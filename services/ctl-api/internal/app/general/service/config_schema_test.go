@@ -51,6 +51,59 @@ func TestGetConfigSchemaSourceDeprecation(t *testing.T) {
 	}
 }
 
+func TestGetConfigSchemaByTypePathAndID(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.GET("/v1/general/config-schema/:type", (&service{}).GetConfigSchemaByType)
+
+	// Each type is served at its own path with $id set to the fetch URL, so
+	// distinct types get distinct $ids.
+	ids := map[string]string{}
+	for _, typ := range []string{"sandbox", "terraform", "action", "break-glass"} {
+		t.Run(typ, func(t *testing.T) {
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodGet, "/v1/general/config-schema/"+typ, nil)
+			req.Host = "api.nuon.co"
+			router.ServeHTTP(rr, req)
+
+			require.Equal(t, http.StatusOK, rr.Code)
+
+			var result map[string]interface{}
+			require.NoError(t, json.Unmarshal(rr.Body.Bytes(), &result))
+
+			// TLS is nil in httptest, and no X-Forwarded-Proto, so scheme is http.
+			wantID := "http://api.nuon.co/v1/general/config-schema/" + typ
+			assert.Equal(t, wantID, result["$id"], "$id must equal the fetch URL")
+			ids[typ] = result["$id"].(string)
+		})
+	}
+
+	seen := map[string]string{}
+	for typ, id := range ids {
+		if prev, ok := seen[id]; ok {
+			t.Fatalf("%s and %s share $id %q", prev, typ, id)
+		}
+		seen[id] = typ
+	}
+}
+
+func TestGetConfigSchemaByTypeHonorsForwardedProto(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.GET("/v1/general/config-schema/:type", (&service{}).GetConfigSchemaByType)
+
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/v1/general/config-schema/sandbox", nil)
+	req.Host = "api.nuon.co"
+	req.Header.Set("X-Forwarded-Proto", "https")
+	router.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusOK, rr.Code)
+	var result map[string]interface{}
+	require.NoError(t, json.Unmarshal(rr.Body.Bytes(), &result))
+	assert.Equal(t, "https://api.nuon.co/v1/general/config-schema/sandbox", result["$id"])
+}
+
 func (s *GeneralPublicTestSuite) TestGetConfigSchema() {
 	testCases := []struct {
 		name              string

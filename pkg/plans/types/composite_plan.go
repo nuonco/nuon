@@ -7,6 +7,9 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
+
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
 type CompositePlan struct {
@@ -33,7 +36,64 @@ func CompositePlanFromAny(v any) (*CompositePlan, error) {
 		return nil, err
 	}
 
+	cp.pruneEmptyClusterInfo()
 	return &cp, nil
+}
+
+// pruneEmptyClusterInfo clears cluster infos (and their auth configs) that
+// decoded as empty objects. go-swagger generates a $ref field that carries a
+// doc comment as an inline struct VALUE (not a pointer) in the SDK models, so a
+// null aws_auth or cluster_info from the API re-marshals as {} during the
+// round-trip above and would otherwise decode into a non-nil empty struct —
+// routing kube auth down the AWS path on non-AWS installs, or making the runner
+// write a kubeconfig for a sandbox that has no cluster at all.
+func (cp *CompositePlan) pruneEmptyClusterInfo() {
+	if dp := cp.DeployPlan; dp != nil {
+		if dp.HelmDeployPlan != nil {
+			dp.HelmDeployPlan.ClusterInfo = pruneClusterInfo(dp.HelmDeployPlan.ClusterInfo)
+		}
+		if dp.TerraformDeployPlan != nil {
+			dp.TerraformDeployPlan.ClusterInfo = pruneClusterInfo(dp.TerraformDeployPlan.ClusterInfo)
+		}
+		if dp.KubernetesManifestDeployPlan != nil {
+			dp.KubernetesManifestDeployPlan.ClusterInfo = pruneClusterInfo(dp.KubernetesManifestDeployPlan.ClusterInfo)
+		}
+		if dp.PulumiDeployPlan != nil {
+			dp.PulumiDeployPlan.ClusterInfo = pruneClusterInfo(dp.PulumiDeployPlan.ClusterInfo)
+		}
+	}
+	if cp.ActionWorkflowRunPlan != nil {
+		cp.ActionWorkflowRunPlan.ClusterInfo = pruneClusterInfo(cp.ActionWorkflowRunPlan.ClusterInfo)
+	}
+	if cp.SyncSecretsPlan != nil {
+		cp.SyncSecretsPlan.ClusterInfo = pruneClusterInfo(cp.SyncSecretsPlan.ClusterInfo)
+	}
+}
+
+func pruneClusterInfo(ci *kube.ClusterInfo) *kube.ClusterInfo {
+	if ci == nil {
+		return nil
+	}
+	if ci.AWSAuth != nil && *ci.AWSAuth == (awscredentials.Config{}) {
+		ci.AWSAuth = nil
+	}
+	if clusterInfoIsZero(ci) {
+		return nil
+	}
+	return ci
+}
+
+func clusterInfoIsZero(ci *kube.ClusterInfo) bool {
+	return ci.ID == "" &&
+		ci.Endpoint == "" &&
+		ci.CAData == "" &&
+		len(ci.EnvVars) == 0 &&
+		ci.KubeConfig == "" &&
+		ci.AWSAuth == nil &&
+		ci.AzureAuth == nil &&
+		ci.GCPAuth == nil &&
+		!ci.Inline &&
+		ci.TrustedRoleARN == ""
 }
 
 // Inner returns the single populated sub-plan, or nil when the composite plan is

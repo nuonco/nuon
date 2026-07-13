@@ -79,6 +79,26 @@ export const WithBothOptions = () => (
   </div>
 )
 
+const mockStackNoBucket = {
+  versions: [
+    {
+      terraform_contents: mockStackWithBoth.versions[0].terraform_contents,
+      terraform_checksum: 'sha256-abc',
+    },
+  ],
+} as any
+
+export const NoTemplateBucket = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitAWSDetails
+      stack={mockStackNoBucket}
+      step={mockStep}
+      orgId="org-1"
+      installId="install-1"
+    />
+  </div>
+)
+
 export const TerraformProvider = () => (
   <div className="max-w-2xl p-4">
     <AwaitAWSDetails

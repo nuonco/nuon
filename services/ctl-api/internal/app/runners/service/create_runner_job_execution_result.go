@@ -172,7 +172,7 @@ const metricCompositeErrorParse = "runner.composite_error_parse"
 // parseCompositeError and emits exactly one metric per failed result so parse
 // coverage is observable without any per-parser wiring.
 func (s *service) parseResultCompositeError(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
-	ce := parseCompositeError(req, runnerJob)
+	ce := s.parseCompositeError(req, runnerJob)
 	if !req.Success {
 		// Default empty facets to "unknown" so Datadog never sees a bare
 		// "tool:" tag; matched_type stays "miss" for a nil/typeless parse.
@@ -207,7 +207,7 @@ func (s *service) parseResultCompositeError(req *CreateRunnerJobExecutionResultR
 // It is best-effort: a success, a missing message, or a parse miss yields nil,
 // leaving the plain-string status description in place. Source is set to the
 // runner job's owner so a future view can join errors back to their subject.
-func parseCompositeError(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
+func (s *service) parseCompositeError(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
 	if req.Success {
 		return nil
 	}
@@ -229,7 +229,15 @@ func parseCompositeError(req *CreateRunnerJobExecutionResultRequest, runnerJob *
 		return nil
 	}
 
-	return compositeerrors.New(ce, compositeerrors.WithSource(runnerJob.OwnerType, runnerJob.OwnerID))
+	data, err := compositeerrors.New(ce, compositeerrors.WithSource(runnerJob.OwnerType, runnerJob.OwnerID))
+	if err != nil {
+		s.l.Warn("unable to build composite error; omitting enrichment",
+			zap.String("runner_job_id", runnerJob.ID),
+			zap.String("composite_error_type", string(ce.Type())),
+			zap.Error(err))
+		return nil
+	}
+	return data
 }
 
 const (

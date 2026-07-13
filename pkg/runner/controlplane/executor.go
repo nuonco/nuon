@@ -33,6 +33,7 @@ import (
 
 type Client interface {
 	GetJobPlanJSON(ctx context.Context, jobID string) (string, error)
+	GetJobCompositePlan(ctx context.Context, jobID string) (*models.PlantypesCompositePlan, error)
 	UpdateJobExecution(ctx context.Context, jobID, executionID string, req *models.ServiceUpdateRunnerJobExecutionRequest) (*models.AppRunnerJobExecution, error)
 	CreateJobExecutionResult(ctx context.Context, jobID, executionID string, req *models.ServiceCreateRunnerJobExecutionResultRequest) (*models.AppRunnerJobExecutionResult, error)
 	CreateJobExecutionOutputs(ctx context.Context, jobID, executionID string, req *models.ServiceCreateRunnerJobExecutionOutputsRequest) (*models.AppRunnerJobExecutionOutputs, error)

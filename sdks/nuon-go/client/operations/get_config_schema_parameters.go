@@ -61,6 +61,12 @@ GetConfigSchemaParams contains all the parameters to send to the API endpoint
 */
 type GetConfigSchemaParams struct {
 
+	/* Source.
+
+	   deprecated alias for type; responses include a Deprecation header when used
+	*/
+	Source *string
+
 	/* Type.
 
 	   return a schema for a source file
@@ -120,6 +126,17 @@ func (o *GetConfigSchemaParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithSource adds the source to the get config schema params
+func (o *GetConfigSchemaParams) WithSource(source *string) *GetConfigSchemaParams {
+	o.SetSource(source)
+	return o
+}
+
+// SetSource adds the source to the get config schema params
+func (o *GetConfigSchemaParams) SetSource(source *string) {
+	o.Source = source
+}
+
 // WithType adds the typeVar to the get config schema params
 func (o *GetConfigSchemaParams) WithType(typeVar *string) *GetConfigSchemaParams {
 	o.SetType(typeVar)
@@ -138,6 +155,23 @@ func (o *GetConfigSchemaParams) WriteToRequest(r runtime.ClientRequest, reg strf
 		return err
 	}
 	var res []error
+
+	if o.Source != nil {
+
+		// query param source
+		var qrSource string
+
+		if o.Source != nil {
+			qrSource = *o.Source
+		}
+		qSource := qrSource
+		if qSource != "" {
+
+			if err := r.SetQueryParam("source", qSource); err != nil {
+				return err
+			}
+		}
+	}
 
 	if o.Type != nil {
 

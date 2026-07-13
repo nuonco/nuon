@@ -64,9 +64,7 @@ func (e *AWSPermissionError) Severity() compositeerrors.Severity {
 // surfacing the actionable error. The step is parked for manual retry once the
 // user grants the permission.
 func (e *AWSPermissionError) Hints() compositeerrors.Hints {
-	return compositeerrors.Hints{
-		compositeerrors.HintSkipAutoRetry: "true",
-	}
+	return compositeerrors.NewHints().WithSkipAutoRetry()
 }
 
 // Sections returns the structured detail rendered in the dashboard: what AWS
@@ -74,38 +72,29 @@ func (e *AWSPermissionError) Hints() compositeerrors.Hints {
 // statement granting the missing action.
 func (e *AWSPermissionError) Sections() []compositeerrors.Section {
 	sections := []compositeerrors.Section{
-		{
-			Heading: "Why",
-			Body:    "The IAM principal used by this deployment was denied a permission required to perform the operation. This usually means the permission is not granted, but it can also be an explicit deny, a service control policy (SCP), or a permissions boundary. Grant or unblock the permission for the principal and retry.",
-		},
+		compositeerrors.MarkdownSection("Why", "The IAM principal used by this deployment was denied a permission required to perform the operation. This usually means the permission is not granted, but it can also be an explicit deny, a service control policy (SCP), or a permissions boundary. Grant or unblock the permission for the principal and retry."),
 	}
 
 	if e.RawMessage != "" {
-		sections = append(sections, compositeerrors.Section{
-			Heading: "AWS response",
-			Body:    "```\n" + e.RawMessage + "\n```",
-		})
+		sections = append(sections, compositeerrors.CodeSection("AWS response", e.RawMessage))
 	}
 
 	if e.Principal != "" || e.Resource != "" {
 		var lines []string
 		if e.Principal != "" {
-			lines = append(lines, fmt.Sprintf("Principal: `%s`", e.Principal))
+			lines = append(lines, fmt.Sprintf("Principal: %s", e.Principal))
 		}
 		if e.Resource != "" {
-			lines = append(lines, fmt.Sprintf("Resource: `%s`", e.Resource))
+			lines = append(lines, fmt.Sprintf("Resource: %s", e.Resource))
 		}
-		sections = append(sections, compositeerrors.Section{
-			Heading: "Context",
-			Body:    strings.Join(lines, "\n\n"),
-		})
+		sections = append(sections, compositeerrors.TextSection("Context", strings.Join(lines, "\n")))
 	}
 
 	if e.Action != "" {
-		sections = append(sections, compositeerrors.Section{
-			Heading: "How to fix",
-			Body:    "Add the following to the role used by this deployment:\n\n```json\n" + e.policyStatementJSON() + "\n```",
-		})
+		sections = append(sections,
+			compositeerrors.MarkdownSection("How to fix", "Add the following statement to the role used by this deployment:"),
+			compositeerrors.CodeSection("IAM policy statement", e.policyStatementJSON()),
+		)
 	}
 
 	return sections
@@ -159,9 +148,10 @@ type permissionParser struct{}
 func (permissionParser) Layer() errparse.Layer { return errparse.LayerProvider }
 
 // Tools is nil (tool-agnostic): an AWS IAM denial is a provider-level failure
-// that surfaces across tools — terraform and pulumi provisioning, an ECR push
-// from a docker/oci build, etc. — so it must not be bucketed to a single tool.
-// The AWS signals plus the provider check in Applicable are the real gates.
+// that surfaces across tools, such as terraform and pulumi provisioning or an
+// ECR push from a docker/oci build, so it must not be bucketed to a single
+// tool. The AWS signals plus the provider check in Applicable are the real
+// gates.
 func (permissionParser) Tools() []errparse.Tool { return nil }
 func (permissionParser) Signals() []string {
 	return []string{

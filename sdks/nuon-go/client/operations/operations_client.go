@@ -504,6 +504,8 @@ type ClientService interface {
 
 	GetConfigSchema(params *GetConfigSchemaParams, opts ...ClientOption) (*GetConfigSchemaOK, error)
 
+	GetConfigSchemaByType(params *GetConfigSchemaByTypeParams, opts ...ClientOption) (*GetConfigSchemaByTypeOK, error)
+
 	GetCurrentAccount(params *GetCurrentAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentAccountOK, error)
 
 	GetCurrentInstallInputs(params *GetCurrentInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetCurrentInstallInputsOK, error)
@@ -9918,7 +9920,7 @@ func (a *Client) GetComponentLatestConfig(params *GetComponentLatestConfigParams
 }
 
 /*
-	GetConfigSchema gets jsonschema for config file
+	GetConfigSchema gets jsonschema for config file deprecated query form
 
 	Return jsonschemas for Nuon configs. These can be used in frontmatter in most editors that have a TOML LSP (such as
 
@@ -9981,6 +9983,73 @@ func (a *Client) GetConfigSchema(params *GetConfigSchemaParams, opts ...ClientOp
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetConfigSchema: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	GetConfigSchemaByType gets jsonschema for a config file type
+
+	Return jsonschemas for Nuon configs. These can be used in frontmatter in most editors that have a TOML LSP (such as
+
+[Taplo](https://taplo.tamasfe.dev/) configured.
+
+```toml
+#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+
+description = "description"
+```
+
+You can pass in a valid source argument to render within a specific config file:
+
+- input
+- input-group
+- installer
+- sandbox
+- runner
+- docker_build
+- container_image
+- helm
+- terraform
+- runbook
+- job
+*/
+func (a *Client) GetConfigSchemaByType(params *GetConfigSchemaByTypeParams, opts ...ClientOption) (*GetConfigSchemaByTypeOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetConfigSchemaByTypeParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetConfigSchemaByType",
+		Method:             "GET",
+		PathPattern:        "/v1/general/config-schema/{type}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetConfigSchemaByTypeReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetConfigSchemaByTypeOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetConfigSchemaByType: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

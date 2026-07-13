@@ -6,7 +6,7 @@
 //
 // The runner drives helm through the Go SDK (helm.sh/helm/v4 pkg/action), not
 // the CLI, so the familiar "INSTALLATION FAILED"/"UPGRADE FAILED" phase
-// prefixes never appear — those are added only by helm's cmd layer. What is
+// prefixes never appear, since those are added only by helm's cmd layer. What is
 // reliably present is the runner's own wrapper around the SDK error
 // ("unable to upgrade helm release: <sdk error>", "unable to execute with
 // dry-run: <sdk error>"). The parser leads the headline at the SDK error by
@@ -71,7 +71,7 @@ var wrappers = []string{"helm release:", "with dry-run:"}
 
 // causes are verified helm v4 SDK (pkg/action, pkg/kube) error substrings, used
 // as a backup anchor when the captured output does not carry the runner wrapper
-// (e.g. only a log line was retained). Every entry is helm-specific — generic
+// (e.g. only a log line was retained). Every entry is helm-specific; generic
 // kubernetes phrases like "timed out waiting for the condition" are
 // deliberately excluded, since they can appear in streamed pod logs before the
 // real cause and would produce a misleading headline. (That phrase is still
@@ -104,7 +104,7 @@ type classifier struct {
 
 // skipRetry marks a deterministic failure a blind retry cannot fix, so the
 // orchestrator parks the step for manual retry instead of burning attempts.
-var skipRetry = compositeerrors.Hints{compositeerrors.HintSkipAutoRetry: "true"}
+var skipRetry = compositeerrors.NewHints().WithSkipAutoRetry()
 
 var classifiers = []classifier{
 	{HelmOwnershipConflictType, skipRetry, contains("exists and cannot be imported into the current release", "invalid ownership metadata")},
@@ -154,10 +154,9 @@ func (e *HelmError) Sections() []compositeerrors.Section {
 	if e.Output == "" {
 		return nil
 	}
-	return []compositeerrors.Section{{
-		Heading: "Output",
-		Body:    "```\n" + e.Output + "\n```",
-	}}
+	return []compositeerrors.Section{
+		compositeerrors.CodeSection("Output", e.Output),
+	}
 }
 
 // errorParser recognises helm failures in a helm job's raw output.

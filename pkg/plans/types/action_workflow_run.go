@@ -20,7 +20,13 @@ type ActionWorkflowRunPlan struct {
 	OverrideEnvVars map[string]string            `json:"override_env_vars"`
 	Timeout         time.Duration                `json:"timeout,omitempty" swaggertype:"primitive,integer"`
 
-	// optional fields based on the configuration
+	// Optional fields based on the configuration.
+	//
+	// NOTE: keep this comment detached from the field below (blank line above
+	// the field) — a doc comment on a $ref field makes go-swagger generate the
+	// SDK model field as an inline struct VALUE, so a null cluster_info
+	// round-trips to {} in the runner and becomes a non-nil empty ClusterInfo.
+
 	ClusterInfo *kube.ClusterInfo        `json:"cluster_info,block"`
 	AWSAuth     *awscredentials.Config   `json:"aws_auth,omitempty"`
 	AzureAuth   *azurecredentials.Config `json:"azure_auth,omitempty"`

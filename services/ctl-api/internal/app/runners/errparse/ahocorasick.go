@@ -6,7 +6,7 @@ package errparse
 // regardless of how many patterns (error signatures) are registered, which is
 // what lets the provider layer grow without bound.
 //
-// It answers only "which patterns are present" (a set), not where — that is all
+// It answers only "which patterns are present" (a set), not where, which is all
 // the registry needs to decide which parsers are candidates.
 type ahoCorasick struct {
 	next    []map[byte]int // goto transitions per node

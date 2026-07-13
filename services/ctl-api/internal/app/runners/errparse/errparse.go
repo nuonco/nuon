@@ -3,7 +3,7 @@
 //
 // Parsing is hierarchical: a single failure blob is a stack of nested errors
 // (cloud-provider inside tool inside orchestration), and we want to surface the
-// most specific layer — "Missing IAM permission s3:CreateBucket", not
+// most specific layer, "Missing IAM permission s3:CreateBucket" rather than
 // "terraform apply failed". Parsers therefore declare a Layer, and the registry
 // tries the deepest (provider) layer first, then tool, then a generic
 // emit-the-body fallback.
@@ -13,7 +13,7 @@
 // index) and the Signals that must be physically present in the text (a single
 // compiled multi-pattern scan). A parser's expensive Parse only runs when its
 // facet gate passes and one of its signals is present, so per-error cost is a
-// function of the text length and the handful of matched candidates — not the
+// function of the text length and the handful of matched candidates, not the
 // total number of registered parsers.
 package errparse
 
@@ -28,7 +28,13 @@ type Layer int
 const (
 	// LayerProvider is the cloud-provider layer (AWS/Azure/GCP error codes).
 	LayerProvider Layer = 0
-	// LayerTool is the execution-tool layer (terraform/helm/pulumi/docker).
+	// LayerToolSpecific is for a specific, recognised cause within a tool (e.g.
+	// terraform's state-lock failure). It is tried before LayerTool so a
+	// specific classifier wins over the tool's catch-all, while a provider
+	// cause still wins over both.
+	LayerToolSpecific Layer = 9
+	// LayerTool is the execution-tool layer catch-all (terraform/helm/pulumi/
+	// docker): a recognised-but-unclassified diagnostic for that tool.
 	LayerTool Layer = 10
 	// LayerGeneric is the always-matches fallback that emits the cleaned error
 	// body when no specific parser recognises the failure.

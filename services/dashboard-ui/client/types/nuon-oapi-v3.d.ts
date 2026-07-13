@@ -5988,7 +5988,10 @@ export interface components {
     "compositeerrors.Section": {
       body?: string;
       heading?: string;
+      kind?: components["schemas"]["compositeerrors.SectionKind"];
     };
+    /** @enum {string} */
+    "compositeerrors.SectionKind": "markdown" | "text" | "code";
     /** @enum {string} */
     "compositeerrors.Severity": "fatal" | "error" | "warning" | "info";
     /** @enum {string} */

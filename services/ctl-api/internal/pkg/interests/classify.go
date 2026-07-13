@@ -339,6 +339,15 @@ func workflowResolution(wfType string) (ResourceKind, string, bool) {
 // good enough for the common case where a workflow's steps share a single
 // target kind (e.g. every step in a deploy_components workflow is a deploy).
 func stepResolution(stepTargetType, parentWorkflowType string) (ResourceKind, string, bool) {
+	// App-branch interests govern the whole workflow, including steps whose
+	// underlying targets are components, actions, or other resource types.
+	switch parentWorkflowType {
+	case "app_branches_manual_update",
+		"app_branches_config_repo_update",
+		"app_branches_component_repo_update":
+		return ResourceAppBranches, "run", true
+	}
+
 	if stepTargetType == "" {
 		return stepResolutionFromParent(parentWorkflowType)
 	}
