@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	defaultMaxConcurrentActivities                int = 30
-	defaultMaxConcurrentWorkflowTaskExecutionSize int = 10000
+	defaultMaxConcurrentActivities                int = 20
+	defaultMaxConcurrentWorkflowTaskExecutionSize int = 20
 	defaultMaxConcurrentActivityTaskPollers       int = 20
 	defaultMaxConcurrentWorkflowTaskPollers       int = 20
 
