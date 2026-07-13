@@ -679,6 +679,22 @@ func TestStepResolution(t *testing.T) {
 			wantOK:         true,
 		},
 		{
+			name:           "deploy step inside app branch workflow → app_branches.run",
+			stepTargetType: stepTargetInstallDeploy,
+			parentWfType:   "app_branches_manual_update",
+			wantResource:   ResourceAppBranches,
+			wantOp:         "run",
+			wantOK:         true,
+		},
+		{
+			name:           "action step inside app branch workflow → app_branches.run",
+			stepTargetType: stepTargetInstallActionWorkflowRun,
+			parentWfType:   "app_branches_component_repo_update",
+			wantResource:   ResourceAppBranches,
+			wantOp:         "run",
+			wantOK:         true,
+		},
+		{
 			name:           "action workflow run step → actions.run",
 			stepTargetType: stepTargetInstallActionWorkflowRun,
 			parentWfType:   "provision",
