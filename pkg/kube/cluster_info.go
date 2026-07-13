@@ -40,6 +40,13 @@ type ClusterInfo struct {
 
 	// If either an AWS auth or Azure auth is passed in, we will automatically use it to resolve credentials and set
 	// them in the environment.
+	//
+	// NOTE: keep this comment detached from the field below (blank line above the
+	// field). A doc comment on a $ref field makes go-swagger wrap the property in
+	// allOf and generate it as an inline struct VALUE instead of a pointer — a
+	// null aws_auth then round-trips to {} in the runner SDK and breaks kube auth
+	// on non-AWS installs.
+
 	AWSAuth   *awscredentials.Config   `json:"aws_auth" hcl:"aws_auth,block"`
 	AzureAuth *azurecredentials.Config `json:"azure_auth" hcl:"azure_auth,block"`
 	GCPAuth   *gcpcredentials.Config   `json:"gcp_auth", hcl:gcp_auth,block`
