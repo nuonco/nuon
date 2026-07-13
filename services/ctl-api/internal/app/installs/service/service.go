@@ -324,6 +324,11 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	// provider's nuon_stack data source. Public: the per-stack-version
 	// phone_home_id in the URL path is the secret.
 	api.GET("/v1/stack-runs/:phone_home_id/config", s.GetInstallStackVersionConfig)
+
+	// phone home reported by the install stack over the runner API. The
+	// per-stack-version phone_home_id in the URL path is the secret; the route
+	// is already in the public whitelist, so no runner token is required.
+	api.POST("/v1/installs/:install_id/phone-home/:phone_home_id", s.InstallPhoneHome)
 	return nil
 }
 
