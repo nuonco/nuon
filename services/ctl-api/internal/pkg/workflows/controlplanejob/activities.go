@@ -148,6 +148,35 @@ func (a *Activities) GetJobPlanJSON(ctx context.Context, jobID string) (string, 
 	return plan.PlanJSON, nil
 }
 
+func (a *Activities) GetJobCompositePlan(ctx context.Context, jobID string) (*models.PlantypesCompositePlan, error) {
+	var plan app.RunnerJobPlan
+	if err := a.db.WithContext(ctx).Where(&app.RunnerJobPlan{RunnerJobID: jobID}).First(&plan).Error; err != nil {
+		return nil, fmt.Errorf("unable to get runner job plan: %w", err)
+	}
+
+	compositePlan, _ := plan.GetCompositePlan(ctx, a.cfg.BlobReadEnabled)
+	if compositePlan.IsEmpty() {
+		job, err := a.getJob(ctx, jobID)
+		if err != nil {
+			return nil, err
+		}
+		compositePlan, err = plan.DeriveCompositePlan(job)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	contents, err := json.Marshal(compositePlan)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal composite plan: %w", err)
+	}
+	var result models.PlantypesCompositePlan
+	if err := json.Unmarshal(contents, &result); err != nil {
+		return nil, fmt.Errorf("unable to convert composite plan: %w", err)
+	}
+	return &result, nil
+}
+
 func (a *Activities) UpdateJobExecution(ctx context.Context, jobID, executionID string, req *models.ServiceUpdateRunnerJobExecutionRequest) (*models.AppRunnerJobExecution, error) {
 	updates := app.RunnerJobExecution{Status: app.RunnerJobExecutionStatus(req.Status)}
 	if req.StatusDescription != "" {
