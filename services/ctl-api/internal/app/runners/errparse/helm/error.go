@@ -154,10 +154,9 @@ func (e *HelmError) Sections() []compositeerrors.Section {
 	if e.Output == "" {
 		return nil
 	}
-	return []compositeerrors.Section{{
-		Heading: "Output",
-		Body:    "```\n" + e.Output + "\n```",
-	}}
+	return []compositeerrors.Section{
+		compositeerrors.CodeSection("Output", e.Output),
+	}
 }
 
 // errorParser recognises helm failures in a helm job's raw output.

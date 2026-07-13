@@ -74,38 +74,29 @@ func (e *AWSPermissionError) Hints() compositeerrors.Hints {
 // statement granting the missing action.
 func (e *AWSPermissionError) Sections() []compositeerrors.Section {
 	sections := []compositeerrors.Section{
-		{
-			Heading: "Why",
-			Body:    "The IAM principal used by this deployment was denied a permission required to perform the operation. This usually means the permission is not granted, but it can also be an explicit deny, a service control policy (SCP), or a permissions boundary. Grant or unblock the permission for the principal and retry.",
-		},
+		compositeerrors.MarkdownSection("Why", "The IAM principal used by this deployment was denied a permission required to perform the operation. This usually means the permission is not granted, but it can also be an explicit deny, a service control policy (SCP), or a permissions boundary. Grant or unblock the permission for the principal and retry."),
 	}
 
 	if e.RawMessage != "" {
-		sections = append(sections, compositeerrors.Section{
-			Heading: "AWS response",
-			Body:    "```\n" + e.RawMessage + "\n```",
-		})
+		sections = append(sections, compositeerrors.CodeSection("AWS response", e.RawMessage))
 	}
 
 	if e.Principal != "" || e.Resource != "" {
 		var lines []string
 		if e.Principal != "" {
-			lines = append(lines, fmt.Sprintf("Principal: `%s`", e.Principal))
+			lines = append(lines, fmt.Sprintf("Principal: %s", e.Principal))
 		}
 		if e.Resource != "" {
-			lines = append(lines, fmt.Sprintf("Resource: `%s`", e.Resource))
+			lines = append(lines, fmt.Sprintf("Resource: %s", e.Resource))
 		}
-		sections = append(sections, compositeerrors.Section{
-			Heading: "Context",
-			Body:    strings.Join(lines, "\n\n"),
-		})
+		sections = append(sections, compositeerrors.TextSection("Context", strings.Join(lines, "\n")))
 	}
 
 	if e.Action != "" {
-		sections = append(sections, compositeerrors.Section{
-			Heading: "How to fix",
-			Body:    "Add the following to the role used by this deployment:\n\n```json\n" + e.policyStatementJSON() + "\n```",
-		})
+		sections = append(sections,
+			compositeerrors.MarkdownSection("How to fix", "Add the following statement to the role used by this deployment:"),
+			compositeerrors.CodeSection("IAM policy statement", e.policyStatementJSON()),
+		)
 	}
 
 	return sections
