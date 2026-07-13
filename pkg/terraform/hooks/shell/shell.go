@@ -23,7 +23,7 @@ type shell struct {
 	v       *validator.Validate
 	rootDir string
 
-	EnvVars map[string]string `validate:"required"`
+	EnvVars map[string]string
 	Auth    *credentials.Config
 }
 
@@ -38,6 +38,9 @@ func New(v *validator.Validate, opts ...shellOption) (*shell, error) {
 		if err := opt(s); err != nil {
 			return nil, fmt.Errorf("unable to set %d option: %w", idx, err)
 		}
+	}
+	if s.EnvVars == nil {
+		s.EnvVars = map[string]string{}
 	}
 	if err := s.v.Struct(s); err != nil {
 		return nil, err
