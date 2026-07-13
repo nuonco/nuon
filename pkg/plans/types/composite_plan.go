@@ -36,49 +36,64 @@ func CompositePlanFromAny(v any) (*CompositePlan, error) {
 		return nil, err
 	}
 
-	cp.pruneEmptyClusterAuth()
+	cp.pruneEmptyClusterInfo()
 	return &cp, nil
 }
 
-// pruneEmptyClusterAuth clears cluster-info auth configs that decoded as empty
-// objects. go-swagger generates ClusterInfo.aws_auth as an inline struct value
-// (not a pointer), so a null aws_auth from the API re-marshals as {} during the
-// round-trip above and would otherwise decode into a non-nil empty config,
-// routing kube auth down the AWS path on non-AWS installs.
-func (cp *CompositePlan) pruneEmptyClusterAuth() {
-	for _, ci := range cp.clusterInfos() {
-		if ci == nil {
-			continue
-		}
-		if ci.AWSAuth != nil && *ci.AWSAuth == (awscredentials.Config{}) {
-			ci.AWSAuth = nil
-		}
-	}
-}
-
-func (cp *CompositePlan) clusterInfos() []*kube.ClusterInfo {
-	infos := make([]*kube.ClusterInfo, 0, 6)
+// pruneEmptyClusterInfo clears cluster infos (and their auth configs) that
+// decoded as empty objects. go-swagger generates a $ref field that carries a
+// doc comment as an inline struct VALUE (not a pointer) in the SDK models, so a
+// null aws_auth or cluster_info from the API re-marshals as {} during the
+// round-trip above and would otherwise decode into a non-nil empty struct —
+// routing kube auth down the AWS path on non-AWS installs, or making the runner
+// write a kubeconfig for a sandbox that has no cluster at all.
+func (cp *CompositePlan) pruneEmptyClusterInfo() {
 	if dp := cp.DeployPlan; dp != nil {
 		if dp.HelmDeployPlan != nil {
-			infos = append(infos, dp.HelmDeployPlan.ClusterInfo)
+			dp.HelmDeployPlan.ClusterInfo = pruneClusterInfo(dp.HelmDeployPlan.ClusterInfo)
 		}
 		if dp.TerraformDeployPlan != nil {
-			infos = append(infos, dp.TerraformDeployPlan.ClusterInfo)
+			dp.TerraformDeployPlan.ClusterInfo = pruneClusterInfo(dp.TerraformDeployPlan.ClusterInfo)
 		}
 		if dp.KubernetesManifestDeployPlan != nil {
-			infos = append(infos, dp.KubernetesManifestDeployPlan.ClusterInfo)
+			dp.KubernetesManifestDeployPlan.ClusterInfo = pruneClusterInfo(dp.KubernetesManifestDeployPlan.ClusterInfo)
 		}
 		if dp.PulumiDeployPlan != nil {
-			infos = append(infos, dp.PulumiDeployPlan.ClusterInfo)
+			dp.PulumiDeployPlan.ClusterInfo = pruneClusterInfo(dp.PulumiDeployPlan.ClusterInfo)
 		}
 	}
 	if cp.ActionWorkflowRunPlan != nil {
-		infos = append(infos, cp.ActionWorkflowRunPlan.ClusterInfo)
+		cp.ActionWorkflowRunPlan.ClusterInfo = pruneClusterInfo(cp.ActionWorkflowRunPlan.ClusterInfo)
 	}
 	if cp.SyncSecretsPlan != nil {
-		infos = append(infos, cp.SyncSecretsPlan.ClusterInfo)
+		cp.SyncSecretsPlan.ClusterInfo = pruneClusterInfo(cp.SyncSecretsPlan.ClusterInfo)
 	}
-	return infos
+}
+
+func pruneClusterInfo(ci *kube.ClusterInfo) *kube.ClusterInfo {
+	if ci == nil {
+		return nil
+	}
+	if ci.AWSAuth != nil && *ci.AWSAuth == (awscredentials.Config{}) {
+		ci.AWSAuth = nil
+	}
+	if clusterInfoIsZero(ci) {
+		return nil
+	}
+	return ci
+}
+
+func clusterInfoIsZero(ci *kube.ClusterInfo) bool {
+	return ci.ID == "" &&
+		ci.Endpoint == "" &&
+		ci.CAData == "" &&
+		len(ci.EnvVars) == 0 &&
+		ci.KubeConfig == "" &&
+		ci.AWSAuth == nil &&
+		ci.AzureAuth == nil &&
+		ci.GCPAuth == nil &&
+		!ci.Inline &&
+		ci.TrustedRoleARN == ""
 }
 
 // Inner returns the single populated sub-plan, or nil when the composite plan is
