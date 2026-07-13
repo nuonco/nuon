@@ -64,23 +64,11 @@ func (e *TerraformError) Sections() []compositeerrors.Section {
 	var sections []compositeerrors.Section
 
 	if len(e.Errors) > 1 {
-		var b strings.Builder
-		for _, s := range e.Errors {
-			b.WriteString("- ")
-			b.WriteString(s)
-			b.WriteString("\n")
-		}
-		sections = append(sections, compositeerrors.Section{
-			Heading: "Errors",
-			Body:    strings.TrimRight(b.String(), "\n"),
-		})
+		sections = append(sections, compositeerrors.TextSection("Errors", strings.Join(e.Errors, "\n")))
 	}
 
 	if e.Output != "" {
-		sections = append(sections, compositeerrors.Section{
-			Heading: "Output",
-			Body:    "```\n" + e.Output + "\n```",
-		})
+		sections = append(sections, compositeerrors.CodeSection("Output", e.Output))
 	}
 
 	return sections

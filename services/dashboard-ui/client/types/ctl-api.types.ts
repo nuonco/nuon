@@ -220,6 +220,8 @@ export type TCompositeErrorSeverity =
   components['schemas']['compositeerrors.Severity']
 export type TCompositeErrorSection =
   components['schemas']['compositeerrors.Section']
+export type TCompositeErrorSectionKind =
+  components['schemas']['compositeerrors.SectionKind']
 export type TCompositeError =
   components['schemas']['compositeerrors.CompositeErrorData']
 
