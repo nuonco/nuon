@@ -40,6 +40,25 @@ func TestCompositePlanFromAny_PrunesEmptyAWSAuth(t *testing.T) {
 	assert.Equal(t, "proj", ci.GCPAuth.ProjectID)
 }
 
+func TestCompositePlanFromAny_PrunesEmptyClusterInfo(t *testing.T) {
+	// Mirrors an action workflow run plan for a sandbox with no cluster:
+	// models.PlantypesActionWorkflowRunPlan.ClusterInfo is a struct value, so a
+	// null cluster_info from the API re-marshals as {} (with an empty aws_auth
+	// under the old SDK models).
+	sdkPlan := map[string]any{
+		"action_workflow_run_plan": map[string]any{
+			"id":           "run-1",
+			"install_id":   "inst-1",
+			"cluster_info": map[string]any{"aws_auth": map[string]any{}},
+		},
+	}
+
+	cp, err := CompositePlanFromAny(sdkPlan)
+	require.NoError(t, err)
+	require.NotNil(t, cp.ActionWorkflowRunPlan)
+	assert.Nil(t, cp.ActionWorkflowRunPlan.ClusterInfo, "empty cluster_info from the SDK round-trip must be pruned")
+}
+
 func TestCompositePlanFromAny_KeepsPopulatedAWSAuth(t *testing.T) {
 	sdkPlan := map[string]any{
 		"deploy_plan": map[string]any{
