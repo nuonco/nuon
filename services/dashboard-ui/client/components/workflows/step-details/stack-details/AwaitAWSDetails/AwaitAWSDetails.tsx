@@ -87,7 +87,7 @@ export const AwaitAWSDetails = ({
 
       {hasTerraform ? (
         <Tabs
-          initActiveTab="cloudformation"
+          initActiveTab={version?.template_url ? 'cloudformation' : 'terraform'}
           tabs={{
             cloudformation: (
               <CloudFormationTab
@@ -130,6 +130,20 @@ const CloudFormationTab = ({
   installAwsRegion,
 }: ICloudFormationTab) => {
   const templateUrl = version?.template_url
+
+  if (!templateUrl) {
+    return (
+      <div className="flex flex-col gap-4 pt-4">
+        <Card>
+          <Text variant="subtext" theme="neutral">
+            CloudFormation is unavailable for this install. Set up the stack
+            template bucket to enable it.
+          </Text>
+        </Card>
+      </div>
+    )
+  }
+
   const isS3Template =
     templateUrl?.includes('s3.amazonaws.com') || templateUrl?.includes('.s3.')
   const region =

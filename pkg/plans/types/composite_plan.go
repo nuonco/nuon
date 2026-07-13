@@ -7,6 +7,9 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
+
+	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
+	"github.com/nuonco/nuon/pkg/kube"
 )
 
 type CompositePlan struct {
@@ -33,7 +36,49 @@ func CompositePlanFromAny(v any) (*CompositePlan, error) {
 		return nil, err
 	}
 
+	cp.pruneEmptyClusterAuth()
 	return &cp, nil
+}
+
+// pruneEmptyClusterAuth clears cluster-info auth configs that decoded as empty
+// objects. go-swagger generates ClusterInfo.aws_auth as an inline struct value
+// (not a pointer), so a null aws_auth from the API re-marshals as {} during the
+// round-trip above and would otherwise decode into a non-nil empty config,
+// routing kube auth down the AWS path on non-AWS installs.
+func (cp *CompositePlan) pruneEmptyClusterAuth() {
+	for _, ci := range cp.clusterInfos() {
+		if ci == nil {
+			continue
+		}
+		if ci.AWSAuth != nil && *ci.AWSAuth == (awscredentials.Config{}) {
+			ci.AWSAuth = nil
+		}
+	}
+}
+
+func (cp *CompositePlan) clusterInfos() []*kube.ClusterInfo {
+	infos := make([]*kube.ClusterInfo, 0, 6)
+	if dp := cp.DeployPlan; dp != nil {
+		if dp.HelmDeployPlan != nil {
+			infos = append(infos, dp.HelmDeployPlan.ClusterInfo)
+		}
+		if dp.TerraformDeployPlan != nil {
+			infos = append(infos, dp.TerraformDeployPlan.ClusterInfo)
+		}
+		if dp.KubernetesManifestDeployPlan != nil {
+			infos = append(infos, dp.KubernetesManifestDeployPlan.ClusterInfo)
+		}
+		if dp.PulumiDeployPlan != nil {
+			infos = append(infos, dp.PulumiDeployPlan.ClusterInfo)
+		}
+	}
+	if cp.ActionWorkflowRunPlan != nil {
+		infos = append(infos, cp.ActionWorkflowRunPlan.ClusterInfo)
+	}
+	if cp.SyncSecretsPlan != nil {
+		infos = append(infos, cp.SyncSecretsPlan.ClusterInfo)
+	}
+	return infos
 }
 
 // Inner returns the single populated sub-plan, or nil when the composite plan is

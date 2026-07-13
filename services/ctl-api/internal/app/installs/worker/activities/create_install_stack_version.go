@@ -59,9 +59,9 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 		obj.AWSBucketKey = bucketKey
 
 		// Only generate S3-based template URL and CloudFormation quick link when
-		// running on AWS BYOC (S3 base URL is configured). On GCP BYOC, the
-		// template is uploaded to GCS and the URL is set after upload.
-		if a.cfg.AWSCloudFormationStackTemplateBaseURL != "" {
+		// the template bucket is configured; otherwise the install is
+		// Terraform-only and no template is uploaded.
+		if a.cfg.AWSCloudFormationStackTemplateBaseURL != "" && a.cfg.AWSCloudFormationStackTemplateBucket != "" {
 			templateURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/"), bucketKey)
 			obj.AWSBucketName = a.cfg.AWSCloudFormationStackTemplateBucket
 			obj.TemplateURL = templateURL

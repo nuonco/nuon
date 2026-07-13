@@ -327,7 +327,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		checksum = armResult.Checksum
 	}
 
-	if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
+	if s.cfg.AWSCloudFormationStackTemplateBucket == "" {
+		workflow.GetLogger(ctx).Warn("cloudformation stack template bucket not configured, skipping s3 upload", "install_id", install.ID)
+	} else if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
 		BucketKey: stackVersion.AWSBucketKey,
 		Template:  tmplByts,
 	}); err != nil {

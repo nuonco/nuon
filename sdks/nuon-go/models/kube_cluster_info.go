@@ -19,11 +19,8 @@ import (
 // swagger:model kube.ClusterInfo
 type KubeClusterInfo struct {
 
-	// If either an AWS auth or Azure auth is passed in, we will automatically use it to resolve credentials and set
-	// them in the environment.
-	AwsAuth struct {
-		GithubComNuoncoNuonPkgAwsCredentialsConfig
-	} `json:"aws_auth,omitempty"`
+	// aws auth
+	AwsAuth *GithubComNuoncoNuonPkgAwsCredentialsConfig `json:"aws_auth,omitempty"`
 
 	// azure auth
 	AzureAuth *GithubComNuoncoNuonPkgAzureCredentialsConfig `json:"azure_auth,omitempty"`
@@ -79,6 +76,21 @@ func (m *KubeClusterInfo) Validate(formats strfmt.Registry) error {
 func (m *KubeClusterInfo) validateAwsAuth(formats strfmt.Registry) error {
 	if swag.IsZero(m.AwsAuth) { // not required
 		return nil
+	}
+
+	if m.AwsAuth != nil {
+		if err := m.AwsAuth.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("aws_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("aws_auth")
+			}
+
+			return err
+		}
 	}
 
 	return nil
@@ -153,6 +165,26 @@ func (m *KubeClusterInfo) ContextValidate(ctx context.Context, formats strfmt.Re
 }
 
 func (m *KubeClusterInfo) contextValidateAwsAuth(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AwsAuth != nil {
+
+		if swag.IsZero(m.AwsAuth) { // not required
+			return nil
+		}
+
+		if err := m.AwsAuth.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("aws_auth")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("aws_auth")
+			}
+
+			return err
+		}
+	}
 
 	return nil
 }
