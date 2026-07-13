@@ -8,18 +8,25 @@ import (
 )
 
 type fakeClient struct {
-	planJSON string
+	planJSON      string
+	compositePlan *models.PlantypesCompositePlan
 
-	planCalls    int
-	outputs      any
-	resultCalls  int
-	statuses     []models.AppRunnerJobExecutionStatus
-	outputsCalls int
+	planCalls          int
+	compositePlanCalls int
+	outputs            any
+	resultCalls        int
+	statuses           []models.AppRunnerJobExecutionStatus
+	outputsCalls       int
 }
 
 func (c *fakeClient) GetJobPlanJSON(ctx context.Context, jobID string) (string, error) {
 	c.planCalls++
 	return c.planJSON, nil
+}
+
+func (c *fakeClient) GetJobCompositePlan(ctx context.Context, jobID string) (*models.PlantypesCompositePlan, error) {
+	c.compositePlanCalls++
+	return c.compositePlan, nil
 }
 
 func (c *fakeClient) UpdateJobExecution(ctx context.Context, jobID, executionID string, req *models.ServiceUpdateRunnerJobExecutionRequest) (*models.AppRunnerJobExecution, error) {
@@ -86,7 +93,8 @@ func TestExecuteSandboxBuildShortCircuits(t *testing.T) {
 
 func TestExecuteNonSandboxDoesNotShortCircuit(t *testing.T) {
 	client := &fakeClient{
-		planJSON: `{"sandbox_mode":{"enabled":false}}`,
+		planJSON:      `{"sandbox_mode":{"enabled":false}}`,
+		compositePlan: &models.PlantypesCompositePlan{BuildPlan: &models.PlantypesBuildPlan{}},
 	}
 	e, err := NewExecutor(client, nil, Config{})
 	if err != nil {
@@ -101,6 +109,9 @@ func TestExecuteNonSandboxDoesNotShortCircuit(t *testing.T) {
 	// short-circuit as a sandbox build (no outputs/result written).
 	_ = e.Execute(context.Background(), job, execution)
 
+	if client.compositePlanCalls != 1 {
+		t.Errorf("expected composite plan fetched exactly once, got %d", client.compositePlanCalls)
+	}
 	if client.outputsCalls != 0 {
 		t.Errorf("non-sandbox build should not write sandbox outputs, got %d", client.outputsCalls)
 	}

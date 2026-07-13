@@ -36,9 +36,6 @@ func (c *clientAdapter) TailJobs(context.Context, models.AppRunnerJobGroup, time
 func (c *clientAdapter) GetJob(context.Context, string) (*models.AppRunnerJob, error) {
 	return nil, unsupported("GetJob")
 }
-func (c *clientAdapter) GetJobCompositePlan(context.Context, string) (*models.PlantypesCompositePlan, error) {
-	return nil, unsupported("GetJobCompositePlan")
-}
 func (c *clientAdapter) UpdateJob(context.Context, string, *models.ServiceUpdateRunnerJobRequest) (*models.AppRunnerJob, error) {
 	return nil, unsupported("UpdateJob")
 }

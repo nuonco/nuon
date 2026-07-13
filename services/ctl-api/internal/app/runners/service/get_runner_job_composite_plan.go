@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -79,7 +78,7 @@ func (s *service) getRunnerJobCompositePlan(ctx context.Context, runnerJobID str
 		return nil, fmt.Errorf("unable to get job: %w", res.Error)
 	}
 
-	return s.deriveCompositePlan(&runnerPlan, &runnerJob)
+	return runnerPlan.DeriveCompositePlan(&runnerJob)
 }
 
 func (s *service) getOrgRunnerJobCompositePlan(ctx context.Context, runnerJobID string, orgID string) (*plantypes.CompositePlan, error) {
@@ -113,56 +112,5 @@ func (s *service) getOrgRunnerJobCompositePlan(ctx context.Context, runnerJobID 
 		return nil, fmt.Errorf("unable to get job: %w", res.Error)
 	}
 
-	return s.deriveCompositePlan(&runnerPlan, &runnerJob)
-}
-
-func (s *service) deriveCompositePlan(runnerPlan *app.RunnerJobPlan, runnerJob *app.RunnerJob) (*plantypes.CompositePlan, error) {
-
-	var compositePlan plantypes.CompositePlan
-	switch runnerJob.Group {
-	case app.RunnerJobGroupSync:
-		switch runnerJob.Type {
-		case app.RunnerJobTypeOCISync, app.RunnerJobTypeNOOPSync:
-			err := json.Unmarshal([]byte(runnerPlan.PlanJSON), &compositePlan.SyncOCIPlan)
-			if err != nil {
-				return nil, fmt.Errorf("unable to unmarshal sync oci plan: %w", err)
-			}
-		case app.RunnerJobTypeSandboxSyncSecrets:
-			err := json.Unmarshal([]byte(runnerPlan.PlanJSON), &compositePlan.SyncSecretsPlan)
-			if err != nil {
-				return nil, fmt.Errorf("unable to unmarshal sync secret plan: %w", err)
-			}
-		case app.RunnerJobTypeFetchImageMetadata:
-			err := json.Unmarshal([]byte(runnerPlan.PlanJSON), &compositePlan.FetchImageMetadataPlan)
-			if err != nil {
-				return nil, fmt.Errorf("unable to unmarshal fetch image metadata plan: %w", err)
-			}
-		default:
-			return nil, fmt.Errorf("unknown sync job type: %s", runnerJob.Type)
-		}
-	case app.RunnerJobGroupBuild:
-		err := json.Unmarshal([]byte(runnerPlan.PlanJSON), &compositePlan.BuildPlan)
-		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal build plan: %w", err)
-		}
-	case app.RunnerJobGroupDeploy:
-		err := json.Unmarshal([]byte(runnerPlan.PlanJSON), &compositePlan.DeployPlan)
-		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal deploy plan: %w", err)
-		}
-	case app.RunnerJobGroupActions:
-		err := json.Unmarshal([]byte(runnerPlan.PlanJSON), &compositePlan.ActionWorkflowRunPlan)
-		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal action plan: %w", err)
-		}
-	case app.RunnerJobGroupSandbox:
-		err := json.Unmarshal([]byte(runnerPlan.PlanJSON), &compositePlan.SandboxRunPlan)
-		if err != nil {
-			return nil, fmt.Errorf("unable to unmarshal sandbox plan: %w", err)
-		}
-	default:
-		return nil, fmt.Errorf("unknown runner job group: %s", runnerJob.Group)
-	}
-
-	return &compositePlan, nil
+	return runnerPlan.DeriveCompositePlan(&runnerJob)
 }
