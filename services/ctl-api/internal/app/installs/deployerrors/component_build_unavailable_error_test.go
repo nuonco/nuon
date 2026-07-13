@@ -55,7 +55,10 @@ func TestComponentBuildUnavailableError_Missing(t *testing.T) {
 		t.Errorf("Error() = %q, want it to mention the component", got)
 	}
 
-	data := compositeerrors.New(e)
+	data, err := compositeerrors.New(e)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if data.Type != ComponentBuildUnavailableErrorType {
 		t.Errorf("New().Type = %q, want %q", data.Type, ComponentBuildUnavailableErrorType)
 	}

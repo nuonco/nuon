@@ -64,9 +64,7 @@ func (e *AWSPermissionError) Severity() compositeerrors.Severity {
 // surfacing the actionable error. The step is parked for manual retry once the
 // user grants the permission.
 func (e *AWSPermissionError) Hints() compositeerrors.Hints {
-	return compositeerrors.Hints{
-		compositeerrors.HintSkipAutoRetry: "true",
-	}
+	return compositeerrors.NewHints().WithSkipAutoRetry()
 }
 
 // Sections returns the structured detail rendered in the dashboard: what AWS
@@ -150,9 +148,10 @@ type permissionParser struct{}
 func (permissionParser) Layer() errparse.Layer { return errparse.LayerProvider }
 
 // Tools is nil (tool-agnostic): an AWS IAM denial is a provider-level failure
-// that surfaces across tools — terraform and pulumi provisioning, an ECR push
-// from a docker/oci build, etc. — so it must not be bucketed to a single tool.
-// The AWS signals plus the provider check in Applicable are the real gates.
+// that surfaces across tools, such as terraform and pulumi provisioning or an
+// ECR push from a docker/oci build, so it must not be bucketed to a single
+// tool. The AWS signals plus the provider check in Applicable are the real
+// gates.
 func (permissionParser) Tools() []errparse.Tool { return nil }
 func (permissionParser) Signals() []string {
 	return []string{

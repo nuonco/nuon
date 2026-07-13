@@ -22,7 +22,7 @@ const stateLockSignal = "acquiring the state lock"
 
 // StateLockError is the payload for a terraform state-lock failure. The detailed
 // lock info (ID, who, path) is emitted to the log stream, not the captured error
-// output, so it is not available here — Output carries whatever context was
+// output, so it is not available here; Output carries whatever context was
 // captured. target ("sandbox"/"component"/"") tailors the force-unlock command
 // in the remediation.
 type StateLockError struct {
@@ -43,7 +43,7 @@ func (e *StateLockError) Severity() compositeerrors.Severity {
 }
 
 func (e *StateLockError) Hints() compositeerrors.Hints {
-	return compositeerrors.Hints{compositeerrors.HintSkipAutoRetry: "true"}
+	return compositeerrors.NewHints().WithSkipAutoRetry()
 }
 
 func (e *StateLockError) Sections() []compositeerrors.Section {

@@ -76,9 +76,33 @@ func (plainError) Type() Type          { return "test.plain" }
 func (plainError) Severity() Severity  { return SeverityWarning }
 func (plainError) Sections() []Section { return nil }
 
+func TestHintsWriters(t *testing.T) {
+	h := NewHints().WithSkipAutoRetry().WithTerminal().WithDocsURL("https://docs.nuon.co/x").WithRequeueAfter(5 * time.Minute)
+
+	if !h.SkipAutoRetry() {
+		t.Error("expected skip_auto_retry set")
+	}
+	if !h.Terminal() {
+		t.Error("expected terminal set")
+	}
+	if h.DocsURL() != "https://docs.nuon.co/x" {
+		t.Errorf("docs_url = %q", h.DocsURL())
+	}
+	if d, ok := h.RequeueAfter(); !ok || d != 5*time.Minute {
+		t.Errorf("requeue_after = %v ok=%v", d, ok)
+	}
+
+	if _, ok := NewHints().WithRequeueAfter(-1 * time.Second).RequeueAfter(); ok {
+		t.Error("a negative duration must leave requeue_after unset")
+	}
+}
+
 func TestNewCapturesVersionHintsAndSource(t *testing.T) {
 	t.Run("captures version and hints", func(t *testing.T) {
-		d := New(hintedError{hints: Hints{HintSkipAutoRetry: "true"}})
+		d, err := New(hintedError{hints: Hints{HintSkipAutoRetry: "true"}})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		if d.Version != SchemaVersion {
 			t.Fatalf("expected version %d, got %d", SchemaVersion, d.Version)
 		}
@@ -88,21 +112,30 @@ func TestNewCapturesVersionHintsAndSource(t *testing.T) {
 	})
 
 	t.Run("no hints when provider absent", func(t *testing.T) {
-		d := New(plainError{})
+		d, err := New(plainError{})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		if d.Hints != nil {
 			t.Fatalf("expected nil hints, got %v", d.Hints)
 		}
 	})
 
 	t.Run("empty hints not stored", func(t *testing.T) {
-		d := New(hintedError{hints: Hints{}})
+		d, err := New(hintedError{hints: Hints{}})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		if d.Hints != nil {
 			t.Fatalf("expected nil hints for empty bag, got %v", d.Hints)
 		}
 	})
 
 	t.Run("WithSource records provenance", func(t *testing.T) {
-		d := New(plainError{}, WithSource("runner_job_execution_results", "rje_123"))
+		d, err := New(plainError{}, WithSource("runner_job_execution_results", "rje_123"))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		if d.SourceType != "runner_job_execution_results" || d.SourceID != "rje_123" {
 			t.Fatalf("unexpected source: %s/%s", d.SourceType, d.SourceID)
 		}

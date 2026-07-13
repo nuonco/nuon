@@ -2,10 +2,10 @@
 // across the Nuon platform.
 //
 // A CompositeError is a regular Go error (it satisfies the standard error
-// interface) plus typed metadata — a discriminator, a severity, and an
-// optional list of structured Sections — that lets the dashboard present a
-// rich, opinionated view without losing the ability to be returned through
-// the call stack like any other error.
+// interface) plus typed metadata: a discriminator, a severity, and an optional
+// list of structured Sections. That metadata lets the dashboard present a rich,
+// opinionated view without losing the ability to be returned through the call
+// stack like any other error.
 //
 // Composite errors are persisted by attaching a CompositeErrorData JSONB
 // column to owner rows (component builds, sandbox runs, deploys, action runs, ..)
@@ -33,18 +33,18 @@ const (
 // standard error interface (Error() returns the headline message), plus
 // metadata used to persist and present the error in the dashboard.
 type CompositeError interface {
-	error // headline — the one-line message users see
+	error // headline, the one-line message users see
 
 	Type() Type
 	Severity() Severity
 
 	// Sections returns optional structured detail (what / why / fix).
-	// Returning nil is fine — the headline alone is a valid view.
+	// Returning nil is fine; the headline alone is a valid view.
 	Sections() []Section
 }
 
-// SectionKind tells the renderer how to interpret a Section body, and — for
-// security — whether the body is trusted. Untrusted content (raw tool output,
+// SectionKind tells the renderer how to interpret a Section body, and, for
+// security, whether the body is trusted. Untrusted content (raw tool output,
 // values extracted from an error) must never be rendered as markdown: the
 // dashboard's markdown pipeline enables raw HTML and runs custom-component
 // extraction over the string, so a crafted payload could escape a code fence
@@ -74,7 +74,7 @@ type Section struct {
 }
 
 // MarkdownSection builds a trusted, markdown-rendered section. Only pass
-// hand-authored, code-controlled content — never raw tool output.
+// hand-authored, code-controlled content, never raw tool output.
 func MarkdownSection(heading, body string) Section {
 	return Section{Heading: heading, Body: body, Kind: SectionMarkdown}
 }
