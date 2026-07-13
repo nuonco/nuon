@@ -54,23 +54,15 @@ func (c *command) buildCommand(ctx context.Context) (*exec.Cmd, func(), error) {
 	if c.UseProcessGroup {
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 		cmd.Cancel = func() error {
-			pgid := -cmd.Process.Pid
-			// Send SIGTERM first so children can clean up
-			_ = syscall.Kill(pgid, syscall.SIGTERM)
-
-			// Give processes time to exit gracefully, then force kill
-			done := make(chan struct{})
-			go func() {
-				cmd.Process.Wait()
-				close(done)
-			}()
-			select {
-			case <-done:
-				return nil
-			case <-time.After(3 * time.Second):
-				return syscall.Kill(pgid, syscall.SIGKILL)
+			if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL); err != nil {
+				if errors.Is(err, syscall.ESRCH) {
+					return os.ErrProcessDone
+				}
+				return err
 			}
+			return nil
 		}
+		cmd.WaitDelay = 3 * time.Second
 	}
 
 	envVars := os.Environ()
