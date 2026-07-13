@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
+	"go.uber.org/zap"
 )
 
 func ptr(s string) *string { return &s }
@@ -37,6 +38,7 @@ func hasTag(tags []string, want string) bool {
 }
 
 func TestParseResultCompositeError(t *testing.T) {
+	s := &service{l: zap.NewNop()}
 	job := &app.RunnerJob{OwnerType: "install_deploys", OwnerID: "idpl_123"}
 
 	awsMsg := "Error: creating S3 Bucket: AccessDenied: User: " +
@@ -48,14 +50,14 @@ func TestParseResultCompositeError(t *testing.T) {
 			Success:       true,
 			ErrorMetadata: map[string]*string{"message": ptr(awsMsg)},
 		}
-		if got := parseCompositeError(req, job); got != nil {
+		if got := s.parseCompositeError(req, job); got != nil {
 			t.Fatalf("expected nil on success, got %+v", got)
 		}
 	})
 
 	t.Run("no message yields nil", func(t *testing.T) {
 		req := &CreateRunnerJobExecutionResultRequest{Success: false}
-		if got := parseCompositeError(req, job); got != nil {
+		if got := s.parseCompositeError(req, job); got != nil {
 			t.Fatalf("expected nil when no message, got %+v", got)
 		}
 	})
@@ -65,7 +67,7 @@ func TestParseResultCompositeError(t *testing.T) {
 			Success:       false,
 			ErrorMetadata: map[string]*string{"message": ptr("some unrelated failure")},
 		}
-		got := parseCompositeError(req, job)
+		got := s.parseCompositeError(req, job)
 		if got == nil {
 			t.Fatal("expected the generic fallback to produce a composite error")
 		}
@@ -82,7 +84,7 @@ func TestParseResultCompositeError(t *testing.T) {
 			Success:       false,
 			ErrorMetadata: map[string]*string{"message": ptr(awsMsg)},
 		}
-		got := parseCompositeError(req, job)
+		got := s.parseCompositeError(req, job)
 		if got == nil {
 			t.Fatal("expected a composite error, got nil")
 		}
@@ -108,7 +110,7 @@ func TestParseResultCompositeError(t *testing.T) {
 				"error_output": ptr(awsMsg),
 			},
 		}
-		got := parseCompositeError(req, job)
+		got := s.parseCompositeError(req, job)
 		if got == nil || got.Type != "terraform.aws_permission" {
 			t.Fatalf("expected AWS permission parsed from error_output, got %+v", got)
 		}
@@ -129,7 +131,7 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 
 	t.Run("specific match tags the matched type", func(t *testing.T) {
 		mw := &fakeMetricsWriter{}
-		s := &service{mw: mw}
+		s := &service{mw: mw, l: zap.NewNop()}
 		s.parseResultCompositeError(&CreateRunnerJobExecutionResultRequest{
 			Success:       false,
 			ErrorMetadata: map[string]*string{"message": ptr(awsMsg)},
@@ -151,7 +153,7 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 
 	t.Run("parse miss is tagged generic", func(t *testing.T) {
 		mw := &fakeMetricsWriter{}
-		s := &service{mw: mw}
+		s := &service{mw: mw, l: zap.NewNop()}
 		s.parseResultCompositeError(&CreateRunnerJobExecutionResultRequest{
 			Success:       false,
 			ErrorMetadata: map[string]*string{"message": ptr("some unrelated failure")},
@@ -167,7 +169,7 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 
 	t.Run("empty output is tagged miss", func(t *testing.T) {
 		mw := &fakeMetricsWriter{}
-		s := &service{mw: mw}
+		s := &service{mw: mw, l: zap.NewNop()}
 		s.parseResultCompositeError(&CreateRunnerJobExecutionResultRequest{Success: false}, tfDeploy)
 
 		if len(mw.incrs) != 1 {
@@ -180,7 +182,7 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 
 	t.Run("unknown tool falls back to unknown tag", func(t *testing.T) {
 		mw := &fakeMetricsWriter{}
-		s := &service{mw: mw}
+		s := &service{mw: mw, l: zap.NewNop()}
 		s.parseResultCompositeError(&CreateRunnerJobExecutionResultRequest{
 			Success:       false,
 			ErrorMetadata: map[string]*string{"message": ptr("boom")},
@@ -193,7 +195,7 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 
 	t.Run("success emits no metric", func(t *testing.T) {
 		mw := &fakeMetricsWriter{}
-		s := &service{mw: mw}
+		s := &service{mw: mw, l: zap.NewNop()}
 		s.parseResultCompositeError(&CreateRunnerJobExecutionResultRequest{Success: true}, tfDeploy)
 
 		if len(mw.incrs) != 0 {

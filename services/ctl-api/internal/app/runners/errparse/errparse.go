@@ -3,7 +3,7 @@
 //
 // Parsing is hierarchical: a single failure blob is a stack of nested errors
 // (cloud-provider inside tool inside orchestration), and we want to surface the
-// most specific layer — "Missing IAM permission s3:CreateBucket", not
+// most specific layer, "Missing IAM permission s3:CreateBucket" rather than
 // "terraform apply failed". Parsers therefore declare a Layer, and the registry
 // tries the deepest (provider) layer first, then tool, then a generic
 // emit-the-body fallback.
@@ -13,7 +13,7 @@
 // index) and the Signals that must be physically present in the text (a single
 // compiled multi-pattern scan). A parser's expensive Parse only runs when its
 // facet gate passes and one of its signals is present, so per-error cost is a
-// function of the text length and the handful of matched candidates — not the
+// function of the text length and the handful of matched candidates, not the
 // total number of registered parsers.
 package errparse
 

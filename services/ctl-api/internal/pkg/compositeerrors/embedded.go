@@ -59,27 +59,45 @@ func WithSource(sourceType, sourceID string) Option {
 
 // New constructs a CompositeErrorData from a typed CompositeError. The
 // implementation's data, headline message, sections, and (optionally) hints
-// are captured at this point and frozen on the resulting record. Options apply
-// record-site context such as provenance.
-func New(e CompositeError, opts ...Option) *CompositeErrorData {
-	data, _ := json.Marshal(e)
+// are captured at this point and frozen on the resulting record. Sections and
+// Hints are copied so a shared source (e.g. a package-level default hints bag)
+// cannot be mutated through the persisted record. Options apply record-site
+// context such as provenance.
+//
+// It returns an error when the typed payload cannot be marshalled, so a
+// serialization failure surfaces at the call site instead of silently
+// persisting a record with a null payload.
+func New(e CompositeError, opts ...Option) (*CompositeErrorData, error) {
+	data, err := json.Marshal(e)
+	if err != nil {
+		return nil, fmt.Errorf("compositeerrors: marshal %T payload: %w", e, err)
+	}
 	d := &CompositeErrorData{
 		Version:  SchemaVersion,
 		Type:     e.Type(),
 		Severity: e.Severity(),
 		Message:  e.Error(),
-		Sections: e.Sections(),
+		Sections: cloneSections(e.Sections()),
 		Data:     data,
 	}
 	if hp, ok := e.(HintsProvider); ok {
-		if hints := hp.Hints(); len(hints) > 0 {
-			d.Hints = hints
-		}
+		d.Hints = hp.Hints().Clone()
 	}
 	for _, opt := range opts {
 		opt(d)
 	}
-	return d
+	return d, nil
+}
+
+// cloneSections returns a copy of s, or nil when empty. Section fields are all
+// value types, so a slice copy fully detaches the result from the source.
+func cloneSections(s []Section) []Section {
+	if len(s) == 0 {
+		return nil
+	}
+	out := make([]Section, len(s))
+	copy(out, s)
+	return out
 }
 
 // Scan implements database/sql.Scanner.

@@ -70,6 +70,53 @@ func (h Hints) DocsURL() string {
 	return h[HintDocsURL]
 }
 
+// Clone returns a shallow copy of the bag, or nil when empty. Use it before
+// mutating a Hints value that may be shared (e.g. a package-level default).
+func (h Hints) Clone() Hints {
+	if len(h) == 0 {
+		return nil
+	}
+	out := make(Hints, len(h))
+	for k, v := range h {
+		out[k] = v
+	}
+	return out
+}
+
+// NewHints returns an empty bag ready for the With* setters. Prefer the typed
+// setters over raw map literals so canonical keys and value formats stay
+// correct (a misspelled key or malformed value silently becomes a no-op).
+func NewHints() Hints { return Hints{} }
+
+// WithSkipAutoRetry marks the failure so the orchestrator parks the step for
+// manual retry instead of auto-retrying.
+func (h Hints) WithSkipAutoRetry() Hints {
+	h[HintSkipAutoRetry] = "true"
+	return h
+}
+
+// WithTerminal marks the failure as not retryable at all.
+func (h Hints) WithTerminal() Hints {
+	h[HintTerminal] = "true"
+	return h
+}
+
+// WithRequeueAfter sets the back-off before retrying. A negative duration is
+// ignored so the bag never carries a malformed value.
+func (h Hints) WithRequeueAfter(d time.Duration) Hints {
+	if d < 0 {
+		return h
+	}
+	h[HintRequeueAfter] = strconv.Itoa(int(d.Seconds()))
+	return h
+}
+
+// WithDocsURL attaches a documentation link the UI may surface as "learn more".
+func (h Hints) WithDocsURL(url string) Hints {
+	h[HintDocsURL] = url
+	return h
+}
+
 // HintsProvider is an optional capability implemented by typed CompositeError
 // values that want to attach hints. New() captures Hints() at write time, the
 // same way it captures Sections().

@@ -56,8 +56,8 @@ func TestParse_SingleError(t *testing.T) {
 	if !ok {
 		t.Fatal("expected an Output section")
 	}
-	// The output preserves the detail (with the "│" box-drawing stripped) and
-	// drops our own wrapper is fine to retain — but the terraform detail must
+	// The output preserves the terraform detail (with the "│" box-drawing
+	// stripped); our own wrapper may be retained, but the terraform detail must
 	// survive.
 	if !strings.Contains(out, `A managed resource "aws_subnet" "main" has not been declared`) {
 		t.Errorf("Output missing terraform detail: %q", out)

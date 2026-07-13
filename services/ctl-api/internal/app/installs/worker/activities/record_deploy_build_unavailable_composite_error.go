@@ -58,7 +58,11 @@ func (a *Activities) RecordDeployBuildUnavailableCompositeError(ctx context.Cont
 		opts = append(opts, compositeerrors.WithSource("component_builds", req.BuildID))
 	}
 
-	data := compositeerrors.New(ce, opts...)
+	data, err := compositeerrors.New(ce, opts...)
+	if err != nil {
+		l.Warn("unable to build build-unavailable composite error; skipping", zap.Error(err))
+		return nil
+	}
 	res := a.db.WithContext(ctx).
 		Model(&app.InstallDeploy{ID: req.DeployID}).
 		Select("composite_error").

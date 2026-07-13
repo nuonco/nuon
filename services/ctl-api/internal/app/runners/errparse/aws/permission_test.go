@@ -113,8 +113,8 @@ func TestParse_UnauthorizedOperation(t *testing.T) {
 // runner captured from a broken-provision deploy: plain log-capture lines (no
 // terraform box-drawing), a quoted resource ARN, and the "explicit deny in a
 // permissions boundary" phrasing. It guards the quote-stripping in
-// cleanResource — a quoted ARN would otherwise produce a malformed IAM policy
-// statement in the "How to fix" section.
+// cleanResource, since a quoted ARN would otherwise produce a malformed IAM
+// policy statement in the "How to fix" section.
 func TestParse_S3AccessDenied_PermissionsBoundary(t *testing.T) {
 	ce := parse(readFixture(t, "s3_access_denied_permissions_boundary.txt"))
 	if ce == nil {

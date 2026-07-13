@@ -15,7 +15,7 @@ import (
 // Registration is expected to happen entirely at init time (parser packages
 // blank-imported at the chokepoint). Register panics if called after the first
 // Parse, because a late parser would be silently dropped from the already-built
-// buckets — a bug that is far easier to catch as a panic than as a parser that
+// buckets. That bug is far easier to catch as a panic than as a parser that
 // mysteriously never fires.
 //
 // Parsers are referenced by their index into r.parsers everywhere (buckets,
