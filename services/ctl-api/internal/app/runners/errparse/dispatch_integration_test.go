@@ -7,102 +7,83 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/errparsetest"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-// This external test package registers parsers solely through the errparse/all
-// manifest, the same wiring production uses, so the two can never drift.
-// Assertions match on the composite error's Type() discriminator rather than a
-// concrete parser type so no parser package is imported directly here. It
-// asserts the layer contract that only holds once specific and generic parsers
-// coexist: a specific provider-layer parser wins, and the generic fallback
-// catches everything else.
+// This external test registers parsers solely through the errparse/all
+// manifest, the same wiring production uses, so the two can never drift. It runs
+// fixtures through the contract runner, which dispatches against the real
+// registry and enforces both the layer contract and the persistence
+// round-trip. Cases match on the winning composite error's Type() rather than a
+// concrete parser type so no parser package is imported directly here.
 const (
-	awsPermissionType  = "terraform.aws_permission"
-	genericType        = "generic"
-	terraformType      = "terraform.error"
-	terraformStateLock = "terraform.state_lock"
-	helmNameInUseType  = "helm.name_in_use"
+	awsPermissionType  compositeerrors.Type = "terraform.aws_permission"
+	genericType        compositeerrors.Type = "generic"
+	terraformType      compositeerrors.Type = "terraform.error"
+	terraformStateLock compositeerrors.Type = "terraform.state_lock"
+	helmNameInUseType  compositeerrors.Type = "helm.name_in_use"
 )
 
-func TestDefaultRegistry_SpecificBeatsGeneric(t *testing.T) {
-	raw, err := os.ReadFile(filepath.Join("aws", "testdata", "terraform_apply_access_denied.txt"))
+func readFixture(t *testing.T, tool, name string) string {
+	t.Helper()
+	b, err := os.ReadFile(filepath.Join(tool, "testdata", name))
 	if err != nil {
-		t.Fatalf("read fixture: %v", err)
+		t.Fatalf("read fixture %s/%s: %v", tool, name, err)
 	}
-
-	ce := errparse.Parse(&errparse.ParseContext{Raw: string(raw)})
-	if ce == nil {
-		t.Fatal("expected a match")
-	}
-	if ce.Type() != awsPermissionType {
-		t.Fatalf("expected AWS permission error to win over generic, got %T (type %q)", ce, ce.Type())
-	}
+	return string(b)
 }
 
-func TestDefaultRegistry_GenericCatchesUnclassified(t *testing.T) {
-	ce := errparse.Parse(&errparse.ParseContext{Raw: "helm upgrade failed: context deadline exceeded"})
-	if ce == nil {
-		t.Fatal("expected the generic fallback to match")
-	}
-	if ce.Type() != genericType {
-		t.Fatalf("expected generic fallback, got %T (type %q)", ce, ce.Type())
-	}
-}
-
-// TestDefaultRegistry_ToolLayerOrdering asserts the three-layer contract on a
-// terraform job: a terraform diagnostic that no provider parser recognises
-// yields the tool-layer parser (not the raw generic dump), while an AWS
-// permission blob on the same job is still won by the provider layer.
-func TestDefaultRegistry_ToolLayerOrdering(t *testing.T) {
-	tfDiag, err := os.ReadFile(filepath.Join("terraform", "testdata", "invalid_reference.txt"))
-	if err != nil {
-		t.Fatalf("read fixture: %v", err)
-	}
-	ce := errparse.Parse(&errparse.ParseContext{Raw: string(tfDiag), Tool: errparse.ToolTerraform})
-	if ce.Type() != terraformType {
-		t.Fatalf("expected terraform tool-layer parser to win over generic, got %T (type %q)", ce, ce.Type())
-	}
-
-	awsBlob := "Error: creating S3 Bucket (acme): AccessDenied: User: " +
+func TestDefaultRegistry_Contract(t *testing.T) {
+	awsTerraformBlob := "Error: creating S3 Bucket (acme): AccessDenied: User: " +
 		"arn:aws:iam::123:role/nuon-runner is not authorized to perform: " +
 		"s3:CreateBucket on resource: arn:aws:s3:::acme"
-	ce = errparse.Parse(&errparse.ParseContext{Raw: awsBlob, Tool: errparse.ToolTerraform})
-	if ce.Type() != awsPermissionType {
-		t.Fatalf("expected AWS provider layer to win over terraform tool layer, got %T (type %q)", ce, ce.Type())
-	}
-}
-
-// TestDefaultRegistry_StateLockBeatsTerraformCatchAll asserts that the
-// state-lock parser wins over the generic terraform catch-all: both are
-// candidates for a lock failure (each signals on the same diagnostic), and the
-// state-lock parser's more-specific layer must break the tie.
-func TestDefaultRegistry_StateLockBeatsTerraformCatchAll(t *testing.T) {
-	raw, err := os.ReadFile(filepath.Join("terraform", "testdata", "state_lock.txt"))
-	if err != nil {
-		t.Fatalf("read fixture: %v", err)
-	}
-	ce := errparse.Parse(&errparse.ParseContext{Raw: string(raw), Tool: errparse.ToolTerraform})
-	if ce.Type() != terraformStateLock {
-		t.Fatalf("expected state-lock parser to win over the terraform catch-all, got %T (type %q)", ce, ce.Type())
-	}
-}
-
-// TestDefaultRegistry_HelmToolLayer asserts the same three-layer contract on a
-// helm job: a recognised helm failure yields the tool-layer parser, while an
-// AWS permission blob on the same job is still won by the provider layer.
-func TestDefaultRegistry_HelmToolLayer(t *testing.T) {
-	helmErr := "job step errored unable to execute job: unable to upgrade helm release: " +
-		"cannot reuse a name that is still in use"
-	ce := errparse.Parse(&errparse.ParseContext{Raw: helmErr, Tool: errparse.ToolHelm})
-	if ce.Type() != helmNameInUseType {
-		t.Fatalf("expected helm tool-layer parser to win over generic, got %T (type %q)", ce, ce.Type())
-	}
-
-	awsBlob := "unable to upgrade helm release: creating S3 Bucket (acme): AccessDenied: " +
+	awsHelmBlob := "unable to upgrade helm release: creating S3 Bucket (acme): AccessDenied: " +
 		"User: arn:aws:iam::123:role/nuon-runner is not authorized to perform: " +
 		"s3:CreateBucket on resource: arn:aws:s3:::acme"
-	ce = errparse.Parse(&errparse.ParseContext{Raw: awsBlob, Tool: errparse.ToolHelm})
-	if ce.Type() != awsPermissionType {
-		t.Fatalf("expected AWS provider layer to win over helm tool layer, got %T (type %q)", ce, ce.Type())
-	}
+	helmNameInUse := "job step errored unable to execute job: unable to upgrade helm release: " +
+		"cannot reuse a name that is still in use"
+
+	errparsetest.Run(t, []errparsetest.Case{
+		{
+			Name:     "provider layer beats generic",
+			Raw:      readFixture(t, "aws", "terraform_apply_access_denied.txt"),
+			WantType: awsPermissionType,
+		},
+		{
+			Name:     "generic catches unclassified",
+			Raw:      "helm upgrade failed: context deadline exceeded",
+			WantType: genericType,
+		},
+		{
+			Name:     "terraform tool layer beats generic",
+			Raw:      readFixture(t, "terraform", "invalid_reference.txt"),
+			Tool:     errparse.ToolTerraform,
+			WantType: terraformType,
+		},
+		{
+			Name:     "provider layer beats terraform tool layer",
+			Raw:      awsTerraformBlob,
+			Tool:     errparse.ToolTerraform,
+			WantType: awsPermissionType,
+		},
+		{
+			Name:     "state-lock parser beats terraform catch-all",
+			Raw:      readFixture(t, "terraform", "state_lock.txt"),
+			Tool:     errparse.ToolTerraform,
+			WantType: terraformStateLock,
+		},
+		{
+			Name:     "helm tool layer beats generic",
+			Raw:      helmNameInUse,
+			Tool:     errparse.ToolHelm,
+			WantType: helmNameInUseType,
+		},
+		{
+			Name:     "provider layer beats helm tool layer",
+			Raw:      awsHelmBlob,
+			Tool:     errparse.ToolHelm,
+			WantType: awsPermissionType,
+		},
+	})
 }
