@@ -88,12 +88,6 @@ type GetInstallActionsLatestRunsParams struct {
 	*/
 	Offset *int64
 
-	/* Orphans.
-
-	   only return actions no longer in the install's current app config
-	*/
-	Orphans *bool
-
 	/* Page.
 
 	   page number of results to return
@@ -105,6 +99,14 @@ type GetInstallActionsLatestRunsParams struct {
 	   search query for action workflow name or ID
 	*/
 	Q *string
+
+	/* Synced.
+
+	   return actions in the install's current app config; set false to return only actions no longer in it
+
+	   Default: true
+	*/
+	Synced *bool
 
 	/* TriggerTypes.
 
@@ -134,16 +136,16 @@ func (o *GetInstallActionsLatestRunsParams) SetDefaults() {
 
 		offsetDefault = int64(0)
 
-		orphansDefault = bool(false)
-
 		pageDefault = int64(0)
+
+		syncedDefault = bool(true)
 	)
 
 	val := GetInstallActionsLatestRunsParams{
-		Limit:   &limitDefault,
-		Offset:  &offsetDefault,
-		Orphans: &orphansDefault,
-		Page:    &pageDefault,
+		Limit:  &limitDefault,
+		Offset: &offsetDefault,
+		Page:   &pageDefault,
+		Synced: &syncedDefault,
 	}
 
 	val.timeout = o.timeout
@@ -229,17 +231,6 @@ func (o *GetInstallActionsLatestRunsParams) SetOffset(offset *int64) {
 	o.Offset = offset
 }
 
-// WithOrphans adds the orphans to the get install actions latest runs params
-func (o *GetInstallActionsLatestRunsParams) WithOrphans(orphans *bool) *GetInstallActionsLatestRunsParams {
-	o.SetOrphans(orphans)
-	return o
-}
-
-// SetOrphans adds the orphans to the get install actions latest runs params
-func (o *GetInstallActionsLatestRunsParams) SetOrphans(orphans *bool) {
-	o.Orphans = orphans
-}
-
 // WithPage adds the page to the get install actions latest runs params
 func (o *GetInstallActionsLatestRunsParams) WithPage(page *int64) *GetInstallActionsLatestRunsParams {
 	o.SetPage(page)
@@ -260,6 +251,17 @@ func (o *GetInstallActionsLatestRunsParams) WithQ(q *string) *GetInstallActionsL
 // SetQ adds the q to the get install actions latest runs params
 func (o *GetInstallActionsLatestRunsParams) SetQ(q *string) {
 	o.Q = q
+}
+
+// WithSynced adds the synced to the get install actions latest runs params
+func (o *GetInstallActionsLatestRunsParams) WithSynced(synced *bool) *GetInstallActionsLatestRunsParams {
+	o.SetSynced(synced)
+	return o
+}
+
+// SetSynced adds the synced to the get install actions latest runs params
+func (o *GetInstallActionsLatestRunsParams) SetSynced(synced *bool) {
+	o.Synced = synced
 }
 
 // WithTriggerTypes adds the triggerTypes to the get install actions latest runs params
@@ -337,23 +339,6 @@ func (o *GetInstallActionsLatestRunsParams) WriteToRequest(r runtime.ClientReque
 		}
 	}
 
-	if o.Orphans != nil {
-
-		// query param orphans
-		var qrOrphans bool
-
-		if o.Orphans != nil {
-			qrOrphans = *o.Orphans
-		}
-		qOrphans := swag.FormatBool(qrOrphans)
-		if qOrphans != "" {
-
-			if err := r.SetQueryParam("orphans", qOrphans); err != nil {
-				return err
-			}
-		}
-	}
-
 	if o.Page != nil {
 
 		// query param page
@@ -383,6 +368,23 @@ func (o *GetInstallActionsLatestRunsParams) WriteToRequest(r runtime.ClientReque
 		if qQ != "" {
 
 			if err := r.SetQueryParam("q", qQ); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Synced != nil {
+
+		// query param synced
+		var qrSynced bool
+
+		if o.Synced != nil {
+			qrSynced = *o.Synced
+		}
+		qSynced := swag.FormatBool(qrSynced)
+		if qSynced != "" {
+
+			if err := r.SetQueryParam("synced", qSynced); err != nil {
 				return err
 			}
 		}

@@ -114,7 +114,7 @@ source = "template_job_component.toml"
 source = "template_ecr_container_image_component.toml"
 `
 
-const installerConfig = `#:schema https://api.nuon.co/v1/general/config-schema?type=installer
+const installerConfig = `#:schema https://api.nuon.co/v1/general/config-schema/installer
 name = "installer"
 description = "one click installer"
 documentation_url = "docs-url"
@@ -131,14 +131,14 @@ post_install_markdown = ""
 copyright_markdown = ""
 footer_markdown = ""`
 
-const runnerConfig = `#:schema https://api.nuon.co/v1/general/config-schema?type=runner
+const runnerConfig = `#:schema https://api.nuon.co/v1/general/config-schema/runner
 runner_type = "aws-ecs"
 
 [env_vars]
 runner-env-var = "runner-env-var"
 `
 
-const sandboxConfig = `#:schema https://api.nuon.co/v1/general/config-schema?type=sandbox
+const sandboxConfig = `#:schema https://api.nuon.co/v1/general/config-schema/sandbox
 terraform_version = "1.7.5"
 
 # https://docs.nuon.co/guides/install-access-delegation#setup-delegation
@@ -155,7 +155,7 @@ branch = "main"
 vpc_id = "{{.nuon.install.inputs.vpc_id}}"
 `
 
-const inputsConfig = `#:schema https://api.nuon.co/v1/general/config-schema?type=inputs
+const inputsConfig = `#:schema https://api.nuon.co/v1/general/config-schema/inputs
 [[group]]
 name = "sandbox"
 description = "Sandbox inputs"
@@ -178,7 +178,7 @@ display_name = "API Key"
 group = "sandbox"
 `
 
-const terraformComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema?type=terraform
+const terraformComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema/terraform
 name = "toml_terraform"
 type = "terraform_module"
 terraform_version = "1.7.5"
@@ -193,7 +193,7 @@ AWS_REGION = "{{.nuon.install.sandbox.account.region}}"
 ACCOUNT_ID = "{{.nuon.install.sandbox.account.id}}"
 `
 
-const terraformInfraComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema?type=terraform
+const terraformInfraComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema/terraform
 name = "toml_infra"
 type = "terraform_module"
 terraform_version = "1.7.5"
@@ -207,7 +207,7 @@ branch = "main"
 iam_role = "{{.nuon.components.infra.outputs.iam_role}}"
 `
 
-const helmComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema?type=helm
+const helmComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema/helm
 name = "toml_helm"
 type = "helm_chart"
 chart_name = "e2e-helm"
@@ -226,7 +226,7 @@ image.tag = {{.nuon.components.toml_docker_build.image.name}}
 "api.ingresses.public_domain" = "{{.nuon.components.infra.outputs.iam_role}}"
 `
 
-const dockerBuildComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema?type=docker-build
+const dockerBuildComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema/docker-build
 name = "toml_docker_build"
 type = "docker_build"
 
@@ -238,7 +238,7 @@ repo = "nuonco/nuon"
 branch = "main"
 `
 
-const containerImageComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema?type=container-image
+const containerImageComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema/container-image
 name = "toml_container_image"
 type = "container_image"
 
@@ -247,7 +247,7 @@ image_url = "kennethreitz/httpbin"
 tag = "latest"
 `
 
-const jobComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema?type=job
+const jobComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema/job
 name = "toml_job"
 type = "job"
 
@@ -260,7 +260,7 @@ args	  = [""]
 PUBLIC_DOMAIN = "{{.nuon.components.infra.outputs.iam_role}}"
 `
 
-const ecrContainerImageComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema?type=container-image
+const ecrContainerImageComponentConfig = `#:schema https://api.nuon.co/v1/general/config-schema/container-image
 name = "toml_container_image_ecr"
 type = "container_image"
 

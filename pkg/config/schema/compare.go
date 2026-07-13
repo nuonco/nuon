@@ -55,7 +55,7 @@ func (d *SchemaDiff) String() string {
 
 // FetchRemoteSchema fetches a schema from the API
 func FetchRemoteSchema(ctx context.Context, apiURL, schemaType string) (*jsonschema.Schema, error) {
-	url := fmt.Sprintf("%s/v1/general/config-schema?type=%s", strings.TrimSuffix(apiURL, "/"), schemaType)
+	url := fmt.Sprintf("%s/v1/general/config-schema/%s", strings.TrimSuffix(apiURL, "/"), schemaType)
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
