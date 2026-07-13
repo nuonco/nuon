@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -83,4 +84,47 @@ func (r *RunnerJobPlan) GetCompositePlan(ctx context.Context, blobRead bool) (*p
 	}
 
 	return &r.CompositePlan, false
+}
+
+func (r *RunnerJobPlan) DeriveCompositePlan(runnerJob *RunnerJob) (*plantypes.CompositePlan, error) {
+	var compositePlan plantypes.CompositePlan
+	switch runnerJob.Group {
+	case RunnerJobGroupSync:
+		switch runnerJob.Type {
+		case RunnerJobTypeOCISync, RunnerJobTypeNOOPSync:
+			if err := json.Unmarshal([]byte(r.PlanJSON), &compositePlan.SyncOCIPlan); err != nil {
+				return nil, fmt.Errorf("unable to unmarshal sync oci plan: %w", err)
+			}
+		case RunnerJobTypeSandboxSyncSecrets:
+			if err := json.Unmarshal([]byte(r.PlanJSON), &compositePlan.SyncSecretsPlan); err != nil {
+				return nil, fmt.Errorf("unable to unmarshal sync secret plan: %w", err)
+			}
+		case RunnerJobTypeFetchImageMetadata:
+			if err := json.Unmarshal([]byte(r.PlanJSON), &compositePlan.FetchImageMetadataPlan); err != nil {
+				return nil, fmt.Errorf("unable to unmarshal fetch image metadata plan: %w", err)
+			}
+		default:
+			return nil, fmt.Errorf("unknown sync job type: %s", runnerJob.Type)
+		}
+	case RunnerJobGroupBuild:
+		if err := json.Unmarshal([]byte(r.PlanJSON), &compositePlan.BuildPlan); err != nil {
+			return nil, fmt.Errorf("unable to unmarshal build plan: %w", err)
+		}
+	case RunnerJobGroupDeploy:
+		if err := json.Unmarshal([]byte(r.PlanJSON), &compositePlan.DeployPlan); err != nil {
+			return nil, fmt.Errorf("unable to unmarshal deploy plan: %w", err)
+		}
+	case RunnerJobGroupActions:
+		if err := json.Unmarshal([]byte(r.PlanJSON), &compositePlan.ActionWorkflowRunPlan); err != nil {
+			return nil, fmt.Errorf("unable to unmarshal action plan: %w", err)
+		}
+	case RunnerJobGroupSandbox:
+		if err := json.Unmarshal([]byte(r.PlanJSON), &compositePlan.SandboxRunPlan); err != nil {
+			return nil, fmt.Errorf("unable to unmarshal sandbox plan: %w", err)
+		}
+	default:
+		return nil, fmt.Errorf("unknown runner job group: %s", runnerJob.Group)
+	}
+
+	return &compositePlan, nil
 }
