@@ -1,0 +1,7 @@
+Error: Error acquiring the state lock
+terraform run errored: unable execute plan pipeline: unable to execute step 8.plan: unable to execute: unable to plan: exit status 1
+
+job step errored unable to execute job: unable to execute create-apply-plan run: unable execute plan pipeline: unable to execute step 8.plan: unable to execute: unable to plan: exit status 1
+: unable to execute job: unable to execute create-apply-plan run: unable execute plan pipeline: unable to execute step 8.plan: unable to execute: unable to plan: exit status 1
+
+job was failed via API, attempting to cancel execution
