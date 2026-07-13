@@ -208,32 +208,10 @@ func (s *service) parseResultCompositeError(req *CreateRunnerJobExecutionResultR
 // leaving the plain-string status description in place. Source is set to the
 // runner job's owner so a future view can join errors back to their subject.
 func (s *service) parseCompositeError(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
-	if req.Success {
-		return nil
-	}
-
-	raw := rawErrorText(req.ErrorMetadata)
-	if raw == "" {
-		return nil
-	}
-
-	ce := errparse.Parse(&errparse.ParseContext{
-		Raw:       raw,
-		Tool:      runnerJobTool(runnerJob),
-		Operation: string(runnerJob.Operation),
-		Group:     string(runnerJob.Group),
-		Owner:     errparse.Owner{Type: runnerJob.OwnerType, ID: runnerJob.OwnerID},
-		Meta:      flattenErrorMetadata(req.ErrorMetadata),
-	})
-	if ce == nil {
-		return nil
-	}
-
-	data, err := compositeerrors.New(ce, compositeerrors.WithSource(runnerJob.OwnerType, runnerJob.OwnerID))
+	data, err := errparse.ParseRunnerJobResult(req.Success, flattenErrorMetadata(req.ErrorMetadata), runnerJob)
 	if err != nil {
 		s.l.Warn("unable to build composite error; omitting enrichment",
 			zap.String("runner_job_id", runnerJob.ID),
-			zap.String("composite_error_type", string(ce.Type())),
 			zap.Error(err))
 		return nil
 	}
@@ -253,44 +231,14 @@ const (
 // rawErrorText picks the richest error text the runner sent: the captured
 // output when present, else the wrapped message.
 func rawErrorText(meta map[string]*string) string {
-	for _, k := range []string{errMetaKeyOutput, errMetaKeyMessage} {
-		if v := meta[k]; v != nil && *v != "" {
-			return *v
-		}
-	}
-	return ""
+	return errparse.RunnerJobErrorText(flattenErrorMetadata(meta))
 }
 
 // runnerJobTool maps a runner job's type to the execution tool errparse uses as
 // a facet, so tool-layer parsers are only considered for the matching tool.
 // Provider-layer parsers are tool-agnostic and are unaffected by ToolUnknown.
 func runnerJobTool(runnerJob *app.RunnerJob) errparse.Tool {
-	switch runnerJob.Type {
-	case app.RunnerJobTypeTerraformDeploy,
-		app.RunnerJobTypeTerraformModuleBuild,
-		app.RunnerJobTypeSandboxTerraform,
-		app.RunnerJobTypeSandboxTerraformPlan,
-		app.RunnerJobTypeRunnerTerraform:
-		return errparse.ToolTerraform
-	case app.RunnerJobTypeHelmChartDeploy,
-		app.RunnerJobTypeHelmChartBuild,
-		app.RunnerJobTypeRunnerHelm:
-		return errparse.ToolHelm
-	case app.RunnerJobTypePulumiDeploy,
-		app.RunnerJobTypePulumiBuild,
-		app.RunnerJobTypeSandboxPulumi:
-		return errparse.ToolPulumi
-	case app.RunnerJobTypeDockerBuild:
-		return errparse.ToolDocker
-	case app.RunnerJobTypeKubrenetesManifestDeploy,
-		app.RunnerJobTypeKubernetesManifestBuild:
-		return errparse.ToolKubernetes
-	case app.RunnerJobTypeContainerImageBuild,
-		app.RunnerJobTypeOCISync:
-		return errparse.ToolOCI
-	default:
-		return errparse.ToolUnknown
-	}
+	return errparse.ToolForRunnerJob(runnerJob)
 }
 
 // flattenErrorMetadata converts the runner-sent hstore metadata into the plain
