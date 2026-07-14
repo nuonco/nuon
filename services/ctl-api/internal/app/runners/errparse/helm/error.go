@@ -159,19 +159,14 @@ func (e *HelmError) Sections() []compositeerrors.Section {
 	}
 }
 
-// errorParser recognises helm failures in a helm job's raw output.
-type errorParser struct{}
-
-func (errorParser) Layer() errparse.Layer  { return errparse.LayerTool }
-func (errorParser) Tools() []errparse.Tool { return []errparse.Tool{errparse.ToolHelm} }
-
-func (errorParser) Signals() []string {
+// signals gates the parser on the runner wrapper prefixes plus the verified SDK
+// cause substrings.
+func signals() []string {
 	return append(append([]string{}, wrappers...), causes...)
 }
 
-func (errorParser) Applicable(*errparse.ParseContext) bool { return true }
-
-func (errorParser) Parse(ctx *errparse.ParseContext) compositeerrors.CompositeError {
+// parseError recognises helm failures in a helm job's raw output.
+func parseError(ctx *errparse.ParseContext) compositeerrors.CompositeError {
 	lines := cleanedLines(ctx.Raw)
 
 	summary := wrapperSummary(lines)
@@ -203,7 +198,10 @@ func (errorParser) Parse(ctx *errparse.ParseContext) compositeerrors.CompositeEr
 }
 
 func init() {
-	errparse.Register(errorParser{})
+	errparse.Register(errparse.NewParser(errparse.LayerTool, parseError,
+		errparse.WithTools(errparse.ToolHelm),
+		errparse.WithSignals(signals()...),
+	))
 }
 
 // wrapperSummary returns the SDK error that follows the runner's helm wrapper on
