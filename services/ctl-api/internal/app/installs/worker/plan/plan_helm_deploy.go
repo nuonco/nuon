@@ -144,6 +144,7 @@ func (p *Planner) createHelmDeployPlan(
 		Values:          values,
 		ValuesOverride:  valuesOverride,
 		TakeOwnership:   cfg.TakeOwnership,
+		SkipCRDs:        cfg.SkipCRDs,
 
 		ClusterInfo: clusterInfo,
 		AWSAuth:     cloudAuth.AWS,

@@ -698,6 +698,7 @@ func diffHelmChart(old, new *HelmChartComponentConfig) []*diff.Diff {
 		diff.NewDiff(diff.WithKey("namespace"), diff.WithStringDiff(old.Namespace, new.Namespace)),
 		diff.NewDiff(diff.WithKey("storage_driver"), diff.WithStringDiff(old.StorageDriver, new.StorageDriver)),
 		diff.NewDiff(diff.WithKey("take_ownership"), diff.WithBoolDiff(old.TakeOwnership, new.TakeOwnership)),
+		diff.NewDiff(diff.WithKey("skip_crds"), diff.WithBoolDiff(old.SkipCRDs, new.SkipCRDs)),
 		diff.NewDiff(diff.WithKey("drift_schedule"), diff.WithOptionalStringDiff(old.DriftSchedule, new.DriftSchedule)),
 		diff.NewDiff(diff.WithKey("build_timeout"), diff.WithStringDiff(old.BuildTimeout, new.BuildTimeout)),
 		diff.NewDiff(diff.WithKey("deploy_timeout"), diff.WithStringDiff(old.DeployTimeout, new.DeployTimeout)),

@@ -46,6 +46,9 @@ type AppHelmComponentConfig struct {
 	// public git vcs config
 	PublicGitVcsConfig *AppPublicGitVCSConfig `json:"public_git_vcs_config,omitempty"`
 
+	// skip crds
+	SkipCrds bool `json:"skip_crds,omitempty"`
+
 	// storage driver
 	StorageDriver string `json:"storage_driver,omitempty"`
 
