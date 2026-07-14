@@ -172,6 +172,7 @@ type TPlanChange = {
   action: THelmK8sChangeAction
   before?: string
   after?: string
+  diff: string
 }
 
 export type THelmPlanSummary = TPlanSummary
