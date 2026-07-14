@@ -7,7 +7,7 @@ import type { TRunnerProcess } from '@/types'
 
 const baseProcess = {
   id: 'proc-123',
-  type: 'runner',
+  type: 'mng',
   log_stream_id: 'log-1',
 } as TRunnerProcess
 
