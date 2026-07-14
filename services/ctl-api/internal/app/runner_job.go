@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"encoding/json"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -379,19 +379,6 @@ func (r *RunnerJob) BeforeCreate(tx *gorm.DB) error {
 		r.LogStreamID = generics.ToPtr(logstreamIDFromContext(tx.Statement.Context))
 	}
 
-	// Persist flow identity onto the job so telemetry can correlate it to the
-	// workflow/step when the runner later processes it under a decoupled context.
-	r.stampFlowMetadata(tx.Statement.Context)
-
-	// the overall timeout can be derived by combining the various lower level timeouts.
-	if r.OverallTimeout == 0 {
-		r.OverallTimeout = r.QueueTimeout + time.Duration(r.MaxExecutions)*(r.AvailableTimeout+r.ExecutionTimeout)
-	}
-
-	return nil
-}
-
-func (r *RunnerJob) stampFlowMetadata(ctx context.Context) {
 	set := func(k, v string) {
 		if v == "" {
 			return
@@ -402,22 +389,24 @@ func (r *RunnerJob) stampFlowMetadata(ctx context.Context) {
 		val := v
 		r.Metadata[k] = &val
 	}
-	set("flow_workflow_id", flowWorkflowIDFromContext(ctx))
-	set("flow_install_id", flowInstallIDFromContext(ctx))
+	set("flow_workflow_id", flowWorkflowIDFromContext(tx.Statement.Context))
+	set("flow_install_id", flowInstallIDFromContext(tx.Statement.Context))
+
+	// the overall timeout can be derived by combining the various lower level timeouts.
+	if r.OverallTimeout == 0 {
+		r.OverallTimeout = r.QueueTimeout + time.Duration(r.MaxExecutions)*(r.AvailableTimeout+r.ExecutionTimeout)
+	}
+
+	return nil
 }
 
-func (r *RunnerJob) metaValue(k string) string {
-	if r.Metadata == nil {
-		return ""
-	}
-	if v, ok := r.Metadata[k]; ok && v != nil {
-		return *v
-	}
-	return ""
+func (r *RunnerJob) FlowWorkflowID() string {
+	return dbgenerics.HstoreValue(r.Metadata, "flow_workflow_id")
 }
 
-func (r *RunnerJob) FlowWorkflowID() string { return r.metaValue("flow_workflow_id") }
-func (r *RunnerJob) FlowInstallID() string  { return r.metaValue("flow_install_id") }
+func (r *RunnerJob) FlowInstallID() string {
+	return dbgenerics.HstoreValue(r.Metadata, "flow_install_id")
+}
 
 func (r *RunnerJob) AfterQuery(tx *gorm.DB) error {
 	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)

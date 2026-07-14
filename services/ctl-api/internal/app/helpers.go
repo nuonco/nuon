@@ -27,13 +27,11 @@ func orgIDFromContext(ctx context.Context) string {
 }
 
 func flowWorkflowIDFromContext(ctx context.Context) string {
-	s, _ := ctx.Value(keys.FlowWorkflowIDCtxKey).(string)
-	return s
+	return keys.FlowWorkflowIDFromContext(ctx)
 }
 
 func flowInstallIDFromContext(ctx context.Context) string {
-	s, _ := ctx.Value(keys.FlowInstallIDCtxKey).(string)
-	return s
+	return keys.FlowInstallIDFromContext(ctx)
 }
 
 func logstreamIDFromContext(ctx context.Context) string {

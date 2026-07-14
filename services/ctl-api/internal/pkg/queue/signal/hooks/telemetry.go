@@ -181,11 +181,8 @@ func terminalEvent(kind string, errored bool) string {
 }
 
 func eventInstallID(event signal.SignalPhaseEvent) string {
-	if event.InstallID != nil && *event.InstallID != "" {
+	if event.InstallID != nil {
 		return *event.InstallID
-	}
-	if event.OwnerType == "installs" {
-		return event.OwnerID
 	}
 	return ""
 }

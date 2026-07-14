@@ -28,15 +28,6 @@ func (a *Activities) CreateSandboxJob(ctx context.Context, req *CreateSandboxJob
 
 	// RunnerJob.BeforeCreate reads these from ctx into job metadata for telemetry.
 	ctx = cctx.SetFlowInstallIDContext(ctx, req.InstallID)
-	if req.OwnerType == "install_sandbox_runs" {
-		var run app.InstallSandboxRun
-		if err := a.db.WithContext(ctx).
-			Select("install_workflow_id").
-			Where("id = ?", req.OwnerID).
-			First(&run).Error; err == nil && run.InstallWorkflowID != nil {
-			ctx = cctx.SetFlowWorkflowIDContext(ctx, *run.InstallWorkflowID)
-		}
-	}
 
 	job, err := a.runnersHelpers.CreateInstallSandboxJob(ctx,
 		req.RunnerID,

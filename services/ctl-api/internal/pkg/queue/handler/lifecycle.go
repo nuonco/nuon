@@ -40,6 +40,11 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 			event.OrgName = ctx.OrgName
 		}
 		event.InstallID = ctx.InstallID
+		// Install-owned workflows carry the install as the queue owner but don't
+		// always set InstallID explicitly; default it so consumers can rely on it.
+		if event.InstallID == nil && ctx.OwnerType == "installs" && ctx.OwnerID != "" {
+			event.InstallID = &ctx.OwnerID
+		}
 		event.ComponentID = ctx.ComponentID
 		event.SandboxID = ctx.SandboxID
 		event.Operation = ctx.Operation

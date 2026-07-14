@@ -1,6 +1,8 @@
 package keys
 
-import "context"
+import (
+	"context"
+)
 
 // All of the context keys are defined here so we can use them in different contexts.
 //
@@ -54,4 +56,14 @@ func OrgIDFromContext(ctx context.Context) string {
 		return ""
 	}
 	return valStr
+}
+
+func FlowWorkflowIDFromContext(ctx context.Context) string {
+	s, _ := ctx.Value(FlowWorkflowIDCtxKey).(string)
+	return s
+}
+
+func FlowInstallIDFromContext(ctx context.Context) string {
+	s, _ := ctx.Value(FlowInstallIDCtxKey).(string)
+	return s
 }
