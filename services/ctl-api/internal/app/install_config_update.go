@@ -24,7 +24,7 @@ type InstallAppConfigVersion struct {
 	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	AppBranchRunID *string      `json:"app_branch_run_id,omitempty" temporaljson:"app_branch_run_id,omitzero,omitempty"`
-	AppBranchRun   AppBranchRun `faker:"-" json:"-" temporaljson:"app_branch_run,omitzero,omitempty"`
+	AppBranchRun   AppBranchRun `faker:"-" json:"app_branch_run,omitempty" temporaljson:"app_branch_run,omitzero,omitempty"`
 
 	InstallGroupID *string               `json:"install_group_id,omitempty" temporaljson:"install_group_id,omitzero,omitempty"`
 	InstallGroup   AppBranchInstallGroup `faker:"-" json:"-" temporaljson:"install_group,omitzero,omitempty"`

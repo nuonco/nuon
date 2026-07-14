@@ -140,12 +140,17 @@ const ConfigVersionSummary = ({
   version,
   orgId,
   installId,
+  appId,
 }: {
   version: TInstallAppConfigVersion
   orgId: string
   installId: string
+  appId: string
 }) => {
   const status = version.status?.status || 'unknown'
+  const branchRun = (version as any).app_branch_run
+  const branchRunWorkflowId = branchRun?.workflow_id
+  const branchId = branchRun?.app_branch_id
 
   return (
     <div className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-md bg-cool-grey-50 dark:bg-dark-grey-700">
@@ -158,6 +163,14 @@ const ConfigVersionSummary = ({
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <Status status={status} />
+        {branchId && branchRunWorkflowId && (
+          <Link
+            href={`/${orgId}/apps/${appId}/branches/${branchId}/runs/${branchRunWorkflowId}`}
+            className="text-[11px]"
+          >
+            View run
+          </Link>
+        )}
         {version.workflow_id && (
           <Link
             href={`/${orgId}/installs/${installId}/workflows/${version.workflow_id}`}
@@ -247,6 +260,7 @@ const BranchCard = ({
                     version={version}
                     orgId={orgId}
                     installId={installId}
+                    appId={appId}
                   />
                 ))}
               </div>

@@ -74,7 +74,7 @@ func (c *fakeClient) WriteControlPlaneTraces(ctx context.Context, runnerID strin
 
 func TestExecuteSandboxBuildShortCircuits(t *testing.T) {
 	client := &fakeClient{
-		planJSON: `{"sandbox_mode":{"enabled":true,"outputs":{"image":{"tag":"v1.2.3","repository":"nuon/app-service"}}}}`,
+		planJSON: `{"build_plan":{"sandbox_mode":{"enabled":true,"outputs":{"image":{"tag":"v1.2.3","repository":"nuon/app-service"}}}}}`,
 	}
 	e, err := NewExecutor(client, nil, Config{})
 	if err != nil {
@@ -112,8 +112,8 @@ func TestExecuteSandboxBuildShortCircuits(t *testing.T) {
 
 func TestExecuteNonSandboxDoesNotShortCircuit(t *testing.T) {
 	client := &fakeClient{
-		planJSON:      `{"sandbox_mode":{"enabled":false}}`,
 		compositePlan: &models.PlantypesCompositePlan{BuildPlan: &models.PlantypesBuildPlan{}},
+		planJSON:      `{"build_plan":{"sandbox_mode":{"enabled":false}}}`,
 	}
 	e, err := NewExecutor(client, nil, Config{})
 	if err != nil {

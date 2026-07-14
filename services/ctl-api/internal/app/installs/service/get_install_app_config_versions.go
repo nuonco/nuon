@@ -48,6 +48,8 @@ func (s *service) getInstallAppConfigVersions(ctx *gin.Context, installID, orgID
 	res := s.db.WithContext(ctx).
 		Preload("Workflow").
 		Preload("Workflow.Steps").
+		Preload("AppBranchRun").
+		Preload("AppBranchRun.AppBranch").
 		Where(app.InstallAppConfigVersion{
 			InstallID: installID,
 			OrgID:     orgID,
