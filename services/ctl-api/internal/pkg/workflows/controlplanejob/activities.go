@@ -43,6 +43,12 @@ type Activities struct {
 	statusActivities *statusactivities.Activities
 }
 
+type executorClient struct {
+	*Activities
+}
+
+var _ runnercontrolplane.Client = (*executorClient)(nil)
+
 type ActivityParams struct {
 	fx.In
 
@@ -151,7 +157,7 @@ func (a *Activities) RunJob(ctx context.Context, req *RunJobRequest) error {
 	capture := errcapture.New()
 	ctx = errcapture.NewContext(ctx, capture)
 
-	executor, err := runnercontrolplane.NewExecutor(a, a.l, runnercontrolplane.Config{GitRef: a.cfg.GitRef})
+	executor, err := runnercontrolplane.NewExecutor(&executorClient{Activities: a}, a.l, runnercontrolplane.Config{GitRef: a.cfg.GitRef})
 	if err != nil {
 		return fmt.Errorf("unable to create control-plane executor: %w", err)
 	}
@@ -591,8 +597,8 @@ func (a *Activities) getJob(ctx context.Context, jobID string) (*app.RunnerJob, 
 	return &job, nil
 }
 
-func (a *Activities) GetJob(ctx context.Context, jobID string) (*models.AppRunnerJob, error) {
-	job, err := a.getJob(ctx, jobID)
+func (c *executorClient) GetJob(ctx context.Context, jobID string) (*models.AppRunnerJob, error) {
+	job, err := c.Activities.getJob(ctx, jobID)
 	if err != nil {
 		return nil, err
 	}
