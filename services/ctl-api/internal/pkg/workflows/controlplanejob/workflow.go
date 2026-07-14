@@ -25,7 +25,7 @@ func (w *Workflows) ExecuteControlPlaneJob(ctx workflow.Context, req *ExecuteReq
 	ensureCtx = workflow.WithActivityOptions(ensureCtx, workflow.ActivityOptions{
 		StartToCloseTimeout: time.Minute,
 	})
-	execution, err := AwaitEnsureExecution(ensureCtx, &EnsureExecutionRequest{JobID: req.JobID})
+	execution, err := AwaitEnsureExecution(ensureCtx, EnsureExecutionRequest{JobID: req.JobID})
 	if err != nil {
 		return fmt.Errorf("unable to ensure control-plane execution: %w", err)
 	}
@@ -40,7 +40,11 @@ func (w *Workflows) ExecuteControlPlaneJob(ctx workflow.Context, req *ExecuteReq
 		},
 	})
 	outcome := FinalizeOutcome{Status: app.RunnerJobExecutionStatusFinished}
-	runErr := AwaitRunJob(runCtx, &RunJobRequest{JobID: req.JobID, ExecutionID: execution.ExecutionID})
+	runErr := AwaitRunJob(
+		runCtx,
+		RunJobRequest{JobID: req.JobID, ExecutionID: execution.ExecutionID},
+		&workflow.ActivityOptions{StartToCloseTimeout: execution.JobExecutionTimeout},
+	)
 	if runErr != nil {
 		outcome.Status = executionStatusForError(runErr)
 		outcome.Error = runErr.Error()
@@ -53,7 +57,7 @@ func (w *Workflows) ExecuteControlPlaneJob(ctx workflow.Context, req *ExecuteReq
 
 	finalizeCtx, _ := workflow.NewDisconnectedContext(ctx)
 	finalizeCtx = workflow.WithActivityOptions(finalizeCtx, workflow.ActivityOptions{StartToCloseTimeout: time.Minute})
-	finalized, err := AwaitFinalize(finalizeCtx, &FinalizeRequest{JobID: req.JobID, ExecutionID: execution.ExecutionID, Outcome: outcome})
+	finalized, err := AwaitFinalize(finalizeCtx, FinalizeRequest{JobID: req.JobID, ExecutionID: execution.ExecutionID, Outcome: outcome})
 	if err != nil {
 		return fmt.Errorf("unable to finalize control-plane execution: %w", err)
 	}
