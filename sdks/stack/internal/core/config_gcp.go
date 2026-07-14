@@ -34,6 +34,12 @@ type GCPConfig struct {
 	DeprovisionPermissions    []string `json:"deprovision_permissions,omitempty"`
 	DeprovisionPredefinedRole string   `json:"deprovision_predefined_role,omitempty"`
 
+	// Per-policy custom roles (policy name → permissions): one custom role per
+	// policy.
+	ProvisionPolicies   map[string][]string `json:"provision_policies,omitempty"`
+	MaintenancePolicies map[string][]string `json:"maintenance_policies,omitempty"`
+	DeprovisionPolicies map[string][]string `json:"deprovision_policies,omitempty"`
+
 	// BreakGlassRoles / CustomRoles are keyed by the role name to use verbatim,
 	// matching the module's map(object) variables.
 	BreakGlassRoles map[string]GCPRole `json:"break_glass_roles,omitempty"`
@@ -47,4 +53,7 @@ type GCPRole struct {
 	Permissions    []string `json:"permissions,omitempty"`
 	PredefinedRole string   `json:"predefined_role,omitempty"`
 	Enabled        bool     `json:"enabled,omitempty"`
+
+	// Per-policy custom roles (policy name → permissions).
+	Policies map[string][]string `json:"policies,omitempty"`
 }
