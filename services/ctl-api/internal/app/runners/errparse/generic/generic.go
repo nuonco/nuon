@@ -58,17 +58,10 @@ func (e *GenericError) Sections() []compositeerrors.Section {
 	}
 }
 
-// genericParser is the tool-agnostic, always-candidate fallback. It has no
-// signals (always a candidate) and no tools (considered for every job), and
-// sits at LayerGeneric so specific parsers always win.
-type genericParser struct{}
-
-func (genericParser) Layer() errparse.Layer                  { return errparse.LayerGeneric }
-func (genericParser) Tools() []errparse.Tool                 { return nil }
-func (genericParser) Signals() []string                      { return nil }
-func (genericParser) Applicable(*errparse.ParseContext) bool { return true }
-
-func (genericParser) Parse(ctx *errparse.ParseContext) compositeerrors.CompositeError {
+// parseGeneric is the tool-agnostic, always-candidate fallback. Registered with
+// no signals (always a candidate) and no tools (considered for every job) at
+// LayerGeneric, so specific parsers always win.
+func parseGeneric(ctx *errparse.ParseContext) compositeerrors.CompositeError {
 	body := cleanBody(ctx.Raw)
 	if body == "" {
 		return nil
@@ -77,7 +70,9 @@ func (genericParser) Parse(ctx *errparse.ParseContext) compositeerrors.Composite
 }
 
 func init() {
-	errparse.Register(genericParser{})
+	errparse.Register(errparse.NewParser(errparse.LayerGeneric, parseGeneric,
+		errparse.AlwaysCandidate(),
+	))
 }
 
 // cleanBody normalises raw error output for display: it strips the terraform

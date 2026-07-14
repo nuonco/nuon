@@ -20,7 +20,7 @@ func readFixture(t *testing.T, name string) string {
 }
 
 func parse(raw string) compositeerrors.CompositeError {
-	return errorParser{}.Parse(&errparse.ParseContext{Raw: raw})
+	return parseError(&errparse.ParseContext{Raw: raw})
 }
 
 func TestParse_SingleError(t *testing.T) {

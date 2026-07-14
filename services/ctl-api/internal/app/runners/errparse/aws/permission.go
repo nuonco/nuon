@@ -141,38 +141,9 @@ var awsPermissionPatterns = []*regexp.Regexp{
 	),
 }
 
-// permissionParser recognises AWS IAM permission failures in a runner job's
-// raw output.
-type permissionParser struct{}
-
-func (permissionParser) Layer() errparse.Layer { return errparse.LayerProvider }
-
-// Tools is nil (tool-agnostic): an AWS IAM denial is a provider-level failure
-// that surfaces across tools, such as terraform and pulumi provisioning or an
-// ECR push from a docker/oci build, so it must not be bucketed to a single
-// tool. The AWS signals plus the provider check in Applicable are the real
-// gates.
-func (permissionParser) Tools() []errparse.Tool { return nil }
-func (permissionParser) Signals() []string {
-	return []string{
-		"AccessDenied",
-		"UnauthorizedOperation",
-		"not authorized to perform",
-		"AuthorizationError",
-	}
-}
-
-// Applicable gates on the cloud provider, failing open on unknown.
-func (permissionParser) Applicable(ctx *errparse.ParseContext) bool {
-	switch ctx.Provider() {
-	case errparse.ProviderAWS, errparse.ProviderUnknown:
-		return true
-	default:
-		return false
-	}
-}
-
-func (permissionParser) Parse(ctx *errparse.ParseContext) compositeerrors.CompositeError {
+// parsePermission recognises AWS IAM permission failures in a runner job's raw
+// output.
+func parsePermission(ctx *errparse.ParseContext) compositeerrors.CompositeError {
 	raw := ctx.Raw
 	for _, re := range awsPermissionPatterns {
 		match := re.FindStringSubmatch(raw)
@@ -196,8 +167,20 @@ func (permissionParser) Parse(ctx *errparse.ParseContext) compositeerrors.Compos
 	return nil
 }
 
+// An AWS IAM denial is a provider-level failure that surfaces across tools
+// (terraform and pulumi provisioning, an ECR push from a docker/oci build), so
+// the parser is registered tool-agnostic; the AWS signals plus the provider
+// gate are the real filters.
 func init() {
-	errparse.Register(permissionParser{})
+	errparse.Register(errparse.NewParser(errparse.LayerProvider, parsePermission,
+		errparse.WithSignals(
+			"AccessDenied",
+			"UnauthorizedOperation",
+			"not authorized to perform",
+			"AuthorizationError",
+		),
+		errparse.WithProviders(errparse.ProviderAWS),
+	))
 }
 
 func groupMap(re *regexp.Regexp, match []string) map[string]string {

@@ -56,17 +56,11 @@ func (e *StateLockError) Sections() []compositeerrors.Section {
 	return sections
 }
 
-// stateLockParser recognises a terraform state-lock failure and yields a
-// dedicated composite error. It registers independently of the terraform
-// catch-all so the two classifiers stay decoupled.
-type stateLockParser struct{}
-
-func (stateLockParser) Layer() errparse.Layer                  { return errparse.LayerToolSpecific }
-func (stateLockParser) Tools() []errparse.Tool                 { return []errparse.Tool{errparse.ToolTerraform} }
-func (stateLockParser) Signals() []string                      { return []string{stateLockSignal} }
-func (stateLockParser) Applicable(*errparse.ParseContext) bool { return true }
-
-func (stateLockParser) Parse(ctx *errparse.ParseContext) compositeerrors.CompositeError {
+// parseStateLock recognises a terraform state-lock failure and yields a
+// dedicated composite error. It registers at LayerToolSpecific, independently of
+// the terraform catch-all, so the two classifiers stay decoupled and the more
+// specific state-lock parser wins the tie.
+func parseStateLock(ctx *errparse.ParseContext) compositeerrors.CompositeError {
 	lines := cleanedLines(ctx.Raw)
 	if !containsStateLock(lines) {
 		return nil
@@ -78,7 +72,10 @@ func (stateLockParser) Parse(ctx *errparse.ParseContext) compositeerrors.Composi
 }
 
 func init() {
-	errparse.Register(stateLockParser{})
+	errparse.Register(errparse.NewParser(errparse.LayerToolSpecific, parseStateLock,
+		errparse.WithTools(errparse.ToolTerraform),
+		errparse.WithSignals(stateLockSignal),
+	))
 }
 
 // containsStateLock reports whether any cleaned line carries the state-lock

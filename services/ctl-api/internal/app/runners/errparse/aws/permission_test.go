@@ -22,7 +22,7 @@ func readFixture(t *testing.T, name string) string {
 // parse runs the permission parser directly against raw text, the way the
 // registry would once its signal gate passes.
 func parse(raw string) compositeerrors.CompositeError {
-	return permissionParser{}.Parse(&errparse.ParseContext{Raw: raw})
+	return parsePermission(&errparse.ParseContext{Raw: raw})
 }
 
 func TestParse_AccessDenied(t *testing.T) {
