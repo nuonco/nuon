@@ -52,6 +52,32 @@ const mockStackWithBoth = {
   ],
 } as any
 
+const mockStackLegacy = {
+  versions: [
+    {
+      ...mockStack.versions[0],
+      terraform_contents: JSON.stringify({
+        tfvars: `nuon_install_id        = "inl4xabsyaqxp0cb2oy5l8urvf"
+nuon_org_id            = "orgnwi4odoca7y0z9wddc1767e"
+nuon_app_id            = "appk2o58477kw8jbounuxpkaqr"
+aws_region             = "us-east-1"
+install_inputs = {
+}
+auto_generate_secrets = []
+secrets = {
+  "stripe_key" = {
+    description = "Your Stripe API key"
+    required    = true
+    value       = ""
+  }
+}
+`,
+      }),
+      terraform_checksum: 'sha256-legacy',
+    },
+  ],
+} as any
+
 const mockStep = {
   id: 'step-1',
   status: { status: 'active' },
@@ -107,6 +133,17 @@ export const TerraformProvider = () => (
       orgId="org-1"
       installId="install-1"
       tfProvider
+    />
+  </div>
+)
+
+export const LegacyContents = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitAWSDetails
+      stack={mockStackLegacy}
+      step={mockStep}
+      orgId="org-1"
+      installId="install-1"
     />
   </div>
 )
