@@ -18,6 +18,7 @@ interface IDeploymentPlanEditor extends Omit<IModal, 'onSubmit'> {
   availableInstalls: TInstall[]
   loadingInstalls: boolean
   isSaving: boolean
+  labelColors?: Record<string, string>
   onSave: (groups: IInstallGroup[]) => void
   onCancel: () => void
 }
@@ -27,6 +28,7 @@ export const DeploymentPlanEditor = ({
   availableInstalls,
   loadingInstalls,
   isSaving,
+  labelColors,
   onSave,
   onCancel,
   ...props
@@ -190,6 +192,7 @@ export const DeploymentPlanEditor = ({
                   totalGroups={groups.length}
                   availableInstalls={availableInstalls}
                   unassignedInstalls={unassignedInstalls}
+                  labelColors={labelColors}
                   disabled={isDisabled}
                   nameError={nameError}
                   contentError={contentError}
@@ -228,7 +231,7 @@ export const DeploymentPlanEditor = ({
               </div>
               <div className="flex flex-col gap-1.5">
                 {unassignedInstalls.map((install) => (
-                  <InstallRow key={install.id} install={install} />
+                  <InstallRow key={install.id} install={install} labelColors={labelColors} />
                 ))}
               </div>
             </div>

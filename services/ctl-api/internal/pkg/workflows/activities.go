@@ -55,12 +55,11 @@ type Activities struct {
 }
 
 func (a *Activities) AllActivities() []any {
-	return []any{
+	activities := []any{
 		a.JobActivities,
 		a.FlowActivities,
 		a.Activities,
 		a.StatusActivities,
-		a.ControlPlaneActivities,
 		a.QueueActivities,
 		a.Enqueuer,
 		a.EmitterActivities,
@@ -69,6 +68,7 @@ func (a *Activities) AllActivities() []any {
 		a.EmitterClient,
 		a.SignalLifecycleActivities,
 	}
+	return append(activities, a.ControlPlaneActivities.AllActivities()...)
 }
 
 func NewActivities(params Params) *Activities {

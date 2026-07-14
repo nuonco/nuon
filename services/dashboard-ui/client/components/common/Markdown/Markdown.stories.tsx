@@ -140,7 +140,7 @@ const MockInstallProviders = ({ children }: { children: ReactNode }) => {
   return (
     <QueryClientProvider client={qc}>
       <OrgContext.Provider value={{ org: mockOrg, refresh: () => {} }}>
-        <InstallContext.Provider value={{ install: mockInstall, refresh: () => {} }}>
+        <InstallContext.Provider value={{ install: mockInstall, labelColors: {}, refresh: () => {} }}>
           <SurfacesProvider>
             {children}
           </SurfacesProvider>

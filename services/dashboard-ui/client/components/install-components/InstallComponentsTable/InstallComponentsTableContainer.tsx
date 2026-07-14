@@ -20,7 +20,7 @@ export const InstallComponentsTableContainer = ({
 }) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
-  const { install } = useInstall()
+  const { install, labelColors } = useInstall()
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: componentsResult, isLoading } = useQuery({
@@ -108,7 +108,7 @@ export const InstallComponentsTableContainer = ({
         install?.id ?? '',
         configConnections,
         componentToggles,
-        install?.app?.label_colors,
+        labelColors,
         overriddenComponentNames
       )}
       filterActions={

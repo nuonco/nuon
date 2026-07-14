@@ -7,7 +7,7 @@ export type TBadgeTheme = TTheme
 
 export interface IBadge extends HTMLAttributes<HTMLSpanElement> {
   size?: 'sm' | 'md' | 'lg'
-  theme?: TBadgeTheme
+  theme?: TBadgeTheme | 'none'
   variant?: TBadgeVariant
 }
 
@@ -23,6 +23,7 @@ const VARIANT_CLASSES: Record<NonNullable<IBadge['variant']>, string> = {
 }
 
 const THEME_CLASSES: Record<NonNullable<IBadge['theme']>, string> = {
+  none: '',
   brand:
     'bg-primary-50 !border-primary-200 text-primary-600 dark:bg-[#1B1026] dark:!border-[#351F4D] dark:text-primary-400',
   default:

@@ -32,10 +32,8 @@ type PlantypesActionWorkflowRunPlan struct {
 	// builtin env vars
 	BuiltinEnvVars map[string]string `json:"builtin_env_vars,omitempty"`
 
-	// optional fields based on the configuration
-	ClusterInfo struct {
-		KubeClusterInfo
-	} `json:"cluster_info,omitempty"`
+	// cluster info
+	ClusterInfo *KubeClusterInfo `json:"cluster_info,omitempty"`
 
 	// gcp auth
 	GcpAuth *GithubComNuoncoNuonPkgGcpCredentialsConfig `json:"gcp_auth,omitempty"`
@@ -142,6 +140,21 @@ func (m *PlantypesActionWorkflowRunPlan) validateAzureAuth(formats strfmt.Regist
 func (m *PlantypesActionWorkflowRunPlan) validateClusterInfo(formats strfmt.Registry) error {
 	if swag.IsZero(m.ClusterInfo) { // not required
 		return nil
+	}
+
+	if m.ClusterInfo != nil {
+		if err := m.ClusterInfo.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("cluster_info")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("cluster_info")
+			}
+
+			return err
+		}
 	}
 
 	return nil
@@ -308,6 +321,26 @@ func (m *PlantypesActionWorkflowRunPlan) contextValidateAzureAuth(ctx context.Co
 }
 
 func (m *PlantypesActionWorkflowRunPlan) contextValidateClusterInfo(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ClusterInfo != nil {
+
+		if swag.IsZero(m.ClusterInfo) { // not required
+			return nil
+		}
+
+		if err := m.ClusterInfo.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("cluster_info")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("cluster_info")
+			}
+
+			return err
+		}
+	}
 
 	return nil
 }
