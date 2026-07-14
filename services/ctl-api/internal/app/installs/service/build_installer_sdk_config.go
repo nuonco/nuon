@@ -212,6 +212,10 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 			DeprovisionPermissions:    deprov.Permissions,
 			DeprovisionPredefinedRole: deprov.PredefinedRole,
 
+			ProvisionPolicies:   prov.Policies,
+			MaintenancePolicies: maint.Policies,
+			DeprovisionPolicies: deprov.Policies,
+
 			BreakGlassRoles: gcpRolesToSDKMap(breakGlass, false),
 			CustomRoles:     gcpRolesToSDKMap(customRoles, true),
 		}
@@ -248,6 +252,7 @@ func gcpRolesToSDKMap(rs []gcpstacks.GCPRoleRaw, enabled bool) map[string]app.In
 			Permissions:    r.Permissions,
 			PredefinedRole: r.PredefinedRole,
 			Enabled:        enabled,
+			Policies:       r.Policies,
 		}
 	}
 	return out
