@@ -131,6 +131,33 @@ func TestRegistry_SameLayerTieBreakByRegistrationOrder(t *testing.T) {
 	}
 }
 
+// TestRegistry_HigherLayerSkipsLowerProviderGate proves the dispatch order:
+// candidates are consulted in layer order, so a higher-priority match returns
+// before any lower-priority parser's Applicable runs. A provider-gated parser
+// below the winner therefore never triggers its lazy provider lookup.
+func TestRegistry_HigherLayerSkipsLowerProviderGate(t *testing.T) {
+	resolved := 0
+	r := &Registry{}
+	// Winner: higher priority (lower layer number), no provider gate.
+	r.Register(fakeParser{id: "winner", layer: LayerToolSpecific, tools: []Tool{ToolTerraform}, signals: []string{"boom"}, applicable: true})
+	// Lower priority, provider-gated: its Applicable would resolve the provider.
+	r.Register(NewParser(LayerTool, func(*ParseContext) compositeerrors.CompositeError { return fakeError{id: "loser"} },
+		WithSignals("boom"), WithProviders(ProviderAWS)))
+
+	ctx := &ParseContext{
+		Raw:             "boom",
+		Tool:            ToolTerraform,
+		ResolveProvider: func() Provider { resolved++; return ProviderAWS },
+	}
+	ce := r.Parse(ctx)
+	if ce == nil || ce.Error() != "winner" {
+		t.Fatalf("expected winner, got %v", ce)
+	}
+	if resolved != 0 {
+		t.Errorf("provider resolved %d times; a higher-layer match must skip the lower provider gate", resolved)
+	}
+}
+
 func TestRegister_PanicsAfterBuild(t *testing.T) {
 	r := &Registry{}
 	r.Register(fakeParser{id: "p", layer: LayerProvider, tools: []Tool{ToolTerraform}, signals: []string{"boom"}, applicable: true})
