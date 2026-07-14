@@ -136,7 +136,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		tfPlan.TerraformVersion = sandboxConfig.TerraformVersion
 	}
 
-	// Build the composite plan
+	isSandboxOrg, err := activities.AwaitIsOrgSandboxMode(ctx, activities.IsOrgSandboxModeRequest{
+		OrgID: run.OrgID,
+	})
+	if err != nil {
+		l.Warn("unable to check org sandbox mode, continuing without it", "error", err)
+	}
+
 	compositePlan := plantypes.CompositePlan{
 		BuildPlan: &plantypes.BuildPlan{
 			Src:                gitSource,
@@ -144,6 +150,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			DstTag:             build.ID,
 			TerraformBuildPlan: tfPlan,
 		},
+	}
+	if isSandboxOrg {
+		compositePlan.BuildPlan.SandboxMode = &plantypes.SandboxMode{
+			Enabled: true,
+		}
 	}
 	planJSON, err := json.Marshal(compositePlan)
 	if err != nil {

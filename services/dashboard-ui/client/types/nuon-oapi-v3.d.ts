@@ -4216,6 +4216,7 @@ export interface components {
       updated_at?: string;
     };
     "app.InstallAppConfigVersion": {
+      app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
       created_at?: string;
       created_by_id?: string;
