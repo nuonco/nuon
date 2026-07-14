@@ -6,7 +6,7 @@ import (
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/errcapture"
+	"github.com/nuonco/nuon/pkg/runner/errcapture"
 )
 
 // resultCaptureClient decorates a nuonrunner.Client to attach the execution's

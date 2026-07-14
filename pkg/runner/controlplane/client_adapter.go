@@ -7,6 +7,8 @@ import (
 
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
+
+	"github.com/nuonco/nuon/pkg/runner/errcapture"
 )
 
 type clientAdapter struct {
@@ -17,6 +19,20 @@ var _ nuonrunner.Client = (*clientAdapter)(nil)
 
 func (c *clientAdapter) SetRunnerID(string)  {}
 func (c *clientAdapter) SetAuthToken(string) {}
+
+func (c *clientAdapter) CreateJobExecutionResult(ctx context.Context, jobID, executionID string, req *models.ServiceCreateRunnerJobExecutionResultRequest) (*models.AppRunnerJobExecutionResult, error) {
+	if req != nil && !req.Success {
+		if output := errcapture.Output(ctx); output != "" {
+			if req.ErrorMetadata == nil {
+				req.ErrorMetadata = make(map[string]string)
+			}
+			if req.ErrorMetadata[errcapture.MetadataKey] == "" {
+				req.ErrorMetadata[errcapture.MetadataKey] = output
+			}
+		}
+	}
+	return c.Client.CreateJobExecutionResult(ctx, jobID, executionID, req)
+}
 
 func (c *clientAdapter) GetSettings(context.Context) (*models.AppRunnerGroupSettings, error) {
 	return nil, unsupported("GetSettings")
@@ -33,8 +49,8 @@ func (c *clientAdapter) GetJobs(context.Context, models.AppRunnerJobGroup, model
 func (c *clientAdapter) TailJobs(context.Context, models.AppRunnerJobGroup, time.Duration) ([]*models.AppRunnerJob, error) {
 	return nil, unsupported("TailJobs")
 }
-func (c *clientAdapter) GetJob(context.Context, string) (*models.AppRunnerJob, error) {
-	return nil, unsupported("GetJob")
+func (c *clientAdapter) GetJob(ctx context.Context, jobID string) (*models.AppRunnerJob, error) {
+	return c.Client.GetJob(ctx, jobID)
 }
 func (c *clientAdapter) UpdateJob(context.Context, string, *models.ServiceUpdateRunnerJobRequest) (*models.AppRunnerJob, error) {
 	return nil, unsupported("UpdateJob")

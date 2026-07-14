@@ -60,10 +60,14 @@ func (e *Executor) executeSandboxBuild(
 		outputs = map[string]any{}
 	}
 
-	if _, err := e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{
+	updated, err := e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{
 		Status: models.AppRunnerJobExecutionStatusInDashProgress,
-	}); err != nil {
+	})
+	if err != nil {
 		return fmt.Errorf("unable to mark sandbox build in progress: %w", err)
+	}
+	if err := terminalExecutionError(updated.Status); err != nil {
+		return err
 	}
 
 	if _, err := e.client.CreateJobExecutionOutputs(ctx, job.ID, execution.ID, &models.ServiceCreateRunnerJobExecutionOutputsRequest{
@@ -78,11 +82,11 @@ func (e *Executor) executeSandboxBuild(
 		return fmt.Errorf("unable to write sandbox build result: %w", err)
 	}
 
-	if _, err := e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{
+	updated, err = e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{
 		Status: models.AppRunnerJobExecutionStatusFinished,
-	}); err != nil {
+	})
+	if err != nil {
 		return fmt.Errorf("unable to mark sandbox build finished: %w", err)
 	}
-
-	return nil
+	return terminalExecutionError(updated.Status)
 }
