@@ -63,6 +63,7 @@ Plan: 1 to add, 1 to change, 1 to destroy
         action: 'added',
         before: null,
         after: { data: { config: 'value' } },
+        diff: '+ {\n+   "data": {\n+     "config": "value"\n+   }\n+ }',
       })
 
       expect(result.changes[1]).toEqual({
@@ -73,6 +74,7 @@ Plan: 1 to add, 1 to change, 1 to destroy
         action: 'changed',
         before: { replicas: 2 },
         after: { replicas: 3 },
+        diff: '  {\n-   "replicas": 2\n+   "replicas": 3\n  }',
       })
 
       expect(result.changes[2]).toEqual({
@@ -83,6 +85,7 @@ Plan: 1 to add, 1 to change, 1 to destroy
         action: 'destroyed',
         before: { port: 80 },
         after: null,
+        diff: '- {\n-   "port": 80\n- }',
       })
     })
 
@@ -122,6 +125,7 @@ Plan: 1 to add, 0 to change, 0 to destroy
         action: 'added',
         before: null,
         after: null,
+        diff: 'Diff not available from planner',
       })
 
       expect(result.summary).toEqual({
@@ -159,6 +163,7 @@ Plan: 1 to add, 0 to change, 0 to destroy
         action: 'added',
         before: null, // No matching diff found
         after: null,
+        diff: 'Diff not available from planner',
       })
     })
 
