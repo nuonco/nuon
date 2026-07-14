@@ -7,6 +7,8 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
 type TokenType string
@@ -42,4 +44,17 @@ type Token struct {
 func (a *Token) BeforeCreate(tx *gorm.DB) error {
 	a.ID = domains.NewUserTokenID()
 	return nil
+}
+
+func (a *Token) Indexes(db *gorm.DB) []migrations.Index {
+	return []migrations.Index{
+		{
+			Name: indexes.Name(db, &Token{}, "account_id_created_at"),
+			Columns: []string{
+				"account_id",
+				"created_at",
+			},
+			Option: "WHERE deleted_at = 0",
+		},
+	}
 }
