@@ -98,6 +98,12 @@ func (p *Planner) resolveKubernetesContextByName(
 		return nil, nil
 	}
 
+	if obj.GCPAuth != nil && obj.GCPAuth.ImpersonateServiceAccount != "" &&
+		p.gcpRunnerInstanceRoleFallback(ctx, &stack.InstallStackOutputs) {
+		l.Info("gcp-runner-instance-role enabled; using runner instance auth for cluster access")
+		obj.GCPAuth = withoutGCPImpersonation(obj.GCPAuth)
+	}
+
 	if err := assertCloudAuth(stack, cloudAuth); err != nil {
 		return nil, err
 	}

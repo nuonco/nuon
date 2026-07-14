@@ -95,6 +95,12 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		}
 	}
 
+	gcpAuth := cloudAuth.GCP
+	if gcpAuth != nil && gcpAuth.ImpersonateServiceAccount != "" &&
+		p.gcpRunnerInstanceRoleFallback(ctx, &stack.InstallStackOutputs) {
+		gcpAuth = withoutGCPImpersonation(gcpAuth)
+	}
+
 	plan := &plantypes.ActionWorkflowRunPlan{
 		InstallID:       run.InstallID,
 		ID:              runID,
@@ -105,7 +111,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		ClusterInfo:     clusterInfo,
 		AzureAuth:       cloudAuth.Azure,
 		AWSAuth:         cloudAuth.AWS,
-		GCPAuth:         cloudAuth.GCP,
+		GCPAuth:         gcpAuth,
 	}
 
 	if !run.ActionWorkflowConfigID.Empty() {

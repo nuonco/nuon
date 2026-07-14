@@ -97,6 +97,12 @@ const (
 	// provider's stack_config data source) and use the slimmed-down tfvars
 	// instead of the full generated set.
 	OrgFeatureStackTFProvider OrgFeature = "stack-tf-provider"
+	// OrgFeatureGCPRunnerInstanceRole reverts GCP installs to the legacy
+	// runner-instance-role auth: GKE cluster auth, GAR registry access, and
+	// action workflow env use the runner's own service account instead of
+	// impersonating the selected operation-role SA. Terraform and Pulumi env
+	// impersonation predates the impersonated-auth fix and is unaffected.
+	OrgFeatureGCPRunnerInstanceRole OrgFeature = "gcp-runner-instance-role"
 )
 
 type Org struct {
@@ -221,6 +227,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureSpaceliftInstallStacks:  false,
 		OrgFeatureControlPlaneBuilds:      false,
 		OrgFeatureStackTFProvider:         false,
+		OrgFeatureGCPRunnerInstanceRole:   false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
@@ -294,6 +301,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureSpaceliftInstallStacks,
 		OrgFeatureControlPlaneBuilds,
 		OrgFeatureStackTFProvider,
+		OrgFeatureGCPRunnerInstanceRole,
 	}
 }
 
@@ -332,6 +340,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureSpaceliftInstallStacks:  "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
 		OrgFeatureControlPlaneBuilds:      "Run component and sandbox builds on Temporal-backed control-plane workers instead of the org runner, so build-only work does not require a live org runner.",
 		OrgFeatureStackTFProvider:         "Use the Terraform-provider install stack flow: the await step's directions clone the ja/stack-sdk branch of install-stacks (which reads config from the API via the stack provider) and use the slimmed-down tfvars.",
+		OrgFeatureGCPRunnerInstanceRole:   "Revert GCP installs to legacy runner-instance-role auth: GKE cluster auth, GAR registry access, and action workflow env use the runner's own service account instead of impersonating the selected operation-role SA. Terraform and Pulumi impersonation is unaffected.",
 	}
 }
 
