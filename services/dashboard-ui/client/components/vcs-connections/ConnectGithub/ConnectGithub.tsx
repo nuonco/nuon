@@ -28,6 +28,11 @@ export const ConnectGithubModal = ({
   const [isManualMode, setIsManualMode] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
 
+  const githubAppSlug = githubAppName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = Object.fromEntries(new FormData(e.currentTarget))
@@ -71,7 +76,7 @@ export const ConnectGithubModal = ({
       {!isManualMode ? (
         <div className="flex flex-col gap-6">
           <Button
-            href={`https://github.com/apps/${githubAppName}/installations/new?state=${orgId}`}
+            href={`https://github.com/apps/${githubAppSlug}/installations/new?state=${orgId}`}
             variant="ghost"
             className="flex flex-col items-center justify-center gap-4 !p-8 rounded !h-auto !text-center !border-cool-grey-400 dark:!border-dark-grey-500"
           >
