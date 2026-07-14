@@ -10,11 +10,12 @@ import type { TCloudPlatform, TInstall } from '@/types'
 
 interface IInstallRow {
   install: TInstall
+  labelColors?: Record<string, string>
   onRemove?: () => void
   disabled?: boolean
 }
 
-export const InstallRow = ({ install, onRemove, disabled }: IInstallRow) => {
+export const InstallRow = ({ install, labelColors, onRemove, disabled }: IInstallRow) => {
   const platform = (install.cloud_platform?.toLowerCase() as TCloudPlatform) || 'unknown'
   const region = install.aws_account?.region || install.gcp_account?.region
   const location = install.azure_account?.location
@@ -29,7 +30,7 @@ export const InstallRow = ({ install, onRemove, disabled }: IInstallRow) => {
             {install.name || install.id}
           </Text>
           {labelEntries.map(([k, v]) => (
-            <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" variant="code" />
+            <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" variant="code" customColor={labelColors?.[k]} />
           ))}
         </div>
         <div className="flex items-center gap-2 min-w-0">
