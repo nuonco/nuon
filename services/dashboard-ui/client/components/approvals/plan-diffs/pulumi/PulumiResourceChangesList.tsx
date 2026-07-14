@@ -248,6 +248,7 @@ export function PulumiResourceChangesList({
             <Expand
               key={`${change.urn}-${idx}`}
               id={change.urn}
+              isOpen
               className={`border-l-4 ${borderColor}`}
               headerClassName={`w-full px-4 py-3 gap-3 text-left focus:outline-none ${bgColor}`}
               heading={
