@@ -9,7 +9,7 @@ import (
 )
 
 func parse(raw string) compositeerrors.CompositeError {
-	return genericParser{}.Parse(&errparse.ParseContext{Raw: raw})
+	return parseGeneric(&errparse.ParseContext{Raw: raw})
 }
 
 func TestParse_SingleLine(t *testing.T) {
