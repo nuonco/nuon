@@ -4,6 +4,7 @@ import type {
   THelmPlanSummary,
   THelmK8sChangeAction,
 } from '@/types'
+import { diffLines } from '@/utils/code-utils'
 
 const NORMALIZE_ACTION: Record<string, THelmK8sChangeAction> = {
   added: 'added',
@@ -63,6 +64,7 @@ export function parseHelmPlan(plan: THelmPlan): {
         action: NORMALIZE_ACTION[match[5].trim()] || match[5].trim() as unknown as THelmK8sChangeAction,
         before: before,
         after: after,
+        diff: diffLines(before, after),
       })
     }
 

@@ -19,9 +19,11 @@ export const LogStreamContext = createContext<LogStreamContextValue | undefined>
 export function LogStreamProvider({
   children,
   logStreamId,
+  renderWhilePending = false,
 }: {
   children: ReactNode
   logStreamId?: string
+  renderWhilePending?: boolean
 }) {
   const { org } = useOrg()
 
@@ -157,7 +159,23 @@ export function LogStreamProvider({
     }
   }, [logStreamId, org?.id])
 
-  if (!logStreamId) return <LogsPageSkeleton />
+  if (!logStreamId) {
+    if (!renderWhilePending) return <LogsPageSkeleton />
+    return (
+      <LogStreamContext.Provider
+        value={{
+          logs: [],
+          logStreamId: '',
+          isLoading: false,
+          isCatchingUp: false,
+          error: null,
+          connectionState: 'disconnected',
+        }}
+      >
+        {children}
+      </LogStreamContext.Provider>
+    )
+  }
 
   const isLoading =
     (logs.length === 0 && connectionState === 'connecting') ||
