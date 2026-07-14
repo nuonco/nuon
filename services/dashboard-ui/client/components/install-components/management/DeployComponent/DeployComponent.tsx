@@ -13,7 +13,6 @@ interface IDeployComponentModal extends Omit<IModal, 'onSubmit'> {
   currentDeployStatus?: string
   installId: string
   isPending: boolean
-  rolesUnavailable?: boolean
   error?: { error?: string } | null
   onSubmit: (params: {
     buildId: string
@@ -39,7 +38,6 @@ export const DeployComponentModal = ({
   currentDeployStatus,
   installId,
   isPending,
-  rolesUnavailable,
   error,
   onSubmit,
   onClose,
@@ -52,7 +50,7 @@ export const DeployComponentModal = ({
   const [deployDependencies, setDeployDependencies] = useState(false)
   const [selectedRole, setSelectedRole] = useState<string>('')
 
-  const isDeployDisabled = !buildId || isPending || rolesUnavailable
+  const isDeployDisabled = !buildId || isPending
 
   const handleClose = () => {
     setBuildId(undefined)

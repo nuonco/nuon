@@ -24,7 +24,6 @@ export const ReprovisionSandboxModal = ({
 }: IReprovisionSandboxModal) => {
   const [selectedRole, setSelectedRole] = useState<string>('')
   const [skipComponents, setSkipComponents] = useState(false)
-  const [rolesUnavailable, setRolesUnavailable] = useState(false)
 
   return (
     <Modal
@@ -41,7 +40,7 @@ export const ReprovisionSandboxModal = ({
             Reprovision sandbox
           </span>
         ),
-        disabled: isPending || rolesUnavailable,
+        disabled: isPending,
         onClick: () => onSubmit({ selectedRole, skipComponents }),
         variant: 'primary' as const,
       }}
@@ -66,7 +65,6 @@ export const ReprovisionSandboxModal = ({
           value={selectedRole}
           onChange={setSelectedRole}
           name="role"
-          onAvailabilityChange={(available) => setRolesUnavailable(!available)}
         />
 
         <div className="flex items-start">

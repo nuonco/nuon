@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getAvailableRoles } from '@/lib'
@@ -14,8 +13,6 @@ interface IRoleSelectorContainer {
   onChange?: (value: string) => void
   name?: string
   disabled?: boolean
-  hideWhenEmpty?: boolean
-  onAvailabilityChange?: (available: boolean) => void
 }
 
 export const RoleSelectorContainer = ({
@@ -27,8 +24,6 @@ export const RoleSelectorContainer = ({
   onChange,
   name,
   disabled,
-  hideWhenEmpty,
-  onAvailabilityChange,
 }: IRoleSelectorContainer) => {
   const { org } = useOrg()
 
@@ -41,11 +36,6 @@ export const RoleSelectorContainer = ({
 
   const roles = data?.roles ?? []
 
-  useEffect(() => {
-    if (!onAvailabilityChange) return
-    onAvailabilityChange(isLoading || isError || roles.length > 0)
-  }, [isLoading, isError, roles.length, onAvailabilityChange])
-
   return (
     <RoleSelector
       roles={roles as any}
@@ -55,7 +45,6 @@ export const RoleSelectorContainer = ({
       onChange={onChange}
       name={name}
       disabled={disabled}
-      hideWhenEmpty={hideWhenEmpty}
     />
   )
 }
