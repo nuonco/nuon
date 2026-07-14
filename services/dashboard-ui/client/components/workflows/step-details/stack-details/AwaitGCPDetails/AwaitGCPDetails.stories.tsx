@@ -106,6 +106,29 @@ stack:
   ],
 } as any
 
+const mockLegacyStack = {
+  versions: [
+    {
+      contents: JSON.stringify({
+        tfvars: `nuon_install_id          = "inla1cquvcch1xh6lww38ikf6k"
+nuon_org_id              = "org3d3kug2cr7kgf508st60ozt"
+nuon_app_id              = "appnxg0vgp77ar1lkfeq1c1fka"
+install_inputs = {
+}
+auto_generate_secrets = []
+secrets = {
+  "stripe_key" = {
+    description = "Your Stripe API key"
+    required    = true
+    value       = ""
+  }
+}
+`,
+      }),
+    },
+  ],
+} as any
+
 const mockStep = {
   id: 'step-1',
   status: { status: 'active' },
@@ -135,6 +158,16 @@ export const TerraformProvider = () => (
       step={mockStep}
       installId="install-1"
       tfProvider
+    />
+  </div>
+)
+
+export const LegacyContents = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitGCPDetails
+      stack={mockLegacyStack}
+      step={mockStep}
+      installId="install-1"
     />
   </div>
 )
