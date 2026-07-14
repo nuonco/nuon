@@ -303,6 +303,10 @@ func (p *Planner) getSandboxRunEnvVars(appCfg *app.AppConfig) map[string]string 
 	case app.AppRunnerTypeGCP:
 		envVars["GOOGLE_PROJECT"] = "{{.nuon.install_stack.outputs.project_id}}"
 		envVars["GOOGLE_REGION"] = "{{.nuon.install_stack.outputs.region}}"
+	case app.AppRunnerTypeAzure:
+		envVars["ARM_SUBSCRIPTION_ID"] = "{{.nuon.install_stack.outputs.subscription_id}}"
+		envVars["ARM_TENANT_ID"] = "{{.nuon.install_stack.outputs.subscription_tenant_id}}"
+		envVars["ARM_LOCATION"] = "{{.nuon.install_stack.outputs.resource_group_location}}"
 	}
 
 	return envVars
