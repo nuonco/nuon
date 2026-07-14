@@ -2,6 +2,7 @@ import type { CSSProperties, HTMLAttributes } from 'react'
 import { Badge, type IBadge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { cn } from '@/utils/classnames'
+import './LabelBadge.css'
 
 export interface ILabelBadge extends HTMLAttributes<HTMLSpanElement> {
   label?: string
@@ -48,12 +49,8 @@ export const LabelBadge = ({
 
   const iconSize = size === 'lg' ? 13 : size === 'md' ? 12 : 11
 
-  const customStyle: CSSProperties | undefined = customColor
-    ? {
-        backgroundColor: `${customColor}15`,
-        color: customColor,
-        borderColor: `${customColor}40`,
-      }
+  const customStyle = customColor
+    ? ({ '--label-color': customColor } as CSSProperties)
     : undefined
 
   return (
@@ -63,9 +60,9 @@ export const LabelBadge = ({
       </Badge>
       <Badge
         size={size}
-        theme={customStyle ? undefined : theme}
+        theme={customStyle ? 'none' : theme}
         variant={variant}
-        className={cn('rounded-l-none border-l-0', customStyle && 'border', onRemove && 'pr-1')}
+        className={cn('rounded-l-none border-l-0', customStyle && 'label-badge-value', onRemove && 'pr-1')}
         style={customStyle}
       >
         {value}

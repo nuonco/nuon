@@ -23,7 +23,7 @@ export const InstallActionsTableContainer = ({
 }) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
-  const { install } = useInstall()
+  const { install, labelColors } = useInstall()
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: result, isLoading } = useQuery({
@@ -62,7 +62,7 @@ export const InstallActionsTableContainer = ({
         actions,
         org?.id ?? '',
         install?.id ?? '',
-        install?.app?.label_colors
+        labelColors
       )}
       filterActions={
         <div className="flex items-center gap-4 flex-wrap">

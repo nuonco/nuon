@@ -24,6 +24,7 @@ interface IGroupEditor {
   totalGroups: number
   unassignedInstalls: TInstall[]
   availableInstalls: TInstall[]
+  labelColors?: Record<string, string>
   disabled?: boolean
   nameError?: string
   contentError?: string
@@ -41,6 +42,7 @@ export const GroupEditor = ({
   totalGroups,
   unassignedInstalls,
   availableInstalls,
+  labelColors,
   disabled,
   nameError,
   contentError,
@@ -142,6 +144,7 @@ export const GroupEditor = ({
             groupId={group.id}
             labelSelector={group.label_selector}
             availableInstalls={availableInstalls}
+            labelColors={labelColors}
             disabled={disabled}
             onUpdate={(ls) => onUpdate({ label_selector: ls })}
           />
@@ -153,6 +156,7 @@ export const GroupEditor = ({
                   <InstallRow
                     key={install.id}
                     install={install}
+                    labelColors={labelColors}
                     onRemove={() => onRemoveInstall(install.id)}
                     disabled={disabled}
                   />
@@ -188,12 +192,14 @@ const LabelSelectorEditor = ({
   groupId,
   labelSelector,
   availableInstalls,
+  labelColors,
   disabled,
   onUpdate,
 }: {
   groupId: string
   labelSelector?: ILabelSelector | null
   availableInstalls: TInstall[]
+  labelColors?: Record<string, string>
   disabled?: boolean
   onUpdate: (ls: ILabelSelector) => void
 }) => {
@@ -262,6 +268,7 @@ const LabelSelectorEditor = ({
               size="sm"
               variant="code"
               disabled={disabled}
+              customColor={labelColors?.[key]}
               onRemove={() => removeLabel(key)}
               removeAriaLabel={`Remove ${key}=${value}`}
             />
@@ -322,7 +329,7 @@ const LabelSelectorEditor = ({
               {matchedInstalls.length} {matchedInstalls.length === 1 ? 'install matches' : 'installs match'}
             </Text>
             {matchedInstalls.map((install) => (
-              <InstallRow key={install.id} install={install} />
+              <InstallRow key={install.id} install={install} labelColors={labelColors} />
             ))}
           </div>
         ) : (
