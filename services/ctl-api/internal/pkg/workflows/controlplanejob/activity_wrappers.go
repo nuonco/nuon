@@ -12,6 +12,8 @@ func AwaitRunJob(ctx workflow.Context, req *RunJobRequest) error {
 	return workflow.ExecuteActivity(ctx, (*Activities).RunJob, req).Get(ctx, nil)
 }
 
-func AwaitFinalize(ctx workflow.Context, req *FinalizeRequest) error {
-	return workflow.ExecuteActivity(ctx, (*Activities).Finalize, req).Get(ctx, nil)
+func AwaitFinalize(ctx workflow.Context, req *FinalizeRequest) (*FinalizeResponse, error) {
+	var out *FinalizeResponse
+	err := workflow.ExecuteActivity(ctx, (*Activities).Finalize, req).Get(ctx, &out)
+	return out, err
 }

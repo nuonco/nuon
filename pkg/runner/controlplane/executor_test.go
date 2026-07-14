@@ -2,10 +2,23 @@ package controlplane
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
+
+func TestTerminalExecutionError(t *testing.T) {
+	if err := terminalExecutionError(models.AppRunnerJobExecutionStatusFinished); err != nil {
+		t.Fatalf("finished status returned error: %v", err)
+	}
+	if err := terminalExecutionError(models.AppRunnerJobExecutionStatusCancelled); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled status error = %v", err)
+	}
+	if err := terminalExecutionError(models.AppRunnerJobExecutionStatusTimedDashOut); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("timed-out status error = %v", err)
+	}
+}
 
 type fakeClient struct {
 	planJSON      string
@@ -15,8 +28,13 @@ type fakeClient struct {
 	compositePlanCalls int
 	outputs            any
 	resultCalls        int
+	resultRequest      *models.ServiceCreateRunnerJobExecutionResultRequest
 	statuses           []models.AppRunnerJobExecutionStatus
 	outputsCalls       int
+}
+
+func (c *fakeClient) GetJob(context.Context, string) (*models.AppRunnerJob, error) {
+	return &models.AppRunnerJob{Status: models.AppRunnerJobStatusInDashProgress}, nil
 }
 
 func (c *fakeClient) GetJobPlanJSON(ctx context.Context, jobID string) (string, error) {
@@ -36,6 +54,7 @@ func (c *fakeClient) UpdateJobExecution(ctx context.Context, jobID, executionID 
 
 func (c *fakeClient) CreateJobExecutionResult(ctx context.Context, jobID, executionID string, req *models.ServiceCreateRunnerJobExecutionResultRequest) (*models.AppRunnerJobExecutionResult, error) {
 	c.resultCalls++
+	c.resultRequest = req
 	return &models.AppRunnerJobExecutionResult{}, nil
 }
 

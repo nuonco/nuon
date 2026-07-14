@@ -530,6 +530,7 @@ func (a *Activities) UpdateRunnerJobStatusV2(ctx context.Context, req UpdateRunn
 type UpdateRunnerJobExecutionStatusV2Request struct {
 	RunnerJobExecutionID string                       `validate:"required"`
 	Status               app.RunnerJobExecutionStatus `validate:"required"`
+	StatusDescription    string
 }
 
 // @temporal-gen-v2 activity
@@ -545,6 +546,7 @@ func (a *Activities) UpdateRunnerJobExecutionStatusV2(ctx context.Context, req U
 	}
 
 	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	status.StatusHumanDescription = req.StatusDescription
 	return a.updateStatusV2(ctx, &obj, status, getter)
 }
 

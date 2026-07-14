@@ -14,9 +14,9 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/sandboxhandler"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/errcapture"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	"github.com/nuonco/nuon/pkg/runner/errcapture"
 	"github.com/nuonco/nuon/pkg/runner/errs"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
 	"github.com/nuonco/nuon/pkg/runner/log"
