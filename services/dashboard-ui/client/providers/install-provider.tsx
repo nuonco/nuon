@@ -1,8 +1,8 @@
-import { createContext, useEffect, type ReactNode } from 'react'
+import { createContext, useEffect, useMemo, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
-import { getInstall } from '@/lib'
+import { getInstall, getAppLabels, toLabelColorMap } from '@/lib'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { ProviderError } from '@/components/layout/ProviderError'
@@ -11,6 +11,7 @@ import type { TAPIError, TInstall } from '@/types'
 
 type InstallContextValue = {
   install: TInstall
+  labelColors: Record<string, string>
   refresh: () => void
 }
 
@@ -49,6 +50,14 @@ export function InstallProvider({
     enabled: !!org.id && !!installId,
   })
 
+  const { data: labelsData } = useQuery({
+    queryKey: ['app-labels', org.id!, install?.app_id],
+    queryFn: () => getAppLabels({ orgId: org.id!, appId: install!.app_id! }),
+    enabled: !!org.id && !!install?.app_id,
+  })
+
+  const labelColors = useMemo(() => toLabelColorMap(labelsData), [labelsData])
+
   useEffect(() => {
     if (error && install) {
       addToast(
@@ -64,7 +73,7 @@ export function InstallProvider({
   if (isLoading || !install) return loadingElement
 
   return (
-    <InstallContext.Provider value={{ install, refresh: refetch }}>
+    <InstallContext.Provider value={{ install, labelColors, refresh: refetch }}>
       {children}
     </InstallContext.Provider>
   )

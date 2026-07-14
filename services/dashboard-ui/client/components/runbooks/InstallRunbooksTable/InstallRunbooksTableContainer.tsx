@@ -17,7 +17,7 @@ export const InstallRunbooksTableContainer = ({
 } = {}) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
-  const { install } = useInstall()
+  const { install, labelColors } = useInstall()
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
   const synced = searchParams.get('synced') === 'false' ? false : undefined
@@ -44,7 +44,7 @@ export const InstallRunbooksTableContainer = ({
         result?.data ?? [],
         org?.id ?? '',
         install?.id ?? '',
-        install?.app?.label_colors
+        labelColors
       )}
       isLoading={isLoading}
       filterActions={<SyncedFilterContainer />}

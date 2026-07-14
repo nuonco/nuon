@@ -8,6 +8,7 @@ interface IPlanGroupStep {
   installs: any[]
   groupName?: string
   orgId: string
+  labelColors?: Record<string, string>
   hasResponse: boolean
   responseType?: string
   showApproveBar: boolean
@@ -99,6 +100,7 @@ export const PlanGroupStep = ({
   installs,
   groupName,
   orgId: _orgId,
+  labelColors,
   hasResponse,
   responseType,
   showApproveBar,
@@ -119,6 +121,7 @@ export const PlanGroupStep = ({
         groupName={groupName || 'install group'}
         installs={transformInstalls(installs)}
         isLoading={isInProgress}
+        labelColors={labelColors}
       />
 
       {showApproveBar && (

@@ -44,7 +44,7 @@ export const InstallLayout = () => {
 
 const InstallTemplate = () => {
   const { org } = useOrg()
-  const { install } = useInstall()
+  const { install, labelColors } = useInstall()
   const hasRunbooks = !!org?.features?.runbooks
   const hasNotebooks = !!org?.features?.notebooks
 
@@ -170,7 +170,7 @@ const InstallTemplate = () => {
                   )}
                   {install.labels &&
                     Object.entries(install.labels).map(([key, value]) => (
-                      <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} customColor={install?.app?.label_colors?.[key]} />
+                      <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} customColor={labelColors?.[key]} />
                     ))}
                 </div>
                 <ID>{install.id}</ID>

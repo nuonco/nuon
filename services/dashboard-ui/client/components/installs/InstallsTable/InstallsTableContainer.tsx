@@ -1,8 +1,8 @@
 import { useSearchParams } from 'react-router'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { useOrg } from '@/hooks/use-org'
-import { getInstalls, getInstallLabelKeys } from '@/lib'
+import { getInstalls, getInstallLabelKeys, getAppLabels, toLabelColorMap } from '@/lib'
 import { CreateInstallButton } from '../CreateInstall'
 import { InstallsTable, parseInstallsToTableData } from './InstallsTable'
 
@@ -33,9 +33,25 @@ export const InstallsTableContainer = ({
     refetchInterval: shouldPoll ? pollInterval : false,
   })
 
+  const installs = result?.data ?? []
+  const appIds = [...new Set(installs.map((i) => i.app_id).filter(Boolean))] as string[]
+
+  const labelQueries = useQueries({
+    queries: appIds.map((appId) => ({
+      queryKey: ['app-labels', org.id, appId],
+      queryFn: () => getAppLabels({ orgId: org.id, appId }),
+      enabled: !!org.id && !!appId,
+    })),
+  })
+
+  const labelColorsByApp: Record<string, Record<string, string>> = {}
+  appIds.forEach((appId, i) => {
+    labelColorsByApp[appId] = toLabelColorMap(labelQueries[i]?.data)
+  })
+
   return (
     <InstallsTable
-      data={parseInstallsToTableData(result?.data ?? [], org.id)}
+      data={parseInstallsToTableData(installs, org.id, labelColorsByApp)}
       isLoading={isLoading}
       emptyStateAction={<CreateInstallButton />}
       filterActions={
