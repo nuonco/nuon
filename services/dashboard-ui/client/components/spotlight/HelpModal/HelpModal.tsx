@@ -72,7 +72,7 @@ export const HelpModal = ({ ...props }: IModal) => {
             keys: (
               <Combo>
                 <Kbd>{mod}</Kbd>
-                <Kbd>H</Kbd>
+                <Kbd>?</Kbd>
               </Combo>
             ),
           },
