@@ -3,6 +3,8 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -11,6 +13,13 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
+
+var githubAppSlugPattern = regexp.MustCompile(`[^a-z0-9]+`)
+
+func githubAppSlug(name string) string {
+	slug := githubAppSlugPattern.ReplaceAllString(strings.ToLower(name), "-")
+	return strings.Trim(slug, "-")
+}
 
 type ConnectHandler struct {
 	cfg *internal.Config
@@ -38,7 +47,7 @@ func (h *ConnectHandler) StartConnectGithub(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "github app not configured"})
 		return
 	}
-	target := fmt.Sprintf("https://github.com/apps/%s/installations/new?state=%s", h.cfg.GithubAppName, orgID)
+	target := fmt.Sprintf("https://github.com/apps/%s/installations/new?state=%s", githubAppSlug(h.cfg.GithubAppName), orgID)
 	c.Redirect(http.StatusFound, target)
 }
 
