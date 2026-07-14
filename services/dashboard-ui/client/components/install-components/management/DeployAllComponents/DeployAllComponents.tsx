@@ -9,7 +9,6 @@ interface IDeployAllComponentsModal extends Omit<IModal, 'onSubmit'> {
   installName: string
   isPending: boolean
   isKickedOff: boolean
-  rolesUnavailable?: boolean
   error?: { error?: string } | null
   onSubmit: (params: { role: string }) => void
   roleSelector: (props: {
@@ -22,7 +21,6 @@ export const DeployAllComponentsModal = ({
   installName,
   isPending,
   isKickedOff,
-  rolesUnavailable,
   error,
   onSubmit,
   roleSelector,
@@ -52,7 +50,7 @@ export const DeployAllComponentsModal = ({
         ) : (
           'Deploy all components'
         ),
-        disabled: isKickedOff || isPending || rolesUnavailable,
+        disabled: isKickedOff || isPending,
         onClick: () => onSubmit({ role: selectedRole }),
         variant: 'primary',
       }}

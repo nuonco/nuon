@@ -13,7 +13,6 @@ interface IRunAdhocActionModal extends Omit<IModal, 'onSubmit'> {
   installId: string
   initialValues?: TRunAdhocActionBody
   isPending: boolean
-  rolesUnavailable?: boolean
   error: any
   onSubmit: (body: TRunAdhocActionBody) => void
   onDraftResume: (onResume: () => void, onStartFresh: () => void, onClose: () => void, draftTimestamp: string) => void
@@ -25,7 +24,6 @@ export const RunAdhocActionModal = ({
   installId,
   initialValues,
   isPending,
-  rolesUnavailable,
   error,
   onSubmit,
   onDraftResume,
@@ -166,7 +164,7 @@ export const RunAdhocActionModal = ({
           'Run action'
         ),
         onClick: () => formRef.current?.requestSubmit(),
-        disabled: isPending || rolesUnavailable,
+        disabled: isPending,
         variant: 'primary',
       }}
       size="lg"
