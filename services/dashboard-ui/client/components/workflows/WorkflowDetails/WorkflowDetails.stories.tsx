@@ -51,7 +51,7 @@ const Wrapper = ({
   workflow: TWorkflow
 }) => (
   <OrgContext.Provider value={{ org: mockOrg, refresh: () => {} }}>
-    <InstallContext.Provider value={{ install: mockInstall, refresh: () => {} }}>
+    <InstallContext.Provider value={{ install: mockInstall, labelColors: {}, refresh: () => {} }}>
       <WorkflowContext.Provider
         value={{
           workflow,

@@ -28,7 +28,7 @@ const LIMIT = 20
 
 const BranchDetailContent = () => {
   const { org } = useOrg()
-  const { app } = useApp()
+  const { app, labelColors } = useApp()
   const { branch } = useBranch()
   const params = useParams()
   const [searchParams] = useSearchParams()
@@ -155,6 +155,7 @@ const BranchDetailContent = () => {
             config={currentConfig}
             installsById={installsById}
             orgId={orgId}
+            labelColors={labelColors}
           />
         )}
       </div>

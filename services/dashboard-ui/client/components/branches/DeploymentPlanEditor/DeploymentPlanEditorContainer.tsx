@@ -43,7 +43,7 @@ export const DeploymentPlanEditorContainer = ({
   ...props
 }: IDeploymentPlanEditorContainer) => {
   const { org } = useOrg()
-  const { app } = useApp()
+  const { app, labelColors } = useApp()
   const { addToast } = useToast()
   const { removeModal } = useSurfaces()
 
@@ -137,6 +137,7 @@ export const DeploymentPlanEditorContainer = ({
       availableInstalls={availableInstalls}
       loadingInstalls={loadingInstalls}
       isSaving={isSaving}
+      labelColors={labelColors}
       onSave={(groups) => save(groups)}
       onCancel={() => removeModal(props.modalId)}
       {...props}

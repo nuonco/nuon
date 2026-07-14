@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import type { TInstallWorkflowStep } from '@/types'
 import { PlanGroupStep } from './PlanGroupStep'
@@ -11,6 +12,7 @@ interface IPlanGroupStepContainer {
 
 export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContainer) => {
   const { org } = useOrg()
+  const { labelColors } = useApp()
   const orgId = org?.id ?? ''
 
   const approvalId = step.approval?.id
@@ -39,6 +41,7 @@ export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContain
       installs={installs}
       groupName={groupName}
       orgId={orgId}
+      labelColors={labelColors}
       hasResponse={hasResponse}
       responseType={step.approval?.response?.response_type}
       showApproveBar={showApproveBar}

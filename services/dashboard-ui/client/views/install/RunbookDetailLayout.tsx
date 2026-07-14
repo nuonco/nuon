@@ -20,7 +20,7 @@ export const RunbookDetailLayout = () => {
   const { runbookId } = useParams()
   const { pathname } = useLocation()
   const { org } = useOrg()
-  const { install } = useInstall()
+  const { install, labelColors } = useInstall()
 
   const { data: installRunbook, isLoading } = useQuery({
     queryKey: ['install-runbook', org?.id, install?.id, runbookId],
@@ -130,7 +130,7 @@ export const RunbookDetailLayout = () => {
                     {Object.keys(runbook.labels)
                       .sort()
                       .map((k) => (
-                        <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" customColor={install?.app?.label_colors?.[k]} />
+                        <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" customColor={labelColors?.[k]} />
                       ))}
                   </span>
                 ) : null}
