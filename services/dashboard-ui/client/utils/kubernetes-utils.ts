@@ -5,6 +5,7 @@ import type {
   TKubernetesPlanError,
   THelmK8sChangeAction,
 } from '@/types'
+import { diffLines } from '@/utils/code-utils'
 
 export function parseKubernetesPlan(plan: TKubernetesPlan): {
   changes: TKubernetesPlanChange[]
@@ -67,6 +68,7 @@ export function parseKubernetesPlan(plan: TKubernetesPlan): {
       action: action,
       before: before,
       after: after,
+      diff: diffLines(before, after),
     })
   })
 

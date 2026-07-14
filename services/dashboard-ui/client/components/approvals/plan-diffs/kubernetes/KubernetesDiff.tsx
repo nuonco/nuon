@@ -7,7 +7,6 @@ import { Expand } from '@/components/common/Expand'
 import { Text } from '@/components/common/Text'
 import { useHelmK8sPlanFilter } from '@/hooks/use-helm-k8s-plan-filter'
 import type { TKubernetesPlan, TKubernetesPlanChange } from '@/types'
-import { diffLines } from '@/utils/code-utils'
 import { parseKubernetesPlan } from '@/utils/kubernetes-utils'
 import {
   HELM_ACTION_BADGE_THEME,
@@ -103,6 +102,7 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
               <Expand
                 key={idx}
                 id={`change-${idx}`}
+                isOpen
                 className={`border-l-4 ${borderColor}`}
                 headerClassName={`!px-4 sm:!px-6 ${bgColor}`}
                 heading={
@@ -135,7 +135,7 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
                   language="yaml"
                   isDiff
                 >
-                  {diffLines(change.before, change.after)}
+                  {change.diff}
                 </CodeBlock>
               </Expand>
             )

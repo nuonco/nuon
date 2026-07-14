@@ -140,13 +140,14 @@ const ApprovalStepTabs = ({
         ...(traceTab ? { trace: traceTab } : {}),
       }
 
-  const tabsEl = <Tabs tabs={tabs} />
-
-  if (!hasLogStream) return tabsEl
-
   return (
-    <LogStreamProvider logStreamId={sandboxRun!.log_stream!.id}>
-      <LogViewerProvider>{tabsEl}</LogViewerProvider>
+    <LogStreamProvider
+      logStreamId={sandboxRun?.log_stream?.id}
+      renderWhilePending
+    >
+      <LogViewerProvider>
+        <Tabs tabs={tabs} />
+      </LogViewerProvider>
     </LogStreamProvider>
   )
 }
