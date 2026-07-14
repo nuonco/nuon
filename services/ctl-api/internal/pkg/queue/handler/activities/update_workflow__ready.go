@@ -20,7 +20,7 @@ import (
 func (a *Activities) updateWorkflowReady(ctx context.Context, workflowID string, updateID string, queueID string) (*handler.ReadyResponse, error) {
 	info := activity.GetInfo(ctx)
 
-	startOp := a.handlerStartOperation(workflowID, queueID, updateID)
+	startOp := a.handlerStartOperation(workflowID, queueID, updateID, info.TaskQueue)
 	rawResp, err := a.tclient.UpdateWithStartWorkflowInNamespace(ctx,
 		info.WorkflowNamespace,
 		tclient.UpdateWithStartWorkflowOptions{

@@ -26,6 +26,7 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 		{InstallActionWorkflowsQueueName, 10},
 		{InstallDriftWorkflowsQueueName, 5},
 		{InstallActionCronSignalsQueueName, 10},
+		{InstallDriftCronSignalsQueueName, 5},
 	}
 
 	ownerType := plugins.TableName(s.db, app.Install{})

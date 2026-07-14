@@ -82,8 +82,16 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 		providers = append(providers, fxmodules.ComponentsWorkerModule)
 	}
 
-	if (namespace == "all" || namespace == "installs") && !shouldSkipNamespace("installs") {
+	runInstalls := (namespace == "all" || namespace == "installs") && !shouldSkipNamespace("installs")
+	runInstallCrons := (namespace == "all" || namespace == "install-crons") && !shouldSkipNamespace("install-crons")
+	if runInstalls || runInstallCrons {
+		providers = append(providers, fxmodules.InstallWorkerProvidersModule)
+	}
+	if runInstalls {
 		providers = append(providers, fxmodules.InstallsWorkerModule)
+	}
+	if runInstallCrons {
+		providers = append(providers, fxmodules.InstallCronWorkerModule)
 	}
 
 	// Releases namespace removed - being deprecated
@@ -91,8 +99,16 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	// 	providers = append(providers, fxmodules.ReleasesWorkerModule)
 	// }
 
-	if (namespace == "all" || namespace == "runners") && !shouldSkipNamespace("runners") {
+	runRunners := (namespace == "all" || namespace == "runners") && !shouldSkipNamespace("runners")
+	runRunnerHealthcheckCrons := (namespace == "all" || namespace == "runner-healthcheck-crons") && !shouldSkipNamespace("runner-healthcheck-crons")
+	if runRunners || runRunnerHealthcheckCrons {
+		providers = append(providers, fxmodules.RunnerWorkerProvidersModule)
+	}
+	if runRunners {
 		providers = append(providers, fxmodules.RunnersWorkerModule)
+	}
+	if runRunnerHealthcheckCrons {
+		providers = append(providers, fxmodules.RunnerHealthcheckCronWorkerModule)
 	}
 
 	if (namespace == "all" || namespace == "actions") && !shouldSkipNamespace("actions") {

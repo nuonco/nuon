@@ -50,6 +50,11 @@ const (
 	// InstallActionCronSignalsQueueName is the queue for action cron emitter signals.
 	// Separate from install-signals so action crons don't compete with other signals.
 	InstallActionCronSignalsQueueName = "install-action-cron-signals"
+
+	// InstallDriftCronSignalsQueueName is the queue for drift cron emitter signals.
+	// Separate from install-signals so drift crons don't compete with other signals
+	// and can be routed to the isolated install-crons task queue.
+	InstallDriftCronSignalsQueueName = "install-drift-cron-signals"
 )
 
 type Params struct {

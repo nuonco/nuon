@@ -10,26 +10,44 @@ import (
 	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const runnerSignalsQueueName = "runner-signals"
+const (
+	runnerSignalsQueueName = "runner-signals"
 
-// EnsureRunnerSignalsQueue creates the runner-signals queue if it doesn't exist.
-// Safe to call multiple times — queueClient.Create is idempotent.
+	// RunnerHealthcheckCronsQueueName isolates the runner healthcheck cron emitter
+	// onto its own queue + task queue so it doesn't compete with runner-signals.
+	RunnerHealthcheckCronsQueueName = "runner-healthcheck-crons"
+)
+
+// EnsureRunnerSignalsQueue creates the runner-signals queue and the dedicated
+// runner-healthcheck-crons queue (with its healthcheck emitter) if they don't
+// exist. Safe to call multiple times — queueClient.Create is idempotent.
 func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string) error {
-	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerID,
 		OwnerType:   "runners",
 		Namespace:   "runners",
 		Name:        runnerSignalsQueueName,
 		MaxInFlight: 10,
 		MaxDepth:    50,
-	})
-	if err != nil {
+	}); err != nil {
 		return fmt.Errorf("unable to ensure runner-signals queue: %w", err)
 	}
 
-	emitters, err := h.emitterClient.GetEmittersByQueueID(ctx, q.ID)
+	healthcheckQueue, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OwnerID:     runnerID,
+		OwnerType:   "runners",
+		Namespace:   "runners",
+		Name:        RunnerHealthcheckCronsQueueName,
+		MaxInFlight: 5,
+		MaxDepth:    50,
+	})
 	if err != nil {
-		return fmt.Errorf("unable to list emitters for runner-signals queue: %w", err)
+		return fmt.Errorf("unable to ensure runner-healthcheck-crons queue: %w", err)
+	}
+
+	emitters, err := h.emitterClient.GetEmittersByQueueID(ctx, healthcheckQueue.ID)
+	if err != nil {
+		return fmt.Errorf("unable to list emitters for runner-healthcheck-crons queue: %w", err)
 	}
 
 	hasHealthcheckEmitter := false
@@ -42,7 +60,7 @@ func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string)
 
 	if !hasHealthcheckEmitter {
 		if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-			QueueID:         q.ID,
+			QueueID:         healthcheckQueue.ID,
 			Name:            "runner-healthcheck",
 			Description:     "Periodic runner-level health check",
 			Mode:            app.QueueEmitterModeCron,

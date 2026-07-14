@@ -47,6 +47,7 @@ func (a *Activities) CreateQueueSignal(ctx context.Context, req *CreateQueueSign
 		Workflow: signaldb.WorkflowRef{
 			Namespace:  info.WorkflowNamespace,
 			IDTemplate: info.WorkflowExecution.ID + "-handler-%s-" + string(req.Signal.Type()) + "-" + hex.EncodeToString(suffix),
+			TaskQueue:  info.TaskQueue,
 		},
 	}
 
