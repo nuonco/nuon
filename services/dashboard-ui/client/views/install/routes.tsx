@@ -6,6 +6,7 @@ import { Actions } from './Actions'
 import { Roles } from './Roles'
 import { Policies } from './Policies'
 import { Runner } from './Runner'
+import { ProcessSystemLogs } from './ProcessSystemLogs'
 import { Sandbox } from './Sandbox'
 import { Stacks } from './Stacks'
 import { Versions } from './Versions'
@@ -69,6 +70,10 @@ export const installRoutes: RouteObject[] = [
       {
         path: ':orgId/installs/:installId/runner/jobs/:jobId',
         element: <RunnerJobDetail />,
+      },
+      {
+        path: ':orgId/installs/:installId/runner/processes/:processId/logs',
+        element: <ProcessSystemLogs />,
       },
       { path: ':orgId/installs/:installId/sandbox', element: <Sandbox /> },
       {

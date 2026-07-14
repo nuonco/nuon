@@ -15,11 +15,13 @@ export const ProcessCardContainer = ({
   settings,
   shouldPoll = false,
   pollInterval = 10000,
+  runnerBasePath,
 }: {
   process: TRunnerProcess
   settings?: TRunnerSettings
   shouldPoll?: boolean
   pollInterval?: number
+  runnerBasePath?: string
 }) => {
   const { org } = useOrg()
   const { runner } = useRunner()
@@ -67,6 +69,7 @@ export const ProcessCardContainer = ({
       managementDropdown={
         <ProcessManagementDropdown
           process={process}
+          runnerBasePath={runnerBasePath}
         />
       }
     />

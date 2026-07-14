@@ -15,7 +15,7 @@ export const Default = () => (
   <ProcessManagementDropdown
     process={mockProcess}
     runnerId="runner-456"
-    onViewSystemLogs={() => {}}
+    systemLogsHref="/org-1/runner/processes/proc-123/logs"
   />
 )
 
