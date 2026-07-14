@@ -100,7 +100,7 @@ export const InstallBranchesSection = ({ install }: IInstallBranchesContainer) =
         const appConfigId = configStep?.status?.metadata?.app_config_id as string | undefined
 
         const branchVersions = (configVersions ?? []).filter(
-          (v) => v.app_branch_run_id && branchRun?.id && v.app_branch_run_id === branchRun.id
+          (v) => !!v.app_branch_run_id
         )
 
         return {
