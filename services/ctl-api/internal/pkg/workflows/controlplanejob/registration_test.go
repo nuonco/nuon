@@ -16,6 +16,9 @@ func TestComponentAndControlPlaneActivitiesRegisterTogether(t *testing.T) {
 
 	require.NotPanics(t, func() {
 		env.RegisterActivity(&componentactivities.Activities{})
-		env.RegisterActivity(&controlplanejob.Activities{})
+		acts := &controlplanejob.Activities{}
+		for _, act := range acts.AllActivities() {
+			env.RegisterActivity(act)
+		}
 	})
 }

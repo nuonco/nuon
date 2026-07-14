@@ -43,12 +43,6 @@ type Activities struct {
 	statusActivities *statusactivities.Activities
 }
 
-type executorClient struct {
-	*Activities
-}
-
-var _ runnercontrolplane.Client = (*executorClient)(nil)
-
 type ActivityParams struct {
 	fx.In
 
@@ -74,8 +68,12 @@ func NewActivities(params ActivityParams) *Activities {
 	}
 }
 
-type EnsureExecutionRequest struct {
-	JobID string `json:"job_id" validate:"required"`
+func (a *Activities) AllActivities() []any {
+	return []any{
+		a.ControlPlaneJobEnsureExecution,
+		a.ControlPlaneJobRunJob,
+		a.ControlPlaneJobFinalize,
+	}
 }
 
 type EnsureExecutionResponse struct {
@@ -83,14 +81,17 @@ type EnsureExecutionResponse struct {
 	JobExecutionTimeout time.Duration `json:"job_execution_timeout"`
 }
 
-func (a *Activities) EnsureExecution(ctx context.Context, req *EnsureExecutionRequest) (*EnsureExecutionResponse, error) {
+// @temporal-gen-v2 activity
+// @as-wrapper
+// @wrapper-prefix ControlPlaneJob
+func (a *Activities) ensureExecution(ctx context.Context, jobID string) (*EnsureExecutionResponse, error) {
 	var job app.RunnerJob
 	var execution app.RunnerJobExecution
 	if err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.
 			Scopes(scopes.WithDisableViews).
 			Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where(&app.RunnerJob{ID: req.JobID}).
+			Where(&app.RunnerJob{ID: jobID}).
 			First(&job).Error; err != nil {
 			return fmt.Errorf("unable to get runner job: %w", err)
 		}
@@ -134,22 +135,20 @@ func (a *Activities) EnsureExecution(ctx context.Context, req *EnsureExecutionRe
 	return &EnsureExecutionResponse{ExecutionID: execution.ID, JobExecutionTimeout: job.ExecutionTimeout}, nil
 }
 
-type RunJobRequest struct {
-	JobID       string `json:"job_id" validate:"required"`
-	ExecutionID string `json:"execution_id" validate:"required"`
-}
-
-func (a *Activities) RunJob(ctx context.Context, req *RunJobRequest) error {
+// @temporal-gen-v2 activity
+// @as-wrapper
+// @wrapper-prefix ControlPlaneJob
+func (a *Activities) runJob(ctx context.Context, jobID, executionID string) error {
 	activity.RecordHeartbeat(ctx, "starting")
 	stopHeartbeat := runnercontrolplane.HeartbeatUntilDone(ctx, func() { activity.RecordHeartbeat(ctx, "running") })
 	defer stopHeartbeat()
 
-	job, err := a.getJob(ctx, req.JobID)
+	job, err := a.getJob(ctx, jobID)
 	if err != nil {
 		return err
 	}
 	var execution app.RunnerJobExecution
-	if err := a.db.WithContext(ctx).Where(&app.RunnerJobExecution{ID: req.ExecutionID, RunnerJobID: req.JobID}).First(&execution).Error; err != nil {
+	if err := a.db.WithContext(ctx).Where(&app.RunnerJobExecution{ID: executionID, RunnerJobID: jobID}).First(&execution).Error; err != nil {
 		return fmt.Errorf("unable to get runner job execution: %w", err)
 	}
 	ctx = cctx.SetOrgIDContext(ctx, job.OrgID)
@@ -157,12 +156,12 @@ func (a *Activities) RunJob(ctx context.Context, req *RunJobRequest) error {
 	capture := errcapture.New()
 	ctx = errcapture.NewContext(ctx, capture)
 
-	executor, err := runnercontrolplane.NewExecutor(&executorClient{Activities: a}, a.l, runnercontrolplane.Config{GitRef: a.cfg.GitRef})
+	executor, err := runnercontrolplane.NewExecutor(a, a.l, runnercontrolplane.Config{GitRef: a.cfg.GitRef})
 	if err != nil {
 		return fmt.Errorf("unable to create control-plane executor: %w", err)
 	}
 	if err := executor.Execute(ctx, toRunnerJobModel(job), toRunnerExecutionModel(&execution)); err != nil {
-		if failureErr := a.ensureFailureResult(ctx, req.JobID, req.ExecutionID, err.Error()); failureErr != nil {
+		if failureErr := a.ensureFailureResult(ctx, jobID, executionID, err.Error()); failureErr != nil {
 			a.l.Warn("unable to persist control-plane failure result", zap.Error(failureErr))
 		}
 		if errors.Is(err, context.Canceled) {
@@ -178,18 +177,15 @@ type FinalizeOutcome struct {
 	Error  string                       `json:"error,omitempty"`
 }
 
-type FinalizeRequest struct {
-	JobID       string          `json:"job_id" validate:"required"`
-	ExecutionID string          `json:"execution_id" validate:"required"`
-	Outcome     FinalizeOutcome `json:"outcome"`
-}
-
 type FinalizeResponse struct {
 	Status app.RunnerJobExecutionStatus `json:"status"`
 }
 
-func (a *Activities) Finalize(ctx context.Context, req *FinalizeRequest) (*FinalizeResponse, error) {
-	job, err := a.getJob(ctx, req.JobID)
+// @temporal-gen-v2 activity
+// @as-wrapper
+// @wrapper-prefix ControlPlaneJob
+func (a *Activities) finalize(ctx context.Context, jobID, executionID string, outcome FinalizeOutcome) (*FinalizeResponse, error) {
+	job, err := a.getJob(ctx, jobID)
 	if err != nil {
 		return nil, err
 	}
@@ -198,12 +194,12 @@ func (a *Activities) Finalize(ctx context.Context, req *FinalizeRequest) (*Final
 
 	var execution app.RunnerJobExecution
 	if err := a.db.WithContext(ctx).
-		Where(&app.RunnerJobExecution{ID: req.ExecutionID, RunnerJobID: req.JobID}).
+		Where(&app.RunnerJobExecution{ID: executionID, RunnerJobID: jobID}).
 		First(&execution).Error; err != nil {
 		return nil, fmt.Errorf("unable to get runner job execution: %w", err)
 	}
 
-	execStatus := req.Outcome.Status
+	execStatus := outcome.Status
 	if execStatus == "" {
 		execStatus = app.RunnerJobExecutionStatusFinished
 	}
@@ -213,25 +209,25 @@ func (a *Activities) Finalize(ctx context.Context, req *FinalizeRequest) (*Final
 
 	description := "finished"
 	if execStatus != app.RunnerJobExecutionStatusFinished {
-		description = req.Outcome.Error
+		description = outcome.Error
 		if description == "" {
 			description = string(execStatus)
 		}
-		if err := a.ensureFailureResult(ctx, req.JobID, req.ExecutionID, req.Outcome.Error); err != nil {
+		if err := a.ensureFailureResult(ctx, jobID, executionID, outcome.Error); err != nil {
 			return nil, err
 		}
 	}
-	if _, err := a.UpdateJobExecution(ctx, req.JobID, req.ExecutionID, &models.ServiceUpdateRunnerJobExecutionRequest{Status: models.AppRunnerJobExecutionStatus(execStatus), StatusDescription: description}); err != nil {
+	if _, err := a.UpdateJobExecution(ctx, jobID, executionID, &models.ServiceUpdateRunnerJobExecutionRequest{Status: models.AppRunnerJobExecutionStatus(execStatus), StatusDescription: description}); err != nil {
 		return nil, err
 	}
-	if err := a.db.WithContext(ctx).Where(&app.RunnerJobExecution{ID: req.ExecutionID, RunnerJobID: req.JobID}).First(&execution).Error; err != nil {
+	if err := a.db.WithContext(ctx).Where(&app.RunnerJobExecution{ID: executionID, RunnerJobID: jobID}).First(&execution).Error; err != nil {
 		return nil, fmt.Errorf("unable to refresh runner job execution: %w", err)
 	}
 	jobStatus := jobStatusForExecution(execution.Status)
-	if err := a.updateJob(ctx, req.JobID, jobStatus, description); err != nil {
+	if err := a.updateJob(ctx, jobID, jobStatus, description); err != nil {
 		return nil, err
 	}
-	job, err = a.getJob(ctx, req.JobID)
+	job, err = a.getJob(ctx, jobID)
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +236,7 @@ func (a *Activities) Finalize(ctx context.Context, req *FinalizeRequest) (*Final
 		effectiveStatus = executionStatusForJob(job.Status)
 	}
 	if err := a.db.WithContext(ctx).
-		Model(&app.RunnerJob{ID: req.JobID}).
+		Model(&app.RunnerJob{ID: jobID}).
 		Update("finished_at", time.Now().UTC()).Error; err != nil {
 		return nil, fmt.Errorf("unable to update runner job finished_at: %w", err)
 	}
@@ -597,8 +593,8 @@ func (a *Activities) getJob(ctx context.Context, jobID string) (*app.RunnerJob, 
 	return &job, nil
 }
 
-func (c *executorClient) GetJob(ctx context.Context, jobID string) (*models.AppRunnerJob, error) {
-	job, err := c.Activities.getJob(ctx, jobID)
+func (a *Activities) GetJob(ctx context.Context, jobID string) (*models.AppRunnerJob, error) {
+	job, err := a.getJob(ctx, jobID)
 	if err != nil {
 		return nil, err
 	}
