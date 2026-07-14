@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -8,10 +8,11 @@ import { Tooltip } from '@/components/common/Tooltip'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getAppConfig, updateInstall, updateInstallInputs } from '@/lib'
+import { updateInstall, updateInstallInputs } from '@/lib'
 import { EditInputsFormModal } from './EditInputs'
 
 interface IEditInputs {
@@ -32,21 +33,7 @@ export const EditInputsFormModalContainer = ({ showNameField, ...props }: IEditI
   const [installName, setInstallName] = useState(install?.name ?? '')
   const formDirty = useRef(false)
 
-  const {
-    data: config,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['app-config', org.id, install?.app_id, install?.app_config_id],
-    queryFn: () =>
-      getAppConfig({
-        orgId: org.id,
-        appId: install.app_id,
-        appConfigId: install.app_config_id,
-        recurse: true,
-      }),
-    enabled: !!install?.app_id && !!install?.app_config_id,
-  })
+  const { appConfig: config, isLoading, error } = useInstallAppConfig()
 
   const { mutate: updateNameOnly, isPending: isUpdatingName } = useMutation({
     mutationFn: async () => {

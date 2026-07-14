@@ -4,8 +4,9 @@ import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { SyncedFilterContainer } from '@/components/common/SyncedFilter'
 import { ComponentTypeFilterDropdown } from '@/components/components/ComponentTypeFilter'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallComponents, getAppConfig, getComponentLabelKeys } from '@/lib'
+import { getInstallComponents, getComponentLabelKeys } from '@/lib'
 import { parseComponentOverrideInput } from '@/utils/install-utils'
 import { InstallComponentsTable, parseInstallComponentSummaryToTableData } from './InstallComponentsTable'
 
@@ -50,23 +51,7 @@ export const InstallComponentsTableContainer = ({
     enabled: !!org?.id && !!install?.id,
   })
 
-  const { data: configResult } = useQuery({
-    queryKey: [
-      'app-config',
-      org?.id,
-      install?.app_id,
-      install?.app_config_id,
-      'recurse',
-    ],
-    queryFn: () =>
-      getAppConfig({
-        orgId: org.id,
-        appId: install.app_id,
-        appConfigId: install.app_config_id,
-        recurse: true,
-      }),
-    enabled: !!org?.id && !!install?.app_config_id,
-  })
+  const { appConfig: configResult } = useInstallAppConfig()
 
   const components = componentsResult?.data ?? []
   const pagination = {

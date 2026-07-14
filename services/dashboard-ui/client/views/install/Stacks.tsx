@@ -13,6 +13,7 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
@@ -23,25 +24,7 @@ export const Stacks = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const { data: configResult, isLoading: isLoadingConfig } = useQuery({
-    queryKey: [
-      'app-config',
-      org?.id,
-      install?.app_id,
-      install?.app_config_id,
-      'recurse',
-    ],
-    queryFn: () =>
-      getAppConfig({
-        orgId: org.id,
-        appId: install.app_id,
-        appConfigId: install.app_config_id,
-        recurse: true,
-      }),
-    enabled: !!org?.id && !!install?.app_config_id,
-  })
-
-  const config = configResult
+  const { appConfig: config, isLoading: isLoadingConfig } = useInstallAppConfig()
 
   const { data: latestConfigs } = useQuery({
     queryKey: ['app-configs', org?.id, install?.app_id, 'latest'],

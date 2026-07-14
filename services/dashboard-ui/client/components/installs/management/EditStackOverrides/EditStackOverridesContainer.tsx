@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -9,8 +9,8 @@ import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import {
-  getAppConfig,
   createInstallConfig,
   updateInstallConfig,
 } from '@/lib'
@@ -26,17 +26,7 @@ export const EditStackOverridesModalContainer = ({
   const { install, refresh } = useInstall()
   const { addToast } = useToast()
 
-  const { data: appConfig } = useQuery({
-    queryKey: ['app-config', org?.id, install?.app_id, install?.app_config_id, 'recurse'],
-    queryFn: () =>
-      getAppConfig({
-        orgId: org.id,
-        appId: install.app_id,
-        appConfigId: install.app_config_id,
-        recurse: true,
-      }),
-    enabled: !!org?.id && !!install?.app_config_id,
-  })
+  const { appConfig } = useInstallAppConfig()
 
   const hasInstallConfig = Boolean(install?.install_config)
   const ic = install?.install_config
