@@ -22,6 +22,9 @@ type TDropdownNestingContext = {
 const DropdownNestingContext =
   createContext<TDropdownNestingContext | null>(null)
 
+const MENU_ITEM_SELECTOR =
+  'button:not([data-focus-guard]), a, [role="menuitem"], [tabindex]:not([tabindex="-1"]):not([data-focus-guard])'
+
 export interface IDropdown extends IButtonAsButton {
   alignment?: 'left' | 'right' | 'overlay'
   buttonClassName?: string
@@ -65,10 +68,18 @@ export const Dropdown = ({
   const triggerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
   const childPortals = useRef<Set<HTMLElement>>(new Set())
+  const pendingFocus = useRef(false)
   const parentNesting = useContext(DropdownNestingContext)
 
   const handleClose = useCallback(() => {
+    pendingFocus.current = false
     setIsOpen(false)
+  }, [])
+
+  const focusFirstItem = useCallback(() => {
+    const item = contentRef.current?.querySelector<HTMLElement>(MENU_ITEM_SELECTOR)
+    if (item) item.focus()
+    else pendingFocus.current = true
   }, [])
 
   const nestingContext = useRef<TDropdownNestingContext>({
@@ -95,6 +106,12 @@ export const Dropdown = ({
     },
     [parentNesting]
   )
+
+  useEffect(() => {
+    if (!isOpen || !contentEl || !pendingFocus.current) return
+    pendingFocus.current = false
+    contentEl.querySelector<HTMLElement>(MENU_ITEM_SELECTOR)?.focus()
+  }, [isOpen, contentEl])
 
   const isInsideTree = useCallback(
     (target: Node | null): boolean => {
@@ -362,7 +379,10 @@ export const Dropdown = ({
         type="button"
         variant={variant}
         onClick={() => {
-          if (!isOpen) setIsOpen(true)
+          if (!isOpen) {
+            setIsOpen(true)
+            focusFirstItem()
+          }
         }}
         onFocus={() => {
           if (!isOpen) setIsOpen(true)
@@ -371,14 +391,7 @@ export const Dropdown = ({
           if (e.key === 'ArrowDown') {
             e.preventDefault()
             if (!isOpen) setIsOpen(true)
-            requestAnimationFrame(() => {
-              const content = contentRef.current
-              if (!content) return
-              const focusable = content.querySelector<HTMLElement>(
-                'button:not([data-focus-guard]), a, [role="menuitem"], [tabindex]:not([tabindex="-1"]):not([data-focus-guard])'
-              )
-              focusable?.focus()
-            })
+            focusFirstItem()
           }
           if (e.key === 'Escape' && isOpen) {
             e.preventDefault()

@@ -89,6 +89,7 @@ const RunnerContent = ({
           process={processes[0]}
           settings={settings}
           shouldPoll
+          runnerBasePath={`/${org?.id}/installs/${installId}/runner`}
         />
       ) : (
         <div className="@container">
@@ -99,6 +100,7 @@ const RunnerContent = ({
                 process={process}
                 settings={settings}
                 shouldPoll
+                runnerBasePath={`/${org?.id}/installs/${installId}/runner`}
               />
             ))}
           </div>

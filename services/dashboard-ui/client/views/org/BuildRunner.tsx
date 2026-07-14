@@ -170,6 +170,7 @@ export const BuildRunner = () => {
                   process={processes[0]}
                   settings={settings}
                   shouldPoll
+                  runnerBasePath={`/${org?.id}/runner`}
                 />
               ) : (
                 <div className="@container">
@@ -180,6 +181,7 @@ export const BuildRunner = () => {
                         process={process}
                         settings={settings}
                         shouldPoll
+                        runnerBasePath={`/${org?.id}/runner`}
                       />
                     ))}
                   </div>
