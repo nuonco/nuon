@@ -118,9 +118,9 @@ export const Button = forwardRef<
       {
         '!border-primary-600 !hover:!border-primary-600':
           isActive && variant === 'tab',
-        '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md !bg-transparent !border-0 !shadow-none !text-cool-grey-800 dark:!text-white/70 hover:!bg-cool-grey-500/8 dark:hover:!bg-cool-grey-500/8 active:!bg-cool-grey-500/16 dark:active:!bg-cool-grey-500/16':
+        '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md !bg-transparent !border-0 !shadow-none !text-cool-grey-800 dark:!text-white/70 hover:!bg-cool-grey-500/8 dark:hover:!bg-cool-grey-500/8 focus:!bg-cool-grey-500/8 dark:focus:!bg-cool-grey-500/8 focus-visible:[--tw-outline-style:solid] focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-primary-400/80 active:!bg-cool-grey-500/16 dark:active:!bg-cool-grey-500/16':
           isMenuButton && variant !== 'danger',
-        '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md !bg-transparent !border-0 !shadow-none !text-red-800 dark:!text-red-500 hover:!bg-red-50 dark:hover:!bg-[#1D0D10]':
+        '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md !bg-transparent !border-0 !shadow-none !text-red-800 dark:!text-red-500 hover:!bg-red-50 dark:hover:!bg-[#1D0D10] focus:!bg-red-50 dark:focus:!bg-[#1D0D10] focus-visible:[--tw-outline-style:solid] focus-visible:outline-1 focus-visible:outline-offset-0 focus-visible:outline-red-400/80 dark:focus-visible:outline-red-500/50':
           isMenuButton && variant === 'danger',
       },
       className
