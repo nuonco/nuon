@@ -1,0 +1,107 @@
+---
+title: "Pulumi Components"
+description:
+  "Pulumi components allow you to provision infrastructure in your customer's
+  cloud account to power your install."
+icon: "layer-group"
+keywords: ["components", "Pulumi", "Pulumi guide", "pulumi type", "Pulumi runtime", "provision infrastructure", "Pulumi config", "Pulumi stack"]
+---
+
+Pulumi components allow you to deploy a Pulumi program from a public or connected
+repo, to provision infrastructure resources in customer installs.
+
+## Configuring a Pulumi component
+
+To configure a Pulumi component, specify a repo, the Pulumi runtime, and any
+stack configuration values the program requires.
+
+```toml components/<your-component>.toml
+# pulumi
+name    = "pulumi_infra"
+type    = "pulumi"
+runtime = "go"
+
+[connected_repo]
+repo      = "nuonco/kitchen-sink"
+directory = "components/pulumi"
+branch    = "main"
+
+[config]
+"aws:region"              = "{{.nuon.install_stack.outputs.region}}"
+"kitchen-sink:install_id" = "{{.nuon.install.id}}"
+
+[env_vars]
+PULUMI_SKIP_UPDATE_CHECK = "true"
+```
+
+The `runtime` field selects the language your Pulumi program is written in and
+must match the `runtime` declared in the project's `Pulumi.yaml`. Supported
+runtimes are `go`, `nodejs`, `python`, `dotnet`, `java`, and `yaml`.
+
+You can configure Pulumi components to use either a public repo (using a
+`public_repo` block) or a private GitHub repo (using a `connected_repo` block).
+Read more about VCS configuration [here](/guides/vcs).
+
+You can also put the Pulumi source inside of the same repo as the app, and point to it.
+
+<Note>
+If you include the Pulumi source in the app repo, you must push the entire repo and do a manual build of the component in the dashboard or CLI. The CLI's `nuon apps sync` will not recognize that the component has changed so will not do the build.
+</Note>
+
+By default Nuon uses the latest Pulumi CLI. To pin a specific version, set
+`pulumi_version`.
+
+```toml components/<your-component>.toml
+# pulumi
+name           = "pulumi_infra"
+type           = "pulumi"
+runtime        = "go"
+pulumi_version = "3.100.0"
+```
+
+## Configuring stack config
+
+Use the `[config]` block to set Pulumi stack configuration values, equivalent to
+`pulumi config set`. Keys use the `namespace:key` format — for example, `aws:region`
+targets the AWS provider, while a project-scoped key such as `kitchen-sink:install_id`
+is read by your program via `config.New(ctx, "kitchen-sink")`.
+
+Config values support [component variables](/guides/using-variables), so they
+can access inputs, other components, the sandbox, and details about the install
+itself using templating and interpolation.
+
+```toml components/<your-component>.toml
+[config]
+"aws:region"              = "{{.nuon.install_stack.outputs.region}}"
+"kitchen-sink:install_id" = "{{.nuon.install.id}}"
+```
+
+Use the `[env_vars]` block to pass environment variables into the Pulumi
+execution environment.
+
+## State Management
+
+All Pulumi state is managed by the Nuon data plane through the Nuon http-based
+API. The runner imports the prior state before each operation and uploads the
+updated state back to the control plane when the operation completes.
+
+Each execution of a Pulumi component in an install is visible in the plan and apply steps in the dashboard.
+
+The Enterprise edition has two additional features including requiring approvals of the plan and apply steps and showing diffs from previous runs.
+
+## Execution and Permissions
+
+The [runner](/concepts/runners) is responsible for executing Pulumi, and is
+provisioned as part of the initial Install Stack. e.g., in AWS, the
+CloudFormation stack creates a VPC, networking, ASG and an EC2 instance to start
+the runner. The runner is separate from the Install's infrastructure e.g.,
+Kubernetes cluster.
+
+To learn more about the runner, read the
+[Nuon Runner Architecture](https://nuon.co/blog/the-nuon-runner-architecture/#nuons-runner-model)
+blog post.
+
+## Per-install config overrides
+
+To override a Pulumi component's config for a single install without changing your app config, use
+[component overrides](/guides/component-overrides).
