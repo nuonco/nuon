@@ -9,6 +9,7 @@ import {
   ProcessCardSkeleton,
 } from '@/components/runners/ProcessCard'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
+import { RunnerStatusBanner } from '@/components/runners/RunnerStatusBanner'
 import { ManagementDropdownContainer } from '@/components/runners/management/ManagementDropdown'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -64,6 +65,8 @@ const RunnerContent = ({
           <ManagementDropdownContainer isInstallRunner settings={settings} />
         )}
       </div>
+
+      <RunnerStatusBanner />
 
       <Text variant="base" weight="strong">
         Processes
