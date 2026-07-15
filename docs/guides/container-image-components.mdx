@@ -160,6 +160,7 @@ section that matches your registry and the deployment kind your customers are us
 | AWS ECR | Self-hosted on GCP | [AWS ECR from a Self-Hosted-on-GCP Customer](#aws-ecr-from-a-self-hosted-on-gcp-customer) |
 | GCP Artifact Registry | Nuon-hosted (AWS) | [GAR for Nuon-hosted (AWS) customers](#gar-for-nuon-hosted-aws-customers) |
 | GCP Artifact Registry | Self-hosted on GCP | [GCP GAR Access](#gcp-gar-access) |
+| GCP Artifact Registry | Self-hosted on Azure | [GAR for Nuon self-hosted (Azure) customers](#gar-for-nuon-self-hosted-azure-customers) |
 
 If you have customers on both deployments, you can set both inputs on the same role or service account. Both modules add the new principals alongside any existing ones.
 
@@ -302,6 +303,39 @@ Requires `nuonco/gar-access/google` version `0.2.0` or later.
 In the customer's component config, set `gcp_gar.service_account_email` to the GAR-access SA email, and set
 `gcp_gar.workload_identity_provider` to the provider path for that customer's AWS account from the module's
 `workload_identity_provider_paths` output.
+
+#### GAR for Nuon self-hosted (Azure) customers
+
+If some of your customers run Nuon self-hosted on Azure, pass each customer's Azure user-assigned managed identity via
+`azure_principals`. You can use it alongside `customer_principals` and `aws_principals`. The module sets up a Workload
+Identity Pool and an OIDC provider per identity — trusting the Entra ID issuer for its tenant — and lets the federated
+identity impersonate the GAR-access SA.
+
+```hcl
+module "nuon_gar_access" {
+  source = "nuonco/gar-access/google"
+
+  project_id          = "<your-gcp-project>"
+  repository_location = "us-central1"
+  repositories        = ["<repo-name>"]
+
+  azure_principals = [
+    {
+      tenant_id    = "<azure-tenant-id>"
+      principal_id = "<managed-identity-principal-id>"
+    },
+  ]
+}
+
+output "azure_workload_identity_provider_paths" {
+  value = module.nuon_gar_access.azure_workload_identity_provider_paths
+}
+```
+
+`principal_id` is the managed identity's principal (object) ID — the `sub` claim Nuon's Azure ctl-api presents. In the
+customer's component config, set `gcp_gar.service_account_email` to the GAR-access SA email, and set
+`gcp_gar.workload_identity_provider` to the provider path for that customer's identity from the module's
+`azure_workload_identity_provider_paths` output.
 
 See the full set of `gcp_gar` fields in the [container-image config reference](/config-ref/container-image#gcp_gar).
 
