@@ -28,8 +28,9 @@ type InstallerSDKConfig struct {
 
 // InstallerSDKAWSConfig mirrors sdks/stack core.AWSConfig.
 type InstallerSDKAWSConfig struct {
-	Region      string `json:"region,omitempty"`
-	ClusterName string `json:"cluster_name,omitempty"`
+	Region            string `json:"region,omitempty"`
+	ClusterName       string `json:"cluster_name,omitempty"`
+	RunnerMachineType string `json:"runner_machine_type,omitempty"`
 
 	NuonSupportIAMRoleARNs []string `json:"nuon_support_iam_role_arns,omitempty"`
 
@@ -57,6 +58,7 @@ type InstallerSDKGCPConfig struct {
 	// provision time via the CLI. ctl-api only emits the Nuon-generated inputs.
 	RunnerInitScriptURL string `json:"runner_init_script_url,omitempty"`
 	RunnerAPIToken      string `json:"runner_api_token,omitempty"`
+	RunnerMachineType   string `json:"runner_machine_type,omitempty"`
 
 	ProvisionPermissions      []string `json:"provision_permissions,omitempty"`
 	ProvisionPredefinedRole   string   `json:"provision_predefined_role,omitempty"`
