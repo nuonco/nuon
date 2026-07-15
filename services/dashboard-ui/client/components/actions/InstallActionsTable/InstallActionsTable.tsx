@@ -10,6 +10,7 @@ import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig'
 import type { TActionConfigTriggerType, TInstallAction } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 import { ActionTriggerType } from '../ActionTriggerType'
@@ -23,13 +24,15 @@ export type InstallActionRow = {
   actionRunDuration: ReactNode
   labels: ReactNode
   href: string
+  removed: boolean
 }
 
 export function parseInstallActionsLatestRunsToTableData(
   actionsWithRuns: TInstallAction[],
   orgId: string,
   installId: string,
-  labelColors?: Record<string, string>
+  labelColors?: Record<string, string>,
+  removed = false
 ): InstallActionRow[] {
   return actionsWithRuns.map((actionWithRuns) => {
     const basePath = `/${orgId}/installs/${installId}`
@@ -94,6 +97,7 @@ export function parseInstallActionsLatestRunsToTableData(
         )
       })(),
       href: `${basePath}/actions/${actionWithRuns.action_workflow_id}`,
+      removed,
     }
   })
 }
@@ -104,8 +108,11 @@ const columns: ColumnDef<InstallActionRow>[] = [
     header: 'Action',
     cell: (info) => (
       <span>
-        <Text variant="body">
+        <Text variant="body" flex className="items-center gap-2">
           <Link href={info.row.original.href}>{info.getValue() as string}</Link>
+          {info.row.original.removed ? (
+            <RemovedFromAppConfigBadge kind="action" />
+          ) : null}
         </Text>
         <ID>{info.row.original.actionId as string}</ID>
       </span>

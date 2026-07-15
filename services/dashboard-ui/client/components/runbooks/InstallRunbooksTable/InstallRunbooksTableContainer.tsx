@@ -20,10 +20,10 @@ export const InstallRunbooksTableContainer = ({
   const { install, labelColors } = useInstall()
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
-  const synced = searchParams.get('synced') === 'false' ? false : undefined
+  const syncedOnly = searchParams.get('synced_only') === 'true'
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['install-runbooks', org?.id, install?.id, offset, q, synced],
+    queryKey: ['install-runbooks', org?.id, install?.id, offset, q],
     queryFn: () =>
       getInstallRunbooks({
         orgId: org!.id,
@@ -31,21 +31,48 @@ export const InstallRunbooksTableContainer = ({
         offset,
         limit: LIMIT,
         q,
-        synced,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
   })
 
+  const { data: removedResult } = useQuery({
+    queryKey: ['install-runbooks-removed', org?.id, install?.id, q],
+    queryFn: () =>
+      getInstallRunbooks({
+        orgId: org!.id,
+        installId: install!.id,
+        offset: 0,
+        limit: 100,
+        q,
+        synced: false,
+      }),
+    placeholderData: keepPreviousData,
+    refetchInterval: shouldPoll ? pollInterval : false,
+    enabled: !!org?.id && !!install?.id && !syncedOnly,
+  })
+
+  const removedRunbooks =
+    offset === 0 && !syncedOnly ? removedResult?.data ?? [] : []
+
+  const removedRows = parseInstallRunbooksToTableData(
+    removedRunbooks,
+    org?.id ?? '',
+    install?.id ?? '',
+    labelColors,
+    true
+  )
+  const currentRows = parseInstallRunbooksToTableData(
+    result?.data ?? [],
+    org?.id ?? '',
+    install?.id ?? '',
+    labelColors
+  )
+
   return (
     <InstallRunbooksTable
-      data={parseInstallRunbooksToTableData(
-        result?.data ?? [],
-        org?.id ?? '',
-        install?.id ?? '',
-        labelColors
-      )}
+      data={[...removedRows, ...currentRows]}
       isLoading={isLoading}
       filterActions={<SyncedFilterContainer />}
       pagination={{
