@@ -23,37 +23,51 @@ export const InstallComponentsTableContainer = ({
   const { org } = useOrg()
   const { install, labelColors } = useInstall()
   const offset = Number(searchParams.get('offset') ?? 0)
+  const q = searchParams.get('q') || undefined
+  const types = searchParams.get('types') || undefined
+  const labels = searchParams.get('labels') || undefined
+  const syncedOnly = searchParams.get('synced_only') === 'true'
 
   const { data: componentsResult, isLoading } = useQuery({
-    queryKey: [
-      'install-components',
-      org?.id,
-      install?.id,
-      offset,
-      searchParams.get('q'),
-      searchParams.get('types'),
-      searchParams.get('labels'),
-      searchParams.get('synced'),
-    ],
+    queryKey: ['install-components', org?.id, install?.id, offset, q, types, labels],
     queryFn: () =>
       getInstallComponents({
         orgId: org.id,
         installId: install.id,
         limit: LIMIT,
         offset,
-        q: searchParams.get('q') || undefined,
-        types: searchParams.get('types') || undefined,
-        labels: searchParams.get('labels') || undefined,
-        synced: searchParams.get('synced') === 'false' ? false : undefined,
+        q,
+        types,
+        labels,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
   })
 
+  const { data: removedResult } = useQuery({
+    queryKey: ['install-components-removed', org?.id, install?.id, q, types, labels],
+    queryFn: () =>
+      getInstallComponents({
+        orgId: org.id,
+        installId: install.id,
+        limit: 100,
+        offset: 0,
+        q,
+        types,
+        labels,
+        synced: false,
+      }),
+    placeholderData: keepPreviousData,
+    refetchInterval: shouldPoll ? pollInterval : false,
+    enabled: !!org?.id && !!install?.id && !syncedOnly,
+  })
+
   const { appConfig: configResult } = useInstallAppConfig()
 
   const components = componentsResult?.data ?? []
+  const removedComponents =
+    offset === 0 && !syncedOnly ? removedResult?.data ?? [] : []
   const pagination = {
     hasNext: componentsResult?.pagination?.hasNext ?? false,
     offset,
@@ -84,25 +98,38 @@ export const InstallComponentsTableContainer = ({
     }
   })
 
+  const removedRows = parseInstallComponentSummaryToTableData(
+    removedComponents,
+    [],
+    org?.id ?? '',
+    install?.id ?? '',
+    configConnections,
+    componentToggles,
+    labelColors,
+    overriddenComponentNames,
+    true
+  )
+  const currentRows = parseInstallComponentSummaryToTableData(
+    components,
+    deps,
+    org?.id ?? '',
+    install?.id ?? '',
+    configConnections,
+    componentToggles,
+    labelColors,
+    overriddenComponentNames
+  )
+
   return (
     <InstallComponentsTable
-      data={parseInstallComponentSummaryToTableData(
-        components,
-        deps,
-        org?.id ?? '',
-        install?.id ?? '',
-        configConnections,
-        componentToggles,
-        labelColors,
-        overriddenComponentNames
-      )}
+      data={[...removedRows, ...currentRows]}
       filterActions={
         <div className="flex items-center gap-3">
+          <SyncedFilterContainer />
           <LabelFilterDropdown
             queryKey={['component-label-keys', org.id, install?.app_id]}
             queryFn={() => getComponentLabelKeys({ orgId: org.id, appId: install.app_id })}
           />
-          <SyncedFilterContainer />
           <ComponentTypeFilterDropdown />
         </div>
       }
