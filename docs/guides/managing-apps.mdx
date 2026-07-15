@@ -71,3 +71,16 @@ readme       = "./README.md"
 ```
 
 The `readme` field points to a Markdown file rendered in the dashboard for each install. See the [Using READMEs](/guides/using-readmes) guide for details.
+
+### Label colors
+
+Give labels custom colors in the dashboard with a `label_colors` table in `metadata.toml`. Keys are label key names; values are hex color codes:
+
+```toml metadata.toml
+[label_colors]
+env      = "#FF5733"
+region   = "#33FF57"
+customer = "#3357FF"
+```
+
+The colors apply wherever those label keys appear in the dashboard — on apps, installs, and components. You can also set label colors directly in the dashboard; either source can be updated later, and a sync will reconcile the values from your config.
