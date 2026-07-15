@@ -293,14 +293,6 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 				},
 			},
 			{
-				Name: "installer.toml",
-				Schemas: []ConfigFileSchema{
-					{
-						Instance: &config.InstallerConfig{},
-					},
-				},
-			},
-			{
 				Name: "sandbox.toml",
 				Schemas: []ConfigFileSchema{
 					{
@@ -360,7 +352,7 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 						Name: "example_helm_chart.toml",
 						Schemas: []ConfigFileSchema{
 							{
-								Instance: &config.Component{},
+								Instance: &config.Component{Type: config.HelmChartComponentType},
 							},
 							{
 								Instance: &config.HelmChartComponentConfig{},
@@ -371,7 +363,7 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 						Name: "example_terraform_module.toml",
 						Schemas: []ConfigFileSchema{
 							{
-								Instance: &config.Component{},
+								Instance: &config.Component{Type: config.TerraformModuleComponentType},
 							},
 							{
 								Instance: &config.TerraformModuleComponentConfig{},
@@ -382,7 +374,7 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 						Name: "example_kubernetes_manifest.toml",
 						Schemas: []ConfigFileSchema{
 							{
-								Instance: &config.Component{},
+								Instance: &config.Component{Type: config.KubernetesManifestComponentType},
 							},
 							{
 								Instance: &config.KubernetesManifestComponentConfig{},

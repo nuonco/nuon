@@ -109,24 +109,16 @@ func NewDefaultReflector() *jsonschema.Reflector {
 	}
 }
 
-const (
-	StructTagOneofRequired                   = "oneof_required"
-	StructTagOneofRequiredGroupComponentType = "component_type"
-	StructTagOneofRequiredGroupGitRepository = "git_repository"
-)
-
-var (
-	StructTagOneOfRequiredGroups = []string{StructTagOneofRequiredGroupComponentType, StructTagOneofRequiredGroupGitRepository}
-	IgnoredProperties            = []string{
-		"source",
-		"helm_chart",
-		"terraform_module",
-		"docker_build",
-		"job",
-		"external_image",
-		"kubernetes_manifest",
-	}
-)
+var IgnoredProperties = []string{
+	"source",
+	"helm_chart",
+	"terraform_module",
+	"docker_build",
+	"job",
+	"external_image",
+	"kubernetes_manifest",
+	"pulumi",
+}
 
 type ConfigGen struct {
 	EnableDefaults          bool
@@ -278,24 +270,20 @@ func (g *ConfigGen) encodeConfigFile(cfd ConfigFileDefinition, name string) (*st
 		output.WriteString(fmt.Sprintf("#:schema %s/v1/general/config-schema/%s\n\n", g.schemaBaseURL(), slug))
 	}
 
-	for _, configFile := range cfd.Schemas {
-		schema := configFile.Schema()
-		if schema == nil {
-			continue
-		}
-
-		extractor := NewInstanceValueExtractor(configFile.Instance)
-
-		oneOFGroups := make(map[string]map[string]bool)
-		for _, s := range schema.OneOf {
-			oneOFGroups[s.Title] = make(map[string]bool)
-			oneOfRequired := oneOFGroups[s.Title]
-			for _, r := range s.Required {
-				oneOfRequired[r] = true
+	// Emit all scalar fields (across every schema) before any table headers so
+	// the concatenated output is valid TOML — top-level key/values must precede
+	// [table] sections.
+	for _, phase := range []encodePhase{phaseLines, phaseBlocks} {
+		for _, configFile := range cfd.Schemas {
+			schema := configFile.Schema()
+			if schema == nil {
+				continue
 			}
-		}
 
-		g.recursivelyEncode(schema, oneOFGroups, &output, "", false, g.EnableInfoComments, configFile.SkipNonRequired, extractor)
+			extractor := NewInstanceValueExtractor(configFile.Instance)
+
+			g.recursivelyEncode(schema, &output, "", false, g.EnableInfoComments, configFile.SkipNonRequired, extractor, phase)
+		}
 	}
 	return &output, nil
 }
