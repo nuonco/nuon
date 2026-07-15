@@ -12,8 +12,9 @@ import { EditInputsButton } from '@/components/installs/management/EditInputs'
 import { InputValue } from '@/components/installs/management/InputValue'
 import { ComponentOverridesList } from '@/components/install-overrides/ComponentOverridesList'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
-import { getAppConfig, getInstallCurrentInputs } from '@/lib'
+import { getInstallCurrentInputs } from '@/lib'
 import { normalizeAppInputGroups } from '@/utils/app-utils'
 import {
   COMPONENT_OVERRIDE_INPUT_GROUP,
@@ -31,17 +32,7 @@ export const CurrentInputs = () => {
     enabled: !!org?.id && !!install?.id,
   })
 
-  const { data: config, isLoading: configLoading } = useQuery({
-    queryKey: ['app-config', org?.id, install?.app_id, install?.app_config_id],
-    queryFn: () =>
-      getAppConfig({
-        orgId: org.id,
-        appId: install.app_id,
-        appConfigId: install.app_config_id,
-        recurse: true,
-      }),
-    enabled: !!org?.id && !!install?.app_id && !!install?.app_config_id,
-  })
+  const { appConfig: config, isLoading: configLoading } = useInstallAppConfig()
 
   const isLoading = inputsLoading || configLoading
   const redacted = inputs?.redacted_values ?? {}

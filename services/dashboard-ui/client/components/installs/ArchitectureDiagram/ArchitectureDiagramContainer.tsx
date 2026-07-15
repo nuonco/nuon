@@ -14,9 +14,10 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getInstallComponents, getInstallStack, getAppConfig, getInstallAppPermissionsConfig, getInstallAuditLog } from '@/lib'
+import { getInstallComponents, getInstallStack, getInstallAppPermissionsConfig, getInstallAuditLog } from '@/lib'
 import type { TCloudPlatform } from '@/types'
 import { downloadFileOnClick } from '@/utils/file-download'
 import { slugify } from '@/utils/string-utils'
@@ -51,22 +52,7 @@ const ArchitectureDiagramContainer = () => {
     enabled: !!org?.id && !!install?.id,
   })
 
-  const { data: appConfig } = useQuery({
-    queryKey: [
-      'app-config-diagram',
-      org?.id,
-      install?.app_id,
-      install?.app_config_id,
-    ],
-    queryFn: () =>
-      getAppConfig({
-        orgId: org.id!,
-        appId: install.app_id!,
-        appConfigId: install.app_config_id!,
-        recurse: true,
-      }),
-    enabled: !!org?.id && !!install?.app_id && !!install?.app_config_id,
-  })
+  const { appConfig } = useInstallAppConfig()
 
   const { data: permissionsConfig } = useQuery({
     queryKey: ['install-permissions-config-diagram', org?.id, install?.id],
