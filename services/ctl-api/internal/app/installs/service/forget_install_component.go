@@ -87,11 +87,20 @@ func (s *service) ForgetInstallComponent(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
-// getAppConfigComponentIDs returns a map of component IDs currently in the app config
+// getAppConfigComponentIDs returns the set of component IDs that are in the given app config
+// version AND still exist as components.
+//
+// AppConfig.ComponentIDs is the authoritative per-version list — unlike ComponentConfigConnection
+// rows, which are pinned to the version in which a component's config last changed and so miss a
+// component whose config was unchanged across a version bump.
+//
+// ComponentIDs is an immutable snapshot that is never rewritten, so it retains the IDs of
+// components that have since been deleted. Deletion is a hard delete, so intersecting with the
+// components that still exist drops those stale entries — otherwise a component could no longer be
+// forgotten after its app component was deleted.
 func (s *service) getAppConfigComponentIDs(ctx context.Context, appConfigID string) (map[string]bool, error) {
 	var appConfig app.AppConfig
 	res := s.db.WithContext(ctx).
-		Preload("ComponentConfigConnections").
 		Where("id = ?", appConfigID).
 		First(&appConfig)
 
@@ -99,10 +108,22 @@ func (s *service) getAppConfigComponentIDs(ctx context.Context, appConfigID stri
 		return nil, fmt.Errorf("unable to get app config: %w", res.Error)
 	}
 
-	// Build map of active component IDs from ComponentConfigConnections (source of truth)
-	componentIDs := make(map[string]bool)
-	for _, ccc := range appConfig.ComponentConfigConnections {
-		componentIDs[ccc.ComponentID] = true
+	if len(appConfig.ComponentIDs) == 0 {
+		return map[string]bool{}, nil
+	}
+
+	var existingIDs []string
+	res = s.db.WithContext(ctx).
+		Model(&app.Component{}).
+		Where("id IN ?", []string(appConfig.ComponentIDs)).
+		Pluck("id", &existingIDs)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get components: %w", res.Error)
+	}
+
+	componentIDs := make(map[string]bool, len(existingIDs))
+	for _, id := range existingIDs {
+		componentIDs[id] = true
 	}
 
 	return componentIDs, nil

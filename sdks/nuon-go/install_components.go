@@ -117,6 +117,16 @@ func (c *client) TeardownInstallComponent(ctx context.Context, installID, compon
 	return resp.Payload, nil
 }
 
+func (c *client) ForgetInstallComponent(ctx context.Context, installID, componentID string) error {
+	_, err := c.genClient.Operations.ForgetInstallComponent(&operations.ForgetInstallComponentParams{
+		InstallID:   installID,
+		ComponentID: componentID,
+		Context:     ctx,
+		Req:         map[string]any{},
+	}, c.getOrgIDAuthInfo())
+	return err
+}
+
 func (c *client) TeardownInstallComponents(ctx context.Context, installID string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.TeardownInstallComponents(&operations.TeardownInstallComponentsParams{
 		InstallID: installID,
