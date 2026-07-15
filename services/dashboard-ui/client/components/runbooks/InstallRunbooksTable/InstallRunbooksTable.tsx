@@ -11,7 +11,9 @@ import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { Tooltip } from '@/components/common/Tooltip'
 import { RunRunbookButton } from '@/components/runbooks/RunRunbook/RunRunbook'
+import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig'
 import type { TInstallRunbook } from '@/lib/ctl-api/installs/runbooks'
 
 export type TInstallRunbookRow = {
@@ -24,13 +26,15 @@ export type TInstallRunbookRow = {
   href: string
   latestRunHref: string | null
   installRunbook: TInstallRunbook
+  removed?: boolean
 }
 
 export function parseInstallRunbooksToTableData(
   runbooks: TInstallRunbook[],
   orgId: string,
   installId: string,
-  labelColors?: Record<string, string>
+  labelColors?: Record<string, string>,
+  removed = false
 ): TInstallRunbookRow[] {
   return runbooks.map((ir) => {
     const basePath = `/${orgId}/installs/${installId}`
@@ -87,6 +91,7 @@ export function parseInstallRunbooksToTableData(
         return workflowId ? `${basePath}/workflows/${workflowId}` : null
       })(),
       installRunbook: ir,
+      removed,
     }
   })
 }
@@ -97,8 +102,11 @@ const columns: ColumnDef<TInstallRunbookRow>[] = [
     header: 'Runbook',
     cell: (info) => (
       <span>
-        <Text variant="body">
+        <Text variant="body" flex className="items-center gap-2">
           <Link href={info.row.original.href}>{info.getValue() as string}</Link>
+          {info.row.original.removed ? (
+            <RemovedFromAppConfigBadge kind="runbook" />
+          ) : null}
         </Text>
         <ID>{info.row.original.runbookId}</ID>
       </span>
@@ -144,12 +152,29 @@ const columns: ColumnDef<TInstallRunbookRow>[] = [
         variant="ghost"
       >
         <Menu>
-          <RunRunbookButton
-            installRunbook={info.row.original.installRunbook}
-            isMenuButton
-          >
-            Run runbook
-          </RunRunbookButton>
+          {info.row.original.removed ? (
+            <Tooltip
+              className="block !w-full"
+              position="left"
+              tipContent={
+                <Text variant="subtext">
+                  This runbook is no longer in the install's app config version.
+                </Text>
+              }
+            >
+              <Button isMenuButton disabled className="pointer-events-none w-full">
+                Run runbook
+                <Icon variant="PlayIcon" />
+              </Button>
+            </Tooltip>
+          ) : (
+            <RunRunbookButton
+              installRunbook={info.row.original.installRunbook}
+              isMenuButton
+            >
+              Run runbook
+            </RunRunbookButton>
+          )}
           {info.row.original.latestRunHref ? (
             <Button href={info.row.original.latestRunHref} isMenuButton>
               Latest run

@@ -17,6 +17,7 @@ import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
 import { ComponentOverrideCard } from '@/components/install-overrides/ComponentOverrideCard'
+import { RemovedFromAppConfigBanner } from '@/components/installs/RemovedFromAppConfig'
 import { groupComponentOverrideInputs } from '@/utils/install-utils'
 import { Toggle } from '@/components/common/form/Toggle'
 import { ManagementDropdown } from '@/components/install-components/management/ManagementDropdown'
@@ -72,6 +73,7 @@ export const InstallComponentDetail = () => {
   const config = appConfig?.component_config_connections?.find(
     (c) => c.component_id === componentId
   )
+  const removed = !isLoadingConfig && !!appConfig && !config
 
   const installValues = install?.install_inputs?.at(0)?.values
   const overrideCard = groupComponentOverrideInputs(
@@ -182,6 +184,7 @@ export const InstallComponentDetail = () => {
                 currentDeployStatus={isDisabled ? 'disabled' : latestDeploy?.status_v2?.status}
                 installComponent={installComponent}
                 isConfigLoading={isLoadingConfig}
+                removed={removed}
               />
             </div>
           )}
@@ -189,6 +192,7 @@ export const InstallComponentDetail = () => {
 
         <div className="grid grid-cols-1 @5xl:grid-cols-12 gap-6">
           <div className="@5xl:col-span-8 flex flex-col gap-6">
+            {removed ? <RemovedFromAppConfigBanner kind="component" /> : null}
             {isToggleable && component ? (
               <div className="flex justify-end">
                 <Toggle

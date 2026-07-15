@@ -2,15 +2,15 @@ import { type ChangeEvent } from 'react'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 
 interface ISyncedFilter {
-  showSynced: boolean
+  syncedOnly: boolean
   onChange: (e: ChangeEvent<HTMLInputElement>) => void
 }
 
-export const SyncedFilter = ({ showSynced, onChange }: ISyncedFilter) => {
+export const SyncedFilter = ({ syncedOnly, onChange }: ISyncedFilter) => {
   return (
     <CheckboxInput
-      labelProps={{ labelText: 'Synced' }}
-      checked={showSynced}
+      labelProps={{ labelText: 'Synced only' }}
+      checked={syncedOnly}
       onChange={onChange}
     />
   )

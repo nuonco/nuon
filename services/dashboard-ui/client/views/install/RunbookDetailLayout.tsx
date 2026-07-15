@@ -7,14 +7,18 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { Tooltip } from '@/components/common/Tooltip'
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { RunRunbookButton } from '@/components/runbooks/RunRunbook/RunRunbook'
+import { RemovedFromAppConfigBanner } from '@/components/installs/RemovedFromAppConfig'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { TabNav } from '@/components/navigation/TabNav'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallRunbook } from '@/lib'
+import { getInstallRunbook, getInstallRunbooks } from '@/lib'
 
 export const RunbookDetailLayout = () => {
   const { runbookId } = useParams()
@@ -33,6 +37,22 @@ export const RunbookDetailLayout = () => {
     enabled: !!org?.id && !!install?.id && !!runbookId,
     refetchInterval: 10000,
   })
+
+  const { data: removedResult } = useQuery({
+    queryKey: ['install-runbooks-removed', org?.id, install?.id],
+    queryFn: () =>
+      getInstallRunbooks({
+        orgId: org!.id,
+        installId: install!.id,
+        limit: 100,
+        offset: 0,
+        synced: false,
+      }),
+    enabled: !!org?.id && !!install?.id,
+  })
+  const removed = (removedResult?.data ?? []).some(
+    (r) => r.runbook_id === runbookId || r.id === runbookId
+  )
 
   const runbook = installRunbook?.runbook
   const latestConfig = runbook?.configs?.[0]
@@ -144,13 +164,36 @@ export const RunbookDetailLayout = () => {
             </HeadingGroup>
 
             {installRunbook ? (
-              <RunRunbookButton
-                installRunbook={installRunbook}
-                variant="primary"
-              />
+              removed ? (
+                <Tooltip
+                  position="left"
+                  tipContent={
+                    <Text variant="subtext">
+                      This runbook is no longer in the install's app config
+                      version.
+                    </Text>
+                  }
+                >
+                  <Button variant="primary" disabled>
+                    Run runbook
+                    <Icon variant="PlayIcon" />
+                  </Button>
+                </Tooltip>
+              ) : (
+                <RunRunbookButton
+                  installRunbook={installRunbook}
+                  variant="primary"
+                />
+              )
             ) : null}
           </div>
         </header>
+
+        {removed ? (
+          <div className="px-6 pt-6">
+            <RemovedFromAppConfigBanner kind="runbook" />
+          </div>
+        ) : null}
 
         <PageSection>
           <TabNav

@@ -14,6 +14,7 @@ import { Tooltip } from '@/components/common/Tooltip'
 import { ComponentType } from '@/components/components/ComponentType'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
 import { QuickComponentManagementDropdown } from '@/components/install-components/management/QuickComponentManagementDropdown'
+import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig'
 import type { TComponentConfig, TInstallComponent } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 
@@ -35,6 +36,7 @@ export type InstallComponentRow = {
   action: ReactNode
   dependencies: ReactNode
   labels: ReactNode
+  removed?: boolean
 }
 
 export function parseInstallComponentSummaryToTableData(
@@ -45,7 +47,8 @@ export function parseInstallComponentSummaryToTableData(
   configConnections?: TComponentConfig[],
   componentToggles?: { [key: string]: boolean },
   labelColors?: Record<string, string>,
-  overriddenComponentNames?: Set<string>
+  overriddenComponentNames?: Set<string>,
+  removed = false
 ): InstallComponentRow[] {
   return components.map((component) => {
     const depIndex = deps?.findIndex((dep) => dep?.id === component?.id)
@@ -151,9 +154,11 @@ export function parseInstallComponentSummaryToTableData(
             installComponent={component}
             orgId={orgId}
             installId={installId}
+            removed={removed}
           />
         </div>
       ),
+      removed,
     }
   })
 }
@@ -164,8 +169,11 @@ const columns: ColumnDef<InstallComponentRow>[] = [
     header: 'Component name',
     cell: (info) => (
       <span>
-        <Text variant="body">
+        <Text variant="body" flex className="items-center gap-2">
           <Link href={info.row.original.href}>{info.getValue() as string}</Link>
+          {info.row.original.removed ? (
+            <RemovedFromAppConfigBadge kind="component" />
+          ) : null}
         </Text>
         <ID>{info.row.original.componentId as string}</ID>
       </span>

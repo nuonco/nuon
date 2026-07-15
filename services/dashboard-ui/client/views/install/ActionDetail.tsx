@@ -19,16 +19,20 @@ import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
 import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { InstallActionRunTimeline } from '@/components/actions/InstallActionRunTimeline'
+import { RemovedFromAppConfigBanner } from '@/components/installs/RemovedFromAppConfig'
+import { Tooltip } from '@/components/common/Tooltip'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { Panel } from '@/components/surfaces/Panel'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getInstallAction, getInstallState } from '@/lib'
 import type { TActionConfigTriggerType } from '@/types'
 import { sortByIdx } from '@/utils/action-utils'
+import { isActionInAppConfig } from '@/utils/app-config-membership'
 
 export const ActionDetail = () => {
   const { actionId } = useParams()
@@ -55,6 +59,9 @@ export const ActionDetail = () => {
     queryFn: () => getInstallState({ orgId: org.id, installId: install.id }),
     enabled: !!org?.id && !!install?.id,
   })
+
+  const { appConfig } = useInstallAppConfig()
+  const removed = !!appConfig && !isActionInAppConfig(appConfig, actionId)
 
   const installActionBreakGlassRole =
     action?.action_workflow?.configs?.[0]?.break_glass_role_arn
@@ -185,14 +192,31 @@ export const ActionDetail = () => {
               {action?.action_workflow?.configs?.[0]?.triggers?.find(
                 (t) => t.type === 'manual'
               ) ? (
-                <InstallActionManualRunButton
-                  action={action.action_workflow}
-                  actionConfigId={action.action_workflow.configs[0].id}
-                  variant="primary"
-                >
-                  Run action
-                  <Icon variant="PlayIcon" />
-                </InstallActionManualRunButton>
+                removed ? (
+                  <Tooltip
+                    position="left"
+                    tipContent={
+                      <Text variant="subtext">
+                        This action is no longer in the install's app config
+                        version.
+                      </Text>
+                    }
+                  >
+                    <Button variant="primary" disabled>
+                      Run action
+                      <Icon variant="PlayIcon" />
+                    </Button>
+                  </Tooltip>
+                ) : (
+                  <InstallActionManualRunButton
+                    action={action.action_workflow}
+                    actionConfigId={action.action_workflow.configs[0].id}
+                    variant="primary"
+                  >
+                    Run action
+                    <Icon variant="PlayIcon" />
+                  </InstallActionManualRunButton>
+                )
               ) : null}
             </div>
           </div>
@@ -236,6 +260,12 @@ export const ActionDetail = () => {
             </div>
           ) : null}
         </header>
+
+        {removed ? (
+          <div className="px-6 pt-6">
+            <RemovedFromAppConfigBanner kind="action" />
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-1 @5xl:grid-cols-12 flex-1">
           <div className="@5xl:col-span-8 flex flex-col gap-6">
