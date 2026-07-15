@@ -74,6 +74,9 @@ type ServiceCreateHelmComponentConfigRequest struct {
 	// references
 	References []string `json:"references"`
 
+	// skip crds
+	SkipCrds bool `json:"skip_crds,omitempty"`
+
 	// skip noops
 	SkipNoops bool `json:"skip_noops,omitempty"`
 
