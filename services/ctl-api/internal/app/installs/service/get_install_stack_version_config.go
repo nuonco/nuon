@@ -58,19 +58,22 @@ func (s *service) GetInstallStackVersionConfig(ctx *gin.Context) {
 	}
 	cfg.PhoneHomeURL = stackVersion.PhoneHomeURL
 
-	// Merge the install's latest stored input values: a missing inputs row is
-	// not an error.
+	// Fill in the install's latest stored values for the customer-source inputs
+	// that buildInstallerSDKConfig already seeded (names with empty values). Only
+	// update existing keys — vendor-source inputs are intentionally excluded from
+	// install_inputs, matching the classic tfvars renderer. A missing inputs row
+	// is not an error.
 	var ins app.InstallInputs
 	if err := s.db.WithContext(reqCtx).
 		Where(app.InstallInputs{InstallID: stackVersion.InstallID}).
 		Order("created_at DESC").
 		Limit(1).
 		First(&ins).Error; err == nil {
-		if cfg.InstallInputs == nil {
-			cfg.InstallInputs = map[string]string{}
-		}
 		for k, v := range ins.Values {
-			if v != nil {
+			if v == nil {
+				continue
+			}
+			if _, ok := cfg.InstallInputs[k]; ok {
 				cfg.InstallInputs[k] = *v
 			}
 		}
