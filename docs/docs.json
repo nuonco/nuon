@@ -292,6 +292,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/038-spacelift-and-cli-automation",
           "updates/037-split-install-stack-tfvars",
           "updates/036-toggleable-components",
           "updates/035-runbooks-and-readmes",
