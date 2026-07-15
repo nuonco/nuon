@@ -7,7 +7,6 @@ import { Expand } from '@/components/common/Expand'
 import { Text } from '@/components/common/Text'
 import { useHelmK8sPlanFilter } from '@/hooks/use-helm-k8s-plan-filter'
 import type { THelmPlan, THelmPlanChange } from '@/types'
-import { diffLines } from '@/utils/code-utils'
 import { parseHelmPlan } from '@/utils/helm-utils'
 import {
   HELM_ACTION_BADGE_THEME,
@@ -67,6 +66,7 @@ export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
               <Expand
                 id={`change-${idx}`}
                 key={`${change.release}-${idx}`}
+                isOpen
                 className={`border-l-4 ${borderColor}`}
                 headerClassName={`!px-4 sm:!px-6 ${bgColor}`}
                 heading={
@@ -99,7 +99,7 @@ export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
                   language="yaml"
                   isDiff
                 >
-                  {diffLines(change.before, change.after)}
+                  {change.diff}
                 </CodeBlock>
               </Expand>
             )

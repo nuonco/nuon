@@ -1107,7 +1107,7 @@ export interface paths {
   };
   "/v1/general/config-schema": {
     /**
-     * Get jsonschema for config file
+     * Get jsonschema for config file (deprecated query form)
      * @description Return jsonschemas for Nuon configs. These can be used in frontmatter in most editors that have a TOML LSP (such as
      * [Taplo](https://taplo.tamasfe.dev/) configured.
      *
@@ -1132,6 +1132,34 @@ export interface paths {
      * - job
      */
     get: operations["GetConfigSchema"];
+  };
+  "/v1/general/config-schema/{type}": {
+    /**
+     * Get jsonschema for a config file type
+     * @description Return jsonschemas for Nuon configs. These can be used in frontmatter in most editors that have a TOML LSP (such as
+     * [Taplo](https://taplo.tamasfe.dev/) configured.
+     *
+     * ```toml
+     * #:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+     *
+     * description = "description"
+     * ```
+     *
+     * You can pass in a valid source argument to render within a specific config file:
+     *
+     * - input
+     * - input-group
+     * - installer
+     * - sandbox
+     * - runner
+     * - docker_build
+     * - container_image
+     * - helm
+     * - terraform
+     * - runbook
+     * - job
+     */
+    get: operations["GetConfigSchemaByType"];
   };
   "/v1/general/current-user": {
     /**
@@ -6244,10 +6272,6 @@ export interface components {
       src_static_credentials?: components["schemas"]["iam.StaticCredentials"];
     };
     "kube.ClusterInfo": {
-      /**
-       * @description If either an AWS auth or Azure auth is passed in, we will automatically use it to resolve credentials and set
-       * them in the environment.
-       */
       aws_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_aws_credentials.Config"];
       azure_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_azure_credentials.Config"];
       /** @description CAData is the base64 encoded public certificate */
@@ -6299,7 +6323,6 @@ export interface components {
       builtin_env_vars?: {
         [key: string]: string;
       };
-      /** @description optional fields based on the configuration */
       cluster_info?: components["schemas"]["kube.ClusterInfo"];
       gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
       id?: string;
@@ -17357,7 +17380,7 @@ export interface operations {
     };
   };
   /**
-   * Get jsonschema for config file
+   * Get jsonschema for config file (deprecated query form)
    * @description Return jsonschemas for Nuon configs. These can be used in frontmatter in most editors that have a TOML LSP (such as
    * [Taplo](https://taplo.tamasfe.dev/) configured.
    *
@@ -17388,6 +17411,77 @@ export interface operations {
         type?: string;
         /** @description deprecated alias for type; responses include a Deprecation header when used */
         source?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get jsonschema for a config file type
+   * @description Return jsonschemas for Nuon configs. These can be used in frontmatter in most editors that have a TOML LSP (such as
+   * [Taplo](https://taplo.tamasfe.dev/) configured.
+   *
+   * ```toml
+   * #:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+   *
+   * description = "description"
+   * ```
+   *
+   * You can pass in a valid source argument to render within a specific config file:
+   *
+   * - input
+   * - input-group
+   * - installer
+   * - sandbox
+   * - runner
+   * - docker_build
+   * - container_image
+   * - helm
+   * - terraform
+   * - runbook
+   * - job
+   */
+  GetConfigSchemaByType: {
+    parameters: {
+      path: {
+        /** @description config file type, e.g. sandbox, terraform, action */
+        type: string;
       };
     };
     responses: {

@@ -125,7 +125,8 @@ function ActivityCell({ install }: { install: TInstall }) {
 
 export function parseInstallsToTableData(
   installs: TInstall[],
-  orgId: string
+  orgId: string,
+  labelColorsByApp?: Record<string, Record<string, string>>
 ): InstallRow[] {
   return installs.map((install) => ({
     appHref: `/${install.org_id}/apps/${install.app_id}`,
@@ -161,7 +162,7 @@ export function parseInstallsToTableData(
           {Object.keys(lbls)
             .sort()
             .map((k) => (
-              <LabelBadge key={k} variant="code" size="sm" labelKey={k} labelValue={lbls[k]} customColor={install?.app?.label_colors?.[k]} />
+              <LabelBadge key={k} variant="code" size="sm" labelKey={k} labelValue={lbls[k]} customColor={labelColorsByApp?.[install.app_id ?? '']?.[k]} />
             ))}
         </span>
       )

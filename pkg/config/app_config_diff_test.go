@@ -261,6 +261,7 @@ func (s *AppConfigDiffSuite) TestHelmChartDiff() {
 				ChartName: "prometheus",
 				ValuesMap: map[string]string{"replicas": "3", "log_level": "info"},
 				Namespace: "observability",
+				SkipCRDs:  true,
 			},
 		},
 	}
@@ -273,6 +274,9 @@ func (s *AppConfigDiffSuite) TestHelmChartDiff() {
 	ns := findChild(chart, "namespace")
 	s.Require().NotNil(ns)
 	s.Equal(diff.OpChange, ns.Diff.Op)
+	skipCRDs := findChild(chart, "skip_crds")
+	s.Require().NotNil(skipCRDs)
+	s.Equal(diff.OpChange, skipCRDs.Diff.Op)
 
 	vals := findChild(chart, "values")
 	s.Require().NotNil(vals)

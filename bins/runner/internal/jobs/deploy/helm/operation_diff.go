@@ -48,7 +48,7 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 	client.DependencyUpdate = true
 	client.Timeout = h.state.timeout
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
-	client.SkipCRDs = false
+	client.SkipCRDs = h.state.plan.HelmDeployPlan.SkipCRDs
 	client.SubNotes = true
 	client.DisableOpenAPIValidation = false
 	client.Description = ""
@@ -126,7 +126,7 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 	client.GenerateName = false
 	client.NameTemplate = ""
 	client.OutputDir = ""
-	client.SkipCRDs = false
+	client.SkipCRDs = h.state.plan.HelmDeployPlan.SkipCRDs
 	client.SubNotes = true
 	client.DisableOpenAPIValidation = false
 	client.Replace = false

@@ -28,6 +28,7 @@ export interface IInstallGroupDiff {
   groupName: string
   installs: InstallDiffEntry[]
   isLoading?: boolean
+  labelColors?: Record<string, string>
 }
 
 const SKELETON_ROW_WIDTHS = ['9rem', '7rem', '11rem', '8rem']
@@ -90,7 +91,7 @@ const ChangeSummary = ({ install }: { install: InstallDiffEntry }) => {
   )
 }
 
-export const InstallGroupDiff = ({ groupName, installs, isLoading = false }: IInstallGroupDiff) => {
+export const InstallGroupDiff = ({ groupName, installs, isLoading = false, labelColors }: IInstallGroupDiff) => {
   const focusCtx = useConfigDiffFocus()
 
   if (isLoading && installs.length === 0) {
@@ -130,7 +131,7 @@ export const InstallGroupDiff = ({ groupName, installs, isLoading = false }: IIn
             <div className="flex items-center gap-3 w-full">
               <Text weight="strong">{install.installName || install.installId}</Text>
               {labelEntries.map(([k, v]) => (
-                <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" variant="code" className="shrink-0" />
+                <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" variant="code" className="shrink-0" customColor={labelColors?.[k]} />
               ))}
               <ChangeSummary install={install} />
             </div>

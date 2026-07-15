@@ -9,6 +9,7 @@ import {
   ProcessCardSkeleton,
 } from '@/components/runners/ProcessCard'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
+import { RunnerStatusBanner } from '@/components/runners/RunnerStatusBanner'
 import { ManagementDropdownContainer } from '@/components/runners/management/ManagementDropdown'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -65,6 +66,8 @@ const RunnerContent = ({
         )}
       </div>
 
+      <RunnerStatusBanner />
+
       <Text variant="base" weight="strong">
         Processes
       </Text>
@@ -89,6 +92,7 @@ const RunnerContent = ({
           process={processes[0]}
           settings={settings}
           shouldPoll
+          runnerBasePath={`/${org?.id}/installs/${installId}/runner`}
         />
       ) : (
         <div className="@container">
@@ -99,6 +103,7 @@ const RunnerContent = ({
                 process={process}
                 settings={settings}
                 shouldPoll
+                runnerBasePath={`/${org?.id}/installs/${installId}/runner`}
               />
             ))}
           </div>

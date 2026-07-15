@@ -1,0 +1,13 @@
+.label-badge-value {
+  background-color: color-mix(in srgb, var(--label-color) 10%, white);
+  color: color-mix(in srgb, var(--label-color) 88%, black);
+  border-color: color-mix(in srgb, var(--label-color) 35%, white) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .label-badge-value {
+    background-color: color-mix(in srgb, var(--label-color) 25%, var(--color-dark-grey-700));
+    color: color-mix(in srgb, var(--label-color) 62%, white);
+    border-color: color-mix(in srgb, var(--label-color) 45%, var(--color-dark-grey-700)) !important;
+  }
+}

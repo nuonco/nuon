@@ -27,3 +27,13 @@ export const getAppLabels = ({
     path: `apps/${appId}/labels`,
     orgId,
   })
+
+export const toLabelColorMap = (
+  data?: TAppLabelsResponse
+): Record<string, string> => {
+  const colors: Record<string, string> = {}
+  for (const lk of data?.labels ?? []) {
+    colors[lk.key] = lk.color
+  }
+  return colors
+}

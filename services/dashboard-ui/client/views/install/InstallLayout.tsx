@@ -23,6 +23,7 @@ import type { TNavItem } from '@/types'
 
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
 import { InstallProvider } from '@/providers/install-provider'
+import { InstallAppConfigProvider } from '@/providers/install-app-config-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 
@@ -31,20 +32,22 @@ export const InstallLayout = () => {
 
   return (
     <InstallProvider installId={params?.installId} shouldPoll>
-      <PageSidebarProvider>
-        <ToastProvider>
-          <SurfacesProvider>
-            <InstallTemplate />
-          </SurfacesProvider>
-        </ToastProvider>
-      </PageSidebarProvider>
+      <InstallAppConfigProvider>
+        <PageSidebarProvider>
+          <ToastProvider>
+            <SurfacesProvider>
+              <InstallTemplate />
+            </SurfacesProvider>
+          </ToastProvider>
+        </PageSidebarProvider>
+      </InstallAppConfigProvider>
     </InstallProvider>
   )
 }
 
 const InstallTemplate = () => {
   const { org } = useOrg()
-  const { install } = useInstall()
+  const { install, labelColors } = useInstall()
   const hasRunbooks = !!org?.features?.runbooks
   const hasNotebooks = !!org?.features?.notebooks
 
@@ -170,7 +173,7 @@ const InstallTemplate = () => {
                   )}
                   {install.labels &&
                     Object.entries(install.labels).map(([key, value]) => (
-                      <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} customColor={install?.app?.label_colors?.[key]} />
+                      <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} customColor={labelColors?.[key]} />
                     ))}
                 </div>
                 <ID>{install.id}</ID>

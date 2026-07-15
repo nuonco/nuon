@@ -1,5 +1,3 @@
-import { Banner } from '@/components/common/Banner'
-import { Text } from '@/components/common/Text'
 import { Select, type SelectOption } from '@/components/common/form/Select'
 
 const ROLE_TYPE_CONFIG = {
@@ -24,7 +22,6 @@ interface IRoleSelector {
   onChange?: (value: string) => void
   name?: string
   disabled?: boolean
-  hideWhenEmpty?: boolean
 }
 
 export const RoleSelector = ({
@@ -35,21 +32,7 @@ export const RoleSelector = ({
   onChange,
   name,
   disabled,
-  hideWhenEmpty,
 }: IRoleSelector) => {
-  if (!isLoading && !isError && roles.length === 0) {
-    if (hideWhenEmpty) {
-      return null
-    }
-    return (
-      <Banner theme="warn">
-        <Text variant="body">
-          No execution roles are available for this operation. Add or enable a role in your install stack to continue.
-        </Text>
-      </Banner>
-    )
-  }
-
   const defaultRole = roles.find((r) => r.default)
 
   const roleOption = (role: TAvailableRole, value: string): SelectOption => ({
@@ -70,14 +53,16 @@ export const RoleSelector = ({
     ? 'Loading available roles…'
     : isError
       ? 'Failed to load available roles'
-      : 'If unset, the default role is used.'
+      : roles.length === 0
+        ? 'No roles available from install stack outputs'
+        : 'If unset, the default role is used.'
 
   return (
     <Select
       name={name}
       value={value ?? ''}
       onChange={(e) => onChange?.(e.target.value)}
-      disabled={disabled || isLoading || isError}
+      disabled={disabled || isLoading || isError || roles.length === 0}
       options={options}
       placeholder={defaultRole ? defaultRole.name : 'Use default role'}
       labelProps={{ labelText: 'Execution role (optional)' }}

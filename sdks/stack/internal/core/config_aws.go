@@ -12,6 +12,10 @@ type AWSConfig struct {
 	// getClusterName: install input "cluster_name" if set, else install_id.
 	ClusterName string `json:"cluster_name,omitempty"`
 
+	// RunnerMachineType is the EC2 instance type for the runner host, from the
+	// app runner config (default per platform). Nuon-generated, not customer-set.
+	RunnerMachineType string `json:"runner_machine_type,omitempty"`
+
 	// NuonSupportIAMRoleARNs lists Nuon control-plane IAM role ARNs that may
 	// assume the operation roles. Empty falls back to the customer's account
 	// root, matching the TF module's control_plane_assume default.

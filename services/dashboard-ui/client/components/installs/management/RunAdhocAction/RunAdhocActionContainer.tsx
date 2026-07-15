@@ -32,7 +32,6 @@ export const RunAdhocActionModalContainer = ({
   const [selectedRole, setSelectedRole] = useState<string>(
     initialValues?.role || ''
   )
-  const [rolesUnavailable, setRolesUnavailable] = useState(false)
 
   const {
     mutate,
@@ -103,7 +102,6 @@ export const RunAdhocActionModalContainer = ({
       installId={install.id}
       initialValues={initialValues}
       isPending={isLoading}
-      rolesUnavailable={rolesUnavailable}
       error={error}
       onSubmit={(body) => mutate(body)}
       onDraftResume={handleDraftResume}
@@ -114,7 +112,6 @@ export const RunAdhocActionModalContainer = ({
           principalType="action"
           value={selectedRole}
           onChange={setSelectedRole}
-          onAvailabilityChange={(available) => setRolesUnavailable(!available)}
         />
       }
       {...props}

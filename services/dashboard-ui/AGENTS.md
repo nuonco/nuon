@@ -951,3 +951,62 @@ e2e/
 
 `e2e/flows/` contains structured markdown describing test scenarios. These are the source-of-truth — update the flow markdown, then regenerate or update the corresponding spec in `e2e/specs/`. See `e2e/flows/README.md` for the format.
 
+## Screenshotting the Running Dashboard (agent workflow)
+
+When verifying a UI change, take a real screenshot of the running dashboard instead of relying on Ladle stories or guessing. This authenticates against the **local dev stack** the same way the e2e setup does — no personal credentials, no browser login.
+
+**Prerequisites:**
+
+- Local stack running: admin API (`:8082`), public API (`:8081`), dashboard (`:4000`).
+- Playwright chromium installed (`bunx playwright install chromium`).
+
+**How it works** (mirrors `e2e/global-setup.ts`):
+
+1. `POST http://127.0.0.1:8082/v1/general/seed-user` with header `X-Nuon-Admin-Email: <email>` returns `{ api_token }`. The admin API trusts this header locally — use **`seed@nuon.co`** (the shared seed account, already used across the e2e setup) so no personal email is committed. Override with your own nuon.co email via `NUON_DEV_EMAIL` if you need to see your own orgs.
+2. List orgs/apps with the token (`GET :8081/v1/orgs`, `GET :8081/v1/apps` with `X-Nuon-Org-ID`) to find what to navigate to.
+3. Inject the token as the `X-Nuon-Auth` cookie on `127.0.0.1` and drive the page with Playwright.
+
+**Gotchas that will waste your time if you skip them:**
+
+- **Do NOT `waitUntil: 'networkidle'`** — the SPA polls (SSE + `refetchInterval`), so the network never goes idle and `goto` times out. Use `waitUntil: 'domcontentloaded'` then `waitFor` a selector unique to the page.
+- **Dark mode** is `prefers-color-scheme`-based (no `.dark` class), so set `colorScheme: 'dark'` on the Playwright context — that's what triggers the app's dark styles.
+- Use `deviceScaleFactor: 2`+ for crisp screenshots; write them to a tmp dir.
+
+**Reusable script** (`bun run <file>.mjs`, or `node`):
+
+```js
+import { chromium } from 'playwright-core'
+
+const ADMIN = 'http://127.0.0.1:8082'
+const PUB = 'http://127.0.0.1:8081'
+const APP = 'http://127.0.0.1:4000'
+const EMAIL = process.env.NUON_DEV_EMAIL ?? 'seed@nuon.co'
+
+const seed = await fetch(`${ADMIN}/v1/general/seed-user`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'X-Nuon-Admin-Email': EMAIL },
+  body: '{}',
+})
+const { api_token } = JSON.parse((await seed.text()).match(/^\{[^}]*\}/)[0])
+
+// Discover an org + app (or hardcode ids you already know)
+const orgs = await (await fetch(`${PUB}/v1/orgs`, { headers: { Authorization: `Bearer ${api_token}` } })).json()
+const orgId = orgs[0].id
+const apps = await (await fetch(`${PUB}/v1/apps`, { headers: { Authorization: `Bearer ${api_token}`, 'X-Nuon-Org-ID': orgId } })).json()
+const appId = apps[0].id
+
+const path = `/${orgId}/apps/${appId}/labels` // whatever page you're verifying
+const browser = await chromium.launch()
+for (const scheme of ['light', 'dark']) {
+  const ctx = await browser.newContext({ colorScheme: scheme, viewport: { width: 1280, height: 800 }, deviceScaleFactor: 2 })
+  await ctx.addCookies([{ name: 'X-Nuon-Auth', value: api_token, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Lax' }])
+  const page = await ctx.newPage()
+  await page.goto(`${APP}${path}`, { waitUntil: 'domcontentloaded' })
+  await page.getByRole('heading').first().waitFor({ timeout: 15000 }).catch(() => {})
+  await page.waitForTimeout(1500)
+  await page.screenshot({ path: `/tmp/shot-${scheme}.png`, fullPage: true })
+  await ctx.close()
+}
+await browser.close()
+```
+

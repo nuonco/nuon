@@ -1,6 +1,6 @@
-import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
 import { ShutdownRunnerControl } from '@/components/runners/management/ShutdownRunnerControl'
@@ -9,13 +9,13 @@ import type { TRunnerProcess } from '@/types'
 interface IProcessManagementDropdown {
   process: TRunnerProcess
   runnerId: string
-  onViewSystemLogs?: () => void
+  systemLogsHref?: string
 }
 
 export const ProcessManagementDropdown = ({
   process,
   runnerId,
-  onViewSystemLogs,
+  systemLogsHref,
 }: IProcessManagementDropdown) => {
   return (
     <Dropdown
@@ -32,14 +32,11 @@ export const ProcessManagementDropdown = ({
           <ShutdownRunnerControl isMenuButton isManaged runnerId={runnerId} processId={process.id} />
         ) : null}
 
-        {process.log_stream_id && onViewSystemLogs ? (
-          <Button
-            isMenuButton
-            onClick={onViewSystemLogs}
-          >
+        {process.log_stream_id && systemLogsHref ? (
+          <Link href={systemLogsHref}>
             View system logs
             <Icon variant="TerminalWindowIcon" />
-          </Button>
+          </Link>
         ) : null}
       </Menu>
     </Dropdown>

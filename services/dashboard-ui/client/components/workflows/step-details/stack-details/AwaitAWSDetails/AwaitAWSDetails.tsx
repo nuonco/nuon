@@ -46,10 +46,13 @@ function parseTfvars(contents: unknown): TfvarsEnvelope {
 
   if (typeof raw === 'object' && raw !== null) {
     const rec = raw as Record<string, unknown>
+    const inputs = String(rec.inputs_tfvars ?? '')
+    const secrets = String(rec.secrets_tfvars ?? '')
+    const legacy = String(rec.tfvars ?? '')
     return {
-      inputs: String(rec.inputs_tfvars ?? ''),
+      inputs: inputs || (secrets ? '' : legacy),
       providerInputs: String(rec.provider_tfvars ?? ''),
-      secrets: String(rec.secrets_tfvars ?? ''),
+      secrets,
     }
   }
 
@@ -385,26 +388,28 @@ cd install-stacks/aws`
           </span>
           <Code variant="preformated">{inputsFile}</Code>
         </Card>
-        <Card>
-          <span className="flex justify-between items-center">
-            <Text>
-              Save this as <code>secrets.auto.tfvars</code>
-            </Text>
-            <span className="flex gap-2 items-center">
-              <ClickToCopyButton textToCopy={secretsTfvars} />
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() =>
-                  createFileDownload(secretsTfvars, 'secrets.auto.tfvars')
-                }
-              >
-                Download
-              </Button>
+        {secretsTfvars ? (
+          <Card>
+            <span className="flex justify-between items-center">
+              <Text>
+                Save this as <code>secrets.auto.tfvars</code>
+              </Text>
+              <span className="flex gap-2 items-center">
+                <ClickToCopyButton textToCopy={secretsTfvars} />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    createFileDownload(secretsTfvars, 'secrets.auto.tfvars')
+                  }
+                >
+                  Download
+                </Button>
+              </span>
             </span>
-          </span>
-          <Code variant="preformated">{secretsTfvars}</Code>
-        </Card>
+            <Code variant="preformated">{secretsTfvars}</Code>
+          </Card>
+        ) : null}
       </div>
 
       <Divider />

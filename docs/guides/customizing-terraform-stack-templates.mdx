@@ -5,14 +5,36 @@ icon: "code-fork"
 keywords: ["installs", "stacks", "terraform", "install-stacks", "customize", "fork"]
 ---
 
-The Terraform templates for provisioning Stacks live in the open-source
-[`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) repo. The defaults work out of the box for most
-customers, but if you need to meet specific networking, compliance, or naming requirements you can fork the repo, modify
-the relevant cloud directory (`aws/` or `gcp/`), and point your customers at your fork.
+The Terraform stack templates live in the open-source
+[`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) repo. The defaults work out of the box in most cases,
+but if you need to meet specific networking, compliance, or naming requirements you can fork the repo, or create your own customer terraform module from scratch.
 
-The runner has some requirements that the Stack must fulfill. Each cloud has its own contract — the
+The runner and control plane have some requirements that the Stack must fulfill. Each cloud has its own contract — the
 shape is similar but the resource types and payload keys differ. As long as your fork preserves the contract for the
 clouds you support, you can change anything else freely.
+
+## How the templates read their configuration
+
+Each stack template fetches internal configuration from the Nuon control plane using the [`nuonco/stack` Terraform
+provider](/guides/nuon-stack-terraform-provider), then layers the customer-provided inputs and secrets over that. 
+
+```hcl
+data "stack_config" "this" {
+  phone_home_id = var.phone_home_id
+}
+
+locals {
+  runner_id                  = data.stack_config.this.runner_id
+  runner_api_url             = data.stack_config.this.runner_api_url
+  phone_home_url             = data.stack_config.this.phone_home_url
+  nuon_support_iam_role_arns = data.stack_config.this.aws.nuon_support_iam_role_arns
+  # ...
+}
+```
+
+If you fork a module, keep this pattern: the customer supplies only `phone_home_id`, an optional `api_url`, the target
+cloud region, and any secret values — everything else comes from the data source. The attribute reference for every
+value the data source exposes is in [The Nuon Stack Terraform Provider](/guides/nuon-stack-terraform-provider).
 
 ## AWS
 
@@ -50,8 +72,8 @@ Attached to the instance via an instance profile. The inline policy must allow:
 - One IAM role per `[operation_role]`, `[[break_glass_role]]`, and `[[custom_role]]` block declared in `stack.toml`.
 - Trust policy must allow `sts:AssumeRole` from:
   - The runner role ARN — the runner assumes them when executing components or actions.
-  - The Nuon control-plane principals (`var.nuon_support_iam_role_arns`, falling back to account root) — used for
-    ad-hoc actions and break-glass operations initiated from ctl-api.
+  - The Nuon control-plane principals (`data.stack_config.this.aws.nuon_support_iam_role_arns`, falling back to account
+    root) — used for ad-hoc actions and break-glass operations initiated from ctl-api.
 - Permissions on each role come from your `stack.toml` (`provision_inline_policy`,
   `provision_managed_policy_arns`, etc.). The stack's job is to translate those into IAM resources.
 - **Role names must match `each.key` from `stack.toml` verbatim.** ctl-api looks roles up by exact name, and the
@@ -60,9 +82,10 @@ Attached to the instance via an instance profile. The inline policy must allow:
 
 ### Phone-home payload
 
-After `terraform apply` succeeds, the stack POSTs a JSON payload to `var.phone_home_url`. ctl-api persists every key
-in this payload as an install stack output, accessible from app templates as
-`nuon.install_stack.outputs.<key>`.
+After `terraform apply` succeeds, the stack reports a JSON payload to the control plane — either through the
+[`stack_phone_home` resource](/guides/nuon-stack-terraform-provider#stack-phone-home-resource) or by POSTing to the
+`phone_home_url` from the data source. ctl-api persists every key in this payload as an install stack output,
+accessible from app templates as `nuon.install_stack.outputs.<key>`.
 
 The required keys (matching the CloudFormation phone-home Lambda payload exactly):
 
@@ -79,7 +102,7 @@ The required keys (matching the CloudFormation phone-home Lambda payload exactly
 | `runner_asg_name`, `runner_log_group_name` | Used by the runner management UI. |
 | `provision_iam_role_arn`, `maintenance_iam_role_arn`, `deprovision_iam_role_arn` | Empty string when the corresponding role isn't declared. |
 | `break_glass_role_arns`, `custom_role_arns` | Maps of role-name → ARN. |
-| `install_inputs` | Echo of `var.install_inputs`. |
+| `install_inputs` | Echo of the install inputs (`data.stack_config.this.install_inputs`). |
 | `<secret_name>_arn` | One key per secret declared in `stack.toml`, flattened into the top-level payload. |
 
 ## GCP
@@ -114,7 +137,8 @@ Attached to the runner instance. The IAM policy must allow:
 
 ### Phone-home payload
 
-After `terraform apply` succeeds, the stack POSTs a JSON payload to `var.phone_home_url`. Required keys:
+After `terraform apply` succeeds, the stack reports a JSON payload to the control plane (via the `stack_phone_home`
+resource or a POST to the `phone_home_url` from the data source). Required keys:
 
 | Key | Notes |
 | --- | --- |
@@ -127,7 +151,7 @@ After `terraform apply` succeeds, the stack POSTs a JSON payload to `var.phone_h
 | `provision_sa_email`, `maintenance_sa_email`, `deprovision_sa_email` | Empty string when the corresponding role isn't declared. |
 | `break_glass_sa_emails`, `custom_sa_emails` | Maps of role-name → SA email. |
 | `gke_node_pool_sa_email` | Pre-existing GKE node pool SA, or one created by the stack when `var.gke_node_pool_sa_email` is empty. |
-| `install_inputs` | Echo of `var.install_inputs`. |
+| `install_inputs` | Echo of the install inputs (`data.stack_config.this.install_inputs`). |
 | `<secret_name>` | One key per secret declared in `stack.toml`, flattened into the top-level payload (Secret Manager secret names, not ARNs). |
 
 ## What you can customize freely
@@ -144,9 +168,16 @@ After `terraform apply` succeeds, the stack POSTs a JSON payload to `var.phone_h
   ```hcl
   module "nuon" {
     source = "github.com/nuonco/install-stacks//aws"
-    # ...
+
+    phone_home_id = var.phone_home_id
+    aws = {
+      region = "us-west-2"
+    }
   }
   ```
+
+  The module reads the rest of its configuration from the control plane via the `stack_config` data source, so you
+  only pass `phone_home_id`, the target region, and any secret overrides.
 
 ## Contributing
 

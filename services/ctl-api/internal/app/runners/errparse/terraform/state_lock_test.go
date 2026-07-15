@@ -8,12 +8,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-func parseStateLock(raw string) compositeerrors.CompositeError {
-	return stateLockParser{}.Parse(&errparse.ParseContext{Raw: raw})
+func parseStateLockRaw(raw string) compositeerrors.CompositeError {
+	return parseStateLock(&errparse.ParseContext{Raw: raw})
 }
 
 func TestParse_StateLock(t *testing.T) {
-	ce := parseStateLock(readFixture(t, "state_lock.txt"))
+	ce := parseStateLockRaw(readFixture(t, "state_lock.txt"))
 	if ce == nil {
 		t.Fatal("expected a composite error, got nil")
 	}
@@ -63,7 +63,7 @@ func TestParse_StateLock(t *testing.T) {
 // not swallow a normal terraform diagnostic.
 func TestParse_OrdinaryErrorIsNotStateLock(t *testing.T) {
 	raw := readFixture(t, "invalid_reference.txt")
-	if ce := parseStateLock(raw); ce != nil {
+	if ce := parseStateLockRaw(raw); ce != nil {
 		t.Fatalf("state-lock parser must defer on an ordinary error, got %T", ce)
 	}
 	if _, ok := parse(raw).(*TerraformError); !ok {

@@ -7,7 +7,9 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -22,15 +24,79 @@ type CompositeerrorsSection struct {
 
 	// heading
 	Heading string `json:"heading,omitempty"`
+
+	// kind
+	Kind CompositeerrorsSectionKind `json:"kind,omitempty"`
 }
 
 // Validate validates this compositeerrors section
 func (m *CompositeerrorsSection) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateKind(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this compositeerrors section based on context it is used
+func (m *CompositeerrorsSection) validateKind(formats strfmt.Registry) error {
+	if swag.IsZero(m.Kind) { // not required
+		return nil
+	}
+
+	if err := m.Kind.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("kind")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("kind")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this compositeerrors section based on the context it is used
 func (m *CompositeerrorsSection) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateKind(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *CompositeerrorsSection) contextValidateKind(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Kind) { // not required
+		return nil
+	}
+
+	if err := m.Kind.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("kind")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("kind")
+		}
+
+		return err
+	}
+
 	return nil
 }
 

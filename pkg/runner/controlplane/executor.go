@@ -13,9 +13,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 	runnerctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	"github.com/nuonco/nuon/pkg/runner/errcapture"
 	"github.com/nuonco/nuon/pkg/runner/errs"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
 	containerimagebuild "github.com/nuonco/nuon/pkg/runner/jobs/build/containerimage"
@@ -29,9 +31,11 @@ import (
 	ocicopy "github.com/nuonco/nuon/pkg/runner/oci/copy"
 	ociresolve "github.com/nuonco/nuon/pkg/runner/oci/resolve"
 	"github.com/nuonco/nuon/pkg/runner/settings"
+	"github.com/nuonco/nuon/pkg/runner/workspace"
 )
 
 type Client interface {
+	GetJob(ctx context.Context, jobID string) (*models.AppRunnerJob, error)
 	GetJobPlanJSON(ctx context.Context, jobID string) (string, error)
 	GetJobCompositePlan(ctx context.Context, jobID string) (*models.PlantypesCompositePlan, error)
 	UpdateJobExecution(ctx context.Context, jobID, executionID string, req *models.ServiceUpdateRunnerJobExecutionRequest) (*models.AppRunnerJobExecution, error)
@@ -144,12 +148,32 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 		zap.String("runner_job_execution.id", execution.ID),
 		zap.String("log_stream.id", job.LogStreamID),
 	)
+	defer func() {
+		if err := workspace.CleanupByID(execution.ID); err != nil {
+			l.Warn("unable to clean up execution workspace", zap.Error(err))
+		}
+	}()
+
+	capture := errcapture.FromContext(ctx)
+	if capture == nil {
+		capture = errcapture.New()
+		ctx = errcapture.NewContext(ctx, capture)
+	}
+	l = l.WithOptions(zap.WrapCore(func(core zapcore.Core) zapcore.Core {
+		return zapcore.NewTee(core, capture.Core())
+	}))
 
 	handler, err := e.handler(job)
 	if err != nil {
 		l.Error("unable to resolve job handler", zap.Error(err))
 		return err
 	}
+	executionCtx, cancelExecution := context.WithCancelCause(ctx)
+	defer cancelExecution(nil)
+	monitorDone := make(chan struct{})
+	defer close(monitorDone)
+	go e.monitorJob(executionCtx, cancelExecution, monitorDone, job.ID, l, handler)
+	ctx = executionCtx
 
 	ctx = runnerctx.SetJobMetadata(ctx, runnerctx.JobMetadata{RunnerJobID: job.ID, RunnerJobExecutionID: execution.ID})
 	var tracer trace.Tracer
@@ -184,20 +208,30 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 		sandboxMode, err := e.getSandboxMode(ctx, job.ID)
 		if err != nil {
 			jobErr = fmt.Errorf("unable to check sandbox mode: %w", err)
-			_, _ = e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{
+			updated, _ := e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{
 				Status:            statusForError(jobErr),
 				StatusDescription: jobErr.Error(),
 			})
+			if updated != nil {
+				if terminalErr := terminalExecutionError(updated.Status); errors.Is(terminalErr, context.Canceled) || errors.Is(terminalErr, context.DeadlineExceeded) {
+					jobErr = terminalErr
+				}
+			}
 			return jobErr
 		}
 		if sandboxMode != nil {
 			l.Info("sandbox mode active for control-plane build; skipping real build execution")
 			if err := e.executeSandboxBuild(ctx, job, execution, sandboxMode); err != nil {
 				jobErr = fmt.Errorf("sandbox build: %w", err)
-				_, _ = e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{
+				updated, _ := e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{
 					Status:            statusForError(jobErr),
 					StatusDescription: jobErr.Error(),
 				})
+				if updated != nil {
+					if terminalErr := terminalExecutionError(updated.Status); errors.Is(terminalErr, context.Canceled) || errors.Is(terminalErr, context.DeadlineExceeded) {
+						jobErr = terminalErr
+					}
+				}
 				return jobErr
 			}
 			return nil
@@ -231,8 +265,13 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 	}
 
 	for _, step := range steps {
-		if _, err := e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{Status: step.status}); err != nil {
+		updated, err := e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{Status: step.status})
+		if err != nil {
 			jobErr = fmt.Errorf("unable to mark step %s started: %w", step.name, err)
+			return jobErr
+		}
+		if err := terminalExecutionError(updated.Status); err != nil {
+			jobErr = err
 			return jobErr
 		}
 		stepCtx := runnerctx.SetJobMetadata(ctx, runnerctx.JobMetadata{RunnerJobID: job.ID, RunnerJobExecutionID: execution.ID, StepName: step.name})
@@ -254,16 +293,24 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 		stepCtx = runnerctx.SetLogger(stepCtx, stepL)
 		stepL.Info("executing job step "+step.name, zap.String("step", step.name))
 		if err := step.fn(stepCtx); err != nil {
+			if cause := context.Cause(ctx); cause != nil {
+				err = fmt.Errorf("%w: %v", cause, err)
+			}
 			stepL.Error("job step "+step.name+" failed", zap.String("step", step.name), zap.Error(err))
 			if stepSpan != nil {
 				stepSpan.RecordError(err)
 				stepSpan.SetStatus(codes.Error, err.Error())
 				stepSpan.End()
 			}
-			_, _ = e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{
+			updated, _ := e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{
 				Status:            statusForError(err),
 				StatusDescription: fmt.Sprintf("%s: %s", step.name, err.Error()),
 			})
+			if updated != nil {
+				if terminalErr := terminalExecutionError(updated.Status); errors.Is(terminalErr, context.Canceled) || errors.Is(terminalErr, context.DeadlineExceeded) {
+					err = terminalErr
+				}
+			}
 			if step.name == "execute" || step.name == "outputs" {
 				_ = handler.Cleanup(ctx, job, execution)
 			}
@@ -275,11 +322,13 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 		}
 	}
 
-	_, err = e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{Status: models.AppRunnerJobExecutionStatusFinished})
+	updated, err := e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{Status: models.AppRunnerJobExecutionStatusFinished})
 	if err != nil {
 		jobErr = err
+		return err
 	}
-	return err
+	jobErr = terminalExecutionError(updated.Status)
+	return jobErr
 }
 
 func (e *Executor) handler(job *models.AppRunnerJob) (jobs.JobHandler, error) {
@@ -300,7 +349,59 @@ func statusForError(err error) models.AppRunnerJobExecutionStatus {
 	if errors.Is(err, context.DeadlineExceeded) {
 		return models.AppRunnerJobExecutionStatusTimedDashOut
 	}
+	if errors.Is(err, context.Canceled) {
+		return models.AppRunnerJobExecutionStatusCancelled
+	}
 	return models.AppRunnerJobExecutionStatusFailed
+}
+
+func terminalExecutionError(status models.AppRunnerJobExecutionStatus) error {
+	switch status {
+	case models.AppRunnerJobExecutionStatusCancelled:
+		return context.Canceled
+	case models.AppRunnerJobExecutionStatusTimedDashOut:
+		return context.DeadlineExceeded
+	case models.AppRunnerJobExecutionStatusFailed:
+		return errors.New("runner job execution failed")
+	default:
+		return nil
+	}
+}
+
+func (e *Executor) monitorJob(ctx context.Context, cancel context.CancelCauseFunc, done <-chan struct{}, jobID string, l *zap.Logger, handler jobs.JobHandler) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-done:
+			return
+		case <-ticker.C:
+		}
+
+		job, err := e.client.GetJob(ctx, jobID)
+		if err != nil {
+			l.Warn("unable to fetch job cancellation status", zap.Error(err))
+			continue
+		}
+		var cause error
+		switch job.Status {
+		case models.AppRunnerJobStatusCancelled:
+			cause = context.Canceled
+		case models.AppRunnerJobStatusTimedDashOut:
+			cause = context.DeadlineExceeded
+		case models.AppRunnerJobStatusFailed:
+			cause = errors.New("runner job failed")
+		default:
+			continue
+		}
+		if err := handler.GracefulShutdown(ctx, job, l); err != nil {
+			l.Error("unable to gracefully shut down job", zap.Error(err))
+		}
+		cancel(cause)
+		return
+	}
 }
 
 type noopLifecycle struct{}

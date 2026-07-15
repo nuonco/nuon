@@ -28,8 +28,9 @@ type InstallerSDKConfig struct {
 
 // InstallerSDKAWSConfig mirrors sdks/stack core.AWSConfig.
 type InstallerSDKAWSConfig struct {
-	Region      string `json:"region,omitempty"`
-	ClusterName string `json:"cluster_name,omitempty"`
+	Region            string `json:"region,omitempty"`
+	ClusterName       string `json:"cluster_name,omitempty"`
+	RunnerMachineType string `json:"runner_machine_type,omitempty"`
 
 	NuonSupportIAMRoleARNs []string `json:"nuon_support_iam_role_arns,omitempty"`
 
@@ -57,6 +58,7 @@ type InstallerSDKGCPConfig struct {
 	// provision time via the CLI. ctl-api only emits the Nuon-generated inputs.
 	RunnerInitScriptURL string `json:"runner_init_script_url,omitempty"`
 	RunnerAPIToken      string `json:"runner_api_token,omitempty"`
+	RunnerMachineType   string `json:"runner_machine_type,omitempty"`
 
 	ProvisionPermissions      []string `json:"provision_permissions,omitempty"`
 	ProvisionPredefinedRole   string   `json:"provision_predefined_role,omitempty"`
@@ -64,6 +66,12 @@ type InstallerSDKGCPConfig struct {
 	MaintenancePredefinedRole string   `json:"maintenance_predefined_role,omitempty"`
 	DeprovisionPermissions    []string `json:"deprovision_permissions,omitempty"`
 	DeprovisionPredefinedRole string   `json:"deprovision_predefined_role,omitempty"`
+
+	// Per-policy custom roles (policy name → permissions): one custom role per
+	// policy.
+	ProvisionPolicies   map[string][]string `json:"provision_policies,omitempty"`
+	MaintenancePolicies map[string][]string `json:"maintenance_policies,omitempty"`
+	DeprovisionPolicies map[string][]string `json:"deprovision_policies,omitempty"`
 
 	BreakGlassRoles map[string]InstallerSDKGCPRole `json:"break_glass_roles,omitempty"`
 	CustomRoles     map[string]InstallerSDKGCPRole `json:"custom_roles,omitempty"`
@@ -89,4 +97,7 @@ type InstallerSDKGCPRole struct {
 	Permissions    []string `json:"permissions,omitempty"`
 	PredefinedRole string   `json:"predefined_role,omitempty"`
 	Enabled        bool     `json:"enabled,omitempty"`
+
+	// Per-policy custom roles (policy name → permissions).
+	Policies map[string][]string `json:"policies,omitempty"`
 }

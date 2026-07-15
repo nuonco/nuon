@@ -2,7 +2,7 @@ import { createContext, useEffect, useMemo, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
-import { getApp, getAppLabels } from '@/lib'
+import { getApp, getAppLabels, toLabelColorMap } from '@/lib'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { ProviderError } from '@/components/layout/ProviderError'
@@ -43,13 +43,7 @@ export function AppProvider({
     enabled: !!org.id && !!appId,
   })
 
-  const labelColors = useMemo(() => {
-    const colors: Record<string, string> = {}
-    for (const lk of labelsData?.labels ?? []) {
-      colors[lk.key] = lk.color
-    }
-    return colors
-  }, [labelsData])
+  const labelColors = useMemo(() => toLabelColorMap(labelsData), [labelsData])
 
   useEffect(() => {
     if (error && app) {

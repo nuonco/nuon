@@ -26,7 +26,6 @@ interface IInstallActionManualRunModal extends Omit<IModal, 'onSubmit'> {
   action: TAction
   actionConfigId: string
   isLoading: boolean
-  rolesUnavailable?: boolean
   onSubmit: (vars: Record<string, string>, role: string) => void
   roleSelector: ReactNode
 }
@@ -35,7 +34,6 @@ export const InstallActionManualRunModal = ({
   action,
   actionConfigId,
   isLoading,
-  rolesUnavailable,
   onSubmit,
   roleSelector,
   ...props
@@ -98,7 +96,7 @@ export const InstallActionManualRunModal = ({
             Run action
           </>
         ),
-        disabled: isLoading || rolesUnavailable,
+        disabled: isLoading,
         onClick: handlePrimaryAction,
         variant: 'primary',
       }}

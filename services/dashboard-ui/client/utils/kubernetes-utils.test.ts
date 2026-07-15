@@ -102,6 +102,7 @@ describe('kubernetes-utils', () => {
         action: 'added',
         before: null,
         after: 'spec:\n  replicas: 3',
+        diff: '+ spec:\n+   replicas: 3',
       })
 
       // Check second change (apply with type 3 = changed)
@@ -113,6 +114,7 @@ describe('kubernetes-utils', () => {
         action: 'changed',
         before: 'spec:\n  ports:\n  - port: 8080',
         after: 'spec:\n  ports:\n  - port: 9090',
+        diff: '  spec:\n    ports:\n~   - port: 8080 -> 9090',
       })
 
       // Check third change (delete op = destroyed)
@@ -124,6 +126,7 @@ describe('kubernetes-utils', () => {
         action: 'destroyed',
         before: 'data:\n  config: old',
         after: null,
+        diff: '- data:\n-   config: old',
       })
     })
 

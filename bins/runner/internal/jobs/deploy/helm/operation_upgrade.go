@@ -56,10 +56,11 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.Devel = true
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
 	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
+	client.SkipCRDs = h.state.plan.HelmDeployPlan.SkipCRDs
 	client.Timeout = h.state.timeout
 
 	crds := chart.CRDObjects()
-	if len(crds) > 0 {
+	if len(crds) > 0 && !client.SkipCRDs {
 		// skip dry run
 		crdZapFieldList := []zap.Field{}
 		for i, crd := range crds {
@@ -92,6 +93,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.Devel = true
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
 	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
+	client.SkipCRDs = h.state.plan.HelmDeployPlan.SkipCRDs
 	client.Timeout = h.state.timeout
 
 	rel, err := helm.HelmUpgradeWithLogStreaming(ctx, client, prevRel.Name, chart, values, kubeCfg, l)

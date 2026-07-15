@@ -27,6 +27,7 @@ export function ResourceChangesList({ changes }: ResourceChangesListProps) {
             <Expand
               key={`${change.address}-${idx}`}
               id={change.address}
+              isOpen
               className={`border-l-4 ${borderColor}`}
               headerClassName={`w-full px-4 py-3 gap-3 text-left focus:outline-none ${bgColor}`}
               heading={

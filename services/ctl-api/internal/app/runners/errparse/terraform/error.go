@@ -74,20 +74,11 @@ func (e *TerraformError) Sections() []compositeerrors.Section {
 	return sections
 }
 
-// errorParser recognises terraform "Error:" diagnostics in a terraform job's
-// raw output.
-type errorParser struct{}
-
-func (errorParser) Layer() errparse.Layer  { return errparse.LayerTool }
-func (errorParser) Tools() []errparse.Tool { return []errparse.Tool{errparse.ToolTerraform} }
-
-// Signals gates on the presence of a terraform diagnostic. "Error:" is broad,
-// but the parser is already bucketed to terraform jobs, where its presence
-// reliably marks a diagnostic block.
-func (errorParser) Signals() []string                      { return []string{"Error:"} }
-func (errorParser) Applicable(*errparse.ParseContext) bool { return true }
-
-func (errorParser) Parse(ctx *errparse.ParseContext) compositeerrors.CompositeError {
+// parseError recognises terraform "Error:" diagnostics in a terraform job's raw
+// output. It is registered at LayerTool and gated to terraform jobs by the
+// "Error:" signal; that signal is broad, but the parser only ever runs on
+// terraform jobs where its presence reliably marks a diagnostic block.
+func parseError(ctx *errparse.ParseContext) compositeerrors.CompositeError {
 	lines := cleanedLines(ctx.Raw)
 	summaries := errorSummaries(lines)
 	if len(summaries) == 0 {
@@ -107,7 +98,10 @@ func (errorParser) Parse(ctx *errparse.ParseContext) compositeerrors.CompositeEr
 }
 
 func init() {
-	errparse.Register(errorParser{})
+	errparse.Register(errparse.NewParser(errparse.LayerTool, parseError,
+		errparse.WithTools(errparse.ToolTerraform),
+		errparse.WithSignals("Error:"),
+	))
 }
 
 // errorSummaries returns the distinct text following each terraform "Error:"
