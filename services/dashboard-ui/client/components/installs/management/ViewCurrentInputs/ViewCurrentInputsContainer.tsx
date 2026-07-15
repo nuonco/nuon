@@ -3,9 +3,10 @@ import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getAppConfig, getInstallCurrentInputs } from '@/lib'
+import { getInstallCurrentInputs } from '@/lib'
 import { normalizeAppInputGroups } from '@/utils/app-utils'
 import { EditInputsButton } from '../EditInputs'
 import { ViewCurrentInputsModal } from './ViewCurrentInputs'
@@ -23,17 +24,7 @@ export const ViewCurrentInputsModalContainer = ({ ...props }: IModal) => {
     enabled: !!org?.id && !!install?.id,
   })
 
-  const { data: config, isLoading: configLoading } = useQuery({
-    queryKey: ['app-config', org?.id, install?.app_id, install?.app_config_id],
-    queryFn: () =>
-      getAppConfig({
-        orgId: org.id,
-        appId: install.app_id,
-        appConfigId: install.app_config_id,
-        recurse: true,
-      }),
-    enabled: !!org?.id && !!install?.app_id && !!install?.app_config_id,
-  })
+  const { appConfig: config, isLoading: configLoading } = useInstallAppConfig()
 
   const isLoading = inputsLoading || configLoading
   const redactedValues = inputs?.redacted_values ?? {}

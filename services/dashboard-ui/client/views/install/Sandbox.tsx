@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -17,32 +16,16 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { Panel } from '@/components/surfaces/Panel'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getAppConfig } from '@/lib'
 
 export const Sandbox = () => {
   const { org } = useOrg()
   const { install } = useInstall()
   const { addPanel } = useSurfaces()
 
-  const { data: configResult } = useQuery({
-    queryKey: [
-      'app-config',
-      org?.id,
-      install?.app_id,
-      install?.app_config_id,
-      'recurse',
-    ],
-    queryFn: () =>
-      getAppConfig({
-        orgId: org.id,
-        appId: install.app_id,
-        appConfigId: install.app_config_id,
-        recurse: true,
-      }),
-    enabled: !!org?.id && !!install?.app_config_id,
-  })
+  const { appConfig: configResult } = useInstallAppConfig()
 
   const sandboxConfig = configResult?.sandbox
   const isPulumi = sandboxConfig?.type === 'pulumi'
