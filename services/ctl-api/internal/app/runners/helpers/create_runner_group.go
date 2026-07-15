@@ -112,9 +112,13 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		return nil, res.Error
 	}
 
-	if err := h.EnsureRunnerSignalsQueue(ctx, runnerGroup.Runners[0].ID); err != nil {
-		return nil, fmt.Errorf("unable to create runner signals queue: %w", err)
-	}
+	// TEMP(rb): disabled to test the runner-healthcheck backfill endpoint locally.
+	// With this commented out, new install runners have no runner-signals queue or
+	// healthcheck emitter, so the backfill workflow has something to create. REVERT
+	// before merge.
+	// if err := h.EnsureRunnerSignalsQueue(ctx, runnerGroup.Runners[0].ID); err != nil {
+	// 	return nil, fmt.Errorf("unable to create runner signals queue: %w", err)
+	// }
 
 	parallelJobs, err := h.featuresClient.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureParallelRunnerJobs)
 	if err != nil {

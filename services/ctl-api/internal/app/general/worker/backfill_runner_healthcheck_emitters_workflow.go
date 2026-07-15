@@ -37,7 +37,8 @@ func (w *Workflows) BackfillRunnerHealthcheckEmitters(ctx workflow.Context, req 
 		EmittersCreated:  req.EmittersCreated,
 		AlreadyPresent:   req.AlreadyPresent,
 		Errors:           req.Errors,
-		Cursor:           req.Cursor,
+		CursorCreatedAt:  req.CursorCreatedAt,
+		CursorID:         req.CursorID,
 	}
 	if err := workflow.SetQueryHandler(ctx, runnerhealthcheckbackfill.ProgressQueryType, func() (runnerhealthcheckbackfill.Progress, error) {
 		return progress, nil
@@ -59,7 +60,11 @@ func (w *Workflows) BackfillRunnerHealthcheckEmitters(ctx workflow.Context, req 
 		var resp activities.BackfillRunnerHealthcheckEmittersResponse
 		if err := workflow.ExecuteActivity(actx,
 			(*activities.Activities).BackfillRunnerHealthcheckEmitters,
-			activities.BackfillRunnerHealthcheckEmittersRequest{Cursor: req.Cursor, Limit: batchSize},
+			activities.BackfillRunnerHealthcheckEmittersRequest{
+				CursorCreatedAt: req.CursorCreatedAt,
+				CursorID:        req.CursorID,
+				Limit:           batchSize,
+			},
 		).Get(actx, &resp); err != nil {
 			return errors.Wrap(err, "unable to backfill runner healthcheck emitters batch")
 		}
@@ -69,14 +74,16 @@ func (w *Workflows) BackfillRunnerHealthcheckEmitters(ctx workflow.Context, req 
 		req.AlreadyPresent += resp.AlreadyPresent
 		req.Errors += len(resp.Errors)
 		if resp.LastID != "" {
-			req.Cursor = resp.LastID
+			req.CursorCreatedAt = resp.LastCreatedAt
+			req.CursorID = resp.LastID
 		}
 
 		progress.RunnersProcessed = req.RunnersProcessed
 		progress.EmittersCreated = req.EmittersCreated
 		progress.AlreadyPresent = req.AlreadyPresent
 		progress.Errors = req.Errors
-		progress.Cursor = req.Cursor
+		progress.CursorCreatedAt = req.CursorCreatedAt
+		progress.CursorID = req.CursorID
 
 		// A short batch means the fleet is drained.
 		if resp.Examined < batchSize {
@@ -93,7 +100,8 @@ func (w *Workflows) BackfillRunnerHealthcheckEmitters(ctx workflow.Context, req 
 
 	l.Info("continuing runner healthcheck emitter backfill",
 		zap.Int("runners_processed", req.RunnersProcessed),
-		zap.String("cursor", req.Cursor),
+		zap.Time("cursor_created_at", req.CursorCreatedAt),
+		zap.String("cursor_id", req.CursorID),
 	)
 	return workflow.NewContinueAsNewError(ctx, runnerhealthcheckbackfill.WorkflowName, req)
 }

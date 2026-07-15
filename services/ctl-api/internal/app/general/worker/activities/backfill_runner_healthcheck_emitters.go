@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -19,16 +20,20 @@ const (
 )
 
 type BackfillRunnerHealthcheckEmittersRequest struct {
-	// Cursor is the last runner ID processed; the batch selects runners with a
-	// greater ID (keyset pagination). Empty starts from the beginning.
-	Cursor string `json:"cursor"`
-	Limit  int    `json:"limit"`
+	// CursorCreatedAt / CursorID form the keyset cursor: the batch selects
+	// runners ordered by (created_at, id) ascending that sort after this pair.
+	// Zero values start from the beginning.
+	CursorCreatedAt time.Time `json:"cursor_created_at"`
+	CursorID        string    `json:"cursor_id"`
+	Limit           int       `json:"limit"`
 }
 
 type BackfillRunnerHealthcheckEmittersResponse struct {
-	// LastID is the ID of the last runner examined; feed it back as the next
-	// Cursor. Empty when the batch was empty.
-	LastID string `json:"last_id"`
+	// LastCreatedAt / LastID are the cursor of the last runner examined; feed
+	// them back as the next CursorCreatedAt / CursorID. LastID is empty when
+	// the batch was empty.
+	LastCreatedAt time.Time `json:"last_created_at"`
+	LastID        string    `json:"last_id"`
 	// Examined is how many runners this batch looked at; a value < Limit means
 	// the fleet is drained.
 	Examined        int      `json:"examined"`
@@ -54,8 +59,8 @@ func (a *Activities) BackfillRunnerHealthcheckEmitters(ctx context.Context, req 
 
 	var runners []app.Runner
 	if res := a.db.WithContext(ctx).
-		Where("id > ?", req.Cursor).
-		Order("id").
+		Where("(created_at, id) > (?, ?)", req.CursorCreatedAt, req.CursorID).
+		Order("created_at asc, id asc").
 		Limit(limit).
 		Find(&runners); res.Error != nil {
 		return nil, fmt.Errorf("unable to list runners: %w", res.Error)
@@ -69,6 +74,7 @@ func (a *Activities) BackfillRunnerHealthcheckEmitters(ctx context.Context, req 
 
 	for i := range runners {
 		runner := runners[i]
+		resp.LastCreatedAt = runner.CreatedAt
 		resp.LastID = runner.ID
 
 		created, err := a.ensureRunnerHealthcheckEmitter(ctx, runner)

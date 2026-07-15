@@ -4,6 +4,8 @@
 // implements it) can share them without an import cycle.
 package runnerhealthcheckbackfill
 
+import "time"
+
 const (
 	// WorkflowName must match the registered workflow function name.
 	WorkflowName = "BackfillRunnerHealthcheckEmitters"
@@ -22,9 +24,12 @@ const (
 // Request is the orchestrator input. Callers leave it zero; the workflow fills
 // in the cursor and running totals and carries them across continue-as-new.
 type Request struct {
-	// Cursor is the last runner ID processed (keyset pagination). Empty starts
+	// CursorCreatedAt / CursorID form a keyset cursor ordered by
+	// (created_at, id) ascending, so the fleet is processed oldest-first. The
+	// id is a tiebreaker for runners sharing a created_at. Zero values start
 	// from the beginning.
-	Cursor string `json:"cursor"`
+	CursorCreatedAt time.Time `json:"cursor_created_at"`
+	CursorID        string    `json:"cursor_id"`
 	// BatchSize overrides DefaultBatchSize when non-zero.
 	BatchSize int `json:"batch_size"`
 
@@ -36,10 +41,11 @@ type Request struct {
 
 // Progress is the live snapshot returned by the workflow's progress query.
 type Progress struct {
-	RunnersProcessed int    `json:"runners_processed"`
-	EmittersCreated  int    `json:"emitters_created"`
-	AlreadyPresent   int    `json:"already_present"`
-	Errors           int    `json:"errors"`
-	Cursor           string `json:"cursor"`
-	Done             bool   `json:"done"`
+	RunnersProcessed int       `json:"runners_processed"`
+	EmittersCreated  int       `json:"emitters_created"`
+	AlreadyPresent   int       `json:"already_present"`
+	Errors           int       `json:"errors"`
+	CursorCreatedAt  time.Time `json:"cursor_created_at"`
+	CursorID         string    `json:"cursor_id"`
+	Done             bool      `json:"done"`
 }
