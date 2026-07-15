@@ -122,6 +122,14 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 		Secrets:             secrets,
 	}
 
+	// Runner machine/instance type from the app runner config, falling back to
+	// the platform default — mirrors generate_install_stack_version's classic
+	// tfvars path so both flows resolve the same type.
+	instanceType := appCfg.RunnerConfig.InstanceType
+	if instanceType == "" {
+		instanceType = app.DefaultInstanceTypeForPlatform(appCfg.RunnerConfig.CloudPlatform)
+	}
+
 	switch appCfg.RunnerConfig.Type {
 	case app.AppRunnerTypeAWS:
 		if install.AWSAccount == nil || install.AWSAccount.Region == "" {
@@ -162,8 +170,9 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 
 		cfg.Cloud = "aws"
 		cfg.AWS = &app.InstallerSDKAWSConfig{
-			Region:      install.AWSAccount.Region,
-			ClusterName: clusterName,
+			Region:            install.AWSAccount.Region,
+			ClusterName:       clusterName,
+			RunnerMachineType: instanceType,
 
 			NuonSupportIAMRoleARNs: supportARNs,
 
@@ -204,6 +213,7 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 		cfg.GCP = &app.InstallerSDKGCPConfig{
 			RunnerInitScriptURL: initScriptURL,
 			RunnerAPIToken:      token.Token,
+			RunnerMachineType:   instanceType,
 
 			ProvisionPermissions:      prov.Permissions,
 			ProvisionPredefinedRole:   prov.PredefinedRole,
