@@ -32,6 +32,7 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"permissions":         PermissionsConfigSchema,
 	"policy":              PolicyConfigSchema,
 	"policies":            PoliciesConfigSchema,
+	"pulumi":              PulumiConfigSchema,
 	"runbook":             RunbookConfigSchema,
 	"runner":              RunnerConfigSchema,
 	"sandbox":             SandboxConfigSchema,
@@ -254,6 +255,14 @@ func TerraformModuleConfigSchema() (*jsonschema.Schema, error) {
 	}
 
 	return flattenedComponentSchema(config.TerraformModuleComponentConfig{}, config.TerraformModuleComponentType)
+}
+
+func PulumiConfigSchema() (*jsonschema.Schema, error) {
+	if err := ValidateJSONSchemaExtend(config.PulumiComponentConfig{}); err != nil {
+		return nil, errors.Wrap(err, "PulumiComponentConfig validation failed")
+	}
+
+	return flattenedComponentSchema(config.PulumiComponentConfig{}, config.PulumiComponentType)
 }
 
 func MetadataConfigSchema() (*jsonschema.Schema, error) {

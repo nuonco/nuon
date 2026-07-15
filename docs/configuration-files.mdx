@@ -193,6 +193,30 @@ account_id = "{{.nuon.install.sandbox.account.id}}"
 
 ```
 
+### Pulumi Component
+
+To define a [pulumi component](/guides/pulumi-components) use the `pulumi` type.
+
+To configure a pulumi component using a connected repo:
+
+```toml components/pulumi.toml
+# pulumi
+name    = "pulumi_infra"
+type    = "pulumi"
+runtime = "go"
+
+[connected_repo]
+directory = "components/pulumi"
+repo = "org/repo"
+branch = "main"
+
+[config]
+"aws:region" = "{{.nuon.install_stack.outputs.region}}"
+
+[env_vars]
+PULUMI_SKIP_UPDATE_CHECK = "true"
+```
+
 ### Helm Chart Component
 
 To define a [helm chart component](/guides/helm-chart-components) use the
