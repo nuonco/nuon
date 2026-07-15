@@ -8,9 +8,96 @@ import (
 
 	"github.com/invopop/jsonschema"
 	"github.com/pkg/errors"
+
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/schema"
 )
 
 const schemaBaseURL = "https://api.nuon.co"
+
+// schemaTypeForDefinition resolves the schema type slug for a config file. It
+// prefers an explicitly-set Header, then falls back to deriving the slug from
+// the config instances the file was built from, so scaffolded files that don't
+// set Header still get a #:schema directive.
+func schemaTypeForDefinition(cfd ConfigFileDefinition) string {
+	if cfd.Header != "" {
+		return cfd.Header
+	}
+
+	for _, cfs := range cfd.Schemas {
+		if slug := schemaTypeForInstance(cfs.Instance); slug != "" {
+			return slug
+		}
+	}
+
+	return ""
+}
+
+func schemaTypeForInstance(instance any) string {
+	switch v := instance.(type) {
+	case *config.Component:
+		return componentTypeSchemaSlug(v.Type)
+	case config.Component:
+		return componentTypeSchemaSlug(v.Type)
+	case *config.AppInputConfig:
+		return "inputs"
+	case *config.InstallerConfig:
+		return "installer"
+	case *config.AppSandboxConfig:
+		return "sandbox"
+	case *config.AppRunnerConfig:
+		return "runner"
+	case *config.StackConfig:
+		return "stack"
+	case *config.SecretsConfig:
+		return "secrets"
+	case *config.BreakGlass:
+		return "break-glass"
+	case *config.PoliciesConfig:
+		return "policies"
+	case *config.PermissionsConfig:
+		return "permissions"
+	case *config.ActionConfig:
+		return "action"
+	case *config.Install:
+		return "install"
+	case *config.MetadataConfig:
+		return "metadata"
+	case *config.TerraformModuleComponentConfig:
+		return "terraform"
+	case *config.HelmChartComponentConfig:
+		return "helm"
+	case *config.DockerBuildComponentConfig:
+		return "docker-build"
+	case *config.ExternalImageComponentConfig:
+		return "container-image"
+	case *config.KubernetesManifestComponentConfig:
+		return "kubernetes-manifest"
+	case *config.JobComponentConfig:
+		return "job"
+	default:
+		return ""
+	}
+}
+
+func componentTypeSchemaSlug(t config.ComponentType) string {
+	switch t {
+	case config.TerraformModuleComponentType:
+		return "terraform"
+	case config.HelmChartComponentType:
+		return "helm"
+	case config.DockerBuildComponentType:
+		return "docker-build"
+	case config.ContainerImageComponentType, config.ExternalImageComponentType:
+		return "container-image"
+	case config.KubernetesManifestComponentType:
+		return "kubernetes-manifest"
+	case config.JobComponentType:
+		return "job"
+	default:
+		return ""
+	}
+}
 
 func NewDefaultReflector() *jsonschema.Reflector {
 	return &jsonschema.Reflector{
@@ -175,8 +262,8 @@ func (g *ConfigGen) encodeConfigFile(cfd ConfigFileDefinition, name string) (*st
 
 	// write the schema directive so editors with a TOML LSP resolve the
 	// dedicated per-type schema for this file
-	if cfd.Header != "" {
-		output.WriteString(fmt.Sprintf("#:schema %s/v1/general/config-schema/%s\n\n", schemaBaseURL, cfd.Header))
+	if slug := schemaTypeForDefinition(cfd); schema.IsValidSchemaType(slug) {
+		output.WriteString(fmt.Sprintf("#:schema %s/v1/general/config-schema/%s\n\n", schemaBaseURL, slug))
 	}
 
 	for _, configFile := range cfd.Schemas {
