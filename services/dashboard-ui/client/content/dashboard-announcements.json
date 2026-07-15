@@ -1,12 +1,12 @@
 {
   "announcements": [
     {
-      "id": "runbooks-readmes-035",
-      "title": "Runbooks and rendered READMEs",
-      "date": "June 1, 2026",
-      "description": "Define and run multi-step runbooks against installs, and fetch install READMEs rendered with live values.",
+      "id": "spacelift-cli-038",
+      "title": "Spacelift install stacks and CLI automation",
+      "date": "July 10, 2026",
+      "description": "Provision install stacks through Spacelift and drive the nuon CLI reliably from CI/CD.",
       "ctaText": "Learn more",
-      "ctaUrl": "https://docs.nuon.co/updates/035-runbooks-and-readmes",
+      "ctaUrl": "https://docs.nuon.co/updates/038-spacelift-and-cli-automation",
       "dismissible": false
     }
   ]
