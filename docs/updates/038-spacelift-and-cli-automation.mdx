@@ -74,6 +74,14 @@ Labels can now be assigned custom colors, making apps, installs, and components 
 
 Fixes that make the `nuon` CLI more reliable when you drive it headlessly from CI/CD:
 
-- `nuon apps sync` now uses distinct exit codes so CI can separate a sync failure from a build failure: `1` = sync failed, `3` = config synced but one or more scheduled component builds failed or timed out (`0` = fully succeeded). Pass `--no-wait` to skip the build wait so the exit code reflects the sync alone.
-- The published config schemas are now satisfiable, so you can validate app config against them in CI or an editor. Previously the typed schemas (`container-image`, `helm`, `kubernetes-manifest`, and the rest) could never validate any document.
-- Generated config files now reference their schema with `?type=` (e.g. `?type=helm`), and the `config-schema` API still accepts the older `?source=` form as a deprecated alias instead of returning HTTP 400 — so schema references resolve in your editor either way.
+- **`nuon apps sync` now uses distinct exit codes**, so CI can separate a sync failure from a build failure:
+  - `0` — config synced and all builds succeeded.
+  - `1` — sync failed.
+  - `3` — config synced, but one or more scheduled component builds failed or timed out.
+  - Pass `--no-wait` to skip the build wait so the exit code reflects the sync alone.
+- **Config schemas are now satisfiable**, so you can validate app config against them in CI or an editor. Previously the typed schemas (`container-image`, `helm`, `kubernetes-manifest`, and the rest) could never validate any document.
+- **Each config file type now has its own schema endpoint** — `GET /v1/general/config-schema/{type}`:
+  - Fetch a single type directly, e.g. `/config-schema/helm` or `/config-schema/sandbox`.
+  - Generated config files now reference these per-type URLs.
+  - Each type's schema carries its own `$id`, so editors and validators that cache schemas by URL resolve every config type distinctly instead of collapsing them onto one entry.
+  - The older single-URL form still works for backward compatibility: `config-schema?type=helm`, with `?source=` accepted as a deprecated alias that returns a deprecation header instead of an HTTP 400.
