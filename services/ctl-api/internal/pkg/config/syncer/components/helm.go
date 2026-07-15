@@ -138,6 +138,7 @@ func SyncHelmComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.H
 		ValuesFiles:    valuesFiles,
 		StorageDriver:  comp.HelmChart.StorageDriver,
 		TakeOwnership:  comp.HelmChart.TakeOwnership,
+		SkipCRDs:       comp.HelmChart.SkipCRDs,
 		HelmRepoConfig: helmRepoConfig,
 	}
 

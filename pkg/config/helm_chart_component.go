@@ -45,6 +45,7 @@ type HelmChartComponentConfig struct {
 	StorageDriver string `mapstructure:"storage_driver,omitempty" toml:"storage_driver,omitempty" features:"template"`
 
 	TakeOwnership bool `mapstructure:"take_ownership" toml:"take_ownership" features:"template"`
+	SkipCRDs      bool `mapstructure:"skip_crds,omitempty" toml:"skip_crds,omitempty" nuonhash:"omitempty"`
 
 	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
@@ -90,6 +91,10 @@ func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("configmap").
 		Field("take_ownership").Short("adopt existing Helm releases").
 		Long("If true, Nuon will adopt an existing Helm release with the same name and namespace that was not originally managed by Nuon. Useful when migrating existing deployments to Nuon").
+		Field("skip_crds").Short("skip Helm chart CRDs").
+		Long("If true, Helm will not install CRDs from the chart's crds directory. CRDs rendered from templates are not skipped").
+		Default("false").
+		Example("true").
 		Field("value").Short("deprecated: use values map instead").
 		Long("Deprecated: Array of name/value pairs for Helm values. Use the values map instead").
 		Field("drift_schedule").Short("drift detection schedule").

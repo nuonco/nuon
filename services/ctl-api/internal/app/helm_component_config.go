@@ -43,6 +43,7 @@ type HelmComponentConfig struct {
 	StorageDriver generics.NullString `json:"storage_driver,omitzero" swaggertype:"string" features:"template" temporaljson:"storage_driver,omitzero,omitempty"`
 	// Newer config fields that we don't need a column for
 	TakeOwnership bool `json:"take_ownership,omitzero" gorm:"-" temporaljson:"take_ownership,omitzero,omitempty"`
+	SkipCRDs      bool `json:"skip_crds,omitzero" gorm:"-" temporaljson:"skip_crds,omitzero,omitempty"`
 
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitzero,omitempty" temporaljson:"public_git_vcs_config,omitzero,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitzero,omitempty" temporaljson:"connected_github_vcs_config,omitzero,omitempty"`
@@ -74,6 +75,7 @@ func (c *HelmComponentConfig) AfterQuery(tx *gorm.DB) error {
 		c.Namespace = generics.NewNullString(c.HelmConfig.Namespace)
 		c.StorageDriver = generics.NewNullString(c.HelmConfig.StorageDriver)
 		c.TakeOwnership = c.HelmConfig.TakeOwnership
+		c.SkipCRDs = c.HelmConfig.SkipCRDs
 	}
 	return nil
 }
@@ -88,6 +90,7 @@ type HelmConfig struct {
 
 	// Newer fields that we don't need to store as columns in the database
 	TakeOwnership bool `json:"take_ownership,omitempty"`
+	SkipCRDs      bool `json:"skip_crds,omitempty"`
 }
 
 type HelmRepoConfig struct {
