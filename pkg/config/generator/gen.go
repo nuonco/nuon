@@ -224,7 +224,7 @@ func (g *ConfigGen) WriteConfigToDisk(c *ConfigStructure) error {
 		dp := filepath.Join(c.Name)
 		dp = filepath.Join(dp, d.Name)
 
-		if err := os.Mkdir(dp, 0o755); err != nil && !os.IsExist(err) {
+		if err := os.MkdirAll(dp, 0o755); err != nil && !os.IsExist(err) {
 			return errors.Wrapf(err, "unable to create app config sub-dirctory for path: %s", dp)
 		}
 
@@ -260,6 +260,107 @@ func (g *ConfigGen) EncodeToTOML(cs *ConfigStructure) error {
 	return nil
 }
 
+// alignAssignments aligns the `=` in contiguous runs of `key = value` lines
+// (including commented `# key = value` blocks) and collapses repeated blank
+// lines, matching the hand-formatted style of well-organized Nuon configs.
+func alignAssignments(s string) string {
+	lines := strings.Split(s, "\n")
+	out := make([]string, 0, len(lines))
+
+	var group []int // indices into out awaiting alignment
+	flush := func() {
+		if len(group) < 1 {
+			group = nil
+			return
+		}
+		width := 0
+		for _, idx := range group {
+			key := strings.TrimRight(out[idx][:strings.Index(out[idx], "=")], " ")
+			if len(key) > width {
+				width = len(key)
+			}
+		}
+		for _, idx := range group {
+			eq := strings.Index(out[idx], "=")
+			key := strings.TrimRight(out[idx][:eq], " ")
+			val := strings.TrimLeft(out[idx][eq+1:], " ")
+			out[idx] = fmt.Sprintf("%-*s = %s", width, key, val)
+		}
+		group = nil
+	}
+
+	inMultiline := false
+	for _, line := range lines {
+		if inMultiline {
+			out = append(out, line)
+			if strings.Count(line, `"""`)%2 == 1 {
+				inMultiline = false
+			}
+			continue
+		}
+
+		// Collapse consecutive blank lines.
+		if strings.TrimSpace(line) == "" {
+			flush()
+			if len(out) > 0 && out[len(out)-1] == "" {
+				continue
+			}
+			out = append(out, "")
+			continue
+		}
+
+		if strings.Count(line, `"""`)%2 == 1 {
+			flush()
+			out = append(out, line)
+			inMultiline = true
+			continue
+		}
+
+		if isAssignmentLine(line) {
+			group = append(group, len(out))
+			out = append(out, line)
+			continue
+		}
+
+		flush()
+		// Separate the scalar block (and adjacent tables) with a single blank
+		// line before each table header.
+		if isTableHeader(line) && len(out) > 0 && out[len(out)-1] != "" {
+			out = append(out, "")
+		}
+		out = append(out, line)
+	}
+	flush()
+
+	result := strings.Join(out, "\n")
+	return strings.TrimRight(result, "\n") + "\n"
+}
+
+// isAssignmentLine reports whether a line is a `key = value` (or commented
+// `# key = value`) assignment, as opposed to a table header, schema directive,
+// or comment.
+func isAssignmentLine(line string) bool {
+	core := strings.TrimSpace(line)
+	if strings.HasPrefix(core, "#") {
+		core = strings.TrimSpace(strings.TrimPrefix(core, "#"))
+	}
+	if core == "" || strings.HasPrefix(core, "[") || strings.HasPrefix(core, ":") {
+		return false
+	}
+	eq := strings.Index(core, "=")
+	return eq > 0
+}
+
+// isTableHeader reports whether a line is a TOML [table]/[[array]] header,
+// including a commented-out one.
+func isTableHeader(line string) bool {
+	core := strings.TrimSpace(line)
+	if strings.HasPrefix(core, "#") {
+		core = strings.TrimSpace(strings.TrimPrefix(core, "#"))
+	}
+	return strings.HasPrefix(core, "[")
+}
+
 // encodeConfigFile returns contents of a file
 func (g *ConfigGen) encodeConfigFile(cfd ConfigFileDefinition, name string) (*strings.Builder, error) {
 	var output strings.Builder
@@ -285,5 +386,8 @@ func (g *ConfigGen) encodeConfigFile(cfd ConfigFileDefinition, name string) (*st
 			g.recursivelyEncode(schema, &output, "", false, g.EnableInfoComments, configFile.SkipNonRequired, extractor, phase)
 		}
 	}
-	return &output, nil
+
+	var formatted strings.Builder
+	formatted.WriteString(alignAssignments(output.String()))
+	return &formatted, nil
 }

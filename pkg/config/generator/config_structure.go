@@ -284,11 +284,10 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 		// Root-level config files
 		Configs: []ConfigFileDefinition{
 			{
-				Name: "inputs.toml",
+				Name: "metadata.toml",
 				Schemas: []ConfigFileSchema{
 					{
-						SkipNonRequired: false,
-						Instance:        &config.AppInputConfig{},
+						Instance: &config.MetadataConfig{},
 					},
 				},
 			},
@@ -333,23 +332,42 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 					},
 				},
 			},
-			{
-				Name: "policies.toml",
-				Schemas: []ConfigFileSchema{
-					{
-						Instance:        &config.PoliciesConfig{},
-						SkipNonRequired: false,
-					},
-				},
-			},
 		},
 		// Subdirectories with their config files
 		ConfigDirectories: []ConfigDirectoryDefinition{
 			{
-				Name: "components",
+				Name: "input_groups",
 				Configs: []ConfigFileDefinition{
 					{
-						Name: "example_helm_chart.toml",
+						Header: "input-group",
+						Name:   "example.toml",
+						Schemas: []ConfigFileSchema{
+							{
+								Instance: &config.AppInputGroup{},
+							},
+						},
+					},
+				},
+			},
+			{
+				Name: "inputs/example",
+				Configs: []ConfigFileDefinition{
+					{
+						Header: "input",
+						Name:   "example_input.toml",
+						Schemas: []ConfigFileSchema{
+							{
+								Instance: &config.AppInput{},
+							},
+						},
+					},
+				},
+			},
+			{
+				Name: "components/example_helm_chart",
+				Configs: []ConfigFileDefinition{
+					{
+						Name: "nuon.toml",
 						Schemas: []ConfigFileSchema{
 							{
 								Instance: &config.Component{Type: config.HelmChartComponentType},
@@ -359,8 +377,13 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 							},
 						},
 					},
+				},
+			},
+			{
+				Name: "components/example_terraform_module",
+				Configs: []ConfigFileDefinition{
 					{
-						Name: "example_terraform_module.toml",
+						Name: "nuon.toml",
 						Schemas: []ConfigFileSchema{
 							{
 								Instance: &config.Component{Type: config.TerraformModuleComponentType},
@@ -370,8 +393,13 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 							},
 						},
 					},
+				},
+			},
+			{
+				Name: "components/example_kubernetes_manifest",
+				Configs: []ConfigFileDefinition{
 					{
-						Name: "example_kubernetes_manifest.toml",
+						Name: "nuon.toml",
 						Schemas: []ConfigFileSchema{
 							{
 								Instance: &config.Component{Type: config.KubernetesManifestComponentType},
@@ -413,10 +441,10 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 				},
 			},
 			{
-				Name: "actions",
+				Name: "actions/example_action",
 				Configs: []ConfigFileDefinition{
 					{
-						Name: "example_action.toml",
+						Name: "nuon.toml",
 						Schemas: []ConfigFileSchema{
 							{
 								Instance: &config.ActionConfig{},
@@ -426,13 +454,14 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 				},
 			},
 			{
-				Name: "installs",
+				Name: "policies",
 				Configs: []ConfigFileDefinition{
 					{
-						Name: "example_install.toml",
+						Header: "policy",
+						Name:   "example_policy.toml",
 						Schemas: []ConfigFileSchema{
 							{
-								Instance: &config.Install{},
+								Instance: &config.AppPolicy{Type: config.AppPolicyTypeTerraformModule},
 							},
 						},
 					},

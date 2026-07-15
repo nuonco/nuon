@@ -14,9 +14,33 @@ import (
 	"github.com/nuonco/nuon/pkg/config/schema"
 )
 
-// schemaTypeForFile maps a generated config filename to its schema type slug.
-func schemaTypeForFile(name string) string {
+// schemaTypeForFile maps a generated config file (relative path) to its schema
+// type slug.
+func schemaTypeForFile(rel string) string {
 	switch {
+	case strings.HasPrefix(rel, "input_groups/"):
+		return "input-group"
+	case strings.HasPrefix(rel, "inputs/"):
+		return "input"
+	case strings.HasPrefix(rel, "policies/"):
+		return "policy"
+	case strings.HasPrefix(rel, "actions/"):
+		return "action"
+	case strings.HasPrefix(rel, "components/"):
+		switch {
+		case strings.Contains(rel, "helm"):
+			return "helm"
+		case strings.Contains(rel, "terraform"):
+			return "terraform"
+		case strings.Contains(rel, "kubernetes"):
+			return "kubernetes-manifest"
+		}
+		return ""
+	}
+	name := filepath.Base(rel)
+	switch {
+	case name == "metadata.toml":
+		return "metadata"
 	case name == "sandbox.toml":
 		return "sandbox"
 	case name == "runner.toml":
@@ -25,26 +49,12 @@ func schemaTypeForFile(name string) string {
 		return "stack"
 	case name == "installer.toml":
 		return "installer"
-	case name == "inputs.toml":
-		return "inputs"
-	case name == "policies.toml":
-		return "policies"
 	case name == "secrets.toml":
 		return "secrets"
 	case name == "break_glass.toml":
 		return "break-glass"
 	case name == "provision.toml", name == "maintenance.toml", name == "deprovision.toml":
 		return "permissions"
-	case strings.Contains(name, "helm"):
-		return "helm"
-	case strings.Contains(name, "terraform"):
-		return "terraform"
-	case strings.Contains(name, "kubernetes"):
-		return "kubernetes-manifest"
-	case strings.HasPrefix(name, "example_action"):
-		return "action"
-	case strings.HasPrefix(name, "example_install"):
-		return "install"
 	}
 	return ""
 }
@@ -65,7 +75,7 @@ func TestGeneratedConfigsValidateAgainstSchemas(t *testing.T) {
 			return nil
 		}
 		rel, _ := filepath.Rel(dir, path)
-		typ := schemaTypeForFile(filepath.Base(path))
+		typ := schemaTypeForFile(rel)
 		if typ == "" {
 			t.Fatalf("no schema type mapping for generated file %s", rel)
 		}
