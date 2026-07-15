@@ -29,6 +29,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigSuccess() {
 			AppConfigID: s.testAppConfig.ID,
 			ChartName:   "my-chart",
 			Values:      map[string]*string{"foo": &valVal},
+			SkipCRDs:    true,
 			basicVCSConfigRequest: basicVCSConfigRequest{
 				PublicGitVCSConfig: &PublicGitVCSConfigRequest{
 					Repo:      "owner/repo",
@@ -50,6 +51,7 @@ func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigSuccess() {
 		assert.NotNil(s.T(), response.PublicGitVCSConfig)
 		assert.NotNil(s.T(), response.HelmConfig)
 		assert.Equal(s.T(), "my-chart", response.HelmConfig.ChartName)
+		assert.True(s.T(), response.HelmConfig.SkipCRDs)
 	})
 }
 

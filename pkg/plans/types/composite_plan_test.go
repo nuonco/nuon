@@ -86,3 +86,19 @@ func TestCompositePlanFromAny_KeepsPopulatedAWSAuth(t *testing.T) {
 	require.NotNil(t, ci.AWSAuth.AssumeRole)
 	assert.Equal(t, "arn:aws:iam::123:role/deploy", ci.AWSAuth.AssumeRole.RoleARN)
 }
+
+func TestCompositePlanFromAny_KeepsHelmSkipCRDs(t *testing.T) {
+	sdkPlan := &models.PlantypesCompositePlan{
+		DeployPlan: &models.PlantypesDeployPlan{
+			Helm: &models.PlantypesHelmDeployPlan{
+				SkipCrds: true,
+			},
+		},
+	}
+
+	cp, err := CompositePlanFromAny(sdkPlan)
+	require.NoError(t, err)
+	require.NotNil(t, cp.DeployPlan)
+	require.NotNil(t, cp.DeployPlan.HelmDeployPlan)
+	assert.True(t, cp.DeployPlan.HelmDeployPlan.SkipCRDs)
+}

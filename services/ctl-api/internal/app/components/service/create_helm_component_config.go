@@ -27,6 +27,7 @@ type CreateHelmComponentConfigRequest struct {
 	Namespace                    string             `json:"namespace,omitempty"`
 	StorageDriver                string             `json:"storage_driver,omitempty"`
 	TakeOwnership                bool               `json:"take_ownership,omitempty"`
+	SkipCRDs                     bool               `json:"skip_crds,omitempty"`
 	BuildTimeout                 string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
 	DeployTimeout                string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 	MaxAutoRetries               *int               `json:"max_auto_retries,omitempty"`
@@ -213,6 +214,7 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 			Values:         req.Values,
 			ValuesFiles:    req.ValuesFiles,
 			TakeOwnership:  req.TakeOwnership,
+			SkipCRDs:       req.SkipCRDs,
 		},
 	}
 

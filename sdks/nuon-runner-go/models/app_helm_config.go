@@ -28,6 +28,9 @@ type AppHelmConfig struct {
 	// namespace
 	Namespace string `json:"namespace,omitempty"`
 
+	// skip crds
+	SkipCrds bool `json:"skip_crds,omitempty"`
+
 	// storage driver
 	StorageDriver string `json:"storage_driver,omitempty"`
 
