@@ -16,6 +16,7 @@ import {
   ProcessCard,
   ProcessCardSkeleton,
 } from '@/components/runners/ProcessCard'
+import { RunnerStatusBanner } from '@/components/runners/RunnerStatusBanner'
 import { ControlPlaneRecentActivity } from '@/components/runners/ControlPlaneRecentActivity'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
 import { ManagementDropdownContainer } from '@/components/runners/management/ManagementDropdown'
@@ -146,6 +147,8 @@ export const BuildRunner = () => {
 
           <PageContent>
             <PageSection>
+              <RunnerStatusBanner />
+
               <Text variant="base" weight="strong">
                 Processes
               </Text>
