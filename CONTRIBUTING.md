@@ -68,8 +68,7 @@ days. If the issue is still relevant, please feel free to reopen it with any add
 
 ### Creating Pull Requests and Contributing Fixes
 
-Stay tuned for more information on how to contribute code and fixes to Nuon. In the meantime, use GitHub Issues to
-outline your ideas and Nuon may open GitHub Discussions for broader community input.
+Pull requests are welcome. We run test, lint, and other checks against PRs. We require that [commits be signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits), and [conventional commit](https://www.conventionalcommits.org/) format be used for PR titles.
 
 ## Thank You
 
