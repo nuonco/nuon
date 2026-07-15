@@ -13,7 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config/schema"
 )
 
-const schemaBaseURL = "https://api.nuon.co"
+const defaultSchemaBaseURL = "https://api.nuon.co"
 
 // schemaTypeForDefinition resolves the schema type slug for a config file. It
 // prefers an explicitly-set Header, then falls back to deriving the slug from
@@ -134,15 +134,27 @@ type ConfigGen struct {
 	EnableDeprecated        bool
 	SkipNonRequired         bool
 	OverwriteConfigContents bool
+
+	// SchemaBaseURL is the API host used in generated #:schema directives. When
+	// empty, defaultSchemaBaseURL is used.
+	SchemaBaseURL string
 }
 
-func NewConfigGen(EnableDefaults, EnableInfoComments, EnableDeprecated, OverwriteConfigContents, SkipNonRequired bool) *ConfigGen {
+func (g *ConfigGen) schemaBaseURL() string {
+	if g.SchemaBaseURL != "" {
+		return strings.TrimSuffix(g.SchemaBaseURL, "/")
+	}
+	return defaultSchemaBaseURL
+}
+
+func NewConfigGen(EnableDefaults, EnableInfoComments, EnableDeprecated, OverwriteConfigContents, SkipNonRequired bool, schemaBaseURL string) *ConfigGen {
 	return &ConfigGen{
 		EnableDefaults:          EnableDefaults,
 		EnableInfoComments:      EnableInfoComments,
 		EnableDeprecated:        EnableDeprecated,
 		OverwriteConfigContents: OverwriteConfigContents,
 		SkipNonRequired:         SkipNonRequired,
+		SchemaBaseURL:           schemaBaseURL,
 	}
 }
 
@@ -263,7 +275,7 @@ func (g *ConfigGen) encodeConfigFile(cfd ConfigFileDefinition, name string) (*st
 	// write the schema directive so editors with a TOML LSP resolve the
 	// dedicated per-type schema for this file
 	if slug := schemaTypeForDefinition(cfd); schema.IsValidSchemaType(slug) {
-		output.WriteString(fmt.Sprintf("#:schema %s/v1/general/config-schema/%s\n\n", schemaBaseURL, slug))
+		output.WriteString(fmt.Sprintf("#:schema %s/v1/general/config-schema/%s\n\n", g.schemaBaseURL(), slug))
 	}
 
 	for _, configFile := range cfd.Schemas {

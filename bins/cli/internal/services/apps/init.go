@@ -17,14 +17,24 @@ type ConfigGenParams struct {
 	SkipNonRequired bool
 }
 
-func NewGen(params ConfigGenParams) *generator.ConfigGen {
+func (s *Service) newGen(params ConfigGenParams) *generator.ConfigGen {
 	return generator.NewConfigGen(
 		params.EnableDefaults,
 		params.EnableComments,
 		false,
 		params.Overwrite,
 		params.SkipNonRequired,
+		s.schemaBaseURL(),
 	)
+}
+
+// schemaBaseURL returns the configured API host so generated #:schema
+// directives point at the control plane the CLI is targeting.
+func (s *Service) schemaBaseURL() string {
+	if s.cfg != nil {
+		return s.cfg.APIURL
+	}
+	return ""
 }
 
 type InitParams struct {
@@ -83,13 +93,7 @@ func (s *Service) Init(ctx context.Context, genParams ConfigGenParams, params *I
 		c = generator.DefaultAppConfigConfigStructure(genParams.Path)
 	}
 
-	gen := generator.NewConfigGen(
-		genParams.EnableDefaults,
-		genParams.EnableComments,
-		false,
-		genParams.Overwrite,
-		genParams.SkipNonRequired,
-	)
+	gen := s.newGen(genParams)
 
 	err = gen.Gen(genParams.Path, c)
 	if err != nil {
@@ -120,13 +124,7 @@ func (s *Service) InitSampleActions(ctx context.Context, genParams ConfigGenPara
 		}
 	}
 
-	gen := generator.NewConfigGen(
-		genParams.EnableDefaults,
-		genParams.EnableComments,
-		false,
-		genParams.Overwrite,
-		genParams.SkipNonRequired,
-	)
+	gen := s.newGen(genParams)
 
 	err := gen.Gen(genParams.Path, &c)
 	if err != nil {
@@ -190,13 +188,7 @@ func (s *Service) InitSampleComponents(ctx context.Context, genParams ConfigGenP
 		}
 	}
 
-	gen := generator.NewConfigGen(
-		genParams.EnableDefaults,
-		genParams.EnableComments,
-		false,
-		genParams.Overwrite,
-		genParams.SkipNonRequired,
-	)
+	gen := s.newGen(genParams)
 
 	err := gen.Gen(genParams.Path, &c)
 	if err != nil {
@@ -207,7 +199,7 @@ func (s *Service) InitSampleComponents(ctx context.Context, genParams ConfigGenP
 }
 
 func (s *Service) InitConfigFile(ctx context.Context, path string, configType string, genParams ConfigGenParams) error {
-	gen := NewGen(genParams)
+	gen := s.newGen(genParams)
 	// Create a custom ConfigStructure with only the specified config file
 	configStructure := generator.DefaultAppConfigConfigStructure(path)
 
@@ -254,7 +246,7 @@ type SandboxParams struct {
 }
 
 func (s *Service) InitSandboxConfig(ctx context.Context, genParams ConfigGenParams, params SandboxParams) error {
-	gen := NewGen(genParams)
+	gen := s.newGen(genParams)
 
 	// Build the sandbox config instance
 	sandboxConfig := &config.AppSandboxConfig{
@@ -328,7 +320,7 @@ type StackParams struct {
 }
 
 func (s *Service) InitStackConfig(ctx context.Context, genParams ConfigGenParams, params StackParams) error {
-	gen := NewGen(genParams)
+	gen := s.newGen(genParams)
 
 	// Build the stack config instance
 	stackConfig := &config.StackConfig{
@@ -370,7 +362,7 @@ type RunnerParams struct {
 }
 
 func (s *Service) InitRunnerConfig(ctx context.Context, genParams ConfigGenParams, params RunnerParams) error {
-	gen := NewGen(genParams)
+	gen := s.newGen(genParams)
 
 	// Build the runner config instance
 	runnerConfig := &config.AppRunnerConfig{
@@ -422,7 +414,7 @@ type TerraformModuleComponentParams struct {
 }
 
 func (s *Service) InitTerraformModuleComponentConfig(ctx context.Context, genParams ConfigGenParams, params TerraformModuleComponentParams) error {
-	gen := NewGen(genParams)
+	gen := s.newGen(genParams)
 
 	// Build the terraform module component config
 	tfModuleConfig := &config.TerraformModuleComponentConfig{
@@ -524,7 +516,7 @@ type HelmChartComponentParams struct {
 }
 
 func (s *Service) InitHelmChartComponentConfig(ctx context.Context, genParams ConfigGenParams, params HelmChartComponentParams) error {
-	gen := NewGen(genParams)
+	gen := s.newGen(genParams)
 
 	// Build the helm chart component config
 	helmConfig := &config.HelmChartComponentConfig{
@@ -624,7 +616,7 @@ type KubernetesManifestComponentParams struct {
 }
 
 func (s *Service) InitKubernetesManifestComponentConfig(ctx context.Context, genParams ConfigGenParams, params KubernetesManifestComponentParams) error {
-	gen := NewGen(genParams)
+	gen := s.newGen(genParams)
 
 	// Build the kubernetes manifest component config
 	k8sManifestConfig := &config.KubernetesManifestComponentConfig{
@@ -694,7 +686,7 @@ type ActionParams struct {
 }
 
 func (s *Service) InitActionConfig(ctx context.Context, genParams ConfigGenParams, params ActionParams) error {
-	gen := NewGen(genParams)
+	gen := s.newGen(genParams)
 
 	trigger := &config.ActionTriggerConfig{
 		Type: params.TriggerType,
