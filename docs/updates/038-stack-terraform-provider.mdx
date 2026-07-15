@@ -1,0 +1,81 @@
+---
+title: 038 - Terraform stack provider
+description: First-class support for building stack templates in Terraform.
+---
+
+_July 14, 2026_
+
+## Terraform stack provider
+
+To better support developing stack templates in Terraform, we have published the [Nuon Stack Terraform Provider](https://registry.terraform.io/providers/nuonco/stack/latest/docs).
+
+Terraform has proven to be a powerful and flexible way to provision and manage stacks. But they require some repetitive boilerplate, and exposing internal stack configuration to customers. We felt we needed a more first-class integration between these templates and the Nuon control plane.
+
+The new stack provider is that integration. We are using it today in our [open-source terraform stack templates](https://github.com/nuonco/install-stacks). If you want to use it build your own templates, using the provider is simple.
+
+Add the provider to your terraform module.
+
+```hcl providers.tf
+terraform {
+  required_providers {
+    stack = {
+      source = "nuonco/stack"
+    }
+  }
+}
+
+provider "stack" {
+  api_url = "https://runner.nuon.co"
+}
+```
+
+Use the `stack_config` data source to read the internal stack config values from the control plane.
+
+```hcl locals.tf
+data "stack_config" "this" {
+  phone_home_id = var.phone_home_id
+}
+
+output "install_id" {
+  value = data.stack_config.this.install_id
+}
+```
+
+Use the `stack_phone_home` resource to send the phone home request to the control plane once the required resources have provisioned.
+
+```hcl phone_home.tf
+resource "stack_phone_home" "this" {
+  depends_on = [
+    google_compute_network.main,
+    google_compute_subnetwork.public,
+    google_compute_subnetwork.private,
+    google_compute_subnetwork.runner,
+    # etc...
+  ]
+
+  install_id      = data.stack_config.this.install_id
+  phone_home_id   = var.phone_home_id
+  phone_home_type = "gcp"
+
+  payload = jsonencode({
+    network_name   = module.stack.network_name
+    install_inputs = data.stack_config.this.install_inputs
+  })
+}
+```
+
+Once implemented, variables providing internal stack configuration will no longer be required.
+
+```hcl inputs.auto.tfvars
+phone_home_id = "awsw7xq1wftutycwqwjt7dyd71"
+
+gcp = {
+  project_id = ""
+  region     = ""
+}
+
+install_inputs = {
+  "greeting" = "Hello from Nuon"
+  "api_key" = ""
+}
+```
