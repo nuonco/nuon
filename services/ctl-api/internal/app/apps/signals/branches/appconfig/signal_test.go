@@ -3,10 +3,12 @@ package appconfig
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/worker"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -25,6 +27,11 @@ func TestAppConfigSignalSuite(t *testing.T) {
 
 func (s *AppConfigSignalTestSuite) SetupTest() {
 	s.env = s.NewTestWorkflowEnvironment()
+	// Give the deadlock detector generous headroom so loaded CI runners don't
+	// false-positive on the 1s default while the workflow goroutine runs.
+	s.env.SetWorkerOptions(worker.Options{
+		DeadlockDetectionTimeout: time.Minute,
+	})
 }
 
 func (s *AppConfigSignalTestSuite) AfterTest(suiteName, testName string) {

@@ -41,12 +41,13 @@ func (h *handler) install(ctx context.Context, l *zap.Logger, actionCfg *action.
 	client.Namespace = h.state.plan.HelmDeployPlan.Namespace
 	client.ReleaseName = h.state.plan.HelmDeployPlan.Name
 	client.TakeOwnership = h.state.plan.HelmDeployPlan.TakeOwnership
+	client.SkipCRDs = h.state.plan.HelmDeployPlan.SkipCRDs
 	client.Timeout = h.state.timeout
 	client.DryRun = true
 
 	// determine if we're going to calculate the diff
 	crds := chart.CRDObjects()
-	if len(crds) > 0 {
+	if len(crds) > 0 && !client.SkipCRDs {
 		// skip dry run
 		crdZapFieldList := []zap.Field{}
 		for i, crd := range crds {

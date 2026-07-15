@@ -24,6 +24,7 @@ func (s *syncer) createHelmChartComponentConfig(ctx context.Context, resource, c
 		Namespace:                obj.Namespace,
 		StorageDriver:            obj.StorageDriver,
 		TakeOwnership:            obj.TakeOwnership,
+		SkipCrds:                 obj.SkipCRDs,
 		BuildTimeout:             obj.BuildTimeout,
 		DeployTimeout:            obj.DeployTimeout,
 		KubernetesContext:        comp.KubernetesContext,
