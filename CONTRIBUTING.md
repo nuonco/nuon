@@ -70,6 +70,9 @@ days. If the issue is still relevant, please feel free to reopen it with any add
 
 Pull requests are welcome. We run test, lint, and other checks against PRs. We require that [commits be signed](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits), and [conventional commit](https://www.conventionalcommits.org/) format be used for PR titles.
 
+> [!NOTE]
+> We do not support merging PRs from forks. PRs must be opened from a branch in this repo.
+
 ## Thank You
 
 Your feedback, bug finding, and ideas to Nuon's open source will ensure a stronger and feature-rich project. Thank you
