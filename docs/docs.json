@@ -154,6 +154,7 @@
                   "guides/image-update-policies",
                   "guides/helm-chart-components",
                   "guides/kubernetes-manifest-components",
+                  "guides/pulumi-components",
                   "guides/terraform-components"
                 ]
               }
@@ -253,6 +254,7 @@
                   "config-ref/docker-build",
                   "config-ref/helm",
                   "config-ref/kubernetes-manifest",
+                  "config-ref/pulumi",
                   "config-ref/terraform"
                 ]
               },
