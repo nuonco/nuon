@@ -574,6 +574,22 @@ input that is not declared on the app raises an error.`,
 	teardownInstallComponentCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for component teardown")
 	installsCmds.AddCommand(teardownInstallComponentCmd)
 
+	forgetInstallComponentCmd := &cobra.Command{
+		Use:   "forget-component",
+		Short: "Forget a component on an install.",
+		Long:  "Remove a component from Nuon's tracking without destroying its underlying infrastructure. The component must first be removed from the app config (via nuon apps sync). This is irreversible via the API.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ForgetComponent(cmd.Context(), id, componentID, skipConfirm, PrintJSON)
+		}),
+	}
+	forgetInstallComponentCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	forgetInstallComponentCmd.MarkFlagRequired("install-id")
+	forgetInstallComponentCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID or name to forget")
+	forgetInstallComponentCmd.MarkFlagRequired("component-id")
+	forgetInstallComponentCmd.Flags().BoolVarP(&skipConfirm, "yes", "y", false, "Skip the confirmation prompt")
+	installsCmds.AddCommand(forgetInstallComponentCmd)
+
 	deployInstallComponentsCmd := &cobra.Command{
 		Use:   "deploy-components",
 		Short: "Deploy all components to an install.",
