@@ -2,11 +2,13 @@ package planinstallgroup
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/worker"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -25,6 +27,11 @@ func TestPlanInstallGroupSuite(t *testing.T) {
 
 func (s *PlanInstallGroupTestSuite) SetupTest() {
 	s.env = s.NewTestWorkflowEnvironment()
+	// Give the deadlock detector generous headroom so loaded CI runners don't
+	// false-positive on the 1s default while the workflow goroutine runs.
+	s.env.SetWorkerOptions(worker.Options{
+		DeadlockDetectionTimeout: time.Minute,
+	})
 
 	// Register activities with string-based names so the test env can match them
 	// when called via method references with primitive (non-struct) arguments.
