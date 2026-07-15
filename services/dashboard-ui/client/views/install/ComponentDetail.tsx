@@ -29,9 +29,10 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { Panel } from '@/components/surfaces/Panel'
 import { useInstall } from '@/hooks/use-install'
+import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getAppConfig, getComponentBuilds, getInstallComponent } from '@/lib'
+import { getComponentBuilds, getInstallComponent } from '@/lib'
 import type { TComponentConfig, TInstall } from '@/types'
 
 function isComponentDisabled(
@@ -64,23 +65,7 @@ export const InstallComponentDetail = () => {
     enabled: !!org?.id && !!install?.id && !!componentId,
   })
 
-  const { data: appConfig, isLoading: isLoadingConfig } = useQuery({
-    queryKey: [
-      'app-config',
-      org?.id,
-      install?.app_id,
-      install?.app_config_id,
-      'recurse',
-    ],
-    queryFn: () =>
-      getAppConfig({
-        orgId: org.id,
-        appId: install.app_id,
-        appConfigId: install.app_config_id,
-        recurse: true,
-      }),
-    enabled: !!org?.id && !!install?.app_config_id,
-  })
+  const { appConfig, isLoading: isLoadingConfig } = useInstallAppConfig()
 
   const component = installComponent?.component
   const latestDeploy = installComponent?.install_deploys?.[0]
