@@ -36,7 +36,7 @@ export type InstallComponentRow = {
   action: ReactNode
   dependencies: ReactNode
   labels: ReactNode
-  removed: boolean
+  removed?: boolean
 }
 
 export function parseInstallComponentSummaryToTableData(

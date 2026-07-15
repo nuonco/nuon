@@ -24,7 +24,7 @@ export type InstallActionRow = {
   actionRunDuration: ReactNode
   labels: ReactNode
   href: string
-  removed: boolean
+  removed?: boolean
 }
 
 export function parseInstallActionsLatestRunsToTableData(

@@ -26,7 +26,7 @@ export type TInstallRunbookRow = {
   href: string
   latestRunHref: string | null
   installRunbook: TInstallRunbook
-  removed: boolean
+  removed?: boolean
 }
 
 export function parseInstallRunbooksToTableData(
