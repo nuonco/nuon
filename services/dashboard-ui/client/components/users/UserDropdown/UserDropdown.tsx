@@ -91,7 +91,7 @@ export const UserDropdown = ({
           </Button>
         )}
         {!hideOrgSettings && isAdmin && adminDashboardUrl && (
-          <Link href={adminDashboardUrl} isExternal>
+          <Link href="/admin/dashboard" isExternal>
             Admin dashboard <Icon variant="ArrowSquareOutIcon" />
           </Link>
         )}

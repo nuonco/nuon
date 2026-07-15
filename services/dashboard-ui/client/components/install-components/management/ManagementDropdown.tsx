@@ -18,7 +18,7 @@ const DisabledMenuItem = ({
   reason,
 }: {
   label: string
-  icon: 'CloudArrowDownIcon' | 'TrashIcon'
+  icon: 'CloudArrowDownIcon' | 'CloudArrowUpIcon' | 'TrashIcon'
   reason: string
 }) => (
   <Tooltip className="block !w-full" position="left" tipContent={reason}>
@@ -36,6 +36,7 @@ export const ManagementDropdown = ({
   currentDeployStatus,
   installComponent,
   isConfigLoading,
+  removed = false,
 }: {
   component: TComponent
   componentConfig?: TComponentConfig
@@ -43,6 +44,7 @@ export const ManagementDropdown = ({
   currentDeployStatus?: string
   installComponent?: TInstallComponent
   isConfigLoading?: boolean
+  removed?: boolean
 }) => {
   const workspaceId = installComponent?.terraform_workspace?.id
   const isToggleable = componentConfig?.toggleable === true
@@ -71,7 +73,13 @@ export const ManagementDropdown = ({
             isMenuButton
           />
         ) : null}
-        {!isDisabled ? (
+        {removed ? (
+          <DisabledMenuItem
+            label="Deploy component"
+            icon="CloudArrowUpIcon"
+            reason="This component is no longer in the install's app config version."
+          />
+        ) : !isDisabled ? (
           <>
             <DriftScanComponentButton
               component={component}

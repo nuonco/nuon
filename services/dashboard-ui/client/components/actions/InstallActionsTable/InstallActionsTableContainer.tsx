@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { SyncedFilterContainer } from '@/components/common/SyncedFilter'
@@ -25,53 +25,77 @@ export const InstallActionsTableContainer = ({
   const { org } = useOrg()
   const { install, labelColors } = useInstall()
   const offset = Number(searchParams.get('offset') ?? 0)
+  const q = searchParams.get('q') || undefined
+  const trigger_types = searchParams.get('trigger_types') || undefined
+  const labels = searchParams.get('labels') || undefined
+  const syncedOnly = searchParams.get('synced_only') === 'true'
 
   const { data: result, isLoading } = useQuery({
-    queryKey: [
-      'install-actions',
-      org?.id,
-      install?.id,
-      offset,
-      searchParams.get('q'),
-      searchParams.get('trigger_types'),
-      searchParams.get('labels'),
-      searchParams.get('synced'),
-    ],
+    queryKey: ['install-actions', org?.id, install?.id, offset, q, trigger_types, labels],
     queryFn: () =>
       getInstallActionsLatestRuns({
         orgId: org.id,
         installId: install.id,
         limit: LIMIT,
         offset,
-        q: searchParams.get('q') || undefined,
-        trigger_types: searchParams.get('trigger_types') || undefined,
-        labels: searchParams.get('labels') || undefined,
-        synced: searchParams.get('synced') === 'false' ? false : undefined,
+        q,
+        trigger_types,
+        labels,
       }),
+    placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
   })
 
+  const { data: removedResult } = useQuery({
+    queryKey: ['install-actions-removed', org?.id, install?.id, q, trigger_types, labels],
+    queryFn: () =>
+      getInstallActionsLatestRuns({
+        orgId: org.id,
+        installId: install.id,
+        limit: 100,
+        offset: 0,
+        q,
+        trigger_types,
+        labels,
+        synced: false,
+      }),
+    placeholderData: keepPreviousData,
+    refetchInterval: shouldPoll ? pollInterval : false,
+    enabled: !!org?.id && !!install?.id && !syncedOnly,
+  })
+
   const actions = result?.data ?? []
+  const removedActions =
+    offset === 0 && !syncedOnly ? removedResult?.data ?? [] : []
   const pagination = { hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }
+
+  const removedRows = parseInstallActionsLatestRunsToTableData(
+    removedActions,
+    org?.id ?? '',
+    install?.id ?? '',
+    labelColors,
+    true
+  )
+  const currentRows = parseInstallActionsLatestRunsToTableData(
+    actions,
+    org?.id ?? '',
+    install?.id ?? '',
+    labelColors
+  )
 
   return (
     <InstallActionsTable
       isLoading={isLoading}
-      data={parseInstallActionsLatestRunsToTableData(
-        actions,
-        org?.id ?? '',
-        install?.id ?? '',
-        labelColors
-      )}
+      data={[...removedRows, ...currentRows]}
       filterActions={
         <div className="flex items-center gap-4 flex-wrap">
+          <AdminDashboardLink path={`/queues?owner_id=${install.id}`} label="View queues" />
+          <SyncedFilterContainer />
           <LabelFilterDropdown
             queryKey={['action-label-keys', org.id, install?.app_id]}
             queryFn={() => getActionLabelKeys({ orgId: org.id, appId: install.app_id })}
           />
-          <AdminDashboardLink path={`/queues?owner_id=${install.id}`} label="View queues" />
-          <SyncedFilterContainer />
           <TriggeredByFilter />
         </div>
       }
