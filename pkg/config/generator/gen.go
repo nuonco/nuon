@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const schemaBaseURL = "https://api.nuon.co"
+
 func NewDefaultReflector() *jsonschema.Reflector {
 	return &jsonschema.Reflector{
 		ExpandedStruct:            true,
@@ -171,8 +173,11 @@ func (g *ConfigGen) EncodeToTOML(cs *ConfigStructure) error {
 func (g *ConfigGen) encodeConfigFile(cfd ConfigFileDefinition, name string) (*strings.Builder, error) {
 	var output strings.Builder
 
-	// write table header / schema name / schema url
-	output.WriteString(fmt.Sprintf("# %s\n\n", cfd.Header))
+	// write the schema directive so editors with a TOML LSP resolve the
+	// dedicated per-type schema for this file
+	if cfd.Header != "" {
+		output.WriteString(fmt.Sprintf("#:schema %s/v1/general/config-schema/%s\n\n", schemaBaseURL, cfd.Header))
+	}
 
 	for _, configFile := range cfd.Schemas {
 		schema := configFile.Schema()

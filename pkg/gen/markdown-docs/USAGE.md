@@ -199,7 +199,7 @@ If a schema is missing:
 
 1. Check it's in `schema.SchemaMapping`
 2. Verify the schema function returns no error
-3. Test the schema endpoint: `GET /v1/general/config-schema?type=<name>`
+3. Test the schema endpoint: `GET /v1/general/config-schema/<name>`
 
 ### MDX Parsing Errors
 
