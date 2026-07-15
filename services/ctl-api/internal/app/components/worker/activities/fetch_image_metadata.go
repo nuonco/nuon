@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
-	"golang.org/x/oauth2/google"
 )
 
 type FetchImageMetadataRequest struct {
@@ -136,21 +135,19 @@ func (a *Activities) getACRAuth(ctx context.Context, acrCfg *app.AzureACRImageCo
 }
 
 func (a *Activities) getGARAuth(ctx context.Context, garCfg *app.GCPGARImageConfig) (*metadata.RegistryAuth, error) {
-	ts, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
+	tok, err := a.GetGARAccessToken(ctx, &GetGARAccessTokenRequest{
+		ServiceAccountEmail:      garCfg.ServiceAccountEmail,
+		WorkloadIdentityProvider: garCfg.WorkloadIdentityProvider,
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get GCP token source for GAR")
-	}
-
-	token, err := ts.Token()
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get GCP access token for GAR")
+		return nil, errors.Wrap(err, "unable to get GAR access token")
 	}
 
 	host := garCfg.GCPRegion + "-docker.pkg.dev"
 	return &metadata.RegistryAuth{
 		ServerAddress: "https://" + host,
-		Username:      "oauth2accesstoken",
-		Password:      token.AccessToken,
+		Username:      tok.Username,
+		Password:      tok.Password,
 	}, nil
 }
 
