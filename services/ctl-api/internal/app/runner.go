@@ -141,3 +141,13 @@ func (r *Runner) BeforeCreate(tx *gorm.DB) error {
 
 	return nil
 }
+
+const missingMngProcessWarning = "The management process is not running. Remote restart, upgrade, and shutdown are unavailable until it recovers."
+
+func (r *Runner) AfterQuery(tx *gorm.DB) error {
+	if missing, ok := r.StatusV2.Metadata["missing_mng_process"].(bool); ok && missing {
+		r.Warnings = append(r.Warnings, missingMngProcessWarning)
+	}
+
+	return nil
+}
