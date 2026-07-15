@@ -1,6 +1,8 @@
 package gcp
 
 import (
+	"fmt"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -9,12 +11,14 @@ import (
 type GCPRoleRaw struct {
 	Name           string
 	Permissions    []string
+	Policies       map[string][]string
 	PredefinedRole string
 }
 
 // GCPOpRoleRaw is the un-rendered payload for a standard operation role.
 type GCPOpRoleRaw struct {
 	Permissions    []string
+	Policies       map[string][]string
 	PredefinedRole string
 }
 
@@ -32,6 +36,31 @@ func extractRolePermissions(role app.AppAWSIAMRoleConfig) ([]string, string) {
 	return perms, predefinedRole
 }
 
+// extractRolePolicyMap returns policy name → permissions (one custom role per
+// policy), mirroring extractRolePolicies. Empty policies are skipped; unnamed
+// ones fall back to "policy-<index>".
+func extractRolePolicyMap(role app.AppAWSIAMRoleConfig) (map[string][]string, string) {
+	policies := map[string][]string{}
+	var predefinedRole string
+	for i, policy := range role.Policies {
+		if policy.GCPPredefinedRole != "" {
+			predefinedRole = policy.GCPPredefinedRole
+		}
+		if len(policy.GCPPermissions) == 0 {
+			continue
+		}
+		name := policy.Name
+		if name == "" {
+			name = fmt.Sprintf("policy-%d", i)
+		}
+		policies[name] = policy.GCPPermissions
+	}
+	if len(policies) == 0 {
+		policies = nil
+	}
+	return policies, predefinedRole
+}
+
 // ExtractGCPStandardRolesRaw returns the permissions/predefined-role for the
 // standard provision/maintenance/deprovision operation roles.
 func ExtractGCPStandardRolesRaw(appCfg *app.AppConfig) (provision, maintenance, deprovision GCPOpRoleRaw) {
@@ -43,16 +72,17 @@ func ExtractGCPStandardRolesRaw(appCfg *app.AppConfig) (provision, maintenance, 
 			continue
 		}
 		perms, predefined := extractRolePermissions(role)
+		policies, _ := extractRolePolicyMap(role)
 		if len(perms) == 0 && predefined == "" {
 			continue
 		}
 		switch role.Type {
 		case app.AWSIAMRoleTypeRunnerProvision:
-			provision = GCPOpRoleRaw{Permissions: perms, PredefinedRole: predefined}
+			provision = GCPOpRoleRaw{Permissions: perms, Policies: policies, PredefinedRole: predefined}
 		case app.AWSIAMRoleTypeRunnerMaintenance:
-			maintenance = GCPOpRoleRaw{Permissions: perms, PredefinedRole: predefined}
+			maintenance = GCPOpRoleRaw{Permissions: perms, Policies: policies, PredefinedRole: predefined}
 		case app.AWSIAMRoleTypeRunnerDeprovision:
-			deprovision = GCPOpRoleRaw{Permissions: perms, PredefinedRole: predefined}
+			deprovision = GCPOpRoleRaw{Permissions: perms, Policies: policies, PredefinedRole: predefined}
 		}
 	}
 	return
@@ -67,10 +97,11 @@ func ExtractGCPRolesRaw(roles []app.AppAWSIAMRoleConfig) []GCPRoleRaw {
 			continue
 		}
 		perms, predefined := extractRolePermissions(role)
+		policies, _ := extractRolePolicyMap(role)
 		if len(perms) == 0 && predefined == "" {
 			continue
 		}
-		out = append(out, GCPRoleRaw{Name: role.Name, Permissions: perms, PredefinedRole: predefined})
+		out = append(out, GCPRoleRaw{Name: role.Name, Permissions: perms, Policies: policies, PredefinedRole: predefined})
 	}
 	return out
 }
