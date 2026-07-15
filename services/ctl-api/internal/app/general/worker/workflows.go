@@ -29,6 +29,7 @@ func (w Workflows) All() []any {
 		w.BackfillBlobsDay,
 		w.VerifyBlobs,
 		w.VerifyBlobsDay,
+		w.BackfillRunnerHealthcheckEmitters,
 	}
 	return wkflows
 }
@@ -42,6 +43,7 @@ func (w *Workflows) ListWorkflowFns() []any {
 		w.BackfillBlobsDay,
 		w.VerifyBlobs,
 		w.VerifyBlobsDay,
+		w.BackfillRunnerHealthcheckEmitters,
 	}
 }
 
