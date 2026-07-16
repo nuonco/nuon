@@ -91,6 +91,13 @@ func TestMatches(t *testing.T) {
 		StepID:       "iws_step_1",
 	}
 
+	awaitingRetryStep := signal.SignalPhaseEvent{
+		SignalType:   signalTypeWorkflowStepAwaitingRetry,
+		WorkflowType: "deploy_components",
+		Phase:        signal.SignalPhaseExecute,
+		StepID:       "iws_step_1",
+	}
+
 	successOutcome := &signal.SignalPhaseOutcome{Status: signal.SignalStatusSuccess}
 	failureOutcome := &signal.SignalPhaseOutcome{Status: signal.SignalStatusError}
 	cancelledOutcome := &signal.SignalPhaseOutcome{Status: signal.SignalStatusCancelled}
@@ -617,6 +624,60 @@ func TestMatches(t *testing.T) {
 			}},
 			want: false,
 		},
+		{
+			// The awaiting-retry carrier's own outcome is success — the
+			// matcher must still treat it as a failure event.
+			name:    "Awaiting-retry matches OutcomeFailures despite carrier success",
+			event:   awaitingRetryStep,
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceComponents: {Outcome: OutcomeFailures},
+			}},
+			want: true,
+		},
+		{
+			name:    "Awaiting-retry matches OutcomeCompletion",
+			event:   awaitingRetryStep,
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceComponents: {Outcome: OutcomeCompletion},
+			}},
+			want: true,
+		},
+		{
+			name:    "Awaiting-retry muted by OutcomeNone",
+			event:   awaitingRetryStep,
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceComponents: {Outcome: OutcomeNone},
+			}},
+			want: false,
+		},
+		{
+			name:    "Awaiting-retry respects Ops filter (non-matching op)",
+			event:   awaitingRetryStep,
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceComponents: {Ops: []string{"teardown"}, Outcome: OutcomeFailures},
+			}},
+			want: false,
+		},
+		{
+			name:    "Awaiting-retry dropped when resource not subscribed",
+			event:   awaitingRetryStep,
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceSandboxes: {Outcome: OutcomeFailures},
+			}},
+			want: false,
+		},
+		{
+			name:    "Awaiting-retry matches AllEvents",
+			event:   awaitingRetryStep,
+			outcome: successOutcome,
+			in:      AllEvents(),
+			want:    true,
+		},
 	}
 
 	for _, tc := range cases {
@@ -861,6 +922,41 @@ func TestClassifySlugs(t *testing.T) {
 				Phase:        signal.SignalPhaseExecute,
 			},
 			want: nil,
+		},
+		{
+			name: "awaiting-retry (deploy_components) → failed non-terminal slugs",
+			event: signal.SignalPhaseEvent{
+				SignalType:   signalTypeWorkflowStepAwaitingRetry,
+				WorkflowType: "deploy_components",
+				Phase:        signal.SignalPhaseExecute,
+				StepID:       "iws_x",
+			},
+			// The carrier signal itself succeeds; classification must still
+			// project a failure. No outcome:completion — the step isn't
+			// terminal yet.
+			outcome: &signal.SignalPhaseOutcome{Status: signal.SignalStatusSuccess},
+			want: []string{
+				"resource:components",
+				"op:components.deploy",
+				"event:lifecycle.failed",
+				"outcome:failures",
+			},
+		},
+		{
+			name: "awaiting-retry (provision) → sandboxes slugs via parent fallback",
+			event: signal.SignalPhaseEvent{
+				SignalType:   signalTypeWorkflowStepAwaitingRetry,
+				WorkflowType: "provision",
+				Phase:        signal.SignalPhaseExecute,
+				StepID:       "iws_x",
+			},
+			outcome: &signal.SignalPhaseOutcome{Status: signal.SignalStatusSuccess},
+			want: []string{
+				"resource:sandboxes",
+				"op:sandboxes.provision",
+				"event:lifecycle.failed",
+				"outcome:failures",
+			},
 		},
 		{
 			name: "drift-detected (drift_run) → components.drift slugs",

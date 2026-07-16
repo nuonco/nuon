@@ -187,7 +187,14 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 		return obj.Status, nil
 	}
 
-	return a.updateStatus(ctx, &obj, req.Status, getter)
+	if err := a.updateStatus(ctx, &obj, req.Status, getter); err != nil {
+		return err
+	}
+
+	if a.notifier != nil {
+		a.notifier.FlowStatusUpdated(ctx, req)
+	}
+	return nil
 }
 
 // @temporal-gen-v2 activity

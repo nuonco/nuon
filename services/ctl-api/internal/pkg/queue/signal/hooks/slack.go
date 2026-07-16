@@ -157,6 +157,7 @@ func (h *SlackSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) bool 
 		signalTypeWorkflowStepApprovalRequest,
 		signalTypeWorkflowStepApprovalResponse,
 		signalTypeDriftDetected,
+		signalTypeWorkflowStepAwaitingRetry,
 		signalTypeStackRun,
 		signalTypeRoleChange,
 		signalTypeInputsUpdated,
@@ -178,7 +179,7 @@ func (h *SlackSignalLifecycleHook) BeforePhase(ctx context.Context, event signal
 	// matching comment in webhook.go. Drift-detected is a single-shot
 	// notification carrier (its Execute is a no-op) so a "started" emission
 	// would just produce a duplicate message right before the real one.
-	if isApprovalSignalType(event.SignalType) || isNotificationOnlySignalType(event.SignalType) {
+	if suppressesStartedEvent(event.SignalType) {
 		return signal.AllowPhaseDecision(), nil
 	}
 

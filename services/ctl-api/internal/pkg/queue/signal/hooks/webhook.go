@@ -36,14 +36,15 @@ import (
 // multi-phase concepts (plan/apply), and inner signal type names are
 // deliberately NOT exposed.
 const (
-	cloudEventTypeWorkflow             = "com.nuon.workflow.lifecycle.v1"
-	cloudEventTypeWorkflowStep         = "com.nuon.workflow_step.lifecycle.v1"
-	cloudEventTypeWorkflowStepApproval = "com.nuon.workflow_step.approval.v1"
-	cloudEventTypeStackRun             = "com.nuon.stack.run.v1"
-	cloudEventTypeRoleChange           = "com.nuon.stack.role_change.v1"
-	cloudEventTypeInputsUpdated        = "com.nuon.stack.inputs_updated.v1"
-	cloudEventTypeAppConfigSynced      = "com.nuon.app.config_synced.v1"
-	cloudEventTypeUpdateAppConfig      = "com.nuon.install.app_config_updated.v1"
+	cloudEventTypeWorkflow                  = "com.nuon.workflow.lifecycle.v1"
+	cloudEventTypeWorkflowStep              = "com.nuon.workflow_step.lifecycle.v1"
+	cloudEventTypeWorkflowStepApproval      = "com.nuon.workflow_step.approval.v1"
+	cloudEventTypeWorkflowStepAwaitingRetry = "com.nuon.workflow_step.awaiting_retry.v1"
+	cloudEventTypeStackRun                  = "com.nuon.stack.run.v1"
+	cloudEventTypeRoleChange                = "com.nuon.stack.role_change.v1"
+	cloudEventTypeInputsUpdated             = "com.nuon.stack.inputs_updated.v1"
+	cloudEventTypeAppConfigSynced           = "com.nuon.app.config_synced.v1"
+	cloudEventTypeUpdateAppConfig           = "com.nuon.install.app_config_updated.v1"
 
 	kindWorkflow             = "workflow"
 	kindWorkflowStep         = "workflow_step"
@@ -76,6 +77,12 @@ const (
 	transitionRequested = "requested"
 	transitionApproved  = "approved"
 	transitionRejected  = "rejected"
+
+	// transitionAwaitingRetry is emitted on workflow_step.awaiting_retry.v1
+	// events when a step has failed and parked waiting for a manual retry,
+	// skip, or cancel. Non-terminal: the step's lifecycle event fires later
+	// once the workflow unblocks.
+	transitionAwaitingRetry = "awaiting_retry"
 )
 
 // signalTypeExecuteWorkflow matches the SignalType produced by
@@ -98,6 +105,12 @@ const (
 	// observed actual changes. Its lifecycle events are how subscribers who
 	// opted into per-resource `drift_detected: true` get notified.
 	signalTypeDriftDetected signal.SignalType = "drift-detected"
+	// signalTypeWorkflowStepAwaitingRetry mirrors workflowstepawaitingretry.
+	// SignalType — the notification-only signal enqueued when a workflow
+	// step fails and parks awaiting manual retry. Its successful after-phase
+	// is projected as a workflow_step.awaiting_retry.v1 event with a failed
+	// outcome sourced from the step's own error.
+	signalTypeWorkflowStepAwaitingRetry signal.SignalType = "workflow-step-awaiting-retry"
 
 	signalTypeStackRun        signal.SignalType = "stack-run"
 	signalTypeRoleChange      signal.SignalType = "role-change"
@@ -243,6 +256,7 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 		signalTypeWorkflowStepApprovalRequest,
 		signalTypeWorkflowStepApprovalResponse,
 		signalTypeDriftDetected,
+		signalTypeWorkflowStepAwaitingRetry,
 		signalTypeStackRun,
 		signalTypeRoleChange,
 		signalTypeInputsUpdated,
@@ -265,7 +279,7 @@ func (h *WebhookSignalLifecycleHook) BeforePhase(ctx context.Context, event sign
 	// terminal (approved / rejected). Drift-detected is a single-shot
 	// notification (its Execute is a no-op) — a "started" emission would
 	// just produce a duplicate event before the real one. Skip both.
-	if isApprovalSignalType(event.SignalType) || isNotificationOnlySignalType(event.SignalType) {
+	if suppressesStartedEvent(event.SignalType) {
 		return signal.AllowPhaseDecision(), nil
 	}
 
@@ -288,6 +302,17 @@ func isNotificationOnlySignalType(t signal.SignalType) bool {
 		return true
 	}
 	return false
+}
+
+// suppressesStartedEvent reports whether a signal type's synthetic "started"
+// (before-phase) emission should be skipped. Awaiting-retry is listed here
+// but deliberately NOT in isNotificationOnlySignalType: that predicate also
+// routes Slack messages to standalone (flat) posts, while awaiting-retry
+// should thread into the workflow's existing Slack thread like a step event.
+func suppressesStartedEvent(t signal.SignalType) bool {
+	return isApprovalSignalType(t) ||
+		isNotificationOnlySignalType(t) ||
+		t == signalTypeWorkflowStepAwaitingRetry
 }
 
 func (h *WebhookSignalLifecycleHook) AfterPhase(ctx context.Context, event signal.SignalPhaseEvent, outcome signal.SignalPhaseOutcome) error {
@@ -505,6 +530,12 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 	case kindUpdateAppConfig:
 		ceType = cloudEventTypeUpdateAppConfig
 	}
+	// Awaiting-retry shares kind=workflow_step with the normal step
+	// lifecycle but gets its own CloudEvent type so consumers can route the
+	// "action required" case without parsing the transition.
+	if event.SignalType == signalTypeWorkflowStepAwaitingRetry {
+		ceType = cloudEventTypeWorkflowStepAwaitingRetry
+	}
 
 	subject := buildSubject(event, data)
 
@@ -617,12 +648,25 @@ func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event s
 		return h.buildApprovalEventData(ctx, event, outcome)
 	}
 
+	// The awaiting-retry carrier only produces a public event from its
+	// successful after-phase: the before-phase is suppressed (see
+	// suppressesStartedEvent) and a failed/cancelled carrier means the
+	// notification itself broke — not something subscribers should see.
+	if event.SignalType == signalTypeWorkflowStepAwaitingRetry &&
+		(outcome == nil || outcome.Status != signal.SignalStatusSuccess) {
+		return lifecycleEventData{}, false
+	}
+
 	kind := kindWorkflow
-	if event.SignalType == signalTypeExecuteWorkflowStep {
+	if event.SignalType == signalTypeExecuteWorkflowStep ||
+		event.SignalType == signalTypeWorkflowStepAwaitingRetry {
 		kind = kindWorkflowStep
 	}
 
 	transition := mapTransition(event, outcome)
+	if event.SignalType == signalTypeWorkflowStepAwaitingRetry {
+		transition = transitionAwaitingRetry
+	}
 
 	data := lifecycleEventData{
 		Kind:       kind,
@@ -652,6 +696,21 @@ func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event s
 
 	if outcome != nil {
 		data.Outcome = h.buildOutcome(event, outcome)
+	}
+
+	// The awaiting-retry carrier signal itself always succeeds (its Execute
+	// is a no-op) — the outcome subscribers care about is the parked step's
+	// real failure, carried in the signal's lifecycle metadata. Project it
+	// as a failed outcome and pass the metadata (retry_index, max_retries,
+	// awaiting_retry / manual_action_required flags) through verbatim.
+	if event.SignalType == signalTypeWorkflowStepAwaitingRetry {
+		data.Metadata = event.Metadata
+		if data.Outcome != nil {
+			data.Outcome.Status = statusFailed
+			if errMsg, _ := event.Metadata["error"].(string); errMsg != "" {
+				data.Outcome.Error = errMsg
+			}
+		}
 	}
 
 	// Enrich the step on workflow_step.lifecycle events AND on the
