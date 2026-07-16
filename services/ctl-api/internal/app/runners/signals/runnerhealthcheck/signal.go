@@ -14,9 +14,11 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/runnerstatuschanged"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -245,6 +247,26 @@ func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, st
 			StatusDescription: description,
 		}); err != nil {
 			return errors.Wrap(err, "unable to update runner status")
+		}
+
+		if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:         runner.OrgID,
+			OwnerType:       "orgs",
+			QueueName:       "org-signals",
+			SignalOwnerID:   runner.ID,
+			SignalOwnerType: "runners",
+			Signal: &runnerstatuschanged.Signal{
+				RunnerID:        runner.ID,
+				OrgID:           runner.OrgID,
+				FromStatus:      runner.Status,
+				ToStatus:        status,
+				Reason:          description,
+				RunnerGroupType: runner.RunnerGroup.Type,
+				OwnerID:         runner.RunnerGroup.OwnerID,
+				OwnerType:       runner.RunnerGroup.OwnerType,
+			},
+		}); err != nil {
+			return errors.Wrap(err, "unable to enqueue runner status changed signal")
 		}
 	}
 
