@@ -249,6 +249,7 @@
               "configuration-files",
               {
                 "group": "Component Types",
+                "boost": 2.5,
                 "pages": [
                   "config-ref/container-image",
                   "config-ref/docker-build",
