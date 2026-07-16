@@ -62,19 +62,21 @@ func (a *Activities) upsertCloudDNSRecords(ctx context.Context, req DelegateDNSR
 		return fmt.Errorf("unable to create Cloud DNS client: %w", err)
 	}
 
-	// ensure domain has trailing dot (Cloud DNS format)
-	domain := req.Domain
-	if len(domain) > 0 && domain[len(domain)-1] != '.' {
-		domain += "."
+	// Cloud DNS requires both the record name and NS rrdata to be
+	// fully-qualified with a trailing dot; Route53 hands back nameservers
+	// without one.
+	nameservers := make([]string, len(req.NameServers))
+	for i, ns := range req.NameServers {
+		nameservers[i] = ensureTrailingDot(ns)
 	}
 
 	change := &googledns.Change{
 		Additions: []*googledns.ResourceRecordSet{
 			{
-				Name:    domain,
+				Name:    ensureTrailingDot(req.Domain),
 				Type:    "NS",
 				Ttl:     3600,
-				Rrdatas: req.NameServers,
+				Rrdatas: nameservers,
 			},
 		},
 	}
