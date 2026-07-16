@@ -28,7 +28,12 @@ func (w Wkflow) ProvisionDNSDelegation(ctx workflow.Context, req *ProvisionDNSDe
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
-	if !strings.Contains(req.Domain, w.cfg.DNSRootDomain) {
+	// DNS names from cloud providers (e.g. GCP Cloud DNS) may carry a trailing
+	// dot; normalize both sides so the delegation isn't silently skipped on a
+	// dot-only mismatch.
+	domain := strings.TrimSuffix(req.Domain, ".")
+	rootDomain := strings.TrimSuffix(w.cfg.DNSRootDomain, ".")
+	if !strings.Contains(domain, rootDomain) {
 		return nil, nil
 	}
 
