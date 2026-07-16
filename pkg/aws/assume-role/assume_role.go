@@ -40,6 +40,7 @@ type Settings struct {
 	RoleARN             string `validate:"required"`
 	RoleSessionName     string `validate:"required"`
 	RoleSessionDuration time.Duration
+	ExternalID          string
 
 	// TwoStepRoleARN is an optional second role, to assume. This is useful for situations where nuon has a shared
 	// role that is assumable by our systems/workers, that our customer's grant access too.
@@ -60,6 +61,7 @@ type assumer struct {
 	RoleARN             string `validate:"required"`
 	RoleSessionName     string `validate:"required"`
 	RoleSessionDuration time.Duration
+	ExternalID          string
 
 	Region string
 
@@ -97,6 +99,9 @@ func New(v *validator.Validate, opts ...assumerOptions) (*assumer, error) {
 	if a.RoleSessionDuration > maxSessionDuration {
 		return nil, fmt.Errorf("role session duration must be less than %d", maxSessionDuration)
 	}
+	if a.ExternalID != "" && (a.UseGithubOIDC || a.UseGCPOIDC) {
+		return nil, fmt.Errorf("external ID cannot be used with OIDC")
+	}
 
 	return a, nil
 }
@@ -110,6 +115,7 @@ func WithSettings(s Settings) assumerOptions {
 
 		a.RoleARN = s.RoleARN
 		a.RoleSessionName = s.RoleSessionName
+		a.ExternalID = s.ExternalID
 		a.TwoStepConfig = s.TwoStepConfig
 		a.UseGithubOIDC = s.UseGithubOIDC
 		a.UseGCPOIDC = s.UseGCPOIDC

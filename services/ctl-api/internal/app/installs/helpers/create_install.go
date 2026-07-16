@@ -23,7 +23,8 @@ type CreateInstallParams struct {
 	Name string `json:"name" validate:"required"`
 
 	AWSAccount *struct {
-		Region string `json:"region"`
+		Region       string `json:"region"`
+		ConnectionID string `json:"connection_id,omitempty"`
 	} `json:"aws_account"`
 
 	AzureAccount *struct {
@@ -140,6 +141,17 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 				Description: "aws_account.region is required for AWS installs",
 			}
 		}
+		if req.AWSAccount.ConnectionID != "" {
+			if runnerType != app.AppRunnerTypeAWS {
+				return nil, stderr.ErrUser{
+					Err:         fmt.Errorf("AWS account connections are not supported for runner type %q", runnerType),
+					Description: "AWS account connections are only supported for AWS runner installs",
+				}
+			}
+			if err := s.validateAWSAccountConnection(ctx, req.AWSAccount.ConnectionID); err != nil {
+				return nil, err
+			}
+		}
 	default:
 		if req.AWSAccount == nil && req.AzureAccount == nil && req.GCPAccount == nil {
 			return nil, stderr.ErrUser{
@@ -152,6 +164,9 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if req.AWSAccount != nil {
 		install.AWSAccount = &app.AWSAccount{
 			Region: req.AWSAccount.Region,
+		}
+		if req.AWSAccount.ConnectionID != "" {
+			install.AWSAccount.AWSAccountConnectionID = &req.AWSAccount.ConnectionID
 		}
 	}
 	if req.AzureAccount != nil {

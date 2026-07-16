@@ -109,6 +109,7 @@ func (c *Config) fetchCredentials(ctx context.Context) (aws.Config, error) {
 		RoleARN:             c.AssumeRole.RoleARN,
 		RoleSessionName:     c.AssumeRole.SessionName,
 		RoleSessionDuration: time.Second * time.Duration(c.AssumeRole.SessionDurationSeconds),
+		ExternalID:          c.AssumeRole.ExternalID,
 
 		UseGithubOIDC: c.AssumeRole.UseGithubOIDC,
 		UseGCPOIDC:    c.AssumeRole.UseGCPOIDC,

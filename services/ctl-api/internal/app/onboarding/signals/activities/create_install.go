@@ -72,7 +72,8 @@ func (a *Activities) createOnboardingInstall(ctx context.Context, input *CreateO
 	}
 	if input.AWSAccount != nil {
 		installParams.AWSAccount = &struct {
-			Region string `json:"region"`
+			Region       string `json:"region"`
+			ConnectionID string `json:"connection_id,omitempty"`
 		}{Region: input.AWSAccount.Region}
 	}
 	if input.AzureAccount != nil {

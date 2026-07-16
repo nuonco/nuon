@@ -85,7 +85,8 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	steps = append(steps, step)
 
 	step, err = sg.installSignalStep(ctx, installID, "await install stack", pgtype.Hstore{}, &awaitinstallstackversionrun.Signal{
-		InstallStackID: stackID,
+		InstallStackID:     stackID,
+		CreateManagedStack: true,
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, err

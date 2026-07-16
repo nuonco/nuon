@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { CreateInstallForm } from '@/components/installs/forms/CreateInstallForm'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-import type { TAppConfig } from '@/types'
+import type { TAppConfig, TAWSAccountConnection } from '@/types'
 import type { TAPIError } from '@/types'
 
 interface ICreateInstall {}
@@ -90,6 +90,7 @@ interface ICreateInstallModal extends ICreateInstall, IModal {
   platform: 'aws' | 'azure' | 'gcp'
   onSubmitAction: (formData: FormData) => Promise<any>
   onCancel: () => void
+  awsAccountConnections?: TAWSAccountConnection[]
 }
 
 export const CreateInstallModal = ({
@@ -105,6 +106,7 @@ export const CreateInstallModal = ({
   platform,
   onSubmitAction,
   onCancel,
+  awsAccountConnections,
   ...props
 }: ICreateInstallModal) => {
   const formRef = useRef<HTMLFormElement>(null)
@@ -133,12 +135,7 @@ export const CreateInstallModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="CubeIcon" size="24" />
           Create install
         </Text>
@@ -190,6 +187,7 @@ export const CreateInstallModal = ({
           }}
           onSubmit={(formData) => onSubmitAction(formData)}
           onCancel={onCancel}
+          awsAccountConnections={awsAccountConnections}
         />
       )}
     </Modal>
@@ -201,10 +199,7 @@ export const CreateInstallButton = ({
   ...props
 }: { onClick: () => void } & Omit<IButtonAsButton, 'onClick'>) => {
   return (
-    <Button
-      onClick={onClick}
-      {...props}
-    >
+    <Button onClick={onClick} {...props}>
       <Icon variant="CubeIcon" />
       Create install
     </Button>

@@ -2998,6 +2998,7 @@ export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
     "app.AWSAccount": {
+      connection_id?: string;
       created_at?: string;
       created_by_id?: string;
       iam_role_arn?: string;
@@ -4621,6 +4622,7 @@ export interface components {
       phone_home_url?: string;
       quick_link_url?: string;
       runs?: components["schemas"]["app.InstallStackVersionRun"][];
+      stack_name?: string;
       template_url?: string;
       terraform_checksum?: string;
       /**
@@ -6125,6 +6127,7 @@ export interface components {
     /** @enum {string} */
     "configs.OCIRegistryType": "ecr" | "acr" | "gar" | "private_oci" | "public_oci";
     "credentials.AssumeRoleConfig": {
+      external_id?: string;
       role_arn: string;
       session_duration_seconds?: number;
       session_name: string;
@@ -7403,6 +7406,7 @@ export interface components {
     };
     "service.CreateInstallRequest": {
       aws_account?: {
+        connection_id?: string;
         region?: string;
       };
       azure_account?: {
@@ -7429,6 +7433,7 @@ export interface components {
     "service.CreateInstallV2Request": {
       app_id: string;
       aws_account?: {
+        connection_id?: string;
         region?: string;
       };
       azure_account?: {
