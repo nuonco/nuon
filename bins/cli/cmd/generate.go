@@ -118,7 +118,7 @@ func (c *cli) initCmd() *cobra.Command {
 		}),
 	}
 
-	initCmd.PersistentFlags().StringVarP(&initPath, "path", "p", "./app-config", "path to create the app config directory")
+	initCmd.PersistentFlags().StringVarP(&initPath, "path", "p", "my-app", "path to create the app config directory")
 	initCmd.PersistentFlags().StringVarP(&prebuildTemplate, "prebuild-template", "t", "", "prebuild sample apps, aws-eks aws-ecs")
 	initCmd.PersistentFlags().BoolVar(&initEnableDefaults, "enable-defaults", false, "include default values from schema")
 	initCmd.PersistentFlags().BoolVar(&includeNonRequired, "include-non-required", false, "include parameters which are not required")

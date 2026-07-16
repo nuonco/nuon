@@ -62,7 +62,7 @@ func rendersBlock(s *jsonschema.Schema) bool {
 //   - phase: Which output pass (lines vs blocks) to emit; phaseAll emits everything
 //
 // Returns an error if the schema is invalid or if there are issues during encoding.
-func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, output *strings.Builder, prefix string, parentOptional bool, writeComments bool, skipNonRequired bool, extractor *InstanceValueExtractor, phase encodePhase) error {
+func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, output *strings.Builder, prefix string, parentOptional bool, writeComments bool, skipNonRequired bool, extractor *InstanceValueExtractor, phase encodePhase, instanceOnly bool) error {
 	if schema == nil || schema.Properties == nil {
 		return fmt.Errorf("schema or properties is nil")
 	}
@@ -112,6 +112,13 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, output *strings
 			}
 		}
 
+		// When rendering a concrete instance record (array item), emit only the
+		// fields the instance actually set — no empty placeholders or commented
+		// oneOf alternatives.
+		if instanceOnly && !hasInstanceValue {
+			continue
+		}
+
 		isOptional := skipNonRequired && (!isRequired || parentOptional) && !hasInstanceValue
 
 		// Non-chosen oneOf branches are always rendered, but commented out.
@@ -156,14 +163,14 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, output *strings
 		switch propertyType {
 		case "array":
 			// array contents
-			err := g.encodeTOMLArray(fullPath, propertySchema, output, isOptional, writeComments, extractor, fullPath)
+			err := g.encodeTOMLArray(fullPath, propertySchema, output, isOptional, writeComments, extractor, fullPath, instanceOnly)
 			if err != nil {
 				return err
 			}
 			output.WriteString("\n")
 		case "object":
 			// nested objects
-			err := g.encodeTOMLObject(fullPath, propertySchema, output, isOptional, writeComments, extractor, fullPath)
+			err := g.encodeTOMLObject(fullPath, propertySchema, output, isOptional, writeComments, extractor, fullPath, instanceOnly)
 			if err != nil {
 				return err
 			}
@@ -287,7 +294,7 @@ func (g *ConfigGen) writePrimitiveField(fieldName string, schema *jsonschema.Sch
 	output.WriteString("\n")
 }
 
-func (g *ConfigGen) encodeTOMLObject(tableName string, schema *jsonschema.Schema, output *strings.Builder, isOptional bool, writeComments bool, extractor *InstanceValueExtractor, propertyPath string) error {
+func (g *ConfigGen) encodeTOMLObject(tableName string, schema *jsonschema.Schema, output *strings.Builder, isOptional bool, writeComments bool, extractor *InstanceValueExtractor, propertyPath string, instanceOnly bool) error {
 	if schema.Properties == nil || schema.Properties.Len() == 0 {
 		if extractor != nil {
 			// Try with full path first, then fall back to just the property name
@@ -345,11 +352,11 @@ func (g *ConfigGen) encodeTOMLObject(tableName string, schema *jsonschema.Schema
 		}
 	}
 
-	g.recursivelyEncode(schema, output, tableName, isOptional, writeComments, false, nestedExtractor, phaseAll)
+	g.recursivelyEncode(schema, output, tableName, isOptional, writeComments, false, nestedExtractor, phaseAll, instanceOnly)
 	return nil
 }
 
-func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema, output *strings.Builder, isOptional bool, writeComments bool, extractor *InstanceValueExtractor, propertyPath string) error {
+func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema, output *strings.Builder, isOptional bool, writeComments bool, extractor *InstanceValueExtractor, propertyPath string, instanceOnly bool) error {
 	itemSchema := schema.Items
 
 	if itemSchema == nil {
@@ -385,7 +392,7 @@ func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema,
 		fmt.Fprintf(output, "%s[[%s]]\n", commentPrefix, arrayName)
 
 		if itemSchema.Properties != nil && itemSchema.Properties.Len() > 0 {
-			return g.recursivelyEncode(itemSchema, output, arrayName, isOptional, writeComments, false, extractor, phaseAll)
+			return g.recursivelyEncode(itemSchema, output, arrayName, isOptional, writeComments, false, extractor, phaseAll, instanceOnly)
 		}
 	case "array":
 		// Nested array (e.g., role containing policies array)
@@ -394,7 +401,7 @@ func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema,
 			// This is an array of arrays of objects - write the table syntax and recurse
 			fmt.Fprintf(output, "%s[[%s]]\n", commentPrefix, arrayName)
 			if itemSchema.Items.Properties != nil && itemSchema.Items.Properties.Len() > 0 {
-				return g.recursivelyEncode(itemSchema.Items, output, arrayName, isOptional, writeComments, false, extractor, phaseAll)
+				return g.recursivelyEncode(itemSchema.Items, output, arrayName, isOptional, writeComments, false, extractor, phaseAll, instanceOnly)
 			}
 		} else {
 			// Simple nested array of primitives - write as empty array
@@ -513,7 +520,7 @@ func (g *ConfigGen) formatInstanceArray(arrayName string, arrayValue reflect.Val
 				itemExtractor := NewInstanceValueExtractor(item.Interface())
 				if itemSchema.Properties != nil && itemSchema.Properties.Len() > 0 {
 					// use skipNonRequired=false to ensure all fields from instance are included
-					err := g.recursivelyEncode(itemSchema, output, arrayName, isOptional, false, false, itemExtractor, phaseAll)
+					err := g.recursivelyEncode(itemSchema, output, arrayName, isOptional, false, false, itemExtractor, phaseAll, true)
 					if err != nil {
 						return err
 					}

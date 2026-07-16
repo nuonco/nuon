@@ -118,6 +118,7 @@ var IgnoredProperties = []string{
 	"external_image",
 	"kubernetes_manifest",
 	"pulumi",
+	"slack_webhook_url",
 }
 
 type ConfigGen struct {
@@ -217,6 +218,13 @@ func (g *ConfigGen) WriteConfigToDisk(c *ConfigStructure) error {
 		fp = filepath.Join(fp, f.Name)
 		if err := os.WriteFile(fp, []byte(strings.TrimSpace(f.TomlEncoded)), 0o644); err != nil {
 			return errors.Wrapf(err, "failed to write schema file %s", fp)
+		}
+	}
+
+	for _, f := range c.RawFiles {
+		fp := filepath.Join(c.Name, f.Name)
+		if err := os.WriteFile(fp, []byte(f.Contents), 0o644); err != nil {
+			return errors.Wrapf(err, "failed to write file %s", fp)
 		}
 	}
 
@@ -383,7 +391,7 @@ func (g *ConfigGen) encodeConfigFile(cfd ConfigFileDefinition, name string) (*st
 
 			extractor := NewInstanceValueExtractor(configFile.Instance)
 
-			g.recursivelyEncode(schema, &output, "", false, g.EnableInfoComments, configFile.SkipNonRequired, extractor, phase)
+			g.recursivelyEncode(schema, &output, "", false, g.EnableInfoComments, configFile.SkipNonRequired, extractor, phase, false)
 		}
 	}
 
