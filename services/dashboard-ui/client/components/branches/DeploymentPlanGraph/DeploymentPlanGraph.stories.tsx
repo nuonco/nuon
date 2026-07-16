@@ -39,7 +39,7 @@ const mockConfig: any = {
 }
 
 export const ThreeGroups = () => (
-  <div className="p-4 bg-cool-grey-950">
+  <div className="p-4">
     <DeploymentPlanGraph
       config={mockConfig}
       installsById={mockInstalls}
@@ -68,7 +68,7 @@ const mockConfigIds: any = {
 }
 
 export const TwoGroupsById = () => (
-  <div className="p-4 bg-cool-grey-950">
+  <div className="p-4">
     <DeploymentPlanGraph
       config={mockConfigIds}
       installsById={mockInstalls}
@@ -78,7 +78,7 @@ export const TwoGroupsById = () => (
 )
 
 export const SingleGroup = () => (
-  <div className="p-4 bg-cool-grey-950">
+  <div className="p-4">
     <DeploymentPlanGraph
       config={{ install_groups: [mockConfig.install_groups[0]] }}
       installsById={mockInstalls}
