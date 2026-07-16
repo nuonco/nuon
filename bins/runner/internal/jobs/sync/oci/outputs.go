@@ -45,7 +45,7 @@ func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
 	}
 
 	obj := map[string]interface{}{
-		"repository":  h.state.plan.Dst.Repository,
+		"repository":  fullRepo,
 		"tag":         h.state.plan.DstTag,
 		"ref":         refOut,
 		"display_tag": h.state.plan.DstTag,
