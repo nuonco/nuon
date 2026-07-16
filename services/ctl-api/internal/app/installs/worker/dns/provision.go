@@ -51,3 +51,10 @@ func (w Wkflow) ProvisionDNSDelegation(ctx workflow.Context, req *ProvisionDNSDe
 
 	return &ProvisionDNSDelegationResponse{}, nil
 }
+
+func ensureTrailingDot(s string) string {
+	if s == "" || strings.HasSuffix(s, ".") {
+		return s
+	}
+	return s + "."
+}
