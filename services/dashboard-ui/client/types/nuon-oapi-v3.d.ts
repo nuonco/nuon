@@ -4030,6 +4030,7 @@ export interface components {
       id?: string;
       namespace?: string;
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      skip_crds?: boolean;
       storage_driver?: string;
       /** @description Newer config fields that we don't need a column for */
       take_ownership?: boolean;
@@ -4043,6 +4044,7 @@ export interface components {
       chart_name?: string;
       helm_repo_config?: components["schemas"]["app.HelmRepoConfig"];
       namespace?: string;
+      skip_crds?: boolean;
       storage_driver?: string;
       /** @description Newer fields that we don't need to store as columns in the database */
       take_ownership?: boolean;
@@ -4216,6 +4218,7 @@ export interface components {
       updated_at?: string;
     };
     "app.InstallAppConfigVersion": {
+      app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
       created_at?: string;
       created_by_id?: string;
@@ -6469,6 +6472,7 @@ export interface components {
        */
       name?: string;
       namespace?: string;
+      skip_crds?: boolean;
       storage_driver?: string;
       take_ownership?: boolean;
       values?: components["schemas"]["plantypes.HelmValue"][];
@@ -7279,6 +7283,7 @@ export interface components {
       };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
+      skip_crds?: boolean;
       skip_noops?: boolean;
       storage_driver?: string;
       take_ownership?: boolean;
