@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
@@ -25,9 +26,27 @@ func (s *Service) UpdateInput(ctx context.Context, installID string, inputs []st
 	}
 	installInput, err := s.api.UpdateInstallInputs(ctx, installID, request)
 	if err != nil {
-		return ui.PrintJSONError(err)
+		if printJSON {
+			return ui.PrintJSONError(err)
+		}
+		return ui.PrintError(err)
 	}
 
-	ui.PrintJSON(installInput)
+	if printJSON {
+		ui.PrintJSON(installInput)
+		return nil
+	}
+
+	values := redactedValues(installInput)
+	view := ui.NewGetView()
+	data := [][]string{{"", "VALUE"}}
+	for k, v := range inputsMap {
+		val, ok := values[k]
+		if !ok {
+			val = v
+		}
+		data = append(data, []string{styles.TextPrimary.Render(k), val})
+	}
+	view.Render(data)
 	return nil
 }
