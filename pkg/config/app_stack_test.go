@@ -44,6 +44,38 @@ func TestStackConfig_Parse_ValidCustomNestedStacks(t *testing.T) {
 	require.NoError(t, cfg.parse())
 }
 
+func TestStackConfig_Parse_DuplicateIndex(t *testing.T) {
+	cfg := &StackConfig{
+		Type:                    "aws-cloudformation",
+		Name:                    "my-stack",
+		Description:             "test stack",
+		VPCNestedTemplateURL:    "https://s3.amazonaws.com/bucket/vpc.yaml",
+		RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
+		CustomNestedStacks: []CustomNestedStack{
+			{Name: "preview_bucket", TemplateURL: "./cloudformation/s3-bucket/stack.yaml", Index: 0},
+			{Name: "rds_subnet", TemplateURL: "./cloudformation/rds-subnet/stack.yaml", Index: 0},
+		},
+	}
+	err := cfg.parse()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unique index")
+}
+
+func TestStackConfig_Parse_UniqueIndices(t *testing.T) {
+	cfg := &StackConfig{
+		Type:                    "aws-cloudformation",
+		Name:                    "my-stack",
+		Description:             "test stack",
+		VPCNestedTemplateURL:    "https://s3.amazonaws.com/bucket/vpc.yaml",
+		RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
+		CustomNestedStacks: []CustomNestedStack{
+			{Name: "preview_bucket", TemplateURL: "./cloudformation/s3-bucket/stack.yaml", Index: 0},
+			{Name: "rds_subnet", TemplateURL: "./cloudformation/rds-subnet/stack.yaml", Index: 1},
+		},
+	}
+	require.NoError(t, cfg.parse())
+}
+
 func TestStackConfig_Parse_AWSCloudFormation_MissingVPCTemplateURL(t *testing.T) {
 	cfg := &StackConfig{
 		Type:                    "aws-cloudformation",

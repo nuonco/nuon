@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/awslabs/goformation/v7/cloudformation"
 	nestedcloudformation "github.com/awslabs/goformation/v7/cloudformation/cloudformation"
@@ -83,8 +84,10 @@ type cfnTemplateShape struct {
 	Outputs map[string]struct{} `yaml:"Outputs"`
 }
 
+var templateFetchClient = &http.Client{Timeout: 30 * time.Second}
+
 func (tpl *Templates) fetchTemplate(templateURL string) (*cfnTemplateShape, error) {
-	resp, err := http.Get(templateURL)
+	resp, err := templateFetchClient.Get(templateURL)
 	if err != nil {
 		return nil, err
 	}

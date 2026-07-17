@@ -2,13 +2,17 @@ package installdelegationdns
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
+	"slices"
 
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 	route53_types "github.com/aws/aws-sdk-go-v2/service/route53/types"
 	"github.com/go-playground/validator/v10"
 	"golang.org/x/oauth2/google"
 	googledns "google.golang.org/api/dns/v1"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
 	"github.com/nuonco/nuon/pkg/generics"
@@ -62,30 +66,59 @@ func (a *Activities) upsertCloudDNSRecords(ctx context.Context, req DelegateDNSR
 		return fmt.Errorf("unable to create Cloud DNS client: %w", err)
 	}
 
-	// ensure domain has trailing dot (Cloud DNS format)
-	domain := req.Domain
-	if len(domain) > 0 && domain[len(domain)-1] != '.' {
-		domain += "."
+	// Cloud DNS requires both the record name and NS rrdata to be
+	// fully-qualified with a trailing dot; Route53 hands back nameservers
+	// without one.
+	nameservers := make([]string, len(req.NameServers))
+	for i, ns := range req.NameServers {
+		nameservers[i] = ensureTrailingDot(ns)
 	}
 
-	change := &googledns.Change{
-		Additions: []*googledns.ResourceRecordSet{
-			{
-				Name:    domain,
-				Type:    "NS",
-				Ttl:     3600,
-				Rrdatas: req.NameServers,
-			},
-		},
+	domain := ensureTrailingDot(req.Domain)
+	record := &googledns.ResourceRecordSet{
+		Name:    domain,
+		Type:    "NS",
+		Ttl:     3600,
+		Rrdatas: nameservers,
 	}
+	change := &googledns.Change{Additions: []*googledns.ResourceRecordSet{record}}
 
+	// Cloud DNS has no native upsert; if an NS record set already exists for
+	// this name, replace it by deleting the current one in the same change so
+	// retries and reprovisions are idempotent.
 	// req.ZoneID holds the Cloud DNS managed zone name (set via DNS_ZONE_ID on GCP)
-	_, err = svc.Changes.Create(a.cfg.ManagementAccountID, req.ZoneID, change).Context(ctx).Do()
-	if err != nil {
-		return fmt.Errorf("unable to create Cloud DNS NS record: %w", err)
+	existing, err := svc.ResourceRecordSets.Get(a.cfg.ManagementAccountID, req.ZoneID, domain, "NS").Context(ctx).Do()
+	switch {
+	case err == nil:
+		if existing.Ttl == record.Ttl && sameRecords(existing.Rrdatas, nameservers) {
+			return nil
+		}
+		change.Deletions = []*googledns.ResourceRecordSet{existing}
+	case !isNotFound(err):
+		return fmt.Errorf("unable to look up existing Cloud DNS NS record: %w", err)
+	}
+
+	if _, err := svc.Changes.Create(a.cfg.ManagementAccountID, req.ZoneID, change).Context(ctx).Do(); err != nil {
+		return fmt.Errorf("unable to upsert Cloud DNS NS record: %w", err)
 	}
 
 	return nil
+}
+
+func isNotFound(err error) bool {
+	var gerr *googleapi.Error
+	if errors.As(err, &gerr) {
+		return gerr.Code == http.StatusNotFound
+	}
+	return false
+}
+
+func sameRecords(a, b []string) bool {
+	a = slices.Clone(a)
+	b = slices.Clone(b)
+	slices.Sort(a)
+	slices.Sort(b)
+	return slices.Equal(a, b)
 }
 
 func (a *Activities) upsertDNSRecords(ctx context.Context, client route53Client, req DelegateDNSRequest) error {

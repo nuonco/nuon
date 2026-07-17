@@ -186,6 +186,7 @@ func (a *StackConfig) parse() error {
 			}
 		}
 	}
+	seenIndices := map[int]string{}
 	for i, stack := range a.CustomNestedStacks {
 		if stack.Name == "" {
 			return ErrConfig{
@@ -199,6 +200,13 @@ func (a *StackConfig) parse() error {
 				Err:         fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name),
 			}
 		}
+		if prev, exists := seenIndices[stack.Index]; exists {
+			return ErrConfig{
+				Description: fmt.Sprintf("custom_nested_stacks: index %d is used by both %q and %q; each stack must have a unique index", stack.Index, prev, stack.Name),
+				Err:         fmt.Errorf("custom_nested_stacks: index %d is used by both %q and %q; each stack must have a unique index", stack.Index, prev, stack.Name),
+			}
+		}
+		seenIndices[stack.Index] = stack.Name
 		for paramName, paramValue := range stack.Parameters {
 			if _, err := ParseInstallInputReference(paramValue); err != nil {
 				return ErrConfig{
