@@ -30,14 +30,16 @@ type appInstallSyncer struct {
 	api          nuon.Client
 	appID, orgID string
 	interactive  bool
+	asJSON       bool
 }
 
-func newAppInstallSyncer(api nuon.Client, appID, orgID string, interactive bool) *appInstallSyncer {
+func newAppInstallSyncer(api nuon.Client, appID, orgID string, interactive, asJSON bool) *appInstallSyncer {
 	return &appInstallSyncer{
 		api:         api,
 		appID:       appID,
 		orgID:       orgID,
 		interactive: interactive,
+		asJSON:      asJSON,
 	}
 }
 
@@ -45,13 +47,15 @@ func (s *appInstallSyncer) syncInstall(
 	ctx context.Context, installCfg *config.Install, installID string, autoApprove, wait, dryRun bool,
 ) (*models.AppInstall, error) {
 	var err error
-	ui.PrintLn(fmt.Sprintf("syncing install %s", installCfg.Name))
+	if !s.asJSON {
+		ui.PrintLn(fmt.Sprintf("syncing install %s", installCfg.Name))
+	}
 
 	if installCfg == nil {
 		return nil, fmt.Errorf("install config cannot be nil")
 	}
 
-	if dryRun {
+	if dryRun && !s.asJSON {
 		ui.PrintLn(fmt.Sprintf("dry run enabled, no changes will be made for install %s", installCfg.Name))
 	}
 
@@ -194,7 +198,9 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		return nil, fmt.Errorf("error handling workflow for install %s: %w", installCfg.Name, err)
 	}
 
-	ui.PrintSuccess(fmt.Sprintf("install %s created successfully", appInstall.Name))
+	if !s.asJSON {
+		ui.PrintSuccess(fmt.Sprintf("install %s created successfully", appInstall.Name))
+	}
 	return appInstall, nil
 }
 
@@ -255,7 +261,9 @@ func (s *appInstallSyncer) syncExistingInstall(
 	}
 	diffRes := diff.Summary()
 	if !diffRes.HasChanged {
-		ui.PrintSuccess(fmt.Sprintf("install %s is up to date, no changes needed", installCfg.Name))
+		if !s.asJSON {
+			ui.PrintSuccess(fmt.Sprintf("install %s is up to date, no changes needed", installCfg.Name))
+		}
 		return appInstall, nil
 	}
 
@@ -385,7 +393,9 @@ func (s *appInstallSyncer) syncExistingInstall(
 		return nil, fmt.Errorf("error syncing labels for install %s: %w", appInstall.Name, err)
 	}
 
-	ui.PrintSuccess(fmt.Sprintf("install %s updated successfully", appInstall.Name))
+	if !s.asJSON {
+		ui.PrintSuccess(fmt.Sprintf("install %s updated successfully", appInstall.Name))
+	}
 	return appInstall, nil
 }
 
@@ -430,26 +440,27 @@ func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string
 			})
 			if err != nil {
 				ui.PrintError(fmt.Errorf("failed auto-approving workflow: %w", err))
-			} else {
+			} else if !s.asJSON {
 				ui.PrintSuccess("All changes have been auto-approved")
 			}
-		} else {
+		} else if !s.asJSON {
 			ui.PrintWarning("Some workflow steps might need manual approval from the UI")
 		}
 	}
 
-	view := ui.NewGetView()
-	view.Render(formatWorkflows([]*models.AppWorkflow{workflow}))
+	if !s.asJSON {
+		view := ui.NewGetView()
+		view.Render(formatWorkflows([]*models.AppWorkflow{workflow}))
+	}
 
 	if !wait {
 		return nil
 	}
 
-	spinner := ui.NewSpinnerView(false, s.interactive)
+	spinner := ui.NewSpinnerView(s.asJSON, s.interactive)
 	spinner.Start("waiting for the workflow to complete")
 
 	for !workflow.Finished && workflow.Status.Status != models.AppStatusCancelled {
-		fmt.Println("finished:", workflow.Finished, "status:", workflow.Status.Status)
 		spinner.Update(fmt.Sprintf("waiting for the workflow to complete (status: %s)", workflow.Status.Status))
 
 		time.Sleep(defaultPollDuration)
@@ -466,11 +477,13 @@ func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string
 		spinner.Success("workflow successfully completed")
 	case models.AppStatusError:
 		spinner.Fail(fmt.Errorf("workflow failed"))
-		cfg, err := s.api.GetCLIConfig(ctx)
-		if err == nil {
-			url := fmt.Sprintf(
-				"%s/%s/installs/%s/workflows/%s", cfg.DashboardURL, s.orgID, installID, workflowID)
-			browser.OpenURL(url)
+		if !s.asJSON {
+			cfg, err := s.api.GetCLIConfig(ctx)
+			if err == nil {
+				url := fmt.Sprintf(
+					"%s/%s/installs/%s/workflows/%s", cfg.DashboardURL, s.orgID, installID, workflowID)
+				browser.OpenURL(url)
+			}
 		}
 	case models.AppStatusCancelled:
 		spinner.Fail(fmt.Errorf("workflow was cancelled"))
@@ -483,7 +496,7 @@ func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string
 }
 
 func (s *appInstallSyncer) printInstallDiff(diff *diff.Diff) {
-	if diff == nil {
+	if s.asJSON || diff == nil {
 		return
 	}
 	summary := diff.Summary()

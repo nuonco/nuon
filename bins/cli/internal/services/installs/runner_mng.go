@@ -79,7 +79,7 @@ func (s *Service) debugRunnerMng(installID, runnerID, endpoint string) {
 	ui.PrintDebug(fmt.Sprintf("install_id=%s runner_id=%s endpoint=POST /v1/runners/%s/mng/%s", installID, runnerID, runnerID, endpoint))
 }
 
-func (s *Service) RunnerRestart(ctx context.Context, installID string) error {
+func (s *Service) RunnerRestart(ctx context.Context, installID string, asJSON bool) error {
 	runnerID, err := s.getRunnerID(ctx, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -90,11 +90,14 @@ func (s *Service) RunnerRestart(ctx context.Context, installID string) error {
 		return ui.PrintError(s.wrapRunnerMngErr(err, "restart"))
 	}
 
-	ui.PrintLn("successfully triggered runner restart")
+	printActionResult(asJSON, "successfully triggered runner restart", actionResult{
+		ID:     runnerID,
+		Status: "runner_restart_triggered",
+	})
 	return nil
 }
 
-func (s *Service) RunnerShutDown(ctx context.Context, installID string) error {
+func (s *Service) RunnerShutDown(ctx context.Context, installID string, asJSON bool) error {
 	runnerID, err := s.getRunnerID(ctx, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -105,11 +108,14 @@ func (s *Service) RunnerShutDown(ctx context.Context, installID string) error {
 		return ui.PrintError(s.wrapRunnerMngErr(err, "shut down"))
 	}
 
-	ui.PrintLn("successfully triggered runner shutdown")
+	printActionResult(asJSON, "successfully triggered runner shutdown", actionResult{
+		ID:     runnerID,
+		Status: "runner_shutdown_triggered",
+	})
 	return nil
 }
 
-func (s *Service) RunnerVMShutDown(ctx context.Context, installID string) error {
+func (s *Service) RunnerVMShutDown(ctx context.Context, installID string, asJSON bool) error {
 	runnerID, err := s.getRunnerID(ctx, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -120,6 +126,9 @@ func (s *Service) RunnerVMShutDown(ctx context.Context, installID string) error 
 		return ui.PrintError(s.wrapRunnerMngErr(err, "shut down VM for"))
 	}
 
-	ui.PrintLn("successfully triggered runner VM shutdown")
+	printActionResult(asJSON, "successfully triggered runner VM shutdown", actionResult{
+		ID:     runnerID,
+		Status: "runner_vm_shutdown_triggered",
+	})
 	return nil
 }

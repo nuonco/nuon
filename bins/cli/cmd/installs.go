@@ -108,7 +108,7 @@ provided labels must match (AND semantics):
 		Long:  "Generate config file for an existing install, to be used with a nuon app config",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.GenerateConfig(cmd.Context(), id)
+			return svc.GenerateConfig(cmd.Context(), id, PrintJSON)
 		}),
 	}
 	generateConfigCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to import")
@@ -183,7 +183,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Long:  "Sync install(s) with the help of config files",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Sync(cmd.Context(), fileOrDir, appID, confirm, wait, dryRun)
+			return svc.Sync(cmd.Context(), fileOrDir, appID, confirm, wait, dryRun, PrintJSON)
 		}),
 	}
 	syncCmd.Flags().StringVarP(&fileOrDir, "file", "d", "", "Path to an install config file or a directory with install config files to sync")
@@ -201,7 +201,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Long:  "Toggle syncing of install using a config file",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.ToggleSync(cmd.Context(), id, enable, disable)
+			return svc.ToggleSync(cmd.Context(), id, enable, disable, PrintJSON)
 		}),
 	}
 	toggleSyncCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to toggle config file syncing for")
@@ -843,7 +843,7 @@ input that is not declared on the app raises an error.`,
 			Use:         "edit",
 			Short:       "Edit install inputs",
 			Long:        "Edit an install's inputs in an interactive TUI form pre-filled with the current values",
-			Annotations: tuiAnnotation(TUIAltScreen),
+			Annotations: annotations(tuiAnnotation(TUIAltScreen), outputsAnnotation(OutputTable)),
 			Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 				svc := installs.New(c.apiClient, c.cfg)
 				return svc.EditInputs(cmd.Context(), id, deployDependents)
@@ -875,7 +875,7 @@ input that is not declared on the app raises an error.`,
 		Long:  "Deselect your current install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Deselect(cmd.Context())
+			return svc.Deselect(cmd.Context(), PrintJSON)
 		}),
 	}
 	installsCmds.AddCommand(deselectInstallCmd)
@@ -887,7 +887,7 @@ input that is not declared on the app raises an error.`,
 		Hidden:     true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Deselect(cmd.Context())
+			return svc.Deselect(cmd.Context(), PrintJSON)
 		}),
 	}
 	installsCmds.AddCommand(unsetCurrentInstallCmd)
@@ -1403,7 +1403,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Long:  "Restart the runner process for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.RunnerRestart(cmd.Context(), id)
+			return svc.RunnerRestart(cmd.Context(), id, PrintJSON)
 		}),
 	}
 	runnerRestartCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
@@ -1416,7 +1416,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Long:  "Shut down the VM running the install runner",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.RunnerVMShutDown(cmd.Context(), id)
+			return svc.RunnerVMShutDown(cmd.Context(), id, PrintJSON)
 		}),
 	}
 	runnerShutdownVMCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
@@ -1430,7 +1430,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Hidden: true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.RunnerShutDown(cmd.Context(), id)
+			return svc.RunnerShutDown(cmd.Context(), id, PrintJSON)
 		}),
 	}
 	runnerShutdownCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")

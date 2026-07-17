@@ -13,5 +13,6 @@ func (s *Service) UnsetCurrent(ctx context.Context) error {
 		return view.Error(err)
 	}
 
+	s.printInstallUnsetMsg()
 	return nil
 }
