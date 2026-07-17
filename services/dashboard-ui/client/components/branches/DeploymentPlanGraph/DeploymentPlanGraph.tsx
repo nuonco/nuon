@@ -2,6 +2,7 @@ import { useMemo, memo } from 'react'
 import { type Node, type NodeProps } from '@xyflow/react'
 
 import { EmptyState } from '@/components/common/EmptyState'
+import { Icon } from '@/components/common/Icon'
 import { matchesSelector } from '@/components/match/matches'
 import { cn } from '@/utils/classnames'
 import type { TAppBranchConfig, TInstall } from '@/types'
@@ -57,7 +58,11 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
       ) : (
         visible.map((inst) => (
           <div key={inst.id} className="flex items-center gap-1.5">
-            <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', accent.dot)} />
+            <Icon
+              variant="CubeIcon"
+              size={compact ? 10 : 12}
+              className="shrink-0 text-cool-grey-400 dark:text-cool-grey-500"
+            />
             <span
               className={cn(
                 'truncate text-cool-grey-700 dark:text-cool-grey-200',

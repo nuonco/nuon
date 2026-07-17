@@ -50,7 +50,9 @@ export const WithBranches = () => (
       branches={mockBranches}
       installId="inst-new"
       orgId="org123"
+      appId="app123"
       onDone={() => alert('done')}
+      onSkip={() => alert('skip')}
     />
   </div>
 )
@@ -61,7 +63,9 @@ export const NoBranches = () => (
       branches={[]}
       installId="inst-new"
       orgId="org123"
+      appId="app123"
       onDone={() => alert('done')}
+      onSkip={() => alert('skip')}
     />
   </div>
 )

@@ -9,17 +9,19 @@ interface IBranchConnectionStepContainer {
   appId: string
   installId: string
   onDone: () => void
+  onSkip: () => void
 }
 
 export const BranchConnectionStepContainer = ({
   appId,
   installId,
   onDone,
+  onSkip,
 }: IBranchConnectionStepContainer) => {
   const { org } = useOrg()
   const orgId = org?.id ?? ''
 
-  const { data: branchList, isLoading } = useQuery({
+  const { data: branchList, isLoading, isSuccess } = useQuery({
     queryKey: ['app-branches', orgId, appId],
     queryFn: () => getAppBranches({ appId, orgId: orgId! }),
     enabled: !!orgId && !!appId,
@@ -43,10 +45,10 @@ export const BranchConnectionStepContainer = ({
     .filter(Boolean)
 
   useEffect(() => {
-    if (!isLoading && !hasBranches) {
+    if (isSuccess && !hasBranches) {
       onDone()
     }
-  }, [isLoading, hasBranches, onDone])
+  }, [isSuccess, hasBranches, onDone])
 
   if (isLoading) {
     return (
@@ -63,7 +65,9 @@ export const BranchConnectionStepContainer = ({
       branches={branchesWithConfigs as any[]}
       installId={installId}
       orgId={orgId}
+      appId={appId}
       onDone={onDone}
+      onSkip={onSkip}
     />
   )
 }
