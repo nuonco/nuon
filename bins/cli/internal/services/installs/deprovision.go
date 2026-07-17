@@ -13,11 +13,15 @@ func (s *Service) Deprovision(ctx context.Context, installID string, asJSON bool
 		return ui.PrintError(err)
 	}
 
-	_, err = s.api.DeprovisionInstall(ctx, installID)
+	resp, err := s.api.DeprovisionInstall(ctx, installID)
 	if err != nil {
 		return ui.PrintJSONError(err)
 	}
 
-	ui.PrintLn("successfully triggered install deprovision")
+	printActionResult(asJSON, "successfully triggered install deprovision", actionResult{
+		InstallID:  installID,
+		WorkflowID: workflowIDFromResp(resp),
+		Status:     "deprovision_triggered",
+	})
 	return nil
 }

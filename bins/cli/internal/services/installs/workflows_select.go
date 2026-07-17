@@ -67,7 +67,16 @@ func (s *Service) WorkflowsSelect(ctx context.Context, installID, workflowID str
 	}
 
 	if selectedWorkflow != nil {
-		s.printWorkflowSetMsg(selectedWorkflow.Name, selectedWorkflow.ID)
+		if asJSON {
+			ui.PrintJSON(actionResult{
+				InstallID:  installID,
+				ID:         selectedWorkflow.ID,
+				WorkflowID: selectedWorkflow.ID,
+				Status:     "workflow_selected",
+			})
+		} else {
+			s.printWorkflowSetMsg(selectedWorkflow.Name, selectedWorkflow.ID)
+		}
 	}
 
 	return nil
@@ -85,6 +94,15 @@ func (s *Service) setCurrentWorkflow(ctx context.Context, workflowID string, asJ
 
 	if err := s.setWorkflowID(ctx, workflow.ID); err != nil {
 		return err
+	}
+
+	if asJSON {
+		ui.PrintJSON(actionResult{
+			ID:         workflow.ID,
+			WorkflowID: workflow.ID,
+			Status:     "workflow_selected",
+		})
+		return nil
 	}
 
 	s.printWorkflowSetMsg(workflow.Name, workflow.ID)

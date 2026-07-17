@@ -94,7 +94,11 @@ func (s *Service) ComponentDeployCreate(ctx context.Context, installID, componen
 		return ui.PrintError(err)
 	}
 
-	ui.PrintLn(fmt.Sprintf("successfully triggered deploy for install %s", aid.ID))
+	printActionResult(asJSON, fmt.Sprintf("successfully triggered deploy for install %s", aid.ID), actionResult{
+		InstallID: installID,
+		ID:        aid.ID,
+		Status:    "deploy_triggered",
+	})
 	return nil
 }
 
@@ -121,6 +125,11 @@ func (s *Service) DeployCancel(ctx context.Context, installID, deployID string, 
 		return ui.PrintJSONError(err)
 	}
 
-	ui.PrintLn(fmt.Sprintf("successfully requested cancellation of deploy %s", deployID))
+	printActionResult(asJSON, fmt.Sprintf("successfully requested cancellation of deploy %s", deployID), actionResult{
+		InstallID:  installID,
+		ID:         deployID,
+		WorkflowID: workflowID,
+		Status:     "cancellation_requested",
+	})
 	return nil
 }

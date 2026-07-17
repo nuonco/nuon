@@ -30,9 +30,13 @@ func (s *Service) ReprovisionSandbox(ctx context.Context, installID string, skip
 		ui.PrintLn("workflow id: " + workflowID)
 	}
 
-	ui.PrintLn("successfully scheduled reprovision of install sandbox")
+	printActionResult(asJSON, "successfully scheduled reprovision of install sandbox", actionResult{
+		InstallID:  installID,
+		WorkflowID: workflowID,
+		Status:     "sandbox_reprovision_scheduled",
+	})
 
-	if workflowID != "" && s.cfg.Preview {
+	if !asJSON && workflowID != "" && s.cfg.Preview {
 		return s.workflowsTUI(ctx, installID, workflowID, false)
 	}
 

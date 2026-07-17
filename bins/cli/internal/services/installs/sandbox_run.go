@@ -59,6 +59,11 @@ func (s *Service) SandboxRunCancel(ctx context.Context, installID, runID string,
 		return ui.PrintJSONError(err)
 	}
 
-	ui.PrintLn(fmt.Sprintf("successfully requested cancellation of sandbox run %s", runID))
+	printActionResult(asJSON, fmt.Sprintf("successfully requested cancellation of sandbox run %s", runID), actionResult{
+		InstallID:  installID,
+		ID:         runID,
+		WorkflowID: workflowID,
+		Status:     "cancellation_requested",
+	})
 	return nil
 }
