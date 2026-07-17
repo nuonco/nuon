@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 
@@ -17,8 +18,10 @@ type cfnOutputsShape struct {
 	Outputs map[string]struct{} `yaml:"Outputs" json:"Outputs"`
 }
 
+var templateOutputsClient = &http.Client{Timeout: 30 * time.Second}
+
 func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
-	resp, err := http.Get(templateURL)
+	resp, err := templateOutputsClient.Get(templateURL)
 	if err != nil {
 		return nil, err
 	}
