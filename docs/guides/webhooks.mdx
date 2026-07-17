@@ -322,6 +322,24 @@ A typical Install provision produces, in order:
    `failed` / `cancelled`).
 3. `workflow.lifecycle succeeded` for the provision workflow once every step terminates.
 
+## Delivery guarantees and failures
+
+Nuon webhooks are best-effort notifications, not a durable event stream.
+
+- A final `2xx` response is required for a delivery to succeed.
+- Nuon waits up to 5 seconds for a response. Endpoints should acknowledge promptly and perform long-running
+  processing asynchronously.
+- Network errors, timeouts, and non-`2xx` responses are treated as delivery failures. Nuon does not retry these
+  failures or provide delivery history or replay.
+- A failed webhook does not interrupt the workflow that produced the event or prevent delivery attempts to other
+  webhook subscriptions.
+- Rare infrastructure interruptions can result in duplicate deliveries when Nuon cannot determine whether an earlier
+  request completed. A duplicate logical event may have a different CloudEvents `id`.
+
+Make webhook handlers idempotent. Persist or enqueue the event before returning a `2xx` response, and derive an
+idempotency key from the relevant workflow, step, resource, and transition fields rather than relying only on the
+CloudEvents `id`.
+
 ## Payload format
 
 The body is a CloudEvents v1.0 JSON envelope sent with `Content-Type: application/cloudevents+json; charset=utf-8`.
@@ -489,8 +507,8 @@ secret is configured, no signature header is sent.
 
 4. Your receiver should record one `workflow.lifecycle.started`, a sequence of `workflow_step.lifecycle.*` deliveries
    (one started + one terminal per step), and finally a `workflow.lifecycle.succeeded` (or `failed` / `cancelled`).
-   A `401` response from your receiver — for example, when the secrets do not match — surfaces in Nuon as a
-   delivery failure and the event is not retried.
+   A `401` response from your receiver, such as when the secrets do not match, is a delivery failure. See
+   [Delivery guarantees and failures](#delivery-guarantees-and-failures).
 
 5. When you are done, remove the webhook:
 
