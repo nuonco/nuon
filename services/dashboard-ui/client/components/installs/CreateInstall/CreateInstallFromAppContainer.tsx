@@ -164,6 +164,7 @@ export const CreateInstallFromAppContainer = ({
         appId={app.id}
         installId={createdInstall.id}
         onDone={navigateToInstall}
+        onSkip={() => removeModal(modalId)}
       />
     )
   }

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -13,7 +13,6 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [installCreated, setInstallCreated] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
-  const modalRef = useRef<HTMLDivElement>(null)
   const clearDraftRef = useRef<(() => void) | null>(null)
 
   const handleClose = () => {
@@ -81,6 +80,7 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
       size={selectedApp ? 'xl' : 'default'}
       className="!max-h-[80vh]"
       childrenClassName="flex-auto overflow-y-auto"
+      showFooter={!installCreated}
       onClose={handleClose}
       {...props}
       {...modalProps}
