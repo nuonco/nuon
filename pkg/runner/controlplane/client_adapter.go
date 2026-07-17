@@ -2,7 +2,6 @@ package controlplane
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -74,15 +73,7 @@ func (c *clientAdapter) GetJob(ctx context.Context, jobID string) (*models.AppRu
 }
 
 func (c *clientAdapter) GetJobCompositePlan(ctx context.Context, jobID string) (*models.PlantypesCompositePlan, error) {
-	planJSON, err := c.Client.GetJobPlanJSON(ctx, jobID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get job plan: %w", err)
-	}
-	var plan models.PlantypesCompositePlan
-	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
-		return nil, fmt.Errorf("unable to parse composite plan: %w", err)
-	}
-	return &plan, nil
+	return c.Client.GetJobCompositePlan(ctx, jobID)
 }
 
 func (c *clientAdapter) UpdateJob(context.Context, string, *models.ServiceUpdateRunnerJobRequest) (*models.AppRunnerJob, error) {
