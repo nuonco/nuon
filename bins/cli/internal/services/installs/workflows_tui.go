@@ -103,6 +103,9 @@ func (s *Service) workflowsTUILatest(ctx context.Context, installID string) erro
 	return nil
 }
 
+// ExitCodeFailed is the process exit code returned when a workflow watch fails.
+const ExitCodeFailed = 1
+
 // WorkflowsWatchTUI launches the full-screen TUI for watching all workflows for an install.
 // It accepts either an installID or workflowID. If workflowID is provided, it resolves
 // the install ID from the workflow's OwnerID field.
