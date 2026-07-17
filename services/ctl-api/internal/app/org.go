@@ -219,14 +219,14 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeaturePulumiUpdatePlans:       false,
 		OrgFeatureNotebooks:               false,
 		OrgFeatureSpaceliftInstallStacks:  false,
-		OrgFeatureControlPlaneBuilds:      false,
 		OrgFeatureStackTFProvider:         false,
+		OrgFeatureOrgRunner:               false,
 
 		// Enabled by default
+		OrgFeatureControlPlaneBuilds: true,
 		OrgFeatureParallelRunnerJobs: true,
 		OrgFeatureQueues:             true,
 		OrgFeatureOrgDashboard:       true,
-		OrgFeatureOrgRunner:          true,
 		OrgFeatureOrgSettings:        true,
 		OrgFeatureAppBranches:        true,
 		OrgFeatureLogTailLongPoll:    true,
