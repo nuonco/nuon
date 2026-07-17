@@ -99,23 +99,23 @@ func (s *Service) WorkflowsGet(ctx context.Context, workflowID string, asJSON bo
 		return nil
 	}
 
-	fmt.Printf("Workflow: %s\n", workflow.ID)
-	fmt.Printf("Name:     %s\n", workflow.Name)
-	fmt.Printf("Type:     %s\n", workflow.Type)
+	ui.Printf("Workflow: %s\n", workflow.ID)
+	ui.Printf("Name:     %s\n", workflow.Name)
+	ui.Printf("Type:     %s\n", workflow.Type)
 	if workflow.Status != nil {
-		fmt.Printf("Status:   %s\n", workflow.Status.Status)
+		ui.Printf("Status:   %s\n", workflow.Status.Status)
 	}
 	startedAt, _ := time.Parse(time.RFC3339Nano, workflow.StartedAt)
 	finishedAt, _ := time.Parse(time.RFC3339Nano, workflow.FinishedAt)
-	fmt.Printf("Started:  %s\n", startedAt.Format(time.Stamp))
+	ui.Printf("Started:  %s\n", startedAt.Format(time.Stamp))
 	if workflow.Finished {
-		fmt.Printf("Finished: %s\n", finishedAt.Format(time.Stamp))
-		fmt.Printf("Duration: %s\n", time.Duration(workflow.ExecutionTime).String())
+		ui.Printf("Finished: %s\n", finishedAt.Format(time.Stamp))
+		ui.Printf("Duration: %s\n", time.Duration(workflow.ExecutionTime).String())
 	}
-	fmt.Println()
+	ui.Println()
 
 	if len(workflow.Steps) > 0 {
-		fmt.Println("Steps:")
+		ui.Println("Steps:")
 		view.Render(formatWorkflowSteps(workflow.Steps))
 	}
 
@@ -211,12 +211,12 @@ func (s *Service) confirmStepAction(ctx context.Context, installID, workflowID, 
 	}
 
 	// Display step information
-	fmt.Println()
-	fmt.Printf("Step:   %s\n", step.Name)
-	fmt.Printf("ID:     %s\n", step.ID)
-	fmt.Printf("Index:  %d\n", step.Idx)
+	ui.Println()
+	ui.Printf("Step:   %s\n", step.Name)
+	ui.Printf("ID:     %s\n", step.ID)
+	ui.Printf("Index:  %d\n", step.Idx)
 	if step.Status != nil {
-		fmt.Printf("Status: %s\n", step.Status.Status)
+		ui.Printf("Status: %s\n", step.Status.Status)
 	}
 
 	// Try to display plan summary if available
@@ -229,16 +229,16 @@ func (s *Service) confirmStepAction(ctx context.Context, installID, workflowID, 
 				if err == nil && plan != "" {
 					formatted, err := plandiff.FormatPlan(plan)
 					if err == nil {
-						fmt.Println()
-						fmt.Println("Plan:")
-						fmt.Println(formatted)
+						ui.Println()
+						ui.Println("Plan:")
+						ui.Println(formatted)
 					}
 				}
 			}
 		}
 	}
 
-	fmt.Println()
+	ui.Println()
 
 	prompt := fmt.Sprintf("Are you sure you want to %s step '%s'?", action, step.Name)
 	return bubbles.Confirm(prompt, s.cfg.Interactive)
@@ -266,51 +266,51 @@ func (s *Service) WorkflowStepsGet(ctx context.Context, workflowID, stepID strin
 		return nil
 	}
 
-	fmt.Printf("Step:           %s\n", step.ID)
-	fmt.Printf("Name:           %s\n", step.Name)
-	fmt.Printf("Execution Type: %s\n", step.ExecutionType)
+	ui.Printf("Step:           %s\n", step.ID)
+	ui.Printf("Name:           %s\n", step.Name)
+	ui.Printf("Execution Type: %s\n", step.ExecutionType)
 	if step.Status != nil {
-		fmt.Printf("Status:         %s\n", step.Status.Status)
+		ui.Printf("Status:         %s\n", step.Status.Status)
 	}
-	fmt.Printf("Index:          %d\n", step.Idx)
-	fmt.Printf("Group Index:    %d\n", step.GroupIdx)
-	fmt.Printf("Retryable:      %t\n", step.Retryable)
-	fmt.Printf("Skippable:      %t\n", step.Skippable)
-	fmt.Printf("Finished:       %t\n", step.Finished)
+	ui.Printf("Index:          %d\n", step.Idx)
+	ui.Printf("Group Index:    %d\n", step.GroupIdx)
+	ui.Printf("Retryable:      %t\n", step.Retryable)
+	ui.Printf("Skippable:      %t\n", step.Skippable)
+	ui.Printf("Finished:       %t\n", step.Finished)
 
 	startedAt, _ := time.Parse(time.RFC3339Nano, step.StartedAt)
 	finishedAt, _ := time.Parse(time.RFC3339Nano, step.FinishedAt)
 	if !startedAt.IsZero() {
-		fmt.Printf("Started:        %s\n", startedAt.Format(time.Stamp))
+		ui.Printf("Started:        %s\n", startedAt.Format(time.Stamp))
 	}
 	if step.Finished && !finishedAt.IsZero() {
-		fmt.Printf("Finished At:    %s\n", finishedAt.Format(time.Stamp))
-		fmt.Printf("Duration:       %s\n", time.Duration(step.ExecutionTime).String())
+		ui.Printf("Finished At:    %s\n", finishedAt.Format(time.Stamp))
+		ui.Printf("Duration:       %s\n", time.Duration(step.ExecutionTime).String())
 	}
 
 	if step.StepTargetID != "" {
-		fmt.Printf("\nTarget:\n")
-		fmt.Printf("  Type: %s\n", step.StepTargetType)
-		fmt.Printf("  ID:   %s\n", step.StepTargetID)
+		ui.Printf("\nTarget:\n")
+		ui.Printf("  Type: %s\n", step.StepTargetType)
+		ui.Printf("  ID:   %s\n", step.StepTargetID)
 	}
 
 	if step.Approval != nil {
-		fmt.Printf("\nApproval:\n")
-		fmt.Printf("  ID:   %s\n", step.Approval.ID)
-		fmt.Printf("  Type: %s\n", step.Approval.Type)
+		ui.Printf("\nApproval:\n")
+		ui.Printf("  ID:   %s\n", step.Approval.ID)
+		ui.Printf("  Type: %s\n", step.Approval.Type)
 	}
 
 	if len(step.Links) > 0 {
-		fmt.Printf("\nLinks:\n")
+		ui.Printf("\nLinks:\n")
 		for key, value := range step.Links {
-			fmt.Printf("  %s: %v\n", key, value)
+			ui.Printf("  %s: %v\n", key, value)
 		}
 	}
 
 	if len(step.Metadata) > 0 {
-		fmt.Printf("\nMetadata:\n")
+		ui.Printf("\nMetadata:\n")
 		for key, value := range step.Metadata {
-			fmt.Printf("  %s: %s\n", key, value)
+			ui.Printf("  %s: %s\n", key, value)
 		}
 	}
 
@@ -444,7 +444,7 @@ func (s *Service) WorkflowStepApprove(ctx context.Context, installID, workflowID
 			return view.Error(err)
 		}
 		if !confirmed {
-			fmt.Println("Aborted.")
+			ui.Println("Aborted.")
 			return nil
 		}
 	}
@@ -471,7 +471,7 @@ func (s *Service) WorkflowStepApprove(ctx context.Context, installID, workflowID
 		return nil
 	}
 
-	fmt.Printf("Approved step %s\n", stepID)
+	ui.Printf("Approved step %s\n", stepID)
 	return nil
 }
 
@@ -495,7 +495,7 @@ func (s *Service) WorkflowStepReject(ctx context.Context, installID, workflowID,
 			return view.Error(err)
 		}
 		if !confirmed {
-			fmt.Println("Aborted.")
+			ui.Println("Aborted.")
 			return nil
 		}
 	}
@@ -522,7 +522,7 @@ func (s *Service) WorkflowStepReject(ctx context.Context, installID, workflowID,
 		return nil
 	}
 
-	fmt.Printf("Rejected step %s\n", stepID)
+	ui.Printf("Rejected step %s\n", stepID)
 	return nil
 }
 
@@ -546,7 +546,7 @@ func (s *Service) WorkflowStepRetry(ctx context.Context, installID, workflowID, 
 			return view.Error(err)
 		}
 		if !confirmed {
-			fmt.Println("Aborted.")
+			ui.Println("Aborted.")
 			return nil
 		}
 	}
@@ -565,7 +565,7 @@ func (s *Service) WorkflowStepRetry(ctx context.Context, installID, workflowID, 
 		return nil
 	}
 
-	fmt.Printf("Retried step %s\n", stepID)
+	ui.Printf("Retried step %s\n", stepID)
 	return nil
 }
 
@@ -615,7 +615,7 @@ func (s *Service) WorkflowStepPlan(ctx context.Context, installID, workflowID, s
 	}
 
 	if plan == "" {
-		fmt.Println("No plan available")
+		ui.Println("No plan available")
 		policyNames, _ := s.getPolicyNameMap(ctx, installID, workflowID)
 		displayPolicyViolationsIfPresent(step, policyNames)
 		return nil
@@ -645,12 +645,12 @@ func (s *Service) WorkflowStepPlan(ctx context.Context, installID, workflowID, s
 	formatted, err := plandiff.FormatPlan(plan)
 	if err != nil {
 		// Fall back to raw plan output if formatting fails
-		fmt.Println(plan)
+		ui.Println(plan)
 		displayPolicyViolationsIfPresent(step, policyNames)
 		return nil
 	}
 
-	fmt.Println(formatted)
+	ui.Println(formatted)
 	displayPolicyViolationsIfPresent(step, policyNames)
 	return nil
 }
@@ -664,7 +664,7 @@ func displayPolicyViolationsIfPresent(step *models.AppWorkflowStep, policyNames 
 	denyViolations, warnViolations := extractPolicyViolations(step.Status.Metadata)
 	output := formatPolicyViolationsDisplay(denyViolations, warnViolations, policyNames)
 	if output != "" {
-		fmt.Print(output)
+		ui.Print(output)
 	}
 }
 
@@ -692,7 +692,7 @@ func (s *Service) WorkflowSetApprovalOption(ctx context.Context, workflowID stri
 		return nil
 	}
 
-	fmt.Printf("Updated workflow %s approval option to %s\n", workflowID, approvalOption)
+	ui.Printf("Updated workflow %s approval option to %s\n", workflowID, approvalOption)
 	return nil
 }
 

@@ -1121,7 +1121,7 @@ By default, launches an interactive TUI to view workflows.`,
 		Long:  "Clear the currently selected workflow",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.WorkflowsDeselect(cmd.Context())
+			return svc.WorkflowsDeselect(cmd.Context(), PrintJSON)
 		}),
 	}
 	workflowsCmd.AddCommand(workflowsDeselectCmd)

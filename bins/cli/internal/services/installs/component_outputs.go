@@ -3,7 +3,6 @@ package installs
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/cockroachdb/errors"
 
@@ -39,6 +38,6 @@ func (s *Service) ComponentOutputs(ctx context.Context, installID, componentID s
 		return view.Error(err)
 	}
 
-	fmt.Println(string(b))
+	ui.Println(string(b))
 	return nil
 }

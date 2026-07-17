@@ -139,6 +139,22 @@ func PrintRaw(msg string) {
 	fmt.Fprint(agentmode.HumanWriter(), msg)
 }
 
+// Printf writes formatted human output to the mode-aware writer (stderr in agent
+// mode, stdout otherwise), so it never pollutes the agent stdout envelope.
+func Printf(format string, a ...any) {
+	fmt.Fprintf(agentmode.HumanWriter(), format, a...)
+}
+
+// Println mirrors fmt.Println but routes to the mode-aware writer.
+func Println(a ...any) {
+	fmt.Fprintln(agentmode.HumanWriter(), a...)
+}
+
+// Print mirrors fmt.Print but routes to the mode-aware writer.
+func Print(a ...any) {
+	fmt.Fprint(agentmode.HumanWriter(), a...)
+}
+
 func PrintLn(msg string) {
 	fmt.Fprintln(agentmode.HumanWriter(), bubbles.InfoStyle.Render(msg))
 }

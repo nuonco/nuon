@@ -50,7 +50,7 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 		}
 
 		url := fmt.Sprintf("%s/%s/installs/%s/workflows/%s?target=%s", cfg.DashboardURL, s.cfg.OrgID, workflow.OwnerID, workflowID, stepID)
-		fmt.Println(url)
+		ui.Println(url)
 		browser.OpenURL(url)
 		return nil
 	}
@@ -155,7 +155,7 @@ func (s *Service) streamStepLogs(ctx context.Context, logStreamID string, opts W
 			if shouldCollect {
 				collected = append(collected, rec)
 			} else {
-				fmt.Printf("[%s] %s %s: %s\n", rec.Timestamp, rec.SeverityText, rec.ServiceName, rec.Body)
+				ui.Printf("[%s] %s %s: %s\n", rec.Timestamp, rec.SeverityText, rec.ServiceName, rec.Body)
 				printed++
 				if opts.Limit > 0 && printed >= opts.Limit {
 					return nil
@@ -186,7 +186,7 @@ func (s *Service) streamStepLogs(ctx context.Context, logStreamID string, opts W
 	if shouldCollect {
 		sortLogRecords(collected, opts.SortOrder)
 		for _, rec := range collected {
-			fmt.Printf("[%s] %s %s: %s\n", rec.Timestamp, rec.SeverityText, rec.ServiceName, rec.Body)
+			ui.Printf("[%s] %s %s: %s\n", rec.Timestamp, rec.SeverityText, rec.ServiceName, rec.Body)
 			printed++
 			if opts.Limit > 0 && printed >= opts.Limit {
 				return nil

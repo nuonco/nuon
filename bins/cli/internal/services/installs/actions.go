@@ -3,7 +3,6 @@ package installs
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
@@ -95,7 +94,7 @@ func (s *Service) ActionOutputs(ctx context.Context, installID, actionWorkflowID
 		return view.Error(err)
 	}
 
-	fmt.Println(string(b))
+	ui.Println(string(b))
 	return nil
 }
 
