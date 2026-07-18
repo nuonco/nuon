@@ -48,6 +48,7 @@ import { WorkflowDetail } from './WorkflowDetail'
 import { RunnerJobDetail } from './RunnerJobDetail'
 import { Notebooks } from './Notebooks'
 import { NotebookDetail } from './NotebookDetail'
+import { InstallConfigs } from './InstallConfigs'
 
 export const installRoutes: RouteObject[] = [
   {
@@ -105,6 +106,7 @@ export const installRoutes: RouteObject[] = [
       },
       { path: ':orgId/installs/:installId/stacks', element: <Stacks /> },
       { path: ':orgId/installs/:installId/versions', element: <Versions /> },
+      { path: ':orgId/installs/:installId/configs', element: <InstallConfigs /> },
       { path: ':orgId/installs/:installId/branches', element: <InstallBranches /> },
       { path: ':orgId/installs/:installId/workflows', element: <Workflows /> },
       { path: ':orgId/installs/:installId/readme', element: <Readme /> },

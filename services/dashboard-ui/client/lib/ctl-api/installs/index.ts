@@ -5,6 +5,8 @@ export * from './resources'
 export * from './sandbox'
 
 // install query
+export * from './get-install-config-versions'
+export * from './get-install-config-syncs'
 export * from './get-installs'
 export * from './get-install-audit-log'
 export * from './get-install'
