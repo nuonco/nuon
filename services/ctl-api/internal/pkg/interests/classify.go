@@ -24,11 +24,17 @@ const (
 	// has been quiet long enough (5 min) for processhealthcheck to give up on
 	// it; the classifier maps it onto (runners, inactive) so subscribers can
 	// opt into a notification.
-	signalTypeOnInactive      signal.SignalType = "on_inactive"
-	signalTypeStackRun        signal.SignalType = "stack-run"
-	signalTypeRoleChange      signal.SignalType = "role-change"
-	signalTypeInputsUpdated   signal.SignalType = "inputs-updated"
-	signalTypeAppConfigSynced signal.SignalType = "app-config-synced"
+	signalTypeOnInactive signal.SignalType = "on_inactive"
+	// signalTypeWorkflowStepAwaitingRetry mirrors the
+	// flow/signals/workflowstepawaitingretry SignalType. The carrier signal
+	// itself always succeeds (notification-only), so classification can't
+	// use the phase outcome — the event is unconditionally treated as a
+	// failure-flavoured, non-terminal "action required" emission.
+	signalTypeWorkflowStepAwaitingRetry signal.SignalType = "workflow-step-awaiting-retry"
+	signalTypeStackRun                  signal.SignalType = "stack-run"
+	signalTypeRoleChange                signal.SignalType = "role-change"
+	signalTypeInputsUpdated             signal.SignalType = "inputs-updated"
+	signalTypeAppConfigSynced           signal.SignalType = "app-config-synced"
 )
 
 // stepTargetType* mirror the WorkflowStepTargetType strings declared in
@@ -58,6 +64,7 @@ const (
 	eventClassApprovalRequest
 	eventClassApprovalResponse
 	eventClassDriftDetected
+	eventClassAwaitingRetry
 	eventClassRoleChange
 	eventClassInputsUpdated
 	eventClassConfigSynced
@@ -230,6 +237,22 @@ func classify(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome,
 		f.Resource = res
 		f.Op = op
 		f.EventClass = eventClassDriftDetected
+		f.Resolved = true
+		return f
+
+	case signalTypeWorkflowStepAwaitingRetry:
+		// Same resource/op resolution as execute-workflow-step: the parked
+		// step's target type + parent workflow type land us on the taxonomy
+		// entry subscribers already filter by (components/deploy,
+		// sandboxes/provision, ...).
+		stepTarget := lookupStepTargetType(event, db)
+		res, op, ok := stepResolution(stepTarget, event.WorkflowType)
+		if !ok {
+			return f
+		}
+		f.Resource = res
+		f.Op = op
+		f.EventClass = eventClassAwaitingRetry
 		f.Resolved = true
 		return f
 
@@ -552,6 +575,13 @@ func slugsForFacts(f facts) []string {
 
 	case eventClassDriftDetected:
 		slugs = append(slugs, SlugEventDriftDetected)
+		return slugs
+
+	case eventClassAwaitingRetry:
+		// Projected as a failure: the step failed and parked. Deliberately
+		// no outcome:completion slug — the step is not terminal (a real
+		// lifecycle event follows once it's retried, skipped, or cancelled).
+		slugs = append(slugs, SlugEventLifecycleFailed, SlugOutcomeFailures)
 		return slugs
 
 	case eventClassRoleChange:

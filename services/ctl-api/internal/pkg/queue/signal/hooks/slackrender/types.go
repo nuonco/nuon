@@ -38,9 +38,10 @@ const (
 	TransitionFailed    = "failed"
 	TransitionCancelled = "cancelled"
 
-	TransitionRequested = "requested"
-	TransitionApproved  = "approved"
-	TransitionRejected  = "rejected"
+	TransitionRequested     = "requested"
+	TransitionApproved      = "approved"
+	TransitionRejected      = "rejected"
+	TransitionAwaitingRetry = "awaiting_retry"
 )
 
 // OwnerType values for WorkflowRef.OwnerType.

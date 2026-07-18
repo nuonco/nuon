@@ -556,6 +556,8 @@ func statusEmoji(transition string) string {
 		return "❌"
 	case TransitionCancelled:
 		return "🚫"
+	case TransitionAwaitingRetry:
+		return "⚠️"
 	case TransitionRequested:
 		return "⏸️"
 	case TransitionApproved:
