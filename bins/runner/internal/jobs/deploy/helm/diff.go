@@ -103,14 +103,26 @@ func (h *handler) getDiff(l *zap.Logger, kubeCfg *rest.Config, release, target *
 		newSpec = manifest.Parse(string(targetResources), target.Namespace, false)
 	}
 
-	diff, err := h.diff(currentSpecs, newSpec)
+	// helm-diff redacts Secret contents in place, so each pass gets its own
+	// copy — a second pass over redacted maps fails to re-parse them and
+	// replaces every Secret with "Error parsing new secret: illegal base64".
+	diff, err := h.diff(cloneSpecs(currentSpecs), cloneSpecs(newSpec))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to generate diff")
 	}
-	diffReport, err := h.diffReport(currentSpecs, newSpec)
+	diffReport, err := h.diffReport(cloneSpecs(currentSpecs), cloneSpecs(newSpec))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to generate diff report")
 	}
 
 	return diff, diffReport, nil
+}
+
+func cloneSpecs(specs map[string]*manifest.MappingResult) map[string]*manifest.MappingResult {
+	out := make(map[string]*manifest.MappingResult, len(specs))
+	for k, v := range specs {
+		cp := *v
+		out[k] = &cp
+	}
+	return out
 }
