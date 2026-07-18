@@ -80,6 +80,15 @@ func Matches(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, 
 		return cfg.ApprovalResponses
 	case eventClassDriftDetected:
 		return cfg.DriftDetected
+	case eventClassAwaitingRetry:
+		// Awaiting-retry is a failure-flavoured "action required" event: any
+		// subscriber who would receive a failed lifecycle event for this
+		// resource/op receives it (failures, completion, and all outcomes;
+		// only OutcomeNone suppresses it).
+		if len(cfg.Ops) > 0 && !contains(cfg.Ops, f.Op) {
+			return false
+		}
+		return cfg.Outcome != OutcomeNone
 	case eventClassRoleChange:
 		return cfg.RoleChanges
 	case eventClassInputsUpdated:
