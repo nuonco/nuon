@@ -136,6 +136,8 @@ func transitionPhrase(transition string) string {
 		return "Cancelled"
 	case TransitionRequested:
 		return "Awaiting approval"
+	case TransitionAwaitingRetry:
+		return "Awaiting manual retry"
 	case TransitionApproved:
 		return "Approved"
 	case TransitionRejected:

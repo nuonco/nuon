@@ -7,6 +7,7 @@ import (
 	cctxinterceptor "github.com/nuonco/nuon/services/ctl-api/internal/interceptors/cctx"
 	metricsinterceptor "github.com/nuonco/nuon/services/ctl-api/internal/interceptors/metrics"
 	validateinterceptor "github.com/nuonco/nuon/services/ctl-api/internal/interceptors/validate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/workflowstepawaitingretry"
 	queue "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	queueactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter"
@@ -69,6 +70,7 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(handleractivities.New),
 	fx.Provide(emitteractivities.New),
 	fx.Provide(statusactivities.New),
+	fx.Provide(workflowstepawaitingretry.NewNotifier),
 	fx.Provide(controlplanejob.NewActivities),
 	fx.Provide(activities.New),
 	fx.Provide(onboardingactivities.New),

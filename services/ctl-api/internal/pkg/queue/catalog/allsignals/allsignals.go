@@ -147,4 +147,5 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstepgroup"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/workflowstepawaitingretry"
 )
