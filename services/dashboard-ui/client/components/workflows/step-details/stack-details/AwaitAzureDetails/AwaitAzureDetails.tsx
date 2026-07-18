@@ -2,7 +2,6 @@ import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
-import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
@@ -17,13 +16,37 @@ interface IAwaitAzureDetails extends IStackDetails {
 
 export const AwaitAzureDetails = ({ stack, installId, azureLocation, secrets }: IAwaitAzureDetails) => {
   const vaultName = installId.slice(0, 24)
-  const customerSecrets = secrets?.filter((s) => !s.auto_generate)
-  const requiredSecrets = customerSecrets?.filter((s) => s.required || (!s.default && !s.required))
-  const overridableSecrets = customerSecrets?.filter((s) => !s.required && !!s.default)
+  // Azure stacks never create vault secrets — customers pre-create all of them, even auto-generated/defaulted ones
+  const allSecrets = [...(secrets ?? [])].sort(
+    (a, b) => Number(!!b.required) - Number(!!a.required)
+  )
+
+  const secretValue = (secret: TAppSecretConfig) => {
+    if (secret.auto_generate) {
+      return secret.format === 'base64'
+        ? '$(openssl rand -base64 48)'
+        : '$(openssl rand -hex 32)'
+    }
+    return secret.default || '<your-secret-value>'
+  }
+
+  const secretHint = (secret: TAppSecretConfig) => {
+    if (secret.auto_generate) {
+      return 'The command generates a random value for this secret.'
+    }
+    if (secret.default) {
+      return 'The command pre-fills the app default. Replace the value to override it.'
+    }
+    if (!secret.required) {
+      return 'Optional. Create it only if your app needs a value.'
+    }
+    return null
+  }
 
   const renderSecretCard = (secret: TAppSecretConfig) => {
-    const kvName = secret.name.replaceAll('_', '-')
-    const cmd = `az keyvault secret set --vault-name ${vaultName} --name ${kvName} --value "<your-secret-value>"`
+    const kvName = (secret.name ?? '').replaceAll('_', '-')
+    const cmd = `az keyvault secret set --vault-name ${vaultName} --name ${kvName} --value "${secretValue(secret)}"`
+    const hint = secretHint(secret)
     return (
       <Card key={secret.name}>
         <span className="flex justify-between items-center">
@@ -40,6 +63,10 @@ export const AwaitAzureDetails = ({ stack, installId, azureLocation, secrets }: 
         </span>
         {secret.description && (
           <Text variant="subtext">{secret.description}</Text>
+        )}
+        {hint && <Text variant="subtext">{hint}</Text>}
+        {secret.format === 'base64' && !secret.auto_generate && (
+          <Text variant="subtext">The value must be base64-encoded.</Text>
         )}
         <Code>{cmd}</Code>
       </Card>
@@ -100,14 +127,16 @@ export const AwaitAzureDetails = ({ stack, installId, azureLocation, secrets }: 
         </Card>
       </div>
 
-      {customerSecrets && customerSecrets.length > 0 && (
+      {allSecrets.length > 0 && (
         <div className="flex flex-col gap-4">
           <Text variant="base" weight="strong">
             Create secrets in the Key Vault
           </Text>
           <Text variant="subtext">
-            Before deploying the stack, create the following secrets in the Key
-             Vault. The secret names must match exactly.
+            Before deploying the stack, create every secret below in the Key
+            Vault. The stack does not create secrets — a skipped secret is never
+            synced, even when it has a default. The secret names must match
+            exactly.
           </Text>
 
           <Card>
@@ -125,25 +154,7 @@ export const AwaitAzureDetails = ({ stack, installId, azureLocation, secrets }: 
             `}</Code>
           </Card>
 
-            {requiredSecrets?.map(renderSecretCard)}
-              {overridableSecrets && overridableSecrets.length > 0 && (
-                <Expand
-                  id="overridable-secrets"
-                  heading={
-                    <Text variant="subtext">
-                      Optional overrides ({overridableSecrets.length})
-                    </Text>
-                  }
-                >
-                  <div className="flex flex-col gap-4 p-2">
-                    <Text variant="subtext">
-                      These secrets have default values. Set them only if you need
-                      to override the defaults.
-                    </Text>
-                    {overridableSecrets.map(renderSecretCard)}
-                  </div>
-                </Expand>
-              )}
+          {allSecrets.map(renderSecretCard)}
         </div>
       )}
 
