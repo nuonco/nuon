@@ -32,7 +32,7 @@ export const AwaitAzureDetails = ({ stack, installId, azureLocation, secrets }: 
 
   const secretHint = (secret: TAppSecretConfig) => {
     if (secret.auto_generate) {
-      return 'The command generates a random value for this secret.'
+      return 'The command generates a random value for test purposes. Replace it with your own value if needed.'
     }
     if (secret.default) {
       return 'The command pre-fills the app default. Replace the value to override it.'
