@@ -11,6 +11,8 @@ type pushEventInfo struct {
 	PusherEmail  string   // email of the person who pushed
 	SenderLogin  string   // GitHub username of the sender (always present)
 	PusherEmails []string // all unique emails from the payload (pusher, commit author/committer)
+	ChangedFiles []string // deduplicated list of added/modified/removed files across all commits
+	HeadSHA      string   // SHA of the head commit
 }
 
 type pullRequestEventInfo struct {
@@ -56,6 +58,12 @@ func parsePushEvent(payload map[string]any) (*pushEventInfo, error) {
 	}
 
 	emails := collectPushEmails(payload, pusherEmail)
+	changedFiles := collectChangedFiles(payload)
+
+	var headSHA string
+	if hc, ok := payload["head_commit"].(map[string]any); ok {
+		headSHA, _ = hc["id"].(string)
+	}
 
 	return &pushEventInfo{
 		Repo:         fullName,
@@ -63,6 +71,8 @@ func parsePushEvent(payload map[string]any) (*pushEventInfo, error) {
 		PusherEmail:  pusherEmail,
 		SenderLogin:  senderLogin,
 		PusherEmails: emails,
+		ChangedFiles: changedFiles,
+		HeadSHA:      headSHA,
 	}, nil
 }
 
@@ -114,6 +124,36 @@ func collectPushEmails(payload map[string]any, pusherEmail string) []string {
 	}
 
 	return emails
+}
+
+func collectChangedFiles(payload map[string]any) []string {
+	seen := make(map[string]bool)
+	var files []string
+
+	addFiles := func(commit map[string]any, key string) {
+		if arr, ok := commit[key].([]any); ok {
+			for _, f := range arr {
+				if s, ok := f.(string); ok && !seen[s] {
+					seen[s] = true
+					files = append(files, s)
+				}
+			}
+		}
+	}
+
+	if commits, ok := payload["commits"].([]any); ok {
+		for _, c := range commits {
+			commit, ok := c.(map[string]any)
+			if !ok {
+				continue
+			}
+			addFiles(commit, "added")
+			addFiles(commit, "modified")
+			addFiles(commit, "removed")
+		}
+	}
+
+	return files
 }
 
 func parsePullRequestEvent(payload map[string]any) (*pullRequestEventInfo, error) {

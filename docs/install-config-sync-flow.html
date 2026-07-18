@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Install Config Sync Flow</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1117; color: #e1e4e8; padding: 40px; }
+  h1 { font-size: 24px; margin-bottom: 8px; color: #fff; }
+  h2 { font-size: 18px; margin: 48px 0 16px; color: #79c0ff; }
+  h3 { font-size: 15px; margin: 32px 0 12px; color: #d2a8ff; }
+  .subtitle { color: #8b949e; margin-bottom: 32px; font-size: 14px; }
+  .section-desc { color: #8b949e; font-size: 13px; margin-bottom: 20px; line-height: 1.6; }
+
+  .diagram { display: flex; flex-direction: column; gap: 0; max-width: 900px; margin: 0 auto; }
+  .flow-section { position: relative; padding: 0 0 0 48px; }
+  .flow-section::before { content: ''; position: absolute; left: 19px; top: 0; bottom: 0; width: 2px; background: #30363d; }
+  .flow-section:last-child::before { display: none; }
+
+  .node { position: relative; margin-bottom: 16px; }
+  .node-dot { position: absolute; left: -37px; top: 12px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid; }
+  .dot-blue { border-color: #58a6ff; background: #1f3a5f; }
+  .dot-green { border-color: #3fb950; background: #1a3a2a; }
+  .dot-orange { border-color: #d29922; background: #3a2f1a; }
+  .dot-purple { border-color: #bc8cff; background: #2a1f3a; }
+  .dot-red { border-color: #f85149; background: #3a1a1a; }
+  .dot-cyan { border-color: #39d2c0; background: #1a3a35; }
+  .dot-pink { border-color: #f778ba; background: #3a1a2e; }
+
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
+  .card-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .card-detail { font-size: 12px; color: #8b949e; line-height: 1.6; }
+  .card-file { font-family: 'SF Mono', Menlo, monospace; font-size: 11px; color: #7ee787; margin-top: 6px; }
+
+  .signal-badge { display: inline-block; font-size: 11px; font-family: 'SF Mono', Menlo, monospace; padding: 2px 8px; border-radius: 4px; margin-right: 6px; }
+  .badge-signal { background: #1f3a5f; color: #58a6ff; border: 1px solid #264f78; }
+  .badge-activity { background: #2a1f3a; color: #bc8cff; border: 1px solid #3d2a5f; }
+  .badge-record { background: #1a3a2a; color: #3fb950; border: 1px solid #2a5f3a; }
+  .badge-model { background: #3a2f1a; color: #d29922; border: 1px solid #5f4a1a; }
+  .badge-ui { background: #1a3a35; color: #39d2c0; border: 1px solid #2a5f55; }
+  .badge-new { background: #3a1a2e; color: #f778ba; border: 1px solid #5f2a4a; }
+
+  .arrow { text-align: center; padding: 8px 0; color: #484f58; font-size: 18px; }
+  .loop-container { border: 1px dashed #30363d; border-radius: 8px; padding: 16px; margin: 8px 0; background: #0d1117; }
+  .loop-label { font-size: 12px; color: #d29922; font-weight: 600; margin-bottom: 12px; }
+
+  .model-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 900px; margin: 16px auto; }
+  .model-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
+  .model-card h4 { font-size: 13px; color: #d29922; margin-bottom: 8px; }
+  .model-field { font-family: 'SF Mono', Menlo, monospace; font-size: 11px; color: #c9d1d9; padding: 2px 0; }
+  .model-field .type { color: #79c0ff; }
+  .model-field .fk { color: #bc8cff; }
+  .model-field .comment { color: #484f58; }
+
+  .trigger-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; max-width: 900px; margin: 16px auto; }
+  .trigger-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px; text-align: center; }
+  .trigger-card .trigger-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .trigger-card .trigger-desc { font-size: 11px; color: #8b949e; }
+  .trigger-card .trigger-icon { font-size: 24px; margin-bottom: 8px; }
+
+  .diff-section { max-width: 900px; margin: 48px auto 0; }
+  .diff-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  .diff-table th { text-align: left; padding: 8px 12px; background: #161b22; border: 1px solid #30363d; font-size: 12px; color: #8b949e; font-weight: 600; }
+  .diff-table td { padding: 8px 12px; border: 1px solid #30363d; font-size: 12px; vertical-align: top; }
+  .diff-table td:first-child { font-weight: 600; white-space: nowrap; }
+
+  code { font-family: 'SF Mono', Menlo, monospace; font-size: 11px; background: #1f2428; padding: 2px 6px; border-radius: 3px; }
+
+  .relationship { max-width: 900px; margin: 24px auto; padding: 20px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; font-family: 'SF Mono', Menlo, monospace; font-size: 12px; line-height: 1.8; color: #c9d1d9; white-space: pre; }
+  .rel-model { color: #d29922; font-weight: 600; }
+  .rel-arrow { color: #484f58; }
+  .rel-field { color: #79c0ff; }
+  .rel-comment { color: #8b949e; }
+
+  .toml-block { max-width: 900px; margin: 16px auto; padding: 16px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; font-family: 'SF Mono', Menlo, monospace; font-size: 12px; line-height: 1.6; color: #c9d1d9; white-space: pre; overflow-x: auto; }
+  .toml-comment { color: #8b949e; }
+  .toml-key { color: #79c0ff; }
+  .toml-value { color: #a5d6ff; }
+  .toml-section { color: #d29922; font-weight: 600; }
+  .toml-string { color: #a5d6ff; }
+</style>
+</head>
+<body>
+
+<h1>Install Config Sync Flow</h1>
+<p class="subtitle">How install configs are synced from git, tracked per-install, and shown in the dashboard</p>
+
+<!-- ============================================================ -->
+<h2>1. Trigger Sources</h2>
+<p class="section-desc">Three ways an install config sync can be triggered. All use the same <code>install-config-sync</code> signal.</p>
+
+<div class="trigger-grid">
+  <div class="trigger-card">
+    <div class="trigger-icon">&#x1F517;</div>
+    <div class="trigger-title">VCS Push (different repo)</div>
+    <div class="trigger-desc">GitHub webhook fires on the installs repo. <code>github_event</code> signal matches the installs VCS config and dispatches <code>install-config-sync</code> with changed files list.</div>
+  </div>
+  <div class="trigger-card">
+    <div class="trigger-icon">&#x1F500;</div>
+    <div class="trigger-title">App Branch Run (same repo)</div>
+    <div class="trigger-desc">Installs directory is in the same repo as the app config. The branch run workflow includes a "sync install configs" step after "fetch app config".</div>
+  </div>
+  <div class="trigger-card">
+    <div class="trigger-icon">&#x1F446;</div>
+    <div class="trigger-title">Manual Trigger</div>
+    <div class="trigger-desc">User clicks "Sync now" in the dashboard or calls the API. Can sync all installs or a single install by name. Uses latest commit.</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>2. Data Model</h2>
+<p class="section-desc">Two new models track sync events and per-install changes. <code>InstallConfigSync</code> is one per sync event (commit/trigger). <code>InstallConfigVersion</code> is one per changed install.</p>
+
+<div class="relationship"><span class="rel-model">AppBranchConfig</span>
+  <span class="rel-arrow">|--</span> <span class="rel-field">installs_directory</span>           <span class="rel-comment"># "installs/" (default)</span>
+  <span class="rel-arrow">|--</span> <span class="rel-field">installs_connected_github_vcs</span>  <span class="rel-comment"># optional: different repo for installs</span>
+  <span class="rel-arrow">|--</span> <span class="rel-field">installs_public_git_vcs</span>        <span class="rel-comment"># optional: public repo for installs</span>
+
+<span class="rel-model">InstallConfigSync</span>                       <span class="rel-comment"># one per sync event (commit or manual trigger)</span>
+  <span class="rel-arrow">|--</span> <span class="rel-field">app_branch_id</span>
+  <span class="rel-arrow">|--</span> <span class="rel-field">app_branch_run_id</span>              <span class="rel-comment"># non-nil when part of a branch run</span>
+  <span class="rel-arrow">|--</span> <span class="rel-field">vcs_connection_commit_id</span>       <span class="rel-comment"># links to the commit</span>
+  <span class="rel-arrow">|--</span> <span class="rel-field">triggered_by</span>                   <span class="rel-comment"># "vcs-push" | "manual" | "app-branch-run"</span>
+  <span class="rel-arrow">|--</span> <span class="rel-field">status</span>                         <span class="rel-comment"># pending -> running -> success/failed</span>
+  <span class="rel-arrow">|--</span> <span class="rel-field">workflow_id</span>                    <span class="rel-comment"># internal workflow (not shown in UI)</span>
+  <span class="rel-arrow">`--&gt;</span> <span class="rel-model">InstallConfigVersion[]</span>         <span class="rel-comment"># one per changed install</span>
+        <span class="rel-arrow">|--</span> <span class="rel-field">install_id</span>
+        <span class="rel-arrow">|--</span> <span class="rel-field">install_name</span>
+        <span class="rel-arrow">|--</span> <span class="rel-field">file_path</span>                  <span class="rel-comment"># "installs/customer-acme.toml"</span>
+        <span class="rel-arrow">|--</span> <span class="rel-field">created</span>                    <span class="rel-comment"># true = new install, false = update</span>
+        <span class="rel-arrow">|--</span> <span class="rel-field">diff</span>                       <span class="rel-comment"># blob: JSON diff of what changed</span>
+        <span class="rel-arrow">`--</span> <span class="rel-field">status</span></div>
+
+<!-- ============================================================ -->
+<h2>3. VCS Push Flow (Different Repo)</h2>
+<p class="section-desc">When the installs repo is separate from the app config repo, VCS events route directly to the install-config-sync signal.</p>
+
+<div class="diagram">
+  <div class="flow-section">
+    <div class="node">
+      <div class="node-dot dot-blue"></div>
+      <div class="card">
+        <div class="card-title"><span class="signal-badge badge-signal">webhook</span> GitHub Push Event</div>
+        <div class="card-detail">Push to <code>myorg/my-installs</code> repo on <code>main</code> branch. Payload includes <code>commits[].added/modified/removed</code> file paths.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <div class="node">
+      <div class="node-dot dot-purple"></div>
+      <div class="card">
+        <div class="card-title"><span class="signal-badge badge-signal">signal</span> github_event</div>
+        <div class="card-detail">Parses push payload. Extracts changed files list. Calls <code>FindMatchingAppBranches</code> which now also matches <code>installs_connected_github_vcs_configs</code> (polymorphic value: <code>installs_app_branch_configs</code>).</div>
+        <div class="card-file">vcs/signals/github_event/execute.go</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <div class="node">
+      <div class="node-dot dot-orange"></div>
+      <div class="card">
+        <div class="card-title"><span class="signal-badge badge-activity">activity</span> FindMatchingAppBranches</div>
+        <div class="card-detail">Returns matches with <code>MatchType: "installs-config"</code>. The event handler routes to <code>install-config-sync</code> instead of <code>vcspush</code>.</div>
+        <div class="card-file">vcs/worker/activities/find_matching_app_branches.go</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <div class="node">
+      <div class="node-dot dot-cyan"></div>
+      <div class="card">
+        <div class="card-title"><span class="signal-badge badge-new">NEW</span><span class="signal-badge badge-signal">signal</span> install-config-sync</div>
+        <div class="card-detail">
+          Receives: <code>app_branch_id</code>, <code>changed_files</code>, <code>commit_sha</code>, <code>triggered_by: "vcs-push"</code><br>
+          Optionally: <code>install_name</code> (for single-install sync)
+        </div>
+        <div class="card-file">apps/signals/branches/installconfigsync/signal.go</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <div class="arrow">&#x2193;</div>
+    <div class="node">
+      <div class="node-dot dot-green"></div>
+      <div class="card">
+        <div class="card-title"><span class="signal-badge badge-new">NEW</span><span class="signal-badge badge-record">record</span> InstallConfigSync</div>
+        <div class="card-detail">Created at the start of execution. Status: <code>pending</code> &rarr; <code>running</code>. Links to commit SHA and app branch.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <div class="node">
+      <div class="node-dot dot-purple"></div>
+      <div class="card">
+        <div class="card-title"><span class="signal-badge badge-activity">activity</span> Clone + Parse</div>
+        <div class="card-detail">
+          1. Clone installs repo at commit SHA<br>
+          2. Determine which files to process:<br>
+          &nbsp;&nbsp;&bull; <code>install_name</code> set &rarr; <code>{dir}/{install_name}.toml</code><br>
+          &nbsp;&nbsp;&bull; <code>changed_files</code> set &rarr; filter to <code>{dir}/*.toml</code><br>
+          &nbsp;&nbsp;&bull; Neither &rarr; all <code>*.toml</code> in directory<br>
+          3. Parse each TOML file into <code>*config.Install</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <div class="loop-container">
+      <div class="loop-label">FOR EACH parsed install config</div>
+
+      <div class="node">
+        <div class="card">
+          <div class="card-title"><span class="signal-badge badge-new">NEW</span><span class="signal-badge badge-activity">activity</span> SyncInstallConfig</div>
+          <div class="card-detail">
+            Calls <code>dbSyncer.SyncInstall(ctx, installConfig)</code><br><br>
+            <strong>Install not found?</strong> &rarr; Create via <code>installs/helpers.CreateInstall</code><br>
+            <strong>Install exists?</strong> &rarr; Compute diff via <code>config.Install.Diff()</code>, update if changed
+          </div>
+          <div class="card-file">apps/signals/branches/activities/sync_install_config.go</div>
+        </div>
+      </div>
+
+      <div class="arrow">&#x2193;</div>
+
+      <div class="node">
+        <div class="card">
+          <div class="card-title"><span class="signal-badge badge-new">NEW</span><span class="signal-badge badge-record">record</span> InstallConfigVersion</div>
+          <div class="card-detail">
+            Created per changed install. Stores:<br>
+            &bull; <code>install_id</code>, <code>install_name</code>, <code>file_path</code><br>
+            &bull; <code>created: true/false</code> (new vs update)<br>
+            &bull; <code>diff</code> blob (JSON diff of changes)<br>
+            &bull; Links back to parent <code>InstallConfigSync</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <div class="node">
+      <div class="node-dot dot-green"></div>
+      <div class="card">
+        <div class="card-title"><span class="signal-badge badge-record">record</span> InstallConfigSync &rarr; success</div>
+        <div class="card-detail">Update status to <code>success</code>. Record <code>synced_installs</code> and <code>failed_installs</code> counts.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>4. Same-Repo Flow (Part of App Branch Run)</h2>
+<p class="section-desc">When installs are in the same repo as the app config, the sync happens as a workflow step inside the branch run.</p>
+
+<div class="diagram">
+  <div class="flow-section">
+    <div class="node">
+      <div class="node-dot dot-blue"></div>
+      <div class="card">
+        <div class="card-title">App Branch Run Workflow</div>
+        <div class="card-detail">Existing steps: fetch commit &rarr; fetch app config &rarr; <strong style="color: #39d2c0;">sync install configs (NEW)</strong> &rarr; build components &rarr; deploy install groups</div>
+        <div class="card-file">apps/workflows/app_branch_run.go</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <div class="node">
+      <div class="node-dot dot-cyan"></div>
+      <div class="card">
+        <div class="card-title"><span class="signal-badge badge-new">NEW</span> Step: "sync install configs"</div>
+        <div class="card-detail">
+          Dispatches the same <code>install-config-sync</code> signal with:<br>
+          &bull; <code>triggered_by: "app-branch-run"</code><br>
+          &bull; <code>app_branch_run_id: runID</code><br>
+          &bull; Skippable &mdash; no-op if no installs directory configured<br><br>
+          The resulting <code>InstallConfigSync</code> links back to the <code>AppBranchRun</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <div class="node">
+      <div class="node-dot dot-orange"></div>
+      <div class="card">
+        <div class="card-title">Continue with builds + deploys</div>
+        <div class="card-detail">Install configs are synced before builds start. New installs created here will be picked up by the install group resolution (label selectors or explicit IDs).</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>5. Manual Trigger Flow</h2>
+<p class="section-desc">User triggers sync from the dashboard or API. Same signal, different <code>triggered_by</code>.</p>
+
+<div class="diagram">
+  <div class="flow-section">
+    <div class="node">
+      <div class="node-dot dot-pink"></div>
+      <div class="card">
+        <div class="card-title">Dashboard: "Sync now" button</div>
+        <div class="card-detail">
+          <strong>All installs:</strong> <code>POST /v1/apps/:appId/branches/:branchId/sync-install-configs</code><br>
+          <strong>Single install:</strong> <code>POST /v1/apps/:appId/branches/:branchId/sync-install-config</code> with <code>{ install_name: "customer-acme" }</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <div class="node">
+      <div class="node-dot dot-cyan"></div>
+      <div class="card">
+        <div class="card-title"><span class="signal-badge badge-signal">signal</span> install-config-sync</div>
+        <div class="card-detail">
+          <code>triggered_by: "manual"</code><br>
+          <code>install_name: "customer-acme"</code> (optional &mdash; if set, only syncs that install)<br>
+          Uses latest commit on the configured branch.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <div class="node">
+      <div class="node-dot dot-green"></div>
+      <div class="card">
+        <div class="card-title">Same execution as VCS push flow</div>
+        <div class="card-detail">Clone &rarr; parse &rarr; sync &rarr; create <code>InstallConfigSync</code> + <code>InstallConfigVersion</code> records.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>6. DB Syncer Architecture</h2>
+<p class="section-desc">The existing <code>Syncer</code> interface gets a new <code>SyncInstall</code> method, separate from the app config <code>Sync</code>.</p>
+
+<div class="relationship"><span class="rel-model">sync.Syncer</span> interface
+  <span class="rel-arrow">|--</span> <span class="rel-field">Sync(ctx)</span>                   <span class="rel-comment"># existing: syncs app config (components, sandbox, etc.)</span>
+  <span class="rel-arrow">|--</span> <span class="rel-field">SyncInstall(ctx, install)</span>   <span class="rel-comment"># NEW: syncs a single install config</span>
+  <span class="rel-arrow">|--</span> <span class="rel-field">GetAppConfigID()</span>            <span class="rel-comment"># existing</span>
+  <span class="rel-arrow">`--</span> <span class="rel-field">...</span>                         <span class="rel-comment"># existing getters</span>
+
+<span class="rel-model">syncer.SyncInstall(ctx, *config.Install)</span> <span class="rel-arrow">&rarr;</span> <span class="rel-model">*InstallSyncResult</span>
+  1. Look up install by <span class="rel-field">name + app_id</span>
+  2. <strong>Not found</strong> &rarr; <span class="rel-field">installs/helpers.CreateInstall()</span>
+     &bull; Sets <span class="rel-field">managed_by: "nuon/git/install-config"</span>
+     &bull; Creates with inputs, labels, cloud account, config, component toggles
+  3. <strong>Found</strong> &rarr; <span class="rel-field">config.Install.Diff()</span>
+     &bull; Update inputs, config, labels if changed
+  4. Return <span class="rel-model">InstallSyncResult</span> { InstallID, Created, Changed, Diff }</div>
+
+<!-- ============================================================ -->
+<h2>7. Example: Install Config TOML</h2>
+<p class="section-desc">Same format as <code>nuon installs sync</code> already accepts. Lives in the installs directory (e.g. <code>installs/customer-acme.toml</code>).</p>
+
+<div class="toml-block"><span class="toml-comment"># installs/customer-acme.toml</span>
+<span class="toml-key">name</span> = <span class="toml-string">"customer-acme"</span>
+<span class="toml-key">approval_option</span> = <span class="toml-string">"approve-all"</span>
+
+<span class="toml-section">[labels]</span>
+<span class="toml-key">env</span> = <span class="toml-string">"production"</span>
+<span class="toml-key">tier</span> = <span class="toml-string">"enterprise"</span>
+<span class="toml-key">region</span> = <span class="toml-string">"us-east-1"</span>
+
+<span class="toml-section">[aws_account]</span>
+<span class="toml-key">region</span> = <span class="toml-string">"us-east-1"</span>
+
+<span class="toml-section">[[inputs]]</span>
+<span class="toml-key">api_key</span> = <span class="toml-string">"sk-xxx"</span>
+<span class="toml-key">domain</span> = <span class="toml-string">"acme.example.com"</span>
+<span class="toml-key">replicas</span> = <span class="toml-string">"3"</span>
+
+<span class="toml-section">[stack_overrides]</span>
+<span class="toml-key">vpc_nested_template_url</span> = <span class="toml-string">"https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/custom-vpc.yaml"</span>
+
+<span class="toml-section">[component_toggles]</span>
+<span class="toml-key">monitoring</span> = <span class="toml-value">true</span>
+<span class="toml-key">debug-tools</span> = <span class="toml-value">false</span>
+
+<span class="toml-section">[components.my-helm-chart]</span>
+<span class="toml-key">helm_values</span> = <span class="toml-string">"""
+replicaCount: 3
+image:
+  tag: v2.1.0
+"""</span></div>
+
+<!-- ============================================================ -->
+<h2>8. Example: Branch Config with Separate Installs Repo</h2>
+<p class="section-desc">The branch config declares two VCS connections: one for the app config, one for installs.</p>
+
+<div class="toml-block"><span class="toml-comment"># Branch config (via API/dashboard)</span>
+{
+  <span class="toml-key">"connected_github_vcs_config"</span>: {
+    <span class="toml-key">"repo"</span>: <span class="toml-string">"myorg/my-app"</span>,
+    <span class="toml-key">"branch"</span>: <span class="toml-string">"main"</span>
+  },
+  <span class="toml-key">"installs_connected_github_vcs_config"</span>: {
+    <span class="toml-key">"repo"</span>: <span class="toml-string">"myorg/my-installs"</span>,
+    <span class="toml-key">"branch"</span>: <span class="toml-string">"main"</span>
+  },
+  <span class="toml-key">"installs_directory"</span>: <span class="toml-string">"installs/"</span>,
+  <span class="toml-key">"install_groups"</span>: [...]
+}</div>
+
+<!-- ============================================================ -->
+<h2>9. Dashboard UI: Install "Configs" Tab</h2>
+<p class="section-desc">New tab in the install left-nav (under Advanced). Shows config version history with diffs and a "Sync now" button.</p>
+
+<div class="model-grid">
+  <div class="model-card">
+    <h4>Left Nav Addition</h4>
+    <div class="model-field"><span class="type">path:</span> /configs</div>
+    <div class="model-field"><span class="type">icon:</span> GearSixIcon</div>
+    <div class="model-field"><span class="type">text:</span> Configs</div>
+    <div class="model-field"><span class="type">section:</span> Advanced</div>
+    <div class="model-field" style="margin-top: 8px;"><span class="comment"># Shows between "Versions" and "Install runner"</span></div>
+  </div>
+  <div class="model-card">
+    <h4>Page Content</h4>
+    <div class="model-field"><span class="type">Header:</span> "Sync now" button</div>
+    <div class="model-field"><span class="type">List:</span> InstallConfigVersion records</div>
+    <div class="model-field"><span class="type">Each row:</span></div>
+    <div class="model-field">&nbsp;&bull; Source badge (git-push / manual)</div>
+    <div class="model-field">&nbsp;&bull; Commit SHA link</div>
+    <div class="model-field">&nbsp;&bull; File path</div>
+    <div class="model-field">&nbsp;&bull; Created / Updated badge</div>
+    <div class="model-field">&nbsp;&bull; Expandable diff view</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>10. File Map</h2>
+
+<div class="diff-section">
+<table class="diff-table">
+  <tr><th>File</th><th>Change</th></tr>
+  <tr><td><code>pkg/config/sync/interface.go</code></td><td>Add <code>SyncInstall</code> method + <code>InstallSyncResult</code></td></tr>
+  <tr><td><code>internal/pkg/config/syncer/installs/sync.go</code></td><td><span class="signal-badge badge-new">NEW</span> Install DB syncer</td></tr>
+  <tr><td><code>internal/pkg/config/syncer/syncer.go</code></td><td>Implement <code>SyncInstall</code></td></tr>
+  <tr><td><code>internal/app/app_branch_config.go</code></td><td>Add installs VCS config + directory fields</td></tr>
+  <tr><td><code>internal/app/install_config_sync.go</code></td><td><span class="signal-badge badge-new">NEW</span> Model</td></tr>
+  <tr><td><code>internal/app/install_config_version.go</code></td><td><span class="signal-badge badge-new">NEW</span> Model</td></tr>
+  <tr><td><code>pkg/shortid/domains/</code></td><td>New ID domains</td></tr>
+  <tr><td><code>branches/installconfigsync/</code></td><td><span class="signal-badge badge-new">NEW</span> Signal (init, signal, execute)</td></tr>
+  <tr><td><code>branches/activities/sync_install_config.go</code></td><td><span class="signal-badge badge-new">NEW</span> Activity</td></tr>
+  <tr><td><code>vcs/signals/github_event/parse.go</code></td><td>Extract changed files from push</td></tr>
+  <tr><td><code>vcs/signals/github_event/execute.go</code></td><td>Route installs VCS events</td></tr>
+  <tr><td><code>vcs/worker/activities/find_matching_app_branches.go</code></td><td>Match installs VCS config</td></tr>
+  <tr><td><code>apps/workflows/app_branch_run.go</code></td><td>Add install sync step (same-repo)</td></tr>
+  <tr><td><code>client/views/install/InstallLayout.tsx</code></td><td>Add "Configs" nav link</td></tr>
+  <tr><td><code>client/views/install/Configs.tsx</code></td><td><span class="signal-badge badge-new">NEW</span> Page</td></tr>
+  <tr><td><code>client/views/install/routes.tsx</code></td><td>Add configs route</td></tr>
+  <tr><td><code>client/lib/ctl-api/installs/</code></td><td>New API functions</td></tr>
+</table>
+</div>
+
+</body>
+</html>

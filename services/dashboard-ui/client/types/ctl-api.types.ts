@@ -531,6 +531,35 @@ export type TInstallAppConfigVersion =
 export type TInstallAppBranchConnection =
   components['schemas']['app.InstallAppBranchConnection']
 
+// install config versions (from git sync)
+export type TInstallConfigVersion = {
+  id: string
+  created_at: string
+  install_config_sync_id: string
+  install_id: string
+  install_name: string
+  file_path?: string
+  created: boolean
+  status?: { status: string; status_human_description?: string }
+  diff?: unknown
+  metadata?: Record<string, string>
+}
+
+export type TInstallConfigSync = {
+  id: string
+  created_at: string
+  app_branch_id: string
+  app_branch_run_id?: string
+  commit_sha?: string
+  triggered_by: string
+  status?: { status: string; status_human_description?: string }
+  total_installs: number
+  synced_installs: number
+  failed_installs: number
+  versions?: TInstallConfigVersion[]
+  vcs_connection_commit?: { sha: string; message?: string; author?: string }
+}
+
 // install group runs
 export type TInstallGroupRun = components['schemas']['app.InstallGroupRun']
 export type TInstallGroupRunInstall =

@@ -129,6 +129,11 @@ const InstallTemplate = () => {
     },
     { type: 'section', label: 'Advanced' },
     {
+      path: `/configs`,
+      iconVariant: 'GearIcon' as const,
+      text: 'Configs',
+    },
+    {
       path: `/runner`,
       iconVariant: 'SneakerMoveIcon' as const,
       text: 'Install runner',

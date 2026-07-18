@@ -215,6 +215,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			branches.GET("/:app_branch_id/runs/:run_id/install-groups", s.GetAppBranchRunInstallGroups)
 			branches.GET("/:app_branch_id/runs/:run_id/install-group-runs", s.GetInstallGroupRuns)
 			branches.GET("/:app_branch_id/runs/:run_id/install-group-runs/:install_group_run_id", s.GetInstallGroupRun)
+			branches.POST("/:app_branch_id/sync-install-configs", s.TriggerInstallConfigSync)
 		}
 
 		// TODO deprecate - latest config routes
