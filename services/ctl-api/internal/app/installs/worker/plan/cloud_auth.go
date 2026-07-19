@@ -41,15 +41,19 @@ func getCloudAuth(
 		}
 
 	case stackOutputs.AzureStackOutputs != nil:
-		// currently azure does not support role based access control and only supports
-		// single SubscriptionID based auth
-		// once that is fixed we should update below impleentation and operationroles package as well to utilize roles
 		azureAuth = &azurecredentials.Config{
 			ServicePrincipal: &azurecredentials.ServicePrincipalCredentials{
 				SubscriptionID:       stackOutputs.AzureStackOutputs.SubscriptionID,
 				SubscriptionTenantID: stackOutputs.AzureStackOutputs.SubscriptionTenantID,
 			},
-			UseDefault: true,
+		}
+		// Run the operation as its per-operation managed identity. When the role
+		// selector could not resolve one (legacy installs provisioned before
+		// per-operation identities), fall back to the runner's ambient identity.
+		if roleSelection.RoleARN != "" {
+			azureAuth.ManagedIdentityClientID = roleSelection.RoleARN
+		} else {
+			azureAuth.UseDefault = true
 		}
 	case stackOutputs.GCPStackOutputs != nil:
 		// gcp uses default instance auth, no config needed

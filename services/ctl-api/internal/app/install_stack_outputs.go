@@ -120,30 +120,55 @@ type AzureStackOutputs struct {
 
 	KeyVaultID   string `json:"key_vault_id,omitzero" mapstructure:"key_vault_id" temporaljson:"key_vault_id,omitzero,omitempty"`
 	KeyVaultName string `json:"key_vault_name,omitzero" mapstructure:"key_vault_name" temporaljson:"key_vault_name,omitzero,omitempty"`
+
+	// Client IDs of the per-operation user-assigned managed identities. The runner
+	// selects one of these by client ID to run an operation as a scoped identity
+	// rather than as its own (permissionless) system identity.
+	ProvisionIdentityClientID   string            `json:"provision_identity_client_id,omitzero" mapstructure:"provision_identity_client_id" temporaljson:"provision_identity_client_id,omitzero,omitempty"`
+	MaintenanceIdentityClientID string            `json:"maintenance_identity_client_id,omitzero" mapstructure:"maintenance_identity_client_id" temporaljson:"maintenance_identity_client_id,omitzero,omitempty"`
+	DeprovisionIdentityClientID string            `json:"deprovision_identity_client_id,omitzero" mapstructure:"deprovision_identity_client_id" temporaljson:"deprovision_identity_client_id,omitzero,omitempty"`
+	CustomIdentityClientIDs     map[string]string `json:"custom_identity_client_ids,omitzero" mapstructure:"custom_identity_client_ids" temporaljson:"custom_identity_client_ids,omitzero,omitempty"`
+	BreakGlassIdentityClientIDs map[string]string `json:"break_glass_identity_client_ids,omitzero" mapstructure:"break_glass_identity_client_ids" temporaljson:"break_glass_identity_client_ids,omitzero,omitempty"`
+
+	InstallInputs map[string]string `json:"install_inputs,omitzero" mapstructure:"install_inputs" temporaljson:"install_inputs,omitzero,omitempty"`
 }
 
-func (a *AzureStackOutputs) ProvisionRoleID() (string, error)   { return "", nil }
-func (a *AzureStackOutputs) DeprovisionRoleID() (string, error) { return "", nil }
-func (a *AzureStackOutputs) MaintenanceRoleID() (string, error) { return "", nil }
-
-func (a *AzureStackOutputs) CustomRoleID(_ string) (string, error) {
-	return "", fmt.Errorf("not supported on azure")
+func (a *AzureStackOutputs) ProvisionRoleID() (string, error) {
+	return a.ProvisionIdentityClientID, nil
+}
+func (a *AzureStackOutputs) DeprovisionRoleID() (string, error) {
+	return a.DeprovisionIdentityClientID, nil
+}
+func (a *AzureStackOutputs) MaintenanceRoleID() (string, error) {
+	return a.MaintenanceIdentityClientID, nil
 }
 
-func (a *AzureStackOutputs) BreakGlassRoleID(_ string) (string, error) {
-	return "", fmt.Errorf("not supported on azure")
+func (a *AzureStackOutputs) CustomRoleID(name string) (string, error) {
+	clientID, ok := a.CustomIdentityClientIDs[name]
+	if !ok {
+		return "", fmt.Errorf("custom identity %q does not exist in stack outputs", name)
+	}
+	return clientID, nil
+}
+
+func (a *AzureStackOutputs) BreakGlassRoleID(name string) (string, error) {
+	clientID, ok := a.BreakGlassIdentityClientIDs[name]
+	if !ok {
+		return "", fmt.Errorf("break glass identity %q does not exist in stack outputs", name)
+	}
+	return clientID, nil
 }
 
 func (a *AzureStackOutputs) CustomRoles() (map[string]string, error) {
-	return nil, nil
+	return a.CustomIdentityClientIDs, nil
 }
 
 func (a *AzureStackOutputs) BreakGlassRoles() (map[string]string, error) {
-	return nil, nil
+	return a.BreakGlassIdentityClientIDs, nil
 }
 
 func (a *AzureStackOutputs) InstallInputValues() (map[string]string, error) {
-	return nil, nil
+	return a.InstallInputs, nil
 }
 
 type GCPStackOutputs struct {

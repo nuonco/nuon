@@ -49,7 +49,7 @@ type ClusterInfo struct {
 
 	AWSAuth   *awscredentials.Config   `json:"aws_auth" hcl:"aws_auth,block"`
 	AzureAuth *azurecredentials.Config `json:"azure_auth" hcl:"azure_auth,block"`
-	GCPAuth   *gcpcredentials.Config   `json:"gcp_auth", hcl:gcp_auth,block`
+	GCPAuth   *gcpcredentials.Config   `json:"gcp_auth" hcl:"gcp_auth,block"`
 
 	// If this is set, we will _not_ use aws-iam-authenticator, but rather inline create the token
 	Inline bool `json:"inline"`
@@ -167,18 +167,24 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 		if os.Getenv("ARM_USE_MSI") == "true" {
 			loginMode = "msi"
 		}
+		args := []string{
+			"get-token",
+			"--login",
+			loginMode,
+			"--server-id",
+			"6dae42f8-4368-4678-94ff-3960e28e3630",
+			"--tenant-id",
+			cInfo.AzureAuth.ServicePrincipal.SubscriptionTenantID,
+		}
+		// Authenticate as the operation's user-assigned managed identity rather
+		// than the runner's system identity, which holds no cluster permissions.
+		if loginMode == "msi" && cInfo.AzureAuth.ManagedIdentityClientID != "" {
+			args = append(args, "--client-id", cInfo.AzureAuth.ManagedIdentityClientID)
+		}
 		cfg.ExecProvider = &clientcmdapi.ExecConfig{
-			APIVersion: "client.authentication.k8s.io/v1beta1",
-			Command:    "kubelogin",
-			Args: []string{
-				"get-token",
-				"--login",
-				loginMode,
-				"--server-id",
-				"6dae42f8-4368-4678-94ff-3960e28e3630",
-				"--tenant-id",
-				cInfo.AzureAuth.ServicePrincipal.SubscriptionTenantID,
-			},
+			APIVersion:      "client.authentication.k8s.io/v1beta1",
+			Command:         "kubelogin",
+			Args:            args,
 			InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
 		}
 	}

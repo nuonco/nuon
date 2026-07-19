@@ -17,6 +17,12 @@ import (
 // swagger:model service.AppAWSIAMPolicyConfig
 type ServiceAppAWSIAMPolicyConfig struct {
 
+	// azure actions
+	AzureActions []string `json:"azure_actions"`
+
+	// azure built in roles
+	AzureBuiltInRoles []string `json:"azure_built_in_roles"`
+
 	// contents
 	Contents string `json:"contents,omitempty"`
 

@@ -17,6 +17,8 @@ func envToken(s string) string {
 func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs) map[string]any {
 	phoneHomeURL := inp.CloudFormationStackVersion.PhoneHomeURL
 
+	operationIDs := azureOperationIdentities(inp.AppCfg)
+
 	// Build per-secret env vars and payload fields dynamically.
 	var secretEnvVars []map[string]any
 	var secretPayloadFields []string
@@ -71,6 +73,11 @@ func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput, customOutput
 		}
 		payloadFields = append(payloadFields, "  \"custom_nested_stacks\": {\n"+strings.Join(stackFields, ",\n")+"\n  }")
 	}
+
+	// Per-operation managed identity client IDs, surfaced as stack outputs so the
+	// control plane can resolve which identity the runner assumes for each op.
+	identityEnvVars, identityPayloadFields := operationIdentityPhoneHomeFields(operationIDs)
+	payloadFields = append(payloadFields, identityPayloadFields...)
 
 	payloadJSON := "{\n" + strings.Join(payloadFields, ",\n") + "\n}"
 
@@ -127,10 +134,16 @@ fi
 	}
 	envVars = append(envVars, secretEnvVars...)
 	envVars = append(envVars, customEnvVars...)
+	envVars = append(envVars, identityEnvVars...)
 
+	// The phone-home script reads custom-stack outputs and each identity's
+	// clientId, so those resources must exist first.
 	dependsOn := []string{"vnetDeployment"}
 	for _, co := range customOutputs {
 		dependsOn = append(dependsOn, co.DeploymentName)
+	}
+	if _, uamiDependsOn := operationIdentityAttachment(operationIDs); len(uamiDependsOn) > 0 {
+		dependsOn = append(dependsOn, uamiDependsOn...)
 	}
 
 	return map[string]any{

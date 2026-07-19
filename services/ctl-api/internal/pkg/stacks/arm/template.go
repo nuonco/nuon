@@ -78,6 +78,12 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		"app_nuon_co_id":     "[parameters('nuonAppID')]",
 	}
 
+	// Per-operation user-assigned managed identities derived from the app's
+	// Azure permissions. When present, the runner assumes these to do deploy work
+	// and its own system identity holds no deploy permissions.
+	operationIDs := azureOperationIdentities(inp.AppCfg)
+	useOperationIdentities := len(operationIDs) > 0
+
 	// Build VNet linked deployment (or use default inline)
 	vnetDeployment, vnetParams, err := t.getVNetLinkedDeployment(inp)
 	if err != nil {
@@ -88,9 +94,14 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		tmpl.Parameters[k] = v
 	}
 
+	// Operation identities and their role assignments.
+	if useOperationIdentities {
+		tmpl.Resources = append(tmpl.Resources, t.getOperationIdentityResources(operationIDs)...)
+	}
+
 	// Runner linked deployment (or use default inline)
 	if !t.cfg.UseLocalRunners {
-		runnerDeployment, runnerParams, err := t.getRunnerLinkedDeployment(inp)
+		runnerDeployment, runnerParams, err := t.getRunnerLinkedDeployment(inp, operationIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -100,16 +111,18 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		}
 	}
 
-	// VMSS role assignments at resource-group scope (depends on runner VMSS)
-	if !t.cfg.UseLocalRunners {
+	// Legacy broad grants on the runner's system identity. Only applied when the
+	// app has NOT adopted per-operation identities — otherwise deploy permissions
+	// live solely on the operation identities.
+	if !t.cfg.UseLocalRunners && !useOperationIdentities {
 		tmpl.Resources = append(tmpl.Resources, t.getVMSSRoleAssignments()...)
-		// Key Vault Secrets User role for the runner VMSS identity
-		tmpl.Resources = append(tmpl.Resources, t.getKeyVaultRoleAssignment())
+		tmpl.Resources = append(tmpl.Resources, t.getCustomRoleDeployment(inp))
 	}
 
-	// Custom role subscription-level deployment (depends on runner VMSS)
+	// Key Vault Secrets User stays on the runner's system identity regardless:
+	// secret-sync reads the vault as the ambient identity.
 	if !t.cfg.UseLocalRunners {
-		tmpl.Resources = append(tmpl.Resources, t.getCustomRoleDeployment(inp))
+		tmpl.Resources = append(tmpl.Resources, t.getKeyVaultRoleAssignment())
 	}
 
 	// Custom linked deployments (before phone home, which reports their outputs)

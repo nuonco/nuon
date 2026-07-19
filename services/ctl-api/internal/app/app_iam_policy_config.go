@@ -36,6 +36,9 @@ type AppAWSIAMPolicyConfig struct {
 	GCPPermissions    []string `json:"gcp_permissions,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"gcp_permissions,omitzero,omitempty"`
 	GCPPredefinedRole string   `json:"gcp_predefined_role,omitzero" gorm:"default:''" temporaljson:"gcp_predefined_role,omitzero,omitempty"`
 
+	AzureActions      []string `json:"azure_actions,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"azure_actions,omitzero,omitempty"`
+	AzureBuiltInRoles []string `json:"azure_built_in_roles,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"azure_built_in_roles,omitzero,omitempty"`
+
 	CloudFormationStackName string `json:"cloudformation_stack_name,omitzero" gorm:"-" features:"template" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
 }
 
