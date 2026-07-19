@@ -2,12 +2,19 @@ package arm
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput) map[string]any {
+var envNameRegexp = regexp.MustCompile(`[^A-Za-z0-9]`)
+
+func envToken(s string) string {
+	return strings.ToUpper(envNameRegexp.ReplaceAllString(s, "_"))
+}
+
+func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs) map[string]any {
 	phoneHomeURL := inp.CloudFormationStackVersion.PhoneHomeURL
 
 	// Build per-secret env vars and payload fields dynamically.
@@ -43,6 +50,28 @@ func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput) map[string]a
 		`  "subscription_tenant_id": "$SUBSCRIPTION_TENANT_ID"`,
 	}
 	payloadFields = append(payloadFields, secretPayloadFields...)
+
+	// Custom nested stack outputs, mirroring the AWS phone-home shape:
+	// custom_nested_stacks.<name>.outputs.<key>. Non-string ARM outputs are
+	// serialized with string().
+	var customEnvVars []map[string]any
+	if len(customOutputs) > 0 {
+		var stackFields []string
+		for _, co := range customOutputs {
+			var outFields []string
+			for _, key := range co.OutputKeys {
+				envName := fmt.Sprintf("CUSTOM_%s_%s", envToken(co.StackName), envToken(key))
+				customEnvVars = append(customEnvVars, map[string]any{
+					"name":  envName,
+					"value": fmt.Sprintf("[string(reference('%s').outputs.%s.value)]", co.DeploymentName, key),
+				})
+				outFields = append(outFields, fmt.Sprintf(`      "%s": "$%s"`, key, envName))
+			}
+			stackFields = append(stackFields, fmt.Sprintf("    \"%s\": {\n      \"outputs\": {\n  %s\n      }\n    }", co.StackName, strings.Join(outFields, ",\n  ")))
+		}
+		payloadFields = append(payloadFields, "  \"custom_nested_stacks\": {\n"+strings.Join(stackFields, ",\n")+"\n  }")
+	}
+
 	payloadJSON := "{\n" + strings.Join(payloadFields, ",\n") + "\n}"
 
 	scriptContent := `#!/bin/bash
@@ -97,6 +126,12 @@ fi
 		{"name": "PRIVATE_SUBNET_NAMES_CSV", "value": "[reference('vnetDeployment').outputs.privateSubnetNames.value]"},
 	}
 	envVars = append(envVars, secretEnvVars...)
+	envVars = append(envVars, customEnvVars...)
+
+	dependsOn := []string{"vnetDeployment"}
+	for _, co := range customOutputs {
+		dependsOn = append(dependsOn, co.DeploymentName)
+	}
 
 	return map[string]any{
 		"type":       "Microsoft.Resources/deploymentScripts",
@@ -105,7 +140,7 @@ fi
 		"location":   "[parameters('location')]",
 		"tags":       "[variables('commonTags')]",
 		"kind":       "AzureCLI",
-		"dependsOn":  []string{"vnetDeployment"},
+		"dependsOn":  dependsOn,
 		"properties": map[string]any{
 			"forceUpdateTag":       "[parameters('deployTimestamp')]",
 			"azCliVersion":         "2.40.0",
