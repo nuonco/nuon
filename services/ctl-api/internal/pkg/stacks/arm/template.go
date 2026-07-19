@@ -100,9 +100,6 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		}
 	}
 
-	// Phone home deployment script
-	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResource(inp))
-
 	// VMSS role assignments at resource-group scope (depends on runner VMSS)
 	if !t.cfg.UseLocalRunners {
 		tmpl.Resources = append(tmpl.Resources, t.getVMSSRoleAssignments()...)
@@ -115,12 +112,14 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		tmpl.Resources = append(tmpl.Resources, t.getCustomRoleDeployment(inp))
 	}
 
-	// Custom linked deployments
+	// Custom linked deployments (before phone home, which reports their outputs)
+	var customOutputs []customDeploymentOutputs
 	if len(inp.AppCfg.StackConfig.CustomNestedStacks) > 0 {
-		customResources, customParams, customIdentities, err := t.getCustomLinkedDeployments(inp)
+		customResources, customParams, customIdentities, customOutputsMeta, err := t.getCustomLinkedDeployments(inp)
 		if err != nil {
 			return nil, err
 		}
+		customOutputs = customOutputsMeta
 		tmpl.Resources = append(tmpl.Resources, customResources...)
 		for k, v := range customParams {
 			tmpl.Parameters[k] = v
@@ -134,6 +133,9 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 			tmpl.Resources = append(tmpl.Resources, t.getCustomDeploymentRoleAssignment(id))
 		}
 	}
+
+	// Phone home deployment script
+	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResource(inp, customOutputs))
 
 	// Add standard outputs (VNet, subnets, key vault)
 	t.addStandardOutputs(tmpl)
