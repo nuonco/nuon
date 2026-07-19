@@ -10,6 +10,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"sort"
+
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
@@ -70,9 +73,18 @@ type GCPTemplateInput struct {
 	BreakGlassRoles []GCPRoleTemplateInput
 	CustomRoles     []GCPRoleTemplateInput
 	InstallInputs   []GCPInstallInputTemplateInput
+	CustomStacks    []GCPCustomStackTemplateInput
 
 	AutoGenerateSecrets []string
 	Secrets             []GCPSecretTemplateInput
+}
+
+// GCPCustomStackTemplateInput renders one curated custom stack into the
+// custom_stacks tfvars map.
+type GCPCustomStackTemplateInput struct {
+	Name       string
+	Module     string
+	Parameters map[string]string
 }
 
 func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
@@ -124,6 +136,36 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		}
 	}
 
+	// Curated custom stacks: parameters resolve to the referenced input's
+	// default, matching how install inputs are seeded into the tfvars.
+	inputDefaults := map[string]string{}
+	for _, input := range installInputs {
+		inputDefaults[input.Name] = input.Default
+	}
+	sortedStacks := make([]config.CustomNestedStack, len(inputs.AppCfg.StackConfig.CustomNestedStacks))
+	copy(sortedStacks, inputs.AppCfg.StackConfig.CustomNestedStacks)
+	sort.SliceStable(sortedStacks, func(i, j int) bool { return sortedStacks[i].Index < sortedStacks[j].Index })
+	var customStacks []GCPCustomStackTemplateInput
+	for _, stack := range sortedStacks {
+		module := stack.GCPModuleName()
+		if module == "" {
+			return nil, "", errors.Errorf("custom_nested_stacks (%s): gcp-terraform custom stacks must reference a curated module: %s<name>", stack.Name, config.GCPCustomStackModulePrefix)
+		}
+		params := map[string]string{}
+		for paramName, templateValue := range stack.Parameters {
+			inputName, err := config.ParseInstallInputReference(templateValue)
+			if err != nil {
+				return nil, "", errors.Wrapf(err, "custom_nested_stacks (%s): parameter %q", stack.Name, paramName)
+			}
+			params[paramName] = inputDefaults[inputName]
+		}
+		customStacks = append(customStacks, GCPCustomStackTemplateInput{
+			Name:       stack.Name,
+			Module:     module,
+			Parameters: params,
+		})
+	}
+
 	var gcpProjectID, gcpRegion string
 	if inputs.Install.GCPAccount != nil {
 		gcpProjectID = inputs.Install.GCPAccount.ProjectID
@@ -137,6 +179,7 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		ProvisionPolicies:         prov,
 		MaintenancePolicies:       maint,
 		DeprovisionPolicies:       deprov,
+		CustomStacks:              customStacks,
 		ProvisionPredefinedRole:   provPredefined,
 		MaintenancePredefinedRole: maintPredefined,
 		DeprovisionPredefinedRole: deprovPredefined,
