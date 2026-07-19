@@ -31,11 +31,19 @@ func (u *CLIUserError) Error() string {
 	return u.Msg
 }
 
+// PrintError renders an error in the active output mode: agent -> envelope,
+// json -> JSON error object, table -> human-styled text.
 func PrintError(err error) error {
 	if agentEnabled() {
 		return emitAgentError(err)
 	}
+	if jsonOutputEnabled() {
+		return emitJSONError(err)
+	}
+	return printHumanError(err)
+}
 
+func printHumanError(err error) error {
 	if os.Getenv(debugEnvVar) != "" {
 		fmt.Println(bubbles.ErrorStyle.Render(fmt.Sprintf("DEBUG: %v", err)))
 	}
