@@ -27,10 +27,18 @@ type customDeploymentIdentity struct {
 	DeploymentName string
 }
 
-func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any, map[string]ARMParameter, []customDeploymentIdentity, error) {
+// customDeploymentOutputs records a custom stack's deployment name and its
+// template's output keys so the phone-home script can report them.
+type customDeploymentOutputs struct {
+	StackName      string
+	DeploymentName string
+	OutputKeys     []string
+}
+
+func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any, map[string]ARMParameter, []customDeploymentIdentity, []customDeploymentOutputs, error) {
 	stacks := inp.AppCfg.StackConfig.CustomNestedStacks
 	if len(stacks) == 0 {
-		return nil, nil, nil, nil
+		return nil, nil, nil, nil, nil
 	}
 
 	// Sort by index
@@ -44,28 +52,29 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 	seenIndices := map[int]string{}
 	for _, stack := range sorted {
 		if prev, exists := seenIndices[stack.Index]; exists {
-			return nil, nil, nil, fmt.Errorf("custom_nested_stacks: duplicate index %d for stacks %q and %q", stack.Index, prev, stack.Name)
+			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks: duplicate index %d for stacks %q and %q", stack.Index, prev, stack.Name)
 		}
 		seenIndices[stack.Index] = stack.Name
 	}
 
 	var resources []any
 	var identities []customDeploymentIdentity
+	var outputsMeta []customDeploymentOutputs
 	hoistedParams := map[string]ARMParameter{}
 	allParamNames := map[string]string{}
 	prevDeploymentName := ""
 
 	for i, stack := range sorted {
 		if stack.Name == "" {
-			return nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d]: name is required", i)
+			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d]: name is required", i)
 		}
 		if stack.TemplateURL == "" {
-			return nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name)
+			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name)
 		}
 
 		deploymentName := sanitizeDeploymentName(stack.Name)
 		if deploymentName == "" {
-			return nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): name produces invalid deployment name", i, stack.Name)
+			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): name produces invalid deployment name", i, stack.Name)
 		}
 
 		// Resolve template URL (use uploaded S3 URL if contents were uploaded)
@@ -83,14 +92,25 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		// Fetch template, validate structure, and extract parameters
 		armTmpl, err := fetchARMTemplate(templateURL)
 		if err != nil {
-			return nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): %w", i, stack.Name, err)
+			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): %w", i, stack.Name, err)
 		}
 
 		if err := validateARMTemplate(armTmpl); err != nil {
-			return nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): %w", i, stack.Name, err)
+			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): %w", i, stack.Name, err)
 		}
 
 		params, defaultParams := extractARMParameters(armTmpl, ReservedParamNames)
+
+		outputKeys := make([]string, 0, len(armTmpl.Outputs))
+		for key := range armTmpl.Outputs {
+			outputKeys = append(outputKeys, key)
+		}
+		sort.Strings(outputKeys)
+		outputsMeta = append(outputsMeta, customDeploymentOutputs{
+			StackName:      stack.Name,
+			DeploymentName: deploymentName,
+			OutputKeys:     outputKeys,
+		})
 
 		// Track custom nested stacks that declare managed identities so the
 		// parent template can create subscription-level role assignments.
@@ -103,7 +123,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		// Check for parameter name conflicts
 		for paramName := range defaultParams {
 			if owner, exists := allParamNames[paramName]; exists {
-				return nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q conflicts with stack %q", i, stack.Name, paramName, owner)
+				return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q conflicts with stack %q", i, stack.Name, paramName, owner)
 			}
 			allParamNames[paramName] = stack.Name
 		}
@@ -128,7 +148,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		for cfnParamName, templateValue := range stack.Parameters {
 			inputName, err := config.ParseInstallInputReference(templateValue)
 			if err != nil {
-				return nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q: %w", i, stack.Name, cfnParamName, err)
+				return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q: %w", i, stack.Name, cfnParamName, err)
 			}
 
 			resolved := ""
@@ -205,5 +225,5 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		prevDeploymentName = deploymentName
 	}
 
-	return resources, hoistedParams, identities, nil
+	return resources, hoistedParams, identities, outputsMeta, nil
 }
