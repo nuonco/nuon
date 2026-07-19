@@ -186,6 +186,14 @@ func (a *StackConfig) parse() error {
 			}
 		}
 	}
+	// The gcp-terraform renderer does not consume custom stacks; reject them
+	// instead of silently ignoring them.
+	if a.Type == "gcp-terraform" && len(a.CustomNestedStacks) > 0 {
+		return ErrConfig{
+			Description: "custom_nested_stacks are not supported when type is gcp-terraform",
+			Err:         fmt.Errorf("custom_nested_stacks are not supported when type is gcp-terraform"),
+		}
+	}
 	seenIndices := map[int]string{}
 	for i, stack := range a.CustomNestedStacks {
 		if stack.Name == "" {
