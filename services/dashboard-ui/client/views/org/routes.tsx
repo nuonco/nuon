@@ -8,6 +8,7 @@ import { RunnerJobDetail } from './RunnerJobDetail'
 import { RunnerProcesses } from './RunnerProcesses'
 import { ProcessSystemLogs } from './ProcessSystemLogs'
 import { Team } from './Team'
+import { ApiTokens } from './ApiTokens'
 import { VCSConnectionDetail } from './VCSConnectionDetail'
 import { Slack } from './Slack'
 import { Webhooks } from './Webhooks'
@@ -27,6 +28,7 @@ export const orgRoutes: RouteObject[] = [
       { path: ':orgId/runner/processes', element: <RunnerProcesses /> },
       { path: ':orgId/runner/processes/:processId/logs', element: <ProcessSystemLogs /> },
       { path: ':orgId/team', element: <Team /> },
+      { path: ':orgId/api-tokens', element: <ApiTokens /> },
       { path: ':orgId/webhooks', element: <Webhooks /> },
       { path: ':orgId/slack', element: <Slack /> },
       { path: ':orgId/connections', loader: ({ params }) => redirect(`/${params.orgId}`) },
