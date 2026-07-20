@@ -12,9 +12,6 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		return t.getDefaultRunnerDeployment(inp, operationIDs), nil, nil
 	}
 
-	// Custom runner templates manage their own VMSS identity; per-operation
-	// identities are only auto-attached on the default runner.
-
 	// Custom runner template — fetch and inspect declared parameters.
 	// Unlike the generic custom-nested-stack path we do NOT hoist arbitrary
 	// params. The runner template is Nuon-owned plumbing; every parameter
@@ -22,6 +19,23 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 	armTmpl, err := fetchARMTemplate(templateURL)
 	if err != nil {
 		return nil, nil, fmt.Errorf("runner linked deployment: %w", err)
+	}
+
+	// Per-operation user-assigned identities must be attached to the runner
+	// VMSS to be usable via IMDS (Azure has no assume-role). The default runner
+	// attaches them automatically; a custom template must opt in by declaring a
+	// "userAssignedIdentities" object parameter, into which we inject the
+	// attachment map. Without it the identities would exist but never reach the
+	// instance, and the runner would fail with an opaque IMDS "Identity not
+	// found" at deploy time — so we reject that combination up front.
+	userAssigned, uamiDependsOn := operationIdentityAttachment(operationIDs)
+	if len(userAssigned) > 0 {
+		if _, ok := armTmpl.Parameters["userAssignedIdentities"]; !ok {
+			return nil, nil, fmt.Errorf(
+				"runner linked deployment: custom runner template %q must declare a 'userAssignedIdentities' object parameter to receive the per-operation managed identities this app's permissions define; omit runner_nested_template_url to use the built-in runner instead",
+				templateURL,
+			)
+		}
 	}
 
 	// All values Nuon can supply. Only injected if the template declares
@@ -39,6 +53,10 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		"commonTags":          "[variables('commonTags')]",
 	}
 
+	if len(userAssigned) > 0 {
+		managedParams["userAssignedIdentities"] = userAssigned
+	}
+
 	deploymentParams := map[string]any{}
 	for paramName := range armTmpl.Parameters {
 		if val, ok := managedParams[paramName]; ok {
@@ -49,11 +67,13 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		// know about, ARM will surface a clear deployment error.
 	}
 
+	dependsOn := append([]string{"vnetDeployment"}, uamiDependsOn...)
+
 	deployment := map[string]any{
 		"type":       "Microsoft.Resources/deployments",
 		"apiVersion": "2022-09-01",
 		"name":       "runnerDeployment",
-		"dependsOn":  []string{"vnetDeployment"},
+		"dependsOn":  dependsOn,
 		"properties": map[string]any{
 			"mode": "Incremental",
 			"templateLink": map[string]any{
