@@ -40,6 +40,12 @@ export const SETTINGS_LINKS: TNavLink[] = [
     text: 'Webhooks',
     shortcut: 'g w',
   },
+  {
+    iconVariant: 'KeyIcon',
+    path: `/api-tokens`,
+    text: 'API tokens',
+    shortcut: 'g k',
+  },
 ]
 
 export const SLACK_LINK: TNavLink = {
