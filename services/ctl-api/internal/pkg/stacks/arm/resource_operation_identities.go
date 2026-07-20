@@ -228,7 +228,10 @@ func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity) ma
 					{
 						"type":       "Microsoft.Authorization/roleAssignments",
 						"apiVersion": "2022-04-01",
-						"name":       "[guid(subscription().id, parameters('principalID'), parameters('roleName'))]",
+						// Name is derived from the (unique) role name rather than the
+						// identity's principalId so ARM what-if can compute the
+						// resource ID without a runtime reference() lookup.
+						"name": "[guid(subscription().id, parameters('roleName'), 'roleassignment')]",
 						"dependsOn": []string{
 							"[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', guid(subscription().id, parameters('roleName')))]",
 						},
