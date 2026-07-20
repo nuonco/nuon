@@ -13,6 +13,7 @@ import (
 const (
 	contributorRoleGUID = "b24988ac-6180-42a0-ab88-20f7382dd24c"
 	keyVaultUserGUID    = "4633458b-17de-408a-b874-0445c86b69e6"
+	acrPushGUID         = "8311e382-0749-4cb8-b61a-304f252e45ec"
 )
 
 func azureRolesTemplateInput() *stacks.TemplateInput {
@@ -66,9 +67,13 @@ func TestOperationIdentities_CreatedAndStripped(t *testing.T) {
 		t.Error("legacy register-action custom role deployment should be stripped when operation identities are used")
 	}
 
-	// Key Vault Secrets User stays on the system identity for secret-sync.
+	// Key Vault Secrets User and ACR push stay on the system identity for
+	// secret-sync and image-sync.
 	if !strings.Contains(body, keyVaultUserGUID) {
 		t.Error("Key Vault Secrets User role should remain on the system identity")
+	}
+	if !strings.Contains(body, acrPushGUID) {
+		t.Error("ACR push role should remain on the system identity for image sync")
 	}
 
 	// VMSS should carry both its system identity and the operation identities.

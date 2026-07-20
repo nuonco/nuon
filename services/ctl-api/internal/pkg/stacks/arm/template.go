@@ -116,10 +116,11 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		tmpl.Resources = append(tmpl.Resources, t.getCustomRoleDeployment(inp))
 	}
 
-	// Key Vault Secrets User stays on the system identity: secret-sync reads the
-	// vault as the ambient identity.
+	// Key Vault Secrets User and ACR pull/push stay on the system identity:
+	// secret-sync and image-sync run as the ambient identity.
 	if !t.cfg.UseLocalRunners {
 		tmpl.Resources = append(tmpl.Resources, t.getKeyVaultRoleAssignment())
+		tmpl.Resources = append(tmpl.Resources, t.getACRRoleAssignments()...)
 	}
 
 	// Custom linked deployments (before phone home, which reports their outputs)
