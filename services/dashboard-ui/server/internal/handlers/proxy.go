@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -48,8 +49,8 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 	// served from {upstream}/docs/{path}. ModifyResponse rewrites the embedded
 	// absolute spec URL so it routes through the proxy instead of hitting the
 	// upstream directly.
-	publicSwaggerProxy := h.newSwaggerProxy(h.cfg.APIUrl, "/public/swagger")
-	adminSwaggerProxy := h.newSwaggerProxy(h.cfg.AdminAPIUrl, "/admin/swagger")
+	publicSwaggerProxy := h.newSwaggerProxy(h.cfg.APIUrl, "/public/swagger", "")
+	adminSwaggerProxy := h.newSwaggerProxy(h.cfg.AdminAPIUrl, "/admin/swagger", "/admin")
 
 	temporalProxy := h.newTemporalProxy(h.cfg.TemporalUIUrl)
 
@@ -105,8 +106,10 @@ func (h *ProxyHandler) newProxy(upstreamBase, stripPrefix, addPrefix string) *ht
 // newSwaggerProxy builds a reverse proxy for Swagger UI HTML/assets. It strips
 // the frontend prefix and adds /docs so assets are fetched from the upstream
 // docs path. ModifyResponse rewrites the embedded absolute spec URL (/oapi/v2)
-// to route through the proxy's dedicated spec routes instead.
-func (h *ProxyHandler) newSwaggerProxy(upstreamBase, frontendPrefix string) *httputil.ReverseProxy {
+// so the spec loads through the proxy, and rewrites the spec's own
+// host/schemes/basePath so Swagger UI's "Execute" requests route back through
+// the BFF (apiPrefix) instead of hitting the internal upstream host directly.
+func (h *ProxyHandler) newSwaggerProxy(upstreamBase, frontendPrefix, apiPrefix string) *httputil.ReverseProxy {
 	target, _ := url.Parse(upstreamBase)
 	specURLOld := []byte("url: '/oapi/v2'")
 	specURLNew := []byte("url: '" + frontendPrefix + "/oapi/v2'")
@@ -124,22 +127,67 @@ func (h *ProxyHandler) newSwaggerProxy(upstreamBase, frontendPrefix string) *htt
 			req.Header.Del("Accept-Encoding")
 		},
 		ModifyResponse: func(resp *http.Response) error {
-			if !strings.Contains(resp.Header.Get("Content-Type"), "text/html") {
+			contentType := resp.Header.Get("Content-Type")
+			switch {
+			case strings.Contains(contentType, "text/html"):
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return err
+				}
+				resp.Body.Close()
+				rewritten := bytes.ReplaceAll(body, specURLOld, specURLNew)
+				return setProxyBody(resp, rewritten)
+			case strings.Contains(contentType, "application/json"):
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return err
+				}
+				resp.Body.Close()
+				rewritten, err := rewriteSwaggerSpec(body, apiPrefix)
+				if err != nil {
+					return err
+				}
+				return setProxyBody(resp, rewritten)
+			default:
 				return nil
 			}
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return err
-			}
-			resp.Body.Close()
-			rewritten := bytes.ReplaceAll(body, specURLOld, specURLNew)
-			resp.Body = io.NopCloser(bytes.NewReader(rewritten))
-			resp.ContentLength = int64(len(rewritten))
-			resp.Header.Set("Content-Length", strconv.Itoa(len(rewritten)))
-			return nil
 		},
 		ErrorLog: zap.NewStdLog(h.l),
 	}
+}
+
+func setProxyBody(resp *http.Response, body []byte) error {
+	resp.Body = io.NopCloser(bytes.NewReader(body))
+	resp.ContentLength = int64(len(body))
+	resp.Header.Set("Content-Length", strconv.Itoa(len(body)))
+	return nil
+}
+
+// rewriteSwaggerSpec points the spec's request target at the BFF proxy so
+// Swagger UI's "Execute" stays same-origin. For Swagger 2.0 it drops the
+// upstream host/schemes (so the browser page origin is used) and rewrites
+// basePath; for OpenAPI 3 it rewrites servers. apiPrefix is the BFF path that
+// fronts this API ("/admin" for the admin proxy, "" for the public proxy).
+func rewriteSwaggerSpec(body []byte, apiPrefix string) ([]byte, error) {
+	var doc map[string]any
+	if err := json.Unmarshal(body, &doc); err != nil {
+		return nil, err
+	}
+
+	basePath := apiPrefix
+	if basePath == "" {
+		basePath = "/"
+	}
+
+	if _, isV3 := doc["openapi"]; isV3 {
+		doc["servers"] = []map[string]string{{"url": basePath}}
+	} else {
+		delete(doc, "host")
+		delete(doc, "schemes")
+		doc["basePath"] = basePath
+	}
+
+	return json.Marshal(doc)
 }
 
 const adminDashboardPrefix = "/admin/dashboard"
