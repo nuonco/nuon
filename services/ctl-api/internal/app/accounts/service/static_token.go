@@ -35,7 +35,7 @@ type StaticTokenResponse struct {
 // @Summary				create a static API token for your org's service account
 // @Description			Creates a long-lived static API token scoped to your current org. The token is issued for the org's service account, which is created automatically if it does not already exist. The token only grants access to the current org.
 // @Param					req	body	CreateStaticTokenRequest	true	"Input"
-// @Tags					account
+// @Tags					accounts
 // @Security				APIKey
 // @Security				OrgID
 // @Accept					json
@@ -100,7 +100,7 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 // @ID						ListStaticTokens
 // @Summary				list your org's static API tokens
 // @Description			Lists the static API tokens for your current org's service account. Token secrets are never returned.
-// @Tags					account
+// @Tags					accounts
 // @Security				APIKey
 // @Security				OrgID
 // @Produce				json
@@ -139,7 +139,7 @@ func (s *service) ListStaticTokens(ctx *gin.Context) {
 // @Summary				delete a static API token
 // @Description			Deletes a static API token belonging to your current org's service account. Once deleted, the token can no longer be used to access the API.
 // @Param					token_id	path	string	true	"token ID"
-// @Tags					account
+// @Tags					accounts
 // @Security				APIKey
 // @Security				OrgID
 // @Produce				json
