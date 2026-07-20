@@ -5,19 +5,23 @@ boost: 10
 keywords: ["API", "api", "Nuon API", "REST API", "control plane API", "API reference", "API token", "access token", "Swagger", "OpenAPI", "programmatic install creation", "Bearer token"]
 ---
 
-You'll need an access token to use the Nuon API. You can get an access token by logging in via the Nuon [Dashboard][1] or the Nuon CLI.
+You'll need an access token to use the Nuon API. Create a durable, org-scoped API token from the Nuon [Dashboard][1] or the Nuon CLI. Tokens are shown only once, so store them somewhere safe.
 
-To get your access token via the Nuon CLI, first login
+To create a token from the Dashboard, go to **Settings → API tokens → Create token**.
+
+To create one via the Nuon CLI, first login
 
 ```sh
 nuon login
 ```
 
-then view the API token
+then create an API token for your current org
 
 ```sh
-nuon orgs api-token
+nuon orgs api-tokens create --name my-token
 ```
+
+You can list and revoke tokens with `nuon orgs api-tokens list` and `nuon orgs api-tokens delete --id <token-id>`. Creating and managing API tokens requires org admin access.
 
 ## Using the Swagger API Reference
 
