@@ -51,16 +51,18 @@ func (c *cli) orgsCmd() *cobra.Command {
 	currentCmd.Hidden = true
 	orgsCmd.AddCommand(currentCmd)
 
-	apiTokenCmd := &cobra.Command{
-		Use:   "api-token",
-		Short: "Get api token",
-		Long:  "Get api token that is active for current org",
+	orgsCmd.AddCommand(c.apiTokensCmd())
+
+	deprecatedAPITokenCmd := &cobra.Command{
+		Use:    "api-token",
+		Short:  "Manage API tokens (deprecated)",
+		Hidden: true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.APIToken(cmd.Context(), PrintJSON)
+			printDeprecatedCommandWarning(cmd, "Use `nuon orgs api-tokens` instead")
+			return cmd.Help()
 		}),
 	}
-	orgsCmd.AddCommand(apiTokenCmd)
+	orgsCmd.AddCommand(deprecatedAPITokenCmd)
 
 	idCmd := &cobra.Command{
 		Use:   "id",
@@ -206,6 +208,60 @@ func (c *cli) orgsCmd() *cobra.Command {
 	orgsCmd.AddCommand(c.orgWebhooksCmd())
 
 	return orgsCmd
+}
+
+func (c *cli) apiTokensCmd() *cobra.Command {
+	var (
+		name     string
+		duration string
+		tokenID  string
+	)
+
+	apiTokensCmd := &cobra.Command{
+		Use:               "api-tokens",
+		Short:             "Manage static API tokens for the current org",
+		Long:              "Create, list, and delete static API tokens scoped to the current org's service account",
+		PersistentPreRunE: c.persistentPreRunE,
+	}
+
+	createCmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create a static API token for the current org",
+		Long:  "Create a static API token scoped to the current org's service account. The token is only shown once.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.CreateStaticToken(cmd.Context(), name, duration, PrintJSON)
+		}),
+	}
+	createCmd.Flags().StringVarP(&name, "name", "n", "", "A human-friendly name to identify the token")
+	createCmd.MarkFlagRequired("name")
+	createCmd.Flags().StringVar(&duration, "duration", "8760h", "How long the token is valid (Go duration, e.g. 720h)")
+	apiTokensCmd.AddCommand(createCmd)
+
+	listCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List static API tokens for the current org",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.ListStaticTokens(cmd.Context(), PrintJSON)
+		}),
+	}
+	apiTokensCmd.AddCommand(listCmd)
+
+	deleteCmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete a static API token for the current org",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.DeleteStaticToken(cmd.Context(), tokenID, PrintJSON)
+		}),
+	}
+	deleteCmd.Flags().StringVar(&tokenID, "id", "", "The ID of the token to delete")
+	deleteCmd.MarkFlagRequired("id")
+	apiTokensCmd.AddCommand(deleteCmd)
+
+	return apiTokensCmd
 }
 
 // subscriptionJSONHelp documents the shape accepted by --subscription-json

@@ -58,11 +58,10 @@ If you do not yet have an org setup, please follow the [quickstart guide](/get-s
 
 ## API Tokens
 
-If you are just trying out the Nuon Github Actions, then you can get started using your personal auth token:
+Create a durable, org-scoped API token and store it as a GitHub Actions secret:
 
 ```sh
-nuon orgs api-token
+nuon orgs api-tokens create --name github-actions --output json | jq -r .api_token
 ```
 
-For real use cases, we recommend using a static token. To request a static token, please [contact
-  us](https://nuon.co/contact-us).
+The token is shown only once, so copy it straight into your repository secret. Rotate it any time by creating a new token and revoking the old one with `nuon orgs api-tokens delete --id <token-id>`. Creating tokens requires org admin access.

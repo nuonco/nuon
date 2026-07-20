@@ -282,6 +282,8 @@ type ClientService interface {
 
 	CreateSlackOrgLink(params *CreateSlackOrgLinkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSlackOrgLinkCreated, error)
 
+	CreateStaticToken(params *CreateStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateStaticTokenCreated, error)
+
 	CreateTerraformModuleComponentConfig(params *CreateTerraformModuleComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTerraformModuleComponentConfigCreated, error)
 
 	CreateTerraformWorkspace(params *CreateTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTerraformWorkspaceCreated, error)
@@ -331,6 +333,8 @@ type ClientService interface {
 	DeleteSlackChannelSubscription(params *DeleteSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSlackChannelSubscriptionNoContent, error)
 
 	DeleteSlackOrgLink(params *DeleteSlackOrgLinkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSlackOrgLinkNoContent, error)
+
+	DeleteStaticToken(params *DeleteStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteStaticTokenNoContent, error)
 
 	DeleteTerraformWorkspace(params *DeleteTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteTerraformWorkspaceOK, error)
 
@@ -807,6 +811,8 @@ type ClientService interface {
 	ListSlackInstallations(params *ListSlackInstallationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSlackInstallationsOK, error)
 
 	ListSlackOrgLinks(params *ListSlackOrgLinksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSlackOrgLinksOK, error)
+
+	ListStaticTokens(params *ListStaticTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListStaticTokensOK, error)
 
 	LockTerraformWorkspace(params *LockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LockTerraformWorkspaceOK, error)
 
@@ -4804,6 +4810,52 @@ func (a *Client) CreateSlackOrgLink(params *CreateSlackOrgLinkParams, authInfo r
 }
 
 /*
+CreateStaticToken creates a static API token for your org s service account
+
+Creates a long-lived static API token scoped to your current org. The token is issued for the org's service account, which is created automatically if it does not already exist. The token only grants access to the current org.
+*/
+func (a *Client) CreateStaticToken(params *CreateStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateStaticTokenCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateStaticTokenParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateStaticToken",
+		Method:             "POST",
+		PathPattern:        "/v1/account/static-token",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateStaticTokenReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateStaticTokenCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateStaticToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateTerraformModuleComponentConfig creates a terraform component config
 
 Create a terraform component config.
@@ -5941,6 +5993,52 @@ func (a *Client) DeleteSlackOrgLink(params *DeleteSlackOrgLinkParams, authInfo r
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteSlackOrgLink: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeleteStaticToken deletes a static API token
+
+Deletes a static API token belonging to your current org's service account. Once deleted, the token can no longer be used to access the API.
+*/
+func (a *Client) DeleteStaticToken(params *DeleteStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteStaticTokenNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteStaticTokenParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteStaticToken",
+		Method:             "DELETE",
+		PathPattern:        "/v1/account/static-tokens/{token_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteStaticTokenReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteStaticTokenNoContent)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteStaticToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -16991,6 +17089,52 @@ func (a *Client) ListSlackOrgLinks(params *ListSlackOrgLinksParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ListSlackOrgLinks: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListStaticTokens lists your org s static API tokens
+
+Lists the static API tokens for your current org's service account. Token secrets are never returned.
+*/
+func (a *Client) ListStaticTokens(params *ListStaticTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListStaticTokensOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListStaticTokensParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListStaticTokens",
+		Method:             "GET",
+		PathPattern:        "/v1/account/static-tokens",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListStaticTokensReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListStaticTokensOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListStaticTokens: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
