@@ -31,6 +31,22 @@ type StaticTokenResponse struct {
 	APIToken string `json:"api_token,omitzero"`
 }
 
+const defaultTokenDuration = "8760h"
+
+func parseTokenDuration(raw string) (time.Duration, error) {
+	if raw == "" {
+		raw = defaultTokenDuration
+	}
+	duration, err := time.ParseDuration(raw)
+	if err != nil {
+		return 0, fmt.Errorf("invalid duration: %w", err)
+	}
+	if duration <= 0 {
+		return 0, fmt.Errorf("duration must be positive")
+	}
+	return duration, nil
+}
+
 // @ID						CreateStaticToken
 // @Summary				create a static API token for your org's service account
 // @Description			Creates a long-lived static API token scoped to your current org. The token is issued for the org's service account, which is created automatically if it does not already exist. The token only grants access to the current org.
@@ -54,16 +70,9 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	if req.Duration == "" {
-		req.Duration = "8760h"
-	}
-	duration, err := time.ParseDuration(req.Duration)
+	duration, err := parseTokenDuration(req.Duration)
 	if err != nil {
-		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("invalid duration: %w", err)))
-		return
-	}
-	if duration <= 0 {
-		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("duration must be positive")))
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
