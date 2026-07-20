@@ -71,6 +71,8 @@ export type TPolicy = {
   contents?: string
   gcp_predefined_role?: string
   gcp_permissions?: string[]
+  azure_built_in_roles?: string[]
+  azure_actions?: string[]
 }
 
 export const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
@@ -215,6 +217,64 @@ export const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
                   />
                   <CodeBlock language="text">
                     {policy.gcp_permissions.join('\n')}
+                  </CodeBlock>
+                </div>
+              </Modal>
+            </>
+          ) : null}
+          {policy?.azure_built_in_roles?.length ? (
+            <>
+              <Code variant="inline" className="!px-2">
+                <Text variant="subtext" family="mono">
+                  {policy.azure_built_in_roles.join(', ')}
+                </Text>
+              </Code>
+
+              <Text variant="subtext" weight="strong">
+                Azure built-in
+              </Text>
+
+              <Button
+                className="!p-1"
+                href="https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles"
+                size="sm"
+              >
+                <Icon variant="ArrowSquareOutIcon" />
+              </Button>
+            </>
+          ) : null}
+          {policy?.azure_actions?.length ? (
+            <>
+              <Code variant="inline" className="!px-2">
+                <Text variant="subtext" family="mono">
+                  {policy?.name}
+                </Text>
+              </Code>
+
+              <Text variant="subtext" weight="strong">
+                Azure custom
+              </Text>
+
+              <Modal
+                size="sm"
+                heading={<>{policy?.name} actions</>}
+                triggerButton={{
+                  className: '!p-1',
+                  children: (
+                    <span>
+                      <Icon variant="BracketsCurlyIcon" />
+                    </span>
+                  ),
+                  size: 'sm',
+                }}
+              >
+                <div className="flex flex-col gap-2">
+                  <ClickToCopyButton
+                    className="!w-fit self-end"
+                    textToCopy={policy.azure_actions.join('\n')}
+                  />
+                  <CodeBlock language="text">
+                    {policy.azure_actions.join('\n')}
                   </CodeBlock>
                 </div>
               </Modal>

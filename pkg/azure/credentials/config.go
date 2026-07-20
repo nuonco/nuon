@@ -8,9 +8,16 @@ type ServicePrincipalCredentials struct {
 type Config struct {
 	ServicePrincipal *ServicePrincipalCredentials `cty:"service_principal,block" hcl:"service_principal,block" mapstructure:"service_principal,omitempty" json:"service_principal" temporaljson:"service_principal"`
 	UseDefault       bool                         `cty:"use_default,optional" hcl:"use_default,optional" mapstructure:"use_default,omitempty" json:"use_default" temporaljson:"use_default"`
+
+	// ManagedIdentityClientID runs the operation as a specific user-assigned
+	// managed identity instead of the VM's system identity.
+	ManagedIdentityClientID string `cty:"managed_identity_client_id,optional" hcl:"managed_identity_client_id,optional" mapstructure:"managed_identity_client_id,omitempty" json:"managed_identity_client_id" temporaljson:"managed_identity_client_id"`
 }
 
 func (c Config) String() string {
+	if c.ManagedIdentityClientID != "" {
+		return "user-assigned managed identity " + c.ManagedIdentityClientID
+	}
 	if c.UseDefault {
 		return "default credentials"
 	}

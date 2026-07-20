@@ -53,8 +53,8 @@ func TestGetRoleForAction(t *testing.T) {
 			useAzure:           true,
 			expectedOperation:  app.OperationTrigger,
 			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
-			expectedRoleName:   "azure-placeholder-name",
-			description:        "Action with no rules on Azure should use Azure placeholder",
+			expectedRoleName:   "MaintenanceRole",
+			description:        "Action with no rules on Azure should use default maintenance identity",
 		},
 
 		// Entity-level role (ActionWorkflowConfig.Role)
@@ -272,9 +272,9 @@ func TestGetRoleForAction(t *testing.T) {
 			matrixRules:        nil,
 			useAzure:           true,
 			expectedOperation:  app.OperationTrigger,
-			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
-			expectedRoleName:   "azure-placeholder-name",
-			description:        "Azure should return placeholder regardless of runtime role",
+			expectedRoleSource: operationroles.RoleSelectionSourceRuntime,
+			expectedRoleName:   "RuntimeRole",
+			description:        "Runtime role should override the default on Azure",
 		},
 		{
 			name:               "entity_role_missing_fallback_to_default",
@@ -391,7 +391,26 @@ func TestGetRoleForAction(t *testing.T) {
 
 			if tt.useAzure {
 				stack.InstallStackOutputs.AzureStackOutputs = &app.AzureStackOutputs{
-					SubscriptionID: "test-subscription-id",
+					SubscriptionID:              "test-subscription-id",
+					ProvisionIdentityClientID:   "client-ProvisionRole",
+					MaintenanceIdentityClientID: "client-MaintenanceRole",
+					DeprovisionIdentityClientID: "client-DeprovisionRole",
+					CustomIdentityClientIDs: map[string]string{
+						"ActionConfigRole":       "client-ActionConfigRole",
+						"CustomMaintenanceRole":  "client-CustomMaintenanceRole",
+						"MatrixDeployActionRole": "client-MatrixDeployActionRole",
+						"MatrixWildcardRole":     "client-MatrixWildcardRole",
+						"SpecificActionRole":     "client-SpecificActionRole",
+						"WildcardRole":           "client-WildcardRole",
+						"ComponentRole":          "client-ComponentRole",
+						"DeployRole":             "client-DeployRole",
+						"DeployActionRole":       "client-DeployActionRole",
+						"MatrixRole":             "client-MatrixRole",
+						"RuntimeRole":            "client-RuntimeRole",
+					},
+					BreakGlassIdentityClientIDs: map[string]string{
+						"EmergencyRole": "client-EmergencyRole",
+					},
 				}
 			} else {
 				stack.InstallStackOutputs.AWSStackOutputs = &app.AWSStackOutputs{
@@ -438,12 +457,9 @@ func TestGetRoleForAction(t *testing.T) {
 			assert.Equal(t, tt.expectedRoleName, roleSelection.RoleName, "Role name mismatch: %s", tt.description)
 			assert.NotEmpty(t, roleSelection.RoleARN, "Role ARN should be populated: %s", tt.description)
 
-			// For Azure, we expect placeholder ARN
-			if tt.useAzure {
-				assert.Equal(t, "azure-placeholder-arn", roleSelection.RoleARN, "Azure should use placeholder ARN: %s", tt.description)
-			} else {
-				assert.Contains(t, roleSelection.RoleARN, tt.expectedRoleName, "Role ARN should contain role name: %s", tt.description)
-			}
+			// Both AWS and Azure now resolve a concrete identifier (IAM role ARN /
+			// managed identity client ID) that embeds the role name.
+			assert.Contains(t, roleSelection.RoleARN, tt.expectedRoleName, "Role identifier should contain role name: %s", tt.description)
 
 			t.Logf("%s: Got role=%s (source=%s, operation=%s)",
 				tt.name,

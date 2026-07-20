@@ -17,6 +17,8 @@ func envToken(s string) string {
 func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs) map[string]any {
 	phoneHomeURL := inp.CloudFormationStackVersion.PhoneHomeURL
 
+	operationIDs := azureOperationIdentities(inp.AppCfg)
+
 	// Build per-secret env vars and payload fields dynamically.
 	var secretEnvVars []map[string]any
 	var secretPayloadFields []string
@@ -71,6 +73,10 @@ func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput, customOutput
 		}
 		payloadFields = append(payloadFields, "  \"custom_nested_stacks\": {\n"+strings.Join(stackFields, ",\n")+"\n  }")
 	}
+
+	// Surface each identity's client ID as a stack output.
+	identityEnvVars, identityPayloadFields := operationIdentityPhoneHomeFields(operationIDs)
+	payloadFields = append(payloadFields, identityPayloadFields...)
 
 	payloadJSON := "{\n" + strings.Join(payloadFields, ",\n") + "\n}"
 
@@ -127,11 +133,18 @@ fi
 	}
 	envVars = append(envVars, secretEnvVars...)
 	envVars = append(envVars, customEnvVars...)
+	envVars = append(envVars, identityEnvVars...)
 
+	// Depend on the identity role setup so a failed role deployment blocks the
+	// outputs rather than reporting half-configured identities.
 	dependsOn := []string{"vnetDeployment"}
 	for _, co := range customOutputs {
 		dependsOn = append(dependsOn, co.DeploymentName)
 	}
+	if _, uamiDependsOn := operationIdentityAttachment(operationIDs); len(uamiDependsOn) > 0 {
+		dependsOn = append(dependsOn, uamiDependsOn...)
+	}
+	dependsOn = append(dependsOn, operationIdentitySetupDependencies(operationIDs)...)
 
 	return map[string]any{
 		"type":       "Microsoft.Resources/deploymentScripts",

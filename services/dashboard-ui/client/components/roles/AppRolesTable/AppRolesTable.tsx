@@ -20,6 +20,10 @@ type TAppRole = {
     name?: string
     managed_policy_name?: string
     contents?: string
+    gcp_predefined_role?: string
+    gcp_permissions?: string[]
+    azure_built_in_roles?: string[]
+    azure_actions?: string[]
   }[]
   permissions_boundary?: string
 }

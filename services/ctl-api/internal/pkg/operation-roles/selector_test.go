@@ -638,7 +638,7 @@ func TestSelectRole(t *testing.T) {
 		},
 		// Azure Support Tests
 		{
-			name: "azure returns placeholder values",
+			name: "azure resolves maintenance identity client id",
 			ctx: &SelectionContext{
 				Operation:     app.OperationDeploy,
 				PrincipalType: principal.TypeComponent,
@@ -646,25 +646,30 @@ func TestSelectRole(t *testing.T) {
 				RuntimeRole:   "",
 				EntityRoles:   nil,
 				MatrixRules:   nil,
-				DefaultRole:   "maintenance",
+				DefaultRole:   "{{.nuon.install.name}}-maintenance",
 				AppConfig:     baseAppConfig,
 				StackOutputs: &app.InstallStackOutputs{
 					AzureStackOutputs: &app.AzureStackOutputs{
-						SubscriptionID: "test-subscription-id",
+						SubscriptionID:              "test-subscription-id",
+						MaintenanceIdentityClientID: "maintenance-client-id",
 					},
 				},
 				InstallState: baseInstallState,
 			},
-			expectedRoleName: "azure-placeholder-name",
-			expectedRoleARN:  "azure-placeholder-arn",
+			expectedRoleName: "test-install-maintenance",
+			expectedRoleARN:  "maintenance-client-id",
 			expectedSource:   RoleSelectionSourceDefault,
 			expectedTrace: []app.InstallRoleSelectionRecord{
-				{RoleName: "azure-placeholder-name", RoleSource: "default", RoleID: "azure-placeholder-arn", Available: true, Selected: true},
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "", RoleSource: "breakglass", Available: false},
+				{RoleName: "", RoleSource: "entity", Available: false},
+				{RoleName: "", RoleSource: "matrix", Available: false},
+				{RoleName: "test-install-maintenance", RoleSource: "default", Available: true, Selected: true},
 			},
 			expectError: false,
 		},
 		{
-			name: "azure early exit ignores all other rules",
+			name: "azure respects runtime role override",
 			ctx: &SelectionContext{
 				Operation:     app.OperationDeploy,
 				PrincipalType: principal.TypeComponent,
@@ -676,20 +681,23 @@ func TestSelectRole(t *testing.T) {
 				MatrixRules: []*app.AppOperationRoleRule{
 					{PrincipalType: "component", PrincipalName: "database", Operation: app.OperationDeploy, Role: "maintenance"},
 				},
-				DefaultRole: "maintenance",
+				DefaultRole: "{{.nuon.install.name}}-maintenance",
 				AppConfig:   baseAppConfig,
 				StackOutputs: &app.InstallStackOutputs{
 					AzureStackOutputs: &app.AzureStackOutputs{
 						SubscriptionID: "test-subscription-id",
+						BreakGlassIdentityClientIDs: map[string]string{
+							"emergency-access": "emergency-client-id",
+						},
 					},
 				},
 				InstallState: baseInstallState,
 			},
-			expectedRoleName: "azure-placeholder-name",
-			expectedRoleARN:  "azure-placeholder-arn",
-			expectedSource:   RoleSelectionSourceDefault,
+			expectedRoleName: "emergency-access",
+			expectedRoleARN:  "emergency-client-id",
+			expectedSource:   RoleSelectionSourceRuntime,
 			expectedTrace: []app.InstallRoleSelectionRecord{
-				{RoleName: "azure-placeholder-name", RoleSource: "default", RoleID: "azure-placeholder-arn", Available: true, Selected: true},
+				{RoleName: "emergency-access", RoleSource: "runtime", Available: true, Selected: true},
 			},
 			expectError: false,
 		},
@@ -864,33 +872,38 @@ func TestSelectRole(t *testing.T) {
 		},
 		// Combined Scenarios
 		{
-			name: "azure returns azure placeholder",
+			name: "azure resolves provision identity client id",
 			ctx: &SelectionContext{
-				Operation:     app.OperationDeploy,
+				Operation:     app.OperationProvision,
 				PrincipalType: principal.TypeComponent,
 				PrincipalName: "database",
 				RuntimeRole:   "",
 				EntityRoles:   nil,
 				MatrixRules:   nil,
-				DefaultRole:   "maintenance",
+				DefaultRole:   "{{.nuon.install.name}}-provision",
 				AppConfig:     baseAppConfig,
 				StackOutputs: &app.InstallStackOutputs{
 					AzureStackOutputs: &app.AzureStackOutputs{
-						SubscriptionID: "test-subscription-id",
+						SubscriptionID:            "test-subscription-id",
+						ProvisionIdentityClientID: "provision-client-id",
 					},
 				},
 				InstallState: baseInstallState,
 			},
-			expectedRoleName: "azure-placeholder-name",
-			expectedRoleARN:  "azure-placeholder-arn",
+			expectedRoleName: "test-install-provision",
+			expectedRoleARN:  "provision-client-id",
 			expectedSource:   RoleSelectionSourceDefault,
 			expectedTrace: []app.InstallRoleSelectionRecord{
-				{RoleName: "azure-placeholder-name", RoleSource: "default", RoleID: "azure-placeholder-arn", Available: true, Selected: true},
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "", RoleSource: "breakglass", Available: false},
+				{RoleName: "", RoleSource: "entity", Available: false},
+				{RoleName: "", RoleSource: "matrix", Available: false},
+				{RoleName: "test-install-provision", RoleSource: "default", Available: true, Selected: true},
 			},
 			expectError: false,
 		},
 		{
-			name: "azure with break glass returns azure placeholder",
+			name: "azure resolves break glass identity client id",
 			ctx: &SelectionContext{
 				Operation:      app.OperationDeploy,
 				PrincipalType:  principal.TypeComponent,
@@ -899,20 +912,24 @@ func TestSelectRole(t *testing.T) {
 				BreakGlassRole: "emergency-access",
 				EntityRoles:    nil,
 				MatrixRules:    nil,
-				DefaultRole:    "maintenance",
+				DefaultRole:    "{{.nuon.install.name}}-maintenance",
 				AppConfig:      baseAppConfig,
 				StackOutputs: &app.InstallStackOutputs{
 					AzureStackOutputs: &app.AzureStackOutputs{
 						SubscriptionID: "test-subscription-id",
+						BreakGlassIdentityClientIDs: map[string]string{
+							"emergency-access": "emergency-client-id",
+						},
 					},
 				},
 				InstallState: baseInstallState,
 			},
-			expectedRoleName: "azure-placeholder-name",
-			expectedRoleARN:  "azure-placeholder-arn",
-			expectedSource:   RoleSelectionSourceDefault,
+			expectedRoleName: "emergency-access",
+			expectedRoleARN:  "emergency-client-id",
+			expectedSource:   RoleSelectionSourceBreakGlass,
 			expectedTrace: []app.InstallRoleSelectionRecord{
-				{RoleName: "azure-placeholder-name", RoleSource: "default", RoleID: "azure-placeholder-arn", Available: true, Selected: true},
+				{RoleName: "", RoleSource: "runtime", Available: false},
+				{RoleName: "emergency-access", RoleSource: "breakglass", Available: true, Selected: true},
 			},
 			expectError: false,
 		},

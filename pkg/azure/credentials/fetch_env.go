@@ -4,13 +4,18 @@ import (
 	"context"
 )
 
-// NOTE(jm): for now, we only support static service principal credentials
 func FetchEnv(ctx context.Context, cfg *Config) (map[string]string, error) {
+	env := map[string]string{}
 	if cfg.ServicePrincipal != nil {
-		return map[string]string{
-			"ARM_SUBSCRIPTION_ID": cfg.ServicePrincipal.SubscriptionID,
-			"ARM_TENANT_ID":       cfg.ServicePrincipal.SubscriptionTenantID,
-		}, nil
+		env["ARM_SUBSCRIPTION_ID"] = cfg.ServicePrincipal.SubscriptionID
+		env["ARM_TENANT_ID"] = cfg.ServicePrincipal.SubscriptionTenantID
 	}
-	return map[string]string{}, nil
+
+	// ARM_USE_MSI + ARM_CLIENT_ID makes the provider use this user-assigned identity.
+	if cfg.ManagedIdentityClientID != "" {
+		env["ARM_USE_MSI"] = "true"
+		env["ARM_CLIENT_ID"] = cfg.ManagedIdentityClientID
+	}
+
+	return env, nil
 }
