@@ -295,3 +295,34 @@ func TestIsS3URL(t *testing.T) {
 		})
 	}
 }
+
+func TestStackConfig_Parse_GCPCustomStacks(t *testing.T) {
+	cfg := &StackConfig{
+		Type:        "gcp-terraform",
+		Name:        "my-stack",
+		Description: "test stack",
+		CustomNestedStacks: []CustomNestedStack{
+			{Name: "preview_bucket", TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/bucket", Index: 0},
+		},
+	}
+	require.NoError(t, cfg.parse())
+	require.Equal(t, "bucket", cfg.CustomNestedStacks[0].GCPModuleName())
+
+	for _, forkURL := range []string{
+		"github.com/acme/install-stacks//gcp/modules/bucket",
+		"git::https://gitlab.com/acme/stacks.git//gcp/modules/bucket",
+	} {
+		cfg.CustomNestedStacks[0].TemplateURL = forkURL
+		require.NoError(t, cfg.parse(), forkURL)
+		require.Equal(t, "bucket", cfg.CustomNestedStacks[0].GCPModuleName(), forkURL)
+	}
+
+	for _, badURL := range []string{
+		"https://example.com/stack.yaml",
+		"github.com/nuonco/install-stacks//gcp/modules/",
+		"github.com/nuonco/install-stacks//gcp/modules/bucket/extra",
+	} {
+		cfg.CustomNestedStacks[0].TemplateURL = badURL
+		require.Error(t, cfg.parse(), badURL)
+	}
+}
