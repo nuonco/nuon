@@ -92,7 +92,7 @@ func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 func (a ActionTriggerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("type").Short("type of trigger").Required().
-		Long("Supported trigger types: manual, cron, pre-provision, post-provision, pre-reprovision, post-reprovision, pre-deprovision, post-deprovision, pre-deploy-all-components, post-deploy-all-components, pre-teardown-all-components, post-teardown-all-components, pre-deploy-component, post-deploy-component, pre-teardown-component, post-teardown-component, pre-deprovision-sandbox, post-deprovision-sandbox, pre-reprovision-sandbox, post-reprovision-sandbox, pre-update-inputs, post-update-inputs, pre-secrets-sync, post-secrets-sync").
+		Long("Supported trigger types: manual, cron, pre-provision, post-provision, pre-reprovision, post-reprovision, pre-deprovision, post-deprovision, pre-deploy-all-components, post-deploy-all-components, pre-teardown-all-components, post-teardown-all-components, pre-deploy-component, post-deploy-component, pre-teardown-component, post-teardown-component, pre-enable-component, post-enable-component, pre-disable-component, post-disable-component, pre-deprovision-sandbox, post-deprovision-sandbox, pre-reprovision-sandbox, post-reprovision-sandbox, pre-update-inputs, post-update-inputs, pre-secrets-sync, post-secrets-sync, role-enabled, role-disabled").
 		Example("manual").
 		Example("cron").
 		Example("post-provision").
@@ -101,7 +101,7 @@ func (a ActionTriggerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("*/5 * * * *").
 		Example("0 */4 * * *").
 		Field("component_name").Short("component name for component-specific triggers").
-		Long("Required for pre-deploy-component, post-deploy-component, pre-teardown-component, post-teardown-component triggers").
+		Long("Required for pre-deploy-component, post-deploy-component, pre-teardown-component, post-teardown-component, pre-enable-component, post-enable-component, pre-disable-component, and post-disable-component triggers").
 		Example("database").
 		Example("api-server").
 		Field("index").Short("index for manual trigger").
