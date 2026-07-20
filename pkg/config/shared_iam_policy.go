@@ -18,6 +18,9 @@ type AppAWSIAMPolicy struct {
 
 	GCPPermissions    []string `mapstructure:"gcp_permissions,omitempty" toml:"gcp_permissions,omitempty"`
 	GCPPredefinedRole string   `mapstructure:"gcp_predefined_role,omitempty" toml:"gcp_predefined_role,omitempty"`
+
+	AzureActions      []string `mapstructure:"azure_actions,omitempty" toml:"azure_actions,omitempty"`
+	AzureBuiltInRoles []string `mapstructure:"azure_built_in_roles,omitempty" toml:"azure_built_in_roles,omitempty"`
 }
 
 func (a AppAWSIAMPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -40,7 +43,15 @@ func (a AppAWSIAMPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("gcp_predefined_role").Short("[GCP] predefined role").OneOfRequired("gcp_policy").
 		Long("[GCP only] Name of a GCP predefined role to bind to the service account. This is the GCP equivalent of AWS managed policies — a Google-managed bundle of permissions. Mutually exclusive with gcp_permissions").
 		Example("roles/editor").
-		Example("roles/owner")
+		Example("roles/owner").
+		Field("azure_actions").Short("[Azure] individual RBAC actions").OneOfRequired("azure_policy").
+		Long("[Azure only] List of Azure RBAC action strings to include in a custom role definition bound to the operation's managed identity. Use this for fine-grained permission control. Mutually exclusive with azure_built_in_roles").
+		Example("Microsoft.Compute/*").
+		Example("Microsoft.Resources/subscriptions/resourceGroups/*").
+		Field("azure_built_in_roles").Short("[Azure] built-in roles").OneOfRequired("azure_policy").
+		Long("[Azure only] Names of Azure built-in roles to assign to the operation's managed identity (e.g. Contributor, Reader). This is the Azure equivalent of AWS managed policies. Mutually exclusive with azure_actions").
+		Example("Contributor").
+		Example("Reader")
 }
 
 func (a *AppAWSIAMPolicy) parse(ctx context.Context) error {
@@ -50,6 +61,10 @@ func (a *AppAWSIAMPolicy) parse(ctx context.Context) error {
 
 	if len(a.GCPPermissions) > 0 && a.GCPPredefinedRole != "" {
 		return fmt.Errorf("policy %q: gcp_permissions and gcp_predefined_role are mutually exclusive; use gcp_permissions for fine-grained custom permissions or gcp_predefined_role for a Google-managed role, not both", a.Name)
+	}
+
+	if len(a.AzureActions) > 0 && len(a.AzureBuiltInRoles) > 0 {
+		return fmt.Errorf("policy %q: azure_actions and azure_built_in_roles are mutually exclusive; use azure_actions for a fine-grained custom role or azure_built_in_roles for Azure-managed roles, not both", a.Name)
 	}
 
 	return nil

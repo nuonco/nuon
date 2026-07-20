@@ -17,11 +17,26 @@ import (
 // swagger:model app.AzureStackOutputs
 type AppAzureStackOutputs struct {
 
+	// break glass identity client ids
+	BreakGlassIdentityClientIds map[string]string `json:"break_glass_identity_client_ids,omitempty"`
+
+	// custom identity client ids
+	CustomIdentityClientIds map[string]string `json:"custom_identity_client_ids,omitempty"`
+
+	// deprovision identity client id
+	DeprovisionIdentityClientID string `json:"deprovision_identity_client_id,omitempty"`
+
+	// install inputs
+	InstallInputs map[string]string `json:"install_inputs,omitempty"`
+
 	// key vault id
 	KeyVaultID string `json:"key_vault_id,omitempty"`
 
 	// key vault name
 	KeyVaultName string `json:"key_vault_name,omitempty"`
+
+	// maintenance identity client id
+	MaintenanceIdentityClientID string `json:"maintenance_identity_client_id,omitempty"`
 
 	// network id
 	NetworkID string `json:"network_id,omitempty"`
@@ -34,6 +49,9 @@ type AppAzureStackOutputs struct {
 
 	// private subnet names
 	PrivateSubnetNames []string `json:"private_subnet_names"`
+
+	// provision identity client id
+	ProvisionIdentityClientID string `json:"provision_identity_client_id,omitempty"`
 
 	// public subnet ids
 	PublicSubnetIds []string `json:"public_subnet_ids"`
