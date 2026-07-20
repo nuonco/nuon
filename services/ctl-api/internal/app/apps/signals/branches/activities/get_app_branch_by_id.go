@@ -25,6 +25,8 @@ func (a *Activities) getAppBranchByID(ctx context.Context, appBranchID string) (
 		}).
 		Preload("Configs.ConnectedGithubVCSConfig").
 		Preload("Configs.PublicGitVCSConfig").
+		Preload("Configs.InstallsConnectedGithubVCSConfig").
+		Preload("Configs.InstallsPublicGitVCSConfig").
 		Preload("Configs.InstallGroups", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_branch_install_groups.order ASC")
 		}).
