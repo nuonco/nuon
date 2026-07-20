@@ -36,7 +36,7 @@ func (a *Activities) CreateComponentBuild(ctx context.Context, req CreateCompone
 	ctx = cctx.SetOrgIDContext(ctx, cmp.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, cmp.CreatedByID)
 
-	build, err := a.componentHelpers.CreateComponentBuildWithID(ctx, req.BuildID, req.ComponentID, true, nil)
+	build, err := a.componentHelpers.CreateComponentBuildWithID(ctx, req.BuildID, req.ComponentID, false, nil)
 	if err != nil {
 		res := a.db.WithContext(ctx).Where(&app.ComponentBuild{ID: req.BuildID}).First(&existing)
 		if res.Error == nil {

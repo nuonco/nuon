@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -73,6 +74,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	l.Info("executing build")
+	if workflow.GetVersion(ctx, "component-build-source-preflight", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		preflightOptions := workflow.ActivityOptions{
+			RetryPolicy: &temporal.RetryPolicy{MaximumAttempts: 1},
+		}
+		if _, err := activities.AwaitGetBuildGitSourceByBuildID(ctx, s.BuildID, &preflightOptions); err != nil {
+			l.Error(err.Error())
+			s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, err.Error())
+			return err
+		}
+	}
+
 	currentApp, err := activities.AwaitGetComponentAppByComponentID(ctx, s.ComponentID)
 	if err != nil {
 		s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, "unable to get component app")
