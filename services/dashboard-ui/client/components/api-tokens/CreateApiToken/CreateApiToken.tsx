@@ -30,7 +30,7 @@ export const CreateApiTokenModal = ({
   onDone: () => void
 } & Omit<IModal, 'onSubmit'>) => {
   const [name, setName] = useState('')
-  const [duration, setDuration] = useState('8760h')
+  const [duration, setDuration] = useState('720h')
 
   if (createdToken) {
     return (
@@ -50,10 +50,10 @@ export const CreateApiTokenModal = ({
       >
         <div className="flex flex-col gap-4">
           <Banner theme="warn">
-            Copy this token now. For security, it won't be shown again.
+            Save this token somewhere safe. You won't be able to view it again.
           </Banner>
           <div className="flex items-center gap-2">
-            <Text variant="body" className="font-mono break-all">
+            <Text variant="body" family="mono" className="break-all">
               {createdToken}
             </Text>
             <ClickToCopyButton textToCopy={createdToken} />
@@ -87,7 +87,9 @@ export const CreateApiTokenModal = ({
     >
       <div className="flex flex-col gap-6">
         {error ? (
-          <Banner theme="error">{error?.error || 'Unable to create API token'}</Banner>
+          <Banner theme="error">
+            {error?.error || 'Unable to create API token'}
+          </Banner>
         ) : null}
 
         <div className="flex flex-col gap-2">
