@@ -47,6 +47,15 @@ type AppAppBranchConfig struct {
 	// install groups
 	InstallGroups []*AppAppBranchInstallGroup `json:"install_groups"`
 
+	// installs connected github vcs config
+	InstallsConnectedGithubVcsConfig *AppConnectedGithubVCSConfig `json:"installs_connected_github_vcs_config,omitempty"`
+
+	// installs directory
+	InstallsDirectory string `json:"installs_directory,omitempty"`
+
+	// installs public git vcs config
+	InstallsPublicGitVcsConfig *AppPublicGitVCSConfig `json:"installs_public_git_vcs_config,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
@@ -69,6 +78,14 @@ func (m *AppAppBranchConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateInstallGroups(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateInstallsConnectedGithubVcsConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateInstallsPublicGitVcsConfig(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -139,6 +156,52 @@ func (m *AppAppBranchConfig) validateInstallGroups(formats strfmt.Registry) erro
 	return nil
 }
 
+func (m *AppAppBranchConfig) validateInstallsConnectedGithubVcsConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.InstallsConnectedGithubVcsConfig) { // not required
+		return nil
+	}
+
+	if m.InstallsConnectedGithubVcsConfig != nil {
+		if err := m.InstallsConnectedGithubVcsConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("installs_connected_github_vcs_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("installs_connected_github_vcs_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchConfig) validateInstallsPublicGitVcsConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.InstallsPublicGitVcsConfig) { // not required
+		return nil
+	}
+
+	if m.InstallsPublicGitVcsConfig != nil {
+		if err := m.InstallsPublicGitVcsConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("installs_public_git_vcs_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("installs_public_git_vcs_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *AppAppBranchConfig) validatePublicGitVcsConfig(formats strfmt.Registry) error {
 	if swag.IsZero(m.PublicGitVcsConfig) { // not required
 		return nil
@@ -201,6 +264,14 @@ func (m *AppAppBranchConfig) ContextValidate(ctx context.Context, formats strfmt
 	}
 
 	if err := m.contextValidateInstallGroups(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateInstallsConnectedGithubVcsConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateInstallsPublicGitVcsConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -267,6 +338,56 @@ func (m *AppAppBranchConfig) contextValidateInstallGroups(ctx context.Context, f
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchConfig) contextValidateInstallsConnectedGithubVcsConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.InstallsConnectedGithubVcsConfig != nil {
+
+		if swag.IsZero(m.InstallsConnectedGithubVcsConfig) { // not required
+			return nil
+		}
+
+		if err := m.InstallsConnectedGithubVcsConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("installs_connected_github_vcs_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("installs_connected_github_vcs_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppBranchConfig) contextValidateInstallsPublicGitVcsConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.InstallsPublicGitVcsConfig != nil {
+
+		if swag.IsZero(m.InstallsPublicGitVcsConfig) { // not required
+			return nil
+		}
+
+		if err := m.InstallsPublicGitVcsConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("installs_public_git_vcs_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("installs_public_git_vcs_config")
+			}
+
+			return err
+		}
 	}
 
 	return nil

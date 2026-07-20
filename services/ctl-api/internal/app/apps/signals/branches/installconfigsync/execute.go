@@ -39,12 +39,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		vcsConfigID = cfg.ID
 	} else if cfg := branchConfig.InstallsPublicGitVCSConfig; cfg != nil {
 		vcsConfigID = cfg.ID
-	} else if cfg := branchConfig.ConnectedGithubVCSConfig; cfg != nil {
-		vcsConfigID = cfg.ID
-	} else if cfg := branchConfig.PublicGitVCSConfig; cfg != nil {
-		vcsConfigID = cfg.ID
 	} else {
-		logger.Info("no VCS config for install config sync, skipping")
+		logger.Info("no installs VCS config, skipping install config sync")
 		return nil
 	}
 
@@ -61,11 +57,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	sourceDir := cloneResult.SourceDir
 
-	installConfigs, err := activities.LocalAwaitParseInstallConfigs(ctx, activities.ParseInstallConfigsRequest{
-		SourceDir:         sourceDir,
-		InstallsDirectory: installsDir,
-		InstallName:       s.InstallName,
-		ChangedFiles:      s.ChangedFiles,
+	installConfigs, err := activities.AwaitParseInstallConfigs(ctx, activities.ParseInstallConfigsRequest{
+		SourceDir: sourceDir,
+		Req: &activities.ParseInstallConfigsInput{
+			SourceDir:         sourceDir,
+			InstallsDirectory: installsDir,
+			InstallName:       s.InstallName,
+			ChangedFiles:      s.ChangedFiles,
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("unable to parse install configs: %w", err)
