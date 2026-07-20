@@ -19,6 +19,10 @@ import (
 // swagger:model github_com_nuonco_nuon_pkg_azure_credentials.Config
 type GithubComNuoncoNuonPkgAzureCredentialsConfig struct {
 
+	// ManagedIdentityClientID runs the operation as a specific user-assigned
+	// managed identity instead of the VM's system identity.
+	ManagedIdentityClientID string `json:"managed_identity_client_id,omitempty"`
+
 	// service principal
 	ServicePrincipal *CredentialsServicePrincipalCredentials `json:"service_principal,omitempty"`
 

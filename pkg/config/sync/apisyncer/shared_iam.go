@@ -12,6 +12,8 @@ func (s *syncer) iamPolicyToRequest(policy config.AppAWSIAMPolicy) *models.Servi
 		Contents:          policy.Contents,
 		GcpPermissions:    policy.GCPPermissions,
 		GcpPredefinedRole: policy.GCPPredefinedRole,
+		AzureActions:      policy.AzureActions,
+		AzureBuiltInRoles: policy.AzureBuiltInRoles,
 		ManagedPolicyName: policy.ManagedPolicyName,
 		Name:              policy.Name,
 	}
