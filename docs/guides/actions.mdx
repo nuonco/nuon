@@ -68,6 +68,7 @@ Actions can run manually, on a cron schedule, or in response to install lifecycl
 - `cron`
 - `pre-provision`
 - `post-provision`
+- `post-provision-sandbox`
 - `pre-reprovision`
 - `post-reprovision`
 - `pre-deprovision`
@@ -89,7 +90,7 @@ Actions can run manually, on a cron schedule, or in response to install lifecycl
 
 Each workflow trigger is called at the beginning or end of the workflow. In some cases, such as `pre-provision` or `pre-reprovision` that include a stack-run, the trigger will be called right after the runner is healthy.
 
-`post-provision` runs after the complete install provision workflow, including sandbox provisioning and component deployment. There is no separate `post-provision-sandbox` trigger. Sandbox-specific triggers are available for reprovision and deprovision workflows.
+`post-provision-sandbox` runs immediately after the initial sandbox apply succeeds, before secrets sync, DNS provisioning, and component deployment. `post-provision` runs after the complete install provision workflow, including component deployment.
 
 #### Role change triggers
 
