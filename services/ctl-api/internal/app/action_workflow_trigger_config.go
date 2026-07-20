@@ -83,7 +83,7 @@ var AllActionWorkflowComponentTriggerTypes = []ActionWorkflowTriggerType{
 	ActionWorkflowTriggerTypePostDisableComponent,
 }
 
-// All component types
+// All trigger types
 var AllActionWorkflowTriggerTypes = []ActionWorkflowTriggerType{
 	ActionWorkflowTriggerTypeManual,
 	ActionWorkflowTriggerTypeCron,
@@ -92,6 +92,8 @@ var AllActionWorkflowTriggerTypes = []ActionWorkflowTriggerType{
 	ActionWorkflowTriggerTypePostDeployComponent,
 	ActionWorkflowTriggerTypePreTeardownComponent,
 	ActionWorkflowTriggerTypePostTeardownComponent,
+	ActionWorkflowTriggerTypePreSecretsSync,
+	ActionWorkflowTriggerTypePostSecretsSync,
 	ActionWorkflowTriggerTypePreProvision,
 	ActionWorkflowTriggerTypePostProvision,
 	ActionWorkflowTriggerTypePreReprovision,
