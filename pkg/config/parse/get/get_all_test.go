@@ -304,3 +304,55 @@ func TestGetAll_GitSourceWithoutFileReturnsError(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "git source must include a `//path/to/file` reference")
 }
+
+// TestGetAll_GitDirectoryPassthrough guards module-address values (e.g. gcp
+// curated custom stacks): a git source whose subdir is a directory is left
+// untouched instead of being inlined.
+func TestGetAll_GitDirectoryPassthrough(t *testing.T) {
+	gitBin, err := exec.LookPath("git")
+	if err != nil {
+		t.Skip("git binary not available; skipping git source test")
+	}
+
+	repoDir := t.TempDir()
+
+	runGit := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command(gitBin, args...)
+		cmd.Dir = repoDir
+		cmd.Env = append(os.Environ(),
+			"GIT_AUTHOR_NAME=test",
+			"GIT_AUTHOR_EMAIL=test@example.com",
+			"GIT_COMMITTER_NAME=test",
+			"GIT_COMMITTER_EMAIL=test@example.com",
+			"GIT_CONFIG_GLOBAL=/dev/null",
+			"GIT_CONFIG_SYSTEM=/dev/null",
+		)
+		out, err := cmd.CombinedOutput()
+		require.NoErrorf(t, err, "git %v failed: %s", args, string(out))
+	}
+
+	runGit("init", "-q", "-b", "main")
+	require.NoError(t, os.MkdirAll(filepath.Join(repoDir, "gcp", "modules", "bucket"), 0o755))
+	require.NoError(t, os.WriteFile(
+		filepath.Join(repoDir, "gcp", "modules", "bucket", "main.tf"),
+		[]byte("resource \"google_storage_bucket\" \"main\" {}\n"),
+		0o644,
+	))
+	runGit("add", "gcp/modules/bucket/main.tf")
+	runGit("commit", "-q", "-m", "add module")
+
+	rootDir := t.TempDir()
+
+	src := "git::file://" + repoDir + "//gcp/modules/bucket"
+	input := subdirPoliciesTestStruct{
+		Contents: src,
+	}
+
+	err = Parse(context.Background(), &input, &Options{
+		FieldTimeout: 30 * time.Second,
+		RootDir:      rootDir,
+	})
+	require.NoError(t, err)
+	require.Equal(t, src, input.Contents)
+}
