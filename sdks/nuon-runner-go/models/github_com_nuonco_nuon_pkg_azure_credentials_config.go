@@ -19,11 +19,8 @@ import (
 // swagger:model github_com_nuonco_nuon_pkg_azure_credentials.Config
 type GithubComNuoncoNuonPkgAzureCredentialsConfig struct {
 
-	// ManagedIdentityClientID selects a specific user-assigned managed identity
-	// (by client ID) for the operation, instead of the VM's system-assigned
-	// identity. This is the Azure equivalent of assuming a per-operation role:
-	// the runner's own identity holds no deploy permissions and the operation
-	// runs as this scoped identity.
+	// ManagedIdentityClientID runs the operation as a specific user-assigned
+	// managed identity instead of the VM's system identity.
 	ManagedIdentityClientID string `json:"managed_identity_client_id,omitempty"`
 
 	// service principal

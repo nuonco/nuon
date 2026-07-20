@@ -50,9 +50,7 @@ type AppAzureStackOutputs struct {
 	// private subnet names
 	PrivateSubnetNames []string `json:"private_subnet_names"`
 
-	// Client IDs of the per-operation user-assigned managed identities. The runner
-	// selects one of these by client ID to run an operation as a scoped identity
-	// rather than as its own (permissionless) system identity.
+	// provision identity client id
 	ProvisionIdentityClientID string `json:"provision_identity_client_id,omitempty"`
 
 	// public subnet ids
