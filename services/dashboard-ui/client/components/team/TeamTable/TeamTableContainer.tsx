@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useAuth } from '@/hooks/use-auth'
 import { useOrg } from '@/hooks/use-org'
 import { getOrgAccounts } from '@/lib'
 import { TeamTable, TEAM_TABLE_LIMIT } from './TeamTable'
@@ -13,6 +14,7 @@ export const TeamTableContainer = ({
 } = {}) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
+  const { user } = useAuth()
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: result, isLoading } = useQuery({
@@ -30,6 +32,7 @@ export const TeamTableContainer = ({
       data={members}
       isLoading={isLoading}
       pagination={{ hasNext, offset, limit: TEAM_TABLE_LIMIT }}
+      currentAccountId={user?.sub}
     />
   )
 }

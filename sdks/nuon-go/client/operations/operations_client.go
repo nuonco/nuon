@@ -920,6 +920,8 @@ type ClientService interface {
 
 	UpdateOrg(params *UpdateOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgOK, error)
 
+	UpdateOrgAccountRole(params *UpdateOrgAccountRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgAccountRoleOK, error)
+
 	UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgFeaturesOK, error)
 
 	UpdateRunbook(params *UpdateRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunbookOK, error)
@@ -4810,9 +4812,9 @@ func (a *Client) CreateSlackOrgLink(params *CreateSlackOrgLinkParams, authInfo r
 }
 
 /*
-CreateStaticToken creates a static API token for your org s service account
+CreateStaticToken creates a static API token for your org
 
-Creates a long-lived static API token scoped to your current org. The token is issued for the org's service account, which is created automatically if it does not already exist. The token only grants access to the current org.
+Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, or org_read_only) and defaults to org_read_only.
 */
 func (a *Client) CreateStaticToken(params *CreateStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateStaticTokenCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -5999,7 +6001,7 @@ func (a *Client) DeleteSlackOrgLink(params *DeleteSlackOrgLinkParams, authInfo r
 /*
 DeleteStaticToken deletes a static API token
 
-Deletes a static API token belonging to your current org's service account. Once deleted, the token can no longer be used to access the API.
+Deletes a static API token belonging to your current org, along with its dedicated service account. Once deleted, the token can no longer be used to access the API.
 */
 func (a *Client) DeleteStaticToken(params *DeleteStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteStaticTokenNoContent, error) {
 	// NOTE: parameters are not validated before sending
@@ -17095,7 +17097,7 @@ func (a *Client) ListSlackOrgLinks(params *ListSlackOrgLinksParams, authInfo run
 /*
 ListStaticTokens lists your org s static API tokens
 
-Lists the static API tokens for your current org's service account. Token secrets are never returned.
+Lists the static API tokens for your current org. Token secrets are never returned.
 */
 func (a *Client) ListStaticTokens(params *ListStaticTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListStaticTokensOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -19553,6 +19555,52 @@ func (a *Client) UpdateOrg(params *UpdateOrgParams, authInfo runtime.ClientAuthI
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateOrg: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateOrgAccountRole changes an org member s role
+
+Changes the role of an existing member of the current org. Requires org admin. You cannot change your own role, and you cannot demote the last remaining admin.
+*/
+func (a *Client) UpdateOrgAccountRole(params *UpdateOrgAccountRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgAccountRoleOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateOrgAccountRoleParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateOrgAccountRole",
+		Method:             "PATCH",
+		PathPattern:        "/v1/orgs/current/accounts/{account_id}/role",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateOrgAccountRoleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateOrgAccountRoleOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateOrgAccountRole: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

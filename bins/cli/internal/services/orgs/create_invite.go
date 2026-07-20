@@ -8,15 +8,20 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) CreateInvite(ctx context.Context, email string, asJSON bool) error {
+func (s *Service) CreateInvite(ctx context.Context, email, role string, asJSON bool) error {
 	view := ui.NewGetView()
 	if email == "" {
 		return view.Error(fmt.Errorf("email is required"))
 	}
 
-	invite, err := s.api.CreateOrgInvite(ctx, &models.ServiceCreateOrgInviteRequest{
+	req := &models.ServiceCreateOrgInviteRequest{
 		Email: &email,
-	})
+	}
+	if role != "" {
+		req.RoleType = models.AppRoleType(role)
+	}
+
+	invite, err := s.api.CreateOrgInvite(ctx, req)
 	if err != nil {
 		return view.Error(err)
 	}

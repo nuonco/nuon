@@ -144,5 +144,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "117-app-branch-unique-with-deleted-at",
 			Fn:   m.Migration117AppBranchUniqueWithDeletedAt,
 		},
+		{
+			Name: "118-backfill-read-only-role",
+			Fn:   m.Migration118BackfillReadOnlyRole,
+		},
 	}
 }

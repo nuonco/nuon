@@ -34,3 +34,16 @@ func (c *client) CreateOrgInvite(ctx context.Context, req *models.ServiceCreateO
 
 	return resp.Payload, nil
 }
+
+func (c *client) UpdateOrgAccountRole(ctx context.Context, accountID string, req *models.ServiceUpdateOrgAccountRoleRequest) (*models.AppAccount, error) {
+	resp, err := c.genClient.Operations.UpdateOrgAccountRole(&operations.UpdateOrgAccountRoleParams{
+		AccountID: accountID,
+		Req:       req,
+		Context:   ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}

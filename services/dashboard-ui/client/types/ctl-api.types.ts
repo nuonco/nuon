@@ -458,6 +458,7 @@ export type TInvite = components['schemas']['app.OrgInvite']
 export interface TStaticToken {
   id: string
   name?: string
+  role?: string
   account_id?: string
   created_by_id?: string
   token_type?: string
@@ -470,6 +471,7 @@ export interface TStaticToken {
 export interface TCreateStaticTokenBody {
   name: string
   duration?: string
+  role?: string
 }
 
 export interface TCreateStaticTokenResponse {

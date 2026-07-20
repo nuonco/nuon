@@ -74,10 +74,10 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 	if roleType == "" {
 		roleType = app.RoleTypeOrgAdmin
 	}
-	if roleType != app.RoleTypeOrgAdmin && roleType != app.RoleTypeOrgSupport {
+	if roleType != app.RoleTypeOrgAdmin && roleType != app.RoleTypeOrgSupport && roleType != app.RoleTypeOrgReadOnly {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("invalid role type: %s", roleType),
-			Description: fmt.Sprintf("role_type must be %q or %q", app.RoleTypeOrgAdmin, app.RoleTypeOrgSupport),
+			Description: fmt.Sprintf("role_type must be %q, %q, or %q", app.RoleTypeOrgAdmin, app.RoleTypeOrgSupport, app.RoleTypeOrgReadOnly),
 		})
 		return
 	}
