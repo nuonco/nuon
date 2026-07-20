@@ -47,9 +47,8 @@ func getCloudAuth(
 				SubscriptionTenantID: stackOutputs.AzureStackOutputs.SubscriptionTenantID,
 			},
 		}
-		// Run the operation as its per-operation managed identity. When the role
-		// selector could not resolve one (legacy installs provisioned before
-		// per-operation identities), fall back to the runner's ambient identity.
+		// Legacy installs have no per-operation identity; fall back to the runner's
+		// ambient identity.
 		if roleSelection.RoleARN != "" {
 			azureAuth.ManagedIdentityClientID = roleSelection.RoleARN
 		} else {

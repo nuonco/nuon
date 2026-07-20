@@ -12,8 +12,8 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		return t.getDefaultRunnerDeployment(inp, operationIDs), nil, nil
 	}
 
-	// NOTE: custom runner templates manage their own VMSS identity, so per-operation
-	// user-assigned identities are only attached automatically on the default runner.
+	// Custom runner templates manage their own VMSS identity; per-operation
+	// identities are only auto-attached on the default runner.
 
 	// Custom runner template — fetch and inspect declared parameters.
 	// Unlike the generic custom-nested-stack path we do NOT hoist arbitrary
@@ -70,8 +70,7 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity) map[string]any {
 	customData := t.buildRunnerCustomData(inp)
 
-	// The VMSS references the operation identities by resource ID, so they must
-	// exist before this deployment runs.
+	// VMSS references the operation identities, so they must exist first.
 	dependsOn := []string{"vnetDeployment"}
 	if _, uamiDependsOn := operationIdentityAttachment(operationIDs); len(uamiDependsOn) > 0 {
 		dependsOn = append(dependsOn, uamiDependsOn...)

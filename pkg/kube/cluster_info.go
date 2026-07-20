@@ -176,8 +176,7 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 			"--tenant-id",
 			cInfo.AzureAuth.ServicePrincipal.SubscriptionTenantID,
 		}
-		// Authenticate as the operation's user-assigned managed identity rather
-		// than the runner's system identity, which holds no cluster permissions.
+		// Authenticate as the operation identity, not the runner's system identity.
 		if loginMode == "msi" && cInfo.AzureAuth.ManagedIdentityClientID != "" {
 			args = append(args, "--client-id", cInfo.AzureAuth.ManagedIdentityClientID)
 		}

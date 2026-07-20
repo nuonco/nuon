@@ -74,8 +74,7 @@ func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput, customOutput
 		payloadFields = append(payloadFields, "  \"custom_nested_stacks\": {\n"+strings.Join(stackFields, ",\n")+"\n  }")
 	}
 
-	// Per-operation managed identity client IDs, surfaced as stack outputs so the
-	// control plane can resolve which identity the runner assumes for each op.
+	// Surface each identity's client ID as a stack output.
 	identityEnvVars, identityPayloadFields := operationIdentityPhoneHomeFields(operationIDs)
 	payloadFields = append(payloadFields, identityPayloadFields...)
 
@@ -136,9 +135,7 @@ fi
 	envVars = append(envVars, customEnvVars...)
 	envVars = append(envVars, identityEnvVars...)
 
-	// The phone-home script reads custom-stack outputs and each identity's
-	// clientId, so those resources must exist first. It also depends on the
-	// identity role setup so a failed role deployment/assignment blocks the
+	// Depend on the identity role setup so a failed role deployment blocks the
 	// outputs rather than reporting half-configured identities.
 	dependsOn := []string{"vnetDeployment"}
 	for _, co := range customOutputs {

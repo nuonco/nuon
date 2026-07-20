@@ -121,9 +121,6 @@ type AzureStackOutputs struct {
 	KeyVaultID   string `json:"key_vault_id,omitzero" mapstructure:"key_vault_id" temporaljson:"key_vault_id,omitzero,omitempty"`
 	KeyVaultName string `json:"key_vault_name,omitzero" mapstructure:"key_vault_name" temporaljson:"key_vault_name,omitzero,omitempty"`
 
-	// Client IDs of the per-operation user-assigned managed identities. The runner
-	// selects one of these by client ID to run an operation as a scoped identity
-	// rather than as its own (permissionless) system identity.
 	ProvisionIdentityClientID   string            `json:"provision_identity_client_id,omitzero" mapstructure:"provision_identity_client_id" temporaljson:"provision_identity_client_id,omitzero,omitempty"`
 	MaintenanceIdentityClientID string            `json:"maintenance_identity_client_id,omitzero" mapstructure:"maintenance_identity_client_id" temporaljson:"maintenance_identity_client_id,omitzero,omitempty"`
 	DeprovisionIdentityClientID string            `json:"deprovision_identity_client_id,omitzero" mapstructure:"deprovision_identity_client_id" temporaljson:"deprovision_identity_client_id,omitzero,omitempty"`

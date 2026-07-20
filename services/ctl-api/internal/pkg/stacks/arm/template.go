@@ -78,9 +78,8 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		"app_nuon_co_id":     "[parameters('nuonAppID')]",
 	}
 
-	// Per-operation user-assigned managed identities derived from the app's
-	// Azure permissions. When present, the runner assumes these to do deploy work
-	// and its own system identity holds no deploy permissions.
+	// When the app declares Azure roles, deploy work runs as per-operation
+	// identities and the system identity is stripped of deploy grants.
 	operationIDs := azureOperationIdentities(inp.AppCfg)
 	useOperationIdentities := len(operationIDs) > 0
 
@@ -94,7 +93,6 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		tmpl.Parameters[k] = v
 	}
 
-	// Operation identities and their role assignments.
 	if useOperationIdentities {
 		tmpl.Resources = append(tmpl.Resources, t.getOperationIdentityResources(operationIDs)...)
 	}
@@ -111,16 +109,15 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		}
 	}
 
-	// Legacy broad grants on the runner's system identity. Only applied when the
-	// app has NOT adopted per-operation identities — otherwise deploy permissions
-	// live solely on the operation identities.
+	// Legacy broad grants on the system identity, only when per-operation
+	// identities are not in use.
 	if !t.cfg.UseLocalRunners && !useOperationIdentities {
 		tmpl.Resources = append(tmpl.Resources, t.getVMSSRoleAssignments()...)
 		tmpl.Resources = append(tmpl.Resources, t.getCustomRoleDeployment(inp))
 	}
 
-	// Key Vault Secrets User stays on the runner's system identity regardless:
-	// secret-sync reads the vault as the ambient identity.
+	// Key Vault Secrets User stays on the system identity: secret-sync reads the
+	// vault as the ambient identity.
 	if !t.cfg.UseLocalRunners {
 		tmpl.Resources = append(tmpl.Resources, t.getKeyVaultRoleAssignment())
 	}

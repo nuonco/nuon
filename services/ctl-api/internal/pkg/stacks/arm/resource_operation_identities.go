@@ -11,14 +11,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// azureIdentitySuffixRegexp keeps user-supplied role names to characters that are
-// valid in an Azure user-assigned managed identity resource name.
 var azureIdentitySuffixRegexp = regexp.MustCompile(`[^A-Za-z0-9-]`)
 
-// azureBuiltInRoleGUIDs maps common Azure built-in role names to their role
-// definition GUIDs. Role assignments reference the definition by GUID, and there
-// is no ARM function to look one up by name. Unknown values are assumed to
-// already be a role definition GUID.
+// azureBuiltInRoleGUIDs maps common built-in role names to their definition GUIDs;
+// role assignments reference the definition by GUID and ARM has no name lookup.
 var azureBuiltInRoleGUIDs = map[string]string{
 	"Owner":                     "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
 	"Contributor":               "b24988ac-6180-42a0-ab88-20f7382dd24c",
@@ -36,20 +32,13 @@ var azureBuiltInRoleGUIDs = map[string]string{
 	"Network Contributor":                         "4d97b98b-1d4f-4787-a291-c67834d212e7",
 }
 
-// azureOperationIdentity is a per-operation user-assigned managed identity derived
-// from an app config Azure role. The runner assumes it (by client ID) to run an
-// operation, so its own system identity holds no deploy permissions.
 type azureOperationIdentity struct {
-	// roleName is the (rendered) app-config role name, used as the output map key
-	// for custom/break-glass identities and to build the identity resource name.
-	roleName string
-	// suffix is appended to the install ID to form the identity resource name.
-	suffix string
-	// kind is one of: provision, maintenance, deprovision, custom, breakglass.
-	kind string
-	// actions are custom RBAC actions, rolled into a subscription-level custom role.
-	actions []string
-	// builtInRoles are Azure built-in role names or GUIDs, assigned at RG scope.
+	// roleName is the rendered app-config role name; also the output map key for
+	// custom/break-glass identities.
+	roleName     string
+	suffix       string
+	kind         string
+	actions      []string
 	builtInRoles []string
 }
 
@@ -69,8 +58,6 @@ func azureBuiltInRoleGUID(nameOrGUID string) string {
 	return nameOrGUID
 }
 
-// azureOperationIdentities extracts the per-operation identities to create from an
-// app config's Azure-marked roles (standard, custom, and break-glass).
 func azureOperationIdentities(appCfg *app.AppConfig) []azureOperationIdentity {
 	var ids []azureOperationIdentity
 
@@ -126,9 +113,6 @@ func flattenAzurePolicies(policies []app.AppAWSIAMPolicyConfig) (actions []strin
 	return actions, builtInRoles
 }
 
-// uamiResourceIDExpr builds the ARM expression for an operation identity's
-// resource ID. It is stable across the parent template and the runner nested
-// deployment (both resolve to the same resource group).
 func uamiResourceIDExpr(suffix string) string {
 	return fmt.Sprintf("[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-%s', parameters('nuonInstallID')))]", suffix)
 }
@@ -145,16 +129,12 @@ func uamiNameExpr(suffix string) string {
 	return "[" + uamiNameInner(suffix) + "]"
 }
 
-// uamiNameInner is the unbracketed form for embedding inside another ARM
-// expression (e.g. guid(...)), avoiding invalid nested brackets.
+// uamiNameInner is unbracketed for embedding in another ARM expression; ARM does
+// not allow nested [ ].
 func uamiNameInner(suffix string) string {
 	return fmt.Sprintf("format('{0}-%s', parameters('nuonInstallID'))", suffix)
 }
 
-// getOperationIdentityResources builds every ARM resource needed for the
-// per-operation managed identities: the identities themselves, a subscription
-// level custom role per identity (register-action + declared actions), and
-// resource-group-scoped assignments for any declared built-in roles.
 func (t *Templates) getOperationIdentityResources(ids []azureOperationIdentity) []any {
 	var resources []any
 
@@ -176,10 +156,9 @@ func (t *Templates) getOperationIdentityResources(ids []azureOperationIdentity) 
 	return resources
 }
 
-// azureRoleDeploymentToken returns a short, stable token for the subscription-level
-// role deployment name. Custom/break-glass role names are user-defined and often
-// long (and may repeat the install ID), which overflows ARM's 64-char
-// deployment-name limit, so those hash to a short token.
+// azureRoleDeploymentToken keeps the subscription-level role deployment name under
+// ARM's 64-char limit; custom/break-glass role names are user-defined and can
+// overflow, so they hash to a short token.
 func azureRoleDeploymentToken(id azureOperationIdentity) string {
 	switch id.kind {
 	case "provision", "maintenance", "deprovision":
@@ -194,17 +173,20 @@ func azureRoleDeploymentToken(id azureOperationIdentity) string {
 	}
 }
 
-// getOperationIdentityCustomRole creates a subscription-level custom role for the
-// identity and assigns it. The role always includes */register/action so the
-// azurerm provider can register resource providers during apply — that action is
-// subscription-scoped and was previously granted to the runner's system identity.
+func roleDeploymentNameExpr(id azureOperationIdentity) string {
+	return fmt.Sprintf("[format('{0}-%s-role', parameters('nuonInstallID'))]", azureRoleDeploymentToken(id))
+}
+
+// getOperationIdentityCustomRole always includes */register/action so the azurerm
+// provider can register resource providers on apply (a subscription-scoped action
+// previously held by the runner's system identity).
 func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity) map[string]any {
 	roleActions := append([]string{"*/register/action"}, id.actions...)
 
 	return map[string]any{
 		"type":           "Microsoft.Resources/deployments",
 		"apiVersion":     "2022-09-01",
-		"name":           fmt.Sprintf("[format('{0}-%s-role', parameters('nuonInstallID'))]", azureRoleDeploymentToken(id)),
+		"name":           roleDeploymentNameExpr(id),
 		"subscriptionId": "[subscription().subscriptionId]",
 		"location":       "[resourceGroup().location]",
 		"dependsOn":      []string{uamiResourceIDExpr(id.suffix)},
@@ -248,11 +230,8 @@ func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity) ma
 					{
 						"type":       "Microsoft.Authorization/roleAssignments",
 						"apiVersion": "2022-04-01",
-						// Stable guid of the (unique per identity) role name: unique,
-						// idempotent across redeploys, and computable by ARM what-if (no
-						// runtime reference()). Do NOT change this — renaming an existing
-						// assignment fails redeploys with RoleAssignmentExists, since
-						// Azure dedupes role assignments by principal+role+scope.
+						// Do NOT change: renaming an existing assignment fails redeploys
+						// with RoleAssignmentExists (Azure dedupes by principal+role+scope).
 						"name": "[guid(subscription().id, parameters('roleName'), 'roleassignment')]",
 						"dependsOn": []string{
 							"[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', guid(subscription().id, parameters('roleName')))]",
@@ -269,8 +248,6 @@ func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity) ma
 	}
 }
 
-// getOperationIdentityBuiltInRoleAssignments assigns each declared built-in role
-// to the identity at resource-group scope.
 func (t *Templates) getOperationIdentityBuiltInRoleAssignments(id azureOperationIdentity) []any {
 	var assignments []any
 	for _, role := range id.builtInRoles {
@@ -290,17 +267,14 @@ func (t *Templates) getOperationIdentityBuiltInRoleAssignments(id azureOperation
 	return assignments
 }
 
-// azureIdentityEnvName derives a shell-safe env var name for an identity's client
-// ID inside the phone-home script.
 func azureIdentityEnvName(suffix string) string {
 	s := strings.ToUpper(strings.ReplaceAll(suffix, "-", "_"))
 	s = regexp.MustCompile(`[^A-Z0-9_]`).ReplaceAllString(s, "")
 	return s + "_IDENTITY_CLIENT_ID"
 }
 
-// operationIdentityPhoneHomeFields returns the phone-home env vars and payload
-// lines that surface each identity's client ID to the control plane as stack
-// outputs. Custom and break-glass identities are emitted as native JSON objects
+// operationIdentityPhoneHomeFields returns phone-home env vars and payload lines
+// carrying each identity's client ID. Custom/break-glass are native JSON objects
 // keyed by role name so they decode into map[string]string.
 func operationIdentityPhoneHomeFields(ids []azureOperationIdentity) (envVars []map[string]any, payloadFields []string) {
 	if len(ids) == 0 {
@@ -338,8 +312,6 @@ func operationIdentityPhoneHomeFields(ids []azureOperationIdentity) (envVars []m
 	return envVars, payloadFields
 }
 
-// jsonEnvObject builds a native JSON object literal mapping role names to shell
-// variable references, e.g. {"my-role":"$MY_ROLE_IDENTITY_CLIENT_ID"}.
 func jsonEnvObject(nameToEnv map[string]string) string {
 	names := make([]string, 0, len(nameToEnv))
 	for name := range nameToEnv {
@@ -354,14 +326,13 @@ func jsonEnvObject(nameToEnv map[string]string) string {
 	return "{" + strings.Join(parts, ",") + "}"
 }
 
-// operationIdentitySetupDependencies returns the resource identifiers (per-operation
-// role deployments and built-in role assignments) that must complete before the
-// phone-home reports identity client IDs. Gating on these means a failed role
-// setup blocks the outputs instead of reporting half-configured identities.
+// operationIdentitySetupDependencies lists the role deployments and built-in
+// assignments the phone-home must wait on, so a failed role setup blocks the
+// outputs instead of reporting half-configured identities.
 func operationIdentitySetupDependencies(ids []azureOperationIdentity) []string {
 	var deps []string
 	for _, id := range ids {
-		deps = append(deps, fmt.Sprintf("[format('{0}-%s-role', parameters('nuonInstallID'))]", azureRoleDeploymentToken(id)))
+		deps = append(deps, roleDeploymentNameExpr(id))
 		for _, role := range id.builtInRoles {
 			guid := azureBuiltInRoleGUID(role)
 			deps = append(deps, fmt.Sprintf("[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, %s, '%s'))]", uamiNameInner(id.suffix), guid))
@@ -370,8 +341,6 @@ func operationIdentitySetupDependencies(ids []azureOperationIdentity) []string {
 	return deps
 }
 
-// operationIdentityAttachment returns the VMSS userAssignedIdentities object and
-// the identity resource IDs the runner deployment must depend on.
 func operationIdentityAttachment(ids []azureOperationIdentity) (userAssigned map[string]any, dependsOn []string) {
 	if len(ids) == 0 {
 		return nil, nil
