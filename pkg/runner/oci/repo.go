@@ -63,7 +63,7 @@ func GetRepo(ctx context.Context, cfg *configs.OCIRegistryRepository) (registry.
 	if accessInfo.Auth != nil && accessInfo.Auth.Username != "" {
 		repo.Client = &auth.Client{
 			Client: retry.DefaultClient,
-			Cache:  auth.DefaultCache,
+			Cache:  auth.NewCache(),
 			Credential: auth.StaticCredential(strings.TrimPrefix(accessInfo.Auth.ServerAddress, "https://"), auth.Credential{
 				Username: accessInfo.Auth.Username,
 				Password: accessInfo.Auth.Password,
