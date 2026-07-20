@@ -238,6 +238,33 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigSuccess() {
 			},
 		},
 		{
+			name: "post provision sandbox trigger",
+			setupFunc: func() (string, string, string) {
+				action := s.createActionWorkflow(s.testApp.ID, "post-provision-sandbox-action")
+				appConfig := s.createAppConfig(s.testApp.ID)
+				return action.ID, appConfig.ID, ""
+			},
+			requestFunc: func(actionID, appConfigID, componentID string) CreateActionWorkflowConfigRequest {
+				return CreateActionWorkflowConfigRequest{
+					AppConfigID: appConfigID,
+					Triggers: []CreateActionWorkflowConfigTriggerRequest{
+						{Type: app.ActionWorkflowTriggerTypePostProvisionSandbox},
+					},
+					Steps: []CreateActionWorkflowConfigStepRequest{
+						{
+							Name:           "post-provision-sandbox-step",
+							InlineContents: "echo 'sandbox provisioned'",
+						},
+					},
+				}
+			},
+			expectedCode: http.StatusCreated,
+			validateFunc: func(config *app.ActionWorkflowConfig) {
+				assert.Len(s.T(), config.Triggers, 1)
+				assert.Equal(s.T(), app.ActionWorkflowTriggerTypePostProvisionSandbox, config.Triggers[0].Type)
+			},
+		},
+		{
 			name: "component lifecycle trigger",
 			setupFunc: func() (string, string, string) {
 				action := s.createActionWorkflow(s.testApp.ID, "component-action")
