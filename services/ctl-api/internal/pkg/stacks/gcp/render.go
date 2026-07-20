@@ -153,7 +153,7 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	for _, stack := range sortedStacks {
 		module := stack.GCPModuleName()
 		if module == "" {
-			return nil, "", errors.Errorf("custom_nested_stacks (%s): gcp-terraform custom stacks must reference a curated module: %s<name>", stack.Name, config.GCPCustomStackModulePrefix)
+			return nil, "", errors.Errorf("custom_nested_stacks (%s): gcp-terraform custom stacks must reference a gcp modules path (<repo>%s<name>)", stack.Name, config.GCPCustomStackModuleMarker)
 		}
 		params := map[string]string{}
 		for paramName, templateValue := range stack.Parameters {

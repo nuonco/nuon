@@ -308,6 +308,15 @@ func TestStackConfig_Parse_GCPCustomStacks(t *testing.T) {
 	require.NoError(t, cfg.parse())
 	require.Equal(t, "bucket", cfg.CustomNestedStacks[0].GCPModuleName())
 
+	for _, forkURL := range []string{
+		"github.com/acme/install-stacks//gcp/modules/bucket",
+		"git::https://gitlab.com/acme/stacks.git//gcp/modules/bucket",
+	} {
+		cfg.CustomNestedStacks[0].TemplateURL = forkURL
+		require.NoError(t, cfg.parse(), forkURL)
+		require.Equal(t, "bucket", cfg.CustomNestedStacks[0].GCPModuleName(), forkURL)
+	}
+
 	for _, badURL := range []string{
 		"https://example.com/stack.yaml",
 		"github.com/nuonco/install-stacks//gcp/modules/",
