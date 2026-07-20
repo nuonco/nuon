@@ -114,6 +114,8 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 	switch {
 	case outputs.AWSStackOutputs != nil:
 		stackOutput = outputs.AWSStackOutputs
+	case outputs.AzureStackOutputs != nil:
+		stackOutput = outputs.AzureStackOutputs
 	case outputs.GCPStackOutputs != nil:
 		stackOutput = outputs.GCPStackOutputs
 	default:
