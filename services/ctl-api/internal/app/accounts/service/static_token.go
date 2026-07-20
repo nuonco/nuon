@@ -48,8 +48,8 @@ func parseTokenDuration(raw string) (time.Duration, error) {
 }
 
 // @ID						CreateStaticToken
-// @Summary				create a static API token for your org's service account
-// @Description			Creates a long-lived static API token scoped to your current org. The token is issued for the org's service account, which is created automatically if it does not already exist. The token only grants access to the current org.
+// @Summary				create a static API token for your org
+// @Description			Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org.
 // @Param					req	body	CreateStaticTokenRequest	true	"Input"
 // @Tags					accounts
 // @Security				APIKey
@@ -88,13 +88,13 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	acct, err := s.ensureServiceAccount(ctx, org.ID)
+	acct, err := s.createTokenServiceAccount(ctx, org.ID, app.RoleTypeOrgAdmin)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to ensure service account: %w", err))
+		ctx.Error(fmt.Errorf("unable to create service account: %w", err))
 		return
 	}
 
-	token, err := s.createStaticToken(ctx, acct, caller.ID, req.Name, duration)
+	token, err := s.createStaticToken(ctx, acct, org.ID, caller.ID, req.Name, duration)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create static token: %w", err))
 		return
@@ -108,7 +108,7 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 
 // @ID						ListStaticTokens
 // @Summary				list your org's static API tokens
-// @Description			Lists the static API tokens for your current org's service account. Token secrets are never returned.
+// @Description			Lists the static API tokens for your current org. Token secrets are never returned.
 // @Tags					accounts
 // @Security				APIKey
 // @Security				OrgID
@@ -122,16 +122,10 @@ func (s *service) ListStaticTokens(ctx *gin.Context) {
 		return
 	}
 
-	acct, err := s.ensureServiceAccount(ctx, org.ID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to ensure service account: %w", err))
-		return
-	}
-
 	var tokens []app.Token
 	res := s.db.WithContext(ctx).
 		Where(app.Token{
-			AccountID: acct.ID,
+			OrgID:     org.ID,
 			TokenType: app.TokenTypeStatic,
 		}).
 		Order("created_at DESC").
@@ -146,7 +140,7 @@ func (s *service) ListStaticTokens(ctx *gin.Context) {
 
 // @ID						DeleteStaticToken
 // @Summary				delete a static API token
-// @Description			Deletes a static API token belonging to your current org's service account. Once deleted, the token can no longer be used to access the API.
+// @Description			Deletes a static API token belonging to your current org, along with its dedicated service account. Once deleted, the token can no longer be used to access the API.
 // @Param					token_id	path	string	true	"token ID"
 // @Tags					accounts
 // @Security				APIKey
@@ -163,25 +157,30 @@ func (s *service) DeleteStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	acct, err := s.ensureServiceAccount(ctx, org.ID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to ensure service account: %w", err))
-		return
-	}
-
+	var token app.Token
 	res := s.db.WithContext(ctx).
 		Where(app.Token{
 			ID:        tokenID,
-			AccountID: acct.ID,
+			OrgID:     org.ID,
 			TokenType: app.TokenTypeStatic,
 		}).
-		Delete(&app.Token{})
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to delete static token: %w", res.Error))
+		First(&token)
+	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		ctx.Error(stderr.ErrNotFound{Err: fmt.Errorf("token not found")})
 		return
 	}
-	if res.RowsAffected == 0 {
-		ctx.Error(stderr.ErrNotFound{Err: fmt.Errorf("token not found")})
+	if res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to look up static token: %w", res.Error))
+		return
+	}
+
+	if err := s.db.WithContext(ctx).Delete(&token).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to delete static token: %w", err))
+		return
+	}
+
+	if err := s.deleteTokenServiceAccount(ctx, org.ID, token.AccountID); err != nil {
+		ctx.Error(fmt.Errorf("unable to delete service account: %w", err))
 		return
 	}
 
@@ -218,17 +217,9 @@ func (s *service) isOrgAdmin(acct *app.Account, orgID string) bool {
 	return false
 }
 
-func (s *service) ensureServiceAccount(ctx context.Context, orgID string) (*app.Account, error) {
-	name := fmt.Sprintf("%s-admin-service-account", orgID)
+func (s *service) createTokenServiceAccount(ctx context.Context, orgID string, roleType app.RoleType) (*app.Account, error) {
+	name := fmt.Sprintf("%s-token-%s", orgID, domains.NewAccountID())
 	email := account.ServiceAccountEmail(name)
-
-	acct, err := s.acctClient.FindAccount(ctx, email)
-	if err == nil {
-		return acct, nil
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("unable to lookup account: %w", err)
-	}
 
 	newAcct := app.Account{
 		Email:       email,
@@ -239,17 +230,32 @@ func (s *service) ensureServiceAccount(ctx context.Context, orgID string) (*app.
 		return nil, fmt.Errorf("unable to create service account: %w", res.Error)
 	}
 
-	if err := s.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, orgID, newAcct.ID); err != nil {
+	if err := s.authzClient.AddAccountOrgRole(ctx, roleType, orgID, newAcct.ID); err != nil {
 		return nil, fmt.Errorf("unable to add org role to service account: %w", err)
 	}
 
 	return &newAcct, nil
 }
 
-func (s *service) createStaticToken(ctx context.Context, acct *app.Account, createdByID, name string, duration time.Duration) (*app.Token, error) {
+func (s *service) deleteTokenServiceAccount(ctx context.Context, orgID, accountID string) error {
+	if err := s.authzClient.RemoveAccountOrgRoles(ctx, orgID, accountID); err != nil {
+		return fmt.Errorf("unable to remove service account roles: %w", err)
+	}
+
+	if err := s.db.WithContext(ctx).
+		Where(app.Account{ID: accountID, AccountType: app.AccountTypeService}).
+		Delete(&app.Account{}).Error; err != nil {
+		return fmt.Errorf("unable to delete service account: %w", err)
+	}
+
+	return nil
+}
+
+func (s *service) createStaticToken(ctx context.Context, acct *app.Account, orgID, createdByID, name string, duration time.Duration) (*app.Token, error) {
 	token := app.Token{
 		CreatedByID: createdByID,
 		Name:        name,
+		OrgID:       orgID,
 		Token:       domains.NewUserTokenID(),
 		TokenType:   app.TokenTypeStatic,
 		ExpiresAt:   time.Now().Add(duration),
