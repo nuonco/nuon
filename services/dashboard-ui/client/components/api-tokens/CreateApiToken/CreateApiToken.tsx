@@ -10,6 +10,8 @@ import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
 export const DURATION_OPTIONS = [
+  { value: '24h', label: '1 day' },
+  { value: '168h', label: '1 week' },
   { value: '720h', label: '30 days' },
   { value: '2160h', label: '90 days' },
   { value: '8760h', label: '1 year' },
