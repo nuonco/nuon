@@ -63,6 +63,9 @@ const (
 	// AppActionWorkflowTriggerTypePostDashProvision captures enum value "post-provision"
 	AppActionWorkflowTriggerTypePostDashProvision AppActionWorkflowTriggerType = "post-provision"
 
+	// AppActionWorkflowTriggerTypePostDashProvisionDashSandbox captures enum value "post-provision-sandbox"
+	AppActionWorkflowTriggerTypePostDashProvisionDashSandbox AppActionWorkflowTriggerType = "post-provision-sandbox"
+
 	// AppActionWorkflowTriggerTypePreDashReprovision captures enum value "pre-reprovision"
 	AppActionWorkflowTriggerTypePreDashReprovision AppActionWorkflowTriggerType = "pre-reprovision"
 
@@ -129,7 +132,7 @@ var appActionWorkflowTriggerTypeEnum []any
 
 func init() {
 	var res []AppActionWorkflowTriggerType
-	if err := json.Unmarshal([]byte(`["manual","cron","adhoc","pre-deploy-component","post-deploy-component","pre-teardown-component","post-teardown-component","pre-secrets-sync","post-secrets-sync","pre-provision","post-provision","pre-reprovision","post-reprovision","pre-deprovision","post-deprovision","pre-deploy-all-components","post-deploy-all-components","pre-teardown-all-components","post-teardown-all-components","pre-deprovision-sandbox","post-deprovision-sandbox","pre-reprovision-sandbox","post-reprovision-sandbox","pre-update-inputs","post-update-inputs","role-enabled","role-disabled","pre-enable-component","post-enable-component","pre-disable-component","post-disable-component"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["manual","cron","adhoc","pre-deploy-component","post-deploy-component","pre-teardown-component","post-teardown-component","pre-secrets-sync","post-secrets-sync","pre-provision","post-provision","post-provision-sandbox","pre-reprovision","post-reprovision","pre-deprovision","post-deprovision","pre-deploy-all-components","post-deploy-all-components","pre-teardown-all-components","post-teardown-all-components","pre-deprovision-sandbox","post-deprovision-sandbox","pre-reprovision-sandbox","post-reprovision-sandbox","pre-update-inputs","post-update-inputs","role-enabled","role-disabled","pre-enable-component","post-enable-component","pre-disable-component","post-disable-component"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

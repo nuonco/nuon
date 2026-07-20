@@ -36,8 +36,9 @@ const (
 	ActionWorkflowTriggerTypePostSecretsSync ActionWorkflowTriggerType = "post-secrets-sync"
 
 	// workflow triggers
-	ActionWorkflowTriggerTypePreProvision  ActionWorkflowTriggerType = "pre-provision"
-	ActionWorkflowTriggerTypePostProvision ActionWorkflowTriggerType = "post-provision"
+	ActionWorkflowTriggerTypePreProvision         ActionWorkflowTriggerType = "pre-provision"
+	ActionWorkflowTriggerTypePostProvision        ActionWorkflowTriggerType = "post-provision"
+	ActionWorkflowTriggerTypePostProvisionSandbox ActionWorkflowTriggerType = "post-provision-sandbox"
 
 	ActionWorkflowTriggerTypePreReprovision  ActionWorkflowTriggerType = "pre-reprovision"
 	ActionWorkflowTriggerTypePostReprovision ActionWorkflowTriggerType = "post-reprovision"
@@ -96,6 +97,7 @@ var AllActionWorkflowTriggerTypes = []ActionWorkflowTriggerType{
 	ActionWorkflowTriggerTypePostSecretsSync,
 	ActionWorkflowTriggerTypePreProvision,
 	ActionWorkflowTriggerTypePostProvision,
+	ActionWorkflowTriggerTypePostProvisionSandbox,
 	ActionWorkflowTriggerTypePreReprovision,
 	ActionWorkflowTriggerTypePostReprovision,
 	ActionWorkflowTriggerTypePreDeprovision,
