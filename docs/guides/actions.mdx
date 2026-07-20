@@ -62,8 +62,10 @@ The example workflow will time out after 15 seconds, more than enough time to ma
 
 ### Action triggers
 
-Action triggers are available for all workflows. You can use the following set of triggers:
+Actions can run manually, on a cron schedule, or in response to install lifecycle events. The supported triggers that are not tied to a specific component are:
 
+- `manual`
+- `cron`
 - `pre-provision`
 - `post-provision`
 - `pre-reprovision`
@@ -86,6 +88,8 @@ Action triggers are available for all workflows. You can use the following set o
 - `role-disabled`
 
 Each workflow trigger is called at the beginning or end of the workflow. In some cases, such as `pre-provision` or `pre-reprovision` that include a stack-run, the trigger will be called right after the runner is healthy.
+
+`post-provision` runs after the complete install provision workflow, including sandbox provisioning and component deployment. There is no separate `post-provision-sandbox` trigger. Sandbox-specific triggers are available for reprovision and deprovision workflows.
 
 #### Role change triggers
 
@@ -114,8 +118,14 @@ The following triggers require a `component_name` field to be set, as they are t
 
 - `pre-deploy-component`
 - `post-deploy-component`
-- `post-teardown-component`
 - `pre-teardown-component`
+- `post-teardown-component`
+- `pre-enable-component`
+- `post-enable-component`
+- `pre-disable-component`
+- `post-disable-component`
+
+The enable and disable triggers run when an input update changes a toggleable component's enabled state.
 
 Actions can be triggered manually, on a cron, or by install events. You can define multiple triggers for an action.
 
