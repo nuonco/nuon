@@ -38,30 +38,34 @@ func (e *Executor) getSandboxMode(ctx context.Context, jobID string) (*plantypes
 		return nil, fmt.Errorf("unable to get job plan: %w", err)
 	}
 
-	var cp plantypes.CompositePlan
-	if err := json.Unmarshal([]byte(planJSON), &cp); err != nil {
-		return nil, fmt.Errorf("unable to parse composite plan: %w", err)
+	var plan plantypes.MinSandboxMode
+	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
+		return nil, fmt.Errorf("unable to parse sandbox mode from job plan: %w", err)
+	}
+	if plan.SandboxMode != nil && plan.SandboxMode.Enabled {
+		return plan.SandboxMode, nil
 	}
 
-	inner := cp.Inner()
+	var compositePlan plantypes.CompositePlan
+	if err := json.Unmarshal([]byte(planJSON), &compositePlan); err != nil {
+		return nil, fmt.Errorf("unable to parse composite job plan: %w", err)
+	}
+	inner := compositePlan.Inner()
 	if inner == nil {
 		return nil, nil
 	}
-
-	b, err := json.Marshal(inner)
+	innerJSON, err := json.Marshal(inner)
 	if err != nil {
-		return nil, fmt.Errorf("unable to re-marshal inner plan: %w", err)
+		return nil, fmt.Errorf("unable to marshal inner job plan: %w", err)
+	}
+	if err := json.Unmarshal(innerJSON, &plan); err != nil {
+		return nil, fmt.Errorf("unable to parse sandbox mode from inner job plan: %w", err)
 	}
 
-	var sm plantypes.MinSandboxMode
-	if err := json.Unmarshal(b, &sm); err != nil {
-		return nil, fmt.Errorf("unable to parse sandbox mode: %w", err)
-	}
-
-	if sm.SandboxMode == nil || !sm.SandboxMode.Enabled {
+	if plan.SandboxMode == nil || !plan.SandboxMode.Enabled {
 		return nil, nil
 	}
-	return sm.SandboxMode, nil
+	return plan.SandboxMode, nil
 }
 
 func (e *Executor) executeSandboxBuild(
