@@ -105,15 +105,13 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 	}
 
 	l.Info("executing inline build")
-	if workflow.GetVersion(ctx, "inline-component-build-source-preflight", workflow.DefaultVersion, 1) != workflow.DefaultVersion {
-		preflightOptions := workflow.ActivityOptions{
-			RetryPolicy: &temporal.RetryPolicy{MaximumAttempts: 1},
-		}
-		if _, err := activities.AwaitGetBuildGitSourceByBuildID(ctx, buildID, &preflightOptions); err != nil {
-			l.Error(err.Error())
-			s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, err.Error())
-			return err
-		}
+	preflightOptions := workflow.ActivityOptions{
+		RetryPolicy: &temporal.RetryPolicy{MaximumAttempts: 1},
+	}
+	if _, err := activities.AwaitGetBuildGitSourceByBuildID(ctx, buildID, &preflightOptions); err != nil {
+		l.Error(err.Error())
+		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, err.Error())
+		return err
 	}
 
 	currentApp, err := activities.AwaitGetComponentAppByComponentID(ctx, s.ComponentID)
