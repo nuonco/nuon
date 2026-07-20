@@ -6,11 +6,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput) (map[string]any, map[string]ARMParameter, error) {
+func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity) (map[string]any, map[string]ARMParameter, error) {
 	templateURL := inp.RunnerNestedStackTemplateURL
 	if templateURL == "" {
-		return t.getDefaultRunnerDeployment(inp), nil, nil
+		return t.getDefaultRunnerDeployment(inp, operationIDs), nil, nil
 	}
+
+	// Custom runner templates manage their own VMSS identity; per-operation
+	// identities are only auto-attached on the default runner.
 
 	// Custom runner template — fetch and inspect declared parameters.
 	// Unlike the generic custom-nested-stack path we do NOT hoist arbitrary
@@ -64,14 +67,20 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput) (map[st
 	return deployment, nil, nil
 }
 
-func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput) map[string]any {
+func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity) map[string]any {
 	customData := t.buildRunnerCustomData(inp)
+
+	// VMSS references the operation identities, so they must exist first.
+	dependsOn := []string{"vnetDeployment"}
+	if _, uamiDependsOn := operationIdentityAttachment(operationIDs); len(uamiDependsOn) > 0 {
+		dependsOn = append(dependsOn, uamiDependsOn...)
+	}
 
 	deployment := map[string]any{
 		"type":       "Microsoft.Resources/deployments",
 		"apiVersion": "2022-09-01",
 		"name":       "runnerDeployment",
-		"dependsOn":  []string{"vnetDeployment"},
+		"dependsOn":  dependsOn,
 		"properties": map[string]any{
 			"mode": "Incremental",
 			"expressionEvaluationOptions": map[string]any{
@@ -84,14 +93,22 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput) map[st
 				"customData":     map[string]any{"value": customData},
 				"commonTags":     map[string]any{"value": "[variables('commonTags')]"},
 			},
-			"template": t.getDefaultRunnerTemplate(),
+			"template": t.getDefaultRunnerTemplate(operationIDs),
 		},
 	}
 
 	return deployment
 }
 
-func (t *Templates) getDefaultRunnerTemplate() map[string]any {
+func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdentity) map[string]any {
+	identity := map[string]any{"type": "SystemAssigned"}
+	if userAssigned, _ := operationIdentityAttachment(operationIDs); len(userAssigned) > 0 {
+		identity = map[string]any{
+			"type":                   "SystemAssigned, UserAssigned",
+			"userAssignedIdentities": userAssigned,
+		}
+	}
+
 	return map[string]any{
 		"$schema":        "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
 		"contentVersion": "1.0.0.0",
@@ -114,9 +131,7 @@ func (t *Templates) getDefaultRunnerTemplate() map[string]any {
 					"tier":     "Standard",
 					"capacity": 1,
 				},
-				"identity": map[string]any{
-					"type": "SystemAssigned",
-				},
+				"identity": identity,
 				"properties": map[string]any{
 					"overprovision": false,
 					"upgradePolicy": map[string]any{

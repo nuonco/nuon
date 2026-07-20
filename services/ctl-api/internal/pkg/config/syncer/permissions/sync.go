@@ -76,6 +76,8 @@ func convertIAMRole(role *config.AppAWSIAMRole, appConfigID string, roleType app
 			Contents:          generics.ToJSON(policy.Contents),
 			GCPPermissions:    policy.GCPPermissions,
 			GCPPredefinedRole: policy.GCPPredefinedRole,
+			AzureActions:      policy.AzureActions,
+			AzureBuiltInRoles: policy.AzureBuiltInRoles,
 		})
 	}
 

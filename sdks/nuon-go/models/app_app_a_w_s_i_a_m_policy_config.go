@@ -23,6 +23,12 @@ type AppAppAWSIAMPolicyConfig struct {
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
+	// azure actions
+	AzureActions []string `json:"azure_actions"`
+
+	// azure built in roles
+	AzureBuiltInRoles []string `json:"azure_built_in_roles"`
+
 	// cloudformation stack name
 	CloudformationStackName string `json:"cloudformation_stack_name,omitempty"`
 
