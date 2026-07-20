@@ -248,10 +248,11 @@ func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity) ma
 					{
 						"type":       "Microsoft.Authorization/roleAssignments",
 						"apiVersion": "2022-04-01",
-						// Name is derived from the (unique) role name rather than the
-						// identity's principalId so ARM what-if can compute the
-						// resource ID without a runtime reference() lookup.
-						"name": "[guid(subscription().id, parameters('roleName'), 'roleassignment')]",
+						// Name is keyed on principalId + role (Azure dedupes role
+						// assignments by principal+role+scope). Redeploys reuse the same
+						// assignment; changing this name orphans the prior one and fails
+						// with RoleAssignmentExists. what-if can't preview it (cosmetic).
+						"name": "[guid(subscription().id, parameters('principalID'), parameters('roleName'))]",
 						"dependsOn": []string{
 							"[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', guid(subscription().id, parameters('roleName')))]",
 						},
