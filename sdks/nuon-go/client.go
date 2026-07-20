@@ -39,6 +39,11 @@ type Client interface {
 	UpdateCurrentOrgWebhook(ctx context.Context, webhookID string, req *models.ServiceUpdateCurrentOrgWebhookRequest) (*models.ServiceCurrentOrgWebhookResponse, error)
 	DeleteCurrentOrgWebhook(ctx context.Context, webhookID string) error
 
+	// static api tokens
+	CreateStaticToken(ctx context.Context, req *models.ServiceCreateStaticTokenRequest) (*models.GithubComNuoncoNuonServicesCtlAPIInternalAppAccountsServiceStaticTokenResponse, error)
+	ListStaticTokens(ctx context.Context) ([]*models.AppToken, error)
+	DeleteStaticToken(ctx context.Context, tokenID string) error
+
 	// app methods
 	GetApp(ctx context.Context, appID string) (*models.AppApp, error)
 	GetApps(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppApp, bool, error)
