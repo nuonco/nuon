@@ -137,7 +137,9 @@ fi
 	envVars = append(envVars, identityEnvVars...)
 
 	// The phone-home script reads custom-stack outputs and each identity's
-	// clientId, so those resources must exist first.
+	// clientId, so those resources must exist first. It also depends on the
+	// identity role setup so a failed role deployment/assignment blocks the
+	// outputs rather than reporting half-configured identities.
 	dependsOn := []string{"vnetDeployment"}
 	for _, co := range customOutputs {
 		dependsOn = append(dependsOn, co.DeploymentName)
@@ -145,6 +147,7 @@ fi
 	if _, uamiDependsOn := operationIdentityAttachment(operationIDs); len(uamiDependsOn) > 0 {
 		dependsOn = append(dependsOn, uamiDependsOn...)
 	}
+	dependsOn = append(dependsOn, operationIdentitySetupDependencies(operationIDs)...)
 
 	return map[string]any{
 		"type":       "Microsoft.Resources/deploymentScripts",

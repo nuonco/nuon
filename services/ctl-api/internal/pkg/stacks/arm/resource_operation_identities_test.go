@@ -122,6 +122,47 @@ func TestOperationIdentities_LegacyWhenNoAzureRoles(t *testing.T) {
 	}
 }
 
+func TestPhoneHomeDependsOnIdentityRoleSetup(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+
+	armTmpl, err := tmpl.getAzureTemplate(azureRolesTemplateInput())
+	if err != nil {
+		t.Fatalf("getAzureTemplate returned error: %v", err)
+	}
+
+	var phoneHome map[string]any
+	for _, r := range armTmpl.Resources {
+		if m, ok := r.(map[string]any); ok && m["type"] == "Microsoft.Resources/deploymentScripts" {
+			phoneHome = m
+			break
+		}
+	}
+	if phoneHome == nil {
+		t.Fatal("phone-home deploymentScripts resource not found")
+	}
+
+	deps, ok := phoneHome["dependsOn"].([]string)
+	if !ok {
+		t.Fatalf("phone-home dependsOn is not []string: %T", phoneHome["dependsOn"])
+	}
+
+	var hasRoleDeployment, hasRoleAssignment bool
+	for _, d := range deps {
+		if strings.Contains(d, "-role',") {
+			hasRoleDeployment = true
+		}
+		if strings.Contains(d, "Microsoft.Authorization/roleAssignments") {
+			hasRoleAssignment = true
+		}
+	}
+	if !hasRoleDeployment {
+		t.Error("phone-home must depend on the operation-identity role deployments so a failed role setup blocks the outputs")
+	}
+	if !hasRoleAssignment {
+		t.Error("phone-home must depend on the built-in role assignments")
+	}
+}
+
 func TestAzureBuiltInRoleGUID(t *testing.T) {
 	if got := azureBuiltInRoleGUID("Contributor"); got != contributorRoleGUID {
 		t.Errorf("Contributor = %q, want %q", got, contributorRoleGUID)

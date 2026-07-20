@@ -352,6 +352,22 @@ func jsonEnvObject(nameToEnv map[string]string) string {
 	return "{" + strings.Join(parts, ",") + "}"
 }
 
+// operationIdentitySetupDependencies returns the resource identifiers (per-operation
+// role deployments and built-in role assignments) that must complete before the
+// phone-home reports identity client IDs. Gating on these means a failed role
+// setup blocks the outputs instead of reporting half-configured identities.
+func operationIdentitySetupDependencies(ids []azureOperationIdentity) []string {
+	var deps []string
+	for _, id := range ids {
+		deps = append(deps, fmt.Sprintf("[format('{0}-%s-role', parameters('nuonInstallID'))]", azureRoleDeploymentToken(id)))
+		for _, role := range id.builtInRoles {
+			guid := azureBuiltInRoleGUID(role)
+			deps = append(deps, fmt.Sprintf("[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, %s, '%s'))]", uamiNameInner(id.suffix), guid))
+		}
+	}
+	return deps
+}
+
 // operationIdentityAttachment returns the VMSS userAssignedIdentities object and
 // the identity resource IDs the runner deployment must depend on.
 func operationIdentityAttachment(ids []azureOperationIdentity) (userAssigned map[string]any, dependsOn []string) {
