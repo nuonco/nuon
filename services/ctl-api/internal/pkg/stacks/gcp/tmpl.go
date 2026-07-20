@@ -19,6 +19,20 @@ runner_init_script_url   = "{{.RunnerInitScriptURL}}"
 runner_machine_type      = "{{.Settings.AWSInstanceType}}"
 {{- end}}
 phone_home_url           = "{{.CloudFormationStackVersion.PhoneHomeURL}}"
+{{- if .CustomStacks}}
+custom_stacks = {
+{{- range .CustomStacks}}
+  "{{.Name}}" = {
+    module = "{{.Module}}"
+    parameters = {
+{{- range $k, $v := .Parameters}}
+      "{{$k}}" = "{{$v}}"
+{{- end}}
+    }
+  }
+{{- end}}
+}
+{{- end}}
 provision_policies = {
 {{- range .ProvisionPolicies}}
   "{{.Name}}" = {{.Permissions}}

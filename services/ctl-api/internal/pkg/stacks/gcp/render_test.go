@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
@@ -553,4 +554,31 @@ func TestRenderPredefinedRoleValues(t *testing.T) {
 			assert.Contains(t, line, `"roles/editor"`)
 		}
 	}
+}
+
+func TestRenderCustomStacks(t *testing.T) {
+	inp := testInput()
+	versioning := "true"
+	inp.Install.CurrentInstallInputs = &app.InstallInputs{Values: map[string]*string{"bucket_versioning": &versioning}}
+	inp.AppCfg.StackConfig.CustomNestedStacks = []config.CustomNestedStack{
+		{
+			Name:        "preview_bucket",
+			TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/bucket",
+			Index:       0,
+			Parameters:  map[string]string{"versioning": "{{.nuon.install.inputs.bucket_versioning}}"},
+		},
+	}
+
+	out, _, err := Render(inp)
+	require.NoError(t, err)
+
+	tfvars := extractTfvars(t, out)
+	assert.Contains(t, tfvars, "custom_stacks = {")
+	assert.Contains(t, tfvars, `"preview_bucket" = {`)
+	assert.Contains(t, tfvars, `module = "bucket"`)
+	assert.Contains(t, tfvars, `"versioning" = "true"`)
+
+	inp.AppCfg.StackConfig.CustomNestedStacks[0].TemplateURL = "https://example.com/stack.yaml"
+	_, _, err = Render(inp)
+	require.Error(t, err)
 }

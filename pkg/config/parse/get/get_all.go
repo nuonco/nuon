@@ -18,6 +18,8 @@ func (g *get) GetAll(ctx context.Context) error {
 	return g.walkFields(ctx, g.dst, "")
 }
 
+var errIsDirectory = errors.New("git source path is a directory")
+
 type sourceFileGetter interface {
 	GetSourceFile() string
 }
@@ -230,7 +232,11 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 	// instead clone the containing directory with ClientModeDir and read the
 	// requested file ourselves.
 	if strings.HasPrefix(detected, "git::") {
-		return g.fetchGitFile(ctx, detected, tmpDir, pwd)
+		content, err := g.fetchGitFile(ctx, detected, tmpDir, pwd)
+		if errors.Is(err, errIsDirectory) {
+			return inputVal, nil
+		}
+		return content, err
 	}
 
 	tmpFP := filepath.Join(tmpDir, "field")
@@ -298,7 +304,15 @@ func (g *get) fetchGitFile(ctx context.Context, detected, tmpDir, pwd string) (s
 		return "", errors.Wrap(err, "failed to fetch git source")
 	}
 
-	content, err := os.ReadFile(filepath.Join(cloneDir, filepath.FromSlash(cleanSubdir)))
+	target := filepath.Join(cloneDir, filepath.FromSlash(cleanSubdir))
+
+	// A directory is a module address (e.g. a curated gcp custom stack), not
+	// inlinable file content — pass the original value through untouched.
+	if stat, err := os.Stat(target); err == nil && stat.IsDir() {
+		return "", errIsDirectory
+	}
+
+	content, err := os.ReadFile(target)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to read file from git source")
 	}

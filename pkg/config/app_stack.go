@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strings"
 
 	"github.com/invopop/jsonschema"
 )
@@ -50,6 +51,30 @@ func (a CustomNestedStack) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("parameters").Short("parameter-to-input mappings").
 		Long("Map of CloudFormation parameter names to Nuon install input references. Values must use the template format {{.nuon.install.inputs.<input_name>}}. Only vendor-provided inputs are supported.").
 		Example("Namespaces = \"{{.nuon.install.inputs.namespaces}}\"")
+}
+
+// GCPCustomStackModuleMarker separates the repo address from the curated
+// module name in a gcp-terraform custom stack template_url. Any repo works —
+// forks carry their own modules — as long as the install stack the customer
+// applies comes from the same repo; the rendered tfvars only carry the name.
+const GCPCustomStackModuleMarker = "//gcp/modules/"
+
+// GCPCustomStackModulePrefix is the canonical upstream form, used in examples
+// and error messages.
+const GCPCustomStackModulePrefix = "github.com/nuonco/install-stacks" + GCPCustomStackModuleMarker
+
+// GCPModuleName returns the curated module name a gcp-terraform custom stack
+// references, or "" when the template_url is not a gcp modules path.
+func (c CustomNestedStack) GCPModuleName() string {
+	idx := strings.LastIndex(c.TemplateURL, GCPCustomStackModuleMarker)
+	if idx <= 0 {
+		return ""
+	}
+	name := c.TemplateURL[idx+len(GCPCustomStackModuleMarker):]
+	if name == "" || strings.ContainsAny(name, "/?") {
+		return ""
+	}
+	return name
 }
 
 type StackConfig struct {
@@ -186,12 +211,16 @@ func (a *StackConfig) parse() error {
 			}
 		}
 	}
-	// The gcp-terraform renderer does not consume custom stacks; reject them
-	// instead of silently ignoring them.
-	if a.Type == "gcp-terraform" && len(a.CustomNestedStacks) > 0 {
-		return ErrConfig{
-			Description: "custom_nested_stacks are not supported when type is gcp-terraform",
-			Err:         fmt.Errorf("custom_nested_stacks are not supported when type is gcp-terraform"),
+	// gcp-terraform custom stacks are curated: template_url must select a
+	// child module of the install-stacks gcp root.
+	if a.Type == "gcp-terraform" {
+		for i, stack := range a.CustomNestedStacks {
+			if stack.GCPModuleName() == "" {
+				return ErrConfig{
+					Description: fmt.Sprintf("custom_nested_stacks[%d] (%s): gcp-terraform custom stacks must reference a gcp modules path (<repo>%s<name>), e.g. %s<name>", i, stack.Name, GCPCustomStackModuleMarker, GCPCustomStackModulePrefix),
+					Err:         fmt.Errorf("custom_nested_stacks[%d] (%s): gcp-terraform custom stacks must reference a gcp modules path (<repo>%s<name>), e.g. %s<name>", i, stack.Name, GCPCustomStackModuleMarker, GCPCustomStackModulePrefix),
+				}
+			}
 		}
 	}
 	seenIndices := map[int]string{}
