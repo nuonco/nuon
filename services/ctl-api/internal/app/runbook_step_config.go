@@ -42,10 +42,11 @@ type RunbookStepConfig struct {
 	RunbookConfigID string        `json:"runbook_config_id,omitzero" gorm:"notnull" temporaljson:"runbook_config_id,omitzero,omitempty"`
 	RunbookConfig   RunbookConfig `json:"-" temporaljson:"runbook_config,omitzero,omitempty"`
 
-	Idx  int             `json:"idx" gorm:"notnull;default:0" temporaljson:"idx,omitzero,omitempty"`
-	Name string          `json:"name,omitzero" gorm:"notnull" temporaljson:"name,omitzero,omitempty"`
-	Type RunbookStepType `json:"type,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"type,omitzero,omitempty"`
-	Role string          `json:"role,omitzero" temporaljson:"role,omitzero,omitempty"`
+	Idx      int             `json:"idx" gorm:"notnull;default:0" temporaljson:"idx,omitzero,omitempty"`
+	Name     string          `json:"name,omitzero" gorm:"notnull" temporaljson:"name,omitzero,omitempty"`
+	Type     RunbookStepType `json:"type,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"type,omitzero,omitempty"`
+	Role     string          `json:"role,omitzero" temporaljson:"role,omitzero,omitempty"`
+	PlanOnly bool            `json:"plan_only,omitzero" gorm:"default:false" temporaljson:"plan_only,omitzero,omitempty"`
 
 	// deploy / tear-down fields
 	ComponentName      string `json:"component_name,omitzero" temporaljson:"component_name,omitzero,omitempty"`

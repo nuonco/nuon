@@ -1,5 +1,6 @@
 import { RunbooksTable } from '@/components/runbooks/RunbooksTable'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -22,14 +23,22 @@ export const Runbooks = () => {
           { path: `/${org?.id}/apps/${app?.id}/runbooks`, text: 'Runbooks' },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          App runbooks
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          Define and manage operational procedures for your installs.
-        </Text>
-      </HeadingGroup>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <HeadingGroup>
+          <Text variant="base" weight="strong">
+            App runbooks
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            Define and manage operational procedures for your installs.
+          </Text>
+        </HeadingGroup>
+        <Button
+          variant="primary"
+          href={`/${org?.id}/apps/${app?.id}/runbooks/builder`}
+        >
+          Build runbook
+        </Button>
+      </div>
       <RunbooksTable />
     </PageSection>
   )

@@ -8,6 +8,7 @@ import { BuildDetail } from './BuildDetail'
 import { Actions } from './Actions'
 import { ActionDetail } from './ActionDetail'
 import { Runbooks } from './Runbooks'
+import { RunbookBuilder } from './RunbookBuilder'
 import { RunbookDetailLayout } from './RunbookDetailLayout'
 import { RunbookReadmeTab } from './runbook-tabs/RunbookReadmeTab'
 import { RunbookStepsTab } from './runbook-tabs/RunbookStepsTab'
@@ -56,6 +57,10 @@ export const appRoutes: RouteObject[] = [
         element: <ActionDetail />,
       },
       { path: ':orgId/apps/:appId/runbooks', element: <Runbooks /> },
+      {
+        path: ':orgId/apps/:appId/runbooks/builder',
+        element: <RunbookBuilder />,
+      },
       {
         path: ':orgId/apps/:appId/runbooks/:runbookId',
         element: <RunbookDetailLayout />,
