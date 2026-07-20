@@ -60,6 +60,9 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 		func() error {
 			return ValidateCustomNestedStackOutputs(a)
 		},
+		func() error {
+			return ValidateAzureRunnerIdentities(a)
+		},
 		//
 		func() error {
 			if err := a.OperationRoles.Validate(); err != nil {
