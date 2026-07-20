@@ -86,6 +86,13 @@ func (i *InstallRoleUsage) Indexes(db *gorm.DB) []migrations.Index {
 				"install_role_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &InstallRoleUsage{}, "runner_job_id_deleted_at"),
+			Columns: []string{
+				"runner_job_id",
+				"deleted_at",
+			},
+		},
 	}
 }
 
