@@ -1,6 +1,8 @@
 package arm
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"regexp"
 	"sort"
@@ -174,6 +176,24 @@ func (t *Templates) getOperationIdentityResources(ids []azureOperationIdentity) 
 	return resources
 }
 
+// azureRoleDeploymentToken returns a short, stable token for the subscription-level
+// role deployment name. Custom/break-glass role names are user-defined and often
+// long (and may repeat the install ID), which overflows ARM's 64-char
+// deployment-name limit, so those hash to a short token.
+func azureRoleDeploymentToken(id azureOperationIdentity) string {
+	switch id.kind {
+	case "provision", "maintenance", "deprovision":
+		return id.suffix
+	default:
+		sum := sha256.Sum256([]byte(id.suffix))
+		prefix := "custom"
+		if id.kind == "breakglass" {
+			prefix = "bg"
+		}
+		return prefix + "-" + hex.EncodeToString(sum[:])[:8]
+	}
+}
+
 // getOperationIdentityCustomRole creates a subscription-level custom role for the
 // identity and assigns it. The role always includes */register/action so the
 // azurerm provider can register resource providers during apply — that action is
@@ -184,7 +204,7 @@ func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity) ma
 	return map[string]any{
 		"type":           "Microsoft.Resources/deployments",
 		"apiVersion":     "2022-09-01",
-		"name":           fmt.Sprintf("[format('{0}-%s-role', parameters('nuonInstallID'))]", id.suffix),
+		"name":           fmt.Sprintf("[format('{0}-%s-role', parameters('nuonInstallID'))]", azureRoleDeploymentToken(id)),
 		"subscriptionId": "[subscription().subscriptionId]",
 		"location":       "[resourceGroup().location]",
 		"dependsOn":      []string{uamiResourceIDExpr(id.suffix)},
