@@ -6,24 +6,32 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
 
 type Params struct {
 	fx.In
 
-	DB *gorm.DB `name:"psql"`
+	DB          *gorm.DB `name:"psql"`
+	AcctClient  *account.Client
+	AuthzClient *authz.Client
 }
 
 type service struct {
-	db *gorm.DB
+	db          *gorm.DB
+	acctClient  *account.Client
+	authzClient *authz.Client
 }
 
 var _ api.Service = (*service)(nil)
 
 func New(params Params) *service {
 	return &service{
-		db: params.DB,
+		db:          params.DB,
+		acctClient:  params.AcctClient,
+		authzClient: params.AuthzClient,
 	}
 }
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
@@ -31,6 +39,10 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	account := api.Group("/v1/account")
 	{
 		account.GET("", s.GetCurrentAccount)
+
+		account.POST("/static-token", s.CreateStaticToken)
+		account.GET("/static-tokens", s.ListStaticTokens)
+		account.DELETE("/static-tokens/:token_id", s.DeleteStaticToken)
 
 		// user journeys
 		userJourneys := account.Group("/user-journeys")

@@ -454,6 +454,29 @@ export type TWaitlist = components['schemas']['app.Waitlist']
 export type TAccount = components['schemas']['app.Account']
 export type TInvite = components['schemas']['app.OrgInvite']
 
+// API tokens
+export interface TStaticToken {
+  id: string
+  name?: string
+  account_id?: string
+  created_by_id?: string
+  token_type?: string
+  expires_at?: string
+  issued_at?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface TCreateStaticTokenBody {
+  name: string
+  duration?: string
+}
+
+export interface TCreateStaticTokenResponse {
+  id?: string
+  api_token?: string
+}
+
 // User Journey (Enhanced with completion tracking and metadata)
 export interface TUserJourneyStep {
   name: string

@@ -14,7 +14,6 @@ func TestReadOnlyAllowsConfigViewers(t *testing.T) {
 		"input-config",
 		"runner-config",
 		"plan",
-		"api-token",
 		"runs",
 	}
 

@@ -32,6 +32,8 @@ type Token struct {
 
 	AccountID string `json:"account_id,omitzero" temporaljson:"account_id,omitzero,omitempty"`
 
+	Name string `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
+
 	Token     string    `gorm:"unique" json:"-" temporaljson:"token,omitzero,omitempty"`
 	TokenType TokenType `json:"token_type,omitzero" temporaljson:"token_type,omitzero,omitempty"`
 
