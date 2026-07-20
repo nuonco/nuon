@@ -134,7 +134,6 @@ export const BranchDetailActionsContainer = ({
           <Icon variant="TrashIcon" size={16} />
         </Button>
       }
-      hasConfig={(currentConfig?.install_groups?.length ?? 0) > 0}
       isTriggerPending={false}
       showTriggerNudge={showTriggerNudge}
       onTriggerRun={() => openTriggerModal(false)}

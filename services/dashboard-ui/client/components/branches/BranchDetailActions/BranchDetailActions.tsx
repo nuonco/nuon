@@ -12,7 +12,6 @@ interface IBranchDetailActions {
   editButton: ReactNode
   deploymentPlanButton: ReactNode
   deleteButton: ReactNode
-  hasConfig: boolean
   isTriggerPending: boolean
   showTriggerNudge?: boolean
   onTriggerRun: () => void
@@ -23,7 +22,6 @@ export const BranchDetailActions = ({
   editButton,
   deploymentPlanButton,
   deleteButton,
-  hasConfig,
   isTriggerPending,
   showTriggerNudge = false,
   onTriggerRun,
@@ -73,17 +71,13 @@ export const BranchDetailActions = ({
         >
           <Button
             variant="primary"
-            disabled={!hasConfig || isTriggerPending}
+            disabled={isTriggerPending}
             onClick={() => {
               setNudgeOpen(false)
               onTriggerRun()
             }}
             className="!rounded-r-none"
-            title={
-              !hasConfig
-                ? 'Create a deployment plan first to trigger a run'
-                : 'Trigger a new run with the current deployment plan'
-            }
+            title="Trigger a new run"
           >
             <Icon variant="PlayIcon" size={16} />
             {isTriggerPending ? 'Triggering...' : 'Trigger run'}
@@ -95,7 +89,7 @@ export const BranchDetailActions = ({
           variant="primary"
           alignment="right"
           hideIcon
-          disabled={!hasConfig || isTriggerPending}
+          disabled={isTriggerPending}
           buttonClassName="!rounded-l-none !border-l !border-l-primary-700 !px-2"
           buttonText={<Icon variant="CaretDownIcon" size={14} />}
         >

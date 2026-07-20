@@ -11,7 +11,6 @@ import (
 	appconfig "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/appconfig"
 	builds "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
 	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/installconfigsync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/planinstallgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/setuppreview"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
@@ -95,19 +94,6 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		}
 		steps = append(steps, step)
 	}
-
-	// Step: Sync install configs (if installs directory is configured)
-	sg.nextGroup()
-	step, err = sg.appBranchSignalStep(ctx, appBranchID, "sync install configs", pgtype.Hstore{}, &installconfigsync.Signal{
-		AppBranchID:       appBranchID,
-		AppBranchConfigID: configID,
-		TriggeredBy:       "app-branch-run",
-		AppBranchRunID:    runID,
-	}, WithSkippable(true))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create sync install configs step")
-	}
-	steps = append(steps, step)
 
 	// Step 3: Build all components and sandbox
 	if appConfigID != "" && skipBuilds {
