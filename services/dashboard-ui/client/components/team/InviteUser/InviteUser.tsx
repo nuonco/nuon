@@ -4,7 +4,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
 import { Label } from '@/components/common/form/Label'
-import { RadioInput } from '@/components/common/form/RadioInput'
+import { Select } from '@/components/common/form/Select'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
@@ -22,6 +22,12 @@ export const InviteUserModal = ({
 } & Omit<IModal, 'onSubmit'>) => {
   const [email, setEmail] = useState('')
   const [roleType, setRoleType] = useState('org_admin')
+
+  const roleOptions = [
+    { value: 'org_admin', label: 'Admin' },
+    ...(hasSupportRole ? [{ value: 'org_support', label: 'Support' }] : []),
+    { value: 'org_read_only', label: 'Read-only' },
+  ]
 
   return (
     <Modal
@@ -67,25 +73,12 @@ export const InviteUserModal = ({
             required
           />
         </div>
-        {hasSupportRole ? (
-          <div className="flex flex-col gap-2">
-            <Label>Role</Label>
-            <RadioInput
-              name="role_type"
-              value="org_admin"
-              checked={roleType === 'org_admin'}
-              onChange={() => setRoleType('org_admin')}
-              labelProps={{ labelText: 'Admin' }}
-            />
-            <RadioInput
-              name="role_type"
-              value="org_support"
-              checked={roleType === 'org_support'}
-              onChange={() => setRoleType('org_support')}
-              labelProps={{ labelText: 'Support' }}
-            />
-          </div>
-        ) : null}
+        <Select
+          value={roleType}
+          onChange={(e) => setRoleType(e.target.value)}
+          options={roleOptions}
+          labelProps={{ labelText: 'Role' }}
+        />
       </div>
     </Modal>
   )

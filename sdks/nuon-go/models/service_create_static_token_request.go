@@ -25,6 +25,10 @@ type ServiceCreateStaticTokenRequest struct {
 	// human-friendly name to identify the token later
 	// Required: true
 	Name *string `json:"name"`
+
+	// org role granted to the token. one of org_admin, org_support, org_read_only.
+	// defaults to org_read_only.
+	Role string `json:"role,omitempty"`
 }
 
 // Validate validates this service create static token request

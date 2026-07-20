@@ -17,6 +17,12 @@ export const DURATION_OPTIONS = [
   { value: '8760h', label: '1 year' },
 ]
 
+export const ROLE_OPTIONS = [
+  { value: 'org_read_only', label: 'Read-only' },
+  { value: 'org_admin', label: 'Admin' },
+  { value: 'org_support', label: 'Support' },
+]
+
 export const CreateApiTokenModal = ({
   isPending,
   error,
@@ -28,11 +34,12 @@ export const CreateApiTokenModal = ({
   isPending: boolean
   error: TAPIError | null
   createdToken: string | null
-  onSubmit: (params: { name: string; duration: string }) => void
+  onSubmit: (params: { name: string; duration: string; role: string }) => void
   onDone: () => void
 } & Omit<IModal, 'onSubmit'>) => {
   const [name, setName] = useState('')
   const [duration, setDuration] = useState('720h')
+  const [role, setRole] = useState('org_read_only')
 
   if (createdToken) {
     return (
@@ -82,7 +89,7 @@ export const CreateApiTokenModal = ({
           'Create token'
         ),
         disabled: !name || isPending,
-        onClick: () => onSubmit({ name, duration }),
+        onClick: () => onSubmit({ name, duration, role }),
         variant: 'primary',
       }}
       {...props}
@@ -105,6 +112,13 @@ export const CreateApiTokenModal = ({
             required
           />
         </div>
+
+        <Select
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          options={ROLE_OPTIONS}
+          labelProps={{ labelText: 'Role' }}
+        />
 
         <Select
           value={duration}

@@ -15,8 +15,9 @@ type RoleType string
 
 const (
 	// user roles
-	RoleTypeOrgAdmin   RoleType = "org_admin"
-	RoleTypeOrgSupport RoleType = "org_support"
+	RoleTypeOrgAdmin    RoleType = "org_admin"
+	RoleTypeOrgSupport  RoleType = "org_support"
+	RoleTypeOrgReadOnly RoleType = "org_read_only"
 
 	// service account roles
 	RoleTypeInstaller       RoleType = "installer"

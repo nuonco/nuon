@@ -20,7 +20,7 @@ const InviteUserModalContainer = (props: Record<string, any>) => {
   const { mutate, isPending, error } = useMutation({
     mutationFn: ({ email, roleType }: { email: string; roleType: string }) =>
       inviteUser({
-        body: { email, ...(hasSupportRole ? { role_type: roleType } : {}) },
+        body: { email, role_type: roleType },
         orgId: org.id,
       }),
     onSuccess: (_data, { email }) => {

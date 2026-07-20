@@ -214,6 +214,7 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 	var (
 		name     string
 		duration string
+		role     string
 		tokenID  string
 	)
 
@@ -230,12 +231,13 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 		Long:  "Create a static API token scoped to the current org's service account. The token is only shown once.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.CreateStaticToken(cmd.Context(), name, duration, PrintJSON)
+			return svc.CreateStaticToken(cmd.Context(), name, duration, role, PrintJSON)
 		}),
 	}
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "A human-friendly name to identify the token")
 	createCmd.MarkFlagRequired("name")
 	createCmd.Flags().StringVar(&duration, "duration", "8760h", "How long the token is valid (Go duration, e.g. 720h)")
+	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to the token (org_admin, org_support, or org_read_only)")
 	apiTokensCmd.AddCommand(createCmd)
 
 	listCmd := &cobra.Command{

@@ -12,6 +12,12 @@ import { DeleteApiTokenButton } from '@/components/api-tokens/DeleteApiToken'
 
 export const API_TOKENS_TABLE_LIMIT = 20
 
+const ROLE_LABELS: Record<string, string> = {
+  org_admin: 'Admin',
+  org_support: 'Support',
+  org_read_only: 'Read-only',
+}
+
 const ActionCell = ({ token }: { token: TStaticToken }) => (
   <Dropdown
     id={`action-${token.id}`}
@@ -48,6 +54,14 @@ export const ApiTokensTable = ({
             {props.getValue<string>() || 'Unnamed token'}
           </Text>
         ),
+      },
+      {
+        header: 'Role',
+        accessorKey: 'role',
+        cell: (props) => {
+          const role = props.getValue<string>()
+          return <Text variant="body">{ROLE_LABELS[role] ?? role ?? '—'}</Text>
+        },
       },
       {
         header: 'Created',
@@ -88,6 +102,7 @@ export const ApiTokensTable = ({
 
 const skeletonColumns: ColumnDef<TStaticToken>[] = [
   { header: 'Name', accessorKey: 'name' },
+  { header: 'Role', accessorKey: 'role' },
   { header: 'Created', accessorKey: 'created_at' },
   { header: 'Expires', accessorKey: 'expires_at' },
   { header: 'Action', id: 'action' },
