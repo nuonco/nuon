@@ -149,6 +149,12 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		}
 		steps = append(steps, step)
 
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePostProvisionSandbox)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, lifecycleSteps...)
+
 		lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreSecretsSync)
 		if err != nil {
 			return nil, err
