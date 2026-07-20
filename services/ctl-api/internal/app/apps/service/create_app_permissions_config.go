@@ -50,6 +50,8 @@ func (a AppAWSIAMRoleConfig) getPolicies(appConfigID string) []app.AppAWSIAMPoli
 			Contents:          generics.ToJSON(policy.Contents),
 			GCPPermissions:    policy.GCPPermissions,
 			GCPPredefinedRole: policy.GCPPredefinedRole,
+			AzureActions:      policy.AzureActions,
+			AzureBuiltInRoles: policy.AzureBuiltInRoles,
 		})
 	}
 
@@ -63,6 +65,8 @@ type AppAWSIAMPolicyConfig struct {
 	Contents          string   `json:"contents" swaggertype:"string" validate:"optional_json"`
 	GCPPermissions    []string `json:"gcp_permissions,omitempty"`
 	GCPPredefinedRole string   `json:"gcp_predefined_role,omitempty"`
+	AzureActions      []string `json:"azure_actions,omitempty"`
+	AzureBuiltInRoles []string `json:"azure_built_in_roles,omitempty"`
 }
 
 func (p *AppAWSIAMPolicyConfig) validateMutualExclusivity(roleName string) error {
@@ -72,6 +76,10 @@ func (p *AppAWSIAMPolicyConfig) validateMutualExclusivity(roleName string) error
 
 	if len(p.GCPPermissions) > 0 && p.GCPPredefinedRole != "" {
 		return fmt.Errorf("role %q policy %q: gcp_permissions and gcp_predefined_role are mutually exclusive; use gcp_permissions for fine-grained custom permissions or gcp_predefined_role for a Google-managed role, not both", roleName, p.Name)
+	}
+
+	if len(p.AzureActions) > 0 && len(p.AzureBuiltInRoles) > 0 {
+		return fmt.Errorf("role %q policy %q: azure_actions and azure_built_in_roles are mutually exclusive; use azure_actions for a fine-grained custom role or azure_built_in_roles for Azure-managed roles, not both", roleName, p.Name)
 	}
 
 	return nil

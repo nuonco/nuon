@@ -78,6 +78,11 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		"app_nuon_co_id":     "[parameters('nuonAppID')]",
 	}
 
+	// When the app declares Azure roles, deploy work runs as per-operation
+	// identities and the system identity is stripped of deploy grants.
+	operationIDs := azureOperationIdentities(inp.AppCfg)
+	useOperationIdentities := len(operationIDs) > 0
+
 	// Build VNet linked deployment (or use default inline)
 	vnetDeployment, vnetParams, err := t.getVNetLinkedDeployment(inp)
 	if err != nil {
@@ -88,9 +93,13 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		tmpl.Parameters[k] = v
 	}
 
+	if useOperationIdentities {
+		tmpl.Resources = append(tmpl.Resources, t.getOperationIdentityResources(operationIDs)...)
+	}
+
 	// Runner linked deployment (or use default inline)
 	if !t.cfg.UseLocalRunners {
-		runnerDeployment, runnerParams, err := t.getRunnerLinkedDeployment(inp)
+		runnerDeployment, runnerParams, err := t.getRunnerLinkedDeployment(inp, operationIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -100,16 +109,18 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		}
 	}
 
-	// VMSS role assignments at resource-group scope (depends on runner VMSS)
-	if !t.cfg.UseLocalRunners {
+	// Legacy broad grants on the system identity, only when per-operation
+	// identities are not in use.
+	if !t.cfg.UseLocalRunners && !useOperationIdentities {
 		tmpl.Resources = append(tmpl.Resources, t.getVMSSRoleAssignments()...)
-		// Key Vault Secrets User role for the runner VMSS identity
-		tmpl.Resources = append(tmpl.Resources, t.getKeyVaultRoleAssignment())
+		tmpl.Resources = append(tmpl.Resources, t.getCustomRoleDeployment(inp))
 	}
 
-	// Custom role subscription-level deployment (depends on runner VMSS)
+	// Key Vault Secrets User and ACR pull/push stay on the system identity:
+	// secret-sync and image-sync run as the ambient identity.
 	if !t.cfg.UseLocalRunners {
-		tmpl.Resources = append(tmpl.Resources, t.getCustomRoleDeployment(inp))
+		tmpl.Resources = append(tmpl.Resources, t.getKeyVaultRoleAssignment())
+		tmpl.Resources = append(tmpl.Resources, t.getACRRoleAssignments()...)
 	}
 
 	// Custom linked deployments (before phone home, which reports their outputs)

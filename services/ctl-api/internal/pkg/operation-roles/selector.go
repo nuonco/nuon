@@ -91,11 +91,6 @@ func SelectRole(ctx *SelectionContext, l *zap.Logger) (*RoleSelection, error) {
 		return nil, err
 	}
 
-	// If RoleARN is already set (e.g., Azure placeholder), return as-is
-	if selection.RoleARN != "" {
-		return selection, nil
-	}
-
 	renderedRoleName, err := renderRoleName(selection.RoleName, ctx.InstallState)
 	if err != nil {
 		return nil, &SelectionError{
@@ -164,24 +159,6 @@ func selectRole(ctx *SelectionContext) (*RoleSelection, error) {
 	}
 
 	var trace []app.InstallRoleSelectionRecord
-
-	// early exit for azure since architecturally azure uses single tenant<> sub id combination
-	if ctx.StackOutputs.AzureStackOutputs != nil {
-		trace = append(trace, app.InstallRoleSelectionRecord{
-			RoleName:   "azure-placeholder-name",
-			RoleSource: string(RoleSelectionSourceDefault),
-			RoleID:     "azure-placeholder-arn",
-			Available:  true,
-			Selected:   true,
-		})
-		return &RoleSelection{
-			// in case of azure this will be empty, till we figureout azure role based permissions
-			RoleName: "azure-placeholder-name",
-			RoleARN:  "azure-placeholder-arn",
-			Source:   RoleSelectionSourceDefault,
-			Trace:    trace,
-		}, nil
-	}
 
 	if ctx.DefaultRole == "" {
 		return nil, &SelectionError{Trace: trace, Err: fmt.Errorf("no default role configured for %s", ctx.Operation)}
@@ -409,12 +386,10 @@ func resolveRoleARN(
 
 	var stackOutput app.StackOutput
 	if installStackOutputs.AzureStackOutputs != nil {
-		return "", nil
+		stackOutput = installStackOutputs.AzureStackOutputs
 	} else if installStackOutputs.AWSStackOutputs != nil {
-		// Try AWS second
 		stackOutput = installStackOutputs.AWSStackOutputs
 	} else if installStackOutputs.GCPStackOutputs != nil {
-		// Try GCP third
 		stackOutput = installStackOutputs.GCPStackOutputs
 	} else {
 		return "", errors.New("stack outputs must have either AWS, Azure, or GCP outputs")

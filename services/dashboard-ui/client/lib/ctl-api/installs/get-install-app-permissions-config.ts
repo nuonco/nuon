@@ -7,6 +7,8 @@ export type TInstallPermissionsRolePolicy = {
   contents?: string
   gcp_predefined_role?: string
   gcp_permissions?: string[]
+  azure_built_in_roles?: string[]
+  azure_actions?: string[]
 }
 
 export type TInstallPermissionsRoleStatus = {
