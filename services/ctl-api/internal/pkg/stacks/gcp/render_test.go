@@ -558,8 +558,15 @@ func TestRenderPredefinedRoleValues(t *testing.T) {
 
 func TestRenderCustomStacks(t *testing.T) {
 	inp := testInput()
+	versioning := "true"
+	inp.Install.CurrentInstallInputs = &app.InstallInputs{Values: map[string]*string{"bucket_versioning": &versioning}}
 	inp.AppCfg.StackConfig.CustomNestedStacks = []config.CustomNestedStack{
-		{Name: "preview_bucket", TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/bucket", Index: 0},
+		{
+			Name:        "preview_bucket",
+			TemplateURL: "github.com/nuonco/install-stacks//gcp/modules/bucket",
+			Index:       0,
+			Parameters:  map[string]string{"versioning": "{{.nuon.install.inputs.bucket_versioning}}"},
+		},
 	}
 
 	out, _, err := Render(inp)
@@ -569,6 +576,7 @@ func TestRenderCustomStacks(t *testing.T) {
 	assert.Contains(t, tfvars, "custom_stacks = {")
 	assert.Contains(t, tfvars, `"preview_bucket" = {`)
 	assert.Contains(t, tfvars, `module = "bucket"`)
+	assert.Contains(t, tfvars, `"versioning" = "true"`)
 
 	inp.AppCfg.StackConfig.CustomNestedStacks[0].TemplateURL = "https://example.com/stack.yaml"
 	_, _, err = Render(inp)

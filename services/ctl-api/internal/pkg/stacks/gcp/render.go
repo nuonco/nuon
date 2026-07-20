@@ -136,11 +136,15 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		}
 	}
 
-	// Curated custom stacks: parameters resolve to the referenced input's
-	// default, matching how install inputs are seeded into the tfvars.
+	// Curated custom stacks: parameters resolve from the install's actual
+	// input values (matching the CFN/ARM paths), falling back to the app
+	// input's default — covering vendor-side inputs that never appear in the
+	// customer tfvars.
 	inputDefaults := map[string]string{}
-	for _, input := range installInputs {
-		inputDefaults[input.Name] = input.Default
+	if inputs.AppCfg != nil {
+		for _, input := range inputs.AppCfg.InputConfig.AppInputs {
+			inputDefaults[input.Name] = input.Default
+		}
 	}
 	sortedStacks := make([]config.CustomNestedStack, len(inputs.AppCfg.StackConfig.CustomNestedStacks))
 	copy(sortedStacks, inputs.AppCfg.StackConfig.CustomNestedStacks)
@@ -157,7 +161,13 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 			if err != nil {
 				return nil, "", errors.Wrapf(err, "custom_nested_stacks (%s): parameter %q", stack.Name, paramName)
 			}
-			params[paramName] = inputDefaults[inputName]
+			resolved := inputDefaults[inputName]
+			if inputs.Install.CurrentInstallInputs != nil {
+				if val, ok := inputs.Install.CurrentInstallInputs.Values[inputName]; ok && val != nil {
+					resolved = *val
+				}
+			}
+			params[paramName] = resolved
 		}
 		customStacks = append(customStacks, GCPCustomStackTemplateInput{
 			Name:       stack.Name,
