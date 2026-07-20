@@ -2,51 +2,54 @@ import { useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Input } from '@/components/common/form/Input'
-import { Label } from '@/components/common/form/Label'
 import { Select } from '@/components/common/form/Select'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
-export const InviteUserModal = ({
+export const ChangeRoleModal = ({
+  accountEmail,
+  currentRole,
   isPending,
   error,
   onSubmit,
   ...props
 }: {
+  accountEmail: string
+  currentRole: string
   isPending: boolean
   error: TAPIError | null
-  onSubmit: (params: { email: string; roleType: string }) => void
+  onSubmit: (params: { roleType: string }) => void
 } & Omit<IModal, 'onSubmit'>) => {
-  const [email, setEmail] = useState('')
-  const [roleType, setRoleType] = useState('org_admin')
+  const [roleType, setRoleType] = useState(currentRole || 'org_read_only')
 
   const roleOptions = [
     { value: 'org_admin', label: 'Admin' },
     { value: 'org_read_only', label: 'Read-only' },
+    // Support is not offered as a new choice, but keep it visible when the
+    // member already holds it so their current role displays correctly.
+    ...(currentRole === 'org_support'
+      ? [{ value: 'org_support', label: 'Support' }]
+      : []),
   ]
 
   return (
     <Modal
       heading={
         <Text flex className="gap-4" variant="h3" weight="strong">
-          <Icon variant="UserPlusIcon" size="24" />
-          Invite team member
+          <Icon variant="UserCheckIcon" size="24" />
+          Change role
         </Text>
       }
       primaryActionTrigger={{
         children: isPending ? (
           <span className="flex items-center gap-2">
-            <Icon variant="Loading" /> Inviting...
+            <Icon variant="Loading" /> Saving...
           </span>
         ) : (
-          <span className="flex items-center gap-2">
-            <Icon variant="UserPlusIcon" />
-            Invite user
-          </span>
+          'Save'
         ),
-        disabled: !email || isPending,
-        onClick: () => onSubmit({ email, roleType }),
+        disabled: isPending || roleType === currentRole,
+        onClick: () => onSubmit({ roleType }),
         variant: 'primary',
       }}
       {...props}
@@ -54,22 +57,14 @@ export const InviteUserModal = ({
       <div className="flex flex-col gap-6">
         {error ? (
           <Banner theme="error">
-            {error?.error || 'Unable to invite user to organization'}
+            {error?.error || 'Unable to change role'}
           </Banner>
         ) : null}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="invite-email">
-            Email address of the user you want to invite
-          </Label>
-          <Input
-            id="invite-email"
-            placeholder="user@email.com"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
+
+        <Text>
+          Change the role for <strong>{accountEmail}</strong>.
+        </Text>
+
         <Select
           value={roleType}
           onChange={(e) => setRoleType(e.target.value)}

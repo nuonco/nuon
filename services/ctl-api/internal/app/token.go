@@ -36,6 +36,8 @@ type Token struct {
 
 	Name string `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
 
+	Role string `json:"role,omitzero" temporaljson:"role,omitzero,omitempty"`
+
 	Token     string    `gorm:"unique" json:"-" temporaljson:"token,omitzero,omitempty"`
 	TokenType TokenType `json:"token_type,omitzero" temporaljson:"token_type,omitzero,omitempty"`
 

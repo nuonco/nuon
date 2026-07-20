@@ -24,6 +24,29 @@ type CreateStaticTokenRequest struct {
 
 	// human-friendly name to identify the token later
 	Name string `json:"name" validate:"required"`
+
+	// org role granted to the token. one of org_admin, org_support, org_read_only.
+	// defaults to org_read_only.
+	Role string `json:"role"`
+}
+
+const defaultTokenRole = app.RoleTypeOrgReadOnly
+
+var allowedTokenRoles = map[app.RoleType]struct{}{
+	app.RoleTypeOrgAdmin:    {},
+	app.RoleTypeOrgSupport:  {},
+	app.RoleTypeOrgReadOnly: {},
+}
+
+func parseTokenRole(raw string) (app.RoleType, error) {
+	if raw == "" {
+		return defaultTokenRole, nil
+	}
+	role := app.RoleType(raw)
+	if _, ok := allowedTokenRoles[role]; !ok {
+		return "", fmt.Errorf("invalid role %q: must be one of %q, %q, %q", raw, app.RoleTypeOrgAdmin, app.RoleTypeOrgSupport, app.RoleTypeOrgReadOnly)
+	}
+	return role, nil
 }
 
 type StaticTokenResponse struct {
@@ -49,7 +72,7 @@ func parseTokenDuration(raw string) (time.Duration, error) {
 
 // @ID						CreateStaticToken
 // @Summary				create a static API token for your org
-// @Description			Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org.
+// @Description			Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, or org_read_only) and defaults to org_read_only.
 // @Param					req	body	CreateStaticTokenRequest	true	"Input"
 // @Tags					accounts
 // @Security				APIKey
@@ -76,6 +99,12 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 		return
 	}
 
+	role, err := parseTokenRole(req.Role)
+	if err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
+		return
+	}
+
 	org, err := s.requireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
@@ -88,13 +117,13 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	acct, err := s.createTokenServiceAccount(ctx, org.ID, app.RoleTypeOrgAdmin)
+	acct, err := s.createTokenServiceAccount(ctx, org.ID, role)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create service account: %w", err))
 		return
 	}
 
-	token, err := s.createStaticToken(ctx, acct, org.ID, caller.ID, req.Name, duration)
+	token, err := s.createStaticToken(ctx, acct, org.ID, caller.ID, req.Name, role, duration)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create static token: %w", err))
 		return
@@ -251,10 +280,11 @@ func (s *service) deleteTokenServiceAccount(ctx context.Context, orgID, accountI
 	return nil
 }
 
-func (s *service) createStaticToken(ctx context.Context, acct *app.Account, orgID, createdByID, name string, duration time.Duration) (*app.Token, error) {
+func (s *service) createStaticToken(ctx context.Context, acct *app.Account, orgID, createdByID, name string, role app.RoleType, duration time.Duration) (*app.Token, error) {
 	token := app.Token{
 		CreatedByID: createdByID,
 		Name:        name,
+		Role:        string(role),
 		OrgID:       orgID,
 		Token:       domains.NewUserTokenID(),
 		TokenType:   app.TokenTypeStatic,

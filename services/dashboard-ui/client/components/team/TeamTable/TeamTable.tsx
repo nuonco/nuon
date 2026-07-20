@@ -9,6 +9,13 @@ import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import type { TAccount } from '@/types'
 import { RemoveUserButton } from '@/components/team/RemoveUser'
+import { ChangeRoleButton } from '@/components/team/ChangeRole'
+
+const ROLE_LABELS: Record<string, string> = {
+  org_admin: 'Admin',
+  org_support: 'Support',
+  org_read_only: 'Read-only',
+}
 
 export type TTeamMemberRow = {
   id: string
@@ -20,17 +27,26 @@ export type TTeamMemberRow = {
 }
 
 export function parseAccountToTableData(members: TAccount[]): TTeamMemberRow[] {
-  return members.map((member) => ({
-    id: member.id || '',
-    name: member.email?.split('@')[0] || 'Unknown',
-    email: member.email || '',
-    role: 'All permissions',
-    status: 'active',
-    account: member,
-  }))
+  return members.map((member) => {
+    const roleType = member.roles?.[0]?.role_type || ''
+    return {
+      id: member.id || '',
+      name: member.email?.split('@')[0] || 'Unknown',
+      email: member.email || '',
+      role: ROLE_LABELS[roleType] ?? roleType ?? '—',
+      status: 'active',
+      account: member,
+    }
+  })
 }
 
-const ActionCell = ({ account }: { account: TAccount }) => (
+const ActionCell = ({
+  account,
+  isSelf,
+}: {
+  account: TAccount
+  isSelf: boolean
+}) => (
   <Dropdown
     id={`action-${account.id}`}
     buttonText={<Icon variant="DotsThreeIcon" size={20} weight="bold" />}
@@ -40,6 +56,11 @@ const ActionCell = ({ account }: { account: TAccount }) => (
     alignment="right"
   >
     <Menu>
+      {!isSelf ? (
+        <span>
+          <ChangeRoleButton account={account} isMenuButton />
+        </span>
+      ) : null}
       <span>
         <RemoveUserButton account={account} isMenuButton />
       </span>
@@ -53,10 +74,12 @@ export const TeamTable = ({
   data,
   isLoading,
   pagination,
+  currentAccountId,
 }: {
   data: TAccount[]
   isLoading: boolean
   pagination: { hasNext: boolean; offset: number; limit: number }
+  currentAccountId?: string
 }) => {
   const columns: ColumnDef<TTeamMemberRow>[] = useMemo(
     () => [
@@ -99,10 +122,15 @@ export const TeamTable = ({
       {
         id: 'action',
         header: 'Action',
-        cell: (props) => <ActionCell account={props.row.original.account} />,
+        cell: (props) => (
+          <ActionCell
+            account={props.row.original.account}
+            isSelf={props.row.original.account.id === currentAccountId}
+          />
+        ),
       },
     ],
-    []
+    [currentAccountId]
   )
 
   if (isLoading) {

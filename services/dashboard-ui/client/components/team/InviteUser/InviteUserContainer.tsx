@@ -15,12 +15,10 @@ const InviteUserModalContainer = (props: Record<string, any>) => {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const hasSupportRole = !!org?.features?.['support-role']
-
   const { mutate, isPending, error } = useMutation({
     mutationFn: ({ email, roleType }: { email: string; roleType: string }) =>
       inviteUser({
-        body: { email, ...(hasSupportRole ? { role_type: roleType } : {}) },
+        body: { email, role_type: roleType },
         orgId: org.id,
       }),
     onSuccess: (_data, { email }) => {
@@ -43,7 +41,6 @@ const InviteUserModalContainer = (props: Record<string, any>) => {
 
   return (
     <InviteUserModal
-      hasSupportRole={hasSupportRole}
       isPending={isPending}
       error={error}
       onSubmit={({ email, roleType }) => mutate({ email, roleType })}

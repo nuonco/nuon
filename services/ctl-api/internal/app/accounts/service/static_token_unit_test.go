@@ -39,6 +39,34 @@ func TestParseTokenDuration(t *testing.T) {
 	}
 }
 
+func TestParseTokenRole(t *testing.T) {
+	testCases := []struct {
+		name    string
+		raw     string
+		want    app.RoleType
+		wantErr bool
+	}{
+		{name: "empty defaults to read-only", raw: "", want: app.RoleTypeOrgReadOnly},
+		{name: "admin", raw: "org_admin", want: app.RoleTypeOrgAdmin},
+		{name: "support", raw: "org_support", want: app.RoleTypeOrgSupport},
+		{name: "read-only", raw: "org_read_only", want: app.RoleTypeOrgReadOnly},
+		{name: "internal role is rejected", raw: "installer", wantErr: true},
+		{name: "unknown role is rejected", raw: "superuser", wantErr: true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := parseTokenRole(tc.raw)
+			if tc.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
 func TestIsOrgAdmin(t *testing.T) {
 	const orgID = "org_abc"
 
