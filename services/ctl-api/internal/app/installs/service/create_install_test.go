@@ -21,7 +21,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2Success() {
 		CreateInstallParams: helpers.CreateInstallParams{
 			Name: "my-install",
 			AWSAccount: &struct {
-				Region string `json:"region"`
+				Region       string `json:"region"`
+				ConnectionID string `json:"connection_id,omitempty"`
 			}{Region: "us-west-2"},
 		},
 	}
@@ -61,7 +62,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2WithInputs() {
 		CreateInstallParams: helpers.CreateInstallParams{
 			Name: "install-with-inputs",
 			AWSAccount: &struct {
-				Region string `json:"region"`
+				Region       string `json:"region"`
+				ConnectionID string `json:"connection_id,omitempty"`
 			}{Region: "us-west-2"},
 			Inputs: map[string]*string{
 				"region": &region,
@@ -159,7 +161,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2InvalidAppID() {
 		CreateInstallParams: helpers.CreateInstallParams{
 			Name: "bad-app",
 			AWSAccount: &struct {
-				Region string `json:"region"`
+				Region       string `json:"region"`
+				ConnectionID string `json:"connection_id,omitempty"`
 			}{Region: "us-west-2"},
 		},
 	}
@@ -174,7 +177,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallDeprecatedRoute() {
 	body := helpers.CreateInstallParams{
 		Name: "deprecated-route-install",
 		AWSAccount: &struct {
-			Region string `json:"region"`
+			Region       string `json:"region"`
+			ConnectionID string `json:"connection_id,omitempty"`
 		}{Region: "us-west-2"},
 	}
 

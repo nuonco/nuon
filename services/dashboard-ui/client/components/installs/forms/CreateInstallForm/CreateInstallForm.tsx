@@ -5,7 +5,7 @@ import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Text } from '@/components/common/Text'
 import { InputConfigFields } from '../shared/InputConfigFields'
 import { PlatformFields } from '../shared/PlatformFields'
-import type { TAppInputConfig } from '@/types'
+import type { TAppInputConfig, TAWSAccountConnection } from '@/types'
 
 interface ICreateInstallFormPresentation {
   appId: string
@@ -20,6 +20,7 @@ interface ICreateInstallFormPresentation {
   onCancel: () => void
   defaultAutoApprove?: boolean
   autoApproveDescription?: string
+  awsAccountConnections?: TAWSAccountConnection[]
 }
 
 export const CreateInstallForm = forwardRef<
@@ -38,6 +39,7 @@ export const CreateInstallForm = forwardRef<
       onSuccess,
       defaultAutoApprove,
       autoApproveDescription,
+      awsAccountConnections,
     },
     ref
   ) => {
@@ -45,7 +47,9 @@ export const CreateInstallForm = forwardRef<
       e.preventDefault()
 
       const form = e.currentTarget
-      const firstInvalid = form.querySelector<HTMLElement>(':invalid:not(fieldset):not(form)')
+      const firstInvalid = form.querySelector<HTMLElement>(
+        ':invalid:not(fieldset):not(form)'
+      )
       if (firstInvalid) {
         firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' })
         firstInvalid.focus()
@@ -99,7 +103,11 @@ export const CreateInstallForm = forwardRef<
           </div>
 
           {platform && (
-            <PlatformFields platform={platform} draftValues={draftValues} />
+            <PlatformFields
+              platform={platform}
+              draftValues={draftValues}
+              awsAccountConnections={awsAccountConnections}
+            />
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
@@ -114,7 +122,11 @@ export const CreateInstallForm = forwardRef<
             <CheckboxInput
               name="auto-approve"
               className="mt-[6px]"
-              defaultChecked={draftValues ? draftValues['auto-approve'] === 'true' : Boolean(defaultAutoApprove)}
+              defaultChecked={
+                draftValues
+                  ? draftValues['auto-approve'] === 'true'
+                  : Boolean(defaultAutoApprove)
+              }
               labelProps={{
                 className: 'items-start',
                 labelText: (
@@ -139,52 +151,53 @@ export const CreateInstallForm = forwardRef<
 
           {/* Nested CloudFormation template overrides only apply to AWS install stacks */}
           {platform === 'aws' && (
-          <Expand
-            id="advanced-stack-overrides"
-            heading="Advanced"
-            headerClassName="!px-4 bg-code"
-            className="mt-2 border rounded-md"
-          >
-            <div className="flex flex-col gap-6 p-4 border-t">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                <span className="flex flex-col gap-0">
-                  <Text variant="body" weight="strong">
-                    VPC template URL override{' '}
-                    <Text className="ml-1" variant="subtext" theme="neutral">
-                      (optional)
+            <Expand
+              id="advanced-stack-overrides"
+              heading="Advanced"
+              headerClassName="!px-4 bg-code"
+              className="mt-2 border rounded-md"
+            >
+              <div className="flex flex-col gap-6 p-4 border-t">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                  <span className="flex flex-col gap-0">
+                    <Text variant="body" weight="strong">
+                      VPC template URL override{' '}
+                      <Text className="ml-1" variant="subtext" theme="neutral">
+                        (optional)
+                      </Text>
                     </Text>
-                  </Text>
-                  <Text variant="subtext">
-                    Override the app-level VPC nested CloudFormation template
-                  </Text>
-                </span>
-                <Input
-                  name="vpc_nested_template_url"
-                  placeholder="https://s3.amazonaws.com/..."
-                  defaultValue={draftValues?.vpc_nested_template_url || ''}
-                />
-              </div>
+                    <Text variant="subtext">
+                      Override the app-level VPC nested CloudFormation template
+                    </Text>
+                  </span>
+                  <Input
+                    name="vpc_nested_template_url"
+                    placeholder="https://s3.amazonaws.com/..."
+                    defaultValue={draftValues?.vpc_nested_template_url || ''}
+                  />
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                <span className="flex flex-col gap-0">
-                  <Text variant="body" weight="strong">
-                    Runner template URL override{' '}
-                    <Text className="ml-1" variant="subtext" theme="neutral">
-                      (optional)
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                  <span className="flex flex-col gap-0">
+                    <Text variant="body" weight="strong">
+                      Runner template URL override{' '}
+                      <Text className="ml-1" variant="subtext" theme="neutral">
+                        (optional)
+                      </Text>
                     </Text>
-                  </Text>
-                  <Text variant="subtext">
-                    Override the app-level runner nested CloudFormation template
-                  </Text>
-                </span>
-                <Input
-                  name="runner_nested_template_url"
-                  placeholder="https://s3.amazonaws.com/..."
-                  defaultValue={draftValues?.runner_nested_template_url || ''}
-                />
+                    <Text variant="subtext">
+                      Override the app-level runner nested CloudFormation
+                      template
+                    </Text>
+                  </span>
+                  <Input
+                    name="runner_nested_template_url"
+                    placeholder="https://s3.amazonaws.com/..."
+                    defaultValue={draftValues?.runner_nested_template_url || ''}
+                  />
+                </div>
               </div>
-            </div>
-          </Expand>
+            </Expand>
           )}
 
           {inputConfig && (

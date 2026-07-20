@@ -8,9 +8,18 @@ import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getAppConfigs, getAppConfig, createAppInstall, type TCreateAppInstallBody } from '@/lib'
+import {
+  getAppConfigs,
+  getAppConfig,
+  createAppInstall,
+  getAWSAccountConnections,
+  type TCreateAppInstallBody,
+} from '@/lib'
 import { toSentenceCase } from '@/utils/string-utils'
-import { CreateInstallModal, CreateInstallButton as CreateInstallButtonComponent } from './CreateInstall'
+import {
+  CreateInstallModal,
+  CreateInstallButton as CreateInstallButtonComponent,
+} from './CreateInstall'
 
 interface ICreateInstall {}
 
@@ -21,6 +30,9 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
+  const platform = app?.runner_config?.app_runner_type
+  const awsConnectionsEnabled =
+    platform === 'aws' && !!org?.features?.['aws-account-connections']
 
   const {
     data: configs,
@@ -33,12 +45,27 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
   })
 
   const {
+    data: awsAccountConnections,
+    isLoading: awsAccountConnectionsLoading,
+  } = useQuery({
+    queryKey: ['aws-account-connections', org?.id],
+    queryFn: () => getAWSAccountConnections({ orgId: org.id }),
+    enabled: !!org?.id && awsConnectionsEnabled,
+  })
+
+  const {
     data: config,
     isLoading: configLoading,
     error: configError,
   } = useQuery({
     queryKey: ['app-config', org?.id, app?.id, configs?.[0]?.id],
-    queryFn: () => getAppConfig({ orgId: org.id, appId: app.id, appConfigId: configs[0].id, recurse: true }),
+    queryFn: () =>
+      getAppConfig({
+        orgId: org.id,
+        appId: app.id,
+        appConfigId: configs[0].id,
+        recurse: true,
+      }),
     enabled: !!configs?.[0]?.id,
   })
 
@@ -60,10 +87,13 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
       )
 
       const installConfig: TCreateAppInstallBody['install_config'] = {
-        approval_option: formDataObj['auto-approve'] === 'on' ? 'approve-all' : 'prompt',
+        approval_option:
+          formDataObj['auto-approve'] === 'on' ? 'approve-all' : 'prompt',
       }
       const vpcUrl = (formDataObj.vpc_nested_template_url as string)?.trim()
-      const runnerUrl = (formDataObj.runner_nested_template_url as string)?.trim()
+      const runnerUrl = (
+        formDataObj.runner_nested_template_url as string
+      )?.trim()
       if (vpcUrl) {
         installConfig!.vpc_nested_template_url = vpcUrl
       }
@@ -78,9 +108,12 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
         metadata: { managed_by: 'nuon/dashboard' },
       }
 
-      const platform = app?.runner_config?.app_runner_type
       if (platform === 'aws' && formDataObj.region) {
-        body.aws_account = { iam_role_arn: '', region: formDataObj.region as string }
+        body.aws_account = {
+          iam_role_arn: '',
+          region: formDataObj.region as string,
+          connection_id: (formDataObj.aws_connection_id as string) || undefined,
+        }
       } else if (platform === 'azure' && formDataObj.location) {
         body.azure_account = {
           location: formDataObj.location as string,
@@ -93,7 +126,11 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
         body.gcp_account = {}
       }
 
-      return createAppInstall({ appId: app?.id || '', body, orgId: org?.id || '' })
+      return createAppInstall({
+        appId: app?.id || '',
+        body,
+        orgId: org?.id || '',
+      })
     },
     onSuccess: (result) => {
       addToast(
@@ -105,10 +142,13 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       removeModal(props.modalId)
       const workflowId = result.data.workflow_id
-      const suffix = result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
+      const suffix =
+        result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
 
       if (workflowId) {
-        navigate(`/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`)
+        navigate(
+          `/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`
+        )
       } else {
         navigate(`/${org?.id}/installs/${result.data.id}/workflows${suffix}`)
       }
@@ -126,7 +166,10 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
     },
   })
 
-  const isLoading = configsLoading || configLoading
+  const isLoading =
+    configsLoading ||
+    configLoading ||
+    (awsConnectionsEnabled && awsAccountConnectionsLoading)
   const hasError =
     configsError || configError || !configs || configs.length === 0
 
@@ -143,6 +186,9 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
       platform={app?.runner_config?.app_runner_type as 'aws' | 'azure' | 'gcp'}
       onSubmitAction={(formData) => mutateAsync(formData)}
       onCancel={() => removeModal(props.modalId)}
+      awsAccountConnections={
+        awsConnectionsEnabled ? awsAccountConnections || [] : undefined
+      }
       {...props}
     />
   )
@@ -156,9 +202,6 @@ export const CreateInstallButtonContainer = ({
   const modal = <CreateInstallModalContainer />
 
   return (
-    <CreateInstallButtonComponent
-      onClick={() => addModal(modal)}
-      {...props}
-    />
+    <CreateInstallButtonComponent onClick={() => addModal(modal)} {...props} />
   )
 }

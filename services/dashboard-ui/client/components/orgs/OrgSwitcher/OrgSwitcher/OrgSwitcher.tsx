@@ -3,6 +3,7 @@ import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
+import { AWSAccountConnections } from '@/components/aws-account-connections/AWSAccountConnections'
 import { ConnectGithubButton } from '@/components/vcs-connections/ConnectGithub'
 import { VCSConnections } from '@/components/vcs-connections/VCSConnections'
 import { cn } from '@/utils/classnames'
@@ -62,6 +63,9 @@ export const OrgSwitcher = ({ org, isSidebarOpen, ...props }: IOrgSwitcher) => {
           <div className="flex flex-col gap-2">
             <VCSConnections vcsConnections={org?.vcs_connections} />
           </div>
+          {org?.features?.['aws-account-connections'] ? (
+            <AWSAccountConnections />
+          ) : null}
         </div>
         <hr className="border-dashed mx-4" />
         <div className="px-1 py-4 flex flex-col gap-1.5">

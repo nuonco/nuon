@@ -365,6 +365,25 @@ export type TVCSConnectionReposResponse = {
   total_count: number
 }
 
+export type TAWSAccountConnection = {
+  id: string
+  created_at: string
+  updated_at: string
+  name: string
+  account_id: string
+  default_region: string
+  role_arn?: string
+  verification_status: 'pending' | 'verified' | 'error'
+  verification_code?: string
+  verification_message?: string
+  last_checked_at?: string
+  verified_at?: string
+  verified_principal_arn?: string
+  external_id?: string
+  management_principal_arn?: string
+  trust_policy?: Record<string, unknown>
+}
+
 export type TVCSWebhookSubscription = {
   id: string
   created_at: string

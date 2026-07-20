@@ -3,7 +3,7 @@ import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { CreateInstallForm } from '@/components/installs/forms/CreateInstallForm'
-import type { TApp, TAppConfig } from '@/types'
+import type { TApp, TAppConfig, TAWSAccountConnection } from '@/types'
 import { FormSkeleton } from './FormSkeleton'
 
 interface CreateInstallFromAppProps {
@@ -18,6 +18,7 @@ interface CreateInstallFromAppProps {
   onSubmit: (formData: FormData) => Promise<any>
   formRef?: React.RefObject<HTMLFormElement>
   onRegisterClearDraft?: (clearFn: () => void) => void
+  awsAccountConnections?: TAWSAccountConnection[]
 }
 
 export const CreateInstallFromApp = ({
@@ -32,15 +33,23 @@ export const CreateInstallFromApp = ({
   onSubmit,
   formRef: externalFormRef,
   onRegisterClearDraft,
+  awsAccountConnections,
 }: CreateInstallFromAppProps) => {
   const internalFormRef = useRef<HTMLFormElement>(null)
   const formRef = externalFormRef || internalFormRef
 
-  const isDuplicateName = submitError?.error?.includes('duplicated key not allowed')
+  const isDuplicateName = submitError?.error?.includes(
+    'duplicated key not allowed'
+  )
   const submitErrorMessage = useMemo(() => {
     if (!submitError) return undefined
-    if (isDuplicateName) return 'Duplicate install names are not allowed. Choose a different name.'
-    return submitError.error || submitError.description || 'Unable to create install.'
+    if (isDuplicateName)
+      return 'Duplicate install names are not allowed. Choose a different name.'
+    return (
+      submitError.error ||
+      submitError.description ||
+      'Unable to create install.'
+    )
   }, [submitError, isDuplicateName])
 
   const nestInputsUnderGroups = (
@@ -125,6 +134,7 @@ export const CreateInstallFromApp = ({
         onSubmit={(formData: FormData) => onSubmit(formData)}
         onCancel={onClose}
         onRegisterClearDraft={onRegisterClearDraft}
+        awsAccountConnections={awsAccountConnections}
       />
     </div>
   )

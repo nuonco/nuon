@@ -111,7 +111,8 @@ const mockInputConfig = {
           id: 'input-tfvars',
           name: 'nuon_component_override_v1_tf_vars_767063',
           display_name: 'vpc Terraform vars',
-          description: 'Raw .tfvars (HCL or JSON) appended as the final -var-file',
+          description:
+            'Raw .tfvars (HCL or JSON) appended as the final -var-file',
           type: 'hcl',
           required: false,
           default: 'cidr_block = "10.1.0.0/16"\ninstance_count = 3\n',
@@ -136,10 +137,6 @@ export const Default = () => (
 
 export const WithoutInputConfig = () => (
   <div className="max-w-2xl p-4">
-    <CreateInstallForm
-      appId="app-1"
-      platform="aws"
-      onCancel={() => {}}
-    />
+    <CreateInstallForm appId="app-1" platform="aws" onCancel={() => {}} />
   </div>
 )

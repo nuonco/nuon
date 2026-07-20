@@ -52,7 +52,7 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 	}
 
 	if a.TwoStepConfig.SrcIAMRoleARN != "" {
-		creds, err := a.assumeIamRole(ctx, stsClient, a.TwoStepConfig.SrcIAMRoleARN)
+		creds, err := a.assumeIamRole(ctx, stsClient, a.TwoStepConfig.SrcIAMRoleARN, "")
 		if err != nil {
 			return nil, fmt.Errorf("failed to assume two step src role: %w", err)
 		}
@@ -67,7 +67,7 @@ func (a *assumer) fetchSTSClient(ctx context.Context) (*sts.Client, error) {
 	}
 
 	// finally, if an IAM role is set, we create a set of credentials and then return an STS client using them
-	creds, err := a.assumeIamRole(ctx, stsClient, a.TwoStepConfig.IAMRoleARN)
+	creds, err := a.assumeIamRole(ctx, stsClient, a.TwoStepConfig.IAMRoleARN, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to assume two step role: %w", err)
 	}

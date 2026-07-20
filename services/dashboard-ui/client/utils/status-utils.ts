@@ -15,6 +15,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   finished: 'success',
   healthy: 'success',
   connected: 'success',
+  verified: 'success',
   approved: 'success',
   success: 'success',
 
@@ -89,6 +90,7 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   finished: 'CheckCircleIcon',
   healthy: 'CheckCircleIcon',
   connected: 'CheckCircleIcon',
+  verified: 'CheckCircleIcon',
   approved: 'CheckCircleIcon',
   success: 'CheckCircleIcon',
 
@@ -170,9 +172,10 @@ const THEME_PRIORITY: TStatusTheme[] = [
   'success',
 ]
 
-export function getWorstStatusTheme(
-  statuses: (string | undefined)[]
-): { theme: TStatusTheme; worstStatus: string } {
+export function getWorstStatusTheme(statuses: (string | undefined)[]): {
+  theme: TStatusTheme
+  worstStatus: string
+} {
   const defined = statuses.filter((s): s is string => s !== undefined)
   if (defined.length === 0) return { theme: 'neutral', worstStatus: 'unknown' }
 

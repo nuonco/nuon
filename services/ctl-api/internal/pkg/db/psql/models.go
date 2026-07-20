@@ -26,6 +26,7 @@ func AllModels() []any {
 		&app.Org{},
 		&app.Webhook{},
 		&app.OrgInvite{},
+		&app.AWSAccountConnection{},
 
 		// slack
 		&app.SlackInstallation{},

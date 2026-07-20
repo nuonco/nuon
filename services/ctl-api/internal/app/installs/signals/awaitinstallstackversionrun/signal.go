@@ -18,8 +18,9 @@ import (
 const SignalType signal.SignalType = "await-install-stack-version-run"
 
 type Signal struct {
-	InstallStackID string
-	WorkflowStepID string
+	InstallStackID     string
+	WorkflowStepID     string
+	CreateManagedStack bool
 
 	versionID string
 }
@@ -69,6 +70,14 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
+func shouldCreateManagedAWSCloudFormationStack(createManagedStack bool, install *app.Install, appCfg *app.AppConfig) bool {
+	return createManagedStack &&
+		!install.SandboxMode.Bool &&
+		appCfg.RunnerConfig.Type == app.AppRunnerTypeAWS &&
+		install.AWSAccount != nil &&
+		install.AWSAccount.AWSAccountConnectionID != nil
+}
+
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
@@ -104,6 +113,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		CallbackRef: cb,
 	}); err != nil {
 		return errors.Wrap(err, "unable to store callback ref")
+	}
+
+	if shouldCreateManagedAWSCloudFormationStack(s.CreateManagedStack, install, appCfg) {
+		if err := activities.AwaitCreateManagedAWSCloudFormationStack(ctx, &activities.CreateManagedAWSCloudFormationStackRequest{
+			InstallID:      install.ID,
+			StackVersionID: version.ID,
+			ConnectionID:   *install.AWSAccount.AWSAccountConnectionID,
+		}); err != nil {
+			return errors.Wrap(err, "unable to create managed cloudformation stack")
+		}
+		statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID:     version.ID,
+			Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusProvisioning),
+		})
 	}
 
 	if install.SandboxMode.Bool {

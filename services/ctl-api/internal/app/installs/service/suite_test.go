@@ -209,7 +209,8 @@ func (s *InstallsServiceTestSuite) createTestInstallViaAPI() testInstallWithWork
 		CreateInstallParams: helpers.CreateInstallParams{
 			Name: fmt.Sprintf("api-install-%d", time.Now().UnixNano()),
 			AWSAccount: &struct {
-				Region string `json:"region"`
+				Region       string `json:"region"`
+				ConnectionID string `json:"connection_id,omitempty"`
 			}{Region: "us-west-2"},
 		},
 	}
