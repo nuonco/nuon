@@ -112,9 +112,12 @@ nuon actions create-run -w <action-workflow-id> -i <install-id>
 
 ## Action Triggers
 
-Action triggers are now available for all workflows. You can now use the
-following set of triggers:
+Actions can run manually, on a cron schedule, or in response to install
+lifecycle events. The supported triggers that are not tied to a specific
+component are:
 
+- `manual`
+- `cron`
 - `pre-provision`
 - `post-provision`
 - `pre-reprovision`
@@ -140,6 +143,9 @@ Each workflow trigger is called at the beginning or end of the workflow. In some
 cases, such as `pre-provision` or `pre-reprovision` that include a stack-run,
 the trigger will be called right after the runner is healthy.
 
+`post-provision` runs after the complete install provision workflow, including
+sandbox provisioning and component deployment.
+
 ### Role change triggers
 
 The `role-enabled` and `role-disabled` triggers fire when a customer enables or
@@ -154,8 +160,15 @@ tied to a specific component:
 
 - `pre-deploy-component`
 - `post-deploy-component`
-- `post-teardown-component`
 - `pre-teardown-component`
+- `post-teardown-component`
+- `pre-enable-component`
+- `post-enable-component`
+- `pre-disable-component`
+- `post-disable-component`
+
+The enable and disable triggers run when an input update changes a toggleable
+component's enabled state.
 
 <Note>
 	`pre-component-deploy` and `post-component-deploy` have been renamed to

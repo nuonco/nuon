@@ -29,7 +29,7 @@ title: 'Action'
 | **`type`**<br/>string | type of trigger Supported trigger types: manual, cron, pre-provision, post-provision, pre-reprovision, post-reprovision, pre-deprovision, post-deprovision, pre-deploy-all-components, post-deploy-al... | **✅ Required** | `"manual"`, `"cron"`, `"post-provision"` |
 | **`index`**<br/>integer | index for manual trigger Used to differentiate multiple manual triggers in the same action | **Optional** | `"0"`, `"1"` |
 | **`cron_schedule`**<br/>string | cron schedule expression for scheduled triggers Standard cron format (minute hour day month weekday). For example, '*/5 * * * *' runs every 5 minutes | **Optional** | `"*/5 * * * *"`, `"0 */4 * * *"` |
-| **`component_name`**<br/>string | component name for component-specific triggers Required for pre-deploy-component, post-deploy-component, pre-teardown-component, post-teardown-component triggers | **Optional** | `"database"`, `"api-server"` |
+| **`component_name`**<br/>string | component name for component-specific triggers Required for pre-deploy-component, post-deploy-component, pre-teardown-component, post-teardown-component, pre-enable-component, post-enable-component... | **Optional** | `"database"`, `"api-server"` |
 
 ### `steps`
 
