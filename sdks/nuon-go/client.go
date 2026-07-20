@@ -31,6 +31,7 @@ type Client interface {
 
 	// org invites and users
 	CreateOrgInvite(ctx context.Context, req *models.ServiceCreateOrgInviteRequest) (*models.AppOrgInvite, error)
+	UpdateOrgAccountRole(ctx context.Context, accountID string, req *models.ServiceUpdateOrgAccountRoleRequest) (*models.AppAccount, error)
 	GetOrgInvites(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppOrgInvite, bool, error)
 
 	// org webhooks

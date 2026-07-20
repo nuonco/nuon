@@ -18,10 +18,11 @@ type PolicyName string
 
 const (
 	// we create a custom policy for each role
-	PolicyNameOrgAdmin   PolicyName = "org_admin"
-	PolicyNameOrgSupport PolicyName = "org_support"
-	PolicyNameInstaller  PolicyName = "installer"
-	PolicyNameRunner     PolicyName = "runner"
+	PolicyNameOrgAdmin    PolicyName = "org_admin"
+	PolicyNameOrgSupport  PolicyName = "org_support"
+	PolicyNameOrgReadOnly PolicyName = "org_read_only"
+	PolicyNameInstaller   PolicyName = "installer"
+	PolicyNameRunner      PolicyName = "runner"
 
 	// policy names for service accounts
 	PolicyNameHostedInstaller PolicyName = "hosted_installer"

@@ -40,6 +40,27 @@ export interface paths {
      */
     get: operations["GetCurrentAccount"];
   };
+  "/v1/account/static-token": {
+    /**
+     * create a static API token for your org
+     * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, or org_read_only) and defaults to org_read_only.
+     */
+    post: operations["CreateStaticToken"];
+  };
+  "/v1/account/static-tokens": {
+    /**
+     * list your org's static API tokens
+     * @description Lists the static API tokens for your current org. Token secrets are never returned.
+     */
+    get: operations["ListStaticTokens"];
+  };
+  "/v1/account/static-tokens/{token_id}": {
+    /**
+     * delete a static API token
+     * @description Deletes a static API token belonging to your current org, along with its dedicated service account. Once deleted, the token can no longer be used to access the API.
+     */
+    delete: operations["DeleteStaticToken"];
+  };
   "/v1/account/user-journeys": {
     /**
      * Get user journeys
@@ -2116,6 +2137,13 @@ export interface paths {
      */
     get: operations["GetOrgAcounts"];
   };
+  "/v1/orgs/current/accounts/{account_id}/role": {
+    /**
+     * Change an org member's role
+     * @description Changes the role of an existing member of the current org. Requires org admin. You cannot change your own role, and you cannot demote the last remaining admin.
+     */
+    patch: operations["UpdateOrgAccountRole"];
+  };
   "/v1/orgs/current/features": {
     /**
      * get current org's feature flags
@@ -3166,6 +3194,8 @@ export interface components {
     "app.AppAWSIAMPolicyConfig": {
       app_aws_iam_role_config_id?: string;
       app_config_id?: string;
+      azure_actions?: string[];
+      azure_built_in_roles?: string[];
       cloudformation_stack_name?: string;
       contents?: string;
       created_at?: string;
@@ -3670,12 +3700,24 @@ export interface components {
       updated_at?: string;
     };
     "app.AzureStackOutputs": {
+      break_glass_identity_client_ids?: {
+        [key: string]: string;
+      };
+      custom_identity_client_ids?: {
+        [key: string]: string;
+      };
+      deprovision_identity_client_id?: string;
+      install_inputs?: {
+        [key: string]: string;
+      };
       key_vault_id?: string;
       key_vault_name?: string;
+      maintenance_identity_client_id?: string;
       network_id?: string;
       network_name?: string;
       private_subnet_ids?: string[];
       private_subnet_names?: string[];
+      provision_identity_client_id?: string;
       public_subnet_ids?: string[];
       public_subnet_names?: string[];
       resource_group_id?: string;
@@ -4936,7 +4978,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "installer" | "runner" | "hosted_installer";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "installer" | "runner" | "hosted_installer";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -5125,7 +5167,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "installer" | "runner" | "hosted-installer";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "installer" | "runner" | "hosted-installer";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -5672,6 +5714,23 @@ export interface components {
       /** @description Foreign key to TerraformWorkspace with unique constraint to prevent conflicting states for a workspace */
       workspace_id?: string;
     };
+    "app.Token": {
+      account_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      /** @description claim data */
+      expires_at?: string;
+      id?: string;
+      issued_at?: string;
+      issuer?: string;
+      name?: string;
+      org_id?: string;
+      role?: string;
+      token_type?: components["schemas"]["app.TokenType"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.TokenType": "auth" | "auth0" | "admin" | "static" | "integration" | "canary" | "nuon";
     "app.UserJourney": {
       name?: string;
       steps?: components["schemas"]["app.UserJourneyStep"][];
@@ -6198,6 +6257,11 @@ export interface components {
       use_default?: boolean;
     };
     "github_com_nuonco_nuon_pkg_azure_credentials.Config": {
+      /**
+       * @description ManagedIdentityClientID runs the operation as a specific user-assigned
+       * managed identity instead of the VM's system identity.
+       */
+      managed_identity_client_id?: string;
       service_principal?: components["schemas"]["credentials.ServicePrincipalCredentials"];
       use_default?: boolean;
     };
@@ -6236,6 +6300,10 @@ export interface components {
       secrets?: components["schemas"]["state.SecretsState"];
       /** @description loaded from the database but not part of the state itself */
       stale_at?: string;
+    };
+    "github_com_nuonco_nuon_services_ctl-api_internal_app_accounts_service.StaticTokenResponse": {
+      api_token?: string;
+      id?: string;
     };
     "helpers.ConnectedGithubVCSConfigRequest": {
       branch?: string;
@@ -6780,6 +6848,8 @@ export interface components {
       };
     };
     "service.AppAWSIAMPolicyConfig": {
+      azure_actions?: string[];
+      azure_built_in_roles?: string[];
       contents?: string;
       gcp_permissions?: string[];
       gcp_predefined_role?: string;
@@ -7533,6 +7603,20 @@ export interface components {
       expires_at?: string;
       token?: string;
     };
+    "service.CreateStaticTokenRequest": {
+      /**
+       * @description defaults to one year
+       * @default 8760h
+       */
+      duration?: string;
+      /** @description human-friendly name to identify the token later */
+      name: string;
+      /**
+       * @description org role granted to the token. one of org_admin, org_support, org_read_only.
+       * defaults to org_read_only.
+       */
+      role?: string;
+    };
     "service.CreateTerraformModuleComponentConfigRequest": {
       app_config_id?: string;
       auto_approve_on_policies_passing?: boolean;
@@ -7970,6 +8054,9 @@ export interface components {
       /** @enum {string} */
       status?: "active" | "archived";
     };
+    "service.UpdateOrgAccountRoleRequest": {
+      role_type: components["schemas"]["app.RoleType"];
+    };
     "service.UpdateOrgFeaturesRequest": {
       features: {
         [key: string]: boolean;
@@ -8358,6 +8445,58 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
+      };
+    };
+  };
+  /**
+   * create a static API token for your org
+   * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, or org_read_only) and defaults to org_read_only.
+   */
+  CreateStaticToken: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateStaticTokenRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["github_com_nuonco_nuon_services_ctl-api_internal_app_accounts_service.StaticTokenResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * list your org's static API tokens
+   * @description Lists the static API tokens for your current org. Token secrets are never returned.
+   */
+  ListStaticTokens: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Token"][];
+        };
+      };
+    };
+  };
+  /**
+   * delete a static API token
+   * @description Deletes a static API token belonging to your current org, along with its dedicated service account. Once deleted, the token can no longer be used to access the API.
+   */
+  DeleteStaticToken: {
+    parameters: {
+      path: {
+        /** @description token ID */
+        token_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
       };
     };
   };
@@ -24110,6 +24249,50 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Change an org member's role
+   * @description Changes the role of an existing member of the current org. Requires org admin. You cannot change your own role, and you cannot demote the last remaining admin.
+   */
+  UpdateOrgAccountRole: {
+    parameters: {
+      path: {
+        /** @description account ID */
+        account_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateOrgAccountRoleRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
