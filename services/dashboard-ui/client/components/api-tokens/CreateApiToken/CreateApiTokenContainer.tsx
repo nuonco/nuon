@@ -18,8 +18,15 @@ const CreateApiTokenModalContainer = (props: Record<string, any>) => {
   const [createdToken, setCreatedToken] = useState<string | null>(null)
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: ({ name, duration }: { name: string; duration: string }) =>
-      createStaticToken({ body: { name, duration }, orgId: org.id }),
+    mutationFn: ({
+      name,
+      duration,
+      role,
+    }: {
+      name: string
+      duration: string
+      role: string
+    }) => createStaticToken({ body: { name, duration, role }, orgId: org.id }),
     onSuccess: (data, { name }) => {
       queryClient.invalidateQueries({ queryKey: ['static-tokens', org?.id] })
       setCreatedToken(data?.api_token ?? null)
@@ -43,7 +50,7 @@ const CreateApiTokenModalContainer = (props: Record<string, any>) => {
       isPending={isPending}
       error={error}
       createdToken={createdToken}
-      onSubmit={({ name, duration }) => mutate({ name, duration })}
+      onSubmit={({ name, duration, role }) => mutate({ name, duration, role })}
       onDone={() => removeModal(props.modalId)}
       {...props}
     />

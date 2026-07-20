@@ -17,6 +17,8 @@ func (c *cli) orgsCmd() *cobra.Command {
 		email        string
 		noSelect     bool
 		connectionID string
+		userID       string
+		role         string
 	)
 
 	orgsCmd := &cobra.Command{
@@ -186,11 +188,27 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:  "Invite a user by email to org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.CreateInvite(cmd.Context(), email, PrintJSON)
+			return svc.CreateInvite(cmd.Context(), email, role, PrintJSON)
 		}),
 	}
 	createInviteCmd.Flags().StringVarP(&email, "email", "e", "", "Email of user to invite")
+	createInviteCmd.Flags().StringVar(&role, "role", "", "The org role to grant (org_admin or org_read_only; defaults to org_admin)")
 	orgsCmd.AddCommand(createInviteCmd)
+
+	updateUserRoleCmd := &cobra.Command{
+		Use:   "update-user-role",
+		Short: "Change an org member's role",
+		Long:  "Change the role of an existing member of the current org. Requires org admin.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.UpdateUserRole(cmd.Context(), userID, role, PrintJSON)
+		}),
+	}
+	updateUserRoleCmd.Flags().StringVar(&userID, "user-id", "", "The ID of the user whose role to change")
+	updateUserRoleCmd.MarkFlagRequired("user-id")
+	updateUserRoleCmd.Flags().StringVar(&role, "role", "", "The new org role (org_admin or org_read_only)")
+	updateUserRoleCmd.MarkFlagRequired("role")
+	orgsCmd.AddCommand(updateUserRoleCmd)
 
 	listInvitesCmd := &cobra.Command{
 		Use:   "list-invites",
@@ -214,6 +232,7 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 	var (
 		name     string
 		duration string
+		role     string
 		tokenID  string
 	)
 
@@ -230,12 +249,13 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 		Long:  "Create a static API token scoped to the current org's service account. The token is only shown once.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.CreateStaticToken(cmd.Context(), name, duration, PrintJSON)
+			return svc.CreateStaticToken(cmd.Context(), name, duration, role, PrintJSON)
 		}),
 	}
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "A human-friendly name to identify the token")
 	createCmd.MarkFlagRequired("name")
 	createCmd.Flags().StringVar(&duration, "duration", "8760h", "How long the token is valid (Go duration, e.g. 720h)")
+	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to the token (org_admin or org_read_only)")
 	apiTokensCmd.AddCommand(createCmd)
 
 	listCmd := &cobra.Command{

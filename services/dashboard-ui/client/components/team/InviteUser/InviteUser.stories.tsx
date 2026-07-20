@@ -9,41 +9,19 @@ const noop = () => {}
 
 export const Default = () => (
   <ModalStory>
-    <InviteUserModal
-      hasSupportRole={false}
-      isPending={false}
-      error={null}
-      onSubmit={noop}
-    />
-  </ModalStory>
-)
-
-export const WithRoleSelection = () => (
-  <ModalStory>
-    <InviteUserModal
-      hasSupportRole={true}
-      isPending={false}
-      error={null}
-      onSubmit={noop}
-    />
+    <InviteUserModal isPending={false} error={null} onSubmit={noop} />
   </ModalStory>
 )
 
 export const Pending = () => (
   <ModalStory>
-    <InviteUserModal
-      hasSupportRole={false}
-      isPending={true}
-      error={null}
-      onSubmit={noop}
-    />
+    <InviteUserModal isPending={true} error={null} onSubmit={noop} />
   </ModalStory>
 )
 
 export const WithError = () => (
   <ModalStory>
     <InviteUserModal
-      hasSupportRole={false}
       isPending={false}
       error={{ error: 'User already invited', description: '', user_error: true }}
       onSubmit={noop}

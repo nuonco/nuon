@@ -42,6 +42,21 @@ func (c *Client) CreateOrgRoles(ctx context.Context, orgID string) error {
 			},
 		},
 
+		// read-only role
+		{
+			OrgID:    generics.NewNullString(orgID),
+			RoleType: app.RoleTypeOrgReadOnly,
+			Policies: []app.Policy{
+				{
+					OrgID: generics.NewNullString(orgID),
+					Name:  app.PolicyNameOrgReadOnly,
+					Permissions: pgtype.Hstore(map[string]*string{
+						orgID: permissions.PermissionRead.ToStrPtr(),
+					}),
+				},
+			},
+		},
+
 		// installer role
 		{
 			OrgID:    generics.NewNullString(orgID),

@@ -43,6 +43,12 @@ type AppToken struct {
 	// name
 	Name string `json:"name,omitempty"`
 
+	// org id
+	OrgID string `json:"org_id,omitempty"`
+
+	// role
+	Role string `json:"role,omitempty"`
+
 	// token type
 	TokenType AppTokenType `json:"token_type,omitempty"`
 

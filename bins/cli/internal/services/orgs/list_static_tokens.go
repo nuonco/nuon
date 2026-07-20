@@ -28,6 +28,7 @@ func (s *Service) ListStaticTokens(ctx context.Context, asJSON bool) error {
 		{
 			"ID",
 			"NAME",
+			"ROLE",
 			"EXPIRES AT",
 			"CREATED AT",
 			"CREATED BY",
@@ -38,6 +39,7 @@ func (s *Service) ListStaticTokens(ctx context.Context, asJSON bool) error {
 		data = append(data, []string{
 			t.ID,
 			t.Name,
+			t.Role,
 			t.ExpiresAt,
 			t.CreatedAt,
 			t.CreatedByID,
