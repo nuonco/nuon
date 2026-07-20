@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID						GetAppComponentBuild
@@ -98,14 +97,14 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC"))
 		}).
 		Preload("ComponentConfigConnection.Component").
-		Preload("RunnerJob", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithDisableViews)
-		}).
 		Preload("LogStream").
 		Preload("QueueSignal").
 		First(&bld, "id = ? AND org_id = ?", bldID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component build: %w", res.Error)
+	}
+	if err := s.hydrateBuildRunnerJobs(ctx, &bld); err != nil {
+		return nil, err
 	}
 
 	return &bld, nil

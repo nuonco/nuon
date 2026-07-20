@@ -16,6 +16,7 @@ export interface ITimeline<T extends IHasCreatedAt>
   events: Array<T>
   eventCount?: number
   groupByDate?: boolean
+  getEventKey?: (event: T, idx: number) => React.Key
   pagination: Omit<IPagination, 'position'>
   renderEvent?: (event: T, idx: number) => React.ReactNode
 }
@@ -25,6 +26,7 @@ const TimelineBase = <T extends IHasCreatedAt>({
   events,
   eventCount = 10,
   groupByDate = true,
+  getEventKey,
   pagination,
   renderEvent,
   ...props
@@ -49,7 +51,7 @@ const TimelineBase = <T extends IHasCreatedAt>({
             <Text className="timeline-date">{formatToRelativeDay(date)}</Text>
             <div className="timeline-events">
               {groupedEvents[date].map((event, idx) => (
-                <React.Fragment key={event.created_at}>
+                <React.Fragment key={getEventKey?.(event, idx) ?? event.created_at}>
                   {renderEvent ? renderEvent?.(event, idx) : null}
                 </React.Fragment>
               ))}
@@ -59,7 +61,7 @@ const TimelineBase = <T extends IHasCreatedAt>({
       ) : (
         <div className="timeline-events">
           {events.map((event, idx) => (
-            <React.Fragment key={event.created_at}>
+            <React.Fragment key={getEventKey?.(event, idx) ?? event.created_at}>
               {renderEvent ? renderEvent?.(event, idx) : null}
             </React.Fragment>
           ))}

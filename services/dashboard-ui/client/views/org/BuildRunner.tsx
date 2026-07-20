@@ -101,15 +101,12 @@ export const BuildRunner = () => {
         <PageHeader>
           <PageHeadingGroup
             title="Builds"
-            subtitle="Component and sandbox builds run on Nuon's control plane."
+            subtitle="Component builds run on Nuon's control plane."
           />
         </PageHeader>
         <PageContent>
           <PageSection>
-            <ControlPlaneRecentActivity
-              shouldPoll
-              jobDetailBasePath={`/${org?.id}/runner`}
-            />
+            <ControlPlaneRecentActivity shouldPoll />
           </PageSection>
         </PageContent>
       </PageLayout>

@@ -55,6 +55,7 @@ var _ apiPkg.Service = (*service)(nil)
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	// show all components for an org
 	api.GET("/v1/components", s.GetOrgComponents)
+	api.GET("/v1/component-builds", s.ListOrgComponentBuilds)
 
 	// components belong to an app
 	apps := api.Group("/v1/apps/:app_id")

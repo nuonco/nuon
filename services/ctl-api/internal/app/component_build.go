@@ -35,7 +35,8 @@ type ComponentBuild struct {
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
 	// runner details
-	RunnerJob RunnerJob `json:"runner_job,omitzero" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
+	RunnerJob        RunnerJob `json:"runner_job,omitzero" gorm:"polymorphic:Owner;" temporaljson:"runner_job,omitzero,omitempty"`
+	BuildRunnerJobID *string   `json:"build_runner_job_id" gorm:"-" temporaljson:"-"`
 
 	LogStream LogStream `json:"log_stream,omitzero" gorm:"polymorphic:Owner;" temporaljson:"log_stream,omitzero,omitempty"`
 
@@ -125,6 +126,15 @@ func (c *ComponentBuild) Indexes(db *gorm.DB) []migrations.Index {
 			Name: indexes.Name(db, &ComponentBuild{}, "app_branch_run_id"),
 			Columns: []string{
 				"app_branch_run_id",
+			},
+		},
+		{
+			Name: indexes.Name(db, &ComponentBuild{}, "history"),
+			Columns: []string{
+				"org_id",
+				"deleted_at",
+				"created_at DESC",
+				"id DESC",
 			},
 		},
 	}

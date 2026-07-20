@@ -35,6 +35,7 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
   const { org } = useOrg()
   const { addToast } = useToast()
   const [hasBeenCanceled, setHasBeenCanceled] = useState(false)
+  const executionJobId = build?.build_runner_job_id ?? build?.runner_job?.id
 
   const { mutate: cancelBuild, isPending: isCanceling } = useMutation<
     unknown,
@@ -171,11 +172,19 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
                 label="View signal"
               />
             ) : null}
-            {build?.runner_job ? (
-              <RunnerJobPlanButton
-                buttonText="Build plan"
-                runnerJobId={build?.runner_job?.id}
-              />
+            {executionJobId ? (
+              <>
+                <RunnerJobPlanButton
+                  buttonText="Build plan"
+                  runnerJobId={executionJobId}
+                />
+                <Button
+                  href={`/${org?.id}/runner/jobs/${executionJobId}`}
+                  variant="secondary"
+                >
+                  View execution
+                </Button>
+              </>
             ) : null}
           </div>
         </div>
