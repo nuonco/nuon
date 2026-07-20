@@ -209,6 +209,35 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigSuccess() {
 			},
 		},
 		{
+			name: "secrets sync triggers",
+			setupFunc: func() (string, string, string) {
+				action := s.createActionWorkflow(s.testApp.ID, "secrets-sync-action")
+				appConfig := s.createAppConfig(s.testApp.ID)
+				return action.ID, appConfig.ID, ""
+			},
+			requestFunc: func(actionID, appConfigID, componentID string) CreateActionWorkflowConfigRequest {
+				return CreateActionWorkflowConfigRequest{
+					AppConfigID: appConfigID,
+					Triggers: []CreateActionWorkflowConfigTriggerRequest{
+						{Type: app.ActionWorkflowTriggerTypePreSecretsSync},
+						{Type: app.ActionWorkflowTriggerTypePostSecretsSync},
+					},
+					Steps: []CreateActionWorkflowConfigStepRequest{
+						{
+							Name:           "secrets-sync-step",
+							InlineContents: "echo 'secrets synced'",
+						},
+					},
+				}
+			},
+			expectedCode: http.StatusCreated,
+			validateFunc: func(config *app.ActionWorkflowConfig) {
+				assert.Len(s.T(), config.Triggers, 2)
+				assert.Equal(s.T(), app.ActionWorkflowTriggerTypePreSecretsSync, config.Triggers[0].Type)
+				assert.Equal(s.T(), app.ActionWorkflowTriggerTypePostSecretsSync, config.Triggers[1].Type)
+			},
+		},
+		{
 			name: "component lifecycle trigger",
 			setupFunc: func() (string, string, string) {
 				action := s.createActionWorkflow(s.testApp.ID, "component-action")
@@ -435,6 +464,21 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigValidation() {
 					AppConfigID: appConfig.ID,
 					Triggers: []CreateActionWorkflowConfigTriggerRequest{
 						{Type: app.ActionWorkflowTriggerTypePostDeployComponent},
+					},
+					Steps: []CreateActionWorkflowConfigStepRequest{
+						{Name: "test", InlineContents: "echo 'test'"},
+					},
+				}
+			},
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name: "unknown trigger type",
+			requestFunc: func() CreateActionWorkflowConfigRequest {
+				return CreateActionWorkflowConfigRequest{
+					AppConfigID: appConfig.ID,
+					Triggers: []CreateActionWorkflowConfigTriggerRequest{
+						{Type: app.ActionWorkflowTriggerType("unknown")},
 					},
 					Steps: []CreateActionWorkflowConfigStepRequest{
 						{Name: "test", InlineContents: "echo 'test'"},
