@@ -120,6 +120,7 @@ component are:
 - `cron`
 - `pre-provision`
 - `post-provision`
+- `post-provision-sandbox`
 - `pre-reprovision`
 - `post-reprovision`
 - `pre-deprovision`
@@ -143,8 +144,10 @@ Each workflow trigger is called at the beginning or end of the workflow. In some
 cases, such as `pre-provision` or `pre-reprovision` that include a stack-run,
 the trigger will be called right after the runner is healthy.
 
+`post-provision-sandbox` runs immediately after the initial sandbox apply
+succeeds, before secrets sync, DNS provisioning, and component deployment.
 `post-provision` runs after the complete install provision workflow, including
-sandbox provisioning and component deployment.
+component deployment.
 
 ### Role change triggers
 

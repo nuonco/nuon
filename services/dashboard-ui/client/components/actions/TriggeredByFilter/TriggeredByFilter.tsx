@@ -17,6 +17,7 @@ const TRIGGER_OPTIONS = [
   'post-secrets-sync',
   'pre-provision',
   'post-provision',
+  'post-provision-sandbox',
   'pre-reprovision',
   'post-reprovision',
   'pre-deprovision',
