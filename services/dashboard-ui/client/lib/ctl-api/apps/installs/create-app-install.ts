@@ -3,6 +3,7 @@ import type { TInstall } from '@/types'
 
 export type TCreateAppInstallBody = {
   aws_account?: {
+    connection_id?: string
     iam_role_arn: ''
     region: string
   }

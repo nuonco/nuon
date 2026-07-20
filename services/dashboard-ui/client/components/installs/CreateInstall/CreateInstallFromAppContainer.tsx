@@ -6,7 +6,12 @@ import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getAppConfig, createAppInstall, type TCreateAppInstallBody } from '@/lib'
+import {
+  getAppConfig,
+  createAppInstall,
+  getAWSAccountConnections,
+  type TCreateAppInstallBody,
+} from '@/lib'
 import type { TApp } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 import { CreateInstallFromApp } from './CreateInstallFromApp'
@@ -37,18 +42,40 @@ export const CreateInstallFromAppContainer = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
+  const platform = app.runner_config?.app_runner_type
+  const awsConnectionsEnabled =
+    platform === 'aws' && !!org?.features?.['aws-account-connections']
 
   const {
     data: config,
-    isLoading,
+    isLoading: configLoading,
     error,
   } = useQuery({
     queryKey: ['app-config', org?.id, app.id, configId],
-    queryFn: () => getAppConfig({ orgId: org.id, appId: app.id, appConfigId: configId, recurse: true }),
+    queryFn: () =>
+      getAppConfig({
+        orgId: org.id,
+        appId: app.id,
+        appConfigId: configId,
+        recurse: true,
+      }),
     enabled: !!org?.id,
   })
 
-  const { mutateAsync, isPending: isSubmitting, error: submitError } = useMutation({
+  const {
+    data: awsAccountConnections,
+    isLoading: awsAccountConnectionsLoading,
+  } = useQuery({
+    queryKey: ['aws-account-connections', org?.id],
+    queryFn: () => getAWSAccountConnections({ orgId: org.id }),
+    enabled: !!org?.id && awsConnectionsEnabled,
+  })
+
+  const {
+    mutateAsync,
+    isPending: isSubmitting,
+    error: submitError,
+  } = useMutation({
     mutationFn: (formData: FormData) => {
       const formDataObj = Object.fromEntries(formData)
       const inputs = Object.keys(formDataObj).reduce(
@@ -66,10 +93,13 @@ export const CreateInstallFromAppContainer = ({
       )
 
       const installConfig: TCreateAppInstallBody['install_config'] = {
-        approval_option: formDataObj['auto-approve'] === 'on' ? 'approve-all' : 'prompt',
+        approval_option:
+          formDataObj['auto-approve'] === 'on' ? 'approve-all' : 'prompt',
       }
       const vpcUrl = (formDataObj.vpc_nested_template_url as string)?.trim()
-      const runnerUrl = (formDataObj.runner_nested_template_url as string)?.trim()
+      const runnerUrl = (
+        formDataObj.runner_nested_template_url as string
+      )?.trim()
       if (vpcUrl) {
         installConfig!.vpc_nested_template_url = vpcUrl
       }
@@ -84,9 +114,12 @@ export const CreateInstallFromAppContainer = ({
         metadata: { managed_by: 'nuon/dashboard' },
       }
 
-      const platform = app.runner_config?.app_runner_type
       if (platform === 'aws' && formDataObj.region) {
-        body.aws_account = { iam_role_arn: '', region: formDataObj.region as string }
+        body.aws_account = {
+          iam_role_arn: '',
+          region: formDataObj.region as string,
+          connection_id: (formDataObj.aws_connection_id as string) || undefined,
+        }
       } else if (platform === 'azure' && formDataObj.location) {
         body.azure_account = {
           location: formDataObj.location as string,
@@ -111,9 +144,12 @@ export const CreateInstallFromAppContainer = ({
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       removeModal(modalId)
       const workflowId = result.data.workflow_id
-      const suffix = result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
+      const suffix =
+        result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
       if (workflowId) {
-        navigate(`/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`)
+        navigate(
+          `/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`
+        )
       } else {
         navigate(`/${org?.id}/installs/${result.data.id}/workflows${suffix}`)
       }
@@ -135,6 +171,9 @@ export const CreateInstallFromAppContainer = ({
     onLoadingChange?.(isSubmitting)
   }, [isSubmitting, onLoadingChange])
 
+  const isLoading =
+    configLoading || (awsConnectionsEnabled && awsAccountConnectionsLoading)
+
   return (
     <CreateInstallFromApp
       app={app}
@@ -148,6 +187,9 @@ export const CreateInstallFromAppContainer = ({
       onSubmit={(formData) => mutateAsync(formData)}
       formRef={formRef}
       onRegisterClearDraft={onRegisterClearDraft}
+      awsAccountConnections={
+        awsConnectionsEnabled ? awsAccountConnections || [] : undefined
+      }
     />
   )
 }

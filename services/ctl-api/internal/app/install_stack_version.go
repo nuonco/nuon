@@ -35,6 +35,7 @@ type InstallStackVersion struct {
 	Contents     []byte `json:"contents,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"contents,omitzero,omitempty"`
 	Checksum     string `json:"checksum,omitzero" temporaljson:"checksum,omitzero,omitempty"`
 	TemplateURL  string `json:"template_url,omitzero" temporaljson:"template_url,omitzero,omitempty"`
+	StackName    string `json:"stack_name,omitzero" temporaljson:"stack_name,omitzero,omitempty"`
 	PhoneHomeID  string `json:"phone_home_id,omitzero" temporaljson:"phone_home_id,omitzero,omitempty"`
 	PhoneHomeURL string `json:"phone_home_url,omitzero" temporaljson:"phone_home_url,omitzero,omitempty"`
 

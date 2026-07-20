@@ -40,6 +40,7 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 		AppConfigID:    req.AppConfigID,
 		InstallID:      req.InstallID,
 		InstallStackID: req.InstallStackID,
+		StackName:      req.StackName,
 		PhoneHomeID:    phoneHomeID,
 		PhoneHomeURL: fmt.Sprintf(
 			"%s/v1/installs/%s/phone-home/%s",

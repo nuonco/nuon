@@ -25,8 +25,10 @@ type AWSAccount struct {
 
 	InstallID string `json:"-" gorm:"notnull" temporaljson:"install_id,omitzero,omitempty"`
 
-	Region     string `json:"region,omitzero" gorm:"notnull" temporaljson:"region,omitzero,omitempty"`
-	IAMRoleARN string `json:"iam_role_arn,omitzero" gorm:"notnull" temporaljson:"iam_role_arn,omitzero,omitempty"`
+	Region                 string                `json:"region,omitzero" gorm:"notnull" temporaljson:"region,omitzero,omitempty"`
+	IAMRoleARN             string                `json:"iam_role_arn,omitzero" gorm:"notnull" temporaljson:"iam_role_arn,omitzero,omitempty"`
+	AWSAccountConnectionID *string               `json:"connection_id,omitempty" gorm:"index" temporaljson:"aws_account_connection_id,omitzero,omitempty"`
+	AWSAccountConnection   *AWSAccountConnection `json:"-" gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" temporaljson:"-"`
 }
 
 func (a *AWSAccount) Indexes(db *gorm.DB) []migrations.Index {

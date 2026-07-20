@@ -8,19 +8,23 @@ const FieldWrapper = ({
   children,
   labelText,
   helpText,
+  required = true,
 }: {
   children: React.ReactElement
   labelText: string
   helpText?: string
+  required?: boolean
 }) => {
   return (
     <label className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
       <span className="flex flex-col gap-0">
         <Text variant="body" weight="strong">
           {labelText}{' '}
-          <Text className="ml-1" variant="subtext" theme="error">
-            {'*'}
-          </Text>
+          {required ? (
+            <Text className="ml-1" variant="subtext" theme="error">
+              {'*'}
+            </Text>
+          ) : null}
         </Text>
         {helpText ? (
           <Text variant="subtext" className="max-w-72">
@@ -35,8 +39,10 @@ const FieldWrapper = ({
 
 const AWSFields = ({
   draftValues,
+  awsAccountConnections,
 }: {
   draftValues?: Record<string, string> | null
+  awsAccountConnections?: IPlatformFields['awsAccountConnections']
 }) => {
   const options = AWS_REGIONS.map((region) => ({
     value: region.value,
@@ -64,6 +70,30 @@ const AWSFields = ({
           defaultValue={draftValues?.region || ''}
         />
       </FieldWrapper>
+
+      {awsAccountConnections ? (
+        <FieldWrapper
+          labelText="AWS connection (optional)"
+          helpText="Select an AWS connection for Nuon to apply the install stack. Leave as None if the customer will apply it."
+          required={false}
+        >
+          <Select
+            name="aws_connection_id"
+            options={[
+              {
+                value: '',
+                label: 'None — customer will apply the stack',
+              },
+              ...awsAccountConnections.map((connection) => ({
+                value: connection.id,
+                label: `${connection.name} · ${connection.account_id} · ${connection.verification_status === 'verified' ? 'Verified' : connection.verification_status}`,
+                disabled: connection.verification_status !== 'verified',
+              })),
+            ]}
+            defaultValue={draftValues?.aws_connection_id || ''}
+          />
+        </FieldWrapper>
+      ) : null}
     </fieldset>
   )
 }
@@ -106,9 +136,15 @@ const AzureFields = ({
 export const PlatformFields = ({
   platform,
   draftValues,
+  awsAccountConnections,
 }: IPlatformFields) => {
   if (platform === 'aws') {
-    return <AWSFields draftValues={draftValues} />
+    return (
+      <AWSFields
+        draftValues={draftValues}
+        awsAccountConnections={awsAccountConnections}
+      />
+    )
   }
 
   if (platform === 'azure') {

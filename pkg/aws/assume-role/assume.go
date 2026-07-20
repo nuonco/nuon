@@ -13,6 +13,11 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 )
 
+type stsRoleAssumer interface {
+	AssumeRole(context.Context, *sts.AssumeRoleInput, ...func(*sts.Options)) (*sts.AssumeRoleOutput, error)
+	AssumeRoleWithWebIdentity(context.Context, *sts.AssumeRoleWithWebIdentityInput, ...func(*sts.Options)) (*sts.AssumeRoleWithWebIdentityOutput, error)
+}
+
 // LoadConfigWithAssumedRole loads an AWS config using the default credential provider chain
 // to assume the provided role with the provided session name
 func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, error) {
@@ -21,7 +26,7 @@ func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, er
 		return aws.Config{}, err
 	}
 
-	creds, err := a.assumeIamRole(ctx, stsClient, a.RoleARN)
+	creds, err := a.assumeIamRole(ctx, stsClient, a.RoleARN, a.ExternalID)
 	if err != nil {
 		return aws.Config{}, fmt.Errorf("failed to assume role: %w", err)
 	}
@@ -40,7 +45,7 @@ func (a *assumer) LoadConfigWithAssumedRole(ctx context.Context) (aws.Config, er
 	return cfg, nil
 }
 
-func (a *assumer) assumeIamRole(ctx context.Context, client *sts.Client, role string) (*sts_types.Credentials, error) {
+func (a *assumer) assumeIamRole(ctx context.Context, client stsRoleAssumer, role, externalID string) (*sts_types.Credentials, error) {
 	if a.UseGithubOIDC || a.UseGCPOIDC {
 		var token string
 		var err error
@@ -70,6 +75,9 @@ func (a *assumer) assumeIamRole(ctx context.Context, client *sts.Client, role st
 		RoleArn:         &role,
 		RoleSessionName: &a.RoleSessionName,
 		DurationSeconds: generics.ToPtr(int32(a.RoleSessionDuration.Seconds())),
+	}
+	if externalID != "" {
+		params.ExternalId = &externalID
 	}
 
 	resp, err := client.AssumeRole(ctx, params)

@@ -96,7 +96,8 @@ const (
 	// branch of install-stacks (which reads config from the API via the stack
 	// provider's stack_config data source) and use the slimmed-down tfvars
 	// instead of the full generated set.
-	OrgFeatureStackTFProvider OrgFeature = "stack-tf-provider"
+	OrgFeatureStackTFProvider       OrgFeature = "stack-tf-provider"
+	OrgFeatureAWSAccountConnections OrgFeature = "aws-account-connections"
 )
 
 type Org struct {
@@ -127,11 +128,12 @@ type Org struct {
 
 	Priority int `json:"-" temporaljson:"priority,omitzero,omitempty"`
 
-	Apps           []App               `faker:"-" swaggerignore:"true" json:"apps,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"apps,omitzero,omitempty"`
-	VCSConnections []VCSConnection     `json:"vcs_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"vcs_connections,omitzero,omitempty"`
-	Invites        []OrgInvite         `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"invites,omitzero,omitempty"`
-	Features       types.StringBoolMap `json:"features,omitzero" gorm:"type:jsonb;default null" temporaljson:"features,omitzero,omitempty"`
-	Tags           pq.StringArray      `json:"tags,omitzero" gorm:"type:text[];default '{}'" swaggertype:"array,string" temporaljson:"tags,omitzero,omitempty"`
+	Apps                  []App                  `faker:"-" swaggerignore:"true" json:"apps,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"apps,omitzero,omitempty"`
+	VCSConnections        []VCSConnection        `json:"vcs_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"vcs_connections,omitzero,omitempty"`
+	AWSAccountConnections []AWSAccountConnection `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"aws_account_connections,omitzero,omitempty"`
+	Invites               []OrgInvite            `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"invites,omitzero,omitempty"`
+	Features              types.StringBoolMap    `json:"features,omitzero" gorm:"type:jsonb;default null" temporaljson:"features,omitzero,omitempty"`
+	Tags                  pq.StringArray         `json:"tags,omitzero" gorm:"type:text[];default '{}'" swaggertype:"array,string" temporaljson:"tags,omitzero,omitempty"`
 	labels.Labeled
 
 	// Other relationships as part of the data model
@@ -221,6 +223,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureSpaceliftInstallStacks:  false,
 		OrgFeatureStackTFProvider:         false,
 		OrgFeatureOrgRunner:               false,
+		OrgFeatureAWSAccountConnections:   false,
 
 		// Enabled by default
 		OrgFeatureControlPlaneBuilds: true,
@@ -294,6 +297,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureSpaceliftInstallStacks,
 		OrgFeatureControlPlaneBuilds,
 		OrgFeatureStackTFProvider,
+		OrgFeatureAWSAccountConnections,
 	}
 }
 
@@ -332,6 +336,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureSpaceliftInstallStacks:  "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
 		OrgFeatureControlPlaneBuilds:      "Run component and sandbox builds on Temporal-backed control-plane workers instead of the org runner, so build-only work does not require a live org runner.",
 		OrgFeatureStackTFProvider:         "Use the Terraform-provider install stack flow: the await step's directions clone the ja/stack-sdk branch of install-stacks (which reads config from the API via the stack provider) and use the slimmed-down tfvars.",
+		OrgFeatureAWSAccountConnections:   "Enable organization-owned cross-account AWS connections with external ID trust verification.",
 	}
 }
 
@@ -358,7 +363,7 @@ func GetUserManageableFeatures() []OrgFeature {
 	manageable := make([]OrgFeature, 0, len(allFeatures)-1)
 
 	for _, feature := range allFeatures {
-		if feature != OrgFeatureUserManagedFeatures {
+		if feature != OrgFeatureUserManagedFeatures && feature != OrgFeatureAWSAccountConnections {
 			manageable = append(manageable, feature)
 		}
 	}

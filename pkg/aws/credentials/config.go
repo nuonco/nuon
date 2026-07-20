@@ -14,6 +14,7 @@ type AssumeRoleConfig struct {
 	RoleARN                string `cty:"arn" hcl:"role_arn" validate:"required" mapstructure:"role_arn,omitempty" json:"role_arn" temporaljson:"role_arn"`
 	SessionName            string `cty:"session_name" hcl:"session_name" validate:"required" mapstructure:"session_name,omitempty" json:"session_name" temporaljson:"session_name"`
 	SessionDurationSeconds int    `cty:"session_duration_seconds" hcl:"session_duration_seconds" mapstructure:"session_duration_seconds,omitempty" json:"session_duration_seconds" temporaljson:"session_duration_seconds"`
+	ExternalID             string `cty:"external_id" hcl:"external_id,optional" mapstructure:"external_id,omitempty" json:"external_id,omitempty" temporaljson:"-"`
 
 	// configuration for two stepping before assuming this role
 	TwoStepConfig *assumerole.TwoStepConfig `cty:"two_step_config" hcl:"two_step_config" mapstructure:"two_step_config,omitempty" json:"two_step_config" temporaljson:"two_step_config"`

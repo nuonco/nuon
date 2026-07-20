@@ -1,4 +1,4 @@
-import type { TAppInputConfig, TInstall } from '@/types'
+import type { TAppInputConfig, TAWSAccountConnection, TInstall } from '@/types'
 
 export interface ICreateInstallForm {
   appId: string
@@ -13,6 +13,7 @@ export interface ICreateInstallForm {
   onRegisterClearDraft?: (clearFn: () => void) => void
   defaultAutoApprove?: boolean
   autoApproveDescription?: string
+  awsAccountConnections?: TAWSAccountConnection[]
 }
 
 export interface IUpdateInstallForm {
@@ -34,6 +35,7 @@ export interface IUpdateInstallForm {
 export interface IPlatformFields {
   platform: 'aws' | 'azure' | 'gcp'
   draftValues?: Record<string, string> | null
+  awsAccountConnections?: TAWSAccountConnection[]
 }
 
 export interface IInputConfigFields {

@@ -150,7 +150,8 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 	}
 	if req.AWSAccount != nil {
 		installParams.AWSAccount = &struct {
-			Region string `json:"region"`
+			Region       string `json:"region"`
+			ConnectionID string `json:"connection_id,omitempty"`
 		}{Region: req.AWSAccount.Region}
 	}
 	if req.AzureAccount != nil {
