@@ -192,7 +192,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		}),
 	}
 	createInviteCmd.Flags().StringVarP(&email, "email", "e", "", "Email of user to invite")
-	createInviteCmd.Flags().StringVar(&role, "role", "", "The org role to grant (org_admin, org_support, or org_read_only; defaults to org_admin)")
+	createInviteCmd.Flags().StringVar(&role, "role", "", "The org role to grant (org_admin or org_read_only; defaults to org_admin)")
 	orgsCmd.AddCommand(createInviteCmd)
 
 	updateUserRoleCmd := &cobra.Command{
@@ -206,7 +206,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 	}
 	updateUserRoleCmd.Flags().StringVar(&userID, "user-id", "", "The ID of the user whose role to change")
 	updateUserRoleCmd.MarkFlagRequired("user-id")
-	updateUserRoleCmd.Flags().StringVar(&role, "role", "", "The new org role (org_admin, org_support, or org_read_only)")
+	updateUserRoleCmd.Flags().StringVar(&role, "role", "", "The new org role (org_admin or org_read_only)")
 	updateUserRoleCmd.MarkFlagRequired("role")
 	orgsCmd.AddCommand(updateUserRoleCmd)
 
@@ -255,7 +255,7 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "A human-friendly name to identify the token")
 	createCmd.MarkFlagRequired("name")
 	createCmd.Flags().StringVar(&duration, "duration", "8760h", "How long the token is valid (Go duration, e.g. 720h)")
-	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to the token (org_admin, org_support, or org_read_only)")
+	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to the token (org_admin or org_read_only)")
 	apiTokensCmd.AddCommand(createCmd)
 
 	listCmd := &cobra.Command{

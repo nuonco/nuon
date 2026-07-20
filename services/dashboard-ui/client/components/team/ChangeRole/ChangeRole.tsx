@@ -9,7 +9,6 @@ import type { TAPIError } from '@/types'
 export const ChangeRoleModal = ({
   accountEmail,
   currentRole,
-  hasSupportRole,
   isPending,
   error,
   onSubmit,
@@ -17,7 +16,6 @@ export const ChangeRoleModal = ({
 }: {
   accountEmail: string
   currentRole: string
-  hasSupportRole: boolean
   isPending: boolean
   error: TAPIError | null
   onSubmit: (params: { roleType: string }) => void
@@ -26,8 +24,12 @@ export const ChangeRoleModal = ({
 
   const roleOptions = [
     { value: 'org_admin', label: 'Admin' },
-    ...(hasSupportRole ? [{ value: 'org_support', label: 'Support' }] : []),
     { value: 'org_read_only', label: 'Read-only' },
+    // Support is not offered as a new choice, but keep it visible when the
+    // member already holds it so their current role displays correctly.
+    ...(currentRole === 'org_support'
+      ? [{ value: 'org_support', label: 'Support' }]
+      : []),
   ]
 
   return (

@@ -12,7 +12,6 @@ export const Default = () => (
     <ChangeRoleModal
       accountEmail="user@example.com"
       currentRole="org_admin"
-      hasSupportRole={false}
       isPending={false}
       error={null}
       onSubmit={noop}
@@ -20,12 +19,11 @@ export const Default = () => (
   </ModalStory>
 )
 
-export const WithSupportRole = () => (
+export const ExistingSupportMember = () => (
   <ModalStory>
     <ChangeRoleModal
       accountEmail="user@example.com"
-      currentRole="org_read_only"
-      hasSupportRole={true}
+      currentRole="org_support"
       isPending={false}
       error={null}
       onSubmit={noop}
@@ -38,7 +36,6 @@ export const Pending = () => (
     <ChangeRoleModal
       accountEmail="user@example.com"
       currentRole="org_read_only"
-      hasSupportRole={false}
       isPending={true}
       error={null}
       onSubmit={noop}
@@ -51,7 +48,6 @@ export const WithError = () => (
     <ChangeRoleModal
       accountEmail="user@example.com"
       currentRole="org_admin"
-      hasSupportRole={false}
       isPending={false}
       error={{ error: 'Cannot demote the last org admin', description: '', user_error: true }}
       onSubmit={noop}

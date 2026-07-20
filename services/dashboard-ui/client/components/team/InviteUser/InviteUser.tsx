@@ -9,13 +9,11 @@ import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
 export const InviteUserModal = ({
-  hasSupportRole,
   isPending,
   error,
   onSubmit,
   ...props
 }: {
-  hasSupportRole: boolean
   isPending: boolean
   error: TAPIError | null
   onSubmit: (params: { email: string; roleType: string }) => void
@@ -25,7 +23,6 @@ export const InviteUserModal = ({
 
   const roleOptions = [
     { value: 'org_admin', label: 'Admin' },
-    ...(hasSupportRole ? [{ value: 'org_support', label: 'Support' }] : []),
     { value: 'org_read_only', label: 'Read-only' },
   ]
 

@@ -19,7 +19,6 @@ const ChangeRoleModalContainer = ({
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const hasSupportRole = !!org?.features?.['support-role']
   const currentRole = account.roles?.[0]?.role_type || ''
 
   const { mutate, isPending, error } = useMutation({
@@ -51,7 +50,6 @@ const ChangeRoleModalContainer = ({
     <ChangeRoleModal
       accountEmail={account.email || ''}
       currentRole={currentRole}
-      hasSupportRole={hasSupportRole}
       isPending={isPending}
       error={error}
       onSubmit={({ roleType }) => mutate({ roleType })}
