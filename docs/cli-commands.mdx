@@ -23,6 +23,7 @@ The commands you'll use most. Run `nuon --help` (or `nuon <command> --help`) for
 | `nuon orgs api-tokens create --name <name>` | Create a durable API token for the current org (shown once). Requires org admin. Add `--role` (`org_admin`, `org_support`, `org_read_only`; defaults to `org_read_only`) to set the token's permissions. |
 | `nuon orgs api-tokens list` | List the current org's API tokens. |
 | `nuon orgs api-tokens delete --id <token-id>` | Revoke an API token. |
+| `nuon orgs update-user-role --user-id <id> --role <role>` | Change an org member's role (`org_admin`, `org_support`, `org_read_only`). Requires org admin. |
 
 ## Apps & config
 

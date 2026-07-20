@@ -17,6 +17,8 @@ func (c *cli) orgsCmd() *cobra.Command {
 		email        string
 		noSelect     bool
 		connectionID string
+		userID       string
+		role         string
 	)
 
 	orgsCmd := &cobra.Command{
@@ -186,11 +188,27 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:  "Invite a user by email to org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.CreateInvite(cmd.Context(), email, PrintJSON)
+			return svc.CreateInvite(cmd.Context(), email, role, PrintJSON)
 		}),
 	}
 	createInviteCmd.Flags().StringVarP(&email, "email", "e", "", "Email of user to invite")
+	createInviteCmd.Flags().StringVar(&role, "role", "", "The org role to grant (org_admin, org_support, or org_read_only; defaults to org_admin)")
 	orgsCmd.AddCommand(createInviteCmd)
+
+	updateUserRoleCmd := &cobra.Command{
+		Use:   "update-user-role",
+		Short: "Change an org member's role",
+		Long:  "Change the role of an existing member of the current org. Requires org admin.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.UpdateUserRole(cmd.Context(), userID, role, PrintJSON)
+		}),
+	}
+	updateUserRoleCmd.Flags().StringVar(&userID, "user-id", "", "The ID of the user whose role to change")
+	updateUserRoleCmd.MarkFlagRequired("user-id")
+	updateUserRoleCmd.Flags().StringVar(&role, "role", "", "The new org role (org_admin, org_support, or org_read_only)")
+	updateUserRoleCmd.MarkFlagRequired("role")
+	orgsCmd.AddCommand(updateUserRoleCmd)
 
 	listInvitesCmd := &cobra.Command{
 		Use:   "list-invites",
