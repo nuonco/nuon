@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
@@ -36,7 +37,7 @@ func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string)
 	healthcheckQueue, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerID,
 		OwnerType:   "runners",
-		Namespace:   "runners",
+		Namespace:   pkgworkflows.RunnerHealthcheckCronsNamespace,
 		Name:        RunnerHealthcheckCronsQueueName,
 		MaxInFlight: 5,
 		MaxDepth:    50,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -13,20 +14,24 @@ import (
 // Safe to call multiple times — queueClient.Create is idempotent.
 // Also updates MaxInFlight on existing queues if it has changed.
 func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) error {
+	const installsNamespace = "installs"
+	cronsNamespace := pkgworkflows.InstallCronsNamespace
+
 	queues := []struct {
 		Name        string
+		Namespace   string
 		MaxInFlight int
 	}{
-		{InstallWorkflowsQueueName, 25},
-		{InstallSignalsQueueName, 20},
-		{InstallWorkflowStepGroupsQueueName, 40},
-		{InstallWorkflowStepsQueueName, 40},
-		{InstallStateManagerQueueName, 5},
-		{InstallGenerateStepsQueueName, 10},
-		{InstallActionWorkflowsQueueName, 10},
-		{InstallDriftWorkflowsQueueName, 5},
-		{InstallActionCronSignalsQueueName, 10},
-		{InstallDriftCronSignalsQueueName, 5},
+		{InstallWorkflowsQueueName, installsNamespace, 25},
+		{InstallSignalsQueueName, installsNamespace, 20},
+		{InstallWorkflowStepGroupsQueueName, installsNamespace, 40},
+		{InstallWorkflowStepsQueueName, installsNamespace, 40},
+		{InstallStateManagerQueueName, installsNamespace, 5},
+		{InstallGenerateStepsQueueName, installsNamespace, 10},
+		{InstallActionWorkflowsQueueName, cronsNamespace, 10},
+		{InstallDriftWorkflowsQueueName, cronsNamespace, 5},
+		{InstallActionCronSignalsQueueName, cronsNamespace, 10},
+		{InstallDriftCronSignalsQueueName, cronsNamespace, 5},
 	}
 
 	ownerType := plugins.TableName(s.db, app.Install{})
@@ -35,7 +40,7 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 		existing, err := s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 			OwnerID:     installID,
 			OwnerType:   ownerType,
-			Namespace:   "installs",
+			Namespace:   q.Namespace,
 			Name:        q.Name,
 			MaxInFlight: q.MaxInFlight,
 			MaxDepth:    50,

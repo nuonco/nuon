@@ -56,7 +56,7 @@ type WorkerParams struct {
 }
 
 func New(params WorkerParams) (*Worker, error) {
-	wkr, err := buildWorker(params, pkgworkflows.APITaskQueue, "runners worker")
+	wkr, err := buildWorker(params, "runners", pkgworkflows.APITaskQueue, "runners worker")
 	if err != nil {
 		return nil, err
 	}
@@ -64,15 +64,15 @@ func New(params WorkerParams) (*Worker, error) {
 }
 
 func NewHealthcheckCronWorker(params WorkerParams) (*HealthcheckCronWorker, error) {
-	wkr, err := buildWorker(params, pkgworkflows.RunnerHealthcheckCronsTaskQueue, "runner healthcheck cron worker")
+	wkr, err := buildWorker(params, pkgworkflows.RunnerHealthcheckCronsNamespace, pkgworkflows.RunnerHealthcheckCronsTaskQueue, "runner healthcheck cron worker")
 	if err != nil {
 		return nil, err
 	}
 	return &HealthcheckCronWorker{wkr}, nil
 }
 
-func buildWorker(params WorkerParams, taskQueue string, logName string) (worker.Worker, error) {
-	client, err := params.Tclient.GetNamespaceClient("runners")
+func buildWorker(params WorkerParams, namespace string, taskQueue string, logName string) (worker.Worker, error) {
+	client, err := params.Tclient.GetNamespaceClient(namespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
 	}
