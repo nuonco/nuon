@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -88,10 +89,13 @@ func (m middleware) Handler() gin.HandlerFunc {
 		orgErr := acct.AllPermissions.CanPerform(object, perm)
 
 		if m.cfg.ResourceGrantsEnabled {
-			// Split membership from authorization: an org-wide grant takes the
-			// fast path; a member without one defers to a downstream resource
-			// middleware (which fails closed if none authorizes the request).
-			if orgErr != nil {
+			// Split membership from authorization. An org-wide grant takes the
+			// fast path; otherwise a member is authorized at the resource level
+			// (or, for a grant-filtered collection, in the handler). Anything
+			// else fails closed.
+			if orgErr == nil {
+				cctx.SetOrgAuthorized(ctx, true)
+			} else {
 				if !acct.HasOrg(org.ID) {
 					ctx.Error(stderr.ErrAuthorization{
 						Err:         fmt.Errorf("account has no access to org %s", org.ID),
@@ -101,8 +105,14 @@ func (m middleware) Handler() gin.HandlerFunc {
 					return
 				}
 				cctx.SetOrgAuthorized(ctx, false)
-			} else {
-				cctx.SetOrgAuthorized(ctx, true)
+
+				if !isFilteredCollection(ctx) {
+					if err := m.authorizeResource(ctx, acct, org.ID, perm); err != nil {
+						ctx.Error(err)
+						ctx.Abort()
+						return
+					}
+				}
 			}
 		} else {
 			if orgErr != nil {
@@ -126,6 +136,63 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 		ctx.Next()
 	}
+}
+
+// authorizeResource resolves the most specific resource named in the path
+// (install, then app; name-or-id, org-scoped) and authorizes it via the walk-up
+// primitive. A deferred request that names no grantable resource fails closed.
+func (m middleware) authorizeResource(ctx *gin.Context, acct *app.Account, orgID string, perm permissions.Permission) error {
+	chain, resolved, err := m.resourceChain(ctx, orgID)
+	if err != nil {
+		return stderr.ErrAuthorization{
+			Err:         fmt.Errorf("unable to resolve resource in org %s: %w", orgID, err),
+			Description: "the requested resource could not be found in this org",
+		}
+	}
+	if !resolved {
+		return stderr.ErrAuthorization{
+			Err:         fmt.Errorf("no org-wide permission and no grantable resource in path"),
+			Description: fmt.Sprintf("Please make sure you have the correct permissions for %s", orgID),
+		}
+	}
+	if err := authz.Authorize(acct.AllPermissions, chain, perm); err != nil {
+		return stderr.ErrAuthorization{
+			Err:         fmt.Errorf("unable to perform %s on the requested resource", perm),
+			Description: "you do not have access to the requested resource",
+		}
+	}
+	return nil
+}
+
+// resourceChain builds the ownership chain of the most specific resource named
+// in the path (install first, then app). resolved is false when the route names
+// no grantable resource.
+func (m middleware) resourceChain(ctx *gin.Context, orgID string) (chain []string, resolved bool, err error) {
+	if raw := ctx.Param("install_id"); raw != "" {
+		var inst app.Install
+		res := m.db.WithContext(ctx).
+			Where("org_id = ?", orgID).
+			Where(m.db.Where("id = ?", raw).Or("name = ?", raw)).
+			First(&inst)
+		if res.Error != nil {
+			return nil, false, res.Error
+		}
+		return []string{inst.ID, inst.AppID, orgID}, true, nil
+	}
+
+	if raw := ctx.Param("app_id"); raw != "" {
+		var a app.App
+		res := m.db.WithContext(ctx).
+			Where("org_id = ?", orgID).
+			Where(m.db.Where("id = ?", raw).Or("name = ?", raw)).
+			First(&a)
+		if res.Error != nil {
+			return nil, false, res.Error
+		}
+		return []string{a.ID, orgID}, true, nil
+	}
+
+	return nil, false, nil
 }
 
 func New(params Params) *middleware {

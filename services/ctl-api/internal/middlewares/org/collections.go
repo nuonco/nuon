@@ -1,4 +1,4 @@
-package resource
+package org
 
 import "github.com/gin-gonic/gin"
 
