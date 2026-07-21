@@ -636,6 +636,19 @@ export interface paths {
     /** @description Update app configuration across multiple installs. */
     post: operations["UpdateAppConfigInstallsV2"];
   };
+  "/v1/apps/{app_id}/grants": {
+    /** list grants on an app */
+    get: operations["ListAppGrants"];
+    /**
+     * grant an account access to an app
+     * @description Grant an account read or full access to a single app (and its installs via walk-up). Org-admin only.
+     */
+    post: operations["CreateAppGrant"];
+  };
+  "/v1/apps/{app_id}/grants/{grant_id}": {
+    /** revoke a grant on an app */
+    delete: operations["DeleteAppGrant"];
+  };
   "/v1/apps/{app_id}/input-config": {
     /**
      * @description App input configs allow you to declare the inputs for your application, and do things such as require customer inputs or
@@ -1803,6 +1816,19 @@ export interface paths {
      * @description Generate terraform configuration for an installer.
      */
     get: operations["GenerateTerraformInstallerConfig"];
+  };
+  "/v1/installs/{install_id}/grants": {
+    /** list grants on an install */
+    get: operations["ListInstallGrants"];
+    /**
+     * grant an account access to an install
+     * @description Grant an account read or full access to a single install. Org-admin only.
+     */
+    post: operations["CreateInstallGrant"];
+  };
+  "/v1/installs/{install_id}/grants/{grant_id}": {
+    /** revoke a grant on an install */
+    delete: operations["DeleteInstallGrant"];
   };
   "/v1/installs/{install_id}/inputs": {
     /**
@@ -3155,6 +3181,7 @@ export interface components {
       account_type?: components["schemas"]["app.AccountType"];
       created_at?: string;
       email?: string;
+      grants?: components["schemas"]["app.ResourceGrant"][];
       id?: string;
       name?: string;
       /** @description ReadOnly Fields */
@@ -4166,6 +4193,8 @@ export interface components {
       status?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
     };
+    /** @enum {string} */
+    "app.GrantResourceType": "org" | "app" | "install";
     "app.HelmChart": {
       created_at?: string;
       created_by_id?: string;
@@ -5361,6 +5390,19 @@ export interface components {
       type?: string;
       updated_at?: string;
       workflow?: components["schemas"]["signaldb.WorkflowRef"];
+    };
+    "app.ResourceGrant": {
+      /** @description account the grant is issued to */
+      account_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      /** @description org the grant lives in; drives membership resolution (account OrgIDs) */
+      org_id?: string;
+      permission?: string;
+      resource_id?: string;
+      resource_type?: components["schemas"]["app.GrantResourceType"];
+      updated_at?: string;
     };
     "app.Role": {
       createdBy?: components["schemas"]["app.Account"];
@@ -7185,6 +7227,7 @@ export interface components {
       account_type?: components["schemas"]["app.AccountType"];
       created_at?: string;
       email?: string;
+      grants?: components["schemas"]["app.ResourceGrant"][];
       id?: string;
       identities?: components["schemas"]["service.AuthMeIdentity"][];
       name?: string;
@@ -7573,6 +7616,12 @@ export interface components {
        * uses the highest matching tag. Tag becomes optional in this case.
        */
       update_policy?: string;
+    };
+    "service.CreateGrantRequest": {
+      account_id?: string;
+      email?: string;
+      /** @enum {string} */
+      permission: "read" | "all";
     };
     "service.CreateHelmComponentConfigRequest": {
       app_config_id?: string;
@@ -13712,6 +13761,66 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
+      };
+    };
+  };
+  /** list grants on an app */
+  ListAppGrants: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ResourceGrant"][];
+        };
+      };
+    };
+  };
+  /**
+   * grant an account access to an app
+   * @description Grant an account read or full access to a single app (and its installs via walk-up). Org-admin only.
+   */
+  CreateAppGrant: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description grant */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateGrantRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ResourceGrant"];
+        };
+      };
+    };
+  };
+  /** revoke a grant on an app */
+  DeleteAppGrant: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description grant ID */
+        grant_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
       };
     };
   };
@@ -21951,6 +22060,78 @@ export interface operations {
         content: {
           "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
         };
+      };
+    };
+  };
+  /** list grants on an install */
+  ListInstallGrants: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ResourceGrant"][];
+        };
+      };
+    };
+  };
+  /**
+   * grant an account access to an install
+   * @description Grant an account read or full access to a single install. Org-admin only.
+   */
+  CreateInstallGrant: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description grant */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateGrantRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ResourceGrant"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** revoke a grant on an install */
+  DeleteInstallGrant: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description grant ID */
+        grant_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
       };
     };
   };
