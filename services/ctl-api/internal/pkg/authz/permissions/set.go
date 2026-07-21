@@ -29,6 +29,19 @@ func (p Set) Add(set map[string]*string) error {
 	return nil
 }
 
+// Grant adds a single object permission, preferring the most permissive value
+// on collision so a narrow grant can never downgrade a broader existing grant
+// (e.g. a role policy of {orgID: all} is not clobbered by {orgID: read}).
+func (p Set) Grant(obj string, perm Permission) {
+	if existing, ok := p[obj]; ok {
+		if existing == PermissionAll || perm != PermissionAll {
+			return
+		}
+	}
+
+	p[obj] = perm
+}
+
 func (p Set) CanPerform(obj string, perm Permission) error {
 	objects := []string{obj, "*"}
 	if parent, _, found := strings.Cut(obj, ":"); found {
