@@ -21,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/panicker"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/patcher"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/public"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/resource"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/size"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/timeout"
@@ -38,6 +39,7 @@ var MiddlewaresModule = fx.Module("middlewares",
 	fx.Provide(middlewares.AsMiddleware(auth.New)),
 	fx.Provide(middlewares.AsMiddleware(org.New)),
 	fx.Provide(middlewares.AsMiddleware(org.NewRunner)),
+	fx.Provide(middlewares.AsMiddleware(resource.New)),
 	fx.Provide(middlewares.AsMiddleware(public.New)),
 	fx.Provide(middlewares.AsMiddleware(pagination.New)),
 	fx.Provide(middlewares.AsMiddleware(cors.New)),
