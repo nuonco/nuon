@@ -16,7 +16,13 @@ export const InstallAppConfigContext = createContext<
   InstallAppConfigContextValue | undefined
 >(undefined)
 
-export function InstallAppConfigProvider({ children }: { children: ReactNode }) {
+export function InstallAppConfigProvider({
+  children,
+  enabled = true,
+}: {
+  children: ReactNode
+  enabled?: boolean
+}) {
   const { org } = useOrg()
   const { install } = useInstall()
 
@@ -40,7 +46,7 @@ export function InstallAppConfigProvider({ children }: { children: ReactNode }) 
         appConfigId: install.app_config_id!,
         recurse: true,
       }),
-    enabled: !!org?.id && !!install?.app_id && !!install?.app_config_id,
+    enabled: enabled && !!org?.id && !!install?.app_id && !!install?.app_config_id,
   })
 
   return (
