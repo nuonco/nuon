@@ -38,6 +38,7 @@ type Account struct {
 	AccountType AccountType `json:"account_type,omitzero" temporaljson:"account_type,omitzero,omitempty"`
 
 	Roles        []Role            `gorm:"many2many:account_roles;constraint:OnDelete:CASCADE;" json:"roles,omitzero" temporaljson:"roles,omitzero,omitempty"`
+	Grants       []ResourceGrant   `gorm:"constraint:OnDelete:CASCADE;" json:"grants,omitzero" temporaljson:"grants,omitzero,omitempty"`
 	Tokens       []Token           `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"tokens,omitzero,omitempty"`
 	Identities   []AccountIdentity `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"identities,omitzero,omitempty"`
 	UserJourneys UserJourneys      `json:"user_journeys,omitzero" gorm:"type:jsonb;default null" temporaljson:"user_journeys,omitzero,omitempty"`
@@ -104,7 +105,36 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 		visited[role.Org.ID] = struct{}{}
 	}
 
+	for i := range a.Grants {
+		grant := a.Grants[i]
+
+		if perm, err := permissions.NewPermission(grant.Permission); err == nil {
+			a.AllPermissions.Grant(grant.ResourceID, perm)
+		}
+
+		if grant.OrgID == "" {
+			continue
+		}
+		if _, ok := visited[grant.OrgID]; ok {
+			continue
+		}
+
+		a.OrgIDs = append(a.OrgIDs, grant.OrgID)
+		if grant.Org.ID != "" {
+			a.Orgs = append(a.Orgs, &a.Grants[i].Org)
+		}
+		visited[grant.OrgID] = struct{}{}
+	}
+
 	return nil
+}
+
+// HasOrg reports whether the account has any access to the given org — via an
+// org role or a resource grant. This is membership, not authorization: it does
+// not imply any particular permission, only that org-scoped enforcement should
+// proceed to a downstream (grant-level) check rather than reject outright.
+func (a *Account) HasOrg(orgID string) bool {
+	return slices.Contains(a.OrgIDs, orgID)
 }
 
 func (*Account) JoinTables() []migrations.JoinTable {
