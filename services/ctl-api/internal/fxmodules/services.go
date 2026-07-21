@@ -11,6 +11,7 @@ import (
 	awsaccountconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/aws-account-connections/service"
 	componentsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/components/service"
 	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
+	grantsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/grants/service"
 	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
 	notebooksservice "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/service"
@@ -48,6 +49,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(appsservice.New)),
 	fx.Provide(api.AsService(componentsservice.New)),
 	fx.Provide(api.AsService(generalservice.New)),
+	fx.Provide(api.AsService(grantsservice.New)),
 	fx.Provide(api.AsService(identityprovidersservice.New)),
 	fx.Provide(api.AsService(installsservice.New)),
 	fx.Provide(api.AsService(notebooksservice.New)),
