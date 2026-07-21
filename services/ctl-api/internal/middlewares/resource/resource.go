@@ -56,6 +56,16 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		// Collection endpoints authorize a deferred grantee by filtering their
+		// result set in the handler, not by gating the whole route — so they are
+		// let through here even when their path carries a resource param (e.g.
+		// GET /v1/apps/:app_id/installs, where an install-only grantee has no app
+		// grant to satisfy a gate). This check precedes resource resolution.
+		if isFilteredCollection(ctx) {
+			ctx.Next()
+			return
+		}
+
 		org, err := cctx.OrgFromContext(ctx)
 		if err != nil {
 			// No org in context (e.g. a non-org-scoped route). Nothing to
@@ -70,14 +80,9 @@ func (m middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		// A deferred request that names no grantable resource is only allowed if
-		// the route opts into grant-filtered collection handling (populated as
-		// list endpoints adopt scope filtering); otherwise fail closed.
+		// A deferred request that names no grantable resource and is not a
+		// filtered collection fails closed.
 		if !resolved {
-			if isFilteredCollection(ctx) {
-				ctx.Next()
-				return
-			}
 			m.deny(ctx, "insufficient permissions for this org")
 			return
 		}

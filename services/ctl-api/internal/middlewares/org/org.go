@@ -103,13 +103,18 @@ func (m middleware) Handler() gin.HandlerFunc {
 			} else {
 				cctx.SetOrgAuthorized(ctx, true)
 			}
-		} else if orgErr != nil {
-			ctx.Error(stderr.ErrAuthorization{
-				Err:         fmt.Errorf("unable to perform %s on org %s", perm, org.ID),
-				Description: fmt.Sprintf("Please make sure you have the correct permissions for %s", org.ID),
-			})
-			ctx.Abort()
-			return
+		} else {
+			if orgErr != nil {
+				ctx.Error(stderr.ErrAuthorization{
+					Err:         fmt.Errorf("unable to perform %s on org %s", perm, org.ID),
+					Description: fmt.Sprintf("Please make sure you have the correct permissions for %s", org.ID),
+				})
+				ctx.Abort()
+				return
+			}
+			// Legacy path: reaching here means the account has org-wide access,
+			// so downstream grant-scope filtering must no-op.
+			cctx.SetOrgAuthorized(ctx, true)
 		}
 
 		cctx.SetOrgGinContext(ctx, &org)

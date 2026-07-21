@@ -56,6 +56,7 @@ func (s *service) getApps(ctx *gin.Context, orgID, q string) ([]*app.App, error)
 
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
+		Scopes(s.appGrantScope(ctx)).
 		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithOverrideTable("app_configs_latest_view_v1"))
 		}).

@@ -59,6 +59,7 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID string) ([]app.Install, error) {
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
+		Scopes(s.installGrantScope(ctx)).
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels(views.TableOrViewName(s.db, &app.Install{}, ".labels"), lbls)).
 		Preload("AppSandboxConfig").

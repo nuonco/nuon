@@ -80,6 +80,7 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q string
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
+		Scopes(s.installGrantScope(ctx)).
 		Scopes(labels.WithLabels("labels", lbls))
 
 	if q != "" {
