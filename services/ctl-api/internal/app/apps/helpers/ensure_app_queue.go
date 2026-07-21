@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -17,11 +18,29 @@ const (
 	AppGenerateStepsQueueName      = "app-generate-steps"
 )
 
+func (h *Helpers) EnsureAppAutomationQueue(ctx context.Context, appID string) (*app.Queue, error) {
+	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OwnerID:     appID,
+		OwnerType:   plugins.TableName(h.db, app.App{}),
+		Namespace:   "apps",
+		Name:        queue.AppAutomationsQueueName,
+		MaxInFlight: 10,
+		MaxDepth:    50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to ensure app-automations queue for app %s: %w", appID, err)
+	}
+	return q, nil
+}
+
 // EnsureAppQueue creates all Temporal queue workflows needed for an app to
 // execute workflows through the shared flow infrastructure.
 // Safe to call multiple times — queueClient.Create is idempotent.
 func (h *Helpers) EnsureAppQueue(ctx context.Context, appID string) error {
 	ownerType := plugins.TableName(h.db, app.App{})
+	if _, err := h.EnsureAppAutomationQueue(ctx, appID); err != nil {
+		return err
+	}
 
 	// app-workflows queue — orchestrates workflow execution (executeflow.Signal)
 	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{

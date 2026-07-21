@@ -28,6 +28,7 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"POST", "/v1/vcs/connection-callback"}:                        {},
 	{"POST", "/v1/vcs/:vcs_connection_id/events"}:                  {},
 	{"POST", "/v1/vcs/webhooks/:subscription_id/events"}:           {},
+	{"POST", "/v1/event-ingress/:ingress_key"}:                     {},
 	{"POST", "/v1/installs/:install_id/phone-home/:phone_home_id"}: {},
 
 	// stack-run config: read-only, side-effect free. The per-stack-version

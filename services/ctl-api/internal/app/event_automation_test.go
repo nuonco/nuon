@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -31,6 +32,8 @@ func TestEventAutomationUniqueIndexes(t *testing.T) {
 	sourceIndexes := (&EventSource{}).Indexes(db)
 	require.Equal(t, []string{"app_id", "name", "deleted_at"}, sourceIndexes[0].Columns)
 	require.True(t, sourceIndexes[0].UniqueValue.Bool)
+	require.Equal(t, []string{"ingress_key_hash"}, sourceIndexes[3].Columns)
+	require.True(t, sourceIndexes[3].UniqueValue.Bool)
 
 	secretIndexes := (&EventSourceSecret{}).Indexes(db)
 	require.Equal(t, []string{"event_source_id", "key_id"}, secretIndexes[0].Columns)
@@ -48,6 +51,19 @@ func TestEventAutomationUniqueIndexes(t *testing.T) {
 	require.Equal(t, []string{"queue_id", "dedupe_key"}, queueSignalIndexes[0].Columns)
 	require.True(t, queueSignalIndexes[0].UniqueValue.Bool)
 	require.Equal(t, "WHERE deleted_at = 0 AND dedupe_key IS NOT NULL AND dedupe_key <> ''", queueSignalIndexes[0].Option)
+
+	queueIndexes := (&Queue{}).Indexes(db)
+	require.Equal(t, []string{"owner_id", "owner_type", "name"}, queueIndexes[2].Columns)
+	require.True(t, queueIndexes[2].UniqueValue.Bool)
+	require.Equal(t, "WHERE deleted_at = 0 AND name = 'app-automations'", queueIndexes[2].Option)
+}
+
+func TestEventSourceSecretDefaultsKeyIDToID(t *testing.T) {
+	secret := EventSourceSecret{}
+	tx := &gorm.DB{Statement: &gorm.Statement{Context: context.Background()}}
+	require.NoError(t, secret.BeforeCreate(tx))
+	require.NotEmpty(t, secret.ID)
+	require.Equal(t, secret.ID, secret.KeyID)
 }
 
 func TestEventAutomationRelationships(t *testing.T) {

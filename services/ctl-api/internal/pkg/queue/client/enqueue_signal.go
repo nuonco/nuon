@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -43,9 +44,25 @@ type EnqueueSignalRequest struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (*queue.EnqueueResponse, error) {
-	q, err := c.getQueue(ctx, req.QueueID)
+	resp, queueSignal, err := c.enqueueSignal(ctx, c.db, req)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get queue")
+		return nil, err
+	}
+	if c.enqueuer != nil && queueSignal != nil {
+		c.enqueuer.Send(queueSignal.ID)
+	}
+	return resp, nil
+}
+
+func (c *Client) EnqueueSignalInTransaction(ctx context.Context, tx *gorm.DB, req *EnqueueSignalRequest) (*queue.EnqueueResponse, error) {
+	resp, _, err := c.enqueueSignal(ctx, tx, req)
+	return resp, err
+}
+
+func (c *Client) enqueueSignal(ctx context.Context, db *gorm.DB, req *EnqueueSignalRequest) (*queue.EnqueueResponse, *app.QueueSignal, error) {
+	var q app.Queue
+	if err := db.WithContext(ctx).Where(app.Queue{ID: req.QueueID}).First(&q).Error; err != nil {
+		return nil, nil, errors.Wrap(err, "unable to get queue")
 	}
 
 	// Create the QueueSignal record in the DB directly so we can return the
@@ -97,7 +114,7 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		Callbacks: callbacks,
 	}
 
-	create := c.db.WithContext(ctx)
+	create := db.WithContext(ctx)
 	if req.IdempotencyKey != "" {
 		queueSignal.ID = idempotentQueueSignalID(req.QueueID, req.Signal.Type(), req.IdempotencyKey)
 		queueSignal.Workflow.ID = fmt.Sprintf(queueSignal.Workflow.IDTemplate, queueSignal.ID)
@@ -116,24 +133,20 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 	}
 	res := create.Create(&queueSignal)
 	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to create queue signal")
+		return nil, nil, errors.Wrap(res.Error, "unable to create queue signal")
 	}
 	if res.RowsAffected == 0 {
 		var existing app.QueueSignal
-		query := c.db.WithContext(ctx)
+		query := db.WithContext(ctx)
 		if req.IdempotencyKey != "" {
 			query = query.Unscoped().Where(app.QueueSignal{ID: queueSignal.ID})
 		} else {
 			query = query.Where(app.QueueSignal{QueueID: req.QueueID, DedupeKey: req.DedupeKey})
 		}
 		if err := query.First(&existing).Error; err != nil {
-			return nil, errors.Wrap(err, "unable to get deduplicated queue signal")
+			return nil, nil, errors.Wrap(err, "unable to get deduplicated queue signal")
 		}
-		return &queue.EnqueueResponse{ID: existing.ID, WorkflowID: existing.Workflow.ID, Deduplicated: true}, nil
-	}
-
-	if c.enqueuer != nil {
-		c.enqueuer.Send(queueSignal.ID)
+		return &queue.EnqueueResponse{ID: existing.ID, WorkflowID: existing.Workflow.ID, Deduplicated: true}, nil, nil
 	}
 
 	c.mw.Incr("queue.signal.enqueued", metrics.ToTags(map[string]string{
@@ -145,7 +158,7 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		ID:           queueSignal.ID,
 		WorkflowID:   queueSignal.Workflow.ID,
 		Deduplicated: false,
-	}, nil
+	}, &queueSignal, nil
 }
 
 func idempotentQueueSignalID(queueID string, signalType signal.SignalType, idempotencyKey string) string {

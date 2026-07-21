@@ -51,23 +51,23 @@ type EventAutomationFilter struct {
 }
 
 type EventSource struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
-	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
-	OrgID       string                `json:"org_id,omitzero" gorm:"notnull;<-:create" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
-	Org         Org                   `json:"-" temporaljson:"-"`
-	AppID       string                `json:"app_id,omitzero" gorm:"notnull;<-:create" temporaljson:"app_id,omitzero,omitempty"`
-	App         App                   `json:"-" temporaljson:"-"`
-	Name        string                `json:"name" gorm:"notnull" temporaljson:"name,omitzero,omitempty"`
-	Description string                `json:"description,omitempty" temporaljson:"description,omitzero,omitempty"`
-	Type        EventSourceType       `json:"type" gorm:"notnull;<-:create;check:event_source_type_checker,type IN ('generic_hmac')" temporaljson:"type,omitzero,omitempty"`
-	Status      EventSourceStatus     `json:"status" gorm:"notnull;check:event_source_status_checker,status IN ('active','suspended')" temporaljson:"status,omitzero,omitempty"`
-	LastEventAt *time.Time            `json:"last_event_at,omitempty" temporaljson:"last_event_at,omitzero,omitempty"`
-	Queues      []Queue               `json:"queues,omitzero" gorm:"polymorphic:Owner;polymorphicValue:event_sources" temporaljson:"queues,omitzero,omitempty"`
-	Secrets     []EventSourceSecret   `json:"-" gorm:"constraint:OnDelete:CASCADE" temporaljson:"-"`
-	Events      []EventSourceEvent    `json:"-" gorm:"constraint:OnDelete:CASCADE" temporaljson:"-"`
+	ID             string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID    string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedAt      time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt      time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt      soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
+	OrgID          string                `json:"org_id,omitzero" gorm:"notnull;<-:create" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
+	Org            Org                   `json:"-" temporaljson:"-"`
+	AppID          string                `json:"app_id,omitzero" gorm:"notnull;<-:create" temporaljson:"app_id,omitzero,omitempty"`
+	App            App                   `json:"-" temporaljson:"-"`
+	IngressKeyHash string                `json:"-" gorm:"notnull;<-:create" temporaljson:"-"`
+	Name           string                `json:"name" gorm:"notnull" temporaljson:"name,omitzero,omitempty"`
+	Description    string                `json:"description,omitempty" temporaljson:"description,omitzero,omitempty"`
+	Type           EventSourceType       `json:"type" gorm:"notnull;<-:create;check:event_source_type_checker,type IN ('generic_hmac')" temporaljson:"type,omitzero,omitempty"`
+	Status         EventSourceStatus     `json:"status" gorm:"notnull;check:event_source_status_checker,status IN ('active','suspended')" temporaljson:"status,omitzero,omitempty"`
+	LastEventAt    *time.Time            `json:"last_event_at,omitempty" temporaljson:"last_event_at,omitzero,omitempty"`
+	Secrets        []EventSourceSecret   `json:"-" gorm:"constraint:OnDelete:CASCADE" temporaljson:"-"`
+	Events         []EventSourceEvent    `json:"-" gorm:"constraint:OnDelete:CASCADE" temporaljson:"-"`
 }
 
 func (e *EventSource) Indexes(db *gorm.DB) []migrations.Index {
@@ -75,6 +75,7 @@ func (e *EventSource) Indexes(db *gorm.DB) []migrations.Index {
 		{Name: indexes.Name(db, e, "app_id_name_deleted_at"), Columns: []string{"app_id", "name", "deleted_at"}, UniqueValue: sql.NullBool{Bool: true, Valid: true}},
 		{Name: indexes.Name(db, e, "org_id"), Columns: []string{"org_id"}},
 		{Name: indexes.Name(db, e, "app_id"), Columns: []string{"app_id"}},
+		{Name: indexes.Name(db, e, "ingress_key_hash"), Columns: []string{"ingress_key_hash"}, UniqueValue: sql.NullBool{Bool: true, Valid: true}},
 	}
 }
 
@@ -127,6 +128,9 @@ func (e *EventSourceSecret) BeforeCreate(tx *gorm.DB) error {
 	if e.ID == "" {
 		e.ID = domains.NewEventSourceSecretID()
 	}
+	if e.KeyID == "" {
+		e.KeyID = e.ID
+	}
 	if e.CreatedByID == "" {
 		e.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
@@ -150,6 +154,7 @@ type EventSourceEvent struct {
 	OrgID               string                `json:"org_id" gorm:"notnull;<-:create" temporaljson:"org_id,omitzero,omitempty"`
 	Org                 Org                   `json:"-" temporaljson:"-"`
 	ExternalID          string                `json:"external_id" gorm:"notnull;<-:create" temporaljson:"external_id,omitzero,omitempty"`
+	CloudEventSource    string                `json:"cloud_event_source" gorm:"notnull;<-:create" temporaljson:"cloud_event_source,omitzero,omitempty"`
 	EventType           string                `json:"event_type" gorm:"notnull;<-:create" temporaljson:"event_type,omitzero,omitempty"`
 	Subject             string                `json:"subject,omitempty" gorm:"<-:create" temporaljson:"subject,omitzero,omitempty"`
 	OccurredAt          *time.Time            `json:"occurred_at,omitempty" gorm:"<-:create" temporaljson:"occurred_at,omitzero,omitempty"`

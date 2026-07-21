@@ -10,6 +10,7 @@ import (
 	authservice "github.com/nuonco/nuon/services/ctl-api/internal/app/auth/service"
 	awsaccountconnectionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/aws-account-connections/service"
 	componentsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/components/service"
+	eventautomationsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/event-automations/service"
 	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
 	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
@@ -47,6 +48,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(awsaccountconnectionsservice.New)),
 	fx.Provide(api.AsService(appsservice.New)),
 	fx.Provide(api.AsService(componentsservice.New)),
+	fx.Provide(api.AsService(eventautomationsservice.New)),
 	fx.Provide(api.AsService(generalservice.New)),
 	fx.Provide(api.AsService(identityprovidersservice.New)),
 	fx.Provide(api.AsService(installsservice.New)),

@@ -12,6 +12,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
+const AppAutomationsQueueName = "app-automations"
+
 type QueueWorkflowRequest struct {
 	QueueID string
 	Version string
