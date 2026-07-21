@@ -69,6 +69,8 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 	outL := l.With(zap.String("nuon.command_output", "true"))
 	lOut := zapwriter.New(outL, zapcore.InfoLevel, "")
 	lErr := zapwriter.New(outL, zapcore.ErrorLevel, "")
+	// pull progress: INFO, untagged (not the action's command output)
+	lPull := zapwriter.New(l, zapcore.InfoLevel, "")
 
 	spec := launcher.RunSpec{
 		Image:         image,
@@ -94,6 +96,7 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 		PidsLimit: 512,
 		Stdout:    lOut,
 		Stderr:    lErr,
+		PullLog:   lPull,
 	}
 
 	opCtx, end := op.Tool(ctx, "action", "image-command")

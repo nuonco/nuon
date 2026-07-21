@@ -40,6 +40,27 @@ export interface paths {
      */
     get: operations["GetCurrentAccount"];
   };
+  "/v1/account/static-token": {
+    /**
+     * create a static API token for your org's service account
+     * @description Creates a long-lived static API token scoped to your current org. The token is issued for the org's service account, which is created automatically if it does not already exist. The token only grants access to the current org.
+     */
+    post: operations["CreateStaticToken"];
+  };
+  "/v1/account/static-tokens": {
+    /**
+     * list your org's static API tokens
+     * @description Lists the static API tokens for your current org's service account. Token secrets are never returned.
+     */
+    get: operations["ListStaticTokens"];
+  };
+  "/v1/account/static-tokens/{token_id}": {
+    /**
+     * delete a static API token
+     * @description Deletes a static API token belonging to your current org's service account. Once deleted, the token can no longer be used to access the API.
+     */
+    delete: operations["DeleteStaticToken"];
+  };
   "/v1/account/user-journeys": {
     /**
      * Get user journeys
@@ -3053,6 +3074,8 @@ export interface components {
       created_by_id?: string;
       enable_kube_config?: components["schemas"]["sql.NullBool"];
       id?: string;
+      /** @description Image is an optional container image the action's steps run inside. */
+      image?: string;
       /**
        * @description KubernetesContextName is the name of an AppKubernetesContextConfig on
        * the same AppConfig. Empty means fall back to the implicit sandbox
@@ -3166,6 +3189,8 @@ export interface components {
     "app.AppAWSIAMPolicyConfig": {
       app_aws_iam_role_config_id?: string;
       app_config_id?: string;
+      azure_actions?: string[];
+      azure_built_in_roles?: string[];
       cloudformation_stack_name?: string;
       contents?: string;
       created_at?: string;
@@ -3670,12 +3695,24 @@ export interface components {
       updated_at?: string;
     };
     "app.AzureStackOutputs": {
+      break_glass_identity_client_ids?: {
+        [key: string]: string;
+      };
+      custom_identity_client_ids?: {
+        [key: string]: string;
+      };
+      deprovision_identity_client_id?: string;
+      install_inputs?: {
+        [key: string]: string;
+      };
       key_vault_id?: string;
       key_vault_name?: string;
+      maintenance_identity_client_id?: string;
       network_id?: string;
       network_name?: string;
       private_subnet_ids?: string[];
       private_subnet_names?: string[];
+      provision_identity_client_id?: string;
       public_subnet_ids?: string[];
       public_subnet_names?: string[];
       resource_group_id?: string;
@@ -4218,7 +4255,6 @@ export interface components {
       updated_at?: string;
     };
     "app.InstallAppConfigVersion": {
-      app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
       created_at?: string;
       created_by_id?: string;
@@ -5430,7 +5466,7 @@ export interface components {
     /** @enum {string} */
     "app.RunnerJobExecutionStatus": "pending" | "initializing" | "in-progress" | "cleaning-up" | "finished" | "failed" | "timed-out" | "not-attempted" | "cancelled" | "unknown";
     /** @enum {string} */
-    "app.RunnerJobGroup": "health-checks" | "sync" | "build" | "deploy" | "sandbox" | "runner" | "operations" | "management" | "actions" | "" | "any";
+    "app.RunnerJobGroup": "health-checks" | "sync" | "build" | "deploy" | "sandbox" | "runner" | "operations" | "management" | "actions" | "image-actions" | "" | "any";
     /** @enum {string} */
     "app.RunnerJobOperationType": "exec" | "build" | "create-apply-plan" | "create-teardown-plan" | "apply-plan" | "unknown";
     "app.RunnerJobPlan": {
@@ -5673,6 +5709,21 @@ export interface components {
       /** @description Foreign key to TerraformWorkspace with unique constraint to prevent conflicting states for a workspace */
       workspace_id?: string;
     };
+    "app.Token": {
+      account_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      /** @description claim data */
+      expires_at?: string;
+      id?: string;
+      issued_at?: string;
+      issuer?: string;
+      name?: string;
+      token_type?: components["schemas"]["app.TokenType"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.TokenType": "auth" | "auth0" | "admin" | "static" | "integration" | "canary" | "nuon";
     "app.UserJourney": {
       name?: string;
       steps?: components["schemas"]["app.UserJourneyStep"][];
@@ -6199,6 +6250,11 @@ export interface components {
       use_default?: boolean;
     };
     "github_com_nuonco_nuon_pkg_azure_credentials.Config": {
+      /**
+       * @description ManagedIdentityClientID runs the operation as a specific user-assigned
+       * managed identity instead of the VM's system identity.
+       */
+      managed_identity_client_id?: string;
       service_principal?: components["schemas"]["credentials.ServicePrincipalCredentials"];
       use_default?: boolean;
     };
@@ -6237,6 +6293,10 @@ export interface components {
       secrets?: components["schemas"]["state.SecretsState"];
       /** @description loaded from the database but not part of the state itself */
       stale_at?: string;
+    };
+    "github_com_nuonco_nuon_services_ctl-api_internal_app_accounts_service.StaticTokenResponse": {
+      api_token?: string;
+      id?: string;
     };
     "helpers.ConnectedGithubVCSConfigRequest": {
       branch?: string;
@@ -6329,11 +6389,19 @@ export interface components {
       cluster_info?: components["schemas"]["kube.ClusterInfo"];
       gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
       id?: string;
+      image_registry?: components["schemas"]["configs.OCIRegistryRepository"];
+      image_tag?: string;
       install_id?: string;
       override_env_vars?: {
         [key: string]: string;
       };
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
+      /**
+       * @description Image-backed actions: SourceImage is the rendered app-authored ref
+       * (e.g. ghcr.io/acme/tools:v1); ImageRegistry/ImageTag point at the
+       * install-registry mirror the runner pulls from.
+       */
+      source_image?: string;
       steps?: components["schemas"]["plantypes.ActionWorkflowRunStepPlan"][];
       timeout?: number;
     };
@@ -6781,6 +6849,8 @@ export interface components {
       };
     };
     "service.AppAWSIAMPolicyConfig": {
+      azure_actions?: string[];
+      azure_built_in_roles?: string[];
       contents?: string;
       gcp_permissions?: string[];
       gcp_predefined_role?: string;
@@ -6984,6 +7054,7 @@ export interface components {
       break_glass_role_arn?: string;
       dependencies?: string[];
       enable_kube_config?: boolean | null;
+      image?: string;
       kubernetes_context?: string;
       references?: string[];
       role?: string;
@@ -7533,6 +7604,15 @@ export interface components {
     "service.CreateRunnerBootstrapTokenResponse": {
       expires_at?: string;
       token?: string;
+    };
+    "service.CreateStaticTokenRequest": {
+      /**
+       * @description defaults to one year
+       * @default 8760h
+       */
+      duration?: string;
+      /** @description human-friendly name to identify the token later */
+      name: string;
     };
     "service.CreateTerraformModuleComponentConfigRequest": {
       app_config_id?: string;
@@ -8359,6 +8439,58 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
+      };
+    };
+  };
+  /**
+   * create a static API token for your org's service account
+   * @description Creates a long-lived static API token scoped to your current org. The token is issued for the org's service account, which is created automatically if it does not already exist. The token only grants access to the current org.
+   */
+  CreateStaticToken: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateStaticTokenRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["github_com_nuonco_nuon_services_ctl-api_internal_app_accounts_service.StaticTokenResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * list your org's static API tokens
+   * @description Lists the static API tokens for your current org's service account. Token secrets are never returned.
+   */
+  ListStaticTokens: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Token"][];
+        };
+      };
+    };
+  };
+  /**
+   * delete a static API token
+   * @description Deletes a static API token belonging to your current org's service account. Once deleted, the token can no longer be used to access the API.
+   */
+  DeleteStaticToken: {
+    parameters: {
+      path: {
+        /** @description token ID */
+        token_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
       };
     };
   };

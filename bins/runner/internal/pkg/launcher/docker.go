@@ -59,8 +59,15 @@ func (d *DockerLauncher) pull(ctx context.Context, spec RunSpec, dockerConfigDir
 	args := []string{"pull", spec.Image}
 	cmd := exec.CommandContext(ctx, d.dockerPath, args...)
 	cmd.Env = dockerEnv(dockerConfigDir)
-	cmd.Stdout = spec.Stderr // pull progress is noise; keep it off the action stdout
-	cmd.Stderr = spec.Stderr
+
+	// Pull progress goes to the dedicated pull log (INFO), not the action's
+	// stdout/stderr — docker writes it to stderr but it isn't an error.
+	pullLog := spec.PullLog
+	if pullLog == nil {
+		pullLog = spec.Stdout
+	}
+	cmd.Stdout = pullLog
+	cmd.Stderr = pullLog
 	return cmd.Run()
 }
 

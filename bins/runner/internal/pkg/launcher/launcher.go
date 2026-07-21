@@ -39,6 +39,11 @@ type RunSpec struct {
 
 	Stdout io.Writer
 	Stderr io.Writer
+
+	// PullLog receives image-pull progress (docker writes it to stderr, but it
+	// is not an error and not the action's output — keep it separate so it logs
+	// at INFO and isn't tagged as command output).
+	PullLog io.Writer
 }
 
 // Launcher pulls and runs an image-backed action container.
