@@ -36,6 +36,7 @@ export interface IDropdown extends IButtonAsButton {
   icon?: React.ReactNode
   iconAlignment?: 'left' | 'right'
   isOpen?: boolean
+  onOpenChange?: (isOpen: boolean) => void
   id: string
   position?: 'above' | 'below' | 'beside' | 'overlay'
   wrapperClassName?: string
@@ -54,6 +55,7 @@ export const Dropdown = ({
   iconAlignment = 'right',
   id,
   isOpen: initIsOpen = false,
+  onOpenChange,
   position = 'below',
   variant,
   ...props
@@ -75,6 +77,15 @@ export const Dropdown = ({
     pendingFocus.current = false
     setIsOpen(false)
   }, [])
+
+  const hasMounted = useRef(false)
+  useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true
+      return
+    }
+    onOpenChange?.(isOpen)
+  }, [isOpen, onOpenChange])
 
   const focusFirstItem = useCallback(() => {
     const item = contentRef.current?.querySelector<HTMLElement>(MENU_ITEM_SELECTOR)
