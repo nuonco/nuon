@@ -31,6 +31,9 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 		func() error {
 			return ValidatePolicies(a)
 		},
+		func() error {
+			return ValidateEventAutomations(a)
+		},
 
 		// NOTE(jm): we are moving validation functions for types into the actual types.
 		// We build this validation tooling here, so we can validate as many things up front as possible.

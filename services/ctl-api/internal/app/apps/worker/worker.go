@@ -12,6 +12,7 @@ import (
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/automationevent"
 	branchactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	syncappconfiginstalls "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/syncappconfiginstalls"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"

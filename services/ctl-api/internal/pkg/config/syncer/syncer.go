@@ -21,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/branches"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/breakglass"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/components"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/eventautomations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/inputs"
 	installsyncer "github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/installs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/kubernetescontexts"
@@ -190,6 +191,12 @@ func (s *syncer) syncSteps() []syncStep {
 			Resource: "app-branches",
 			Method: func(ctx context.Context) error {
 				return branches.Sync(ctx, s.db, s.appsHelpers, s.cfg, s.appID)
+			},
+		},
+		{
+			Resource: "event-automations",
+			Method: func(ctx context.Context) error {
+				return eventautomations.Sync(ctx, s.db, s.cfg, s.orgID, s.appID, s.appConfigID)
 			},
 		},
 		{

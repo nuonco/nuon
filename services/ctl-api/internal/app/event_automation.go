@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"time"
@@ -48,6 +49,27 @@ type EventAutomationFilter struct {
 	Op    EventAutomationFilterType `json:"op"`
 	Path  string                    `json:"path"`
 	Value any                       `json:"value"`
+}
+
+func (e *EventAutomationFilter) UnmarshalJSON(data []byte) error {
+	var encoded struct {
+		Op    EventAutomationFilterType `json:"op"`
+		Path  string                    `json:"path"`
+		Value json.RawMessage           `json:"value"`
+	}
+	if err := json.Unmarshal(data, &encoded); err != nil {
+		return err
+	}
+	decoder := json.NewDecoder(bytes.NewReader(encoded.Value))
+	decoder.UseNumber()
+	var value any
+	if err := decoder.Decode(&value); err != nil {
+		return err
+	}
+	e.Op = encoded.Op
+	e.Path = encoded.Path
+	e.Value = value
+	return nil
 }
 
 type EventSource struct {
@@ -166,6 +188,8 @@ type EventSourceEvent struct {
 	SecretKeyID         string                `json:"secret_key_id" gorm:"notnull;<-:create" temporaljson:"secret_key_id,omitzero,omitempty"`
 	RoutingStatus       EventRoutingStatus    `json:"routing_status" gorm:"notnull;check:event_routing_status_checker,routing_status IN ('accepted','routing','routed','routing_failed')" temporaljson:"routing_status,omitzero,omitempty"`
 	RoutingError        string                `json:"routing_error,omitempty" temporaljson:"routing_error,omitzero,omitempty"`
+	RoutingStartedAt    *time.Time            `json:"routing_started_at,omitempty" temporaljson:"routing_started_at,omitzero,omitempty"`
+	RoutingCompletedAt  *time.Time            `json:"routing_completed_at,omitempty" temporaljson:"routing_completed_at,omitzero,omitempty"`
 	MatchCount          int                   `json:"match_count" temporaljson:"match_count,omitzero,omitempty"`
 	DispatchCount       int                   `json:"dispatch_count" temporaljson:"dispatch_count,omitzero,omitempty"`
 }

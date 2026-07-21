@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/lib/pq"
 	"github.com/nuonco/nuon/pkg/config"
@@ -68,7 +69,9 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 	)
 
 	var cfg config.AppConfig
-	if err := json.Unmarshal([]byte(intermediateJSON), &cfg); err != nil {
+	decoder := json.NewDecoder(strings.NewReader(intermediateJSON))
+	decoder.UseNumber()
+	if err := decoder.Decode(&cfg); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal intermediate config: %w", err)
 	}
 

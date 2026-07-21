@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -23,6 +24,13 @@ func TestEventAutomationConstants(t *testing.T) {
 		EventDispatchStatusDeadLettered,
 		EventDispatchStatusCancelled,
 	})
+}
+
+func TestEventAutomationFilterPreservesJSONNumberPrecision(t *testing.T) {
+	var filters []EventAutomationFilter
+	require.NoError(t, json.Unmarshal([]byte(`[{"op":"eq","path":"/id","value":9007199254740993}]`), &filters))
+	require.Len(t, filters, 1)
+	require.Equal(t, json.Number("9007199254740993"), filters[0].Value)
 }
 
 func TestEventAutomationUniqueIndexes(t *testing.T) {
