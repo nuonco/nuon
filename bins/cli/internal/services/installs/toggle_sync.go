@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-func (s *Service) ToggleSync(ctx context.Context, installID string, enable, disable bool) error {
+func (s *Service) ToggleSync(ctx context.Context, installID string, enable, disable, asJSON bool) error {
 
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
@@ -44,8 +44,18 @@ func (s *Service) ToggleSync(ctx context.Context, installID string, enable, disa
 	}
 
 	configuredState := "disabled"
+	status := "sync_disabled"
 	if appInstall.Metadata["managed_by"] == ManagedByNuonCLIConfig {
 		configuredState = "enabled"
+		status = "sync_enabled"
+	}
+
+	if asJSON {
+		ui.PrintJSON(actionResult{
+			InstallID: appInstall.ID,
+			Status:    status,
+		})
+		return nil
 	}
 
 	ui.PrintSuccess(fmt.Sprintf("config file syncing is now %s for install %s", configuredState, appInstall.Name))

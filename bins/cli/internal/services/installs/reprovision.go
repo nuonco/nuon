@@ -13,11 +13,15 @@ func (s *Service) Reprovision(ctx context.Context, installID string, asJSON bool
 		return ui.PrintError(err)
 	}
 
-	_, err = s.api.ReprovisionInstall(ctx, installID)
+	resp, err := s.api.ReprovisionInstall(ctx, installID)
 	if err != nil {
 		return ui.PrintJSONError(err)
 	}
 
-	ui.PrintLn("successfully triggered install reprovision")
+	printActionResult(asJSON, "successfully triggered install reprovision", actionResult{
+		InstallID:  installID,
+		WorkflowID: workflowIDFromResp(resp),
+		Status:     "reprovision_triggered",
+	})
 	return nil
 }

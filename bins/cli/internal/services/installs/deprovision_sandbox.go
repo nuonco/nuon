@@ -13,11 +13,15 @@ func (s *Service) DeprovisionSandbox(ctx context.Context, installID string, asJS
 		return ui.PrintError(err)
 	}
 
-	_, err = s.api.DeprovisionInstallSandbox(ctx, installID)
+	resp, err := s.api.DeprovisionInstallSandbox(ctx, installID)
 	if err != nil {
 		return ui.PrintJSONError(err)
 	}
 
-	ui.PrintLn("successfully scheduled deprovision of install sandbox")
+	printActionResult(asJSON, "successfully scheduled deprovision of install sandbox", actionResult{
+		InstallID:  installID,
+		WorkflowID: workflowIDFromResp(resp),
+		Status:     "sandbox_deprovision_scheduled",
+	})
 	return nil
 }

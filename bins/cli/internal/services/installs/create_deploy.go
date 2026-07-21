@@ -26,7 +26,11 @@ func (s *Service) CreateDeploy(ctx context.Context, installID, buildID string, d
 		return ui.PrintError(err)
 	}
 
-	ui.PrintLn(fmt.Sprintf("successfully triggered deploy for install %s", aid.ID))
+	printActionResult(asJSON, fmt.Sprintf("successfully triggered deploy for install %s", aid.ID), actionResult{
+		InstallID: installID,
+		ID:        aid.ID,
+		Status:    "deploy_triggered",
+	})
 
 	return nil
 }

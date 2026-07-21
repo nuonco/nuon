@@ -68,6 +68,7 @@ func (c *cli) resolveOutput(cmd *cobra.Command) error {
 	case OutputTable:
 	case OutputJSON:
 		PrintJSON = true
+		ui.SetJSONOutput(true)
 	case OutputAgent:
 		PrintJSON = true
 		agentmode.SetEnabled(true)

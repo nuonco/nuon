@@ -67,14 +67,33 @@ func (s *Service) WorkflowsSelect(ctx context.Context, installID, workflowID str
 	}
 
 	if selectedWorkflow != nil {
-		s.printWorkflowSetMsg(selectedWorkflow.Name, selectedWorkflow.ID)
+		if asJSON {
+			ui.PrintJSON(actionResult{
+				InstallID:  installID,
+				ID:         selectedWorkflow.ID,
+				WorkflowID: selectedWorkflow.ID,
+				Status:     "workflow_selected",
+			})
+		} else {
+			s.printWorkflowSetMsg(selectedWorkflow.Name, selectedWorkflow.ID)
+		}
 	}
 
 	return nil
 }
 
-func (s *Service) WorkflowsDeselect(ctx context.Context) error {
-	return s.unsetWorkflowID(ctx)
+func (s *Service) WorkflowsDeselect(ctx context.Context, asJSON bool) error {
+	if err := s.unsetWorkflowID(ctx); err != nil {
+		return ui.PrintError(err)
+	}
+
+	if asJSON {
+		ui.PrintJSON(actionResult{Status: "workflow_deselected"})
+		return nil
+	}
+
+	s.printWorkflowUnsetMsg()
+	return nil
 }
 
 func (s *Service) setCurrentWorkflow(ctx context.Context, workflowID string, asJSON bool) error {
@@ -85,6 +104,15 @@ func (s *Service) setCurrentWorkflow(ctx context.Context, workflowID string, asJ
 
 	if err := s.setWorkflowID(ctx, workflow.ID); err != nil {
 		return err
+	}
+
+	if asJSON {
+		ui.PrintJSON(actionResult{
+			ID:         workflow.ID,
+			WorkflowID: workflow.ID,
+			Status:     "workflow_selected",
+		})
+		return nil
 	}
 
 	s.printWorkflowSetMsg(workflow.Name, workflow.ID)
@@ -98,7 +126,6 @@ func (s *Service) setWorkflowID(ctx context.Context, workflowID string) error {
 
 func (s *Service) unsetWorkflowID(ctx context.Context) error {
 	s.cfg.Set("workflow_id", "")
-	fmt.Printf("%s\n", bubbles.InfoStyle.Render("current workflow is now unset"))
 	return s.cfg.WriteConfig()
 }
 
@@ -107,9 +134,13 @@ func (s *Service) GetWorkflowID() string {
 }
 
 func (s *Service) printWorkflowSetMsg(name, id string) {
-	fmt.Printf("%s\n", bubbles.InfoStyle.Render(fmt.Sprintf("current workflow is now %s: %s", name, id)))
+	ui.Printf("%s\n", bubbles.InfoStyle.Render(fmt.Sprintf("current workflow is now %s: %s", name, id)))
+}
+
+func (s *Service) printWorkflowUnsetMsg() {
+	ui.Printf("%s\n", bubbles.InfoStyle.Render("current workflow is now unset"))
 }
 
 func (s *Service) printNoWorkflowsMsg() {
-	fmt.Printf("%s\n", bubbles.BaseStyle.Render("no workflows found for this install"))
+	ui.Printf("%s\n", bubbles.BaseStyle.Render("no workflows found for this install"))
 }

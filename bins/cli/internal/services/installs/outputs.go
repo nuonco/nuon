@@ -173,17 +173,17 @@ func (s *Service) Outputs(ctx context.Context, installID string, opts OutputsOpt
 	if len(out.Stack) > 0 {
 		empty = false
 		printedSection = true
-		fmt.Println(header.Render("Stack"))
+		ui.Println(header.Render("Stack"))
 		printOutputsTable(view, out.Stack)
 	}
 
 	if len(out.Sandbox) > 0 {
 		empty = false
 		if printedSection {
-			fmt.Println()
+			ui.Println()
 		}
 		printedSection = true
-		fmt.Println(header.Render("Sandbox"))
+		ui.Println(header.Render("Sandbox"))
 		printOutputsTable(view, out.Sandbox)
 	}
 
@@ -195,10 +195,10 @@ func (s *Service) Outputs(ctx context.Context, installID string, opts OutputsOpt
 	for _, name := range compNames {
 		empty = false
 		if printedSection {
-			fmt.Println()
+			ui.Println()
 		}
 		printedSection = true
-		fmt.Println(header.Render("Component " + name))
+		ui.Println(header.Render("Component " + name))
 		printOutputsTable(view, out.Components[name])
 	}
 
@@ -239,7 +239,7 @@ func availableComponents(components []*models.AppInstallComponent) {
 		names = append(names, componentDisplayName(c))
 	}
 	sort.Strings(names)
-	fmt.Printf("\nAvailable components: %s\n", strings.Join(names, ", "))
+	ui.Printf("\nAvailable components: %s\n", strings.Join(names, ", "))
 }
 
 // latestSandboxOutputs returns the outputs map from the most relevant sandbox
