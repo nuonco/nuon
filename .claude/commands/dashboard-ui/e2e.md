@@ -28,10 +28,11 @@ Wait for confirmation before proceeding.
 Create `services/dashboard-ui/e2e/specs/<name>.spec.ts` that implements the flow.
 
 Rules:
-- Import `{ test, expect }` from `../fixtures` — never from `@playwright/test`
-- Use the `orgId` fixture for org-scoped navigation
-- Use `page.waitForLoadState('networkidle')` after navigation
-- Prefer Playwright's role-based locators (`getByRole`, `getByText`, `getByLabel`) over CSS selectors
+- Import `{ test, expect }` from `../fixtures` — never from `@playwright/test`. If a helper needs the `Page` type, import it from `../fixtures` too (it is re-exported there).
+- Use the available fixtures: `orgId` for org-scoped navigation, plus `appConfig` and `installIds`. For flows that act on a seeded install, read `installIds[0]` and guard with `test.skip(!installIds[0], 'No seed install available')` — never hard-code entity IDs, the seed org is recreated each run.
+- Use `page.waitForLoadState('domcontentloaded')` after navigation, then assert on a specific element or the page title — **never `networkidle`**: the SPA polls continuously (SSE + TanStack Query `refetchInterval`), so the network never goes idle and `networkidle` times out the test.
+- To assert a page loaded, prefer its browser tab title (e.g. `await expect(page).toHaveTitle(/^Components \|/)`) — pages set it via `PageTitle` as `"<title> | Nuon"`. Do NOT use `getByRole('heading', ...)` for page titles: many page headers render with `HeadingGroup` (an `<hgroup>`, not a heading role) and will not match.
+- Prefer Playwright's role-based locators (`getByRole`, `getByText`, `getByLabel`) over CSS selectors. Exception: elements identified only by a dynamic `id` (e.g. the row dropdown trigger `#dropdown-button-<installId>`) — a `locator()` is correct there.
 - Keep tests focused — one `test()` per logical step or group of related assertions
 - Use `test.describe` if the flow has multiple distinct phases
 
@@ -40,10 +41,14 @@ Rules:
 Run the new spec:
 
 ```bash
-cd services/dashboard-ui && E2E_EMAIL=${E2E_EMAIL} E2E_ORG_ID=${E2E_ORG_ID} bunx playwright test -c e2e/playwright.config.ts e2e/specs/<name>.spec.ts
+# E2E_ORG_ID is optional: omit it and global-setup seeds a fresh org + app + 2 installs (slower, ~1min),
+# then deletes the org on teardown. Pass an existing E2E_ORG_ID to reuse an org and skip provisioning.
+cd services/dashboard-ui && E2E_EMAIL=${E2E_EMAIL:-seed@nuon.co} bunx playwright test -c e2e/playwright.config.ts e2e/specs/<name>.spec.ts
 ```
 
 If the test fails, read the error output and fix the spec. Do not modify the flow markdown unless the user asks — the flow is the source of truth.
+
+To confirm a regression test is meaningful, temporarily reintroduce the bug it guards against and check the spec fails, then restore — a spec that passes with the bug present is not catching anything.
 
 ## Anti-Patterns
 
