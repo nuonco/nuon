@@ -169,23 +169,25 @@ func (r *Registry) Parse(ctx *ParseContext) compositeerrors.CompositeError {
 		collect(r.all)
 	}
 
-	applicable := candidates[:0]
-	for _, idx := range candidates {
-		if r.parsers[idx].Applicable(ctx) {
-			applicable = append(applicable, idx)
-		}
-	}
-
-	sort.SliceStable(applicable, func(i, j int) bool {
-		li, lj := r.parsers[applicable[i]].Layer(), r.parsers[applicable[j]].Layer()
+	// Order candidates by layer (then registration order) up front, then check
+	// Applicable and Parse in that order so the most specific parser is
+	// consulted first. Evaluating the gates lazily in priority order means a
+	// higher-priority match short-circuits every lower-priority parser,
+	// including any lazy provider lookup their Applicable would trigger.
+	sort.SliceStable(candidates, func(i, j int) bool {
+		li, lj := r.parsers[candidates[i]].Layer(), r.parsers[candidates[j]].Layer()
 		if li != lj {
 			return li < lj
 		}
-		return applicable[i] < applicable[j]
+		return candidates[i] < candidates[j]
 	})
 
-	for _, idx := range applicable {
-		if ce := r.parsers[idx].Parse(ctx); ce != nil {
+	for _, idx := range candidates {
+		p := r.parsers[idx]
+		if !p.Applicable(ctx) {
+			continue
+		}
+		if ce := p.Parse(ctx); ce != nil {
 			return ce
 		}
 	}
