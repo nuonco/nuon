@@ -222,6 +222,7 @@ func TestGenerate(t *testing.T) {
 		false,
 		true,
 		false,
+		"",
 	)
 	err := generator.Gen("./test-app-init/", NewTestingConfigStructure("test-app-init"))
 	assert.NoError(t, err, "generator existed with error")
@@ -230,7 +231,7 @@ func TestGenerate(t *testing.T) {
 // this is a ai generated tests, not to be trusted, only used for dev purposed
 func TestGenerateWithInstanceValues(t *testing.T) {
 	// This test verifies that instance values are being used in the generated TOML
-	generator := NewConfigGen(true, true, false, true, false)
+	generator := NewConfigGen(true, true, false, true, false, "")
 
 	defer func() {
 		// cleanup

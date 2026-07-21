@@ -61,6 +61,15 @@ type ConfigStructure struct {
 	Configs []ConfigFileDefinition
 	// directory containing config files
 	ConfigDirectories []ConfigDirectoryDefinition
+	// non-config files written verbatim (e.g. README.md)
+	RawFiles []RawFileDefinition
+}
+
+// RawFileDefinition is a plain file written to the config root as-is, without
+// TOML encoding or a schema directive.
+type RawFileDefinition struct {
+	Name     string
+	Contents string
 }
 
 func NewConfigStructure(name string) ConfigStructure {
@@ -279,24 +288,22 @@ func (c *ConfigStructure) UpdateMetadata(cfg *config.MetadataConfig) error {
 }
 
 func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
+	kubernetesSync := true
+
 	return &ConfigStructure{
 		Name: name,
 		// Root-level config files
 		Configs: []ConfigFileDefinition{
 			{
-				Name: "inputs.toml",
+				Name: "metadata.toml",
 				Schemas: []ConfigFileSchema{
 					{
-						SkipNonRequired: false,
-						Instance:        &config.AppInputConfig{},
-					},
-				},
-			},
-			{
-				Name: "installer.toml",
-				Schemas: []ConfigFileSchema{
-					{
-						Instance: &config.InstallerConfig{},
+						Instance: &config.MetadataConfig{
+							Version:     "v1",
+							DisplayName: "My App",
+							Description: "A Nuon-deployed application.",
+							Readme:      "./README.md",
+						},
 					},
 				},
 			},
@@ -304,7 +311,18 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 				Name: "sandbox.toml",
 				Schemas: []ConfigFileSchema{
 					{
-						Instance: &config.AppSandboxConfig{},
+						Instance: &config.AppSandboxConfig{
+							TerraformVersion: "1.11.3",
+							PublicRepo: &config.PublicRepoConfig{
+								Repo:      "nuonco/aws-eks-sandbox",
+								Directory: ".",
+								Branch:    "main",
+							},
+							VarsMap: map[string]string{
+								"cluster_name":    "n-{{.nuon.install.id}}",
+								"cluster_version": "1.34",
+							},
+						},
 					},
 				},
 			},
@@ -312,7 +330,15 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 				Name: "runner.toml",
 				Schemas: []ConfigFileSchema{
 					{
-						Instance: &config.AppRunnerConfig{},
+						Instance: &config.AppRunnerConfig{
+							RunnerType:    "aws",
+							HelmDriver:    "configmap",
+							InitScriptURL: "https://raw.githubusercontent.com/nuonco/runner/refs/tags/aws-v0.1.0/scripts/aws/init-mng.sh",
+							EnvVarMap: map[string]string{
+								"HELM_MAX_HISTORY":   "10",
+								"RUNNER_AUTH_METHOD": "iid",
+							},
+						},
 					},
 				},
 			},
@@ -320,7 +346,13 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 				Name: "stack.toml",
 				Schemas: []ConfigFileSchema{
 					{
-						Instance: &config.StackConfig{},
+						Instance: &config.StackConfig{
+							Type:                    "aws-cloudformation",
+							Name:                    "my-app-{{.nuon.install.id}}",
+							Description:             "CloudFormation stack for My App: install {{.nuon.install.id}}",
+							VPCNestedTemplateURL:    "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.0/vpc/eks/default/stack.yaml",
+							RunnerNestedTemplateURL: "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.0/runner/asg/stack.yaml",
+						},
 					},
 				},
 			},
@@ -328,8 +360,19 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 				Name: "secrets.toml",
 				Schemas: []ConfigFileSchema{
 					{
-						Instance:        &config.SecretsConfig{},
-						SkipNonRequired: false,
+						Instance: &config.SecretsConfig{
+							Secrets: []*config.AppSecret{
+								{
+									Name:                      "db_password",
+									DisplayName:               "Database Password",
+									Description:               "Password for the application database.",
+									AutoGenerate:              true,
+									KubernetesSync:            &kubernetesSync,
+									KubernetesSecretNamespace: "my-app",
+									KubernetesSecretName:      "my-app-secrets",
+								},
+							},
+						},
 					},
 				},
 			},
@@ -337,16 +380,18 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 				Name: "break_glass.toml",
 				Schemas: []ConfigFileSchema{
 					{
-						Instance: &config.BreakGlass{},
-					},
-				},
-			},
-			{
-				Name: "policies.toml",
-				Schemas: []ConfigFileSchema{
-					{
-						Instance:        &config.PoliciesConfig{},
-						SkipNonRequired: false,
+						Instance: &config.BreakGlass{
+							Roles: []*config.AppAWSIAMRole{
+								{
+									Name:        "{{.nuon.install.id}}-app-break-glass",
+									DisplayName: "Break Glass Admin",
+									Description: "grants admin access for emergencies",
+									Policies: []config.AppAWSIAMPolicy{
+										{ManagedPolicyName: "AdministratorAccess"},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -354,38 +399,123 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 		// Subdirectories with their config files
 		ConfigDirectories: []ConfigDirectoryDefinition{
 			{
-				Name: "components",
+				Name: "input_groups",
 				Configs: []ConfigFileDefinition{
 					{
-						Name: "example_helm_chart.toml",
+						Header: "input-group",
+						Name:   "example.toml",
 						Schemas: []ConfigFileSchema{
 							{
-								Instance: &config.Component{},
-							},
-							{
-								Instance: &config.HelmChartComponentConfig{},
+								Instance: &config.AppInputGroup{
+									Name:        "example",
+									DisplayName: "Example",
+									Description: "Example input group.",
+								},
 							},
 						},
 					},
+				},
+			},
+			{
+				Name: "inputs/example",
+				Configs: []ConfigFileDefinition{
 					{
-						Name: "example_terraform_module.toml",
+						Header: "input",
+						Name:   "example_input.toml",
 						Schemas: []ConfigFileSchema{
 							{
-								Instance: &config.Component{},
-							},
-							{
-								Instance: &config.TerraformModuleComponentConfig{},
+								Instance: &config.AppInput{
+									Name:             "instance_type",
+									DisplayName:      "Node Instance Size",
+									Description:      "EC2 instance type for worker nodes.",
+									Group:            "example",
+									Default:          "t3a.medium",
+									Type:             "string",
+									UserConfigurable: true,
+								},
 							},
 						},
 					},
+				},
+			},
+			{
+				Name: "components/example_helm_chart",
+				Configs: []ConfigFileDefinition{
 					{
-						Name: "example_kubernetes_manifest.toml",
+						Name: "nuon.toml",
 						Schemas: []ConfigFileSchema{
 							{
-								Instance: &config.Component{},
+								Instance: &config.Component{
+									Type: config.HelmChartComponentType,
+									Name: "my_app_chart",
+								},
 							},
 							{
-								Instance: &config.KubernetesManifestComponentConfig{},
+								Instance: &config.HelmChartComponentConfig{
+									ChartName: "my-app",
+									Namespace: "my-app",
+									ConnectedRepo: &config.ConnectedRepoConfig{
+										Repo:      "your-org/your-repo",
+										Directory: "components/chart",
+										Branch:    "main",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				Name: "components/example_terraform_module",
+				Configs: []ConfigFileDefinition{
+					{
+						Name: "nuon.toml",
+						Schemas: []ConfigFileSchema{
+							{
+								Instance: &config.Component{
+									Type: config.TerraformModuleComponentType,
+									Name: "my_app_infra",
+								},
+							},
+							{
+								Instance: &config.TerraformModuleComponentConfig{
+									TerraformVersion: "1.9.0",
+									ConnectedRepo: &config.ConnectedRepoConfig{
+										Repo:      "your-org/your-repo",
+										Directory: "components/terraform",
+										Branch:    "main",
+									},
+									VarsMap: map[string]string{
+										"install_id": "{{.nuon.install.id}}",
+										"region":     "{{.nuon.install_stack.outputs.region}}",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				Name: "components/example_kubernetes_manifest",
+				Configs: []ConfigFileDefinition{
+					{
+						Name: "nuon.toml",
+						Schemas: []ConfigFileSchema{
+							{
+								Instance: &config.Component{
+									Type: config.KubernetesManifestComponentType,
+									Name: "my_app_manifests",
+								},
+							},
+							{
+								Instance: &config.KubernetesManifestComponentConfig{
+									Namespace: "my-app",
+									ConnectedRepo: &config.ConnectedRepoConfig{
+										Repo:      "your-org/your-repo",
+										Directory: "components/manifests",
+										Branch:    "main",
+									},
+								},
 							},
 						},
 					},
@@ -395,57 +525,117 @@ func DefaultAppConfigConfigStructure(name string) *ConfigStructure {
 				Name: "permissions",
 				Configs: []ConfigFileDefinition{
 					{
-						Name: "provision.toml",
+						Header: "permission",
+						Name:   "provision.toml",
 						Schemas: []ConfigFileSchema{
 							{
-								Instance: &config.PermissionsConfig{},
+								Instance: &config.AppAWSIAMRole{
+									Type:        "provision",
+									Name:        "{{.nuon.install.id}}-provision",
+									DisplayName: "provision role",
+									Description: "Provisions the sandbox and components.",
+									Policies: []config.AppAWSIAMPolicy{
+										{ManagedPolicyName: "AdministratorAccess"},
+									},
+								},
 							},
 						},
 					},
 					{
-						Name: "maintenance.toml",
+						Header: "permission",
+						Name:   "maintenance.toml",
 						Schemas: []ConfigFileSchema{
 							{
-								Instance: &config.PermissionsConfig{},
+								Instance: &config.AppAWSIAMRole{
+									Type:        "maintenance",
+									Name:        "{{.nuon.install.id}}-maintenance",
+									DisplayName: "maintenance role",
+									Description: "Deploys and maintains components.",
+									Policies: []config.AppAWSIAMPolicy{
+										{ManagedPolicyName: "AdministratorAccess"},
+									},
+								},
 							},
 						},
 					},
 					{
-						Name: "deprovision.toml",
+						Header: "permission",
+						Name:   "deprovision.toml",
 						Schemas: []ConfigFileSchema{
 							{
-								Instance: &config.PermissionsConfig{},
+								Instance: &config.AppAWSIAMRole{
+									Type:        "deprovision",
+									Name:        "{{.nuon.install.id}}-deprovision",
+									DisplayName: "deprovision role",
+									Description: "Tears down the sandbox and components.",
+									Policies: []config.AppAWSIAMPolicy{
+										{ManagedPolicyName: "AdministratorAccess"},
+									},
+								},
 							},
 						},
 					},
 				},
 			},
 			{
-				Name: "actions",
+				Name: "actions/example_action",
 				Configs: []ConfigFileDefinition{
 					{
-						Name: "example_action.toml",
+						Name: "nuon.toml",
 						Schemas: []ConfigFileSchema{
 							{
-								Instance: &config.ActionConfig{},
+								Instance: &config.ActionConfig{
+									Name:    "healthcheck",
+									Timeout: "30s",
+									Triggers: []*config.ActionTriggerConfig{
+										{Type: "cron", CronSchedule: "*/5 * * * *"},
+										{Type: "manual"},
+									},
+									Steps: []*config.ActionStepConfig{
+										{Name: "run-healthcheck", Command: "echo healthcheck"},
+									},
+								},
 							},
 						},
 					},
 				},
 			},
 			{
-				Name: "installs",
+				Name: "policies",
 				Configs: []ConfigFileDefinition{
 					{
-						Name: "example_install.toml",
+						Header: "policy",
+						Name:   "example_policy.toml",
 						Schemas: []ConfigFileSchema{
 							{
-								Instance: &config.Install{},
+								Instance: &config.AppPolicy{
+									Type:   config.AppPolicyTypeTerraformModule,
+									Engine: config.AppPolicyEngineOPA,
+									Name:   "example-policy",
+								},
 							},
 						},
 					},
 				},
 			},
 		},
+		RawFiles: []RawFileDefinition{
+			{
+				Name:     "README.md",
+				Contents: defaultReadme,
+			},
+		},
 	}
 }
+
+const defaultReadme = `# My App
+
+A Nuon-deployed application.
+
+This directory contains the Nuon app configuration. Edit the files to describe
+your app, then sync it with:
+
+    nuon apps sync -c metadata.toml
+
+See https://docs.nuon.co for more information.
+`

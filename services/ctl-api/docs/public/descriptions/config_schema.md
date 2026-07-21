@@ -2,7 +2,7 @@ Return jsonschemas for Nuon configs. These can be used in frontmatter in most ed
 [Taplo](https://taplo.tamasfe.dev/) configured.
 
 ```toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+#:schema https://api.nuon.co/v1/general/config-schema/inputs
 
 description = "description"
 ```

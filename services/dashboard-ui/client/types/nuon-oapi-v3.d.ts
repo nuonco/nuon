@@ -1133,7 +1133,7 @@ export interface paths {
      * [Taplo](https://taplo.tamasfe.dev/) configured.
      *
      * ```toml
-     * #:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+     * #:schema https://api.nuon.co/v1/general/config-schema/inputs
      *
      * description = "description"
      * ```
@@ -1161,7 +1161,7 @@ export interface paths {
      * [Taplo](https://taplo.tamasfe.dev/) configured.
      *
      * ```toml
-     * #:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+     * #:schema https://api.nuon.co/v1/general/config-schema/inputs
      *
      * description = "description"
      * ```
@@ -17533,7 +17533,7 @@ export interface operations {
    * [Taplo](https://taplo.tamasfe.dev/) configured.
    *
    * ```toml
-   * #:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+   * #:schema https://api.nuon.co/v1/general/config-schema/inputs
    *
    * description = "description"
    * ```
@@ -17606,7 +17606,7 @@ export interface operations {
    * [Taplo](https://taplo.tamasfe.dev/) configured.
    *
    * ```toml
-   * #:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+   * #:schema https://api.nuon.co/v1/general/config-schema/inputs
    *
    * description = "description"
    * ```

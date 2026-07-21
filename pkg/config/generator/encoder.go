@@ -20,22 +20,49 @@ func extractPropertyName(path string) string {
 	return path[lastDotIndex+1:]
 }
 
+// encodePhase controls which top-level properties a pass emits. TOML requires
+// all scalar key/values to precede any [table]/[[table]] headers, so multi-schema
+// files are encoded in two passes: lines first, then blocks.
+type encodePhase int
+
+const (
+	phaseAll encodePhase = iota
+	phaseLines
+	phaseBlocks
+)
+
+// rendersBlock reports whether a property is emitted as a TOML table/array-of-
+// tables header (which must come after all scalar key/values).
+func rendersBlock(s *jsonschema.Schema) bool {
+	switch s.Type {
+	case "object":
+		return true
+	case "array":
+		if s.Items != nil && (s.Items.Type == "object" ||
+			(s.Items.Items != nil && s.Items.Items.Type == "object")) {
+			return true
+		}
+		return false
+	default:
+		return false
+	}
+}
+
 // recursivelyEncode traverses a JSON schema and generates TOML configuration content.
 // It handles nested objects, arrays, and primitive fields while respecting optional/required field rules.
 //
 // Parameters:
 //   - schema: The JSON schema to process
-//   - oneOfGroups: Map of oneOf group names to their required fields for conditional field inclusion, this is only passed from root not as part of
-//     recursive calls
 //   - output: String builder to write the generated TOML content to
 //   - prefix: Current property path prefix for nested objects
 //   - parentOptional: Whether the parent object is optional (unused in current implementation)
 //   - writeComments: Whether to include property comments in the output
 //   - skipNonRequired: Whether to skip non-required fields in the output
 //   - extractor: Instance value extractor for retrieving actual values from struct instances
+//   - phase: Which output pass (lines vs blocks) to emit; phaseAll emits everything
 //
 // Returns an error if the schema is invalid or if there are issues during encoding.
-func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, oneOfGroups map[string]map[string]bool, output *strings.Builder, prefix string, parentOptional bool, writeComments bool, skipNonRequired bool, extractor *InstanceValueExtractor) error {
+func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, output *strings.Builder, prefix string, parentOptional bool, writeComments bool, skipNonRequired bool, extractor *InstanceValueExtractor, phase encodePhase, instanceOnly bool) error {
 	if schema == nil || schema.Properties == nil {
 		return fmt.Errorf("schema or properties is nil")
 	}
@@ -47,6 +74,12 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, oneOfGroups map
 		requiredFields[fieldName] = true
 	}
 
+	// A schema.OneOf whose branches list mutually-exclusive sibling properties
+	// (e.g. connected_repo vs public_repo) means exactly one branch may be
+	// present. Emit the chosen branch actively and the alternatives commented
+	// out, so the output validates while still documenting the options.
+	oneOfMembers, oneOfChosen := selectOneOfBranch(schema, extractor, prefix)
+
 	for pair := schema.Properties.Oldest(); pair != nil; pair = pair.Next() {
 		propertyName := pair.Key
 		propertySchema := pair.Value
@@ -56,6 +89,11 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, oneOfGroups map
 		}
 
 		isRequired := requiredFields[propertyName]
+		isOneOfMember := oneOfMembers[propertyName]
+		isOneOfAlternative := isOneOfMember && !oneOfChosen[propertyName]
+		if oneOfChosen[propertyName] {
+			isRequired = true
+		}
 
 		fullPath := propertyName
 		if prefix != "" {
@@ -74,9 +112,19 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, oneOfGroups map
 			}
 		}
 
+		// When rendering a concrete instance record (array item), emit only the
+		// fields the instance actually set — no empty placeholders or commented
+		// oneOf alternatives.
+		if instanceOnly && !hasInstanceValue {
+			continue
+		}
+
 		isOptional := skipNonRequired && (!isRequired || parentOptional) && !hasInstanceValue
 
-		if skipNonRequired && !isRequired && !hasInstanceValue {
+		// Non-chosen oneOf branches are always rendered, but commented out.
+		if isOneOfAlternative {
+			isOptional = true
+		} else if skipNonRequired && !isRequired && !hasInstanceValue {
 			continue
 		}
 
@@ -84,14 +132,11 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, oneOfGroups map
 			continue
 		}
 
-		oneOfRequiredGroup, ok := propertySchema.Extras[StructTagOneofRequired]
-		// we check if the current property contains one of group extras properties
-		// also if one of groups is present in recursive inputs
-		if ok && oneOfGroups != nil && slices.Contains(StructTagOneOfRequiredGroups, oneOfRequiredGroup.(string)) {
-			// if yes, we check if the property name is included in the
-			oneOfGroupName := oneOfRequiredGroup.(string)
-			// check if one of group name exists, if exits check if the property name exists in that group name, if yes, skip
-			if oneOfGroup, ok := oneOfGroups[oneOfGroupName]; ok && oneOfGroup[propertyName] && !hasInstanceValue {
+		// Split output into lines-first / blocks-last passes so scalar fields
+		// from every schema precede any table headers.
+		if phase != phaseAll {
+			block := rendersBlock(propertySchema)
+			if (phase == phaseLines) == block {
 				continue
 			}
 		}
@@ -100,18 +145,32 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, oneOfGroups map
 			g.writePropertyComments(propertySchema, output)
 		}
 
+		// A typeless property backed by a oneOf (commonly array|null) must be
+		// rendered as its real type, not as an empty string.
+		propertyType := propertySchema.Type
+		if propertyType == "" && oneOfIsArray(propertySchema) {
+			if isOptional {
+				output.WriteString("# ")
+			}
+			fmt.Fprintf(output, "%s = []\n", fullPath)
+			if writeComments && g.EnableInfoComments {
+				output.WriteString("\n")
+			}
+			continue
+		}
+
 		// Handle different types
-		switch propertySchema.Type {
+		switch propertyType {
 		case "array":
 			// array contents
-			err := g.encodeTOMLArray(fullPath, propertySchema, output, isOptional, writeComments, extractor, fullPath)
+			err := g.encodeTOMLArray(fullPath, propertySchema, output, isOptional, writeComments, extractor, fullPath, instanceOnly)
 			if err != nil {
 				return err
 			}
 			output.WriteString("\n")
 		case "object":
 			// nested objects
-			err := g.encodeTOMLObject(fullPath, propertySchema, output, isOptional, writeComments, extractor, fullPath)
+			err := g.encodeTOMLObject(fullPath, propertySchema, output, isOptional, writeComments, extractor, fullPath, instanceOnly)
 			if err != nil {
 				return err
 			}
@@ -127,6 +186,58 @@ func (g *ConfigGen) recursivelyEncode(schema *jsonschema.Schema, oneOfGroups map
 		// output.WriteString("\n")
 	}
 	return nil
+}
+
+// selectOneOfBranch inspects an object schema's OneOf branches (each of which
+// lists the sibling properties required for that alternative) and returns the
+// set of all properties participating in any branch, plus the set belonging to
+// the single branch that should be emitted actively. The chosen branch is the
+// first whose properties have an instance value, otherwise the first branch.
+func selectOneOfBranch(schema *jsonschema.Schema, extractor *InstanceValueExtractor, prefix string) (members, chosen map[string]bool) {
+	members = map[string]bool{}
+	chosen = map[string]bool{}
+
+	chosenIdx := -1
+	for i, branch := range schema.OneOf {
+		if len(branch.Required) == 0 {
+			continue
+		}
+		if chosenIdx == -1 {
+			chosenIdx = i
+		}
+		for _, field := range branch.Required {
+			members[field] = true
+			if extractor == nil {
+				continue
+			}
+			fullPath := field
+			if prefix != "" {
+				fullPath = prefix + "." + field
+			}
+			if extractor.HasValue(fullPath) || extractor.HasValue(field) {
+				chosenIdx = i
+			}
+		}
+	}
+
+	if chosenIdx >= 0 {
+		for _, field := range schema.OneOf[chosenIdx].Required {
+			chosen[field] = true
+		}
+	}
+
+	return members, chosen
+}
+
+// oneOfIsArray reports whether a typeless property's oneOf includes an array
+// alternative (e.g. a nullable slice rendered as array|null).
+func oneOfIsArray(schema *jsonschema.Schema) bool {
+	for _, branch := range schema.OneOf {
+		if branch.Type == "array" {
+			return true
+		}
+	}
+	return false
 }
 
 func (g *ConfigGen) writePropertyComments(schema *jsonschema.Schema, output *strings.Builder) {
@@ -183,7 +294,7 @@ func (g *ConfigGen) writePrimitiveField(fieldName string, schema *jsonschema.Sch
 	output.WriteString("\n")
 }
 
-func (g *ConfigGen) encodeTOMLObject(tableName string, schema *jsonschema.Schema, output *strings.Builder, isOptional bool, writeComments bool, extractor *InstanceValueExtractor, propertyPath string) error {
+func (g *ConfigGen) encodeTOMLObject(tableName string, schema *jsonschema.Schema, output *strings.Builder, isOptional bool, writeComments bool, extractor *InstanceValueExtractor, propertyPath string, instanceOnly bool) error {
 	if schema.Properties == nil || schema.Properties.Len() == 0 {
 		if extractor != nil {
 			// Try with full path first, then fall back to just the property name
@@ -241,11 +352,11 @@ func (g *ConfigGen) encodeTOMLObject(tableName string, schema *jsonschema.Schema
 		}
 	}
 
-	g.recursivelyEncode(schema, nil, output, tableName, isOptional, writeComments, false, nestedExtractor)
+	g.recursivelyEncode(schema, output, tableName, isOptional, writeComments, false, nestedExtractor, phaseAll, instanceOnly)
 	return nil
 }
 
-func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema, output *strings.Builder, isOptional bool, writeComments bool, extractor *InstanceValueExtractor, propertyPath string) error {
+func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema, output *strings.Builder, isOptional bool, writeComments bool, extractor *InstanceValueExtractor, propertyPath string, instanceOnly bool) error {
 	itemSchema := schema.Items
 
 	if itemSchema == nil {
@@ -281,7 +392,7 @@ func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema,
 		fmt.Fprintf(output, "%s[[%s]]\n", commentPrefix, arrayName)
 
 		if itemSchema.Properties != nil && itemSchema.Properties.Len() > 0 {
-			return g.recursivelyEncode(itemSchema, nil, output, arrayName, isOptional, writeComments, false, extractor)
+			return g.recursivelyEncode(itemSchema, output, arrayName, isOptional, writeComments, false, extractor, phaseAll, instanceOnly)
 		}
 	case "array":
 		// Nested array (e.g., role containing policies array)
@@ -290,7 +401,7 @@ func (g *ConfigGen) encodeTOMLArray(arrayName string, schema *jsonschema.Schema,
 			// This is an array of arrays of objects - write the table syntax and recurse
 			fmt.Fprintf(output, "%s[[%s]]\n", commentPrefix, arrayName)
 			if itemSchema.Items.Properties != nil && itemSchema.Items.Properties.Len() > 0 {
-				return g.recursivelyEncode(itemSchema.Items, nil, output, arrayName, isOptional, writeComments, false, extractor)
+				return g.recursivelyEncode(itemSchema.Items, output, arrayName, isOptional, writeComments, false, extractor, phaseAll, instanceOnly)
 			}
 		} else {
 			// Simple nested array of primitives - write as empty array
@@ -409,7 +520,7 @@ func (g *ConfigGen) formatInstanceArray(arrayName string, arrayValue reflect.Val
 				itemExtractor := NewInstanceValueExtractor(item.Interface())
 				if itemSchema.Properties != nil && itemSchema.Properties.Len() > 0 {
 					// use skipNonRequired=false to ensure all fields from instance are included
-					err := g.recursivelyEncode(itemSchema, nil, output, arrayName, isOptional, false, false, itemExtractor)
+					err := g.recursivelyEncode(itemSchema, output, arrayName, isOptional, false, false, itemExtractor, phaseAll, true)
 					if err != nil {
 						return err
 					}
