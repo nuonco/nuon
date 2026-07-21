@@ -16,6 +16,7 @@ func Execute() {
 	c.registerRun()
 	c.registerVersion()
 	c.registerRunLocal()
+	c.registerSupervisor()
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(2)

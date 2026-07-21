@@ -9,6 +9,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/launcher"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
 	"github.com/nuonco/nuon/pkg/runner/settings"
 )
@@ -17,6 +18,10 @@ type handler struct {
 	v         *validator.Validate
 	apiClient nuonrunner.Client
 	settings  *settings.Settings
+
+	// launcher is only set for the image-actions handler registered by the mng
+	// process; it is nil for the in-process actions handler.
+	launcher launcher.Launcher
 
 	// state is reused between function calls, but can _not_ be reused with different jobs.
 	//
@@ -33,6 +38,7 @@ type HandlerParams struct {
 	V         *validator.Validate
 	APIClient nuonrunner.Client
 	Settings  *settings.Settings
+	Launcher  launcher.Launcher `optional:"true"`
 }
 
 func New(params HandlerParams) *handler {
@@ -40,6 +46,7 @@ func New(params HandlerParams) *handler {
 		apiClient: params.APIClient,
 		v:         params.V,
 		settings:  params.Settings,
+		launcher:  params.Launcher,
 	}
 }
 

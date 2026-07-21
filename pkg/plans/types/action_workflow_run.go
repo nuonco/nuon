@@ -7,6 +7,7 @@ import (
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/kube"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
 type ActionWorkflowRunPlan struct {
@@ -31,6 +32,13 @@ type ActionWorkflowRunPlan struct {
 	AWSAuth     *awscredentials.Config   `json:"aws_auth,omitempty"`
 	AzureAuth   *azurecredentials.Config `json:"azure_auth,omitempty"`
 	GCPAuth     *gcpcredentials.Config   `json:"gcp_auth,omitempty"`
+
+	// Image-backed actions: SourceImage is the rendered app-authored ref
+	// (e.g. ghcr.io/acme/tools:v1); ImageRegistry/ImageTag point at the
+	// install-registry mirror the runner pulls from.
+	SourceImage   string                         `json:"source_image,omitempty"`
+	ImageRegistry *configs.OCIRegistryRepository `json:"image_registry,omitempty"`
+	ImageTag      string                         `json:"image_tag,omitempty"`
 
 	MinSandboxMode
 }

@@ -75,6 +75,7 @@ func (s *syncer) syncAction(ctx context.Context, resource string, action *config
 		Role:              action.Role,
 		EnableKubeConfig:  &enableKubeConfig,
 		KubernetesContext: action.KubernetesContext,
+		Image:             action.Image,
 	}
 
 	for _, ref := range action.References {

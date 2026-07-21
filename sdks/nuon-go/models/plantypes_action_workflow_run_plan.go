@@ -41,6 +41,12 @@ type PlantypesActionWorkflowRunPlan struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// image registry
+	ImageRegistry *ConfigsOCIRegistryRepository `json:"image_registry,omitempty"`
+
+	// image tag
+	ImageTag string `json:"image_tag,omitempty"`
+
 	// install id
 	InstallID string `json:"install_id,omitempty"`
 
@@ -49,6 +55,11 @@ type PlantypesActionWorkflowRunPlan struct {
 
 	// sandbox mode
 	SandboxMode *PlantypesSandboxMode `json:"sandbox_mode,omitempty"`
+
+	// Image-backed actions: SourceImage is the rendered app-authored ref
+	// (e.g. ghcr.io/acme/tools:v1); ImageRegistry/ImageTag point at the
+	// install-registry mirror the runner pulls from.
+	SourceImage string `json:"source_image,omitempty"`
 
 	// steps
 	Steps []*PlantypesActionWorkflowRunStepPlan `json:"steps"`
@@ -74,6 +85,10 @@ func (m *PlantypesActionWorkflowRunPlan) Validate(formats strfmt.Registry) error
 	}
 
 	if err := m.validateGcpAuth(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateImageRegistry(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -183,6 +198,29 @@ func (m *PlantypesActionWorkflowRunPlan) validateGcpAuth(formats strfmt.Registry
 	return nil
 }
 
+func (m *PlantypesActionWorkflowRunPlan) validateImageRegistry(formats strfmt.Registry) error {
+	if swag.IsZero(m.ImageRegistry) { // not required
+		return nil
+	}
+
+	if m.ImageRegistry != nil {
+		if err := m.ImageRegistry.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("image_registry")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("image_registry")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *PlantypesActionWorkflowRunPlan) validateSandboxMode(formats strfmt.Registry) error {
 	if swag.IsZero(m.SandboxMode) { // not required
 		return nil
@@ -253,6 +291,10 @@ func (m *PlantypesActionWorkflowRunPlan) ContextValidate(ctx context.Context, fo
 	}
 
 	if err := m.contextValidateGcpAuth(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateImageRegistry(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -361,6 +403,31 @@ func (m *PlantypesActionWorkflowRunPlan) contextValidateGcpAuth(ctx context.Cont
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("gcp_auth")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesActionWorkflowRunPlan) contextValidateImageRegistry(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ImageRegistry != nil {
+
+		if swag.IsZero(m.ImageRegistry) { // not required
+			return nil
+		}
+
+		if err := m.ImageRegistry.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("image_registry")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("image_registry")
 			}
 
 			return err

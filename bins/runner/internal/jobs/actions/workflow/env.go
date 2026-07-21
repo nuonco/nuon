@@ -37,6 +37,46 @@ func (h *handler) getBuiltInEnv(ctx context.Context, cfg *models.AppActionWorkfl
 		env[hasKubeConfigEnvVar] = "false"
 	}
 
+	cloudEnv, err := h.cloudCredentialEnv(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return generics.MergeMap(env, cloudEnv), nil
+}
+
+// getContainerBuiltInEnv is the image-backed-action variant of getBuiltInEnv:
+// it maps every host path (outputs file, workspace root, kubeconfig) through
+// mapPath so the values resolve inside the container's workspace mount.
+func (h *handler) getContainerBuiltInEnv(ctx context.Context, cfg *models.AppActionWorkflowStepConfig, mapPath func(string) string) (map[string]string, error) {
+	env := map[string]string{
+		outputsEnvVar: mapPath(h.outputsFP(cfg)),
+		rootEnvVar:    mapPath(h.state.workspace.Root()),
+	}
+
+	if h.state.plan.ClusterInfo != nil {
+		path := h.state.workspace.AbsPath(config.DefaultKubeConfigFilename)
+		if err := config.WriteConfig(ctx, h.state.plan.ClusterInfo, path); err != nil {
+			return nil, errors.Wrap(err, "unable to write kube config")
+		}
+
+		env[config.DefaultKubeConfigEnvVar] = mapPath(path)
+		env[hasKubeConfigEnvVar] = "true"
+	} else {
+		env[hasKubeConfigEnvVar] = "false"
+	}
+
+	cloudEnv, err := h.cloudCredentialEnv(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return generics.MergeMap(env, cloudEnv), nil
+}
+
+func (h *handler) cloudCredentialEnv(ctx context.Context) (map[string]string, error) {
+	env := map[string]string{}
+
 	if h.state.auth.AWSAuth != nil {
 		awsEnv, err := credentials.FetchEnv(ctx, h.state.auth.AWSAuth)
 		if err != nil {

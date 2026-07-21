@@ -1,6 +1,8 @@
 package plan
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -132,6 +134,22 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		plan.Steps = append(plan.Steps, stepPlan)
 	}
 
+	if !run.ActionWorkflowConfigID.Empty() && run.ActionWorkflowConfig.Image != "" {
+		sourceImage, err := RenderText(run.ActionWorkflowConfig.Image, stateMap)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "unable to render action image")
+		}
+
+		imageRegistry, err := p.getOrgRegistryRepositoryConfig(ctx, run.InstallID, runID)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "unable to get registry for action image")
+		}
+
+		plan.SourceImage = sourceImage
+		plan.ImageRegistry = imageRegistry
+		plan.ImageTag = actionImageTag(sourceImage)
+	}
+
 	if slimInstall.SandboxMode.Bool {
 		targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)
 
@@ -143,6 +161,14 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 
 	l.Info("successfully created plan")
 	return plan, roleSelection, nil
+}
+
+// actionImageTag derives a stable, digest-like tag for the mirrored action
+// image from its rendered source ref, so re-runs of an unchanged image reuse
+// the same mirror and registries dedupe the underlying layers.
+func actionImageTag(sourceImage string) string {
+	sum := sha256.Sum256([]byte(sourceImage))
+	return fmt.Sprintf("action-%s", hex.EncodeToString(sum[:])[:16])
 }
 
 // TODO(ja): make this a method on the run struct?

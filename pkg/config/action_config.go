@@ -25,6 +25,11 @@ type ActionConfig struct {
 
 	EnableKubeConfig *bool `mapstructure:"enable_kube_config,omitempty" toml:"enable_kube_config,omitempty"`
 
+	// Image is an optional container image the action's steps run inside. When
+	// set, Nuon mounts the actions-supervisor into the image and executes each
+	// step's inline_contents there. Steps must use inline_contents.
+	Image string `mapstructure:"image,omitempty" toml:"image,omitempty" features:"template"`
+
 	// KubernetesContext is the name of a kubernetes_context this action
 	// targets. Empty means fall back to the implicit sandbox default (when
 	// the sandbox emits cluster outputs). See pkg/config/kubernetes_context.go.
@@ -83,6 +88,9 @@ func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("When set to false, the action runner will not fetch the install's kubeconfig or set the KUBECONFIG env var. Defaults to true. Set to false for actions that do not need Kubernetes access to avoid the overhead of fetching cluster credentials").
 		Example("true").
 		Example("false").
+		Field("image").Short("container image the action's steps run inside").
+		Long("Optional container image (e.g. ghcr.io/acme/kubernetes-tools:v1) supplying the tools the action needs. When set, Nuon mirrors the image into the install registry and runs each step's inline_contents inside the image via the mounted actions-supervisor. All steps must use inline_contents when an image is set. Only supported on VM-based runners").
+		Example("ghcr.io/acme/kubernetes-tools:v1").
 		Field("kubernetes_context").Short("kubernetes context this action targets").
 		Long("Name of a top-level kubernetes_context binding to target when this action runs. When set, the action's runner receives the cluster connection details from that context's source component. Empty falls back to the implicit sandbox default. Only takes effect when enable_kube_config is true").
 		Example("compute").
@@ -142,6 +150,16 @@ func (a *ActionConfig) parse() error {
 			return ErrConfig{
 				Description: fmt.Sprintf("unable to parse timeout %s", a.Timeout),
 				Err:         err,
+			}
+		}
+	}
+
+	if a.Image != "" {
+		for _, step := range a.Steps {
+			if step.InlineContents == "" {
+				return ErrConfig{
+					Description: fmt.Sprintf("action %s sets an image, so step %s must use inline_contents (command and repo steps are not supported with image-backed actions)", a.Name, step.Name),
+				}
 			}
 		}
 	}

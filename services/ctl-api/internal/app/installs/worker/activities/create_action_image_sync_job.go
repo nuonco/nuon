@@ -6,9 +6,10 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-type CreateActionWorkflowRunRunnerJob struct {
+type CreateActionImageSyncJobRequest struct {
 	ActionWorkflowRunID string            `validate:"required"`
 	RunnerID            string            `validate:"required"`
 	LogStreamID         string            `validate:"required"`
@@ -17,35 +18,23 @@ type CreateActionWorkflowRunRunnerJob struct {
 
 // @temporal-gen-v2 activity
 // @by-field ActionWorkflowRunID
-func (a *Activities) CreateActionWorkflowRunRunnerJob(ctx context.Context, req *CreateActionWorkflowRunRunnerJob) (*app.RunnerJob, error) {
+func (a *Activities) CreateActionImageSyncJob(ctx context.Context, req *CreateActionImageSyncJobRequest) (*app.RunnerJob, error) {
 	run, err := a.getInstallActionWorkflowRun(ctx, req.ActionWorkflowRunID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get action workflow run")
 	}
 
-	// adhoc runs have no ActionWorkflowConfig; their timeout lives on the run
-	cfg := run.ActionWorkflowConfig
-	if cfg.Timeout == 0 {
-		cfg.Timeout = run.Timeout
-	}
+	ctx = cctx.SetAccountIDContext(ctx, run.CreatedByID)
+	ctx = cctx.SetOrgIDContext(ctx, run.OrgID)
 
-	// image-backed actions are launched by the mng process on VM runners, which
-	// polls the dedicated image-actions group.
-	group := app.RunnerJobGroupActions
-	if cfg.Image != "" {
-		group = app.RunnerJobGroupImageActions
-	}
-
-	job, err := a.runnersHelpers.CreateActionsWorkflowRunJob(ctx,
+	job, err := a.runnersHelpers.CreateActionImageSyncJob(ctx,
 		req.RunnerID,
 		req.ActionWorkflowRunID,
 		req.LogStreamID,
-		&cfg,
-		group,
 		req.Metadata,
 	)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to create runner job")
+		return nil, errors.Wrap(err, "unable to create action image sync job")
 	}
 
 	return job, nil

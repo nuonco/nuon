@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/distribution/reference"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/stategen"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
@@ -284,6 +286,15 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		return errors.Wrap(err, "unable to create plan")
 	}
 
+	// image-backed actions: mirror the app image into the install registry
+	// and verify the runner can host the container before dispatching.
+	if planResponse.Plan.SourceImage != "" {
+		if err := s.mirrorActionImage(ctx, run, ls.ID, planResponse.Plan); err != nil {
+			s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, err.Error())
+			return errors.Wrap(err, "unable to prepare image-backed action")
+		}
+	}
+
 	// execute job
 	l.Info("creating runner job to execute action")
 	runnerJob, err := activities.AwaitCreateActionWorkflowRunRunnerJob(ctx, &activities.CreateActionWorkflowRunRunnerJob{
@@ -364,6 +375,117 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 	}
 
 	return nil
+}
+
+// mirrorActionImage mirrors an image-backed action's app-authored image into
+// the install registry via an oci-sync job, after confirming the org has the
+// feature enabled and the install's runner is a VM (only VM runners run the
+// mng process that launches action containers).
+func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionWorkflowRun, logStreamID string, awPlan *plantypes.ActionWorkflowRunPlan) error {
+	l := workflow.GetLogger(ctx)
+
+	enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureImageBackedActions))
+	if err != nil {
+		return errors.Wrap(err, "unable to check image-backed-actions feature")
+	}
+	if !enabled {
+		return errors.New("image-backed actions are not enabled for this organization")
+	}
+
+	platform := run.Install.RunnerGroup.Platform
+	if !isVMRunnerPlatform(platform) {
+		return fmt.Errorf("image-backed actions require a VM-based runner; runner platform %q is not supported", platform)
+	}
+
+	src, srcTag, err := parseActionImageSource(awPlan.SourceImage)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse action image reference")
+	}
+
+	l.Info("mirroring image-backed action image into install registry",
+		zap.String("source_image", awPlan.SourceImage))
+
+	syncJob, err := activities.AwaitCreateActionImageSyncJob(ctx, &activities.CreateActionImageSyncJobRequest{
+		ActionWorkflowRunID: run.ID,
+		RunnerID:            run.Install.RunnerID,
+		LogStreamID:         logStreamID,
+		Metadata: map[string]string{
+			"install_id":             run.InstallID,
+			"action_workflow_run_id": run.ID,
+			"source_image":           awPlan.SourceImage,
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to create image sync job")
+	}
+
+	syncPlan := &plantypes.SyncOCIPlan{
+		Src:    src,
+		SrcTag: srcTag,
+		Dst:    awPlan.ImageRegistry,
+		DstTag: awPlan.ImageTag,
+	}
+	if awPlan.SandboxMode != nil {
+		syncPlan.SandboxMode = &plantypes.SandboxMode{Enabled: true}
+	}
+
+	syncPlanJSON, err := json.Marshal(syncPlan)
+	if err != nil {
+		return errors.Wrap(err, "unable to marshal sync plan")
+	}
+
+	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+		JobID:         syncJob.ID,
+		PlanJSON:      string(syncPlanJSON),
+		CompositePlan: plantypes.CompositePlan{SyncOCIPlan: syncPlan},
+	}); err != nil {
+		return errors.Wrap(err, "unable to save sync job plan")
+	}
+
+	if _, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID:   run.Install.RunnerID,
+		JobID:      syncJob.ID,
+		WorkflowID: "action-image-sync-exec-job-" + run.ID,
+	}); err != nil {
+		return errors.Wrap(err, "image sync job failed")
+	}
+
+	return nil
+}
+
+func isVMRunnerPlatform(p app.AppRunnerType) bool {
+	switch p {
+	case app.AppRunnerTypeAWS, app.AppRunnerTypeAzure, app.AppRunnerTypeGCP, app.AppRunnerTypeLocal:
+		return true
+	default:
+		return false
+	}
+}
+
+// parseActionImageSource splits an app-authored image ref (e.g.
+// ghcr.io/acme/tools:v1) into the source registry descriptor and tag the
+// oci-sync copier pulls from.
+func parseActionImageSource(sourceImage string) (*configs.OCIRegistryRepository, string, error) {
+	named, err := reference.ParseDockerRef(sourceImage)
+	if err != nil {
+		return nil, "", fmt.Errorf("invalid image reference %q: %w", sourceImage, err)
+	}
+
+	tag := "latest"
+	if tagged, ok := named.(reference.Tagged); ok {
+		tag = tagged.Tag()
+	}
+
+	loginServer := ""
+	if reference.Domain(named) == "docker.io" {
+		loginServer = "docker.io"
+	}
+
+	return &configs.OCIRegistryRepository{
+		RegistryType: configs.OCIRegistryTypePublicOCI,
+		Repository:   named.Name(),
+		LoginServer:  loginServer,
+	}, tag, nil
 }
 
 func (s *Signal) updateActionRunStatus(ctx workflow.Context, runID string, status app.InstallActionWorkflowRunStatus, msg string) {

@@ -97,6 +97,11 @@ const (
 	// provider's stack_config data source) and use the slimmed-down tfvars
 	// instead of the full generated set.
 	OrgFeatureStackTFProvider OrgFeature = "stack-tf-provider"
+	// OrgFeatureImageBackedActions lets actions declare a container image
+	// their steps run inside. Nuon mirrors the image into the install
+	// registry and the mng process runs each step's inline_contents in the
+	// image via the mounted actions-supervisor. VM-based runners only.
+	OrgFeatureImageBackedActions OrgFeature = "image-backed-actions"
 )
 
 type Org struct {
@@ -220,6 +225,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureNotebooks:               false,
 		OrgFeatureSpaceliftInstallStacks:  false,
 		OrgFeatureStackTFProvider:         false,
+		OrgFeatureImageBackedActions:      false,
 		OrgFeatureOrgRunner:               false,
 
 		// Enabled by default
@@ -294,6 +300,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureSpaceliftInstallStacks,
 		OrgFeatureControlPlaneBuilds,
 		OrgFeatureStackTFProvider,
+		OrgFeatureImageBackedActions,
 	}
 }
 
@@ -332,6 +339,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureSpaceliftInstallStacks:  "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
 		OrgFeatureControlPlaneBuilds:      "Run component and sandbox builds on Temporal-backed control-plane workers instead of the org runner, so build-only work does not require a live org runner.",
 		OrgFeatureStackTFProvider:         "Use the Terraform-provider install stack flow: the await step's directions clone the ja/stack-sdk branch of install-stacks (which reads config from the API via the stack provider) and use the slimmed-down tfvars.",
+		OrgFeatureImageBackedActions:      "Allow actions to declare a container image their steps run inside. Nuon mirrors the image into the install registry and the mng process runs each step's inline_contents in the image via the mounted actions-supervisor. VM-based runners only.",
 	}
 }
 

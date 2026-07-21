@@ -20,7 +20,12 @@ import (
 	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
-type cli struct{}
+type cli struct {
+	// extraProviders are appended to the install-mode providers. Used by
+	// run-local (dev) to also register the image-actions loop in-process so
+	// image-backed actions can be exercised without a separate mng process.
+	extraProviders []fx.Option
+}
 
 func (c *cli) commonProviders() []fx.Option {
 	// providers for both runner modes: mng and (org |install)
