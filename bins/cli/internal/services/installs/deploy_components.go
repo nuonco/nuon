@@ -2,7 +2,6 @@ package installs
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
@@ -14,12 +13,15 @@ func (s *Service) DeployComponents(ctx context.Context, installID string, roleNa
 		return ui.PrintError(err)
 	}
 
-	_, err = s.api.DeployInstallComponents(ctx, installID, roleName, planOnly)
+	resp, err := s.api.DeployInstallComponents(ctx, installID, roleName, planOnly)
 	if err != nil {
-		fmt.Printf("deploy components err: %+s\n", err)
 		return ui.PrintJSONError(err)
 	}
 
-	ui.PrintLn("successfully triggered deploy of all install components")
+	printActionResult(asJSON, "successfully triggered deploy of all install components", actionResult{
+		InstallID:  installID,
+		WorkflowID: workflowIDFromResp(resp),
+		Status:     "deploy_triggered",
+	})
 	return nil
 }

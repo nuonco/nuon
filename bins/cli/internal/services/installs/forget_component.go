@@ -47,6 +47,9 @@ func (s *Service) ForgetComponent(ctx context.Context, installID, componentID st
 		return ui.PrintJSONError(err)
 	}
 
-	ui.PrintLn("successfully forgot component")
+	printActionResult(asJSON, "successfully forgot component", actionResult{
+		InstallID: installID,
+		Status:    "component_forgotten",
+	})
 	return nil
 }

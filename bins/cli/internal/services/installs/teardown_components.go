@@ -13,11 +13,15 @@ func (s *Service) TeardownComponents(ctx context.Context, installID string, asJS
 		return ui.PrintError(err)
 	}
 
-	_, err = s.api.TeardownInstallComponents(ctx, installID)
+	resp, err := s.api.TeardownInstallComponents(ctx, installID)
 	if err != nil {
 		return ui.PrintJSONError(err)
 	}
 
-	ui.PrintLn("successfully triggered teardown of all install components")
+	printActionResult(asJSON, "successfully triggered teardown of all install components", actionResult{
+		InstallID:  installID,
+		WorkflowID: workflowIDFromResp(resp),
+		Status:     "teardown_triggered",
+	})
 	return nil
 }

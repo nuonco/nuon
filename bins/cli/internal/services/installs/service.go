@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 )
@@ -41,8 +42,11 @@ func (s *Service) GetInstallID() string {
 
 func (s *Service) unsetInstallID(ctx context.Context) error {
 	s.cfg.Set("install_id", "")
-	fmt.Printf("%s\n", bubbles.InfoStyle.Render("current install is now unset"))
 	return s.cfg.WriteConfig()
+}
+
+func (s *Service) printInstallUnsetMsg() {
+	ui.PrintLn("current install is now unset")
 }
 
 func (s *Service) printAppSetMsg(id string) {

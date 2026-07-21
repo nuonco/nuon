@@ -18,7 +18,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 )
 
-func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, autoApprove, wait, dryRun bool) error {
+func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, autoApprove, wait, dryRun, asJSON bool) error {
 	if fileOrDir == "" {
 		return ui.PrintError(fmt.Errorf("file or directory path is required"))
 	}
@@ -38,8 +38,9 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, auto
 		return ui.PrintError(fmt.Errorf("error listing installs for app %s: %w", appID, err))
 	}
 
-	is := newAppInstallSyncer(s.api, appID, s.cfg.OrgID, s.cfg.Interactive)
+	is := newAppInstallSyncer(s.api, appID, s.cfg.OrgID, s.cfg.Interactive, asJSON)
 
+	results := make([]syncedInstall, 0, len(installCfgs))
 	for _, installCfg := range installCfgs {
 		var installID string
 
@@ -48,7 +49,10 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, auto
 			installID = appInstall.ID
 
 			if appInstall.AppID != appID {
-				ui.PrintWarning(fmt.Sprintf("install %s is not associated with app %s", installCfg.Name, appID))
+				if !asJSON {
+					ui.PrintWarning(fmt.Sprintf("install %s is not associated with app %s", installCfg.Name, appID))
+				}
+				results = append(results, syncedInstall{Name: installCfg.Name, InstallID: installID, Status: "skipped"})
 				continue
 			}
 
@@ -59,12 +63,39 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, auto
 			}
 		}
 
-		_, err = is.syncInstall(ctx, installCfg, installID, autoApprove, wait, dryRun)
+		synced, err := is.syncInstall(ctx, installCfg, installID, autoApprove, wait, dryRun)
 		if err != nil {
 			return ui.PrintError(fmt.Errorf("error syncing install %s: %w", installCfg.Name, err))
 		}
+
+		results = append(results, syncResultFor(installCfg.Name, synced, dryRun))
+	}
+
+	if asJSON {
+		ui.PrintJSON(syncResult{Installs: results})
 	}
 	return nil
+}
+
+type syncResult struct {
+	Installs []syncedInstall `json:"installs"`
+}
+
+type syncedInstall struct {
+	Name      string `json:"name"`
+	InstallID string `json:"install_id,omitempty"`
+	Status    string `json:"status"`
+}
+
+func syncResultFor(name string, synced *models.AppInstall, dryRun bool) syncedInstall {
+	switch {
+	case dryRun:
+		return syncedInstall{Name: name, Status: "dry_run"}
+	case synced == nil:
+		return syncedInstall{Name: name, Status: "skipped"}
+	default:
+		return syncedInstall{Name: name, InstallID: synced.ID, Status: "synced"}
+	}
 }
 
 func (s *Service) listAllAppInstalls(ctx context.Context, appID string) (map[string]*models.AppInstall, error) {

@@ -7,7 +7,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-func (s *Service) GenerateConfig(ctx context.Context, installID string) error {
+func (s *Service) GenerateConfig(ctx context.Context, installID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -16,6 +16,14 @@ func (s *Service) GenerateConfig(ctx context.Context, installID string) error {
 	installCfgBytes, err := s.api.GenerateCLIInstallConfig(ctx, installID)
 	if err != nil {
 		return ui.PrintError(err)
+	}
+
+	if asJSON {
+		ui.PrintJSON(map[string]string{
+			"install_id": installID,
+			"config":     string(installCfgBytes),
+		})
+		return nil
 	}
 
 	ui.PrintRaw(string(installCfgBytes))

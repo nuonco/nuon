@@ -2,7 +2,6 @@ package installs
 
 import (
 	"context"
-	"fmt"
 	"sort"
 
 	"charm.land/lipgloss/v2"
@@ -39,10 +38,10 @@ func (s *Service) CurrentInputs(ctx context.Context, installID string, asJSON bo
 		for _, k := range keys {
 			data = append(data, []string{k, inp.RedactedValues[k]})
 		}
-		fmt.Println("")
+		ui.Println("")
 		highlight := lipgloss.NewStyle().Foreground(styles.AccentColor).Bold(true)
-		fmt.Println("inputs ID: " + highlight.Render(inp.ID))
-		fmt.Println("modified at: " + highlight.Render(inp.CreatedAt))
+		ui.Println("inputs ID: " + highlight.Render(inp.ID))
+		ui.Println("modified at: " + highlight.Render(inp.CreatedAt))
 		view.Render(data)
 	}
 	return nil

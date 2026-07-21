@@ -50,6 +50,11 @@ func (c *cli) installsCmd() *cobra.Command {
 		GroupID:           InstallGroup.ID,
 	}
 
+	installOpsGroup := cobra.Group{ID: "install-ops", Title: "Install Commands"}
+	installConfigGroup := cobra.Group{ID: "install-config", Title: "Install Config Commands"}
+	installResourceGroup := cobra.Group{ID: "install-resources", Title: "Install Child Commands"}
+	installsCmds.AddGroup(&installOpsGroup, &installConfigGroup, &installResourceGroup)
+
 	listCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -103,7 +108,7 @@ provided labels must match (AND semantics):
 		Long:  "Generate config file for an existing install, to be used with a nuon app config",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.GenerateConfig(cmd.Context(), id)
+			return svc.GenerateConfig(cmd.Context(), id, PrintJSON)
 		}),
 	}
 	generateConfigCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to import")
@@ -178,7 +183,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Long:  "Sync install(s) with the help of config files",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Sync(cmd.Context(), fileOrDir, appID, confirm, wait, dryRun)
+			return svc.Sync(cmd.Context(), fileOrDir, appID, confirm, wait, dryRun, PrintJSON)
 		}),
 	}
 	syncCmd.Flags().StringVarP(&fileOrDir, "file", "d", "", "Path to an install config file or a directory with install config files to sync")
@@ -196,7 +201,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Long:  "Toggle syncing of install using a config file",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.ToggleSync(cmd.Context(), id, enable, disable)
+			return svc.ToggleSync(cmd.Context(), id, enable, disable, PrintJSON)
 		}),
 	}
 	toggleSyncCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to toggle config file syncing for")
@@ -209,8 +214,8 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	var compOffset, compLimit int
 	componentsCmd := &cobra.Command{
 		Use:   "components",
-		Short: "Get install components",
-		Long:  "Get all components on an install",
+		Short: "Manage install components",
+		Long:  "Manage the components on an install. With no subcommand, lists the components on an install.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.Components(cmd.Context(), id, compOffset, compLimit, PrintJSON)
@@ -269,12 +274,233 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	componentsToggleCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Only plan the resulting deploy or teardown, do not apply it")
 	componentsCmd.AddCommand(componentsToggleCmd)
 
+	componentsListCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List install components",
+		Long:    "List all components on an install",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.Components(cmd.Context(), id, compOffset, compLimit, PrintJSON)
+		}),
+	}
+	componentsListCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
+	componentsListCmd.MarkFlagRequired("install-id")
+	componentsListCmd.Flags().IntVarP(&compOffset, "offset", "o", 0, "Offset for pagination")
+	componentsListCmd.Flags().IntVarP(&compLimit, "limit", "l", 0, "Maximum components to return (0 returns all)")
+	componentsCmd.AddCommand(componentsListCmd)
+
+	componentsDeploysCmd := &cobra.Command{
+		Use:     "deploys",
+		Aliases: []string{"ls"},
+		Short:   "List deploys for an install component",
+		Long:    "List the deploys for a single component on an install (alias for `nuon installs deploys list`)",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ComponentDeploysList(cmd.Context(), id, componentID, offset, limit, PrintJSON)
+		}),
+	}
+	componentsDeploysCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	componentsDeploysCmd.MarkFlagRequired("install-id")
+	componentsDeploysCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID or name")
+	componentsDeploysCmd.MarkFlagRequired("component-id")
+	componentsDeploysCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	componentsDeploysCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum deploys to return")
+	componentsCmd.AddCommand(componentsDeploysCmd)
+
+	componentsDeployCmd := &cobra.Command{
+		Use:   "deploy",
+		Short: "Deploy an install component",
+		Long:  "Deploy a single component on an install (alias for `nuon installs deploys create --type=deploy`). Uses the component's latest build unless --build-id is given.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ComponentDeployCreate(cmd.Context(), id, componentID, deployID, deployDeps, deployDependencies, PrintJSON)
+		}),
+	}
+	componentsDeployCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	componentsDeployCmd.MarkFlagRequired("install-id")
+	componentsDeployCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID or name to deploy")
+	componentsDeployCmd.MarkFlagRequired("component-id")
+	componentsDeployCmd.Flags().StringVarP(&deployID, "build-id", "b", "", "The build ID to deploy (defaults to the component's latest build)")
+	componentsDeployCmd.Flags().BoolVar(&deployDeps, "dependents", false, "Trigger a deploy for any component that depends on this component")
+	componentsDeployCmd.Flags().BoolVar(&deployDependencies, "dependency-images", false, "Sync any images that this component depends on")
+	componentsCmd.AddCommand(componentsDeployCmd)
+
+	componentsDeployAllCmd := &cobra.Command{
+		Use:   "deploy-all",
+		Short: "Deploy all components to an install",
+		Long:  "Deploy all components to an install.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.DeployComponents(cmd.Context(), id, roleName, planOnly, PrintJSON)
+		}),
+	}
+	componentsDeployAllCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	componentsDeployAllCmd.MarkFlagRequired("install-id")
+	componentsDeployAllCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Only plan, do not actually deploy")
+	componentsDeployAllCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for component deploys")
+	componentsCmd.AddCommand(componentsDeployAllCmd)
+
+	componentsTeardownCmd := &cobra.Command{
+		Use:   "teardown",
+		Short: "Teardown a component on an install",
+		Long:  "Teardown a deployed component on an install",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.TeardownComponent(cmd.Context(), id, componentID, roleName, PrintJSON)
+		}),
+	}
+	componentsTeardownCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	componentsTeardownCmd.MarkFlagRequired("install-id")
+	componentsTeardownCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The ID of the component you want to teardown")
+	componentsTeardownCmd.MarkFlagRequired("component-id")
+	componentsTeardownCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for component teardown")
+	componentsCmd.AddCommand(componentsTeardownCmd)
+
+	componentsTeardownAllCmd := &cobra.Command{
+		Use:   "teardown-all",
+		Short: "Teardown all components on an install",
+		Long:  "Teardown all deployed components on an install",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.TeardownComponents(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	componentsTeardownAllCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	componentsTeardownAllCmd.MarkFlagRequired("install-id")
+	componentsCmd.AddCommand(componentsTeardownAllCmd)
+
+	componentsForgetCmd := &cobra.Command{
+		Use:   "forget",
+		Short: "Forget a component on an install",
+		Long:  "Remove a component from Nuon's tracking without destroying its underlying infrastructure. The component must first be removed from the app config (via nuon apps sync). This is irreversible via the API.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ForgetComponent(cmd.Context(), id, componentID, skipConfirm, PrintJSON)
+		}),
+	}
+	componentsForgetCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	componentsForgetCmd.MarkFlagRequired("install-id")
+	componentsForgetCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID or name to forget")
+	componentsForgetCmd.MarkFlagRequired("component-id")
+	componentsForgetCmd.Flags().BoolVarP(&skipConfirm, "yes", "y", false, "Skip the confirmation prompt")
+	componentsCmd.AddCommand(componentsForgetCmd)
+
 	installsCmds.AddCommand(componentsCmd)
 
-	getDeployCmd := &cobra.Command{
-		Use:   "get-deploy",
+	var deployType string
+	deploysCmd := &cobra.Command{
+		Use:   "deploys",
+		Short: "Manage install component deploys",
+		Long:  "Manage the deploys for components on an install",
+	}
+
+	deploysListCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List deploys for an install component",
+		Long:    "List the deploys for a single component on an install",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ComponentDeploysList(cmd.Context(), id, componentID, offset, limit, PrintJSON)
+		}),
+	}
+	deploysListCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	deploysListCmd.MarkFlagRequired("install-id")
+	deploysListCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID or name")
+	deploysListCmd.MarkFlagRequired("component-id")
+	deploysListCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	deploysListCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum deploys to return")
+	deploysCmd.AddCommand(deploysListCmd)
+
+	deploysGetCmd := &cobra.Command{
+		Use:   "get",
 		Short: "Get an install deploy",
 		Long:  "Get an install deploy by ID",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.GetDeploy(cmd.Context(), id, deployID, PrintJSON)
+		}),
+	}
+	deploysGetCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	deploysGetCmd.MarkFlagRequired("install-id")
+	deploysGetCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID or name")
+	deploysGetCmd.Flags().StringVarP(&deployID, "deploy-id", "d", "", "The deploy ID")
+	deploysGetCmd.MarkFlagRequired("deploy-id")
+	deploysCmd.AddCommand(deploysGetCmd)
+
+	deploysCreateCmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create a deploy for an install component",
+		Long: `Create a deploy for a single component on an install.
+
+--type selects the operation:
+  --type=deploy     deploy the component (uses its latest build unless --build-id is given)
+  --type=teardown   teardown the component`,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			switch deployType {
+			case "deploy":
+				return svc.ComponentDeployCreate(cmd.Context(), id, componentID, deployID, deployDeps, deployDependencies, PrintJSON)
+			case "teardown":
+				return svc.TeardownComponent(cmd.Context(), id, componentID, roleName, PrintJSON)
+			default:
+				return fmt.Errorf("invalid --type %q: must be one of deploy, teardown", deployType)
+			}
+		}),
+	}
+	deploysCreateCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	deploysCreateCmd.MarkFlagRequired("install-id")
+	deploysCreateCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID or name")
+	deploysCreateCmd.MarkFlagRequired("component-id")
+	deploysCreateCmd.Flags().StringVar(&deployType, "type", "", "The deploy type: deploy or teardown")
+	deploysCreateCmd.MarkFlagRequired("type")
+	deploysCreateCmd.Flags().StringVarP(&deployID, "build-id", "b", "", "The build ID to deploy (defaults to the component's latest build; --type=deploy only)")
+	deploysCreateCmd.Flags().BoolVar(&deployDeps, "dependents", false, "Trigger a deploy for any component that depends on this component (--type=deploy only)")
+	deploysCreateCmd.Flags().BoolVar(&deployDependencies, "dependency-images", false, "Sync any images that this component depends on (--type=deploy only)")
+	deploysCreateCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use (--type=teardown only)")
+	deploysCmd.AddCommand(deploysCreateCmd)
+
+	deploysCancelCmd := &cobra.Command{
+		Use:   "cancel",
+		Short: "Cancel an install deploy",
+		Long:  "Cancel an in-flight install deploy by cancelling its workflow",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.DeployCancel(cmd.Context(), id, deployID, PrintJSON)
+		}),
+	}
+	deploysCancelCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	deploysCancelCmd.MarkFlagRequired("install-id")
+	deploysCancelCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID or name")
+	deploysCancelCmd.Flags().StringVarP(&deployID, "deploy-id", "d", "", "The deploy ID to cancel")
+	deploysCancelCmd.MarkFlagRequired("deploy-id")
+	deploysCmd.AddCommand(deploysCancelCmd)
+
+	deploysLogsCmd := &cobra.Command{
+		Use:         "logs",
+		Short:       "View deploy logs",
+		Long:        "View deploy logs by install and deploy ID",
+		Annotations: tuiAnnotation(TUIAltScreen),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.DeployLogs(cmd.Context(), id, deployID, installCompID, PrintJSON)
+		}),
+	}
+	deploysLogsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	deploysLogsCmd.MarkFlagRequired("install-id")
+	deploysLogsCmd.Flags().StringVarP(&deployID, "deploy-id", "d", "", "The deploy ID for the deploy log you want to view")
+	deploysLogsCmd.MarkFlagRequired("deploy-id")
+	deploysCmd.AddCommand(deploysLogsCmd)
+
+	installsCmds.AddCommand(deploysCmd)
+
+	getDeployCmd := &cobra.Command{
+		Use:        "get-deploy",
+		Deprecated: "use `nuon installs deploys get` instead",
+		Hidden:     true,
+		Short:      "Get an install deploy",
+		Long:       "Get an install deploy by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.GetDeploy(cmd.Context(), id, deployID, PrintJSON)
@@ -286,9 +512,11 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	installsCmds.AddCommand(getDeployCmd)
 
 	createDeployCmd := &cobra.Command{
-		Use:   "create-deploy",
-		Short: "Create an install deploy",
-		Long:  "Create an install deploy by install ID and build ID",
+		Use:        "create-deploy",
+		Deprecated: "use `nuon installs components deploy` instead",
+		Hidden:     true,
+		Short:      "Create an install deploy",
+		Long:       "Create an install deploy by install ID and build ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.CreateDeploy(cmd.Context(), id, deployID, deployDeps, deployDependencies, PrintJSON)
@@ -304,6 +532,8 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 
 	deployLogsCmd := &cobra.Command{
 		Use:         "deploy-logs",
+		Deprecated:  "use `nuon installs deploys logs` instead",
+		Hidden:      true,
 		Short:       "View deploy logs",
 		Long:        "View deploy logs by install and deploy ID",
 		Annotations: tuiAnnotation(TUIAltScreen),
@@ -319,9 +549,11 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	installsCmds.AddCommand(deployLogsCmd)
 
 	listDeploysCmd := &cobra.Command{
-		Use:   "list-deploys",
-		Short: "View all install deploys",
-		Long:  "View all install deploys by install ID",
+		Use:        "list-deploys",
+		Deprecated: "use `nuon installs deploys list` instead",
+		Hidden:     true,
+		Short:      "View all install deploys",
+		Long:       "View all install deploys by install ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.ListDeploys(cmd.Context(), id, offset, limit, PrintJSON)
@@ -333,25 +565,164 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	listDeploysCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum deploys to return")
 	installsCmds.AddCommand(listDeploysCmd)
 
+	var (
+		sandboxRunType        string
+		sandboxSkipComponents bool
+	)
 	sandboxRunsCmd := &cobra.Command{
 		Use:   "sandbox-runs",
-		Short: "View sandbox runs",
-		Long:  "View sandbox runs by install ID",
+		Short: "Manage install sandbox runs",
+		Long:  "Manage the sandbox runs for an install",
+	}
+
+	sandboxRunsListCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List install sandbox runs",
+		Long:    "List the sandbox runs for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.SandboxRuns(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
-	sandboxRunsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
-	sandboxRunsCmd.MarkFlagRequired("install-id")
-	sandboxRunsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
-	sandboxRunsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum runs to return")
-	installsCmds.AddCommand(sandboxRunsCmd)
+	sandboxRunsListCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	sandboxRunsListCmd.MarkFlagRequired("install-id")
+	sandboxRunsListCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	sandboxRunsListCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum runs to return")
+	sandboxRunsCmd.AddCommand(sandboxRunsListCmd)
 
-	sandboxRunLogsCmd := &cobra.Command{
-		Use:   "sandbox-run-logs",
+	sandboxRunsGetCmd := &cobra.Command{
+		Use:   "get",
+		Short: "Get an install sandbox run",
+		Long:  "Get an install sandbox run by ID",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.SandboxRunGet(cmd.Context(), id, runID, PrintJSON)
+		}),
+	}
+	sandboxRunsGetCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	sandboxRunsGetCmd.MarkFlagRequired("install-id")
+	sandboxRunsGetCmd.Flags().StringVarP(&runID, "run-id", "r", "", "The ID of the sandbox run")
+	sandboxRunsGetCmd.MarkFlagRequired("run-id")
+	sandboxRunsCmd.AddCommand(sandboxRunsGetCmd)
+
+	sandboxRunsCreateCmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create an install sandbox run",
+		Long: `Create a sandbox run for an install.
+
+--type selects the operation:
+  --type=reprovision   reprovision the install sandbox
+  --type=deprovision   deprovision the install sandbox`,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			switch sandboxRunType {
+			case "reprovision":
+				return svc.ReprovisionSandbox(cmd.Context(), id, sandboxSkipComponents, PrintJSON)
+			case "deprovision":
+				return svc.DeprovisionSandbox(cmd.Context(), id, PrintJSON)
+			default:
+				return fmt.Errorf("invalid --type %q: must be one of reprovision, deprovision", sandboxRunType)
+			}
+		}),
+	}
+	sandboxRunsCreateCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	sandboxRunsCreateCmd.MarkFlagRequired("install-id")
+	sandboxRunsCreateCmd.Flags().StringVar(&sandboxRunType, "type", "", "The run type: reprovision or deprovision")
+	sandboxRunsCreateCmd.MarkFlagRequired("type")
+	sandboxRunsCreateCmd.Flags().BoolVar(&sandboxSkipComponents, "skip-components", false, "Skip deploying components after reprovisioning (--type=reprovision only)")
+	sandboxRunsCmd.AddCommand(sandboxRunsCreateCmd)
+
+	sandboxRunsCancelCmd := &cobra.Command{
+		Use:   "cancel",
+		Short: "Cancel an install sandbox run",
+		Long:  "Cancel an in-flight install sandbox run by cancelling its workflow",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.SandboxRunCancel(cmd.Context(), id, runID, PrintJSON)
+		}),
+	}
+	sandboxRunsCancelCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	sandboxRunsCancelCmd.MarkFlagRequired("install-id")
+	sandboxRunsCancelCmd.Flags().StringVarP(&runID, "run-id", "r", "", "The ID of the sandbox run to cancel")
+	sandboxRunsCancelCmd.MarkFlagRequired("run-id")
+	sandboxRunsCmd.AddCommand(sandboxRunsCancelCmd)
+
+	sandboxRunsLogsCmd := &cobra.Command{
+		Use:   "logs",
 		Short: "View sandbox run logs",
 		Long:  "View sandbox run logs by run & install IDs",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.SandboxRunLogs(cmd.Context(), id, runID, PrintJSON)
+		}),
+	}
+	sandboxRunsLogsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	sandboxRunsLogsCmd.MarkFlagRequired("install-id")
+	sandboxRunsLogsCmd.Flags().StringVarP(&runID, "run-id", "r", "", "The ID of the run you want to view")
+	sandboxRunsLogsCmd.MarkFlagRequired("run-id")
+	sandboxRunsLogsCmd.Flags().StringVarP(&installCompID, "install-comp-id", "c", "", "The ID of the install component to view logs for")
+	sandboxRunsCmd.AddCommand(sandboxRunsLogsCmd)
+
+	installsCmds.AddCommand(sandboxRunsCmd)
+
+	sandboxCmd := &cobra.Command{
+		Use:   "sandbox",
+		Short: "Manage an install sandbox",
+		Long:  "Manage an install sandbox and its runs",
+	}
+
+	sandboxRunsPorcelainCmd := &cobra.Command{
+		Use:     "runs",
+		Aliases: []string{"ls"},
+		Short:   "List install sandbox runs",
+		Long:    "List the sandbox runs for an install (alias for `nuon installs sandbox-runs list`)",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.SandboxRuns(cmd.Context(), id, offset, limit, PrintJSON)
+		}),
+	}
+	sandboxRunsPorcelainCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	sandboxRunsPorcelainCmd.MarkFlagRequired("install-id")
+	sandboxRunsPorcelainCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
+	sandboxRunsPorcelainCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum runs to return")
+	sandboxCmd.AddCommand(sandboxRunsPorcelainCmd)
+
+	sandboxReprovisionCmd := &cobra.Command{
+		Use:   "reprovision",
+		Short: "Reprovision an install sandbox",
+		Long:  "Reprovision an install sandbox (alias for `nuon installs sandbox-runs create --type=reprovision`)",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ReprovisionSandbox(cmd.Context(), id, sandboxSkipComponents, PrintJSON)
+		}),
+	}
+	sandboxReprovisionCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	sandboxReprovisionCmd.MarkFlagRequired("install-id")
+	sandboxReprovisionCmd.Flags().BoolVar(&sandboxSkipComponents, "skip-components", false, "Skip deploying components after reprovisioning the sandbox")
+	sandboxCmd.AddCommand(sandboxReprovisionCmd)
+
+	sandboxDeprovisionCmd := &cobra.Command{
+		Use:   "deprovision",
+		Short: "Deprovision an install sandbox",
+		Long:  "Deprovision an install sandbox (alias for `nuon installs sandbox-runs create --type=deprovision`)",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.DeprovisionSandbox(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	sandboxDeprovisionCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	sandboxDeprovisionCmd.MarkFlagRequired("install-id")
+	sandboxCmd.AddCommand(sandboxDeprovisionCmd)
+
+	installsCmds.AddCommand(sandboxCmd)
+
+	sandboxRunLogsCmd := &cobra.Command{
+		Use:        "sandbox-run-logs",
+		Deprecated: "use `nuon installs sandbox-runs logs` instead",
+		Hidden:     true,
+		Short:      "View sandbox run logs",
+		Long:       "View sandbox run logs by run & install IDs",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.SandboxRunLogs(cmd.Context(), id, runID, PrintJSON)
@@ -413,9 +784,11 @@ The --stack, --sandbox, and --component-id flags are mutually exclusive.`,
 	installsCmds.AddCommand(outputsCmd)
 
 	currentInputs := &cobra.Command{
-		Use:   "current-inputs",
-		Short: "View current inputs",
-		Long:  "View current set app inputs",
+		Use:        "current-inputs",
+		Deprecated: "use `nuon installs inputs get` instead",
+		Hidden:     true,
+		Short:      "View current inputs",
+		Long:       "View current set app inputs",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.CurrentInputs(cmd.Context(), id, PrintJSON)
@@ -470,7 +843,7 @@ input that is not declared on the app raises an error.`,
 			Use:         "edit",
 			Short:       "Edit install inputs",
 			Long:        "Edit an install's inputs in an interactive TUI form pre-filled with the current values",
-			Annotations: tuiAnnotation(TUIAltScreen),
+			Annotations: annotations(tuiAnnotation(TUIAltScreen), outputsAnnotation(OutputTable)),
 			Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 				svc := installs.New(c.apiClient, c.cfg)
 				return svc.EditInputs(cmd.Context(), id, deployDependents)
@@ -502,7 +875,7 @@ input that is not declared on the app raises an error.`,
 		Long:  "Deselect your current install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Deselect(cmd.Context())
+			return svc.Deselect(cmd.Context(), PrintJSON)
 		}),
 	}
 	installsCmds.AddCommand(deselectInstallCmd)
@@ -514,7 +887,7 @@ input that is not declared on the app raises an error.`,
 		Hidden:     true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Deselect(cmd.Context())
+			return svc.Deselect(cmd.Context(), PrintJSON)
 		}),
 	}
 	installsCmds.AddCommand(unsetCurrentInstallCmd)
@@ -546,9 +919,11 @@ input that is not declared on the app raises an error.`,
 	installsCmds.AddCommand(deprovisionInstallCmd)
 
 	teardownInstallComponentsCmd := &cobra.Command{
-		Use:   "teardown-components",
-		Short: "Teardown components on install.",
-		Long:  "Teardown all deployed components on an install (deprecated)",
+		Use:        "teardown-components",
+		Deprecated: "use `nuon installs components teardown-all` instead",
+		Hidden:     true,
+		Short:      "Teardown components on install.",
+		Long:       "Teardown all deployed components on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.TeardownComponents(cmd.Context(), id, PrintJSON)
@@ -559,9 +934,11 @@ input that is not declared on the app raises an error.`,
 	installsCmds.AddCommand(teardownInstallComponentsCmd)
 
 	teardownInstallComponentCmd := &cobra.Command{
-		Use:   "teardown-component",
-		Short: "Teardown component on install.",
-		Long:  "Teardown all deployed components on an install",
+		Use:        "teardown-component",
+		Deprecated: "use `nuon installs components teardown` instead",
+		Hidden:     true,
+		Short:      "Teardown component on install.",
+		Long:       "Teardown a deployed component on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.TeardownComponent(cmd.Context(), id, componentID, roleName, PrintJSON)
@@ -575,9 +952,11 @@ input that is not declared on the app raises an error.`,
 	installsCmds.AddCommand(teardownInstallComponentCmd)
 
 	forgetInstallComponentCmd := &cobra.Command{
-		Use:   "forget-component",
-		Short: "Forget a component on an install.",
-		Long:  "Remove a component from Nuon's tracking without destroying its underlying infrastructure. The component must first be removed from the app config (via nuon apps sync). This is irreversible via the API.",
+		Use:        "forget-component",
+		Deprecated: "use `nuon installs components forget` instead",
+		Hidden:     true,
+		Short:      "Forget a component on an install.",
+		Long:       "Remove a component from Nuon's tracking without destroying its underlying infrastructure. The component must first be removed from the app config (via nuon apps sync). This is irreversible via the API.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.ForgetComponent(cmd.Context(), id, componentID, skipConfirm, PrintJSON)
@@ -591,9 +970,11 @@ input that is not declared on the app raises an error.`,
 	installsCmds.AddCommand(forgetInstallComponentCmd)
 
 	deployInstallComponentsCmd := &cobra.Command{
-		Use:   "deploy-components",
-		Short: "Deploy all components to an install.",
-		Long:  "Deploy all components to an install.",
+		Use:        "deploy-components",
+		Deprecated: "use `nuon installs components deploy-all` instead",
+		Hidden:     true,
+		Short:      "Deploy all components to an install.",
+		Long:       "Deploy all components to an install.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.DeployComponents(cmd.Context(), id, roleName, planOnly, PrintJSON)
@@ -606,9 +987,11 @@ input that is not declared on the app raises an error.`,
 	installsCmds.AddCommand(deployInstallComponentsCmd)
 
 	updateInputCmd := &cobra.Command{
-		Use:   "update-input",
-		Short: "Update install input",
-		Long:  "Update an install input value",
+		Use:        "update-input",
+		Deprecated: "use `nuon installs inputs set` instead",
+		Hidden:     true,
+		Short:      "Update install input",
+		Long:       "Update an install input value",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.UpdateInput(cmd.Context(), id, inputs, deployDependents, PrintJSON)
@@ -622,9 +1005,11 @@ input that is not declared on the app raises an error.`,
 	installsCmds.AddCommand(updateInputCmd)
 
 	deprovisionInstallSandboxCmd := &cobra.Command{
-		Use:   "deprovision-sandbox",
-		Short: "Deprovision install sandbox",
-		Long:  "Deprovision an install sandbox",
+		Use:        "deprovision-sandbox",
+		Deprecated: "use `nuon installs sandbox deprovision` instead",
+		Hidden:     true,
+		Short:      "Deprovision install sandbox",
+		Long:       "Deprovision an install sandbox",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
 			return svc.DeprovisionSandbox(cmd.Context(), id, PrintJSON)
@@ -637,6 +1022,8 @@ input that is not declared on the app raises an error.`,
 	var skipComponents bool
 	reprovisionInstallSandboxCmd := &cobra.Command{
 		Use:         "reprovision-sandbox",
+		Deprecated:  "use `nuon installs sandbox reprovision` instead",
+		Hidden:      true,
 		Short:       "Reprovision install sandbox [preview]",
 		Long:        "Reprovision an install sandbox",
 		Annotations: tuiAnnotation(TUIAltScreen),
@@ -734,7 +1121,7 @@ By default, launches an interactive TUI to view workflows.`,
 		Long:  "Clear the currently selected workflow",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.WorkflowsDeselect(cmd.Context())
+			return svc.WorkflowsDeselect(cmd.Context(), PrintJSON)
 		}),
 	}
 	workflowsCmd.AddCommand(workflowsDeselectCmd)
@@ -1016,7 +1403,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Long:  "Restart the runner process for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.RunnerRestart(cmd.Context(), id)
+			return svc.RunnerRestart(cmd.Context(), id, PrintJSON)
 		}),
 	}
 	runnerRestartCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
@@ -1029,7 +1416,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Long:  "Shut down the VM running the install runner",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.RunnerVMShutDown(cmd.Context(), id)
+			return svc.RunnerVMShutDown(cmd.Context(), id, PrintJSON)
 		}),
 	}
 	runnerShutdownVMCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
@@ -1043,7 +1430,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Hidden: true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.RunnerShutDown(cmd.Context(), id)
+			return svc.RunnerShutDown(cmd.Context(), id, PrintJSON)
 		}),
 	}
 	runnerShutdownCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
@@ -1221,6 +1608,37 @@ Examples:
 	labelsCmd.AddCommand(labelsUnsetCmd)
 
 	installsCmds.AddCommand(labelsCmd)
+
+	resourceCommands := map[string]struct{}{
+		"components":   {},
+		"deploys":      {},
+		"inputs":       {},
+		"outputs":      {},
+		"sandbox":      {},
+		"sandbox-runs": {},
+		"workflows":    {},
+		"stacks":       {},
+		"actions":      {},
+		"labels":       {},
+		"runner":       {},
+	}
+	configCommands := map[string]struct{}{
+		"generate-config": {},
+		"sync":            {},
+		"toggle-sync":     {},
+	}
+	for _, sub := range installsCmds.Commands() {
+		if sub.Hidden {
+			continue
+		}
+		if _, ok := resourceCommands[sub.Name()]; ok {
+			sub.GroupID = installResourceGroup.ID
+		} else if _, ok := configCommands[sub.Name()]; ok {
+			sub.GroupID = installConfigGroup.ID
+		} else {
+			sub.GroupID = installOpsGroup.ID
+		}
+	}
 
 	return installsCmds
 }

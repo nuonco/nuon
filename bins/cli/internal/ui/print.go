@@ -31,11 +31,19 @@ func (u *CLIUserError) Error() string {
 	return u.Msg
 }
 
+// PrintError renders an error in the active output mode: agent -> envelope,
+// json -> JSON error object, table -> human-styled text.
 func PrintError(err error) error {
 	if agentEnabled() {
 		return emitAgentError(err)
 	}
+	if jsonOutputEnabled() {
+		return emitJSONError(err)
+	}
+	return printHumanError(err)
+}
 
+func printHumanError(err error) error {
 	if os.Getenv(debugEnvVar) != "" {
 		fmt.Println(bubbles.ErrorStyle.Render(fmt.Sprintf("DEBUG: %v", err)))
 	}
@@ -137,6 +145,22 @@ func containsTechnicalError(msg string) bool {
 
 func PrintRaw(msg string) {
 	fmt.Fprint(agentmode.HumanWriter(), msg)
+}
+
+// Printf writes formatted human output to the mode-aware writer (stderr in agent
+// mode, stdout otherwise), so it never pollutes the agent stdout envelope.
+func Printf(format string, a ...any) {
+	fmt.Fprintf(agentmode.HumanWriter(), format, a...)
+}
+
+// Println mirrors fmt.Println but routes to the mode-aware writer.
+func Println(a ...any) {
+	fmt.Fprintln(agentmode.HumanWriter(), a...)
+}
+
+// Print mirrors fmt.Print but routes to the mode-aware writer.
+func Print(a ...any) {
+	fmt.Fprint(agentmode.HumanWriter(), a...)
 }
 
 func PrintLn(msg string) {
