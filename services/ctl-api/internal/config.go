@@ -45,6 +45,12 @@ func init() {
 	config.RegisterDefault("clickhouse_db_write_timeout", "10s")
 	config.RegisterDefault("clickhouse_db_dial_timeout", "1s")
 
+	// defaults for kafka
+	config.RegisterDefault("kafka_enabled", false)
+	config.RegisterDefault("kafka_brokers", "localhost:9092")
+	config.RegisterDefault("kafka_security_protocol", "PLAINTEXT")
+	config.RegisterDefault("kafka_client_id", "ctl-api")
+
 	// defaults for app
 	config.RegisterDefault("github_app_key_secret_name", "ctl-api-github-app-key")
 	config.RegisterDefault("sandbox_artifacts_base_url", "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox")
@@ -216,6 +222,18 @@ type Config struct {
 	ClickhouseDBReadTimeout  time.Duration `config:"clickhouse_db_read_timeout" validate:"required"`
 	ClickhouseDBWriteTimeout time.Duration `config:"clickhouse_db_write_timeout" validate:"required"`
 	ClickhouseDBDialTimeout  time.Duration `config:"clickhouse_db_dial_timeout" validate:"required"`
+
+	// kafka configuration. Security is pluggable per cloud (local PLAINTEXT; MSK
+	// IAM and GCP/Azure OAUTHBEARER wired per-cloud later). KafkaEnabled gates
+	// whether producers use Kafka vs writing straight to ClickHouse
+	KafkaEnabled          bool   `config:"kafka_enabled"`
+	KafkaBrokers          string `config:"kafka_brokers"`
+	KafkaSecurityProtocol string `config:"kafka_security_protocol"`
+	KafkaSASLMechanism    string `config:"kafka_sasl_mechanism"`
+	KafkaSASLUsername     string `config:"kafka_sasl_username"`
+	KafkaSASLPassword     string `config:"kafka_sasl_password"`
+	KafkaTLSEnabled       bool   `config:"kafka_tls_enabled"`
+	KafkaClientID         string `config:"kafka_client_id"`
 
 	// temporal configuration
 	TemporalHost                          string        `config:"temporal_host"  validate:"required"`
