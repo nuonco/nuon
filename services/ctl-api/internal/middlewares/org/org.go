@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
@@ -21,13 +22,15 @@ const (
 type Params struct {
 	fx.In
 
-	L  *zap.Logger
-	DB *gorm.DB `name:"psql"`
+	L   *zap.Logger
+	DB  *gorm.DB `name:"psql"`
+	Cfg *internal.Config
 }
 
 type middleware struct {
-	l  *zap.Logger
-	db *gorm.DB
+	l   *zap.Logger
+	db  *gorm.DB
+	cfg *internal.Config
 }
 
 func (m middleware) Name() string {
@@ -81,8 +84,26 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 		// make sure account has access to org
 		perm := permissions.FromRequest(ctx)
-		err = acct.AllPermissions.CanPerform(org.ID, perm)
-		if err != nil {
+		orgErr := acct.AllPermissions.CanPerform(org.ID, perm)
+
+		if m.cfg.ResourceGrantsEnabled {
+			// Split membership from authorization: an org-wide grant takes the
+			// fast path; a member without one defers to a downstream resource
+			// middleware (which fails closed if none authorizes the request).
+			if orgErr != nil {
+				if !acct.HasOrg(org.ID) {
+					ctx.Error(stderr.ErrAuthorization{
+						Err:         fmt.Errorf("account has no access to org %s", org.ID),
+						Description: fmt.Sprintf("Please make sure you have access to %s", org.ID),
+					})
+					ctx.Abort()
+					return
+				}
+				cctx.SetOrgAuthorized(ctx, false)
+			} else {
+				cctx.SetOrgAuthorized(ctx, true)
+			}
+		} else if orgErr != nil {
 			ctx.Error(stderr.ErrAuthorization{
 				Err:         fmt.Errorf("unable to perform %s on org %s", perm, org.ID),
 				Description: fmt.Sprintf("Please make sure you have the correct permissions for %s", org.ID),
@@ -103,7 +124,8 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 func New(params Params) *middleware {
 	return &middleware{
-		l:  params.L,
-		db: params.DB,
+		l:   params.L,
+		db:  params.DB,
+		cfg: params.Cfg,
 	}
 }

@@ -25,6 +25,7 @@ const (
 	OrgIDCtxKey           string = "org_id"
 	OffPaginationCtxKey   string = "offset_pagination"
 	IsPublicKey           string = "is_public"
+	OrgAuthorizedKey      string = "org_authorized"
 	RunnerCtxKey          string = "runner"
 	RunnerIDCtxKey        string = "runner_id"
 	DisableViewCtxKey     string = "disable_view"
