@@ -5,27 +5,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
-
-// appBranchRunSignal is a minimal signal type that matches the
-// run.Signal type string. We define it here to avoid an import cycle
-// (activities cannot import branches/run which imports activities).
-type appBranchRunSignal struct {
-	RunID string `json:"run_id"`
-}
-
-func (s *appBranchRunSignal) Type() signal.SignalType           { return "app-branch-run" }
-func (s *appBranchRunSignal) Validate(_ workflow.Context) error { return nil }
-func (s *appBranchRunSignal) Execute(_ workflow.Context) error  { return nil }
 
 type TriggerAppBranchRunFromVCSPushResponse struct {
 	RunID         string `json:"run_id"`
@@ -72,30 +57,12 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 	runType := RunTypeFromEventType(req.EventType)
 	runLabels := BuildRunLabels(&req)
 
-	run, err := a.helpers.CreateAppBranchRun(ctx, &appshelpers.CreateAppBranchRunRequest{
-		AppBranchID:       appBranchID,
-		AppBranchConfigID: appBranchConfigID,
-		RunType:           runType,
-		Force:             false,
-		PlanOnly:          req.PlanOnly,
-		EventType:         req.EventType,
-		PRNumber:          req.PRNumber,
-		HeadSHA:           req.HeadSHA,
-		BaseBranch:        req.BaseBranch,
-		Labels:            runLabels,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create app branch run: %w", err)
-	}
-
 	metadata := map[string]string{
-		"run_id":        run.ID,
 		"app_id":        branch.AppID,
 		"config_id":     appBranchConfigID,
 		"config_number": strconv.Itoa(config.ConfigNumber),
 		"force":         "false",
 		"event_type":    req.EventType,
-		"commit_sha":    run.CommitSHA,
 		"run_type":      string(runType),
 	}
 	if req.PRNumber != nil {
@@ -108,38 +75,29 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		metadata["base_branch"] = req.BaseBranch
 	}
 
-	wf, err := a.helpers.CreateWorkflow(
-		ctx,
-		appBranchID,
-		app.WorkflowTypeAppBranchesRun,
-		metadata,
-		req.PlanOnly,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create workflow: %w", err)
-	}
-
-	run.WorkflowID = &wf.ID
-	if err := a.db.WithContext(ctx).Save(run).Error; err != nil {
-		return nil, fmt.Errorf("unable to update run with workflow id: %w", err)
-	}
-
-	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID:   branch.Queue.ID,
-		OwnerID:   run.ID,
-		OwnerType: plugins.TableName(a.db, app.AppBranchRun{}),
-		Signal: &appBranchRunSignal{
-			RunID: run.ID,
+	triggerResp, err := a.helpers.TriggerAppBranchRun(ctx, &appshelpers.TriggerAppBranchRunRequest{
+		Run: appshelpers.CreateAppBranchRunRequest{
+			AppBranchID:       appBranchID,
+			AppBranchConfigID: appBranchConfigID,
+			RunType:           runType,
+			PlanOnly:          req.PlanOnly,
+			EventType:         req.EventType,
+			PRNumber:          req.PRNumber,
+			HeadSHA:           req.HeadSHA,
+			BaseBranch:        req.BaseBranch,
+			Labels:            runLabels,
 		},
+		QueueID:  branch.Queue.ID,
+		Metadata: metadata,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("unable to enqueue run signal: %w", err)
+		return nil, fmt.Errorf("unable to trigger app branch run: %w", err)
 	}
 
 	return &TriggerAppBranchRunFromVCSPushResponse{
-		RunID:         run.ID,
-		WorkflowID:    wf.ID,
-		QueueSignalID: enqueueResp.ID,
+		RunID:         triggerResp.Run.ID,
+		WorkflowID:    triggerResp.Workflow.ID,
+		QueueSignalID: triggerResp.QueueSignalID,
 	}, nil
 }
 
