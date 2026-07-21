@@ -47,6 +47,14 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	sources.POST("/:event_source_id/enable", s.EnableEventSource)
 	sources.POST("/:event_source_id/disable", s.DisableEventSource)
 	sources.POST("/:event_source_id/secrets/:secret_id/revoke", s.RevokeSecret)
+
+	automations := api.Group("/v1/apps/:app_id/event-automations")
+	automations.GET("/events", s.ListEvents)
+	automations.GET("/events/:event_id", s.GetEvent)
+	automations.POST("/events/:event_id/replay", s.ReplayEvent)
+	automations.GET("/dispatches", s.ListDispatches)
+	automations.GET("/dispatches/:dispatch_id", s.GetDispatch)
+	automations.POST("/dispatches/:dispatch_id/retry", s.RetryDispatch)
 	return nil
 }
 

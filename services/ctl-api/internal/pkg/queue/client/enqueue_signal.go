@@ -146,7 +146,7 @@ func (c *Client) enqueueSignal(ctx context.Context, db *gorm.DB, req *EnqueueSig
 		if err := query.First(&existing).Error; err != nil {
 			return nil, nil, errors.Wrap(err, "unable to get deduplicated queue signal")
 		}
-		return &queue.EnqueueResponse{ID: existing.ID, WorkflowID: existing.Workflow.ID, Deduplicated: true}, nil, nil
+		return &queue.EnqueueResponse{ID: existing.ID, WorkflowID: existing.Workflow.ID, Deduplicated: true}, &existing, nil
 	}
 
 	c.mw.Incr("queue.signal.enqueued", metrics.ToTags(map[string]string{

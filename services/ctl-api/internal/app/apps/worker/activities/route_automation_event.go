@@ -19,11 +19,17 @@ import (
 )
 
 type RouteAutomationEventRequest struct {
-	EventID string `validate:"required"`
+	EventID  string `validate:"required"`
+	ReplayID string
 }
 
 type RouteAutomationEventResponse struct {
-	DispatchIDs []string `json:"dispatch_ids"`
+	Dispatches []AutomationDispatchRef `json:"dispatches"`
+}
+
+type AutomationDispatchRef struct {
+	ID              string `json:"id"`
+	GenerationToken string `json:"generation_token"`
 }
 
 // @temporal-gen-v2 activity
@@ -43,10 +49,17 @@ func (a *Activities) RouteAutomationEvent(ctx context.Context, req RouteAutomati
 			return fmt.Errorf("unable to get event: %w", err)
 		}
 
-		if event.RoutingStatus == app.EventRoutingStatusRouted {
-			return tx.Model(&app.EventDispatch{}).
-				Where(app.EventDispatch{EventSourceEventID: event.ID}).
-				Pluck("id", &resp.DispatchIDs).Error
+		if req.ReplayID == "" && event.RoutingStatus == app.EventRoutingStatusRouted {
+			var dispatches []app.EventDispatch
+			if err := tx.Where(app.EventDispatch{EventSourceEventID: event.ID}).Find(&dispatches).Error; err != nil {
+				return err
+			}
+			for i := range dispatches {
+				if dispatches[i].ReplayID == nil {
+					resp.Dispatches = append(resp.Dispatches, AutomationDispatchRef{ID: dispatches[i].ID, GenerationToken: dispatches[i].GenerationToken})
+				}
+			}
+			return nil
 		}
 
 		if err := tx.Model(&event).Updates(map[string]any{
@@ -102,7 +115,8 @@ func (a *Activities) RouteAutomationEvent(ctx context.Context, req RouteAutomati
 				AppID:                 event.AppID,
 				EventSourceEventID:    event.ID,
 				EventAutomationRuleID: rule.ID,
-				IdempotencyKey:        event.ID + ":" + rule.ID,
+				ReplayID:              replayIDPtr(req.ReplayID),
+				IdempotencyKey:        automationDispatchKey(event.ID, rule.ID, req.ReplayID),
 				TargetType:            rule.TargetType,
 				TargetID:              rule.AppBranchID,
 				Status:                app.EventDispatchStatusPending,
@@ -117,10 +131,10 @@ func (a *Activities) RouteAutomationEvent(ctx context.Context, req RouteAutomati
 			if err := tx.Where(app.EventDispatch{IdempotencyKey: dispatch.IdempotencyKey}).First(&persisted).Error; err != nil {
 				return fmt.Errorf("unable to get event dispatch for rule %q: %w", rule.Name, err)
 			}
-			resp.DispatchIDs = append(resp.DispatchIDs, persisted.ID)
+			resp.Dispatches = append(resp.Dispatches, AutomationDispatchRef{ID: persisted.ID, GenerationToken: persisted.GenerationToken})
 		}
 
-		return markEventRouted(tx, &event, matchCount, len(resp.DispatchIDs))
+		return markEventRouted(tx, &event, matchCount, len(resp.Dispatches))
 	})
 	if err != nil {
 		completedAt := time.Now().UTC()
@@ -140,6 +154,21 @@ func (a *Activities) RouteAutomationEvent(ctx context.Context, req RouteAutomati
 		return nil, err
 	}
 	return resp, nil
+}
+
+func replayIDPtr(replayID string) *string {
+	if replayID == "" {
+		return nil
+	}
+	return &replayID
+}
+
+func automationDispatchKey(eventID, ruleID, replayID string) string {
+	key := eventID + ":" + ruleID
+	if replayID != "" {
+		key += ":" + replayID
+	}
+	return key
 }
 
 func markEventRouted(tx *gorm.DB, event *app.EventSourceEvent, matchCount, dispatchCount int) error {

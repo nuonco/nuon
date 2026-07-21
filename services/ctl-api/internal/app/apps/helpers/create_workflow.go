@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -47,6 +48,15 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	metadata map[string]string,
 	planOnly bool,
 ) (*app.Workflow, error) {
+	return s.createWorkflowWithDB(ctx, s.db, ownerID, ownerType, workflowType, metadata, planOnly)
+}
+
+func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
+	ownerID, ownerType string,
+	workflowType app.WorkflowType,
+	metadata map[string]string,
+	planOnly bool,
+) (*app.Workflow, error) {
 	wf := app.Workflow{
 		Type:              workflowType,
 		OwnerID:           ownerID,
@@ -61,7 +71,7 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 		},
 	}
 
-	res := s.db.WithContext(ctx).Create(&wf)
+	res := db.WithContext(ctx).Create(&wf)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create workflow")
 	}

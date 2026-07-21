@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
@@ -286,6 +287,8 @@ type EventDispatch struct {
 	MappedInputs          map[string]any            `json:"mapped_inputs,omitempty" gorm:"serializer:json;type:jsonb;<-:create" temporaljson:"mapped_inputs,omitzero,omitempty"`
 	Status                EventDispatchStatus       `json:"status" gorm:"notnull;check:event_dispatch_status_checker,status IN ('pending','dispatching','triggered','retryable_failed','dead_lettered','cancelled')" temporaljson:"status,omitzero,omitempty"`
 	Attempts              int                       `json:"attempts" gorm:"check:event_dispatch_attempts_checker,attempts >= 0" temporaljson:"attempts,omitzero,omitempty"`
+	GenerationToken       string                    `json:"-" temporaljson:"-"`
+	ExecutionToken        string                    `json:"-" temporaljson:"-"`
 	NextAttemptAt         *time.Time                `json:"next_attempt_at,omitempty" temporaljson:"next_attempt_at,omitzero,omitempty"`
 	Error                 string                    `json:"error,omitempty" temporaljson:"error,omitzero,omitempty"`
 	QueueSignalID         *string                   `json:"queue_signal_id,omitempty" temporaljson:"queue_signal_id,omitzero,omitempty"`
@@ -317,6 +320,9 @@ func (e *EventDispatch) BeforeCreate(tx *gorm.DB) error {
 	}
 	if e.Status == "" {
 		e.Status = EventDispatchStatusPending
+	}
+	if e.GenerationToken == "" {
+		e.GenerationToken = uuid.NewString()
 	}
 	return nil
 }
