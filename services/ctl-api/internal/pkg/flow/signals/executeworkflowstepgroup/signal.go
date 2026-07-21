@@ -84,12 +84,30 @@ type Signal struct {
 }
 
 var (
-	_ signal.Signal                   = (*Signal)(nil)
-	_ signal.SignalWithCancel         = (*Signal)(nil)
-	_ signal.SignalWithUpdateHandlers = (*Signal)(nil)
-	_ signal.SignalWithTimeout        = (*Signal)(nil)
-	_ signal.SignalWithParams         = (*Signal)(nil)
+	_ signal.Signal                     = (*Signal)(nil)
+	_ signal.SignalWithCancel           = (*Signal)(nil)
+	_ signal.SignalWithUpdateHandlers   = (*Signal)(nil)
+	_ signal.SignalWithTimeout          = (*Signal)(nil)
+	_ signal.SignalWithParams           = (*Signal)(nil)
+	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
 )
+
+func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	return signal.SignalLifecycleContext{
+		OrgID:        s.OrgID,
+		OrgName:      s.OrgName,
+		WorkflowID:   s.WorkflowID,
+		WorkflowType: s.WorkflowType,
+		OwnerID:      s.OwnerID,
+		OwnerType:    s.OwnerType,
+		OwnerName:    s.OwnerName,
+		Operation:    "execute-workflow-step-group",
+		Metadata: map[string]any{
+			"step_group_id": s.StepGroupID,
+			"group_idx":     s.GroupIdx,
+		},
+	}
+}
 
 func (s *Signal) WithParams(params *signal.Params) {
 	s.mw = params.MW

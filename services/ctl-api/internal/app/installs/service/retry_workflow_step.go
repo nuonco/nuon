@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -74,6 +75,13 @@ func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("retry step: %w", err))
 		return
 	}
+
+	s.logFlowAPIAction(ctx, "step.retry_requested",
+		zap.String("workflow_id", workflow.ID),
+		zap.String("step_id", step.ID),
+		zap.String("install_id", workflow.OwnerID),
+		zap.Bool("retryable", resp.Retryable),
+	)
 
 	ctx.JSON(201, RetryWorkflowStepResponse{
 		WorkflowID: workflow.ID,

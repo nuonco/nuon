@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/lifecyclephase"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -86,6 +87,11 @@ func (s *service) DeprovisionInstall(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 		return
 	}
+
+	s.logFlowAPIAction(ctx, "workflow.deprovision_requested",
+		zap.String("workflow_id", workflow.ID),
+		zap.String("install_id", install.ID),
+	)
 
 	ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
 }

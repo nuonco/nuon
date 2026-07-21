@@ -36,3 +36,13 @@ func ToPtrStringMap(val map[string]string) map[string]*string {
 
 	return vals
 }
+
+func HstoreValue(hstore pgtype.Hstore, k string) string {
+	if hstore == nil {
+		return ""
+	}
+	if v, ok := hstore[k]; ok && v != nil {
+		return *v
+	}
+	return ""
+}

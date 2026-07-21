@@ -51,6 +51,7 @@ type SignalPhaseEvent struct {
 	// reason about workflow/step lifecycle without having to know the inner
 	// signal taxonomy.
 	StepID    string `json:"step_id,omitempty"`
+	StepName  string `json:"step_name,omitempty"`
 	OwnerID   string `json:"owner_id,omitempty"`
 	OwnerType string `json:"owner_type,omitempty"`
 	OwnerName string `json:"owner_name,omitempty"`
@@ -114,6 +115,7 @@ type SignalLifecycleContext struct {
 	// hooks can emit workflow/workflow_step lifecycle events without leaking
 	// inner signal taxonomy.
 	StepID    string `json:"step_id,omitempty"`
+	StepName  string `json:"step_name,omitempty"`
 	OwnerID   string `json:"owner_id,omitempty"`
 	OwnerType string `json:"owner_type,omitempty"`
 	// OwnerName is the human-readable owner label resolved by the signal at

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -25,18 +26,25 @@ type Params struct {
 	DB       *gorm.DB `name:"psql"`
 	MW       metrics.Writer
 	Notifier FlowStatusNotifier `optional:"true"`
+	L        *zap.Logger        `optional:"true"`
 }
 
 type Activities struct {
 	db       *gorm.DB
 	mw       metrics.Writer
 	notifier FlowStatusNotifier
+	l        *zap.Logger
 }
 
 func New(params Params) *Activities {
+	l := params.L
+	if l == nil {
+		l = zap.NewNop()
+	}
 	return &Activities{
 		db:       params.DB,
 		mw:       params.MW,
+		l:        l,
 		notifier: params.Notifier,
 	}
 }

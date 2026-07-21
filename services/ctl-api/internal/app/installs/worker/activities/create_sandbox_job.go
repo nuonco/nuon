@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateSandboxJobRequest struct {
@@ -24,6 +25,9 @@ func (a *Activities) CreateSandboxJob(ctx context.Context, req *CreateSandboxJob
 	if jobType == "" {
 		jobType = app.RunnerJobTypeSandboxTerraform
 	}
+
+	// RunnerJob.BeforeCreate reads these from ctx into job metadata for telemetry.
+	ctx = cctx.SetFlowInstallIDContext(ctx, req.InstallID)
 
 	job, err := a.runnersHelpers.CreateInstallSandboxJob(ctx,
 		req.RunnerID,

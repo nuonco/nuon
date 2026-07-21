@@ -136,6 +136,13 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 		}
 	}
 
+	s.logFlowAPIAction(ctx, "step.approval_response_submitted",
+		zap.String("workflow_id", workflowID),
+		zap.String("step_id", stepID),
+		zap.String("approval_id", approval.ID),
+		zap.String("response_type", string(req.ResponseType)),
+	)
+
 	response := CreateWorkflowStepApprovalResponseResponse{
 		ID:   wfsaResponse.ID,
 		Type: string(wfsaResponse.Type),

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/generics"
@@ -100,6 +101,12 @@ func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID strin
 	}) {
 		return fmt.Errorf("workflow is not cancelable (status: %s)", wf.Status.Status)
 	}
+
+	s.logFlowAPIAction(ctx, "workflow.cancel_requested",
+		zap.String("workflow_id", wf.ID),
+		zap.String("workflow_type", string(wf.Type)),
+		zap.String("install_id", wf.OwnerID),
+	)
 
 	// If the workflow hasn't started yet, cancel it directly in the DB —
 	// there is no signal to cancel.
