@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design: Hierarchical Resource Grants (ctl-api RBAC)</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --ink: #e6e9ef; --muted: #9aa4b2;
+    --accent: #6ea8fe; --good: #3fb950; --warn: #d29922; --bad: #f85149;
+    --border: #2a2f3a; --code: #1e232c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 120px; }
+  h1 { font-size: 30px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  h2 { font-size: 22px; margin: 48px 0 12px; padding-top: 16px; border-top: 1px solid var(--border); letter-spacing: -0.01em; }
+  h3 { font-size: 17px; margin: 28px 0 8px; color: var(--accent); }
+  .sub { color: var(--muted); margin: 0 0 8px; }
+  code { background: var(--code); padding: 1px 6px; border-radius: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; }
+  pre { background: var(--code); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-size: 13px; }
+  pre code { background: none; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; font-weight: 600; }
+  .tag.good { background: rgba(63,185,80,.15); color: var(--good); }
+  .tag.warn { background: rgba(210,153,34,.15); color: var(--warn); }
+  .tag.bad  { background: rgba(248,81,73,.15);  color: var(--bad); }
+  .tag.info { background: rgba(110,168,254,.15); color: var(--accent); }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin: 14px 0; }
+  .callout { border-left: 3px solid var(--accent); padding-left: 14px; margin: 14px 0; color: var(--muted); }
+  .callout.warn { border-color: var(--warn); }
+  .callout.bad { border-color: var(--bad); }
+  ul { margin: 8px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .tree { font-family: ui-monospace, monospace; font-size: 13px; white-space: pre; color: var(--ink); }
+  .scenario { margin: 10px 0; }
+  .scenario .req { font-family: ui-monospace, monospace; font-size: 13px; color: var(--accent); }
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Hierarchical Resource Grants</h1>
+<p class="sub">Object-level RBAC for ctl-api &mdash; replacing coarse org roles with grants that scope down to a single app or install (and, later, component / install-component).</p>
+<p class="meta">Status: <strong>Draft / planning</strong> &middot; Owner: auth-scopes &middot; Last updated after pressure-test pass.</p>
+
+<h2>1. Motivation</h2>
+<p>Today the org roles (<code>org_admin</code>, <code>org_support</code>, <code>installer</code>, <code>runner</code>) all resolve to the same policy: <code>{&lt;orgID&gt;: "all"}</code>. Authorization happens once, in the org middleware, as <code>acct.AllPermissions.CanPerform(org.ID, methodPerm)</code>. The role type is effectively metadata &mdash; there is no way to say &ldquo;read-only&rdquo; or &ldquo;only this app&rdquo;.</p>
+<p>The original ask was <code>apps_read_only</code> and <code>installs_read_only</code> role types. Investigation showed that a resource-<em>type</em> dimension (&ldquo;all apps&rdquo;) is a large change to the permission scheme, whereas scoping to a <em>specific</em> resource fits the existing model almost for free &mdash; the permission <code>Set</code> is already <code>map[objectID]Permission</code> with a <code>"*"</code> wildcard. This doc designs the specific-resource path.</p>
+
+<h2>2. Existing building blocks</h2>
+<table>
+  <tr><th>Piece</th><th>Location</th><th>Relevance</th></tr>
+  <tr><td><code>permissions.Set</code> &mdash; <code>map[string]Permission</code>, <code>CanPerform(obj, perm)</code> with <code>"*"</code> fallback</td><td><code>internal/pkg/authz/permissions/set.go</code></td><td>Already supports keying on any object ID, not just org ID.</td></tr>
+  <tr><td><code>FromRequest</code> &mdash; HTTP verb &rarr; permission</td><td><code>.../permissions/request.go</code></td><td>GET&rarr;read, POST&rarr;create, PUT/PATCH&rarr;update, DELETE&rarr;delete. Gives read-only for free.</td></tr>
+  <tr><td><code>authz.CanRead/CanPerform(ctx, id)</code></td><td><code>internal/pkg/authz/context.go</code></td><td>Object-level helpers &mdash; exist, essentially unused today.</td></tr>
+  <tr><td>Org middleware</td><td><code>internal/middlewares/org/org.go</code></td><td>Single enforcement point; checks <code>CanPerform(org.ID, perm)</code>.</td></tr>
+  <tr><td>Account <code>AfterQuery</code> hook</td><td><code>internal/app/account.go</code></td><td>Flattens role policies into <code>AllPermissions</code>; builds <code>OrgIDs</code>.</td></tr>
+  <tr><td>Backfill migration precedent</td><td><code>.../migrations/095_backfill_org_support_role.go</code></td><td>Template for rolling a new capability onto existing orgs.</td></tr>
+</table>
+
+<h2>3. The ownership tree</h2>
+<p>Every grantable resource has a static (or resolvable) parent chain terminating at the org. Authorization <strong>walks up</strong> this chain: a request is allowed if the requested resource <em>or any ancestor</em> carries a grant satisfying the verb.</p>
+<div class="tree">org
+&#9500;&#9472; app                       chain: app &rarr; org          &lt;- grant target (initial)
+&#9474;  &#9500;&#9472; install                chain: install &rarr; app &rarr; org   &lt;- grant target (initial)
+&#9474;  &#9474;  &#9492;&#9472; install-component   (deferred target)
+&#9474;  &#9500;&#9472; component              (deferred target)
+&#9474;  &#9492;&#9472; (secrets, actions, runbooks, builds, releases &hellip; inherit via app/install)
+&#9492;&#9472; (runner, runner-group, vcs, webhook &hellip; org-owned; deferred targets)</div>
+<p class="meta">Initial grant targets are <code>org</code>, <code>app</code>, <code>install</code>. Everything else inherits via walk-up until promoted to a target.</p>
+<p class="meta">Deploys, builds, releases, sandboxes, cloud accounts, audit logs, notebooks are <em>not</em> grant targets &mdash; they inherit from their parent install/component/app via walk-up.</p>
+
+<h2>4. Grant-target set (initial scope)</h2>
+<table>
+  <tr><th>Target</th><th>Model</th><th>Ownership tier</th><th>Verbs</th></tr>
+  <tr><td><code>org</code></td><td><code>Org</code></td><td>root</td><td>read, all</td></tr>
+  <tr><td><code>app</code></td><td><code>App</code> (<code>OrgID</code>)</td><td>org</td><td>read, all</td></tr>
+  <tr><td><code>install</code></td><td><code>Install</code> (<code>OrgID</code>+<code>AppID</code>)</td><td>app</td><td>read, all</td></tr>
+</table>
+<p class="meta">Initial scope is the three-level spine <code>org &rarr; app &rarr; install</code>. All app-owned and install-owned children (components, secrets, actions, runbooks, builds, releases, install-components, cloud accounts, notebooks, audit logs) inherit via walk-up from their app or install.</p>
+<p><strong>Deferred targets</strong> (add later via the extensible chain builder):</p>
+<ul>
+  <li><code>component</code> &mdash; leaf under app; chain <code>[componentID, appID, orgID]</code>. Deferred: enforceable, but adds the deepest-param middleware work (F2/F4) and its main personas are covered acceptably by <code>app</code> grants at first.</li>
+  <li><code>install-component</code> &mdash; leaf under install. Deferred with the same rationale; would be keyed on <code>InstallComponent.ID</code> (<code>ic_...</code>), resolved from the URL's <code>(install_id, app-component-id)</code> pair via the composite <code>(InstallID, ComponentID)</code> key.</li>
+  <li><code>runner</code>, <code>runner-group</code> (polymorphic owner), <code>vcs-connection</code>, <code>webhook</code>, <code>installer</code> &mdash; org-owned siblings.</li>
+  <li>Runbooks/actions &mdash; pending an <code>execute</code> verb (section 9).</li>
+</ul>
+
+<h2>5. Persona &rarr; grant mapping</h2>
+<table>
+  <tr><th>Persona</th><th>Grant</th><th>Effect</th></tr>
+  <tr><td>Org admin</td><td><code>org &middot; all</code></td><td>Everything (existing behavior).</td></tr>
+  <tr><td>Org read-only / auditor</td><td><code>org &middot; read</code></td><td>Read all descendants; no writes. (Original <code>org_read_only</code>.)</td></tr>
+  <tr><td>App owner</td><td><code>app &middot; all</code></td><td>Full control of one app + its installs/components.</td></tr>
+  <tr><td>App read-only</td><td><code>app &middot; read</code></td><td>Read one app subtree. (Original <code>apps_read_only</code>, scoped.)</td></tr>
+  <tr><td>Install operator</td><td><code>install &middot; all</code></td><td>Drive one install; no app-config writes.</td></tr>
+  <tr><td>Install read-only / support</td><td><code>install &middot; read</code></td><td>View one install. (Original <code>installs_read_only</code>, scoped.)</td></tr>
+  <tr><td class="meta">Component maintainer <span class="tag info">deferred</span></td><td class="meta"><code>component &middot; all/read</code></td><td class="meta">One app component's config + builds. Covered by an <code>app</code> grant until <code>component</code> is promoted.</td></tr>
+  <tr><td class="meta">Deployment debugger <span class="tag info">deferred</span></td><td class="meta"><code>install-component &middot; read</code></td><td class="meta">One deployed component in one install. Covered by an <code>install</code> grant until promoted.</td></tr>
+</table>
+<div class="callout"><strong>Key simplification:</strong> &ldquo;read-only&rdquo; is a <em>permission verb</em>, not a role type. Every <code>*_read_only</code> persona is just <code>&lt;target&gt; &middot; read</code>. We do not add per-resource read-only role types.</div>
+
+<h2>6. Data model</h2>
+<p>One unified table, folded into <code>AllPermissions</code> alongside role policies.</p>
+<pre><code>ResourceGrant {
+  ID
+  OrgID         // org the grant lives in (drives membership/OrgIDs)
+  AccountID
+  ResourceType  // initial: "org" | "app" | "install"
+                // deferred: "component" | "install-component" | "runner" | ...
+  ResourceID    // canonical ID of the granted resource
+  Permission    // "read" | "all"
+}</code></pre>
+<p>In <code>account.go</code> <code>AfterQuery</code>: after merging role policies, loop grants &mdash; merge each as <code>{ResourceID: Permission}</code> into the Set, and append <code>OrgID</code> to <code>OrgIDs</code> so an otherwise org-less account can pass org resolution. Keys are distinct canonical IDs, so the <code>Set.Add</code> last-wins hazard does not apply between grants.</p>
+
+<h2>7. Authorization primitive: walk-up-the-chain</h2>
+<pre><code>// most-specific &rarr; least-specific; allow if any link satisfies perm
+func Authorize(acct, chain []string, perm) error {
+  for _, id := range chain {
+    if acct.AllPermissions.CanPerform(id, perm) == nil { return nil }
+  }
+  return NoAccess
+}</code></pre>
+<p>Chain builders per resource type (all hops are indexed, org-scoped lookups):</p>
+<ul>
+  <li><code>org</code>: <code>[orgID]</code></li>
+  <li><code>app</code>: <code>[appID, orgID]</code></li>
+  <li><code>install</code>: <code>[installID, appID, orgID]</code> (install row carries <code>app_id</code>)</li>
+  <li class="meta"><code>component</code>: <code>[componentID, appID, orgID]</code> &mdash; deferred</li>
+  <li class="meta"><code>install-component</code>: <code>[installComponentID, installID, appID, orgID]</code> &mdash; deferred</li>
+</ul>
+<p>The org-admin case (<code>{orgID: all}</code>) is just the last link, so this unifies the existing org gate with the new grants.</p>
+<div class="callout"><strong>Deepest-path-param chain (needed only for deferred leaf targets, F2).</strong> For the initial <code>org/app/install</code> scope, each middleware keys off its single group param (<code>:app_id</code> or <code>:install_id</code>). When <code>component</code>/<code>install-component</code> are promoted, the middleware must instead inspect the full matched route and key off the <em>most specific</em> resource param &mdash; e.g. under <code>/v1/installs/:install_id/components/:component_id</code> resolve the install-component and build <code>[installComponentID, installID, appID, orgID]</code>. Designing the builder to select by deepest param now keeps that promotion additive.</div>
+
+<h2>8. Enforcement wiring</h2>
+<h3>8a. Org-gate rework <span class="tag warn">only non-additive change</span></h3>
+<p><code>org.go</code> splits membership from authorization:</p>
+<pre><code>if !acct.HasOrg(org.ID) { 403 }                       // not a member at all
+if acct.AllPermissions.CanPerform(org.ID, perm)==nil {
+    cctx.SetOrgAuthorized(ctx, true); Next(); return  // org-wide grant: fast path
+}
+cctx.SetOrgAuthorized(ctx, false); Next()             // member; defer downstream</code></pre>
+<p><strong>Fail-closed:</strong> a handler reached with <code>OrgAuthorized=false</code> and no resource middleware having authorized &rarr; deny. Preserves today's behavior on every non-resource route.</p>
+<h3>8b. Resource middlewares (after <code>org</code> in the config chain)</h3>
+<p>One per path-parameterized group (<code>/v1/apps/:app_id</code>, <code>/v1/installs/:install_id</code>). Each: skip if <code>IsGlobal/IsPublic</code> or <code>OrgAuthorized</code>; read its path param; resolve name-or-id scoped by org; build chain; <code>Authorize</code>; stash resolved entity in context. Registered in the middleware config slices (<code>internal/config.go</code>) right after <code>"org"</code>, provided via <code>fxmodules/middlewares.go</code>.</p>
+
+<h3>8c. Collection-endpoint grant-scope filtering <span class="tag bad">added post-pressure-test (F1)</span></h3>
+<p>Walk-up authorizes a single addressed resource, but list endpoints return whole collections with no per-item check. For a genuinely narrow grant, gating the whole endpoint is wrong in both directions (deny-all hides the user's own resource; allow-all leaks siblings). Fix has two parts:</p>
+<ul>
+  <li><strong>Gate:</strong> collection routes let deferred (<code>OrgAuthorized=false</code>) members through instead of failing closed.</li>
+  <li><strong>Filter:</strong> the query gains a grant-derived <code>WHERE</code> &mdash; return a row only if its own id, its parent <code>app_id</code>, or its <code>org_id</code> appears in the caller's grant set. Implemented per list query (<code>get_org_installs.go</code>, <code>get_app_installs.go</code>, <code>get_apps.go</code>, <code>get_org_components.go</code>).</li>
+</ul>
+<p>Callers with an org- or app-<code>read</code> grant covering the whole collection skip the filter (their ancestor grant matches every row). Only narrow grants pay for it. A shared helper should turn the caller's grants + resource type into the id/app/org filter sets so the logic isn't duplicated across handlers.</p>
+
+<h3>8d. Collection filter &mdash; reference implementation</h3>
+
+<p><strong>Why grants, not the flattened Set.</strong> <code>AllPermissions</code> is <code>map[string]Permission</code> &mdash; opaque ids with no tier information, so it can't tell &ldquo;this id is an app&rdquo; from &ldquo;this id is an install.&rdquo; The filter needs tiers, so the account must also carry its raw grants. Load them alongside roles and expose them:</p>
+<pre><code>// internal/app/account.go
+type Account struct {
+    ...
+    Roles          []Role
+    Grants         []ResourceGrant // preload: Preload("Grants")
+    AllPermissions permissions.Set // still used by the middleware walk-up
+}</code></pre>
+
+<p><strong>Shared helper</strong> &mdash; turns the caller's grants into per-tier id sets for a given verb. Lives in a small package (e.g. <code>internal/pkg/authz/scope</code>) so every list handler uses identical logic.</p>
+<pre><code>// internal/pkg/authz/scope/scope.go
+type IDSets struct {
+    OrgIDs     []string
+    AppIDs     []string
+    InstallIDs []string
+}
+
+// a grant satisfies the request if it is "all" or exactly the requested verb
+func satisfies(g permissions.Permission, want permissions.Permission) bool {
+    return g == permissions.PermissionAll || g == want
+}
+
+// ForList collects the resources the caller is granted at each tier for `perm`.
+func ForList(acct *app.Account, perm permissions.Permission) IDSets {
+    var s IDSets
+    for _, g := range acct.Grants {
+        if !satisfies(permissions.NewPermission(g.Permission), perm) {
+            continue
+        }
+        switch g.ResourceType {
+        case "org":     s.OrgIDs = append(s.OrgIDs, g.ResourceID)
+        case "app":     s.AppIDs = append(s.AppIDs, g.ResourceID)
+        case "install": s.InstallIDs = append(s.InstallIDs, g.ResourceID)
+        }
+    }
+    return s
+}</code></pre>
+
+<p><strong>Per-resource GORM scopes.</strong> Each returns a <code>func(*gorm.DB) *gorm.DB</code> to drop into <code>.Scopes(...)</code>. The row is visible if any tier it belongs to is granted. Empty <code>IN ?</code> slices compile to <code>IN (NULL)</code> (match nothing), so a caller with no relevant grant gets an empty list &mdash; not an error, which is the right behavior for a collection.</p>
+<pre><code>// installs list: columns installs.id, installs.app_id, installs.org_id
+func (s IDSets) Installs(db *gorm.DB) func(*gorm.DB) *gorm.DB {
+    return func(tx *gorm.DB) *gorm.DB {
+        return tx.Where(
+            db.Where("installs.id IN ?", s.InstallIDs).
+                Or("installs.app_id IN ?", s.AppIDs).
+                Or("installs.org_id IN ?", s.OrgIDs),
+        )
+    }
+}
+
+// apps list: columns apps.id, apps.org_id
+// plus UPWARD visibility: show the parent app of any granted install/component
+// so a narrow grantee can navigate to it (metadata only; its other children stay filtered).
+func (s IDSets) Apps(db *gorm.DB) func(*gorm.DB) *gorm.DB {
+    return func(tx *gorm.DB) *gorm.DB {
+        return tx.Where(
+            db.Where("apps.id IN ?", s.AppIDs).
+                Or("apps.org_id IN ?", s.OrgIDs).
+                Or("apps.id IN (?)",
+                    db.Model(&amp;app.Install{}).
+                        Select("app_id").
+                        Where("id IN ?", s.InstallIDs)),
+        )
+    }
+}</code></pre>
+
+<p><strong>Handler wiring</strong> &mdash; skip the filter entirely when the org gate already authorized org-wide; otherwise apply the scope. Example for <code>get_org_installs.go</code>:</p>
+<pre><code>func (s *service) GetOrgInstalls(ctx *gin.Context) {
+    org, _ := cctx.OrgFromContext(ctx)
+    acct, _ := cctx.AccountFromContext(ctx)
+
+    tx := s.db.WithContext(ctx).
+        Joins("JOIN apps ON apps.id = installs.app_id").
+        Where("installs.org_id = ?", org.ID)
+
+    if !cctx.OrgAuthorized(ctx) {                       // deferred member: narrow scope
+        sets := scope.ForList(acct, permissions.PermissionRead)
+        tx = tx.Scopes(sets.Installs(s.db))
+    }
+    // ... existing q / runner_id filters, ordering, pagination unchanged ...
+}</code></pre>
+
+<div class="callout">
+  <strong>Upward visibility &mdash; decided: navigable (&sect;9).</strong> The <code>Apps</code> scope surfaces the parent app of a granted install so the grantee can see where their install lives, but that app's <em>other</em> installs remain filtered by the <code>Installs</code> scope. This keeps navigation coherent without leaking siblings. The strict-isolation variant (drop the subquery branch) is not used.
+</div>
+
+<div class="callout warn">
+  <strong>Endpoints to update</strong> (each gets the <code>OrgAuthorized</code> guard + its scope): <code>get_org_installs.go</code>, <code>get_app_installs.go</code> (already app-scoped &mdash; only needs the install narrowing when the caller lacks the app grant), <code>get_apps.go</code>, <code>get_org_components.go</code>. Note that since <code>component</code> is a deferred target, the components-list filter matches at the <code>app_id</code>/<code>org_id</code> tiers only (no component-id tier yet): an <code>app&middot;read</code> grantee sees that app's components; an <code>install&middot;read</code> grantee correctly sees none in the org-wide list (their scope is the install, reachable via <code>/v1/installs/:id/components</code>, not the org-wide component list). Any future list endpoint over a grantable resource must adopt the same pattern &mdash; consider a lint/review checklist item so new collections don't silently ship unfiltered.
+</div>
+
+<h3>8e. Query performance</h3>
+<p>The filter is cheap in the expected case but has a few sharp edges worth stating explicitly.</p>
+
+<p><strong>Why it stays cheap: the mandatory org predicate.</strong> Every list query already AND's an unconditional <code>WHERE &lt;table&gt;.org_id = ?</code> <em>before</em> the grant scope. Postgres uses the <code>org_id</code> index to narrow to a single org first, then evaluates the OR-of-INs over that already-small subset. An org's app/install count is bounded (hundreds, low thousands), so the OR filter runs in-memory over a narrow row set. The classic &ldquo;OR across columns &rarr; seq scan&rdquo; hazard can therefore only ever scan <em>within one org</em>, never the whole table. Note that for a narrow (deferred) grantee, <code>OrgIDs</code> is empty (an org grant would have taken the fast path), so the effective filter collapses to <code>id IN (&hellip;) OR app_id IN (&hellip;)</code> over the org-narrowed rows.</p>
+
+<table>
+  <tr><th>Risk</th><th>Impact</th><th>Mitigation</th></tr>
+  <tr>
+    <td>OR-of-INs can't use a single composite index</td>
+    <td>Planner bitmap-ORs separate index scans or filters post-narrowing. Negligible at org scale.</td>
+    <td>Ensure each filtered column is independently indexed: <code>org_id</code>, <code>app_id</code> (present), <code>id</code> (PK). No new composite index needed.</td>
+  </tr>
+  <tr>
+    <td>High grant cardinality (e.g. 500+ install grants on one account)</td>
+    <td><code>id IN (&hellip;)</code> with a large literal list; fine to low thousands, degrades beyond.</td>
+    <td>If grants-per-account grows large, swap the materialized IN lists for a JOIN against <code>resource_grants</code> (below). Not needed at expected scale.</td>
+  </tr>
+  <tr>
+    <td>Separate <code>COUNT(*)</code> for pagination totals</td>
+    <td><strong>Correctness</strong>, not just perf: an unfiltered count over-reports the page total.</td>
+    <td>Apply the same <code>.Scopes(...)</code> to the count query. Audit each list handler's pagination path.</td>
+  </tr>
+  <tr>
+    <td>Upward-visibility subquery in the apps list</td>
+    <td>One extra lookup <code>apps.id IN (SELECT app_id FROM installs WHERE id IN (&hellip;))</code>.</td>
+    <td>Single indexed scan on <code>installs.id</code> &rarr; <code>app_id</code>; the outer query is already org-narrowed. Negligible.</td>
+  </tr>
+  <tr>
+    <td>Admin / org-wide callers</td>
+    <td><strong>No regression</strong> &mdash; the large-org unfiltered plan is unchanged.</td>
+    <td>The <code>OrgAuthorized</code> fast path skips the filter entirely for them.</td>
+  </tr>
+</table>
+
+<p><strong>Scalable alternative (only if grant cardinality demands it):</strong> replace the Go-materialized IN lists with a JOIN, letting an index on <code>resource_grants(account_id, resource_id)</code> do the work and keeping grant volume off the query string:</p>
+<pre><code>JOIN resource_grants rg
+  ON rg.account_id = @acctID
+ AND rg.deleted_at IS NULL
+ AND (
+   (rg.resource_type = 'install' AND rg.resource_id = installs.id)      OR
+   (rg.resource_type = 'app'     AND rg.resource_id = installs.app_id)  OR
+   (rg.resource_type = 'org'     AND rg.resource_id = installs.org_id)
+ )</code></pre>
+<p class="meta">The IN-list form is recommended initially for its simplicity; this JOIN form is the escape hatch if a single account ever accumulates thousands of grants. Both are org-narrowed first, so both are fast in practice.</p>
+
+<div class="callout">
+  <strong>Bottom line.</strong> With the org predicate always leading, the filter adds a cheap in-org OR-filter for narrow grantees and nothing at all for org/app-wide grantees. The only items that need active attention are (1) indexing the three filter columns and (2) applying the scope to any pagination <code>COUNT</code> query &mdash; the latter is a correctness bug if missed, not merely slow.
+</div>
+
+<h2>9. Decisions</h2>
+
+<h3>Resolved</h3>
+<table>
+  <tr><th>Question</th><th>Decision</th><th>Implication</th></tr>
+  <tr>
+    <td>Who can grant?</td>
+    <td><span class="tag good">Org-admins only</span></td>
+    <td>Grant CRUD endpoints require an <code>org &middot; all</code> caller. No delegation, no re-grant/escalation checks, no new grant-management permission axis. Simplest and most auditable; delegation can be added later without breaking the model.</td>
+  </tr>
+  <tr>
+    <td>Grantee scope?</td>
+    <td><span class="tag good">External invitees too</span></td>
+    <td>A grant may target an account not yet in the org. <strong>Touches the invite flow:</strong> <code>create_invite.go</code> currently rejects any role other than <code>org_admin</code>/<code>org_support</code> &mdash; it must accept a resource-scoped invite (target type + id + permission), and acceptance must create the <code>ResourceGrant</code> (adding the org to the account's <code>OrgIDs</code>) rather than an org-wide role. Adds a scoped-invite path to build + test.</td>
+  </tr>
+  <tr>
+    <td>Upward visibility in lists?</td>
+    <td><span class="tag good">Navigable (show parent app)</span></td>
+    <td>Locks in the &sect;8d <code>Apps</code> subquery: a narrow grantee sees the parent app of a granted install/component (metadata only; siblings stay filtered). The strict-isolation toggle is not used.</td>
+  </tr>
+</table>
+
+<h3>Deferred (with the deferred targets)</h3>
+<ul>
+  <li><strong>Execute verb:</strong> runbooks/actions need an <code>execute</code> permission, not CRUD. Not in initial scope (those aren't initial targets), but the <code>Permission</code> enum and <code>FromRequest</code> mapping should be left extensible so adding <code>execute</code> later is additive.</li>
+  <li><strong>Polymorphic owners:</strong> <code>runner-group</code> and <code>workflow</code> resolve their owner at runtime via <code>OwnerID</code>/<code>OwnerType</code>. When promoted, the chain builder must dispatch on <code>OwnerType</code> (introduce typed constants for it &mdash; today it's an untyped string). The deepest-param builder design already anticipates per-type resolution.</li>
+</ul>
+
+<h2>10. Pressure test</h2>
+<p class="meta">Each scenario traces a concrete request through org-gate &rarr; resource middleware &rarr; handler. Findings feed back into the design above.</p>
+<div id="pressure-test">
+
+<table>
+  <tr><th>#</th><th>Request &amp; grant</th><th>Trace</th><th>Result</th></tr>
+
+  <tr>
+    <td>S1</td>
+    <td class="req">GET /v1/installs/:id<br>grant: install&middot;read</td>
+    <td>Org gate: member (grant put org in <code>OrgIDs</code>), no org-wide &rarr; defer. Install mw: chain <code>[install,app,org]</code>, <code>CanPerform(install,read)</code> hits.</td>
+    <td><span class="tag good">PASS</span></td>
+  </tr>
+
+  <tr>
+    <td>S2</td>
+    <td class="req">PATCH /v1/installs/:id<br>grant: install&middot;read</td>
+    <td><code>FromRequest</code>&rarr;update; no chain link satisfies update.</td>
+    <td><span class="tag good">DENY (correct)</span> &mdash; read-only enforced for free.</td>
+  </tr>
+
+  <tr>
+    <td>S5</td>
+    <td class="req">GET /v1/installs/:id<br>grant: app&middot;read (parent app)</td>
+    <td>Install mw chain <code>[install,app,org]</code>; <code>CanPerform(app,read)</code> hits via walk-up.</td>
+    <td><span class="tag good">PASS</span> &mdash; cascade works.</td>
+  </tr>
+
+  <tr>
+    <td>S8</td>
+    <td class="req">GET /v1/apps/my-app-name<br>grant: app&middot;read (by canonical id)</td>
+    <td>App mw resolves name&rarr;canonical id <em>before</em> keying, then <code>CanPerform(canonicalID,read)</code>.</td>
+    <td><span class="tag good">PASS</span> &mdash; provided mw resolves name-or-id first (design requirement).</td>
+  </tr>
+
+  <tr>
+    <td>S9</td>
+    <td class="req">any, X-Nuon-Org-ID=orgB<br>grant: install&middot;read in orgA</td>
+    <td>Org gate: <code>HasOrg(orgB)</code> false (grant added only orgA).</td>
+    <td><span class="tag good">DENY (correct)</span> &mdash; cross-org isolation holds.</td>
+  </tr>
+
+  <tr>
+    <td>S12</td>
+    <td class="req">PATCH /v1/installs/:id<br>grants: app&middot;read + install&middot;all</td>
+    <td>Chain <code>[install,app,org]</code>: <code>CanPerform(install,update)</code> &mdash; install&middot;<code>all</code> satisfies update.</td>
+    <td><span class="tag good">PASS</span> &mdash; any-link-wins + <code>all</code> works; grants accumulate independently.</td>
+  </tr>
+
+  <tr>
+    <td>S3/S4</td>
+    <td class="req">GET /v1/installs<br>GET /v1/apps/:id/installs<br>grant: install&middot;read (one install)</td>
+    <td>List handlers scope by org/app only and do <strong>no per-item filtering</strong> (verified: <code>get_org_installs.go</code>, <code>get_app_installs.go</code>). Org gate defers; collection route has no single resource id &rarr; fail-closed.</td>
+    <td><span class="tag bad">GAP &mdash; F1</span></td>
+  </tr>
+
+  <tr>
+    <td>S6</td>
+    <td class="req">GET /v1/installs/:iid/components/:cid<br>grant: install-component&middot;read</td>
+    <td class="meta"><em>Deferred target.</em> In initial scope an <code>install</code> grant covers this route (install-mw chain <code>[install,app,org]</code> hits). When install-component is promoted, the deepest-param builder (F2) is required: <code>:cid</code> is the <em>app</em> component id, resolved to <code>InstallComponent</code> by <code>(InstallID, ComponentID)</code>, grant keyed on <code>ic_...</code>.</td>
+    <td><span class="tag info">DEFERRED &mdash; F2</span></td>
+  </tr>
+
+  <tr>
+    <td>S10</td>
+    <td class="req">GET /v1/workflows/:wid<br>grant: install&middot;read (owning install)</td>
+    <td>Route not under a resource group; no <code>install_id</code> in path. Workflow row has <code>OwnerID</code>/<code>OwnerType</code> (<code>"installs"</code>/<code>"apps"</code>, untyped) but handler doesn't resolve it. Fail-closed.</td>
+    <td><span class="tag warn">GAP &mdash; F3</span></td>
+  </tr>
+
+  <tr>
+    <td>S11</td>
+    <td class="req">GET /v1/components/:cid (deprecated)<br>grant: component&middot;read</td>
+    <td class="meta"><em>Deferred target.</em> When promoted: <code>:cid</code> keys directly, but ancestor (app/org) grants need the <code>findComponent</code> app Preload. Handled by the deepest-param builder.</td>
+    <td><span class="tag info">DEFERRED &mdash; F4</span></td>
+  </tr>
+</table>
+
+<h3>Findings &amp; design changes</h3>
+
+<div class="callout bad">
+  <strong>F1 &mdash; Collection endpoints need result-filtering (biggest gap).</strong>
+  Walk-up authorizes a single addressed resource; list endpoints (<code>GET /v1/installs</code>, <code>/v1/apps/:id/installs</code>, <code>/v1/apps</code>, <code>/v1/components</code>) return everything in the org/app with no per-item check. A narrow-grant user is either denied the whole list (can't see their own install) or, if the gate is relaxed, sees everything (leak). <strong>Resolution:</strong> these endpoints must (a) let deferred accounts through the gate, and (b) add a <code>WHERE</code> derived from the grant set &mdash; return rows whose <code>id</code>, parent <code>app_id</code>, or <code>org_id</code> matches a granted resource. This is a real scope increase: each list query gets a grant-scope filter (design in &sect;8c, reference implementation in &sect;8d). Org- and app-<code>read</code> holders are unaffected (their grant covers the whole collection); only genuinely narrow grants need the filter.
+</div>
+
+<div class="callout"><span class="tag info">deferred</span>
+  <strong>F2 &mdash; Deepest-path-param chain (for deferred leaf targets).</strong>
+  Only relevant once <code>component</code>/<code>install-component</code> are promoted. In initial scope, <code>/v1/installs/:install_id/components/:component_id</code> is authorized by the install chain <code>[install,app,org]</code>. On promotion, the middleware must detect <code>:component_id</code>, resolve the <code>InstallComponent</code> by <code>(install_id, component_id)</code>, key on <code>InstallComponent.ID</code>, and build <code>[installComponentID, installID, appID, orgID]</code>. Designing the builder to select by deepest param now makes that promotion additive.
+</div>
+
+<div class="callout warn">
+  <strong>F3 &mdash; Out-of-group routes need per-handler resolution.</strong>
+  <code>/v1/workflows/:workflow_id</code> (and deprecated <code>/v1/install-workflows</code>, <code>/v1/action-workflows</code>, <code>/v1/components/builds/:build_id</code>) have no owning-resource id in the path. Default is fail-closed (safe). Where the read-only UI needs them (workflows, most likely), add an explicit <code>authz</code> check in the handler that reads <code>OwnerID</code>/<code>OwnerType</code>, builds the chain, and calls <code>Authorize</code>. Note <code>OwnerType</code> is an untyped string (<code>"installs"</code>/<code>"apps"</code>) &mdash; introduce constants as part of this work.
+</div>
+
+<div class="callout"><span class="tag info">deferred</span>
+  <strong>F4 &mdash; Deprecated top-level component routes.</strong>
+  Only relevant when <code>component</code> is promoted. <code>/v1/components/:component_id</code> carries the component id (direct grants resolve from the path); ancestor grants need the <code>findComponent</code> app lookup. The deepest-param builder handles this uniformly if it Preloads the app.
+</div>
+
+<div class="callout">
+  <strong>Confirmed sound:</strong> read-only-as-verb (S2), ancestor cascade (S5), name-or-id resolution ordering (S8), cross-org isolation (S9), and independent grant accumulation with any-link/<code>all</code> precedence (S12). The core single-resource path is correct; the gaps are all about <em>collections</em> and <em>routes that don't name their resource</em>.
+</div>
+
+</div>
+
+<h2>11. Revised implementation order (post-pressure-test)</h2>
+<ol>
+  <li><code>ResourceGrant</code> model + migration + <code>AfterQuery</code> aggregation.</li>
+  <li><code>Authorize</code> primitive + chain builders for <code>org/app/install</code> (design the builder to select by deepest path param so leaf targets are an additive promotion later).</li>
+  <li>Org-gate rework with <code>OrgAuthorized</code> (heavy tests vs. existing role types).</li>
+  <li>Resource middlewares (app + install groups).</li>
+  <li><strong>Collection-endpoint grant-scope filtering (F1, &sect;8d)</strong> &mdash; shared <code>scope</code> helper + GORM scopes + <code>OrgAuthorized</code> guard on each list handler.</li>
+  <li>Grant CRUD endpoints (org-admin only per &sect;9).</li>
+  <li>Scoped-invite path (&sect;9 grantee scope): extend <code>create_invite.go</code> validation to accept a resource-scoped invite, and make acceptance create the <code>ResourceGrant</code> instead of an org-wide role.</li>
+  <li>Per-handler checks for out-of-group routes where the read-only UX needs them (F3): start with <code>/v1/workflows/:workflow_id</code>.</li>
+  <li>UI + CLI for managing grants and scoped invites.</li>
+</ol>
+
+</div>
+</body>
+</html>
