@@ -798,6 +798,8 @@ type ClientService interface {
 
 	GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerOK, error)
 
+	ListOrgComponentBuilds(params *ListOrgComponentBuildsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOrgComponentBuildsOK, error)
+
 	ListQueues(params *ListQueuesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListQueuesOK, error)
 
 	ListRunnerJobs(params *ListRunnerJobsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRunnerJobsOK, error)
@@ -10027,7 +10029,7 @@ func (a *Client) GetComponentLatestConfig(params *GetComponentLatestConfigParams
 [Taplo](https://taplo.tamasfe.dev/) configured.
 
 ```toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+#:schema https://api.nuon.co/v1/general/config-schema/inputs
 
 description = "description"
 ```
@@ -10094,7 +10096,7 @@ func (a *Client) GetConfigSchema(params *GetConfigSchemaParams, opts ...ClientOp
 [Taplo](https://taplo.tamasfe.dev/) configured.
 
 ```toml
-#:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+#:schema https://api.nuon.co/v1/general/config-schema/inputs
 
 description = "description"
 ```
@@ -16771,6 +16773,50 @@ func (a *Client) GracefulShutDownRunner(params *GracefulShutDownRunnerParams, au
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GracefulShutDownRunner: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListOrgComponentBuilds lists component build history for the current organization
+*/
+func (a *Client) ListOrgComponentBuilds(params *ListOrgComponentBuildsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOrgComponentBuildsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListOrgComponentBuildsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListOrgComponentBuilds",
+		Method:             "GET",
+		PathPattern:        "/v1/component-builds",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListOrgComponentBuildsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListOrgComponentBuildsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListOrgComponentBuilds: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

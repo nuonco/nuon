@@ -23,6 +23,9 @@ type AppComponentBuild struct {
 	// app branch run id
 	AppBranchRunID string `json:"app_branch_run_id,omitempty"`
 
+	// build runner job id
+	BuildRunnerJobID string `json:"build_runner_job_id,omitempty"`
+
 	// checksum of our intermediate component config
 	Checksum string `json:"checksum,omitempty"`
 
