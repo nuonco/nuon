@@ -49,16 +49,17 @@ func ForList(acct *app.Account, perm permissions.Permission) IDSets {
 	return s
 }
 
-// Installs scopes an installs query to rows visible via any granted tier
-// (the install itself, its parent app, or its org). Empty id slices compile to
-// IN (NULL) and match nothing, so an account with no relevant grant gets an
-// empty result rather than an error.
-func (s IDSets) Installs(db *gorm.DB) func(*gorm.DB) *gorm.DB {
+// Installs scopes an installs query to rows visible via any granted tier (the
+// install itself, its parent app, or its org). Column names are passed in so
+// callers querying through a view supply the correct aliases. Empty id slices
+// compile to IN (NULL) and match nothing, so an account with no relevant grant
+// gets an empty result rather than an error.
+func (s IDSets) Installs(db *gorm.DB, idCol, appCol, orgCol string) func(*gorm.DB) *gorm.DB {
 	return func(tx *gorm.DB) *gorm.DB {
 		return tx.Where(
-			db.Where("installs.id IN ?", s.InstallIDs).
-				Or("installs.app_id IN ?", s.AppIDs).
-				Or("installs.org_id IN ?", s.OrgIDs),
+			db.Where(idCol+" IN ?", s.InstallIDs).
+				Or(appCol+" IN ?", s.AppIDs).
+				Or(orgCol+" IN ?", s.OrgIDs),
 		)
 	}
 }
@@ -66,15 +67,28 @@ func (s IDSets) Installs(db *gorm.DB) func(*gorm.DB) *gorm.DB {
 // Apps scopes an apps query to granted apps and org, plus the parent app of any
 // granted install (upward visibility: a narrow grantee can see where their
 // install lives; that app's other installs stay filtered by Installs).
-func (s IDSets) Apps(db *gorm.DB) func(*gorm.DB) *gorm.DB {
+func (s IDSets) Apps(db *gorm.DB, idCol, orgCol string) func(*gorm.DB) *gorm.DB {
 	return func(tx *gorm.DB) *gorm.DB {
 		return tx.Where(
-			db.Where("apps.id IN ?", s.AppIDs).
-				Or("apps.org_id IN ?", s.OrgIDs).
-				Or("apps.id IN (?)",
+			db.Where(idCol+" IN ?", s.AppIDs).
+				Or(orgCol+" IN ?", s.OrgIDs).
+				Or(idCol+" IN (?)",
 					db.Model(&app.Install{}).
 						Select("app_id").
 						Where("id IN ?", s.InstallIDs)),
+		)
+	}
+}
+
+// Components scopes a components query. Since component is not yet a grant
+// target, visibility is only via the parent app or the org (an install-only
+// grantee sees no components in the org-wide list — the install's components
+// are reachable under /v1/installs/:id/components instead).
+func (s IDSets) Components(db *gorm.DB, appCol, orgCol string) func(*gorm.DB) *gorm.DB {
+	return func(tx *gorm.DB) *gorm.DB {
+		return tx.Where(
+			db.Where(appCol+" IN ?", s.AppIDs).
+				Or(orgCol+" IN ?", s.OrgIDs),
 		)
 	}
 }
