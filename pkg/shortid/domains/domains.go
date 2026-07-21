@@ -10,6 +10,12 @@ func NewAppID() string {
 	return shortid.NewNanoID("app")
 }
 
+func NewEventSourceID() string         { return shortid.NewNanoID("esr") }
+func NewEventSourceSecretID() string   { return shortid.NewNanoID("ess") }
+func NewEventSourceEventID() string    { return shortid.NewNanoID("ese") }
+func NewEventAutomationRuleID() string { return shortid.NewNanoID("ear") }
+func NewEventDispatchID() string       { return shortid.NewNanoID("edp") }
+
 func NewAppCfgID() string {
 	return shortid.NewNanoID("apc")
 }

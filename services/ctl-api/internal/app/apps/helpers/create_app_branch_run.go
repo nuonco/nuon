@@ -9,17 +9,18 @@ import (
 )
 
 type CreateAppBranchRunRequest struct {
-	AppBranchID       string
-	AppBranchConfigID string
-	AppConfigID       string
-	Force             bool
-	RunType           app.AppBranchRunType
-	PlanOnly          bool
-	EventType         string
-	PRNumber          *int
-	HeadSHA           string
-	BaseBranch        string
-	Labels            labels.Labels
+	AppBranchID          string
+	AppBranchConfigID    string
+	AppConfigID          string
+	Force                bool
+	RunType              app.AppBranchRunType
+	PlanOnly             bool
+	EventType            string
+	PRNumber             *int
+	HeadSHA              string
+	BaseBranch           string
+	Labels               labels.Labels
+	AutomationDispatchID *string
 }
 
 func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRunRequest) (*app.AppBranchRun, error) {
@@ -43,20 +44,21 @@ func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRu
 	}
 
 	run := &app.AppBranchRun{
-		AppBranchID:       req.AppBranchID,
-		AppBranchConfigID: req.AppBranchConfigID,
-		AppConfigID:       req.AppConfigID,
-		RunType:           runType,
-		Force:             req.Force,
-		PlanOnly:          req.PlanOnly,
-		EventType:         req.EventType,
-		PRNumber:          req.PRNumber,
-		HeadSHA:           req.HeadSHA,
-		BaseBranch:        req.BaseBranch,
-		PreviousRunID:     previousRunID,
-		Status:            "pending",
-		WorkflowID:        nil,
-		Labeled:           labels.Labeled{Labels: req.Labels},
+		AppBranchID:          req.AppBranchID,
+		AppBranchConfigID:    req.AppBranchConfigID,
+		AutomationDispatchID: req.AutomationDispatchID,
+		AppConfigID:          req.AppConfigID,
+		RunType:              runType,
+		Force:                req.Force,
+		PlanOnly:             req.PlanOnly,
+		EventType:            req.EventType,
+		PRNumber:             req.PRNumber,
+		HeadSHA:              req.HeadSHA,
+		BaseBranch:           req.BaseBranch,
+		PreviousRunID:        previousRunID,
+		Status:               "pending",
+		WorkflowID:           nil,
+		Labeled:              labels.Labeled{Labels: req.Labels},
 	}
 
 	res := h.db.WithContext(ctx).Create(run)
