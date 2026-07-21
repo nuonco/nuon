@@ -29,6 +29,9 @@ type ServiceAuthMeResponse struct {
 	// email
 	Email string `json:"email,omitempty"`
 
+	// grants
+	Grants []*AppResourceGrant `json:"grants"`
+
 	// id
 	ID string `json:"id,omitempty"`
 
@@ -62,6 +65,10 @@ func (m *ServiceAuthMeResponse) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateAccountType(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGrants(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -103,6 +110,36 @@ func (m *ServiceAuthMeResponse) validateAccountType(formats strfmt.Registry) err
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceAuthMeResponse) validateGrants(formats strfmt.Registry) error {
+	if swag.IsZero(m.Grants) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Grants); i++ {
+		if swag.IsZero(m.Grants[i]) { // not required
+			continue
+		}
+
+		if m.Grants[i] != nil {
+			if err := m.Grants[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("grants" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("grants" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil
@@ -229,6 +266,10 @@ func (m *ServiceAuthMeResponse) ContextValidate(ctx context.Context, formats str
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateGrants(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateIdentities(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -268,6 +309,35 @@ func (m *ServiceAuthMeResponse) contextValidateAccountType(ctx context.Context, 
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceAuthMeResponse) contextValidateGrants(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Grants); i++ {
+
+		if m.Grants[i] != nil {
+
+			if swag.IsZero(m.Grants[i]) { // not required
+				return nil
+			}
+
+			if err := m.Grants[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("grants" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("grants" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil
