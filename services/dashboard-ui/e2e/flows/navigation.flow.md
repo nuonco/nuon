@@ -1,29 +1,28 @@
 # Flow: Navigation
 
-Verifies major pages are reachable and render correctly.
+Verifies the major org-level pages are reachable and render correctly. Each page sets a distinct browser tab title via `PageTitle`, used as the "rendered correctly" assertion.
 
 ## Setup
-- env: E2E_ORG_ID (required)
 - start: /:orgId
 
 ## Steps
 
 ### Apps page
 - action: goto | /:orgId/apps
-- action: wait | networkidle
-- expect: visible | heading "Apps"
+- action: wait | domcontentloaded
+- expect: title | /^Apps \|/
 
 ### Installs page
 - action: goto | /:orgId/installs
-- action: wait | networkidle
-- expect: visible | heading "Installs"
+- action: wait | domcontentloaded
+- expect: title | /^Installs \|/
 
-### Runners page
-- action: goto | /:orgId/runners
-- action: wait | networkidle
-- expect: visible | heading "Runners"
+### Builds (runner) page
+- action: goto | /:orgId/runner
+- action: wait | domcontentloaded
+- expect: title | /^Builds \|/
 
 ### Team page
 - action: goto | /:orgId/team
-- action: wait | networkidle
-- expect: visible | heading "Team"
+- action: wait | domcontentloaded
+- expect: title | /^Team \|/

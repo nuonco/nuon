@@ -1,4 +1,4 @@
-import { test as base, expect } from "@playwright/test";
+import { test as base, expect, type Page } from "@playwright/test";
 import fs from "node:fs";
 
 const ORG_STATE_PATH = "e2e/.auth/org.json";
@@ -30,3 +30,4 @@ export const test = base.extend<Fixtures>({
 });
 
 export { expect };
+export type { Page };
