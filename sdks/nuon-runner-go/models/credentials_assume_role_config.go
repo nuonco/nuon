@@ -19,6 +19,9 @@ import (
 // swagger:model credentials.AssumeRoleConfig
 type CredentialsAssumeRoleConfig struct {
 
+	// external id
+	ExternalID string `json:"external_id,omitempty"`
+
 	// role arn
 	// Required: true
 	RoleArn *string `json:"role_arn"`

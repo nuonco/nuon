@@ -71,6 +71,9 @@ type AppInstallStackVersion struct {
 	// runs
 	Runs []*AppInstallStackVersionRun `json:"runs"`
 
+	// stack name
+	StackName string `json:"stack_name,omitempty"`
+
 	// template url
 	TemplateURL string `json:"template_url,omitempty"`
 

@@ -383,6 +383,9 @@ func (m *ServiceCreateInstallRequest) UnmarshalBinary(b []byte) error {
 // swagger:model ServiceCreateInstallRequestAwsAccount
 type ServiceCreateInstallRequestAwsAccount struct {
 
+	// connection id
+	ConnectionID string `json:"connection_id,omitempty"`
+
 	// region
 	Region string `json:"region,omitempty"`
 }
