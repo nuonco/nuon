@@ -65,7 +65,7 @@ const BuildDetailInner = ({ component }: { component: TComponent | undefined }) 
               Waiting on log stream
             </Text>
             <Text variant="body" theme="neutral">
-              Logs will appear here once the build runner starts.
+              Logs will appear when build processing starts.
             </Text>
             <Button
               variant="ghost"

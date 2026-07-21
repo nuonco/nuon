@@ -104,7 +104,10 @@ export type TComponentType = components['schemas']['app.ComponentType']
 
 // build
 export type TComponentBuild = components['schemas']['app.ComponentBuild']
-export type TBuild = TComponentBuild & { org_id: string }
+export type TBuild = TComponentBuild & {
+  org_id: string
+  build_runner_job_id?: string | null
+}
 
 // org
 export type TOrg = components['schemas']['app.Org']

@@ -2,57 +2,68 @@ import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import type { ITimeline } from '@/components/common/Timeline'
 import { useOrg } from '@/hooks/use-org'
-import { getOrgRunnerJobs } from '@/lib'
-import type { TRunnerJob } from '@/types'
 import {
-  RunnerRecentActivityComponent,
-  RECENT_ACTIVITY_SEARCH_PARAM,
-  RECENT_ACTIVITY_LIMIT,
-} from '../RunnerRecentActivity'
+  getOrgComponentBuildHistory,
+  type TOrgComponentBuildHistoryItem,
+} from '@/lib'
+import { ControlPlaneRecentActivity } from './ControlPlaneRecentActivity'
 
-const HIDDEN_JOB_TYPES = ['fetch-image-metadata']
+const BUILD_HISTORY_CURSOR_PARAM = 'build_cursor'
+const BUILD_HISTORY_LIMIT = 10
 
 interface IControlPlaneRecentActivityContainer
-  extends Omit<ITimeline<TRunnerJob>, 'events' | 'renderEvent' | 'pagination'> {
+  extends Omit<
+    ITimeline<TOrgComponentBuildHistoryItem & { created_at: string }>,
+    'events' | 'renderEvent' | 'pagination'
+  > {
   shouldPoll?: boolean
   pollInterval?: number
-  jobDetailBasePath?: string
 }
 
 export const ControlPlaneRecentActivityContainer = ({
   shouldPoll = false,
   pollInterval = 20000,
-  jobDetailBasePath,
   ...props
 }: IControlPlaneRecentActivityContainer) => {
   const { org } = useOrg()
-  const [searchParams] = useSearchParams()
-  const offset = Number(searchParams.get(RECENT_ACTIVITY_SEARCH_PARAM) ?? 0)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const cursor = searchParams.get(BUILD_HISTORY_CURSOR_PARAM) ?? undefined
 
-  const { data: result, isLoading } = useQuery({
-    queryKey: ['control-plane-runner-jobs', org?.id, offset],
+  const {
+    data: result,
+    isFetching,
+    isLoading,
+  } = useQuery({
+    queryKey: ['org-component-build-history', org?.id, cursor],
     queryFn: () =>
-      getOrgRunnerJobs({
+      getOrgComponentBuildHistory({
         orgId: org!.id,
-        executor: 'control-plane',
-        limit: RECENT_ACTIVITY_LIMIT,
-        offset,
+        limit: BUILD_HISTORY_LIMIT,
+        cursor,
       }),
-    refetchInterval: shouldPoll ? pollInterval : false,
+    refetchInterval: shouldPoll && !cursor ? pollInterval : false,
     enabled: !!org?.id,
   })
 
-  const visibleJobs = (result?.data ?? []).filter(
-    (job) => !HIDDEN_JOB_TYPES.includes(job.type)
-  )
+  const setCursor = (nextCursor: string | null) => {
+    const params = new URLSearchParams(searchParams)
+    if (nextCursor) {
+      params.set(BUILD_HISTORY_CURSOR_PARAM, nextCursor)
+    } else {
+      params.delete(BUILD_HISTORY_CURSOR_PARAM)
+    }
+    setSearchParams(params)
+  }
 
   return (
-    <RunnerRecentActivityComponent
-      jobs={visibleJobs}
+    <ControlPlaneRecentActivity
+      activity={result?.items ?? []}
+      orgId={org?.id}
+      isFetching={isFetching}
       isLoading={isLoading}
-      hasNext={result?.pagination?.hasNext ?? false}
-      offset={offset}
-      jobDetailBasePath={jobDetailBasePath}
+      nextCursor={result?.next_cursor ?? null}
+      previousCursor={result?.previous_cursor ?? null}
+      onCursorChange={setCursor}
       {...props}
     />
   )

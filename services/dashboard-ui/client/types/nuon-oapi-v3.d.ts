@@ -959,6 +959,10 @@ export interface paths {
      */
     get: operations["GetComponentBuilds"];
   };
+  "/v1/component-builds": {
+    /** list component build history for the current organization */
+    get: operations["ListOrgComponentBuilds"];
+  };
   "/v1/components": {
     /**
      * get all components for an org
@@ -3758,6 +3762,7 @@ export interface components {
     };
     "app.ComponentBuild": {
       app_branch_run_id?: string;
+      build_runner_job_id?: string;
       /** @description checksum of our intermediate component config */
       checksum?: string;
       component_config_connection?: components["schemas"]["app.ComponentConfigConnection"];
@@ -7820,6 +7825,18 @@ export interface components {
       operation: components["schemas"]["app.OperationType"];
       principal: string;
       role: string;
+    };
+    "service.OrgComponentBuildHistoryItem": {
+      app_id?: string;
+      build?: components["schemas"]["app.ComponentBuild"];
+      build_runner_job_id?: string;
+      component_id?: string;
+      component_name?: string;
+    };
+    "service.OrgComponentBuildHistoryResponse": {
+      items?: components["schemas"]["service.OrgComponentBuildHistoryItem"][];
+      next_cursor?: string;
+      previous_cursor?: string;
     };
     "service.PatchInstallConfigParams": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
@@ -16284,6 +16301,37 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** list component build history for the current organization */
+  ListOrgComponentBuilds: {
+    parameters: {
+      query?: {
+        /** @description limit of builds to return */
+        limit?: number;
+        /** @description opaque component build history cursor */
+        cursor?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.OrgComponentBuildHistoryResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

@@ -27,8 +27,7 @@ type CreateComponentBuildRecordRequest struct {
 func (a *Activities) CreateComponentBuildRecord(ctx context.Context, req CreateComponentBuildRecordRequest) (*app.ComponentBuild, error) {
 	ctx = cctx.SetOrgIDContext(ctx, req.OrgID)
 
-	useLatest := req.GitRef == nil
-	build, err := a.helpers.CreateComponentBuild(ctx, req.ComponentID, useLatest, req.GitRef)
+	build, err := a.helpers.CreateComponentBuild(ctx, req.ComponentID, false, req.GitRef)
 	if err != nil {
 		return nil, fmt.Errorf("create component build: %w", err)
 	}

@@ -40,6 +40,8 @@ func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildSuccess() {
 		assert.NotEmpty(s.T(), response.ID)
 		assert.NotEmpty(s.T(), response.ComponentConfigConnectionID)
 		assert.Equal(s.T(), app.ComponentBuildStatus("queued"), response.Status)
+		require.NotNil(s.T(), response.GitRef)
+		assert.Equal(s.T(), "main", *response.GitRef)
 
 		// Verify persisted to DB
 		var dbBuild app.ComponentBuild
@@ -69,6 +71,12 @@ func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildUseLatest() {
 
 		assert.NotEmpty(s.T(), response.ID)
 		assert.Equal(s.T(), app.ComponentBuildStatus("queued"), response.Status)
+		assert.Nil(s.T(), response.GitRef)
+
+		var dbBuild app.ComponentBuild
+		require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).First(&dbBuild, "id = ?", response.ID).Error)
+		assert.Nil(s.T(), dbBuild.GitRef)
+		assert.Nil(s.T(), dbBuild.VCSConnectionCommitID)
 	})
 }
 
