@@ -75,28 +75,39 @@ function isGoDuration(value: string) {
   return nanoseconds <= limit
 }
 
+export function validateStep(step: TBuilderStep) {
+  const errors: string[] = []
+  if (!step.name.trim()) errors.push('requires a name.')
+  if (
+    [
+      'deploy-component',
+      'check-component-drift',
+      'tear-down-component',
+    ].includes(step.operation) &&
+    !step.componentName
+  )
+    errors.push('requires a component.')
+  if (step.operation === 'configured-action' && !step.actionName)
+    errors.push('requires an action.')
+  if (step.operation === 'command' && !step.command?.trim())
+    errors.push('requires a command.')
+  if (
+    step.operation === 'command' &&
+    step.timeout?.trim() &&
+    !isGoDuration(step.timeout.trim())
+  )
+    errors.push('requires a valid timeout such as 30s or 5m.')
+  return errors
+}
+
 export function validateRunbook(name: string, steps: TBuilderStep[]) {
   const errors: string[] = []
   if (!name.trim()) errors.push('Enter a runbook name.')
   if (!steps.length) errors.push('Add at least one step.')
   steps.forEach((step, index) => {
-    const label = `Step ${index + 1}`
-    if (!step.name.trim()) errors.push(`${label} requires a name.`)
-    if (
-      [
-        'deploy-component',
-        'check-component-drift',
-        'tear-down-component',
-      ].includes(step.operation) &&
-      !step.componentName
+    errors.push(
+      ...validateStep(step).map((error) => `Step ${index + 1} ${error}`)
     )
-      errors.push(`${label} requires a component.`)
-    if (step.operation === 'configured-action' && !step.actionName)
-      errors.push(`${label} requires an action.`)
-    if (step.operation === 'command' && !step.command?.trim())
-      errors.push(`${label} requires a command.`)
-    if (step.operation === 'command' && step.timeout?.trim() && !isGoDuration(step.timeout.trim()))
-      errors.push(`${label} requires a valid timeout such as 30s or 5m.`)
   })
   return errors
 }
@@ -104,12 +115,13 @@ export function validateRunbook(name: string, steps: TBuilderStep[]) {
 export function serializeRunbook(
   name: string,
   description: string,
-  steps: TBuilderStep[]
+  steps: TBuilderStep[],
+  hasReadme = steps.some((step) => step.documentation?.trim())
 ) {
   const lines = [`name = ${escapeToml(name.trim())}`]
   if (description.trim())
     lines.push(`description = ${escapeToml(description.trim())}`)
-  if (steps.some((step) => step.documentation?.trim()))
+  if (hasReadme)
     lines.push(
       `readme = ${escapeToml(`./runbooks/${slugifyRunbookName(name)}.md`)}`
     )

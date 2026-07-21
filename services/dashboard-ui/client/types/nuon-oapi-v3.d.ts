@@ -5432,6 +5432,7 @@ export interface components {
       idx?: number;
       inline_contents?: string;
       name?: string;
+      plan_only?: boolean;
       role?: string;
       runbook_config_id?: string;
       /** @description sandbox lifecycle fields */
@@ -7822,6 +7823,7 @@ export interface components {
       idx?: number;
       inline_contents?: string;
       name: string;
+      plan_only?: boolean;
       role?: string;
       skip_component_deploys?: boolean;
       tear_down_dependents?: boolean;

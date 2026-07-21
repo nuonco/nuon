@@ -1,6 +1,7 @@
 import { RunbooksTable } from '@/components/runbooks/RunbooksTable'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Button } from '@/components/common/Button'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -11,6 +12,7 @@ import { useOrg } from '@/hooks/use-org'
 export const Runbooks = () => {
   const { org } = useOrg()
   const { app } = useApp()
+  const hasRunbookStudio = !!org?.features?.['runbook-studio']
 
   return (
     <PageSection>
@@ -32,12 +34,12 @@ export const Runbooks = () => {
             Define and manage operational procedures for your installs.
           </Text>
         </HeadingGroup>
-        <Button
-          variant="primary"
-          href={`/${org?.id}/apps/${app?.id}/runbooks/builder`}
-        >
-          Build runbook
-        </Button>
+        {hasRunbookStudio && (
+          <Button variant="primary" href={`/${org?.id}/apps/${app?.id}/studio`}>
+            <Icon variant="ListChecksIcon" size={16} />
+            Open runbook studio
+          </Button>
+        )}
       </div>
       <RunbooksTable />
     </PageSection>
