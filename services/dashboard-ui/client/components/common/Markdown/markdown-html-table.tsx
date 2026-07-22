@@ -1,4 +1,5 @@
 import { Children, isValidElement, type ReactElement, type ReactNode } from 'react'
+import { DateTime } from 'luxon'
 import type { ExtractedTable, TableCell, TableSearchConfig } from './markdown-table'
 
 function nodeText(node: ReactNode): string {
@@ -43,9 +44,40 @@ function span(cell: ReactElement, key: 'colSpan' | 'rowSpan'): number {
   return Number.isFinite(n) ? n : 1
 }
 
+function cellSortValue(node: ReactNode): number | undefined {
+  let result: number | undefined
+  const visit = (n: ReactNode) => {
+    if (result !== undefined) return
+    if (Array.isArray(n)) {
+      n.forEach(visit)
+      return
+    }
+    if (!isValidElement(n)) return
+    const props = n.props as any
+    const seconds = props?.seconds
+    if (seconds != null && String(seconds).trim() !== '' && !Number.isNaN(Number(seconds))) {
+      const dt = DateTime.fromSeconds(Number(seconds))
+      if (dt.isValid) {
+        result = dt.toMillis()
+        return
+      }
+    }
+    if (typeof props?.time === 'string' && props.time.trim() !== '') {
+      const dt = DateTime.fromISO(props.time)
+      if (dt.isValid) {
+        result = dt.toMillis()
+        return
+      }
+    }
+    if (props?.children) visit(props.children)
+  }
+  visit(node)
+  return result
+}
+
 function toCell(cell: ReactElement): TableCell {
   const content = (cell.props as any)?.children
-  return { text: nodeText(content).trim(), content }
+  return { text: nodeText(content).trim(), content, sortValue: cellSortValue(content) }
 }
 
 export function htmlTableToExtracted(

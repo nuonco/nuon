@@ -143,6 +143,34 @@ test('falls back to plain rendering for HTML tables with colspan', () => {
   expect(screen.queryByPlaceholderText(/search/i)).toBeNull()
 })
 
+test('sorts a time column by timestamp, not by rendered relative text', () => {
+  render(
+    <Markdown
+      content={`<table>
+<thead>
+<tr><th>Name</th><th>Updated</th></tr>
+</thead>
+<tbody>
+<tr><td>bravo</td><td><nuon-time time="2026-07-20T00:00:00Z" format="relative"></nuon-time></td></tr>
+<tr><td>alpha</td><td><nuon-time time="2026-07-01T00:00:00Z" format="relative"></nuon-time></td></tr>
+<tr><td>charlie</td><td><nuon-time time="2026-07-10T00:00:00Z" format="relative"></nuon-time></td></tr>
+</tbody>
+</table>`}
+    />
+  )
+
+  const header = screen.getByText('Updated').closest('th')
+  expect(header).not.toBeNull()
+  fireEvent.click(header!)
+
+  const rows = rowText()
+  expect(rows.map((r) => r.match(/alpha|bravo|charlie/)?.[0])).toEqual([
+    'alpha',
+    'charlie',
+    'bravo',
+  ])
+})
+
 test('renders formatted cell content and matches on its text', () => {
   render(
     <Markdown
