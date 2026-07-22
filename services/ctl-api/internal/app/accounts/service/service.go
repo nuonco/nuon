@@ -55,6 +55,19 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		}
 	}
 
+	// roles
+	api.GET("/v1/roles", s.ListRoles)
+
+	// service accounts
+	serviceAccounts := api.Group("/v1/service-accounts")
+	{
+		serviceAccounts.GET("", s.ListServiceAccounts)
+		serviceAccounts.POST("", s.CreateServiceAccount)
+		serviceAccounts.PATCH("/:account_id/role", s.UpdateServiceAccountRole)
+		serviceAccounts.DELETE("/:account_id", s.DeleteServiceAccount)
+		serviceAccounts.POST("/:account_id/tokens", s.CreateServiceAccountToken)
+	}
+
 	// auth/me - registered here instead of authservice so it's available in PublicServicesModule
 	auth := api.Group("/v1/auth")
 	{

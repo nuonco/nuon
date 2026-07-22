@@ -20,7 +20,6 @@ type UpdateOrgAccountRoleRequest struct {
 
 var allowedAccountRoles = map[app.RoleType]struct{}{
 	app.RoleTypeOrgAdmin:    {},
-	app.RoleTypeOrgSupport:  {},
 	app.RoleTypeOrgReadOnly: {},
 }
 
@@ -74,7 +73,7 @@ func (s *service) UpdateOrgAccountRole(ctx *gin.Context) {
 	if _, ok := allowedAccountRoles[req.RoleType]; !ok {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("invalid role type: %s", req.RoleType),
-			Description: fmt.Sprintf("role_type must be %q, %q, or %q", app.RoleTypeOrgAdmin, app.RoleTypeOrgSupport, app.RoleTypeOrgReadOnly),
+			Description: fmt.Sprintf("role_type must be %q or %q", app.RoleTypeOrgAdmin, app.RoleTypeOrgReadOnly),
 		})
 		return
 	}
