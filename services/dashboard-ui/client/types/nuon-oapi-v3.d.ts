@@ -2669,6 +2669,12 @@ export interface paths {
      * its existing API tokens.
      */
     delete: operations["DeleteServiceAccount"];
+    /**
+     * Update a service account for the current org
+     * @description Update a service account's human-friendly name. The account's email and ID are
+     * immutable; only the display name changes.
+     */
+    patch: operations["UpdateServiceAccount"];
   };
   "/v1/service-accounts/{account_id}/role": {
     /**
@@ -3108,6 +3114,7 @@ export interface components {
       created_at?: string;
       email?: string;
       id?: string;
+      name?: string;
       /** @description ReadOnly Fields */
       org_ids?: string[];
       permissions?: components["schemas"]["permissions.Set"];
@@ -7020,6 +7027,7 @@ export interface components {
       email?: string;
       id?: string;
       identities?: components["schemas"]["service.AuthMeIdentity"][];
+      name?: string;
       /** @description ReadOnly Fields */
       org_ids?: string[];
       permissions?: components["schemas"]["permissions.Set"];
@@ -7672,6 +7680,8 @@ export interface components {
       token?: string;
     };
     "service.CreateServiceAccountRequest": {
+      /** @description Name is a human-friendly label for the service account. */
+      name: string;
       /** @description Role must be one of the service account roles returned by GET /v1/roles. */
       role: string;
     };
@@ -8193,6 +8203,10 @@ export interface components {
       org_k8s_service_account_name?: string;
       runner_api_url?: string;
       vm_max_uptime?: number;
+    };
+    "service.UpdateServiceAccountRequest": {
+      /** @description Name is a human-friendly label for the service account. */
+      name: string;
     };
     "service.UpdateServiceAccountRoleRequest": {
       role: string;
@@ -27714,6 +27728,8 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
+        /** @description include service accounts with the runner role (excluded by default) */
+        include_runners?: boolean;
       };
     };
     responses: {
@@ -27809,6 +27825,63 @@ export interface operations {
       /** @description Accepted */
       202: {
         content: never;
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Update a service account for the current org
+   * @description Update a service account's human-friendly name. The account's email and ID are
+   * immutable; only the display name changes.
+   */
+  UpdateServiceAccount: {
+    parameters: {
+      path: {
+        /** @description service account ID */
+        account_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateServiceAccountRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
       };
       /** @description Bad Request */
       400: {
