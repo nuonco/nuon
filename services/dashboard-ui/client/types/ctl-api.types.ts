@@ -473,7 +473,7 @@ export type TReadme = components['schemas']['service.Readme']
 export type TWaitlist = components['schemas']['app.Waitlist']
 
 // User / Account
-export type TAccount = components['schemas']['app.Account']
+export type TAccount = components['schemas']['app.Account'] & { name?: string }
 export type TInvite = components['schemas']['app.OrgInvite']
 
 // API tokens
@@ -511,11 +511,16 @@ export interface TRoleInfo {
 
 // Service accounts
 export interface TCreateServiceAccountBody {
+  name: string
   role: string
 }
 
 export interface TUpdateServiceAccountRoleBody {
   role: string
+}
+
+export interface TUpdateServiceAccountBody {
+  name: string
 }
 
 export interface TCreateServiceAccountTokenBody {

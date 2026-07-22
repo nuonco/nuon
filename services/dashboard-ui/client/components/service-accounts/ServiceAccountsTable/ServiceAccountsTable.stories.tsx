@@ -8,6 +8,7 @@ import type { TAccount } from '@/types'
 const mockAccounts: TAccount[] = [
   {
     id: 'acc-1',
+    name: 'ci-deploy',
     email: 'svc-ci-deploy@example.com',
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
@@ -15,6 +16,7 @@ const mockAccounts: TAccount[] = [
   } as TAccount,
   {
     id: 'acc-2',
+    name: 'terraform',
     email: 'svc-terraform@example.com',
     created_at: '2024-01-02T00:00:00Z',
     updated_at: '2024-01-02T00:00:00Z',

@@ -30,7 +30,7 @@ func (a *Activities) CreateAccount(ctx context.Context, req CreateAccountRequest
 		return acct, nil
 	}
 
-	acct, err = a.acctClient.CreateServiceAccount(ctx, req.RunnerID)
+	acct, err = a.acctClient.CreateServiceAccount(ctx, req.RunnerID, "")
 	if err != nil {
 		return nil, fmt.Errorf("unable to create service account: %w", err)
 	}

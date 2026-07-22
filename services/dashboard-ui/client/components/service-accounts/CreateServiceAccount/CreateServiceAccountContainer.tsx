@@ -25,13 +25,13 @@ const CreateServiceAccountModalContainer = (props: Record<string, any>) => {
     .map((role) => ({ value: role.role_type, label: role.title }))
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: ({ role }: { role: string }) =>
-      createServiceAccount({ body: { role }, orgId: org.id }),
-    onSuccess: () => {
+    mutationFn: ({ name, role }: { name: string; role: string }) =>
+      createServiceAccount({ body: { name, role }, orgId: org.id }),
+    onSuccess: (_data, { name }) => {
       queryClient.invalidateQueries({ queryKey: ['service-accounts', org.id] })
       addToast(
         <Toast heading="Service account created" theme="success">
-          <Text>Created a new service account for {org.name}.</Text>
+          <Text>Created {name} for {org.name}.</Text>
         </Toast>
       )
       removeModal(props.modalId)
@@ -50,7 +50,7 @@ const CreateServiceAccountModalContainer = (props: Record<string, any>) => {
       roleOptions={roleOptions}
       isPending={isPending}
       error={error}
-      onSubmit={({ role }) => mutate({ role })}
+      onSubmit={({ name, role }) => mutate({ name, role })}
       {...props}
     />
   )

@@ -191,6 +191,8 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 }
 
 type CreateServiceAccountRequest struct {
+	// Name is a human-friendly label for the service account.
+	Name string `json:"name" binding:"required"`
 	// Role must be one of the service account roles returned by GET /v1/roles.
 	Role string `json:"role" binding:"required"`
 }
@@ -232,7 +234,7 @@ func (s *service) CreateServiceAccount(ctx *gin.Context) {
 		return
 	}
 
-	acct, err := s.acctClient.CreateServiceAccount(ctx, domains.NewAccountID())
+	acct, err := s.acctClient.CreateServiceAccount(ctx, domains.NewAccountID(), req.Name)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create service account: %w", err))
 		return
@@ -250,6 +252,69 @@ func (s *service) CreateServiceAccount(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, acct)
+}
+
+type UpdateServiceAccountRequest struct {
+	// Name is a human-friendly label for the service account.
+	Name string `json:"name" binding:"required"`
+}
+
+// @ID						UpdateServiceAccount
+// @Summary				Update a service account for the current org
+// @Description.markdown	update_service_account.md
+// @Param					account_id	path	string						true	"service account ID"
+// @Param					req			body	UpdateServiceAccountRequest	true	"Input"
+// @Tags					accounts
+// @Accept					json
+// @Produce				json
+// @Security				APIKey
+// @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
+// @Success				200	{object}	app.Account
+// @Router					/v1/service-accounts/{account_id} [PATCH]
+func (s *service) UpdateServiceAccount(ctx *gin.Context) {
+	org, err := s.requireOrgAdmin(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	accountID := ctx.Param("account_id")
+
+	var req UpdateServiceAccountRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("unable to parse request: %w", err),
+			Description: fmt.Sprintf("unable to parse request: %s", err.Error()),
+		})
+		return
+	}
+
+	acct, err := s.getOrgServiceAccount(ctx, org.ID, accountID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	if err := s.db.WithContext(ctx).
+		Model(&app.Account{}).
+		Where(app.Account{ID: acct.ID}).
+		Update("name", req.Name).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to update service account: %w", err))
+		return
+	}
+
+	acct, err = s.acctClient.FindAccount(ctx, acct.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to reload service account: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, acct)
 }
 
 type UpdateServiceAccountRoleRequest struct {

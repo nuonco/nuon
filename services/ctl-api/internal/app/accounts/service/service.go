@@ -63,6 +63,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	{
 		serviceAccounts.GET("", s.ListServiceAccounts)
 		serviceAccounts.POST("", s.CreateServiceAccount)
+		serviceAccounts.PATCH("/:account_id", s.UpdateServiceAccount)
 		serviceAccounts.PATCH("/:account_id/role", s.UpdateServiceAccountRole)
 		serviceAccounts.DELETE("/:account_id", s.DeleteServiceAccount)
 		serviceAccounts.POST("/:account_id/tokens", s.CreateServiceAccountToken)

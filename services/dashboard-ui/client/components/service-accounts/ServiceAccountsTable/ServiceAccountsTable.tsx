@@ -9,11 +9,13 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TAccount, TRoleInfo } from '@/types'
 import { ChangeServiceAccountRoleButton } from '@/components/service-accounts/ChangeServiceAccountRole'
+import { RenameServiceAccountButton } from '@/components/service-accounts/RenameServiceAccount'
 import { CreateServiceAccountTokenButton } from '@/components/service-accounts/ServiceAccountToken'
 import { DeleteServiceAccountButton } from '@/components/service-accounts/DeleteServiceAccount'
 
 export type TServiceAccountRow = {
   id: string
+  name: string
   identity: string
   role: string
   createdAt: string
@@ -35,6 +37,7 @@ export function parseServiceAccountsToTableData(
     const roleType = account.roles?.[0]?.role_type || ''
     return {
       id: account.id || '',
+      name: account.name || account.email || account.id || '',
       identity: account.email || account.id || '',
       role: roleTitles[roleType] ?? roleType ?? '—',
       createdAt: account.created_at || '',
@@ -53,6 +56,9 @@ const ActionCell = ({ account }: { account: TAccount }) => (
     alignment="right"
   >
     <Menu>
+      <span>
+        <RenameServiceAccountButton account={account} isMenuButton />
+      </span>
       <span>
         <ChangeServiceAccountRoleButton account={account} isMenuButton />
       </span>
@@ -82,13 +88,18 @@ export const ServiceAccountsTable = ({
   const columns: ColumnDef<TServiceAccountRow>[] = useMemo(
     () => [
       {
-        header: 'Identity',
-        accessorKey: 'identity',
+        header: 'Name',
+        accessorKey: 'name',
         cell: (props) => (
           <Text variant="body" weight="strong">
             {props.getValue<string>()}
           </Text>
         ),
+      },
+      {
+        header: 'Identity',
+        accessorKey: 'identity',
+        cell: (props) => <Text variant="body">{props.getValue<string>()}</Text>,
       },
       {
         header: 'Role',
@@ -135,6 +146,7 @@ export const ServiceAccountsTable = ({
 }
 
 const skeletonColumns: ColumnDef<TServiceAccountRow>[] = [
+  { header: 'Name', accessorKey: 'name' },
   { header: 'Identity', accessorKey: 'identity' },
   { header: 'Role', accessorKey: 'role' },
   { header: 'Created', accessorKey: 'createdAt' },
