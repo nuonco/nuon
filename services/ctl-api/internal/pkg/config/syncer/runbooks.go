@@ -20,6 +20,9 @@ import (
 func (s *syncer) ensureRunbook(ctx context.Context, runbook *config.RunbookConfig) error {
 	_, err := s.getRunbook(ctx, runbook.Name)
 	if err == nil {
+		if err := s.runbooksHelpers.EnsureInstallRunbooks(ctx, s.appID, nil); err != nil {
+			return sync.SyncInternalErr{Description: fmt.Sprintf("unable to ensure install runbooks for %s", runbook.Name), Err: err}
+		}
 		return nil
 	}
 
@@ -69,6 +72,16 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 
 	steps := make([]app.RunbookStepConfig, 0, len(runbook.Steps))
 	for idx, step := range runbook.Steps {
+		var trigger app.Trigger
+		if step.Type == config.RunbookStepTypeWaitForEvent {
+			var org app.Org
+			if err := s.db.WithContext(ctx).Select("features").Where(app.Org{ID: s.orgID}).First(&org).Error; err != nil || !org.Features[string(app.OrgFeatureTriggers)] {
+				return sync.SyncErr{Resource: fmt.Sprintf("runbook-%s", runbook.Name), Description: "triggers feature is not enabled"}
+			}
+			if err := s.db.WithContext(ctx).Where(app.Trigger{OrgID: s.orgID, Name: step.Trigger}).First(&trigger).Error; err != nil {
+				return sync.SyncErr{Resource: fmt.Sprintf("runbook-%s", runbook.Name), Description: fmt.Sprintf("unable to find trigger %q", step.Trigger)}
+			}
+		}
 		timeout := time.Duration(0)
 		if step.Timeout != "" {
 			parsedTimeout, err := time.ParseDuration(step.Timeout)
@@ -100,6 +113,12 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 			EnvVars:              envVars,
 			Timeout:              timeout,
 			Role:                 step.Role,
+			TriggerID:            trigger.ID,
+			TriggerName:          trigger.Name,
+			EventTypes:           step.EventTypes,
+		}
+		for _, filter := range step.Filters {
+			stepCfg.Filters = append(stepCfg.Filters, app.TriggerFilter{From: filter.From, Path: filter.Path, Op: app.TriggerFilterType(filter.Op), Value: filter.Value})
 		}
 
 		// Resolve action_name to ActionWorkflowID

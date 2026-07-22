@@ -2,7 +2,11 @@ export default {
   title: 'Workflows/StepDetails/DeployApply',
 }
 
-import { DeployApply, DeployApplySkeleton, DeployLogsSkeleton } from './DeployApply'
+import {
+  DeployApply,
+  DeployApplySkeleton,
+  DeployLogsSkeleton,
+} from './DeployApply'
 import type { TInstallDeploy } from '@/types'
 
 const mockDeploy: TInstallDeploy = {
@@ -18,10 +22,15 @@ export const Active = () => <DeployApply initDeploy={mockDeploy} />
 
 export const Error = () => (
   <DeployApply
-    initDeploy={{
-      ...mockDeploy,
-      status_v2: { status: 'error', status_human_description: 'Deploy failed' },
-    } as TInstallDeploy}
+    initDeploy={
+      {
+        ...mockDeploy,
+        status_v2: {
+          status: 'error',
+          status_human_description: 'Deploy failed',
+        },
+      } as TInstallDeploy
+    }
   />
 )
 

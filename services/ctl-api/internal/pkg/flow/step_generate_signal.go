@@ -203,7 +203,11 @@ func persistGenerateResult(ctx workflow.Context, flw *app.Workflow, result *app.
 		groupTimeouts := make(map[int]time.Duration, len(groups))
 		for _, step := range steps {
 			t := step.Timeout
-			if t <= 0 {
+			if t < 0 {
+				groupTimeouts[step.GroupIdx] = signal.UnboundedTimeout
+				continue
+			}
+			if t == 0 || groupTimeouts[step.GroupIdx] == signal.UnboundedTimeout {
 				continue
 			}
 			if groupParallel[step.GroupIdx] {

@@ -22,18 +22,13 @@ export const CancelWorkflowsModal = ({
   onSubmit,
   ...props
 }: ICancelWorkflowsModal) => {
-  const hasPartialErrors = cancelResults?.errors && cancelResults.errors.length > 0
+  const hasPartialErrors =
+    cancelResults?.errors && cancelResults.errors.length > 0
 
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-          theme="error"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong" theme="error">
           <Icon variant="WarningIcon" size="24" />
           {`Cancel ${count} workflow${count === 1 ? '' : 's'}?`}
         </Text>
@@ -60,7 +55,8 @@ export const CancelWorkflowsModal = ({
         )}
         {hasPartialErrors && (
           <Banner theme="error">
-            {cancelResults.errors!.length} workflow{cancelResults.errors!.length === 1 ? '' : 's'} failed to cancel:
+            {cancelResults.errors!.length} workflow
+            {cancelResults.errors!.length === 1 ? '' : 's'} failed to cancel:
             <ul className="mt-1 list-disc pl-4">
               {cancelResults.errors!.map((e) => (
                 <li key={e.workflow_id}>
@@ -71,8 +67,9 @@ export const CancelWorkflowsModal = ({
           </Banner>
         )}
         <Text variant="base">
-          Once canceled, {count === 1 ? 'this workflow' : `these ${count} workflows`} cannot
-          be restarted. You will have to trigger new workflow runs.
+          Once canceled,{' '}
+          {count === 1 ? 'this workflow' : `these ${count} workflows`} cannot be
+          restarted. You will have to trigger new workflow runs.
         </Text>
       </div>
     </Modal>

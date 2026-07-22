@@ -1,9 +1,19 @@
-import { createContext, useEffect, useState, useRef, type ReactNode } from 'react'
+import {
+  createContext,
+  useEffect,
+  useState,
+  useRef,
+  type ReactNode,
+} from 'react'
 import { useOrg } from '@/hooks/use-org'
 import { LogsPageSkeleton } from '@/components/log-stream/SSELogs'
 import type { TOTELLog, TAPIError } from '@/types'
 
-type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting'
+type ConnectionState =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
 
 export type LogStreamContextValue = {
   logs: TOTELLog[]
@@ -14,7 +24,9 @@ export type LogStreamContextValue = {
   connectionState: ConnectionState
 }
 
-export const LogStreamContext = createContext<LogStreamContextValue | undefined>(undefined)
+export const LogStreamContext = createContext<
+  LogStreamContextValue | undefined
+>(undefined)
 
 export function LogStreamProvider({
   children,
@@ -28,7 +40,8 @@ export function LogStreamProvider({
   const { org } = useOrg()
 
   const [logs, setLogs] = useState<TOTELLog[]>([])
-  const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected')
+  const [connectionState, setConnectionState] =
+    useState<ConnectionState>('disconnected')
   const [error, setError] = useState<TAPIError | null>(null)
   const [isCatchingUp, setIsCatchingUp] = useState(false)
 
@@ -80,20 +93,21 @@ export function LogStreamProvider({
       eventSource.onmessage = (event) => {
         try {
           const newLogs: TOTELLog[] = JSON.parse(event.data)
-          const unique = newLogs.filter(log => {
+          const unique = newLogs.filter((log) => {
             if (seenIdsRef.current.has(log.id)) return false
             seenIdsRef.current.add(log.id)
             return true
           })
           if (unique.length > 0) {
-            setLogs(prev => [...prev, ...unique])
+            setLogs((prev) => [...prev, ...unique])
           }
           setConnState('connected')
           reconnectAttemptRef.current = 0
         } catch {
           setError({
             error: 'Failed to parse log data',
-            description: 'The log data received from the server could not be parsed as valid JSON',
+            description:
+              'The log data received from the server could not be parsed as valid JSON',
             user_error: false,
           })
         }
@@ -118,14 +132,17 @@ export function LogStreamProvider({
           const errorData = JSON.parse(event.data)
           setError({
             error: errorData.error || 'Server error occurred',
-            description: errorData.description || 'An error was received from the log streaming server',
+            description:
+              errorData.description ||
+              'An error was received from the log streaming server',
             user_error: errorData.user_error || false,
             meta: errorData.meta,
           })
         } catch {
           setError({
             error: 'Server error occurred',
-            description: 'Failed to parse error message from the log streaming server',
+            description:
+              'Failed to parse error message from the log streaming server',
             user_error: false,
           })
         }
@@ -138,7 +155,10 @@ export function LogStreamProvider({
         if (isCompleteRef.current) return
 
         setConnState('reconnecting')
-        const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttemptRef.current), 30000)
+        const backoffDelay = Math.min(
+          1000 * Math.pow(2, reconnectAttemptRef.current),
+          30000
+        )
         reconnectAttemptRef.current += 1
 
         reconnectTimeoutRef.current = setTimeout(() => {

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/nuonco/nuon/pkg/eventfilter"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -40,13 +41,16 @@ type CreateRunbookStepConfigRequest struct {
 	TearDownDependents   bool   `json:"tear_down_dependents,omitempty"`
 	SkipComponentDeploys bool   `json:"skip_component_deploys,omitempty"`
 	// Legacy alias for DeployDependents — accepted to keep older API clients working.
-	DeployDependenciesLegacy bool              `json:"deploy_dependencies,omitempty" swaggerignore:"true"`
-	ActionName               string            `json:"action_name,omitempty"`
-	Command                  string            `json:"command,omitempty"`
-	InlineContents           string            `json:"inline_contents,omitempty"`
-	EnvVars                  map[string]string `json:"env_vars,omitempty"`
-	Timeout                  int64             `json:"timeout,omitempty"`
-	Role                     string            `json:"role,omitempty"`
+	DeployDependenciesLegacy bool                `json:"deploy_dependencies,omitempty" swaggerignore:"true"`
+	ActionName               string              `json:"action_name,omitempty"`
+	Command                  string              `json:"command,omitempty"`
+	InlineContents           string              `json:"inline_contents,omitempty"`
+	EnvVars                  map[string]string   `json:"env_vars,omitempty"`
+	Timeout                  int64               `json:"timeout,omitempty"`
+	Role                     string              `json:"role,omitempty"`
+	Trigger                  string              `json:"trigger,omitempty"`
+	EventTypes               []string            `json:"event_types,omitempty"`
+	Filters                  []app.TriggerFilter `json:"filters,omitempty"`
 }
 
 // @ID				CreateRunbookConfig
@@ -102,6 +106,7 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 	}
 
 	steps := make([]app.RunbookStepConfig, 0, len(req.Steps))
+	waitStepNames := make(map[string]struct{})
 	for idx, stepReq := range req.Steps {
 		stepType := app.RunbookStepType(stepReq.Type)
 		// Canonicalize the legacy "deploy" step type to "component_deploy".
@@ -113,7 +118,8 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 			app.RunbookStepTypeComponentTearDown,
 			app.RunbookStepTypeAction,
 			app.RunbookStepTypeSandboxReprovision,
-			app.RunbookStepTypeSandboxDeprovision:
+			app.RunbookStepTypeSandboxDeprovision,
+			app.RunbookStepTypeWaitForEvent:
 		default:
 			ctx.Error(fmt.Errorf("invalid step type %q for step %s", stepReq.Type, stepReq.Name))
 			return
@@ -142,6 +148,32 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 			EnvVars:              envVars,
 			Timeout:              time.Duration(stepReq.Timeout),
 			Role:                 stepReq.Role,
+			EventTypes:           stepReq.EventTypes,
+			Filters:              stepReq.Filters,
+		}
+		if stepType == app.RunbookStepTypeWaitForEvent {
+			if _, exists := waitStepNames[stepReq.Name]; exists {
+				ctx.Error(fmt.Errorf("wait_for_event step names must be unique: %s", stepReq.Name))
+				return
+			}
+			waitStepNames[stepReq.Name] = struct{}{}
+			eventEnabled, featureErr := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureTriggers)
+			if featureErr != nil || !eventEnabled || stepReq.Trigger == "" || len(stepReq.EventTypes) == 0 {
+				ctx.Error(fmt.Errorf("wait_for_event requires triggers, trigger, and event_types"))
+				return
+			}
+			var trigger app.Trigger
+			if err := s.db.WithContext(ctx).Where(app.Trigger{OrgID: org.ID, Name: stepReq.Trigger}).First(&trigger).Error; err != nil {
+				ctx.Error(fmt.Errorf("unable to find trigger %q: %w", stepReq.Trigger, err))
+				return
+			}
+			stepCfg.TriggerID, stepCfg.TriggerName = trigger.ID, trigger.Name
+			for _, filter := range stepReq.Filters {
+				if _, err := eventfilter.Compile(eventfilter.Filter{From: eventfilter.Source(filter.From), Path: filter.Path, Op: eventfilter.Operator(filter.Op), Value: filter.Value}); err != nil {
+					ctx.Error(fmt.Errorf("invalid filter for step %s: %w", stepReq.Name, err))
+					return
+				}
+			}
 		}
 
 		// Resolve action_name to ActionWorkflowID

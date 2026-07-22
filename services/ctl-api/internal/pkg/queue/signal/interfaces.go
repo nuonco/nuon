@@ -234,6 +234,12 @@ type SignalWithTimeout interface {
 	Timeout() time.Duration
 }
 
+// SignalWithUnboundedTimeout distinguishes an intentional unbounded timeout
+// from legacy signals whose zero timeout means to use the fallback.
+type SignalWithUnboundedTimeout interface {
+	UnboundedTimeout() bool
+}
+
 // SignalWithMaxInFlightAge is implemented by signals that should not be deduped
 // indefinitely. When EmitSignal finds an in-flight signal (queued or in-progress)
 // for the same emitter older than this age, the stale signal is marked failed

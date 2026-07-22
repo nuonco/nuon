@@ -69,6 +69,10 @@ func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
 	if d := diffActions(old.Actions, a.Actions); d != nil {
 		children = append(children, d)
 	}
+	children = append(children, diff.NewDiff(
+		diff.WithKey("triggers"),
+		diff.WithStringDiff(sectionTOML(old.Triggers), sectionTOML(a.Triggers)),
+	))
 
 	return diff.NewDiff(
 		diff.WithKey("app_config"),

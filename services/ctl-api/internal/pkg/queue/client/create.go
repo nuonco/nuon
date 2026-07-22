@@ -84,11 +84,18 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 		},
 	}
 	create := c.db.WithContext(ctx)
-	if req.Name == queue.AppAutomationsQueueName {
+	conflictPredicate := ""
+	switch req.Name {
+	case queue.AppTriggersQueueName:
+		conflictPredicate = "deleted_at = 0 AND name = 'app-triggers'"
+	case queue.OrgSignalsQueueName:
+		conflictPredicate = "deleted_at = 0 AND name = 'org-signals'"
+	}
+	if conflictPredicate != "" {
 		create = create.Clauses(clause.OnConflict{
 			Columns: []clause.Column{{Name: "owner_id"}, {Name: "owner_type"}, {Name: "name"}},
 			TargetWhere: clause.Where{Exprs: []clause.Expression{
-				clause.Expr{SQL: "deleted_at = 0 AND name = 'app-automations'"},
+				clause.Expr{SQL: conflictPredicate},
 			}},
 			DoNothing: true,
 		})
@@ -97,7 +104,7 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create queue")
 	}
-	if res.RowsAffected == 0 && req.Name == queue.AppAutomationsQueueName {
+	if res.RowsAffected == 0 && conflictPredicate != "" {
 		if err := c.db.WithContext(ctx).Where(app.Queue{OwnerID: req.OwnerID, OwnerType: req.OwnerType, Name: req.Name}).First(&existing).Error; err != nil {
 			return nil, errors.Wrap(err, "unable to get concurrently created queue")
 		}

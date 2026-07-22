@@ -36,7 +36,7 @@ type WorkerParams struct {
 	SharedActivities *workflows.Activities
 	WKflows          *Workflows
 	Acts             *activities.Activities
-	AutomationActs   *appsactivities.Activities `name:"org-automation-activities"`
+	TriggerActs      *appsactivities.Activities `name:"org-trigger-activities"`
 	L                *zap.Logger
 	LC               fx.Lifecycle
 	Interceptors     []interceptor.WorkerInterceptor `group:"interceptors"`
@@ -65,9 +65,10 @@ func New(params WorkerParams) (*Worker, error) {
 	})
 
 	wkr.RegisterActivity(params.Acts)
-	wkr.RegisterActivity(params.AutomationActs.RouteAutomationEvent)
-	wkr.RegisterActivity(params.AutomationActs.DispatchAutomationEvent)
-	wkr.RegisterActivity(params.AutomationActs.FinalizeAutomationDispatchFailure)
+	wkr.RegisterActivity(params.TriggerActs.RouteTriggerEvent)
+	wkr.RegisterActivity(params.TriggerActs.NotifyEventRunbookWaiter)
+	wkr.RegisterActivity(params.TriggerActs.DispatchTriggerEvent)
+	wkr.RegisterActivity(params.TriggerActs.FinalizeTriggerEventDispatchFailure)
 	for _, acts := range params.SharedActivities.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}

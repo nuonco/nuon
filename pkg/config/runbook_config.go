@@ -20,6 +20,7 @@ const (
 	RunbookStepTypeAction             RunbookStepType = "action"
 	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
 	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
+	RunbookStepTypeWaitForEvent       RunbookStepType = "wait_for_event"
 
 	// RunbookStepTypeDeployLegacy is the prior name for component_deploy. Accepted
 	// as input and canonicalized to component_deploy at parse/ingress time.
@@ -69,6 +70,11 @@ type RunbookStepConfig struct {
 	EnvVarMap      map[string]string `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
 	Timeout        string            `mapstructure:"timeout,omitempty" toml:"timeout,omitempty"`
 	Role           string            `mapstructure:"role,omitempty" toml:"role,omitempty"`
+
+	Trigger    string                `mapstructure:"trigger,omitempty" toml:"trigger,omitempty"`
+	EventTypes []string              `mapstructure:"event_types,omitempty" toml:"event_types,omitempty"`
+	Filters    []TriggerFilterConfig `mapstructure:"filters,omitempty" toml:"filters,omitempty"`
+	MatchAll   bool                  `mapstructure:"match_all,omitempty" toml:"match_all,omitempty"`
 
 	References []refs.Ref `mapstructure:"-" jsonschema:"-"`
 }
@@ -130,7 +136,13 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("role").Short("IAM role for inline action execution").
 		Long("IAM role name to use when executing the inline action step").
 		Field("skip_component_deploys").Short("skip component deployments after sandbox reprovision").
-		Long("Only applies to 'sandbox_reprovision' steps. When true, only the sandbox infrastructure is reprovisioned and components are NOT redeployed on top. Matches the dashboard's 'Skip component deployments' option")
+		Long("Only applies to 'sandbox_reprovision' steps. When true, only the sandbox infrastructure is reprovisioned and components are NOT redeployed on top. Matches the dashboard's 'Skip component deployments' option").
+		Field("trigger").Short("trigger to wait on").
+		Long("Required for wait_for_event steps. The matched normalized event is available to later action steps by step name, for example {{.runbook_outputs.wait_for_tag.event.payload.tag}}. For names containing dashes, use {{(index .runbook_outputs \"wait-for-tag\").event.payload.tag}}. Event fields are id, external_id, source, type, occurred_at, received_at, trigger, and payload").
+		Field("event_types").Short("event types that can resume this step").
+		Long("For wait_for_event steps, the step resumes when an event from trigger has one of these types and matches every configured filter").
+		Field("match_all").Short("explicitly match all event types").
+		Long("For wait_for_event steps, permits matching all event types, including when filters contain only exclusion predicates")
 }
 
 func (r *RunbookConfig) parse() error {
@@ -138,10 +150,23 @@ func (r *RunbookConfig) parse() error {
 		return nil
 	}
 
+	waitStepNames := make(map[string]struct{})
 	for _, step := range r.Steps {
 		if step.PlanOnly && step.Type != RunbookStepTypeComponentDeploy && step.Type != RunbookStepTypeDeployLegacy && step.Type != RunbookStepTypeSandboxReprovision {
 			return ErrConfig{
 				Description: fmt.Sprintf("runbook %q step %q: plan_only is only supported for component_deploy and sandbox_reprovision", r.Name, step.Name),
+			}
+		}
+		if step.Type == RunbookStepTypeWaitForEvent {
+			if _, exists := waitStepNames[step.Name]; exists {
+				return ErrConfig{Description: fmt.Sprintf("wait_for_event step names must be unique: %s", step.Name), Err: fmt.Errorf("duplicate wait_for_event step name")}
+			}
+			waitStepNames[step.Name] = struct{}{}
+			if step.Trigger == "" {
+				return ErrConfig{Description: fmt.Sprintf("wait_for_event step %s requires trigger", step.Name), Err: fmt.Errorf("missing trigger")}
+			}
+			if err := ValidateTriggerMatch(step.EventTypes, step.Filters, step.MatchAll); err != nil {
+				return ErrConfig{Description: fmt.Sprintf("invalid event match for step %s", step.Name), Err: err}
 			}
 		}
 		if step.Timeout != "" {

@@ -67,13 +67,19 @@ export const ActionRunMetadata = ({
         {actionRun?.created_at ? (
           <Text theme="info" flex className="gap-1">
             <Icon variant="TimerIcon" />
-            <Duration variant="subtext" beginTime={actionRun.created_at} endTime={actionRun.updated_at} />
+            <Duration
+              variant="subtext"
+              beginTime={actionRun.created_at}
+              endTime={actionRun.updated_at}
+            />
           </Text>
         ) : null}
         {actionRun?.runner_job?.install_role_usage?.role_name ? (
           <Text theme="info" flex className="gap-1">
             <Icon variant="FileLockIcon" />
-            <Text variant="subtext">{actionRun.runner_job.install_role_usage.role_name}</Text>
+            <Text variant="subtext">
+              {actionRun.runner_job.install_role_usage.role_name}
+            </Text>
           </Text>
         ) : null}
       </div>
@@ -95,9 +101,7 @@ export const ActionRunMetadata = ({
           </RunAdhocActionButton>
         </div>
       ) : rerunButton ? (
-        <div className="self-end">
-          {rerunButton}
-        </div>
+        <div className="self-end">{rerunButton}</div>
       ) : null}
     </div>
   )

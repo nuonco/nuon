@@ -4,7 +4,5 @@ import { GenerateStackDetails } from './GenerateStackDetails'
 export const GenerateStackDetailsContainer = () => {
   const { appConfig, isLoading } = useInstallAppConfig()
 
-  return (
-    <GenerateStackDetails appConfig={appConfig} isLoading={isLoading} />
-  )
+  return <GenerateStackDetails appConfig={appConfig} isLoading={isLoading} />
 }

@@ -126,7 +126,11 @@ export const RunRunbookModal = ({
       addToast(
         <Toast heading="Runbook run started" theme="info">
           <Text>
-            Running <Badge variant="code" size="md">{runbookName}</Badge>.
+            Running{' '}
+            <Badge variant="code" size="md">
+              {runbookName}
+            </Badge>
+            .
           </Text>
         </Toast>
       )
@@ -258,9 +262,7 @@ export const RunRunbookModal = ({
             ]}
             currentStepIndex={page}
             completedSteps={
-              new Set(
-                ['inputs', 'steps'].slice(0, page) as string[]
-              )
+              new Set(['inputs', 'steps'].slice(0, page) as string[])
             }
             skipHref={null}
             onGoToStep={(index) => {

@@ -64,16 +64,17 @@ func TestNewAppID(t *testing.T) {
 	})
 }
 
-func TestEventAutomationIDs(t *testing.T) {
+func TestTriggerIDs(t *testing.T) {
 	tests := map[string]struct {
 		newID  func() string
 		prefix string
 	}{
-		"source":        {NewEventSourceID, "esr"},
-		"source secret": {NewEventSourceSecretID, "ess"},
-		"source event":  {NewEventSourceEventID, "ese"},
-		"rule":          {NewEventAutomationRuleID, "ear"},
-		"dispatch":      {NewEventDispatchID, "edp"},
+		"source":         {NewTriggerID, "trg"},
+		"source secret":  {NewTriggerSecretID, "trs"},
+		"source event":   {NewTriggerEventID, "tre"},
+		"rule":           {NewTriggerRuleID, "ear"},
+		"dispatch":       {NewEventDispatchID, "edp"},
+		"runbook waiter": {NewEventRunbookWaiterID, "erw"},
 	}
 
 	for name, test := range tests {

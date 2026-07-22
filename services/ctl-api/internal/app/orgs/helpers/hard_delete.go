@@ -12,10 +12,11 @@ import (
 func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 	childObjs := []interface{}{
 		&app.EventDispatch{},
-		&app.EventAutomationRule{},
-		&app.EventSourceEvent{},
-		&app.EventSourceSecret{},
-		&app.EventSource{},
+		&app.TriggerRule{},
+		&app.EventRunbookWaiter{},
+		&app.TriggerEvent{},
+		&app.TriggerSecret{},
+		&app.Trigger{},
 		&app.RunnerJobExecutionResult{},
 		&app.RunnerJobExecutionOutputs{},
 		&app.RunnerJobExecution{},

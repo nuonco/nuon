@@ -2,7 +2,7 @@
 
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
-import { toSentenceCase } from '@/utils/string-utils'
+import { getWorkflowStepTitle } from '@/utils/workflow-utils'
 import { IStepDetails } from './types'
 
 export const StepTitle = ({ step }: IStepDetails) => {
@@ -14,7 +14,7 @@ export const StepTitle = ({ step }: IStepDetails) => {
         variant="timeline"
       />
       <Text nowrap className="!inline-block truncate" variant="base">
-        {toSentenceCase(step?.name)}
+        {getWorkflowStepTitle(step)}
       </Text>
     </span>
   )

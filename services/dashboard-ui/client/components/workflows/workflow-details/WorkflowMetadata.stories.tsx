@@ -41,12 +41,19 @@ const mockFinishedWorkflow = {
       {
         status: 'failed',
         created_at_ts: 1704067320,
-        status_human_description: 'Step deploy_component failed: terraform apply exit code 1',
+        status_human_description:
+          'Step deploy_component failed: terraform apply exit code 1',
       },
-      { status: 'in-progress', created_at_ts: 1704067350, status_human_description: 'Retrying step deploy_component' },
+      {
+        status: 'in-progress',
+        created_at_ts: 1704067350,
+        status_human_description: 'Retrying step deploy_component',
+      },
     ],
   },
 } as TWorkflow
 
 export const InProgress = () => <WorkflowMetadata workflow={mockWorkflow} />
-export const Finished = () => <WorkflowMetadata workflow={mockFinishedWorkflow} />
+export const Finished = () => (
+  <WorkflowMetadata workflow={mockFinishedWorkflow} />
+)

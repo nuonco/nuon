@@ -65,6 +65,7 @@ const StepHistoryStatus = ({
 export interface IRunbookStepCard {
   step: TWorkflowStep
   workflowUrl: string
+  eventHref?: (eventId: string, triggerId: string) => string
   targetData?: unknown
   deployOutputs?: Record<string, unknown>
   isLoading?: boolean
@@ -73,6 +74,7 @@ export interface IRunbookStepCard {
 export const RunbookStepCard = ({
   step,
   workflowUrl,
+  eventHref,
   targetData,
   deployOutputs,
   isLoading,
@@ -89,6 +91,7 @@ export const RunbookStepCard = ({
   const envVarEntries = Object.entries(actionRun?.run_env_vars ?? {})
   const stepStatus =
     typeof step.status === 'object' ? step.status?.status : step.status
+  const eventWait = step?.links?.event_wait
 
   return (
     <Card className="flex flex-col gap-4 p-4">
@@ -100,10 +103,7 @@ export const RunbookStepCard = ({
           </Text>
         </div>
         <Link href={`${workflowUrl}?panel=${step.id}`}>
-          <Text
-            variant="subtext"
-            className="!inline-flex gap-1 items-center"
-          >
+          <Text variant="subtext" className="!inline-flex gap-1 items-center">
             View workflow <Icon size="12" variant="CaretRightIcon" />
           </Text>
         </Link>
@@ -111,11 +111,15 @@ export const RunbookStepCard = ({
 
       {isActionRun && actionRun ? (
         <div className="flex flex-col gap-4">
-          <Text variant="base" weight="strong">Outputs</Text>
+          <Text variant="base" weight="strong">
+            Outputs
+          </Text>
           <InstallActionRunOutputs installActionRun={actionRun} />
           {envVarEntries.length > 0 ? (
             <>
-              <Text variant="base" weight="strong">Environment variables</Text>
+              <Text variant="base" weight="strong">
+                Environment variables
+              </Text>
               <KeyValueList
                 values={envVarEntries.map(([key, value]) => ({ key, value }))}
               />
@@ -125,10 +129,96 @@ export const RunbookStepCard = ({
       ) : null}
 
       {isDeploy && deployOutputs && Object.keys(deployOutputs).length > 0 ? (
-        <TerraformOutputs
-          heading="Outputs"
-          outputs={deployOutputs}
-        />
+        <TerraformOutputs heading="Outputs" outputs={deployOutputs} />
+      ) : null}
+
+      {eventWait ? (
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-4">
+            <Text variant="base" weight="strong">
+              Event wait
+            </Text>
+            <Status
+              status={
+                eventWait?.status === 'matched'
+                  ? 'success'
+                  : eventWait?.status === 'active'
+                    ? 'info'
+                    : eventWait?.status === 'expired'
+                      ? 'error'
+                      : 'neutral'
+              }
+              variant="badge"
+            >
+              {eventWait?.status || 'unknown'}
+            </Status>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="flex flex-col gap-1">
+              <Text variant="subtext" theme="neutral">
+                Trigger
+              </Text>
+              <Text variant="subtext">
+                {eventWait?.trigger_name || eventWait?.trigger_id || 'Unknown'}
+              </Text>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Text variant="subtext" theme="neutral">
+                Event types
+              </Text>
+              <Text variant="subtext">
+                {eventWait?.event_types?.join(', ') || 'All event types'}
+              </Text>
+            </div>
+            {eventWait?.activated_at ? (
+              <div className="flex flex-col gap-1">
+                <Text variant="subtext" theme="neutral">
+                  Activated
+                </Text>
+                <Time
+                  time={eventWait.activated_at}
+                  format="long-datetime"
+                  variant="subtext"
+                />
+              </div>
+            ) : null}
+            {eventWait?.matched_at ? (
+              <div className="flex flex-col gap-1">
+                <Text variant="subtext" theme="neutral">
+                  Matched
+                </Text>
+                <Time
+                  time={eventWait.matched_at}
+                  format="long-datetime"
+                  variant="subtext"
+                />
+              </div>
+            ) : null}
+          </div>
+          {eventWait?.filters?.length ? (
+            <div className="flex flex-col gap-2">
+              <Text variant="subtext" weight="strong">
+                Filters
+              </Text>
+              {eventWait.filters.map((filter, index) => (
+                <Code key={`${filter?.path}-${index}`}>
+                  {`${filter?.from || 'payload'} ${filter?.path || '—'} ${filter?.op || '—'} ${JSON.stringify(filter?.value)}`}
+                </Code>
+              ))}
+            </div>
+          ) : null}
+          {eventWait?.matched_event_id && eventWait?.trigger_id && eventHref ? (
+            <Link
+              href={eventHref(eventWait.matched_event_id, eventWait.trigger_id)}
+            >
+              View matched event
+              {eventWait?.matched_event_type
+                ? ` · ${eventWait.matched_event_type}`
+                : ''}
+              <Icon variant="CaretRightIcon" />
+            </Link>
+          ) : null}
+        </div>
       ) : null}
 
       <Stack gap={2}>
@@ -179,10 +269,14 @@ export const RunbookStepCard = ({
             }
           >
             <div className="border-t">
-              <JSONViewer data={targetData} expanded={1} showDataTypes={false} />
+              <JSONViewer
+                data={targetData}
+                expanded={1}
+                showDataTypes={false}
+              />
             </div>
           </Expand>
-        ) : (
+        ) : eventWait ? null : (
           <Text variant="subtext" theme="neutral">
             No data available
           </Text>

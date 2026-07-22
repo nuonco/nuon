@@ -1,6 +1,8 @@
 package executeworkflowstep
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -219,6 +221,7 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 	)
 
 	cb := callback.New(ctx, step.ID)
+	dedupeKey := fmt.Sprintf("workflow-step:%s:retry:%d:group-retry:%d", step.ID, step.RetryIndex, step.GroupRetryIdx)
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.OwnerID,
 		OwnerType:       s.OwnerType,
@@ -228,6 +231,7 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 		SignalOwnerID:   step.ID,
 		SignalOwnerType: "install_workflow_steps",
 		Callback:        cb,
+		DedupeKey:       &dedupeKey,
 	})
 	if err != nil {
 		return errors.Wrapf(err, "unable to enqueue signal for step %s", step.Name)
@@ -242,7 +246,7 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 	)
 
 	stepTimeout := step.Timeout
-	if stepTimeout <= 0 {
+	if stepTimeout == 0 {
 		stepTimeout = callback.FallbackAwaitTimeout
 	}
 	_, err = callback.AwaitWithTimeout(ctx, cb, stepTimeout)

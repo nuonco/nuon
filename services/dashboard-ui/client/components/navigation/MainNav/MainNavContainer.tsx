@@ -25,6 +25,7 @@ export const MainNavContainer = () => {
       hasOrgSettings={!!org?.features?.['org-settings']}
       hasServiceAccountsAndTokens={!!org?.features?.['service-accounts-and-tokens']}
       hasSlack={!!org?.features?.['slack']}
+      hasTriggers={!!org?.features?.['triggers']}
       hasCustomerPortal={false}
       customerPortalUrl={customerPortalUrl}
     />

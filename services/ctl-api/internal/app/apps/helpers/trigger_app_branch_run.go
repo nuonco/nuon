@@ -54,6 +54,7 @@ func (h *Helpers) ResumeAppBranchRun(ctx context.Context, run *app.AppBranchRun,
 		req.Metadata = make(map[string]string)
 	}
 	req.Metadata["run_id"] = run.ID
+	req.Metadata["app_branch_id"] = run.AppBranchID
 	req.Metadata["commit_sha"] = run.CommitSHA
 	var wf app.Workflow
 	err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -62,7 +63,7 @@ func (h *Helpers) ResumeAppBranchRun(ctx context.Context, run *app.AppBranchRun,
 			return err
 		}
 		if locked.WorkflowID == nil {
-			created, err := h.createWorkflowWithDB(ctx, tx, locked.AppBranchID, plugins.TableName(h.db, app.AppBranch{}), app.WorkflowTypeAppBranchesRun, req.Metadata, locked.PlanOnly)
+			created, err := h.createWorkflowWithDB(ctx, tx, locked.AppBranchID, plugins.TableName(h.db, app.AppBranch{}), app.WorkflowTypeAppBranchesRun, req.Metadata, locked.PlanOnly, app.InstallApprovalOptionPrompt)
 			if err != nil {
 				return fmt.Errorf("unable to create workflow: %w", err)
 			}

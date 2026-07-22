@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -49,8 +50,10 @@ type InstallRunbookRun struct {
 	InstallRunbookID string         `json:"install_runbook_id,omitzero" gorm:"index:idx_install_runbook_runs_query,priority:2" temporaljson:"install_runbook_id,omitzero,omitempty"`
 	InstallRunbook   InstallRunbook `json:"install_runbook,omitzero" temporaljson:"install_runbook,omitzero,omitempty"`
 
-	RunbookConfigID string        `json:"runbook_config_id,omitzero" temporaljson:"runbook_config_id,omitzero,omitempty"`
-	RunbookConfig   RunbookConfig `json:"runbook_config,omitzero" temporaljson:"runbook_config,omitzero,omitempty"`
+	RunbookConfigID        string         `json:"runbook_config_id,omitzero" temporaljson:"runbook_config_id,omitzero,omitempty"`
+	RunbookConfig          RunbookConfig  `json:"runbook_config,omitzero" temporaljson:"runbook_config,omitzero,omitempty"`
+	TriggerEventDispatchID *string        `json:"trigger_event_dispatch_id,omitempty" temporaljson:"trigger_event_dispatch_id,omitzero,omitempty"`
+	TriggerEventDispatch   *EventDispatch `json:"-" gorm:"constraint:OnDelete:SET NULL" temporaljson:"-"`
 
 	RunbookInputs         pgtype.Hstore `json:"runbook_inputs,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"runbook_inputs,omitzero,omitempty"`
 	RunbookInputsRedacted pgtype.Hstore `json:"runbook_inputs_redacted,omitzero" gorm:"type:hstore;->;-:migration" swaggertype:"object,string" temporaljson:"runbook_inputs_redacted,omitzero,omitempty"`
@@ -110,6 +113,11 @@ func (r *InstallRunbookRun) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"org_id",
 			},
+		},
+		{
+			Name:        indexes.Name(db, &InstallRunbookRun{}, "trigger_event_dispatch_id"),
+			Columns:     []string{"trigger_event_dispatch_id"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
 	}
 }

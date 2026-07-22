@@ -6,7 +6,10 @@ import {
   ActionRunMetadataSkeleton,
 } from '../ActionRunMetadata'
 import { AdhocActionDetails } from '../AdhocActionDetails'
-import { StandardActionSteps, StandardActionStepsSkeleton } from '../StandardActionSteps'
+import {
+  StandardActionSteps,
+  StandardActionStepsSkeleton,
+} from '../StandardActionSteps'
 import { ActionRunLogs, ActionRunLogsSkeleton } from '../ActionRunLogs'
 
 export interface IActionRunStepDetails {

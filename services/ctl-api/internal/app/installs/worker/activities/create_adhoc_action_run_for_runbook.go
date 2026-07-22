@@ -11,14 +11,15 @@ import (
 )
 
 type CreateAdHocActionRunForRunbookRequest struct {
-	InstallID       string        `validate:"required"`
-	Command         string        `json:"command"`
-	InlineContents  string        `json:"inline_contents"`
-	EnvVars         pgtype.Hstore `json:"env_vars"`
-	Timeout         time.Duration `json:"timeout"`
-	Role            string        `json:"role"`
-	TriggeredByID   string        `json:"triggered_by_id"`
-	TriggeredByType string        `json:"triggered_by_type"`
+	InstallID         string        `validate:"required"`
+	InstallWorkflowID string        `json:"install_workflow_id"`
+	Command           string        `json:"command"`
+	InlineContents    string        `json:"inline_contents"`
+	EnvVars           pgtype.Hstore `json:"env_vars"`
+	Timeout           time.Duration `json:"timeout"`
+	Role              string        `json:"role"`
+	TriggeredByID     string        `json:"triggered_by_id"`
+	TriggeredByType   string        `json:"triggered_by_type"`
 }
 
 // @temporal-gen-v2 activity
@@ -51,6 +52,9 @@ func (a *Activities) CreateAdHocActionRunForRunbook(ctx context.Context, req Cre
 		Timeout:           req.Timeout,
 		Role:              req.Role,
 		EnableKubeConfig:  generics.NewNullBoolFromPtr(&defaultEnableKubeConfig),
+	}
+	if req.InstallWorkflowID != "" {
+		run.InstallWorkflowID = generics.ToPtr(req.InstallWorkflowID)
 	}
 
 	if err := a.db.WithContext(ctx).Create(&run).Error; err != nil {

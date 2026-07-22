@@ -1,7 +1,9 @@
 package service
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -9,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminTriggerAppBranchRunRequest struct {
@@ -34,9 +37,9 @@ func (s *service) AdminTriggerAppBranchRun(ctx *gin.Context) {
 	appBranchID := ctx.Param("app_branch_id")
 
 	var req AdminTriggerAppBranchRunRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		// Allow empty body (default force=false)
-		req = AdminTriggerAppBranchRunRequest{}
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		ctx.Error(stderr.NewInvalidRequest(err))
+		return
 	}
 
 	// Load branch with queue

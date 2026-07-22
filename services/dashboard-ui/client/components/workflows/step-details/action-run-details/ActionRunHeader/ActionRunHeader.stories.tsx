@@ -26,11 +26,7 @@ export const Default = () => (
 
 export const Adhoc = () => (
   <div className="p-4">
-    <ActionRunHeader
-      actionRun={mockActionRun}
-      isAdhoc
-      orgId="org-1"
-    />
+    <ActionRunHeader actionRun={mockActionRun} isAdhoc orgId="org-1" />
   </div>
 )
 

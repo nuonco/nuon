@@ -10,11 +10,12 @@ func NewAppID() string {
 	return shortid.NewNanoID("app")
 }
 
-func NewEventSourceID() string         { return shortid.NewNanoID("esr") }
-func NewEventSourceSecretID() string   { return shortid.NewNanoID("ess") }
-func NewEventSourceEventID() string    { return shortid.NewNanoID("ese") }
-func NewEventAutomationRuleID() string { return shortid.NewNanoID("ear") }
-func NewEventDispatchID() string       { return shortid.NewNanoID("edp") }
+func NewTriggerID() string            { return shortid.NewNanoID("trg") }
+func NewTriggerSecretID() string      { return shortid.NewNanoID("trs") }
+func NewTriggerEventID() string       { return shortid.NewNanoID("tre") }
+func NewTriggerRuleID() string        { return shortid.NewNanoID("ear") }
+func NewEventDispatchID() string      { return shortid.NewNanoID("edp") }
+func NewEventRunbookWaiterID() string { return shortid.NewNanoID("erw") }
 
 func NewAppCfgID() string {
 	return shortid.NewNanoID("apc")

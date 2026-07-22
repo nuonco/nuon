@@ -4,7 +4,10 @@ import { SyncedFilterContainer } from '@/components/common/SyncedFilter'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallRunbooks } from '@/lib'
-import { InstallRunbooksTable, parseInstallRunbooksToTableData } from './InstallRunbooksTable'
+import {
+  InstallRunbooksTable,
+  parseInstallRunbooksToTableData,
+} from './InstallRunbooksTable'
 
 const LIMIT = 20
 
@@ -54,7 +57,7 @@ export const InstallRunbooksTableContainer = ({
   })
 
   const removedRunbooks =
-    offset === 0 && !syncedOnly ? removedResult?.data ?? [] : []
+    offset === 0 && !syncedOnly ? (removedResult?.data ?? []) : []
 
   const removedRows = parseInstallRunbooksToTableData(
     removedRunbooks,

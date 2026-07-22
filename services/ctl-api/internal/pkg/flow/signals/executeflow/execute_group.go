@@ -75,7 +75,7 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 
 	// Bound by the group's derived timeout; fall back to the human-wait cap when unset.
 	groupTimeout := group.Timeout
-	if groupTimeout <= 0 {
+	if groupTimeout == 0 {
 		groupTimeout = callback.FallbackAwaitTimeout
 	}
 	_, err = callback.AwaitWithTimeout(ctx, cb, groupTimeout)

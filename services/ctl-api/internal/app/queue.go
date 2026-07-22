@@ -59,10 +59,16 @@ func (r *Queue) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 		{
-			Name:        indexes.Name(db, &Queue{}, "app_automations_owner_name"),
+			Name:        indexes.Name(db, &Queue{}, "app_triggers_owner_name"),
 			Columns:     []string{"owner_id", "owner_type", "name"},
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
-			Option:      "WHERE deleted_at = 0 AND name = 'app-automations'",
+			Option:      "WHERE deleted_at = 0 AND name = 'app-triggers'",
+		},
+		{
+			Name:        indexes.Name(db, &Queue{}, "org_signals_owner_name"),
+			Columns:     []string{"owner_id", "owner_type", "name"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+			Option:      "WHERE deleted_at = 0 AND name = 'org-signals'",
 		},
 	}
 }

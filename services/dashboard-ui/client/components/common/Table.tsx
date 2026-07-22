@@ -30,6 +30,7 @@ export interface ITable<TData extends object> {
   enableSorting?: boolean
   enableSearch?: boolean
   filterActions?: ReactNode
+  initialSorting?: SortingState
   isLoading?: boolean
   pagination?: Omit<IPagination, 'position'>
   searchPlaceholder?: string
@@ -45,13 +46,14 @@ export function TableBase<TData extends object>({
   enableSorting = true,
   enableSearch = true,
   filterActions,
+  initialSorting = [],
   isLoading = false, // default isLoading to false
   pagination,
   searchPlaceholder,
   skeletonRows = 5, // default skeleton row count
 }: ITable<TData>) {
   const { isPaginating, setIsPaginating } = usePagination()
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [sorting, setSorting] = useState<SortingState>(initialSorting)
 
   const table = useReactTable({
     data,

@@ -24,13 +24,15 @@ export const VCSConnectionDetail = () => {
 
   const { data: vcs_connection } = useQuery({
     queryKey: ['vcs-connection', org?.id, connectionId],
-    queryFn: () => getVCSConnection({ orgId: org!.id, connectionId: connectionId! }),
+    queryFn: () =>
+      getVCSConnection({ orgId: org!.id, connectionId: connectionId! }),
     enabled: !!org?.id && !!connectionId,
   })
 
   const { data: status, isLoading: isLoadingStatus } = useQuery({
     queryKey: ['vcs-connection-status', org?.id, connectionId],
-    queryFn: () => checkVCSConnectionStatus({ orgId: org!.id, connectionId: connectionId! }),
+    queryFn: () =>
+      checkVCSConnectionStatus({ orgId: org!.id, connectionId: connectionId! }),
     enabled: !!org?.id && !!connectionId,
     refetchInterval: 60_000,
   })
@@ -46,12 +48,20 @@ export const VCSConnectionDetail = () => {
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
-          { path: `/${org?.id}/connections/vcs/${connectionId}`, text: `${accountName} connection` },
+          {
+            path: `/${org?.id}/connections/vcs/${connectionId}`,
+            text: `${accountName} connection`,
+          },
         ]}
       />
       <PageHeader className="flex items-start justify-between">
         <div className="flex flex-col gap-2">
-          <Text variant="h3" weight="stronger" level={1} className="!flex gap-2 items-center">
+          <Text
+            variant="h3"
+            weight="stronger"
+            level={1}
+            className="!flex gap-2 items-center"
+          >
             <Icon variant="GitHub" size="24" />
             {accountName} connection
           </Text>
@@ -65,7 +75,12 @@ export const VCSConnectionDetail = () => {
               <Status status={status.status} variant="badge" />
               <Text variant="subtext" theme="neutral">
                 Last checked{' '}
-                <Time time={status?.checked_at} format="relative" variant="subtext" shouldTick />
+                <Time
+                  time={status?.checked_at}
+                  format="relative"
+                  variant="subtext"
+                  shouldTick
+                />
               </Text>
             </div>
           ) : null}
@@ -82,7 +97,9 @@ export const VCSConnectionDetail = () => {
       </PageHeader>
       <PageContent>
         <PageSection>
-          {vcs_connection && <ConnectionDetail vcs_connection={vcs_connection} />}
+          {vcs_connection && (
+            <ConnectionDetail vcs_connection={vcs_connection} />
+          )}
         </PageSection>
       </PageContent>
     </PageLayout>

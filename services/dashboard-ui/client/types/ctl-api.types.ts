@@ -4,9 +4,11 @@ import type { Interests as TInterests } from '@/components/interests/types'
 // app branches
 export type TAppBranch = components['schemas']['app.AppBranch']
 export type TAppBranchConfig = components['schemas']['app.AppBranchConfig']
-export type TAppBranchInstallGroup = components['schemas']['app.AppBranchInstallGroup']
+export type TAppBranchInstallGroup =
+  components['schemas']['app.AppBranchInstallGroup']
 export type TAppBranchRun = components['schemas']['app.AppBranchRun']
-export type TCreateAppBranchRequest = components['schemas']['service.CreateAppBranchRequest']
+export type TCreateAppBranchRequest =
+  components['schemas']['service.CreateAppBranchRequest']
 export type TVCSBranch = { name: string }
 
 // app
@@ -32,7 +34,11 @@ export type TAppSandboxBuild = {
   app_sandbox_config_id?: string
   status?: string
   status_description?: string
-  status_v2?: { status?: string; status_human_description?: string; metadata?: { [key: string]: unknown } }
+  status_v2?: {
+    status?: string
+    status_human_description?: string
+    metadata?: { [key: string]: unknown }
+  }
   log_stream?: { id?: string; open?: boolean }
   runner_job?: { id: string }
   vcs_connection_commit?: { sha?: string; message?: string }
@@ -74,6 +80,244 @@ export type TAppPoliciesConfig = {
   app_id?: string
   app_config_id?: string
   policies?: TAppPolicyConfig[]
+}
+
+export type TTriggerEventFilterEvaluation = {
+  from?: string
+  path?: string
+  op?: string
+  expected?: unknown
+  selected?: unknown[]
+  truncated?: boolean
+  matched?: boolean
+  error?: string
+}
+
+export type TTriggerEventRuleEvaluation = {
+  rule_id?: string
+  rule_name?: string
+  app_id?: string
+  event_type?: string
+  allowed_event_types?: string[]
+  event_type_matched?: boolean
+  filters?: TTriggerEventFilterEvaluation[]
+  matched?: boolean
+}
+
+export type TTriggerEventDispatch = {
+  id?: string
+  app_id?: string
+  trigger_rule_id?: string
+  target_type?: string
+  target_id?: string
+  status?: string
+  attempts?: number
+  error?: string
+  result_resource_type?: string
+  result_resource_id?: string
+  workflow_id?: string
+  install_id?: string
+  runbook_id?: string
+  runbook_name?: string
+  created_at?: string
+}
+
+export type TTriggerEventWaiterMatch = {
+  id?: string
+  install_id?: string
+  workflow_id?: string
+  workflow_step_id?: string
+  workflow_step_name?: string
+  trigger_id?: string
+  trigger_name?: string
+  event_types?: string[]
+  filters?: TTriggerFilter[]
+  status?: string
+  matched_event_id?: string
+  matched_event_type?: string
+  activated_at?: string
+  matched_at?: string
+  notified_at?: string
+  runbook_run_id?: string
+  runbook_id?: string
+  runbook_name?: string
+}
+
+export type TTriggerEventDispatchRetryResponse = {
+  dispatch_id?: string
+  retry_id?: string
+}
+
+export type TTriggerEvent = {
+  id?: string
+  trigger_id?: string
+  trigger_name?: string
+  external_id?: string
+  source?: string
+  event_type?: string
+  occurred_at?: string
+  received_at?: string
+  payload?: unknown
+  headers?: Record<string, string[]>
+  raw_body_sha256?: string
+  payload_sha256?: string
+  raw_body_size?: number
+  raw_content_type?: string
+  payload_content_type?: string
+  secret_key_id?: string
+  routing_status?: string
+  routing_error?: string
+  routing_started_at?: string
+  routing_completed_at?: string
+  match_count?: number
+  waiter_match_count?: number
+  dispatch_count?: number
+  match_explanations?: TTriggerEventRuleEvaluation[]
+  explanations_truncated?: boolean
+  dispatches?: TTriggerEventDispatch[]
+  dispatches_truncated?: boolean
+  waiter_matches?: TTriggerEventWaiterMatch[]
+}
+
+export type TTriggerEventPage = {
+  items?: TTriggerEvent[]
+  next_cursor?: string
+}
+
+export type TTriggerEventDispatchPage = {
+  items?: TTriggerEventDispatch[]
+  next_cursor?: string
+}
+
+export type TTriggerEventReplayResponse = {
+  event_id?: string
+  replay_id?: string
+}
+
+export type TTriggerEventRaw = {
+  raw_body_base64?: string
+  raw_body_sha256?: string
+  raw_body_size?: number
+  raw_content_type?: string
+}
+
+export type TTriggerAuthType =
+  | 'none'
+  | 'hmac'
+  | 'api_key'
+  | 'basic'
+  | 'bearer_jwt'
+  | 'sns_signature'
+
+export type TTriggerEnvelope = 'none' | 'pubsub_push' | 'cloudevents' | 'sns'
+
+export type TEventFieldSelector = { header?: string; payload?: string }
+
+export type TTriggerAuthConfig = {
+  header?: string
+  prefix?: string
+  encoding?: string
+  algorithm?: string
+  username?: string
+  issuer?: string
+  audience?: string[]
+  topic_arn?: string
+  expected_email?: string
+  expected_subject?: string
+}
+
+export type TTriggerSecret = {
+  id?: string
+  key_id?: string
+  created_at?: string
+  not_before?: string
+  expires_at?: string
+  revoked_at?: string
+  last_used_at?: string
+}
+
+export type TTrigger = {
+  id?: string
+  created_at?: string
+  name?: string
+  description?: string
+  preset?: string
+  auth_type?: TTriggerAuthType
+  auth_config?: TTriggerAuthConfig
+  envelope?: TTriggerEnvelope
+  type_from?: TEventFieldSelector
+  id_from?: TEventFieldSelector
+  status?: string
+  last_event_at?: string
+  secrets?: TTriggerSecret[]
+}
+
+export type TCreateTriggerBody = {
+  name: string
+  description?: string
+  preset?: string
+  secret?: string
+  auth_type?: TTriggerAuthType
+  auth_config?: TTriggerAuthConfig
+  envelope?: TTriggerEnvelope
+}
+
+export type TCreateTriggerResponse = {
+  trigger?: TTrigger
+  ingress_url?: string
+  key_id?: string
+  secret?: string
+}
+
+export type TTriggerIngressURLResponse = { ingress_url?: string }
+
+export type TRotateTriggerIngressResponse = {
+  trigger?: TTrigger
+  ingress_url?: string
+}
+
+export type TRotateTriggerSecretResponse = {
+  trigger?: TTrigger
+  key_id?: string
+  secret?: string
+}
+
+export type TRevokeTriggerSecretResponse = { revoked_at?: string }
+
+export type TRevealTriggerSecretResponse = {
+  key_id?: string
+  secret?: string
+}
+
+export type TEventTypeFacet = { event_type?: string; count?: number }
+
+export type TTriggerFilter = {
+  from?: string
+  path?: string
+  op?: string
+  value?: unknown
+}
+
+export type TTriggerRule = {
+  id?: string
+  name?: string
+  app_id?: string
+  app_name?: string
+  app_config_id?: string
+  app_branch_id?: string
+  app_branch_name?: string
+  runbook_id?: string
+  runbook_name?: string
+  install_name?: string
+  input_mappings?: Record<string, string>
+  event_types?: string[]
+  filters?: TTriggerFilter[]
+  target_type?: string
+  enabled?: boolean
+  valid_from?: string
+  valid_to?: string
+  force?: boolean
+  plan_only?: boolean
 }
 
 // policy reports
@@ -182,7 +426,8 @@ export type TCreateSlackChannelSubscriptionBody = Omit<
 // Re-export SubscriptionMatch under a `T`-prefixed alias so dashboard
 // types stay in one place. The picker / helpers import the raw type from
 // '@/components/match/types' directly to avoid a re-import dance.
-export type TSubscriptionMatch = import('@/components/match/types').SubscriptionMatch
+export type TSubscriptionMatch =
+  import('@/components/match/types').SubscriptionMatch
 
 export type TInstallSandbox = components['schemas']['app.InstallSandbox']
 
@@ -376,9 +621,13 @@ export type TSandboxConfig = components['schemas']['app.AppSandboxConfig'] & {
   cloud_platform?: string
 }
 
-export type TCreateAppSandboxConfigBody = components['schemas']['service.CreateAppSandboxConfigRequest']
+export type TCreateAppSandboxConfigBody =
+  components['schemas']['service.CreateAppSandboxConfigRequest']
 
-export type TSandboxRun = Omit<components['schemas']['app.InstallSandboxRun'], 'app_sandbox_config'> & {
+export type TSandboxRun = Omit<
+  components['schemas']['app.InstallSandboxRun'],
+  'app_sandbox_config'
+> & {
   org_id: string
   app_sandbox_config?: TSandboxConfig
 }
@@ -609,6 +858,25 @@ export type TInstallWorkflowStep = components['schemas']['app.WorkflowStep']
 export type TWorkflow = components['schemas']['app.Workflow']
 export type TWorkflowStep = components['schemas']['app.WorkflowStep'] & {
   log_stream?: { id?: string; open?: boolean }
+  links?: {
+    event_wait?: TWorkflowStepEventWait
+    [key: string]: unknown
+  }
+}
+export type TWorkflowStepEventWait = {
+  id?: string
+  status?: 'active' | 'matched' | 'cancelled' | 'expired'
+  trigger_id?: string
+  trigger_name?: string
+  event_types?: string[]
+  filters?: TTriggerFilter[]
+  matched_event_id?: string
+  matched_event_type?: string
+  activated_at?: string
+  matched_at?: string
+  notified_at?: string
+  cancelled_at?: string
+  expired_at?: string
 }
 export type TWorkflowStepApproval =
   components['schemas']['app.WorkflowStepApproval']

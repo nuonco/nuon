@@ -18,17 +18,17 @@ const (
 	AppGenerateStepsQueueName      = "app-generate-steps"
 )
 
-func (h *Helpers) EnsureAppAutomationQueue(ctx context.Context, appID string) (*app.Queue, error) {
+func (h *Helpers) EnsureAppTriggerQueue(ctx context.Context, appID string) (*app.Queue, error) {
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     appID,
 		OwnerType:   plugins.TableName(h.db, app.App{}),
 		Namespace:   "apps",
-		Name:        queue.AppAutomationsQueueName,
+		Name:        queue.AppTriggersQueueName,
 		MaxInFlight: 10,
 		MaxDepth:    50,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("unable to ensure app-automations queue for app %s: %w", appID, err)
+		return nil, fmt.Errorf("unable to ensure app-triggers queue for app %s: %w", appID, err)
 	}
 	return q, nil
 }
@@ -38,7 +38,7 @@ func (h *Helpers) EnsureAppAutomationQueue(ctx context.Context, appID string) (*
 // Safe to call multiple times — queueClient.Create is idempotent.
 func (h *Helpers) EnsureAppQueue(ctx context.Context, appID string) error {
 	ownerType := plugins.TableName(h.db, app.App{})
-	if _, err := h.EnsureAppAutomationQueue(ctx, appID); err != nil {
+	if _, err := h.EnsureAppTriggerQueue(ctx, appID); err != nil {
 		return err
 	}
 

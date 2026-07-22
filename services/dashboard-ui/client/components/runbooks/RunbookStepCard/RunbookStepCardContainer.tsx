@@ -1,5 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { getDeploy, getInstallActionRun, getInstallComponentOutputs } from '@/lib'
+import {
+  getDeploy,
+  getInstallActionRun,
+  getInstallComponentOutputs,
+} from '@/lib'
 import type { TDeploy, TWorkflowStep } from '@/types'
 import { RunbookStepCard } from './RunbookStepCard'
 
@@ -52,6 +56,9 @@ export const RunbookStepCardContainer = ({
     <RunbookStepCard
       step={step}
       workflowUrl={workflowUrl}
+      eventHref={(eventId, triggerId) =>
+        `/${orgId}/triggers/${triggerId}/events/${eventId}`
+      }
       targetData={data}
       deployOutputs={deployOutputs}
       isLoading={isLoading}

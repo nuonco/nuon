@@ -7,6 +7,21 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
+func MergeRunbookInputDefaults(rbConfig *app.RunbookConfig, inputs map[string]*string) map[string]*string {
+	merged := make(map[string]*string, len(inputs)+len(rbConfig.Inputs))
+	for name, value := range inputs {
+		merged[name] = value
+	}
+	for _, input := range rbConfig.Inputs {
+		if _, ok := merged[input.Name]; ok || input.Default == "" {
+			continue
+		}
+		value := input.Default
+		merged[input.Name] = &value
+	}
+	return merged
+}
+
 // ValidateRunbookInputs verifies the supplied inputs against the runbook config's
 // declared inputs: no unknown names, and every required input has a non-empty value.
 func (s *Helpers) ValidateRunbookInputs(rbConfig *app.RunbookConfig, inputs map[string]*string) error {

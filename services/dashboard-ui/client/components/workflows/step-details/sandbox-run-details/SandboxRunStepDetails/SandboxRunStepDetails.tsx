@@ -66,13 +66,19 @@ export const SandboxRunStepDetails = ({
         {sandboxRun?.created_at ? (
           <Text theme="info" flex className="gap-1">
             <Icon variant="TimerIcon" />
-            <Duration variant="subtext" beginTime={sandboxRun.created_at} endTime={sandboxRun.updated_at} />
+            <Duration
+              variant="subtext"
+              beginTime={sandboxRun.created_at}
+              endTime={sandboxRun.updated_at}
+            />
           </Text>
         ) : null}
         {sandboxRun?.runner_jobs?.at(0)?.install_role_usage?.role_name ? (
           <Text theme="info" flex className="gap-1">
             <Icon variant="FileLockIcon" />
-            <Text variant="subtext">{sandboxRun.runner_jobs.at(0).install_role_usage.role_name}</Text>
+            <Text variant="subtext">
+              {sandboxRun.runner_jobs.at(0).install_role_usage.role_name}
+            </Text>
           </Text>
         ) : null}
       </div>

@@ -25,6 +25,7 @@ import (
 )
 
 const SignalType signal.SignalType = "install-action-workflow-run"
+const runbookEventOutputsVersion = "runbook-event-outputs-v1"
 
 type Signal struct {
 	signal.LifecycleBase
@@ -170,6 +171,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to create action workflow run")
 	}
+	if s.TriggeredByType == "runbook" && workflow.GetVersion(ctx, runbookEventOutputsVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if err := activities.AwaitRenderRunbookActionEventOutputs(ctx, activities.RenderRunbookActionEventOutputsRequest{ActionWorkflowRunID: actionWorkflowRun.ID}); err != nil {
+			return errors.Wrap(err, "unable to render runbook event outputs")
+		}
+	}
 
 	defer func() {
 		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
@@ -200,6 +206,12 @@ func (s *Signal) executeAdhocRun(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 	l.Info("executing adhoc action workflow run signal",
 		zap.String("adhoc_action_run_id", s.AdhocActionRunID))
+
+	if s.TriggeredByType == "runbook" && workflow.GetVersion(ctx, runbookEventOutputsVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion {
+		if err := activities.AwaitRenderRunbookActionEventOutputs(ctx, activities.RenderRunbookActionEventOutputsRequest{ActionWorkflowRunID: s.AdhocActionRunID}); err != nil {
+			return errors.Wrap(err, "unable to render runbook event outputs")
+		}
+	}
 
 	run, err := activities.AwaitGetInstallActionWorkflowRunByRunID(ctx, s.AdhocActionRunID)
 	if err != nil {

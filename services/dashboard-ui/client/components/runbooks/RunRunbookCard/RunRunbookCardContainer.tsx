@@ -11,12 +11,19 @@ interface IRunRunbookCardContainer {
   name?: string
 }
 
-export const RunRunbookCardContainer = ({ id, name }: IRunRunbookCardContainer) => {
+export const RunRunbookCardContainer = ({
+  id,
+  name,
+}: IRunRunbookCardContainer) => {
   const { org } = useOrg()
   const { install } = useInstall()
   const { addModal } = useSurfaces()
 
-  const { data: result, isLoading, error } = useQuery({
+  const {
+    data: result,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['install-runbooks-card', org?.id, install?.id, name, id],
     queryFn: () =>
       getInstallRunbooks({

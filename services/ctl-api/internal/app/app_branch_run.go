@@ -35,10 +35,10 @@ type AppBranchRun struct {
 	AppBranchID string    `json:"app_branch_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"app_branch_id,omitzero,omitempty"`
 	AppBranch   AppBranch `json:"app_branch,omitempty" temporaljson:"app_branch,omitzero,omitempty"`
 
-	AppBranchConfigID    string          `json:"app_branch_config_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"app_branch_config_id,omitzero,omitempty"`
-	AppBranchConfig      AppBranchConfig `json:"app_branch_config,omitempty" temporaljson:"app_branch_config,omitzero,omitempty"`
-	AutomationDispatchID *string         `json:"automation_dispatch_id,omitempty" gorm:"<-:create" temporaljson:"automation_dispatch_id,omitzero,omitempty"`
-	AutomationDispatch   *EventDispatch  `json:"-" gorm:"constraint:OnDelete:SET NULL" temporaljson:"-"`
+	AppBranchConfigID      string          `json:"app_branch_config_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"app_branch_config_id,omitzero,omitempty"`
+	AppBranchConfig        AppBranchConfig `json:"app_branch_config,omitempty" temporaljson:"app_branch_config,omitzero,omitempty"`
+	TriggerEventDispatchID *string         `json:"trigger_event_dispatch_id,omitempty" gorm:"<-:create" temporaljson:"trigger_event_dispatch_id,omitzero,omitempty"`
+	TriggerEventDispatch   *EventDispatch  `json:"-" gorm:"constraint:OnDelete:SET NULL" temporaljson:"-"`
 
 	WorkflowID *string   `json:"workflow_id,omitempty" temporaljson:"workflow_id,omitzero,omitempty"`
 	Workflow   *Workflow `json:"workflow,omitempty" temporaljson:"workflow,omitzero,omitempty"`
@@ -101,7 +101,7 @@ type AppBranchRun struct {
 
 func (a *AppBranchRun) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
-		{Name: indexes.Name(db, &AppBranchRun{}, "automation_dispatch_id"), Columns: []string{"automation_dispatch_id"}, UniqueValue: sql.NullBool{Bool: true, Valid: true}, Option: "WHERE deleted_at = 0 AND automation_dispatch_id IS NOT NULL"},
+		{Name: indexes.Name(db, &AppBranchRun{}, "trigger_event_dispatch_id"), Columns: []string{"trigger_event_dispatch_id"}, UniqueValue: sql.NullBool{Bool: true, Valid: true}, Option: "WHERE deleted_at = 0 AND trigger_event_dispatch_id IS NOT NULL"},
 		{
 			Name: indexes.Name(db, &AppBranchRun{}, "org_id"),
 			Columns: []string{

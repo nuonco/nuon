@@ -1,10 +1,27 @@
 import type { TBadgeTheme } from '@/components/common/Badge'
 import type { TBannerTheme } from '@/components/common/Banner'
 import type { TWorkflow, TWorkflowStep, TWorkflowStepApproval } from '@/types'
+import { toSentenceCase } from './string-utils'
 
 export type TBadgeCfg = {
   children?: string
   theme?: TBadgeTheme
+}
+
+export function getWorkflowStepTitle(step?: TWorkflowStep): string {
+  if (step?.links?.event_wait) {
+    const normalizedName = step?.name?.replace(/[-_]+/g, ' ').trim() ?? ''
+    const waitForPrefix = /^wait\s+for(?:\s+|$)/i
+
+    if (waitForPrefix.test(normalizedName)) {
+      const eventName = normalizedName.replace(waitForPrefix, '').trim()
+      return eventName ? `Wait for ${eventName}` : 'Wait for event'
+    }
+
+    return toSentenceCase(normalizedName)
+  }
+
+  return toSentenceCase(step?.name)
 }
 
 const WORKFLOW_BADGE_MAP: Record<

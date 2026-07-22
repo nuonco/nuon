@@ -85,7 +85,7 @@ func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.Workflow
 	// Wait for completion via signal channel — zero activity overhead, zero heartbeats.
 	// Bound by the step's derived timeout so we don't wait 30 days on a misconfigured step.
 	stepTimeout := step.Timeout
-	if stepTimeout <= 0 {
+	if stepTimeout == 0 {
 		stepTimeout = callback.FallbackAwaitTimeout
 	}
 	_, err = callback.AwaitWithTimeout(ctx, cb, stepTimeout)

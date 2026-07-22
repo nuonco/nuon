@@ -28,10 +28,10 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
                 ? 'RocketIcon'
                 : step.type === 'component_tear_down'
                   ? 'TrashIcon'
-                : step.type === 'sandbox_reprovision' ||
-                    step.type === 'sandbox_deprovision'
-                  ? 'CubeIcon'
-                  : 'TerminalIcon'
+                  : step.type === 'sandbox_reprovision' ||
+                      step.type === 'sandbox_deprovision'
+                    ? 'CubeIcon'
+                    : 'TerminalIcon'
             }
             size={16}
           />
@@ -50,47 +50,127 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
         <div className="flex flex-col divide-y">
           {step.component_name ? (
             <div className="flex items-center py-2 gap-4">
-              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Component</Text>
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">
+                Component
+              </Text>
               <Text variant="subtext">{step.component_name}</Text>
             </div>
           ) : null}
           {step.type === 'component_deploy' || step.type === 'deploy' ? (
             <div className="flex items-center py-2 gap-4">
-              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Deploy dependents</Text>
-              <Text variant="subtext">{step.deploy_dependents ? 'Yes' : 'No'}</Text>
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">
+                Deploy dependents
+              </Text>
+              <Text variant="subtext">
+                {step.deploy_dependents ? 'Yes' : 'No'}
+              </Text>
             </div>
           ) : null}
           {step.type === 'component_tear_down' ? (
             <div className="flex items-center py-2 gap-4">
-              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Tear down dependents</Text>
-              <Text variant="subtext">{step.tear_down_dependents ? 'Yes' : 'No'}</Text>
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">
+                Tear down dependents
+              </Text>
+              <Text variant="subtext">
+                {step.tear_down_dependents ? 'Yes' : 'No'}
+              </Text>
             </div>
           ) : null}
           {step.type === 'sandbox_reprovision' ? (
             <div className="flex items-center py-2 gap-4">
-              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Skip component deploys</Text>
-              <Text variant="subtext">{step.skip_component_deploys ? 'Yes' : 'No'}</Text>
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">
+                Skip component deploys
+              </Text>
+              <Text variant="subtext">
+                {step.skip_component_deploys ? 'Yes' : 'No'}
+              </Text>
             </div>
           ) : null}
           {step.action_workflow_id ? (
             <div className="flex items-center py-2 gap-4">
-              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Action ID</Text>
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">
+                Action ID
+              </Text>
               <ID>{step.action_workflow_id}</ID>
             </div>
           ) : null}
           {step.role ? (
             <div className="flex items-center py-2 gap-4">
-              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Role</Text>
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">
+                Role
+              </Text>
               <Text variant="subtext">{step.role}</Text>
             </div>
           ) : null}
           {step.timeout ? (
             <div className="flex items-center py-2 gap-4">
-              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Timeout</Text>
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">
+                Timeout
+              </Text>
               <Duration nanoseconds={step.timeout} variant="subtext" />
             </div>
           ) : null}
+          {step.type === 'wait_for_event' ? (
+            <>
+              <div className="flex items-center py-2 gap-4">
+                <Text
+                  variant="subtext"
+                  theme="neutral"
+                  className="w-48 shrink-0"
+                >
+                  Trigger
+                </Text>
+                <Text variant="subtext">
+                  {step.trigger_name || step.trigger_id || 'Unknown'}
+                </Text>
+              </div>
+              <div className="flex items-center py-2 gap-4">
+                <Text
+                  variant="subtext"
+                  theme="neutral"
+                  className="w-48 shrink-0"
+                >
+                  Event types
+                </Text>
+                <Text variant="subtext">
+                  {step.event_types?.join(', ') || 'All event types'}
+                </Text>
+              </div>
+              {!step.timeout ? (
+                <div className="flex items-center py-2 gap-4">
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    className="w-48 shrink-0"
+                  >
+                    Timeout
+                  </Text>
+                  <Text variant="subtext">Wait indefinitely</Text>
+                </div>
+              ) : null}
+            </>
+          ) : null}
         </div>
+
+        {step.type === 'wait_for_event' ? (
+          <div className="flex flex-col gap-2">
+            <Text weight="strong">Filters</Text>
+            {step.filters?.length ? (
+              step.filters.map((filter, filterIndex) => (
+                <CodeBlock
+                  key={`${filter.path}-${filterIndex}`}
+                  language="text"
+                >
+                  {`${filter.from || 'payload'} ${filter.path || '—'} ${filter.op || '—'} ${JSON.stringify(filter.value)}`}
+                </CodeBlock>
+              ))
+            ) : (
+              <Text variant="subtext" theme="neutral">
+                No filters. Every configured event type matches.
+              </Text>
+            )}
+          </div>
+        ) : null}
 
         {step.command ? (
           <div className="flex flex-col gap-2">

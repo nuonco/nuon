@@ -12,10 +12,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
-const OrgSignalsQueueName = "org-signals"
+const OrgSignalsQueueName = queue.OrgSignalsQueueName
 
 type CreateOrgParams struct {
 	Name           string

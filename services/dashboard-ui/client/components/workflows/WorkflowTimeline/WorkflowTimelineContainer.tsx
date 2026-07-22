@@ -51,7 +51,15 @@ export const WorkflowTimelineContainer = ({
       org?.id && installId
         ? `/api/orgs/${org.id}/installs/${installId}/workflows/sse?limit=${LIMIT}&offset=${offset}&planonly=${planonly}&type=${type}&search=${encodeURIComponent(search)}`
         : undefined,
-    queryKey: ['install-workflows', org?.id, installId, offset, planonly, type, search],
+    queryKey: [
+      'install-workflows',
+      org?.id,
+      installId,
+      offset,
+      planonly,
+      type,
+      search,
+    ],
     queryFn: () =>
       getInstallWorkflows({
         orgId: org.id,

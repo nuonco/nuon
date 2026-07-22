@@ -2,7 +2,10 @@ export default {
   title: 'Workflows/StepDetails/AwaitStackDetails',
 }
 
-import { AwaitStackDetails, AwaitStackDetailsSkeleton } from './AwaitStackDetails'
+import {
+  AwaitStackDetails,
+  AwaitStackDetailsSkeleton,
+} from './AwaitStackDetails'
 
 const mockStep = {
   id: 'step-1',

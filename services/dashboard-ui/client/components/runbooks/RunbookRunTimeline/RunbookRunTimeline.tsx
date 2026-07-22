@@ -39,8 +39,7 @@ export const RunbookRunTimeline = ({
             ? (run.install_workflow.status as { status?: string })?.status
             : run.install_workflow?.status
         const status = wfStatus ?? run.status ?? 'unknown'
-        const workflowId =
-          run.install_workflow_id ?? run.install_workflow?.id
+        const workflowId = run.install_workflow_id ?? run.install_workflow?.id
 
         return (
           <TimelineEvent

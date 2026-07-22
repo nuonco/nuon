@@ -32,7 +32,7 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 			return ValidatePolicies(a)
 		},
 		func() error {
-			return ValidateEventAutomations(a)
+			return ValidateTriggers(a)
 		},
 
 		// NOTE(jm): we are moving validation functions for types into the actual types.

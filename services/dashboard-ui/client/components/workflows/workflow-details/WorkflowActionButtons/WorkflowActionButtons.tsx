@@ -16,13 +16,9 @@ export const WorkflowActionButtons = ({
 }: IWorkflowActionButtons) => {
   return (
     <div className="flex items-center gap-4">
-      {canShowApproveAll && (
-        <ApproveAllButton workflow={workflow} />
-      )}
+      {canShowApproveAll && <ApproveAllButton workflow={workflow} />}
 
-      {canShowCancel && (
-        <CancelWorkflowButton workflow={workflow} />
-      )}
+      {canShowCancel && <CancelWorkflowButton workflow={workflow} />}
 
       {workflow?.id && (
         <AdminDashboardLink

@@ -51,7 +51,9 @@ const RunnerHeading = ({
           />
         )}
       </HeadingGroup>
-      {!controlPlaneBuilds && settings && <ManagementDropdownContainer settings={settings} />}
+      {!controlPlaneBuilds && settings && (
+        <ManagementDropdownContainer settings={settings} />
+      )}
     </div>
   </PageHeader>
 )

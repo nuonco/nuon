@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/lib/pq"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -22,6 +23,7 @@ const (
 	RunbookStepTypeAction             RunbookStepType = "action"
 	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
 	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
+	RunbookStepTypeWaitForEvent       RunbookStepType = "wait_for_event"
 
 	// RunbookStepTypeDeployLegacy is the prior name for component_deploy. Accepted
 	// as input and canonicalized to component_deploy at ingress.
@@ -64,6 +66,11 @@ type RunbookStepConfig struct {
 	InlineContents string        `json:"inline_contents,omitzero" temporaljson:"inline_contents,omitzero,omitempty"`
 	EnvVars        pgtype.Hstore `json:"env_vars,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"env_vars,omitzero,omitempty"`
 	Timeout        time.Duration `json:"timeout,omitzero" gorm:"default:0;not null" swaggertype:"primitive,integer" temporaljson:"timeout,omitzero,omitempty"`
+
+	TriggerID   string          `json:"trigger_id,omitzero" temporaljson:"trigger_id,omitzero,omitempty"`
+	TriggerName string          `json:"trigger_name,omitzero" temporaljson:"trigger_name,omitzero,omitempty"`
+	EventTypes  pq.StringArray  `json:"event_types,omitzero" gorm:"type:text[]" temporaljson:"event_types,omitzero,omitempty"`
+	Filters     []TriggerFilter `json:"filters,omitzero" gorm:"serializer:json;type:jsonb" temporaljson:"filters,omitzero,omitempty"`
 }
 
 func (r *RunbookStepConfig) BeforeCreate(tx *gorm.DB) error {

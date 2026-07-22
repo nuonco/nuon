@@ -22,6 +22,7 @@ export const Default = () => (
       hasOrgSettings
       hasServiceAccountsAndTokens
       hasSlack
+      hasTriggers
       hasCustomerPortal={false}
       customerPortalUrl="https://customers.nuon.co"
     />
@@ -37,6 +38,7 @@ export const Collapsed = () => (
       hasOrgSettings={false}
       hasServiceAccountsAndTokens={false}
       hasSlack={false}
+      hasTriggers={false}
       hasCustomerPortal={false}
       customerPortalUrl="https://customers.nuon.co"
     />
