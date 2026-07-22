@@ -7,32 +7,18 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-type CreateAppBranchConfigOptions struct {
-	InstallsDirectory                *string
-	InstallsConnectedGithubVCSConfig *app.ConnectedGithubVCSConfig
-	InstallsPublicGitVCSConfig       *app.PublicGitVCSConfig
-}
-
 func (h *Helpers) CreateAppBranchConfig(
 	ctx context.Context,
 	appBranchID string,
 	connectedGithubVCSConfig *app.ConnectedGithubVCSConfig,
 	publicGitVCSConfig *app.PublicGitVCSConfig,
 	installGroups []app.AppBranchInstallGroup,
-	opts ...CreateAppBranchConfigOptions,
 ) (*app.AppBranchConfig, error) {
 	config := app.AppBranchConfig{
 		AppBranchID:              appBranchID,
 		InstallGroups:            installGroups,
 		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
 		PublicGitVCSConfig:       publicGitVCSConfig,
-	}
-
-	if len(opts) > 0 {
-		o := opts[0]
-		config.InstallsDirectory = o.InstallsDirectory
-		config.InstallsConnectedGithubVCSConfig = o.InstallsConnectedGithubVCSConfig
-		config.InstallsPublicGitVCSConfig = o.InstallsPublicGitVCSConfig
 	}
 
 	// Create config - GORM will automatically create VCS configs due to polymorphic relationship

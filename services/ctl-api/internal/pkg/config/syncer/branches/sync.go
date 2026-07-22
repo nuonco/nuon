@@ -145,44 +145,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		return err
 	}
 
-	var configOpts appshelpers.CreateAppBranchConfigOptions
-
-	if branchCfg.InstallsDirectory != "" {
-		dir := branchCfg.InstallsDirectory
-		configOpts.InstallsDirectory = &dir
-	}
-
-	if branchCfg.InstallsConnectedRepo != nil {
-		cfg, err := vcsHelper.BuildConnectedGithubVCSConfig(ctx, &vcshelpers.ConnectedGithubVCSConfigRequest{
-			Repo:      branchCfg.InstallsConnectedRepo.Repo,
-			Branch:    branchCfg.InstallsConnectedRepo.Branch,
-			Directory: branchCfg.InstallsConnectedRepo.Directory,
-		}, parentApp.Org)
-		if err != nil {
-			return sync.SyncInternalErr{
-				Description: fmt.Sprintf("unable to build installs connected VCS config for branch %q", branchCfg.Name),
-				Err:         err,
-			}
-		}
-		configOpts.InstallsConnectedGithubVCSConfig = cfg
-	}
-
-	if branchCfg.InstallsPublicRepo != nil {
-		cfg, err := vcsHelper.BuildPublicGitVCSConfig(ctx, &vcshelpers.PublicGitVCSConfigRequest{
-			Repo:      branchCfg.InstallsPublicRepo.Repo,
-			Branch:    branchCfg.InstallsPublicRepo.Branch,
-			Directory: branchCfg.InstallsPublicRepo.Directory,
-		})
-		if err != nil {
-			return sync.SyncInternalErr{
-				Description: fmt.Sprintf("unable to build installs public VCS config for branch %q", branchCfg.Name),
-				Err:         err,
-			}
-		}
-		configOpts.InstallsPublicGitVCSConfig = cfg
-	}
-
-	if _, err := appsHelper.CreateAppBranchConfig(ctx, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, configOpts); err != nil {
+	if _, err := appsHelper.CreateAppBranchConfig(ctx, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups); err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create config for branch %q", branchCfg.Name),
 			Err:         err,

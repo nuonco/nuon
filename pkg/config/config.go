@@ -56,7 +56,8 @@ type AppConfig struct {
 	// Components are used to connect container images, automation and infrastructure as code to your Nuon App
 	Components ComponentList `mapstructure:"components,omitempty" toml:"components,omitempty"`
 
-	Installs []*Install `mapstructure:"installs,omitempty" toml:"installs,omitempty"`
+	Installs       []*Install      `mapstructure:"installs,omitempty" toml:"installs,omitempty"`
+	InstallsConfig *InstallsConfig `mapstructure:"installs_config,omitempty" toml:"installs_config,omitempty"`
 
 	Actions []*ActionConfig `mapstructure:"actions,omitempty" toml:"actions,omitempty"`
 
