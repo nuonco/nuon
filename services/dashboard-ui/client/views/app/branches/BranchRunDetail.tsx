@@ -16,6 +16,7 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
 import { BranchRunSummary } from '@/components/branches/BranchRunSummary'
+import { RuntimeChanges } from '@/components/branches/RuntimeChanges'
 import { WorkflowRunPanelButton } from '@/components/branches/WorkflowRunPanel'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import { useOrg } from '@/hooks/use-org'
@@ -255,6 +256,8 @@ const BranchRunDetailContent = () => {
         />
 
         {appConfigId && <AppConfigDiff appConfigId={appConfigId} focus={configFocus} />}
+
+        {branchRun?.id && <RuntimeChanges branchId={branchId} appBranchRunId={branchRun.id} />}
       </PageSection>
     </ConfigDiffFocusContext.Provider>
   )
