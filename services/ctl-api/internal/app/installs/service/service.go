@@ -110,6 +110,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.GET("/state", s.GetInstallState)
 		installs.GET("/state-history", s.GetInstallStateHistory)
 
+		// install dns delegation check
+		installs.GET("/dns/check", s.CheckInstallDNSDelegation)
+
 		// install sandbox
 		installs.POST("/reprovision-sandbox", s.ReprovisionInstallSandbox)
 		installs.POST("/deprovision-sandbox", s.DeprovisionInstallSandbox)
