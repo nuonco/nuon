@@ -58,6 +58,88 @@ func TestDecodeCloudEventEnvelope(t *testing.T) {
 	}
 }
 
+func TestDecodeGenericJSONPayloadSelectors(t *testing.T) {
+	source := &app.EventSource{
+		Envelope: app.EventEnvelopeTypeNone,
+		AuthType: app.EventSourceAuthTypeAPIKey,
+		IDFrom:   app.EventFieldSelector{Payload: "$.delivery.id"},
+		TypeFrom: app.EventFieldSelector{Payload: `$['detail-type']`},
+	}
+	event, err := decodeEvent(source, nil, []byte(`{"delivery":{"id":"evt-1"},"detail-type":"image.push"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if event.ID != "evt-1" || event.Type != "image.push" {
+		t.Fatalf("unexpected normalized event: %#v", event)
+	}
+
+	source.IDFrom.Payload = "$.delivery[*]"
+	if err := validateEventFieldSelector(source.IDFrom); err == nil {
+		t.Fatal("wildcard selector accepted in singular context")
+	}
+}
+
+func TestDecodePubSubPushEnvelope(t *testing.T) {
+	body := []byte(`{"message":{"data":"eyJhY3Rpb24iOiJwdXNoIn0=","messageId":"msg-1","publishTime":"2026-07-22T12:00:00Z"}}`)
+	event, err := decodeEvent(&app.EventSource{Envelope: app.EventEnvelopeTypePubSubPush}, nil, body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if event.ID != "msg-1" || string(event.Payload) != `{"action":"push"}` || event.OccurredAt == nil {
+		t.Fatalf("unexpected normalized event: %#v", event)
+	}
+}
+
+func TestEventSourcePresets(t *testing.T) {
+	req := createEventSourceRequest{Preset: "github"}
+	if err := applyEventSourcePreset(&req); err != nil {
+		t.Fatal(err)
+	}
+	if err := defaultAndValidateAuthConfig(&req); err != nil {
+		t.Fatal(err)
+	}
+	if req.AuthType != app.EventSourceAuthTypeHMAC || req.AuthConfig.Header != "X-Hub-Signature-256" || req.IDFrom.Header != "X-GitHub-Delivery" {
+		t.Fatalf("unexpected GitHub preset: %#v", req)
+	}
+
+	pubsub := createEventSourceRequest{Preset: "google-pubsub", AuthConfig: app.EventSourceAuthConfig{Audience: []string{"https://example.com/hook"}}}
+	if err := applyEventSourcePreset(&pubsub); err != nil {
+		t.Fatal(err)
+	}
+	if err := defaultAndValidateAuthConfig(&pubsub); err != nil {
+		t.Fatal(err)
+	}
+	if pubsub.Envelope != app.EventEnvelopeTypePubSubPush || pubsub.AuthType != app.EventSourceAuthTypeBearerJWT {
+		t.Fatalf("unexpected Pub/Sub preset: %#v", pubsub)
+	}
+}
+
+func TestValidateOIDCIssuerRejectsLocalNetworks(t *testing.T) {
+	for _, issuer := range []string{"http://accounts.example.com", "https://localhost", "https://127.0.0.1", "https://10.0.0.1"} {
+		if err := validateOIDCIssuer(issuer); err == nil {
+			t.Fatalf("accepted unsafe issuer %q", issuer)
+		}
+	}
+	if err := validateOIDCIssuer("https://accounts.google.com"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestEventHeadersRedactCredentials(t *testing.T) {
+	headers := http.Header{
+		"Authorization":    {"Bearer token"},
+		"X-Webhook-Secret": {"secret"},
+		"X-Event":          {"push"},
+	}
+	redacted := eventHeaders(&app.EventSource{AuthType: app.EventSourceAuthTypeAPIKey, AuthConfig: app.EventSourceAuthConfig{Header: "X-Webhook-Secret"}}, headers)
+	if redacted.Get("Authorization") != "" || redacted.Get("X-Webhook-Secret") != "" || redacted.Get("X-Event") != "push" {
+		t.Fatalf("unexpected redacted headers: %#v", redacted)
+	}
+	if headers.Get("Authorization") == "" {
+		t.Fatal("input headers were mutated")
+	}
+}
+
 func TestReadLimitedBody(t *testing.T) {
 	if _, err := readLimitedBody(bytes.NewBuffer(make([]byte, maxEventBody))); err != nil {
 		t.Fatal(err)

@@ -34,6 +34,13 @@ func TestEventAutomationFilterPreservesJSONNumberPrecision(t *testing.T) {
 	require.Equal(t, json.Number("9007199254740993"), filters[0].Value)
 }
 
+func TestEventAutomationFilterAllowsOmittedValue(t *testing.T) {
+	var filter EventAutomationFilter
+	require.NoError(t, json.Unmarshal([]byte(`{"op":"exists","path":"$.ref"}`), &filter))
+	require.Equal(t, EventAutomationFilterTypeExists, filter.Op)
+	require.Nil(t, filter.Value)
+}
+
 func TestEventAutomationUniqueIndexes(t *testing.T) {
 	db, err := gorm.Open(postgres.New(postgres.Config{DSN: "host=unused", PreferSimpleProtocol: true}), &gorm.Config{DisableAutomaticPing: true})
 	require.NoError(t, err)

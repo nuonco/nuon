@@ -3,15 +3,17 @@ package config
 import "github.com/invopop/jsonschema"
 
 type EventFilterConfig struct {
-	Op    string `mapstructure:"op" toml:"op" jsonschema:"required,enum=eq"`
-	Path  string `mapstructure:"path" toml:"path" jsonschema:"required,pattern=^/"`
-	Value any    `mapstructure:"value" toml:"value" jsonschema:"required"`
+	From  string `mapstructure:"from,omitempty" toml:"from,omitempty" jsonschema:"enum=payload,enum=headers"`
+	Op    string `mapstructure:"op" toml:"op" jsonschema:"required,enum=eq,enum=neq,enum=in,enum=prefix,enum=suffix,enum=contains,enum=gt,enum=gte,enum=lt,enum=lte,enum=regex,enum=exists,enum=not_exists"`
+	Path  string `mapstructure:"path" toml:"path" jsonschema:"required"`
+	Value any    `mapstructure:"value,omitempty" toml:"value,omitempty"`
 }
 
 func (c EventFilterConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
-	addDescription(schema, "op", "filter operation; only exact equality is supported")
-	addDescription(schema, "path", "nonempty RFC 6901 JSON Pointer into the event payload")
-	addDescription(schema, "value", "JSON primitive value to compare")
+	addDescription(schema, "from", "filter source: payload (default) or request headers")
+	addDescription(schema, "op", "comparison operation")
+	addDescription(schema, "path", "restricted JSONPath for payload filters, or a header name for header filters")
+	addDescription(schema, "value", "comparison value; omitted for exists and not_exists")
 }
 
 type EventTargetConfig struct {
@@ -37,8 +39,8 @@ func (c EventRuleConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "name", "unique event automation rule name")
 	addDescription(schema, "source", "event source name")
 	addDescription(schema, "event_types", "optional list of exact event type strings")
-	addDescription(schema, "filters", "optional exact-match payload filters")
-	addDescription(schema, "match_all", "explicitly match every event from the source")
+	addDescription(schema, "filters", "optional ANDed payload or request-header predicates")
+	addDescription(schema, "match_all", "explicit matching baseline, including for exclusion-only filters")
 	addDescription(schema, "target", "app branch run target")
 }
 

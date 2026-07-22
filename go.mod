@@ -41,7 +41,7 @@ require (
 	github.com/Jeffail/gabs v1.4.0
 	github.com/a-h/templ v0.3.977
 	github.com/abiosoft/lineprefix v0.1.4
-	github.com/auth0/go-jwt-middleware/v2 v2.3.0
+	github.com/auth0/go-jwt-middleware/v2 v2.3.1
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/aws/aws-sdk-go v1.55.7
 	github.com/aws/aws-sdk-go-v2 v1.40.0
@@ -123,6 +123,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/stretchr/testify v1.11.1
+	github.com/theory/jsonpath v0.12.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/swag v1.16.6
 	github.com/tidwall/gjson v1.17.1

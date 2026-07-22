@@ -6,15 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
-	"reflect"
-	"strconv"
-	"strings"
+	"net/http"
 	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"github.com/nuonco/nuon/pkg/eventfilter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -102,7 +100,7 @@ func (a *Activities) RouteAutomationEvent(ctx context.Context, req RouteAutomati
 		matchCount := 0
 		for i := range rules {
 			rule := &rules[i]
-			if activeConfigIDs[rule.AppID] != rule.AppConfigID || rule.SuspendedAt != nil || !ruleMatchesEvent(rule, event.EventType, payload) {
+			if activeConfigIDs[rule.AppID] != rule.AppConfigID || rule.SuspendedAt != nil || !ruleMatchesEvent(rule, event.EventType, payload, http.Header(event.Headers)) {
 				continue
 			}
 			matchCount++
@@ -218,7 +216,7 @@ func decodeAutomationPayload(raw json.RawMessage) (any, error) {
 	return payload, nil
 }
 
-func ruleMatchesEvent(rule *app.EventAutomationRule, eventType string, payload any) bool {
+func ruleMatchesEvent(rule *app.EventAutomationRule, eventType string, payload any, headers ...http.Header) bool {
 	if len(rule.EventTypes) != 0 {
 		eventTypeMatches := false
 		for _, allowed := range rule.EventTypes {
@@ -231,70 +229,18 @@ func ruleMatchesEvent(rule *app.EventAutomationRule, eventType string, payload a
 			return false
 		}
 	}
+	var requestHeaders http.Header
+	if len(headers) != 0 {
+		requestHeaders = headers[0]
+	}
 	for _, filter := range rule.Filters {
-		if filter.Op != app.EventAutomationFilterTypeEq {
-			return false
-		}
-		actual, ok := resolveJSONPointer(payload, filter.Path)
-		if !ok || !jsonValuesEqual(actual, filter.Value) {
+		compiled, err := eventfilter.Compile(eventfilter.Filter{
+			From: eventfilter.Source(filter.From), Path: filter.Path,
+			Op: eventfilter.Operator(filter.Op), Value: filter.Value,
+		})
+		if err != nil || !compiled.Evaluate(payload, requestHeaders).Matched {
 			return false
 		}
 	}
 	return true
-}
-
-func resolveJSONPointer(value any, pointer string) (any, bool) {
-	current := value
-	for _, encoded := range strings.Split(strings.TrimPrefix(pointer, "/"), "/") {
-		key := strings.ReplaceAll(strings.ReplaceAll(encoded, "~1", "/"), "~0", "~")
-		switch container := current.(type) {
-		case map[string]any:
-			var ok bool
-			current, ok = container[key]
-			if !ok {
-				return nil, false
-			}
-		case []any:
-			if key != "0" && (key == "" || key[0] == '0') {
-				return nil, false
-			}
-			for _, digit := range key {
-				if digit < '0' || digit > '9' {
-					return nil, false
-				}
-			}
-			index, err := strconv.Atoi(key)
-			if err != nil || index < 0 || index >= len(container) {
-				return nil, false
-			}
-			current = container[index]
-		default:
-			return nil, false
-		}
-	}
-	return current, true
-}
-
-func jsonValuesEqual(left, right any) bool {
-	leftJSON, leftErr := json.Marshal(left)
-	rightJSON, rightErr := json.Marshal(right)
-	if leftErr != nil || rightErr != nil {
-		return reflect.DeepEqual(left, right)
-	}
-	var normalizedLeft, normalizedRight any
-	leftDecoder := json.NewDecoder(bytes.NewReader(leftJSON))
-	leftDecoder.UseNumber()
-	rightDecoder := json.NewDecoder(bytes.NewReader(rightJSON))
-	rightDecoder.UseNumber()
-	if leftDecoder.Decode(&normalizedLeft) != nil || rightDecoder.Decode(&normalizedRight) != nil {
-		return reflect.DeepEqual(left, right)
-	}
-	leftNumber, leftIsNumber := normalizedLeft.(json.Number)
-	rightNumber, rightIsNumber := normalizedRight.(json.Number)
-	if leftIsNumber && rightIsNumber {
-		leftRat, leftOK := new(big.Rat).SetString(leftNumber.String())
-		rightRat, rightOK := new(big.Rat).SetString(rightNumber.String())
-		return leftOK && rightOK && leftRat.Cmp(rightRat) == 0
-	}
-	return reflect.DeepEqual(normalizedLeft, normalizedRight)
 }

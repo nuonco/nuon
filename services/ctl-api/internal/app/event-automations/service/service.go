@@ -1,6 +1,11 @@
 package service
 
 import (
+	"net/http"
+	"sync"
+	"time"
+
+	"github.com/auth0/go-jwt-middleware/v2/jwks"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -23,17 +28,22 @@ type Params struct {
 }
 
 type service struct {
-	db          *gorm.DB
-	cfg         *internal.Config
-	l           *zap.Logger
-	appsHelpers *appshelpers.Helpers
-	queueClient *queueclient.Client
+	db           *gorm.DB
+	cfg          *internal.Config
+	l            *zap.Logger
+	appsHelpers  *appshelpers.Helpers
+	queueClient  *queueclient.Client
+	httpClient   *http.Client
+	snsVerifier  *snsVerifier
+	jwtMu        sync.Mutex
+	jwtProviders map[string]*jwks.CachingProvider
 }
 
 var _ api.Service = (*service)(nil)
 
 func New(p Params) *service {
-	return &service{db: p.DB, cfg: p.Cfg, l: p.L, appsHelpers: p.AppsHelpers, queueClient: p.QueueClient}
+	httpClient := &http.Client{Timeout: 10 * time.Second}
+	return &service{db: p.DB, cfg: p.Cfg, l: p.L, appsHelpers: p.AppsHelpers, queueClient: p.QueueClient, httpClient: httpClient, snsVerifier: newSNSVerifier(httpClient), jwtProviders: make(map[string]*jwks.CachingProvider)}
 }
 
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {

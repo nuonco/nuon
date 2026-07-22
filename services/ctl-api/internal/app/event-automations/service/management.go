@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -12,17 +13,20 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"github.com/nuonco/nuon/pkg/eventfilter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type createEventSourceRequest struct {
-	Name        string                  `json:"name" binding:"required"`
-	Description string                  `json:"description"`
-	AuthType    app.EventSourceAuthType `json:"auth_type"`
-	Envelope    app.EventEnvelopeType   `json:"envelope"`
-	TypeFrom    app.EventFieldSelector  `json:"type_from"`
-	IDFrom      app.EventFieldSelector  `json:"id_from"`
+	Name        string                    `json:"name" binding:"required"`
+	Description string                    `json:"description"`
+	Preset      string                    `json:"preset"`
+	AuthType    app.EventSourceAuthType   `json:"auth_type"`
+	AuthConfig  app.EventSourceAuthConfig `json:"auth_config"`
+	Envelope    app.EventEnvelopeType     `json:"envelope"`
+	TypeFrom    app.EventFieldSelector    `json:"type_from"`
+	IDFrom      app.EventFieldSelector    `json:"id_from"`
 }
 
 type credentialResponse struct {
@@ -90,17 +94,21 @@ func (s *service) CreateEventSource(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "name must be between 1 and 128 characters"})
 		return
 	}
+	if err := applyEventSourcePreset(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	if req.AuthType == "" {
 		req.AuthType = app.EventSourceAuthTypeHMAC
 	}
 	if req.Envelope == "" {
 		req.Envelope = app.EventEnvelopeTypeNone
 	}
-	if req.AuthType != app.EventSourceAuthTypeNone && req.AuthType != app.EventSourceAuthTypeHMAC {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "auth_type is not implemented"})
+	if err := defaultAndValidateAuthConfig(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if req.Envelope != app.EventEnvelopeTypeNone && req.Envelope != app.EventEnvelopeTypeCloudEvents {
+	if req.Envelope != app.EventEnvelopeTypeNone && req.Envelope != app.EventEnvelopeTypeCloudEvents && req.Envelope != app.EventEnvelopeTypePubSubPush && req.Envelope != app.EventEnvelopeTypeSNS {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "envelope is not implemented"})
 		return
 	}
@@ -127,12 +135,12 @@ func (s *service) CreateEventSource(ctx *gin.Context) {
 	}
 	source := app.EventSource{
 		OrgID: org.ID, Name: req.Name, Description: req.Description,
-		IngressKeyHash: hashIngressKey(ingressKey), AuthType: req.AuthType, Envelope: req.Envelope,
+		IngressKeyHash: hashIngressKey(ingressKey), AuthType: req.AuthType, AuthConfig: req.AuthConfig, Envelope: req.Envelope,
 		TypeFrom: req.TypeFrom, IDFrom: req.IDFrom,
 	}
 	var secretValue string
 	var secret app.EventSourceSecret
-	if req.AuthType == app.EventSourceAuthTypeHMAC {
+	if authUsesSecret(req.AuthType) {
 		secretValue, err = generateCredential()
 		if err != nil {
 			ctx.Error(err)
@@ -144,7 +152,7 @@ func (s *service) CreateEventSource(ctx *gin.Context) {
 		if err := tx.Create(&source).Error; err != nil {
 			return err
 		}
-		if req.AuthType == app.EventSourceAuthTypeHMAC {
+		if authUsesSecret(req.AuthType) {
 			secret.EventSourceID = source.ID
 			return tx.Create(&secret).Error
 		}
@@ -158,12 +166,135 @@ func (s *service) CreateEventSource(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, credentialResponse{EventSource: source, IngressURL: ingressURL, KeyID: secret.KeyID, Secret: secretValue})
 }
 
+func authUsesSecret(authType app.EventSourceAuthType) bool {
+	return authType == app.EventSourceAuthTypeHMAC || authType == app.EventSourceAuthTypeAPIKey || authType == app.EventSourceAuthTypeBasic
+}
+
+func defaultAndValidateAuthConfig(req *createEventSourceRequest) error {
+	switch req.AuthType {
+	case app.EventSourceAuthTypeNone:
+		return nil
+	case app.EventSourceAuthTypeSNSSignature:
+		if req.AuthConfig.TopicARN == "" {
+			return errors.New("sns_signature auth requires topic_arn")
+		}
+		return nil
+	case app.EventSourceAuthTypeHMAC:
+		if req.AuthConfig.Header == "" {
+			req.AuthConfig.Header = "X-Nuon-Signature"
+		}
+		if req.AuthConfig.Algorithm == "" {
+			req.AuthConfig.Algorithm = "sha256"
+		}
+		if req.AuthConfig.Encoding == "" {
+			req.AuthConfig.Encoding = "hex"
+		}
+		if req.AuthConfig.Header == "X-Nuon-Signature" && req.AuthConfig.Prefix == "" {
+			req.AuthConfig.Prefix = "v1="
+		}
+		if req.AuthConfig.Algorithm != "sha256" && req.AuthConfig.Algorithm != "sha512" {
+			return errors.New("HMAC algorithm must be sha256 or sha512")
+		}
+		if req.AuthConfig.Encoding != "hex" && req.AuthConfig.Encoding != "base64" {
+			return errors.New("HMAC encoding must be hex or base64")
+		}
+		if req.AuthConfig.Header == "X-Nuon-Signature" && (req.AuthConfig.Prefix != "v1=" || req.AuthConfig.Algorithm != "sha256" || req.AuthConfig.Encoding != "hex") {
+			return errors.New("X-Nuon-Signature requires prefix v1=, sha256, and hex encoding")
+		}
+		return nil
+	case app.EventSourceAuthTypeAPIKey:
+		if req.AuthConfig.Header == "" {
+			req.AuthConfig.Header = "X-Nuon-API-Key"
+		}
+		return nil
+	case app.EventSourceAuthTypeBasic:
+		if req.AuthConfig.Username == "" {
+			req.AuthConfig.Username = "nuon"
+		}
+		return nil
+	case app.EventSourceAuthTypeBearerJWT:
+		if req.AuthConfig.Issuer == "" || len(req.AuthConfig.Audience) == 0 {
+			return errors.New("bearer_jwt auth requires issuer and audience")
+		}
+		if err := validateOIDCIssuer(req.AuthConfig.Issuer); err != nil {
+			return err
+		}
+		for _, audience := range req.AuthConfig.Audience {
+			if audience == "" {
+				return errors.New("bearer_jwt audience may not be empty")
+			}
+		}
+		return nil
+	default:
+		return errors.New("unsupported auth_type")
+	}
+}
+
+func applyEventSourcePreset(req *createEventSourceRequest) error {
+	if req.Preset == "" {
+		return nil
+	}
+	type preset struct {
+		auth       app.EventSourceAuthType
+		envelope   app.EventEnvelopeType
+		authConfig app.EventSourceAuthConfig
+		typeHeader string
+		idHeader   string
+	}
+	presets := map[string]preset{
+		"github":          {auth: app.EventSourceAuthTypeHMAC, authConfig: app.EventSourceAuthConfig{Header: "X-Hub-Signature-256", Prefix: "sha256=", Algorithm: "sha256", Encoding: "hex"}, typeHeader: "X-GitHub-Event", idHeader: "X-GitHub-Delivery"},
+		"gitlab":          {auth: app.EventSourceAuthTypeAPIKey, authConfig: app.EventSourceAuthConfig{Header: "X-Gitlab-Token"}, typeHeader: "X-Gitlab-Event", idHeader: "X-Gitlab-Event-UUID"},
+		"bitbucket":       {auth: app.EventSourceAuthTypeHMAC, authConfig: app.EventSourceAuthConfig{Header: "X-Hub-Signature", Prefix: "sha256=", Algorithm: "sha256", Encoding: "hex"}, typeHeader: "X-Event-Key", idHeader: "X-Request-UUID"},
+		"gitea":           {auth: app.EventSourceAuthTypeHMAC, authConfig: app.EventSourceAuthConfig{Header: "X-Gitea-Signature", Algorithm: "sha256", Encoding: "hex"}, typeHeader: "X-Gitea-Event", idHeader: "X-Gitea-Delivery"},
+		"forgejo":         {auth: app.EventSourceAuthTypeHMAC, authConfig: app.EventSourceAuthConfig{Header: "X-Forgejo-Signature", Algorithm: "sha256", Encoding: "hex"}, typeHeader: "X-Forgejo-Event", idHeader: "X-Forgejo-Delivery"},
+		"terraform-cloud": {auth: app.EventSourceAuthTypeHMAC, authConfig: app.EventSourceAuthConfig{Header: "X-TFE-Notification-Signature", Algorithm: "sha512", Encoding: "hex"}},
+		"google-pubsub":   {auth: app.EventSourceAuthTypeBearerJWT, envelope: app.EventEnvelopeTypePubSubPush, authConfig: app.EventSourceAuthConfig{Issuer: "https://accounts.google.com"}},
+		"azure-devops":    {auth: app.EventSourceAuthTypeBasic},
+		"aws-eventbridge": {auth: app.EventSourceAuthTypeAPIKey},
+		"aws-sns":         {auth: app.EventSourceAuthTypeSNSSignature, envelope: app.EventEnvelopeTypeSNS},
+	}
+	p, ok := presets[req.Preset]
+	if !ok {
+		return fmt.Errorf("unknown event source preset %q", req.Preset)
+	}
+	if req.AuthType == "" {
+		req.AuthType = p.auth
+	}
+	if req.Envelope == "" {
+		req.Envelope = p.envelope
+	}
+	if req.AuthConfig.Header == "" {
+		req.AuthConfig.Header = p.authConfig.Header
+	}
+	if req.AuthConfig.Prefix == "" {
+		req.AuthConfig.Prefix = p.authConfig.Prefix
+	}
+	if req.AuthConfig.Algorithm == "" {
+		req.AuthConfig.Algorithm = p.authConfig.Algorithm
+	}
+	if req.AuthConfig.Encoding == "" {
+		req.AuthConfig.Encoding = p.authConfig.Encoding
+	}
+	if req.AuthConfig.Issuer == "" {
+		req.AuthConfig.Issuer = p.authConfig.Issuer
+	}
+	if req.TypeFrom == (app.EventFieldSelector{}) && p.typeHeader != "" {
+		req.TypeFrom.Header = p.typeHeader
+	}
+	if req.IDFrom == (app.EventFieldSelector{}) && p.idHeader != "" {
+		req.IDFrom.Header = p.idHeader
+	}
+	return nil
+}
+
 func validateEventFieldSelector(selector app.EventFieldSelector) error {
 	if selector.Header != "" && selector.Payload != "" {
 		return errors.New("exactly one of header or payload may be set")
 	}
 	if selector.Payload != "" {
-		return errors.New("payload selectors require the JSONPath evaluator")
+		if _, err := eventfilter.ParsePath(selector.Payload, false); err != nil {
+			return fmt.Errorf("invalid payload selector: %w", err)
+		}
 	}
 	return nil
 }
@@ -270,8 +401,8 @@ func (s *service) RotateSecret(ctx *gin.Context) {
 	if !ok {
 		return
 	}
-	if source.AuthType != app.EventSourceAuthTypeHMAC {
-		ctx.JSON(http.StatusConflict, gin.H{"error": "event source does not use HMAC auth"})
+	if !authUsesSecret(source.AuthType) {
+		ctx.JSON(http.StatusConflict, gin.H{"error": "event source does not use a managed secret"})
 		return
 	}
 	value, err := generateCredential()

@@ -1,11 +1,10 @@
 package validate
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/eventfilter"
 )
 
 func ValidateEventAutomations(cfg *config.AppConfig) error {
@@ -38,9 +37,6 @@ func ValidateEventAutomations(cfg *config.AppConfig) error {
 		if rule.Source == "" {
 			return eventAutomationConfigErr("%s.source is required", prefix)
 		}
-		if len(rule.EventTypes) == 0 && len(rule.Filters) == 0 && !rule.MatchAll {
-			return eventAutomationConfigErr("%s must declare event_types, filters, or match_all = true", prefix)
-		}
 		eventTypes := make(map[string]struct{}, len(rule.EventTypes))
 		for _, eventType := range rule.EventTypes {
 			if eventType == "" {
@@ -51,20 +47,20 @@ func ValidateEventAutomations(cfg *config.AppConfig) error {
 			}
 			eventTypes[eventType] = struct{}{}
 		}
+		hasPositiveFilter := false
 		for j, filter := range rule.Filters {
 			filterPrefix := fmt.Sprintf("%s.filters[%d]", prefix, j)
-			if filter.Op != "eq" {
-				return eventAutomationConfigErr("%s.op must be %q", filterPrefix, "eq")
+			compiledFilter := eventfilter.Filter{From: eventfilter.Source(filter.From), Path: filter.Path, Op: eventfilter.Operator(filter.Op), Value: filter.Value}
+			if _, err := eventfilter.Compile(compiledFilter); err != nil {
+				return eventAutomationConfigErr("%s is invalid: %v", filterPrefix, err)
 			}
-			if !validJSONPointer(filter.Path) {
-				return eventAutomationConfigErr("%s.path must be a nonempty RFC 6901 JSON Pointer", filterPrefix)
-			}
-			if !isJSONPrimitive(filter.Value) {
-				return eventAutomationConfigErr("%s.value must be a JSON primitive", filterPrefix)
-			}
+			hasPositiveFilter = hasPositiveFilter || eventfilter.IsPositive(compiledFilter.Op)
 		}
-		if rule.MatchAll && (len(rule.EventTypes) != 0 || len(rule.Filters) != 0) {
-			return eventAutomationConfigErr("%s.match_all cannot be combined with event_types or filters", prefix)
+		if len(rule.EventTypes) == 0 && !hasPositiveFilter && !rule.MatchAll {
+			return eventAutomationConfigErr("%s must declare event_types, a positive filter, or match_all = true", prefix)
+		}
+		if rule.MatchAll && len(rule.EventTypes) != 0 {
+			return eventAutomationConfigErr("%s.match_all cannot be combined with event_types", prefix)
 		}
 		if rule.Target == nil {
 			return eventAutomationConfigErr("%s.target is required", prefix)
@@ -80,33 +76,6 @@ func ValidateEventAutomations(cfg *config.AppConfig) error {
 		}
 	}
 	return nil
-}
-
-func validJSONPointer(pointer string) bool {
-	if !strings.HasPrefix(pointer, "/") {
-		return false
-	}
-	for i := 0; i < len(pointer); i++ {
-		if pointer[i] == '~' {
-			if i+1 >= len(pointer) || (pointer[i+1] != '0' && pointer[i+1] != '1') {
-				return false
-			}
-			i++
-		}
-	}
-	return true
-}
-
-func isJSONPrimitive(value any) bool {
-	switch value.(type) {
-	case nil, bool, string, json.Number,
-		int, int8, int16, int32, int64,
-		uint, uint8, uint16, uint32, uint64,
-		float32, float64:
-		return true
-	default:
-		return false
-	}
 }
 
 func eventAutomationConfigErr(format string, args ...any) error {

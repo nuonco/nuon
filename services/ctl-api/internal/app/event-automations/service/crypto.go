@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -79,4 +80,36 @@ func hmacPayload(envelope app.EventEnvelopeType, eventID, eventType string, body
 	payload = append(payload, '\n')
 	payload = append(payload, body...)
 	return payload, nil
+}
+
+func decodeHMACSignature(value string, config app.EventSourceAuthConfig) ([]byte, error) {
+	if !strings.HasPrefix(value, config.Prefix) {
+		return nil, errors.New("invalid signature prefix")
+	}
+	value = strings.TrimPrefix(value, config.Prefix)
+	switch config.Encoding {
+	case "hex":
+		return hex.DecodeString(value)
+	case "base64":
+		return base64.StdEncoding.DecodeString(value)
+	default:
+		return nil, errors.New("unsupported signature encoding")
+	}
+}
+
+func verifyGenericHMAC(secret string, payload, signature []byte, algorithm string) bool {
+	var expected []byte
+	switch algorithm {
+	case "sha256":
+		mac := hmac.New(sha256.New, []byte(secret))
+		_, _ = mac.Write(payload)
+		expected = mac.Sum(nil)
+	case "sha512":
+		mac := hmac.New(sha512.New, []byte(secret))
+		_, _ = mac.Write(payload)
+		expected = mac.Sum(nil)
+	default:
+		return false
+	}
+	return hmac.Equal(expected, signature)
 }

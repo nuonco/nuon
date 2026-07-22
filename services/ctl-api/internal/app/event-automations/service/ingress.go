@@ -4,11 +4,15 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +20,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"github.com/nuonco/nuon/pkg/eventfilter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	orghelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -59,6 +64,14 @@ type normalizedEvent struct {
 	ContentType string
 }
 
+type pubSubPushEnvelope struct {
+	Message struct {
+		Data        string `json:"data"`
+		MessageID   string `json:"messageId"`
+		PublishTime string `json:"publishTime"`
+	} `json:"message"`
+}
+
 func parseCloudEvent(body []byte) (*cloudEvent, error) {
 	var event cloudEvent
 	decoder := json.NewDecoder(bytes.NewReader(body))
@@ -78,11 +91,30 @@ func decodeEvent(source *app.EventSource, headers http.Header, body []byte) (*no
 			return nil, errors.New("invalid JSON event")
 		}
 		eventID := headers.Get(source.IDFrom.Header)
-		if eventID == "" && source.AuthType == app.EventSourceAuthTypeNone {
+		eventType := headers.Get(source.TypeFrom.Header)
+		if source.IDFrom.Payload != "" || source.TypeFrom.Payload != "" {
+			payload, err := decodeAutomationJSON(body)
+			if err != nil {
+				return nil, err
+			}
+			if source.IDFrom.Payload != "" {
+				eventID, err = selectEventString(payload, source.IDFrom.Payload)
+				if err != nil {
+					return nil, fmt.Errorf("extract event ID: %w", err)
+				}
+			}
+			if source.TypeFrom.Payload != "" {
+				eventType, err = selectEventString(payload, source.TypeFrom.Payload)
+				if err != nil {
+					return nil, fmt.Errorf("extract event type: %w", err)
+				}
+			}
+		}
+		if eventID == "" && (source.AuthType != app.EventSourceAuthTypeHMAC || (source.AuthConfig.Header != "" && source.AuthConfig.Header != "X-Nuon-Signature")) {
 			eventID = uuid.NewString()
 		}
 		return &normalizedEvent{
-			ID: eventID, Type: headers.Get(source.TypeFrom.Header), Payload: json.RawMessage(body), ContentType: headers.Get("Content-Type"),
+			ID: eventID, Type: eventType, Payload: json.RawMessage(body), ContentType: headers.Get("Content-Type"),
 		}, nil
 	case app.EventEnvelopeTypeCloudEvents:
 		event, err := parseCloudEvent(body)
@@ -90,9 +122,70 @@ func decodeEvent(source *app.EventSource, headers http.Header, body []byte) (*no
 			return nil, err
 		}
 		return &normalizedEvent{ID: event.ID, Type: event.Type, OccurredAt: event.Time, Payload: event.Data, ContentType: event.DataContentType}, nil
+	case app.EventEnvelopeTypePubSubPush:
+		var push pubSubPushEnvelope
+		if err := json.Unmarshal(body, &push); err != nil || push.Message.Data == "" || push.Message.MessageID == "" {
+			return nil, errors.New("invalid Pub/Sub push envelope")
+		}
+		payload, err := base64.StdEncoding.DecodeString(push.Message.Data)
+		if err != nil || !json.Valid(payload) {
+			return nil, errors.New("invalid Pub/Sub message data")
+		}
+		var occurredAt *time.Time
+		if push.Message.PublishTime != "" {
+			parsed, err := time.Parse(time.RFC3339Nano, push.Message.PublishTime)
+			if err != nil {
+				return nil, errors.New("invalid Pub/Sub publish time")
+			}
+			occurredAt = &parsed
+		}
+		return &normalizedEvent{ID: push.Message.MessageID, OccurredAt: occurredAt, Payload: payload, ContentType: "application/json"}, nil
+	case app.EventEnvelopeTypeSNS:
+		msg, err := parseSNSMessage(body)
+		if err != nil {
+			return nil, err
+		}
+		if msg.Type != "Notification" {
+			return nil, nil
+		}
+		payload := json.RawMessage(msg.Message)
+		if !json.Valid(payload) {
+			return nil, errors.New("SNS Notification Message must contain JSON")
+		}
+		occurredAt, err := time.Parse(time.RFC3339Nano, msg.Timestamp)
+		if err != nil {
+			return nil, errors.New("invalid SNS timestamp")
+		}
+		return &normalizedEvent{ID: msg.MessageID, OccurredAt: &occurredAt, Payload: payload, ContentType: "application/json"}, nil
 	default:
 		return nil, errUnsupportedEnvelope
 	}
+}
+
+func decodeAutomationJSON(body []byte) (any, error) {
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.UseNumber()
+	var payload any
+	if err := decoder.Decode(&payload); err != nil {
+		return nil, err
+	}
+	return payload, nil
+}
+
+func selectEventString(payload any, pathValue string) (string, error) {
+	path, err := eventfilter.ParsePath(pathValue, false)
+	if err != nil {
+		return "", err
+	}
+	selected := path.Select(payload)
+	if len(selected) != 1 {
+		return "", fmt.Errorf("selector matched %d values", len(selected))
+	}
+	value, ok := selected[0].(string)
+	if !ok || value == "" {
+		return "", errors.New("selector must match a nonempty string")
+	}
+	return value, nil
 }
 
 func readLimitedBody(body io.Reader) ([]byte, error) {
@@ -150,31 +243,46 @@ func (s *service) IngestEvent(ctx *gin.Context) {
 	switch source.AuthType {
 	case app.EventSourceAuthTypeNone:
 	case app.EventSourceAuthTypeHMAC:
-		signedPayload, err := hmacPayload(source.Envelope, event.ID, event.Type, body)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
+		config := source.AuthConfig
+		if config.Header == "" {
+			config = app.EventSourceAuthConfig{Header: "X-Nuon-Signature", Prefix: "v1=", Algorithm: "sha256", Encoding: "hex"}
 		}
-		timestamp, err := parseTimestamp(ctx.GetHeader("X-Nuon-Timestamp"), now)
-		if err != nil {
-			if errors.Is(err, errStaleTimestamp) {
-				ctx.JSON(http.StatusUnauthorized, gin.H{"error": "stale signature"})
+		isNuonSignature := config.Header == "X-Nuon-Signature" && config.Prefix == "v1="
+		signedPayload := body
+		if isNuonSignature {
+			signedPayload, err = hmacPayload(source.Envelope, event.ID, event.Type, body)
+			if err != nil {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 				return
 			}
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid timestamp"})
-			return
 		}
-		signature, err := parseSignature(ctx.GetHeader("X-Nuon-Signature"))
+		signature, err := decodeHMACSignature(ctx.GetHeader(config.Header), config)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid signature header"})
 			return
 		}
+		var timestamp string
+		if isNuonSignature {
+			timestamp, err = parseTimestamp(ctx.GetHeader("X-Nuon-Timestamp"), now)
+			if err != nil {
+				if errors.Is(err, errStaleTimestamp) {
+					ctx.JSON(http.StatusUnauthorized, gin.H{"error": "stale signature"})
+					return
+				}
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid timestamp"})
+				return
+			}
+		}
 		for i := range source.Secrets {
 			secret := &source.Secrets[i]
-			if secret.RevokedAt != nil || now.Before(secret.NotBefore) || (secret.ExpiresAt != nil && !now.Before(*secret.ExpiresAt)) {
+			if !activeEventSourceSecret(secret, now) {
 				continue
 			}
-			if verifySignature(secret.Secret, timestamp, signedPayload, signature) {
+			valid := verifyGenericHMAC(secret.Secret, signedPayload, signature, config.Algorithm)
+			if isNuonSignature {
+				valid = verifySignature(secret.Secret, timestamp, signedPayload, signature)
+			}
+			if valid {
 				matched = secret
 				break
 			}
@@ -183,8 +291,55 @@ func (s *service) IngestEvent(ctx *gin.Context) {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid signature"})
 			return
 		}
+	case app.EventSourceAuthTypeSNSSignature:
+		msg, err := parseSNSMessage(body)
+		if err != nil || msg.TopicARN != source.AuthConfig.TopicARN || s.snsVerifier.verify(ctx, msg) != nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid SNS signature"})
+			return
+		}
+		if msg.Type == "SubscriptionConfirmation" {
+			if err := s.confirmSNSSubscription(ctx, msg); err != nil {
+				ctx.Error(err)
+				return
+			}
+		}
+	case app.EventSourceAuthTypeAPIKey:
+		value := ctx.GetHeader(source.AuthConfig.Header)
+		if !strings.HasPrefix(value, source.AuthConfig.Prefix) {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid API key"})
+			return
+		}
+		value = strings.TrimPrefix(value, source.AuthConfig.Prefix)
+		matched = matchEventSourceSecret(source.Secrets, value, now)
+		if matched == nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid API key"})
+			return
+		}
+	case app.EventSourceAuthTypeBasic:
+		username, password, ok := ctx.Request.BasicAuth()
+		if !ok || subtle.ConstantTimeCompare([]byte(username), []byte(source.AuthConfig.Username)) != 1 {
+			ctx.Header("WWW-Authenticate", `Basic realm="event-ingress"`)
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid basic authentication"})
+			return
+		}
+		matched = matchEventSourceSecret(source.Secrets, password, now)
+		if matched == nil {
+			ctx.Header("WWW-Authenticate", `Basic realm="event-ingress"`)
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid basic authentication"})
+			return
+		}
+	case app.EventSourceAuthTypeBearerJWT:
+		if err := s.verifyBearerJWT(ctx, &source); err != nil {
+			ctx.Header("WWW-Authenticate", "Bearer")
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid bearer token"})
+			return
+		}
 	default:
 		ctx.JSON(http.StatusNotImplemented, gin.H{"error": errUnsupportedAuth.Error()})
+		return
+	}
+	if event == nil {
+		ctx.JSON(http.StatusAccepted, ingressResponse{})
 		return
 	}
 	cctx.SetOrgIDGinContext(ctx, source.OrgID)
@@ -211,6 +366,41 @@ func (s *service) IngestEvent(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusAccepted, ingressResponse{EventID: receipt.ID, Duplicate: duplicate})
+}
+
+func activeEventSourceSecret(secret *app.EventSourceSecret, now time.Time) bool {
+	return secret.RevokedAt == nil && !now.Before(secret.NotBefore) && (secret.ExpiresAt == nil || now.Before(*secret.ExpiresAt))
+}
+
+func matchEventSourceSecret(secrets []app.EventSourceSecret, value string, now time.Time) *app.EventSourceSecret {
+	for i := range secrets {
+		secret := &secrets[i]
+		if activeEventSourceSecret(secret, now) && subtle.ConstantTimeCompare([]byte(value), []byte(secret.Secret)) == 1 {
+			return secret
+		}
+	}
+	return nil
+}
+
+func (s *service) confirmSNSSubscription(ctx context.Context, msg *snsMessage) error {
+	if err := validateSNSSubscribeURL(msg.SubscribeURL, msg.TopicARN, msg.Token); err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, msg.SubscribeURL, nil)
+	if err != nil {
+		return err
+	}
+	client := *s.httpClient
+	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("confirm SNS subscription: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("confirm SNS subscription: HTTP %d", resp.StatusCode)
+	}
+	return nil
 }
 
 func (s *service) appAutomationQueue(ctx context.Context, appID string) (*app.Queue, error) {
@@ -249,7 +439,7 @@ func (s *service) persistEvent(ctx *gin.Context, source *app.EventSource, secret
 		EventSourceID: source.ID, OrgID: source.OrgID,
 		ExternalID: envelope.ID, EventType: envelope.Type, OccurredAt: envelope.OccurredAt,
 		ReceivedAt: now, Payload: envelope.Payload, PayloadContentType: envelope.ContentType,
-		Headers: ctx.Request.Header.Clone(), RawBody: body, RawBodySHA256: hashHex, RawBodySize: int64(len(body)), RawContentType: ctx.GetHeader("Content-Type"),
+		Headers: eventHeaders(source, ctx.Request.Header), RawBody: body, RawBodySHA256: hashHex, RawBodySize: int64(len(body)), RawContentType: ctx.GetHeader("Content-Type"),
 	}
 	if secret != nil {
 		event.EventSourceSecretID = &secret.ID
@@ -317,4 +507,14 @@ func (s *service) persistEvent(ctx *gin.Context, source *app.EventSource, secret
 		return nil, false, false, err
 	}
 	return &event, duplicate, collision, nil
+}
+
+func eventHeaders(source *app.EventSource, headers http.Header) http.Header {
+	redacted := headers.Clone()
+	redacted.Del("Authorization")
+	redacted.Del("Proxy-Authorization")
+	if source.AuthType == app.EventSourceAuthTypeHMAC || source.AuthType == app.EventSourceAuthTypeAPIKey {
+		redacted.Del(source.AuthConfig.Header)
+	}
+	return redacted
 }

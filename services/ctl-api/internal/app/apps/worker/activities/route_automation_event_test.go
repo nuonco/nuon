@@ -2,6 +2,7 @@ package activities
 
 import (
 	"encoding/json"
+	"net/http"
 	"testing"
 
 	"github.com/lib/pq"
@@ -17,8 +18,8 @@ func TestRuleMatchesAutomationEvent(t *testing.T) {
 	rule := &app.EventAutomationRule{
 		EventTypes: pq.StringArray{"com.acme.image.pushed.v1"},
 		Filters: []app.EventAutomationFilter{
-			{Op: app.EventAutomationFilterTypeEq, Path: "/image/repository", Value: "acme/api"},
-			{Op: app.EventAutomationFilterTypeEq, Path: "/attempt", Value: 2},
+			{Op: app.EventAutomationFilterTypeEq, Path: "$.image.repository", Value: "acme/api"},
+			{Op: app.EventAutomationFilterTypeEq, Path: "$.attempt", Value: 2},
 		},
 	}
 
@@ -31,9 +32,20 @@ func TestRuleMatchesAutomationEvent(t *testing.T) {
 func TestRuleMatchesAutomationEventWithoutEventTypes(t *testing.T) {
 	payload, err := decodeAutomationPayload(json.RawMessage(`{"ref":"main"}`))
 	require.NoError(t, err)
-	rule := &app.EventAutomationRule{Filters: []app.EventAutomationFilter{{Op: app.EventAutomationFilterTypeEq, Path: "/ref", Value: "main"}}}
+	rule := &app.EventAutomationRule{Filters: []app.EventAutomationFilter{{Op: app.EventAutomationFilterTypeEq, Path: "$.ref", Value: "main"}}}
 	require.True(t, ruleMatchesEvent(rule, "push", payload))
 	require.True(t, ruleMatchesEvent(&app.EventAutomationRule{}, "push", payload))
+}
+
+func TestRuleMatchesAutomationEventWithWildcardAndHeaderFilters(t *testing.T) {
+	payload, err := decodeAutomationPayload(json.RawMessage(`{"commits":[{"author":{"name":"Ada"}},{"author":{"name":"Grace"}}]}`))
+	require.NoError(t, err)
+	rule := &app.EventAutomationRule{Filters: []app.EventAutomationFilter{
+		{Op: app.EventAutomationFilterTypeEq, Path: "$.commits[*].author.name", Value: "Grace"},
+		{From: "headers", Op: app.EventAutomationFilterTypeEq, Path: "X-GitHub-Event", Value: "push"},
+	}}
+	require.True(t, ruleMatchesEvent(rule, "", payload, http.Header{"X-Github-Event": {"push"}}))
+	require.False(t, ruleMatchesEvent(rule, "", payload, http.Header{"X-Github-Event": {"pull_request"}}))
 }
 
 func TestActiveAutomationConfigIDsSelectsLatestNonPreviewPerApp(t *testing.T) {
@@ -44,28 +56,4 @@ func TestActiveAutomationConfigIDsSelectsLatestNonPreviewPerApp(t *testing.T) {
 		{ID: "app-a-old", AppID: "app-a"},
 	}
 	require.Equal(t, map[string]string{"app-a": "app-a-latest", "app-b": "app-b-latest"}, activeAutomationConfigIDs(configs))
-}
-
-func TestResolveJSONPointerEscapes(t *testing.T) {
-	payload := map[string]any{"a/b": []any{map[string]any{"~key": true}}}
-	value, ok := resolveJSONPointer(payload, "/a~1b/0/~0key")
-	require.True(t, ok)
-	require.Equal(t, true, value)
-}
-
-func TestResolveJSONPointerRejectsNonCanonicalArrayIndexes(t *testing.T) {
-	payload := []any{"first", "second"}
-	for _, pointer := range []string{"/01", "/+1", "/-0", "/-"} {
-		_, ok := resolveJSONPointer(payload, pointer)
-		require.False(t, ok, pointer)
-	}
-	value, ok := resolveJSONPointer(payload, "/1")
-	require.True(t, ok)
-	require.Equal(t, "second", value)
-}
-
-func TestJSONValuesEqualNumbers(t *testing.T) {
-	require.True(t, jsonValuesEqual(json.Number("1.0"), 1))
-	require.True(t, jsonValuesEqual(json.Number("9007199254740993"), json.Number("9007199254740993.0")))
-	require.False(t, jsonValuesEqual(json.Number("9007199254740993"), json.Number("9007199254740992")))
 }

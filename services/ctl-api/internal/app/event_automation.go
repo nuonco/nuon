@@ -47,7 +47,19 @@ const (
 	EventRoutingStatusRejected      EventRoutingStatus = "rejected"
 	EventRoutingStatusRoutingFailed EventRoutingStatus = "routing_failed"
 
-	EventAutomationFilterTypeEq EventAutomationFilterType = "eq"
+	EventAutomationFilterTypeEq        EventAutomationFilterType = "eq"
+	EventAutomationFilterTypeNEq       EventAutomationFilterType = "neq"
+	EventAutomationFilterTypeIn        EventAutomationFilterType = "in"
+	EventAutomationFilterTypePrefix    EventAutomationFilterType = "prefix"
+	EventAutomationFilterTypeSuffix    EventAutomationFilterType = "suffix"
+	EventAutomationFilterTypeContains  EventAutomationFilterType = "contains"
+	EventAutomationFilterTypeGT        EventAutomationFilterType = "gt"
+	EventAutomationFilterTypeGTE       EventAutomationFilterType = "gte"
+	EventAutomationFilterTypeLT        EventAutomationFilterType = "lt"
+	EventAutomationFilterTypeLTE       EventAutomationFilterType = "lte"
+	EventAutomationFilterTypeRegex     EventAutomationFilterType = "regex"
+	EventAutomationFilterTypeExists    EventAutomationFilterType = "exists"
+	EventAutomationFilterTypeNotExists EventAutomationFilterType = "not_exists"
 
 	EventAutomationTargetTypeAppBranchRun EventAutomationTargetType = "app_branch_run"
 
@@ -60,6 +72,7 @@ const (
 )
 
 type EventAutomationFilter struct {
+	From  string                    `json:"from,omitempty"`
 	Op    EventAutomationFilterType `json:"op"`
 	Path  string                    `json:"path"`
 	Value any                       `json:"value"`
@@ -70,8 +83,20 @@ type EventFieldSelector struct {
 	Payload string `json:"payload,omitempty"`
 }
 
+type EventSourceAuthConfig struct {
+	Header    string   `json:"header,omitempty"`
+	Prefix    string   `json:"prefix,omitempty"`
+	Encoding  string   `json:"encoding,omitempty"`
+	Algorithm string   `json:"algorithm,omitempty"`
+	Username  string   `json:"username,omitempty"`
+	Issuer    string   `json:"issuer,omitempty"`
+	Audience  []string `json:"audience,omitempty"`
+	TopicARN  string   `json:"topic_arn,omitempty"`
+}
+
 func (e *EventAutomationFilter) UnmarshalJSON(data []byte) error {
 	var encoded struct {
+		From  string                    `json:"from"`
 		Op    EventAutomationFilterType `json:"op"`
 		Path  string                    `json:"path"`
 		Value json.RawMessage           `json:"value"`
@@ -79,13 +104,16 @@ func (e *EventAutomationFilter) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &encoded); err != nil {
 		return err
 	}
-	decoder := json.NewDecoder(bytes.NewReader(encoded.Value))
-	decoder.UseNumber()
 	var value any
-	if err := decoder.Decode(&value); err != nil {
-		return err
+	if len(encoded.Value) != 0 {
+		decoder := json.NewDecoder(bytes.NewReader(encoded.Value))
+		decoder.UseNumber()
+		if err := decoder.Decode(&value); err != nil {
+			return err
+		}
 	}
 	e.Op = encoded.Op
+	e.From = encoded.From
 	e.Path = encoded.Path
 	e.Value = value
 	return nil
@@ -103,6 +131,7 @@ type EventSource struct {
 	Name           string                `json:"name" gorm:"notnull" temporaljson:"name,omitzero,omitempty"`
 	Description    string                `json:"description,omitempty" temporaljson:"description,omitzero,omitempty"`
 	AuthType       EventSourceAuthType   `json:"auth_type" gorm:"notnull;<-:create;check:event_source_auth_type_checker,auth_type IN ('none','hmac','api_key','basic','bearer_jwt','sns_signature')" temporaljson:"auth_type,omitzero,omitempty"`
+	AuthConfig     EventSourceAuthConfig `json:"auth_config,omitempty" gorm:"serializer:json;type:jsonb;<-:create" temporaljson:"auth_config,omitzero,omitempty"`
 	Envelope       EventEnvelopeType     `json:"envelope" gorm:"notnull;<-:create;check:event_source_envelope_checker,envelope IN ('none','pubsub_push','cloudevents','sns')" temporaljson:"envelope,omitzero,omitempty"`
 	TypeFrom       EventFieldSelector    `json:"type_from,omitempty" gorm:"serializer:json;type:jsonb;<-:create" temporaljson:"type_from,omitzero,omitempty"`
 	IDFrom         EventFieldSelector    `json:"id_from,omitempty" gorm:"serializer:json;type:jsonb;<-:create" temporaljson:"id_from,omitzero,omitempty"`

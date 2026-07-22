@@ -104,7 +104,7 @@ func buildRule(ruleCfg *config.EventRuleConfig, orgID, appID, appConfigID, sourc
 	}
 	filters := make([]app.EventAutomationFilter, len(ruleCfg.Filters))
 	for i, filter := range ruleCfg.Filters {
-		filters[i] = app.EventAutomationFilter{Op: app.EventAutomationFilterTypeEq, Path: filter.Path, Value: filter.Value}
+		filters[i] = app.EventAutomationFilter{From: filter.From, Op: app.EventAutomationFilterType(filter.Op), Path: filter.Path, Value: filter.Value}
 	}
 	return &app.EventAutomationRule{
 		OrgID: orgID, AppID: appID, AppConfigID: appConfigID, EventSourceID: sourceID,
