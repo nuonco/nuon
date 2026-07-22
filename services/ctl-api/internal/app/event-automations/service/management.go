@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -17,15 +17,19 @@ import (
 )
 
 type createEventSourceRequest struct {
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description"`
+	Name        string                  `json:"name" binding:"required"`
+	Description string                  `json:"description"`
+	AuthType    app.EventSourceAuthType `json:"auth_type"`
+	Envelope    app.EventEnvelopeType   `json:"envelope"`
+	TypeFrom    app.EventFieldSelector  `json:"type_from"`
+	IDFrom      app.EventFieldSelector  `json:"id_from"`
 }
 
 type credentialResponse struct {
 	EventSource app.EventSource `json:"event_source"`
 	IngressURL  string          `json:"ingress_url,omitempty"`
-	KeyID       string          `json:"key_id"`
-	Secret      string          `json:"secret"`
+	KeyID       string          `json:"key_id,omitempty"`
+	Secret      string          `json:"secret,omitempty"`
 }
 
 type eventSourceSecretResponse struct {
@@ -54,13 +58,9 @@ func eventSourceAPIResponse(source *app.EventSource) eventSourceResponse {
 	return resp
 }
 
-func (s *service) scopedApp(ctx context.Context, orgID, appID string) error {
-	return s.db.WithContext(ctx).Where(app.App{ID: appID, OrgID: orgID}).First(&app.App{}).Error
-}
-
-func (s *service) scopedSource(ctx context.Context, orgID, appID, sourceID string) (*app.EventSource, error) {
+func (s *service) scopedSource(ctx context.Context, orgID, sourceID string) (*app.EventSource, error) {
 	var source app.EventSource
-	err := s.db.WithContext(ctx).Preload("Secrets").Where(app.EventSource{ID: sourceID, OrgID: orgID, AppID: appID}).First(&source).Error
+	err := s.db.WithContext(ctx).Preload("Secrets").Where(app.EventSource{ID: sourceID, OrgID: orgID}).First(&source).Error
 	return &source, err
 }
 
@@ -71,19 +71,13 @@ func (s *service) scopedSource(ctx context.Context, orgID, appID, sourceID strin
 // @Produce json
 // @Security APIKey
 // @Security OrgID
-// @Param app_id path string true "App ID"
 // @Param request body createEventSourceRequest true "Event source"
 // @Success 201 {object} credentialResponse
-// @Router /v1/apps/{app_id}/event-sources [post]
+// @Router /v1/event-sources [post]
 func (s *service) CreateEventSource(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
-		return
-	}
-	appID := ctx.Param("app_id")
-	if err := s.scopedApp(ctx, org.ID, appID); err != nil {
-		ctx.Error(fmt.Errorf("app not found: %w", err))
 		return
 	}
 	var req createEventSourceRequest
@@ -96,28 +90,65 @@ func (s *service) CreateEventSource(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "name must be between 1 and 128 characters"})
 		return
 	}
+	if req.AuthType == "" {
+		req.AuthType = app.EventSourceAuthTypeHMAC
+	}
+	if req.Envelope == "" {
+		req.Envelope = app.EventEnvelopeTypeNone
+	}
+	if req.AuthType != app.EventSourceAuthTypeNone && req.AuthType != app.EventSourceAuthTypeHMAC {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "auth_type is not implemented"})
+		return
+	}
+	if req.Envelope != app.EventEnvelopeTypeNone && req.Envelope != app.EventEnvelopeTypeCloudEvents {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "envelope is not implemented"})
+		return
+	}
+	if err := validateEventFieldSelector(req.TypeFrom); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid type_from: " + err.Error()})
+		return
+	}
+	if err := validateEventFieldSelector(req.IDFrom); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid id_from: " + err.Error()})
+		return
+	}
+	if req.Envelope == app.EventEnvelopeTypeNone {
+		if req.TypeFrom == (app.EventFieldSelector{}) {
+			req.TypeFrom.Header = "X-Nuon-Event-Type"
+		}
+		if req.IDFrom == (app.EventFieldSelector{}) {
+			req.IDFrom.Header = "X-Nuon-Event-ID"
+		}
+	}
 	ingressKey, err := generateCredential()
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	secretValue, err := generateCredential()
-	if err != nil {
-		ctx.Error(err)
-		return
+	source := app.EventSource{
+		OrgID: org.ID, Name: req.Name, Description: req.Description,
+		IngressKeyHash: hashIngressKey(ingressKey), AuthType: req.AuthType, Envelope: req.Envelope,
+		TypeFrom: req.TypeFrom, IDFrom: req.IDFrom,
 	}
-	if _, err := s.appsHelpers.EnsureAppAutomationQueue(ctx, appID); err != nil {
-		ctx.Error(err)
-		return
+	var secretValue string
+	var secret app.EventSourceSecret
+	if req.AuthType == app.EventSourceAuthTypeHMAC {
+		secretValue, err = generateCredential()
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		secret = app.EventSourceSecret{OrgID: org.ID, Secret: secretValue, NotBefore: time.Now()}
 	}
-	source := app.EventSource{OrgID: org.ID, AppID: appID, Name: req.Name, Description: req.Description, IngressKeyHash: hashIngressKey(ingressKey)}
-	secret := app.EventSourceSecret{OrgID: org.ID, Secret: secretValue, NotBefore: time.Now()}
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&source).Error; err != nil {
 			return err
 		}
-		secret.EventSourceID = source.ID
-		return tx.Create(&secret).Error
+		if req.AuthType == app.EventSourceAuthTypeHMAC {
+			secret.EventSourceID = source.ID
+			return tx.Create(&secret).Error
+		}
+		return nil
 	})
 	if err != nil {
 		ctx.Error(err)
@@ -127,28 +158,32 @@ func (s *service) CreateEventSource(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, credentialResponse{EventSource: source, IngressURL: ingressURL, KeyID: secret.KeyID, Secret: secretValue})
 }
 
+func validateEventFieldSelector(selector app.EventFieldSelector) error {
+	if selector.Header != "" && selector.Payload != "" {
+		return errors.New("exactly one of header or payload may be set")
+	}
+	if selector.Payload != "" {
+		return errors.New("payload selectors require the JSONPath evaluator")
+	}
+	return nil
+}
+
 // @ID ListEventSources
 // @Summary List event sources
 // @Tags event-automations
 // @Produce json
 // @Security APIKey
 // @Security OrgID
-// @Param app_id path string true "App ID"
 // @Success 200 {array} app.EventSource
-// @Router /v1/apps/{app_id}/event-sources [get]
+// @Router /v1/event-sources [get]
 func (s *service) ListEventSources(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	appID := ctx.Param("app_id")
-	if err := s.scopedApp(ctx, org.ID, appID); err != nil {
-		ctx.Error(err)
-		return
-	}
 	var sources []app.EventSource
-	if err := s.db.WithContext(ctx).Preload("Secrets").Where(app.EventSource{OrgID: org.ID, AppID: appID}).Find(&sources).Error; err != nil {
+	if err := s.db.WithContext(ctx).Preload("Secrets").Where(app.EventSource{OrgID: org.ID}).Find(&sources).Error; err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -165,15 +200,46 @@ func (s *service) ListEventSources(ctx *gin.Context) {
 // @Produce json
 // @Security APIKey
 // @Security OrgID
-// @Param app_id path string true "App ID"
 // @Param event_source_id path string true "Event source ID"
 // @Success 200 {object} app.EventSource
-// @Router /v1/apps/{app_id}/event-sources/{event_source_id} [get]
+// @Router /v1/event-sources/{event_source_id} [get]
 func (s *service) GetEventSource(ctx *gin.Context) {
 	source, ok := s.managementSource(ctx)
 	if ok {
 		ctx.JSON(http.StatusOK, eventSourceAPIResponse(source))
 	}
+}
+
+// @ID DeleteEventSource
+// @Summary Delete an event source
+// @Tags event-automations
+// @Security APIKey
+// @Security OrgID
+// @Param event_source_id path string true "Event source ID"
+// @Param force query bool false "Delete a source referenced by rules"
+// @Success 204
+// @Router /v1/event-sources/{event_source_id} [delete]
+func (s *service) DeleteEventSource(ctx *gin.Context) {
+	source, ok := s.managementSource(ctx)
+	if !ok {
+		return
+	}
+	var references int64
+	if err := s.db.WithContext(ctx).Model(&app.EventAutomationRule{}).
+		Where(app.EventAutomationRule{OrgID: source.OrgID, EventSourceID: source.ID}).
+		Count(&references).Error; err != nil {
+		ctx.Error(err)
+		return
+	}
+	if references != 0 && ctx.Query("force") != "true" {
+		ctx.JSON(http.StatusConflict, gin.H{"error": "event source is referenced by automation rules; use force=true to delete it"})
+		return
+	}
+	if err := s.db.WithContext(ctx).Delete(source).Error; err != nil {
+		ctx.Error(err)
+		return
+	}
+	ctx.Status(http.StatusNoContent)
 }
 
 func (s *service) managementSource(ctx *gin.Context) (*app.EventSource, bool) {
@@ -182,12 +248,7 @@ func (s *service) managementSource(ctx *gin.Context) (*app.EventSource, bool) {
 		ctx.Error(err)
 		return nil, false
 	}
-	appID := ctx.Param("app_id")
-	if err := s.scopedApp(ctx, org.ID, appID); err != nil {
-		ctx.Error(err)
-		return nil, false
-	}
-	source, err := s.scopedSource(ctx, org.ID, appID, ctx.Param("event_source_id"))
+	source, err := s.scopedSource(ctx, org.ID, ctx.Param("event_source_id"))
 	if err != nil {
 		ctx.Error(err)
 		return nil, false
@@ -201,13 +262,16 @@ func (s *service) managementSource(ctx *gin.Context) (*app.EventSource, bool) {
 // @Produce json
 // @Security APIKey
 // @Security OrgID
-// @Param app_id path string true "App ID"
 // @Param event_source_id path string true "Event source ID"
 // @Success 201 {object} credentialResponse
-// @Router /v1/apps/{app_id}/event-sources/{event_source_id}/rotate-secret [post]
+// @Router /v1/event-sources/{event_source_id}/rotate-secret [post]
 func (s *service) RotateSecret(ctx *gin.Context) {
 	source, ok := s.managementSource(ctx)
 	if !ok {
+		return
+	}
+	if source.AuthType != app.EventSourceAuthTypeHMAC {
+		ctx.JSON(http.StatusConflict, gin.H{"error": "event source does not use HMAC auth"})
 		return
 	}
 	value, err := generateCredential()
@@ -220,7 +284,7 @@ func (s *service) RotateSecret(ctx *gin.Context) {
 	secret := app.EventSourceSecret{OrgID: source.OrgID, EventSourceID: source.ID, Secret: value, NotBefore: now}
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var lockedSource app.EventSource
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Secrets").Where(app.EventSource{ID: source.ID, OrgID: source.OrgID, AppID: source.AppID}).First(&lockedSource).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Secrets").Where(app.EventSource{ID: source.ID, OrgID: source.OrgID}).First(&lockedSource).Error; err != nil {
 			return err
 		}
 		for i := range lockedSource.Secrets {
@@ -258,7 +322,7 @@ func (s *service) setSourceStatus(ctx *gin.Context, status app.EventSourceStatus
 // @Tags event-automations
 // @Security APIKey
 // @Security OrgID
-// @Router /v1/apps/{app_id}/event-sources/{event_source_id}/enable [post]
+// @Router /v1/event-sources/{event_source_id}/enable [post]
 func (s *service) EnableEventSource(ctx *gin.Context) {
 	s.setSourceStatus(ctx, app.EventSourceStatusActive)
 }
@@ -268,7 +332,7 @@ func (s *service) EnableEventSource(ctx *gin.Context) {
 // @Tags event-automations
 // @Security APIKey
 // @Security OrgID
-// @Router /v1/apps/{app_id}/event-sources/{event_source_id}/disable [post]
+// @Router /v1/event-sources/{event_source_id}/disable [post]
 func (s *service) DisableEventSource(ctx *gin.Context) {
 	s.setSourceStatus(ctx, app.EventSourceStatusSuspended)
 }
@@ -278,7 +342,7 @@ func (s *service) DisableEventSource(ctx *gin.Context) {
 // @Tags event-automations
 // @Security APIKey
 // @Security OrgID
-// @Router /v1/apps/{app_id}/event-sources/{event_source_id}/secrets/{secret_id}/revoke [post]
+// @Router /v1/event-sources/{event_source_id}/secrets/{secret_id}/revoke [post]
 func (s *service) RevokeSecret(ctx *gin.Context) {
 	source, ok := s.managementSource(ctx)
 	if !ok {

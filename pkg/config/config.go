@@ -63,7 +63,7 @@ type AppConfig struct {
 
 	Runbooks []*RunbookConfig `mapstructure:"runbooks,omitempty" toml:"runbooks,omitempty"`
 
-	EventAutomations []*EventAutomationConfig `mapstructure:"event_automations,omitempty" toml:"event_automations,omitempty"`
+	Events *EventsConfig `mapstructure:"events,omitempty" toml:"events,omitempty"`
 }
 type ComponentList []*Component
 
@@ -126,8 +126,8 @@ func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Custom workflows and actions that can be executed on installs").
 		Field("runbooks").Short("runbook configurations").
 		Long("Ordered release procedures with deploy and action steps that can be executed on installs").
-		Field("event_automations").Short("event automation rules").
-		Long("Immutable rules that run app branches for exact event source event types")
+		Field("events").Short("event automation configuration").
+		Long("Rules that run app branches for events received from declared sources")
 }
 
 type parseFn struct {

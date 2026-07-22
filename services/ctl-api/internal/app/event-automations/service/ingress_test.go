@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -28,6 +29,32 @@ func TestParseCloudEvent(t *testing.T) {
 		if _, err := parseCloudEvent([]byte(body)); err == nil {
 			t.Fatalf("invalid CloudEvent accepted: %s", body)
 		}
+	}
+}
+
+func TestDecodeGenericJSONEvent(t *testing.T) {
+	headers := http.Header{"X-Nuon-Event-Id": {"delivery-1"}, "X-Nuon-Event-Type": {"push"}, "Content-Type": {"application/json"}}
+	source := &app.EventSource{Envelope: app.EventEnvelopeTypeNone, AuthType: app.EventSourceAuthTypeHMAC, IDFrom: app.EventFieldSelector{Header: "X-Nuon-Event-ID"}, TypeFrom: app.EventFieldSelector{Header: "X-Nuon-Event-Type"}}
+	event, err := decodeEvent(source, headers, []byte(`{"ref":"main"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if event.ID != "delivery-1" || event.Type != "push" || string(event.Payload) != `{"ref":"main"}` {
+		t.Fatalf("unexpected normalized event: %#v", event)
+	}
+	if _, err := decodeEvent(source, nil, []byte(`not json`)); err == nil {
+		t.Fatal("invalid JSON event accepted")
+	}
+}
+
+func TestDecodeCloudEventEnvelope(t *testing.T) {
+	body := []byte(`{"specversion":"1.0","id":"evt-1","source":"urn:test","type":"test.created","data":{"ok":true}}`)
+	event, err := decodeEvent(&app.EventSource{Envelope: app.EventEnvelopeTypeCloudEvents}, nil, body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if event.ID != "evt-1" || event.Type != "test.created" || string(event.Payload) != `{"ok":true}` {
+		t.Fatalf("unexpected normalized event: %#v", event)
 	}
 }
 

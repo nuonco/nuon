@@ -45,15 +45,15 @@ func listLimit(ctx *gin.Context) int {
 	return limit
 }
 
-func (s *service) scopedEvent(ctx *gin.Context, orgID, appID, eventID string) (*app.EventSourceEvent, error) {
+func (s *service) scopedEvent(ctx *gin.Context, orgID, eventID string) (*app.EventSourceEvent, error) {
 	var event app.EventSourceEvent
-	err := s.db.WithContext(ctx).Where(app.EventSourceEvent{ID: eventID, OrgID: orgID, AppID: appID}).First(&event).Error
+	err := s.db.WithContext(ctx).Where(app.EventSourceEvent{ID: eventID, OrgID: orgID}).First(&event).Error
 	return &event, err
 }
 
-func (s *service) scopedDispatch(ctx *gin.Context, orgID, appID, dispatchID string) (*app.EventDispatch, error) {
+func (s *service) scopedDispatch(ctx *gin.Context, orgID, dispatchID string) (*app.EventDispatch, error) {
 	var dispatch app.EventDispatch
-	err := s.db.WithContext(ctx).Where(app.EventDispatch{ID: dispatchID, OrgID: orgID, AppID: appID}).First(&dispatch).Error
+	err := s.db.WithContext(ctx).Where(app.EventDispatch{ID: dispatchID, OrgID: orgID}).First(&dispatch).Error
 	return &dispatch, err
 }
 
@@ -63,23 +63,17 @@ func (s *service) scopedDispatch(ctx *gin.Context, orgID, appID, dispatchID stri
 // @Produce json
 // @Security APIKey
 // @Security OrgID
-// @Param app_id path string true "App ID"
 // @Param limit query int false "Maximum events to return (max 100)"
 // @Success 200 {array} app.EventSourceEvent
-// @Router /v1/apps/{app_id}/event-automations/events [get]
+// @Router /v1/event-automations/events [get]
 func (s *service) ListEvents(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	appID := ctx.Param("app_id")
-	if err := s.scopedApp(ctx, org.ID, appID); err != nil {
-		ctx.Error(err)
-		return
-	}
 	var events []app.EventSourceEvent
-	if err := s.db.WithContext(ctx).Where(app.EventSourceEvent{OrgID: org.ID, AppID: appID}).Order("received_at DESC").Limit(listLimit(ctx)).Find(&events).Error; err != nil {
+	if err := s.db.WithContext(ctx).Where(app.EventSourceEvent{OrgID: org.ID}).Order("received_at DESC").Limit(listLimit(ctx)).Find(&events).Error; err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -92,28 +86,22 @@ func (s *service) ListEvents(ctx *gin.Context) {
 // @Produce json
 // @Security APIKey
 // @Security OrgID
-// @Param app_id path string true "App ID"
 // @Param event_id path string true "Event ID"
 // @Success 200 {object} eventResponse
-// @Router /v1/apps/{app_id}/event-automations/events/{event_id} [get]
+// @Router /v1/event-automations/events/{event_id} [get]
 func (s *service) GetEvent(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	appID := ctx.Param("app_id")
-	if err := s.scopedApp(ctx, org.ID, appID); err != nil {
-		ctx.Error(err)
-		return
-	}
-	event, err := s.scopedEvent(ctx, org.ID, appID, ctx.Param("event_id"))
+	event, err := s.scopedEvent(ctx, org.ID, ctx.Param("event_id"))
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 	var dispatches []app.EventDispatch
-	if err := s.db.WithContext(ctx).Where(app.EventDispatch{OrgID: org.ID, AppID: appID, EventSourceEventID: event.ID}).Order("created_at DESC").Find(&dispatches).Error; err != nil {
+	if err := s.db.WithContext(ctx).Where(app.EventDispatch{OrgID: org.ID, EventSourceEventID: event.ID}).Order("created_at DESC").Find(&dispatches).Error; err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -126,27 +114,21 @@ func (s *service) GetEvent(ctx *gin.Context) {
 // @Produce json
 // @Security APIKey
 // @Security OrgID
-// @Param app_id path string true "App ID"
 // @Param event_id path string true "Event ID"
 // @Success 202 {object} replayResponse
-// @Router /v1/apps/{app_id}/event-automations/events/{event_id}/replay [post]
+// @Router /v1/event-automations/events/{event_id}/replay [post]
 func (s *service) ReplayEvent(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	appID := ctx.Param("app_id")
-	if err := s.scopedApp(ctx, org.ID, appID); err != nil {
-		ctx.Error(err)
-		return
-	}
-	event, err := s.scopedEvent(ctx, org.ID, appID, ctx.Param("event_id"))
+	event, err := s.scopedEvent(ctx, org.ID, ctx.Param("event_id"))
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	queue, err := s.appAutomationQueue(ctx, appID)
+	queue, err := s.orgAutomationQueue(ctx, org.ID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -155,7 +137,7 @@ func (s *service) ReplayEvent(ctx *gin.Context) {
 	dedupeKey := "automation-event:replay:" + event.ID + ":" + replayID
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		result := tx.Model(&app.EventSourceEvent{}).
-			Where(app.EventSourceEvent{ID: event.ID, OrgID: org.ID, AppID: appID}).
+			Where(app.EventSourceEvent{ID: event.ID, OrgID: org.ID}).
 			Updates(map[string]any{"routing_status": app.EventRoutingStatusAccepted, "routing_error": "", "routing_started_at": nil, "routing_completed_at": nil, "match_count": 0, "dispatch_count": 0})
 		if result.Error != nil {
 			return result.Error
@@ -182,23 +164,17 @@ func (s *service) ReplayEvent(ctx *gin.Context) {
 // @Produce json
 // @Security APIKey
 // @Security OrgID
-// @Param app_id path string true "App ID"
 // @Param limit query int false "Maximum dispatches to return (max 100)"
 // @Success 200 {array} app.EventDispatch
-// @Router /v1/apps/{app_id}/event-automations/dispatches [get]
+// @Router /v1/event-automations/dispatches [get]
 func (s *service) ListDispatches(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	appID := ctx.Param("app_id")
-	if err := s.scopedApp(ctx, org.ID, appID); err != nil {
-		ctx.Error(err)
-		return
-	}
 	var dispatches []app.EventDispatch
-	if err := s.db.WithContext(ctx).Where(app.EventDispatch{OrgID: org.ID, AppID: appID}).Order("created_at DESC").Limit(listLimit(ctx)).Find(&dispatches).Error; err != nil {
+	if err := s.db.WithContext(ctx).Where(app.EventDispatch{OrgID: org.ID}).Order("created_at DESC").Limit(listLimit(ctx)).Find(&dispatches).Error; err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -211,22 +187,16 @@ func (s *service) ListDispatches(ctx *gin.Context) {
 // @Produce json
 // @Security APIKey
 // @Security OrgID
-// @Param app_id path string true "App ID"
 // @Param dispatch_id path string true "Dispatch ID"
 // @Success 200 {object} app.EventDispatch
-// @Router /v1/apps/{app_id}/event-automations/dispatches/{dispatch_id} [get]
+// @Router /v1/event-automations/dispatches/{dispatch_id} [get]
 func (s *service) GetDispatch(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	appID := ctx.Param("app_id")
-	if err := s.scopedApp(ctx, org.ID, appID); err != nil {
-		ctx.Error(err)
-		return
-	}
-	dispatch, err := s.scopedDispatch(ctx, org.ID, appID, ctx.Param("dispatch_id"))
+	dispatch, err := s.scopedDispatch(ctx, org.ID, ctx.Param("dispatch_id"))
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -240,28 +210,22 @@ func (s *service) GetDispatch(ctx *gin.Context) {
 // @Produce json
 // @Security APIKey
 // @Security OrgID
-// @Param app_id path string true "App ID"
 // @Param dispatch_id path string true "Dispatch ID"
 // @Success 202 {object} retryResponse
 // @Failure 409 {object} map[string]string
-// @Router /v1/apps/{app_id}/event-automations/dispatches/{dispatch_id}/retry [post]
+// @Router /v1/event-automations/dispatches/{dispatch_id}/retry [post]
 func (s *service) RetryDispatch(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	appID := ctx.Param("app_id")
-	if err := s.scopedApp(ctx, org.ID, appID); err != nil {
-		ctx.Error(err)
-		return
-	}
-	dispatch, err := s.scopedDispatch(ctx, org.ID, appID, ctx.Param("dispatch_id"))
+	dispatch, err := s.scopedDispatch(ctx, org.ID, ctx.Param("dispatch_id"))
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
-	queue, err := s.appAutomationQueue(ctx, appID)
+	queue, err := s.appAutomationQueue(ctx, dispatch.AppID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -271,7 +235,7 @@ func (s *service) RetryDispatch(ctx *gin.Context) {
 	dedupeKey := "automation-dispatch:retry:" + dispatch.ID + ":" + retryID
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var locked app.EventDispatch
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.EventDispatch{ID: dispatch.ID, OrgID: org.ID, AppID: appID}).First(&locked).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.EventDispatch{ID: dispatch.ID, OrgID: org.ID, AppID: dispatch.AppID}).First(&locked).Error; err != nil {
 			return err
 		}
 		if locked.Status != app.EventDispatchStatusDeadLettered {

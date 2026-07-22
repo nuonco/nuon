@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func TestCredentialGenerationAndHash(t *testing.T) {
@@ -49,5 +51,29 @@ func TestTimestampSkew(t *testing.T) {
 	}
 	if _, err := parseTimestamp("1719999699", now); err == nil {
 		t.Fatal("accepted stale timestamp")
+	}
+}
+
+func TestGenericHMACPayloadAuthenticatesEventIdentity(t *testing.T) {
+	payload, err := hmacPayload(app.EventEnvelopeTypeNone, "delivery-1", "push", []byte(`{"ref":"main"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(payload) != "delivery-1\npush\n{\"ref\":\"main\"}" {
+		t.Fatalf("unexpected signed payload %q", payload)
+	}
+	mac := hmac.New(sha256.New, []byte("secret"))
+	mac.Write([]byte("1720000000."))
+	mac.Write(payload)
+	signature := mac.Sum(nil)
+	alteredPayload, err := hmacPayload(app.EventEnvelopeTypeNone, "delivery-1", "delete", []byte(`{"ref":"main"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if verifySignature("secret", "1720000000", alteredPayload, signature) {
+		t.Fatal("accepted a signature after event type was altered")
+	}
+	if _, err := hmacPayload(app.EventEnvelopeTypeNone, "", "push", []byte(`{}`)); err == nil {
+		t.Fatal("accepted HMAC generic event without an ID")
 	}
 }

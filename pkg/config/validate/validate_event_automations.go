@@ -9,7 +9,10 @@ import (
 )
 
 func ValidateEventAutomations(cfg *config.AppConfig) error {
-	ruleNames := make(map[string]struct{}, len(cfg.EventAutomations))
+	if cfg.Events == nil {
+		return nil
+	}
+	ruleNames := make(map[string]struct{}, len(cfg.Events.Rules))
 	branchNames := make(map[string]struct{}, len(cfg.Branches)+1)
 	if cfg.Branch != nil {
 		branchNames[cfg.Branch.Name] = struct{}{}
@@ -20,8 +23,8 @@ func ValidateEventAutomations(cfg *config.AppConfig) error {
 		}
 	}
 
-	for i, rule := range cfg.EventAutomations {
-		prefix := fmt.Sprintf("event_automations[%d]", i)
+	for i, rule := range cfg.Events.Rules {
+		prefix := fmt.Sprintf("events.rules[%d]", i)
 		if rule == nil {
 			return eventAutomationConfigErr("%s must not be null", prefix)
 		}
@@ -32,11 +35,11 @@ func ValidateEventAutomations(cfg *config.AppConfig) error {
 			return eventAutomationConfigErr("event automation rule name %q must be unique", rule.Name)
 		}
 		ruleNames[rule.Name] = struct{}{}
-		if rule.EventSource == "" {
-			return eventAutomationConfigErr("%s.event_source is required", prefix)
+		if rule.Source == "" {
+			return eventAutomationConfigErr("%s.source is required", prefix)
 		}
-		if len(rule.EventTypes) == 0 {
-			return eventAutomationConfigErr("%s.event_types must contain at least one event type", prefix)
+		if len(rule.EventTypes) == 0 && len(rule.Filters) == 0 && !rule.MatchAll {
+			return eventAutomationConfigErr("%s must declare event_types, filters, or match_all = true", prefix)
 		}
 		eventTypes := make(map[string]struct{}, len(rule.EventTypes))
 		for _, eventType := range rule.EventTypes {
@@ -59,6 +62,9 @@ func ValidateEventAutomations(cfg *config.AppConfig) error {
 			if !isJSONPrimitive(filter.Value) {
 				return eventAutomationConfigErr("%s.value must be a JSON primitive", filterPrefix)
 			}
+		}
+		if rule.MatchAll && (len(rule.EventTypes) != 0 || len(rule.Filters) != 0) {
+			return eventAutomationConfigErr("%s.match_all cannot be combined with event_types or filters", prefix)
 		}
 		if rule.Target == nil {
 			return eventAutomationConfigErr("%s.target is required", prefix)

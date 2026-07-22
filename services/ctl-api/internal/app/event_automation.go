@@ -16,7 +16,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-type EventSourceType string
+type EventSourceAuthType string
+type EventEnvelopeType string
 type EventSourceStatus string
 type EventRoutingStatus string
 type EventAutomationFilterType string
@@ -24,14 +25,26 @@ type EventAutomationTargetType string
 type EventDispatchStatus string
 
 const (
-	EventSourceTypeGenericHMAC EventSourceType = "generic_hmac"
+	EventSourceAuthTypeNone         EventSourceAuthType = "none"
+	EventSourceAuthTypeHMAC         EventSourceAuthType = "hmac"
+	EventSourceAuthTypeAPIKey       EventSourceAuthType = "api_key"
+	EventSourceAuthTypeBasic        EventSourceAuthType = "basic"
+	EventSourceAuthTypeBearerJWT    EventSourceAuthType = "bearer_jwt"
+	EventSourceAuthTypeSNSSignature EventSourceAuthType = "sns_signature"
+
+	EventEnvelopeTypeNone        EventEnvelopeType = "none"
+	EventEnvelopeTypePubSubPush  EventEnvelopeType = "pubsub_push"
+	EventEnvelopeTypeCloudEvents EventEnvelopeType = "cloudevents"
+	EventEnvelopeTypeSNS         EventEnvelopeType = "sns"
 
 	EventSourceStatusActive    EventSourceStatus = "active"
 	EventSourceStatusSuspended EventSourceStatus = "suspended"
 
 	EventRoutingStatusAccepted      EventRoutingStatus = "accepted"
 	EventRoutingStatusRouting       EventRoutingStatus = "routing"
-	EventRoutingStatusRouted        EventRoutingStatus = "routed"
+	EventRoutingStatusMatched       EventRoutingStatus = "matched"
+	EventRoutingStatusIgnored       EventRoutingStatus = "ignored"
+	EventRoutingStatusRejected      EventRoutingStatus = "rejected"
 	EventRoutingStatusRoutingFailed EventRoutingStatus = "routing_failed"
 
 	EventAutomationFilterTypeEq EventAutomationFilterType = "eq"
@@ -50,6 +63,11 @@ type EventAutomationFilter struct {
 	Op    EventAutomationFilterType `json:"op"`
 	Path  string                    `json:"path"`
 	Value any                       `json:"value"`
+}
+
+type EventFieldSelector struct {
+	Header  string `json:"header,omitempty"`
+	Payload string `json:"payload,omitempty"`
 }
 
 func (e *EventAutomationFilter) UnmarshalJSON(data []byte) error {
@@ -81,12 +99,13 @@ type EventSource struct {
 	DeletedAt      soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 	OrgID          string                `json:"org_id,omitzero" gorm:"notnull;<-:create" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org            Org                   `json:"-" temporaljson:"-"`
-	AppID          string                `json:"app_id,omitzero" gorm:"notnull;<-:create" temporaljson:"app_id,omitzero,omitempty"`
-	App            App                   `json:"-" temporaljson:"-"`
 	IngressKeyHash string                `json:"-" gorm:"notnull;<-:create" temporaljson:"-"`
 	Name           string                `json:"name" gorm:"notnull" temporaljson:"name,omitzero,omitempty"`
 	Description    string                `json:"description,omitempty" temporaljson:"description,omitzero,omitempty"`
-	Type           EventSourceType       `json:"type" gorm:"notnull;<-:create;check:event_source_type_checker,type IN ('generic_hmac')" temporaljson:"type,omitzero,omitempty"`
+	AuthType       EventSourceAuthType   `json:"auth_type" gorm:"notnull;<-:create;check:event_source_auth_type_checker,auth_type IN ('none','hmac','api_key','basic','bearer_jwt','sns_signature')" temporaljson:"auth_type,omitzero,omitempty"`
+	Envelope       EventEnvelopeType     `json:"envelope" gorm:"notnull;<-:create;check:event_source_envelope_checker,envelope IN ('none','pubsub_push','cloudevents','sns')" temporaljson:"envelope,omitzero,omitempty"`
+	TypeFrom       EventFieldSelector    `json:"type_from,omitempty" gorm:"serializer:json;type:jsonb;<-:create" temporaljson:"type_from,omitzero,omitempty"`
+	IDFrom         EventFieldSelector    `json:"id_from,omitempty" gorm:"serializer:json;type:jsonb;<-:create" temporaljson:"id_from,omitzero,omitempty"`
 	Status         EventSourceStatus     `json:"status" gorm:"notnull;check:event_source_status_checker,status IN ('active','suspended')" temporaljson:"status,omitzero,omitempty"`
 	LastEventAt    *time.Time            `json:"last_event_at,omitempty" temporaljson:"last_event_at,omitzero,omitempty"`
 	Secrets        []EventSourceSecret   `json:"-" gorm:"constraint:OnDelete:CASCADE" temporaljson:"-"`
@@ -95,9 +114,8 @@ type EventSource struct {
 
 func (e *EventSource) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
-		{Name: indexes.Name(db, e, "app_id_name_deleted_at"), Columns: []string{"app_id", "name", "deleted_at"}, UniqueValue: sql.NullBool{Bool: true, Valid: true}},
+		{Name: indexes.Name(db, e, "org_id_name_deleted_at"), Columns: []string{"org_id", "name", "deleted_at"}, UniqueValue: sql.NullBool{Bool: true, Valid: true}},
 		{Name: indexes.Name(db, e, "org_id"), Columns: []string{"org_id"}},
-		{Name: indexes.Name(db, e, "app_id"), Columns: []string{"app_id"}},
 		{Name: indexes.Name(db, e, "ingress_key_hash"), Columns: []string{"ingress_key_hash"}, UniqueValue: sql.NullBool{Bool: true, Valid: true}},
 	}
 }
@@ -112,8 +130,11 @@ func (e *EventSource) BeforeCreate(tx *gorm.DB) error {
 	if e.CreatedByID == "" {
 		e.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
-	if e.Type == "" {
-		e.Type = EventSourceTypeGenericHMAC
+	if e.AuthType == "" {
+		e.AuthType = EventSourceAuthTypeHMAC
+	}
+	if e.Envelope == "" {
+		e.Envelope = EventEnvelopeTypeNone
 	}
 	if e.Status == "" {
 		e.Status = EventSourceStatusActive
@@ -170,24 +191,23 @@ type EventSourceEvent struct {
 	DeletedAt           soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 	EventSourceID       string                `json:"event_source_id" gorm:"notnull;<-:create" temporaljson:"event_source_id,omitzero,omitempty"`
 	EventSource         EventSource           `json:"-" gorm:"constraint:OnDelete:CASCADE" temporaljson:"-"`
-	EventSourceSecretID string                `json:"event_source_secret_id" gorm:"notnull;<-:create" temporaljson:"event_source_secret_id,omitzero,omitempty"`
+	EventSourceSecretID *string               `json:"event_source_secret_id,omitempty" gorm:"<-:create" temporaljson:"event_source_secret_id,omitzero,omitempty"`
 	EventSourceSecret   EventSourceSecret     `json:"-" temporaljson:"-"`
-	AppID               string                `json:"app_id" gorm:"notnull;<-:create" temporaljson:"app_id,omitzero,omitempty"`
-	App                 App                   `json:"-" temporaljson:"-"`
 	OrgID               string                `json:"org_id" gorm:"notnull;<-:create" temporaljson:"org_id,omitzero,omitempty"`
 	Org                 Org                   `json:"-" temporaljson:"-"`
 	ExternalID          string                `json:"external_id" gorm:"notnull;<-:create" temporaljson:"external_id,omitzero,omitempty"`
-	CloudEventSource    string                `json:"cloud_event_source" gorm:"notnull;<-:create" temporaljson:"cloud_event_source,omitzero,omitempty"`
 	EventType           string                `json:"event_type" gorm:"notnull;<-:create" temporaljson:"event_type,omitzero,omitempty"`
-	Subject             string                `json:"subject,omitempty" gorm:"<-:create" temporaljson:"subject,omitzero,omitempty"`
 	OccurredAt          *time.Time            `json:"occurred_at,omitempty" gorm:"<-:create" temporaljson:"occurred_at,omitzero,omitempty"`
 	ReceivedAt          time.Time             `json:"received_at" gorm:"notnull;<-:create" temporaljson:"received_at,omitzero,omitempty"`
 	Payload             json.RawMessage       `json:"payload" gorm:"serializer:json;type:jsonb;notnull;<-:create" temporaljson:"payload,omitzero,omitempty"`
-	PayloadSHA256       string                `json:"payload_sha256" gorm:"notnull;<-:create" temporaljson:"payload_sha256,omitzero,omitempty"`
+	Headers             map[string][]string   `json:"headers,omitempty" gorm:"serializer:json;type:jsonb;<-:create" temporaljson:"headers,omitzero,omitempty"`
+	RawBody             []byte                `json:"-" gorm:"type:bytea;notnull;<-:create" temporaljson:"-"`
+	RawBodySHA256       string                `json:"raw_body_sha256" gorm:"notnull;<-:create" temporaljson:"raw_body_sha256,omitzero,omitempty"`
+	RawBodySize         int64                 `json:"raw_body_size" gorm:"<-:create" temporaljson:"raw_body_size,omitzero,omitempty"`
+	RawContentType      string                `json:"raw_content_type,omitempty" gorm:"<-:create" temporaljson:"raw_content_type,omitzero,omitempty"`
 	PayloadContentType  string                `json:"payload_content_type,omitempty" gorm:"<-:create" temporaljson:"payload_content_type,omitzero,omitempty"`
-	PayloadSize         int64                 `json:"payload_size" gorm:"<-:create" temporaljson:"payload_size,omitzero,omitempty"`
-	SecretKeyID         string                `json:"secret_key_id" gorm:"notnull;<-:create" temporaljson:"secret_key_id,omitzero,omitempty"`
-	RoutingStatus       EventRoutingStatus    `json:"routing_status" gorm:"notnull;check:event_routing_status_checker,routing_status IN ('accepted','routing','routed','routing_failed')" temporaljson:"routing_status,omitzero,omitempty"`
+	SecretKeyID         string                `json:"secret_key_id,omitempty" gorm:"<-:create" temporaljson:"secret_key_id,omitzero,omitempty"`
+	RoutingStatus       EventRoutingStatus    `json:"routing_status" gorm:"notnull;check:event_routing_status_checker,routing_status IN ('accepted','routing','matched','ignored','rejected','routing_failed')" temporaljson:"routing_status,omitzero,omitempty"`
 	RoutingError        string                `json:"routing_error,omitempty" temporaljson:"routing_error,omitzero,omitempty"`
 	RoutingStartedAt    *time.Time            `json:"routing_started_at,omitempty" temporaljson:"routing_started_at,omitzero,omitempty"`
 	RoutingCompletedAt  *time.Time            `json:"routing_completed_at,omitempty" temporaljson:"routing_completed_at,omitzero,omitempty"`
@@ -199,7 +219,7 @@ func (e *EventSourceEvent) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{Name: indexes.Name(db, e, "event_source_id_external_id"), Columns: []string{"event_source_id", "external_id"}, UniqueValue: sql.NullBool{Bool: true, Valid: true}},
 		{Name: indexes.Name(db, e, "org_id"), Columns: []string{"org_id"}},
-		{Name: indexes.Name(db, e, "app_id_received_at"), Columns: []string{"app_id", "received_at"}},
+		{Name: indexes.Name(db, e, "org_id_received_at"), Columns: []string{"org_id", "received_at"}},
 		{Name: indexes.Name(db, e, "routing_status_received_at"), Columns: []string{"routing_status", "received_at"}},
 	}
 }
@@ -236,7 +256,7 @@ type EventAutomationRule struct {
 	SuspendedByID *string                   `json:"suspended_by_id,omitempty" temporaljson:"suspended_by_id,omitzero,omitempty"`
 	ValidFrom     time.Time                 `json:"valid_from" gorm:"notnull;<-:create" temporaljson:"valid_from,omitzero,omitempty"`
 	ValidTo       *time.Time                `json:"valid_to,omitempty" gorm:"check:event_automation_rule_validity_checker,valid_to IS NULL OR valid_to > valid_from" temporaljson:"valid_to,omitzero,omitempty"`
-	EventTypes    pq.StringArray            `json:"event_types" gorm:"type:text[];notnull;<-:create;check:event_automation_rule_event_types_checker,cardinality(event_types) > 0" temporaljson:"event_types,omitzero,omitempty"`
+	EventTypes    pq.StringArray            `json:"event_types,omitempty" gorm:"type:text[];<-:create" temporaljson:"event_types,omitzero,omitempty"`
 	Filters       []EventAutomationFilter   `json:"filters" gorm:"serializer:json;type:jsonb;<-:create" temporaljson:"filters,omitzero,omitempty"`
 	TargetType    EventAutomationTargetType `json:"target_type" gorm:"notnull;<-:create;check:event_automation_rule_target_type_checker,target_type IN ('app_branch_run')" temporaljson:"target_type,omitzero,omitempty"`
 	AppBranchID   string                    `json:"app_branch_id" gorm:"notnull;<-:create" temporaljson:"app_branch_id,omitzero,omitempty"`

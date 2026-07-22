@@ -11,7 +11,8 @@ import (
 )
 
 func TestEventAutomationConstants(t *testing.T) {
-	require.Equal(t, EventSourceType("generic_hmac"), EventSourceTypeGenericHMAC)
+	require.Equal(t, EventSourceAuthType("hmac"), EventSourceAuthTypeHMAC)
+	require.Equal(t, EventEnvelopeType("none"), EventEnvelopeTypeNone)
 	require.Equal(t, EventAutomationFilterType("eq"), EventAutomationFilterTypeEq)
 	require.Equal(t, EventAutomationTargetType("app_branch_run"), EventAutomationTargetTypeAppBranchRun)
 	require.ElementsMatch(t, []EventDispatchStatus{
@@ -38,10 +39,10 @@ func TestEventAutomationUniqueIndexes(t *testing.T) {
 	require.NoError(t, err)
 
 	sourceIndexes := (&EventSource{}).Indexes(db)
-	require.Equal(t, []string{"app_id", "name", "deleted_at"}, sourceIndexes[0].Columns)
+	require.Equal(t, []string{"org_id", "name", "deleted_at"}, sourceIndexes[0].Columns)
 	require.True(t, sourceIndexes[0].UniqueValue.Bool)
-	require.Equal(t, []string{"ingress_key_hash"}, sourceIndexes[3].Columns)
-	require.True(t, sourceIndexes[3].UniqueValue.Bool)
+	require.Equal(t, []string{"ingress_key_hash"}, sourceIndexes[2].Columns)
+	require.True(t, sourceIndexes[2].UniqueValue.Bool)
 
 	secretIndexes := (&EventSourceSecret{}).Indexes(db)
 	require.Equal(t, []string{"event_source_id", "key_id"}, secretIndexes[0].Columns)
@@ -82,9 +83,9 @@ func TestEventAutomationRelationships(t *testing.T) {
 		model         any
 		relationships []string
 	}{
-		{model: &EventSource{}, relationships: []string{"Org", "App", "Secrets", "Events"}},
+		{model: &EventSource{}, relationships: []string{"Org", "Secrets", "Events"}},
 		{model: &EventSourceSecret{}, relationships: []string{"Org", "EventSource"}},
-		{model: &EventSourceEvent{}, relationships: []string{"Org", "App", "EventSource", "EventSourceSecret"}},
+		{model: &EventSourceEvent{}, relationships: []string{"Org", "EventSource", "EventSourceSecret"}},
 		{model: &EventAutomationRule{}, relationships: []string{"Org", "App", "AppConfig", "EventSource", "AppBranch"}},
 		{model: &EventDispatch{}, relationships: []string{"Org", "App", "EventSourceEvent", "EventAutomationRule"}},
 		{model: &AppBranchRun{}, relationships: []string{"AutomationDispatch"}},
@@ -107,10 +108,10 @@ func TestEventAutomationCheckConstraints(t *testing.T) {
 		model       any
 		constraints []string
 	}{
-		{model: &EventSource{}, constraints: []string{"event_source_type_checker", "event_source_status_checker"}},
+		{model: &EventSource{}, constraints: []string{"event_source_auth_type_checker", "event_source_envelope_checker", "event_source_status_checker"}},
 		{model: &EventSourceSecret{}, constraints: []string{"event_source_secret_expiration_checker"}},
 		{model: &EventSourceEvent{}, constraints: []string{"event_routing_status_checker"}},
-		{model: &EventAutomationRule{}, constraints: []string{"event_automation_rule_validity_checker", "event_automation_rule_event_types_checker", "event_automation_rule_target_type_checker"}},
+		{model: &EventAutomationRule{}, constraints: []string{"event_automation_rule_validity_checker", "event_automation_rule_target_type_checker"}},
 		{model: &EventDispatch{}, constraints: []string{"event_dispatch_target_type_checker", "event_dispatch_status_checker", "event_dispatch_attempts_checker"}},
 	}
 

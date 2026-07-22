@@ -20,13 +20,13 @@ import (
 )
 
 func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, orgID, appID, appConfigID string) error {
-	if len(cfg.EventAutomations) == 0 {
+	if cfg.Events == nil || len(cfg.Events.Rules) == 0 {
 		return nil
 	}
 
 	validFrom := time.Now().UTC()
-	for _, ruleCfg := range cfg.EventAutomations {
-		source, err := resolveEventSource(ctx, db, appID, ruleCfg.EventSource)
+	for _, ruleCfg := range cfg.Events.Rules {
+		source, err := resolveEventSource(ctx, db, orgID, ruleCfg.Source)
 		if err != nil {
 			return err
 		}
@@ -73,9 +73,9 @@ func verifyExistingRule(ctx context.Context, db *gorm.DB, desired *app.EventAuto
 	return nil
 }
 
-func resolveEventSource(ctx context.Context, db *gorm.DB, appID, name string) (*app.EventSource, error) {
+func resolveEventSource(ctx context.Context, db *gorm.DB, orgID, name string) (*app.EventSource, error) {
 	var source app.EventSource
-	err := db.WithContext(ctx).Where(app.EventSource{AppID: appID, Name: name, Status: app.EventSourceStatusActive}).First(&source).Error
+	err := db.WithContext(ctx).Where(app.EventSource{OrgID: orgID, Name: name, Status: app.EventSourceStatusActive}).First(&source).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, sync.SyncErr{Resource: "event-automations", Description: fmt.Sprintf("event automation references unknown or inactive event source %q", name)}
 	}
@@ -97,7 +97,7 @@ func resolveAppBranch(ctx context.Context, db *gorm.DB, appID, name string) (*ap
 	return &branch, nil
 }
 
-func buildRule(ruleCfg *config.EventAutomationConfig, orgID, appID, appConfigID, sourceID, branchID string, validFrom time.Time) (*app.EventAutomationRule, error) {
+func buildRule(ruleCfg *config.EventRuleConfig, orgID, appID, appConfigID, sourceID, branchID string, validFrom time.Time) (*app.EventAutomationRule, error) {
 	hash, err := configHash(ruleCfg)
 	if err != nil {
 		return nil, err
@@ -115,11 +115,11 @@ func buildRule(ruleCfg *config.EventAutomationConfig, orgID, appID, appConfigID,
 	}, nil
 }
 
-func configHash(ruleCfg *config.EventAutomationConfig) (string, error) {
+func configHash(ruleCfg *config.EventRuleConfig) (string, error) {
 	normalized := *ruleCfg
 	normalized.EventTypes = append([]string(nil), ruleCfg.EventTypes...)
 	sort.Strings(normalized.EventTypes)
-	normalized.Filters = append([]config.EventAutomationFilterConfig(nil), ruleCfg.Filters...)
+	normalized.Filters = append([]config.EventFilterConfig(nil), ruleCfg.Filters...)
 	sort.Slice(normalized.Filters, func(i, j int) bool {
 		left, _ := json.Marshal(normalized.Filters[i])
 		right, _ := json.Marshal(normalized.Filters[j])

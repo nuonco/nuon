@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 const signatureSkew = 5 * time.Minute
@@ -61,4 +63,20 @@ func verifySignature(secret, timestamp string, body, signature []byte) bool {
 	_, _ = mac.Write([]byte(timestamp + "."))
 	_, _ = mac.Write(body)
 	return hmac.Equal(mac.Sum(nil), signature)
+}
+
+func hmacPayload(envelope app.EventEnvelopeType, eventID, eventType string, body []byte) ([]byte, error) {
+	if envelope != app.EventEnvelopeTypeNone {
+		return body, nil
+	}
+	if eventID == "" {
+		return nil, errors.New("event ID selector did not match a value")
+	}
+	payload := make([]byte, 0, len(eventID)+len(eventType)+len(body)+2)
+	payload = append(payload, eventID...)
+	payload = append(payload, '\n')
+	payload = append(payload, eventType...)
+	payload = append(payload, '\n')
+	payload = append(payload, body...)
+	return payload, nil
 }

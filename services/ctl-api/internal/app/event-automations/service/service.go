@@ -39,16 +39,17 @@ func New(p Params) *service {
 func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/event-ingress/:ingress_key", s.IngestEvent)
 
-	sources := api.Group("/v1/apps/:app_id/event-sources")
+	sources := api.Group("/v1/event-sources")
 	sources.POST("", s.CreateEventSource)
 	sources.GET("", s.ListEventSources)
 	sources.GET("/:event_source_id", s.GetEventSource)
+	sources.DELETE("/:event_source_id", s.DeleteEventSource)
 	sources.POST("/:event_source_id/rotate-secret", s.RotateSecret)
 	sources.POST("/:event_source_id/enable", s.EnableEventSource)
 	sources.POST("/:event_source_id/disable", s.DisableEventSource)
 	sources.POST("/:event_source_id/secrets/:secret_id/revoke", s.RevokeSecret)
 
-	automations := api.Group("/v1/apps/:app_id/event-automations")
+	automations := api.Group("/v1/event-automations")
 	automations.GET("/events", s.ListEvents)
 	automations.GET("/events/:event_id", s.GetEvent)
 	automations.POST("/events/:event_id/replay", s.ReplayEvent)

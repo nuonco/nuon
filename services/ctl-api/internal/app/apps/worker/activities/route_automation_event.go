@@ -49,7 +49,7 @@ func (a *Activities) RouteAutomationEvent(ctx context.Context, req RouteAutomati
 			return fmt.Errorf("unable to get event: %w", err)
 		}
 
-		if req.ReplayID == "" && event.RoutingStatus == app.EventRoutingStatusRouted {
+		if req.ReplayID == "" && (event.RoutingStatus == app.EventRoutingStatusMatched || event.RoutingStatus == app.EventRoutingStatusIgnored || event.RoutingStatus == app.EventRoutingStatusRejected) {
 			var dispatches []app.EventDispatch
 			if err := tx.Where(app.EventDispatch{EventSourceEventID: event.ID}).Find(&dispatches).Error; err != nil {
 				return err
@@ -60,6 +60,9 @@ func (a *Activities) RouteAutomationEvent(ctx context.Context, req RouteAutomati
 				}
 			}
 			return nil
+		}
+		if event.EventSource.ID == "" {
+			return markEventRejected(tx, &event, "event source was deleted")
 		}
 
 		if err := tx.Model(&event).Updates(map[string]any{
@@ -72,26 +75,20 @@ func (a *Activities) RouteAutomationEvent(ctx context.Context, req RouteAutomati
 		}
 
 		var activeConfigs []app.AppConfig
-		if err := tx.Where(app.AppConfig{AppID: event.AppID, Status: app.AppConfigStatusActive}).
+		if err := tx.Where(app.AppConfig{OrgID: event.OrgID, Status: app.AppConfigStatusActive}).
 			Order("created_at DESC").
 			Find(&activeConfigs).Error; err != nil {
 			return fmt.Errorf("unable to get active app configs: %w", err)
 		}
-		var activeConfig *app.AppConfig
-		for i := range activeConfigs {
-			if activeConfigs[i].Labels["source"] != string(app.AppBranchRunTypeGitPreview) {
-				activeConfig = &activeConfigs[i]
-				break
-			}
-		}
-		if activeConfig == nil {
+		activeConfigIDs := activeAutomationConfigIDs(activeConfigs)
+		if len(activeConfigIDs) == 0 {
 			return markEventRouted(tx, &event, 0, 0)
 		}
 
 		var rules []app.EventAutomationRule
 		if err := tx.Where(app.EventAutomationRule{
-			AppConfigID:   activeConfig.ID,
 			EventSourceID: event.EventSourceID,
+			OrgID:         event.OrgID,
 			Enabled:       true,
 		}).Find(&rules).Error; err != nil {
 			return fmt.Errorf("unable to list event automation rules: %w", err)
@@ -105,14 +102,14 @@ func (a *Activities) RouteAutomationEvent(ctx context.Context, req RouteAutomati
 		matchCount := 0
 		for i := range rules {
 			rule := &rules[i]
-			if rule.SuspendedAt != nil || !ruleMatchesEvent(rule, event.EventType, payload) {
+			if activeConfigIDs[rule.AppID] != rule.AppConfigID || rule.SuspendedAt != nil || !ruleMatchesEvent(rule, event.EventType, payload) {
 				continue
 			}
 			matchCount++
 			dispatch := app.EventDispatch{
 				CreatedByID:           event.EventSource.CreatedByID,
 				OrgID:                 event.OrgID,
-				AppID:                 event.AppID,
+				AppID:                 rule.AppID,
 				EventSourceEventID:    event.ID,
 				EventAutomationRuleID: rule.ID,
 				ReplayID:              replayIDPtr(req.ReplayID),
@@ -142,7 +139,9 @@ func (a *Activities) RouteAutomationEvent(ctx context.Context, req RouteAutomati
 		defer cancel()
 		statusErr := a.db.WithContext(cleanupCtx).Model(&app.EventSourceEvent{}).
 			Where(app.EventSourceEvent{ID: req.EventID}).
-			Not(app.EventSourceEvent{RoutingStatus: app.EventRoutingStatusRouted}).
+			Not(app.EventSourceEvent{RoutingStatus: app.EventRoutingStatusMatched}).
+			Not(app.EventSourceEvent{RoutingStatus: app.EventRoutingStatusIgnored}).
+			Not(app.EventSourceEvent{RoutingStatus: app.EventRoutingStatusRejected}).
 			Updates(map[string]any{
 				"routing_status":       app.EventRoutingStatusRoutingFailed,
 				"routing_error":        err.Error(),
@@ -154,6 +153,18 @@ func (a *Activities) RouteAutomationEvent(ctx context.Context, req RouteAutomati
 		return nil, err
 	}
 	return resp, nil
+}
+
+func activeAutomationConfigIDs(configs []app.AppConfig) map[string]string {
+	active := make(map[string]string)
+	for i := range configs {
+		config := &configs[i]
+		if _, ok := active[config.AppID]; ok || config.Labels["source"] == string(app.AppBranchRunTypeGitPreview) {
+			continue
+		}
+		active[config.AppID] = config.ID
+	}
+	return active
 }
 
 func replayIDPtr(replayID string) *string {
@@ -171,10 +182,25 @@ func automationDispatchKey(eventID, ruleID, replayID string) string {
 	return key
 }
 
-func markEventRouted(tx *gorm.DB, event *app.EventSourceEvent, matchCount, dispatchCount int) error {
+func markEventRejected(tx *gorm.DB, event *app.EventSourceEvent, reason string) error {
 	completedAt := time.Now().UTC()
 	return tx.Model(event).Updates(map[string]any{
-		"routing_status":       app.EventRoutingStatusRouted,
+		"routing_status":       app.EventRoutingStatusRejected,
+		"routing_error":        reason,
+		"routing_completed_at": completedAt,
+		"match_count":          0,
+		"dispatch_count":       0,
+	}).Error
+}
+
+func markEventRouted(tx *gorm.DB, event *app.EventSourceEvent, matchCount, dispatchCount int) error {
+	completedAt := time.Now().UTC()
+	status := app.EventRoutingStatusMatched
+	if matchCount == 0 {
+		status = app.EventRoutingStatusIgnored
+	}
+	return tx.Model(event).Updates(map[string]any{
+		"routing_status":       status,
 		"routing_error":        "",
 		"routing_completed_at": completedAt,
 		"match_count":          matchCount,
@@ -193,15 +219,17 @@ func decodeAutomationPayload(raw json.RawMessage) (any, error) {
 }
 
 func ruleMatchesEvent(rule *app.EventAutomationRule, eventType string, payload any) bool {
-	eventTypeMatches := false
-	for _, allowed := range rule.EventTypes {
-		if eventType == allowed {
-			eventTypeMatches = true
-			break
+	if len(rule.EventTypes) != 0 {
+		eventTypeMatches := false
+		for _, allowed := range rule.EventTypes {
+			if eventType == allowed {
+				eventTypeMatches = true
+				break
+			}
 		}
-	}
-	if !eventTypeMatches {
-		return false
+		if !eventTypeMatches {
+			return false
+		}
 	}
 	for _, filter := range rule.Filters {
 		if filter.Op != app.EventAutomationFilterTypeEq {

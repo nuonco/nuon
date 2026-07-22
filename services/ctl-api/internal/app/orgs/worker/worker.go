@@ -12,6 +12,7 @@ import (
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	appsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -35,6 +36,7 @@ type WorkerParams struct {
 	SharedActivities *workflows.Activities
 	WKflows          *Workflows
 	Acts             *activities.Activities
+	AutomationActs   *appsactivities.Activities `name:"org-automation-activities"`
 	L                *zap.Logger
 	LC               fx.Lifecycle
 	Interceptors     []interceptor.WorkerInterceptor `group:"interceptors"`
@@ -63,6 +65,9 @@ func New(params WorkerParams) (*Worker, error) {
 	})
 
 	wkr.RegisterActivity(params.Acts)
+	wkr.RegisterActivity(params.AutomationActs.RouteAutomationEvent)
+	wkr.RegisterActivity(params.AutomationActs.DispatchAutomationEvent)
+	wkr.RegisterActivity(params.AutomationActs.FinalizeAutomationDispatchFailure)
 	for _, acts := range params.SharedActivities.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}

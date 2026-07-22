@@ -8,15 +8,16 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"mime"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	orghelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queuepkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
@@ -30,6 +31,8 @@ var (
 	errEventBodyTooLarge   = errors.New("request body too large")
 	errEventSourceInactive = errors.New("event source inactive")
 	errEventSecretInactive = errors.New("event source secret inactive")
+	errUnsupportedAuth     = errors.New("event source auth is not implemented")
+	errUnsupportedEnvelope = errors.New("event source envelope is not implemented")
 )
 
 type cloudEvent struct {
@@ -48,6 +51,14 @@ type ingressResponse struct {
 	Duplicate bool   `json:"duplicate"`
 }
 
+type normalizedEvent struct {
+	ID          string
+	Type        string
+	OccurredAt  *time.Time
+	Payload     json.RawMessage
+	ContentType string
+}
+
 func parseCloudEvent(body []byte) (*cloudEvent, error) {
 	var event cloudEvent
 	decoder := json.NewDecoder(bytes.NewReader(body))
@@ -58,6 +69,30 @@ func parseCloudEvent(body []byte) (*cloudEvent, error) {
 		return nil, errors.New("invalid structured CloudEvent 1.0")
 	}
 	return &event, nil
+}
+
+func decodeEvent(source *app.EventSource, headers http.Header, body []byte) (*normalizedEvent, error) {
+	switch source.Envelope {
+	case app.EventEnvelopeTypeNone:
+		if !json.Valid(body) {
+			return nil, errors.New("invalid JSON event")
+		}
+		eventID := headers.Get(source.IDFrom.Header)
+		if eventID == "" && source.AuthType == app.EventSourceAuthTypeNone {
+			eventID = uuid.NewString()
+		}
+		return &normalizedEvent{
+			ID: eventID, Type: headers.Get(source.TypeFrom.Header), Payload: json.RawMessage(body), ContentType: headers.Get("Content-Type"),
+		}, nil
+	case app.EventEnvelopeTypeCloudEvents:
+		event, err := parseCloudEvent(body)
+		if err != nil {
+			return nil, err
+		}
+		return &normalizedEvent{ID: event.ID, Type: event.Type, OccurredAt: event.Time, Payload: event.Data, ContentType: event.DataContentType}, nil
+	default:
+		return nil, errUnsupportedEnvelope
+	}
 }
 
 func readLimitedBody(body io.Reader) ([]byte, error) {
@@ -73,33 +108,14 @@ func readLimitedBody(body io.Reader) ([]byte, error) {
 }
 
 // @ID IngestAutomationEvent
-// @Summary Ingest a CloudEvent
+// @Summary Ingest an event
 // @Tags event-automations
-// @Accept application/cloudevents+json
+// @Accept json
 // @Produce json
 // @Param ingress_key path string true "Opaque ingress key"
 // @Success 202 {object} ingressResponse
 // @Router /v1/event-ingress/{ingress_key} [post]
 func (s *service) IngestEvent(ctx *gin.Context) {
-	mediaType, _, err := mime.ParseMediaType(ctx.GetHeader("Content-Type"))
-	if err != nil || mediaType != "application/cloudevents+json" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "content type must be application/cloudevents+json"})
-		return
-	}
-	timestamp, err := parseTimestamp(ctx.GetHeader("X-Nuon-Timestamp"), time.Now())
-	if err != nil {
-		if errors.Is(err, errStaleTimestamp) {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "stale signature"})
-			return
-		}
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid timestamp"})
-		return
-	}
-	signature, err := parseSignature(ctx.GetHeader("X-Nuon-Signature"))
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid signature header"})
-		return
-	}
 	body, err := readLimitedBody(ctx.Request.Body)
 	if err != nil {
 		if errors.Is(err, errEventBodyTooLarge) {
@@ -121,28 +137,58 @@ func (s *service) IngestEvent(ctx *gin.Context) {
 		return
 	}
 	now := time.Now()
-	var matched *app.EventSourceSecret
-	for i := range source.Secrets {
-		secret := &source.Secrets[i]
-		if secret.RevokedAt != nil || now.Before(secret.NotBefore) || (secret.ExpiresAt != nil && !now.Before(*secret.ExpiresAt)) {
-			continue
+	event, err := decodeEvent(&source, ctx.Request.Header, body)
+	if err != nil {
+		if errors.Is(err, errUnsupportedEnvelope) {
+			ctx.JSON(http.StatusNotImplemented, gin.H{"error": err.Error()})
+			return
 		}
-		if verifySignature(secret.Secret, timestamp, body, signature) {
-			matched = secret
-			break
-		}
-	}
-	if matched == nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid signature"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid event envelope"})
 		return
 	}
-	event, err := parseCloudEvent(body)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid CloudEvent"})
+	var matched *app.EventSourceSecret
+	switch source.AuthType {
+	case app.EventSourceAuthTypeNone:
+	case app.EventSourceAuthTypeHMAC:
+		signedPayload, err := hmacPayload(source.Envelope, event.ID, event.Type, body)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		timestamp, err := parseTimestamp(ctx.GetHeader("X-Nuon-Timestamp"), now)
+		if err != nil {
+			if errors.Is(err, errStaleTimestamp) {
+				ctx.JSON(http.StatusUnauthorized, gin.H{"error": "stale signature"})
+				return
+			}
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid timestamp"})
+			return
+		}
+		signature, err := parseSignature(ctx.GetHeader("X-Nuon-Signature"))
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid signature header"})
+			return
+		}
+		for i := range source.Secrets {
+			secret := &source.Secrets[i]
+			if secret.RevokedAt != nil || now.Before(secret.NotBefore) || (secret.ExpiresAt != nil && !now.Before(*secret.ExpiresAt)) {
+				continue
+			}
+			if verifySignature(secret.Secret, timestamp, signedPayload, signature) {
+				matched = secret
+				break
+			}
+		}
+		if matched == nil {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid signature"})
+			return
+		}
+	default:
+		ctx.JSON(http.StatusNotImplemented, gin.H{"error": errUnsupportedAuth.Error()})
 		return
 	}
 	cctx.SetOrgIDGinContext(ctx, source.OrgID)
-	queue, err := s.appAutomationQueue(ctx, source.AppID)
+	queue, err := s.orgAutomationQueue(ctx, source.OrgID)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -180,14 +226,34 @@ func (s *service) appAutomationQueue(ctx context.Context, appID string) (*app.Qu
 	return s.appsHelpers.EnsureAppAutomationQueue(ctx, appID)
 }
 
-func (s *service) persistEvent(ctx *gin.Context, source *app.EventSource, secret *app.EventSourceSecret, queueID string, envelope *cloudEvent, body []byte, now time.Time) (*app.EventSourceEvent, bool, bool, error) {
+func (s *service) orgAutomationQueue(ctx context.Context, orgID string) (*app.Queue, error) {
+	ownerType := plugins.TableName(s.db, app.Org{})
+	var queue app.Queue
+	err := s.db.WithContext(ctx).Where(app.Queue{OwnerID: orgID, OwnerType: ownerType, Name: orghelpers.OrgSignalsQueueName}).First(&queue).Error
+	if err == nil {
+		return &queue, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	return s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OrgID: &orgID, OwnerID: orgID, OwnerType: ownerType, Namespace: "orgs", Name: orghelpers.OrgSignalsQueueName,
+		MaxInFlight: 10, MaxDepth: 50,
+	})
+}
+
+func (s *service) persistEvent(ctx *gin.Context, source *app.EventSource, secret *app.EventSourceSecret, queueID string, envelope *normalizedEvent, body []byte, now time.Time) (*app.EventSourceEvent, bool, bool, error) {
 	hash := sha256.Sum256(body)
 	hashHex := hex.EncodeToString(hash[:])
 	event := app.EventSourceEvent{
-		EventSourceID: source.ID, EventSourceSecretID: secret.ID, AppID: source.AppID, OrgID: source.OrgID,
-		ExternalID: envelope.ID, CloudEventSource: envelope.Source, EventType: envelope.Type, Subject: envelope.Subject, OccurredAt: envelope.Time,
-		ReceivedAt: now, Payload: envelope.Data, PayloadSHA256: hashHex, PayloadContentType: envelope.DataContentType,
-		PayloadSize: int64(len(body)), SecretKeyID: secret.KeyID,
+		EventSourceID: source.ID, OrgID: source.OrgID,
+		ExternalID: envelope.ID, EventType: envelope.Type, OccurredAt: envelope.OccurredAt,
+		ReceivedAt: now, Payload: envelope.Payload, PayloadContentType: envelope.ContentType,
+		Headers: ctx.Request.Header.Clone(), RawBody: body, RawBodySHA256: hashHex, RawBodySize: int64(len(body)), RawContentType: ctx.GetHeader("Content-Type"),
+	}
+	if secret != nil {
+		event.EventSourceSecretID = &secret.ID
+		event.SecretKeyID = secret.KeyID
 	}
 	duplicate := false
 	collision := false
@@ -202,16 +268,19 @@ func (s *service) persistEvent(ctx *gin.Context, source *app.EventSource, secret
 		if lockedSource.Status != app.EventSourceStatusActive {
 			return errEventSourceInactive
 		}
-		var lockedSecret app.EventSourceSecret
-		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.EventSourceSecret{ID: secret.ID, EventSourceID: source.ID}).First(&lockedSecret).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
+		var lockedSecret *app.EventSourceSecret
+		if secret != nil {
+			lockedSecret = &app.EventSourceSecret{}
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where(app.EventSourceSecret{ID: secret.ID, EventSourceID: source.ID}).First(lockedSecret).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return errEventSecretInactive
+				}
+				return err
+			}
+			secretCheckTime := time.Now()
+			if lockedSecret.RevokedAt != nil || secretCheckTime.Before(lockedSecret.NotBefore) || (lockedSecret.ExpiresAt != nil && !secretCheckTime.Before(*lockedSecret.ExpiresAt)) {
 				return errEventSecretInactive
 			}
-			return err
-		}
-		secretCheckTime := time.Now()
-		if lockedSecret.RevokedAt != nil || secretCheckTime.Before(lockedSecret.NotBefore) || (lockedSecret.ExpiresAt != nil && !secretCheckTime.Before(*lockedSecret.ExpiresAt)) {
-			return errEventSecretInactive
 		}
 		res := tx.Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "event_source_id"}, {Name: "external_id"}}, DoNothing: true}).Create(&event)
 		if res.Error != nil {
@@ -222,7 +291,7 @@ func (s *service) persistEvent(ctx *gin.Context, source *app.EventSource, secret
 			if err := tx.Unscoped().Where(app.EventSourceEvent{EventSourceID: source.ID, ExternalID: envelope.ID}).First(&event).Error; err != nil {
 				return err
 			}
-			collision = event.PayloadSHA256 != hashHex
+			collision = event.RawBodySHA256 != hashHex || event.EventType != envelope.Type
 		}
 		if !collision {
 			dedupeKey := "automation-event:" + event.ID
@@ -237,8 +306,10 @@ func (s *service) persistEvent(ctx *gin.Context, source *app.EventSource, secret
 		if collision {
 			return nil
 		}
-		if err := tx.Model(&lockedSecret).Update("last_used_at", now).Error; err != nil {
-			return err
+		if lockedSecret != nil {
+			if err := tx.Model(lockedSecret).Update("last_used_at", now).Error; err != nil {
+				return err
+			}
 		}
 		return tx.Model(&lockedSource).Update("last_event_at", now).Error
 	})
