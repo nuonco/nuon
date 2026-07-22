@@ -50,6 +50,13 @@ func init() {
 	config.RegisterDefault("kafka_brokers", "localhost:9092")
 	config.RegisterDefault("kafka_security_protocol", "PLAINTEXT")
 	config.RegisterDefault("kafka_client_id", "ctl-api")
+	config.RegisterDefault("kafka_consumer_group", "ctl-api-heartbeats")
+	// consumer flush cadence: each fetch (and so each ClickHouse insert) waits
+	// until min_bytes accumulate or max_wait elapses, whichever comes first.
+	// min_bytes is the target batch/part size; max_wait caps latency and, at low
+	// volume, bounds the insert rate to ~1 per partition per interval.
+	config.RegisterDefault("kafka_consumer_fetch_max_wait", "5s")
+	config.RegisterDefault("kafka_consumer_fetch_min_bytes", 256*1024)
 
 	// defaults for app
 	config.RegisterDefault("github_app_key_secret_name", "ctl-api-github-app-key")
@@ -226,14 +233,17 @@ type Config struct {
 	// kafka configuration. Security is pluggable per cloud (local PLAINTEXT; MSK
 	// IAM and GCP/Azure OAUTHBEARER wired per-cloud later). KafkaEnabled gates
 	// whether producers use Kafka vs writing straight to ClickHouse
-	KafkaEnabled          bool   `config:"kafka_enabled"`
-	KafkaBrokers          string `config:"kafka_brokers"`
-	KafkaSecurityProtocol string `config:"kafka_security_protocol"`
-	KafkaSASLMechanism    string `config:"kafka_sasl_mechanism"`
-	KafkaSASLUsername     string `config:"kafka_sasl_username"`
-	KafkaSASLPassword     string `config:"kafka_sasl_password"`
-	KafkaTLSEnabled       bool   `config:"kafka_tls_enabled"`
-	KafkaClientID         string `config:"kafka_client_id"`
+	KafkaEnabled               bool          `config:"kafka_enabled"`
+	KafkaBrokers               string        `config:"kafka_brokers"`
+	KafkaSecurityProtocol      string        `config:"kafka_security_protocol"`
+	KafkaSASLMechanism         string        `config:"kafka_sasl_mechanism"`
+	KafkaSASLUsername          string        `config:"kafka_sasl_username"`
+	KafkaSASLPassword          string        `config:"kafka_sasl_password"`
+	KafkaTLSEnabled            bool          `config:"kafka_tls_enabled"`
+	KafkaClientID              string        `config:"kafka_client_id"`
+	KafkaConsumerGroup         string        `config:"kafka_consumer_group"`
+	KafkaConsumerFetchMaxWait  time.Duration `config:"kafka_consumer_fetch_max_wait"`
+	KafkaConsumerFetchMinBytes int32         `config:"kafka_consumer_fetch_min_bytes"`
 
 	// temporal configuration
 	TemporalHost                          string        `config:"temporal_host"  validate:"required"`

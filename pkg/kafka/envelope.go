@@ -6,17 +6,7 @@ import (
 	"time"
 )
 
-// EnvelopeVersion is the current schema version stamped on outgoing messages.
 const EnvelopeVersion = 1
-
-const envelopeSource = "ctl-api"
-
-// Message type discriminators carried in the envelope.
-const (
-	TypeRunnerHeartBeat = "runner_heart_beat"
-	// TypeOtelLogRecord is defined for the logs stream, which is not wired yet.
-	TypeOtelLogRecord = "otel_log_record"
-)
 
 // Envelope is the versioned wrapper every Kafka message uses. Payload is left as
 // raw JSON so consumers decode it by Type/Version rather than the producer and
@@ -29,8 +19,8 @@ type Envelope struct {
 	Payload    json.RawMessage `json:"payload"`
 }
 
-// Wrap marshals payload and returns the JSON-encoded envelope ready to produce.
-func Wrap(typ string, payload any) ([]byte, error) {
+// Wrap marshals payload into a versioned envelope stamped with source and type.
+func Wrap(source, typ string, payload any) ([]byte, error) {
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("marshal payload: %w", err)
@@ -40,7 +30,7 @@ func Wrap(typ string, payload any) ([]byte, error) {
 		Version:    EnvelopeVersion,
 		Type:       typ,
 		ProducedAt: time.Now().UTC(),
-		Source:     envelopeSource,
+		Source:     source,
 		Payload:    raw,
 	})
 }
