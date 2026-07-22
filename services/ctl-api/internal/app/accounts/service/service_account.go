@@ -132,9 +132,10 @@ func (s *service) getOrgServiceAccount(ctx context.Context, orgID, accountID str
 // @ID						ListServiceAccounts
 // @Summary				List service accounts for the current org
 // @Description.markdown	list_service_accounts.md
-// @Param					offset	query	int	false	"offset of results to return"	Default(0)
-// @Param					limit	query	int	false	"limit of results to return"	Default(10)
-// @Param					page	query	int	false	"page number of results to return"	Default(0)
+// @Param					offset			query	int		false	"offset of results to return"	Default(0)
+// @Param					limit			query	int		false	"limit of results to return"	Default(10)
+// @Param					page			query	int		false	"page number of results to return"	Default(0)
+// @Param					include_runners	query	bool	false	"include service accounts with the runner role (excluded by default)"
 // @Tags					accounts
 // @Accept					json
 // @Produce				json
@@ -152,11 +153,21 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 		return
 	}
 
+	includeRunners := ctx.Query("include_runners") == "true"
+
 	accounts := []app.Account{}
 	tx := s.db.WithContext(ctx).
 		Model(&app.Account{}).
 		Joins("JOIN account_roles ON account_roles.account_id = accounts.id AND account_roles.org_id = ? AND account_roles.deleted_at = 0", org.ID).
-		Where("accounts.account_type = ?", app.AccountTypeService).
+		Where("accounts.account_type = ?", app.AccountTypeService)
+
+	if !includeRunners {
+		tx = tx.
+			Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0").
+			Where("roles.role_type != ?", app.RoleTypeRunner)
+	}
+
+	tx = tx.
 		Group("accounts.id").
 		Order("accounts.email").
 		Order("accounts.id").

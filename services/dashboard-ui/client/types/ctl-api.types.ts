@@ -501,6 +501,32 @@ export interface TCreateStaticTokenResponse {
   api_token?: string
 }
 
+// Roles
+export interface TRoleInfo {
+  role_type: string
+  title: string
+  description: string
+  applies_to: string[]
+}
+
+// Service accounts
+export interface TCreateServiceAccountBody {
+  role: string
+}
+
+export interface TUpdateServiceAccountRoleBody {
+  role: string
+}
+
+export interface TCreateServiceAccountTokenBody {
+  duration?: string
+  invalidate?: boolean
+}
+
+export interface TCreateServiceAccountTokenResponse {
+  token: string
+}
+
 // User Journey (Enhanced with completion tracking and metadata)
 export interface TUserJourneyStep {
   name: string
