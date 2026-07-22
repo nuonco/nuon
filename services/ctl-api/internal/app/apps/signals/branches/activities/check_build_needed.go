@@ -40,12 +40,20 @@ func (a *Activities) CheckBuildNeeded(ctx context.Context, input *CheckBuildNeed
 
 	var newConn app.ComponentConfigConnection
 	err = a.db.WithContext(ctx).
+		Preload("ExternalImageComponentConfig").
 		Where(app.ComponentConfigConnection{
 			AppConfigID: input.NewAppConfigID,
 			ComponentID: input.ComponentID,
 		}).
 		First(&newConn).Error
 	if err != nil {
+		return &CheckBuildNeededOutput{NeedsBuild: true}, nil
+	}
+
+	// An update_policy resolves tags against the source registry at build
+	// time, so an unchanged config does not imply an unchanged artifact —
+	// always rebuild and let the runner no-op on a matching digest.
+	if cfg := newConn.ExternalImageComponentConfig; cfg != nil && cfg.UpdatePolicy != "" {
 		return &CheckBuildNeededOutput{NeedsBuild: true}, nil
 	}
 
