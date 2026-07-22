@@ -14,8 +14,20 @@ import (
 // Safe to call multiple times — queueClient.Create is idempotent.
 // Also updates MaxInFlight on existing queues if it has changed.
 func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) error {
+	var install app.Install
+	if res := s.db.WithContext(ctx).Where(app.Install{ID: installID}).First(&install); res.Error != nil {
+		return fmt.Errorf("unable to get install: %w", res.Error)
+	}
+
 	const installsNamespace = "installs"
-	cronsNamespace := pkgworkflows.InstallCronsNamespace
+	cronsNamespace := installsNamespace
+	isolated, err := s.featuresClient.OrgCronNamespaceIsolationEnabled(ctx, install.OrgID)
+	if err != nil {
+		return fmt.Errorf("unable to evaluate cron namespace isolation: %w", err)
+	}
+	if isolated {
+		cronsNamespace = pkgworkflows.InstallCronsNamespace
+	}
 
 	queues := []struct {
 		Name        string
@@ -52,6 +64,12 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 		// Update MaxInFlight if it has drifted from the desired value.
 		if existing.MaxInFlight != q.MaxInFlight {
 			s.db.WithContext(ctx).Model(existing).Update("max_in_flight", q.MaxInFlight)
+		}
+
+		// queueClient.Create migrates the queue workflow when its namespace
+		// changed; migrate the queue's emitters to match (no-op if unchanged).
+		if err := s.emitterClient.MigrateQueueEmitters(ctx, existing.ID, q.Namespace); err != nil {
+			return fmt.Errorf("unable to migrate %s queue emitters: %w", q.Name, err)
 		}
 	}
 

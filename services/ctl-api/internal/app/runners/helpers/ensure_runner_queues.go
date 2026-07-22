@@ -23,6 +23,20 @@ const (
 // runner-healthcheck-crons queue (with its healthcheck emitter) if they don't
 // exist. Safe to call multiple times — queueClient.Create is idempotent.
 func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string) error {
+	var runner app.Runner
+	if res := h.db.WithContext(ctx).Where(app.Runner{ID: runnerID}).First(&runner); res.Error != nil {
+		return fmt.Errorf("unable to get runner: %w", res.Error)
+	}
+
+	healthcheckNamespace := "runners"
+	isolated, err := h.featuresClient.OrgCronNamespaceIsolationEnabled(ctx, runner.OrgID)
+	if err != nil {
+		return fmt.Errorf("unable to evaluate cron namespace isolation: %w", err)
+	}
+	if isolated {
+		healthcheckNamespace = pkgworkflows.RunnerHealthcheckCronsNamespace
+	}
+
 	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerID,
 		OwnerType:   "runners",
@@ -37,13 +51,17 @@ func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string)
 	healthcheckQueue, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerID,
 		OwnerType:   "runners",
-		Namespace:   pkgworkflows.RunnerHealthcheckCronsNamespace,
+		Namespace:   healthcheckNamespace,
 		Name:        RunnerHealthcheckCronsQueueName,
 		MaxInFlight: 5,
 		MaxDepth:    50,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to ensure runner-healthcheck-crons queue: %w", err)
+	}
+
+	if err := h.emitterClient.MigrateQueueEmitters(ctx, healthcheckQueue.ID, healthcheckNamespace); err != nil {
+		return fmt.Errorf("unable to migrate runner healthcheck emitters: %w", err)
 	}
 
 	emitters, err := h.emitterClient.GetEmittersByQueueID(ctx, healthcheckQueue.ID)

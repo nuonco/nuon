@@ -44,6 +44,20 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 	if res := c.db.WithContext(ctx).
 		Where(app.Queue{OwnerID: req.OwnerID, Name: req.Name}).
 		First(&existing); res.Error == nil {
+
+			// todo(sk): is this relevant ? 
+		if existing.Workflow.Namespace != req.Namespace {
+			if err := c.migrateQueueNamespace(
+				ctx,
+				&existing,
+				req.Namespace,
+				taskqueue.For(req.Namespace, req.Name)
+			); err != nil {
+				return nil, errors.Wrap(err, "unable to migrate queue namespace")
+			}
+
+			return &existing, nil
+		}
 		if err := c.HintRestartSingle(ctx, existing.ID); err != nil {
 			c.l.Warn("unable to hint restart existing queue during idempotent create",
 				zap.String("queue-id", existing.ID), zap.Error(err))
