@@ -80,6 +80,14 @@ export function MarkdownTable({ headers, rows, align, search }: ExtractedTable) 
         id: `col-${i}`,
         header: h.text || `Column ${i + 1}`,
         accessorFn: (row: Row) => rows[row.__i]?.[i]?.text ?? '',
+        sortingFn: (a, b) => {
+          const av = rows[a.original.__i]?.[i]?.sortValue
+          const bv = rows[b.original.__i]?.[i]?.sortValue
+          if (av !== undefined && bv !== undefined) return av - bv
+          const at = rows[a.original.__i]?.[i]?.text ?? ''
+          const bt = rows[b.original.__i]?.[i]?.text ?? ''
+          return at.localeCompare(bt)
+        },
         cell: (ctx) => {
           const cls = alignClass(align[i])
           return (

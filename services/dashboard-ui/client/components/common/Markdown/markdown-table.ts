@@ -6,6 +6,7 @@ export interface TableCell {
   text: string
   markdown?: string
   content?: ReactNode
+  sortValue?: number
 }
 
 export interface TableSearchConfig {
