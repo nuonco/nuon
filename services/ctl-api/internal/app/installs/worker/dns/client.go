@@ -15,7 +15,6 @@ const (
 
 type route53Client interface {
 	ChangeResourceRecordSets(context.Context, *route53.ChangeResourceRecordSetsInput, ...func(*route53.Options)) (*route53.ChangeResourceRecordSetsOutput, error)
-	ListResourceRecordSets(context.Context, *route53.ListResourceRecordSetsInput, ...func(*route53.Options)) (*route53.ListResourceRecordSetsOutput, error)
 }
 
 func (a *Activities) getRoute53Client(ctx context.Context, iamRoleARN string) (*route53.Client, error) {

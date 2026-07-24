@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisiondns"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
@@ -83,15 +82,6 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	if err != nil {
 		return nil, err
 	}
-
-	sg.nextGroup() // deprovision dns delegation before the sandbox (and its zone) is destroyed
-	step, err = sg.installSignalStep(ctx, installID, "deprovision dns delegation", pgtype.Hstore{}, &deprovisiondns.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
 
 	sg.nextGroup() // deprovision sandbox plan + apply
 

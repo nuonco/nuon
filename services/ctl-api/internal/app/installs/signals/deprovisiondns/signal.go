@@ -5,9 +5,8 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
-
+	"github.com/cockroachdb/errors"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	installdelegationdns "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/dns"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -36,21 +35,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	}
 
 	return nil
-}
-
-type nuonDNSDomain struct {
-	ZoneID      string   `mapstructure:"zone_id,omitempty"`
-	Name        string   `mapstructure:"name,omitempty"`
-	Nameservers []string `mapstructure:"nameservers,omitempty"`
-}
-
-type nuonDNSOutputs struct {
-	Enabled      bool          `mapstructure:"enabled,omitempty"`
-	PublicDomain nuonDNSDomain `mapstructure:"public_domain,omitempty"`
-}
-
-type nuonDNSSandboxOutputs struct {
-	DNS nuonDNSOutputs `mapstructure:"nuon_dns"`
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
