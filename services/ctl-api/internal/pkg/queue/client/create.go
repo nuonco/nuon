@@ -51,7 +51,7 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 				ctx,
 				&existing,
 				req.Namespace,
-				taskqueue.For(req.Namespace, req.Name)
+				taskqueue.For(req.Namespace, req.Name),
 			); err != nil {
 				return nil, errors.Wrap(err, "unable to migrate queue namespace")
 			}

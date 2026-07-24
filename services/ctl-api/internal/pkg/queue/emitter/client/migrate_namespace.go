@@ -56,11 +56,12 @@ func (c *Client) MigrateQueueEmitters(ctx context.Context, queueID string, newNa
 		}
 
 		opts := tclient.StartWorkflowOptions{
-			ID:                    em.Workflow.ID,
-			TaskQueue:             newTaskQueue,
-			Memo:                  emitterMemo(em),
-			WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
-			RetryPolicy:           &temporal.RetryPolicy{MaximumAttempts: 0},
+			ID:                       em.Workflow.ID,
+			TaskQueue:                newTaskQueue,
+			Memo:                     emitterMemo(em),
+			WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+			WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_TERMINATE_EXISTING,
+			RetryPolicy:              &temporal.RetryPolicy{MaximumAttempts: 0},
 		}
 		if em.Mode == app.QueueEmitterModeCron {
 			opts.CronSchedule = em.CronSchedule
