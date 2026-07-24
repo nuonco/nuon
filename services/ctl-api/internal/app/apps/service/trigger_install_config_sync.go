@@ -1,14 +1,17 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/installconfigsync"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -19,7 +22,7 @@ type TriggerInstallConfigSyncRequest struct {
 
 // @ID						TriggerInstallConfigSync
 // @Summary				trigger install config sync from git
-// @Description			Triggers a sync of install configs from the configured installs VCS repo. Optionally specify install_name to sync a single install.
+// @Description			Triggers a sync of install configs from the installs.toml VCS repo configured in the app config. Optionally specify install_name to sync a single install.
 // @Tags					apps
 // @Accept					json
 // @Param					req				body	TriggerInstallConfigSyncRequest	true	"Input"
@@ -56,10 +59,6 @@ func (s *service) TriggerInstallConfigSync(ctx *gin.Context) {
 		Preload("Configs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("created_at DESC").Limit(1)
 		}).
-		Preload("Configs.InstallsConnectedGithubVCSConfig").
-		Preload("Configs.InstallsPublicGitVCSConfig").
-		Preload("Configs.ConnectedGithubVCSConfig").
-		Preload("Configs.PublicGitVCSConfig").
 		Where(app.AppBranch{ID: branchID, AppID: appID, OrgID: org.ID}).
 		First(&branch).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to get app branch: %w", err))
@@ -72,6 +71,37 @@ func (s *service) TriggerInstallConfigSync(ctx *gin.Context) {
 	}
 
 	configID := branch.Configs[0].ID
+
+	var latestAppConfig app.AppConfig
+	if err := s.db.WithContext(ctx).
+		Where(app.AppConfig{AppID: appID}).
+		Order("created_at DESC").
+		First(&latestAppConfig).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to get latest app config: %w", err))
+		return
+	}
+
+	blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
+	intermediateJSON, err := latestAppConfig.IntermediateConfig.Get(blobCtx)
+	if err != nil || intermediateJSON == "" {
+		ctx.Error(fmt.Errorf("unable to read intermediate config: %w", err))
+		return
+	}
+
+	var parsedConfig config.AppConfig
+	if err := json.Unmarshal([]byte(intermediateJSON), &parsedConfig); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse intermediate config: %w", err))
+		return
+	}
+
+	if parsedConfig.InstallsConfig == nil {
+		ctx.Error(fmt.Errorf("no installs config found in app config - add an installs.toml with a connected_repo or public_repo"))
+		return
+	}
+	if parsedConfig.InstallsConfig.ConnectedRepo == nil && parsedConfig.InstallsConfig.PublicRepo == nil {
+		ctx.Error(fmt.Errorf("installs.toml has no connected_repo or public_repo configured"))
+		return
+	}
 
 	queue, err := s.queueClient.GetQueueByOwner(ctx, branchID, "app_branches")
 	if err != nil {

@@ -12,8 +12,6 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-const defaultInstallsDirectory = "installs"
-
 func (s *Signal) Execute(ctx workflow.Context) error {
 	logger := workflow.GetLogger(ctx)
 
@@ -22,34 +20,30 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app branch: %w", err)
 	}
 
-	if len(branch.Configs) == 0 {
-		logger.Info("no branch config, skipping install config sync")
+	vcsResult, err := activities.AwaitGetInstallsVCSConfigByAppID(ctx, branch.AppID)
+	if err != nil {
+		return fmt.Errorf("unable to get installs VCS config: %w", err)
+	}
+
+	if !vcsResult.HasVCSConfig {
+		logger.Info("no installs VCS config in app config, skipping install config sync")
 		return nil
 	}
 
-	branchConfig := branch.Configs[0]
-
-	installsDir := defaultInstallsDirectory
-	if branchConfig.InstallsDirectory != nil && *branchConfig.InstallsDirectory != "" {
-		installsDir = *branchConfig.InstallsDirectory
+	installsDir := vcsResult.InstallsDir
+	if installsDir == "" {
+		installsDir = "."
 	}
 
-	var vcsConfigID string
-	if cfg := branchConfig.InstallsConnectedGithubVCSConfig; cfg != nil {
-		vcsConfigID = cfg.ID
-	} else if cfg := branchConfig.InstallsPublicGitVCSConfig; cfg != nil {
-		vcsConfigID = cfg.ID
-	} else {
-		logger.Info("no installs VCS config, skipping install config sync")
-		return nil
+	runID := s.AppBranchRunID
+	if runID == "" {
+		runID = s.AppBranchID
 	}
-
-	commitSHA := s.CommitSHA
 
 	cloneResult, err := activities.LocalAwaitCloneRepo(ctx, activities.CloneRepoRequest{
-		RunID:       s.AppBranchRunID,
-		VcsConfigID: vcsConfigID,
-		CommitSHA:   commitSHA,
+		RunID:       runID,
+		VcsConfigID: vcsResult.VCSConfigID,
+		CommitSHA:   s.CommitSHA,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to clone repo: %w", err)
@@ -80,7 +74,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		AppBranchID:       s.AppBranchID,
 		AppBranchConfigID: s.AppBranchConfigID,
 		AppBranchRunID:    s.AppBranchRunID,
-		CommitSHA:         commitSHA,
+		CommitSHA:         s.CommitSHA,
 		TriggeredBy:       s.TriggeredBy,
 		TotalInstalls:     len(installConfigs.Installs),
 	})
