@@ -328,10 +328,11 @@ func (c *Client) RestartEmitterWorkflow(ctx context.Context, emitterID string) (
 	}
 
 	opts := tclient.StartWorkflowOptions{
-		ID:                    em.Workflow.ID,
-		TaskQueue:             taskqueue.For(q.Workflow.Namespace, q.Name),
-		Memo:                  emitterMemo(em),
-		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		ID:                       em.Workflow.ID,
+		TaskQueue:                taskqueue.For(q.Workflow.Namespace, q.Name),
+		Memo:                     emitterMemo(em),
+		WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+		WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_TERMINATE_EXISTING,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,
 		},

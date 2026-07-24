@@ -45,7 +45,6 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 		Where(app.Queue{OwnerID: req.OwnerID, Name: req.Name}).
 		First(&existing); res.Error == nil {
 
-			// todo(sk): is this relevant ? 
 		if existing.Workflow.Namespace != req.Namespace {
 			if err := c.migrateQueueNamespace(
 				ctx,
