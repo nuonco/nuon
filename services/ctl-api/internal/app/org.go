@@ -214,7 +214,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureTerraformProviderMirror: false,
 		OrgFeatureAppBranchesUI:           false,
 		OrgFeatureTraceView:               false,
-		OrgFeatureStateGenV2:              false,
+		OrgFeatureStateGenV2:              true,
 		OrgFeatureSlack:                   false,
 		OrgFeatureRunbooks:                true,
 		OrgFeaturePulumiSandbox:           false,
