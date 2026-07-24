@@ -164,6 +164,7 @@ func (a *Activities) DeleteDNS(ctx context.Context, req DeleteDNSRequest) (Delet
 		if err := a.deleteRoute53(ctx, req); err != nil {
 			return DeleteDNSResponse{}, fmt.Errorf("unable to delete cloud dns records: %w", err)
 		}
+		return DeleteDNSResponse{}, nil
 	default:
 		return DeleteDNSResponse{}, fmt.Errorf("cloud provider not supported for dns delegation: %q", a.cfg.CloudProvider)
 	}
