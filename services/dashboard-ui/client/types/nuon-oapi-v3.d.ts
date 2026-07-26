@@ -1730,6 +1730,13 @@ export interface paths {
      */
     post: operations["DeprovisionInstallSandbox"];
   };
+  "/v1/installs/{install_id}/dns/check": {
+    /**
+     * Check whether an install's public DNS delegation is live.
+     * @description Resolves the install's public domain nameservers from the public internet and compares them to the nameservers Nuon provisioned, confirming whether the customer's registrar delegation has taken effect.
+     */
+    get: operations["CheckInstallDNSDelegation"];
+  };
   "/v1/installs/{install_id}/drifted-objects": {
     /**
      * get drifted objects for an install
@@ -7078,6 +7085,16 @@ export interface components {
     "service.CancelWorkflowsResponse": {
       cancelled?: string[];
       errors?: components["schemas"]["service.CancelWorkflowError"][];
+    };
+    "service.CheckInstallDNSDelegationResponse": {
+      delegated?: boolean;
+      domain?: string;
+      enabled?: boolean;
+      expected_nameservers?: string[];
+      extra_nameservers?: string[];
+      message?: string;
+      missing_nameservers?: string[];
+      observed_nameservers?: string[];
     };
     "service.CompleteInstallStepRequest": {
       aws_account?: {
@@ -21244,6 +21261,56 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.WorkflowResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Check whether an install's public DNS delegation is live.
+   * @description Resolves the install's public domain nameservers from the public internet and compares them to the nameservers Nuon provisioned, confirming whether the customer's registrar delegation has taken effect.
+   */
+  CheckInstallDNSDelegation: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.CheckInstallDNSDelegationResponse"];
         };
       };
       /** @description Bad Request */
