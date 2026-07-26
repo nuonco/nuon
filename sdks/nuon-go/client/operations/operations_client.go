@@ -146,6 +146,8 @@ type ClientService interface {
 
 	CancelWorkflows(params *CancelWorkflowsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowsOK, error)
 
+	CheckInstallDNSDelegation(params *CheckInstallDNSDelegationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CheckInstallDNSDelegationOK, error)
+
 	CheckVCSConnectionStatus(params *CheckVCSConnectionStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CheckVCSConnectionStatusOK, error)
 
 	CompleteOnboardingDeployStep(params *CompleteOnboardingDeployStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingDeployStepOK, error)
@@ -1648,6 +1650,52 @@ func (a *Client) CancelWorkflows(params *CancelWorkflowsParams, authInfo runtime
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CancelWorkflows: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CheckInstallDNSDelegation checks whether an install s public DNS delegation is live
+
+Resolves the install's public domain nameservers from the public internet and compares them to the nameservers Nuon provisioned, confirming whether the customer's registrar delegation has taken effect.
+*/
+func (a *Client) CheckInstallDNSDelegation(params *CheckInstallDNSDelegationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CheckInstallDNSDelegationOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCheckInstallDNSDelegationParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CheckInstallDNSDelegation",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/dns/check",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CheckInstallDNSDelegationReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CheckInstallDNSDelegationOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CheckInstallDNSDelegation: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
