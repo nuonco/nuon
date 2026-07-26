@@ -257,7 +257,7 @@ export default async function globalSetup(_config: FullConfig) {
 
   const page = await context.newPage();
   await page.goto(`${env.baseUrl}/${orgId}`);
-  await page.waitForLoadState("networkidle");
+  await page.waitForLoadState("domcontentloaded");
 
   await context.storageState({ path: AUTH_STATE_PATH });
   await browser.close();
