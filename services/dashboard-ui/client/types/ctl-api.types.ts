@@ -473,7 +473,7 @@ export type TReadme = components['schemas']['service.Readme']
 export type TWaitlist = components['schemas']['app.Waitlist']
 
 // User / Account
-export type TAccount = components['schemas']['app.Account']
+export type TAccount = components['schemas']['app.Account'] & { name?: string }
 export type TInvite = components['schemas']['app.OrgInvite']
 
 // API tokens
@@ -499,6 +499,37 @@ export interface TCreateStaticTokenBody {
 export interface TCreateStaticTokenResponse {
   id?: string
   api_token?: string
+}
+
+// Roles
+export interface TRoleInfo {
+  role_type: string
+  title: string
+  description: string
+  applies_to: string[]
+}
+
+// Service accounts
+export interface TCreateServiceAccountBody {
+  name: string
+  role: string
+}
+
+export interface TUpdateServiceAccountRoleBody {
+  role: string
+}
+
+export interface TUpdateServiceAccountBody {
+  name: string
+}
+
+export interface TCreateServiceAccountTokenBody {
+  duration?: string
+  invalidate?: boolean
+}
+
+export interface TCreateServiceAccountTokenResponse {
+  token: string
 }
 
 // User Journey (Enhanced with completion tracking and metadata)

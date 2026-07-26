@@ -278,6 +278,10 @@ type ClientService interface {
 
 	CreateRunnerBootstrapToken(params *CreateRunnerBootstrapTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerBootstrapTokenCreated, error)
 
+	CreateServiceAccount(params *CreateServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateServiceAccountCreated, error)
+
+	CreateServiceAccountToken(params *CreateServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateServiceAccountTokenCreated, error)
+
 	CreateSlackChannelSubscription(params *CreateSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSlackChannelSubscriptionCreated, error)
 
 	CreateSlackOrgLink(params *CreateSlackOrgLinkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSlackOrgLinkCreated, error)
@@ -329,6 +333,8 @@ type ClientService interface {
 	DeleteOrg(params *DeleteOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOrgOK, error)
 
 	DeleteRunbook(params *DeleteRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRunbookOK, error)
+
+	DeleteServiceAccount(params *DeleteServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteServiceAccountAccepted, error)
 
 	DeleteSlackChannelSubscription(params *DeleteSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSlackChannelSubscriptionNoContent, error)
 
@@ -802,9 +808,13 @@ type ClientService interface {
 
 	ListQueues(params *ListQueuesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListQueuesOK, error)
 
+	ListRoles(params *ListRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRolesOK, error)
+
 	ListRunnerJobs(params *ListRunnerJobsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRunnerJobsOK, error)
 
 	ListRunnerProcesses(params *ListRunnerProcessesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRunnerProcessesOK, error)
+
+	ListServiceAccounts(params *ListServiceAccountsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListServiceAccountsOK, error)
 
 	ListSlackChannelSubscriptions(params *ListSlackChannelSubscriptionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSlackChannelSubscriptionsOK, error)
 
@@ -931,6 +941,10 @@ type ClientService interface {
 	UpdateRunnerMng(params *UpdateRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerMngCreated, error)
 
 	UpdateRunnerSettings(params *UpdateRunnerSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerSettingsOK, error)
+
+	UpdateServiceAccount(params *UpdateServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateServiceAccountOK, error)
+
+	UpdateServiceAccountRole(params *UpdateServiceAccountRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateServiceAccountRoleOK, error)
 
 	UpdateSlackChannelSubscription(params *UpdateSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateSlackChannelSubscriptionOK, error)
 
@@ -4722,6 +4736,107 @@ func (a *Client) CreateRunnerBootstrapToken(params *CreateRunnerBootstrapTokenPa
 }
 
 /*
+	CreateServiceAccount creates a service account for the current org
+
+	Create a service account for the current org. Service accounts can be used to
+
+generate API tokens for automation and CI/CD workflows.
+
+Defaults to the `org_admin` role if `role` is not specified. Allowed roles
+are `org_admin`, `installer`, and `runner`.
+*/
+func (a *Client) CreateServiceAccount(params *CreateServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateServiceAccountCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateServiceAccountParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateServiceAccount",
+		Method:             "POST",
+		PathPattern:        "/v1/service-accounts",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateServiceAccountReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateServiceAccountCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateServiceAccount: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	CreateServiceAccountToken creates a token for a service account in the current org
+
+	Create an API token for a service account in the current org.
+
+Defaults to a duration of one year (`8760h`) if `duration` is not
+specified. If `invalidate` is set, all existing tokens for the service
+account are invalidated before the new token is created.
+*/
+func (a *Client) CreateServiceAccountToken(params *CreateServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateServiceAccountTokenCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateServiceAccountTokenParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateServiceAccountToken",
+		Method:             "POST",
+		PathPattern:        "/v1/service-accounts/{account_id}/tokens",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateServiceAccountTokenReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateServiceAccountTokenCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateServiceAccountToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateSlackChannelSubscription creates a slack channel subscription
 
 Subscribes a Slack channel to events for the current org. The org_link_id must resolve to a verified SlackOrgLink belonging to the calling org; this is enforced at the DB query level (ABAC).
@@ -5905,6 +6020,55 @@ func (a *Client) DeleteRunbook(params *DeleteRunbookParams, authInfo runtime.Cli
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteRunbook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	DeleteServiceAccount deletes a service account for the current org
+
+	Delete a service account from the current org.
+
+This removes the service account's roles in this org and invalidates all of
+its existing API tokens.
+*/
+func (a *Client) DeleteServiceAccount(params *DeleteServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteServiceAccountAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteServiceAccountParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteServiceAccount",
+		Method:             "DELETE",
+		PathPattern:        "/v1/service-accounts/{account_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteServiceAccountReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteServiceAccountAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteServiceAccount: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -16867,6 +17031,55 @@ func (a *Client) ListQueues(params *ListQueuesParams, authInfo runtime.ClientAut
 }
 
 /*
+	ListRoles lists assignable roles
+
+	List the roles that can be assigned to members and service accounts in an
+
+organization. Each role indicates which principal types it applies to via the
+`applies_to` field (`user`, `service_account`, or both).
+*/
+func (a *Client) ListRoles(params *ListRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRolesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListRolesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListRoles",
+		Method:             "GET",
+		PathPattern:        "/v1/roles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListRolesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListRolesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListRoles: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 ListRunnerJobs lists org runner jobs
 
 list runner jobs for the current org that ran on the control plane. Used by orgs that build on the control plane and therefore have no org runner.
@@ -16953,6 +17166,54 @@ func (a *Client) ListRunnerProcesses(params *ListRunnerProcessesParams, authInfo
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ListRunnerProcesses: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	ListServiceAccounts lists service accounts for the current org
+
+	List the service accounts that belong to the current organization, along with
+
+their roles. Supports offset-based pagination.
+*/
+func (a *Client) ListServiceAccounts(params *ListServiceAccountsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListServiceAccountsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListServiceAccountsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListServiceAccounts",
+		Method:             "GET",
+		PathPattern:        "/v1/service-accounts",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListServiceAccountsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListServiceAccountsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListServiceAccounts: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -19847,6 +20108,104 @@ func (a *Client) UpdateRunnerSettings(params *UpdateRunnerSettingsParams, authIn
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateRunnerSettings: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	UpdateServiceAccount updates a service account for the current org
+
+	Update a service account's human-friendly name. The account's email and ID are
+
+immutable; only the display name changes.
+*/
+func (a *Client) UpdateServiceAccount(params *UpdateServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateServiceAccountOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateServiceAccountParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateServiceAccount",
+		Method:             "PATCH",
+		PathPattern:        "/v1/service-accounts/{account_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateServiceAccountReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateServiceAccountOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateServiceAccount: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	UpdateServiceAccountRole updates the role of a service account for the current org
+
+	Update the role assigned to a service account in the current org.
+
+The service account's existing roles in this org are removed and replaced
+with the requested role. Allowed roles are `org_admin`, `installer`, and
+`runner`.
+*/
+func (a *Client) UpdateServiceAccountRole(params *UpdateServiceAccountRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateServiceAccountRoleOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateServiceAccountRoleParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateServiceAccountRole",
+		Method:             "PATCH",
+		PathPattern:        "/v1/service-accounts/{account_id}/role",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateServiceAccountRoleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateServiceAccountRoleOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateServiceAccountRole: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

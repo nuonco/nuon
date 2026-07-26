@@ -32,6 +32,9 @@ type AppAccount struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// name
+	Name string `json:"name,omitempty"`
+
 	// ReadOnly Fields
 	OrgIds []string `json:"org_ids"`
 

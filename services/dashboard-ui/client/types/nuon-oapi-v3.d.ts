@@ -356,13 +356,6 @@ export interface paths {
      */
     get: operations["GetAppBranchRunInstallGroups"];
   };
-  "/v1/apps/{app_id}/branches/{app_branch_id}/sync-install-configs": {
-    /**
-     * trigger install config sync from git
-     * @description Triggers a sync of install configs from the configured installs VCS repo. Optionally specify install_name to sync a single install.
-     */
-    post: operations["TriggerInstallConfigSync"];
-  };
   "/v1/apps/{app_id}/break-glass-configs": {
     /** @description Create a break glass config for an app. */
     post: operations["CreateAppBreakGlassConfig"];
@@ -966,6 +959,10 @@ export interface paths {
      */
     get: operations["GetComponentBuilds"];
   };
+  "/v1/component-builds": {
+    /** list component build history for the current organization */
+    get: operations["ListOrgComponentBuilds"];
+  };
   "/v1/components": {
     /**
      * get all components for an org
@@ -1140,7 +1137,7 @@ export interface paths {
      * [Taplo](https://taplo.tamasfe.dev/) configured.
      *
      * ```toml
-     * #:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+     * #:schema https://api.nuon.co/v1/general/config-schema/inputs
      *
      * description = "description"
      * ```
@@ -1168,7 +1165,7 @@ export interface paths {
      * [Taplo](https://taplo.tamasfe.dev/) configured.
      *
      * ```toml
-     * #:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+     * #:schema https://api.nuon.co/v1/general/config-schema/inputs
      *
      * description = "description"
      * ```
@@ -1675,20 +1672,6 @@ export interface paths {
      * @description Enable or disable a toggleable component on an install. Enabling triggers a deploy workflow, disabling triggers a teardown workflow.
      */
     post: operations["ToggleInstallComponent"];
-  };
-  "/v1/installs/{install_id}/config-syncs": {
-    /**
-     * get config sync history for an install
-     * @description Returns the install config sync history, ordered by most recent first.
-     */
-    get: operations["GetInstallConfigSyncs"];
-  };
-  "/v1/installs/{install_id}/config-versions": {
-    /**
-     * get config versions for an install
-     * @description Returns the install config version history, ordered by most recent first.
-     */
-    get: operations["GetInstallConfigVersions"];
   };
   "/v1/installs/{install_id}/configs": {
     /**
@@ -2430,6 +2413,15 @@ export interface paths {
      */
     get: operations["GetQueueStatus"];
   };
+  "/v1/roles": {
+    /**
+     * List assignable roles
+     * @description List the roles that can be assigned to members and service accounts in an
+     * organization. Each role indicates which principal types it applies to via the
+     * `applies_to` field (`user`, `service_account`, or both).
+     */
+    get: operations["ListRoles"];
+  };
   "/v1/runner-jobs": {
     /**
      * list org runner jobs
@@ -2650,6 +2642,61 @@ export interface paths {
      * @description Update runner settings and configuration.
      */
     patch: operations["UpdateRunnerSettings"];
+  };
+  "/v1/service-accounts": {
+    /**
+     * List service accounts for the current org
+     * @description List the service accounts that belong to the current organization, along with
+     * their roles. Supports offset-based pagination.
+     */
+    get: operations["ListServiceAccounts"];
+    /**
+     * Create a service account for the current org
+     * @description Create a service account for the current org. Service accounts can be used to
+     * generate API tokens for automation and CI/CD workflows.
+     *
+     * Defaults to the `org_admin` role if `role` is not specified. Allowed roles
+     * are `org_admin`, `installer`, and `runner`.
+     */
+    post: operations["CreateServiceAccount"];
+  };
+  "/v1/service-accounts/{account_id}": {
+    /**
+     * Delete a service account for the current org
+     * @description Delete a service account from the current org.
+     *
+     * This removes the service account's roles in this org and invalidates all of
+     * its existing API tokens.
+     */
+    delete: operations["DeleteServiceAccount"];
+    /**
+     * Update a service account for the current org
+     * @description Update a service account's human-friendly name. The account's email and ID are
+     * immutable; only the display name changes.
+     */
+    patch: operations["UpdateServiceAccount"];
+  };
+  "/v1/service-accounts/{account_id}/role": {
+    /**
+     * Update the role of a service account for the current org
+     * @description Update the role assigned to a service account in the current org.
+     *
+     * The service account's existing roles in this org are removed and replaced
+     * with the requested role. Allowed roles are `org_admin`, `installer`, and
+     * `runner`.
+     */
+    patch: operations["UpdateServiceAccountRole"];
+  };
+  "/v1/service-accounts/{account_id}/tokens": {
+    /**
+     * Create a token for a service account in the current org
+     * @description Create an API token for a service account in the current org.
+     *
+     * Defaults to a duration of one year (`8760h`) if `duration` is not
+     * specified. If `invalidate` is set, all existing tokens for the service
+     * account are invalidated before the new token is created.
+     */
+    post: operations["CreateServiceAccountToken"];
   };
   "/v1/terraform-backend": {
     /**
@@ -3019,6 +3066,7 @@ export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
     "app.AWSAccount": {
+      connection_id?: string;
       created_at?: string;
       created_by_id?: string;
       iam_role_arn?: string;
@@ -3066,6 +3114,7 @@ export interface components {
       created_at?: string;
       email?: string;
       id?: string;
+      name?: string;
       /** @description ReadOnly Fields */
       org_ids?: string[];
       permissions?: components["schemas"]["permissions.Set"];
@@ -3274,9 +3323,6 @@ export interface components {
       created_by_id?: string;
       id?: string;
       install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
-      installs_connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
-      installs_directory?: string;
-      installs_public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       org_id?: string;
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       updated_at?: string;
@@ -3781,6 +3827,7 @@ export interface components {
     };
     "app.ComponentBuild": {
       app_branch_run_id?: string;
+      build_runner_job_id?: string;
       /** @description checksum of our intermediate component config */
       checksum?: string;
       component_config_connection?: components["schemas"]["app.ComponentConfigConnection"];
@@ -4284,7 +4331,6 @@ export interface components {
       updated_at?: string;
     };
     "app.InstallAppConfigVersion": {
-      app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
       created_at?: string;
       created_by_id?: string;
@@ -4364,47 +4410,6 @@ export interface components {
       stack_new_id?: string;
       stack_old_id?: string;
       unchanged?: components["schemas"]["app.ComponentDiffEntry"][];
-    };
-    "app.InstallConfigSync": {
-      app_branch_config_id?: string;
-      app_branch_id?: string;
-      app_branch_run?: components["schemas"]["app.AppBranchRun"];
-      app_branch_run_id?: string;
-      commit_sha?: string;
-      created_at?: string;
-      created_by_id?: string;
-      failed_installs?: number;
-      id?: string;
-      metadata?: {
-        [key: string]: string;
-      };
-      org_id?: string;
-      status?: components["schemas"]["app.CompositeStatus"];
-      synced_installs?: number;
-      total_installs?: number;
-      triggered_by?: string;
-      updated_at?: string;
-      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
-      versions?: components["schemas"]["app.InstallConfigVersion"][];
-      workflow?: components["schemas"]["app.Workflow"];
-      workflow_id?: string;
-    };
-    "app.InstallConfigVersion": {
-      created?: boolean;
-      created_at?: string;
-      created_by_id?: string;
-      diff?: components["schemas"]["blobstore.Blob"];
-      file_path?: string;
-      id?: string;
-      install_config_sync_id?: string;
-      install_id?: string;
-      install_name?: string;
-      metadata?: {
-        [key: string]: string;
-      };
-      org_id?: string;
-      status?: components["schemas"]["app.CompositeStatus"];
-      updated_at?: string;
     };
     "app.InstallDeploy": {
       action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
@@ -4687,6 +4692,7 @@ export interface components {
       phone_home_url?: string;
       quick_link_url?: string;
       runs?: components["schemas"]["app.InstallStackVersionRun"][];
+      stack_name?: string;
       template_url?: string;
       terraform_checksum?: string;
       /**
@@ -6191,6 +6197,7 @@ export interface components {
     /** @enum {string} */
     "configs.OCIRegistryType": "ecr" | "acr" | "gar" | "private_oci" | "public_oci";
     "credentials.AssumeRoleConfig": {
+      external_id?: string;
       role_arn: string;
       session_duration_seconds?: number;
       session_name: string;
@@ -7020,6 +7027,7 @@ export interface components {
       email?: string;
       id?: string;
       identities?: components["schemas"]["service.AuthMeIdentity"][];
+      name?: string;
       /** @description ReadOnly Fields */
       org_ids?: string[];
       permissions?: components["schemas"]["permissions.Set"];
@@ -7469,6 +7477,7 @@ export interface components {
     };
     "service.CreateInstallRequest": {
       aws_account?: {
+        connection_id?: string;
         region?: string;
       };
       azure_account?: {
@@ -7495,6 +7504,7 @@ export interface components {
     "service.CreateInstallV2Request": {
       app_id: string;
       aws_account?: {
+        connection_id?: string;
         region?: string;
       };
       azure_account?: {
@@ -7667,6 +7677,23 @@ export interface components {
     };
     "service.CreateRunnerBootstrapTokenResponse": {
       expires_at?: string;
+      token?: string;
+    };
+    "service.CreateServiceAccountRequest": {
+      /** @description Name is a human-friendly label for the service account. */
+      name: string;
+      /** @description Role must be one of the service account roles returned by GET /v1/roles. */
+      role: string;
+    };
+    "service.CreateServiceAccountTokenRequest": {
+      /**
+       * @description Duration defaults to one year.
+       * @default 8760h
+       */
+      duration?: string;
+      invalidate?: boolean;
+    };
+    "service.CreateServiceAccountTokenResponse": {
       token?: string;
     };
     "service.CreateStaticTokenRequest": {
@@ -7882,6 +7909,18 @@ export interface components {
       principal: string;
       role: string;
     };
+    "service.OrgComponentBuildHistoryItem": {
+      app_id?: string;
+      build?: components["schemas"]["app.ComponentBuild"];
+      build_runner_job_id?: string;
+      component_id?: string;
+      component_name?: string;
+    };
+    "service.OrgComponentBuildHistoryResponse": {
+      items?: components["schemas"]["service.OrgComponentBuildHistoryItem"][];
+      next_cursor?: string;
+      previous_cursor?: string;
+    };
     "service.PatchInstallConfigParams": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
     };
@@ -7964,6 +8003,12 @@ export interface components {
       retryable?: boolean;
       workflow_id?: string;
     };
+    "service.RoleInfo": {
+      applies_to?: string[];
+      description?: string;
+      role_type?: components["schemas"]["app.RoleType"];
+      title?: string;
+    };
     "service.RunCellRequest": {
       /**
        * @description IdempotencyKey deduplicates retried run requests. Optional; a server-side
@@ -8029,9 +8074,6 @@ export interface components {
       plan_only?: boolean;
       /** @description skip builds step (e.g. rollback to existing config with existing builds) */
       skip_builds?: boolean;
-    };
-    "service.TriggerInstallConfigSyncRequest": {
-      install_name?: string;
     };
     "service.UpdateActionWorkflowRequest": {
       labels?: {
@@ -8161,6 +8203,13 @@ export interface components {
       org_k8s_service_account_name?: string;
       runner_api_url?: string;
       vm_max_uptime?: number;
+    };
+    "service.UpdateServiceAccountRequest": {
+      /** @description Name is a human-friendly label for the service account. */
+      name: string;
+    };
+    "service.UpdateServiceAccountRoleRequest": {
+      role: string;
     };
     "service.UpdateUserJourneyStepRequest": {
       complete?: boolean;
@@ -11076,66 +11125,6 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallAppConfigVersion"][];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * trigger install config sync from git
-   * @description Triggers a sync of install configs from the configured installs VCS repo. Optionally specify install_name to sync a single install.
-   */
-  TriggerInstallConfigSync: {
-    parameters: {
-      path: {
-        /** @description app ID */
-        app_id: string;
-        /** @description app branch ID */
-        app_branch_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.TriggerInstallConfigSyncRequest"];
-      };
-    };
-    responses: {
-      /** @description Accepted */
-      202: {
-        content: {
-          "application/json": {
-            [key: string]: string;
-          };
         };
       };
       /** @description Bad Request */
@@ -16420,6 +16409,37 @@ export interface operations {
       };
     };
   };
+  /** list component build history for the current organization */
+  ListOrgComponentBuilds: {
+    parameters: {
+      query?: {
+        /** @description limit of builds to return */
+        limit?: number;
+        /** @description opaque component build history cursor */
+        cursor?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.OrgComponentBuildHistoryResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
   /**
    * get all components for an org
    * @description Returns all components for the provided organization.
@@ -17657,7 +17677,7 @@ export interface operations {
    * [Taplo](https://taplo.tamasfe.dev/) configured.
    *
    * ```toml
-   * #:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+   * #:schema https://api.nuon.co/v1/general/config-schema/inputs
    *
    * description = "description"
    * ```
@@ -17730,7 +17750,7 @@ export interface operations {
    * [Taplo](https://taplo.tamasfe.dev/) configured.
    *
    * ```toml
-   * #:schema https://api.nuon.co/v1/general/config-schema?source=inputs
+   * #:schema https://api.nuon.co/v1/general/config-schema/inputs
    *
    * description = "description"
    * ```
@@ -20789,106 +20809,6 @@ export interface operations {
       };
       /** @description Conflict */
       409: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * get config sync history for an install
-   * @description Returns the install config sync history, ordered by most recent first.
-   */
-  GetInstallConfigSyncs: {
-    parameters: {
-      path: {
-        /** @description install ID */
-        install_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.InstallConfigSync"][];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * get config versions for an install
-   * @description Returns the install config version history, ordered by most recent first.
-   */
-  GetInstallConfigVersions: {
-    parameters: {
-      path: {
-        /** @description install ID */
-        install_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.InstallConfigVersion"][];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -26077,6 +25997,34 @@ export interface operations {
     };
   };
   /**
+   * List assignable roles
+   * @description List the roles that can be assigned to members and service accounts in an
+   * organization. Each role indicates which principal types it applies to via the
+   * `applies_to` field (`user`, `service_account`, or both).
+   */
+  ListRoles: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.RoleInfo"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * list org runner jobs
    * @description list runner jobs for the current org that ran on the control plane. Used by orgs that build on the control plane and therefore have no org runner.
    */
@@ -27732,6 +27680,327 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.RunnerJobExecution"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * List service accounts for the current org
+   * @description List the service accounts that belong to the current organization, along with
+   * their roles. Supports offset-based pagination.
+   */
+  ListServiceAccounts: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+        /** @description include service accounts with the runner role (excluded by default) */
+        include_runners?: boolean;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Account"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Create a service account for the current org
+   * @description Create a service account for the current org. Service accounts can be used to
+   * generate API tokens for automation and CI/CD workflows.
+   *
+   * Defaults to the `org_admin` role if `role` is not specified. Allowed roles
+   * are `org_admin`, `installer`, and `runner`.
+   */
+  CreateServiceAccount: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateServiceAccountRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Delete a service account for the current org
+   * @description Delete a service account from the current org.
+   *
+   * This removes the service account's roles in this org and invalidates all of
+   * its existing API tokens.
+   */
+  DeleteServiceAccount: {
+    parameters: {
+      path: {
+        /** @description service account ID */
+        account_id: string;
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: never;
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Update a service account for the current org
+   * @description Update a service account's human-friendly name. The account's email and ID are
+   * immutable; only the display name changes.
+   */
+  UpdateServiceAccount: {
+    parameters: {
+      path: {
+        /** @description service account ID */
+        account_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateServiceAccountRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Update the role of a service account for the current org
+   * @description Update the role assigned to a service account in the current org.
+   *
+   * The service account's existing roles in this org are removed and replaced
+   * with the requested role. Allowed roles are `org_admin`, `installer`, and
+   * `runner`.
+   */
+  UpdateServiceAccountRole: {
+    parameters: {
+      path: {
+        /** @description service account ID */
+        account_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateServiceAccountRoleRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Account"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Create a token for a service account in the current org
+   * @description Create an API token for a service account in the current org.
+   *
+   * Defaults to a duration of one year (`8760h`) if `duration` is not
+   * specified. If `invalidate` is set, all existing tokens for the service
+   * account are invalidated before the new token is created.
+   */
+  CreateServiceAccountToken: {
+    parameters: {
+      path: {
+        /** @description service account ID */
+        account_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateServiceAccountTokenRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.CreateServiceAccountTokenResponse"];
         };
       };
       /** @description Bad Request */

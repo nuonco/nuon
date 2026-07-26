@@ -35,6 +35,9 @@ type ServiceAuthMeResponse struct {
 	// identities
 	Identities []*ServiceAuthMeIdentity `json:"identities"`
 
+	// name
+	Name string `json:"name,omitempty"`
+
 	// ReadOnly Fields
 	OrgIds []string `json:"org_ids"`
 

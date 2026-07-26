@@ -31,7 +31,7 @@ func (a *Activities) CreateSandboxBuildLogStream(ctx context.Context, req Create
 		return nil, errors.Wrap(res.Error, "unable to create log stream")
 	}
 
-	svcAcct, err := a.acctClient.CreateServiceAccount(ctx, ls.ID)
+	svcAcct, err := a.acctClient.CreateServiceAccount(ctx, ls.ID, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create service account")
 	}

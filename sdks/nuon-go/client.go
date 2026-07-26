@@ -45,6 +45,15 @@ type Client interface {
 	ListStaticTokens(ctx context.Context) ([]*models.AppToken, error)
 	DeleteStaticToken(ctx context.Context, tokenID string) error
 
+	// roles and service accounts
+	ListRoles(ctx context.Context) ([]*models.ServiceRoleInfo, error)
+	ListServiceAccounts(ctx context.Context, includeRunners bool, query *models.GetPaginatedQuery) ([]*models.AppAccount, bool, error)
+	CreateServiceAccount(ctx context.Context, req *models.ServiceCreateServiceAccountRequest) (*models.AppAccount, error)
+	UpdateServiceAccount(ctx context.Context, accountID string, req *models.ServiceUpdateServiceAccountRequest) (*models.AppAccount, error)
+	UpdateServiceAccountRole(ctx context.Context, accountID string, req *models.ServiceUpdateServiceAccountRoleRequest) (*models.AppAccount, error)
+	DeleteServiceAccount(ctx context.Context, accountID string) error
+	CreateServiceAccountToken(ctx context.Context, accountID string, req *models.ServiceCreateServiceAccountTokenRequest) (*models.ServiceCreateServiceAccountTokenResponse, error)
+
 	// app methods
 	GetApp(ctx context.Context, appID string) (*models.AppApp, error)
 	GetApps(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppApp, bool, error)

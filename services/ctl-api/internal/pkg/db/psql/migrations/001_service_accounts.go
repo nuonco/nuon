@@ -25,7 +25,7 @@ func (m *Migrations) migration01InternalAccounts(ctx context.Context, db *gorm.D
 			return errors.Wrap(err, "unable to lookup"+svcAcctName)
 		}
 
-		_, err = m.acctClient.CreateServiceAccount(ctx, svcAcctName)
+		_, err = m.acctClient.CreateServiceAccount(ctx, svcAcctName, "")
 		if err != nil {
 			return errors.Wrap(err, "unable to create "+svcAcctName)
 		}

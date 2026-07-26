@@ -15,11 +15,13 @@ type RoleType string
 
 const (
 	// user roles
-	RoleTypeOrgAdmin    RoleType = "org_admin"
+	RoleTypeOrgAdmin RoleType = "org_admin"
+	// Deprecated: org_support is no longer assignable to new members; use org_admin or org_read_only.
 	RoleTypeOrgSupport  RoleType = "org_support"
 	RoleTypeOrgReadOnly RoleType = "org_read_only"
 
 	// service account roles
+	// Deprecated: installer is no longer assignable; it grants full org access, use org_admin instead.
 	RoleTypeInstaller       RoleType = "installer"
 	RoleTypeRunner          RoleType = "runner"
 	RoleTypeHostedInstaller RoleType = "hosted-installer"

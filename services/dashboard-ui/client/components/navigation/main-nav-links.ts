@@ -46,6 +46,12 @@ export const SETTINGS_LINKS: TNavLink[] = [
     text: 'API tokens',
     shortcut: 'g k',
   },
+  {
+    iconVariant: 'RobotIcon',
+    path: `/service-accounts`,
+    text: 'Service accounts',
+    shortcut: 'g v',
+  },
 ]
 
 export const SLACK_LINK: TNavLink = {

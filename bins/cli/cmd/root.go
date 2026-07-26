@@ -79,6 +79,8 @@ nuon sync
 		c.actionsCmd(),
 		c.componentsCmd(),
 		c.orgsCmd(),
+		c.serviceAccountsCmd(),
+		c.rolesCmd(),
 		c.secretsCmd(),
 		c.buildsCmd(),
 		c.loginCmd(),
