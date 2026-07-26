@@ -88,7 +88,7 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 	}
 
 	// create service account for install stack updates
-	_, err := a.accountsHelpers.CreateServiceAccount(ctx, obj.ID)
+	_, err := a.accountsHelpers.CreateServiceAccount(ctx, obj.ID, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create install stack service account")
 	}

@@ -8,11 +8,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-func (c *Client) CreateServiceAccount(ctx context.Context, svcAcctID string) (*app.Account, error) {
+func (c *Client) CreateServiceAccount(ctx context.Context, svcAcctID, name string) (*app.Account, error) {
 	email := ServiceAccountEmail(svcAcctID)
 	acct := app.Account{
 		Email:       email,
 		Subject:     svcAcctID,
+		Name:        name,
 		AccountType: app.AccountTypeService,
 	}
 	res := c.db.WithContext(ctx).

@@ -34,6 +34,7 @@ type Account struct {
 
 	Email       string      `json:"email,omitzero" gorm:"index:idx_email_subject,unique,not null;default null" temporaljson:"email,omitzero,omitempty"`
 	Subject     string      `json:"subject,omitzero" gorm:"index:idx_email_subject,unique,not null;" temporaljson:"subject,omitzero,omitempty"`
+	Name        string      `json:"name,omitzero" gorm:"default:null" temporaljson:"name,omitzero,omitempty"`
 	AccountType AccountType `json:"account_type,omitzero" temporaljson:"account_type,omitzero,omitempty"`
 
 	Roles        []Role            `gorm:"many2many:account_roles;constraint:OnDelete:CASCADE;" json:"roles,omitzero" temporaljson:"roles,omitzero,omitempty"`

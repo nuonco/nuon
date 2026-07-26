@@ -34,7 +34,7 @@ func (a *Activities) CreateLogStream(ctx context.Context, req CreateLogStreamReq
 	}
 
 	// create a service account to write to the log stream for up to 1 hour.
-	svcAcct, err := a.acctClient.CreateServiceAccount(ctx, ls.ID)
+	svcAcct, err := a.acctClient.CreateServiceAccount(ctx, ls.ID, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create service account")
 	}
