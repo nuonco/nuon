@@ -11,9 +11,15 @@ test.describe("Install labels", () => {
     const installId = installIds[0];
     test.skip(!installId, "No seed install available");
 
+    const labelBadge = (key: string, value: string) =>
+      page
+        .locator("span.inline-flex")
+        .filter({ hasText: key })
+        .filter({ hasText: value });
+
     // --- Step 1: Navigate to the install page ---
     await page.goto(`/${orgId}/installs/${installId}`);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // --- Step 2: Open Manage → Edit labels, clear any existing labels ---
     await page.getByRole("button", { name: "Manage" }).click();
@@ -50,10 +56,10 @@ test.describe("Install labels", () => {
 
     // --- Step 4: Reload and verify all 3 labels ---
     await page.reload();
-    await page.waitForLoadState("networkidle");
-    await expect(page.getByText("env: staging")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText("team: platform")).toBeVisible();
-    await expect(page.getByText("region: us-west-2")).toBeVisible();
+    await page.waitForLoadState("domcontentloaded");
+    await expect(labelBadge("env", "staging")).toBeVisible({ timeout: 10000 });
+    await expect(labelBadge("team", "platform")).toBeVisible();
+    await expect(labelBadge("region", "us-west-2")).toBeVisible();
 
     // --- Step 5: Open Edit labels to rename one and remove one ---
     await page.getByRole("button", { name: "Manage" }).click();
@@ -84,16 +90,16 @@ test.describe("Install labels", () => {
 
     // --- Step 6: Reload and verify updated labels ---
     await page.reload();
-    await page.waitForLoadState("networkidle");
-    await expect(page.getByText("environment: staging")).toBeVisible({
+    await page.waitForLoadState("domcontentloaded");
+    await expect(labelBadge("environment", "staging")).toBeVisible({
       timeout: 10000,
     });
-    await expect(page.getByText("region: us-west-2")).toBeVisible();
-    await expect(page.getByText("team: platform")).not.toBeVisible();
+    await expect(labelBadge("region", "us-west-2")).toBeVisible();
+    await expect(labelBadge("team", "platform")).not.toBeVisible();
 
     // --- Step 7: Navigate to installs list and test label filter ---
     await page.goto(`/${orgId}/installs`);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     const labelsDropdown = page.getByRole("button", { name: /Labels/ });
     await expect(labelsDropdown).toBeVisible({ timeout: 10000 });
