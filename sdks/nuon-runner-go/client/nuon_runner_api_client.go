@@ -9,6 +9,7 @@ import (
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/client/operations"
 )
 
