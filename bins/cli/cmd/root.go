@@ -146,7 +146,7 @@ func (c *cli) getLongDescription() string {
 	orgID := c.cfg.OrgID
 	status += "\n\n"
 	if orgID != "" {
-		if org, err := c.apiClient.GetOrg(ctx); err == nil && org != nil && org.Name != "" {
+		if org := c.currentOrg(); org != nil && org.Name != "" {
 			status += fmt.Sprintf("org: %s (%s)", org.Name, orgID)
 		} else {
 			status += fmt.Sprintf("org: %s", orgID)

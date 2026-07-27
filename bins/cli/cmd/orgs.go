@@ -241,6 +241,7 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 		Short:             "Manage static API tokens for the current org",
 		Long:              "Create, list, and delete static API tokens scoped to the current org's service account",
 		PersistentPreRunE: c.persistentPreRunE,
+		Hidden:            !c.orgFeatureEnabled(featureServiceAccountsAndTokens),
 	}
 
 	createCmd := &cobra.Command{

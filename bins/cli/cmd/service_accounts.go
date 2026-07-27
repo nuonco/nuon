@@ -25,6 +25,7 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 		Aliases:           []string{"service-account", "sa"},
 		PersistentPreRunE: c.persistentPreRunE,
 		GroupID:           AdditionalGroup.ID,
+		Hidden:            !c.orgFeatureEnabled(featureServiceAccountsAndTokens),
 	}
 
 	listCmd := &cobra.Command{

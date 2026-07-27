@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -23,6 +24,9 @@ type cli struct {
 	ctx             context.Context
 	cfg             *config.Config
 	analyticsClient analytics.Writer
+
+	org     *models.AppOrg
+	orgInit bool
 }
 
 func NewCLI() (*cli, error) {
