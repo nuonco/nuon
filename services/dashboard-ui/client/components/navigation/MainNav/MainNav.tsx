@@ -9,6 +9,7 @@ interface IMainNav {
   isSidebarOpen: boolean
   hasOrgDashboard: boolean
   hasOrgSettings: boolean
+  hasServiceAccountsAndTokens: boolean
   hasSlack: boolean
   hasCustomerPortal: boolean
   customerPortalUrl: string
@@ -43,6 +44,7 @@ export const MainNav = ({
   isSidebarOpen,
   hasOrgDashboard,
   hasOrgSettings,
+  hasServiceAccountsAndTokens,
   hasSlack,
   hasCustomerPortal,
   customerPortalUrl,
@@ -59,6 +61,11 @@ export const MainNav = ({
         },
       ]
     : MAIN_LINKS
+  const settingsLinks = hasServiceAccountsAndTokens
+    ? SETTINGS_LINKS
+    : SETTINGS_LINKS.filter(
+        (link) => link.path !== '/api-tokens' && link.path !== '/service-accounts'
+      )
 
   return (
     <nav className="flex flex-col gap-4">
@@ -76,7 +83,7 @@ export const MainNav = ({
         <div className="flex flex-col gap-1">
           <NavLabel isSidebarOpen={isSidebarOpen}>Settings</NavLabel>
 
-          {SETTINGS_LINKS.map((link) => (
+          {settingsLinks.map((link) => (
             <MainNavLink key={link.text} basePath={basePath} {...link} />
           ))}
 
