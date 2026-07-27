@@ -10,6 +10,6 @@ Validates the test infrastructure works: auth cookie injection, page rendering, 
 
 ### Dashboard loads
 - action: goto | /:orgId
-- action: wait | networkidle
+- action: wait | domcontentloaded
 - expect: visible | .logo-link
 - expect: visible | text "Nuon"

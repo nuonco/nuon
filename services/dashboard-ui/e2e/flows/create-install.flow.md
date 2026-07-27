@@ -10,7 +10,7 @@ Opens the create install modal, selects an app, fills out the form with auto-app
 
 ### Navigate to installs page
 - action: goto | /:orgId/installs
-- action: wait | networkidle
+- action: wait | domcontentloaded
 - expect: visible | heading "Installs"
 
 ### Open create modal
@@ -41,7 +41,7 @@ Opens the create install modal, selects an app, fills out the form with auto-app
 
 ### Submit the form
 - action: click | button "Create install" last
-- action: wait | networkidle
+- action: wait | domcontentloaded
 
 ### Redirected to provision workflow
 - expect: url | /workflows/

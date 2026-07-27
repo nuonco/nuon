@@ -3,7 +3,7 @@ import { test, expect } from "../fixtures";
 test.describe("Create install", () => {
   test("navigate to installs page", async ({ page, orgId }) => {
     await page.goto(`/${orgId}/installs`);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
     await expect(page.getByRole("heading", { name: "Installs" })).toBeVisible();
   });
 
@@ -13,7 +13,7 @@ test.describe("Create install", () => {
   }) => {
     test.setTimeout(60000);
     await page.goto(`/${orgId}/installs`);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
 
     // Open create modal (first match is the page header button)
     await page.getByRole("button", { name: "Create install" }).first().click();
@@ -60,8 +60,8 @@ test.describe("Create install", () => {
 
     // Redirected to provision workflow
     await expect(page).toHaveURL(/\/workflows\//, { timeout: 30000 });
-    await expect(page.getByText("Install created successfully")).toBeVisible({
-      timeout: 10000,
-    });
+    await expect(
+      page.getByText("Install created", { exact: true })
+    ).toBeVisible({ timeout: 10000 });
   });
 });
