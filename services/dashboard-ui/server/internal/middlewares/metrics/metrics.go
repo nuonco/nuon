@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
+	"github.com/nuonco/nuon/services/dashboard-ui/server/internal/handlers"
 )
 
 type middleware struct {
@@ -28,6 +29,7 @@ func (m *middleware) Name() string {
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		startTS := time.Now()
+		reqPath := c.Request.URL.Path
 
 		c.Next()
 
@@ -39,6 +41,10 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		status := "ok"
 		if len(c.Errors) > 0 {
 			status = "err"
+		}
+
+		if path == handlers.APIProxyRoutePattern {
+			path = normalizeAPIPath(reqPath)
 		}
 
 		endpoint := strings.ReplaceAll(path, "-", "_")
