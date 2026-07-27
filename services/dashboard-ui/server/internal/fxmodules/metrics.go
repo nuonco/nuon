@@ -12,7 +12,26 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
+	"github.com/nuonco/nuon/services/dashboard-ui/server/internal/apiroutes"
 )
+
+func NewAPIRouteClassifier(lc fx.Lifecycle, cfg *internal.Config, l *zap.Logger) *apiroutes.Classifier {
+	c := apiroutes.NewClassifier(cfg.APIUrl, l)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	lc.Append(fx.Hook{
+		OnStart: func(context.Context) error {
+			go c.Run(ctx)
+			return nil
+		},
+		OnStop: func(context.Context) error {
+			cancel()
+			return nil
+		},
+	})
+
+	return c
+}
 
 func NewMetricsWriter(lc fx.Lifecycle, cfg *internal.Config, l *zap.Logger) (metrics.Writer, error) {
 	v := validator.New()
