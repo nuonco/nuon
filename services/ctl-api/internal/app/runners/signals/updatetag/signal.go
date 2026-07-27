@@ -99,14 +99,14 @@ func (s *Signal) handleInstallRunner(ctx workflow.Context, l log.Logger, runner 
 	// Fallback: update status to indicate restart needed
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		RunnerID:          s.RunnerID,
-		Status:            app.RunnerStatusActive,
+		Status:            runner.Status,
 		StatusDescription: fmt.Sprintf("tag updated to %s, awaiting restart", s.Tag),
 	}); err != nil {
 		return errors.Wrap(err, "unable to update runner status")
 	}
 	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
 		RunnerID:          s.RunnerID,
-		Status:            app.RunnerStatusActive,
+		Status:            runner.Status,
 		StatusDescription: fmt.Sprintf("tag updated to %s, awaiting restart", s.Tag),
 	})
 
