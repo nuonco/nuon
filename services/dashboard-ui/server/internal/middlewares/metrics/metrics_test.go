@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
+	"github.com/nuonco/nuon/services/dashboard-ui/server/internal/apiroutes"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal/handlers"
 )
 
@@ -43,15 +44,19 @@ func TestMetricsEndpointTag(t *testing.T) {
 		reqPath string
 		want    string
 	}{
-		{"proxied api route normalized", handlers.APIProxyRoutePattern, "/v1/apps/app98e2wpzdxwoey393edtqj45/installs", "/v1/apps/{app_id}/installs"},
+		{"proxied api route matched", handlers.APIProxyRoutePattern, "/v1/apps/app98e2wpzdxwoey393edtqj45/installs", "/v1/apps/{app_id}/installs"},
+		{"proxied unknown route bucketed", handlers.APIProxyRoutePattern, "/v1/wp-admin/login", "unmatched"},
 		{"non-proxy route uses full path", "/api/orgs/:orgId/health", "/api/orgs/org123/health", "/api/orgs/:orgId/health"},
 	}
+
+	classifier := apiroutes.NewClassifier("http://example.test", zap.NewNop())
+	classifier.LoadTemplates([]string{"/v1/apps/{app_id}/installs"})
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			gin.SetMode(gin.TestMode)
 			fw := &fakeWriter{}
-			m := New(&internal.Config{}, zap.NewNop(), fw)
+			m := New(&internal.Config{}, zap.NewNop(), fw, classifier)
 
 			e := gin.New()
 			e.Use(m.Handler())
