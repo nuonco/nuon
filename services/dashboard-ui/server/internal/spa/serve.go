@@ -21,6 +21,15 @@ func init() {
 	_ = mime.AddExtensionType(".webmanifest", "application/manifest+json")
 }
 
+var byocFaviconRewrites = map[string]string{
+	"favicon.svg":           "favicon-byoc.svg",
+	"favicon.ico":           "favicon-byoc.ico",
+	"apple-touch-icon.png":  "apple-touch-icon-byoc.png",
+	"icon-192.png":          "icon-192-byoc.png",
+	"icon-512.png":          "icon-512-byoc.png",
+	"icon-maskable-512.png": "icon-maskable-512-byoc.png",
+}
+
 type clientConfig struct {
 	APIUrl                string `json:"apiUrl"`
 	TemporalUIUrl         string `json:"temporalUiUrl,omitempty"`
@@ -171,6 +180,15 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 		}
 
 		filePath := strings.TrimPrefix(c.Request.URL.Path, "/")
+
+		if h.cfg.IsBYOC && publicFS != nil {
+			if variant, ok := byocFaviconRewrites[filePath]; ok {
+				if _, err := fs.Stat(publicFS, variant); err == nil {
+					filePath = variant
+					c.Request.URL.Path = "/" + variant
+				}
+			}
+		}
 
 		if publicFS != nil {
 			if _, err := fs.Stat(publicFS, filePath); err == nil {
