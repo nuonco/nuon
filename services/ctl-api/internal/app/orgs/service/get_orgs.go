@@ -57,7 +57,7 @@ func (s *service) getOrgs(ctx *gin.Context, orgIDs []string, q string) ([]app.Or
 		Order(fmt.Sprintf("CASE WHEN accounts.account_type = '%s' THEN 1 ELSE 0 END, orgs.id", app.AccountTypeCanary))
 
 	if q != "" {
-		tx = tx.Where("name ILIKE ? OR orgs.id = ?", "%"+q+"%", q)
+		tx = tx.Where("orgs.name ILIKE ? OR orgs.id = ?", "%"+q+"%", q)
 	}
 
 	res := tx.
