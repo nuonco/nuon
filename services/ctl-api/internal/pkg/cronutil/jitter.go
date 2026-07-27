@@ -1,5 +1,11 @@
 package cronutil
 
+/**
+This is a temporary package made for adding jitter to cron schedules, ideally we wanna move to use temporal cron
+schedule api which has built in jitter support. This is currently a bit hacky to parse cron schedule but works for most
+of the things we have in the system.
+**/
+
 import (
 	"fmt"
 	"hash/fnv"
