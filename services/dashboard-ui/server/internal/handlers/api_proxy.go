@@ -11,6 +11,8 @@ import (
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
+const APIProxyRoutePattern = "/v1/*path"
+
 type APIProxyHandler struct {
 	cfg *internal.Config
 	l   *zap.Logger
@@ -43,6 +45,6 @@ func (h *APIProxyHandler) RegisterRoutes(e *gin.Engine) error {
 		ErrorLog: zap.NewStdLog(h.l),
 	}
 
-	e.Any("/v1/*path", gin.WrapH(proxy))
+	e.Any(APIProxyRoutePattern, gin.WrapH(proxy))
 	return nil
 }
