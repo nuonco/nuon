@@ -23,6 +23,7 @@ export const MainNavContainer = () => {
       isSidebarOpen={isSidebarOpen}
       hasOrgDashboard={!!org?.features?.['org-dashboard']}
       hasOrgSettings={!!org?.features?.['org-settings']}
+      hasServiceAccountsAndTokens={!!org?.features?.['service-accounts-and-tokens']}
       hasSlack={!!org?.features?.['slack']}
       hasCustomerPortal={false}
       customerPortalUrl={customerPortalUrl}
