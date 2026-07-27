@@ -44,6 +44,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   'pending-shutdown': 'warn',
   'shutting-down': 'warn',
   offline: 'warn',
+  degraded: 'warn',
 
   // Info
   executing: 'info',
@@ -64,6 +65,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   'awaiting-user-run': 'info',
   deprovisioning: 'info',
   reprovisioning: 'info',
+  progressing: 'info',
 
   // Neutral
   noop: 'neutral',
@@ -114,6 +116,7 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   cancelled: 'WarningIcon',
   outdated: 'WarningIcon',
   warn: 'WarningIcon',
+  degraded: 'WarningIcon',
 
   // Info
   executing: 'Loading',
@@ -131,6 +134,7 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   info: 'Loading',
   deprovisioning: 'Loading',
   reprovisioning: 'Loading',
+  progressing: 'Loading',
 
   // Neutral
   noop: 'ClockCountdownIcon',

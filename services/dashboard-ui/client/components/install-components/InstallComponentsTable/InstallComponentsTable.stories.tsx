@@ -20,6 +20,7 @@ const mockRows: InstallComponentRow[] = [
     action: <div />,
     dependencies: <Text variant="subtext">-</Text>,
     labels: <Text variant="subtext">tier: application</Text>,
+    health: 'healthy',
   },
   {
     componentId: 'comp-def456',
@@ -33,6 +34,9 @@ const mockRows: InstallComponentRow[] = [
     action: <div />,
     dependencies: <Text variant="subtext">-</Text>,
     labels: null,
+    health: 'degraded',
+    healthMessage:
+      'FailedDeployModel: CreateListener UnsupportedCertificate — the certificate must have a fully-qualified domain name, a supported signature, and a supported key size.',
   },
 ]
 
@@ -62,5 +66,15 @@ export const Empty = () => (
     filterActions={<div />}
     pagination={mockPagination}
     isLoading={false}
+  />
+)
+
+export const WithHealth = () => (
+  <InstallComponentsTable
+    data={mockRows}
+    filterActions={<div />}
+    pagination={mockPagination}
+    isLoading={false}
+    showHealth
   />
 )

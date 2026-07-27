@@ -13,6 +13,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/registry"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/componenthealth"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
@@ -63,6 +64,10 @@ func (c *cli) runInstall(cmd *cobra.Command, _ []string) {
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
 			fx.Invoke(func(*process.ShutdownPoller) {}),
 			fx.Invoke(func(*registry.Registry) {}),
+
+			// component health watch engine
+			fx.Provide(componenthealth.New),
+			fx.Invoke(func(*componenthealth.Engine) {}),
 		}...,
 	)
 

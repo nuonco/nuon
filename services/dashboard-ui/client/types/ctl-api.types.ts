@@ -218,6 +218,8 @@ export type TInstallComponentOutputs = Record<string, string>
 export type TInstallConfig = components['schemas']['app.InstallConfig']
 export type TInstallAuditLog = components['schemas']['app.InstallAuditLog']
 export type TDriftedObject = components['schemas']['app.DriftedObject']
+export type TInstallResource =
+  components['schemas']['app.InstallComponentResourceState']
 // composite errors
 export type TCompositeErrorSeverity =
   components['schemas']['compositeerrors.Severity']

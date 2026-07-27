@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/api"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/auth"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/componenthealth"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/drain"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/metrics"
@@ -42,6 +43,8 @@ func (c *cli) commonProviders() []fx.Option {
 		fx.Provide(process.NewShutdownPoller),
 		fx.Provide(drain.New),
 		fx.Provide(metrics.New),
+		// shared cluster access captured by deploy handlers for the component-health engine
+		fx.Provide(componenthealth.NewClusterProvider),
 	}
 }
 

@@ -32,6 +32,8 @@ export type InstallComponentRow = {
   overrideStatus: ReactNode
   deployStatus: ReactNode
   driftStatus: ReactNode
+  health?: string
+  healthMessage?: string
   href: string
   action: ReactNode
   dependencies: ReactNode
@@ -48,6 +50,7 @@ export function parseInstallComponentSummaryToTableData(
   componentToggles?: { [key: string]: boolean },
   labelColors?: Record<string, string>,
   overriddenComponentNames?: Set<string>,
+  componentHealth?: Record<string, { health: string; message: string }>,
   removed = false
 ): InstallComponentRow[] {
   return components.map((component) => {
@@ -131,6 +134,8 @@ export function parseInstallComponentSummaryToTableData(
       ) : (
         <Icon variant="MinusIcon" />
       ),
+      health: componentHealth?.[component.component_id]?.health,
+      healthMessage: componentHealth?.[component.component_id]?.message,
       dependencies: (
         <InstallComponentDependencies deps={deps?.at(depIndex)?.dependencies} />
       ),
@@ -163,7 +168,33 @@ export function parseInstallComponentSummaryToTableData(
   })
 }
 
-const columns: ColumnDef<InstallComponentRow>[] = [
+const healthColumn: ColumnDef<InstallComponentRow> = {
+  enableSorting: false,
+  accessorKey: 'health',
+  header: 'Health',
+  cell: (info) => {
+    const health = info.getValue() as string | undefined
+    if (!health) return <Icon variant="MinusIcon" />
+    const badge = <Status variant="badge" status={health} />
+    const message = info.row.original.healthMessage
+    if (!message) return badge
+    return (
+      <Tooltip
+        position="top"
+        tipContentClassName="!p-0"
+        tipContent={
+          <Text as="div" className="flex w-fit max-w-96 p-2" variant="subtext">
+            {message}
+          </Text>
+        }
+      >
+        {badge}
+      </Tooltip>
+    )
+  },
+}
+
+const baseColumns: ColumnDef<InstallComponentRow>[] = [
   {
     accessorKey: 'componentName',
     header: 'Component name',
@@ -240,6 +271,13 @@ const columns: ColumnDef<InstallComponentRow>[] = [
   },
 ]
 
+function buildColumns(showHealth: boolean): ColumnDef<InstallComponentRow>[] {
+  if (!showHealth) return baseColumns
+  const cols = [...baseColumns]
+  cols.splice(1, 0, healthColumn)
+  return cols
+}
+
 interface IInstallComponentsTable {
   data: InstallComponentRow[]
   filterActions: ReactNode
@@ -249,6 +287,7 @@ interface IInstallComponentsTable {
     limit: number
   }
   isLoading: boolean
+  showHealth?: boolean
 }
 
 export const InstallComponentsTable = ({
@@ -256,10 +295,11 @@ export const InstallComponentsTable = ({
   filterActions,
   pagination,
   isLoading,
+  showHealth = false,
 }: IInstallComponentsTable) => {
   return (
     <Table<InstallComponentRow>
-      columns={columns}
+      columns={buildColumns(showHealth)}
       data={data}
       isLoading={isLoading}
       filterActions={filterActions}
@@ -271,5 +311,5 @@ export const InstallComponentsTable = ({
 }
 
 export const InstallComponentsTableSkeleton = () => {
-  return <TableSkeleton columns={columns} skeletonRows={5} />
+  return <TableSkeleton columns={baseColumns} skeletonRows={5} />
 }

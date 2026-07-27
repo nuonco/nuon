@@ -59,6 +59,12 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	)
 	ctx = pkgctx.SetLogger(ctx, l)
 
+	// Share the cluster access with the component-health engine so it can watch
+	// this component's resources (the runner may not be in the cluster).
+	if h.clusterProvider != nil {
+		h.clusterProvider.Set(h.state.plan.KubernetesManifestDeployPlan.ClusterInfo)
+	}
+
 	l.Debug("Starting Exec function",
 		zap.String("jobID", job.ID),
 		zap.String("operation", string(job.Operation)))
@@ -613,6 +619,22 @@ func (h *handler) execApply(ctx context.Context, client dynamic.Interface, resou
 				delete(metadata, "uid")
 				delete(metadata, "creationTimestamp")
 			}
+		}
+
+		// Stamp Nuon ownership labels so the component-health engine can map
+		// live cluster resources back to this install and component.
+		if h.state.plan.InstallID != "" || h.state.plan.ComponentID != "" {
+			objLabels := originalObj.GetLabels()
+			if objLabels == nil {
+				objLabels = map[string]string{}
+			}
+			if h.state.plan.InstallID != "" {
+				objLabels["nuon.co/install-id"] = h.state.plan.InstallID
+			}
+			if h.state.plan.ComponentID != "" {
+				objLabels["nuon.co/component-id"] = h.state.plan.ComponentID
+			}
+			originalObj.SetLabels(objLabels)
 		}
 
 		applyOptions := metav1.ApplyOptions{

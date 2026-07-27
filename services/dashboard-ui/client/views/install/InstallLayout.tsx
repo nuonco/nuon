@@ -69,6 +69,15 @@ const InstallTemplate = () => {
       iconVariant: 'CardsIcon' as const,
       text: 'Components',
     },
+    ...(org?.features?.['component-health']
+      ? [
+          {
+            path: `/resources`,
+            iconVariant: 'PulseIcon' as const,
+            text: 'Resources',
+          },
+        ]
+      : []),
     {
       path: '/sandbox',
       iconVariant: 'ShippingContainerIcon' as const,

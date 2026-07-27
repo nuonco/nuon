@@ -28,6 +28,7 @@ type Params struct {
 	V                *validator.Validate
 	L                *zap.Logger
 	DB               *gorm.DB `name:"psql"`
+	CHDB             *gorm.DB `name:"ch"`
 	MW               metrics.Writer
 	Cfg              *internal.Config
 	ComponentHelpers *componenthelpers.Helpers
@@ -47,6 +48,7 @@ type service struct {
 	v                *validator.Validate
 	l                *zap.Logger
 	db               *gorm.DB
+	chDB             *gorm.DB
 	mw               metrics.Writer
 	cfg              *internal.Config
 	componentHelpers *componenthelpers.Helpers
@@ -105,6 +107,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 		// install drifts
 		installs.GET("/drifted-objects", s.GetDriftedObjects)
+
+		// live component resource explorer
+		installs.GET("/resources", s.GetInstallResources)
 
 		// install state
 		installs.GET("/state", s.GetInstallState)
@@ -352,6 +357,7 @@ func New(params Params) *service {
 		l:                params.L,
 		v:                params.V,
 		db:               params.DB,
+		chDB:             params.CHDB,
 		mw:               params.MW,
 		componentHelpers: params.ComponentHelpers,
 		helpers:          params.Helpers,
