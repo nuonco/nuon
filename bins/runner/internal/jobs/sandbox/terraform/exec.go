@@ -7,10 +7,13 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-hclog"
+	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/kube"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/runner/log"
 	"github.com/nuonco/nuon/pkg/runner/op"
@@ -156,6 +159,16 @@ func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Wo
 		return fmt.Errorf("unable to show state: %w", err)
 	}
 
+	// Share the sandbox's helm releases and cluster access with the
+	// component-health engine, so it can surface sandbox infra (authoritatively,
+	// from the tf state) and report even before the first component deploy.
+	if p.clusterProvider != nil {
+		p.clusterProvider.SetSandboxReleases(sandboxHelmReleaseNames(state))
+		if ci := sandboxClusterInfo(p.state.plan, state); ci != nil {
+			p.clusterProvider.Set(ci)
+		}
+	}
+
 	stateBody, err := json.Marshal(state)
 	if err != nil {
 		p.writeErrorResult(ctx, "terraform show", err)
@@ -168,6 +181,70 @@ func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Wo
 	}
 
 	return nil
+}
+
+// sandboxClusterInfo builds a ClusterInfo from the sandbox's `cluster` output and
+// the plan's cloud-auth — the same inputs ctl-api uses for deploy plans. Returns
+// nil when the sandbox emits no cluster output (non-k8s sandboxes).
+func sandboxClusterInfo(plan *plantypes.SandboxRunPlan, state *tfjson.State) *kube.ClusterInfo {
+	if plan == nil || state == nil || state.Values == nil {
+		return nil
+	}
+	out := state.Values.Outputs["cluster"]
+	if out == nil {
+		return nil
+	}
+	cluster, ok := out.Value.(map[string]any)
+	if !ok {
+		return nil
+	}
+	str := func(k string) string { s, _ := cluster[k].(string); return s }
+
+	var ci *kube.ClusterInfo
+	switch {
+	case plan.AWSAuth != nil:
+		ci = &kube.ClusterInfo{ID: str("name"), Endpoint: str("endpoint"), CAData: str("certificate_authority_data"), AWSAuth: plan.AWSAuth}
+	case plan.GCPAuth != nil:
+		ci = &kube.ClusterInfo{ID: str("name"), Endpoint: str("endpoint"), CAData: str("certificate_authority_data"), GCPAuth: plan.GCPAuth}
+	case plan.AzureAuth != nil:
+		ci = &kube.ClusterInfo{ID: str("name"), Endpoint: str("host"), CAData: str("cluster_ca_certificate"), AzureAuth: plan.AzureAuth}
+	default:
+		return nil
+	}
+	if ci.ID == "" || ci.Endpoint == "" || ci.CAData == "" {
+		return nil
+	}
+	return ci
+}
+
+// sandboxHelmReleaseNames walks the sandbox terraform state and returns the
+// names of every helm_release resource it manages.
+func sandboxHelmReleaseNames(state *tfjson.State) []string {
+	if state == nil || state.Values == nil || state.Values.RootModule == nil {
+		return nil
+	}
+
+	var names []string
+	var walk func(m *tfjson.StateModule)
+	walk = func(m *tfjson.StateModule) {
+		if m == nil {
+			return
+		}
+		for _, r := range m.Resources {
+			if r == nil || r.Type != "helm_release" {
+				continue
+			}
+			if name, ok := r.AttributeValues["name"].(string); ok && name != "" {
+				names = append(names, name)
+			}
+		}
+		for _, cm := range m.ChildModules {
+			walk(cm)
+		}
+	}
+	walk(state.Values.RootModule)
+
+	return names
 }
 
 // NOTE: createJobExecutionResultRequest is only called in cases when there _is_ a plan. otherwise, we don't really need a result object.

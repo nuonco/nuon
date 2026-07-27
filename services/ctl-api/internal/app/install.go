@@ -2,8 +2,11 @@ package app
 
 import (
 	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
 	"time"
 
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
@@ -77,6 +80,21 @@ type Install struct {
 	GCPAccount   *GCPAccount   `json:"gcp_account,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"gcp_account,omitzero,omitempty"`
 
 	RunnerGroup RunnerGroup `json:"-" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"runner_group,omitzero,omitempty"`
+
+	// ComponentHealthContext lets the runner's stateless component-health engine
+	// rehydrate cluster access and sandbox helm release ownership after a
+	// restart. Opaque to ctl-api; only read/written via the runner-authed
+	// component-health-context endpoints. Never serialized on the install
+	// itself since it can carry durable cluster access details.
+	ComponentHealthContext ComponentHealthContext `gorm:"type:jsonb" json:"-" temporaljson:"-"`
+
+	// SandboxHealthStatus / SandboxHealthMessage are a denormalized rollup of the
+	// worst health across the sandbox-owned resources reported by the
+	// component-health engine, written on each ingest so every install read can
+	// surface a degraded sandbox without querying ClickHouse. Empty until the
+	// engine reports.
+	SandboxHealthStatus  string `json:"sandbox_health_status,omitzero" gorm:"column:sandbox_health_status;default:''" temporaljson:"sandbox_health_status,omitzero,omitempty"`
+	SandboxHealthMessage string `json:"sandbox_health_message,omitzero" gorm:"column:sandbox_health_message;default:''" temporaljson:"sandbox_health_message,omitzero,omitempty"`
 
 	// generated view current view
 
@@ -248,4 +266,35 @@ func compositeComponentStatusDescription(componentStatuses pgtype.Hstore) string
 
 	// if any components have not yet succeeded or failed
 	return "Waiting on components"
+}
+
+// ComponentHealthContext persists what the runner's component-health engine
+// needs to rehydrate cluster access after a restart: a durable, opaque
+// (to ctl-api) marshaled kube.ClusterInfo, and the helm release names the
+// install's sandbox manages (base infra like external-dns, cert-manager).
+type ComponentHealthContext struct {
+	ClusterInfoJSON     string   `json:"cluster_info_json"`
+	SandboxHelmReleases []string `json:"sandbox_helm_releases"`
+}
+
+// Scan implements the database/sql.Scanner interface.
+func (c *ComponentHealthContext) Scan(v interface{}) (err error) {
+	switch v := v.(type) {
+	case nil:
+		return nil
+	case []byte:
+		if err := json.Unmarshal(v, c); err != nil {
+			return errors.Wrap(err, "unable to scan component health context")
+		}
+	}
+	return
+}
+
+// Value implements the driver.Valuer interface.
+func (c *ComponentHealthContext) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
+func (ComponentHealthContext) GormDataType() string {
+	return "jsonb"
 }

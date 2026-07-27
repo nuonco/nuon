@@ -102,6 +102,8 @@ func WithAcceptApplicationOctetStream(r *runtime.ClientOperation) {
 type ClientService interface {
 	CompleteRunnerProcessShutdown(params *CompleteRunnerProcessShutdownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteRunnerProcessShutdownOK, error)
 
+	CreateComponentHealth(params *CreateComponentHealthParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentHealthCreated, error)
+
 	CreateHelmRelease(params *CreateHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateHelmReleaseOK, error)
 
 	CreateRunnerHealthCheck(params *CreateRunnerHealthCheckParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerHealthCheckCreated, error)
@@ -128,6 +130,8 @@ type ClientService interface {
 
 	GetActionWorkflowConfig(params *GetActionWorkflowConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionWorkflowConfigOK, error)
 
+	GetComponentHealthContext(params *GetComponentHealthContextParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentHealthContextOK, error)
+
 	GetHelmRelease(params *GetHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetHelmReleaseOK, error)
 
 	GetHelmReleases(params *GetHelmReleasesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetHelmReleasesOK, error)
@@ -141,6 +145,8 @@ type ClientService interface {
 	GetRunner(params *GetRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerOK, error)
 
 	GetRunnerAppConfig(params *GetRunnerAppConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerAppConfigOK, error)
+
+	GetRunnerInstallComponents(params *GetRunnerInstallComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerInstallComponentsOK, error)
 
 	GetRunnerJob(params *GetRunnerJobParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerJobOK, error)
 
@@ -177,6 +183,8 @@ type ClientService interface {
 	LogStreamWriteLogs(params *LogStreamWriteLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamWriteLogsCreated, error)
 
 	PublishMetrics(params *PublishMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PublishMetricsOK, error)
+
+	PutComponentHealthContext(params *PutComponentHealthContextParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutComponentHealthContextOK, error)
 
 	ReportRunnerProcessTerminating(params *ReportRunnerProcessTerminatingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReportRunnerProcessTerminatingAccepted, error)
 
@@ -258,6 +266,52 @@ func (a *Client) CompleteRunnerProcessShutdown(params *CompleteRunnerProcessShut
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CompleteRunnerProcessShutdown: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateComponentHealth reports component resource health
+
+Batch ingest of the resources a runner's install components manage, with per-resource health. Powers the live resource explorer.
+*/
+func (a *Client) CreateComponentHealth(params *CreateComponentHealthParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateComponentHealthCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateComponentHealthParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateComponentHealth",
+		Method:             "POST",
+		PathPattern:        "/v1/runners/{runner_id}/component-health",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateComponentHealthReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateComponentHealthCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateComponentHealth: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -860,6 +914,52 @@ func (a *Client) GetActionWorkflowConfig(params *GetActionWorkflowConfigParams, 
 }
 
 /*
+GetComponentHealthContext gets the component health context for a runner s install
+
+Returns the cluster access info and sandbox-managed helm release names the runner's component-health engine needs to rehydrate after a restart. Returns an empty struct if unset, or if the runner's group isn't owned by an install.
+*/
+func (a *Client) GetComponentHealthContext(params *GetComponentHealthContextParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetComponentHealthContextOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetComponentHealthContextParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetComponentHealthContext",
+		Method:             "GET",
+		PathPattern:        "/v1/runners/{runner_id}/component-health-context",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetComponentHealthContextReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetComponentHealthContextOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetComponentHealthContext: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetHelmRelease gets helm release
 
 Return a Helm release by id.
@@ -1178,6 +1278,52 @@ func (a *Client) GetRunnerAppConfig(params *GetRunnerAppConfigParams, authInfo r
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetRunnerAppConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetRunnerInstallComponents lists the install components a runner serves
+
+Returns metadata (IDs, name, type) for the components of the install this runner belongs to, used by the runner component-health engine to build its ownership index. Returns no credentials or cluster access.
+*/
+func (a *Client) GetRunnerInstallComponents(params *GetRunnerInstallComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerInstallComponentsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetRunnerInstallComponentsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetRunnerInstallComponents",
+		Method:             "GET",
+		PathPattern:        "/v1/runners/{runner_id}/install-components",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetRunnerInstallComponentsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetRunnerInstallComponentsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRunnerInstallComponents: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -2001,6 +2147,52 @@ func (a *Client) PublishMetrics(params *PublishMetricsParams, authInfo runtime.C
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for PublishMetrics: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+PutComponentHealthContext persists the component health context for a runner s install
+
+Stores the cluster access info and sandbox-managed helm release names the runner's component-health engine needs to rehydrate after a restart. No-op if the runner's group isn't owned by an install.
+*/
+func (a *Client) PutComponentHealthContext(params *PutComponentHealthContextParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutComponentHealthContextOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewPutComponentHealthContextParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "PutComponentHealthContext",
+		Method:             "PUT",
+		PathPattern:        "/v1/runners/{runner_id}/component-health-context",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PutComponentHealthContextReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*PutComponentHealthContextOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for PutComponentHealthContext: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

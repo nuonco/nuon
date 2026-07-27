@@ -98,6 +98,10 @@ const (
 	// instead of the full generated set.
 	OrgFeatureStackTFProvider       OrgFeature = "stack-tf-provider"
 	OrgFeatureAWSAccountConnections OrgFeature = "aws-account-connections"
+	// OrgFeatureComponentHealth enables the live component resource explorer:
+	// the runner reports the resources each component manages with per-resource
+	// health, surfaced in the install "Resources" tab.
+	OrgFeatureComponentHealth OrgFeature = "component-health"
 )
 
 type Org struct {
@@ -224,6 +228,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureStackTFProvider:         false,
 		OrgFeatureOrgRunner:               false,
 		OrgFeatureAWSAccountConnections:   false,
+		OrgFeatureComponentHealth:         false,
 
 		// Enabled by default
 		OrgFeatureControlPlaneBuilds: true,
@@ -298,6 +303,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureControlPlaneBuilds,
 		OrgFeatureStackTFProvider,
 		OrgFeatureAWSAccountConnections,
+		OrgFeatureComponentHealth,
 	}
 }
 
@@ -337,6 +343,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureControlPlaneBuilds:      "Run component and sandbox builds on Temporal-backed control-plane workers instead of the org runner, so build-only work does not require a live org runner.",
 		OrgFeatureStackTFProvider:         "Use the Terraform-provider install stack flow: the await step's directions clone the ja/stack-sdk branch of install-stacks (which reads config from the API via the stack provider) and use the slimmed-down tfvars.",
 		OrgFeatureAWSAccountConnections:   "Enable organization-owned cross-account AWS connections with external ID trust verification.",
+		OrgFeatureComponentHealth:         "Enable the live component resource explorer: the install runner reports the Kubernetes and cloud resources each component manages with per-resource health, surfaced in the install Resources tab.",
 	}
 }
 

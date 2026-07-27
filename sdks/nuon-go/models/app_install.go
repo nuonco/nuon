@@ -137,6 +137,16 @@ type AppInstall struct {
 	// sandbox
 	Sandbox *AppInstallSandbox `json:"sandbox,omitempty"`
 
+	// sandbox health message
+	SandboxHealthMessage string `json:"sandbox_health_message,omitempty"`
+
+	// SandboxHealthStatus / SandboxHealthMessage are a denormalized rollup of the
+	// worst health across the sandbox-owned resources reported by the
+	// component-health engine, written on each ingest so every install read can
+	// surface a degraded sandbox without querying ClickHouse. Empty until the
+	// engine reports.
+	SandboxHealthStatus string `json:"sandbox_health_status,omitempty"`
+
 	// sandbox mode
 	SandboxMode *SQLNullBool `json:"sandbox_mode,omitempty"`
 
