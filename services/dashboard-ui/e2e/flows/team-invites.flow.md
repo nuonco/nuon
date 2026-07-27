@@ -23,6 +23,15 @@ Invites a user to the org, verifies the pending invite appears, resends it, then
 ### Pending invite appears
 - expect: visible | text "e2e-invite-{timestamp}@example.com"
 
+### Re-inviting the same email surfaces the existing invite
+- action: click | button "Invite user" first
+- expect: visible | text "Invite team member"
+- action: fill | input "user@email.com" | e2e-invite-{timestamp}@example.com
+- expect: visible | text /already has a pending invite/i
+- expect: visible | button "Resend invite"
+- action: click | button "Resend invite"
+- expect: visible | text "Invite resent"
+
 ### Resend the invite
 - action: click | button "Resend" first
 - expect: visible | text "Resend invite"
