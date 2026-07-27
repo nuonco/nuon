@@ -57,7 +57,8 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 
 	if installCfg.AWSAccount != nil {
 		req.AWSAccount = &struct {
-			Region string `json:"region"`
+			Region       string `json:"region"`
+			ConnectionID string `json:"connection_id,omitempty"`
 		}{Region: installCfg.AWSAccount.Region}
 	}
 	if installCfg.GCPAccount != nil {

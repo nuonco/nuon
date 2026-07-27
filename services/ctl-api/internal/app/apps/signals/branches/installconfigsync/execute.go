@@ -35,21 +35,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		installsDir = "."
 	}
 
-	runID := s.AppBranchRunID
-	if runID == "" {
-		runID = s.AppBranchID
-	}
-
-	cloneResult, err := activities.LocalAwaitCloneRepo(ctx, activities.CloneRepoRequest{
-		RunID:       runID,
-		VcsConfigID: vcsResult.VCSConfigID,
-		CommitSHA:   s.CommitSHA,
+	syncRecord, err := activities.AwaitCreateInstallConfigSync(ctx, &activities.CreateInstallConfigSyncInput{
+		AppBranchID:       s.AppBranchID,
+		AppBranchConfigID: s.AppBranchConfigID,
+		AppBranchRunID:    s.AppBranchRunID,
+		CommitSHA:         s.CommitSHA,
+		TriggeredBy:       s.TriggeredBy,
 	})
 	if err != nil {
-		return fmt.Errorf("unable to clone repo: %w", err)
+		return fmt.Errorf("unable to create install config sync record: %w", err)
 	}
 
-	sourceDir := cloneResult.SourceDir
+	// TODO(jm): remove hardcoded local path once network clone is working
+	sourceDir := "/Users/jonmorehouse/nuon/demo/kitchen-sink"
 
 	installConfigs, err := activities.AwaitParseInstallConfigs(ctx, activities.ParseInstallConfigsRequest{
 		SourceDir: sourceDir,
@@ -66,20 +64,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	if len(installConfigs.Installs) == 0 {
 		logger.Info("no install configs found to sync")
+		_ = activities.AwaitUpdateInstallConfigSyncStatus(ctx, &activities.UpdateInstallConfigSyncStatusInput{
+			InstallConfigSyncID: syncRecord.ID,
+			Status:              string(app.StatusSuccess),
+			StatusDescription:   "no install configs found",
+		})
 		s.updateStepStatus(ctx, app.StatusSuccess, "no install configs found", nil)
 		return nil
-	}
-
-	syncRecord, err := activities.AwaitCreateInstallConfigSync(ctx, &activities.CreateInstallConfigSyncInput{
-		AppBranchID:       s.AppBranchID,
-		AppBranchConfigID: s.AppBranchConfigID,
-		AppBranchRunID:    s.AppBranchRunID,
-		CommitSHA:         s.CommitSHA,
-		TriggeredBy:       s.TriggeredBy,
-		TotalInstalls:     len(installConfigs.Installs),
-	})
-	if err != nil {
-		return fmt.Errorf("unable to create install config sync record: %w", err)
 	}
 
 	synced := 0

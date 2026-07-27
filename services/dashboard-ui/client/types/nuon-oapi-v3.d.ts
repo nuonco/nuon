@@ -356,6 +356,16 @@ export interface paths {
      */
     get: operations["GetAppBranchRunInstallGroups"];
   };
+<<<<<<< HEAD
+=======
+  "/v1/apps/{app_id}/branches/{app_branch_id}/sync-install-configs": {
+    /**
+     * trigger install config sync from git
+     * @description Triggers a sync of install configs from the installs.toml VCS repo configured in the app config. Optionally specify install_name to sync a single install.
+     */
+    post: operations["TriggerInstallConfigSync"];
+  };
+>>>>>>> f617b38a2 (chore: update)
   "/v1/apps/{app_id}/break-glass-configs": {
     /** @description Create a break glass config for an app. */
     post: operations["CreateAppBreakGlassConfig"];
@@ -11217,6 +11227,69 @@ export interface operations {
       };
     };
   };
+<<<<<<< HEAD
+=======
+  /**
+   * trigger install config sync from git
+   * @description Triggers a sync of install configs from the installs.toml VCS repo configured in the app config. Optionally specify install_name to sync a single install.
+   */
+  TriggerInstallConfigSync: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.TriggerInstallConfigSyncRequest"];
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+>>>>>>> f617b38a2 (chore: update)
   /** @description Create a break glass config for an app. */
   CreateAppBreakGlassConfig: {
     parameters: {

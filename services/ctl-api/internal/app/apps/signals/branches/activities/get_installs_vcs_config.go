@@ -80,11 +80,11 @@ func (a *Activities) getInstallsVCSConfig(ctx context.Context, appID string) (*G
 func (a *Activities) resolveConnectedVCSConfigID(ctx context.Context, appID, repo, branch string) (string, error) {
 	var cfg app.ConnectedGithubVCSConfig
 	err := a.db.WithContext(ctx).
-		Where("repo = ? AND branch = ?", repo, branch).
+		Where("repo = ?", repo).
 		Order("created_at DESC").
 		First(&cfg).Error
 	if err != nil {
-		return "", fmt.Errorf("connected VCS config not found for repo=%s branch=%s: %w", repo, branch, err)
+		return "", fmt.Errorf("connected VCS config not found for repo=%s: %w", repo, err)
 	}
 	return cfg.ID, nil
 }
@@ -92,11 +92,11 @@ func (a *Activities) resolveConnectedVCSConfigID(ctx context.Context, appID, rep
 func (a *Activities) resolvePublicVCSConfigID(ctx context.Context, appID, repo, branch string) (string, error) {
 	var cfg app.PublicGitVCSConfig
 	err := a.db.WithContext(ctx).
-		Where("repo = ? AND branch = ?", repo, branch).
+		Where("repo = ?", repo).
 		Order("created_at DESC").
 		First(&cfg).Error
 	if err != nil {
-		return "", fmt.Errorf("public VCS config not found for repo=%s branch=%s: %w", repo, branch, err)
+		return "", fmt.Errorf("public VCS config not found for repo=%s: %w", repo, err)
 	}
 	return cfg.ID, nil
 }
