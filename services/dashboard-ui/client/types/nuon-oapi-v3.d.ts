@@ -1896,13 +1896,6 @@ export interface paths {
      */
     post: operations["ReprovisionInstallSandbox"];
   };
-  "/v1/installs/{install_id}/resources": {
-    /**
-     * live resource explorer for an install
-     * @description Returns the latest observed state of every resource the install's components manage, filterable by component, kind, namespace, health, and provider. Requires the component-health feature.
-     */
-    get: operations["GetInstallResources"];
-  };
   "/v1/installs/{install_id}/retry-workflow": {
     /**
      * rerun the workflow steps starting from input step id, can be used to retry a failed step
@@ -4254,15 +4247,6 @@ export interface components {
       runner_status_description?: string;
       runner_type?: string;
       sandbox?: components["schemas"]["app.InstallSandbox"];
-      sandbox_health_message?: string;
-      /**
-       * @description SandboxHealthStatus / SandboxHealthMessage are a denormalized rollup of the
-       * worst health across the sandbox-owned resources reported by the
-       * component-health engine, written on each ingest so every install read can
-       * surface a degraded sandbox without querying ClickHouse. Empty until the
-       * engine reports.
-       */
-      sandbox_health_status?: string;
       sandbox_mode?: components["schemas"]["sql.NullBool"];
       sandbox_status?: string;
       sandbox_status_description?: string;
@@ -4404,31 +4388,6 @@ export interface components {
       status_v2?: components["schemas"]["app.CompositeStatus"];
       terraform_workspace?: components["schemas"]["app.TerraformWorkspace"];
       updated_at?: string;
-    };
-    "app.InstallComponentResourceState": {
-      api_group?: string;
-      component_id?: string;
-      details?: string;
-      health?: string;
-      install_component_id?: string;
-      install_id?: string;
-      kind?: string;
-      message?: string;
-      name?: string;
-      namespace?: string;
-      native_status?: string;
-      observed_at?: string;
-      org_id?: string;
-      owner_name?: string;
-      provider?: string;
-      runner_id?: string;
-      /**
-       * @description Source classifies the resource owner: "component" (an app component,
-       * keyed by install_component_id) or "sandbox" (install base infra, keyed by
-       * owner_name = helm release name). OwnerName is the display group for
-       * sandbox resources.
-       */
-      source?: string;
     };
     "app.InstallConfig": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
@@ -22515,68 +22474,6 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.WorkflowResponse"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * live resource explorer for an install
-   * @description Returns the latest observed state of every resource the install's components manage, filterable by component, kind, namespace, health, and provider. Requires the component-health feature.
-   */
-  GetInstallResources: {
-    parameters: {
-      query?: {
-        /** @description filter by install component ID */
-        install_component_id?: string;
-        /** @description filter by resource kind (e.g. Deployment) */
-        kind?: string;
-        /** @description filter by namespace */
-        namespace?: string;
-        /** @description filter by health (healthy|progressing|degraded|unhealthy|unknown) */
-        health?: string;
-        /** @description filter by provider (kubernetes|aws|gcp|azure) */
-        provider?: string;
-      };
-      path: {
-        /** @description install ID */
-        install_id: string;
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.InstallComponentResourceState"][];
         };
       };
       /** @description Bad Request */
