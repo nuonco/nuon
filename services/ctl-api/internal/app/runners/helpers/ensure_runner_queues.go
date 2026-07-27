@@ -3,7 +3,6 @@ package helpers
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -48,7 +47,7 @@ func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string)
 			Description:     "Periodic runner-level health check",
 			Mode:            app.QueueEmitterModeCron,
 			CronSchedule:    runnerHealthcheckSchedule(h.cfg.Env),
-			JitterWindow:    30 * time.Second,
+			JitterWindow:    runnerHealthcheckJitterWindow,
 			SignalType:      "runner_healthcheck",
 			SignalExpiresIn: runnerHealthcheckSignalExpiry,
 			SignalTemplate: queuesignal.NewRaw("runner_healthcheck", map[string]any{

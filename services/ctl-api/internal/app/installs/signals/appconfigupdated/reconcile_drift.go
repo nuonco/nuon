@@ -13,7 +13,7 @@ import (
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
-const driftJitterWindow = 150 * time.Second
+const driftJitterWindow = 3 * time.Minute
 
 func (s *Signal) reconcileDriftEmitters(
 	ctx workflow.Context,

@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
@@ -40,7 +41,8 @@ func (h *Helpers) EnsureConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 		h.db.WithContext(ctx).
 			Model(&existing).
 			Updates(map[string]any{
-				"cron_schedule":     "0 * * * *",
+				"cron_schedule":     cronutil.ApplyCronJitter(existing.ID, vcsHealthCheckSchedule, vcsHealthCheckJitterWindow),
+				"jitter_window":     int64(vcsHealthCheckJitterWindow),
 				"signal_expires_in": int64(5 * time.Minute),
 			})
 		return nil
@@ -51,7 +53,8 @@ func (h *Helpers) EnsureConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 		Name:            emitterName,
 		Description:     "Periodic VCS connection health check",
 		Mode:            app.QueueEmitterModeCron,
-		CronSchedule:    "0 * * * *",
+		CronSchedule:    vcsHealthCheckSchedule,
+		JitterWindow:    vcsHealthCheckJitterWindow,
 		SignalExpiresIn: 5 * time.Minute,
 		SignalType:      healthcheck.SignalType,
 		SignalTemplate: &healthcheck.Signal{
