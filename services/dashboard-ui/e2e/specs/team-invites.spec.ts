@@ -25,6 +25,21 @@ test.describe("Team invites", () => {
       .filter({ hasText: email });
     await expect(row).toBeVisible({ timeout: 10000 });
 
+    // --- Re-inviting the same email surfaces the existing invite ---
+    await page.getByRole("button", { name: "Invite user" }).first().click();
+    const dupDialog = page.getByRole("dialog");
+    await expect(dupDialog.getByText("Invite team member")).toBeVisible();
+    await dupDialog.getByPlaceholder("user@email.com").fill(email);
+    await expect(
+      dupDialog.getByText(/already has a pending invite/i)
+    ).toBeVisible({ timeout: 10000 });
+    const dupResend = dupDialog.getByRole("button", { name: "Resend invite" });
+    await expect(dupResend).toBeVisible();
+    await dupResend.click();
+    await expect(page.getByText("Invite resent")).toBeVisible({
+      timeout: 10000,
+    });
+
     // --- Resend ---
     await row.getByRole("button", { name: "Resend" }).click();
     const resendDialog = page.getByRole("dialog");
