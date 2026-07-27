@@ -20,6 +20,7 @@ export const Default = () => (
       isSidebarOpen
       hasOrgDashboard
       hasOrgSettings
+      hasServiceAccountsAndTokens
       hasSlack
       hasCustomerPortal={false}
       customerPortalUrl="https://customers.nuon.co"
@@ -34,6 +35,7 @@ export const Collapsed = () => (
       isSidebarOpen={false}
       hasOrgDashboard
       hasOrgSettings={false}
+      hasServiceAccountsAndTokens={false}
       hasSlack={false}
       hasCustomerPortal={false}
       customerPortalUrl="https://customers.nuon.co"
