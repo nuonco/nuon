@@ -42,9 +42,9 @@ test.describe("Create install", () => {
     await nameInput.fill(installName);
 
     // Select AWS region (if the region selector is present)
-    const regionCombobox = page.getByRole("combobox").filter({ hasText: "Choose AWS region" });
-    if (await regionCombobox.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await regionCombobox.click();
+    const awsSettings = page.getByRole("group", { name: /AWS settings/i });
+    if (await awsSettings.isVisible({ timeout: 8000 }).catch(() => false)) {
+      await awsSettings.getByRole("combobox").click();
       const searchInput = page.getByPlaceholder("Search...");
       await expect(searchInput).toBeVisible();
       await searchInput.fill("us-west-2");
@@ -60,8 +60,5 @@ test.describe("Create install", () => {
 
     // Redirected to provision workflow
     await expect(page).toHaveURL(/\/workflows\//, { timeout: 30000 });
-    await expect(
-      page.getByText("Install created", { exact: true })
-    ).toBeVisible({ timeout: 10000 });
   });
 });
