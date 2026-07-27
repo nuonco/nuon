@@ -162,6 +162,24 @@ export const InstallStatuses = ({
     return status
   }
 
+  const sandboxBaseStatus = effectiveStatus(install?.sandbox_status)
+  const sandboxDisplayStatus =
+    install?.sandbox_health_status && sandboxBaseStatus === 'active'
+      ? install.sandbox_health_status
+      : sandboxBaseStatus
+  const sandboxSubtitle =
+    sandboxDisplayStatus !== sandboxBaseStatus && install?.sandbox_health_message
+      ? install.sandbox_health_message
+      : getInstallStatusTitle(
+          'sandbox_status',
+          install?.sandbox_status,
+          install?.lifecycle_phase?.phase
+        )
+  const sandboxHref =
+    sandboxDisplayStatus !== sandboxBaseStatus
+      ? `/${install?.org_id}/installs/${install?.id}/resources?health=${sandboxDisplayStatus}`
+      : `/${install?.org_id}/installs/${install?.id}/sandbox`
+
   const driftStatus = install?.drifted_objects?.length ? 'warn' : 'active'
   const latestStackVersion = stack?.versions?.[0]
   const stackStatus = latestStackVersion?.composite_status?.status
@@ -277,17 +295,13 @@ export const InstallStatuses = ({
       position={tooltipPosition}
       items={[
         {
-          href: `/${install.org_id}/installs/${install.id}/sandbox`,
+          href: sandboxHref,
           id: install?.install_sandbox_runs?.at(0)?.id,
           title: toSentenceCase(install?.install_sandbox_runs?.at(0)?.run_type),
-          subtitle: getInstallStatusTitle(
-            'sandbox_status',
-            install?.sandbox_status,
-            install?.lifecycle_phase?.phase
-          ),
+          subtitle: sandboxSubtitle,
           leftContent: (
             <Status
-              status={effectiveStatus(install.sandbox_status)}
+              status={sandboxDisplayStatus}
               isWithoutText
               variant="timeline"
               iconSize={16}
@@ -297,7 +311,7 @@ export const InstallStatuses = ({
       ]}
     >
       {variant === 'icon' ? (
-        <Text theme={getStatusTheme(effectiveStatus(install.sandbox_status) ?? '')}>
+        <Text theme={getStatusTheme(sandboxDisplayStatus ?? '')}>
           <Icon
             variant="ShippingContainerIcon"
             size={14}
@@ -305,8 +319,8 @@ export const InstallStatuses = ({
           />
         </Text>
       ) : (
-        <Status status={effectiveStatus(install.sandbox_status)} variant="badge">
-          {isLabelHidden ? 'Sandbox' : effectiveStatus(install.sandbox_status)}
+        <Status status={sandboxDisplayStatus} variant="badge">
+          {isLabelHidden ? 'Sandbox' : sandboxDisplayStatus}
         </Status>
       )}
     </ContextTooltip>
@@ -398,7 +412,7 @@ export const InstallStatuses = ({
   const allStatuses = [
     stackStatus,
     effectiveStatus(install?.runner_status),
-    effectiveStatus(install?.sandbox_status),
+    sandboxDisplayStatus,
     effectiveStatus(install?.composite_component_status),
     install?.drifted_objects?.length ? 'warn' : 'active',
   ]
@@ -440,15 +454,11 @@ export const InstallStatuses = ({
     {
       id: 'sandbox',
       title: 'Sandbox',
-      subtitle: getInstallStatusTitle(
-        'sandbox_status',
-        install?.sandbox_status,
-        install?.lifecycle_phase?.phase
-      ),
-      href: `/${install.org_id}/installs/${install.id}/sandbox`,
+      subtitle: sandboxSubtitle,
+      href: sandboxHref,
       leftContent: (
         <Status
-          status={effectiveStatus(install?.sandbox_status)}
+          status={sandboxDisplayStatus}
           isWithoutText
           variant="timeline"
           iconSize={16}
@@ -543,9 +553,13 @@ export const SimpleInstallStatuses = ({
       {isLabelHidden ? 'Runner' : install.runner_status}
     </Status>
   )
+  const sandboxStatus =
+    install.sandbox_health_status && install.sandbox_status === 'active'
+      ? install.sandbox_health_status
+      : install.sandbox_status
   const SandboxStatus = (
-    <Status status={install.sandbox_status} variant="badge">
-      {isLabelHidden ? 'Sandbox' : install.sandbox_status}
+    <Status status={sandboxStatus} variant="badge">
+      {isLabelHidden ? 'Sandbox' : sandboxStatus}
     </Status>
   )
   const ComponentsStatus = (

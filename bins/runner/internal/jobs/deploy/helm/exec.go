@@ -47,6 +47,12 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	)
 	ctx = pkgctx.SetLogger(ctx, l)
 
+	// Share the cluster access with the component-health engine so it can watch
+	// this component's resources (the runner may not be in the cluster).
+	if h.clusterProvider != nil {
+		h.clusterProvider.Set(h.state.plan.HelmDeployPlan.ClusterInfo)
+	}
+
 	l.Debug("Initializing Helm...",
 		zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()},
 	)

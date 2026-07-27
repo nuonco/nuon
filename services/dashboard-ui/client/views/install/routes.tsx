@@ -2,6 +2,7 @@ import { redirect, type RouteObject } from 'react-router'
 import { InstallLayout } from './InstallLayout'
 import { Overview } from './Overview'
 import { Components } from './Components'
+import { Resources } from './Resources'
 import { Actions } from './Actions'
 import { Roles } from './Roles'
 import { Policies } from './Policies'
@@ -55,6 +56,10 @@ export const installRoutes: RouteObject[] = [
       {
         path: ':orgId/installs/:installId/components',
         element: <Components />,
+      },
+      {
+        path: ':orgId/installs/:installId/resources',
+        element: <Resources />,
       },
       { path: ':orgId/installs/:installId/actions', element: <Actions /> },
       { path: ':orgId/installs/:installId/notebooks', element: <Notebooks /> },

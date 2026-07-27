@@ -124,5 +124,8 @@ var CHTableSizesV1 string
 //go:embed terraform_workspace_states_view_v1.sql
 var TerraformWorkspaceStatesViewV1 string
 
+//go:embed install_component_resource_states_view_v1.sql
+var InstallComponentResourceStatesViewV1 string
+
 //go:embed workflow_step_approvals_pending_view_v1.sql
 var WorkflowStepApprovalsPendingViewV1 string

@@ -215,6 +215,11 @@ export function computeLayout(data: TDiagramData): Node[] {
     }
   }
 
+  const sandboxStatus =
+    install.sandbox_health_status && install.sandbox_status === 'active'
+      ? install.sandbox_health_status
+      : install.sandbox_status
+
   nodes.push({
     id: 'vpc',
     type: 'containerNode',
@@ -222,7 +227,7 @@ export function computeLayout(data: TDiagramData): Node[] {
     data: {
       label: 'VPC',
       icon: 'CloudIcon',
-      status: install.sandbox_status || '',
+      status: sandboxStatus || '',
       width: vpcW,
       height: vpcH,
       level: 1,
@@ -238,7 +243,7 @@ export function computeLayout(data: TDiagramData): Node[] {
     data: {
       label: 'Sandbox',
       icon: 'CubeIcon',
-      status: install.sandbox_status || '',
+      status: sandboxStatus || '',
       width: sandboxW,
       height: sandboxH,
       level: 2,
