@@ -10,6 +10,12 @@ import (
 // dashboard, CLI, and search index. It is the single source of truth — the
 // install_workflows.name column is populated by Workflow.BeforeSave so the
 // stored value stays in sync with this logic.
+// ComputeName lets backfills recompute the title without a full Save, which
+// would try to upsert every association on the struct.
+func (w *Workflow) ComputeName() string {
+	return computeWorkflowName(w)
+}
+
 func computeWorkflowName(w *Workflow) string {
 	suffix := workflowNameSuffix(w)
 

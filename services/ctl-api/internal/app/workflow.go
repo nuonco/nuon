@@ -74,10 +74,14 @@ func (i WorkflowType) PastTenseName() string {
 		return "Reprovisioned sandbox"
 	case WorkflowTypeDeprovision:
 		return "Deprovisioned install"
+	case WorkflowTypeDeprovisionSandbox:
+		return "Deprovisioned sandbox"
 	case WorkflowTypeManualDeploy, WorkflowTypeDriftRun:
 		return "Deployed to install"
 	case WorkflowTypeInputUpdate:
 		return "Updated Input"
+	case WorkflowTypeTeardownComponent:
+		return "Tore down component"
 	case WorkflowTypeTeardownComponents:
 		return "Tore down all components"
 	case WorkflowTypeDeployComponents:
@@ -94,6 +98,12 @@ func (i WorkflowType) PastTenseName() string {
 		return "Enabled component"
 	case WorkflowTypeComponentDisabled:
 		return "Disabled component"
+	case WorkflowTypeAppBranchesConfigRepoUpdate:
+		return "Config repo updated"
+	case WorkflowTypeAppBranchesComponentRepoUpdate:
+		return "Component repo updated"
+	case WorkflowTypeAppBranchConfigUpdate:
+		return "Branch config updated"
 	default:
 	}
 
@@ -108,10 +118,14 @@ func (i WorkflowType) Name() string {
 		return "Reprovisioning install"
 	case WorkflowTypeDeprovision:
 		return "Deprovisioning install"
+	case WorkflowTypeDeprovisionSandbox:
+		return "Deprovisioning sandbox"
 	case WorkflowTypeManualDeploy, WorkflowTypeDriftRun:
 		return "Deploying to install"
 	case WorkflowTypeInputUpdate:
 		return "Input Update"
+	case WorkflowTypeTeardownComponent:
+		return "Tearing down component"
 	case WorkflowTypeTeardownComponents:
 		return "Tearing down all components"
 	case WorkflowTypeDeployComponents:
@@ -130,6 +144,12 @@ func (i WorkflowType) Name() string {
 		return "Enabling component"
 	case WorkflowTypeComponentDisabled:
 		return "Disabling component"
+	case WorkflowTypeAppBranchesConfigRepoUpdate:
+		return "Config repo update"
+	case WorkflowTypeAppBranchesComponentRepoUpdate:
+		return "Component repo update"
+	case WorkflowTypeAppBranchConfigUpdate:
+		return "Branch config update"
 	default:
 	}
 
