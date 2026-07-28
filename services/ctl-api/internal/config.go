@@ -240,6 +240,9 @@ type Config struct {
 	KafkaSASLUsername          string        `config:"kafka_sasl_username"`
 	KafkaSASLPassword          string        `config:"kafka_sasl_password"`
 	KafkaTLSEnabled            bool          `config:"kafka_tls_enabled"`
+	KafkaTLSCAPath             string        `config:"kafka_tls_ca_path"`
+	KafkaTLSCertPath           string        `config:"kafka_tls_cert_path"`
+	KafkaTLSKeyPath            string        `config:"kafka_tls_key_path"`
 	KafkaClientID              string        `config:"kafka_client_id"`
 	KafkaConsumerGroup         string        `config:"kafka_consumer_group"`
 	KafkaConsumerFetchMaxWait  time.Duration `config:"kafka_consumer_fetch_max_wait"`

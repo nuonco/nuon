@@ -40,6 +40,9 @@ func ClientConfig(cfg *internal.Config) pkgkafka.Config {
 		SASLUsername:     cfg.KafkaSASLUsername,
 		SASLPassword:     cfg.KafkaSASLPassword,
 		TLSEnabled:       cfg.KafkaTLSEnabled,
+		TLSCAPath:        cfg.KafkaTLSCAPath,
+		TLSCertPath:      cfg.KafkaTLSCertPath,
+		TLSKeyPath:       cfg.KafkaTLSKeyPath,
 	}
 }
 

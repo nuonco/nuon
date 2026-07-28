@@ -37,7 +37,7 @@ type Consumer struct {
 }
 
 func NewConsumer(cfg Config, ccfg ConsumerConfig, handler Handler, l *zap.Logger) (*Consumer, error) {
-	opts, err := cfg.baseOpts()
+	opts, err := cfg.baseOpts(l)
 	if err != nil {
 		return nil, err
 	}

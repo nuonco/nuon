@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"strings"
 	"sync"
@@ -13,6 +12,7 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/aws"
 	"github.com/twmb/franz-go/pkg/sasl/plain"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
+	"go.uber.org/zap"
 )
 
 // maxMessageBytes — Azure Event Hubs hard-caps a single event at 1 MiB and it
@@ -42,12 +42,25 @@ type Config struct {
 	SASLUsername     string
 	SASLPassword     string
 	TLSEnabled       bool
+
+	// TLSCAPath is the bundle used to verify brokers; empty uses system roots.
+	TLSCAPath string
+	// TLSCertPath and TLSKeyPath enable mTLS and must be set together.
+	TLSCertPath string
+	TLSKeyPath  string
+}
+
+func (c Config) tlsRequired() bool {
+	return c.TLSEnabled ||
+		c.SecurityProtocol == securitySSL ||
+		c.SecurityProtocol == securitySASLSSL ||
+		strings.ToUpper(strings.TrimSpace(c.SASLMechanism)) == saslAWSMSKIAM
 }
 
 // baseOpts builds the transport options shared by producers and consumers.
 // Security is pluggable per cloud: local is PLAINTEXT; MSK IAM and GCP/Azure
 // OAUTHBEARER are wired per-cloud later.
-func (c Config) baseOpts() ([]kgo.Opt, error) {
+func (c Config) baseOpts(l *zap.Logger) ([]kgo.Opt, error) {
 	if len(c.Brokers) == 0 {
 		return nil, fmt.Errorf("no brokers configured")
 	}
@@ -59,8 +72,12 @@ func (c Config) baseOpts() ([]kgo.Opt, error) {
 
 	mechanism := strings.ToUpper(strings.TrimSpace(c.SASLMechanism))
 
-	if c.TLSEnabled || c.SecurityProtocol == securitySSL || c.SecurityProtocol == securitySASLSSL || mechanism == saslAWSMSKIAM {
-		opts = append(opts, kgo.DialTLSConfig(&tls.Config{MinVersion: tls.VersionTLS12}))
+	if c.tlsRequired() {
+		reloader, err := newTLSReloader(c, l)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, kgo.Dialer(reloader.dial))
 	}
 
 	switch mechanism {

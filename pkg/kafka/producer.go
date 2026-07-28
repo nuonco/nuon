@@ -22,7 +22,7 @@ type Producer struct {
 }
 
 func NewProducer(cfg Config, l *zap.Logger, mw metrics.Writer) (*Producer, error) {
-	opts, err := cfg.baseOpts()
+	opts, err := cfg.baseOpts(l)
 	if err != nil {
 		return nil, err
 	}

@@ -146,7 +146,7 @@ func TestConfigBaseOpts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			opts, err := tt.cfg.baseOpts()
+			opts, err := tt.cfg.baseOpts(zap.NewNop())
 			if tt.wantErr {
 				require.Error(t, err)
 				return
