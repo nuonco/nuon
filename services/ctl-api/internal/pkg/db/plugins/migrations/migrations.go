@@ -44,7 +44,7 @@ func (m *Migrator) applyMigrations(ctx context.Context, obj any) error {
 		if err := m.applyMigration(ctx, obj, idx); err != nil {
 			return MigrationErr{
 				Model: plugins.TableName(m.db, obj),
-				Name:  "indexes",
+				Name:  idx.Name,
 				Err:   err,
 			}
 		}
@@ -53,19 +53,12 @@ func (m *Migrator) applyMigrations(ctx context.Context, obj any) error {
 	return nil
 }
 
-func (m *Migrator) applyMigration(ctx context.Context, obj any, idx Migration) error {
-	mm, ok := m.toMigrationMode(obj)
-	if !ok {
-		return nil
+func (m *Migrator) applyMigration(ctx context.Context, _ any, idx Migration) error {
+	if err := m.execMigration(ctx, idx); err != nil {
+		return errors.Wrap(err, "migration failed: "+idx.Name)
 	}
 
-	for _, migration := range mm.Migrations() {
-		if err := m.execMigration(ctx, migration); err != nil {
-			return errors.Wrap(err, "migration %s failed: "+migration.Name)
-		}
-
-		m.mw.Flush()
-	}
+	m.mw.Flush()
 
 	return nil
 }
