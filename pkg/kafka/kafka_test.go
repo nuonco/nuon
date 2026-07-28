@@ -108,12 +108,12 @@ func TestConfigBaseOpts(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "aws msk iam not implemented",
+			name: "aws msk iam",
 			cfg: Config{
 				Brokers:       []string{"broker:9092"},
 				SASLMechanism: saslAWSMSKIAM,
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "oauthbearer not implemented",
