@@ -16,6 +16,7 @@ type CreateHealthCheckRequest struct {
 
 // @temporal-gen-v2 activity
 // @by-field RunnerID
+// @local
 func (a *Activities) CreateHealthCheck(ctx context.Context, req CreateHealthCheckRequest) (*app.RunnerHealthCheck, error) {
 	hc := app.RunnerHealthCheck{
 		RunnerID:     req.RunnerID,

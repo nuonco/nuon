@@ -11,6 +11,7 @@ import (
 // @start-to-close-timeout 1m
 // @as-wrapper
 // @wrapper-prefix QueueInternal
+// @local
 func (a *Activities) checkCANRequested(ctx context.Context, queueID string) (bool, error) {
 	var queue app.Queue
 	if res := a.db.WithContext(ctx).Where(app.Queue{ID: queueID}).First(&queue); res.Error != nil {
@@ -34,6 +35,7 @@ func (a *Activities) checkCANRequested(ctx context.Context, queueID string) (boo
 // @start-to-close-timeout 1m
 // @as-wrapper
 // @wrapper-prefix QueueInternal
+// @local
 func (a *Activities) clearCANRequested(ctx context.Context, queueID string) error {
 	res := a.db.WithContext(ctx).Exec(`
 		UPDATE queues

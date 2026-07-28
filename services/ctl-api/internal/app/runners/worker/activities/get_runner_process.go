@@ -13,6 +13,7 @@ type GetRunnerProcessRequest struct {
 
 // @temporal-gen-v2 activity
 // @by-field ProcessID
+// @local
 func (a *Activities) GetRunnerProcess(ctx context.Context, req GetRunnerProcessRequest) (*app.RunnerProcess, error) {
 	var process app.RunnerProcess
 	res := a.db.WithContext(ctx).

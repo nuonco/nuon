@@ -14,6 +14,7 @@ type StopProcessQueueRequest struct {
 
 // @temporal-gen-v2 activity
 // @by-field RunnerID
+// @local
 func (a *Activities) StopProcessQueue(ctx context.Context, req StopProcessQueueRequest) error {
 	queueName := fmt.Sprintf("runner-process-%s", req.ProcessID)
 

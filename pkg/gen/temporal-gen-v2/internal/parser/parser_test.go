@@ -354,6 +354,44 @@ func TestParse(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		"Activity with local": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @local",
+			},
+			expected: &Annotation{
+				Type: "activity",
+				ActivityOpts: &ActivityOptions{
+					IsLocal: true,
+				},
+			},
+		},
+		"Activity with local and other options": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @local",
+				"// @start-to-close-timeout 5m",
+				"// @by-field ID",
+			},
+			expected: &Annotation{
+				Type: "activity",
+				ActivityOpts: &ActivityOptions{
+					IsLocal:             true,
+					StartToCloseTimeout: 5 * time.Minute,
+					ByField:             "ID",
+				},
+			},
+		},
+		"Local ignored on workflow": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " workflow",
+				"// @local",
+			},
+			expected: &Annotation{
+				Type:         "workflow",
+				WorkflowOpts: &WorkflowOptions{},
+			},
+		},
 		"Unknown argument": {
 			comments: []string{
 				"// @" + config.AnnotationPrefix + " activity",

@@ -15,6 +15,7 @@ import (
 // @start-to-close-timeout 5m
 // @as-wrapper
 // @by-field sourceDir
+// @local
 func (a *Activities) fetchIntermediateConfig(ctx context.Context, sourceDir string) (*config.AppConfig, error) {
 	defer os.RemoveAll(sourceDir)
 
