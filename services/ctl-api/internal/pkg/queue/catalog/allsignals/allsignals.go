@@ -49,6 +49,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployplanonly"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeploysyncandplan"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componenthealthevaluate"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componenthealthnotify"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentsyncimage"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownapplyplan"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownsyncandplan"

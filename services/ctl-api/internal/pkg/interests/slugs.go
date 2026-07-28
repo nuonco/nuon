@@ -54,6 +54,17 @@ const (
 	SlugEventConfigSynced  = SlugPrefixEvent + "config.synced"
 )
 
+// Component health slugs. Emitted by the component-health evaluator on a
+// debounced verdict transition — never on a flip to unknown. Subscribers opt
+// into both component slugs with the single per-resource `component_health`
+// flag so a reported failure is always followed by its resolution;
+// event:install.degraded is gated by `install_degraded` on installs.
+const (
+	SlugEventComponentUnhealthy = SlugPrefixEvent + "component.unhealthy"
+	SlugEventComponentRecovered = SlugPrefixEvent + "component.recovered"
+	SlugEventInstallDegraded    = SlugPrefixEvent + "install.degraded"
+)
+
 // ResourceSlug returns "resource:<kind>".
 func ResourceSlug(kind ResourceKind) string {
 	return SlugPrefixResource + string(kind)

@@ -48,6 +48,14 @@ const (
 	InstallComponentHealthStatusNotApplicable InstallComponentHealthStatus = "not-applicable"
 )
 
+// IsBadHealth reports whether a verdict represents an actionable problem —
+// the only verdicts that notify. Progressing is transient, and unknown means
+// we lost visibility (reported by runner inactivity, not as N component
+// alerts), so neither is "bad" for alerting purposes.
+func (s InstallComponentHealthStatus) IsBadHealth() bool {
+	return s == InstallComponentHealthStatusDegraded || s == InstallComponentHealthStatusUnhealthy
+}
+
 type InstallComponent struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"default:null" temporaljson:"created_by_id,omitzero,omitempty"`

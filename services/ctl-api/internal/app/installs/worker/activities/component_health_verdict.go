@@ -12,10 +12,13 @@ const (
 	// resource observations from ClickHouse. The runner reports every ~60s, so
 	// this covers ~10 reports.
 	componentHealthObservationWindow = 10 * time.Minute
-	// componentHealthStaleAfter is ~3x the runner report interval: no report
-	// inside it means the verdict is unknown, never unhealthy (absence of data
-	// is not health data).
-	componentHealthStaleAfter = 3 * time.Minute
+	// componentHealthStaleAfter is how long without a report makes the verdict
+	// unknown, never unhealthy (absence of data is not health data). Set to
+	// the same 5 minutes at which a runner process is declared inactive, so
+	// health goes unknown exactly when the platform gives up on the runner —
+	// and so a single delayed report on the ~60s cadence cannot bounce a
+	// component through unknown and straight back.
+	componentHealthStaleAfter = 5 * time.Minute
 	// componentHealthFlipBadAfter is how many consecutive bad (degraded or
 	// worse) reports it takes to flip a component's verdict bad.
 	componentHealthFlipBadAfter = 3

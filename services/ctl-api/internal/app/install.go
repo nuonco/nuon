@@ -284,13 +284,24 @@ func compositeComponentStatusDescription(componentStatuses pgtype.Hstore) string
 // health signal and are excluded; an install with no evaluated components has
 // no composite health (empty), so orgs without the feature surface nothing.
 func compositeComponentHealthStatus(componentHealthStatuses pgtype.Hstore) (InstallComponentHealthStatus, string) {
-	counts := map[InstallComponentHealthStatus]int{}
-	total := 0
+	statuses := make([]InstallComponentHealthStatus, 0, len(componentHealthStatuses))
 	for _, status := range componentHealthStatuses {
 		if status == nil {
 			continue
 		}
-		hs := InstallComponentHealthStatus(*status)
+		statuses = append(statuses, InstallComponentHealthStatus(*status))
+	}
+	return CompositeComponentHealthStatus(statuses)
+}
+
+// CompositeComponentHealthStatus rolls per-component health verdicts up to a
+// single install-level verdict and description. Exported so the component
+// health evaluator can compute the before/after rollup without a round trip
+// through the install view.
+func CompositeComponentHealthStatus(statuses []InstallComponentHealthStatus) (InstallComponentHealthStatus, string) {
+	counts := map[InstallComponentHealthStatus]int{}
+	total := 0
+	for _, hs := range statuses {
 		if hs == InstallComponentHealthStatusUnset || hs == InstallComponentHealthStatusNotApplicable {
 			continue
 		}

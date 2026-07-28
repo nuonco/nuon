@@ -150,7 +150,7 @@ func resourceModel(gvr schema.GroupVersionResource, u *unstructured.Unstructured
 		Health:       health,
 		Message:      message,
 		NativeStatus: native,
-		Details:      resourceDetails(u),
+		Details:      resourceDetails(u, resourceDiagnosis(u, health, warn)),
 	}
 }
 

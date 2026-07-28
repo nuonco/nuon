@@ -48,8 +48,15 @@ func mapHealth(code gitopshealth.HealthStatusCode) string {
 // object's status plus its spec with the noisy pod template dropped (status
 // alone is uninformative for many kinds, e.g. a ClusterIP Service). Falls back
 // to status-only, then empty, if it would exceed the size cap.
-func resourceDetails(obj *unstructured.Unstructured) string {
+//
+// diagnosis, when present, is preserved ahead of spec in the fallback order:
+// it is the smallest and most useful part of the payload, and it is what the
+// evaluator copies onto a health transition.
+func resourceDetails(obj *unstructured.Unstructured, diagnosis map[string]any) string {
 	details := map[string]any{}
+	if len(diagnosis) > 0 {
+		details["diagnosis"] = diagnosis
+	}
 	if status, ok := obj.Object["status"]; ok {
 		details["status"] = status
 	}
@@ -71,9 +78,23 @@ func resourceDetails(obj *unstructured.Unstructured) string {
 		return string(b)
 	}
 
-	// spec pushed it over the cap — fall back to status only.
+	// spec pushed it over the cap — fall back to status (plus diagnosis) only.
+	fallback := map[string]any{}
+	if len(diagnosis) > 0 {
+		fallback["diagnosis"] = diagnosis
+	}
 	if status, ok := obj.Object["status"]; ok {
-		if b, err := json.Marshal(map[string]any{"status": status}); err == nil && len(b) <= maxDetailsBytes {
+		fallback["status"] = status
+	}
+	if len(fallback) > 0 {
+		if b, err := json.Marshal(fallback); err == nil && len(b) <= maxDetailsBytes {
+			return string(b)
+		}
+	}
+
+	// Still too large: keep the diagnosis, drop the raw status.
+	if len(diagnosis) > 0 {
+		if b, err := json.Marshal(map[string]any{"diagnosis": diagnosis}); err == nil && len(b) <= maxDetailsBytes {
 			return string(b)
 		}
 	}

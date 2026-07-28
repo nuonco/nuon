@@ -909,6 +909,116 @@ func plainAppConfigSyncedHeadline(e Event) string {
 	return text
 }
 
+// BuildComponentHealthMessage renders a component or install health crossing.
+// recovered flips the card from an alert to a resolution; installLevel renders
+// the install rollup instead of a single component.
+func BuildComponentHealthMessage(e Event, recovered, installLevel bool) Message {
+	headline := componentHealthHeadline(e, recovered, installLevel)
+
+	blocks := []slack.Block{headerBlock(headline)}
+	if fields := componentHealthFields(e, installLevel); len(fields) > 0 {
+		blocks = append(blocks, slack.NewDividerBlock(), fieldsSection(fields))
+	}
+	if actions, ok := actionsBlock(componentHealthLinks(e, installLevel)); ok {
+		blocks = append(blocks, actions)
+	}
+	return Message{Text: headline, Blocks: blocks}
+}
+
+func componentHealthHeadline(e Event, recovered, installLevel bool) string {
+	subject := metadataString(e, "component_name")
+	if installLevel {
+		subject = e.Workflow.OwnerName
+	}
+
+	var text string
+	switch {
+	case recovered && installLevel:
+		text = "✅ Install recovered"
+	case recovered:
+		text = "✅ Component recovered"
+	case installLevel:
+		text = "🔴 Install degraded"
+	case metadataString(e, "health") == "degraded":
+		text = "⚠️ Component degraded"
+	default:
+		text = "🔴 Component unhealthy"
+	}
+
+	if subject != "" {
+		text = text + " · " + slackEscape(subject)
+	}
+	return text
+}
+
+func componentHealthFields(e Event, installLevel bool) []kv {
+	fields := []kv{}
+
+	if !installLevel {
+		if name := metadataString(e, "component_name"); name != "" {
+			fields = append(fields, kv{"Component", slackEscape(name)})
+		}
+	}
+	if health := metadataString(e, "health"); health != "" {
+		fields = append(fields, kv{"Health", slackEscape(health)})
+	}
+	if prev := metadataString(e, "previous_health"); prev != "" {
+		fields = append(fields, kv{"Previously", slackEscape(prev)})
+	}
+	if msg := metadataString(e, "message"); msg != "" {
+		fields = append(fields, kv{"Detail", slackEscape(msg)})
+	}
+	// The failing resource is the actionable part of the story — it is what a
+	// responder would go looking for in the cluster.
+	if resource := componentHealthResource(e); resource != "" {
+		fields = append(fields, kv{"Resource", slackEscape(resource)})
+	}
+	if name := e.Workflow.OwnerName; name != "" && !installLevel {
+		fields = append(fields, kv{"Install", slackEscape(name)})
+	}
+	if name := orgName(e); name != "" {
+		fields = append(fields, kv{"Org", slackEscape(name)})
+	}
+	return fields
+}
+
+// componentHealthResource formats the failing resource as
+// "Kind namespace/name", omitting whichever parts are absent.
+func componentHealthResource(e Event) string {
+	kind := metadataString(e, "root_resource_kind")
+	name := metadataString(e, "root_resource_name")
+	if kind == "" || name == "" {
+		return ""
+	}
+	if ns := metadataString(e, "root_resource_namespace"); ns != "" {
+		return kind + " " + ns + "/" + name
+	}
+	return kind + " " + name
+}
+
+func componentHealthLinks(e Event, installLevel bool) []LinkChip {
+	if e.Links == nil {
+		return nil
+	}
+
+	getters := []func(l *ContextLinks) string{
+		func(l *ContextLinks) string { return l.Component },
+		func(l *ContextLinks) string { return l.Install },
+		func(l *ContextLinks) string { return l.Org },
+	}
+	if installLevel {
+		getters = []func(l *ContextLinks) string{
+			func(l *ContextLinks) string { return l.Install },
+			func(l *ContextLinks) string { return l.Org },
+		}
+	}
+
+	if l := firstNonEmptyLink(e.Links, getters...); l != "" {
+		return []LinkChip{{Label: "Open in Nuon", URL: l}}
+	}
+	return nil
+}
+
 func BuildUpdateAppConfigMessage(e Event) Message {
 	blocks := []slack.Block{headerBlock(updateAppConfigHeaderText(e))}
 	if fields := updateAppConfigFields(e); len(fields) > 0 {

@@ -77,6 +77,20 @@ var (
 		"sandboxes":  true,
 	}
 
+	// componentHealthSupported mirrors
+	// interests.SupportsComponentHealth: only components carry a live
+	// health verdict.
+	componentHealthSupported = map[string]bool{
+		"components": true,
+	}
+
+	// installDegradedSupported mirrors
+	// interests.SupportsInstallDegraded: the health rollup is an
+	// install-level event.
+	installDegradedSupported = map[string]bool{
+		"installs": true,
+	}
+
 	// outcomeOptions are the four canonical outcome filters from
 	// interests.Outcome. Surface order matches the dashboard radio.
 	// "completion" is pre-selected because it matches the dashboard
@@ -121,26 +135,31 @@ func matchModeOptions() []huh.Option[string] {
 // resourceState mirrors interests.ResourceCfg as flat scalars so huh
 // fields can bind to pointers. Defaults come from the dashboard modal
 // (InterestsPicker.tsx onToggleEnabled): outcome=completion, approvals
-// on, drift on (when supported), no explicit ops list (= every op).
+// on, drift and health on (when supported), no explicit ops list
+// (= every op).
 //
 // The picker collapses approval_requests + approval_responses into a
 // single Approval boolean — same simplification the slack variant of
 // the dashboard picker makes (services/dashboard-ui/.../InterestsPicker.tsx).
 // Users who need the split shape have --subscription-json.
 type resourceState struct {
-	enabled  bool
-	refine   bool
-	ops      []string
-	outcome  string
-	approval bool
-	drift    bool
+	enabled         bool
+	refine          bool
+	ops             []string
+	outcome         string
+	approval        bool
+	drift           bool
+	componentHealth bool
+	installDegraded bool
 }
 
 func newResourceState(kind string) *resourceState {
 	return &resourceState{
-		outcome:  "completion",
-		approval: true,
-		drift:    driftSupported[kind],
+		outcome:         "completion",
+		approval:        true,
+		drift:           driftSupported[kind],
+		componentHealth: componentHealthSupported[kind],
+		installDegraded: installDegradedSupported[kind],
 	}
 }
 
@@ -270,7 +289,7 @@ func buildPhase1Groups(
 	}
 	groups = append(groups, huh.NewGroup(resourceToggles...).
 		Title("Which resources?").
-		Description("Each enabled resource starts with sensible defaults: completion-only lifecycle, approvals on, drift on (where supported). Refine on the next screen if needed.").
+		Description("Each enabled resource starts with sensible defaults: completion-only lifecycle, approvals on, drift and health on (where supported). Refine on the next screen if needed.").
 		WithHideFunc(func() bool { return *allEvents }))
 
 	// Per-resource refinement: split across two groups so we can gate
@@ -286,7 +305,7 @@ func buildPhase1Groups(
 		groups = append(groups, huh.NewGroup(
 			huh.NewConfirm().
 				Title(fmt.Sprintf("Refine %s?", k)).
-				Description("Defaults: completion outcome, approvals on, drift on (if supported), every op.").
+				Description("Defaults: completion outcome, approvals on, drift and health on (if supported), every op.").
 				Affirmative("Yes — refine").
 				Negative("No — keep defaults").
 				Value(&st.refine),
@@ -317,6 +336,24 @@ func buildPhase1Groups(
 					Title(fmt.Sprintf("%s — drift detected events?", k)).
 					Description("Fires only when a drift scan finds actual changes.").
 					Value(&st.drift),
+			)
+		}
+
+		if componentHealthSupported[k] {
+			fields = append(fields,
+				huh.NewConfirm().
+					Title(fmt.Sprintf("%s — health change events?", k)).
+					Description("Fires when live health crosses into degraded or unhealthy, and again when it recovers. An unknown verdict never notifies.").
+					Value(&st.componentHealth),
+			)
+		}
+
+		if installDegradedSupported[k] {
+			fields = append(fields,
+				huh.NewConfirm().
+					Title(fmt.Sprintf("%s — degraded events?", k)).
+					Description("Fires when the install's composite health crosses into degraded or unhealthy, and again when it returns to healthy.").
+					Value(&st.installDegraded),
 			)
 		}
 
@@ -396,6 +433,12 @@ func buildInterests(allEvents bool, resources map[string]*resourceState) any {
 		}
 		if st.drift && driftSupported[kind] {
 			cfg["drift_detected"] = true
+		}
+		if st.componentHealth && componentHealthSupported[kind] {
+			cfg["component_health"] = true
+		}
+		if st.installDegraded && installDegradedSupported[kind] {
+			cfg["install_degraded"] = true
 		}
 		out[kind] = cfg
 	}
