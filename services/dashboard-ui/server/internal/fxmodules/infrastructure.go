@@ -18,4 +18,5 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(internal.NewConfig),
 	fx.Provide(newLogger),
 	fx.Provide(NewMetricsWriter),
+	fx.Provide(NewAPIRouteClassifier),
 )

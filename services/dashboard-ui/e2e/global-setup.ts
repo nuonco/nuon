@@ -149,6 +149,19 @@ export default async function globalSetup(_config: FullConfig) {
     } else {
       log("support users added");
     }
+
+    log("enabling org features (app-branches-ui, notebooks)...");
+    try {
+      await adminFetch(`/v1/orgs/${orgId}/admin-features`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          features: { "app-branches-ui": true, notebooks: true },
+        }),
+      });
+      log("org features enabled");
+    } catch (e) {
+      log(`warning: failed to enable org features: ${e}`);
+    }
   } else {
     log(`using existing org: ${orgId}`);
 

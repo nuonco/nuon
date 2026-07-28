@@ -44,7 +44,7 @@ func (m *Migrator) applyMigrations(ctx context.Context, obj any) error {
 		if err := m.applyMigration(ctx, obj, idx); err != nil {
 			return MigrationErr{
 				Model: plugins.TableName(m.db, obj),
-				Name:  "indexes",
+				Name:  idx.Name,
 				Err:   err,
 			}
 		}
@@ -53,22 +53,18 @@ func (m *Migrator) applyMigrations(ctx context.Context, obj any) error {
 	return nil
 }
 
-func (m *Migrator) applyMigration(ctx context.Context, obj any, idx Migration) error {
-	mm, ok := m.toMigrationMode(obj)
-	if !ok {
-		return nil
+func (m *Migrator) applyMigration(ctx context.Context, _ any, idx Migration) error {
+	if err := m.execMigration(ctx, idx); err != nil {
+		return errors.Wrap(err, "migration failed: "+idx.Name)
 	}
 
-	for _, migration := range mm.Migrations() {
-		if err := m.execMigration(ctx, migration); err != nil {
-			return errors.Wrap(err, "migration %s failed: "+migration.Name)
-		}
-
-		m.mw.Flush()
-	}
+	m.mw.Flush()
 
 	return nil
 }
+
+// an in_progress migration older than this is assumed dead and gets reclaimed
+const abandonedMigrationTimeout = time.Hour
 
 func (a *Migrator) isMigrationApplied(ctx context.Context, name string) (bool, error) {
 	var migration MigrationModel
@@ -82,31 +78,70 @@ func (a *Migrator) isMigrationApplied(ctx context.Context, name string) (bool, e
 		return false, res.Error
 	}
 
-	return true, nil
+	// only applied counts. an error row used to read as applied and never retried.
+	return migration.Status == MigrationStatusApplied, nil
 }
 
-func (a *Migrator) createMigration(ctx context.Context, name string) error {
+// claimMigration marks a migration in progress and reports whether we won the claim.
+// errored and abandoned rows get reclaimed so they retry.
+func (a *Migrator) claimMigration(ctx context.Context, name string) (bool, error) {
+	now := time.Now()
+
+	res := a.migrationDB.WithContext(ctx).
+		Model(&MigrationModel{}).
+		Where("name = ?", name).
+		Where("status = ? OR (status = ? AND updated_at < ?)",
+			MigrationStatusError,
+			MigrationStatusInProgress, now.Add(-abandonedMigrationTimeout)).
+		Updates(map[string]any{
+			"status":     MigrationStatusInProgress,
+			"updated_at": now,
+		})
+	if res.Error != nil {
+		return false, res.Error
+	}
+	if res.RowsAffected > 0 {
+		return true, nil
+	}
+
+	// nothing to reclaim, first attempt
 	migration := MigrationModel{
 		Name:   name,
 		Status: MigrationStatusInProgress,
 	}
-	res := a.migrationDB.WithContext(ctx).
-		Create(&migration)
-	if res.Error != nil {
-		return res.Error
+	if err := a.migrationDB.WithContext(ctx).Create(&migration).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			// another run got there first
+			return false, nil
+		}
+
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
 
-func (a *Migrator) updateMigrationStatus(ctx context.Context, name string, status MigrationStatus) error {
-	currentApp := MigrationModel{}
+// maxMigrationErrLen keeps a runaway error string from bloating the row
+const maxMigrationErrLen = 2000
+
+func (a *Migrator) updateMigrationStatus(ctx context.Context, name string, status MigrationStatus, cause error) error {
+	updates := map[string]any{
+		"status":     status,
+		"updated_at": time.Now(),
+		"error":      nil,
+	}
+	if cause != nil {
+		msg := cause.Error()
+		if len(msg) > maxMigrationErrLen {
+			msg = msg[:maxMigrationErrLen]
+		}
+		updates["error"] = msg
+	}
+
 	res := a.migrationDB.WithContext(ctx).
-		Model(&currentApp).
+		Model(&MigrationModel{}).
 		Where("name = ?", name).
-		Updates(MigrationModel{
-			Status: status,
-		})
+		Updates(updates)
 	if res.Error != nil {
 		return fmt.Errorf("unable to migration app: %w", res.Error)
 	}
@@ -169,60 +204,57 @@ func (a *Migrator) execMigration(ctx context.Context, migration Migration) error
 		migration.Name = fmt.Sprintf("%s-%d", migration.Name, ts.Unix())
 	}
 
-	if err := a.createMigration(ctx, migration.Name); err != nil {
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			a.l.Info("migration already in progress", zap.String("name", migration.Name))
-			statusDescription = "already_in_progress"
-			return nil
+	claimed, err := a.claimMigration(ctx, migration.Name)
+	if err != nil {
+		statusDescription = "db"
+		return fmt.Errorf("unable to claim migration: %w", err)
+	}
+	if !claimed {
+		a.l.Info("migration already in progress", zap.String("name", migration.Name))
+		statusDescription = "already_in_progress"
+		return nil
+	}
+
+	fail := func(cause error, desc string) error {
+		statusDescription = desc
+		a.l.Error("migration failed",
+			zap.String("name", migration.Name),
+			zap.String("db_type", a.dbType),
+			zap.Error(cause))
+
+		if updateErr := a.updateMigrationStatus(ctx, migration.Name, MigrationStatusError, cause); updateErr != nil {
+			a.l.Warn("unable to update migration status", zap.Error(updateErr))
 		}
 
-		statusDescription = "db"
-		return fmt.Errorf("unable to create migration: %w", err)
+		return cause
 	}
 
 	if migration.Fn != nil {
 		if err := migration.Fn(ctx, a.db); err != nil {
-			statusDescription = "unable_to_exec_fn"
-			if updateErr := a.updateMigrationStatus(ctx, migration.Name, MigrationStatusError); updateErr != nil {
-				a.l.Info("unable to update migration status", zap.Error(err))
-			}
-			return err
+			return fail(err, "unable_to_exec_fn")
 		}
 	}
 
 	if migration.SQLFn != nil {
 		sql, err := migration.SQLFn(ctx, a.db)
 		if err != nil {
-			statusDescription = "unable_to_get_sql_sql_fn"
-			if updateErr := a.updateMigrationStatus(ctx, migration.Name, MigrationStatusError); updateErr != nil {
-				a.l.Info("unable to update migration status", zap.Error(err))
-			}
-			return err
+			return fail(err, "unable_to_get_sql_sql_fn")
 		}
 
-		res := a.db.WithContext(ctx).Exec(sql)
-		if res.Error != nil {
-			statusDescription = "unable_to_exec_sql_fn_sql"
-			if updateErr := a.updateMigrationStatus(ctx, migration.Name, MigrationStatusError); updateErr != nil {
-				a.l.Info("unable to update migration status", zap.Error(err))
-			}
-			return err
+		// this used to return the nil err from SQLFn above, reporting a failed migration
+		// as a success
+		if res := a.db.WithContext(ctx).Exec(sql); res.Error != nil {
+			return fail(res.Error, "unable_to_exec_sql_fn_sql")
 		}
-
 	}
 
 	if migration.SQL != "" {
-		res := a.db.WithContext(ctx).Exec(migration.SQL)
-		if res.Error != nil {
-			statusDescription = "unable_to_exec_sql"
-			if updateErr := a.updateMigrationStatus(ctx, migration.Name, MigrationStatusError); updateErr != nil {
-				a.l.Info("unable to update migration status", zap.Error(res.Error))
-			}
-			return errors.Wrap(res.Error, "unable to execute sql")
+		if res := a.db.WithContext(ctx).Exec(migration.SQL); res.Error != nil {
+			return fail(errors.Wrap(res.Error, "unable to execute sql"), "unable_to_exec_sql")
 		}
 	}
 
-	if err := a.updateMigrationStatus(ctx, migration.Name, MigrationStatusApplied); err != nil {
+	if err := a.updateMigrationStatus(ctx, migration.Name, MigrationStatusApplied, nil); err != nil {
 		a.l.Info("unable to update migration status", zap.Error(err))
 		statusDescription = "unable_to_update_migration_status"
 	}

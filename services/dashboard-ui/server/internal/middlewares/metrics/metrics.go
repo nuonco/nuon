@@ -10,15 +10,18 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
+	"github.com/nuonco/nuon/services/dashboard-ui/server/internal/apiroutes"
+	"github.com/nuonco/nuon/services/dashboard-ui/server/internal/handlers"
 )
 
 type middleware struct {
-	l      *zap.Logger
-	writer metrics.Writer
+	l          *zap.Logger
+	writer     metrics.Writer
+	classifier *apiroutes.Classifier
 }
 
-func New(cfg *internal.Config, l *zap.Logger, writer metrics.Writer) *middleware {
-	return &middleware{l: l, writer: writer}
+func New(cfg *internal.Config, l *zap.Logger, writer metrics.Writer, classifier *apiroutes.Classifier) *middleware {
+	return &middleware{l: l, writer: writer, classifier: classifier}
 }
 
 func (m *middleware) Name() string {
@@ -28,6 +31,7 @@ func (m *middleware) Name() string {
 func (m *middleware) Handler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		startTS := time.Now()
+		reqPath := c.Request.URL.Path
 
 		c.Next()
 
@@ -39,6 +43,10 @@ func (m *middleware) Handler() gin.HandlerFunc {
 		status := "ok"
 		if len(c.Errors) > 0 {
 			status = "err"
+		}
+
+		if path == handlers.APIProxyRoutePattern {
+			path = m.classifier.Match(reqPath)
 		}
 
 		endpoint := strings.ReplaceAll(path, "-", "_")
