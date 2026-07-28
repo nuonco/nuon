@@ -2,6 +2,7 @@ package ui
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/cockroachdb/errors/withstack"
@@ -39,6 +40,12 @@ func emitJSONError(err error) error {
 	// Construct a stack trace if this error doesn't already have one
 	if !errs.HasNuonStackTrace(err) {
 		err = withstack.WithStackDepth(err, 1)
+	}
+
+	cliUserErr := &CLIUserError{}
+	if errors.As(err, &cliUserErr) {
+		PrintJSON(jsonError{Error: cliUserErr.Msg})
+		return err
 	}
 
 	userErr, ok := nuon.ToUserError(err)
