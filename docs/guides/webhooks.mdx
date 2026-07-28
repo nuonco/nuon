@@ -5,10 +5,9 @@ icon: 'webhook'
 keywords: ["webhooks", "CloudEvents", "workflow lifecycle", "workflow_step lifecycle", "HMAC", "X-Nuon-Signature", "org events", "webhook notifications", "lifecycle event subscriptions", "outbound webhooks"]
 ---
 
-Org-scoped webhooks let you subscribe to **workflow** and **workflow step** lifecycle events for your Nuon
-[Org](/concepts/glossary). Whenever a workflow runs (for example, an [Install](/concepts/glossary) provision, a
-[Sandbox](/concepts/sandboxes) reprovision, or a component deploy), Nuon `POST`s a
-[CloudEvents v1.0](https://cloudevents.io) envelope to every webhook URL registered on the Org.
+Org-scoped webhooks let you subscribe to **workflow** and **workflow step** lifecycle events as well as operational
+notifications for your Nuon [Org](/concepts/glossary). Whenever a subscribed event occurs, Nuon `POST`s a
+[CloudEvents v1.0](https://cloudevents.io) envelope to every matching webhook URL registered on the Org.
 
 Webhooks are scoped to the current Org. Manage them with the [Nuon CLI](/cli) or the dashboard.
 
@@ -89,7 +88,7 @@ Each resource accepts a list of sub-ops drawn from a fixed vocabulary:
 | `components`             | `deploy`, `teardown`                                       |
 | `sandboxes`              | `provision`, `reprovision`, `deprovision`                  |
 | `install_configurations` | `inputs`, `secrets`                                        |
-| `runners`                | `provision`, `reprovision`, `inactive`                     |
+| `runners`                | `provision`, `reprovision`, `inactive`, `unhealthy`        |
 | `actions`                | `run`                                                      |
 
 Drift workflow lifecycle events (`drift_run`, `drift_run_reprovision_sandbox`) are intentionally **not** part of the
@@ -127,15 +126,18 @@ notification fires once per component (inside `drift_run`) or once per sandbox (
 both manually triggered and scheduled drift scans, and is gated **independently of `outcome`** — the
 same way `approval_requests` / `approval_responses` are.
 
-#### Runner inactivity
+#### Unhealthy runners
 
-Runners emit a `runners.inactive` lifecycle event when the control plane gives
-up on a runner-process — currently this fires after roughly 5 minutes of
-silence on the heartbeat channel for that process. It does **not** distinguish
-a true outage from routine churn (process restart, version upgrade, deliberate
-shutdown), so subscribers should expect to see it on normal operations as well.
-Subscribe by including `inactive` in the `runners` `ops` list (or by leaving
-`ops` empty to receive every runner sub-op).
+Runners emit `runners.unhealthy` when the 15-minute runner health check first
+transitions a runner from `active` to `offline` because its primary process is
+missing. Subsequent checks do not emit another notification while the runner
+remains offline. If the runner recovers and later transitions from `active` to
+`offline` again, a new notification is emitted.
+
+This operation is separate from process-level `runners.inactive` events, which
+can occur during routine process shutdown and rotation. Subscribe by including
+`unhealthy` in the `runners` `ops` list (or by leaving `ops` empty to receive
+every runner sub-op).
 
 ### Examples
 
@@ -284,9 +286,9 @@ The same URL can be registered multiple times in one Org with different `match` 
 "all events" subscription to a staging endpoint plus a focused "drift only on env=prod components" subscription to a
 paging endpoint.
 
-## Two primitives: workflows and workflow steps
+## Event types
 
-The webhook surface exposes exactly two primitives:
+The webhook surface exposes two workflow lifecycle primitives plus dedicated notification event types:
 
 1. **Workflow lifecycle** (`com.nuon.workflow.lifecycle.v1`) — fires for the workflow as a whole. Carries the
    workflow's `type` (e.g. `provision`, `reprovision`, `manual_deploy`, `action_workflow_run`) and its owner
@@ -294,6 +296,9 @@ The webhook surface exposes exactly two primitives:
 2. **Workflow step lifecycle** (`com.nuon.workflow_step.lifecycle.v1`) — fires for each step within a workflow.
    Carries the step's `name`, `idx`, and `target_type` (e.g. `install_deploys`, `install_sandbox_runs`,
    `install_action_workflow_runs`) along with denormalized `component_id` / `sandbox_id` when applicable.
+3. **Runner unhealthy** (`com.nuon.runner.unhealthy.v1`) — fires once when the runner health check transitions a runner
+   from `active` to `offline`. Carries `kind: runner_unhealthy`, `transition: unhealthy`, runner and runner-group
+   metadata, the reason, and install context when the runner belongs to an install.
 
 You do not need to memorize an operation taxonomy. To know "did the sandbox finish provisioning?", look at workflow
 events with `data.workflow.type == "provision"` and a step whose `target_type == "install_sandbox_runs"` succeeded.
@@ -310,6 +315,7 @@ Both primitives use the same transition vocabulary:
 | `succeeded` | Execution completed successfully                    |
 | `failed`    | Execution errored or validation rejected the input  |
 | `cancelled` | Execution was cancelled                             |
+| `unhealthy` | A runner transitioned from `active` to `offline`    |
 
 `data.transition` is the transition name. `data.outcome.status` mirrors it on `*.succeeded`, `*.failed`, and
 `*.cancelled` events. Validation failures of the workflow / step wrappers surface as a `failed` outcome on the

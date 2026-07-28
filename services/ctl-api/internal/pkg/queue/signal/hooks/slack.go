@@ -162,7 +162,8 @@ func (h *SlackSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) bool 
 		signalTypeRoleChange,
 		signalTypeInputsUpdated,
 		signalTypeAppConfigSynced,
-		signalTypeUpdateAppConfig:
+		signalTypeUpdateAppConfig,
+		signalTypeRunnerUnhealthy:
 		return true
 	default:
 		return false
@@ -644,6 +645,23 @@ func (h *SlackSignalLifecycleHook) postFlatUpdateAppConfig(
 	return nil
 }
 
+func (h *SlackSignalLifecycleHook) postFlatRunnerUnhealthy(
+	ctx context.Context,
+	install *app.SlackInstallation,
+	sub app.SlackChannelSubscription,
+	rendered renderEvent,
+) error {
+	msg := slackrender.BuildRunnerUnhealthyMessage(rendered.event)
+	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+		Channel: sub.ChannelID,
+		Text:    msg.Text,
+		Blocks:  msg.Blocks,
+	}); err != nil {
+		return fmt.Errorf("post slack runner-unhealthy message: %w", err)
+	}
+	return nil
+}
+
 func (h *SlackSignalLifecycleHook) postFlatNotification(
 	ctx context.Context,
 	install *app.SlackInstallation,
@@ -662,6 +680,9 @@ func (h *SlackSignalLifecycleHook) postFlatNotification(
 	}
 	if signalType == signalTypeUpdateAppConfig {
 		return h.postFlatUpdateAppConfig(ctx, install, sub, rendered)
+	}
+	if signalType == signalTypeRunnerUnhealthy {
+		return h.postFlatRunnerUnhealthy(ctx, install, sub, rendered)
 	}
 	msg := slackrender.BuildFlatMessage(rendered.event)
 	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{

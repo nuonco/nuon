@@ -437,6 +437,78 @@ func plainRoleChangeHeadline(e Event) string {
 	return "🔐 Role " + changeType + " — " + name
 }
 
+func BuildRunnerUnhealthyMessage(e Event) Message {
+	blocks := []slack.Block{headerBlock(runnerUnhealthyHeaderText(e))}
+	if fields := runnerUnhealthyFields(e); len(fields) > 0 {
+		blocks = append(blocks, slack.NewDividerBlock(), fieldsSection(fields))
+	}
+	if actions, ok := actionsBlock(runnerUnhealthyLinks(e)); ok {
+		blocks = append(blocks, actions)
+	}
+	return Message{Text: plainRunnerUnhealthyHeadline(e), Blocks: blocks}
+}
+
+func runnerUnhealthyHeaderText(e Event) string {
+	text := "🚨 Runner unhealthy"
+	if name := runnerUnhealthyName(e); name != "" {
+		text += " · " + name
+	}
+	return text
+}
+
+func runnerUnhealthyName(e Event) string {
+	if name := metadataString(e, "runner_name"); name != "" {
+		return name
+	}
+	return truncateID(metadataString(e, "runner_id"), 10)
+}
+
+func runnerUnhealthyFields(e Event) []kv {
+	fields := []kv{}
+	if name := runnerUnhealthyName(e); name != "" {
+		fields = append(fields, kv{"Runner", slackEscape(name)})
+	}
+	if groupType := metadataString(e, "runner_group_type"); groupType != "" {
+		fields = append(fields, kv{"Scope", slackEscape(groupType)})
+	}
+	if name := installName(e); name != "" {
+		fields = append(fields, kv{"Install", slackEscape(name)})
+	}
+	if name := orgName(e); name != "" {
+		fields = append(fields, kv{"Org", slackEscape(name)})
+	}
+	fromStatus := metadataString(e, "from_status")
+	toStatus := metadataString(e, "to_status")
+	if fromStatus != "" && toStatus != "" {
+		fields = append(fields, kv{"Status", slackEscape(fromStatus + " → " + toStatus)})
+	}
+	if reason := metadataString(e, "reason"); reason != "" {
+		fields = append(fields, kv{"Reason", slackEscape(reason)})
+	}
+	return fields
+}
+
+func runnerUnhealthyLinks(e Event) []LinkChip {
+	if e.Links == nil {
+		return nil
+	}
+	if link := firstNonEmptyLink(e.Links,
+		func(links *ContextLinks) string { return links.Install },
+		func(links *ContextLinks) string { return links.Org },
+	); link != "" {
+		return []LinkChip{{Label: "Open in Nuon", URL: link}}
+	}
+	return nil
+}
+
+func plainRunnerUnhealthyHeadline(e Event) string {
+	text := "🚨 Runner unhealthy"
+	if name := runnerUnhealthyName(e); name != "" {
+		text += " — " + name
+	}
+	return text
+}
+
 // workflowSubjectLabel returns a workflow-scoped subject for the parent
 // header. For runbook_run workflows that is the runbook's name; other
 // workflow types return "" so the header stays the workflow title alone.
