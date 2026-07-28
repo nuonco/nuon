@@ -148,5 +148,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "118-backfill-read-only-role",
 			Fn:   m.Migration118BackfillReadOnlyRole,
 		},
+		{
+			Name: "119-backfill-workflow-names",
+			Fn:   m.Migration119BackfillWorkflowNames,
+		},
 	}
 }
