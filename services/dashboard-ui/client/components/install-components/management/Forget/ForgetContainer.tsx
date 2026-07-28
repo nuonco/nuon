@@ -133,7 +133,6 @@ export const ForgetComponentButton = ({
       }}
       {...props}
       variant="danger"
-      className="!text-red-800 dark:!text-red-500"
     >
       {props?.isMenuButton ? null : <Icon variant="TrashIcon" />}
       Forget component

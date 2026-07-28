@@ -5,11 +5,16 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
 import { usePageSidebar } from '@/hooks/use-page-sidebar'
-import type { TNavItem, TNavLink } from '@/types'
+import type { TNavAction, TNavItem } from '@/types'
 import { SubNavLink } from './SubNavLink'
+import { SubNavButton } from './SubNavButton'
 
 function isSection(item: TNavItem): item is { type: 'section'; label: string } {
   return 'type' in item && item.type === 'section'
+}
+
+function isAction(item: TNavItem): item is TNavAction {
+  return 'type' in item && item.type === 'action'
 }
 
 interface ISubNav {
@@ -103,6 +108,14 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
                 <div className="h-px flex-1 bg-cool-grey-200 dark:bg-white/10" />
               </div>
             )
+          ) : isAction(item) ? (
+            <SubNavButton
+              key={item.key}
+              iconVariant={item.iconVariant}
+              text={item.text}
+              onClick={item.onClick}
+              isActive={item.isActive}
+            />
           ) : (
             <SubNavLink key={item.path} basePath={basePath} {...item} />
           )
