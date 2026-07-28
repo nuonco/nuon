@@ -37,6 +37,73 @@ func TestGenerateActivity(t *testing.T) {
 	assert.Contains(t, code, "options.TaskQueue = opt.TaskQueue")
 }
 
+func TestGenerateLocalActivity(t *testing.T) {
+	data := ActivityData{
+		Name:         "GetRunner",
+		OriginalName: "GetRunner",
+		InputType:    "GetRunnerRequest",
+		OutputType:   "*app.Runner",
+		Receiver:     "*Activities",
+		Options: &parser.ActivityOptions{
+			IsLocal: true,
+		},
+	}
+
+	output, err := GenerateLocalActivity(data)
+	require.NoError(t, err)
+
+	code := string(output)
+	assert.Contains(t, code, "func LocalAwaitGetRunner(ctx workflow.Context, input GetRunnerRequest) (*app.Runner, error)")
+	assert.Contains(t, code, "workflow.WithLocalActivityOptions(ctx, workflow.LocalActivityOptions{")
+	assert.Contains(t, code, "ScheduleToCloseTimeout: 10 * time.Second")
+	assert.Contains(t, code, "MaximumAttempts: 1")
+	assert.Contains(t, code, "workflow.ExecuteLocalActivity(localCtx, (*Activities).GetRunner, input)")
+	assert.NotContains(t, code, "workflow.ExecuteActivity(")
+}
+
+func TestGenerateLocalActivityWithByField(t *testing.T) {
+	data := ActivityData{
+		Name:         "GetRunner",
+		OriginalName: "GetRunner",
+		InputType:    "GetRunnerRequest",
+		OutputType:   "*app.Runner",
+		Receiver:     "*Activities",
+		ByFieldType:  "string",
+		Options: &parser.ActivityOptions{
+			IsLocal: true,
+			ByField: "RunnerID",
+		},
+	}
+
+	output, err := GenerateLocalActivity(data)
+	require.NoError(t, err)
+
+	code := string(output)
+	assert.Contains(t, code, "func LocalAwaitGetRunner(ctx workflow.Context, input GetRunnerRequest) (*app.Runner, error)")
+	assert.Contains(t, code, "func LocalAwaitGetRunnerByRunnerID(ctx workflow.Context, input string) (*app.Runner, error)")
+	assert.Contains(t, code, "return LocalAwaitGetRunner(ctx, req)")
+}
+
+func TestGenerateLocalActivityVoidReturn(t *testing.T) {
+	data := ActivityData{
+		Name:         "UpdateStatus",
+		OriginalName: "UpdateStatus",
+		InputType:    "UpdateStatusRequest",
+		Receiver:     "*Activities",
+		Options: &parser.ActivityOptions{
+			IsLocal: true,
+		},
+	}
+
+	output, err := GenerateLocalActivity(data)
+	require.NoError(t, err)
+
+	code := string(output)
+	assert.Contains(t, code, "func LocalAwaitUpdateStatus(ctx workflow.Context, input UpdateStatusRequest) error")
+	assert.Contains(t, code, ".Get(ctx, nil)")
+	assert.NotContains(t, code, "var result")
+}
+
 func TestGenerateActivityWithWrapperPrefix(t *testing.T) {
 	tests := []struct {
 		name                 string

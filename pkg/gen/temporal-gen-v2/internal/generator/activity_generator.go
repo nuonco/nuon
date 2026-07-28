@@ -13,7 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/parser"
 )
 
-//go:embed templates/activity.tmpl templates/activity_stub.tmpl templates/activity_registration.tmpl
+//go:embed templates/activity.tmpl templates/activity_stub.tmpl templates/activity_registration.tmpl templates/activity_local.tmpl
 var activityTemplateFS embed.FS
 
 type Param struct {
@@ -144,6 +144,43 @@ func generateActivityWithMode(data ActivityData, stubMode bool) ([]byte, error) 
 		}
 		// Return unformatted code for debugging if formatting fails
 		return buf.Bytes(), fmt.Errorf("failed to format source: %w", err)
+	}
+
+	return formatted, nil
+}
+
+func GenerateLocalActivity(data ActivityData) ([]byte, error) {
+	tmplContent, err := activityTemplateFS.ReadFile("templates/activity_local.tmpl")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read local activity template: %w", err)
+	}
+
+	tmpl, err := template.New("activity_local").Funcs(template.FuncMap{
+		"ToPascal": func(s string) string {
+			if s == "" {
+				return ""
+			}
+			return strings.ToUpper(s[:1]) + s[1:]
+		},
+		"isPointer": func(s string) bool {
+			return strings.HasPrefix(s, "*")
+		},
+		"derefType": func(s string) string {
+			return strings.TrimPrefix(s, "*")
+		},
+	}).Parse(string(tmplContent))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse local activity template: %w", err)
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return nil, fmt.Errorf("failed to execute local activity template: %w", err)
+	}
+
+	formatted, err := format.Source(buf.Bytes())
+	if err != nil {
+		return buf.Bytes(), fmt.Errorf("failed to format local activity source: %w", err)
 	}
 
 	return formatted, nil
