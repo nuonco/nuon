@@ -55,7 +55,7 @@ export const WorkflowTimeline = ({
                   : `/${orgId}/installs/${installId}/workflows/${workflow.id}`
               }
             >
-              {workflow.name}
+              {workflow.name || workflow?.type || workflow.id}
             </Link>
             {workflow?.status?.status === 'in-progress' ? (
               <Badge size="sm" theme="info">
