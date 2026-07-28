@@ -28,6 +28,26 @@ func (c *cli) registerStartup() error {
 	return nil
 }
 
+// index builds on big tables can need more than this, hence the override
+const defaultMigrationsTimeout = time.Minute * 5
+
+func migrationsTimeout() time.Duration {
+	raw := os.Getenv("DB_MIGRATIONS_TIMEOUT")
+	if raw == "" {
+		return defaultMigrationsTimeout
+	}
+
+	timeout, err := time.ParseDuration(raw)
+	if err != nil || timeout <= 0 {
+		zap.L().Warn("invalid DB_MIGRATIONS_TIMEOUT, using default",
+			zap.String("value", raw),
+			zap.Duration("default", defaultMigrationsTimeout))
+		return defaultMigrationsTimeout
+	}
+
+	return timeout
+}
+
 func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 	start := time.Now()
 	l := zap.L()
@@ -40,7 +60,7 @@ func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 		fx.Provide(db.AsMigrator(ch.NewCHMigrator)),
 		fx.Invoke(db.DBMigratorParam(func(migs []*migrations.Migrator, shutdowner fx.Shutdowner) {
 			ctx := context.Background()
-			ctx, cancelFn := context.WithTimeout(ctx, time.Minute*5)
+			ctx, cancelFn := context.WithTimeout(ctx, migrationsTimeout())
 			defer cancelFn()
 
 			code := 0
