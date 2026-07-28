@@ -15,6 +15,7 @@ import (
 // @as-wrapper
 // @wrapper-prefix QueueInternal
 // @by-field queueSignalID
+// @local
 func (a *Activities) getQueueSignalSignal(ctx context.Context, queueSignalID string) (signal.Signal, error) {
 	queueSignal, err := a.getQueueSignal(ctx, queueSignalID)
 	if err != nil {
@@ -36,6 +37,7 @@ func (a *Activities) getQueueSignalSignal(ctx context.Context, queueSignalID str
 // @as-wrapper
 // @wrapper-prefix QueueInternal
 // @by-field queueSignalID
+// @local
 func (a *Activities) getQueueSignal(ctx context.Context, queueSignalID string) (*app.QueueSignal, error) {
 	var qs app.QueueSignal
 

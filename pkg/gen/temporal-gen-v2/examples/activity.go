@@ -57,6 +57,21 @@ func ActivityWithByIDOnly(ctx context.Context, user User) error {
 	return nil
 }
 
+// LocalActivity demonstrates the @local pattern for generating LocalAwait wrappers
+// @temporal-gen-v2 activity
+// @local
+func LocalActivity(ctx context.Context, input string) (string, error) {
+	return "processed locally", nil
+}
+
+// LocalActivityWithByField demonstrates @local with @by-field
+// @temporal-gen-v2 activity
+// @local
+// @by-field ID
+func LocalActivityWithByField(ctx context.Context, user User) error {
+	return nil
+}
+
 type Activities struct{}
 
 // myPrivateActivity demonstrates the wrapper pattern

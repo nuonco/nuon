@@ -770,6 +770,7 @@ type UpdateQueueSignalStatusV2Request struct {
 }
 
 // @temporal-gen-v2 activity
+// @local
 func (a *Activities) UpdateQueueSignalStatusV2(ctx context.Context, req UpdateQueueSignalStatusV2Request) error {
 	obj := app.QueueSignal{ID: req.QueueSignalID}
 
