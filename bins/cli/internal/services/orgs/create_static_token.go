@@ -10,8 +10,7 @@ import (
 
 func (s *Service) CreateStaticToken(ctx context.Context, name, duration, role string, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
 	view := ui.NewGetView()
@@ -37,6 +36,6 @@ func (s *Service) CreateStaticToken(ctx context.Context, name, duration, role st
 		{"id", token.ID},
 		{"api token", token.APIToken},
 	})
-	fmt.Println("\nCopy this token now. For security, it won't be shown again.")
+	ui.Println("\nCopy this token now. For security, it won't be shown again.")
 	return nil
 }

@@ -6,14 +6,11 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-func (s *Service) Deselect(ctx context.Context) error {
-	view := ui.NewGetView()
-
+func (s *Service) Deselect(ctx context.Context, asJSON bool) error {
 	if err := s.unsetOrgID(ctx); err != nil {
-		return view.Error(err)
+		return ui.PrintError(err)
 	}
 
-	ui.PrintLn("current org is now unset")
-
+	ui.PrintResult(asJSON, "current org is now unset", map[string]string{"status": "org_deselected"})
 	return nil
 }

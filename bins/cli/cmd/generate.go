@@ -6,6 +6,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	initui "github.com/nuonco/nuon/bins/cli/internal/ui/v3/init"
 	"github.com/spf13/cobra"
@@ -23,10 +24,10 @@ func initRootParams(cmd *cobra.Command) apps.ConfigGenParams {
 }
 
 func successMesssage(path string, configType string) {
-	fmt.Printf("%s\n", bubbles.SuccessStyle.Render(fmt.Sprintf("Successfully initialized %s in %s", configType, path)))
-	fmt.Printf("%s\n", bubbles.InfoStyle.Render("Next steps:"))
-	fmt.Printf("  1. Review and edit the generated configuration file\n")
-	fmt.Printf("  2. Run 'nuon apps sync' to sync your configuration to Nuon\n")
+	ui.Println(bubbles.SuccessStyle.Render(fmt.Sprintf("Successfully initialized %s in %s", configType, path)))
+	ui.Println(bubbles.InfoStyle.Render("Next steps:"))
+	ui.Println("  1. Review and edit the generated configuration file")
+	ui.Println("  2. Run 'nuon apps sync' to sync your configuration to Nuon")
 }
 
 func (c *cli) initCmd() *cobra.Command {
@@ -46,8 +47,8 @@ func (c *cli) initCmd() *cobra.Command {
 		Use:               "init",
 		Short:             "Initialize app configuration",
 		Long:              "Generate app configuration files. Use subcommands to generate specific config files, or run without subcommands to generate all files.",
-		Annotations:       tuiAnnotation(TUIContextual),
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil }, // Skip auth for local init
+		Annotations:       annotations(tuiAnnotation(TUIContextual), outputsAnnotation(OutputTable)),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return c.resolveOutput(cmd) }, // Skip auth for local init
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			params := apps.InitParams{
@@ -133,7 +134,7 @@ func (c *cli) initCmd() *cobra.Command {
 	// 		Use:               commandName,
 	// 		Short:             fmt.Sprintf("Initialize %s", description),
 	// 		Long:              fmt.Sprintf("Generate the %s configuration file", configFileName),
-	// 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+	// 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return c.resolveOutput(cmd) },
 	// 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 	// 			svc := apps.New(c.v, c.apiClient, c.cfg)
 	// 			return svc.InitConfigFile(cmd.Context(), initPath, configFileName, initEnableDefaults, initEnableComments, initOverwrite)
@@ -176,7 +177,8 @@ func (c *cli) initSandboxCmd() *cobra.Command {
 		Use:               "sandbox",
 		Short:             "Initialize sandbox configuration",
 		Long:              "Generate the sandbox.toml configuration file with custom parameters",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		Annotations:       outputsAnnotation(OutputTable),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return c.resolveOutput(cmd) },
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 
@@ -243,7 +245,8 @@ func (c *cli) initStackCmd() *cobra.Command {
 		Use:               "stack",
 		Short:             "Initialize stack configuration",
 		Long:              "Generate the stack.toml configuration file with custom parameters",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		Annotations:       outputsAnnotation(OutputTable),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return c.resolveOutput(cmd) },
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 
@@ -293,7 +296,8 @@ func (c *cli) initRunnerCmd() *cobra.Command {
 		Use:               "runner",
 		Short:             "Initialize runner configuration",
 		Long:              "Generate the runner.toml configuration file with custom parameters",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		Annotations:       outputsAnnotation(OutputTable),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return c.resolveOutput(cmd) },
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 
@@ -352,7 +356,8 @@ func (c *cli) initComponentTerraformModuleCmd() *cobra.Command {
 		Use:               "terraform-module",
 		Short:             "Initialize Terraform module component",
 		Long:              "Generate a Terraform module component configuration file",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		Annotations:       outputsAnnotation(OutputTable),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return c.resolveOutput(cmd) },
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 
@@ -438,7 +443,8 @@ func (c *cli) initComponentHelmChartCmd() *cobra.Command {
 		Use:               "helm-chart",
 		Short:             "Initialize Helm chart component",
 		Long:              "Generate a Helm chart component configuration file",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		Annotations:       outputsAnnotation(OutputTable),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return c.resolveOutput(cmd) },
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 
@@ -522,7 +528,8 @@ func (c *cli) initComponentKubernetesManifestCmd() *cobra.Command {
 		Use:               "kubernetes-manifest",
 		Short:             "Initialize Kubernetes manifest component",
 		Long:              "Generate a Kubernetes manifest component configuration file",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		Annotations:       outputsAnnotation(OutputTable),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return c.resolveOutput(cmd) },
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 
@@ -566,9 +573,10 @@ func (c *cli) initComponentKubernetesManifestCmd() *cobra.Command {
 
 func (c *cli) initComponentCmd() *cobra.Command {
 	componentCmd := &cobra.Command{
-		Use:   "component",
-		Short: "Initialize component configuration",
-		Long:  "Generate component configuration files for terraform modules, helm charts, or kubernetes manifests",
+		Use:         "component",
+		Short:       "Initialize component configuration",
+		Long:        "Generate component configuration files for terraform modules, helm charts, or kubernetes manifests",
+		Annotations: outputsAnnotation(OutputTable),
 	}
 
 	// Add subcommands for each component type
@@ -605,7 +613,8 @@ func (c *cli) initActionCmd() *cobra.Command {
 		Use:               "action",
 		Short:             "Initialize action configuration",
 		Long:              "Generate an action configuration file with custom parameters",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
+		Annotations:       outputsAnnotation(OutputTable),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return c.resolveOutput(cmd) },
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			genParams := initRootParams(cmd)
 

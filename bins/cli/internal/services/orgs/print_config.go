@@ -1,31 +1,27 @@
 package orgs
 
 import (
-	"fmt"
-
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) PrintConfig(asJSON bool) error {
-	view := ui.NewGetView()
-
 	settings := s.cfg.AllSettings()
-	if len(settings) == 0 {
-		fmt.Println("No config set")
+
+	if asJSON {
+		ui.PrintJSON(settings)
 		return nil
-	} else {
-
-		if asJSON {
-			ui.PrintJSON(settings)
-			return nil
-		}
-
-		var data = [][]string{}
-		for k, v := range settings {
-			data = append(data, []string{k, v.(string)})
-		}
-
-		view.Render(data)
 	}
+
+	if len(settings) == 0 {
+		ui.Println("No config set")
+		return nil
+	}
+
+	var data = [][]string{}
+	for k, v := range settings {
+		data = append(data, []string{k, v.(string)})
+	}
+
+	ui.NewGetView().Render(data)
 	return nil
 }

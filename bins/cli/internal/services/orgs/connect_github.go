@@ -8,10 +8,9 @@ import (
 	"github.com/pkg/browser"
 )
 
-func (s *Service) ConnectGithub(ctx context.Context) error {
+func (s *Service) ConnectGithub(ctx context.Context, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
 	cfg, err := s.api.GetCLIConfig(ctx)
@@ -20,5 +19,12 @@ func (s *Service) ConnectGithub(ctx context.Context) error {
 	}
 
 	url := fmt.Sprintf("%s/api/connect-github?org_id=%s", cfg.DashboardURL, s.cfg.OrgID)
+
+	if asJSON {
+		ui.PrintJSON(map[string]string{"url": url})
+		return nil
+	}
+
+	ui.PrintLn("opening GitHub connection flow")
 	return browser.OpenURL(url)
 }

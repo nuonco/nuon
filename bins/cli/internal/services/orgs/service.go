@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 )
@@ -44,21 +45,17 @@ func (s *Service) unsetOrgID(ctx context.Context) error {
 }
 
 func (s *Service) printOrgSetMsg(name, id string) {
-	fmt.Printf("%s\n", bubbles.InfoStyle.Render(fmt.Sprintf("current org is now %s: %s", name, id)))
+	ui.Println(bubbles.InfoStyle.Render(fmt.Sprintf("current org is now %s: %s", name, id)))
 }
 
 func (s *Service) printNoOrgsMsg() {
-	fmt.Printf("%s\n", bubbles.BaseStyle.Render("you don't have any orgs, create one using orgs create"))
+	ui.Println(bubbles.BaseStyle.Render("you don't have any orgs, create one using orgs create"))
 }
 
 func (s *Service) printOrgNotFoundMsg(id string) {
-	fmt.Printf("%s\n", bubbles.BaseStyle.Render(fmt.Sprintf("can't find org %s, use orgs list to view all orgs or create one using orgs create", id)))
+	ui.Println(bubbles.BaseStyle.Render(fmt.Sprintf("can't find org %s, use orgs list to view all orgs or create one using orgs create", id)))
 }
 
 func (s *Service) notFoundErr(id string) error {
 	return fmt.Errorf("org %s was not found", id)
-}
-
-func (s *Service) printOrgNotSetMsg() {
-	fmt.Printf("%s\n", bubbles.BaseStyle.Render("current org is not set, use orgs select to set one"))
 }
