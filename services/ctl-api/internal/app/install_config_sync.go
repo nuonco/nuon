@@ -25,10 +25,13 @@ type InstallConfigSync struct {
 	InstallID string  `json:"install_id,omitzero" gorm:"default:null" temporaljson:"install_id,omitzero,omitempty"`
 	Install   Install `faker:"-" json:"-" temporaljson:"install,omitzero,omitempty"`
 
-	AppBranchID string    `json:"app_branch_id,omitzero" gorm:"not null" temporaljson:"app_branch_id,omitzero,omitempty"`
+	AppInstallConfigSyncID *string               `json:"app_install_config_sync_id,omitempty" temporaljson:"app_install_config_sync_id,omitzero,omitempty"`
+	AppInstallConfigSync   *AppInstallConfigSync `faker:"-" json:"-" temporaljson:"app_install_config_sync,omitzero,omitempty"`
+
+	AppBranchID string    `json:"app_branch_id,omitzero" gorm:"default:null" temporaljson:"app_branch_id,omitzero,omitempty"`
 	AppBranch   AppBranch `faker:"-" json:"-" temporaljson:"app_branch,omitzero,omitempty"`
 
-	AppBranchConfigID string          `json:"app_branch_config_id,omitzero" gorm:"not null" temporaljson:"app_branch_config_id,omitzero,omitempty"`
+	AppBranchConfigID string          `json:"app_branch_config_id,omitzero" gorm:"default:null" temporaljson:"app_branch_config_id,omitzero,omitempty"`
 	AppBranchConfig   AppBranchConfig `faker:"-" json:"-" temporaljson:"app_branch_config,omitzero,omitempty"`
 
 	AppBranchRunID *string      `json:"app_branch_run_id,omitempty" temporaljson:"app_branch_run_id,omitzero,omitempty"`

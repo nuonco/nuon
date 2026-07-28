@@ -514,6 +514,10 @@ func NewInstallRunbookRunID() string {
 	return shortid.NewNanoID("irr")
 }
 
+func NewAppInstallConfigSyncID() string {
+	return shortid.NewNanoID("aics")
+}
+
 func NewInstallConfigSyncID() string {
 	return shortid.NewNanoID("ics")
 }

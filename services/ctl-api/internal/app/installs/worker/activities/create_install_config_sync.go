@@ -8,11 +8,13 @@ import (
 )
 
 type CreateInstallConfigSyncInput struct {
-	InstallID         string `json:"install_id" validate:"required"`
-	AppBranchID       string `json:"app_branch_id" validate:"required"`
-	AppBranchConfigID string `json:"app_branch_config_id" validate:"required"`
-	AppBranchRunID    string `json:"app_branch_run_id,omitempty"`
-	TriggeredBy       string `json:"triggered_by"`
+	InstallID              string `json:"install_id" validate:"required"`
+	AppInstallConfigSyncID string `json:"app_install_config_sync_id,omitempty"`
+	VCSConnectionCommitID  string `json:"vcs_connection_commit_id,omitempty"`
+	AppBranchID            string `json:"app_branch_id,omitempty"`
+	AppBranchConfigID      string `json:"app_branch_config_id,omitempty"`
+	AppBranchRunID         string `json:"app_branch_run_id,omitempty"`
+	TriggeredBy            string `json:"triggered_by"`
 }
 
 type CreateInstallConfigSyncOutput struct {
@@ -30,15 +32,16 @@ func (a *Activities) CreateInstallConfigSync(ctx context.Context, input *CreateI
 		Status:            app.NewCompositeStatus(ctx, app.StatusInProgress),
 	}
 
+	if input.AppInstallConfigSyncID != "" {
+		record.AppInstallConfigSyncID = &input.AppInstallConfigSyncID
+	}
+
+	if input.VCSConnectionCommitID != "" {
+		record.VCSConnectionCommitID = &input.VCSConnectionCommitID
+	}
+
 	if input.AppBranchRunID != "" {
 		record.AppBranchRunID = &input.AppBranchRunID
-
-		var run app.AppBranchRun
-		if err := a.db.WithContext(ctx).First(&run, "id = ?", input.AppBranchRunID).Error; err == nil {
-			if run.VCSConnectionCommitID != nil {
-				record.VCSConnectionCommitID = run.VCSConnectionCommitID
-			}
-		}
 	}
 
 	if err := a.db.WithContext(ctx).Create(&record).Error; err != nil {

@@ -86,34 +86,7 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 		return errors.Wrap(err, "failed to find matching app branches")
 	}
 
-	if len(matches) == 0 {
-		l.Info(fmt.Sprintf("no matching app branches for connection %s", connEvent.VCSConnectionID))
-		return nil
-	}
-
-	l.Info(fmt.Sprintf("found %d matching app branches for connection %s", len(matches), connEvent.VCSConnectionID))
-
 	for _, match := range matches {
-		if match.MatchType == "installs-config" {
-			_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-				OwnerID:   match.AppID,
-				OwnerType: "apps",
-				Signal: &syncinstalls.Signal{
-					AppBranchID:         match.AppBranchID,
-					AppBranchConfigID:   match.AppBranchConfigID,
-					CommitSHA:           headSHA,
-					TriggeredBy:         "vcs-push",
-					FallbackCreatedByID: connEvent.CreatedByID,
-				},
-			})
-			if err != nil {
-				l.Error(fmt.Sprintf("failed to enqueue sync-installs signal for app %s: %v", match.AppID, err))
-				continue
-			}
-			l.Info(fmt.Sprintf("enqueued sync-installs signal for app %s", match.AppID))
-			continue
-		}
-
 		_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 			OwnerID:   match.AppBranchID,
 			OwnerType: "app_branches",
@@ -134,8 +107,38 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 			l.Error(fmt.Sprintf("failed to enqueue vcs-push signal for app branch %s: %v", match.AppBranchID, err))
 			continue
 		}
-
 		l.Info(fmt.Sprintf("enqueued vcs-push signal for app branch %s (event_type=%s)", match.AppBranchID, eventType))
+	}
+
+	installSyncMatches, err := activities.AwaitFindMatchingInstallSyncApps(ctx, activities.FindMatchingInstallSyncAppsRequest{
+		OrgID:  connEvent.OrgID,
+		Repo:   repo,
+		Branch: branch,
+	})
+	if err != nil {
+		l.Error(fmt.Sprintf("failed to find matching install sync apps: %v", err))
+	}
+
+	for _, match := range installSyncMatches {
+		_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   match.AppID,
+			OwnerType: "apps",
+			Signal: &syncinstalls.Signal{
+				AppID:               match.AppID,
+				CommitSHA:           headSHA,
+				TriggeredBy:         "vcs-push",
+				FallbackCreatedByID: connEvent.CreatedByID,
+			},
+		})
+		if err != nil {
+			l.Error(fmt.Sprintf("failed to enqueue sync-installs signal for app %s: %v", match.AppID, err))
+			continue
+		}
+		l.Info(fmt.Sprintf("enqueued sync-installs signal for app %s", match.AppID))
+	}
+
+	if len(matches) == 0 && len(installSyncMatches) == 0 {
+		l.Info(fmt.Sprintf("no matching app branches or install sync apps for connection %s", connEvent.VCSConnectionID))
 	}
 
 	return nil

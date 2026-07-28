@@ -5,15 +5,16 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 const SignalType signal.SignalType = "sync-installs"
 
 type Signal struct {
-	AppBranchID       string `json:"app_branch_id" validate:"required"`
-	AppBranchConfigID string `json:"app_branch_config_id" validate:"required"`
+	AppID string `json:"app_id" validate:"required"`
+
+	AppBranchID       string `json:"app_branch_id,omitempty"`
+	AppBranchConfigID string `json:"app_branch_config_id,omitempty"`
 	AppBranchRunID    string `json:"app_branch_run_id,omitempty"`
 
 	CommitSHA   string `json:"commit_sha,omitempty"`
@@ -41,11 +42,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	v := validator.New()
 	if err := v.Struct(s); err != nil {
 		return errors.Wrap(err, "validation failed")
-	}
-
-	_, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
-	if err != nil {
-		return errors.Wrap(err, "app branch not found")
 	}
 
 	return nil

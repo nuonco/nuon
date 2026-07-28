@@ -14,6 +14,8 @@ const SignalType signal.SignalType = "install-config-sync"
 type Signal struct {
 	InstallID string `json:"install_id" validate:"required"`
 
+	AppInstallConfigSyncID string `json:"app_install_config_sync_id,omitempty"`
+
 	AppBranchID       string `json:"app_branch_id,omitempty"`
 	AppBranchConfigID string `json:"app_branch_config_id,omitempty"`
 	AppBranchRunID    string `json:"app_branch_run_id,omitempty"`

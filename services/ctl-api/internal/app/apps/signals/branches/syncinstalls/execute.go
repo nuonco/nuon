@@ -6,7 +6,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	branchactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigsync"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -16,18 +16,27 @@ import (
 func (s *Signal) Execute(ctx workflow.Context) error {
 	logger := workflow.GetLogger(ctx)
 
-	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
+	syncRecord, err := branchactivities.AwaitCreateAppInstallConfigSync(ctx, &branchactivities.CreateAppInstallConfigSyncInput{
+		AppID:       s.AppID,
+		CommitSHA:   s.CommitSHA,
+		TriggeredBy: s.TriggeredBy,
+	})
 	if err != nil {
-		return fmt.Errorf("unable to get app branch: %w", err)
+		return fmt.Errorf("unable to create app install config sync: %w", err)
 	}
 
-	installs, err := activities.AwaitGetInstallsForAppByAppID(ctx, branch.AppID)
+	installs, err := branchactivities.AwaitGetInstallsForAppByAppID(ctx, s.AppID)
 	if err != nil {
 		return fmt.Errorf("unable to get installs for app: %w", err)
 	}
 
 	if len(installs) == 0 {
 		logger.Info("no installs found for app, skipping sync")
+		_ = branchactivities.AwaitUpdateAppInstallConfigSyncStatus(ctx, &branchactivities.UpdateAppInstallConfigSyncStatusInput{
+			ID:                syncRecord.ID,
+			Status:            string(app.StatusSuccess),
+			StatusDescription: "no installs found",
+		})
 		s.updateStepStatus(ctx, app.StatusSuccess, "no installs found", nil)
 		return nil
 	}
@@ -39,12 +48,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			OwnerType: "installs",
 			QueueName: installhelpers.InstallSignalsQueueName,
 			Signal: &installconfigsync.Signal{
-				InstallID:         install.ID,
-				AppBranchID:       s.AppBranchID,
-				AppBranchConfigID: s.AppBranchConfigID,
-				AppBranchRunID:    s.AppBranchRunID,
-				CommitSHA:         s.CommitSHA,
-				TriggeredBy:       s.TriggeredBy,
+				InstallID:              install.ID,
+				AppInstallConfigSyncID: syncRecord.ID,
+				AppBranchID:            s.AppBranchID,
+				AppBranchConfigID:      s.AppBranchConfigID,
+				AppBranchRunID:         s.AppBranchRunID,
+				CommitSHA:              s.CommitSHA,
+				TriggeredBy:            s.TriggeredBy,
 			},
 		})
 		if err != nil {
@@ -58,8 +68,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		enqueued++
 	}
 
+	finalStatus := app.StatusSuccess
 	desc := fmt.Sprintf("enqueued sync for %d installs", enqueued)
-	s.updateStepStatus(ctx, app.StatusSuccess, desc, map[string]any{
+	if enqueued == 0 {
+		finalStatus = app.StatusError
+		desc = "failed to enqueue any install syncs"
+	}
+
+	_ = branchactivities.AwaitUpdateAppInstallConfigSyncStatus(ctx, &branchactivities.UpdateAppInstallConfigSyncStatusInput{
+		ID:                syncRecord.ID,
+		Status:            string(finalStatus),
+		StatusDescription: desc,
+	})
+
+	s.updateStepStatus(ctx, finalStatus, desc, map[string]any{
 		"enqueued": enqueued,
 		"total":    len(installs),
 	})

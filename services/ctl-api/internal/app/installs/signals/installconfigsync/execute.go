@@ -18,6 +18,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
+	commitResult, err := activities.AwaitFetchLatestInstallsCommitByAppID(ctx, install.AppID)
+	if err != nil {
+		logger.Warn("unable to fetch latest commit for installs config", "error", err)
+	}
+
 	vcsResult, err := activities.AwaitGetInstallsVCSConfigByAppID(ctx, install.AppID)
 	if err != nil {
 		return fmt.Errorf("unable to get installs VCS config: %w", err)
@@ -34,13 +39,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		installsDir = "."
 	}
 
-	syncRecord, err := activities.AwaitCreateInstallConfigSync(ctx, &activities.CreateInstallConfigSyncInput{
-		InstallID:         s.InstallID,
-		AppBranchID:       s.AppBranchID,
-		AppBranchConfigID: s.AppBranchConfigID,
-		AppBranchRunID:    s.AppBranchRunID,
-		TriggeredBy:       s.TriggeredBy,
-	})
+	syncInput := &activities.CreateInstallConfigSyncInput{
+		InstallID:              s.InstallID,
+		AppInstallConfigSyncID: s.AppInstallConfigSyncID,
+		AppBranchID:            s.AppBranchID,
+		AppBranchConfigID:      s.AppBranchConfigID,
+		AppBranchRunID:         s.AppBranchRunID,
+		TriggeredBy:            s.TriggeredBy,
+	}
+
+	if commitResult != nil && commitResult.CommitID != "" {
+		syncInput.VCSConnectionCommitID = commitResult.CommitID
+	}
+
+	syncRecord, err := activities.AwaitCreateInstallConfigSync(ctx, syncInput)
 	if err != nil {
 		return fmt.Errorf("unable to create install config sync record: %w", err)
 	}

@@ -15,58 +15,38 @@ type FindMatchingAppBranchesRequest struct {
 }
 
 type MatchingAppBranch struct {
-	AppID             string `json:"app_id"`
 	AppBranchID       string `json:"app_branch_id"`
 	AppBranchConfigID string `json:"app_branch_config_id"`
-	MatchType         string `json:"match_type"` // "app-config" or "installs-config"
 }
 
 // @temporal-gen-v2 activity
 func (a *Activities) FindMatchingAppBranches(ctx context.Context, req FindMatchingAppBranchesRequest) ([]MatchingAppBranch, error) {
 	appBranchConfigTable := plugins.TableName(a.db, app.AppBranchConfig{})
 
-	var results []MatchingAppBranch
-
-	// Match app config VCS connections (polymorphic type = app_branch_configs table name)
-	appConfigMatches, err := a.findMatchesByConfigType(ctx, req, appBranchConfigTable, "app-config")
+	results, err := a.findMatchesByConfigType(ctx, req, appBranchConfigTable)
 	if err != nil {
 		return nil, err
 	}
-	results = append(results, appConfigMatches...)
 
-	// Match installs VCS connections (polymorphic type = installs_app_branch_configs)
-	installsMatches, err := a.findMatchesByConfigType(ctx, req, "installs_app_branch_configs", "installs-config")
-	if err != nil {
-		return nil, err
-	}
-	results = append(results, installsMatches...)
-
-	// Deduplicate: keep only the latest config per app branch per match type
-	type dedupeKey struct {
-		appBranchID string
-		matchType   string
-	}
-	seen := make(map[dedupeKey]bool)
+	seen := make(map[string]bool)
 	var deduped []MatchingAppBranch
 	for _, r := range results {
-		key := dedupeKey{r.AppBranchID, r.MatchType}
-		if seen[key] {
+		if seen[r.AppBranchID] {
 			continue
 		}
-		seen[key] = true
+		seen[r.AppBranchID] = true
 		deduped = append(deduped, r)
 	}
 
 	return deduped, nil
 }
 
-func (a *Activities) findMatchesByConfigType(ctx context.Context, req FindMatchingAppBranchesRequest, configType, matchType string) ([]MatchingAppBranch, error) {
+func (a *Activities) findMatchesByConfigType(ctx context.Context, req FindMatchingAppBranchesRequest, configType string) ([]MatchingAppBranch, error) {
 	var results []MatchingAppBranch
 
-	// Match via connected_github_vcs_configs
 	err := a.db.WithContext(ctx).
 		Table("connected_github_vcs_configs").
-		Select("app_branches.app_id, app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id, ? as match_type", matchType).
+		Select("app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id").
 		Joins("JOIN app_branch_configs ON app_branch_configs.id = connected_github_vcs_configs.component_config_id AND connected_github_vcs_configs.component_config_type = ?", configType).
 		Joins("JOIN app_branches ON app_branches.id = app_branch_configs.app_branch_id AND app_branches.deleted_at = 0").
 		Where("connected_github_vcs_configs.org_id = ?", req.OrgID).
@@ -77,14 +57,13 @@ func (a *Activities) findMatchesByConfigType(ctx context.Context, req FindMatchi
 		Order("app_branch_configs.created_at DESC").
 		Scan(&results).Error
 	if err != nil {
-		return nil, fmt.Errorf("unable to find matching app branches (connected, %s): %w", matchType, err)
+		return nil, fmt.Errorf("unable to find matching app branches (connected): %w", err)
 	}
 
-	// Match via public_git_vcs_configs
 	var publicResults []MatchingAppBranch
 	err = a.db.WithContext(ctx).
 		Table("public_git_vcs_configs").
-		Select("app_branches.app_id, app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id, ? as match_type", matchType).
+		Select("app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id").
 		Joins("JOIN app_branch_configs ON app_branch_configs.id = public_git_vcs_configs.component_config_id AND public_git_vcs_configs.component_config_type = ?", configType).
 		Joins("JOIN app_branches ON app_branches.id = app_branch_configs.app_branch_id AND app_branches.deleted_at = 0").
 		Where("app_branch_configs.org_id = ?", req.OrgID).
@@ -95,7 +74,7 @@ func (a *Activities) findMatchesByConfigType(ctx context.Context, req FindMatchi
 		Order("app_branch_configs.created_at DESC").
 		Scan(&publicResults).Error
 	if err != nil {
-		return nil, fmt.Errorf("unable to find matching app branches (public, %s): %w", matchType, err)
+		return nil, fmt.Errorf("unable to find matching app branches (public): %w", err)
 	}
 
 	return append(results, publicResults...), nil

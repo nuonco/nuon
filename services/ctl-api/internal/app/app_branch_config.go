@@ -31,10 +31,6 @@ type AppBranchConfig struct {
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"public_git_vcs_config,omitzero,omitempty" temporaljson:"public_git_vcs_config,omitzero,omitempty"`
 	ConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"connected_github_vcs_config,omitzero,omitempty" temporaljson:"connected_github_vcs_config,omitzero,omitempty"`
 
-	InstallsDirectory                *string                   `json:"installs_directory,omitempty" gorm:"default:null" temporaljson:"installs_directory,omitzero,omitempty"`
-	InstallsPublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"polymorphic:ComponentConfig;polymorphicValue:installs_app_branch_configs;constraint:OnDelete:CASCADE;" json:"installs_public_git_vcs_config,omitzero,omitempty" temporaljson:"installs_public_git_vcs_config,omitzero,omitempty"`
-	InstallsConnectedGithubVCSConfig *ConnectedGithubVCSConfig `gorm:"polymorphic:ComponentConfig;polymorphicValue:installs_app_branch_configs;constraint:OnDelete:CASCADE;" json:"installs_connected_github_vcs_config,omitzero,omitempty" temporaljson:"installs_connected_github_vcs_config,omitzero,omitempty"`
-
 	InstallGroups []AppBranchInstallGroup `json:"install_groups,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_groups,omitzero,omitempty"`
 
 	ComponentIDs pq.StringArray `gorm:"type:text[]" json:"component_ids,omitzero" temporaljson:"component_ids,omitzero,omitempty" swaggertype:"array,string"`
