@@ -17,6 +17,7 @@ type ClearProcessShutdownRequestedRequest struct {
 // has been created to prevent duplicate shutdowns.
 //
 // @temporal-gen-v2 activity
+// @local
 func (a *Activities) ClearProcessShutdownRequested(ctx context.Context, req ClearProcessShutdownRequestedRequest) error {
 	// Set shutdown_requested to null to effectively remove it.
 	if err := generics.MergeJSONBMetadata(

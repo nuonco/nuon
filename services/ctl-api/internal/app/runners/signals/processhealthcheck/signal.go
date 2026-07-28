@@ -104,7 +104,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return errors.Wrap(err, "unable to get logger")
 	}
 
-	runner, err := activities.AwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
+	runner, err := activities.LocalAwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner")
 	}
@@ -115,7 +115,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	switch runner.RunnerGroup.OwnerType {
 	case "installs":
 		tags["install_id"] = runner.RunnerGroup.OwnerID
-		install, err := activities.AwaitGetRunnerInstallByInstallID(ctx, runner.RunnerGroup.OwnerID)
+		install, err := activities.LocalAwaitGetRunnerInstallByInstallID(ctx, runner.RunnerGroup.OwnerID)
 		if err != nil {
 			return errors.Wrap(err, "unable to get install for runner")
 		}
@@ -125,7 +125,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		addLabels(runner.Org.Labels)
 	}
 
-	process, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
+	process, err := activities.LocalAwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
 	if err != nil {
 		return dbgenerics.TemporalGormError(err, "runner process not found")
 	}
@@ -142,7 +142,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return err
 	}
 
-	heartbeat, err := activities.AwaitGetMostRecentHeartBeatByProcess(ctx, activities.GetMostRecentHeartBeatByProcessRequest{
+	heartbeat, err := activities.LocalAwaitGetMostRecentHeartBeatByProcess(ctx, activities.GetMostRecentHeartBeatByProcessRequest{
 		RunnerID:  s.RunnerID,
 		ProcessID: s.ProcessID,
 	})
@@ -190,7 +190,7 @@ func (s *Signal) handleShutdownRequested(ctx workflow.Context, l *zap.Logger, pr
 		zap.String("process_id", s.ProcessID),
 	)
 
-	if _, err := activities.AwaitCreateRunnerProcessShutdown(ctx, activities.CreateRunnerProcessShutdownRequest{
+	if _, err := activities.LocalAwaitCreateRunnerProcessShutdown(ctx, activities.CreateRunnerProcessShutdownRequest{
 		RunnerProcessID: s.ProcessID,
 		Type:            app.RunnerProcessShutdownTypeGraceful,
 		CompositeStatus: app.CompositeStatus{
@@ -202,7 +202,7 @@ func (s *Signal) handleShutdownRequested(ctx workflow.Context, l *zap.Logger, pr
 		return true, errors.Wrap(err, "unable to create shutdown for process")
 	}
 
-	if err := activities.AwaitClearProcessShutdownRequested(ctx, activities.ClearProcessShutdownRequestedRequest{
+	if err := activities.LocalAwaitClearProcessShutdownRequested(ctx, activities.ClearProcessShutdownRequestedRequest{
 		ProcessID: s.ProcessID,
 	}); err != nil {
 		l.Warn("unable to clear shutdown_requested metadata",
@@ -225,7 +225,7 @@ func (s *Signal) handleInactive(ctx workflow.Context, tmw tmetrics.Writer, l *za
 		zap.String("process_id", s.ProcessID),
 	)
 
-	if _, err := activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
+	if _, err := activities.LocalAwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
 		ProcessID:         s.ProcessID,
 		Status:            app.RunnerProcessStatusInactive,
 		StatusDescription: "no heartbeat received for 5 minutes",
@@ -255,7 +255,7 @@ func (s *Signal) handleInactive(ctx workflow.Context, tmw tmetrics.Writer, l *za
 		)
 	}
 
-	if err := activities.AwaitStopProcessQueue(ctx, activities.StopProcessQueueRequest{
+	if err := activities.LocalAwaitStopProcessQueue(ctx, activities.StopProcessQueueRequest{
 		RunnerID:  s.RunnerID,
 		ProcessID: s.ProcessID,
 	}); err != nil {
@@ -279,7 +279,7 @@ func (s *Signal) handleOffline(ctx workflow.Context, l *zap.Logger, process *app
 			zap.String("process_id", s.ProcessID),
 		)
 
-		if _, err := activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
+		if _, err := activities.LocalAwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
 			ProcessID:         s.ProcessID,
 			Status:            app.RunnerProcessStatusOffline,
 			StatusDescription: "Runner is offline and will be marked inactive in 5 minutes",
@@ -288,7 +288,7 @@ func (s *Signal) handleOffline(ctx workflow.Context, l *zap.Logger, process *app
 		}
 	}
 
-	if _, err := activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
+	if _, err := activities.LocalAwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
 		RunnerID:  s.RunnerID,
 		ProcessID: s.ProcessID,
 		Status:    app.RunnerStatusError,
@@ -311,7 +311,7 @@ func (s *Signal) handleActive(ctx workflow.Context, l *zap.Logger, process *app.
 			zap.String("runner_id", s.RunnerID),
 			zap.String("process_id", s.ProcessID),
 		)
-		if _, err := activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
+		if _, err := activities.LocalAwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
 			ProcessID:         s.ProcessID,
 			Status:            app.RunnerProcessStatusActive,
 			StatusDescription: "heartbeat received",
@@ -320,7 +320,7 @@ func (s *Signal) handleActive(ctx workflow.Context, l *zap.Logger, process *app.
 		}
 	}
 
-	if _, err := activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
+	if _, err := activities.LocalAwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
 		RunnerID:  s.RunnerID,
 		ProcessID: s.ProcessID,
 		Status:    app.RunnerStatusActive,
@@ -392,7 +392,7 @@ func (s *Signal) checkVersionMismatch(ctx workflow.Context, l *zap.Logger, runne
 		)
 	}
 
-	if _, err := activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
+	if _, err := activities.LocalAwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
 		ProcessID:         s.ProcessID,
 		Status:            app.RunnerProcessStatusActive,
 		StatusDescription: "",

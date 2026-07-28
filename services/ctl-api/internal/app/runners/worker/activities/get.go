@@ -13,6 +13,7 @@ type GetRequest struct {
 
 // @temporal-gen-v2 activity
 // @by-field RunnerID
+// @local
 func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.Runner, error) {
 	runner, err := a.getRunner(ctx, req.RunnerID)
 	if err != nil {

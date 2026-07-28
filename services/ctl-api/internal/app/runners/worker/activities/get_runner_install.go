@@ -13,6 +13,7 @@ type GetRunnerInstallRequest struct {
 
 // @temporal-gen-v2 activity
 // @by-field InstallID
+// @local
 func (a *Activities) GetRunnerInstall(ctx context.Context, req GetRunnerInstallRequest) (*app.Install, error) {
 	install := app.Install{}
 	res := a.db.WithContext(ctx).First(&install, "id = ?", req.InstallID)

@@ -15,6 +15,7 @@ type CreateRunnerProcessShutdownRequest struct {
 
 // @temporal-gen-v2 activity
 // @by-field RunnerProcessID
+// @local
 func (a *Activities) CreateRunnerProcessShutdown(ctx context.Context, req CreateRunnerProcessShutdownRequest) (*app.RunnerProcessShutdown, error) {
 	shutdown := app.RunnerProcessShutdown{
 		RunnerProcessID: req.RunnerProcessID,

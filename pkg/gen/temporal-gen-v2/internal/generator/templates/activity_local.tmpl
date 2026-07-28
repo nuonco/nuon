@@ -1,0 +1,37 @@
+{{- $reqType := "" -}}
+{{- if .Options.GenerateWrapper -}}
+	{{- $reqType = printf "%sRequest" (.Name | ToPascal) -}}
+{{- else -}}
+	{{- $reqType = .InputType -}}
+{{- end -}}
+
+// LocalAwait{{.Name | ToPascal}} executes {{.Name | ToPascal}} as a local activity (no history events, no task queue slot).
+func LocalAwait{{.Name | ToPascal}}(ctx workflow.Context, input {{if .Options.ByFieldOnly}}{{.ByFieldType}}{{else}}{{$reqType}}{{end}}) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
+	{{if .OutputType}}var result {{.OutputType}}{{end}}
+	localCtx := workflow.WithLocalActivityOptions(ctx, workflow.LocalActivityOptions{
+		ScheduleToCloseTimeout: 10 * time.Second,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 1,
+		},
+	})
+	{{- if .Options.ByFieldOnly}}
+	req := {{if isPointer $reqType}}&{{derefType $reqType}}{{else}}{{$reqType}}{{end}}{
+		{{.Options.ByField}}: input,
+	}
+	err := workflow.ExecuteLocalActivity(localCtx, {{if .Receiver}}({{.Receiver}}).{{end}}{{if .Options.GenerateWrapper}}{{if .Options.WrapperPrefix}}{{.Options.WrapperPrefix}}{{end}}{{.Name | ToPascal}}{{else}}{{.OriginalName}}{{end}}, req).Get(ctx, {{if .OutputType}}&result{{else}}nil{{end}})
+	{{- else}}
+	err := workflow.ExecuteLocalActivity(localCtx, {{if .Receiver}}({{.Receiver}}).{{end}}{{if .Options.GenerateWrapper}}{{if .Options.WrapperPrefix}}{{.Options.WrapperPrefix}}{{end}}{{.Name | ToPascal}}{{else}}{{.OriginalName}}{{end}}, input).Get(ctx, {{if .OutputType}}&result{{else}}nil{{end}})
+	{{- end}}
+	return {{if .OutputType}}result, {{end}}err
+}
+
+{{- if and .Options.ByField (not .Options.ByFieldOnly)}}
+
+// LocalAwait{{.Name | ToPascal}}By{{.Options.ByField}} executes {{.Name | ToPascal}} by {{.Options.ByField}} as a local activity.
+func LocalAwait{{.Name | ToPascal}}By{{.Options.ByField}}(ctx workflow.Context, input {{.ByFieldType}}) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
+	req := {{if isPointer $reqType}}&{{derefType $reqType}}{{else}}{{$reqType}}{{end}}{
+		{{.Options.ByField}}: input,
+	}
+	return LocalAwait{{.Name | ToPascal}}(ctx, req)
+}
+{{- end}}
