@@ -23,7 +23,7 @@ func (m *Migrations) Migration116InstallAppConfigVersionMetadataBackfill(ctx con
 
 	// installs whose creator is gone would fail the accounts FK, so fall back instead of
 	// skipping them
-	systemCtx, err := m.systemCtx(ctx)
+	systemCtx, err := m.systemCtx(ctx, db)
 	if err != nil {
 		return err
 	}

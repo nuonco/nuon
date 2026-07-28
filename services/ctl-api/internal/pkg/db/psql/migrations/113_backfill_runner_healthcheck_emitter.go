@@ -11,7 +11,7 @@ import (
 )
 
 func (m *Migrations) Migration113BackfillRunnerHealthcheckEmitter(ctx context.Context, db *gorm.DB) error {
-	ctx, err := m.systemCtx(ctx)
+	ctx, err := m.systemCtx(ctx, db)
 	if err != nil {
 		return err
 	}
