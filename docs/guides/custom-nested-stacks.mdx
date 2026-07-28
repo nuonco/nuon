@@ -76,7 +76,7 @@ ClusterName = "{{.nuon.install.inputs.cluster_name}}"
 | `name`         | `string`            | Yes      | Name of the nested stack. Used as the CloudFormation logical ID (converted to CamelCase) and parameter group label.                           |
 | `template_url` | `string`            | Yes      | S3 URL to the CloudFormation template YAML. Must be publicly accessible or accessible via the stack's execution role. Supports Go templating. |
 | `index`        | `int`               | Yes      | Execution order (ascending). Must be unique across all custom nested stacks.                                                                  |
-| `parameters`   | `map[string]string` | No       | Explicit parameter mappings from install inputs. See [Parameter Mapping](#parameter-mapping).                                                 |
+| `parameters`   | `map[string]string` | No       | Explicit parameter values. Supports Go templating. See [Parameter Mapping](#parameter-mapping).                                               |
 
 {/* prettier-ignore-start */}
 <Tip>
@@ -219,8 +219,8 @@ stacks define a parameter with the same name, `nuon apps sync` will fail with a 
 
 ## Parameter Mapping
 
-Use the `parameters` field to map a template parameter to an install input value. This is useful for passing
-customer-specific values from install inputs into your nested template without hoisting them to the CloudFormation UI.
+Use the `parameters` field to set a template parameter from your app config. This is useful for passing install-specific
+values into your nested template without hoisting them to the CloudFormation UI.
 
 ```toml
 [[custom_nested_stacks]]
@@ -232,12 +232,38 @@ index        = 0
 Namespaces = "{{.nuon.install.inputs.namespaces}}"
 ```
 
-Mapped parameters reference install inputs using the `{{.nuon.install.inputs.<name>}}` syntax. When a parameter is
-explicitly mapped:
+When a parameter is set explicitly:
 
-- Its value is resolved from the install's current inputs.
-- It is removed from the hoisted parameter set (not shown in the CloudFormation UI).
-- If the install input is not set, the parameter resolves to an empty string.
+- Its value is rendered when the install stack is generated.
+- It is removed from the hoisted parameter set (not shown in the CloudFormation UI). Because the value is resolved
+  before the customer applies the stack, it cannot be edited in the CloudFormation console.
+- If a referenced install input has no value, it resolves to that input's declared default (an empty string if it has
+  none).
+
+### Templating
+
+Parameter values are full Go templates with [sprig](https://masterminds.github.io/sprig/) functions available, so you
+can compose literals, branch on an optional input, or transform a value:
+
+```toml
+[custom_nested_stacks.parameters]
+# literal
+Environment = "production"
+# composed
+BucketName = "myapp-{{ .nuon.install.id }}-state"
+# conditional, with a derived fallback
+RootDomain = "{{ if .nuon.install.inputs.root_domain }}{{ .nuon.install.inputs.root_domain }}{{ else }}{{ .nuon.install.id | substr 0 15 }}.installs.example.com{{ end }}"
+```
+
+{/* prettier-ignore-start */}
+<Warning>
+Parameters are rendered **before** the customer applies the stack, so they can only reference state that exists at that
+point: `.nuon.install.inputs.*`, `.nuon.inputs.inputs.*`, `.nuon.install.id`, `.nuon.app.*` and `.nuon.org.*`.
+
+Sandbox outputs, component outputs, action outputs and install stack outputs are rejected when you sync your app config —
+they only exist after the stack has been applied. Reference those from component or sandbox vars instead.
+</Warning>
+{/* prettier-ignore-end */}
 
 ## Authoring Templates
 

@@ -7,6 +7,10 @@ import (
 	"strings"
 
 	"github.com/invopop/jsonschema"
+
+	"github.com/nuonco/nuon/pkg/config/refs"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/render"
 )
 
 // CustomNestedStackStatus describes whether a custom nested stack's template
@@ -48,9 +52,10 @@ func (a CustomNestedStack) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Determines the execution order of custom nested stacks (ascending). Each stack must have a unique index. Lower indices execute first.").
 		Example("0").
 		Example("1").
-		Field("parameters").Short("parameter-to-input mappings").
-		Long("Map of CloudFormation parameter names to Nuon install input references. Values must use the template format {{.nuon.install.inputs.<input_name>}}. Only vendor-provided inputs are supported.").
-		Example("Namespaces = \"{{.nuon.install.inputs.namespaces}}\"")
+		Field("parameters").Short("parameter values").
+		Long("Map of nested stack parameter names to templated values. Values are rendered when the install stack is generated, so they may only reference state that exists at that point: " + availableStackParameterRefs + ". Sandbox, component, action and install stack outputs are not available.").
+		Example("Namespaces = \"{{.nuon.install.inputs.namespaces}}\"").
+		Example("RootDomain = \"{{ if .nuon.install.inputs.root_domain }}{{ .nuon.install.inputs.root_domain }}{{ else }}{{ .nuon.install.id }}.example.com{{ end }}\"")
 }
 
 // GCPCustomStackModuleMarker separates the repo address from the curated
@@ -155,12 +160,83 @@ func ValidateHTTPSURL(templateURL string, fieldName string) error {
 
 var installInputTemplatePattern = regexp.MustCompile(`^\{\{\s*\.nuon\.install\.inputs\.([a-zA-Z0-9_]+)\s*\}\}$`)
 
+// ParseInstallInputReference matches the single-install-input reference form,
+// {{.nuon.install.inputs.<input_name>}}, and returns the input name.
+//
+// Custom nested stack parameters are no longer limited to this form -- they are
+// rendered as full templates before the stack renderers see them (see
+// ValidateStackParameterTemplate). The stack renderers keep this as a fallback for
+// call paths that read config without rendering it first.
 func ParseInstallInputReference(value string) (string, error) {
 	matches := installInputTemplatePattern.FindStringSubmatch(value)
 	if matches == nil {
 		return "", fmt.Errorf("must be a template reference in the form {{.nuon.install.inputs.<input_name>}}, got %q", value)
 	}
 	return matches[1], nil
+}
+
+// RenderCustomNestedStackParameters renders each stack's parameter values in place.
+//
+// Parameters are rendered here rather than through the features:"template" tag on
+// the field because RenderStruct routes tagged fields through html/template, which
+// would escape "&" and quotes in a value that is bound for a cloud provider's API.
+func RenderCustomNestedStackParameters(stacks []CustomNestedStack, data map[string]any) error {
+	for i := range stacks {
+		if err := render.RenderTextStringMap(stacks[i].Parameters, data); err != nil {
+			return fmt.Errorf("custom_nested_stacks[%d] (%s): %w", i, stacks[i].Name, err)
+		}
+	}
+
+	return nil
+}
+
+// Custom nested stack parameters are rendered when the install stack is generated,
+// which happens before the customer applies the stack. References to anything that
+// only exists after that point cannot resolve, and because the renderer runs with
+// missingkey=error they do not render empty -- they fail the generate-install-stack
+// workflow at install create. Reject them at sync instead, where the vendor sees it.
+var disallowedStackParameterRefTypes = []refs.RefType{
+	refs.RefTypeSandbox,
+	refs.RefTypeComponents,
+	refs.RefTypeActions,
+	refs.RefTypeInstallStack,
+}
+
+// Legacy spellings of the same late-bound state. refs.ParseFieldRefs' patterns only
+// cover the flattened paths, so these are matched literally.
+var disallowedStackParameterPaths = []string{
+	"nuon.install.sandbox.",
+	"nuon.install.components.",
+	"nuon.install.actions.",
+}
+
+const availableStackParameterRefs = ".nuon.install.inputs.*, .nuon.inputs.inputs.*, .nuon.install.id, .nuon.app.*, .nuon.org.*"
+
+// ValidateStackParameterTemplate validates a custom nested stack parameter value: it
+// must be a parseable template that only references state which is populated when the
+// install stack is generated.
+func ValidateStackParameterTemplate(value string) error {
+	if value == "" {
+		return fmt.Errorf("must not be empty")
+	}
+
+	if err := render.ValidateTextTemplate(value); err != nil {
+		return fmt.Errorf("is not a valid template: %w", err)
+	}
+
+	for _, ref := range refs.ParseFieldRefs(value) {
+		if generics.SliceContains(ref.Type, disallowedStackParameterRefTypes) {
+			return fmt.Errorf("references %s, which is not populated when the install stack is generated; available: %s", ref.Input, availableStackParameterRefs)
+		}
+	}
+
+	for _, path := range disallowedStackParameterPaths {
+		if strings.Contains(value, path) {
+			return fmt.Errorf("references %s*, which is not populated when the install stack is generated; available: %s", path, availableStackParameterRefs)
+		}
+	}
+
+	return nil
 }
 
 var s3HostPattern = regexp.MustCompile(
@@ -245,7 +321,7 @@ func (a *StackConfig) parse() error {
 		}
 		seenIndices[stack.Index] = stack.Name
 		for paramName, paramValue := range stack.Parameters {
-			if _, err := ParseInstallInputReference(paramValue); err != nil {
+			if err := ValidateStackParameterTemplate(paramValue); err != nil {
 				return ErrConfig{
 					Description: fmt.Sprintf("custom_nested_stacks[%d] (%s): parameter %q: %s", i, stack.Name, paramName, err),
 					Err:         fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q: %w", i, stack.Name, paramName, err),
