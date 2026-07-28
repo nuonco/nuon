@@ -6,6 +6,18 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAction, TActionConfig } from '@/types'
 
+const NUON_MANAGED_ENV_VARS = new Set([
+  'role',
+  'TRIGGER_TYPE',
+  'COMPONENT_ID',
+  'COMPONENT_NAME',
+  'NUON_ORG_ID',
+  'NUON_APP_ID',
+  'NUON_INSTALL_ID',
+  'NUON_API_URL',
+  'NUON_API_TOKEN',
+])
+
 function normalizeEnvVars(steps: TActionConfig['steps']) {
   const envVars = steps.reduce((acc, step) => {
     const keys = Object.keys(step?.env_vars || {})
@@ -44,11 +56,22 @@ export const InstallActionManualRunModal = ({
 }: IInstallActionManualRunModal) => {
   const config = action?.configs?.[0]
   const envVars = normalizeEnvVars(config?.steps || [])
-  const { role: _role, ...prefilledEnvVars } = runEnvVars ?? {}
-  const initialValues = { ...envVars, ...prefilledEnvVars }
-  const hasEnvVars = Object.keys(initialValues).length > 0
 
-  const [customVars, setCustomVars] = useState<number[]>([])
+  const runEnvVarEntries = Object.entries(runEnvVars ?? {}).filter(
+    ([key]) => !NUON_MANAGED_ENV_VARS.has(key)
+  )
+  const configOverrides = Object.fromEntries(
+    runEnvVarEntries.filter(([key]) => key in envVars)
+  )
+  const customFromRun = runEnvVarEntries.filter(([key]) => !(key in envVars))
+
+  const initialValues = { ...envVars, ...configOverrides }
+  const hasEnvVars = Object.keys(initialValues).length > 0 || customFromRun.length > 0
+
+  const [customVars, setCustomVars] = useState<
+    Array<{ id: number; name: string; value: string }>
+  >(() => customFromRun.map(([name, value], index) => ({ id: index, name, value })))
+  const nextCustomId = useRef(customFromRun.length)
   const formRef = useRef<HTMLFormElement>(null)
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -144,22 +167,22 @@ export const InstallActionManualRunModal = ({
 
             {customVars.length > 0 && (
               <div className="flex flex-col gap-2">
-                {customVars.map((cv) => (
+                {customVars.map((cv, index) => (
                   <fieldset
-                    key={cv}
+                    key={cv.id}
                     className="flex flex-col gap-2 py-2 border-t relative"
                   >
                     <legend className="text-base font-medium pr-2 mb-2 flex items-center justify-between">
-                      <span>Custom env var {cv + 1}</span>
+                      <span>Custom env var {index + 1}</span>
                       <Button
                         type="button"
                         variant="ghost"
                         onClick={() => {
-                          setCustomVars((vars) => vars.filter((v) => v !== cv))
+                          setCustomVars((vars) => vars.filter((v) => v.id !== cv.id))
                         }}
                         className="ml-2 !p-2"
                         size="sm"
-                        aria-label={`Remove custom env var ${cv + 1}`}
+                        aria-label={`Remove custom env var ${index + 1}`}
                       >
                         <Icon variant="XIcon" size="12" />
                       </Button>
@@ -171,7 +194,8 @@ export const InstallActionManualRunModal = ({
                       <input
                         className="px-3 py-2 text-base rounded-md border bg-black/5 dark:bg-white/5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600"
                         required
-                        name={`custom:${cv}:name`}
+                        defaultValue={cv.name}
+                        name={`custom:${cv.id}:name`}
                         type="text"
                       />
                     </label>
@@ -182,7 +206,8 @@ export const InstallActionManualRunModal = ({
                       <input
                         className="px-3 py-2 text-base rounded-md border bg-black/5 dark:bg-white/5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600"
                         required
-                        name={`custom:${cv}:value`}
+                        defaultValue={cv.value}
+                        name={`custom:${cv.id}:value`}
                         type="text"
                       />
                     </label>
@@ -196,7 +221,10 @@ export const InstallActionManualRunModal = ({
                 type="button"
                 variant="ghost"
                 onClick={() => {
-                  setCustomVars((vars) => [...vars, vars.length])
+                  setCustomVars((vars) => [
+                    ...vars,
+                    { id: nextCustomId.current++, name: '', value: '' },
+                  ])
                 }}
               >
                 <Icon variant="PlusIcon" />
