@@ -13,13 +13,16 @@ func (s *Service) LatestConfig(ctx context.Context, appID, compID string, asJSON
 		return ui.PrintError(err)
 	}
 
-	view := ui.NewGetView()
-
 	config, err := s.api.GetComponentLatestConfig(ctx, compID)
 	if err != nil {
-		return view.Error(err)
+		return ui.PrintError(err)
 	}
 
-	ui.PrintJSON(config)
+	if asJSON {
+		ui.PrintJSON(config)
+		return nil
+	}
+
+	ui.PrintIndentedJSON(config)
 	return nil
 }

@@ -19,6 +19,18 @@ func PrintJSON(data interface{}) {
 	fmt.Println(string(j))
 }
 
+// PrintIndentedJSON renders data as indented JSON to the mode-aware human writer.
+// Used for the table (human) path of commands whose payload is an arbitrary
+// config blob with no natural tabular form.
+func PrintIndentedJSON(data interface{}) {
+	j, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		Println(err.Error())
+		return
+	}
+	Println(string(j))
+}
+
 type jsonError struct {
 	Error string `json:"error"`
 }

@@ -25,6 +25,7 @@ var readOnlyCommands = map[string]struct{}{
 	"current-inputs":       {},
 	"latest":               {},
 	"latest-config":        {},
+	"list-configs":         {},
 	"configs":              {},
 	"sandbox-config":       {},
 	"input-config":         {},
