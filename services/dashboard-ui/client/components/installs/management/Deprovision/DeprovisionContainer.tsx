@@ -77,6 +77,7 @@ export const DeprovisionButton = ({
         addModal(modal)
       }}
       {...props}
+      variant="danger"
     >
       Deprovision install
       <Icon variant="ArrowDownIcon" />
