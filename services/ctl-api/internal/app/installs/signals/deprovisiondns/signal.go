@@ -59,6 +59,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get install state")
 	}
 
+	if state == nil || state.Sandbox == nil {
+		l.Info("no sandbox state found, skipping dns delegation deprovisioning", "install_id", s.InstallID)
+		return nil
+	}
+
 	var outputs nuonDNSSandboxOutputs
 	if err := mapstructure.Decode(state.Sandbox.Outputs, &outputs); err != nil {
 		return errors.Wrap(err, "unable to parse nuon dns outputs")
@@ -82,8 +87,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	l.Info("deprovisioning DNS delegation", "install_id", s.InstallID, "domain", outputs.DNS.PublicDomain.Name)
 	_, err = installdelegationdns.AwaitDeprovisionDNSDelegation(ctx, &installdelegationdns.DeprovisionDNSDelegationRequest{
 		Domain: outputs.DNS.PublicDomain.Name,
-	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("%s-deprovision-dns", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to deprovision dns delegation")
