@@ -9,8 +9,7 @@ import (
 
 func (s *Service) ListRoles(ctx context.Context, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(&ui.CLIUserError{Msg: "current org is not set, use `orgs select` to set one"})
 	}
 
 	view := ui.NewListView()

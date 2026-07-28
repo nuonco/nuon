@@ -2,7 +2,6 @@ package version
 
 import (
 	"context"
-	"fmt"
 	"runtime"
 	"runtime/debug"
 
@@ -35,6 +34,6 @@ func (s *Service) Version(ctx context.Context, asJSON bool) error {
 		return nil
 	}
 
-	fmt.Println(Version)
+	ui.Println(Version)
 	return nil
 }

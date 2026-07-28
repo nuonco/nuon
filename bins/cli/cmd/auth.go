@@ -18,7 +18,7 @@ func (c *cli) authCmd() *cobra.Command {
 	loginCmd := &cobra.Command{
 		Use:         "login",
 		Short:       "Login to Nuon",
-		Annotations: skipAuthAnnotation(),
+		Annotations: annotations(skipAuthAnnotation(), outputsAnnotation(OutputTable)),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := auth.New(c.apiClient, c.cfg)
 			return svc.Login(cmd.Context())
@@ -32,7 +32,7 @@ func (c *cli) authCmd() *cobra.Command {
 		Annotations: skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := auth.New(c.apiClient, c.cfg)
-			return svc.Logout(cmd.Context())
+			return svc.Logout(cmd.Context(), PrintJSON)
 		}),
 	}
 

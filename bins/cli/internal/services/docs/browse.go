@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/browser"
 
-	"github.com/nuonco/nuon/pkg/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 const (
@@ -13,12 +13,12 @@ const (
 )
 
 func (s *Service) Browse(ctx context.Context, asJSON bool) error {
-	ui.Line(ctx, "opening up docs")
 	if asJSON {
-		ui.Line(ctx, publicDocsSiteURL)
-	} else {
-		browser.OpenURL(publicDocsSiteURL)
+		ui.PrintJSON(map[string]string{"url": publicDocsSiteURL})
+		return nil
 	}
 
+	ui.PrintLn("opening up docs")
+	browser.OpenURL(publicDocsSiteURL)
 	return nil
 }
