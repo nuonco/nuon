@@ -45,7 +45,6 @@ func (c *clientAdapter) CreateHeartBeat(context.Context, *models.ServiceCreateRu
 func (c *clientAdapter) CreateHealthCheck(context.Context, *models.ServiceCreateRunnerHealthCheckRequest) (*models.AppRunnerHealthCheck, error) {
 	return nil, unsupported("CreateHealthCheck")
 }
-<<<<<<< HEAD
 func (c *clientAdapter) CreateComponentHealth(context.Context, *models.ServiceCreateComponentHealthRequest) (*models.ServiceCreateComponentHealthResponse, error) {
 	return nil, unsupported("CreateComponentHealth")
 }
@@ -58,9 +57,6 @@ func (c *clientAdapter) PutComponentHealthContext(context.Context, string, []str
 func (c *clientAdapter) GetComponentHealthContext(context.Context) (string, []string, error) {
 	return "", nil, unsupported("GetComponentHealthContext")
 }
-=======
-
->>>>>>> a04efd0c7 (feat: improve app branch run ui)
 func (c *clientAdapter) GetJobs(context.Context, models.AppRunnerJobGroup, models.AppRunnerJobStatus, *int64) ([]*models.AppRunnerJob, error) {
 	return nil, unsupported("GetJobs")
 }

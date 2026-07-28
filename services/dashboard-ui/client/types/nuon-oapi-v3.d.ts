@@ -356,8 +356,6 @@ export interface paths {
      */
     get: operations["GetAppBranchRunInstallGroups"];
   };
-<<<<<<< HEAD
-=======
   "/v1/apps/{app_id}/branches/{app_branch_id}/sync-install-configs": {
     /**
      * trigger install config sync from git
@@ -365,7 +363,6 @@ export interface paths {
      */
     post: operations["TriggerInstallConfigSync"];
   };
->>>>>>> f617b38a2 (chore: update)
   "/v1/apps/{app_id}/break-glass-configs": {
     /** @description Create a break glass config for an app. */
     post: operations["CreateAppBreakGlassConfig"];
@@ -1682,6 +1679,20 @@ export interface paths {
      * @description Enable or disable a toggleable component on an install. Enabling triggers a deploy workflow, disabling triggers a teardown workflow.
      */
     post: operations["ToggleInstallComponent"];
+  };
+  "/v1/installs/{install_id}/config-syncs": {
+    /**
+     * get config sync history for an install
+     * @description Returns the install config sync history, ordered by most recent first.
+     */
+    get: operations["GetInstallConfigSyncs"];
+  };
+  "/v1/installs/{install_id}/config-versions": {
+    /**
+     * get config versions for an install
+     * @description Returns the install config version history, ordered by most recent first.
+     */
+    get: operations["GetInstallConfigVersions"];
   };
   "/v1/installs/{install_id}/configs": {
     /**
@@ -3347,6 +3358,9 @@ export interface components {
       created_by_id?: string;
       id?: string;
       install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
+      installs_connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      installs_directory?: string;
+      installs_public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       org_id?: string;
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       updated_at?: string;
@@ -4364,6 +4378,7 @@ export interface components {
       updated_at?: string;
     };
     "app.InstallAppConfigVersion": {
+      app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
       created_at?: string;
       created_by_id?: string;
@@ -4468,6 +4483,47 @@ export interface components {
       stack_new_id?: string;
       stack_old_id?: string;
       unchanged?: components["schemas"]["app.ComponentDiffEntry"][];
+    };
+    "app.InstallConfigSync": {
+      app_branch_config_id?: string;
+      app_branch_id?: string;
+      app_branch_run?: components["schemas"]["app.AppBranchRun"];
+      app_branch_run_id?: string;
+      commit_sha?: string;
+      created_at?: string;
+      created_by_id?: string;
+      failed_installs?: number;
+      id?: string;
+      metadata?: {
+        [key: string]: string;
+      };
+      org_id?: string;
+      status?: components["schemas"]["app.CompositeStatus"];
+      synced_installs?: number;
+      total_installs?: number;
+      triggered_by?: string;
+      updated_at?: string;
+      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
+      versions?: components["schemas"]["app.InstallConfigVersion"][];
+      workflow?: components["schemas"]["app.Workflow"];
+      workflow_id?: string;
+    };
+    "app.InstallConfigVersion": {
+      created?: boolean;
+      created_at?: string;
+      created_by_id?: string;
+      diff?: components["schemas"]["blobstore.Blob"];
+      file_path?: string;
+      id?: string;
+      install_config_sync_id?: string;
+      install_id?: string;
+      install_name?: string;
+      metadata?: {
+        [key: string]: string;
+      };
+      org_id?: string;
+      status?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
     };
     "app.InstallDeploy": {
       action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
@@ -8143,6 +8199,9 @@ export interface components {
       /** @description skip builds step (e.g. rollback to existing config with existing builds) */
       skip_builds?: boolean;
     };
+    "service.TriggerInstallConfigSyncRequest": {
+      install_name?: string;
+    };
     "service.UpdateActionWorkflowRequest": {
       labels?: {
         [key: string]: string;
@@ -11227,8 +11286,6 @@ export interface operations {
       };
     };
   };
-<<<<<<< HEAD
-=======
   /**
    * trigger install config sync from git
    * @description Triggers a sync of install configs from the installs.toml VCS repo configured in the app config. Optionally specify install_name to sync a single install.
@@ -11289,7 +11346,6 @@ export interface operations {
       };
     };
   };
->>>>>>> f617b38a2 (chore: update)
   /** @description Create a break glass config for an app. */
   CreateAppBreakGlassConfig: {
     parameters: {
@@ -20940,6 +20996,106 @@ export interface operations {
       };
       /** @description Conflict */
       409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get config sync history for an install
+   * @description Returns the install config sync history, ordered by most recent first.
+   */
+  GetInstallConfigSyncs: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallConfigSync"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get config versions for an install
+   * @description Returns the install config version history, ordered by most recent first.
+   */
+  GetInstallConfigVersions: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallConfigVersion"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
