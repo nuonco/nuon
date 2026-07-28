@@ -12,6 +12,7 @@ import (
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -40,6 +41,7 @@ type Params struct {
 	FeaturesClient   *features.Features
 	QueueClient      *queueclient.Client
 	FlowsClient      *flowclient.Client
+	BlobService      blobstore.Service
 	EndpointAudit    *api.EndpointAudit
 }
 
@@ -60,6 +62,7 @@ type service struct {
 	featuresClient   *features.Features
 	queueClient      *queueclient.Client
 	flowsClient      *flowclient.Client
+	blobSvc          blobstore.Service
 }
 
 var _ api.Service = (*service)(nil)
@@ -167,6 +170,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		}
 
 		installs.POST("/sync-secrets", s.SyncSecrets)
+		installs.POST("/sync-config", s.SyncInstallConfig)
 
 		// install events
 		events := installs.Group("/events")
@@ -218,6 +222,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.GET("/app-config-versions", s.GetInstallAppConfigVersions)
 		installs.GET("/app-config-versions/:version_id/diff", s.GetInstallAppConfigVersionDiff)
 		installs.GET("/config-versions", s.GetInstallConfigVersions)
+		installs.GET("/config-versions/:version_id/diff", s.GetInstallConfigVersionDiff)
 		installs.GET("/config-syncs", s.GetInstallConfigSyncs)
 		installs.POST("/app-config-updates", s.CreateInstallAppConfigUpdate)
 
@@ -370,6 +375,7 @@ func New(params Params) *service {
 		actionsHelpers:   params.ActionsHelpers,
 		featuresClient:   params.FeaturesClient,
 		flowsClient:      params.FlowsClient,
+		blobSvc:          params.BlobService,
 	}
 }
 

@@ -35,7 +35,7 @@ func Sync(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, cfg
 	}
 
 	for _, branchCfg := range branches {
-		if err := syncSingleBranch(ctx, db, appsHelper, branchCfg, existingByName, appID); err != nil {
+		if err := syncSingleBranch(ctx, db, appsHelper, branchCfg, existingByName, appID, cfg.InstallsConfig); err != nil {
 			return err
 		}
 	}
@@ -43,7 +43,7 @@ func Sync(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, cfg
 	return nil
 }
 
-func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, branchCfg *config.AppBranchConfig, existingByName map[string]*app.AppBranch, appID string) error {
+func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, branchCfg *config.AppBranchConfig, existingByName map[string]*app.AppBranch, appID string, installsConfig *config.InstallsConfig) error {
 	existing, found := existingByName[branchCfg.Name]
 
 	var branchID string
@@ -145,7 +145,9 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		return err
 	}
 
-	if _, err := appsHelper.CreateAppBranchConfig(ctx, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups); err != nil {
+	installsOpts := buildInstallsVCSConfigOpts(ctx, vcsHelper, installsConfig, parentApp.Org)
+
+	if _, err := appsHelper.CreateAppBranchConfig(ctx, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, installsOpts); err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create config for branch %q", branchCfg.Name),
 			Err:         err,
@@ -214,6 +216,38 @@ func resolveInstallNames(ctx context.Context, db *gorm.DB, appID string) (map[st
 		}
 	}
 	return nameToID, nil
+}
+
+func buildInstallsVCSConfigOpts(ctx context.Context, vcsHelper *vcshelpers.Helpers, installsConfig *config.InstallsConfig, org *app.Org) *appshelpers.CreateAppBranchConfigOptions {
+	if installsConfig == nil {
+		return nil
+	}
+
+	opts := &appshelpers.CreateAppBranchConfigOptions{}
+
+	if installsConfig.ConnectedRepo != nil {
+		cfg, err := vcsHelper.BuildConnectedGithubVCSConfig(ctx, &vcshelpers.ConnectedGithubVCSConfigRequest{
+			Repo:      installsConfig.ConnectedRepo.Repo,
+			Branch:    installsConfig.ConnectedRepo.Branch,
+			Directory: installsConfig.ConnectedRepo.Directory,
+		}, org)
+		if err == nil {
+			opts.InstallsConnectedGithubVCSConfig = cfg
+		}
+	}
+
+	if installsConfig.PublicRepo != nil {
+		cfg, err := vcsHelper.BuildPublicGitVCSConfig(ctx, &vcshelpers.PublicGitVCSConfigRequest{
+			Repo:      installsConfig.PublicRepo.Repo,
+			Branch:    installsConfig.PublicRepo.Branch,
+			Directory: installsConfig.PublicRepo.Directory,
+		})
+		if err == nil {
+			opts.InstallsPublicGitVCSConfig = cfg
+		}
+	}
+
+	return opts
 }
 
 func getAllBranches(cfg *config.AppConfig) []*config.AppBranchConfig {

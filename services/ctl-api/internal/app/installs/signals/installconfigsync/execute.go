@@ -2,31 +2,30 @@ package installconfigsync
 
 import (
 	"fmt"
-	"path/filepath"
-	"strings"
 
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	logger := workflow.GetLogger(ctx)
 
-	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
+	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
-		return fmt.Errorf("unable to get app branch: %w", err)
+		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	vcsResult, err := activities.AwaitGetInstallsVCSConfigByAppID(ctx, branch.AppID)
+	vcsResult, err := activities.AwaitGetInstallsVCSConfigByAppID(ctx, install.AppID)
 	if err != nil {
 		return fmt.Errorf("unable to get installs VCS config: %w", err)
 	}
 
 	if !vcsResult.HasVCSConfig {
-		logger.Info("no installs VCS config in app config, skipping install config sync")
+		logger.Info("no installs VCS config in app config, skipping")
+		s.updateStepStatus(ctx, app.StatusSuccess, "no installs config", nil)
 		return nil
 	}
 
@@ -36,10 +35,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	syncRecord, err := activities.AwaitCreateInstallConfigSync(ctx, &activities.CreateInstallConfigSyncInput{
+		InstallID:         s.InstallID,
 		AppBranchID:       s.AppBranchID,
 		AppBranchConfigID: s.AppBranchConfigID,
 		AppBranchRunID:    s.AppBranchRunID,
-		CommitSHA:         s.CommitSHA,
 		TriggeredBy:       s.TriggeredBy,
 	})
 	if err != nil {
@@ -47,15 +46,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// TODO(jm): remove hardcoded local path once network clone is working
-	sourceDir := "/Users/jonmorehouse/nuon/demo/kitchen-sink"
+	sourceDir := "/Users/jonmorehouse/nuon/kitchen-sink"
 
 	installConfigs, err := activities.AwaitParseInstallConfigs(ctx, activities.ParseInstallConfigsRequest{
 		SourceDir: sourceDir,
 		Req: &activities.ParseInstallConfigsInput{
 			SourceDir:         sourceDir,
 			InstallsDirectory: installsDir,
-			InstallName:       s.InstallName,
-			ChangedFiles:      s.ChangedFiles,
+			InstallName:       install.Name,
 		},
 	})
 	if err != nil {
@@ -63,13 +61,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	if len(installConfigs.Installs) == 0 {
-		logger.Info("no install configs found to sync")
+		logger.Info("no install config found to sync")
 		_ = activities.AwaitUpdateInstallConfigSyncStatus(ctx, &activities.UpdateInstallConfigSyncStatusInput{
 			InstallConfigSyncID: syncRecord.ID,
 			Status:              string(app.StatusSuccess),
-			StatusDescription:   "no install configs found",
+			StatusDescription:   "no install config found",
 		})
-		s.updateStepStatus(ctx, app.StatusSuccess, "no install configs found", nil)
+		s.updateStepStatus(ctx, app.StatusSuccess, "no install config found", nil)
 		return nil
 	}
 
@@ -79,7 +77,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	for _, ic := range installConfigs.Installs {
 		result, err := activities.AwaitSyncInstallConfig(ctx, &activities.SyncInstallConfigInput{
-			AppID:               branch.AppID,
+			AppID:               install.AppID,
 			InstallConfig:       ic.Config,
 			InstallConfigSyncID: syncRecord.ID,
 			FilePath:            ic.FilePath,
@@ -87,7 +85,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		if err != nil {
 			logger.Warn("failed to sync install config",
 				"install_name", ic.Config.Name,
-				"file_path", ic.FilePath,
 				"error", err,
 			)
 			failed++
@@ -114,8 +111,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	_ = activities.AwaitUpdateInstallConfigSyncStatus(ctx, &activities.UpdateInstallConfigSyncStatusInput{
 		InstallConfigSyncID: syncRecord.ID,
-		SyncedInstalls:      synced,
-		FailedInstalls:      failed,
 		Status:              string(finalStatus),
 		StatusDescription:   desc,
 	})
@@ -126,13 +121,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"failed":  failed,
 		"total":   len(installConfigs.Installs),
 	})
-
-	logger.Info("install config sync completed",
-		"synced", synced,
-		"created", created,
-		"failed", failed,
-		"total", len(installConfigs.Installs),
-	)
 
 	if failed > 0 {
 		return fmt.Errorf("install config sync had %d failures", failed)
@@ -154,10 +142,4 @@ func (s *Signal) updateStepStatus(ctx workflow.Context, status app.Status, desc 
 			Metadata:               metadata,
 		},
 	})
-}
-
-func matchesInstallsDirectory(filePath, installsDir string) bool {
-	dir := filepath.Dir(filePath)
-	installsDir = strings.TrimSuffix(installsDir, "/")
-	return dir == installsDir || strings.HasPrefix(dir, installsDir+"/")
 }

@@ -598,21 +598,38 @@ export type TInstallConfigVersion = {
   status?: { status: string; status_human_description?: string }
   diff?: unknown
   metadata?: Record<string, string>
+  install_config_sync?: TInstallConfigSync
 }
 
 export type TInstallConfigSync = {
   id: string
   created_at: string
+  install_id?: string
   app_branch_id: string
   app_branch_run_id?: string
-  commit_sha?: string
   triggered_by: string
   status?: { status: string; status_human_description?: string }
-  total_installs: number
-  synced_installs: number
-  failed_installs: number
   versions?: TInstallConfigVersion[]
-  vcs_connection_commit?: { sha: string; message?: string; author?: string }
+  vcs_connection_commit?: {
+    sha?: string
+    message?: string
+    author_name?: string
+    author_email?: string
+  }
+}
+
+// install config diff tree (from pkg/config/diff)
+export type TConfigDiffKey = {
+  op: 'add' | 'remove' | 'change' | 'noop' | ''
+  diff: string
+  before?: string
+  after?: string
+}
+
+export type TConfigDiffNode = {
+  key: string
+  diff?: TConfigDiffKey
+  children?: TConfigDiffNode[]
 }
 
 // install group runs

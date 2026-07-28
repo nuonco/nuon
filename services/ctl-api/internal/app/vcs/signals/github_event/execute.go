@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/installconfigsync"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/syncinstalls"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/vcspush"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -96,24 +96,21 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 	for _, match := range matches {
 		if match.MatchType == "installs-config" {
 			_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-				OwnerID:   match.AppBranchID,
-				OwnerType: "app_branches",
-				Signal: &installconfigsync.Signal{
+				OwnerID:   match.AppID,
+				OwnerType: "apps",
+				Signal: &syncinstalls.Signal{
 					AppBranchID:         match.AppBranchID,
 					AppBranchConfigID:   match.AppBranchConfigID,
-					ChangedFiles:        changedFiles,
 					CommitSHA:           headSHA,
 					TriggeredBy:         "vcs-push",
-					PusherEmails:        pusherEmails,
-					SenderLogin:         senderLogin,
 					FallbackCreatedByID: connEvent.CreatedByID,
 				},
 			})
 			if err != nil {
-				l.Error(fmt.Sprintf("failed to enqueue install-config-sync signal for app branch %s: %v", match.AppBranchID, err))
+				l.Error(fmt.Sprintf("failed to enqueue sync-installs signal for app %s: %v", match.AppID, err))
 				continue
 			}
-			l.Info(fmt.Sprintf("enqueued install-config-sync signal for app branch %s", match.AppBranchID))
+			l.Info(fmt.Sprintf("enqueued sync-installs signal for app %s", match.AppID))
 			continue
 		}
 

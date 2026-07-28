@@ -11,9 +11,9 @@ import (
 	appconfig "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/appconfig"
 	builds "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
 	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/installconfigsync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/planinstallgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/setuppreview"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/syncinstalls"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 )
 
@@ -118,7 +118,7 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 
 	// Step 4: Sync install configs from VCS (if installs VCS config is set)
 	sg.nextGroup()
-	syncStep, err := sg.appBranchSignalStep(ctx, appBranchID, "sync install configs", pgtype.Hstore{}, &installconfigsync.Signal{
+	syncStep, err := sg.appBranchSignalStep(ctx, appBranchID, "sync install configs", pgtype.Hstore{}, &syncinstalls.Signal{
 		AppBranchID:       appBranchID,
 		AppBranchConfigID: configID,
 		AppBranchRunID:    runID,

@@ -22,6 +22,9 @@ type InstallConfigSync struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
+	InstallID string  `json:"install_id,omitzero" gorm:"default:null" temporaljson:"install_id,omitzero,omitempty"`
+	Install   Install `faker:"-" json:"-" temporaljson:"install,omitzero,omitempty"`
+
 	AppBranchID string    `json:"app_branch_id,omitzero" gorm:"not null" temporaljson:"app_branch_id,omitzero,omitempty"`
 	AppBranch   AppBranch `faker:"-" json:"-" temporaljson:"app_branch,omitzero,omitempty"`
 
@@ -29,23 +32,14 @@ type InstallConfigSync struct {
 	AppBranchConfig   AppBranchConfig `faker:"-" json:"-" temporaljson:"app_branch_config,omitzero,omitempty"`
 
 	AppBranchRunID *string      `json:"app_branch_run_id,omitempty" temporaljson:"app_branch_run_id,omitzero,omitempty"`
-	AppBranchRun   AppBranchRun `faker:"-" json:"app_branch_run,omitempty" temporaljson:"app_branch_run,omitzero,omitempty"`
-
-	WorkflowID *string   `json:"workflow_id,omitempty" temporaljson:"workflow_id,omitzero,omitempty"`
-	Workflow   *Workflow `json:"workflow,omitempty" temporaljson:"workflow,omitzero,omitempty"`
+	AppBranchRun   AppBranchRun `faker:"-" json:"-" temporaljson:"app_branch_run,omitzero,omitempty"`
 
 	VCSConnectionCommitID *string              `json:"vcs_connection_commit_id,omitempty" swaggerignore:"true" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
 	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit,omitempty" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
 
-	CommitSHA string `json:"commit_sha,omitempty" temporaljson:"commit_sha,omitzero,omitempty"`
-
 	TriggeredBy string `json:"triggered_by,omitzero" gorm:"not null;default:'manual'" temporaljson:"triggered_by,omitzero,omitempty"`
 
 	Status CompositeStatus `json:"status,omitzero" gorm:"type:jsonb" temporaljson:"status,omitzero,omitempty"`
-
-	TotalInstalls  int `json:"total_installs,omitzero" temporaljson:"total_installs,omitzero,omitempty"`
-	SyncedInstalls int `json:"synced_installs,omitzero" temporaljson:"synced_installs,omitzero,omitempty"`
-	FailedInstalls int `json:"failed_installs,omitzero" temporaljson:"failed_installs,omitzero,omitempty"`
 
 	Metadata map[string]string `json:"metadata,omitempty" gorm:"type:jsonb;default:null;serializer:json" temporaljson:"metadata,omitzero,omitempty"`
 
@@ -57,6 +51,10 @@ func (i *InstallConfigSync) Indexes(db *gorm.DB) []migrations.Index {
 		{
 			Name:    indexes.Name(db, &InstallConfigSync{}, "org_id"),
 			Columns: []string{"org_id"},
+		},
+		{
+			Name:    indexes.Name(db, &InstallConfigSync{}, "install_id"),
+			Columns: []string{"install_id"},
 		},
 		{
 			Name:    indexes.Name(db, &InstallConfigSync{}, "app_branch_id"),

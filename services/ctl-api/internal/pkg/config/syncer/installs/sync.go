@@ -26,6 +26,9 @@ func SyncInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelper
 	var existing app.Install
 	err := db.WithContext(ctx).
 		Preload("InstallConfig").
+		Preload("AWSAccount").
+		Preload("GCPAccount").
+		Preload("AzureAccount").
 		Where(app.Install{AppID: appID, Name: install.Name}).
 		First(&existing).Error
 
@@ -150,25 +153,35 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		len(installCfg.ComponentToggles) > 0
 
 	if hasConfigFields {
-		icParams := &installhelpers.CreateInstallConfigParams{}
+		updates := map[string]any{}
 		if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown {
-			icParams.ApprovalOption = app.InstallApprovalOption(installCfg.ApprovalOption)
+			updates["approval_option"] = string(installCfg.ApprovalOption)
 		}
 		if installCfg.StackOverrides != nil {
 			if installCfg.StackOverrides.VPCNestedTemplateURL != "" {
 				url := installCfg.StackOverrides.VPCNestedTemplateURL
-				icParams.VPCNestedTemplateURL = &url
+				updates["vpc_nested_template_url"] = &url
 			}
 			if installCfg.StackOverrides.RunnerNestedTemplateURL != "" {
 				url := installCfg.StackOverrides.RunnerNestedTemplateURL
-				icParams.RunnerNestedTemplateURL = &url
+				updates["runner_nested_template_url"] = &url
 			}
 			if len(installCfg.StackOverrides.CustomNestedStacks) > 0 {
-				icParams.CustomNestedStacks = installCfg.StackOverrides.CustomNestedStacks
+				updates["custom_nested_stacks"] = installCfg.StackOverrides.CustomNestedStacks
 			}
 		}
-		if _, err := installHelpers.CreateInstallConfig(ctx, existing.ID, icParams); err != nil {
-			return nil, fmt.Errorf("unable to update config for install %s: %w", installCfg.Name, err)
+
+		if len(updates) > 0 && existing.InstallConfig != nil {
+			db.WithContext(ctx).Model(&app.InstallConfig{}).
+				Where("id = ?", existing.InstallConfig.ID).
+				Updates(updates)
+		} else if len(updates) > 0 {
+			icParams := &installhelpers.CreateInstallConfigParams{
+				ApprovalOption: app.InstallApprovalOption(installCfg.ApprovalOption),
+			}
+			if _, err := installHelpers.CreateInstallConfig(ctx, existing.ID, icParams); err != nil {
+				return nil, fmt.Errorf("unable to create config for install %s: %w", installCfg.Name, err)
+			}
 		}
 	}
 

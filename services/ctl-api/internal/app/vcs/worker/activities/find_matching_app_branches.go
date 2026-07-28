@@ -15,6 +15,7 @@ type FindMatchingAppBranchesRequest struct {
 }
 
 type MatchingAppBranch struct {
+	AppID             string `json:"app_id"`
 	AppBranchID       string `json:"app_branch_id"`
 	AppBranchConfigID string `json:"app_branch_config_id"`
 	MatchType         string `json:"match_type"` // "app-config" or "installs-config"
@@ -65,7 +66,7 @@ func (a *Activities) findMatchesByConfigType(ctx context.Context, req FindMatchi
 	// Match via connected_github_vcs_configs
 	err := a.db.WithContext(ctx).
 		Table("connected_github_vcs_configs").
-		Select("app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id, ? as match_type", matchType).
+		Select("app_branches.app_id, app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id, ? as match_type", matchType).
 		Joins("JOIN app_branch_configs ON app_branch_configs.id = connected_github_vcs_configs.component_config_id AND connected_github_vcs_configs.component_config_type = ?", configType).
 		Joins("JOIN app_branches ON app_branches.id = app_branch_configs.app_branch_id AND app_branches.deleted_at = 0").
 		Where("connected_github_vcs_configs.org_id = ?", req.OrgID).
@@ -83,7 +84,7 @@ func (a *Activities) findMatchesByConfigType(ctx context.Context, req FindMatchi
 	var publicResults []MatchingAppBranch
 	err = a.db.WithContext(ctx).
 		Table("public_git_vcs_configs").
-		Select("app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id, ? as match_type", matchType).
+		Select("app_branches.app_id, app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id, ? as match_type", matchType).
 		Joins("JOIN app_branch_configs ON app_branch_configs.id = public_git_vcs_configs.component_config_id AND public_git_vcs_configs.component_config_type = ?", configType).
 		Joins("JOIN app_branches ON app_branches.id = app_branch_configs.app_branch_id AND app_branches.deleted_at = 0").
 		Where("app_branch_configs.org_id = ?", req.OrgID).

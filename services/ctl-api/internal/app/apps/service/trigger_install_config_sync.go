@@ -10,7 +10,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/installconfigsync"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigsync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -103,29 +104,47 @@ func (s *service) TriggerInstallConfigSync(ctx *gin.Context) {
 		return
 	}
 
-	queue, err := s.queueClient.GetQueueByOwner(ctx, branchID, "app_branches")
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to find queue for app branch: %w", err))
+	var installs []app.Install
+	query := s.db.WithContext(ctx).Where(app.Install{AppID: appID, OrgID: org.ID})
+	if req.InstallName != "" {
+		query = query.Where(app.Install{Name: req.InstallName})
+	}
+	if err := query.Find(&installs).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to get installs: %w", err))
 		return
 	}
 
-	_, err = s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID:   queue.ID,
-		OwnerID:   branchID,
-		OwnerType: "app_branches",
-		Signal: &installconfigsync.Signal{
-			AppBranchID:       branchID,
-			AppBranchConfigID: configID,
-			InstallName:       req.InstallName,
-			TriggeredBy:       "manual",
-		},
-	})
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to enqueue install config sync: %w", err))
+	if len(installs) == 0 {
+		ctx.Error(fmt.Errorf("no installs found for app"))
 		return
+	}
+
+	enqueued := 0
+	for _, install := range installs {
+		queue, err := s.queueClient.GetQueueByOwnerAndName(ctx, install.ID, "installs", helpers.InstallSignalsQueueName)
+		if err != nil {
+			continue
+		}
+
+		_, err = s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+			QueueID:   queue.ID,
+			OwnerID:   install.ID,
+			OwnerType: "installs",
+			Signal: &installconfigsync.Signal{
+				InstallID:         install.ID,
+				AppBranchID:       branchID,
+				AppBranchConfigID: configID,
+				TriggeredBy:       "manual",
+			},
+		})
+		if err != nil {
+			continue
+		}
+		enqueued++
 	}
 
 	ctx.JSON(http.StatusAccepted, map[string]string{
-		"status": "enqueued",
+		"status":   "enqueued",
+		"enqueued": fmt.Sprintf("%d", enqueued),
 	})
 }

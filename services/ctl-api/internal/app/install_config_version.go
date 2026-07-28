@@ -24,7 +24,7 @@ type InstallConfigVersion struct {
 	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	InstallConfigSyncID string            `json:"install_config_sync_id,omitzero" gorm:"not null" temporaljson:"install_config_sync_id,omitzero,omitempty"`
-	InstallConfigSync   InstallConfigSync `faker:"-" json:"-" temporaljson:"install_config_sync,omitzero,omitempty"`
+	InstallConfigSync   InstallConfigSync `faker:"-" json:"install_config_sync,omitempty" temporaljson:"install_config_sync,omitzero,omitempty"`
 
 	InstallID   string  `json:"install_id,omitzero" gorm:"not null" temporaljson:"install_id,omitzero,omitempty"`
 	Install     Install `faker:"-" json:"-" temporaljson:"install,omitzero,omitempty"`

@@ -232,6 +232,7 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		connectedGithubVCSConfig,
 		publicGitVCSConfig,
 		installGroups,
+		nil, // no installs VCS config from API
 	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch config: %w", err))

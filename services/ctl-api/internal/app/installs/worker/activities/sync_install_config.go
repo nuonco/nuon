@@ -34,7 +34,7 @@ type SyncInstallConfigOutput struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 2m
 func (a *Activities) SyncInstallConfig(ctx context.Context, input *SyncInstallConfigInput) (*SyncInstallConfigOutput, error) {
-	result, err := installs.SyncInstall(ctx, a.db, a.installHelpers, input.AppID, input.InstallConfig)
+	result, err := installs.SyncInstall(ctx, a.db, a.helpers, input.AppID, input.InstallConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to sync install config %s: %w", input.InstallConfig.Name, err)
 	}
@@ -114,6 +114,3 @@ func (a *Activities) saveInstallConfigDiffBlob(ctx context.Context, installConfi
 
 	return nil
 }
-
-// Ensure unused imports are consumed
-var _ = installs.SyncInstall

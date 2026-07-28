@@ -2033,6 +2033,13 @@ export interface paths {
      */
     get: operations["GetInstallStateHistory"];
   };
+  "/v1/installs/{install_id}/sync-config": {
+    /**
+     * trigger install config sync for a single install
+     * @description Triggers a sync of this install's config from git.
+     */
+    post: operations["SyncInstallConfig"];
+  };
   "/v1/installs/{install_id}/sync-secrets": {
     /**
      * sync secrets install
@@ -23787,6 +23794,58 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallState"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * trigger install config sync for a single install
+   * @description Triggers a sync of this install's config from git.
+   */
+  SyncInstallConfig: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
         };
       };
       /** @description Bad Request */

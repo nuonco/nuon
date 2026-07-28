@@ -1,4 +1,4 @@
-package installconfigsync
+package syncinstalls
 
 import (
 	"github.com/go-playground/validator/v10"
@@ -9,22 +9,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "install-config-sync"
+const SignalType signal.SignalType = "sync-installs"
 
 type Signal struct {
 	AppBranchID       string `json:"app_branch_id" validate:"required"`
 	AppBranchConfigID string `json:"app_branch_config_id" validate:"required"`
+	AppBranchRunID    string `json:"app_branch_run_id,omitempty"`
 
-	InstallName  string   `json:"install_name,omitempty"`
-	ChangedFiles []string `json:"changed_files,omitempty"`
-	CommitSHA    string   `json:"commit_sha,omitempty"`
-	TriggeredBy  string   `json:"triggered_by"`
+	CommitSHA   string `json:"commit_sha,omitempty"`
+	TriggeredBy string `json:"triggered_by"`
 
-	AppBranchRunID string `json:"app_branch_run_id,omitempty"`
-
-	PusherEmails        []string `json:"pusher_emails,omitempty"`
-	SenderLogin         string   `json:"sender_login,omitempty"`
-	FallbackCreatedByID string   `json:"fallback_created_by_id,omitempty"`
+	FallbackCreatedByID string `json:"fallback_created_by_id,omitempty"`
 
 	FlowID string `json:"flow_id,omitempty"`
 	StepID string `json:"step_id,omitempty"`

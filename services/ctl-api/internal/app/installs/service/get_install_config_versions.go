@@ -37,6 +37,7 @@ func (s *service) GetInstallConfigVersions(ctx *gin.Context) {
 	var versions []app.InstallConfigVersion
 	res := s.db.WithContext(ctx).
 		Preload("InstallConfigSync").
+		Preload("InstallConfigSync.VCSConnectionCommit").
 		Where(app.InstallConfigVersion{
 			InstallID: installID,
 			OrgID:     org.ID,
