@@ -14,6 +14,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
 const (
@@ -49,6 +50,11 @@ const (
 	// InstallActionCronSignalsQueueName is the queue for action cron emitter signals.
 	// Separate from install-signals so action crons don't compete with other signals.
 	InstallActionCronSignalsQueueName = "install-action-cron-signals"
+
+	// InstallComponentHealthQueueName is the queue for the periodic component
+	// health evaluator. Its own queue (MaxInFlight 1) so evaluations never
+	// overlap and never compete with deploys or other signals.
+	InstallComponentHealthQueueName = "install-component-health"
 )
 
 type Params struct {
@@ -64,6 +70,7 @@ type Params struct {
 	AppsHelpers      *appshelpers.Helpers
 	RunnersHelpers   *runnershelpers.Helpers
 	QueueClient      *queueclient.Client
+	EmitterClient    *emitterclient.Client
 	FeaturesClient   *features.Features
 }
 
@@ -77,6 +84,7 @@ type Helpers struct {
 	runbooksHelpers  *runbookshelpers.Helpers
 	db               *gorm.DB
 	queueClient      *queueclient.Client
+	emitterClient    *emitterclient.Client
 	featuresClient   *features.Features
 }
 
@@ -91,6 +99,7 @@ func New(params Params) *Helpers {
 		appsHelpers:      params.AppsHelpers,
 		db:               params.DB,
 		queueClient:      params.QueueClient,
+		emitterClient:    params.EmitterClient,
 		featuresClient:   params.FeaturesClient,
 	}
 }

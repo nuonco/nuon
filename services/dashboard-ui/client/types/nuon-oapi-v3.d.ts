@@ -4218,11 +4218,22 @@ export interface components {
       aws_account?: components["schemas"]["app.AWSAccount"];
       azure_account?: components["schemas"]["app.AzureAccount"];
       cloud_platform?: string;
+      component_health_statuses?: {
+        [key: string]: string;
+      };
       component_statuses?: {
         [key: string]: string;
       };
       composite_component_status?: string;
       composite_component_status_description?: string;
+      /**
+       * @description CompositeHealthStatus is the live-health rollup of the install's
+       * components — a parallel axis to CompositeComponentStatus (deploy
+       * lifecycle), never merged with it. Empty until the component-health
+       * evaluator has produced verdicts.
+       */
+      composite_health_status?: string;
+      composite_health_status_description?: string;
       created_at?: string;
       created_by_id?: string;
       drifted_objects?: components["schemas"]["app.DriftedObject"][];
@@ -4392,6 +4403,9 @@ export interface components {
        * the component's default_enabled). It is nil for non-toggleable components.
        */
       enabled?: boolean | null;
+      health_status?: string;
+      health_status_description?: string;
+      health_status_v2?: components["schemas"]["app.CompositeStatus"];
       helm_chart?: components["schemas"]["app.HelmChart"];
       id?: string;
       install_deploys?: components["schemas"]["app.InstallDeploy"][];

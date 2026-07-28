@@ -20,6 +20,11 @@ const (
 	InstallComponentResourceHealthUnknown     InstallComponentResourceHealth = "unknown"
 )
 
+const (
+	InstallComponentResourceSourceComponent = "component"
+	InstallComponentResourceSourceSandbox   = "sandbox"
+)
+
 // InstallComponentResourceState is a ClickHouse observation row: one per resource
 // the runner's component-health watch engine reports for an install component. The
 // latest-state view collapses to the most recent observation per resource identity.

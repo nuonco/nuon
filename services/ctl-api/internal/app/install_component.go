@@ -32,6 +32,22 @@ const (
 	InstallComponentStatusDisabled  InstallComponentStatus = "disabled"
 )
 
+// InstallComponentHealthStatus is the live-health axis of an install component,
+// derived from runner-reported resource observations by the component-health
+// evaluator. It is intentionally separate from the deploy/lifecycle Status and
+// never overwrites it (or vice versa). Empty until the evaluator first runs.
+type InstallComponentHealthStatus string
+
+const (
+	InstallComponentHealthStatusUnset         InstallComponentHealthStatus = ""
+	InstallComponentHealthStatusHealthy       InstallComponentHealthStatus = "healthy"
+	InstallComponentHealthStatusProgressing   InstallComponentHealthStatus = "progressing"
+	InstallComponentHealthStatusDegraded      InstallComponentHealthStatus = "degraded"
+	InstallComponentHealthStatusUnhealthy     InstallComponentHealthStatus = "unhealthy"
+	InstallComponentHealthStatusUnknown       InstallComponentHealthStatus = "unknown"
+	InstallComponentHealthStatusNotApplicable InstallComponentHealthStatus = "not-applicable"
+)
+
 type InstallComponent struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -61,6 +77,10 @@ type InstallComponent struct {
 	StatusDescription string                 `json:"status_description,omitzero" gorm:"default:''" temporaljson:"status_description,omitzero,omitempty"`
 	StatusV2          CompositeStatus        `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
+	HealthStatus            InstallComponentHealthStatus `json:"health_status,omitzero" gorm:"default:''" swaggertype:"string" temporaljson:"health_status,omitzero,omitempty"`
+	HealthStatusDescription string                       `json:"health_status_description,omitzero" gorm:"-" temporaljson:"health_status_description,omitzero,omitempty"`
+	HealthStatusV2          CompositeStatus              `json:"health_status_v2,omitzero" gorm:"type:jsonb" temporaljson:"health_status_v2,omitzero,omitempty"`
+
 	// Enabled is the resolved enabled/disabled state for a toggleable component
 	// on this install (from the synthetic enabled install input, falling back to
 	// the component's default_enabled). It is nil for non-toggleable components.
@@ -68,16 +88,17 @@ type InstallComponent struct {
 }
 
 type InstallComponentSummary struct {
-	ID                      string                     `json:"id"`
-	ComponentID             string                     `json:"component_id"`
-	ComponentName           string                     `json:"component_name"`
-	DeployStatus            InstallDeployStatus        `json:"deploy_status"`
-	DeployStatusDescription string                     `json:"deploy_status_description"`
-	BuildStatus             ComponentBuildStatus       `json:"build_status"`
-	BuildStatusDescription  string                     `json:"build_status_description"`
-	ComponentConfig         *ComponentConfigConnection `json:"component_config"`
-	Dependencies            []Component                `json:"dependencies"`
-	DriftedStatus           bool                       `json:"drifted_status"`
+	ID                      string                       `json:"id"`
+	ComponentID             string                       `json:"component_id"`
+	ComponentName           string                       `json:"component_name"`
+	DeployStatus            InstallDeployStatus          `json:"deploy_status"`
+	DeployStatusDescription string                       `json:"deploy_status_description"`
+	BuildStatus             ComponentBuildStatus         `json:"build_status"`
+	BuildStatusDescription  string                       `json:"build_status_description"`
+	ComponentConfig         *ComponentConfigConnection   `json:"component_config"`
+	Dependencies            []Component                  `json:"dependencies"`
+	DriftedStatus           bool                         `json:"drifted_status"`
+	HealthStatus            InstallComponentHealthStatus `json:"health_status"`
 }
 
 func (c *InstallComponent) Indexes(db *gorm.DB) []migrations.Index {
@@ -102,6 +123,11 @@ func (c *InstallComponent) AfterQuery(tx *gorm.DB) error {
 	if c.StatusV2.Status != "" {
 		c.Status = InstallComponentStatus(c.StatusV2.Status)
 		c.StatusDescription = c.StatusV2.StatusHumanDescription
+	}
+
+	if c.HealthStatusV2.Status != "" {
+		c.HealthStatus = InstallComponentHealthStatus(c.HealthStatusV2.Status)
+		c.HealthStatusDescription = c.HealthStatusV2.StatusHumanDescription
 	}
 
 	return nil

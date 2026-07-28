@@ -40,6 +40,15 @@ type AppInstallComponent struct {
 	// the component's default_enabled). It is nil for non-toggleable components.
 	Enabled *bool `json:"enabled,omitempty"`
 
+	// health status
+	HealthStatus string `json:"health_status,omitempty"`
+
+	// health status description
+	HealthStatusDescription string `json:"health_status_description,omitempty"`
+
+	// health status v2
+	HealthStatusV2 *AppCompositeStatus `json:"health_status_v2,omitempty"`
+
 	// helm chart
 	HelmChart *AppHelmChart `json:"helm_chart,omitempty"`
 
@@ -80,6 +89,10 @@ func (m *AppInstallComponent) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateDriftedObject(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateHealthStatusV2(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -142,6 +155,29 @@ func (m *AppInstallComponent) validateDriftedObject(formats strfmt.Registry) err
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("drifted_object")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallComponent) validateHealthStatusV2(formats strfmt.Registry) error {
+	if swag.IsZero(m.HealthStatusV2) { // not required
+		return nil
+	}
+
+	if m.HealthStatusV2 != nil {
+		if err := m.HealthStatusV2.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("health_status_v2")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("health_status_v2")
 			}
 
 			return err
@@ -262,6 +298,10 @@ func (m *AppInstallComponent) ContextValidate(ctx context.Context, formats strfm
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateHealthStatusV2(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateHelmChart(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -325,6 +365,31 @@ func (m *AppInstallComponent) contextValidateDriftedObject(ctx context.Context, 
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("drifted_object")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallComponent) contextValidateHealthStatusV2(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.HealthStatusV2 != nil {
+
+		if swag.IsZero(m.HealthStatusV2) { // not required
+			return nil
+		}
+
+		if err := m.HealthStatusV2.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("health_status_v2")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("health_status_v2")
 			}
 
 			return err

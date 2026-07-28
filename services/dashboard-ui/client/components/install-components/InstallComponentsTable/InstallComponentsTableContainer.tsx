@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
@@ -7,10 +6,8 @@ import { ComponentTypeFilterDropdown } from '@/components/components/ComponentTy
 import { useInstall } from '@/hooks/use-install'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallComponents, getComponentLabelKeys, getInstallResources } from '@/lib'
-import type { TInstallResource } from '@/types'
+import { getInstallComponents, getComponentLabelKeys } from '@/lib'
 import { parseComponentOverrideInput } from '@/utils/install-utils'
-import { getWorstStatusTheme } from '@/utils/status-utils'
 import { InstallComponentsTable, parseInstallComponentSummaryToTableData } from './InstallComponentsTable'
 
 const LIMIT = 10
@@ -68,30 +65,6 @@ export const InstallComponentsTableContainer = ({
 
   const showHealth = !!org?.features?.['component-health']
 
-  const { data: resources } = useQuery({
-    queryKey: ['install-resources-health', org?.id, install?.id],
-    queryFn: () => getInstallResources({ orgId: org.id, installId: install.id }),
-    refetchInterval: shouldPoll ? pollInterval : false,
-    enabled: showHealth && !!org?.id && !!install?.id,
-  })
-
-  const componentHealth = useMemo(() => {
-    const byComponent: Record<string, TInstallResource[]> = {}
-    for (const r of resources ?? []) {
-      if (r?.source && r.source !== 'component') continue
-      const componentId = r?.component_id
-      if (!componentId) continue
-      ;(byComponent[componentId] ??= []).push(r)
-    }
-    const out: Record<string, { health: string; message: string }> = {}
-    for (const [componentId, list] of Object.entries(byComponent)) {
-      const worst = getWorstStatusTheme(list.map((r) => r?.health)).worstStatus
-      const message = list.find((r) => r?.health === worst)?.message ?? ''
-      out[componentId] = { health: worst, message }
-    }
-    return out
-  }, [resources])
-
   const { appConfig: configResult } = useInstallAppConfig()
 
   const components = componentsResult?.data ?? []
@@ -136,7 +109,6 @@ export const InstallComponentsTableContainer = ({
     componentToggles,
     labelColors,
     overriddenComponentNames,
-    componentHealth,
     true
   )
   const currentRows = parseInstallComponentSummaryToTableData(
@@ -147,8 +119,7 @@ export const InstallComponentsTableContainer = ({
     configConnections,
     componentToggles,
     labelColors,
-    overriddenComponentNames,
-    componentHealth
+    overriddenComponentNames
   )
 
   return (
