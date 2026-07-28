@@ -9,7 +9,7 @@ func (m *Migrator) applyGlobalMigrations(ctx context.Context) error {
 		if err := m.execMigration(ctx, mig); err != nil {
 			return MigrationErr{
 				Model: "global-migrations",
-				Name:  "indexes",
+				Name:  mig.Name,
 				Err:   err,
 			}
 		}
