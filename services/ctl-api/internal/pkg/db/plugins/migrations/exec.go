@@ -64,6 +64,12 @@ func (m *Migrator) Exec(ctx context.Context) error {
 	m.l.Info("applying global migrations",
 		zap.String("db_type", m.dbType))
 	if err := m.applyGlobalMigrations(ctx); err != nil {
+		// the per-model phases above log their own failures; without this a failed global
+		// migration produced no log line at all
+		m.l.Error("unable to apply global migrations",
+			zap.Error(err),
+			zap.String("db_type", m.dbType))
+
 		return errors.Wrap(err, "unable to execute global migrations")
 	}
 

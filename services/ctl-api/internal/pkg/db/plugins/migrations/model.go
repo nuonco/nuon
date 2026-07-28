@@ -25,6 +25,9 @@ type MigrationModel struct {
 
 	Name   string          `json:"name" gorm:"unique"`
 	Status MigrationStatus `json:"status" gorm:"not null;default null"`
+
+	// why the migration failed, so the reason survives even when logging does not
+	Error string `json:"error,omitempty" gorm:"type:text;default:null"`
 }
 
 func (a *MigrationModel) BeforeCreate(tx *gorm.DB) error {
