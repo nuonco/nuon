@@ -110,7 +110,7 @@ export const ManagementDropdown = ({
             reason="This component is already torn down."
           />
         ) : (
-          <TeardownComponentButton component={component} isMenuButton />
+          <TeardownComponentButton component={component} isMenuButton variant="danger" />
         )}
         <ForgetComponentButton
           component={component}

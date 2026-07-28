@@ -19,11 +19,15 @@ import { InstallActionManualRunModal } from './InstallActionManualRun'
 interface IInstallActionManualRunModalContainer extends Omit<IModal, 'heading'> {
   action: TAction
   actionConfigId: string
+  isRerun?: boolean
+  runEnvVars?: Record<string, string>
 }
 
 export const InstallActionManualRunModalContainer = ({
   action,
   actionConfigId,
+  isRerun,
+  runEnvVars,
   onSubmit: _onSubmit,
   ...props
 }: IInstallActionManualRunModalContainer) => {
@@ -94,6 +98,8 @@ export const InstallActionManualRunModalContainer = ({
     <InstallActionManualRunModal
       action={action}
       actionConfigId={actionConfigId}
+      isRerun={isRerun}
+      runEnvVars={runEnvVars}
       isLoading={isLoading}
       onSubmit={handleSubmit}
       roleSelector={
@@ -115,15 +121,24 @@ export const InstallActionManualRunModalContainer = ({
 export const InstallActionManualRunButton = ({
   action,
   actionConfigId,
+  isRerun,
+  runEnvVars,
   children = 'Run action',
   ...props
 }: {
   action: TAction
   actionConfigId: string
+  isRerun?: boolean
+  runEnvVars?: Record<string, string>
 } & IButtonAsButton) => {
   const { addModal } = useSurfaces()
   const modal = (
-    <InstallActionManualRunModalContainer action={action} actionConfigId={actionConfigId} />
+    <InstallActionManualRunModalContainer
+      action={action}
+      actionConfigId={actionConfigId}
+      isRerun={isRerun}
+      runEnvVars={runEnvVars}
+    />
   )
 
   return (
