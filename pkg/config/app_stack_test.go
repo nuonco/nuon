@@ -195,6 +195,12 @@ func TestStackConfig_Parse_ValidParameters(t *testing.T) {
 				Parameters: map[string]string{
 					"Namespaces":  "{{.nuon.install.inputs.namespaces}}",
 					"ClusterName": "{{ .nuon.install.inputs.cluster_name }}",
+					// Parameter values are full templates: conditionals, sprig
+					// pipelines, composition with literals, and bare literals.
+					"RootDomain":  "{{ if .nuon.install.inputs.root_domain }}{{ .nuon.install.inputs.root_domain }}{{ else }}sandbox-{{ .nuon.install.id | substr 0 15 }}.installs.example.com{{ end }}",
+					"BucketName":  "vendor-{{ .nuon.install.id }}-service",
+					"Inputs":      "{{ .nuon.inputs.inputs.cluster_version }}",
+					"Environment": "production",
 				},
 			},
 		},
@@ -203,22 +209,40 @@ func TestStackConfig_Parse_ValidParameters(t *testing.T) {
 }
 
 func TestStackConfig_Parse_InvalidParameterValue(t *testing.T) {
-	cfg := &StackConfig{
-		CustomNestedStacks: []CustomNestedStack{
-			{
-				Name:        "my_stack",
-				TemplateURL: "https://s3.amazonaws.com/bucket/template.yaml",
-				Index:       0,
-				Parameters: map[string]string{
-					"Namespaces": "some-literal-value",
-				},
-			},
-		},
+	tests := []struct {
+		name    string
+		value   string
+		wantErr string
+	}{
+		{"unparseable template", "{{ if .nuon.install.inputs.foo }}no-end", "is not a valid template"},
+		{"unknown function", "{{ .nuon.install.inputs.foo | nope }}", "is not a valid template"},
+		{"empty value", "", "must not be empty"},
+		{"sandbox output", "{{ .nuon.sandbox.outputs.cluster }}", "is not populated when the install stack is generated"},
+		{"install stack output", "{{ .nuon.install_stack.outputs.region }}", "is not populated when the install stack is generated"},
+		{"component output", "{{ .nuon.components.nlb.outputs.dns_name }}", "is not populated when the install stack is generated"},
+		{"action output", "{{ .nuon.actions.setup.outputs.token }}", "is not populated when the install stack is generated"},
+		{"legacy sandbox output", "{{ .nuon.install.sandbox.outputs.nuon_dns.public_domain.zone_id }}", "is not populated when the install stack is generated"},
 	}
-	err := cfg.parse()
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "parameter \"Namespaces\"")
-	assert.Contains(t, err.Error(), "must be a template reference")
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := &StackConfig{
+				CustomNestedStacks: []CustomNestedStack{
+					{
+						Name:        "my_stack",
+						TemplateURL: "https://s3.amazonaws.com/bucket/template.yaml",
+						Index:       0,
+						Parameters: map[string]string{
+							"Namespaces": tc.value,
+						},
+					},
+				},
+			}
+			err := cfg.parse()
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "parameter \"Namespaces\"")
+			assert.Contains(t, err.Error(), tc.wantErr)
+		})
+	}
 }
 
 func TestStackConfig_Parse_EmptyParameters(t *testing.T) {

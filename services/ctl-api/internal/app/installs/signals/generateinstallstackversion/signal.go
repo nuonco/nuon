@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -133,6 +134,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	if err := render.RenderStruct(&cfg.StackConfig, stateData); err != nil {
 		return errors.Wrap(err, "unable to render cloudformation stack config")
+	}
+
+	// Custom nested stack parameters are rendered separately so they do not go
+	// through html/template. The stack renderers below receive literal values.
+	if err := config.RenderCustomNestedStackParameters(cfg.StackConfig.CustomNestedStacks, stateData); err != nil {
+		return errors.Wrap(err, "unable to render custom nested stack parameters")
 	}
 
 	runner, err := activities.AwaitGetRunnerByID(ctx, install.RunnerID)
