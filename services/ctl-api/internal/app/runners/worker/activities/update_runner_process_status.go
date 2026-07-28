@@ -16,6 +16,7 @@ type UpdateRunnerProcessStatusRequest struct {
 
 // @temporal-gen-v2 activity
 // @by-field ProcessID
+// @local
 func (a *Activities) UpdateRunnerProcessStatus(ctx context.Context, req UpdateRunnerProcessStatusRequest) (*app.RunnerProcess, error) {
 	var current app.RunnerProcess
 	if res := a.db.WithContext(ctx).First(&current, "id = ?", req.ProcessID); res.Error != nil {

@@ -15,6 +15,7 @@ type GetInstallRequest struct {
 }
 
 // @temporal-gen-v2 activity
+// @local
 func (a *Activities) GetInstall(ctx context.Context, req GetInstallRequest) (*app.Install, error) {
 	return a.getInstall(ctx, req.InstallID)
 }

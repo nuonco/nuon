@@ -28,6 +28,7 @@ type ActivityOptions struct {
 	GenerateWrapper        bool
 	WrapperPrefix          string // Prefix to add to generated wrapper function name
 	ReplicaRead            bool
+	IsLocal                bool
 }
 
 type WorkflowOptions struct {
@@ -316,6 +317,12 @@ func Parse(comments []string) (*Annotation, error) {
 				continue
 			}
 			annotation.ActivityOpts.ReplicaRead = true
+
+		case "@local":
+			if annotation.Type != "activity" {
+				continue
+			}
+			annotation.ActivityOpts.IsLocal = true
 
 		case "@wrapper-prefix":
 			if annotation.Type != "activity" {

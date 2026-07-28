@@ -15,6 +15,7 @@ type UpdateQueueSignalRunIDRequest struct {
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 10s
+// @local
 func (a *Activities) UpdateQueueSignalRunID(ctx context.Context, req *UpdateQueueSignalRunIDRequest) error {
 	var qs app.QueueSignal
 	if res := a.db.WithContext(ctx).First(&qs, "id = ?", req.QueueSignalID); res.Error != nil {
