@@ -50,15 +50,15 @@ func migrationsTimeout() time.Duration {
 
 func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 	start := time.Now()
-	l := zap.L()
 
-	// for now, run the automigrate script
+	// the logger has to come from fx: zap.L() here would be captured before the providers
+	// replace the globals, so every line written through it goes to a nop logger
 	providers := []fx.Option{
 		fx.Provide(psqlmigrations.New),
 		fx.Provide(chmigrations.New),
 		fx.Provide(db.AsMigrator(psql.NewPSQLMigrator)),
 		fx.Provide(db.AsMigrator(ch.NewCHMigrator)),
-		fx.Invoke(db.DBMigratorParam(func(migs []*migrations.Migrator, shutdowner fx.Shutdowner) {
+		fx.Invoke(db.DBMigratorParam(func(migs []*migrations.Migrator, shutdowner fx.Shutdowner, l *zap.Logger) {
 			ctx := context.Background()
 			ctx, cancelFn := context.WithTimeout(ctx, migrationsTimeout())
 			defer cancelFn()
@@ -87,7 +87,7 @@ func (c *cli) runStartup(cmd *cobra.Command, _ []string) {
 		runTime := time.Since(start)
 		if runTime < minRunLen {
 			sleepFor := minRunLen - runTime
-			l.Info(fmt.Sprintf("sleeping for %d seconds to ensure data dog metrics are flushed", sleepFor))
+			zap.L().Info(fmt.Sprintf("sleeping for %d seconds to ensure data dog metrics are flushed", sleepFor))
 			time.Sleep(sleepFor)
 		}
 	}
