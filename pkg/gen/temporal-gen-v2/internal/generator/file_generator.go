@@ -34,7 +34,6 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 	hasActivityWrapper := false
 	hasClient := false
 	hasNamespacedActivity := false
-
 	hasTemporal := false
 	namespacedActivities := []ActivityData{}
 
@@ -134,6 +133,17 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 				ByFieldType:   byFieldType,
 			}
 			code, err = GenerateActivity(data)
+
+			if fn.Annotation.ActivityOpts.IsLocal {
+				hasTemporal = true
+				hasTime = true
+				localCode, localErr := GenerateLocalActivity(data)
+				if localErr != nil {
+					return fmt.Errorf("failed to generate local activity for %s: %w", fn.Decl.Name.Name, localErr)
+				}
+				body.Write(localCode)
+				body.WriteString("\n")
+			}
 
 			// Track namespaced activities for registration generation
 			if fn.Annotation.ActivityOpts.Namespace != "" {

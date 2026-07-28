@@ -460,6 +460,7 @@ type UpdateRunnerStatusV2Request struct {
 }
 
 // @temporal-gen-v2 activity
+// @local
 func (a *Activities) UpdateRunnerStatusV2(ctx context.Context, req UpdateRunnerStatusV2Request) error {
 	obj := app.Runner{ID: req.RunnerID}
 
