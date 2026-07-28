@@ -9,7 +9,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 func (m *Migrations) Migration116InstallAppConfigVersionMetadataBackfill(ctx context.Context, db *gorm.DB) error {
@@ -21,24 +20,16 @@ func (m *Migrations) Migration116InstallAppConfigVersionMetadataBackfill(ctx con
 		return fmt.Errorf("unable to create install_app_config_versions table: %w", err)
 	}
 
-	// installs whose creator is gone would fail the accounts FK, so fall back instead of
-	// skipping them
-	systemCtx, err := m.systemCtx(ctx, db)
-	if err != nil {
-		return err
-	}
-	fallbackCreatedByID := keys.CreatedByIDFromContext(systemCtx)
-
 	var installs []struct {
 		ID          string
 		OrgID       string
 		AppConfigID string
 		CreatedByID string
 	}
+	// installs.created_by_id is not null with an FK to accounts, so it is always a usable
+	// id for the version row
 	if err := db.WithContext(ctx).Raw(`
-		SELECT i.id, i.org_id, i.app_config_id,
-		       CASE WHEN EXISTS (SELECT 1 FROM accounts a WHERE a.id = i.created_by_id)
-		            THEN i.created_by_id ELSE '' END AS created_by_id
+		SELECT i.id, i.org_id, i.app_config_id, i.created_by_id
 		FROM installs i
 		WHERE i.app_config_id != ''
 		  AND i.deleted_at = 0
@@ -52,17 +43,12 @@ func (m *Migrations) Migration116InstallAppConfigVersionMetadataBackfill(ctx con
 
 	now := time.Now()
 	for _, inst := range installs {
-		createdByID := inst.CreatedByID
-		if createdByID == "" {
-			createdByID = fallbackCreatedByID
-		}
-
 		version := app.InstallAppConfigVersion{
 			ID:             domains.NewInstallAppConfigVersionID(),
 			OrgID:          inst.OrgID,
 			InstallID:      inst.ID,
 			NewAppConfigID: inst.AppConfigID,
-			CreatedByID:    createdByID,
+			CreatedByID:    inst.CreatedByID,
 			CreatedAt:      now,
 			UpdatedAt:      now,
 			Status:         app.CompositeStatus{Status: app.StatusSuccess},
