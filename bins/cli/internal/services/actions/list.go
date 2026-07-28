@@ -8,12 +8,11 @@ import (
 )
 
 func (s *Service) List(ctx context.Context, appID string, offset, limit int, asJSON bool) error {
-	view := ui.NewListView()
-
 	if appID == "" {
-		s.printAppNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrAppNotSet())
 	}
+
+	view := ui.NewListView()
 
 	wfs, hasMore, err := s.getActionWorkflows(ctx, appID, offset, limit)
 	if err != nil {

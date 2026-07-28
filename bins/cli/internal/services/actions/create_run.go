@@ -11,8 +11,7 @@ import (
 func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID string, roleName string, asJSON bool) error {
 	awc, err := s.api.GetActionWorkflowLatestConfig(ctx, actionWorkflowID)
 	if err != nil {
-		ui.PrintError(fmt.Errorf("error getting action workflow config: %w", err))
-		return err
+		return ui.PrintError(fmt.Errorf("error getting action workflow config: %w", err))
 	}
 
 	req := &models.ServiceCreateInstallActionWorkflowRunRequest{
@@ -20,13 +19,14 @@ func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID str
 		Role:                   roleName,
 	}
 
-	err = s.api.CreateInstallActionWorkflowRun(ctx, installID, req)
-	if err != nil {
-		ui.PrintError(fmt.Errorf("error creating action workflow run: %w", err))
-		return err
+	if err := s.api.CreateInstallActionWorkflowRun(ctx, installID, req); err != nil {
+		return ui.PrintError(fmt.Errorf("error creating action workflow run: %w", err))
 	}
 
-	ui.PrintLn(fmt.Sprintf("action triggered for action %s", actionWorkflowID))
-
+	ui.PrintResult(asJSON, fmt.Sprintf("action triggered for action %s", actionWorkflowID), map[string]string{
+		"install_id":         installID,
+		"action_workflow_id": actionWorkflowID,
+		"status":             "triggered",
+	})
 	return nil
 }
