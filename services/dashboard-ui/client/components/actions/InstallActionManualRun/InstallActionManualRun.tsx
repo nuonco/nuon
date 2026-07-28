@@ -26,21 +26,27 @@ interface IInstallActionManualRunModal extends Omit<IModal, 'onSubmit'> {
   action: TAction
   actionConfigId: string
   isLoading: boolean
+  isRerun?: boolean
   onSubmit: (vars: Record<string, string>, role: string) => void
   roleSelector: ReactNode
+  runEnvVars?: Record<string, string>
 }
 
 export const InstallActionManualRunModal = ({
   action,
   actionConfigId,
   isLoading,
+  isRerun = false,
   onSubmit,
   roleSelector,
+  runEnvVars,
   ...props
 }: IInstallActionManualRunModal) => {
   const config = action?.configs?.[0]
   const envVars = normalizeEnvVars(config?.steps || [])
-  const hasEnvVars = Object.keys(envVars).length > 0
+  const { role: _role, ...prefilledEnvVars } = runEnvVars ?? {}
+  const initialValues = { ...envVars, ...prefilledEnvVars }
+  const hasEnvVars = Object.keys(initialValues).length > 0
 
   const [customVars, setCustomVars] = useState<number[]>([])
   const formRef = useRef<HTMLFormElement>(null)
@@ -82,18 +88,18 @@ export const InstallActionManualRunModal = ({
 
   return (
     <Modal
-      heading={`Run action ${action?.name}`}
+      heading={`${isRerun ? 'Re-run' : 'Run'} action ${action?.name}`}
       size="lg"
       primaryActionTrigger={{
         children: isLoading ? (
           <>
             <Icon variant="Loading" className="animate-spin" />
-            Running action...
+            {isRerun ? 'Re-running action...' : 'Running action...'}
           </>
         ) : (
           <>
             <Icon variant="PlayIcon" />
-            Run action
+            {isRerun ? 'Re-run action' : 'Run action'}
           </>
         ),
         disabled: isLoading,
@@ -117,9 +123,9 @@ export const InstallActionManualRunModal = ({
               workflow run.
             </Text>
 
-            {Object.keys(envVars).length > 0 && (
+            {Object.keys(initialValues).length > 0 && (
               <div className="flex flex-col gap-4">
-                {Object.keys(envVars).map((envVar) => (
+                {Object.keys(initialValues).map((envVar) => (
                   <label key={envVar} className="flex flex-col gap-1">
                     <Text variant="label" weight="strong">
                       {envVar}
@@ -127,7 +133,7 @@ export const InstallActionManualRunModal = ({
                     <input
                       className="px-3 py-2 text-base rounded-md border bg-black/5 dark:bg-white/5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600"
                       required
-                      defaultValue={envVars[envVar]}
+                      defaultValue={initialValues[envVar]}
                       name={envVar}
                       type="text"
                     />
