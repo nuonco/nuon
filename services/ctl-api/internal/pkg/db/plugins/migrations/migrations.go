@@ -70,6 +70,9 @@ func (m *Migrator) applyMigration(ctx context.Context, obj any, idx Migration) e
 	return nil
 }
 
+// an in_progress migration older than this is assumed dead and gets reclaimed
+const abandonedMigrationTimeout = time.Hour
+
 func (a *Migrator) isMigrationApplied(ctx context.Context, name string) (bool, error) {
 	var migration MigrationModel
 	res := a.migrationDB.WithContext(ctx).
@@ -82,21 +85,47 @@ func (a *Migrator) isMigrationApplied(ctx context.Context, name string) (bool, e
 		return false, res.Error
 	}
 
-	return true, nil
+	// only applied counts. an error row used to read as applied and never retried.
+	return migration.Status == MigrationStatusApplied, nil
 }
 
-func (a *Migrator) createMigration(ctx context.Context, name string) error {
+// claimMigration marks a migration in progress and reports whether we won the claim.
+// errored and abandoned rows get reclaimed so they retry.
+func (a *Migrator) claimMigration(ctx context.Context, name string) (bool, error) {
+	now := time.Now()
+
+	res := a.migrationDB.WithContext(ctx).
+		Model(&MigrationModel{}).
+		Where("name = ?", name).
+		Where("status = ? OR (status = ? AND updated_at < ?)",
+			MigrationStatusError,
+			MigrationStatusInProgress, now.Add(-abandonedMigrationTimeout)).
+		Updates(map[string]any{
+			"status":     MigrationStatusInProgress,
+			"updated_at": now,
+		})
+	if res.Error != nil {
+		return false, res.Error
+	}
+	if res.RowsAffected > 0 {
+		return true, nil
+	}
+
+	// nothing to reclaim, first attempt
 	migration := MigrationModel{
 		Name:   name,
 		Status: MigrationStatusInProgress,
 	}
-	res := a.migrationDB.WithContext(ctx).
-		Create(&migration)
-	if res.Error != nil {
-		return res.Error
+	if err := a.migrationDB.WithContext(ctx).Create(&migration).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			// another run got there first
+			return false, nil
+		}
+
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
 
 func (a *Migrator) updateMigrationStatus(ctx context.Context, name string, status MigrationStatus) error {
@@ -169,15 +198,15 @@ func (a *Migrator) execMigration(ctx context.Context, migration Migration) error
 		migration.Name = fmt.Sprintf("%s-%d", migration.Name, ts.Unix())
 	}
 
-	if err := a.createMigration(ctx, migration.Name); err != nil {
-		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			a.l.Info("migration already in progress", zap.String("name", migration.Name))
-			statusDescription = "already_in_progress"
-			return nil
-		}
-
+	claimed, err := a.claimMigration(ctx, migration.Name)
+	if err != nil {
 		statusDescription = "db"
-		return fmt.Errorf("unable to create migration: %w", err)
+		return fmt.Errorf("unable to claim migration: %w", err)
+	}
+	if !claimed {
+		a.l.Info("migration already in progress", zap.String("name", migration.Name))
+		statusDescription = "already_in_progress"
+		return nil
 	}
 
 	if migration.Fn != nil {
