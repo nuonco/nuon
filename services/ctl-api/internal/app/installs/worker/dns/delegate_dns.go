@@ -160,7 +160,7 @@ func (a *Activities) DeleteDNS(ctx context.Context, req DeleteDNSRequest) (Delet
 	case cloudProviderAzure:
 		activity.GetLogger(ctx).Info("dns delegation not implemented for azure, skipping", "domain", req.Domain)
 		return DeleteDNSResponse{}, nil
-	case cloudProviderAWS:
+	case cloudProviderAWS, "":
 		if err := a.deleteRoute53(ctx, req); err != nil {
 			return DeleteDNSResponse{}, fmt.Errorf("unable to delete cloud dns records: %w", err)
 		}
