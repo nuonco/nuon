@@ -16,6 +16,7 @@ type GetMostRecentHeartBeatByProcessRequest struct {
 
 // @temporal-gen-v2 activity
 // @by-field RunnerID
+// @local
 func (a *Activities) GetMostRecentHeartBeatByProcess(ctx context.Context, req GetMostRecentHeartBeatByProcessRequest) (*app.RunnerHeartBeat, error) {
 	var hb app.RunnerHeartBeat
 	res := a.chDB.WithContext(ctx).

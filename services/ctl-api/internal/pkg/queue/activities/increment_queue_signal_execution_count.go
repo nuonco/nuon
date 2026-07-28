@@ -16,6 +16,7 @@ type IncrementQueueSignalExecutionCountRequest struct {
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
+// @local
 func (a *Activities) IncrementQueueSignalExecutionCount(ctx context.Context, req *IncrementQueueSignalExecutionCountRequest) error {
 	res := a.db.WithContext(ctx).
 		Model(&app.QueueSignal{}).
