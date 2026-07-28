@@ -75,6 +75,7 @@ export const CreateInstallForm = forwardRef<
         key={formKey}
         ref={ref}
         noValidate
+        autoComplete="off"
         onSubmit={handleSubmit}
         className="flex flex-col min-h-[50vh] gap-8 justify-between focus:outline-none relative"
       >

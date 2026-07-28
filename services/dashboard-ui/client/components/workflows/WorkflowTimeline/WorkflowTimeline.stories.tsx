@@ -39,10 +39,30 @@ const completedWorkflow: TWorkflow = {
   status: { status: 'success' },
 } as TWorkflow
 
+const unnamedWorkflow: TWorkflow = {
+  ...mockWorkflow,
+  id: 'wfq7fplr1up5atx5zpxotbabm',
+  name: undefined,
+  type: 'provision',
+  finished: true,
+  status: { status: 'success' },
+} as TWorkflow
+
 export const Default = () => (
   <ApprovalsProvider>
     <WorkflowTimeline
       workflows={[mockWorkflow, completedWorkflow]}
+      pagination={{ hasNext: false, offset: 0, limit: 10 }}
+      orgId="org-123"
+      installId="inst-456"
+    />
+  </ApprovalsProvider>
+)
+
+export const NoName = () => (
+  <ApprovalsProvider>
+    <WorkflowTimeline
+      workflows={[unnamedWorkflow]}
       pagination={{ hasNext: false, offset: 0, limit: 10 }}
       orgId="org-123"
       installId="inst-456"

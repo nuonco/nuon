@@ -32,6 +32,7 @@ export const DeprovisionStackButton = ({
         addModal(modal)
       }}
       {...props}
+      variant="danger"
     >
       Deprovision stack
       <Icon variant="StackMinusIcon" />

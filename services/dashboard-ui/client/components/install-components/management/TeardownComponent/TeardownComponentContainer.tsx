@@ -131,7 +131,6 @@ export const TeardownComponentButton = ({
         addModal(modal)
       }}
       {...props}
-      className="!text-red-800 dark:!text-red-500"
     >
       {props?.isMenuButton ? null : <Icon variant="CloudArrowDownIcon" />}
       Teardown component
