@@ -37,39 +37,84 @@ export const Tooltip = ({
     onOpenChange?.(open)
   }
   const [styles, setStyles] = useState<{
-    top: string
-    left: string
+    top: number
+    left: number
+    arrow: number
   } | null>(null)
+  const [effPosition, setEffPosition] = useState(position)
   const tooltipRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLDivElement>(null)
 
   const calculatePosition = () => {
-    if (triggerRef.current && tooltipRef.current) {
-      const trigger = triggerRef.current.getBoundingClientRect()
-      const tooltipRect = tooltipRef.current.getBoundingClientRect()
+    if (!triggerRef.current || !tooltipRef.current) return
 
-      let top = 0
-      let left = 0
+    const trigger = triggerRef.current.getBoundingClientRect()
+    const tip = tooltipRef.current.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const gap = 8
+    const margin = 8
 
-      if (position === 'top') {
-        top = trigger.top - tooltipRect.height - 8
-        left = trigger.left + trigger.width / 2 - tooltipRect.width / 2
-      } else if (position === 'bottom') {
-        top = trigger.bottom + 8
-        left = trigger.left + trigger.width / 2 - tooltipRect.width / 2
-      } else if (position === 'left') {
-        top = trigger.top + trigger.height / 2 - tooltipRect.height / 2
-        left = trigger.left - tooltipRect.width - 8
-      } else if (position === 'right') {
-        top = trigger.top + trigger.height / 2 - tooltipRect.height / 2
-        left = trigger.right + 8
-      }
-
-      setStyles({
-        top: `${top}px`,
-        left: `${left}px`,
-      })
+    let pos = position
+    if (
+      pos === 'right' &&
+      trigger.right + gap + tip.width > vw - margin &&
+      trigger.left - gap - tip.width >= margin
+    ) {
+      pos = 'left'
+    } else if (
+      pos === 'left' &&
+      trigger.left - gap - tip.width < margin &&
+      trigger.right + gap + tip.width <= vw - margin
+    ) {
+      pos = 'right'
+    } else if (
+      pos === 'bottom' &&
+      trigger.bottom + gap + tip.height > vh - margin &&
+      trigger.top - gap - tip.height >= margin
+    ) {
+      pos = 'top'
+    } else if (
+      pos === 'top' &&
+      trigger.top - gap - tip.height < margin &&
+      trigger.bottom + gap + tip.height <= vh - margin
+    ) {
+      pos = 'bottom'
     }
+
+    let top = 0
+    let left = 0
+    if (pos === 'top') {
+      top = trigger.top - tip.height - gap
+      left = trigger.left + trigger.width / 2 - tip.width / 2
+    } else if (pos === 'bottom') {
+      top = trigger.bottom + gap
+      left = trigger.left + trigger.width / 2 - tip.width / 2
+    } else if (pos === 'left') {
+      top = trigger.top + trigger.height / 2 - tip.height / 2
+      left = trigger.left - tip.width - gap
+    } else if (pos === 'right') {
+      top = trigger.top + trigger.height / 2 - tip.height / 2
+      left = trigger.right + gap
+    }
+
+    left = Math.min(Math.max(margin, left), vw - tip.width - margin)
+    top = Math.min(Math.max(margin, top), vh - tip.height - margin)
+
+    const edge = 12
+    const arrow =
+      pos === 'top' || pos === 'bottom'
+        ? Math.min(
+            Math.max(edge, trigger.left + trigger.width / 2 - left),
+            tip.width - edge
+          )
+        : Math.min(
+            Math.max(edge, trigger.top + trigger.height / 2 - top),
+            tip.height - edge
+          )
+
+    setStyles({ top, left, arrow })
+    setEffPosition(pos)
   }
 
   useEffect(() => {
@@ -91,7 +136,7 @@ export const Tooltip = ({
     <span
       ref={tooltipRef}
       className={cn(
-        `tooltip-content bg-background text-foreground fixed block px-2 py-1 rounded-md drop-shadow-lg w-max whitespace-nowrap ${position}`,
+        `tooltip-content bg-background text-foreground fixed block px-2 py-1 rounded-md drop-shadow-lg w-max whitespace-nowrap ${effPosition}`,
         {
           enter: isOpen,
           exit: !isOpen,
@@ -99,7 +144,15 @@ export const Tooltip = ({
         tipContentClassName
       )}
       role="tooltip"
-      style={styles || undefined}
+      style={
+        styles
+          ? ({
+              top: `${styles.top}px`,
+              left: `${styles.left}px`,
+              '--arrow': `${styles.arrow}px`,
+            } as React.CSSProperties)
+          : undefined
+      }
     >
       {tipContent}
     </span>
