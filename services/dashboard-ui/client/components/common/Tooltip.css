@@ -59,28 +59,28 @@
 
 .tooltip-content.top::after {
   bottom: -0.6rem;
-  left: 50%;
+  left: var(--arrow, 50%);
   translate: -50%;
   border-color: var(--background) transparent transparent transparent;
 }
 
 .tooltip-content.bottom::after {
   top: -0.6rem;
-  left: 50%;
+  left: var(--arrow, 50%);
   translate: -50%;
   border-color: transparent transparent var(--background) transparent;
 }
 
 .tooltip-content.right::after {
   left: -0.6rem;
-  top: 50%;
+  top: var(--arrow, 50%);
   translate: 0 -50%;
   border-color: transparent var(--background) transparent transparent;
 }
 
 .tooltip-content.left::after {
   right: -0.6rem;
-  top: 50%;
+  top: var(--arrow, 50%);
   translate: 0 -50%;
   border-color: transparent transparent transparent var(--background);
 }

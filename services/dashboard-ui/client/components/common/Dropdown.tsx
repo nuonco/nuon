@@ -335,9 +335,17 @@ export const Dropdown = ({
       onClick={(e) => {
         if (!closeOnBlur) return
         const target = e.target as HTMLElement
-        if (target.closest('button, a, [role="menuitem"]')) {
-          handleClose()
+        const actionEl = target.closest<HTMLElement>(
+          'button, a, [role="menuitem"]'
+        )
+        if (!actionEl) return
+        if (
+          actionEl.closest('.dropdown-trigger') ||
+          actionEl.getAttribute('aria-haspopup') === 'true'
+        ) {
+          return
         }
+        handleClose()
       }}
     >
       <span

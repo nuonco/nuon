@@ -39,6 +39,8 @@ export const ActionRunMetadataContainer = (props: IActionRunMetadata) => {
           actionRun?.action_workflow_config_id ??
           ''
         }
+        isRerun
+        runEnvVars={actionRun?.run_env_vars}
       >
         Re-run action
         <Icon variant="PlayIcon" />

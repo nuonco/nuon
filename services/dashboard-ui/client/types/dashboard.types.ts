@@ -53,7 +53,16 @@ export type TNavSectionHeader = {
   label: string
 }
 
-export type TNavItem = TNavLink | TNavSectionHeader
+export type TNavAction = {
+  type: 'action'
+  key: string
+  iconVariant?: TIconVariant
+  text: string
+  onClick: () => void
+  isActive?: boolean
+}
+
+export type TNavItem = TNavLink | TNavSectionHeader | TNavAction
 
 // UI variant types
 export type TEmptyVariant =

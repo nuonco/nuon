@@ -70,6 +70,8 @@ export const InstallActionRunHeaderContainer = ({
               installActionRun?.action_workflow_config_id ??
               ''
             }
+            isRerun
+            runEnvVars={installActionRun?.run_env_vars}
             variant="primary"
           >
             Re-run action
