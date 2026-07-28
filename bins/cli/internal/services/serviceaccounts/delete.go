@@ -22,7 +22,11 @@ func (s *Service) DeleteServiceAccount(ctx context.Context, accountID string, as
 	}
 
 	if asJSON {
-		ui.PrintJSON(map[string]string{"id": accountID, "status": "deleted"})
+		ui.PrintJSON(map[string]string{
+			"id":      accountID,
+			"status":  "deleted",
+			"message": "service account deleted",
+		})
 		return nil
 	}
 

@@ -102,6 +102,9 @@ func (c *cli) clearConfig(ctx context.Context, asJSON bool) error {
 		return ui.PrintError(err)
 	}
 
-	ui.PrintResult(asJSON, "✅ Configuration cleared.", map[string]string{"status": "config_cleared"})
+	ui.PrintResult(asJSON, "✅ Configuration cleared.", map[string]string{
+		"status":  "config_cleared",
+		"message": "Configuration cleared.",
+	})
 	return nil
 }
