@@ -144,17 +144,19 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			}
 		}
 
-		// Resolve explicit parameter mappings from install inputs
+		// Explicit parameter values. These arrive already rendered -- see
+		// config.RenderCustomNestedStackParameters, called when the install stack
+		// version is generated -- so they are used verbatim. The install-input
+		// reference form is still resolved here as a fallback for callers that read
+		// the config without rendering it first.
 		for cfnParamName, templateValue := range stack.Parameters {
-			inputName, err := config.ParseInstallInputReference(templateValue)
-			if err != nil {
-				return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q: %w", i, stack.Name, cfnParamName, err)
-			}
-
-			resolved := ""
-			if inp.Install.CurrentInstallInputs != nil {
-				if val, ok := inp.Install.CurrentInstallInputs.Values[inputName]; ok && val != nil {
-					resolved = *val
+			resolved := templateValue
+			if inputName, err := config.ParseInstallInputReference(templateValue); err == nil {
+				resolved = ""
+				if inp.Install.CurrentInstallInputs != nil {
+					if val, ok := inp.Install.CurrentInstallInputs.Values[inputName]; ok && val != nil {
+						resolved = *val
+					}
 				}
 			}
 
