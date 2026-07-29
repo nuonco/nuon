@@ -24,7 +24,8 @@ const (
 	// has been quiet long enough (5 min) for processhealthcheck to give up on
 	// it; the classifier maps it onto (runners, inactive) so subscribers can
 	// opt into a notification.
-	signalTypeOnInactive signal.SignalType = "on_inactive"
+	signalTypeOnInactive      signal.SignalType = "on_inactive"
+	signalTypeRunnerUnhealthy signal.SignalType = "runner-unhealthy"
 	// signalTypeWorkflowStepAwaitingRetry mirrors the
 	// flow/signals/workflowstepawaitingretry SignalType. The carrier signal
 	// itself always succeeds (notification-only), so classification can't
@@ -68,6 +69,7 @@ const (
 	eventClassRoleChange
 	eventClassInputsUpdated
 	eventClassConfigSynced
+	eventClassRunnerUnhealthy
 )
 
 // approvalResponseType is the resolved approved/rejected outcome of an
@@ -218,6 +220,13 @@ func classify(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome,
 		f.Resource = ResourceRunners
 		f.Op = "inactive"
 		f.EventClass = eventClassLifecycle
+		f.Resolved = true
+		return f
+
+	case signalTypeRunnerUnhealthy:
+		f.Resource = ResourceRunners
+		f.Op = "unhealthy"
+		f.EventClass = eventClassRunnerUnhealthy
 		f.Resolved = true
 		return f
 
@@ -594,6 +603,10 @@ func slugsForFacts(f facts) []string {
 
 	case eventClassConfigSynced:
 		slugs = append(slugs, SlugEventConfigSynced)
+		return slugs
+
+	case eventClassRunnerUnhealthy:
+		slugs = append(slugs, SlugEventRunnerUnhealthy, SlugOutcomeCompletion, SlugOutcomeFailures)
 		return slugs
 	}
 

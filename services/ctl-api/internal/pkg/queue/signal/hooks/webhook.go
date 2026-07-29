@@ -45,6 +45,7 @@ const (
 	cloudEventTypeInputsUpdated             = "com.nuon.stack.inputs_updated.v1"
 	cloudEventTypeAppConfigSynced           = "com.nuon.app.config_synced.v1"
 	cloudEventTypeUpdateAppConfig           = "com.nuon.install.app_config_updated.v1"
+	cloudEventTypeRunnerUnhealthy           = "com.nuon.runner.unhealthy.v1"
 
 	kindWorkflow             = "workflow"
 	kindWorkflowStep         = "workflow_step"
@@ -54,6 +55,7 @@ const (
 	kindInputsUpdated        = "inputs_updated"
 	kindAppConfigSynced      = "app_config_synced"
 	kindUpdateAppConfig      = "app_config_updated"
+	kindRunnerUnhealthy      = "runner_unhealthy"
 )
 
 // Status values surfaced to webhook consumers in the *.lifecycle events.
@@ -77,6 +79,7 @@ const (
 	transitionRequested = "requested"
 	transitionApproved  = "approved"
 	transitionRejected  = "rejected"
+	transitionUnhealthy = "unhealthy"
 
 	// transitionAwaitingRetry is emitted on workflow_step.awaiting_retry.v1
 	// events when a step has failed and parked waiting for a manual retry,
@@ -117,6 +120,7 @@ const (
 	signalTypeInputsUpdated   signal.SignalType = "inputs-updated"
 	signalTypeAppConfigSynced signal.SignalType = "app-config-synced"
 	signalTypeUpdateAppConfig signal.SignalType = "update-app-config"
+	signalTypeRunnerUnhealthy signal.SignalType = "runner-unhealthy"
 )
 
 // approvalPlanExcerptMaxBytes caps the size of the plan excerpt embedded in
@@ -261,7 +265,8 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 		signalTypeRoleChange,
 		signalTypeInputsUpdated,
 		signalTypeAppConfigSynced,
-		signalTypeUpdateAppConfig:
+		signalTypeUpdateAppConfig,
+		signalTypeRunnerUnhealthy:
 		return true
 	default:
 		return false
@@ -298,7 +303,7 @@ func isApprovalSignalType(t signal.SignalType) bool {
 
 func isNotificationOnlySignalType(t signal.SignalType) bool {
 	switch t {
-	case signalTypeDriftDetected, signalTypeStackRun, signalTypeRoleChange, signalTypeInputsUpdated, signalTypeAppConfigSynced, signalTypeUpdateAppConfig:
+	case signalTypeDriftDetected, signalTypeStackRun, signalTypeRoleChange, signalTypeInputsUpdated, signalTypeAppConfigSynced, signalTypeUpdateAppConfig, signalTypeRunnerUnhealthy:
 		return true
 	}
 	return false
@@ -529,6 +534,8 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		ceType = cloudEventTypeAppConfigSynced
 	case kindUpdateAppConfig:
 		ceType = cloudEventTypeUpdateAppConfig
+	case kindRunnerUnhealthy:
+		ceType = cloudEventTypeRunnerUnhealthy
 	}
 	// Awaiting-retry shares kind=workflow_step with the normal step
 	// lifecycle but gets its own CloudEvent type so consumers can route the
@@ -638,6 +645,8 @@ func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event s
 		return h.buildAppConfigSyncedEventData(ctx, event, outcome)
 	case signalTypeUpdateAppConfig:
 		return h.buildUpdateAppConfigEventData(ctx, event, outcome)
+	case signalTypeRunnerUnhealthy:
+		return h.buildRunnerUnhealthyEventData(event, outcome)
 	}
 
 	if event.WorkflowID == "" {
@@ -816,6 +825,32 @@ func (h *WebhookSignalLifecycleHook) buildUpdateAppConfigEventData(_ context.Con
 	if outcome != nil {
 		data.Outcome = h.buildOutcome(event, outcome)
 	}
+	return data, true
+}
+
+func (h *WebhookSignalLifecycleHook) buildRunnerUnhealthyEventData(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
+	if event.Phase != signal.SignalPhaseExecute || outcome == nil || outcome.Status != signal.SignalStatusSuccess {
+		return lifecycleEventData{}, false
+	}
+
+	reason, _ := event.Metadata["reason"].(string)
+	data := lifecycleEventData{
+		Kind:       kindRunnerUnhealthy,
+		Transition: transitionUnhealthy,
+		OrgID:      event.OrgID,
+		OrgName:    event.OrgName,
+		Workflow: workflowRef{
+			OwnerID:   event.OwnerID,
+			OwnerType: event.OwnerType,
+			OwnerName: event.OwnerName,
+		},
+		Outcome: &lifecycleOutcome{
+			Status: statusFailed,
+			Error:  reason,
+		},
+		Metadata: event.Metadata,
+	}
+	data.Links = h.buildContextLinks(event, nil)
 	return data, true
 }
 
@@ -1366,6 +1401,11 @@ func buildSubject(event signal.SignalPhaseEvent, data lifecycleEventData) string
 		parts = append(parts, event.OrgID)
 	}
 	parts = append(parts, data.Kind)
+	if data.Kind == kindRunnerUnhealthy {
+		if runnerID, _ := data.Metadata["runner_id"].(string); runnerID != "" {
+			parts = append(parts, runnerID)
+		}
+	}
 	if data.Workflow.ID != "" {
 		parts = append(parts, data.Workflow.ID)
 	}

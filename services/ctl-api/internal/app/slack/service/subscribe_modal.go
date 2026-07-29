@@ -754,6 +754,8 @@ func subOpLabel(op string) string {
 		return "Secrets"
 	case "inactive":
 		return "Inactive"
+	case "unhealthy":
+		return "Unhealthy"
 	case "run":
 		return "Run"
 	case "version_active":

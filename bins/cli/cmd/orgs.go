@@ -317,7 +317,7 @@ INTERESTS
     components              deploy, teardown
     sandboxes               provision, reprovision, deprovision
     install_configurations  inputs, secrets
-    runners                 provision, reprovision, inactive
+    runners                 provision, reprovision, inactive, unhealthy
     actions                 run
 
   Note: to subscribe to drift, use "drift_detected" (below) — it fires only when
