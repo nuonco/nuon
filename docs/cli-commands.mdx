@@ -37,15 +37,18 @@ The commands you'll use most. Run `nuon --help` (or `nuon <command> --help`) for
 
 ## App branches
 
+These subcommands take the app **ID** (`app...`), not the app name — get it from `nuon apps list`. Select an app with
+`nuon apps select` and you can omit `--app-id` from `trigger` and `runs`.
+
 | Command | What it does |
 |---------|--------------|
 | `nuon sync --branch <name>` | Sync the current directory, then trigger a run on that [app branch](/guides/app-branches). Add `--preview` for a plan-only run, or use `--app-branch` to pick the branch interactively. These flags are on `nuon sync`, not `nuon apps sync`. |
-| `nuon apps branches list --app-id <app>` | List an app's branches. Alias: `nuon apps br`. |
-| `nuon apps branches get --app-id <app> --branch-id <branch-id>` | Show a branch and its deployment groups. |
-| `nuon apps branches create --app-id <app> --name <name>` | Create a branch without syncing a config file. |
-| `nuon apps branches trigger --app-id <app> --branch-id <branch>` | Trigger a branch run. `--preview` for plan-only, `--force` to rebuild every component. |
-| `nuon apps branches runs --app-id <app> --branch-id <branch>` | List a branch's runs and open one in the workflow TUI. |
-| `nuon apps branches delete --app-id <app> --branch-id <branch> --confirm` | Delete a branch. |
+| `nuon apps branches list --app-id <app-id>` | List an app's branches. Alias: `nuon apps br`. |
+| `nuon apps branches get --app-id <app-id> --branch-id <branch-id>` | Show a branch and its deployment groups. |
+| `nuon apps branches create --app-id <app-id> --name <name>` | Create a branch without syncing a config file. |
+| `nuon apps branches trigger --branch-id <branch>` | Trigger a branch run against the selected app. `--preview` plans every group but applies nothing, `--force` rebuilds every component. |
+| `nuon apps branches runs --branch-id <branch>` | List the selected app's branch runs and open one in the workflow TUI. |
+| `nuon apps branches delete --app-id <app-id> --branch-id <branch> --confirm` | Delete a branch. |
 
 ## Installs
 
