@@ -39,7 +39,6 @@ export const BuildAllComponentsModal = ({
           className="gap-4"
           variant="h3"
           weight="strong"
-          theme="info"
         >
           <Icon variant="HammerIcon" size="24" />
           Build all components for {appName}?
