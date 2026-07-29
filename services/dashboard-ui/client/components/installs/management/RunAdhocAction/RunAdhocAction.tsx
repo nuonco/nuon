@@ -146,7 +146,6 @@ export const RunAdhocActionModal = ({
           className="gap-4"
           variant="h3"
           weight="strong"
-          theme="info"
         >
           <Icon variant="TerminalWindowIcon" size="24" />
           Run adhoc action

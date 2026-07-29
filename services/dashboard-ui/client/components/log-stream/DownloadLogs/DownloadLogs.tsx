@@ -26,7 +26,6 @@ export const DownloadLogsModal = ({
           flex
           className="gap-4"
           variant="h3"
-          theme="info"
           weight="strong"
         >
           <Icon variant="FileArrowDownIcon" size={24} /> Download logs

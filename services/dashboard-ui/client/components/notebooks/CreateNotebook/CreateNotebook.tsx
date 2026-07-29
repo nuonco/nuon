@@ -38,7 +38,6 @@ export const CreateNotebookModal = ({
           className="gap-4"
           variant="h3"
           weight="strong"
-          theme="info"
         >
           <Icon variant="NotebookIcon" size="24" />
           Create notebook
