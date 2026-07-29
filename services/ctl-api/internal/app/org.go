@@ -103,6 +103,10 @@ const (
 	// health, surfaced in the install "Resources" tab.
 	OrgFeatureComponentHealth          OrgFeature = "component-health"
 	OrgFeatureServiceAccountsAndTokens OrgFeature = "service-accounts-and-tokens"
+	// OrgFeaturePhoneHomeAuth requires install phone-home requests to carry an
+	// HMAC signature derived from a per-install secret, and requires a target
+	// cloud account identifier at install creation.
+	OrgFeaturePhoneHomeAuth OrgFeature = "phone-home-auth"
 )
 
 type Org struct {
@@ -230,6 +234,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureOrgRunner:               false,
 		OrgFeatureAWSAccountConnections:   false,
 		OrgFeatureComponentHealth:         false,
+		OrgFeaturePhoneHomeAuth:           false,
 
 		// Enabled by default
 		OrgFeatureControlPlaneBuilds: true,
@@ -306,6 +311,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureAWSAccountConnections,
 		OrgFeatureComponentHealth,
 		OrgFeatureServiceAccountsAndTokens,
+		OrgFeaturePhoneHomeAuth,
 	}
 }
 
@@ -347,6 +353,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureAWSAccountConnections:    "Enable organization-owned cross-account AWS connections with external ID trust verification.",
 		OrgFeatureComponentHealth:          "Enable the live component resource explorer: the install runner reports the Kubernetes and cloud resources each component manages with per-resource health, surfaced in the install Resources tab.",
 		OrgFeatureServiceAccountsAndTokens: "Enable the API tokens and service accounts management pages in the dashboard settings navigation.",
+		OrgFeaturePhoneHomeAuth:            "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",
 	}
 }
 
@@ -366,16 +373,25 @@ func GetFeaturesWithDescriptions() []OrgFeatureInfo {
 	return result
 }
 
+// adminOnlyFeatures are never exposed to org users via the public API, either
+// because they gate the flag system itself or because enabling them depends on
+// infrastructure prerequisites outside the org's control.
+var adminOnlyFeatures = map[OrgFeature]struct{}{
+	OrgFeatureUserManagedFeatures:   {},
+	OrgFeatureAWSAccountConnections: {},
+	OrgFeaturePhoneHomeAuth:         {},
+}
+
 // GetUserManageableFeatures returns features that users are allowed to toggle
-// (excludes the user-managed-features flag itself, which is admin-only)
 func GetUserManageableFeatures() []OrgFeature {
 	allFeatures := GetFeatures()
-	manageable := make([]OrgFeature, 0, len(allFeatures)-1)
+	manageable := make([]OrgFeature, 0, len(allFeatures)-len(adminOnlyFeatures))
 
 	for _, feature := range allFeatures {
-		if feature != OrgFeatureUserManagedFeatures && feature != OrgFeatureAWSAccountConnections {
-			manageable = append(manageable, feature)
+		if _, ok := adminOnlyFeatures[feature]; ok {
+			continue
 		}
+		manageable = append(manageable, feature)
 	}
 
 	return manageable
