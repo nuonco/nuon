@@ -24,16 +24,15 @@ type AdminMigrateCronEmittersRequest struct {
 type AdminMigrateCronEmittersResponse struct {
 	Total            int `json:"total"`
 	Updated          int `json:"updated"`
-	Restarted        int `json:"restarted"`
 	InstallsEnqueued int `json:"installs_enqueued"`
 	Skipped          int `json:"skipped"`
 	Failed           int `json:"failed"`
 }
 
 // @ID						AdminMigrateCronEmitters
-// @Summary				Re-jitter all cron emitters and restart them so new schedules take effect immediately
+// @Summary				Re-jitter all cron emitters
 // @Description			System emitters (process/runner/vcs health checks) are re-jittered in place from their
-// @Description			canonical schedules and their workflows restarted. Install emitters (action crons, drift)
+// @Description			canonical schedules . Install emitters (action crons, drift)
 // @Description			are migrated by enqueueing an appconfig-updated reconcile per install.
 // @Param					req	body	AdminMigrateCronEmittersRequest	true	"Input"
 // @Tags					runners/admin
@@ -112,16 +111,6 @@ func (s *service) AdminMigrateCronEmitters(ctx *gin.Context) {
 			continue
 		}
 		resp.Updated++
-
-		if _, err := s.emitterClient.RestartEmitterWorkflow(ctx, em.ID); err != nil {
-			s.l.Warn("unable to restart emitter workflow",
-				zap.String("emitter_id", em.ID),
-				zap.Error(err),
-			)
-			resp.Failed++
-			continue
-		}
-		resp.Restarted++
 	}
 
 	for installID := range installIDs {
