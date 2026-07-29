@@ -23,8 +23,8 @@ each deployment group, approve, deploy.
 ## What You Will Create
 
 - An [app branch](/concepts/app-branches) named `main`, tracking the `eks-simple` directory of the example repository.
-- Two [deployment groups](/concepts/app-branches#deployment-groups) — `stage` and `production` — that select their
-  installs by label.
+- Two [deployment groups](/concepts/app-branches#deployment-groups) named `stage` and `production`, which select
+  their installs by label.
 - A labeled install, so it lands in the `stage` group.
 - A plan-only preview run, and then a real run you approve group by group.
 
@@ -107,7 +107,7 @@ domain = "stage.nuon.run"
 sub_domain = "whoami"
 ```
 
-Either route works — a label set by the CLI and a label set in an install config file are the same label. Managing it
+Either route works. A label set by the CLI and a label set in an install config file are the same label. Managing it
 in the file means group membership is version-controlled along with everything else about the install.
 
 ### Sync the app
@@ -128,16 +128,16 @@ nuon apps branches list --app-id app...
 ```
 
 <Warning>
-	`nuon apps branches list` needs the app **ID** (`app...`), not the app name — a name returns an empty result rather
+	`nuon apps branches list` needs the app **ID** (`app...`), not the app name. A name returns an empty result rather
 	than an error. Copy the ID for `eks-simple` out of `nuon apps list`.
 
 	Run `nuon apps select` with **no flags** and choose from the list: that stores the app's ID, which is what lets the
-	rest of this walkthrough drop `--app-id` from `trigger` and `runs`. Do not use `nuon apps select --app eks-simple` —
+	rest of this walkthrough drop `--app-id` from `trigger` and `runs`. Do not use `nuon apps select --app eks-simple`:
 	it succeeds, but stores the name, and the branch commands then fail as though the branch did not exist.
 </Warning>
 
 You should see one branch, `main`. In the dashboard, the app now has a **Branches** view showing the branch and its
-**Deployment plan** — `stage`, then `production`.
+**Deployment plan**: `stage`, then `production`.
 
 {/* SCREENSHOT NEEDED — see ~/app-branches-launch/SCREENSHOTS-NEEDED.md
 <Frame caption="The eks-simple app's Branches view, with the main branch and its two deployment groups.">
@@ -147,7 +147,7 @@ You should see one branch, `main`. In the dashboard, the app now has a **Branche
 
 ## Preview a Change
 
-Before deploying anything, see what a change would do. Edit an input default in `inputs.toml` — change the `whoami`
+Before deploying anything, see what a change would do. Edit an input default in `inputs.toml`. Change the `whoami`
 subdomain, for instance:
 
 ```toml inputs.toml
@@ -171,7 +171,7 @@ install. Watch it in the workflow TUI the command opens, or in the dashboard.
 <Note>
 	A manual plan-only run still walks the deployment groups: it creates each group's `plan install group` and
 	`deploy install group` step and then **pauses at the first approval gate**, showing you the same per-install diff a
-	real rollout would. `--preview` suppresses the apply, not the workflow — so this run waits for you rather than
+	real rollout would. `--preview` suppresses the apply, not the workflow, so this run waits for you rather than
 	finishing on its own. Approving it applies nothing. (A pull request preview behaves differently and never creates
 	the group steps at all.)
 </Note>
@@ -220,8 +220,8 @@ From step 3 on they are identical:
 ### Approve the plan
 
 Open the run in the dashboard. At `plan install group: stage` you will find the per-install diff and an **Approve
-install group plan** action. Read the diff — for the change above it should show the `sub_domain` input default moving
-from `whoami` to `hello` — and approve it.
+install group plan** action. Read the diff. For the change above it should show the `sub_domain` input default moving
+from `whoami` to `hello`. Then approve it.
 
 {/* SCREENSHOT NEEDED — see ~/app-branches-launch/SCREENSHOTS-NEEDED.md
 <Frame caption="Approving the stage group's plan, with the sub_domain input change visible in the diff.">
@@ -232,11 +232,11 @@ from `whoami` to `hello` — and approve it.
 The `stage` group deploys, and the run then stops at `plan install group: production`. If you have no `env = "prod"`
 installs, that group has nothing to deploy to; use **Skip install group** to move the run past it.
 
-That pause between groups is the whole point: a rollout is a sequence of decisions you make with the diff in front of
-you, not one irreversible action.
+The pause before each group is what makes the rollout reviewable. You decide group by group, with the diff in front
+of you, instead of committing the whole fleet at once.
 
 <Note>
-	Every group's plan needs an approval — from a person in the dashboard, or from an API caller. There is no setting
+	Every group's plan needs an approval, from a person in the dashboard or from an API caller. There is no setting
 	that auto-approves a deployment group.
 </Note>
 
@@ -250,7 +250,7 @@ This lists the branch's runs and opens the one you pick in the workflow TUI.
 
 ## Trigger From a Git Push
 
-So far every run has been triggered by hand, because `branch.toml` tracks `nuonco/example-app-configs` — a repository
+So far every run has been triggered by hand, because `branch.toml` tracks `nuonco/example-app-configs`, a repository
 you cannot push to. To get the push-triggered behavior, point the branch at a repository of your own.
 
 <Steps>
@@ -258,7 +258,7 @@ you cannot push to. To get the push-triggered behavior, point the branch at a re
     Fork `example-app-configs`, or copy the `eks-simple` directory into a repository you control.
   </Step>
   <Step title="Connect it to Nuon">
-    Connect the Nuon GitHub App for your repository's owner — see [connecting a repository](/guides/vcs). This is what
+    Connect the Nuon GitHub App for your repository's owner (see [connecting a repository](/guides/vcs)). This is what
     makes pull request previews possible. It is an org-level connection keyed on the owner, so it enables previews for
     any branch tracking a repo under that owner, whether the branch config uses `[connected_repo]` or `[public_repo]`.
   </Step>
@@ -295,7 +295,7 @@ you cannot push to. To get the push-triggered behavior, point the branch at a re
     git push origin main
     ```
 
-    The push starts a run on its own. From here on, a commit to `main` is the trigger — no CLI step in between.
+    The push starts a run on its own. From here on, a commit to `main` is the trigger, with no CLI step in between.
   </Step>
   <Step title="Open a pull request">
     Open a pull request against `main` with a config change in it. Nuon runs a plan-only preview and posts a comment

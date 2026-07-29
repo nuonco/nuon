@@ -6,8 +6,8 @@ keywords: ["configure app branches", "branch.toml", "install_groups", "deploymen
 ---
 
 This guide walks through setting up an [app branch](/concepts/app-branches) on an existing app: writing the branch
-config, sorting your installs into deployment groups, triggering runs, approving them, and — optionally — keeping your
-install configs in git alongside your app config.
+config, sorting your installs into deployment groups, triggering runs, approving them, and
+(optionally) keeping your install configs in git alongside your app config.
 
 ## Prerequisites
 
@@ -51,7 +51,7 @@ Three things to get right:
 
 - **The repo block.** Use `[connected_repo]` for a repository connected through the Nuon GitHub App, or
   `[public_repo]` for a public one. Exactly one of the two, and `repo`, `directory`, and `branch` are all required.
-  `directory` is the path to your app config within the repo — `"."` if it is at the root.
+  `directory` is the path to your app config within the repo, or `"."` if it is at the root.
 - **`name`** is the branch's name in Nuon, and it comes from this key, not from the filename. It is what you pass to
   `nuon sync --branch`.
 - **Group order.** `order` decides which group deploys first, lowest first. List your groups in the order you want
@@ -103,8 +103,8 @@ install_ids = ["inlbmky2fz8qvrxp3d7twahjc9"]
 
 Two layouts are supported, and they are mutually exclusive:
 
-- **`branch.toml`** — a single branch. This is what most apps want, and what the rest of this guide assumes.
-- **`branches/*.toml`** — one file per branch, for tracking several branches of the same repo (a `staging` branch and
+- **`branch.toml`**: a single branch. This is what most apps want, and what the rest of this guide assumes.
+- **`branches/*.toml`**: one file per branch, for tracking several branches of the same repo (a `staging` branch and
   a `main` branch, for example). The `name` key inside each file sets the branch name; the filename does not.
 
 ## Label your installs
@@ -148,7 +148,7 @@ Syncing your app config creates or updates the branch, along with its deployment
 nuon apps sync
 ```
 
-Branches are upserted by name and are never pruned — removing a branch from your config does not delete it in Nuon.
+Branches are upserted by name and are never pruned. Removing a branch from your config does not delete it in Nuon.
 Use `nuon apps branches delete` for that.
 
 Confirm what Nuon now has:
@@ -164,10 +164,10 @@ included.
 
 <Warning>
   The `nuon apps branches` subcommands take the app **ID** (`app...`), not the app name. Pass a name and `list` returns
-  an empty result, `trigger`, `runs`, and `delete` report that the branch was not found — and `create` silently
-  succeeds, creating a branch that neither `list` nor the dashboard will ever show. Get the ID from `nuon apps list`.
+  an empty result, and `trigger`, `runs`, and `delete` report that the branch was not found. `create` silently
+  succeeds and creates a branch that neither `list` nor the dashboard will ever show. Get the ID from `nuon apps list`.
 
-  You can also select the app once and then omit `--app-id` wherever it is optional — but run `nuon apps select` with
+  You can also select the app once and then omit `--app-id` wherever it is optional, but run `nuon apps select` with
   **no flags** and pick from the list, which stores the app's ID. `nuon apps select --app <name>` succeeds and stores
   the name exactly as you typed it, which leaves the branch commands failing the same way.
 </Warning>
@@ -183,7 +183,7 @@ git push origin main
 
 Nuon receives the push, and the run appears in the dashboard and in `nuon apps branches runs`.
 
-You do not have to wait for a push, though. Two other ways to start a run — both use the app you selected with
+You do not have to wait for a push, though. Two other ways to start a run, both using the app you selected with
 `nuon apps select`:
 
 <CodeGroup>
@@ -216,13 +216,13 @@ nuon sync --app-branch
   `--preview` on a manual run suppresses the **apply**, not the workflow. The run still creates
   `plan install group: <name>` and `deploy install group: <name>` for every group and stops at the first approval gate,
   where you can read the diff. Approving it applies nothing. This differs from a pull request preview, which never
-  creates the group steps at all — so expect a manual plan-only run to sit waiting for you.
+  creates the group steps at all, so expect a manual plan-only run to sit waiting for you.
 </Note>
 
 <Warning>
   `nuon sync --branch` runs against your **local, uncommitted files**, not the tracked branch's commit. It is the
   right tool for iterating on a change; it is not a substitute for pushing. Note also that `--branch`, `--app-branch`,
-  and `--preview` exist on `nuon sync`, not on `nuon apps sync` — and that bare `nuon sync --preview`, without
+  and `--preview` exist on `nuon sync`, not on `nuon apps sync`, and that bare `nuon sync --preview`, without
   `--branch` or `--app-branch`, ignores the flag and performs a real sync.
 </Warning>
 
@@ -253,15 +253,15 @@ than one irreversible action.
 */}
 
 <Note>
-  There is no setting that auto-approves a deployment group's plan — each one needs a human in the dashboard or an API
+  There is no setting that auto-approves a deployment group's plan. Each one needs a human in the dashboard or an API
   caller. If you want a machine to advance a rollout, subscribe to the [webhook](/guides/webhooks) events for the run
   and drive the approval through the API once your own checks pass.
 </Note>
 
 ## Set up pull request previews
 
-There is nothing to configure on the branch itself. Opening a pull request against a tracked branch — or pushing
-another commit to an open one — starts a plan-only run, and Nuon reports back on the pull request:
+There is nothing to configure on the branch itself. Opening a pull request against a tracked branch, or pushing
+another commit to an open one, starts a plan-only run, and Nuon reports back on the pull request:
 
 - a comment headed `## Nuon Preview — <AppName>` with a table of config changes by section, edited in place on each
   later push rather than added to.
@@ -270,14 +270,14 @@ another commit to an open one — starts a plan-only run, and Nuon reports back 
 If the pull request does not change the app config, the run stops early and the comment says so.
 
 What previews *do* need is a **GitHub App connection in your org for the repository's owner**. Connect it once, from
-[connecting a repository](/guides/vcs) — after that, every branch tracking a repo under that owner gets previews. This
+[connecting a repository](/guides/vcs). After that, every branch tracking a repo under that owner gets previews. This
 is an org-level setting, not a property of the branch config: a `[public_repo]` branch pointing at `acmeco/my-app` gets
 previews just like a `[connected_repo]` one, provided your org has connected `acmeco`.
 
 <Warning>
   When no matching connection exists, previews fail **silently**. The run executes and shows up in the dashboard, but
   the pull request comment and the commit status are skipped and nothing reports an error. If previews never appear,
-  check the GitHub App connection for the repository's owner — not your `branch.toml`.
+  check the GitHub App connection for the repository's owner, not your `branch.toml`.
 </Warning>
 
 To reproduce a preview locally before opening the pull request:
@@ -293,7 +293,7 @@ console action.
 
 This takes two settings, and **both are required**: a repository block telling Nuon where the install configs live, and
 `installs_directory` naming the directory inside it. Use `[installs_connected_repo]` for a repository connected through
-the Nuon GitHub App, or `[installs_public_repo]` for a public one — exactly one of the two.
+the Nuon GitHub App, or `[installs_public_repo]` for a public one. Exactly one of the two.
 
 ```toml branch.toml
 name               = "main"
@@ -310,19 +310,19 @@ directory = "."
 branch    = "main"
 ```
 
-Here both blocks name the same repository — a common setup, and one you still have to declare explicitly. To keep the
+Here both blocks name the same repository, a common setup, and one you still have to declare explicitly. To keep the
 install configs somewhere else entirely, point `[installs_connected_repo]` at that repository instead; nothing else
 changes.
 
 <Warning>
   `installs_directory` on its own does nothing. With neither `[installs_connected_repo]` nor `[installs_public_repo]`
-  set, the `sync install configs` step is skipped silently — you get no error and no synced installs. If you set
+  set, the `sync install configs` step is skipped silently: you get no error and no synced installs. If you set
   `installs_directory` and nothing happens, this is why.
 </Warning>
 
 <Note>
   Keep the installs repository block's `directory` at the repository root (`"."`), and give `installs_directory` a path
-  from there — `installs`, which is also the default. That is the layout Nuon resolves consistently; pointing the
+  from there. The default is `installs`. That is the layout Nuon resolves consistently; pointing the
   installs repository block into a subdirectory is not reliable.
 </Note>
 
@@ -370,7 +370,7 @@ enabling install config sync is a commit:
     The push starts a run, whose `fetch app config` step reads the new installs settings and stores them on the branch.
   </Step>
   <Step title="Or trigger a run against the committed config">
-    If you would rather not wait for a push, trigger a run — it fetches `branch.toml` from the tracked branch the same
+    If you would rather not wait for a push, trigger a run. It fetches `branch.toml` from the tracked branch the same
     way:
 
     ```sh
@@ -386,7 +386,7 @@ enabling install config sync is a commit:
     ```
 
     The branch config should now carry the installs repository and directory. If they are absent, the run did not read
-    them from git — check that the file is committed on the tracked branch.
+    them from git. Check that the file is committed on the tracked branch.
   </Step>
 </Steps>
 
@@ -396,7 +396,7 @@ Once the settings are on the branch, three things can start a sync:
 
 1. **A push** that touches files under the installs directory.
 2. **A branch run**, through its skippable `sync install configs` step.
-3. **A manual trigger** — the API call below syncs every install on the branch. To re-sync a *single* install, use
+3. **A manual trigger**: the API call below syncs every install on the branch. To re-sync a *single* install, use
    **Sync now** on that install's **Configs** view in the dashboard, which also shows its config history. The button
    only appears once the install is connected to a branch.
 
@@ -410,7 +410,7 @@ curl -X POST \
 ## Re-apply a previous config version
 
 Every config change to an install is recorded as an app config version, and any earlier version can be applied again.
-That is the recovery path when a rollout — or a mistyped input — turns out badly.
+That is the recovery path when a rollout, or a mistyped input, turns out badly.
 
 <Steps>
   <Step title="List the install's versions">
@@ -445,7 +445,7 @@ That is the recovery path when a rollout — or a mistyped input — turns out b
 </Steps>
 
 To move a whole deployment group back rather than one install, trigger a branch run against the older app config and
-skip the build step — the artifacts for that config already exist:
+skip the build step, since the artifacts for that config already exist:
 
 ```sh
 curl -X POST \
@@ -487,11 +487,11 @@ The run still plans each group and still waits for approval, so you see the reve
 
 **A push did not start a run.** Branch matching is on the exact repository and branch name. Check that the branch's
 `branch` value matches the ref you pushed and that the repo is the one Nuon has connected. There are no path filters,
-so a push that matches always starts a run — if nothing happened, the match itself failed.
+so a push that matches always starts a run. If nothing happened, the match itself failed.
 
 **The pull request has no Nuon comment.** Your org has no GitHub App connection for that repository's owner. The
 preview run itself succeeds and this is not reported as an error, so check the connection rather than the branch config.
-Note this is about the *owner*, not the branch's repo block — a `[public_repo]` branch is fine if the owner is connected.
+Note this is about the *owner*, not the branch's repo block. A `[public_repo]` branch is fine if the owner is connected.
 
 **`installs_directory` is set but no installs sync.** Either the branch has no `[installs_connected_repo]` /
 `[installs_public_repo]` block, or the settings were never read from git. Check
