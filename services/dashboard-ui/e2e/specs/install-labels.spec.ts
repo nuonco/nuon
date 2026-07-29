@@ -21,9 +21,13 @@ test.describe("Install labels", () => {
     await page.goto(`/${orgId}/installs/${installId}`);
     await page.waitForLoadState("domcontentloaded");
 
-    // --- Step 2: Open Manage → Edit labels, clear any existing labels ---
-    await page.getByRole("button", { name: "Manage" }).click();
-    await page.getByRole("button", { name: "Edit labels" }).click();
+    // --- Step 2: Open Settings panel → Edit labels, clear any existing labels ---
+    await page.goto(`/${orgId}/installs/${installId}?panel=settings`);
+    await page.waitForLoadState("domcontentloaded");
+    await page
+      .getByRole("complementary")
+      .getByRole("button", { name: "Edit labels" })
+      .click();
     await expect(page.getByRole("button", { name: "Add label" })).toBeVisible();
 
     // Remove any pre-existing label rows
@@ -55,15 +59,19 @@ test.describe("Install labels", () => {
     ).not.toBeVisible({ timeout: 10000 });
 
     // --- Step 4: Reload and verify all 3 labels ---
-    await page.reload();
+    await page.goto(`/${orgId}/installs/${installId}`);
     await page.waitForLoadState("domcontentloaded");
     await expect(labelBadge("env", "staging")).toBeVisible({ timeout: 10000 });
     await expect(labelBadge("team", "platform")).toBeVisible();
     await expect(labelBadge("region", "us-west-2")).toBeVisible();
 
     // --- Step 5: Open Edit labels to rename one and remove one ---
-    await page.getByRole("button", { name: "Manage" }).click();
-    await page.getByRole("button", { name: "Edit labels" }).click();
+    await page.goto(`/${orgId}/installs/${installId}?panel=settings`);
+    await page.waitForLoadState("domcontentloaded");
+    await page
+      .getByRole("complementary")
+      .getByRole("button", { name: "Edit labels" })
+      .click();
 
     const keyInputs = page.locator('input[name^="label:"][name$=":key"]');
     await expect(keyInputs).toHaveCount(3, { timeout: 10000 });
@@ -89,7 +97,7 @@ test.describe("Install labels", () => {
     ).not.toBeVisible({ timeout: 10000 });
 
     // --- Step 6: Reload and verify updated labels ---
-    await page.reload();
+    await page.goto(`/${orgId}/installs/${installId}`);
     await page.waitForLoadState("domcontentloaded");
     await expect(labelBadge("environment", "staging")).toBeVisible({
       timeout: 10000,

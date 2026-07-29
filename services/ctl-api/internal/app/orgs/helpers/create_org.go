@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
@@ -64,6 +65,12 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 	if err := h.db.WithContext(ctx).Create(&org).Error; err != nil {
 		return nil, fmt.Errorf("unable to create org: %w", err)
 	}
+
+	h.mw.Incr("org.created", metrics.ToTags(map[string]string{
+		"org_id":       org.ID,
+		"org_type":     string(org.OrgType),
+		"account_type": string(acct.AccountType),
+	}))
 
 	// make sure the notifications config orgID is set
 	if res := h.db.WithContext(ctx).

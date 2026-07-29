@@ -6,6 +6,27 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAction, TActionConfig } from '@/types'
 
+const NUON_MANAGED_ENV_VARS = new Set([
+  'role',
+  'TRIGGER_TYPE',
+  'COMPONENT_ID',
+  'COMPONENT_NAME',
+  'FLOW_ID',
+  'FLOW_TYPE',
+  'INSTALL_WORKFLOW_ID',
+  'INSTALL_WORKFLOW_TYPE',
+  'ROLE_ID',
+  'ROLE_ARN',
+  'ROLE_NAME',
+  'ROLE_TYPE',
+  'CHANGE_TYPE',
+  'NUON_ORG_ID',
+  'NUON_APP_ID',
+  'NUON_INSTALL_ID',
+  'NUON_API_URL',
+  'NUON_API_TOKEN',
+])
+
 function normalizeEnvVars(steps: TActionConfig['steps']) {
   const envVars = steps.reduce((acc, step) => {
     const keys = Object.keys(step?.env_vars || {})
@@ -26,23 +47,40 @@ interface IInstallActionManualRunModal extends Omit<IModal, 'onSubmit'> {
   action: TAction
   actionConfigId: string
   isLoading: boolean
+  isRerun?: boolean
   onSubmit: (vars: Record<string, string>, role: string) => void
   roleSelector: ReactNode
+  runEnvVars?: Record<string, string>
 }
 
 export const InstallActionManualRunModal = ({
   action,
   actionConfigId,
   isLoading,
+  isRerun = false,
   onSubmit,
   roleSelector,
+  runEnvVars,
   ...props
 }: IInstallActionManualRunModal) => {
   const config = action?.configs?.[0]
   const envVars = normalizeEnvVars(config?.steps || [])
-  const hasEnvVars = Object.keys(envVars).length > 0
 
-  const [customVars, setCustomVars] = useState<number[]>([])
+  const runEnvVarEntries = Object.entries(runEnvVars ?? {}).filter(
+    ([key]) => !NUON_MANAGED_ENV_VARS.has(key)
+  )
+  const configOverrides = Object.fromEntries(
+    runEnvVarEntries.filter(([key]) => key in envVars)
+  )
+  const customFromRun = runEnvVarEntries.filter(([key]) => !(key in envVars))
+
+  const initialValues = { ...envVars, ...configOverrides }
+  const hasEnvVars = Object.keys(initialValues).length > 0 || customFromRun.length > 0
+
+  const [customVars, setCustomVars] = useState<
+    Array<{ id: number; name: string; value: string }>
+  >(() => customFromRun.map(([name, value], index) => ({ id: index, name, value })))
+  const nextCustomId = useRef(customFromRun.length)
   const formRef = useRef<HTMLFormElement>(null)
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -82,18 +120,18 @@ export const InstallActionManualRunModal = ({
 
   return (
     <Modal
-      heading={`Run action ${action?.name}`}
+      heading={`${isRerun ? 'Re-run' : 'Run'} action ${action?.name}`}
       size="lg"
       primaryActionTrigger={{
         children: isLoading ? (
           <>
             <Icon variant="Loading" className="animate-spin" />
-            Running action...
+            {isRerun ? 'Re-running action...' : 'Running action...'}
           </>
         ) : (
           <>
             <Icon variant="PlayIcon" />
-            Run action
+            {isRerun ? 'Re-run action' : 'Run action'}
           </>
         ),
         disabled: isLoading,
@@ -117,9 +155,9 @@ export const InstallActionManualRunModal = ({
               workflow run.
             </Text>
 
-            {Object.keys(envVars).length > 0 && (
+            {Object.keys(initialValues).length > 0 && (
               <div className="flex flex-col gap-4">
-                {Object.keys(envVars).map((envVar) => (
+                {Object.keys(initialValues).map((envVar) => (
                   <label key={envVar} className="flex flex-col gap-1">
                     <Text variant="label" weight="strong">
                       {envVar}
@@ -127,7 +165,7 @@ export const InstallActionManualRunModal = ({
                     <input
                       className="px-3 py-2 text-base rounded-md border bg-black/5 dark:bg-white/5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600"
                       required
-                      defaultValue={envVars[envVar]}
+                      defaultValue={initialValues[envVar]}
                       name={envVar}
                       type="text"
                     />
@@ -138,22 +176,22 @@ export const InstallActionManualRunModal = ({
 
             {customVars.length > 0 && (
               <div className="flex flex-col gap-2">
-                {customVars.map((cv) => (
+                {customVars.map((cv, index) => (
                   <fieldset
-                    key={cv}
+                    key={cv.id}
                     className="flex flex-col gap-2 py-2 border-t relative"
                   >
                     <legend className="text-base font-medium pr-2 mb-2 flex items-center justify-between">
-                      <span>Custom env var {cv + 1}</span>
+                      <span>Custom env var {index + 1}</span>
                       <Button
                         type="button"
                         variant="ghost"
                         onClick={() => {
-                          setCustomVars((vars) => vars.filter((v) => v !== cv))
+                          setCustomVars((vars) => vars.filter((v) => v.id !== cv.id))
                         }}
                         className="ml-2 !p-2"
                         size="sm"
-                        aria-label={`Remove custom env var ${cv + 1}`}
+                        aria-label={`Remove custom env var ${index + 1}`}
                       >
                         <Icon variant="XIcon" size="12" />
                       </Button>
@@ -165,7 +203,8 @@ export const InstallActionManualRunModal = ({
                       <input
                         className="px-3 py-2 text-base rounded-md border bg-black/5 dark:bg-white/5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600"
                         required
-                        name={`custom:${cv}:name`}
+                        defaultValue={cv.name}
+                        name={`custom:${cv.id}:name`}
                         type="text"
                       />
                     </label>
@@ -176,7 +215,8 @@ export const InstallActionManualRunModal = ({
                       <input
                         className="px-3 py-2 text-base rounded-md border bg-black/5 dark:bg-white/5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600"
                         required
-                        name={`custom:${cv}:value`}
+                        defaultValue={cv.value}
+                        name={`custom:${cv.id}:value`}
                         type="text"
                       />
                     </label>
@@ -190,7 +230,10 @@ export const InstallActionManualRunModal = ({
                 type="button"
                 variant="ghost"
                 onClick={() => {
-                  setCustomVars((vars) => [...vars, vars.length])
+                  setCustomVars((vars) => [
+                    ...vars,
+                    { id: nextCustomId.current++, name: '', value: '' },
+                  ])
                 }}
               >
                 <Icon variant="PlusIcon" />

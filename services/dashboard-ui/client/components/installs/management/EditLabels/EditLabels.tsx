@@ -57,7 +57,7 @@ export const EditLabelsModal = ({
   return (
     <Modal
       heading={
-        <Text flex className="gap-4" variant="h3" weight="strong" theme="info">
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="TagIcon" size="24" />
           Edit labels
         </Text>

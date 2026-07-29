@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useNavigate } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import type { TIconVariant } from '@/components/common/Icon'
 import { getOrgs } from '@/lib/ctl-api/orgs/get-orgs'
@@ -47,6 +48,8 @@ export function useSpotlightResults(
   addModal?: (modal: React.ReactElement) => string,
   orgFeatures?: Record<string, boolean>
 ) {
+  const navigate = useNavigate()
+
   const appSubPages = useMemo(
     () => hasAppBranches ? [...APP_SUB_PAGES, ...APP_BRANCH_SUB_PAGES] : APP_SUB_PAGES,
     [hasAppBranches]
@@ -389,6 +392,13 @@ export function useSpotlightResults(
             action: () => addModal?.(<InstallAdhocActionModal installId={installId} />),
           },
           {
+            label: `${name} › Settings`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'GearIcon',
+            action: () => navigate(`/${orgId}/installs/${installId}?panel=settings`),
+          },
+          {
             label: `${name} › Sync secrets`,
             subtitle: install.app?.name,
             tag: 'command',
@@ -564,7 +574,7 @@ export function useSpotlightResults(
     }
 
     return []
-  }, [liveParsed, parsed, appsResult, installsResult, runnerInstallsResult, globalCommandInstalls, orgsResult, actionResults, componentResults, appSubPages, addModal, orgFeatures, isGlobalCommand])
+  }, [liveParsed, parsed, appsResult, installsResult, runnerInstallsResult, globalCommandInstalls, orgsResult, actionResults, componentResults, appSubPages, addModal, orgFeatures, isGlobalCommand, navigate, orgId])
 
   const isFetching = appsFetching || installsFetching || runnerInstallsFetching || globalCommandInstallsFetching || orgsFetching || actionsFetching || componentsFetching
 

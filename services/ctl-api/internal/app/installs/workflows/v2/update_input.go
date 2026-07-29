@@ -25,7 +25,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	sg := newStepGroup(flw)
 	steps := make([]*app.WorkflowStep, 0)
 
-	sg.nextGroup() // refresh inputs partial in state
+	sg.nextGroupEager() // refresh inputs partial in state
 	step, err := stateInputsRefreshStep(ctx, sg, install, flw.PlanOnly)
 	if err != nil {
 		return nil, err

@@ -65,6 +65,13 @@ func (c *CreateAppStackConfigRequest) Validate(v *validator.Validate) error {
 		if stack.Contents == "" {
 			return fmt.Errorf("custom_nested_stacks[%d] (%s): contents is required when template_url is set", i, stack.Name)
 		}
+		// Also validated at config sync, but a bad parameter persisted here would
+		// fail stack generation for every install of the app.
+		for paramName, paramValue := range stack.Parameters {
+			if err := config.ValidateStackParameterTemplate(paramValue); err != nil {
+				return fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q: %w", i, stack.Name, paramName, err)
+			}
+		}
 	}
 	return nil
 }

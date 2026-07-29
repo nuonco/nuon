@@ -1,4 +1,4 @@
-import { Outlet, useParams, useMatch } from 'react-router'
+import { Outlet, useParams, useMatch, useSearchParams } from 'react-router'
 import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -11,7 +11,11 @@ import { Text } from '@/components/common/Text'
 import { DeprovisionBanner } from '@/components/installs/DeprovisionBanner'
 import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
-import { InstallManagementDropdown } from '@/components/installs/management/InstallManagementDropdown'
+import {
+  InstallSettingsPanel,
+  useOpenInstallSettings,
+  INSTALL_SETTINGS_PANEL_KEY,
+} from '@/components/installs/InstallSettingsPanel'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
@@ -50,6 +54,10 @@ const InstallTemplate = () => {
   const { install, labelColors } = useInstall()
   const hasRunbooks = !!org?.features?.runbooks
   const hasNotebooks = !!org?.features?.notebooks
+  const openSettings = useOpenInstallSettings()
+  const [searchParams] = useSearchParams()
+  const isSettingsOpen =
+    searchParams.get('panel') === INSTALL_SETTINGS_PANEL_KEY
 
   const navLinks: TNavItem[] = [
     { type: 'section', label: 'Overview' },
@@ -63,12 +71,15 @@ const InstallTemplate = () => {
       iconVariant: 'TreeStructureIcon' as const,
       text: 'Workflows',
     },
-    { type: 'section', label: 'App' },
     {
-      path: `/components`,
-      iconVariant: 'CardsIcon' as const,
-      text: 'Components',
+      type: 'action',
+      key: 'settings',
+      iconVariant: 'GearIcon' as const,
+      text: 'Settings',
+      onClick: openSettings,
+      isActive: isSettingsOpen,
     },
+    { type: 'section', label: 'App' },
     ...(org?.features?.['component-health']
       ? [
           {
@@ -78,6 +89,11 @@ const InstallTemplate = () => {
           },
         ]
       : []),
+    {
+      path: `/components`,
+      iconVariant: 'CardsIcon' as const,
+      text: 'Components',
+    },
     {
       path: '/sandbox',
       iconVariant: 'ShippingContainerIcon' as const,
@@ -148,7 +164,9 @@ const InstallTemplate = () => {
         ]
       : []),
   ]
-  const isChildRoute = !!useMatch('/:orgId/installs/:installId/:section/:rest/*')
+  const isChildRoute = !!useMatch(
+    '/:orgId/installs/:installId/:section/:rest/*'
+  )
 
   if (!install) return null
 
@@ -156,82 +174,10 @@ const InstallTemplate = () => {
     install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   return (
-    <PageLayout>    
-      {isChildRoute ? (
-        <PageContent className="border-t" variant="row">
-          <SubNav
-            basePath={`/${org?.id}/installs/${install?.id}`}
-            links={navLinks}
-          />
-          <div className="flex flex-col flex-1 min-w-0">
-            <Outlet />
-          </div>
-        </PageContent>
-      ) : (
-        <>
-          <PageHeader>
-                          <DeprovisionBanner />
-            <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
-              <HeadingGroup className="gap-1.5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Text variant="h3" weight="stronger" level={1}>
-                    {install.name}
-                  </Text>
-                  {install.app_branch?.name && (
-                    <Badge size="sm" theme="brand">{install.app_branch.name}</Badge>
-                  )}
-                  {install.labels &&
-                    Object.entries(install.labels).map(([key, value]) => (
-                      <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} customColor={labelColors?.[key]} />
-                    ))}
-                </div>
-                <ID>{install.id}</ID>
-                <div className="flex items-center gap-3">
-                  <Text variant="subtext" theme="info">
-                    Last updated{' '}
-                    <Time
-                      variant="subtext"
-                      time={install?.updated_at}
-                      format="relative"
-                    />
-                  </Text>
-                  <AdminDashboardLink
-                    path={`/queues?owner_id=${install.id}`}
-                    label="Admin panel"
-                  />
-                </div>
-              </HeadingGroup>
-
-              <div className="flex items-start flex-wrap gap-4 md:gap-8">
-                {isManagedByConfig && (
-                  <LabeledValue label="Managed By">
-                    <Text variant="subtext">
-                      <span className="flex items-center gap-1">
-                        <Icon variant="FileCodeIcon" /> Install Config
-                      </span>
-                    </Text>
-                  </LabeledValue>
-                )}
-                <LabeledValue label="App">
-                  <Text variant="subtext">
-                    <Link href={`/${org.id}/apps/${install.app_id}`}>
-                      {install?.app?.name}
-                    </Link>
-                  </Text>
-                </LabeledValue>
-                <InstallStatusesContainer collapsible />
-                <InstallManagementDropdown />
-              </div>
-            </div>
-            {install?.drifted_objects?.length ? (
-              <DriftedSummary
-                className="mt-4"
-                orgId={org.id}
-                installId={install.id}
-                driftedObjects={install.drifted_objects}
-              />
-            ) : null}
-          </PageHeader>
+    <>
+      <InstallSettingsPanel />
+      <PageLayout>
+        {isChildRoute ? (
           <PageContent className="border-t" variant="row">
             <SubNav
               basePath={`/${org?.id}/installs/${install?.id}`}
@@ -241,8 +187,91 @@ const InstallTemplate = () => {
               <Outlet />
             </div>
           </PageContent>
-        </>
-      )}
-    </PageLayout>
+        ) : (
+          <>
+            <PageHeader>
+              <DeprovisionBanner />
+              <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
+                <HeadingGroup className="gap-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Text variant="h3" weight="stronger" level={1}>
+                      {install.name}
+                    </Text>
+                    {install.app_branch?.name && (
+                      <Badge size="sm" theme="brand">
+                        {install.app_branch.name}
+                      </Badge>
+                    )}
+                    {install.labels &&
+                      Object.entries(install.labels).map(([key, value]) => (
+                        <LabelBadge
+                          key={key}
+                          size="sm"
+                          variant="code"
+                          labelKey={key}
+                          labelValue={value}
+                          customColor={labelColors?.[key]}
+                        />
+                      ))}
+                  </div>
+                  <ID>{install.id}</ID>
+                  <div className="flex items-center gap-3">
+                    <Text variant="subtext" theme="info">
+                      Last updated{' '}
+                      <Time
+                        variant="subtext"
+                        time={install?.updated_at}
+                        format="relative"
+                      />
+                    </Text>
+                    <AdminDashboardLink
+                      path={`/queues?owner_id=${install.id}`}
+                      label="Admin panel"
+                    />
+                  </div>
+                </HeadingGroup>
+
+                <div className="flex items-start flex-wrap gap-4 md:gap-8">
+                  {isManagedByConfig && (
+                    <LabeledValue label="Managed By">
+                      <Text variant="subtext">
+                        <span className="flex items-center gap-1">
+                          <Icon variant="FileCodeIcon" /> Install Config
+                        </span>
+                      </Text>
+                    </LabeledValue>
+                  )}
+                  <LabeledValue label="App">
+                    <Text variant="subtext">
+                      <Link href={`/${org.id}/apps/${install.app_id}`}>
+                        {install?.app?.name}
+                      </Link>
+                    </Text>
+                  </LabeledValue>
+                  <InstallStatusesContainer collapsible />
+                </div>
+              </div>
+              {install?.drifted_objects?.length ? (
+                <DriftedSummary
+                  className="mt-4"
+                  orgId={org.id}
+                  installId={install.id}
+                  driftedObjects={install.drifted_objects}
+                />
+              ) : null}
+            </PageHeader>
+            <PageContent className="border-t" variant="row">
+              <SubNav
+                basePath={`/${org?.id}/installs/${install?.id}`}
+                links={navLinks}
+              />
+              <div className="flex flex-col flex-1 min-w-0">
+                <Outlet />
+              </div>
+            </PageContent>
+          </>
+        )}
+      </PageLayout>
+    </>
   )
 }

@@ -19,6 +19,7 @@ type CloneRepoResult struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
 // @as-wrapper
+// @local
 func (a *Activities) cloneRepo(ctx context.Context, runID string, vcsConfigID string, commitSHA string) (*CloneRepoResult, error) {
 	workspaceID := "app-branch-run-" + runID
 

@@ -73,7 +73,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get logger")
 	}
 
-	runner, err := activities.AwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
+	runner, err := activities.LocalAwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner")
 	}
@@ -106,7 +106,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func (s *Signal) checkOrgRunner(ctx workflow.Context, l *zap.Logger, tmw tmetrics.Writer, runner *app.Runner, tags map[string]string) error {
-	_, err := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
+	_, err := activities.LocalAwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
 		RunnerID:    s.RunnerID,
 		ProcessType: string(app.RunnerProcessTypeBuild),
 	})
@@ -133,7 +133,7 @@ func (s *Signal) checkOrgRunner(ctx workflow.Context, l *zap.Logger, tmw tmetric
 }
 
 func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tmetrics.Writer, runner *app.Runner, tags map[string]string) error {
-	_, err := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
+	_, err := activities.LocalAwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
 		RunnerID:    s.RunnerID,
 		ProcessType: string(app.RunnerProcessTypeInstall),
 	})
@@ -161,7 +161,7 @@ func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tme
 	}
 
 	var metadata map[string]any
-	_, mngErr := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
+	_, mngErr := activities.LocalAwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
 		RunnerID:    s.RunnerID,
 		ProcessType: string(app.RunnerProcessTypeMng),
 	})
@@ -216,7 +216,7 @@ func (s *Signal) emitOfflineEvent(ctx workflow.Context, runner *app.Runner, reas
 	}
 
 	if runner.RunnerGroup.OwnerType == "installs" {
-		install, err := activities.AwaitGetInstall(ctx, activities.GetInstallRequest{
+		install, err := activities.LocalAwaitGetInstall(ctx, activities.GetInstallRequest{
 			InstallID: runner.RunnerGroup.OwnerID,
 		})
 		if err == nil {
@@ -249,7 +249,7 @@ func (s *Signal) emitOfflineEvent(ctx workflow.Context, runner *app.Runner, reas
 
 func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, status app.RunnerStatus, description, ownerName string, metadata map[string]any) error {
 	if runner.Status != status {
-		if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+		if err := activities.LocalAwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 			RunnerID:          s.RunnerID,
 			Status:            status,
 			StatusDescription: description,
@@ -284,7 +284,7 @@ func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, st
 		}
 	}
 
-	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+	statusactivities.LocalAwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
 		RunnerID:          s.RunnerID,
 		Status:            status,
 		StatusDescription: description,

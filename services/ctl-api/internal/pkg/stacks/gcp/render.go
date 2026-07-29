@@ -157,14 +157,17 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		}
 		params := map[string]string{}
 		for paramName, templateValue := range stack.Parameters {
-			inputName, err := config.ParseInstallInputReference(templateValue)
-			if err != nil {
-				return nil, "", errors.Wrapf(err, "custom_nested_stacks (%s): parameter %q", stack.Name, paramName)
-			}
-			resolved := inputDefaults[inputName]
-			if inputs.Install.CurrentInstallInputs != nil {
-				if val, ok := inputs.Install.CurrentInstallInputs.Values[inputName]; ok && val != nil {
-					resolved = *val
+			// Already rendered -- see config.RenderCustomNestedStackParameters,
+			// called when the install stack version is generated. The
+			// install-input reference form is still resolved here as a fallback
+			// for callers that read the config without rendering it first.
+			resolved := templateValue
+			if inputName, err := config.ParseInstallInputReference(templateValue); err == nil {
+				resolved = inputDefaults[inputName]
+				if inputs.Install.CurrentInstallInputs != nil {
+					if val, ok := inputs.Install.CurrentInstallInputs.Values[inputName]; ok && val != nil {
+						resolved = *val
+					}
 				}
 			}
 			params[paramName] = resolved

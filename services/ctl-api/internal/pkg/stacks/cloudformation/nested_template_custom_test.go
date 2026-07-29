@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
@@ -1262,4 +1263,98 @@ func TestSanitizeLogicalID(t *testing.T) {
 			assert.Equal(t, tc.expected, sanitizeLogicalID(tc.input))
 		})
 	}
+}
+
+// installStateData builds the render context the way the install state does, mirroring
+// helpers.MapLegacyFields: .nuon.install.id and .nuon.install.inputs.* are the legacy
+// projections of the flattened state.
+func installStateData(t *testing.T, installID string, inputs map[string]string) map[string]any {
+	t.Helper()
+
+	st := state.New()
+	st.ID = installID
+	st.Inputs = &state.InputsState{Populated: true, Inputs: inputs}
+	st.Install = &state.InstallState{Populated: true, ID: st.ID, Inputs: st.Inputs.Inputs}
+
+	data, err := st.AsMap()
+	require.NoError(t, err)
+
+	return data
+}
+
+// The full chain a vendor sees: a templated parameter is rendered from install state
+// when the stack version is generated, then lands in the nested stack properties as a
+// literal. Both branches of the conditional are exercised.
+func TestGetCustomNestedStacks_ParameterRenderedFromInstallState(t *testing.T) {
+	const rootDomainParam = `{{ if .nuon.install.inputs.root_domain }}{{ .nuon.install.inputs.root_domain }}{{ else }}sandbox-{{ .nuon.install.id | substr 0 15 }}.example.com{{ end }}`
+
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"input set", "vendor.team.example.com", "vendor.team.example.com"},
+		{"input unset falls back", "", "sandbox-1a2b3c4d5e6f7g8.example.com"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte(mockAdditionalTemplateNamespacesOnlyYAML))
+			}))
+			defer server.Close()
+
+			tpl := &Templates{cfg: &internal.Config{}}
+			inp := newTestInput(server.URL, []config.CustomNestedStack{
+				{
+					Name:        "route53_zones",
+					TemplateURL: server.URL + "/stack.yaml",
+					Index:       0,
+					Parameters: map[string]string{
+						"Namespaces": rootDomainParam,
+					},
+				},
+			})
+			inp.Install.ID = "1a2b3c4d5e6f7g8h9i0j"
+
+			data := installStateData(t, inp.Install.ID, map[string]string{"root_domain": tc.input})
+			require.NoError(t, config.RenderCustomNestedStackParameters(inp.AppCfg.StackConfig.CustomNestedStacks, data))
+
+			tb := tagBuilder{installID: inp.Install.ID}
+			result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+			require.NoError(t, err)
+
+			stack := result.resources["Route53Zones"]
+			require.NotNil(t, stack)
+			assert.Equal(t, tc.want, stack.Parameters["Namespaces"])
+			assert.NotContains(t, result.params, "Namespaces")
+		})
+	}
+}
+
+// A value with no template actions is used verbatim, including characters that
+// html/template would have escaped.
+func TestGetCustomNestedStacks_LiteralParameterPassesThrough(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(mockAdditionalTemplateNamespacesOnlyYAML))
+	}))
+	defer server.Close()
+
+	tpl := &Templates{cfg: &internal.Config{}}
+	inp := newTestInput(server.URL, []config.CustomNestedStack{
+		{
+			Name:        "my_stack",
+			TemplateURL: server.URL + "/stack.yaml",
+			Index:       0,
+			Parameters: map[string]string{
+				"Namespaces": `user=a&pass="b"`,
+			},
+		},
+	})
+	tb := tagBuilder{installID: inp.Install.ID}
+
+	result, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{"VPC": true, "RunnerAutoScalingGroup": true})
+	require.NoError(t, err)
+
+	assert.Equal(t, `user=a&pass="b"`, result.resources["MyStack"].Parameters["Namespaces"])
 }

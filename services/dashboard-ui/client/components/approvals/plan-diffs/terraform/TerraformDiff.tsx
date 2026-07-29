@@ -80,7 +80,7 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
     <div className="flex flex-col gap-6">
       <Modal
         heading={
-          <Text flex className="gap-4" variant="h3" weight="strong" theme="info">
+          <Text flex className="gap-4" variant="h3" weight="strong">
             <Icon variant="NetworkXIcon" size="24" /> Plan graph
           </Text>
         }
