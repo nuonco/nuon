@@ -15,8 +15,13 @@ import (
 // vcsTemporalNamespace mirrors the constant in vcs/worker to avoid import cycle.
 const vcsTemporalNamespace = "vcs"
 
-// CreateConnectionQueue creates a queue for the given VCS connection with a cron health check
-// emitter that fires every minute, a fire-once webhook subscription emitter, and enqueues an immediate health check signal.
+const (
+	vcsHealthCheckSchedule     = "0 * * * *"
+	vcsHealthCheckJitterWindow = 60 * time.Minute
+)
+
+// CreateConnectionQueue creates a queue for the given VCS connection with an hourly cron health
+// check emitter, a fire-once webhook subscription emitter, and enqueues an immediate health check signal.
 func (h *Helpers) CreateConnectionQueue(ctx context.Context, vcsConn *app.VCSConnection) (*app.Queue, error) {
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     vcsConn.ID,
@@ -33,13 +38,14 @@ func (h *Helpers) CreateConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 		return nil, fmt.Errorf("unable to create vcs connection queue: %w", err)
 	}
 
-	// Cron emitter: health check every minute
+	// Cron emitter: hourly health check, jittered across the hour
 	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
 		QueueID:         q.ID,
 		Name:            fmt.Sprintf("vcs-connection-%s-health-check", vcsConn.ID),
 		Description:     "Periodic VCS connection health check",
 		Mode:            app.QueueEmitterModeCron,
-		CronSchedule:    "0 * * * *",
+		CronSchedule:    vcsHealthCheckSchedule,
+		JitterWindow:    vcsHealthCheckJitterWindow,
 		SignalExpiresIn: 5 * time.Minute,
 		SignalType:      healthcheck.SignalType,
 		SignalTemplate: &healthcheck.Signal{

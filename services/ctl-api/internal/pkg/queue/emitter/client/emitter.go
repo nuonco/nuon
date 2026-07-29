@@ -11,9 +11,11 @@ import (
 	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
@@ -34,8 +36,9 @@ type CreateEmitterRequest struct {
 
 	// For cron mode: the cron schedule expression (e.g., "0 * * * *")
 	CronSchedule string
-	// For cron mode: spread ticks deterministically across this window
-	// (per-emitter offset = hash(emitter ID) % JitterWindow). Zero disables.
+	// For cron mode: spread fire times deterministically across this window by
+	// shifting the schedule's minute field (offset = hash(emitter ID) % window
+	// minutes). Zero or sub-minute windows disable jitter.
 	JitterWindow time.Duration
 	// For scheduled mode: when to fire the signal
 	ScheduledAt *time.Time
@@ -56,7 +59,6 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 				fmt.Sprintf("%T", err),
 				err,
 			)
-			return nil, errors.New("cron_schedule is required for cron mode")
 		}
 	case app.QueueEmitterModeScheduled, app.QueueEmitterModeFireOnce:
 		if req.ScheduledAt == nil {
@@ -96,8 +98,18 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 		},
 	}
 
-	if res := c.db.WithContext(ctx).Create(&em); res.Error != nil {
+	if res := c.db.WithContext(ctx).Clauses(clause.Returning{}).Create(&em); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create emitter")
+	}
+
+	if em.Mode == app.QueueEmitterModeCron {
+		if jittered := cronutil.ApplyCronJitter(em.ID, em.CronSchedule, em.JitterWindow); jittered != em.CronSchedule {
+			em.CronSchedule = jittered
+			if res := c.db.WithContext(ctx).Model(&em).Clauses(clause.Returning{}).
+				Update("cron_schedule", jittered); res.Error != nil {
+				return nil, errors.Wrap(res.Error, "unable to persist jittered cron schedule")
+			}
+		}
 	}
 
 	wkflowReq := emitter.EmitterWorkflowRequest{
@@ -117,7 +129,7 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 	}
 
 	if req.Mode == app.QueueEmitterModeCron {
-		opts.CronSchedule = req.CronSchedule
+		opts.CronSchedule = em.CronSchedule
 	}
 
 	wkflowRun, err := c.tClient.ExecuteWorkflowInNamespace(ctx,

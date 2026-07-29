@@ -15,7 +15,7 @@ import (
 )
 
 // spread each install's action-cron emitter across this window (deterministic per-emitter offset) so schedules like */10 don't fire every install's actions on the same tick
-const actionCronJitterWindow = 150 * time.Second
+const actionCronJitterWindow = 3 * time.Minute
 
 func (s *Signal) reconcileActionCronEmitters(
 	ctx workflow.Context,
