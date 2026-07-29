@@ -13,7 +13,7 @@ install configs in git alongside your app config.
 
 - An [app](/concepts/apps) already synced to Nuon, with at least one install.
 - The [Nuon CLI](/cli) installed and authenticated (`nuon auth login`).
-- For pull request previews, a repository **connected through the Nuon GitHub App**. See
+- For pull request previews, the **Nuon GitHub App connected in your org for the repository's owner**. See
   [connecting a repository](/guides/vcs).
 
 <Note>
@@ -230,9 +230,8 @@ than one irreversible action.
 
 ## Set up pull request previews
 
-Previews need no configuration beyond a connected repo. Once the branch tracks a `[connected_repo]`, opening a pull
-request against it — or pushing another commit to an open one — starts a plan-only run, and Nuon reports back on the
-pull request:
+There is nothing to configure on the branch itself. Opening a pull request against a tracked branch — or pushing
+another commit to an open one — starts a plan-only run, and Nuon reports back on the pull request:
 
 - a comment headed `## Nuon Preview — <AppName>` with a table of config changes by section, edited in place on each
   later push rather than added to.
@@ -240,10 +239,15 @@ pull request:
 
 If the pull request does not change the app config, the run stops early and the comment says so.
 
+What previews *do* need is a **GitHub App connection in your org for the repository's owner**. Connect it once, from
+[connecting a repository](/guides/vcs) — after that, every branch tracking a repo under that owner gets previews. This
+is an org-level setting, not a property of the branch config: a `[public_repo]` branch pointing at `acmeco/my-app` gets
+previews just like a `[connected_repo]` one, provided your org has connected `acmeco`.
+
 <Warning>
-  With `[public_repo]`, Nuon has no authenticated GitHub client. The preview run still executes and you can see it in
-  the dashboard, but the pull request comment and the commit status are skipped without an error. Connect the repo
-  through the [Nuon GitHub App](/guides/vcs) if you want previews on pull requests.
+  When no matching connection exists, previews fail **silently**. The run executes and shows up in the dashboard, but
+  the pull request comment and the commit status are skipped and nothing reports an error. If previews never appear,
+  check the GitHub App connection for the repository's owner — not your `branch.toml`.
 </Warning>
 
 To reproduce a preview locally before opening the pull request:
@@ -255,7 +259,11 @@ nuon sync --branch main --preview
 ## Manage install configs in git
 
 An app branch can also track your per-install config files, so adding a customer is a pull request rather than a
-console action. Point `installs_directory` at the directory holding them:
+console action.
+
+This takes two settings, and **both are required**: a repository block telling Nuon where the install configs live, and
+`installs_directory` naming the directory inside it. Use `[installs_connected_repo]` for a repository connected through
+the Nuon GitHub App, or `[installs_public_repo]` for a public one — exactly one of the two.
 
 ```toml branch.toml
 name               = "main"
@@ -265,10 +273,28 @@ installs_directory = "installs"
 repo      = "acmeco/my-app-config"
 directory = "."
 branch    = "main"
+
+[installs_connected_repo]
+repo      = "acmeco/my-app-config"
+directory = "."
+branch    = "main"
 ```
 
-The default is `installs`, so that line is only strictly necessary if you use a different directory — set it
-explicitly anyway to make the intent obvious.
+Here both blocks name the same repository — a common setup, and one you still have to declare explicitly. To keep the
+install configs somewhere else entirely, point `[installs_connected_repo]` at that repository instead; nothing else
+changes.
+
+<Warning>
+  `installs_directory` on its own does nothing. With neither `[installs_connected_repo]` nor `[installs_public_repo]`
+  set, the `sync install configs` step is skipped silently — you get no error and no synced installs. If you set
+  `installs_directory` and nothing happens, this is why.
+</Warning>
+
+<Note>
+  Keep the installs repository block's `directory` at the repository root (`"."`), and give `installs_directory` a path
+  from there — `installs`, which is also the default. That is the layout Nuon resolves consistently; pointing the
+  installs repository block into a subdirectory is not reliable.
+</Note>
 
 Each file in the directory describes one install, in the same format `nuon installs sync` accepts:
 
@@ -298,7 +324,45 @@ Install config files also support `[[inputs]]` and `[stack_overrides]`. A sync c
 before and diffs the ones it has, recording a version entry per install with the stored diff, plus counts of how many
 synced and how many failed.
 
-Three things can start a sync:
+### Turn it on
+
+Nuon picks these settings up when it reads `branch.toml` **from git**, during a run's `fetch app config` step. So
+enabling install config sync is a commit:
+
+<Steps>
+  <Step title="Commit the branch config">
+    ```sh
+    git add branch.toml installs/
+    git commit -m "track install configs in git"
+    git push origin main
+    ```
+
+    The push starts a run, whose `fetch app config` step reads the new installs settings and stores them on the branch.
+  </Step>
+  <Step title="Or trigger a run against the committed config">
+    If you would rather not wait for a push, trigger a run — it fetches `branch.toml` from the tracked branch the same
+    way:
+
+    ```sh
+    nuon apps branches trigger --app-id my-app --branch-id main
+    ```
+
+    Because these settings come from the committed file, a run against your local working directory
+    (`nuon sync --branch`) does not apply them.
+  </Step>
+  <Step title="Confirm the settings landed">
+    ```sh
+    nuon apps branches get --app-id my-app --branch-id abr...
+    ```
+
+    The branch config should now carry the installs repository and directory. If they are absent, the run did not read
+    them from git — check that the file is committed on the tracked branch.
+  </Step>
+</Steps>
+
+### Running a sync
+
+Once the settings are on the branch, three things can start a sync:
 
 1. **A push** that touches files under the installs directory.
 2. **A branch run**, through its skippable `sync install configs` step.
@@ -310,27 +374,6 @@ curl -X POST \
   -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
   "https://api.nuon.co/v1/apps/$APP_ID/branches/$APP_BRANCH_ID/sync-install-configs"
 ```
-
-To keep install configs in a **different** repository from the app config, set `installs_connected_repo` (or
-`installs_public_repo`) on the branch:
-
-```toml branch.toml
-name               = "main"
-installs_directory = "installs"
-
-[connected_repo]
-repo      = "acmeco/my-app-config"
-directory = "."
-branch    = "main"
-
-[installs_connected_repo]
-repo      = "acmeco/my-customer-installs"
-directory = "."
-branch    = "main"
-```
-
-`installs_connected_repo` and `installs_public_repo` are mutually exclusive. If you set neither, the branch's own repo
-is used.
 
 ## Re-apply a previous config version
 
@@ -414,7 +457,13 @@ The run still plans each group and still waits for approval, so you see the reve
 `branch` value matches the ref you pushed and that the repo is the one Nuon has connected. There are no path filters,
 so a push that matches always starts a run — if nothing happened, the match itself failed.
 
-**The pull request has no Nuon comment.** The branch is tracking a `[public_repo]`. Previews need a connected repo.
+**The pull request has no Nuon comment.** Your org has no GitHub App connection for that repository's owner. The
+preview run itself succeeds and this is not reported as an error, so check the connection rather than the branch config.
+Note this is about the *owner*, not the branch's repo block — a `[public_repo]` branch is fine if the owner is connected.
+
+**`installs_directory` is set but no installs sync.** Either the branch has no `[installs_connected_repo]` /
+`[installs_public_repo]` block, or the settings were never read from git. Check
+`nuon apps branches get` and see [turn it on](#turn-it-on).
 
 **A sync failed on an install name.** `install_names` must resolve to installs that exist in the org you are syncing
 into. Switch the group to a `label_selector`, or create the install first.
