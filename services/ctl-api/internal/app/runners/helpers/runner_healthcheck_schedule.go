@@ -4,15 +4,18 @@ import (
 	"time"
 
 	config "github.com/nuonco/nuon/pkg/services/config"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
 )
 
 const runnerHealthcheckSignalExpiry = 5 * time.Minute
 
-// runnerHealthcheckJitterWindow spreads healthcheck emitters across the full
-// prod schedule interval by shifting each emitter's cron minute field.
-const runnerHealthcheckJitterWindow = 15 * time.Minute
+// ProcessHealthcheckSchedule is the canonical (pre-jitter) schedule for
+// process health check emitters.
+const ProcessHealthcheckSchedule = "*/5 * * * *"
 
-func runnerHealthcheckSchedule(env config.Env) (schedule string) {
+const runnerHealthcheckJitterWindow = cronutil.MaxJitterWindow
+
+func RunnerHealthcheckSchedule(env config.Env) (schedule string) {
 	if env == config.Development {
 		return "* * * * *"
 	}
