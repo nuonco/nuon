@@ -32,6 +32,7 @@ func (c *cli) commonProviders() []fx.Option {
 		fx.Provide(slog.AsSystemProvider(slog.NewSystemProvider)),
 		fx.Provide(log.AsSystemLogger(log.NewSystem)),
 		fx.Provide(log.AsDevLogger(log.NewDev)),
+		fx.WithLogger(log.NewFXLog),
 		fx.Provide(errs.NewRecorder),
 		// auth: fetch token via IMDS (or use existing token from env)
 		fx.Provide(auth.New),
