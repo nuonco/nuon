@@ -15,7 +15,7 @@ config at that commit, builds whatever changed, and then rolls the new version o
 [installs](/guides/app-install-life-cycle), in an order you define, with a plan and an approval gate in front of
 every step.
 
-Before app branches, updating a fleet meant running `nuon apps sync` from a laptop or wiring up a GitHub Action with
+Before app branches, updating a fleet meant running `nuon apps sync` from your CLI or wiring up a GitHub Action with
 an API token, then driving each install yourself. An app branch makes the git push the trigger, and makes the rollout
 a single reviewable workflow instead of a sequence of manual steps.
 
