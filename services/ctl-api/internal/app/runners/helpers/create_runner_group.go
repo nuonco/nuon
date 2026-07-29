@@ -228,7 +228,7 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 		Name:            "runner-healthcheck",
 		Description:     "Periodic runner-level health check",
 		Mode:            app.QueueEmitterModeCron,
-		CronSchedule:    runnerHealthcheckSchedule(h.cfg.Env),
+		CronSchedule:    RunnerHealthcheckSchedule(h.cfg.Env),
 		JitterWindow:    runnerHealthcheckJitterWindow,
 		SignalType:      "runner_healthcheck",
 		SignalExpiresIn: runnerHealthcheckSignalExpiry,

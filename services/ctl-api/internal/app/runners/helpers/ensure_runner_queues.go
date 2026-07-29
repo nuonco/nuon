@@ -46,7 +46,7 @@ func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string)
 			Name:            "runner-healthcheck",
 			Description:     "Periodic runner-level health check",
 			Mode:            app.QueueEmitterModeCron,
-			CronSchedule:    runnerHealthcheckSchedule(h.cfg.Env),
+			CronSchedule:    RunnerHealthcheckSchedule(h.cfg.Env),
 			JitterWindow:    runnerHealthcheckJitterWindow,
 			SignalType:      "runner_healthcheck",
 			SignalExpiresIn: runnerHealthcheckSignalExpiry,
