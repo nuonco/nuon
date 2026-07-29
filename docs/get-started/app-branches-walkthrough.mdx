@@ -105,7 +105,6 @@ env = "stage"
 [[inputs]]
 domain = "stage.nuon.run"
 sub_domain = "whoami"
-version = "v2"
 ```
 
 Either route works — a label set by the CLI and a label set in an install config file are the same label. Managing it
@@ -123,8 +122,16 @@ nuon apps sync
 The sync creates the branch and its two deployment groups. Check what Nuon now has:
 
 ```sh
-nuon apps branches list --app-id eks-simple
+nuon apps select                 # pick eks-simple; later commands can then omit --app-id
+nuon apps list                   # prints each app's name and ID
+nuon apps branches list --app-id app...
 ```
+
+<Warning>
+	`nuon apps branches list` needs the app **ID** (`app...`), not the app name — a name returns an empty result rather
+	than an error. Copy the ID for `eks-simple` out of `nuon apps list`. Selecting the app with `nuon apps select` lets
+	you drop `--app-id` from `trigger` and `runs`, which is what the rest of this walkthrough does.
+</Warning>
 
 You should see one branch, `main`. In the dashboard, the app now has a **Branches** view showing the branch and its
 **Deployment plan** — `stage`, then `production`.
@@ -155,9 +162,16 @@ Then run a plan-only preview against your local files:
 nuon sync --branch main --preview
 ```
 
-This syncs the config in the current directory and triggers a **plan-only** run for it. The run builds what changed
-and computes the diff, and stops there — the plan and deploy steps for each group are never created, so nothing can
-reach an install. Watch it in the workflow TUI the command opens, or in the dashboard.
+This syncs the config in the current directory and triggers a **plan-only** run for it. Nothing is applied to any
+install. Watch it in the workflow TUI the command opens, or in the dashboard.
+
+<Note>
+	A manual plan-only run still walks the deployment groups: it creates each group's `plan install group` and
+	`deploy install group` step and then **pauses at the first approval gate**, showing you the same per-install diff a
+	real rollout would. `--preview` suppresses the apply, not the workflow — so this run waits for you rather than
+	finishing on its own. Approving it applies nothing. (A pull request preview behaves differently and never creates
+	the group steps at all.)
+</Note>
 
 <Tip>
 	`nuon sync --branch` runs against your local working directory, including uncommitted edits. That makes it the fast
@@ -175,18 +189,30 @@ nuon sync --branch main
 Or trigger a run from the branch's committed config, with no local sync at all:
 
 ```sh
-nuon apps branches trigger --app-id eks-simple --branch-id main
+nuon apps branches trigger --branch-id main
 ```
 
-Either way, the run walks the same steps:
+Both walk the same deployment groups, but their first two steps differ, because `nuon sync --branch` hands Nuon a
+config it already built from your working directory while `trigger` fetches one from git:
 
-1. `fetch commit` and `fetch app config` — get the config and sync it.
-2. `building components and sandbox` — rebuild only what changed.
-3. `sync install configs` — skippable, and a no-op here because this branch does not track install config files. See
-   [managing install configs in git](/guides/app-branches#manage-install-configs-in-git) if you want that.
-4. `plan install group: stage` — computes the diff for every install in the group, then **waits**.
-5. `deploy install group: stage` — runs once you approve.
-6. `plan install group: production`, then `deploy install group: production`.
+| Step | `nuon sync --branch main` | `nuon apps branches trigger` |
+| --- | --- | --- |
+| 1 | `fetch commit (skipped)` | `fetch commit` |
+| 2 | `fetch app config (skipped)` | `fetch app config` |
+| 3 | `building components and sandbox` | `building components and sandbox` |
+| 4 | `sync install configs` | `sync install configs` |
+| 5 | `plan install group: stage` | `plan install group: stage` |
+| 6 | `deploy install group: stage` | `deploy install group: stage` |
+| 7 | `plan install group: production` | `plan install group: production` |
+| 8 | `deploy install group: production` | `deploy install group: production` |
+
+From step 3 on they are identical:
+
+- `building components and sandbox` rebuilds only what changed.
+- `sync install configs` is skippable, and a no-op here because this branch does not track install config files. See
+  [managing install configs in git](/guides/app-branches#manage-install-configs-in-git) if you want that.
+- each `plan install group` computes the diff for every install in the group and then **waits** for you.
+- each `deploy install group` runs once you approve the plan before it.
 
 ### Approve the plan
 
@@ -214,7 +240,7 @@ you, not one irreversible action.
 ### Watch runs from the CLI
 
 ```sh
-nuon apps branches runs --app-id eks-simple --branch-id <branch-id>
+nuon apps branches runs --branch-id main
 ```
 
 This lists the branch's runs and opens the one you pick in the workflow TUI.
