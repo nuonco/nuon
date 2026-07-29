@@ -8,6 +8,7 @@ import (
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -226,6 +227,12 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install: %w", res.Error)
 	}
+
+	s.mw.Incr("install.created", metrics.ToTags(map[string]string{
+		"org_id":     install.OrgID,
+		"app_id":     appID,
+		"install_id": install.ID,
+	}))
 
 	// Create all install queues (workflows, signals, actions, drift, etc.)
 	if err := s.EnsureInstallQueues(ctx, install.ID); err != nil {

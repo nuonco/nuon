@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -26,6 +27,7 @@ type Params struct {
 	RunnersHelpers      *runnershelpers.Helpers
 	QueueClient         *queueclient.Client
 	SlackAutoLinkHelper *autolink.Helper
+	MW                  metrics.Writer
 }
 
 type Helpers struct {
@@ -38,6 +40,7 @@ type Helpers struct {
 	runnersHelpers      *runnershelpers.Helpers
 	queueClient         *queueclient.Client
 	slackAutoLinkHelper *autolink.Helper
+	mw                  metrics.Writer
 }
 
 func New(params Params) *Helpers {
@@ -51,5 +54,6 @@ func New(params Params) *Helpers {
 		runnersHelpers:      params.RunnersHelpers,
 		queueClient:         params.QueueClient,
 		slackAutoLinkHelper: params.SlackAutoLinkHelper,
+		mw:                  params.MW,
 	}
 }
