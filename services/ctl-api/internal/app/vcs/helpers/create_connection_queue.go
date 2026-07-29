@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
 	webhooksubscription "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/webhook_subscription"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
@@ -16,8 +17,8 @@ import (
 const vcsTemporalNamespace = "vcs"
 
 const (
-	vcsHealthCheckSchedule     = "0 * * * *"
-	vcsHealthCheckJitterWindow = 60 * time.Minute
+	VCSHealthCheckSchedule     = "0 * * * *"
+	vcsHealthCheckJitterWindow = cronutil.MaxJitterWindow
 )
 
 // CreateConnectionQueue creates a queue for the given VCS connection with an hourly cron health
@@ -44,7 +45,7 @@ func (h *Helpers) CreateConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 		Name:            fmt.Sprintf("vcs-connection-%s-health-check", vcsConn.ID),
 		Description:     "Periodic VCS connection health check",
 		Mode:            app.QueueEmitterModeCron,
-		CronSchedule:    vcsHealthCheckSchedule,
+		CronSchedule:    VCSHealthCheckSchedule,
 		JitterWindow:    vcsHealthCheckJitterWindow,
 		SignalExpiresIn: 5 * time.Minute,
 		SignalType:      healthcheck.SignalType,

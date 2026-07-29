@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type AdminUpdateHealthCheckCronRequest struct {
@@ -40,12 +39,11 @@ func (s *service) AdminUpdateHealthCheckCron(ctx *gin.Context) {
 		return
 	}
 
-	sched, err := cron.ParseStandard(req.CronSchedule)
-	if err != nil {
+	if _, err := cron.ParseStandard(req.CronSchedule); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("invalid cron schedule: %w", err)))
 		return
 	}
-	jitterWindow := validator.MinScheduleInterval(sched)
+	jitterWindow := cronutil.MaxJitterWindow
 
 	var emitters []app.QueueEmitter
 	if res := s.db.WithContext(ctx).

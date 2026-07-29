@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
@@ -35,7 +36,7 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		return nil, fmt.Errorf("unable to create process queue: %w", err)
 	}
 
-	healthCheckSchedule := "*/5 * * * *"
+	healthCheckSchedule := ProcessHealthcheckSchedule
 	healthCheckExpiry := 5 * time.Minute
 
 	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
@@ -44,7 +45,7 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		Description:     "Periodic process health check",
 		Mode:            app.QueueEmitterModeCron,
 		CronSchedule:    healthCheckSchedule,
-		JitterWindow:    5 * time.Minute,
+		JitterWindow:    cronutil.MaxJitterWindow,
 		SignalType:      "process_healthcheck",
 		SignalExpiresIn: healthCheckExpiry,
 		SignalTemplate: queuesignal.NewRaw("process_healthcheck", map[string]any{
