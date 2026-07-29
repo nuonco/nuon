@@ -37,7 +37,14 @@ func stateInputsRefreshStep(ctx workflow.Context, sg *stepGroup, install *app.In
 		stateSignal = &generatestate.Signal{InstallID: install.ID}
 	}
 
-	return sg.installSignalStep(ctx, install.ID, "update install state inputs", pgtype.Hstore{}, stateSignal, planOnly, WithSkippable(false))
+	return sg.installSignalStep(
+		ctx,
+		install.ID,
+		"update install state inputs",
+		pgtype.Hstore{},
+		stateSignal, planOnly,
+		WithSkippable(false),
+	)
 }
 
 // ComponentEnabledSteps and ComponentDisabledSteps back the dedicated
