@@ -164,8 +164,8 @@ included.
 
 <Warning>
   The `nuon apps branches` subcommands take the app **ID** (`app...`), not the app name. Pass a name and `list` returns
-  an empty result while `trigger`, `runs`, and `delete` report that the branch was not found. Get the ID from
-  `nuon apps list`.
+  an empty result, `trigger`, `runs`, and `delete` report that the branch was not found — and `create` silently
+  succeeds, creating a branch that neither `list` nor the dashboard will ever show. Get the ID from `nuon apps list`.
 
   You can also select the app once and then omit `--app-id` wherever it is optional — but run `nuon apps select` with
   **no flags** and pick from the list, which stores the app's ID. `nuon apps select --app <name>` succeeds and stores
