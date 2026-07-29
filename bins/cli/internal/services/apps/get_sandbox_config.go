@@ -13,11 +13,9 @@ func (s *Service) GetSandboxConfig(ctx context.Context, appID string, asJSON boo
 		return ui.PrintError(err)
 	}
 
-	view := ui.NewGetView()
-
 	sandboxCfg, err := s.api.GetAppSandboxLatestConfig(ctx, appID)
 	if err != nil {
-		return view.Error(err)
+		return ui.PrintError(err)
 	}
 
 	if asJSON {
@@ -25,6 +23,6 @@ func (s *Service) GetSandboxConfig(ctx context.Context, appID string, asJSON boo
 		return nil
 	}
 
-	ui.PrintJSON(sandboxCfg)
+	ui.PrintIndentedJSON(sandboxCfg)
 	return nil
 }

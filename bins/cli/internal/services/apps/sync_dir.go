@@ -278,7 +278,7 @@ func (s *Service) resolveSyncAppID(ctx context.Context, dir string, opts SyncOpt
 		)
 	}
 
-	fmt.Println(styles.TextDim.Render("  " + notice))
+	ui.Println(styles.TextDim.Render("  " + notice))
 	confirmed, err := bubbles.InlineConfirm(
 		fmt.Sprintf("Sync directory named %q to app %q?", appName, targetLabel),
 		false,

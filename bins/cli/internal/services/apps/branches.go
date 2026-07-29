@@ -48,7 +48,7 @@ func (s *Service) GetBranch(ctx context.Context, appID, branchID string, asJSON 
 		return nil
 	}
 
-	ui.PrintJSON(branch)
+	ui.PrintIndentedJSON(branch)
 	return nil
 }
 
@@ -65,7 +65,7 @@ func (s *Service) CreateBranch(ctx context.Context, appID, name string, asJSON b
 		return nil
 	}
 
-	fmt.Printf("Created branch %s (%s)\n", branch.Name, branch.ID)
+	ui.Printf("Created branch %s (%s)\n", branch.Name, branch.ID)
 	return nil
 }
 
@@ -94,7 +94,7 @@ func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, 
 	}
 
 	if run.WorkflowID == "" {
-		fmt.Printf("Triggered run %s\n", run.ID)
+		ui.Printf("Triggered run %s\n", run.ID)
 		return nil
 	}
 
@@ -124,7 +124,7 @@ func (s *Service) ListBranchRuns(ctx context.Context, appID, branchID string, as
 	}
 
 	if len(workflows) == 0 {
-		fmt.Println("No runs found for this branch.")
+		ui.Println("No runs found for this branch.")
 		return nil
 	}
 
@@ -167,11 +167,15 @@ func (s *Service) DeleteBranch(ctx context.Context, appID, branchID string, asJS
 	}
 
 	if asJSON {
-		ui.PrintJSON(map[string]string{"deleted": branchID})
+		ui.PrintJSON(map[string]any{
+			"id":      branchID,
+			"deleted": true,
+			"message": fmt.Sprintf("Deleted branch %s", branchID),
+		})
 		return nil
 	}
 
-	fmt.Printf("Deleted branch %s\n", branchID)
+	ui.Printf("Deleted branch %s\n", branchID)
 	return nil
 }
 
