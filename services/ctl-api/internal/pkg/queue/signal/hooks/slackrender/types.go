@@ -28,6 +28,7 @@ const (
 	KindInputsUpdated        = "inputs_updated"
 	KindStackRun             = "stack_run"
 	KindAppConfigSynced      = "app_config_synced"
+	KindRunnerUnhealthy      = "runner_unhealthy"
 )
 
 // Transition values for Event.Transition. British "cancelled" is the
@@ -42,6 +43,7 @@ const (
 	TransitionApproved      = "approved"
 	TransitionRejected      = "rejected"
 	TransitionAwaitingRetry = "awaiting_retry"
+	TransitionUnhealthy     = "unhealthy"
 )
 
 // OwnerType values for WorkflowRef.OwnerType.

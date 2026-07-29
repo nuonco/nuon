@@ -66,7 +66,7 @@ var (
 		"components":             {"deploy", "teardown"},
 		"sandboxes":              {"provision", "reprovision", "deprovision"},
 		"install_configurations": {"inputs", "secrets"},
-		"runners":                {"provision", "reprovision", "inactive"},
+		"runners":                {"provision", "reprovision", "inactive", "unhealthy"},
 		"actions":                {"run"},
 	}
 
