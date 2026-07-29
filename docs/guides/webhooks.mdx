@@ -300,6 +300,13 @@ events with `data.workflow.type == "provision"` and a step whose `target_type ==
 To know "did this component deploy?", look at a step whose `target_type == "install_deploys"` and inspect
 `data.step.component_id`.
 
+<Note>
+  An `owner_type` of `app_branches` means the workflow is an [app branch](/concepts/app-branches) run — a rollout across
+  a fleet of installs rather than work on a single install. Its step names include `plan install group: <name>` and
+  `deploy install group: <name>`, one pair per deployment group, so you can watch a staged rollout progress and drive
+  the next approval through the API. See [configuring app branches](/guides/app-branches).
+</Note>
+
 ## Transitions
 
 Both primitives use the same transition vocabulary:

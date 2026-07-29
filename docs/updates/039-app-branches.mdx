@@ -1,0 +1,108 @@
+---
+title: 039 - App Branches
+description: Connect a git branch to your app and roll changes out across your customer installs through ordered deployment groups, with a plan and an approval at every step.
+boost: 0.3
+---
+
+_July 29, 2026_
+
+## App Branches
+
+[App branches](/concepts/app-branches) connect one git branch to your app. Push to that branch and Nuon fetches the
+config at that commit, rebuilds what changed, and rolls the new version out across your customer installs — in an
+order you define, with a plan and an approval gate in front of every group.
+
+Updating a fleet used to mean `nuon apps sync` from a laptop, or a GitHub Action holding an API token, plus driving
+each install yourself. Now the push is the trigger and the rollout is one reviewable workflow.
+
+Declare it in a `branch.toml` at the root of your app config:
+
+```toml
+name = "main"
+
+[connected_repo]
+repo      = "acmeco/my-app-config"
+directory = "."
+branch    = "main"
+
+[[install_groups]]
+name  = "staging"
+order = 1
+[install_groups.label_selector]
+env = "staging"
+
+[[install_groups]]
+name  = "production"
+order = 2
+[install_groups.label_selector]
+env = "prod"
+```
+
+{/* SCREENSHOT NEEDED — see ~/app-branches-launch/SCREENSHOTS-NEEDED.md
+<Frame caption="A branch run rolling out through two deployment groups.">
+  <img src="/images/changelog/039-deployment-plan-graph.png" alt="A branch run's deployment plan graph in the Nuon dashboard, showing a staging group and a production group" />
+</Frame>
+*/}
+
+### Deployment groups with label selectors
+
+A deployment group is a named subset of installs that updates as a unit, and groups run in the `order` you declare.
+Membership comes from a `label_selector` — any install carrying those labels is in the group — or from an explicit list
+of install IDs or names. Label an install with `nuon installs labels set` and it joins its group on the next run.
+
+Each group gets a `plan install group: <name>` step that computes the diff for every install in it, then waits for an
+**Approve install group plan**. A group can also be skipped. That makes a staged rollout a sequence of deliberate
+decisions with the diff in front of you, rather than one irreversible action.
+
+### Pull request previews
+
+Open a pull request against a tracked branch and Nuon runs a plan-only preview, then reports on the pull request
+itself: a comment headed `## Nuon Preview — <AppName>` with a table of config changes by section, edited in place on
+each later push, plus a `nuon/preview` commit status. If the pull request does not change the app config, the run stops
+early and says so.
+
+Previews need a repository connected through the Nuon GitHub App. With a `public_repo`, the run still executes but the
+comment and commit status are skipped.
+
+### Install config files in git
+
+A branch can track your per-install config files too. Set `installs_directory` (default `installs`) and each push that
+touches those files syncs them: new installs are created, existing ones diffed, and every sync records a per-install
+version with its diff. Keep them in a separate repository with `installs_connected_repo` or `installs_public_repo`.
+
+Because an install's labels live in its config file, deployment group membership becomes version-controlled along with
+the rest of the install.
+
+### Install version history
+
+Every config change to an install is now recorded as an app config version, with the diff between any two versions —
+visible in the install's **Versions** view as well as over the API. Any earlier version can be applied again, which is
+the path back when a change turns out badly.
+
+### CLI
+
+- `nuon apps branches list|get|create|trigger|runs|delete` (alias `nuon apps br`) — manage branches and runs.
+  `trigger` and `runs` open the workflow TUI.
+- `nuon sync --branch <name>` — sync the current directory and trigger a run for it. Add `--preview` for plan-only, or
+  use `--app-branch` to pick the branch interactively.
+- `nuon installs labels list|set|unset` — manage the labels deployment group selectors match on.
+- `nuon installs list` gained a branch column and a `--labels` filter.
+
+### API
+
+- `GET|POST /v1/apps/{app_id}/branches` and the per-branch routes for configs, runs, and install groups.
+- `POST /v1/apps/{app_id}/branches/{app_branch_id}/sync-install-configs` — trigger an install config sync by hand.
+- `GET /v1/installs/{install_id}/app-config-versions`, `.../{version_id}/diff`, and
+  `POST /v1/installs/{install_id}/app-config-updates` — read an install's version history and apply any version.
+- `GET /v1/installs/config-versions` and `GET /v1/installs/config-syncs` — org-wide install config sync history.
+
+Branch runs also emit the usual [webhook](/guides/webhooks) workflow lifecycle events, with
+`data.workflow.owner_type` of `app_branches`, and post to Slack according to your org's
+[Slack preferences](/guides/slack).
+
+<Tip>
+  Start with the [walkthrough](/get-started/app-branches-walkthrough), which adds a branch to the
+  [`eks-simple`](https://github.com/nuonco/example-app-configs/tree/main/eks-simple) example app end to end. The
+  [guide](/guides/app-branches) covers day-to-day operation, and [`branch.toml`](/config-ref/branch) is fully
+  documented in the config reference.
+</Tip>
