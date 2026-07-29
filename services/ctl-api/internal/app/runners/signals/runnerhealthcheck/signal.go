@@ -2,6 +2,7 @@ package runnerhealthcheck
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
@@ -119,17 +120,19 @@ func (s *Signal) checkOrgRunner(ctx workflow.Context, l *zap.Logger, tmw tmetric
 			)
 			tags["missing_build_process"] = "true"
 			tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "unhealthy"))...)
+			status, metadata := runnerStatusAfterHealthCheck(runner, app.RunnerStatusOffline, nil)
 			ownerName := runner.Org.Name
-			if runner.Status == app.RunnerStatusActive {
+			if runner.Status == app.RunnerStatusActive && status == app.RunnerStatusOffline {
 				ownerName = s.emitOfflineEvent(ctx, runner, "no active build process")
 			}
-			return s.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active build process", ownerName, nil)
+			return s.updateRunnerStatus(ctx, runner, status, "no active build process", ownerName, metadata)
 		}
 		return errors.Wrap(err, "unable to get current build process")
 	}
 
 	tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "healthy"))...)
-	return s.updateRunnerStatus(ctx, runner, app.RunnerStatusActive, "runner healthy", runner.Org.Name, nil)
+	status, metadata := runnerStatusAfterHealthCheck(runner, app.RunnerStatusActive, nil)
+	return s.updateRunnerStatus(ctx, runner, status, "runner healthy", runner.Org.Name, metadata)
 }
 
 func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tmetrics.Writer, runner *app.Runner, tags map[string]string) error {
@@ -189,12 +192,51 @@ func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tme
 		tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "healthy"))...)
 	} else {
 		tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "unhealthy"))...)
-		if runner.Status == app.RunnerStatusActive {
-			ownerName = s.emitOfflineEvent(ctx, runner, description)
-		}
+	}
+
+	status, metadata = runnerStatusAfterHealthCheck(runner, status, metadata)
+	if runner.Status == app.RunnerStatusActive && status == app.RunnerStatusOffline {
+		ownerName = s.emitOfflineEvent(ctx, runner, description)
 	}
 
 	return s.updateRunnerStatus(ctx, runner, status, description, ownerName, metadata)
+}
+
+func runnerStatusAfterHealthCheck(runner *app.Runner, status app.RunnerStatus, metadata map[string]any) (app.RunnerStatus, map[string]any) {
+	if metadata == nil {
+		metadata = make(map[string]any)
+	}
+
+	if status == app.RunnerStatusActive {
+		metadata[app.RunnerHealthCheckConsecutiveFailuresMetadataKey] = 0
+		return status, metadata
+	}
+	if status != app.RunnerStatusOffline {
+		return status, metadata
+	}
+
+	failures := runnerHealthCheckFailures(runner.StatusV2.Metadata) + 1
+	if runner.Status == app.RunnerStatusOffline && failures < 2 {
+		failures = 2
+	}
+	if failures > 2 {
+		failures = 2
+	}
+	metadata[app.RunnerHealthCheckConsecutiveFailuresMetadataKey] = failures
+
+	if runner.Status != app.RunnerStatusOffline && failures < 2 {
+		return runner.Status, metadata
+	}
+
+	return status, metadata
+}
+
+func runnerHealthCheckFailures(metadata map[string]any) int {
+	failures, err := strconv.Atoi(fmt.Sprint(metadata[app.RunnerHealthCheckConsecutiveFailuresMetadataKey]))
+	if err != nil || failures < 0 {
+		return 0
+	}
+	return failures
 }
 
 func (s *Signal) emitOfflineEvent(ctx workflow.Context, runner *app.Runner, reason string) string {
@@ -284,12 +326,14 @@ func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, st
 		}
 	}
 
-	statusactivities.LocalAwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+	if err := statusactivities.LocalAwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
 		RunnerID:          s.RunnerID,
 		Status:            status,
 		StatusDescription: description,
 		Metadata:          metadata,
-	})
+	}); err != nil {
+		return errors.Wrap(err, "unable to update runner status v2")
+	}
 
 	return nil
 }

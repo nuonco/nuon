@@ -55,6 +55,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner process")
 	}
+	metadata := make(map[string]any)
+	switch process.Type {
+	case app.RunnerProcessTypeInstall, app.RunnerProcessTypeBuild, app.RunnerProcessTypeOrg:
+		metadata[app.RunnerHealthCheckConsecutiveFailuresMetadataKey] = 0
+	}
 
 	// Only transition pending processes to active
 	if process.ProcessStatus() != app.RunnerProcessStatus(app.StatusPending) {
@@ -79,11 +84,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return errors.Wrap(err, "unable to update runner status")
 	}
-	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
+	if err := statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
 		RunnerID:          s.RunnerID,
 		Status:            app.RunnerStatusActive,
 		StatusDescription: "process initialized",
-	})
+		Metadata:          metadata,
+	}); err != nil {
+		l.Warn("unable to update runner status v2", "error", err)
+	}
 
 	l.Info("process initialized", "runner_id", s.RunnerID, "process_id", s.ProcessID)
 
