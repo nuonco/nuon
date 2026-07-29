@@ -10,7 +10,15 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { EditInputsButton } from '@/components/installs/management/EditInputs'
 import { InputValue } from '@/components/installs/management/InputValue'
+import {
+  InputsFilterBar,
+  InputsNoResults,
+} from '@/components/installs/InputsFilter'
 import { ComponentOverridesList } from '@/components/install-overrides/ComponentOverridesList'
+import {
+  useInputsFilter,
+  type TInputsFilterGroup,
+} from '@/hooks/use-inputs-filter'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
@@ -43,6 +51,39 @@ export const CurrentInputs = () => {
         config.input?.inputs ?? []
       )
     : []
+  const hasConfig = inputGroups.length > 0
+
+  const {
+    search,
+    setSearch,
+    attributeFilters,
+    sourceFilters,
+    setAttributeFilters,
+    setSourceFilters,
+    toggleAttribute,
+    toggleSource,
+    clearAllFilters,
+    clearAll,
+    filterCount,
+    hasActiveSearch,
+    hasActiveFilters,
+    filteredGroups,
+    filteredFlatInputs,
+  } = useInputsFilter({
+    inputGroups: inputGroups as TInputsFilterGroup[],
+    redacted,
+  })
+
+  const noResultsEmpty = (
+    <InputsNoResults
+      search={search}
+      hasActiveSearch={hasActiveSearch}
+      hasActiveFilters={hasActiveFilters}
+      onClearSearch={() => setSearch('')}
+      onClearFilters={clearAllFilters}
+      onClearAll={clearAll}
+    />
+  )
 
   return (
     <PageSection>
@@ -72,100 +113,125 @@ export const CurrentInputs = () => {
         </div>
       </div>
 
+      {!isLoading && (hasConfig || hasInputs) ? (
+        <div className="flex justify-end">
+          <InputsFilterBar
+            search={search}
+            onSearchChange={setSearch}
+            showFilters={hasConfig}
+            attributeFilters={attributeFilters}
+            sourceFilters={sourceFilters}
+            setAttributeFilters={setAttributeFilters}
+            setSourceFilters={setSourceFilters}
+            toggleAttribute={toggleAttribute}
+            toggleSource={toggleSource}
+            clearAllFilters={clearAllFilters}
+            filterCount={filterCount}
+            hasActiveFilters={hasActiveFilters}
+          />
+        </div>
+      ) : null}
+
       {isLoading ? (
         <Skeleton height="200px" width="100%" />
-      ) : inputGroups.length > 0 ? (
-        <div className="flex flex-col gap-4">
-          {(inputGroups as any[]).map((group) => {
-            const groupInputs = group.app_inputs ?? []
-            if (groupInputs.length === 0) return null
+      ) : hasConfig ? (
+        filteredGroups.length === 0 ? (
+          noResultsEmpty
+        ) : (
+          <div className="flex flex-col gap-4">
+            {filteredGroups.map((group) => {
+              const groupInputs = group.app_inputs ?? []
+              if (groupInputs.length === 0) return null
 
-            return (
-              <Expand
-                isOpen
-                id={group.id}
-                key={group.id}
-                heading={
-                  <div className="flex flex-col items-start">
-                    <Text weight="strong">{group.display_name}</Text>
-                    {group.description && (
-                      <Text variant="subtext" theme="neutral">
-                        {group.description}
-                      </Text>
-                    )}
-                  </div>
-                }
-                className="border rounded-md"
-                headerClassName="!px-4"
-              >
-                {group.name === COMPONENT_OVERRIDE_INPUT_GROUP ? (
-                  <div className="p-4 border-t bg-black/[0.0075] dark:bg-white/[0.0075]">
-                    <ComponentOverridesList
-                      inputs={groupInputs}
-                      values={redacted}
-                    />
-                  </div>
-                ) : (
-                <div className="p-4 border-t bg-black/[0.0075] dark:bg-white/[0.0075]">
-                  <PropertyGrid
-                    align="start"
-                    columns={[
-                      { key: 'name', header: 'Name' },
-                      { key: 'value', header: 'Current value' },
-                      { key: 'default', header: 'Default' },
-                    ]}
-                    gridTemplate="minmax(150px, 1fr) minmax(150px, 2fr) minmax(120px, 1fr)"
-                    values={groupInputs.map(
-                      (input: {
-                        name?: string
-                        display_name?: string
-                        default?: string
-                      }) => ({
-                        name: (
-                          <span className="flex flex-col">
-                            <Text variant="subtext" weight="strong">
-                              {input.display_name}
-                            </Text>
+              return (
+                <Expand
+                  isOpen
+                  id={group.id}
+                  key={group.id}
+                  heading={
+                    <div className="flex flex-col items-start">
+                      <Text weight="strong">{group.display_name}</Text>
+                      {group.description && (
+                        <Text variant="subtext" theme="neutral">
+                          {group.description}
+                        </Text>
+                      )}
+                    </div>
+                  }
+                  className="border rounded-md"
+                  headerClassName="!px-4"
+                >
+                  {group.name === COMPONENT_OVERRIDE_INPUT_GROUP ? (
+                    <div className="p-4 border-t bg-black/[0.0075] dark:bg-white/[0.0075]">
+                      <ComponentOverridesList
+                        inputs={groupInputs}
+                        values={redacted}
+                      />
+                    </div>
+                  ) : (
+                    <div className="p-4 border-t bg-black/[0.0075] dark:bg-white/[0.0075]">
+                      <PropertyGrid
+                        align="start"
+                        columns={[
+                          { key: 'name', header: 'Name' },
+                          { key: 'value', header: 'Current value' },
+                          { key: 'default', header: 'Default' },
+                        ]}
+                        gridTemplate="minmax(150px, 1fr) minmax(150px, 2fr) minmax(120px, 1fr)"
+                        values={groupInputs.map((input) => ({
+                          name: (
+                            <span className="flex flex-col">
+                              <Text variant="subtext" weight="strong">
+                                {input.display_name}
+                              </Text>
+                              <Text
+                                variant="label"
+                                family="mono"
+                                theme="neutral"
+                              >
+                                {input.name
+                                  ? getInputDisplayName(input.name)
+                                  : null}
+                              </Text>
+                            </span>
+                          ),
+                          value: (
+                            <InputValue
+                              name={input.name}
+                              value={
+                                input.name ? redacted[input.name] : undefined
+                              }
+                            />
+                          ),
+                          default: (
                             <Text
                               variant="label"
                               family="mono"
                               theme="neutral"
                             >
-                              {input.name
-                                ? getInputDisplayName(input.name)
-                                : null}
+                              {input?.default}
                             </Text>
-                          </span>
-                        ),
-                        value: (
-                          <InputValue
-                            name={input.name}
-                            value={
-                              input.name ? redacted[input.name] : undefined
-                            }
-                          />
-                        ),
-                        default: (
-                          <Text variant="label" family="mono" theme="neutral">
-                            {input?.default}
-                          </Text>
-                        ),
-                      })
-                    )}
-                  />
-                </div>
-                )}
-              </Expand>
-            )
-          })}
-        </div>
+                          ),
+                        }))}
+                      />
+                    </div>
+                  )}
+                </Expand>
+              )
+            })}
+          </div>
+        )
       ) : hasInputs ? (
-        <PropertyGrid
-          values={Object.entries(redacted).map(([key, value]) => ({
-            key: getInputDisplayName(key),
-            value: <InputValue name={key} value={String(value)} />,
-          }))}
-        />
+        filteredFlatInputs.length === 0 ? (
+          noResultsEmpty
+        ) : (
+          <PropertyGrid
+            values={filteredFlatInputs.map(([key, value]) => ({
+              key: getInputDisplayName(key),
+              value: <InputValue name={key} value={String(value)} />,
+            }))}
+          />
+        )
       ) : (
         <EmptyState
           emptyTitle="No inputs configured"
