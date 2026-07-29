@@ -12,7 +12,7 @@ keywords: ["app branches", "app branch", "what are app branches", "continuous de
 
 An app branch connects one git branch to your [app](/concepts/apps). When you push to that branch, Nuon fetches the
 config at that commit, builds whatever changed, and then rolls the new version out across your customer
-[installs](/guides/app-install-life-cycle) — in an order you define, with a plan and an approval gate in front of
+[installs](/guides/app-install-life-cycle), in an order you define, with a plan and an approval gate in front of
 every step.
 
 Before app branches, updating a fleet meant running `nuon apps sync` from a laptop or wiring up a GitHub Action with
@@ -22,7 +22,7 @@ a single reviewable workflow instead of a sequence of manual steps.
 <Note>
   If you are new to Nuon, read [apps](/concepts/apps) and the [app and install life
   cycle](/guides/app-install-life-cycle) first. An app branch orchestrates the same install workflows those pages
-  describe — it does not replace them.
+  describe. It does not replace them.
 </Note>
 
 ## The end-to-end flow
@@ -66,7 +66,7 @@ touch.
 | --- | --- | --- |
 | `git-run` | A push to the tracked branch | Builds, then plans and deploys each deployment group in order. |
 | `git-preview-run` | Opening or updating a pull request against the tracked branch | Plan only. Builds and reports the config diff, then stops. Never touches an install. |
-| `manual-run` | `nuon apps branches trigger`, or the API, or the dashboard | Same steps as a `git-run`. Add `--preview` and it still plans every group and waits at each approval gate — it just applies nothing. |
+| `manual-run` | `nuon apps branches trigger`, or the API, or the dashboard | Same steps as a `git-run`. Add `--preview` and it still plans every group and waits at each approval gate. It just applies nothing. |
 
 ```mermaid
 flowchart LR
@@ -85,7 +85,7 @@ flowchart LR
 A merge is not a special case: closing a pull request is ignored, and the push to the tracked branch that follows the
 merge is what starts the `git-run`.
 
-A `git-preview-run` stops after `sync install configs` — the per-group plan and deploy steps are not created at all,
+A `git-preview-run` stops after `sync install configs`. The per-group plan and deploy steps are not created at all,
 so a pull request cannot reach an install even in principle.
 
 A manual plan-only run works differently, and the difference matters in practice. `--preview` suppresses the *apply*,
@@ -132,7 +132,7 @@ order = 2
 env = "prod"
 ```
 
-`order` controls which group deploys first — lower runs first. Declare your groups in the order you want them to run;
+`order` controls which group deploys first: lower runs first. Declare your groups in the order you want them to run;
 an unset `order` falls back to the position in the file.
 
 ### Rolling out gradually
@@ -146,7 +146,7 @@ have an external system approve it through the API once your own checks have pas
 
 ## Pull request previews
 
-When you open a pull request against a tracked branch — or push another commit to one — Nuon runs a plan-only preview
+When you open a pull request against a tracked branch, or push another commit to one, Nuon runs a plan-only preview
 and reports it on the pull request itself:
 
 - a comment titled `## Nuon Preview — <AppName>`, containing a table of config changes broken down by section
@@ -159,8 +159,8 @@ If the pull request does not change the app config at all, the run stops early a
 
 Posting to the pull request needs an **org-level GitHub connection**, not a particular kind of branch config: your org
 must have the Nuon GitHub App connected for the repository's owner. That is satisfied by a `[connected_repo]` branch,
-and equally by a `[public_repo]` branch whose owner your org has connected — a public `acmeco/*` repo gets previews as
-long as the org has connected `acmeco`. See [connecting a repository](/guides/vcs).
+and equally by a `[public_repo]` branch whose owner your org has connected. A public `acmeco/*` repo gets
+previews as long as the org has connected `acmeco`. See [connecting a repository](/guides/vcs).
 
 <Warning>
   If no such connection exists, the preview run still executes and appears in the dashboard, but the comment and the
@@ -174,7 +174,7 @@ The value of a branch run is that nothing reaches an install unseen. Each `plan 
 per install in that group, showing exactly what would change, and holds the rollout there.
 
 That gate belongs to whoever operates the install. A customer running your software in their own cloud account sees
-the pending update, reads the diff, and approves or refuses it — the same review they already get for
+the pending update, reads the diff, and approves or refuses it, the same review they already get for
 [workflows](/concepts/workflows) and [approvals](/concepts/workflows#workflow-approvals) on a single install, now
 driven from your git history.
 
@@ -189,7 +189,7 @@ Every config change to an install is recorded as an *app config version*: a snap
 expected to be running at a point in time. The history is available per install in the dashboard and over the API,
 along with the diff between any two versions.
 
-Because any past version can be applied again, the history doubles as a recovery path — if a change turns out badly,
+Because any past version can be applied again, the history doubles as a recovery path: if a change turns out badly,
 you re-apply an earlier version rather than hunting for what the old values were. The
 [guide](/guides/app-branches#re-apply-a-previous-config-version) walks through the exact calls.
 
@@ -199,7 +199,7 @@ An app branch can also track your install config files, not just your app config
 plane in step with what is in git.
 
 Enabling it takes two things: a repository block for the install configs, and the directory they live in. There is no
-implicit default for the repository — a branch tracks install configs only once you set **one of**
+implicit default for the repository. A branch tracks install configs only once you set **one of**
 `installs_connected_repo` or `installs_public_repo` (they are mutually exclusive). Pointing that block at the same
 repository as the app config is perfectly normal; you just have to declare it.
 
@@ -220,12 +220,12 @@ branch    = "main"
 
 <Warning>
   `installs_directory` on its own does nothing. With neither installs repository block set, the sync is skipped
-  silently — no error, no synced installs. Keep the installs repository block's `directory` at the repository root
+  silently: no error, no synced installs. Keep the installs repository block's `directory` at the repository root
   (`"."`) and give `installs_directory` a path from there; that is the layout Nuon resolves consistently.
 </Warning>
 
-Each file describes one install — its labels, its cloud account, its inputs, its stack overrides, its component
-toggles — using the same format `nuon installs sync` already accepts:
+Each file describes one install (its labels, its cloud account, its inputs, its stack overrides, its component
+toggles) using the same format `nuon installs sync` already accepts:
 
 ```toml installs/customer-acme.toml
 name            = "customer-acme"
@@ -246,11 +246,11 @@ monitoring = true
 A sync can start three ways: a push that touches those files, the skippable `sync install configs` step inside a
 branch run, or a manual trigger. Whichever way it starts, Nuon clones the repo at that commit, parses each file,
 creates installs it has not seen before, and diffs the ones it has. Each sync produces a record with per-install
-version entries — file path, whether the install was created or updated, and the stored diff — plus counts of how
+version entries (file path, whether the install was created or updated, and the stored diff), plus counts of how
 many installs synced and how many failed.
 
 Because the install configs get their own repository block, they do not have to live with the app config at all. A
-separate repository — one your support team owns, say, with different reviewers — works the same way.
+separate repository (one your support team owns, say, with different reviewers) works the same way.
 
 <Note>
   Nuon reads the installs repository block when it parses `branch.toml` **from git**, during a branch run's `fetch app
@@ -280,7 +280,7 @@ A few constraints are worth knowing before you design your branch layout:
 - All branches of one app must point at the **same repository**. The branch and directory within it may differ.
 - An install can belong to **one app branch** at a time.
 - Two branches of the same app cannot use an **identical label selector**.
-- Every push to the tracked branch starts a run. There are no path filters — scope what a branch watches with the
+- Every push to the tracked branch starts a run. There are no path filters. Scope what a branch watches with the
   `directory` field on the repo block.
 - `install_names` are resolved to install IDs when you sync, and an unknown name fails the sync. Renaming an install
   detaches it from its group until the next sync, which is the main reason to prefer `label_selector`.
