@@ -17,7 +17,7 @@ import (
 const vcsTemporalNamespace = "vcs"
 
 const (
-	VCSHealthCheckSchedule     = "0 * * * *"
+	vcsHealthCheckSchedule     = "0 * * * *"
 	vcsHealthCheckJitterWindow = cronutil.MaxJitterWindow
 )
 
@@ -45,7 +45,7 @@ func (h *Helpers) CreateConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 		Name:            fmt.Sprintf("vcs-connection-%s-health-check", vcsConn.ID),
 		Description:     "Periodic VCS connection health check",
 		Mode:            app.QueueEmitterModeCron,
-		CronSchedule:    VCSHealthCheckSchedule,
+		CronSchedule:    vcsHealthCheckSchedule,
 		JitterWindow:    vcsHealthCheckJitterWindow,
 		SignalExpiresIn: 5 * time.Minute,
 		SignalType:      healthcheck.SignalType,
