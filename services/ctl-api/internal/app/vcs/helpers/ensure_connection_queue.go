@@ -43,7 +43,7 @@ func (h *Helpers) EnsureConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 			Updates(map[string]any{
 				"cron_schedule": cronutil.ApplyCronJitter(
 					existing.ID,
-					vcsHealthCheckSchedule,
+					VCSHealthCheckSchedule,
 					vcsHealthCheckJitterWindow,
 				),
 				"jitter_window":     int64(vcsHealthCheckJitterWindow),
@@ -57,7 +57,7 @@ func (h *Helpers) EnsureConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 		Name:            emitterName,
 		Description:     "Periodic VCS connection health check",
 		Mode:            app.QueueEmitterModeCron,
-		CronSchedule:    vcsHealthCheckSchedule,
+		CronSchedule:    VCSHealthCheckSchedule,
 		JitterWindow:    vcsHealthCheckJitterWindow,
 		SignalExpiresIn: 5 * time.Minute,
 		SignalType:      healthcheck.SignalType,
