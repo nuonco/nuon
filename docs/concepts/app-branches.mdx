@@ -152,10 +152,15 @@ and reports it on the pull request itself:
 If the pull request does not change the app config at all, the run stops early and says so
 (`No changes to nuon.toml detected in this PR. Preview skipped.`) rather than doing pointless work.
 
+Posting to the pull request needs an **org-level GitHub connection**, not a particular kind of branch config: your org
+must have the Nuon GitHub App connected for the repository's owner. That is satisfied by a `[connected_repo]` branch,
+and equally by a `[public_repo]` branch whose owner your org has connected — a public `acmeco/*` repo gets previews as
+long as the org has connected `acmeco`. See [connecting a repository](/guides/vcs).
+
 <Warning>
-  Pull request previews require a **connected repository** — one attached through the Nuon GitHub App. With a
-  `public_repo`, Nuon has no authenticated GitHub client, so the preview run still executes but the comment and the
-  commit status are silently skipped. See [connecting a repository](/guides/vcs).
+  If no such connection exists, the preview run still executes and appears in the dashboard, but the comment and the
+  commit status are skipped **without an error**. When previews go missing, check the GitHub App connection for the
+  repository's owner rather than the branch config.
 </Warning>
 
 ## Plans, diffs, and who approves
@@ -185,20 +190,34 @@ you re-apply an earlier version rather than hunting for what the old values were
 
 ## Install configs in git
 
-An app branch can also track your install config files, not just your app config. Point `installs_directory` at a
-directory of per-install TOML files (`installs` by default) and Nuon keeps the installs in your control plane in step
-with what is in git.
+An app branch can also track your install config files, not just your app config, keeping the installs in your control
+plane in step with what is in git.
+
+Enabling it takes two things: a repository block for the install configs, and the directory they live in. There is no
+implicit default for the repository — a branch tracks install configs only once you set **one of**
+`installs_connected_repo` or `installs_public_repo` (they are mutually exclusive). Pointing that block at the same
+repository as the app config is perfectly normal; you just have to declare it.
 
 ```toml branch.toml
-name = "main"
+name               = "main"
+installs_directory = "installs"
 
 [connected_repo]
 repo      = "acmeco/my-app-config"
 directory = "."
 branch    = "main"
 
-installs_directory = "installs"
+[installs_connected_repo]
+repo      = "acmeco/my-app-config"
+directory = "."
+branch    = "main"
 ```
+
+<Warning>
+  `installs_directory` on its own does nothing. With neither installs repository block set, the sync is skipped
+  silently — no error, no synced installs. Keep the installs repository block's `directory` at the repository root
+  (`"."`) and give `installs_directory` a path from there; that is the layout Nuon resolves consistently.
+</Warning>
 
 Each file describes one install — its labels, its cloud account, its inputs, its stack overrides, its component
 toggles — using the same format `nuon installs sync` already accepts:
@@ -225,9 +244,14 @@ creates installs it has not seen before, and diffs the ones it has. Each sync pr
 version entries — file path, whether the install was created or updated, and the stored diff — plus counts of how
 many installs synced and how many failed.
 
-By default the install configs live in the same repo as the app config. If you would rather keep them somewhere else —
-a separate repo your support team owns, for instance — set `installs_connected_repo` or `installs_public_repo` on the
-branch instead. The two are mutually exclusive, and if you set neither, the branch's own repo is used.
+Because the install configs get their own repository block, they do not have to live with the app config at all. A
+separate repository — one your support team owns, say, with different reviewers — works the same way.
+
+<Note>
+  Nuon reads the installs repository block when it parses `branch.toml` **from git**, during a branch run's `fetch app
+  config` step. So the way to enable install config sync is to commit these fields and let a run pick them up. See
+  [managing install configs in git](/guides/app-branches#manage-install-configs-in-git) for the exact sequence.
+</Note>
 
 <Tip>
   Labels set in an install config file are what deployment group label selectors match on. Managing install configs in

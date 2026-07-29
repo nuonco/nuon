@@ -182,7 +182,8 @@ Either way, the run walks the same steps:
 
 1. `fetch commit` and `fetch app config` — get the config and sync it.
 2. `building components and sandbox` — rebuild only what changed.
-3. `sync install configs` — skippable; covered below.
+3. `sync install configs` — skippable, and a no-op here because this branch does not track install config files. See
+   [managing install configs in git](/guides/app-branches#manage-install-configs-in-git) if you want that.
 4. `plan install group: stage` — computes the diff for every install in the group, then **waits**.
 5. `deploy install group: stage` — runs once you approve.
 6. `plan install group: production`, then `deploy install group: production`.
@@ -228,8 +229,9 @@ you cannot push to. To get the push-triggered behavior, point the branch at a re
     Fork `example-app-configs`, or copy the `eks-simple` directory into a repository you control.
   </Step>
   <Step title="Connect it to Nuon">
-    Connect the repository through the Nuon GitHub App — see [connecting a repository](/guides/vcs). This step is what
-    makes pull request previews possible; a `[public_repo]` branch cannot comment on your pull requests.
+    Connect the Nuon GitHub App for your repository's owner — see [connecting a repository](/guides/vcs). This is what
+    makes pull request previews possible. It is an org-level connection keyed on the owner, so it enables previews for
+    any branch tracking a repo under that owner, whether the branch config uses `[connected_repo]` or `[public_repo]`.
   </Step>
   <Step title="Update the repo block">
     Swap `[public_repo]` for `[connected_repo]`, pointing at your repository and the directory the config lives in:
@@ -272,33 +274,6 @@ you cannot push to. To get the push-triggered behavior, point the branch at a re
     another commit and the same comment is updated in place.
   </Step>
 </Steps>
-
-## Optional: Track Install Configs in Git
-
-`eks-simple` already has an `installs/` directory holding `eks-simple-ci-stage.toml`. Adding one line to `branch.toml`
-tells the branch to keep the installs in Nuon in step with those files:
-
-```toml branch.toml
-name               = "main"
-installs_directory = "installs"
-
-[public_repo]
-directory = "eks-simple"
-repo      = "nuonco/example-app-configs"
-branch    = "main"
-
-[[install_groups]]
-name  = "stage"
-order = 1
-
-[install_groups.label_selector]
-env = "stage"
-```
-
-With that set, the run's `sync install configs` step parses each file in `installs/`, creates any install it has not
-seen, and diffs the ones it has — recording the diff per install. Because the label lives in the file, adding a
-customer to the `stage` group becomes a pull request that adds one TOML file. See
-[managing install configs in git](/guides/app-branches#manage-install-configs-in-git).
 
 ## Inspect the History
 

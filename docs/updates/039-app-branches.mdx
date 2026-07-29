@@ -61,14 +61,17 @@ itself: a comment headed `## Nuon Preview — <AppName>` with a table of config 
 each later push, plus a `nuon/preview` commit status. If the pull request does not change the app config, the run stops
 early and says so.
 
-Previews need a repository connected through the Nuon GitHub App. With a `public_repo`, the run still executes but the
-comment and commit status are skipped.
+Previews need the Nuon GitHub App connected in your org for the repository's owner — an org-level connection that works
+for `public_repo` branches too, not something you configure per branch. Without it the run still executes, but the
+comment and commit status are skipped without an error.
 
 ### Install config files in git
 
-A branch can track your per-install config files too. Set `installs_directory` (default `installs`) and each push that
-touches those files syncs them: new installs are created, existing ones diffed, and every sync records a per-install
-version with its diff. Keep them in a separate repository with `installs_connected_repo` or `installs_public_repo`.
+A branch can track your per-install config files too. Declare the repository holding them with
+`installs_connected_repo` or `installs_public_repo` — one of the two is required — plus `installs_directory` (default
+`installs`). Once that is committed, each push touching those files syncs them: new installs are created, existing ones
+diffed, and every sync records a per-install version with its diff. The install configs can live alongside the app
+config or in a repository of their own.
 
 Because an install's labels live in its config file, deployment group membership becomes version-controlled along with
 the rest of the install.
