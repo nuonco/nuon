@@ -7,12 +7,13 @@ test.describe("Forget install", () => {
     const installId = installIds[1];
     test.skip(!installId, "No second seed install available");
 
-    await page.goto(`/${orgId}/installs/${installId}`);
+    await page.goto(`/${orgId}/installs/${installId}?panel=settings`);
     await page.waitForLoadState("domcontentloaded");
-    await expect(page).toHaveTitle(/^Overview \|/, { timeout: 15000 });
 
-    await page.getByRole("button", { name: "Manage" }).click();
-    await page.getByRole("button", { name: "Forget install" }).click();
+    const panel = page.getByRole("complementary");
+    const openButton = panel.getByRole("button", { name: "Forget install" });
+    await expect(openButton).toBeVisible({ timeout: 15000 });
+    await openButton.click();
 
     const dialog = page.getByRole("dialog");
     const headingText =

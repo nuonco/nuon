@@ -23,6 +23,23 @@ Install-level:
 | [run-action](./run-action.flow.md) | `specs/run-action.spec.ts` | Trigger a manual action and redirect to its workflow |
 | [run-runbook](./run-runbook.flow.md) | `specs/run-runbook.spec.ts` | Run a runbook and redirect to its workflow |
 
+Tier 2 — workflow-triggering (assert redirect to the workflows page only, never await the workflow):
+
+| Flow | Spec | Covers |
+|------|------|--------|
+| [deploy-component](./deploy-component.flow.md) | `specs/deploy-component.spec.ts` | Deploy a component build and redirect to its workflow |
+| [drift-scan-component](./drift-scan-component.flow.md) | `specs/drift-scan-component.spec.ts` | Drift scan a component and redirect to its workflow |
+| [sync-secrets](./sync-secrets.flow.md) | `specs/sync-secrets.spec.ts` | Sync install secrets and redirect to its workflow |
+| [trigger-branch-run](./trigger-branch-run.flow.md) | `specs/trigger-branch-run.spec.ts` | Trigger an app branch run (asserts the "Run triggered" toast — no redirect) |
+| [teardown-component](./teardown-component.flow.md) | `specs/teardown-component.spec.ts` | Teardown a component on a throwaway install |
+| [reprovision-install](./reprovision-install.flow.md) | `specs/reprovision-install.spec.ts` | Reprovision a throwaway install |
+| [deprovision-install](./deprovision-install.flow.md) | `specs/deprovision-install.spec.ts` | Deprovision a throwaway install |
+| [sandbox-management](./sandbox-management.flow.md) | `specs/sandbox-management.spec.ts` | Drift scan, reprovision, and deprovision the sandbox on a throwaway install |
+
+Destructive Tier-2 specs (teardown, reprovision, deprovision, sandbox) create their own throwaway
+install via the API (`helpers.ts`) so they don't corrupt the shared seed installs; global teardown
+drops the org.
+
 Some specs have no flow doc yet: `specs/apps.spec.ts` and `specs/install-labels.spec.ts`.
 
 ## Format
