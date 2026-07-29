@@ -53,7 +53,7 @@ export function PulumiDiff({
       {hasResourceChanges && (
         <Modal
           heading={
-            <Text flex className="gap-4" variant="h3" weight="strong" theme="info">
+            <Text flex className="gap-4" variant="h3" weight="strong">
               <Icon variant="NetworkXIcon" size="24" /> Preview graph
             </Text>
           }

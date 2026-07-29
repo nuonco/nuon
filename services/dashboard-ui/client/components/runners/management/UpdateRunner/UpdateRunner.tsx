@@ -59,7 +59,6 @@ export const UpdateRunnerModal = ({
             className="gap-4"
             variant="h3"
             weight="strong"
-            theme="info"
           >
             <Icon variant="ArrowsCounterClockwiseIcon" size="24" />
             {modalHeading}

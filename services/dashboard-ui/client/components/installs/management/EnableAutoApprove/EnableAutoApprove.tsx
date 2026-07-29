@@ -32,7 +32,6 @@ export const EnableAutoApproveModal = ({
           className="gap-4"
           variant="h3"
           weight="strong"
-          theme="info"
         >
           <Icon variant={isApproveAll ? "ToggleRightIcon" : "ToggleLeftIcon"} size="24" />
           {buttonText}

@@ -80,7 +80,6 @@ export const ComponentsGraphRenderer = ({
           className="gap-4"
           variant="h3"
           weight="strong"
-          theme="info"
         >
           <Icon variant="GraphIcon" size="24" />
           Component dependency graph

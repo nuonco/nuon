@@ -25,7 +25,6 @@ export const SyncSecretsModal = ({
           className="gap-4"
           variant="h3"
           weight="strong"
-          theme="info"
         >
           <Icon variant="KeyIcon" size="24" />
           Sync secrets

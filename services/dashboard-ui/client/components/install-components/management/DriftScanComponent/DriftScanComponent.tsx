@@ -48,7 +48,6 @@ export const DriftScanComponentModal = ({
             className="gap-4"
             variant="h3"
             weight="strong"
-            theme="info"
           >
             <Icon variant="ScanIcon" size="24" />
             Drift scan {component.name} component
