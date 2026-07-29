@@ -49,17 +49,26 @@ func init() {
 	config.RegisterDefault("kafka_enabled", false)
 	config.RegisterDefault("kafka_brokers", "localhost:9092")
 	config.RegisterDefault("kafka_security_protocol", "PLAINTEXT")
+	config.RegisterDefault("kafka_produce_timeout", "5s")
 	// kafka_client_id is deliberately not defaulted: it is derived per-process
 	// from service_name/service_type/service_deployment unless set explicitly.
-	// The group name must keep the ctl-api prefix — the KafkaUser ACL grants
-	// group access by prefix, so a name outside it fails authorization at join.
-	config.RegisterDefault("kafka_consumer_group", "ctl-api-clickhouse-sink")
+	// Group names must keep the ctl-api prefix — the KafkaUser ACL grants group
+	// access by prefix, so a name outside it fails authorization at join, which
+	// presents as a hang rather than an error because the client retries.
+	config.RegisterDefault("kafka_consumer_group_prefix", "ctl-api-consumer")
 	// consumer flush cadence: each fetch (and so each ClickHouse insert) waits
 	// until min_bytes accumulate or max_wait elapses, whichever comes first.
 	// min_bytes is the target batch/part size; max_wait caps latency and, at low
 	// volume, bounds the insert rate to ~1 per partition per interval.
 	config.RegisterDefault("kafka_consumer_fetch_max_wait", "5s")
 	config.RegisterDefault("kafka_consumer_fetch_min_bytes", 256*1024)
+	// Ceilings on a single fetch, capping how much a consumer can buffer before
+	// decode. Left unset, franz-go allows 50MiB per broker with unbounded fetch
+	// concurrency. See pkg/kafka/consumer.go for the arithmetic; overridden
+	// per-deployment for the higher-volume consumers.
+	config.RegisterDefault("kafka_consumer_fetch_max_bytes", 8*1024*1024)
+	config.RegisterDefault("kafka_consumer_fetch_max_partition_bytes", 2*1024*1024)
+	config.RegisterDefault("kafka_consumer_max_concurrent_fetches", 2)
 
 	// defaults for app
 	config.RegisterDefault("github_app_key_secret_name", "ctl-api-github-app-key")
@@ -237,16 +246,25 @@ type Config struct {
 	// with the client certificate Strimzi issues our KafkaUser in deployed
 	// environments. KafkaEnabled gates whether producers use Kafka vs writing
 	// straight to ClickHouse.
-	KafkaEnabled               bool          `config:"kafka_enabled"`
-	KafkaBrokers               string        `config:"kafka_brokers"`
-	KafkaSecurityProtocol      string        `config:"kafka_security_protocol"`
-	KafkaTLSCAPath             string        `config:"kafka_tls_ca_path"`
-	KafkaTLSCertPath           string        `config:"kafka_tls_cert_path"`
-	KafkaTLSKeyPath            string        `config:"kafka_tls_key_path"`
-	KafkaClientID              string        `config:"kafka_client_id"`
-	KafkaConsumerGroup         string        `config:"kafka_consumer_group"`
-	KafkaConsumerFetchMaxWait  time.Duration `config:"kafka_consumer_fetch_max_wait"`
-	KafkaConsumerFetchMinBytes int32         `config:"kafka_consumer_fetch_min_bytes"`
+	KafkaEnabled          bool   `config:"kafka_enabled"`
+	KafkaBrokers          string `config:"kafka_brokers"`
+	KafkaSecurityProtocol string `config:"kafka_security_protocol"`
+	KafkaTLSCAPath        string `config:"kafka_tls_ca_path"`
+	KafkaTLSCertPath      string `config:"kafka_tls_cert_path"`
+	KafkaTLSKeyPath       string `config:"kafka_tls_key_path"`
+	KafkaClientID         string `config:"kafka_client_id"`
+	// Bounds a synchronous produce, used by the log write paths. franz-go retries
+	// a buffered record effectively forever, so this is what keeps a broker outage
+	// from blocking a runner's log write rather than falling back to ClickHouse.
+	KafkaProduceTimeout time.Duration `config:"kafka_produce_timeout"`
+	// Each consumer derives its own group as <prefix>-<name>, so one consumer
+	// restarting doesn't rebalance the others.
+	KafkaConsumerGroupPrefix            string        `config:"kafka_consumer_group_prefix"`
+	KafkaConsumerFetchMaxWait           time.Duration `config:"kafka_consumer_fetch_max_wait"`
+	KafkaConsumerFetchMinBytes          int32         `config:"kafka_consumer_fetch_min_bytes"`
+	KafkaConsumerFetchMaxBytes          int32         `config:"kafka_consumer_fetch_max_bytes"`
+	KafkaConsumerFetchMaxPartitionBytes int32         `config:"kafka_consumer_fetch_max_partition_bytes"`
+	KafkaConsumerMaxConcurrentFetches   int           `config:"kafka_consumer_max_concurrent_fetches"`
 
 	// temporal configuration
 	TemporalHost                          string        `config:"temporal_host"  validate:"required"`

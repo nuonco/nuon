@@ -1,35 +1,55 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 
 	"github.com/nuonco/nuon/pkg/profiles"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/consumer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/fxmodules"
 )
+
+var consumerName string
 
 func (c *cli) registerConsumer() error {
 	cmd := &cobra.Command{
 		Use:   "consumer",
-		Short: "run kafka consumers (heartbeats, logs, ...)",
-		Run:   c.runConsumer,
+		Short: "run kafka consumers (heartbeats, otel-logs, ...)",
+		RunE:  c.runConsumer,
 	}
+	cmd.Flags().StringVar(&consumerName, "name", consumer.NameAll,
+		fmt.Sprintf("which consumer to run: %s, or %q to run them all in one process", consumer.Names(), consumer.NameAll))
 	rootCmd.AddCommand(cmd)
 	return nil
 }
 
-// runConsumer runs all Kafka consumers in a single process, decoupled from the
-// Temporal workers. Infrastructure providers are lazy, so Temporal is never
-// constructed here — only what the consumers depend on (config, ClickHouse,
-// metrics, logging).
-func (c *cli) runConsumer(cmd *cobra.Command, _ []string) {
+// runConsumer runs the selected Kafka consumer, decoupled from the Temporal
+// workers. Infrastructure providers are lazy, so Temporal is never constructed
+// here — only what the consumers depend on (config, ClickHouse, metrics,
+// logging).
+//
+// Deployed, each pod runs a single consumer (`--name=otel-logs`) so they scale
+// and fail independently; locally `--name=all` runs them together.
+func (c *cli) runConsumer(cmd *cobra.Command, _ []string) error {
+	// Parsed before the fx graph is built so a bad --name is an immediate,
+	// legible error rather than a provider failure buried in an fx trace.
+	selection, err := consumer.NewSelection(consumerName)
+	if err != nil {
+		return err
+	}
+
 	providers := []fx.Option{}
 	providers = append(providers, c.providers()...)
 
 	profilerOptions := profiles.LoadOptionsFromEnv()
 	providers = append(providers, profiles.Module(profilerOptions))
 
+	providers = append(providers, fx.Supply(selection))
 	providers = append(providers, fxmodules.KafkaConsumersModule)
 
 	fx.New(providers...).Run()
+
+	return nil
 }

@@ -12,9 +12,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
-// Producer is re-exported so ctl-api call sites depend on this glue package
-// rather than the generic transport directly.
+// Producer and Message are re-exported so ctl-api call sites depend on this glue
+// package rather than the generic transport directly.
 type Producer = pkgkafka.Producer
+type Message = pkgkafka.Message
 
 // Topics this service produces to / consumes from. Names mirror the destination
 // ClickHouse tables.
@@ -59,6 +60,35 @@ func ClientConfig(cfg *internal.Config) pkgkafka.Config {
 		TLSCAPath:        cfg.KafkaTLSCAPath,
 		TLSCertPath:      cfg.KafkaTLSCertPath,
 		TLSKeyPath:       cfg.KafkaTLSKeyPath,
+		ProduceTimeout:   cfg.KafkaProduceTimeout,
+	}
+}
+
+// ConsumerGroup names the group for one consumer. Per-consumer rather than one
+// shared group because a group with heterogeneous topic subscriptions rebalances
+// every member whenever any member restarts — so a deploy of one consumer would
+// stall the others for no reason.
+//
+// Changing a group's name makes it start from the earliest retained offset
+// (pkgkafka sets ConsumeResetOffset to AtStart), which for a topic with history
+// means replaying the whole retention window. Rename only while a topic is cold,
+// or seed the new group from the old one's committed offsets first.
+func ConsumerGroup(cfg *internal.Config, name string) string {
+	return cfg.KafkaConsumerGroupPrefix + "-" + name
+}
+
+// ConsumerConfig maps ctl-api config into the generic consumer config for one
+// topic. The fetch tunables are process-wide config, set per deployment, since
+// each consumer runs in its own pod.
+func ConsumerConfig(cfg *internal.Config, name, topic string) pkgkafka.ConsumerConfig {
+	return pkgkafka.ConsumerConfig{
+		Group:                  ConsumerGroup(cfg, name),
+		Topics:                 []string{topic},
+		FetchMaxWait:           cfg.KafkaConsumerFetchMaxWait,
+		FetchMinBytes:          cfg.KafkaConsumerFetchMinBytes,
+		FetchMaxBytes:          cfg.KafkaConsumerFetchMaxBytes,
+		FetchMaxPartitionBytes: cfg.KafkaConsumerFetchMaxPartitionBytes,
+		MaxConcurrentFetches:   cfg.KafkaConsumerMaxConcurrentFetches,
 	}
 }
 

@@ -6,17 +6,18 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/consumer"
 )
 
-// KafkaConsumersModule wires every Kafka consumer. They run together in the
-// dedicated `consumer` command, deployed as ctl-api-clickhouse-sink; add new
-// sinks (logs, etc.) here. Each consumer no-ops unless KAFKA_ENABLED.
+// KafkaConsumersModule wires every Kafka consumer. Which of them actually run is
+// decided by `consumer --name`, not by what's registered here: deployed, each
+// pod runs exactly one (its own deployment, resources, and consumer group);
+// locally `--name=all` runs them together. Each also no-ops unless KAFKA_ENABLED.
 //
-// Everything registered here writes to ClickHouse, which is what that deployment
-// is named for. A consumer that does something else — reacting to events, audit
-// trails — wants its own consumer group so it can lag and replay independently,
-// so give it its own deployment and a flag to select which consumers run,
-// mirroring `worker --namespace`. Registering it here instead would silently put
-// it in the sink deployment and share the sink's group.
+// So registering a new consumer here is safe — it does not join any existing
+// deployment. What it does need is its own entry in `consumer.Names()` plus a
+// deployment instance in the ctl-api chart's `consumer.instances`, or nothing
+// will ever select it.
 var KafkaConsumersModule = fx.Module("kafka-consumers",
 	fx.Provide(consumer.NewHeartbeatConsumer),
+	fx.Provide(consumer.NewOtelLogsConsumer),
 	fx.Invoke(func(*consumer.HeartbeatConsumer) {}),
+	fx.Invoke(func(*consumer.OtelLogsConsumer) {}),
 )

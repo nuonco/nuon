@@ -3,10 +3,14 @@ package controlplanejob
 import (
 	"context"
 	"fmt"
+	"time"
 
 	runnercontrolplane "github.com/nuonco/nuon/pkg/runner/controlplane"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -27,10 +31,24 @@ func (a *Activities) WriteControlPlaneLogs(ctx context.Context, logStreamID stri
 		logStreamIDs = append(logStreamIDs, logStream.ParentLogStreamID.String)
 	}
 
+	// One receive time for the batch, so the parent fan-out matches the child.
+	now := time.Now()
+
 	logs := make([]app.OtelLogRecord, 0, len(records)*len(logStreamIDs))
 	for _, targetLogStreamID := range logStreamIDs {
 		for _, record := range records {
 			logs = append(logs, app.OtelLogRecord{
+				// Stamped here rather than left to BeforeCreate / GORM autofill,
+				// which resolve at insert time: on the Kafka path that happens in a
+				// consumer with no request context, so org_id would be empty (it
+				// leads the destination table's ORDER BY) and created_at would mean
+				// "when the sink flushed" instead of "when we got this".
+				ID:          domains.NewOtelLogID(),
+				OrgID:       logStream.OrgID,
+				CreatedByID: logStream.CreatedByID,
+				CreatedAt:   now,
+				UpdatedAt:   now,
+
 				LogStreamID:            targetLogStreamID,
 				RunnerID:               record.RunnerID,
 				RunnerGroupID:          record.RunnerGroupID,
@@ -58,6 +76,39 @@ func (a *Activities) WriteControlPlaneLogs(ctx context.Context, logStreamID stri
 		}
 	}
 
+	if !a.kafka.Enabled() {
+		return a.writeControlPlaneLogs(ctx, logs)
+	}
+
+	// Synchronous for the same reason as the runner OTLP path: this activity's
+	// current write is a blocking ClickHouse insert, and Temporal treats a
+	// returning activity as durably done. Producing fire-and-forget would let the
+	// activity succeed while the records only exist in a process buffer, and a
+	// worker restart would lose them with nothing left to retry.
+	msgs := make([]kafka.Message, 0, len(logs))
+	for _, log := range logs {
+		msgs = append(msgs, kafka.Message{Key: log.LogStreamID, Payload: log})
+	}
+
+	failed := a.kafka.ProduceEnvelopesSync(ctx, kafka.TopicOtelLogRecords, kafka.TypeOtelLogRecord, msgs)
+	if len(failed) == 0 {
+		return nil
+	}
+
+	fallback := make([]app.OtelLogRecord, 0, len(failed))
+	for _, i := range failed {
+		fallback = append(fallback, logs[i])
+	}
+
+	a.l.Warn("unable to produce control-plane logs to kafka; writing unacked records inline",
+		zap.Int("acked", len(logs)-len(failed)),
+		zap.Int("fallback", len(fallback)),
+	)
+
+	return a.writeControlPlaneLogs(ctx, fallback)
+}
+
+func (a *Activities) writeControlPlaneLogs(ctx context.Context, logs []app.OtelLogRecord) error {
 	if err := a.chDB.WithContext(ctx).Create(&logs).Error; err != nil {
 		return fmt.Errorf("unable to ingest control-plane logs: %w", err)
 	}

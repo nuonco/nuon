@@ -10,15 +10,36 @@ import (
 )
 
 const (
-	defaultFetchMaxWait  = 5 * time.Second
+	defaultFetchMaxWait = 5 * time.Second
+	// batch floor
 	defaultFetchMinBytes = 256 * 1024
+	// batch ceilings. franz-go defaults to 50MiB per broker with unbounded fetch
+	// concurrency, which on a 3-broker cluster buffers ~150MiB of records —
+	// compressed, so more again once decompressed — before any of it is decoded.
+	// Its own docs recommend setting these when consuming compressed data, and we
+	// produce lz4. FetchMinBytes sits well under these, so steady-state batching
+	// and latency are unaffected; the caps only bind during a backlog drain, which
+	// is exactly when memory is tightest.
+	defaultFetchMaxBytes          = 8 * 1024 * 1024
+	defaultFetchMaxPartitionBytes = 2 * 1024 * 1024
+	defaultMaxConcurrentFetches   = 2
 )
 
 type ConsumerConfig struct {
-	Group         string
-	Topics        []string
-	FetchMaxWait  time.Duration
-	FetchMinBytes int32
+	Group        string
+	Topics       []string
+	FetchMaxWait time.Duration
+	// FetchMinBytes is the batch floor, the rest are ceilings. Worst-case buffered
+	// bytes is
+	//
+	//	min(FetchMaxBytes, partitionsOnBroker*FetchMaxPartitionBytes) * MaxConcurrentFetches
+	//
+	// so partitions-per-pod — replica count, not topic size — is usually what
+	// actually bounds a consumer's memory.
+	FetchMinBytes          int32
+	FetchMaxBytes          int32
+	FetchMaxPartitionBytes int32
+	MaxConcurrentFetches   int
 }
 
 // Handler processes one partition's batch. Returning nil commits the batch;
@@ -50,6 +71,18 @@ func NewConsumer(cfg Config, ccfg ConsumerConfig, handler Handler, l *zap.Logger
 	if minBytes <= 0 {
 		minBytes = defaultFetchMinBytes
 	}
+	maxBytes := ccfg.FetchMaxBytes
+	if maxBytes <= 0 {
+		maxBytes = defaultFetchMaxBytes
+	}
+	maxPartBytes := ccfg.FetchMaxPartitionBytes
+	if maxPartBytes <= 0 {
+		maxPartBytes = defaultFetchMaxPartitionBytes
+	}
+	maxConcurrentFetches := ccfg.MaxConcurrentFetches
+	if maxConcurrentFetches <= 0 {
+		maxConcurrentFetches = defaultMaxConcurrentFetches
+	}
 
 	opts = append(opts,
 		kgo.ConsumerGroup(ccfg.Group),
@@ -67,6 +100,9 @@ func NewConsumer(cfg Config, ccfg ConsumerConfig, handler Handler, l *zap.Logger
 		kgo.DisableAutoCommit(),
 		kgo.FetchMaxWait(maxWait),
 		kgo.FetchMinBytes(minBytes),
+		kgo.FetchMaxBytes(maxBytes),
+		kgo.FetchMaxPartitionBytes(maxPartBytes),
+		kgo.MaxConcurrentFetches(maxConcurrentFetches),
 	)
 
 	client, err := kgo.NewClient(opts...)

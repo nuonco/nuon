@@ -3,6 +3,7 @@ package kafka
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
 	"go.uber.org/zap"
@@ -29,6 +30,12 @@ type Config struct {
 	// TLSCertPath and TLSKeyPath enable mTLS and must be set together.
 	TLSCertPath string
 	TLSKeyPath  string
+
+	// ProduceTimeout bounds a synchronous produce. franz-go retries a buffered
+	// record effectively forever by default, so without a bound a broker outage
+	// would block a caller waiting on the ack indefinitely. Only applies to the
+	// sync path; async producers never wait.
+	ProduceTimeout time.Duration
 }
 
 func (c Config) protocol() string {
