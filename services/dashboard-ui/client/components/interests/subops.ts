@@ -17,7 +17,7 @@ export const SUB_OPS: Record<ResourceKind, string[]> = {
   components: ['deploy', 'teardown'],
   sandboxes: ['provision', 'reprovision', 'deprovision'],
   install_configurations: ['inputs', 'secrets'],
-  runners: ['provision', 'reprovision', 'inactive'],
+  runners: ['provision', 'reprovision', 'inactive', 'unhealthy'],
   actions: ['run'],
   app_branches: ['run'],
 }
@@ -25,10 +25,8 @@ export const SUB_OPS: Record<ResourceKind, string[]> = {
 // Resources whose workflows can produce a drift_detected event. Mirrors the Go
 // SupportsDriftDetected helper. The picker only renders the drift_detected
 // toggle for these kinds.
-export const RESOURCES_WITH_DRIFT_DETECTED: ReadonlySet<ResourceKind> = new Set<ResourceKind>([
-  'components',
-  'sandboxes',
-])
+export const RESOURCES_WITH_DRIFT_DETECTED: ReadonlySet<ResourceKind> =
+  new Set<ResourceKind>(['components', 'sandboxes'])
 
 const SUB_OP_LABELS: Record<string, string> = {
   // shared lifecycle ops
@@ -43,6 +41,7 @@ const SUB_OP_LABELS: Record<string, string> = {
   secrets: 'Secret syncs',
   // runners
   inactive: 'Inactive',
+  unhealthy: 'Unhealthy',
   // actions
   run: 'Run',
   // stacks
