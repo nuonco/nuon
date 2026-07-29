@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	"os"
 
 	ociregistry "github.com/distribution/distribution/v3/registry"
 	"github.com/sourcegraph/conc"
@@ -37,6 +38,13 @@ func New(params Params) (*Registry, error) {
 		cfg:      params.Cfg,
 		ctx:      ctx,
 		cancelFn: cancelFn,
+	}
+
+	// distribution inits otel unconditionally inside NewRegistry with no config knob to disable it,
+	// and autoexport defaults to an OTLP exporter at localhost:4318 that logs a connection-refused
+	// error on every flush. We run no collector and never consume its spans, so turn it off.
+	if os.Getenv("OTEL_TRACES_EXPORTER") == "" {
+		os.Setenv("OTEL_TRACES_EXPORTER", "none")
 	}
 
 	cfg := reg.getConfig(params.Cfg.RegistryPort)
