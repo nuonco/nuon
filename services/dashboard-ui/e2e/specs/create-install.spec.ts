@@ -10,6 +10,7 @@ test.describe("Create install", () => {
   test("open modal, select app, fill form, and submit", async ({
     page,
     orgId,
+    appConfig,
   }) => {
     test.setTimeout(60000);
     await page.goto(`/${orgId}/installs`);
@@ -26,9 +27,11 @@ test.describe("Create install", () => {
       page.getByPlaceholder("Search apps...")
     ).toBeVisible();
 
-    // Select first app
-    const firstRadio = page.locator('input[name="app-selection"]').first();
-    await firstRadio.click({ force: true });
+    const appRadio = page.getByRole("radio", {
+      name: new RegExp(appConfig ?? "httpbin"),
+    });
+    await expect(appRadio).toBeVisible({ timeout: 10000 });
+    await appRadio.click({ force: true });
 
     // Form loads — wait for the install name input to appear
     const nameInput = page.getByPlaceholder("Enter install name");

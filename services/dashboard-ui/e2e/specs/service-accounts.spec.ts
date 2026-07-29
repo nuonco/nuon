@@ -23,6 +23,8 @@ test.describe("Service accounts", () => {
     const nameInput = createDialog.getByPlaceholder("e.g. ci-deploy");
     await expect(nameInput).toBeVisible();
     await nameInput.fill(name);
+    await createDialog.getByRole("combobox").click();
+    await page.getByRole("option").first().click();
     await createDialog
       .getByRole("button", { name: "Create service account" })
       .click();
