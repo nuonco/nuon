@@ -1,0 +1,337 @@
+---
+title: "Roll Out a Change with an App Branch"
+description: "Add an app branch to the eks-simple example app, then plan and deploy a change across its installs."
+---
+
+<Note>
+	This walkthrough builds on the [`eks-simple`
+	directory](https://github.com/nuonco/example-app-configs/tree/main/eks-simple) of the example-app-configs
+	repository, which now ships a `branch.toml`.
+</Note>
+
+[App branches](/concepts/app-branches) turn a change to your app config into a single, reviewable rollout across your
+installs. This walkthrough adds one to `eks-simple` and takes a change through it end to end: preview the diff, plan
+each deployment group, approve, deploy.
+
+## Prerequisites
+
+- Finish [Create an AWS EKS App](/get-started/app-aws-k8s) first, or otherwise have the `eks-simple` app synced to
+  Nuon with **at least one install** that has finished provisioning.
+- The [Nuon CLI](/cli), authenticated with `nuon auth login` and pointed at your org with `nuon orgs select`.
+- A clone of [`example-app-configs`](https://github.com/nuonco/example-app-configs).
+
+## What You Will Create
+
+- An [app branch](/concepts/app-branches) named `main`, tracking the `eks-simple` directory of the example repository.
+- Two [deployment groups](/concepts/app-branches#deployment-groups) — `stage` and `production` — that select their
+  installs by label.
+- A labeled install, so it lands in the `stage` group.
+- A plan-only preview run, and then a real run you approve group by group.
+
+## Configure the Branch
+
+### `branch.toml`
+
+The branch config is a single file at the root of the app config directory, alongside `metadata.toml`. In
+`example-app-configs/eks-simple`, it looks like this:
+
+```toml branch.toml
+name = "main"
+
+[public_repo]
+directory = "eks-simple"
+repo      = "nuonco/example-app-configs"
+branch    = "main"
+
+[[install_groups]]
+name  = "stage"
+order = 1
+
+[install_groups.label_selector]
+env = "stage"
+
+[[install_groups]]
+name  = "production"
+order = 2
+
+[install_groups.label_selector]
+env = "prod"
+```
+
+Reading it top to bottom:
+
+- **`name = "main"`** is the branch's name in Nuon. It comes from this key, not from the filename, and it is what you
+  pass to `nuon sync --branch`.
+- **`[public_repo]`** is the repository the branch tracks. `directory` is the path to the app config inside that repo,
+  so `eks-simple` here rather than `"."`. All three fields are required.
+- **Two `[[install_groups]]`** — `stage` first (`order = 1`), then `production` (`order = 2`). Lower `order` deploys
+  first, and each group's plan waits for your approval before its deploy runs.
+- **`[install_groups.label_selector]`** picks each group's installs by label. An install labeled `env = "stage"` is in
+  the `stage` group; one labeled `env = "prod"` is in `production`. Nothing is hard-coded to a particular install, so
+  adding a customer to a group is a matter of labeling it.
+
+<Note>
+	Both groups use `label_selector` rather than `install_names` on purpose. Names are resolved to install IDs when you
+	sync and an unknown name fails the whole sync, so a name-based group breaks in any org where that install does not
+	exist. Label selectors re-evaluate on every run.
+</Note>
+
+### Label your install
+
+The `stage` group is empty until an install carries `env = "stage"`. Label the install you provisioned earlier:
+
+```sh
+nuon installs labels set --install-id <your-install-name-or-id> env=stage
+```
+
+Then confirm the selector matches it:
+
+```sh
+nuon installs list --labels env=stage
+```
+
+The example app also declares its CI install as a tracked config file, and sets the label there instead:
+
+```toml installs/eks-simple-ci-stage.toml
+name = "eks-simple-ci-stage"
+approval_option = "approve-all"
+
+[labels]
+env = "stage"
+
+[aws_account]
+  region = "us-east-1"
+
+[[inputs]]
+domain = "stage.nuon.run"
+sub_domain = "whoami"
+version = "v2"
+```
+
+Either route works — a label set by the CLI and a label set in an install config file are the same label. Managing it
+in the file means group membership is version-controlled along with everything else about the install.
+
+### Sync the app
+
+From the `eks-simple` directory:
+
+```sh
+cd example-app-configs/eks-simple
+nuon apps sync
+```
+
+The sync creates the branch and its two deployment groups. Check what Nuon now has:
+
+```sh
+nuon apps branches list --app-id eks-simple
+```
+
+You should see one branch, `main`. In the dashboard, the app now has a **Branches** view showing the branch and its
+**Deployment plan** — `stage`, then `production`.
+
+{/* SCREENSHOT NEEDED — see ~/app-branches-launch/SCREENSHOTS-NEEDED.md
+<Frame caption="The eks-simple app's Branches view, with the main branch and its two deployment groups.">
+  <img src="/images/get-started/app-branches/branches-view.png" alt="The Branches view of the eks-simple app in the Nuon dashboard, showing the main branch with stage and production deployment groups" />
+</Frame>
+*/}
+
+## Preview a Change
+
+Before deploying anything, see what a change would do. Edit an input default in `inputs.toml` — change the `whoami`
+subdomain, for instance:
+
+```toml inputs.toml
+[[input]]
+name         = "sub_domain"
+description  = "The sub domain for the Whoami service"
+default      = "hello"
+display_name = "Sub Domain"
+group        = "dns"
+```
+
+Then run a plan-only preview against your local files:
+
+```sh
+nuon sync --branch main --preview
+```
+
+This syncs the config in the current directory and triggers a **plan-only** run for it. The run builds what changed
+and computes the diff, and stops there — the plan and deploy steps for each group are never created, so nothing can
+reach an install. Watch it in the workflow TUI the command opens, or in the dashboard.
+
+<Tip>
+	`nuon sync --branch` runs against your local working directory, including uncommitted edits. That makes it the fast
+	way to iterate on a change before you commit it. Note the flag lives on `nuon sync`, not `nuon apps sync`.
+</Tip>
+
+## Run It for Real
+
+Drop the `--preview` and the same command becomes a real rollout:
+
+```sh
+nuon sync --branch main
+```
+
+Or trigger a run from the branch's committed config, with no local sync at all:
+
+```sh
+nuon apps branches trigger --app-id eks-simple --branch-id main
+```
+
+Either way, the run walks the same steps:
+
+1. `fetch commit` and `fetch app config` — get the config and sync it.
+2. `building components and sandbox` — rebuild only what changed.
+3. `sync install configs` — skippable; covered below.
+4. `plan install group: stage` — computes the diff for every install in the group, then **waits**.
+5. `deploy install group: stage` — runs once you approve.
+6. `plan install group: production`, then `deploy install group: production`.
+
+### Approve the plan
+
+Open the run in the dashboard. At `plan install group: stage` you will find the per-install diff and an **Approve
+install group plan** action. Read the diff — for the change above it should show the `sub_domain` input default moving
+from `whoami` to `hello` — and approve it.
+
+{/* SCREENSHOT NEEDED — see ~/app-branches-launch/SCREENSHOTS-NEEDED.md
+<Frame caption="Approving the stage group's plan, with the sub_domain input change visible in the diff.">
+  <img src="/images/get-started/app-branches/approve-stage-plan.png" alt="The Approve install group plan step for the stage group, showing the sub_domain input changing from whoami to hello" />
+</Frame>
+*/}
+
+The `stage` group deploys, and the run then stops at `plan install group: production`. If you have no `env = "prod"`
+installs, that group has nothing to deploy to; use **Skip install group** to move the run past it.
+
+That pause between groups is the whole point: a rollout is a sequence of decisions you make with the diff in front of
+you, not one irreversible action.
+
+<Note>
+	Every group's plan needs an approval — from a person in the dashboard, or from an API caller. There is no setting
+	that auto-approves a deployment group.
+</Note>
+
+### Watch runs from the CLI
+
+```sh
+nuon apps branches runs --app-id eks-simple --branch-id <branch-id>
+```
+
+This lists the branch's runs and opens the one you pick in the workflow TUI.
+
+## Trigger From a Git Push
+
+So far every run has been triggered by hand, because `branch.toml` tracks `nuonco/example-app-configs` — a repository
+you cannot push to. To get the push-triggered behavior, point the branch at a repository of your own.
+
+<Steps>
+  <Step title="Push the config to your own repository">
+    Fork `example-app-configs`, or copy the `eks-simple` directory into a repository you control.
+  </Step>
+  <Step title="Connect it to Nuon">
+    Connect the repository through the Nuon GitHub App — see [connecting a repository](/guides/vcs). This step is what
+    makes pull request previews possible; a `[public_repo]` branch cannot comment on your pull requests.
+  </Step>
+  <Step title="Update the repo block">
+    Swap `[public_repo]` for `[connected_repo]`, pointing at your repository and the directory the config lives in:
+
+    ```toml branch.toml
+    name = "main"
+
+    [connected_repo]
+    directory = "eks-simple"
+    repo      = "your-org/example-app-configs"
+    branch    = "main"
+
+    [[install_groups]]
+    name  = "stage"
+    order = 1
+
+    [install_groups.label_selector]
+    env = "stage"
+
+    [[install_groups]]
+    name  = "production"
+    order = 2
+
+    [install_groups.label_selector]
+    env = "prod"
+    ```
+  </Step>
+  <Step title="Sync, then push">
+    ```sh
+    nuon apps sync
+    git commit -am "point app branch at my repo"
+    git push origin main
+    ```
+
+    The push starts a run on its own. From here on, a commit to `main` is the trigger — no CLI step in between.
+  </Step>
+  <Step title="Open a pull request">
+    Open a pull request against `main` with a config change in it. Nuon runs a plan-only preview and posts a comment
+    headed `## Nuon Preview — eks-simple` with a table of what changed, plus a `nuon/preview` commit status. Push
+    another commit and the same comment is updated in place.
+  </Step>
+</Steps>
+
+## Optional: Track Install Configs in Git
+
+`eks-simple` already has an `installs/` directory holding `eks-simple-ci-stage.toml`. Adding one line to `branch.toml`
+tells the branch to keep the installs in Nuon in step with those files:
+
+```toml branch.toml
+name               = "main"
+installs_directory = "installs"
+
+[public_repo]
+directory = "eks-simple"
+repo      = "nuonco/example-app-configs"
+branch    = "main"
+
+[[install_groups]]
+name  = "stage"
+order = 1
+
+[install_groups.label_selector]
+env = "stage"
+```
+
+With that set, the run's `sync install configs` step parses each file in `installs/`, creates any install it has not
+seen, and diffs the ones it has — recording the diff per install. Because the label lives in the file, adding a
+customer to the `stage` group becomes a pull request that adds one TOML file. See
+[managing install configs in git](/guides/app-branches#manage-install-configs-in-git).
+
+## Inspect the History
+
+Every config change to an install is recorded as an app config version. Open the install in the dashboard and look at
+its **Versions** view, or list them over the API:
+
+```sh
+curl -H "Authorization: Bearer $NUON_API_TOKEN" \
+  -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+  "https://api.nuon.co/v1/installs/$INSTALL_ID/app-config-versions"
+```
+
+Any earlier version can be applied again, which is the path back if a change turns out badly. The guide walks through
+[re-applying a previous version](/guides/app-branches#re-apply-a-previous-config-version).
+
+## Wrapping Up and Next Steps
+
+You now have a git branch wired to a fleet: a change to the config produces a build, a diff per install, and an
+approval gate in front of each group.
+
+Where to go next:
+
+<CardGroup cols={2}>
+  <Card title="Configure app branches" icon="screwdriver-wrench" href="/guides/app-branches">
+    Multiple branches, separate install repos, and the full command reference.
+  </Card>
+  <Card title="How app branches work" icon="lightbulb" href="/concepts/app-branches">
+    Run types, previews, and version history in depth.
+  </Card>
+  <Card title="Branch config reference" icon="file" href="/config-ref/branch">
+    Every field on `branch.toml`.
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/guides/webhooks">
+    Have your own systems react to branch runs.
+  </Card>
+</CardGroup>
