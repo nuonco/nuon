@@ -5,10 +5,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type AdminUpdateHealthCheckCronRequest struct {
@@ -37,6 +40,13 @@ func (s *service) AdminUpdateHealthCheckCron(ctx *gin.Context) {
 		return
 	}
 
+	sched, err := cron.ParseStandard(req.CronSchedule)
+	if err != nil {
+		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("invalid cron schedule: %w", err)))
+		return
+	}
+	jitterWindow := validator.MinScheduleInterval(sched)
+
 	var emitters []app.QueueEmitter
 	if res := s.db.WithContext(ctx).
 		Where(app.QueueEmitter{
@@ -49,14 +59,18 @@ func (s *service) AdminUpdateHealthCheckCron(ctx *gin.Context) {
 
 	updated := 0
 	for _, em := range emitters {
-		if em.CronSchedule == req.CronSchedule {
+		jittered := cronutil.ApplyCronJitter(em.ID, req.CronSchedule, jitterWindow)
+		if em.CronSchedule == jittered {
 			continue
 		}
 
 		if res := s.db.WithContext(ctx).
 			Model(&app.QueueEmitter{}).
 			Where("id = ?", em.ID).
-			Update("cron_schedule", req.CronSchedule); res.Error != nil {
+			Updates(map[string]any{
+				"cron_schedule": jittered,
+				"jitter_window": int64(jitterWindow),
+			}); res.Error != nil {
 			s.l.Warn("unable to update emitter cron schedule",
 				zap.String("emitter_id", em.ID),
 				zap.Error(res.Error),
