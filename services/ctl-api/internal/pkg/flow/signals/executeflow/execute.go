@@ -430,6 +430,8 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		}
 	}
 
+	var eagerExecuted map[int]bool
+
 	for gi := startFromGroupIdx; gi < len(groups); gi++ {
 		if s.cancelRequested {
 			s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi-1)
@@ -440,6 +442,10 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		group := &groups[gi]
 
 		if s.Resident && !residentPending[group.GroupIdx] {
+			continue
+		}
+
+		if eagerExecuted[group.GroupIdx] {
 			continue
 		}
 
@@ -562,6 +568,11 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			}
 			flw = completedFlw
 
+			eagerExecuted = make(map[int]bool, gi+1)
+			for i := 0; i <= gi && i < len(groups); i++ {
+				eagerExecuted[groups[i].GroupIdx] = true
+			}
+
 			// Check for cancellation before overwriting status. The cancel
 			// handler may have set StatusCancelled while we were waiting for
 			// step generation to complete.
@@ -596,6 +607,16 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 					})
 				}
 			}
+
+			// Eager groups can sit mid-list in group_idx order; rewind so groups ordered before them are not skipped.
+			next := len(groups)
+			for i := range groups {
+				if !eagerExecuted[groups[i].GroupIdx] {
+					next = i
+					break
+				}
+			}
+			gi = next - 1
 		}
 
 		// ContinueAsNew every 5 groups to bound workflow history
