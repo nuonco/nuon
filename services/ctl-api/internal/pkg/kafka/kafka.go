@@ -29,17 +29,33 @@ const (
 	TypeOtelLogRecord   = "otel_log_record"
 )
 
+// ClientID identifies this process to the brokers. Kafka reports it in request
+// metrics, broker logs, and consumer group member ids, and — the reason it is
+// worth being specific — applies client quotas per client id, so a shared value
+// would make it impossible to throttle one producer without throttling all of
+// them. It is also stamped into every envelope as the message source.
+//
+// Derived from the same service_type/service_deployment that tag our pods in
+// Datadog, so a client id here names the deployment the same way the dashboards
+// do: ctl-api/api-runner, ctl-api/worker-installs, ctl-api/consumer-clickhouse-sink.
+func ClientID(cfg *internal.Config) string {
+	if cfg.KafkaClientID != "" {
+		return cfg.KafkaClientID
+	}
+	if cfg.ServiceDeployment == "" {
+		return cfg.ServiceName + "/" + cfg.ServiceType
+	}
+
+	return cfg.ServiceName + "/" + cfg.ServiceType + "-" + cfg.ServiceDeployment
+}
+
 // ClientConfig maps ctl-api config into the generic Kafka client config. Shared
 // by the producer here and the domain consumers.
 func ClientConfig(cfg *internal.Config) pkgkafka.Config {
 	return pkgkafka.Config{
 		Brokers:          splitBrokers(cfg.KafkaBrokers),
-		ClientID:         cfg.KafkaClientID,
+		ClientID:         ClientID(cfg),
 		SecurityProtocol: cfg.KafkaSecurityProtocol,
-		SASLMechanism:    cfg.KafkaSASLMechanism,
-		SASLUsername:     cfg.KafkaSASLUsername,
-		SASLPassword:     cfg.KafkaSASLPassword,
-		TLSEnabled:       cfg.KafkaTLSEnabled,
 		TLSCAPath:        cfg.KafkaTLSCAPath,
 		TLSCertPath:      cfg.KafkaTLSCertPath,
 		TLSKeyPath:       cfg.KafkaTLSKeyPath,

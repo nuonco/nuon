@@ -54,6 +54,16 @@ func NewConsumer(cfg Config, ccfg ConsumerConfig, handler Handler, l *zap.Logger
 	opts = append(opts,
 		kgo.ConsumerGroup(ccfg.Group),
 		kgo.ConsumeTopics(ccfg.Topics...),
+		// Set explicitly because it decides what a group with no committed
+		// offsets does, and that happens twice: at cutover, where starting from
+		// the earliest retained record picks up anything produced before this
+		// deployment rolled rather than dropping it; and whenever a new group
+		// name is introduced, where it means replaying the entire retention
+		// window. DedupToken will not suppress that replay — it keys on the
+		// offset range of a batch, and a replay does not reproduce the same
+		// batch boundaries — so seed a new group from the old group's committed
+		// offsets instead of letting it start cold.
+		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
 		kgo.DisableAutoCommit(),
 		kgo.FetchMaxWait(maxWait),
 		kgo.FetchMinBytes(minBytes),

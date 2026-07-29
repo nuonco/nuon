@@ -49,8 +49,11 @@ func init() {
 	config.RegisterDefault("kafka_enabled", false)
 	config.RegisterDefault("kafka_brokers", "localhost:9092")
 	config.RegisterDefault("kafka_security_protocol", "PLAINTEXT")
-	config.RegisterDefault("kafka_client_id", "ctl-api")
-	config.RegisterDefault("kafka_consumer_group", "ctl-api-heartbeats")
+	// kafka_client_id is deliberately not defaulted: it is derived per-process
+	// from service_name/service_type/service_deployment unless set explicitly.
+	// The group name must keep the ctl-api prefix — the KafkaUser ACL grants
+	// group access by prefix, so a name outside it fails authorization at join.
+	config.RegisterDefault("kafka_consumer_group", "ctl-api-clickhouse-sink")
 	// consumer flush cadence: each fetch (and so each ClickHouse insert) waits
 	// until min_bytes accumulate or max_wait elapses, whichever comes first.
 	// min_bytes is the target batch/part size; max_wait caps latency and, at low
@@ -230,16 +233,13 @@ type Config struct {
 	ClickhouseDBWriteTimeout time.Duration `config:"clickhouse_db_write_timeout" validate:"required"`
 	ClickhouseDBDialTimeout  time.Duration `config:"clickhouse_db_dial_timeout" validate:"required"`
 
-	// kafka configuration. Security is pluggable per cloud (local PLAINTEXT; MSK
-	// IAM and GCP/Azure OAUTHBEARER wired per-cloud later). KafkaEnabled gates
-	// whether producers use Kafka vs writing straight to ClickHouse
+	// kafka configuration. Two security protocols: PLAINTEXT locally, and SSL
+	// with the client certificate Strimzi issues our KafkaUser in deployed
+	// environments. KafkaEnabled gates whether producers use Kafka vs writing
+	// straight to ClickHouse.
 	KafkaEnabled               bool          `config:"kafka_enabled"`
 	KafkaBrokers               string        `config:"kafka_brokers"`
 	KafkaSecurityProtocol      string        `config:"kafka_security_protocol"`
-	KafkaSASLMechanism         string        `config:"kafka_sasl_mechanism"`
-	KafkaSASLUsername          string        `config:"kafka_sasl_username"`
-	KafkaSASLPassword          string        `config:"kafka_sasl_password"`
-	KafkaTLSEnabled            bool          `config:"kafka_tls_enabled"`
 	KafkaTLSCAPath             string        `config:"kafka_tls_ca_path"`
 	KafkaTLSCertPath           string        `config:"kafka_tls_cert_path"`
 	KafkaTLSKeyPath            string        `config:"kafka_tls_key_path"`

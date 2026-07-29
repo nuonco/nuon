@@ -68,79 +68,43 @@ func TestConfigBaseOpts(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "plaintext no sasl",
+			name: "unset protocol defaults to plaintext",
 			cfg: Config{
 				Brokers: []string{"localhost:9092"},
 			},
 			wantErr: false,
 		},
 		{
-			name: "plain sasl_ssl",
+			name: "explicit plaintext",
 			cfg: Config{
-				Brokers:          []string{"broker:9092"},
-				SecurityProtocol: securitySASLSSL,
-				SASLMechanism:    saslPlain,
-				SASLUsername:     "user",
-				SASLPassword:     "pass",
+				Brokers:          []string{"localhost:9092"},
+				SecurityProtocol: securityPlaintext,
 			},
 			wantErr: false,
 		},
 		{
-			name: "scram-sha-256",
+			name: "lowercase plaintext",
 			cfg: Config{
-				Brokers:          []string{"broker:9092"},
-				SecurityProtocol: securitySASLSSL,
-				SASLMechanism:    saslScram256,
-				SASLUsername:     "user",
-				SASLPassword:     "pass",
+				Brokers:          []string{"localhost:9092"},
+				SecurityProtocol: "plaintext",
 			},
 			wantErr: false,
 		},
 		{
-			name: "scram-sha-512",
+			name: "sasl_ssl is not supported",
 			cfg: Config{
-				Brokers:          []string{"broker:9092"},
-				SecurityProtocol: securitySASLSSL,
-				SASLMechanism:    saslScram512,
-				SASLUsername:     "user",
-				SASLPassword:     "pass",
-			},
-			wantErr: false,
-		},
-		{
-			name: "aws msk iam",
-			cfg: Config{
-				Brokers:       []string{"broker:9092"},
-				SASLMechanism: saslAWSMSKIAM,
-			},
-			wantErr: false,
-		},
-		{
-			name: "oauthbearer not implemented",
-			cfg: Config{
-				Brokers:       []string{"broker:9092"},
-				SASLMechanism: saslOAuth,
+				Brokers:          []string{"broker:9093"},
+				SecurityProtocol: "SASL_SSL",
 			},
 			wantErr: true,
 		},
 		{
-			name: "unknown mechanism",
-			cfg: Config{
-				Brokers:       []string{"broker:9092"},
-				SASLMechanism: "NOPE",
-			},
-			wantErr: true,
-		},
-		{
-			name: "lowercase plain",
+			name: "unknown protocol",
 			cfg: Config{
 				Brokers:          []string{"broker:9092"},
-				SecurityProtocol: securitySASLSSL,
-				SASLMechanism:    "plain",
-				SASLUsername:     "user",
-				SASLPassword:     "pass",
+				SecurityProtocol: "NOPE",
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 	}
 

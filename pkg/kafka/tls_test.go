@@ -260,28 +260,6 @@ func TestTLSReloaderConcurrentRotation(t *testing.T) {
 	wg.Wait()
 }
 
-func TestTLSRequired(t *testing.T) {
-	tests := []struct {
-		name string
-		cfg  Config
-		want bool
-	}{
-		{name: "plaintext", cfg: Config{SecurityProtocol: "PLAINTEXT"}, want: false},
-		{name: "empty", cfg: Config{}, want: false},
-		{name: "ssl", cfg: Config{SecurityProtocol: securitySSL}, want: true},
-		{name: "sasl ssl", cfg: Config{SecurityProtocol: securitySASLSSL}, want: true},
-		{name: "explicit flag", cfg: Config{TLSEnabled: true}, want: true},
-		{name: "msk iam implies tls", cfg: Config{SASLMechanism: saslAWSMSKIAM}, want: true},
-		{name: "msk iam lowercase", cfg: Config{SASLMechanism: "aws_msk_iam"}, want: true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, tt.cfg.tlsRequired())
-		})
-	}
-}
-
 func TestBaseOptsMTLS(t *testing.T) {
 	dir := t.TempDir()
 	certPath := filepath.Join(dir, "user.crt")
