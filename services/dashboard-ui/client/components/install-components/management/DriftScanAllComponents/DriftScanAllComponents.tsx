@@ -27,7 +27,6 @@ export const DriftScanAllComponentsModal = ({
           className="gap-4"
           variant="h3"
           weight="strong"
-          theme="info"
         >
           <Icon variant="ScanIcon" size="24" />
           Drift scan all {installName} components?

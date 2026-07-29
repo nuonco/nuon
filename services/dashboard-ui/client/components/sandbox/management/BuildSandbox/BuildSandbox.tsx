@@ -25,7 +25,6 @@ export const BuildSandboxModal = ({
           className="gap-4"
           variant="h3"
           weight="strong"
-          theme="info"
         >
           <Icon variant="HammerIcon" size="24" />
           Build sandbox

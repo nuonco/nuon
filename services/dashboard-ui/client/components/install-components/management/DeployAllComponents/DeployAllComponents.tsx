@@ -36,7 +36,6 @@ export const DeployAllComponentsModal = ({
           className="gap-4"
           variant="h3"
           weight="strong"
-          theme="info"
         >
           <Icon variant="CloudArrowUpIcon" size="24" />
           Deploy all components to {installName}?

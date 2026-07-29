@@ -66,7 +66,6 @@ export const DeployComponentModal = ({
             className="gap-4"
             variant="h3"
             weight="strong"
-            theme="info"
           >
             <Icon variant="CloudArrowUpIcon" size="24" />
             Deploy {component.name} component

@@ -45,7 +45,6 @@ export const DeprovisionRunnerModal = ({
             className="gap-4"
             variant="h3"
             weight="strong"
-            theme="info"
           >
             <Icon variant="BoxArrowDownIcon" size="24" />
             {headingText}
