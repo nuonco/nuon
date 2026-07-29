@@ -97,7 +97,8 @@ the path back when a change turns out badly.
 - `POST /v1/apps/{app_id}/branches/{app_branch_id}/sync-install-configs` — trigger an install config sync by hand.
 - `GET /v1/installs/{install_id}/app-config-versions`, `.../{version_id}/diff`, and
   `POST /v1/installs/{install_id}/app-config-updates` — read an install's version history and apply any version.
-- `GET /v1/installs/config-versions` and `GET /v1/installs/config-syncs` — org-wide install config sync history.
+- `GET /v1/installs/{install_id}/config-versions` and `GET /v1/installs/{install_id}/config-syncs` — an install's
+  config sync history.
 
 Branch runs also emit the usual [webhook](/guides/webhooks) workflow lifecycle events, with
 `data.workflow.owner_type` of `app_branches`, and post to Slack according to your org's
