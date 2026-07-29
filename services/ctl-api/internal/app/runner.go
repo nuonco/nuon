@@ -28,6 +28,8 @@ const (
 	RunnerStatusUnknown RunnerStatus = "unknown"
 )
 
+const RunnerHealthCheckConsecutiveFailuresMetadataKey = "runner_healthcheck_consecutive_failures"
+
 func (r RunnerStatus) String() string {
 	return string(r)
 }
