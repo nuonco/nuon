@@ -1,55 +1,23 @@
-import React, { useState, useMemo } from 'react'
-import { Button } from '@/components/common/Button'
-import { Dropdown } from '@/components/common/Dropdown'
-import { EmptyState } from '@/components/common/EmptyState'
+import React from 'react'
 import { Expand } from '@/components/common/Expand'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
-import { Menu } from '@/components/common/Menu'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
-import { SearchInput } from '@/components/common/SearchInput'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
-import { CheckboxInputWithButton } from '@/components/common/form/CheckboxInput'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { InputValue } from '@/components/installs/management/InputValue'
+import {
+  InputsFilterBar,
+  InputsNoResults,
+} from '@/components/installs/InputsFilter'
+import { useInputsFilter, type TInputsFilterGroup } from '@/hooks/use-inputs-filter'
 import { getInputDisplayName } from '@/utils/install-utils'
-
-type TAttributeFilter = 'required' | 'sensitive'
-type TSourceFilter = 'vendor' | 'customer'
-
-const ATTRIBUTE_OPTIONS: TAttributeFilter[] = ['required', 'sensitive']
-const SOURCE_OPTIONS: TSourceFilter[] = ['vendor', 'customer']
-
-const ATTRIBUTE_LABELS: Record<TAttributeFilter, string> = {
-  required: 'Required',
-  sensitive: 'Sensitive',
-}
-
-const SOURCE_LABELS: Record<TSourceFilter, string> = {
-  vendor: 'Vendor',
-  customer: 'Customer',
-}
-
-type TInputGroup = {
-  id: string
-  display_name?: string
-  description?: string
-  app_inputs?: Array<{
-    name?: string
-    display_name?: string
-    description?: string
-    default?: string
-    required?: boolean
-    sensitive?: boolean
-    source?: string
-    group_id?: string
-  }>
-}
 
 interface IViewCurrentInputsModal extends IModal {
   isLoading: boolean
   redactedValues: Record<string, any>
-  inputGroups: TInputGroup[]
+  inputGroups: TInputsFilterGroup[]
   footerActions?: React.ReactNode
 }
 
@@ -60,127 +28,38 @@ export const ViewCurrentInputsModal = ({
   footerActions,
   ...props
 }: IViewCurrentInputsModal) => {
-  const [search, setSearch] = useState('')
-  const [attributeFilters, setAttributeFilters] = useState<TAttributeFilter[]>([])
-  const [sourceFilters, setSourceFilters] = useState<TSourceFilter[]>([])
-
   const redacted = redactedValues
   const hasConfig = inputGroups.length > 0
   const hasInputs = Object.keys(redacted).length > 0
-  const query = search.toLowerCase()
-  const hasActiveSearch = query.length > 0
-  const filterCount = attributeFilters.length + sourceFilters.length
-  const hasActiveFilters = filterCount > 0
 
-  const clearAllFilters = () => {
-    setAttributeFilters([])
-    setSourceFilters([])
-  }
-
-  const clearAll = () => {
-    setSearch('')
-    clearAllFilters()
-  }
+  const {
+    search,
+    setSearch,
+    attributeFilters,
+    sourceFilters,
+    setAttributeFilters,
+    setSourceFilters,
+    toggleAttribute,
+    toggleSource,
+    clearAllFilters,
+    clearAll,
+    filterCount,
+    hasActiveSearch,
+    hasActiveFilters,
+    filteredGroups,
+    filteredFlatInputs,
+  } = useInputsFilter({ inputGroups, redacted })
 
   const noResultsEmpty = (
-    <EmptyState
-      emptyTitle="No matching inputs"
-      emptyMessage={
-        hasActiveSearch && hasActiveFilters
-          ? `No inputs match "${search}" with the selected filters.`
-          : hasActiveSearch
-            ? `No inputs match "${search}".`
-            : `No inputs match the selected filters.`
-      }
-      variant="diagram"
-      size="sm"
-      action={
-        <div className="flex items-center gap-2">
-          {hasActiveSearch ? (
-            <Button size="sm" variant="ghost" onClick={() => setSearch('')}>
-              Clear search
-            </Button>
-          ) : null}
-          {hasActiveFilters ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={clearAllFilters}
-            >
-              Reset filters
-            </Button>
-          ) : null}
-          {hasActiveSearch && hasActiveFilters ? (
-            <Button size="sm" variant="ghost" onClick={clearAll}>
-              Clear all
-            </Button>
-          ) : null}
-        </div>
-      }
+    <InputsNoResults
+      search={search}
+      hasActiveSearch={hasActiveSearch}
+      hasActiveFilters={hasActiveFilters}
+      onClearSearch={() => setSearch('')}
+      onClearFilters={clearAllFilters}
+      onClearAll={clearAll}
     />
   )
-
-  const matchesFilters = (input: { required?: boolean; sensitive?: boolean; source?: string }) => {
-    if (!hasActiveFilters) return true
-
-    const matchesAttributes =
-      attributeFilters.length === 0 ||
-      attributeFilters.every((f) => {
-        if (f === 'required') return input.required
-        if (f === 'sensitive') return input.sensitive
-        return false
-      })
-
-    const matchesSource =
-      sourceFilters.length === 0 ||
-      sourceFilters.some((f) => input.source === f)
-
-    return matchesAttributes && matchesSource
-  }
-
-  const toggleAttribute = (filter: TAttributeFilter) => {
-    setAttributeFilters((prev) =>
-      prev.includes(filter)
-        ? prev.filter((f) => f !== filter)
-        : [...prev, filter]
-    )
-  }
-
-  const toggleSource = (filter: TSourceFilter) => {
-    setSourceFilters((prev) =>
-      prev.includes(filter)
-        ? prev.filter((f) => f !== filter)
-        : [...prev, filter]
-    )
-  }
-
-  const filteredGroups = useMemo(() => {
-    return inputGroups
-      .map((group) => ({
-        ...group,
-        app_inputs: (group.app_inputs ?? []).filter((input) => {
-          if (!matchesFilters(input)) return false
-          if (!query) return true
-          const val = input.name ? String(redacted[input.name] ?? '') : ''
-          return (
-            input.name?.toLowerCase().includes(query) ||
-            input.display_name?.toLowerCase().includes(query) ||
-            input.description?.toLowerCase().includes(query) ||
-            val.toLowerCase().includes(query)
-          )
-        }),
-      }))
-      .filter((group) => (group.app_inputs?.length ?? 0) > 0)
-  }, [query, inputGroups, redacted, attributeFilters, sourceFilters])
-
-  const filteredFlatInputs = useMemo(() => {
-    if (!query) return Object.entries(redacted)
-    return Object.entries(redacted).filter(
-      ([key, value]) =>
-        key.toLowerCase().includes(query) ||
-        String(value).toLowerCase().includes(query)
-    )
-  }, [query, redacted])
 
   return (
     <Modal
@@ -201,108 +80,20 @@ export const ViewCurrentInputsModal = ({
       footerActions={footerActions}
       actions={
         !isLoading && (hasConfig || hasInputs) ? (
-          <div className="flex items-center gap-2">
-            <SearchInput
-              placeholder="Search inputs..."
-              value={search}
-              onChange={setSearch}
-            />
-            {hasConfig ? (
-              <Dropdown
-                alignment="right"
-                closeOnBlur={false}
-                id="inputs-filter"
-                buttonText={
-                  <>
-                    <Icon variant="FunnelIcon" size="14" />
-                    {filterCount > 0
-                      ? `Filter (${filterCount})`
-                      : 'Filter'}
-                  </>
-                }
-              >
-                <Menu className="min-w-48">
-                  <Text variant="label" theme="neutral">
-                    Attributes
-                  </Text>
-                  {ATTRIBUTE_OPTIONS.map((opt) => (
-                    <div className="flex items-center space-x-2" key={opt}>
-                      <CheckboxInputWithButton
-                        buttonProps={{
-                          className:
-                            '!p-1 flex items-center justify-between group/filter w-full',
-                          children: (
-                            <span className="font-semibold text-xs">
-                              {ATTRIBUTE_LABELS[opt]}
-                            </span>
-                          ),
-                          type: 'button',
-                          variant: 'ghost',
-                          onClick: () =>
-                            setAttributeFilters((prev) =>
-                              prev.length === 1 && prev[0] === opt
-                                ? []
-                                : [opt]
-                            ),
-                        }}
-                        className="w-full"
-                        name={opt}
-                        onChange={() => toggleAttribute(opt)}
-                        checked={attributeFilters.includes(opt)}
-                        value={opt}
-                      />
-                    </div>
-                  ))}
-                  <hr />
-                  <Text variant="label" theme="neutral">
-                    Source
-                  </Text>
-                  {SOURCE_OPTIONS.map((opt) => (
-                    <div className="flex items-center space-x-2" key={opt}>
-                      <CheckboxInputWithButton
-                        buttonProps={{
-                          className:
-                            '!p-1 flex items-center justify-between group/filter w-full',
-                          children: (
-                            <span className="font-semibold text-xs">
-                              {SOURCE_LABELS[opt]}
-                            </span>
-                          ),
-                          type: 'button',
-                          variant: 'ghost',
-                          onClick: () =>
-                            setSourceFilters((prev) =>
-                              prev.length === 1 && prev[0] === opt
-                                ? []
-                                : [opt]
-                            ),
-                        }}
-                        className="w-full"
-                        name={opt}
-                        onChange={() => toggleSource(opt)}
-                        checked={sourceFilters.includes(opt)}
-                        value={opt}
-                      />
-                    </div>
-                  ))}
-                  {hasActiveFilters ? (
-                    <>
-                      <hr />
-                      <Button
-                        className="w-full !p-1 shrink-0"
-                        type="button"
-                        onClick={clearAllFilters}
-                        size="sm"
-                        variant="ghost"
-                      >
-                        Reset
-                      </Button>
-                    </>
-                  ) : null}
-                </Menu>
-              </Dropdown>
-            ) : null}
-          </div>
+          <InputsFilterBar
+            search={search}
+            onSearchChange={setSearch}
+            showFilters={hasConfig}
+            attributeFilters={attributeFilters}
+            sourceFilters={sourceFilters}
+            setAttributeFilters={setAttributeFilters}
+            setSourceFilters={setSourceFilters}
+            toggleAttribute={toggleAttribute}
+            toggleSource={toggleSource}
+            clearAllFilters={clearAllFilters}
+            filterCount={filterCount}
+            hasActiveFilters={hasActiveFilters}
+          />
         ) : null
       }
       {...props}
