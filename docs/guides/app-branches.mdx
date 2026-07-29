@@ -212,6 +212,9 @@ nuon sync --app-branch
 
 </CodeGroup>
 
+Anything that can run the CLI or call the API can start the same run, which is how a CI job drives a rollout without
+a webhook.
+
 <Note>
   `--preview` on a manual run suppresses the **apply**, not the workflow. The run still creates
   `plan install group: <name>` and `deploy install group: <name>` for every group and stops at the first approval gate,
