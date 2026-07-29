@@ -37,8 +37,9 @@ The commands you'll use most. Run `nuon --help` (or `nuon <command> --help`) for
 
 ## App branches
 
-These subcommands take the app **ID** (`app...`), not the app name — get it from `nuon apps list`. Select an app with
-`nuon apps select` and you can omit `--app-id` from `trigger` and `runs`.
+These subcommands take the app **ID** (`app...`), not the app name — get it from `nuon apps list`. Running
+`nuon apps select` with no flags and picking from the list stores the ID, which lets you omit `--app-id` from `trigger`
+and `runs`; `nuon apps select --app <name>` stores the name and leaves those commands failing.
 
 | Command | What it does |
 |---------|--------------|
