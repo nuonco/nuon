@@ -20,6 +20,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
 type Params struct {
@@ -40,6 +42,8 @@ type Params struct {
 	TemporalClient       temporalclient.Client
 	RunnerJobWake        *RunnerJobWakeRegistry
 	BlobSvc              blobstore.Service
+	EmitterClient        *emitterclient.Client
+	QueueClient          *queueclient.Client
 }
 
 type service struct {
@@ -58,6 +62,8 @@ type service struct {
 	temporalClient       temporalclient.Client
 	runnerJobWake        *RunnerJobWakeRegistry
 	blobSvc              blobstore.Service
+	emitterClient        *emitterclient.Client
+	queueClient          *queueclient.Client
 	// logStreamCache hits in front of getLogStream on the OTLP ingest
 	// hot path. The fields the writer reads (OwnerType, ParentLogStreamID)
 	// are effectively immutable for the life of the stream, so a 5min TTL
@@ -156,6 +162,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		runners.POST("/restart", s.AdminRestartRunners)
 		runners.POST("/shutdown-processes", s.AdminShutdownAllRunnerProcesses)
 		runners.POST("/update-health-check-cron", s.AdminUpdateHealthCheckCron)
+		runners.POST("/migrate-cron-emitters", s.AdminMigrateCronEmitters)
 		runners.PATCH("/bulk-update", s.AdminBulkUpdateRunners)
 
 		// sandbox management
@@ -382,6 +389,8 @@ func New(params Params) *service {
 		temporalClient:       params.TemporalClient,
 		runnerJobWake:        params.RunnerJobWake,
 		blobSvc:              params.BlobSvc,
+		emitterClient:        params.EmitterClient,
+		queueClient:          params.QueueClient,
 		logStreamCache:       expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
 	}
 }

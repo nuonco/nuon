@@ -10,10 +10,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/driftcheck"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
-const driftJitterWindow = 3 * time.Minute
+const driftJitterWindow = cronutil.MaxJitterWindow
 
 func (s *Signal) reconcileDriftEmitters(
 	ctx workflow.Context,
