@@ -15,8 +15,8 @@ title: 'Branch'
 | **`connected_repo`**<br/>[ConnectedRepoConfig](#connected_repo) | connected GitHub repo the branch tracks | **Optional** | - |
 | **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public git repo the branch tracks | **Optional** | - |
 | **`installs_directory`**<br/>string | directory containing install config TOML files (default: installs) | **Optional** | - |
-| **`installs_connected_repo`**<br/>ConnectedRepoConfig | connected GitHub repo for install configs (falls back to branch repo if unset) | **Optional** | - |
-| **`installs_public_repo`**<br/>PublicRepoConfig | public git repo for install configs (falls back to branch repo if unset) | **Optional** | - |
+| **`installs_connected_repo`**<br/>ConnectedRepoConfig | connected GitHub repo containing install configs; one of installs_connected_repo or installs_public_repo is required to enable install config sync (mutually exclusive) | **Optional** | - |
+| **`installs_public_repo`**<br/>PublicRepoConfig | public git repo containing install configs; one of installs_public_repo or installs_connected_repo is required to enable install config sync (mutually exclusive) | **Optional** | - |
 | **`install_groups`**<br/>[array](#install_groups) | ordered deployment groups for this branch | **Optional** | - |
 
 ### `connected_repo`

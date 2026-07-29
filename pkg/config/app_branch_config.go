@@ -42,8 +42,8 @@ func (c AppBranchConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "connected_repo", "connected GitHub repo the branch tracks")
 	addDescription(schema, "public_repo", "public git repo the branch tracks")
 	addDescription(schema, "installs_directory", "directory containing install config TOML files (default: installs)")
-	addDescription(schema, "installs_connected_repo", "connected GitHub repo for install configs (falls back to branch repo if unset)")
-	addDescription(schema, "installs_public_repo", "public git repo for install configs (falls back to branch repo if unset)")
+	addDescription(schema, "installs_connected_repo", "connected GitHub repo containing install configs; one of installs_connected_repo or installs_public_repo is required to enable install config sync (mutually exclusive)")
+	addDescription(schema, "installs_public_repo", "public git repo containing install configs; one of installs_public_repo or installs_connected_repo is required to enable install config sync (mutually exclusive)")
 	addDescription(schema, "install_groups", "ordered deployment groups for this branch")
 }
 
