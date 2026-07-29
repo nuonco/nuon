@@ -71,6 +71,18 @@ func (c *ClusterInfo) WithGCPAuth(auth *gcpcredentials.Config) {
 	c.GCPAuth = auth
 }
 
+// client-go defaults to 5 QPS / 10 burst, which throttles helm and discovery fan-out.
+const (
+	restConfigQPS   = 50
+	restConfigBurst = 100
+)
+
+func withRateLimits(cfg *rest.Config) *rest.Config {
+	cfg.QPS = restConfigQPS
+	cfg.Burst = restConfigBurst
+	return cfg
+}
+
 func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, error) {
 	if cInfo.KubeConfig != "" {
 		config, err := clientcmd.RESTConfigFromKubeConfig([]byte(cInfo.KubeConfig))
@@ -78,7 +90,7 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 			return nil, fmt.Errorf("unable to parse kube config: %w", err)
 		}
 
-		return config, nil
+		return withRateLimits(config), nil
 	}
 
 	if cInfo.AWSAuth == nil && cInfo.AzureAuth == nil && cInfo.GCPAuth == nil {
@@ -239,5 +251,5 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 		}
 	}
 
-	return cfg, nil
+	return withRateLimits(cfg), nil
 }
