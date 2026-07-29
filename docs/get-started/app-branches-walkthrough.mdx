@@ -122,15 +122,18 @@ nuon apps sync
 The sync creates the branch and its two deployment groups. Check what Nuon now has:
 
 ```sh
-nuon apps select                 # pick eks-simple; later commands can then omit --app-id
+nuon apps select                 # no flags: pick eks-simple from the list
 nuon apps list                   # prints each app's name and ID
 nuon apps branches list --app-id app...
 ```
 
 <Warning>
 	`nuon apps branches list` needs the app **ID** (`app...`), not the app name — a name returns an empty result rather
-	than an error. Copy the ID for `eks-simple` out of `nuon apps list`. Selecting the app with `nuon apps select` lets
-	you drop `--app-id` from `trigger` and `runs`, which is what the rest of this walkthrough does.
+	than an error. Copy the ID for `eks-simple` out of `nuon apps list`.
+
+	Run `nuon apps select` with **no flags** and choose from the list: that stores the app's ID, which is what lets the
+	rest of this walkthrough drop `--app-id` from `trigger` and `runs`. Do not use `nuon apps select --app eks-simple` —
+	it succeeds, but stores the name, and the branch commands then fail as though the branch did not exist.
 </Warning>
 
 You should see one branch, `main`. In the dashboard, the app now has a **Branches** view showing the branch and its
