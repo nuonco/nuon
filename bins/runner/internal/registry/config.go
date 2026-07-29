@@ -16,8 +16,6 @@ func (r *Registry) getConfig(port int) *configuration.Configuration {
 
 	// basic parameters for listening/logging
 	cfg.Log.Level = "info"
-	// the registry is a localhost-only cache, so per-request access logs are pure noise
-	cfg.Log.AccessLog.Disabled = true
 	cfg.HTTP.Addr = fmt.Sprintf(":%d", port)
 	cfg.HTTP.Host = "localhost"
 
