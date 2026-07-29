@@ -1,0 +1,440 @@
+---
+title: "Configure app branches"
+description: "Connect a git branch to your app, group your installs, and roll changes out across your fleet from a git push."
+icon: "code-branch"
+keywords: ["configure app branches", "branch.toml", "install_groups", "deployment groups", "label installs", "nuon installs labels set", "nuon apps branches trigger", "nuon sync --branch", "PR preview setup", "installs_directory", "install configs in git", "sync-install-configs", "re-apply config version", "rollback install config", "app-config-updates", "staged rollout setup"]
+---
+
+This guide walks through setting up an [app branch](/concepts/app-branches) on an existing app: writing the branch
+config, sorting your installs into deployment groups, triggering runs, approving them, and — optionally — keeping your
+install configs in git alongside your app config.
+
+## Prerequisites
+
+- An [app](/concepts/apps) already synced to Nuon, with at least one install.
+- The [Nuon CLI](/cli) installed and authenticated (`nuon auth login`).
+- For pull request previews, a repository **connected through the Nuon GitHub App**. See
+  [connecting a repository](/guides/vcs).
+
+<Note>
+  Every branch of a given app must point at the same repository, and an install can belong to only one branch at a
+  time. See [rules and limits](/concepts/app-branches#rules-and-limits) before you plan more than one branch.
+</Note>
+
+## Write a branch config
+
+Add a `branch.toml` file to the root of your app config directory, next to `metadata.toml`. It declares the branch
+name, the repo and branch to track, and the deployment groups the rollout moves through.
+
+```toml branch.toml
+name = "main"
+
+[connected_repo]
+repo      = "acmeco/my-app-config"
+directory = "."
+branch    = "main"
+
+[[install_groups]]
+name  = "staging"
+order = 1
+[install_groups.label_selector]
+env = "staging"
+
+[[install_groups]]
+name  = "production"
+order = 2
+[install_groups.label_selector]
+env = "prod"
+```
+
+Three things to get right:
+
+- **The repo block.** Use `[connected_repo]` for a repository connected through the Nuon GitHub App, or
+  `[public_repo]` for a public one. Exactly one of the two, and `repo`, `directory`, and `branch` are all required.
+  `directory` is the path to your app config within the repo — `"."` if it is at the root.
+- **`name`** is the branch's name in Nuon, and it comes from this key, not from the filename. It is what you pass to
+  `nuon sync --branch`.
+- **Group order.** `order` decides which group deploys first, lowest first. List your groups in the order you want
+  them to run.
+
+<Warning>
+  If you leave out both `[connected_repo]` and `[public_repo]`, the branch is still created but its deployment groups
+  are silently dropped. Always include a repo block.
+</Warning>
+
+Every field is documented in the [branch config reference](/config-ref/branch).
+
+### Selecting installs for a group
+
+Each group picks its installs one of three ways, and they cannot be mixed within one group:
+
+```toml
+# Recommended: matches any install carrying all of these labels.
+[[install_groups]]
+name  = "production"
+order = 2
+[install_groups.label_selector]
+env  = "prod"
+tier = "enterprise"
+```
+
+```toml
+# Explicit names, resolved to install IDs when you sync.
+[[install_groups]]
+name          = "pilot"
+order         = 1
+install_names = ["customer-acme"]
+```
+
+```toml
+# Explicit IDs.
+[[install_groups]]
+name        = "pilot"
+order       = 1
+install_ids = ["inlbmky2fz8qvrxp3d7twahjc9"]
+```
+
+<Tip>
+  Prefer `label_selector`. `install_names` are resolved to IDs at sync time and an unknown name fails the whole sync,
+  so renaming an install detaches it from its group until you sync again. Label selectors re-evaluate on every run.
+</Tip>
+
+### One branch or several
+
+Two layouts are supported, and they are mutually exclusive:
+
+- **`branch.toml`** — a single branch. This is what most apps want, and what the rest of this guide assumes.
+- **`branches/*.toml`** — one file per branch, for tracking several branches of the same repo (a `staging` branch and
+  a `main` branch, for example). The `name` key inside each file sets the branch name; the filename does not.
+
+## Label your installs
+
+A label selector only matches installs that actually carry the labels. Set them with the CLI:
+
+```sh
+nuon installs labels set --install-id customer-acme env=prod tier=enterprise
+```
+
+Labels are key/value pairs, passed as positional `key=value` arguments. To inspect or remove them:
+
+```sh
+nuon installs labels list --install-id customer-acme
+nuon installs labels unset --install-id customer-acme tier
+```
+
+You can also confirm which installs a selector will match before you run anything:
+
+```sh
+nuon installs list --labels env=prod --labels tier=enterprise
+```
+
+All labels passed to `--labels` must match, so this is the same AND semantics a group's `label_selector` uses.
+
+<Note>
+  If you manage install configs in git (below), set labels in the install config file's `[labels]` block instead and
+  let the sync apply them.
+</Note>
+
+## Sync the branch config
+
+Syncing your app config creates or updates the branch, along with its deployment groups:
+
+```sh
+nuon apps sync
+```
+
+Branches are upserted by name and are never pruned — removing a branch from your config does not delete it in Nuon.
+Use `nuon apps branches delete` for that.
+
+Confirm what Nuon now has:
+
+```sh
+nuon apps branches list --app-id my-app
+nuon apps branches get --app-id my-app --branch-id abr...
+```
+
+`list` prints each branch's name and ID; `get` takes the ID and returns the full branch, deployment groups included.
+
+## Trigger a run
+
+Once the branch exists, a push to the tracked branch is all it takes:
+
+```sh
+git commit -am "bump chart version"
+git push origin main
+```
+
+Nuon receives the push, and the run appears in the dashboard and in `nuon apps branches runs`.
+
+You do not have to wait for a push, though. Two other ways to start a run:
+
+<CodeGroup>
+
+```sh Trigger the committed config
+# Runs against the tracked branch's latest commit.
+nuon apps branches trigger --app-id my-app --branch-id main
+
+# Plan only — builds and diffs, never touches an install.
+nuon apps branches trigger --app-id my-app --branch-id main --preview
+
+# Rebuild every component instead of only what changed.
+nuon apps branches trigger --app-id my-app --branch-id main --force
+```
+
+```sh Sync local files, then run
+# Syncs the config in the current directory, then triggers a run for that config.
+nuon sync --branch main
+
+# Same, but plan-only.
+nuon sync --branch main --preview
+
+# Pick the branch interactively.
+nuon sync --app-branch
+```
+
+</CodeGroup>
+
+<Warning>
+  `nuon sync --branch` runs against your **local, uncommitted files**, not the tracked branch's commit. It is the
+  right tool for iterating on a change; it is not a substitute for pushing. Note also that `--branch`, `--app-branch`,
+  and `--preview` exist on `nuon sync`, not on `nuon apps sync`.
+</Warning>
+
+`nuon apps branches trigger` and `nuon apps branches runs` open the full-screen workflow TUI, so you can watch steps
+and approve from the terminal. See the [TUI reference](/tui).
+
+## Approve or skip a deployment group
+
+A run pauses at each group's plan step until someone acts on it. In the dashboard, open the app's **Branches** view,
+then the run, and you will see the **Deployment plan** with each group's steps.
+
+For each group:
+
+- **Approve install group plan** — read the per-install diff, then approve to let the group's deploy step run.
+- **Skip install group** — move the rollout past this group's deploy without applying it.
+
+The run stops at the next group's plan step, so a multi-group rollout is a sequence of deliberate decisions rather
+than one irreversible action.
+
+{/* SCREENSHOT NEEDED — see ~/app-branches-launch/SCREENSHOTS-NEEDED.md
+<Frame caption="The Approve install group plan step, with the per-install diff expanded.">
+  <img src="/images/guides/app-branches/approve-install-group-plan.png" alt="An Approve install group plan step in the Nuon dashboard with the per-install config diff expanded" />
+</Frame>
+*/}
+
+<Note>
+  There is no setting that auto-approves a deployment group's plan — each one needs a human in the dashboard or an API
+  caller. If you want a machine to advance a rollout, subscribe to the [webhook](/guides/webhooks) events for the run
+  and drive the approval through the API once your own checks pass.
+</Note>
+
+## Set up pull request previews
+
+Previews need no configuration beyond a connected repo. Once the branch tracks a `[connected_repo]`, opening a pull
+request against it — or pushing another commit to an open one — starts a plan-only run, and Nuon reports back on the
+pull request:
+
+- a comment headed `## Nuon Preview — <AppName>` with a table of config changes by section, edited in place on each
+  later push rather than added to.
+- a commit status with the context `nuon/preview`, moving from pending to success or failure.
+
+If the pull request does not change the app config, the run stops early and the comment says so.
+
+<Warning>
+  With `[public_repo]`, Nuon has no authenticated GitHub client. The preview run still executes and you can see it in
+  the dashboard, but the pull request comment and the commit status are skipped without an error. Connect the repo
+  through the [Nuon GitHub App](/guides/vcs) if you want previews on pull requests.
+</Warning>
+
+To reproduce a preview locally before opening the pull request:
+
+```sh
+nuon sync --branch main --preview
+```
+
+## Manage install configs in git
+
+An app branch can also track your per-install config files, so adding a customer is a pull request rather than a
+console action. Point `installs_directory` at the directory holding them:
+
+```toml branch.toml
+name               = "main"
+installs_directory = "installs"
+
+[connected_repo]
+repo      = "acmeco/my-app-config"
+directory = "."
+branch    = "main"
+```
+
+The default is `installs`, so that line is only strictly necessary if you use a different directory — set it
+explicitly anyway to make the intent obvious.
+
+Each file in the directory describes one install, in the same format `nuon installs sync` accepts:
+
+```toml installs/customer-acme.toml
+name            = "customer-acme"
+approval_option = "approve-all"
+
+[labels]
+env    = "prod"
+tier   = "enterprise"
+region = "us-east-1"
+
+[aws_account]
+region = "us-east-1"
+
+[component_toggles]
+monitoring  = true
+debug-tools = false
+
+[components.whoami]
+helm_values = """
+replicaCount: 3
+"""
+```
+
+Install config files also support `[[inputs]]` and `[stack_overrides]`. A sync creates installs Nuon has not seen
+before and diffs the ones it has, recording a version entry per install with the stored diff, plus counts of how many
+synced and how many failed.
+
+Three things can start a sync:
+
+1. **A push** that touches files under the installs directory.
+2. **A branch run**, through its skippable `sync install configs` step.
+3. **A manual trigger** — the dashboard's **Sync now** button, or the API:
+
+```sh
+curl -X POST \
+  -H "Authorization: Bearer $NUON_API_TOKEN" \
+  -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+  "https://api.nuon.co/v1/apps/$APP_ID/branches/$APP_BRANCH_ID/sync-install-configs"
+```
+
+To keep install configs in a **different** repository from the app config, set `installs_connected_repo` (or
+`installs_public_repo`) on the branch:
+
+```toml branch.toml
+name               = "main"
+installs_directory = "installs"
+
+[connected_repo]
+repo      = "acmeco/my-app-config"
+directory = "."
+branch    = "main"
+
+[installs_connected_repo]
+repo      = "acmeco/my-customer-installs"
+directory = "."
+branch    = "main"
+```
+
+`installs_connected_repo` and `installs_public_repo` are mutually exclusive. If you set neither, the branch's own repo
+is used.
+
+## Re-apply a previous config version
+
+Every config change to an install is recorded as an app config version, and any earlier version can be applied again.
+That is the recovery path when a rollout — or a mistyped input — turns out badly.
+
+<Steps>
+  <Step title="List the install's versions">
+    ```sh
+    curl -H "Authorization: Bearer $NUON_API_TOKEN" \
+      -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+      "https://api.nuon.co/v1/installs/$INSTALL_ID/app-config-versions"
+    ```
+
+    Each entry carries the app config it pinned. The install's **Versions** view in the dashboard shows the same
+    history.
+  </Step>
+  <Step title="Confirm what changed">
+    ```sh
+    curl -H "Authorization: Bearer $NUON_API_TOKEN" \
+      -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+      "https://api.nuon.co/v1/installs/$INSTALL_ID/app-config-versions/$VERSION_ID/diff"
+    ```
+  </Step>
+  <Step title="Apply the older version">
+    ```sh
+    curl -X POST \
+      -H "Authorization: Bearer $NUON_API_TOKEN" \
+      -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+      -H "Content-Type: application/json" \
+      -d '{"app_config_id": "'"$OLD_APP_CONFIG_ID"'"}' \
+      "https://api.nuon.co/v1/installs/$INSTALL_ID/app-config-updates"
+    ```
+
+    Send `{"plan_only": true}` alongside it first if you want to see the plan without applying.
+  </Step>
+</Steps>
+
+To move a whole deployment group back rather than one install, trigger a branch run against the older app config and
+skip the build step — the artifacts for that config already exist:
+
+```sh
+curl -X POST \
+  -H "Authorization: Bearer $NUON_API_TOKEN" \
+  -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+  -H "Content-Type: application/json" \
+  -d '{"app_config_id": "'"$OLD_APP_CONFIG_ID"'", "skip_builds": true}' \
+  "https://api.nuon.co/v1/apps/$APP_ID/branches/$APP_BRANCH_ID/runs"
+```
+
+The run still plans each group and still waits for approval, so you see the reverse diff before it is applied.
+
+<Note>
+  This is a pattern built from the version history and the branch run API, not a one-click button. Nothing about it is
+  automatic: you choose the version and you approve the plan.
+</Note>
+
+## Command reference
+
+| Command | What it does |
+| --- | --- |
+| `nuon apps branches list --app-id <app>` | List an app's branches. Alias: `nuon apps br`. |
+| `nuon apps branches get --app-id <app> --branch-id <branch-id>` | Show a branch's details, including its deployment groups. Takes an ID, not a name. |
+| `nuon apps branches create --app-id <app> --name <name>` | Create a branch without syncing a config file. |
+| `nuon apps branches trigger --app-id <app> --branch-id <branch>` | Trigger a run. `--preview` for plan-only, `--force` to rebuild everything. |
+| `nuon apps branches runs --app-id <app> --branch-id <branch>` | List runs and open one in the workflow TUI. |
+| `nuon apps branches delete --app-id <app> --branch-id <branch> --confirm` | Delete a branch. |
+| `nuon sync --branch <name>` | Sync the current directory, then trigger a run for it. Add `--preview` for plan-only. |
+| `nuon sync --app-branch` | Same, choosing the branch interactively. |
+| `nuon installs labels set --install-id <install> k=v ...` | Set labels used by group selectors. |
+| `nuon installs labels list --install-id <install>` | List an install's labels. |
+| `nuon installs labels unset --install-id <install> <key> ...` | Remove labels. |
+| `nuon installs list --labels k=v` | Preview which installs a selector matches. |
+
+## Troubleshooting
+
+**The branch synced but has no deployment groups.** The branch config is missing its `[connected_repo]` /
+`[public_repo]` block. Add one and sync again.
+
+**A push did not start a run.** Branch matching is on the exact repository and branch name. Check that the branch's
+`branch` value matches the ref you pushed and that the repo is the one Nuon has connected. There are no path filters,
+so a push that matches always starts a run — if nothing happened, the match itself failed.
+
+**The pull request has no Nuon comment.** The branch is tracking a `[public_repo]`. Previews need a connected repo.
+
+**A sync failed on an install name.** `install_names` must resolve to installs that exist in the org you are syncing
+into. Switch the group to a `label_selector`, or create the install first.
+
+**A group deployed to nothing.** No install carried the selector's labels. Check with
+`nuon installs list --labels ...`.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="How app branches work" icon="lightbulb" href="/concepts/app-branches">
+    Run types, plan and approval flow, and install version history.
+  </Card>
+  <Card title="Walkthrough" icon="rocket" href="/get-started/app-branches-walkthrough">
+    Add a branch to the `eks-simple` example app end to end.
+  </Card>
+  <Card title="Branch config reference" icon="file" href="/config-ref/branch">
+    Every field on `branch.toml`.
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/guides/webhooks">
+    React to branch runs from your own systems.
+  </Card>
+</CardGroup>
