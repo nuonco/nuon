@@ -23,7 +23,7 @@ const (
 	statusAccessError = "access_error"
 )
 
-func (s *Service) Create(ctx context.Context, appID, name, region string, inputs, labelArgs []string, asJSON, noSelect bool) error {
+func (s *Service) Create(ctx context.Context, appID, name, region, awsAccountID string, inputs, labelArgs []string, asJSON, noSelect bool) error {
 	if appID == "" {
 		selectedID, err := appselector.App(ctx, s.cfg, s.api)
 		if err != nil {
@@ -78,7 +78,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 		inputsMap[kvT[0]] = kvT[1]
 	}
 
-	req, err := s.buildCreateInstallRequest(ctx, appID, name, region, inputsMap, labelsMap)
+	req, err := s.buildCreateInstallRequest(ctx, appID, name, region, awsAccountID, inputsMap, labelsMap)
 	if err != nil {
 		return ui.PrintError(err)
 	}
@@ -110,7 +110,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 	return nil
 }
 
-func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, region string, inputs, labelsMap map[string]string) (*models.ServiceCreateInstallRequest, error) {
+func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, region, awsAccountID string, inputs, labelsMap map[string]string) (*models.ServiceCreateInstallRequest, error) {
 	req := &models.ServiceCreateInstallRequest{
 		Name:   &name,
 		Inputs: s.inputsWithDefaults(ctx, appID, inputs),
@@ -119,20 +119,20 @@ func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, re
 
 	runnerCfg, err := s.api.GetAppRunnerLatestConfig(ctx, appID)
 	if err != nil || runnerCfg == nil {
-		req.AwsAccount = &models.ServiceCreateInstallRequestAwsAccount{Region: region}
+		req.AwsAccount = &models.HelpersCreateInstallAWSAccountParams{Region: region, AccountID: awsAccountID}
 		return req, nil
 	}
 
 	switch runnerCfg.CloudPlatform {
 	case models.AppCloudPlatformGcp:
-		req.GcpAccount = &models.ServiceCreateInstallRequestGcpAccount{}
+		req.GcpAccount = &models.HelpersCreateInstallGCPAccountParams{}
 	case models.AppCloudPlatformAzure:
-		req.AzureAccount = &models.ServiceCreateInstallRequestAzureAccount{}
+		req.AzureAccount = &models.HelpersCreateInstallAzureAccountParams{}
 	default:
 		if region == "" {
 			return nil, fmt.Errorf("--region is required for AWS installs")
 		}
-		req.AwsAccount = &models.ServiceCreateInstallRequestAwsAccount{Region: region}
+		req.AwsAccount = &models.HelpersCreateInstallAWSAccountParams{Region: region, AccountID: awsAccountID}
 	}
 
 	return req, nil

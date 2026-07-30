@@ -742,3 +742,68 @@ func TestInstallDiff_OverrideRemovalIgnoresNormalInputs(t *testing.T) {
 
 	assert.Equal(t, 0, d.Summary().Removed, "omitting a normal input must not be a removal")
 }
+
+// A config that declares a target account must not diff against an upstream that
+// reports the same one. If GenerateCLIInstallConfig ever stops emitting these
+// fields, `nuon apps sync` reports drift on every run and this test fails.
+func TestInstallDiff_TargetIdentifiersDoNotDrift(t *testing.T) {
+	for _, tt := range []struct {
+		name  string
+		local *Install
+	}{
+		{
+			name:  "aws account id",
+			local: &Install{AWSAccount: &AWSAccount{Region: "us-west-2", AccountID: "123456789012"}},
+		},
+		{
+			name:  "azure subscription id",
+			local: &Install{AzureAccount: &AzureAccount{Location: "eastus", SubscriptionID: "sub-a"}},
+		},
+		{
+			name:  "gcp project id",
+			local: &Install{GCPAccount: &GCPAccount{Region: "us-central1", ProjectID: "proj-a"}},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			d, err := tt.local.Diff(tt.local)
+			require.NoError(t, err)
+			assert.False(t, d.Summary().HasChanged,
+				"an identical config must not report drift")
+		})
+	}
+}
+
+func TestInstallDiff_TargetIdentifierChangeIsDetected(t *testing.T) {
+	upstream := &Install{AWSAccount: &AWSAccount{Region: "us-west-2", AccountID: "123456789012"}}
+	local := &Install{AWSAccount: &AWSAccount{Region: "us-west-2", AccountID: "999999999999"}}
+
+	d, err := local.Diff(upstream)
+	require.NoError(t, err)
+	assert.True(t, d.Summary().HasChanged, "a changed account id must be visible in the diff")
+}
+
+// The AWS branch used to dereference upstreamInstall.AWSAccount without a nil check,
+// unlike its GCP and Azure siblings.
+func TestInstallDiff_NilUpstreamAWSAccountDoesNotPanic(t *testing.T) {
+	local := &Install{AWSAccount: &AWSAccount{Region: "us-west-2", AccountID: "123456789012"}}
+	upstream := &Install{Name: "no-aws-account-block"}
+
+	d, err := local.Diff(upstream)
+	require.NoError(t, err)
+	assert.True(t, d.Summary().HasChanged)
+}
+
+func TestInstallTargetIdentifiersRoundTripThroughTOML(t *testing.T) {
+	raw := `
+name = "my-install"
+
+[aws_account]
+region = "us-west-2"
+account_id = "123456789012"
+`
+	var install Install
+	require.NoError(t, toml.Unmarshal([]byte(raw), &install))
+	require.NotNil(t, install.AWSAccount)
+	assert.Equal(t, "us-west-2", install.AWSAccount.Region)
+	assert.Equal(t, "123456789012", install.AWSAccount.AccountID)
+}
