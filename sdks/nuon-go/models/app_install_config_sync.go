@@ -26,14 +26,11 @@ type AppInstallConfigSync struct {
 	// app branch id
 	AppBranchID string `json:"app_branch_id,omitempty"`
 
-	// app branch run
-	AppBranchRun *AppAppBranchRun `json:"app_branch_run,omitempty"`
-
 	// app branch run id
 	AppBranchRunID string `json:"app_branch_run_id,omitempty"`
 
-	// commit sha
-	CommitSha string `json:"commit_sha,omitempty"`
+	// app install config sync id
+	AppInstallConfigSyncID string `json:"app_install_config_sync_id,omitempty"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
@@ -41,11 +38,11 @@ type AppInstallConfigSync struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
-	// failed installs
-	FailedInstalls int64 `json:"failed_installs,omitempty"`
-
 	// id
 	ID string `json:"id,omitempty"`
+
+	// install id
+	InstallID string `json:"install_id,omitempty"`
 
 	// metadata
 	Metadata map[string]string `json:"metadata,omitempty"`
@@ -55,12 +52,6 @@ type AppInstallConfigSync struct {
 
 	// status
 	Status *AppCompositeStatus `json:"status,omitempty"`
-
-	// synced installs
-	SyncedInstalls int64 `json:"synced_installs,omitempty"`
-
-	// total installs
-	TotalInstalls int64 `json:"total_installs,omitempty"`
 
 	// triggered by
 	TriggeredBy string `json:"triggered_by,omitempty"`
@@ -73,21 +64,11 @@ type AppInstallConfigSync struct {
 
 	// versions
 	Versions []*AppInstallConfigVersion `json:"versions"`
-
-	// workflow
-	Workflow *AppWorkflow `json:"workflow,omitempty"`
-
-	// workflow id
-	WorkflowID string `json:"workflow_id,omitempty"`
 }
 
 // Validate validates this app install config sync
 func (m *AppInstallConfigSync) Validate(formats strfmt.Registry) error {
 	var res []error
-
-	if err := m.validateAppBranchRun(formats); err != nil {
-		res = append(res, err)
-	}
 
 	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
@@ -101,36 +82,9 @@ func (m *AppInstallConfigSync) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateWorkflow(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *AppInstallConfigSync) validateAppBranchRun(formats strfmt.Registry) error {
-	if swag.IsZero(m.AppBranchRun) { // not required
-		return nil
-	}
-
-	if m.AppBranchRun != nil {
-		if err := m.AppBranchRun.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("app_branch_run")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("app_branch_run")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -210,36 +164,9 @@ func (m *AppInstallConfigSync) validateVersions(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AppInstallConfigSync) validateWorkflow(formats strfmt.Registry) error {
-	if swag.IsZero(m.Workflow) { // not required
-		return nil
-	}
-
-	if m.Workflow != nil {
-		if err := m.Workflow.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("workflow")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("workflow")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
 // ContextValidate validate this app install config sync based on the context it is used
 func (m *AppInstallConfigSync) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
-
-	if err := m.contextValidateAppBranchRun(ctx, formats); err != nil {
-		res = append(res, err)
-	}
 
 	if err := m.contextValidateStatus(ctx, formats); err != nil {
 		res = append(res, err)
@@ -253,38 +180,9 @@ func (m *AppInstallConfigSync) ContextValidate(ctx context.Context, formats strf
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateWorkflow(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *AppInstallConfigSync) contextValidateAppBranchRun(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.AppBranchRun != nil {
-
-		if swag.IsZero(m.AppBranchRun) { // not required
-			return nil
-		}
-
-		if err := m.AppBranchRun.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("app_branch_run")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("app_branch_run")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -362,31 +260,6 @@ func (m *AppInstallConfigSync) contextValidateVersions(ctx context.Context, form
 			}
 		}
 
-	}
-
-	return nil
-}
-
-func (m *AppInstallConfigSync) contextValidateWorkflow(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.Workflow != nil {
-
-		if swag.IsZero(m.Workflow) { // not required
-			return nil
-		}
-
-		if err := m.Workflow.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("workflow")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("workflow")
-			}
-
-			return err
-		}
 	}
 
 	return nil

@@ -37,6 +37,9 @@ type AppInstallConfigVersion struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// install config sync
+	InstallConfigSync *AppInstallConfigSync `json:"install_config_sync,omitempty"`
+
 	// install config sync id
 	InstallConfigSyncID string `json:"install_config_sync_id,omitempty"`
 
@@ -63,6 +66,10 @@ type AppInstallConfigVersion struct {
 func (m *AppInstallConfigVersion) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateInstallConfigSync(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
@@ -70,6 +77,29 @@ func (m *AppInstallConfigVersion) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstallConfigVersion) validateInstallConfigSync(formats strfmt.Registry) error {
+	if swag.IsZero(m.InstallConfigSync) { // not required
+		return nil
+	}
+
+	if m.InstallConfigSync != nil {
+		if err := m.InstallConfigSync.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("install_config_sync")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("install_config_sync")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -100,6 +130,10 @@ func (m *AppInstallConfigVersion) validateStatus(formats strfmt.Registry) error 
 func (m *AppInstallConfigVersion) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateInstallConfigSync(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -107,6 +141,31 @@ func (m *AppInstallConfigVersion) ContextValidate(ctx context.Context, formats s
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstallConfigVersion) contextValidateInstallConfigSync(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.InstallConfigSync != nil {
+
+		if swag.IsZero(m.InstallConfigSync) { // not required
+			return nil
+		}
+
+		if err := m.InstallConfigSync.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("install_config_sync")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("install_config_sync")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

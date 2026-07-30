@@ -50,6 +50,9 @@ type AppRunbookStepConfig struct {
 	// name
 	Name string `json:"name,omitempty"`
 
+	// plan only
+	PlanOnly bool `json:"plan_only,omitempty"`
+
 	// role
 	Role string `json:"role,omitempty"`
 
