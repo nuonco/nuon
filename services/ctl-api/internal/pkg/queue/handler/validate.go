@@ -33,7 +33,11 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	defer func() {
 		status := "success"
 		desc := ""
-		if retErr != nil {
+		switch {
+		case finStatus == app.StatusCancelled:
+			status = "cancelled"
+			desc = finDesc
+		case retErr != nil:
 			status = "error"
 			desc = retErr.Error()
 		}
@@ -43,6 +47,13 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 		}
 		h.validating = false
 	}()
+
+	if h.canceled {
+		// cancelHandler already persisted StatusCancelled — do not stamp
+		// in-progress over it
+		finStatus, finDesc = app.StatusCancelled, "signal was canceled"
+		return nil, errors.New("signal was canceled")
+	}
 
 	if err := workflow.Await(ctx, func() bool {
 		return h.ready
@@ -134,7 +145,9 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	}
 
 	// record validate completion timestamp
-	if !h.skipValidateStamps() {
+	skipCancelledStamp := h.canceled &&
+		workflow.GetVersion(ctx, handlerCancelledStatusVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if !h.skipValidateStamps() && !skipCancelledStamp {
 		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID: h.queueSignalID,
 			Status:        app.StatusInProgress,

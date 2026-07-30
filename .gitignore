@@ -105,6 +105,9 @@ preprocessed_configs/
 # direnv cache
 .direnv/
 
+# Hegel local state
+.hegel/
+
 # nix build output symlinks
 result
 result-*

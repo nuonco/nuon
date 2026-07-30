@@ -188,7 +188,7 @@ func (h *Helpers) TriggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
-		resp, err := h.queueClient.EnqueueSignalInTransaction(ctx, tx, &queueclient.EnqueueSignalRequest{QueueID: q.ID, Signal: &executeflow.Signal{WorkflowID: workflow.ID}, OwnerID: workflow.ID, OwnerType: "install_workflows", DedupeKey: &dedupe, Callback: req.Callback})
+		resp, err := h.queueClient.EnqueueSignalInTransaction(ctx, tx, &queueclient.EnqueueSignalRequest{QueueID: q.ID, Signal: executeflow.NewSignal(workflow.ID), OwnerID: workflow.ID, OwnerType: "install_workflows", DedupeKey: &dedupe, Callback: req.Callback})
 		if err != nil {
 			return err
 		}
@@ -199,7 +199,7 @@ func (h *Helpers) TriggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 		return nil, fmt.Errorf("trigger runbook run: %w", err)
 	}
 	dedupe := "runbook-run:" + run.ID
-	_, _ = h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{QueueID: queueID, Signal: &executeflow.Signal{WorkflowID: workflow.ID}, OwnerID: workflow.ID, OwnerType: "install_workflows", DedupeKey: &dedupe, Callback: req.Callback})
+	_, _ = h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{QueueID: queueID, Signal: executeflow.NewSignal(workflow.ID), OwnerID: workflow.ID, OwnerType: "install_workflows", DedupeKey: &dedupe, Callback: req.Callback})
 	return &TriggerRunbookRunResponse{Run: &run, Workflow: &workflow, QueueSignalID: queueSignalID, TerminalStatus: terminalStatus}, nil
 }
 

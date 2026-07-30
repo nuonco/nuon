@@ -9,7 +9,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuenames"
@@ -34,6 +33,8 @@ func (e *FlowTestSuite) enqueueFlowWithQueues(ctx context.Context, queueID strin
 			GenerateStepsQueueName: names.generateSteps,
 			OwnerID:                flw.OwnerID,
 			OwnerType:              flw.OwnerType,
+			Resident:               true,
+			ResidentIdleTimeout:    testResidentIdleTimeout,
 		},
 		OwnerID:   flw.ID,
 		OwnerType: "install_workflows",
@@ -43,25 +44,21 @@ func (e *FlowTestSuite) enqueueFlowWithQueues(ctx context.Context, queueID strin
 }
 
 func registerLayeringGenerator(ownerType string, workflowType app.WorkflowType) {
-	generateworkflowsteps.RegisterGenerators(ownerType, func() map[app.WorkflowType]flow.WorkflowStepGenerator {
-		return map[app.WorkflowType]flow.WorkflowStepGenerator{
-			workflowType: func(workflow.Context, *app.Workflow) (*app.GenerateStepsResult, error) {
-				return &app.GenerateStepsResult{
-					Groups: []*app.WorkflowStepGroup{{
-						GroupIdx: 1,
-						Status:   app.CompositeStatus{Status: app.StatusPending},
-					}},
-					Steps: []*app.WorkflowStep{{
-						Name:          "layered-success",
-						Idx:           100,
-						GroupIdx:      1,
-						ExecutionType: app.WorkflowStepExecutionTypeSystem,
-						Status:        app.CompositeStatus{Status: app.StatusPending},
-						QueueSignal:   &signaldb.SignalData{Signal: &SuccessSignal{}},
-					}},
-				}, nil
-			},
-		}
+	registerTestGenerator(ownerType, workflowType, func(workflow.Context, *app.Workflow) (*app.GenerateStepsResult, error) {
+		return &app.GenerateStepsResult{
+			Groups: []*app.WorkflowStepGroup{{
+				GroupIdx: 1,
+				Status:   app.CompositeStatus{Status: app.StatusPending},
+			}},
+			Steps: []*app.WorkflowStep{{
+				Name:          "layered-success",
+				Idx:           100,
+				GroupIdx:      1,
+				ExecutionType: app.WorkflowStepExecutionTypeSystem,
+				Status:        app.CompositeStatus{Status: app.StatusPending},
+				QueueSignal:   &signaldb.SignalData{Signal: &SuccessSignal{}},
+			}},
+		}, nil
 	})
 }
 

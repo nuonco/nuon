@@ -64,10 +64,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			QueueName:       queuenames.AppBranchWorkflowsQueueName,
 			SignalOwnerID:   *run.WorkflowID,
 			SignalOwnerType: "install_workflows",
-			Signal: &executeflow.Signal{
-				WorkflowID: *run.WorkflowID,
-			},
-			Callback: cb,
+			Signal:          executeflow.NewSignal(*run.WorkflowID),
+			Callback:        cb,
 		})
 	}
 	enqueueResp, err := enqueue()

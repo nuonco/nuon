@@ -92,9 +92,7 @@ func (s *service) BuildAppConfig(ctx *gin.Context) {
 	// Enqueue the shared execute-workflow signal to start the flow
 	_, err = s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID: queue.ID,
-		Signal: &executeflow.Signal{
-			WorkflowID: wf.ID,
-		},
+		Signal:  executeflow.NewSignal(wf.ID),
 	})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to enqueue build signal: %w", err))

@@ -118,12 +118,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Enqueue the flow execution signal to the install's drift workflows queue
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-		OwnerID:   s.InstallID,
-		OwnerType: "installs",
-		QueueName: helpers.InstallDriftWorkflowsQueueName,
-		Signal: &executeflow.Signal{
-			WorkflowID: wkflw.ID,
-		},
+		OwnerID:         s.InstallID,
+		OwnerType:       "installs",
+		QueueName:       helpers.InstallDriftWorkflowsQueueName,
+		Signal:          executeflow.NewSignal(wkflw.ID),
 		SignalOwnerID:   wkflw.ID,
 		SignalOwnerType: (&app.Workflow{}).TableName(),
 	})
