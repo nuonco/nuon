@@ -65,17 +65,6 @@ Previews need the Nuon GitHub App connected in your org for the repository's own
 for `public_repo` branches too, not something you configure per branch. Without it the run still executes, but the
 comment and commit status are skipped without an error.
 
-### Install config files in git
-
-A branch can track your per-install config files too. Declare the repository holding them with
-`installs_connected_repo` or `installs_public_repo` (one of the two is required), plus `installs_directory`
-(default `installs`). Once that is committed, each push touching those files syncs them: new installs are created, existing ones
-diffed, and every sync records a per-install version with its diff. The install configs can live alongside the app
-config or in a repository of their own.
-
-Because an install's labels live in its config file, deployment group membership becomes version-controlled along with
-the rest of the install.
-
 ### Install version history
 
 Every config change to an install is now recorded as an app config version, with the diff between any two versions,
@@ -94,11 +83,8 @@ the path back when a change turns out badly.
 ### API
 
 - `GET|POST /v1/apps/{app_id}/branches` and the per-branch routes for configs, runs, and install groups.
-- `POST /v1/apps/{app_id}/branches/{app_branch_id}/sync-install-configs`: trigger an install config sync by hand.
 - `GET /v1/installs/{install_id}/app-config-versions`, `.../{version_id}/diff`, and
   `POST /v1/installs/{install_id}/app-config-updates`: read an install's version history and apply any version.
-- `GET /v1/installs/{install_id}/config-versions` and `GET /v1/installs/{install_id}/config-syncs`: an install's
-  config sync history.
 
 Branch runs also emit the usual [webhook](/guides/webhooks) workflow lifecycle events, with
 `data.workflow.owner_type` of `app_branches`, and post to Slack according to your org's
