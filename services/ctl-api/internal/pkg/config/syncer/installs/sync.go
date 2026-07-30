@@ -59,21 +59,22 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 	}
 
 	if installCfg.AWSAccount != nil {
-		req.AWSAccount = &struct {
-			Region       string `json:"region"`
-			ConnectionID string `json:"connection_id,omitempty"`
-		}{Region: installCfg.AWSAccount.Region}
+		req.AWSAccount = &installhelpers.CreateInstallAWSAccountParams{
+			Region:    installCfg.AWSAccount.Region,
+			AccountID: installCfg.AWSAccount.AccountID,
+		}
 	}
 	if installCfg.GCPAccount != nil {
-		req.GCPAccount = &struct {
-			ProjectID string `json:"project_id"`
-			Region    string `json:"region"`
-		}{ProjectID: installCfg.GCPAccount.ProjectID, Region: installCfg.GCPAccount.Region}
+		req.GCPAccount = &installhelpers.CreateInstallGCPAccountParams{
+			ProjectID: installCfg.GCPAccount.ProjectID,
+			Region:    installCfg.GCPAccount.Region,
+		}
 	}
 	if installCfg.AzureAccount != nil {
-		req.AzureAccount = &struct {
-			Location string `json:"location"`
-		}{Location: installCfg.AzureAccount.Location}
+		req.AzureAccount = &installhelpers.CreateInstallAzureAccountParams{
+			Location:       installCfg.AzureAccount.Location,
+			SubscriptionID: installCfg.AzureAccount.SubscriptionID,
+		}
 	}
 
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
