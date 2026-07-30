@@ -397,10 +397,34 @@ type Config struct {
 	// configuration for managing cloud infra for orgs, apps and installs
 	ManagementAccountID string `config:"management_account_id" validate:"required"`
 
+	// ManagementRegion is where management-account resources live. Distinct from
+	// AppRegion: it is baked into customer-deployed artifacts (the phone-home
+	// Lambda's NUON_PHONE_HOME_SECRET_REGION), so it must be stated explicitly
+	// rather than inherited from the pod's AWS_REGION.
+	ManagementRegion string `config:"management_region"`
+
 	// AWS management (not required for GCP)
 	ManagementIAMRoleARN     string `config:"management_iam_role_arn"`
 	ManagementECRRegistryID  string `config:"management_ecr_registry_id"`
 	ManagementECRRegistryARN string `config:"management_ecr_registry_arn"`
+
+	// phone home auth (see plans/phone-home-auth-shared-secret.md)
+	//
+	// The phone-home secret always lives in AWS Secrets Manager in a Nuon-owned AWS
+	// account, whichever cloud this control plane runs on, because the reader is the
+	// customer's phone-home Lambda and Secrets Manager is the only store it can
+	// reach. CloudProvider only selects the credential chain — see
+	// ManagementSecretsCreds.
+	//
+	// PhoneHomeCMKARN is the shared CMK encrypting the secret. It is required for
+	// cross-account reads: the AWS-managed aws/secretsmanager key policy cannot be
+	// edited and is scoped to kms:CallerAccount, so a customer principal fails
+	// kms:Decrypt no matter how permissive the secret's resource policy is.
+	PhoneHomeCMKARN string `config:"phone_home_cmk_arn"`
+	// AWSPhoneHomeSecretsRoleARN is the role in the Nuon AWS account that owns the
+	// secret. Set it on GCP-hosted control planes, where ManagementIAMRoleARN is
+	// legitimately empty; on AWS it defaults to ManagementIAMRoleARN.
+	AWSPhoneHomeSecretsRoleARN string `config:"aws_phone_home_secrets_role_arn"`
 
 	// GCP management (not required for AWS)
 	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
