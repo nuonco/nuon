@@ -43,8 +43,9 @@ type RunbookConfig struct {
 }
 
 type RunbookStepConfig struct {
-	Name string          `mapstructure:"name" toml:"name" jsonschema:"required"`
-	Type RunbookStepType `mapstructure:"type" toml:"type" jsonschema:"required"`
+	Name     string          `mapstructure:"name" toml:"name" jsonschema:"required"`
+	Type     RunbookStepType `mapstructure:"type" toml:"type" jsonschema:"required"`
+	PlanOnly bool            `mapstructure:"plan_only,omitempty" toml:"plan_only,omitempty"`
 
 	// For type = "component_deploy" / "component_tear_down"
 	ComponentName      string `mapstructure:"component_name,omitempty" toml:"component_name,omitempty"`
@@ -109,6 +110,8 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Deprecated("use 'deploy_dependents' instead").
 		Field("tear_down_dependents").Short("also tear down transitive dependents").
 		Long("When true, tears down the component and all components that transitively depend on it (downstream), with dependents torn down first. Only applies to component_tear_down steps").
+		Field("plan_only").Short("generate a plan without applying it").
+		Long("Only applies to 'component_deploy' and 'sandbox_reprovision' steps. When true, the step generates its plan but does not apply it. Plan-only sandbox reprovision steps also do not redeploy components").
 		Field("action_name").Short("existing action to run (for action steps)").
 		Long("Name of a previously defined action workflow to execute. Mutually exclusive with inline action fields (command, inline_contents)").
 		Example("database-migration").
@@ -136,6 +139,11 @@ func (r *RunbookConfig) parse() error {
 	}
 
 	for _, step := range r.Steps {
+		if step.PlanOnly && step.Type != RunbookStepTypeComponentDeploy && step.Type != RunbookStepTypeDeployLegacy && step.Type != RunbookStepTypeSandboxReprovision {
+			return ErrConfig{
+				Description: fmt.Sprintf("runbook %q step %q: plan_only is only supported for component_deploy and sandbox_reprovision", r.Name, step.Name),
+			}
+		}
 		if step.Timeout != "" {
 			_, err := time.ParseDuration(step.Timeout)
 			if err != nil {

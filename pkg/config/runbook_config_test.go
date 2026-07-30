@@ -3,8 +3,24 @@ package config
 import (
 	"testing"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/require"
 )
+
+func TestRunbookStepConfig_PlanOnlyDecode(t *testing.T) {
+	var step RunbookStepConfig
+	decoderConfig := DecoderConfig()
+	decoderConfig.Result = &step
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	require.NoError(t, err)
+
+	require.NoError(t, decoder.Decode(map[string]any{
+		"name":      "check-drift",
+		"type":      "component_deploy",
+		"plan_only": true,
+	}))
+	require.True(t, step.PlanOnly)
+}
 
 func TestRunbookConfig_Parse(t *testing.T) {
 	t.Run("basic runbook parses", func(t *testing.T) {
@@ -56,6 +72,19 @@ func TestRunbookConfig_Parse(t *testing.T) {
 		err := rc.parse()
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "invalid duration")
+	})
+
+	t.Run("plan only rejects unsupported step types", func(t *testing.T) {
+		rc := &RunbookConfig{
+			Name: "bad-plan-only",
+			Steps: []*RunbookStepConfig{
+				{Name: "action", Type: RunbookStepTypeAction, ActionName: "verify", PlanOnly: true},
+			},
+		}
+
+		err := rc.parse()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "plan_only is only supported")
 	})
 
 	t.Run("nil runbook parses", func(t *testing.T) {

@@ -38,10 +38,10 @@ Common uses:
 
 Each step has a `type` that determines what it does:
 
-* **`component_deploy`** — Deploy a component. Set `deploy_dependents` to also roll out the component's downstream dependents, in dependency order. (`deploy` is accepted as a legacy alias.)
+* **`component_deploy`** — Deploy a component. Set `deploy_dependents` to also roll out the component's downstream dependents, in dependency order, or `plan_only` to check for drift without applying the plan. (`deploy` is accepted as a legacy alias.)
 * **`component_tear_down`** — Tear down a component. Set `tear_down_dependents` to also tear down its downstream dependents, with dependents removed first.
 * **`action`** — Run an existing [action](/guides/actions), or an inline command or script defined directly on the step.
-* **`sandbox_reprovision`** — Reprovision the install's sandbox infrastructure. Set `skip_component_deploys` to reprovision the infrastructure only, without redeploying components on top.
+* **`sandbox_reprovision`** — Reprovision the install's sandbox infrastructure. Set `skip_component_deploys` to reprovision the infrastructure only, without redeploying components on top, or `plan_only` to check for drift without applying or redeploying components.
 * **`sandbox_deprovision`** — Deprovision the install's sandbox infrastructure.
 
 Steps run in order, and every run is recorded in the install's workflow history: a durable, auditable record of what ran, when, and against which install.
@@ -107,6 +107,7 @@ timeout = "5m"
 | `component_name` | string | component steps | Component to deploy or tear down. Required when `type = "component_deploy"` or `"component_tear_down"`. |
 | `deploy_dependents` | bool | No | When true, also deploys the component's transitive dependents (downstream subgraph) in dependency order. Only applies to `component_deploy` steps. |
 | `tear_down_dependents` | bool | No | When true, also tears down the component's transitive dependents (downstream subgraph), with dependents torn down first. Only applies to `component_tear_down` steps. |
+| `plan_only` | bool | No | When true, generates the plan without applying it. Applies to `component_deploy` and `sandbox_reprovision`; plan-only sandbox steps also skip component redeployment. |
 | `skip_component_deploys` | bool | No | When true, only the sandbox infrastructure is reprovisioned; components are not redeployed on top. Only applies to `sandbox_reprovision` steps. |
 | `action_name` | string | action steps | Name of an existing [action](/guides/actions) to run. Mutually exclusive with the inline fields below. |
 | `command` | string | action steps | Shell command for an inline action. Supports Go templating. |

@@ -34,6 +34,7 @@ type CreateRunbookStepConfigRequest struct {
 	Name                 string `json:"name" validate:"required"`
 	Type                 string `json:"type" validate:"required"`
 	Idx                  int64  `json:"idx"`
+	PlanOnly             bool   `json:"plan_only,omitempty"`
 	ComponentName        string `json:"component_name,omitempty"`
 	DeployDependents     bool   `json:"deploy_dependents,omitempty"`
 	TearDownDependents   bool   `json:"tear_down_dependents,omitempty"`
@@ -117,6 +118,10 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 			ctx.Error(fmt.Errorf("invalid step type %q for step %s", stepReq.Type, stepReq.Name))
 			return
 		}
+		if stepReq.PlanOnly && stepType != app.RunbookStepTypeComponentDeploy && stepType != app.RunbookStepTypeSandboxReprovision {
+			ctx.Error(fmt.Errorf("plan_only is not supported for step type %q", stepReq.Type))
+			return
+		}
 
 		envVars := pgtype.Hstore{}
 		for k, v := range stepReq.EnvVars {
@@ -127,6 +132,7 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 			Idx:                  idx,
 			Name:                 stepReq.Name,
 			Type:                 stepType,
+			PlanOnly:             stepReq.PlanOnly,
 			ComponentName:        stepReq.ComponentName,
 			DeployDependents:     stepReq.DeployDependents || stepReq.DeployDependenciesLegacy,
 			TearDownDependents:   stepReq.TearDownDependents,

@@ -87,17 +87,19 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 		}
 
 		stepCfg := app.RunbookStepConfig{
-			Idx:                idx,
-			Name:               step.Name,
-			Type:               app.RunbookStepType(step.Type),
-			ComponentName:      step.ComponentName,
-			DeployDependents:   step.DeployDependents,
-			TearDownDependents: step.TearDownDependents,
-			Command:            step.Command,
-			InlineContents:     step.InlineContents,
-			EnvVars:            envVars,
-			Timeout:            timeout,
-			Role:               step.Role,
+			Idx:                  idx,
+			Name:                 step.Name,
+			Type:                 app.RunbookStepType(step.Type),
+			PlanOnly:             step.PlanOnly,
+			ComponentName:        step.ComponentName,
+			DeployDependents:     step.DeployDependents,
+			TearDownDependents:   step.TearDownDependents,
+			SkipComponentDeploys: step.SkipComponentDeploys,
+			Command:              step.Command,
+			InlineContents:       step.InlineContents,
+			EnvVars:              envVars,
+			Timeout:              timeout,
+			Role:                 step.Role,
 		}
 
 		// Resolve action_name to ActionWorkflowID
