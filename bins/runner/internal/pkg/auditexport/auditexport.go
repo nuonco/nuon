@@ -23,14 +23,14 @@ import (
 const collectorBinary = "/bin/nuon-runner-otelcol"
 const secretSyncInterval = 30 * time.Second
 
-var Module = fx.Options(fx.Provide(newAWSFactory, newAWSSecretWatcher, New), fx.Invoke(func(*Supervisor) {}))
+var Module = fx.Options(fx.Provide(newAWSFactory, newConfigSourceResolver, New), fx.Invoke(func(*Supervisor) {}))
 
 type Params struct {
 	fx.In
 	Lifecycle fx.Lifecycle
 	Settings  *settings.Settings
 	Logger    *zap.Logger `name:"system"`
-	Secrets   secretWatcher
+	Sources   configSourceResolver
 }
 
 type Supervisor struct {
@@ -38,7 +38,7 @@ type Supervisor struct {
 	platform  string
 	local     bool
 	logger    *zap.Logger
-	secrets   secretWatcher
+	sources   configSourceResolver
 	cancel    context.CancelFunc
 	done      chan struct{}
 	mu        sync.Mutex
@@ -62,7 +62,7 @@ type childProcess struct {
 }
 
 func New(params Params) *Supervisor {
-	s := &Supervisor{installID: params.Settings.Metadata["install.id"], platform: params.Settings.Platform, local: params.Settings.Cfg.IsNuonctl, logger: params.Logger, secrets: params.Secrets, done: make(chan struct{}), backoff: time.Second}
+	s := &Supervisor{installID: params.Settings.Metadata["install.id"], platform: params.Settings.Platform, local: params.Settings.Cfg.IsNuonctl, logger: params.Logger, sources: params.Sources, done: make(chan struct{}), backoff: time.Second}
 	s.replaceChildFn = s.replaceChild
 	s.stopChildFn = s.stopChild
 	params.Lifecycle.Append(fx.Hook{OnStart: s.start, OnStop: s.stop})
@@ -90,11 +90,14 @@ func (s *Supervisor) stop(ctx context.Context) error {
 
 func (s *Supervisor) run(ctx context.Context) {
 	defer close(s.done)
-	if s.local || s.installID == "" || !strings.HasPrefix(strings.ToLower(s.platform), "aws") {
+	if s.local || s.installID == "" {
 		return
 	}
-	name := "nuon/" + s.installID + "/runner-audit-export"
-	updates := s.secrets.Watch(ctx, name, secretSyncInterval)
+	source := s.sources.Resolve(s.platform, s.installID)
+	if source == nil {
+		return
+	}
+	updates := source.Watch(ctx, secretSyncInterval)
 	crash := time.NewTicker(time.Second)
 	defer crash.Stop()
 	for {
@@ -114,21 +117,21 @@ func (s *Supervisor) run(ctx context.Context) {
 	}
 }
 
-func (s *Supervisor) reconcile(update secretUpdate) {
+func (s *Supervisor) reconcile(update configUpdate) {
 	switch update.state {
-	case secretNotFound:
+	case configNotFound:
 		s.disable("secret not found")
 		return
-	case secretUnavailable:
+	case configUnavailable:
 		s.disable("secret unavailable")
 		return
-	case secretInitializationFailed:
-		s.logger.Warn("audit export AWS initialization failed", zap.Error(update.err))
+	case configSourceInitializationFailed:
+		s.logger.Warn("audit export configuration source initialization failed", zap.Error(update.err))
 		return
-	case secretLookupFailed:
+	case configLookupFailed:
 		s.logger.Warn("audit export secret lookup failed", zap.Error(update.err))
 		return
-	case secretAvailable:
+	case configAvailable:
 	default:
 		return
 	}

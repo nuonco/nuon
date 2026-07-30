@@ -26,17 +26,17 @@ func TestReconcilePreservesLastKnownGoodConfiguration(t *testing.T) {
 		stopChildFn: func() { stops++ },
 	}
 
-	s.reconcile(secretUpdate{state: secretAvailable, value: invalid})
+	s.reconcile(configUpdate{state: configAvailable, value: invalid})
 	if replacements != 0 || stops != 0 || s.active != valid {
 		t.Fatal("invalid update changed the active collector")
 	}
 
-	s.reconcile(secretUpdate{state: secretLookupFailed, err: errors.New("temporary failure")})
+	s.reconcile(configUpdate{state: configLookupFailed, err: errors.New("temporary failure")})
 	if replacements != 0 || stops != 0 || s.active != valid {
 		t.Fatal("transient lookup failure changed the active collector")
 	}
 
-	s.reconcile(secretUpdate{state: secretNotFound})
+	s.reconcile(configUpdate{state: configNotFound})
 	if replacements != 0 || stops != 1 || s.active != "" {
 		t.Fatal("missing secret did not disable the collector")
 	}
@@ -55,8 +55,8 @@ func TestReconcileAppliesChangedValidConfigurationOnce(t *testing.T) {
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(secretUpdate{state: secretAvailable, value: valid})
-	s.reconcile(secretUpdate{state: secretAvailable, value: valid})
+	s.reconcile(configUpdate{state: configAvailable, value: valid})
+	s.reconcile(configUpdate{state: configAvailable, value: valid})
 	if replacements != 1 || s.active != valid {
 		t.Fatal("valid configuration was not applied exactly once")
 	}
@@ -76,7 +76,7 @@ func TestReconcileSchedulesRestartWhenUpdateAndRollbackFail(t *testing.T) {
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(secretUpdate{state: secretAvailable, value: updated})
+	s.reconcile(configUpdate{state: configAvailable, value: updated})
 	if s.nextStart.IsZero() || s.active != current {
 		t.Fatal("failed rollback did not schedule recovery of the last-known-good configuration")
 	}
@@ -94,7 +94,7 @@ func TestReconcileDisablesUnavailableSecret(t *testing.T) {
 		stopChildFn: func() { stops++ },
 	}
 
-	s.reconcile(secretUpdate{state: secretUnavailable})
+	s.reconcile(configUpdate{state: configUnavailable})
 	if stops != 1 || s.active != "" || s.enabled {
 		t.Fatal("unavailable secret did not disable the collector")
 	}
@@ -128,7 +128,7 @@ func TestEmptySecretDoesNotStartCollector(t *testing.T) {
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(secretUpdate{state: secretAvailable})
+	s.reconcile(configUpdate{state: configAvailable})
 	if replacements != 0 || s.active != "" || s.enabled {
 		t.Fatal("empty secret started the audit export collector")
 	}
@@ -147,9 +147,9 @@ func TestReconcileLogsEnabledBackendAndDisabledTransition(t *testing.T) {
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(secretUpdate{state: secretAvailable, value: valid})
-	s.reconcile(secretUpdate{state: secretNotFound})
-	s.reconcile(secretUpdate{state: secretNotFound})
+	s.reconcile(configUpdate{state: configAvailable, value: valid})
+	s.reconcile(configUpdate{state: configNotFound})
+	s.reconcile(configUpdate{state: configNotFound})
 
 	entries := observed.All()
 	if len(entries) != 2 {
