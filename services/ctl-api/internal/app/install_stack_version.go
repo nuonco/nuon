@@ -39,6 +39,19 @@ type InstallStackVersion struct {
 	PhoneHomeID  string `json:"phone_home_id,omitzero" temporaljson:"phone_home_id,omitzero,omitempty"`
 	PhoneHomeURL string `json:"phone_home_url,omitzero" temporaljson:"phone_home_url,omitzero,omitempty"`
 
+	// PhoneHomeTokenID is the tokens row minted for this stack version's phone home,
+	// issued to the version's own service account. Never serialized: it identifies a
+	// live credential.
+	PhoneHomeTokenID string `json:"-" gorm:"index" temporaljson:"-"`
+
+	// PhoneHomeTokenRevokedAt tombstones a token that was deliberately killed while
+	// its stack version is still live — the revoke-on-successor case. Status cannot
+	// express this, because a superseded version is left Active until its successor
+	// has actually phoned home. Without the tombstone, an empty PhoneHomeTokenID is
+	// indistinguishable from "never minted" and the reconciler resurrects the
+	// credential on its next run.
+	PhoneHomeTokenRevokedAt *time.Time `json:"-" temporaljson:"-"`
+
 	// aws configuration parameters
 	AWSBucketName string `json:"aws_bucket_name,omitzero" temporaljson:"aws_bucket_name,omitzero,omitempty"`
 	AWSBucketKey  string `json:"aws_bucket_key,omitzero" temporaljson:"aws_bucket_key,omitzero,omitempty"`
@@ -52,6 +65,37 @@ type InstallStackVersion struct {
 	TerraformChecksum string `json:"terraform_checksum,omitzero" temporaljson:"terraform_checksum,omitzero,omitempty"`
 
 	CallbackRef callback.Ref `json:"callback_ref,omitzero" gorm:"type:jsonb" temporaljson:"callback_ref,omitzero,omitempty"`
+}
+
+// PhoneHomeTokenEligibleStatuses are the statuses for which a stack version should
+// hold a live phone-home token. Retired versions (cancelled, expired, outdated) want
+// no credential at all — the handler rejects an expired version outright, and an
+// outdated one has been superseded by a version that already phoned home.
+//
+// Exported as a slice because the reconciler needs the same rule in SQL, where
+// status is jsonb: Where("(status->>'status') IN ?", PhoneHomeTokenEligibleStatuses).
+var PhoneHomeTokenEligibleStatuses = []Status{
+	InstallStackVersionStatusGenerating,
+	InstallStackVersionStatusPendingUser,
+	InstallStackVersionStatusProvisioning,
+	InstallStackVersionStatusActive,
+}
+
+// PhoneHomeTokenEligible reports whether this version should hold a live phone-home
+// token. A tombstoned token is never reissued: that is what distinguishes a
+// deliberate revocation from a version that has simply never been minted for.
+func (a *InstallStackVersion) PhoneHomeTokenEligible() bool {
+	if a.PhoneHomeTokenRevokedAt != nil {
+		return false
+	}
+
+	for _, status := range PhoneHomeTokenEligibleStatuses {
+		if a.Status.Status == status {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (a *InstallStackVersion) Indexes(db *gorm.DB) []migrations.Index {

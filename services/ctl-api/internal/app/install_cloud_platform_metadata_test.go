@@ -67,8 +67,6 @@ func TestCloudPlatformMetadataScanEdgeCases(t *testing.T) {
 func TestPhoneHomeAuthRoundTrips(t *testing.T) {
 	verified := time.Now().UTC().Truncate(time.Second)
 	original := PhoneHomeAuth{
-		Salt:           "c2FsdHNhbHRzYWx0c2E",
-		KeyID:          "2026-07",
 		SecretARN:      "arn:aws:secretsmanager:us-west-2:123456789012:secret:nuon/phone-home/x-aB3xYz",
 		SecretRegion:   "us-west-2",
 		KMSKeyARN:      "arn:aws:kms:us-west-2:123456789012:key/abc",
@@ -85,7 +83,7 @@ func TestPhoneHomeAuthRoundTrips(t *testing.T) {
 	if err := scanned.Scan(value); err != nil {
 		t.Fatalf("Scan: %v", err)
 	}
-	if scanned.Salt != original.Salt || scanned.KeyID != original.KeyID || scanned.SecretARN != original.SecretARN {
+	if scanned.SecretARN != original.SecretARN || scanned.SecretRegion != original.SecretRegion || scanned.KMSKeyARN != original.KMSKeyARN {
 		t.Fatalf("round trip mismatch:\n got %#v\nwant %#v", scanned, original)
 	}
 	if scanned.LastVerifiedAt == nil || !scanned.LastVerifiedAt.Equal(verified) {
@@ -105,7 +103,10 @@ func TestPhoneHomeAuthPersistsButIsNotSerialized(t *testing.T) {
 			TargetAccountID: "123456789012",
 			TargetSource:    CloudPlatformTargetSourceConnection,
 		},
-		PhoneHomeAuth: &PhoneHomeAuth{Salt: "topsecretsalt", KeyID: "2026-07"},
+		PhoneHomeAuth: &PhoneHomeAuth{
+			SecretARN:    "arn:aws:secretsmanager:us-west-2:123456789012:secret:nuon/phone-home/inst0-aB3xYz",
+			SecretRegion: "us-west-2",
+		},
 	}
 
 	body, err := json.Marshal(install)
@@ -121,7 +122,7 @@ func TestPhoneHomeAuthPersistsButIsNotSerialized(t *testing.T) {
 	if _, ok := payload["phone_home_auth"]; ok {
 		t.Error("phone_home_auth must not be serialized on the install")
 	}
-	for _, leaked := range []string{"topsecretsalt", "salt", "key_id"} {
+	for _, leaked := range []string{"aB3xYz", "secret_arn", "secretsmanager"} {
 		if strings.Contains(rendered, leaked) {
 			t.Errorf("install response leaked %q", leaked)
 		}
@@ -148,8 +149,8 @@ func TestPhoneHomeAuthPersistsButIsNotSerialized(t *testing.T) {
 	if !ok {
 		t.Fatalf("PhoneHomeAuth.Value should marshal to bytes, got %T", value)
 	}
-	if !strings.Contains(string(persisted), "topsecretsalt") {
-		t.Errorf("PhoneHomeAuth must persist its salt to jsonb, got %s", persisted)
+	if !strings.Contains(string(persisted), "aB3xYz") {
+		t.Errorf("PhoneHomeAuth must persist its secret ARN to jsonb, got %s", persisted)
 	}
 }
 
