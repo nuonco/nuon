@@ -36,6 +36,10 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	// provider's nuon_stack data source.
 	{"GET", "/v1/stack-runs/:phone_home_id/config"}: {},
 
+	// oidc workload identity federation: trust is established by verifying
+	// the presented OIDC token against org trust policies
+	{"POST", "/v1/oidc/token"}: {},
+
 	// runner auth: must be accessible w/out a token
 	{"POST", "/v1/runner-auth/aws"}:                   {},
 	{"POST", "/v1/runner-auth/gcp"}:                   {},
