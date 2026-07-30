@@ -988,6 +988,17 @@ The admin dashboard is a React 18 SPA backed by a JSON BFF at `internal/app/admi
 
 **Full documentation**: See [`internal/app/admin-dashboard/AGENTS.md`](internal/app/admin-dashboard/AGENTS.md) for tech stack, handler patterns, and step-by-step recipes for adding pages.
 
+## Composite Status Metadata Updates
+
+Update `CompositeStatus.Metadata` independently from status transitions. Do not add metadata fields to or pass metadata
+through `Update*StatusV2Request` types. Full status updates read and rewrite the composite status, so using them for
+metadata can overwrite concurrent changes.
+
+Runner workflows must use `UpdateRunnerStatusV2Metadata` through its generated Temporal wrapper. At the database layer,
+use `generics.MergeJSONBMetadata` rather than updating the JSONB column directly. The helper atomically merges metadata;
+a `nil` value removes that key. Clear temporary metadata through this helper instead of rebuilding the metadata map or
+storing JSON `null`.
+
 ## Workflow Status Descriptions
 
 **Never use `step.Idx` in user-facing strings.** This includes `StatusHumanDescription`, `StatusDescription`, and error

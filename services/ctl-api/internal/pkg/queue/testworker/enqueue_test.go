@@ -69,6 +69,68 @@ func (e *EnqueueTestSuite) TestEnqueueAndProcessNSignals() {
 	}
 }
 
+func (e *EnqueueTestSuite) TestEnqueueSignalIdempotency() {
+	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
+	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
+
+	queue, err := e.service.Client.Create(ctx, &client.CreateQueueRequest{
+		OwnerID:     generics.GetFakeObj[string](),
+		OwnerType:   generics.GetFakeObj[string](),
+		Namespace:   defaultNamespace,
+		MaxInFlight: 5,
+		MaxDepth:    100,
+	})
+	require.NoError(e.T(), err)
+	require.NoError(e.T(), e.service.Client.QueueReady(ctx, queue.ID))
+
+	key := "same-logical-event"
+	first, err := e.service.Client.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
+		QueueID: queue.ID,
+		Signal: &example.ExampleSignal{
+			Arg1: generics.GetFakeObj[string](),
+			Arg2: generics.GetFakeObj[string](),
+		},
+		IdempotencyKey: key,
+	})
+	require.NoError(e.T(), err)
+	require.False(e.T(), first.Deduplicated)
+	timeout := 5 * time.Second
+	status, err := e.service.Client.PollSignal(ctx, first.ID, &client.PollSignalOptions{
+		Timeout:      &timeout,
+		PollInterval: 500 * time.Millisecond,
+	})
+	require.NoError(e.T(), err)
+	require.True(e.T(), status.Finished)
+
+	second, err := e.service.Client.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
+		QueueID: queue.ID,
+		Signal: &example.ExampleSignal{
+			Arg1: generics.GetFakeObj[string](),
+			Arg2: generics.GetFakeObj[string](),
+		},
+		IdempotencyKey: key,
+	})
+	require.NoError(e.T(), err)
+	require.True(e.T(), second.Deduplicated)
+	require.Equal(e.T(), first.ID, second.ID)
+	require.Equal(e.T(), first.WorkflowID, second.WorkflowID)
+	var queueSignal app.QueueSignal
+	require.NoError(e.T(), e.service.DB.WithContext(ctx).Where(app.QueueSignal{ID: first.ID}).First(&queueSignal).Error)
+	require.Equal(e.T(), 1, queueSignal.ExecutionCount)
+
+	third, err := e.service.Client.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
+		QueueID: queue.ID,
+		Signal: &example.ExampleSignal{
+			Arg1: generics.GetFakeObj[string](),
+			Arg2: generics.GetFakeObj[string](),
+		},
+		IdempotencyKey: "different-logical-event",
+	})
+	require.NoError(e.T(), err)
+	require.False(e.T(), third.Deduplicated)
+	require.NotEqual(e.T(), first.ID, third.ID)
+}
+
 func (e *EnqueueTestSuite) TestPanickingSignalUpdatesDBStatus() {
 	ctx := e.service.Seed.EnsureAccount(e.T().Context(), e.T())
 	ctx = e.service.Seed.EnsureOrg(ctx, e.T())
