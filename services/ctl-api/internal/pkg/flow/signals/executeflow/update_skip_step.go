@@ -33,7 +33,7 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 	if err != nil {
 		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)
 	}
-	if !step.Skippable {
+	if s.Resident && !step.Skippable {
 		return &SkipStepResponse{WorkflowID: s.WorkflowID, Skippable: false}, nil
 	}
 
@@ -88,9 +88,13 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		s.resumeRequested = true
 	}
 
+	skippable := true
+	if resp != nil {
+		skippable = resp.Skippable
+	}
 	return &SkipStepResponse{
 		WorkflowID: s.WorkflowID,
-		Skippable:  true,
+		Skippable:  skippable,
 	}, nil
 }
 

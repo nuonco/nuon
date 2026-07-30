@@ -68,5 +68,9 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		StepID: req.StepID,
 	})
 
-	return &SkipStepResponse{Skippable: true, Directive: string(skipDirective)}, nil
+	resp := &SkipStepResponse{Skippable: true}
+	if s.ResidentFlow {
+		resp.Directive = string(skipDirective)
+	}
+	return resp, nil
 }
