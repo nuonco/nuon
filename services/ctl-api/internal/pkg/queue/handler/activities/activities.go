@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
+	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
@@ -39,14 +40,17 @@ func New(params Params) *Activities {
 // This ensures the handler workflow is running when we send an update to it.
 // If the handler was terminated, this will start a new one; if it's already running,
 // it will use the existing one.
-func (a *Activities) handlerStartOperation(workflowID string, queueID string, queueSignalID string) tclient.WithStartWorkflowOperation {
+func (a *Activities) handlerStartOperation(workflowID string, queueID string, queueSignalID string, taskQueue string) tclient.WithStartWorkflowOperation {
 	req := handler.HandlerRequest{
 		QueueID:       queueID,
 		QueueSignalID: queueSignalID,
 	}
+	if taskQueue == "" {
+		taskQueue = workflows.APITaskQueue
+	}
 	startOpts := tclient.StartWorkflowOptions{
 		ID:                       workflowID,
-		TaskQueue:                "api",
+		TaskQueue:                taskQueue,
 		WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,

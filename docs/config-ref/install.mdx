@@ -27,6 +27,7 @@ title: 'Install'
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`region`**<br/>string | AWS region AWS region where the infrastructure will be deployed | **✅ Required** | `"us-east-1"`, `"us-west-2"`, `"eu-west-1"` |
+| **`account_id`**<br/>string | AWS account ID AWS account this install targets. Required when phone home authentication is enabled for the organization. Immutable once the install exists. | **Optional** | `"123456789012"` |
 
 ### `gcp_account`
 
@@ -40,6 +41,7 @@ title: 'Install'
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`location`**<br/>string | Azure location Azure location/region where the infrastructure will be deployed | **✅ Required** | `"eastus"`, `"westus2"`, `"westeurope"` |
+| **`subscription_id`**<br/>string | Azure subscription ID Azure subscription this install targets. Required when phone home authentication is enabled for the organization. Immutable once the install exists. | **Optional** | `"00000000-0000-0000-0000-000000000000"` |
 
 ### `stack_overrides`
 

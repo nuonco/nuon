@@ -25,6 +25,9 @@ type SignaldbWorkflowRef struct {
 
 	// run id
 	RunID string `json:"run_id,omitempty"`
+
+	// empty means workflows.APITaskQueue (back-compat for pre-isolation rows)
+	TaskQueue string `json:"task_queue,omitempty"`
 }
 
 // Validate validates this signaldb workflow ref

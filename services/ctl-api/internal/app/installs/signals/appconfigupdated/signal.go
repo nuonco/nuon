@@ -88,46 +88,43 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get install action cron signals queue: %w", err)
 	}
 
+	driftCronQueue, err := activities.AwaitGetInstallDriftCronSignalsQueueByInstallID(ctx, s.InstallID)
+	if err != nil {
+		return fmt.Errorf("unable to get install drift cron signals queue: %w", err)
+	}
+
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		return fmt.Errorf("unable to get app config: %w", err)
 	}
 
-	// Fetch existing emitters from the signals queue (drift emitters live here)
 	signalsEmitters, err := emitterclient.AwaitGetEmittersByQueueID(ctx, signalsQueue.ID)
 	if err != nil {
 		return fmt.Errorf("unable to get signals queue emitters: %w", err)
 	}
 
-	// Fetch existing emitters from the action cron queue
 	actionCronEmitters, err := emitterclient.AwaitGetEmittersByQueueID(ctx, actionCronQueue.ID)
 	if err != nil {
 		return fmt.Errorf("unable to get action cron queue emitters: %w", err)
 	}
 
-	// Split signals queue emitters by prefix. Action cron emitters that were
-	// previously on the signals queue are also collected for cleanup.
-	var legacyActionEmitters, driftEmitters, driftSandboxEmitters []app.QueueEmitter
-	for _, em := range signalsEmitters {
-		switch {
-		case strings.HasPrefix(em.Name, actionCronEmitterPrefix):
-			// Legacy: action cron emitters that lived on the signals queue
-			// before they got their own queue. Clean them up.
-			legacyActionEmitters = append(legacyActionEmitters, em)
-		// Check the more specific `drift-sandbox-` prefix BEFORE the bare
-		// `drift-` case — otherwise sandbox emitters would be swept into
-		// the per-component drift bucket.
-		case strings.HasPrefix(em.Name, driftSandboxEmitterPrefix):
-			driftSandboxEmitters = append(driftSandboxEmitters, em)
-		case strings.HasPrefix(em.Name, driftEmitterPrefix):
-			driftEmitters = append(driftEmitters, em)
-		}
+	driftCronEmitters, err := emitterclient.AwaitGetEmittersByQueueID(ctx, driftCronQueue.ID)
+	if err != nil {
+		return fmt.Errorf("unable to get drift cron queue emitters: %w", err)
 	}
 
-	// Clean up legacy action cron emitters from the signals queue.
-	stopAndDeleteEmitters(ctx, l, legacyActionEmitters)
+	// Legacy: cron emitters that lived on the signals queue before they got
+	// their own dedicated queues. Clean them up.
+	var legacyEmitters []app.QueueEmitter
+	for _, em := range signalsEmitters {
+		if strings.HasPrefix(em.Name, actionCronEmitterPrefix) ||
+			strings.HasPrefix(em.Name, driftSandboxEmitterPrefix) ||
+			strings.HasPrefix(em.Name, driftEmitterPrefix) {
+			legacyEmitters = append(legacyEmitters, em)
+		}
+	}
+	stopAndDeleteEmitters(ctx, l, legacyEmitters)
 
-	// Collect action cron emitters from their dedicated queue.
 	var actionEmitters []app.QueueEmitter
 	for _, em := range actionCronEmitters {
 		if strings.HasPrefix(em.Name, actionCronEmitterPrefix) {
@@ -135,15 +132,27 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
+	// Check the more specific `drift-sandbox-` prefix BEFORE the bare `drift-`
+	// case — otherwise sandbox emitters get swept into the per-component bucket.
+	var driftEmitters, driftSandboxEmitters []app.QueueEmitter
+	for _, em := range driftCronEmitters {
+		switch {
+		case strings.HasPrefix(em.Name, driftSandboxEmitterPrefix):
+			driftSandboxEmitters = append(driftSandboxEmitters, em)
+		case strings.HasPrefix(em.Name, driftEmitterPrefix):
+			driftEmitters = append(driftEmitters, em)
+		}
+	}
+
 	if err := s.reconcileActionCronEmitters(ctx, l, install, appCfg, actionCronQueue, actionEmitters); err != nil {
 		return fmt.Errorf("unable to reconcile action cron emitters: %w", err)
 	}
 
-	if err := s.reconcileDriftEmitters(ctx, l, install, appCfg, signalsQueue, driftEmitters); err != nil {
+	if err := s.reconcileDriftEmitters(ctx, l, install, appCfg, driftCronQueue, driftEmitters); err != nil {
 		return fmt.Errorf("unable to reconcile drift emitters: %w", err)
 	}
 
-	if err := s.reconcileDriftSandboxEmitter(ctx, l, install, signalsQueue, driftSandboxEmitters); err != nil {
+	if err := s.reconcileDriftSandboxEmitter(ctx, l, install, driftCronQueue, driftSandboxEmitters); err != nil {
 		return fmt.Errorf("unable to reconcile sandbox drift emitter: %w", err)
 	}
 

@@ -8,6 +8,7 @@ import (
 	"go.temporal.io/sdk/temporal"
 
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
+	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -27,10 +28,14 @@ func UpdateWithStart(
 	qs *app.QueueSignal,
 	opts UpdateWithStartOptions,
 ) (tclient.WorkflowUpdateHandle, error) {
+	taskQueue := qs.Workflow.TaskQueue
+	if taskQueue == "" {
+		taskQueue = workflows.APITaskQueue
+	}
 	startOp := tc.NewWithStartWorkflowOperation(
 		tclient.StartWorkflowOptions{
 			ID:                       qs.Workflow.ID,
-			TaskQueue:                "api",
+			TaskQueue:                taskQueue,
 			WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
 			RetryPolicy: &temporal.RetryPolicy{
 				MaximumAttempts: 0,
