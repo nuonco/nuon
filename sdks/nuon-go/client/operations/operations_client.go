@@ -590,6 +590,8 @@ type ClientService interface {
 
 	GetInstallConfigSyncs(params *GetInstallConfigSyncsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallConfigSyncsOK, error)
 
+	GetInstallConfigVersionDiff(params *GetInstallConfigVersionDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallConfigVersionDiffOK, error)
+
 	GetInstallConfigVersions(params *GetInstallConfigVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallConfigVersionsOK, error)
 
 	GetInstallDeploy(params *GetInstallDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallDeployOK, error)
@@ -889,6 +891,8 @@ type ClientService interface {
 	SlackOAuthCallback(params *SlackOAuthCallbackParams, opts ...ClientOption) error
 
 	SlackSlashCommand(params *SlackSlashCommandParams, opts ...ClientOption) (*SlackSlashCommandOK, error)
+
+	SyncInstallConfig(params *SyncInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncInstallConfigAccepted, error)
 
 	SyncSecrets(params *SyncSecretsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncSecretsCreated, error)
 
@@ -12049,6 +12053,52 @@ func (a *Client) GetInstallConfigSyncs(params *GetInstallConfigSyncsParams, auth
 }
 
 /*
+GetInstallConfigVersionDiff gets the diff for an install config version
+
+Returns the config diff for a specific install config version.
+*/
+func (a *Client) GetInstallConfigVersionDiff(params *GetInstallConfigVersionDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallConfigVersionDiffOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallConfigVersionDiffParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallConfigVersionDiff",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/config-versions/{version_id}/diff",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallConfigVersionDiffReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallConfigVersionDiffOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallConfigVersionDiff: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallConfigVersions gets config versions for an install
 
 Returns the install config version history, ordered by most recent first.
@@ -18918,6 +18968,52 @@ func (a *Client) SlackSlashCommand(params *SlackSlashCommandParams, opts ...Clie
 }
 
 /*
+SyncInstallConfig triggers install config sync for a single install
+
+Triggers a sync of this install's config from git.
+*/
+func (a *Client) SyncInstallConfig(params *SyncInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncInstallConfigAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewSyncInstallConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "SyncInstallConfig",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/sync-config",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &SyncInstallConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*SyncInstallConfigAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for SyncInstallConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 SyncSecrets syncs secrets install
 
 Execute the sync secrets workflow.
@@ -19150,7 +19246,7 @@ func (a *Client) TriggerAppBranchRun(params *TriggerAppBranchRunParams, authInfo
 /*
 TriggerInstallConfigSync triggers install config sync from git
 
-Triggers a sync of install configs from the configured installs VCS repo. Optionally specify install_name to sync a single install.
+Triggers a sync of install configs from the installs.toml VCS repo configured in the app config. Optionally specify install_name to sync a single install.
 */
 func (a *Client) TriggerInstallConfigSync(params *TriggerInstallConfigSyncParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TriggerInstallConfigSyncAccepted, error) {
 	// NOTE: parameters are not validated before sending
