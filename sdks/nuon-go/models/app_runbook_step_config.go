@@ -7,7 +7,10 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
+	"strconv"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -37,6 +40,12 @@ type AppRunbookStepConfig struct {
 
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
+
+	// event types
+	EventTypes []string `json:"event_types"`
+
+	// filters
+	Filters []*AppTriggerFilter `json:"filters"`
 
 	// id
 	ID string `json:"id,omitempty"`
@@ -68,6 +77,12 @@ type AppRunbookStepConfig struct {
 	// timeout
 	Timeout int64 `json:"timeout,omitempty"`
 
+	// trigger id
+	TriggerID string `json:"trigger_id,omitempty"`
+
+	// trigger name
+	TriggerName string `json:"trigger_name,omitempty"`
+
 	// type
 	Type string `json:"type,omitempty"`
 
@@ -77,11 +92,88 @@ type AppRunbookStepConfig struct {
 
 // Validate validates this app runbook step config
 func (m *AppRunbookStepConfig) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateFilters(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this app runbook step config based on context it is used
+func (m *AppRunbookStepConfig) validateFilters(formats strfmt.Registry) error {
+	if swag.IsZero(m.Filters) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Filters); i++ {
+		if swag.IsZero(m.Filters[i]) { // not required
+			continue
+		}
+
+		if m.Filters[i] != nil {
+			if err := m.Filters[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("filters" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("filters" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this app runbook step config based on the context it is used
 func (m *AppRunbookStepConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateFilters(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AppRunbookStepConfig) contextValidateFilters(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Filters); i++ {
+
+		if m.Filters[i] != nil {
+
+			if swag.IsZero(m.Filters[i]) { // not required
+				return nil
+			}
+
+			if err := m.Filters[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("filters" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("filters" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

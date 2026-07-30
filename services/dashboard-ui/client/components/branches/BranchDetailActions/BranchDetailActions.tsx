@@ -12,7 +12,6 @@ interface IBranchDetailActions {
   editButton: ReactNode
   deploymentPlanButton: ReactNode
   deleteButton: ReactNode
-  hasDeploymentPlan: boolean
   isTriggerPending: boolean
   showTriggerNudge?: boolean
   onTriggerRun: () => void
@@ -23,14 +22,12 @@ export const BranchDetailActions = ({
   editButton,
   deploymentPlanButton,
   deleteButton,
-  hasDeploymentPlan,
   isTriggerPending,
   showTriggerNudge = false,
   onTriggerRun,
   onTriggerPreview,
 }: IBranchDetailActions) => {
   const [nudgeOpen, setNudgeOpen] = useState(false)
-  const triggerDisabled = !hasDeploymentPlan || isTriggerPending
 
   useEffect(() => {
     if (!showTriggerNudge) {
@@ -65,20 +62,16 @@ export const BranchDetailActions = ({
 
       <div className="flex items-center">
         <Tooltip
-          isOpen={hasDeploymentPlan ? nudgeOpen : undefined}
-          disableHover={hasDeploymentPlan}
+          isOpen={nudgeOpen}
+          disableHover
           position="bottom"
           tipContent={
-            <Text variant="subtext">
-              {hasDeploymentPlan
-                ? 'Trigger a run to deploy this branch'
-                : 'Create a deployment plan to trigger a run'}
-            </Text>
+            <Text variant="subtext">Trigger a run to deploy this branch</Text>
           }
         >
           <Button
             variant="primary"
-            disabled={triggerDisabled}
+            disabled={isTriggerPending}
             onClick={() => {
               setNudgeOpen(false)
               onTriggerRun()
@@ -96,7 +89,7 @@ export const BranchDetailActions = ({
           variant="primary"
           alignment="right"
           hideIcon
-          disabled={triggerDisabled}
+          disabled={isTriggerPending}
           buttonClassName="!rounded-l-none !border-l !border-l-primary-700 !px-2"
           buttonText={<Icon variant="CaretDownIcon" size={14} />}
         >
