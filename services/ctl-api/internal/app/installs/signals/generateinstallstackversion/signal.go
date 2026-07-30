@@ -240,6 +240,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to create runner token")
 	}
 
+	// Must precede the render: the template carries the secret's location, so the
+	// secret and its cross-account grant have to exist before the customer can apply
+	// the stack. No-ops unless phone-home auth is active for this install.
+	phoneHome, err := activities.AwaitEnsureInstallPhoneHomeSecretByInstallID(ctx, install.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to ensure install phone home secret")
+	}
+
 	// TODO(ja): Ignoring this for Azure. Should probably update.
 
 	// AWS and Azure diverge here, while generating the stack template file.
@@ -256,6 +264,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		Settings:                   &runner.RunnerGroup.Settings,
 		APIToken:                   generics.FromPtrStr(token),
 		RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, s.cfg.RunnerContainerImageTag),
+		PhoneHomeSecretARN:         phoneHome.SecretARN,
+		PhoneHomeSecretRegion:      phoneHome.SecretRegion,
 	}
 
 	switch cfg.RunnerConfig.Type {
