@@ -22,6 +22,17 @@ const (
 	GrantResourceTypeInstall GrantResourceType = "install"
 )
 
+// GrantResourceWildcard is a ResourceID that scopes a grant to every resource
+// of its ResourceType within the grant's org (e.g. install + "*" == all installs
+// in the org). It is deliberately distinct from the type-blind permissions.Set
+// "*" wildcard, which would match every object regardless of tier.
+const GrantResourceWildcard = "*"
+
+// IsWildcard reports whether the grant covers all resources of its type in the org.
+func (r ResourceGrant) IsWildcard() bool {
+	return r.ResourceID == GrantResourceWildcard
+}
+
 // ResourceGrant grants an account a permission on a single resource. It is
 // folded into the account's AllPermissions alongside role policies, and
 // authorization walks up the resource's ownership chain (resource -> ... -> org)

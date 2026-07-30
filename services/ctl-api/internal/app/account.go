@@ -48,6 +48,12 @@ type Account struct {
 	Orgs           []*Org          `json:"-" gorm:"-" temporaljson:"orgs,omitzero,omitempty"`
 	AllPermissions permissions.Set `json:"permissions,omitzero" gorm:"-" temporaljson:"all_permissions,omitzero,omitempty"`
 
+	// TypeGrants holds wildcard resource grants keyed by resource type (e.g.
+	// "install" -> all). Unlike AllPermissions, which maps opaque object ids and
+	// is tier-blind, these carry the tier so authorization can grant every
+	// resource of a type without leaking to other tiers.
+	TypeGrants map[string]permissions.Permission `json:"-" gorm:"-" temporaljson:"-"`
+
 	IsEmployee bool `json:"-"`
 }
 
@@ -83,6 +89,7 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 
 	a.OrgIDs = make([]string, 0)
 	a.AllPermissions = permissions.NewSet()
+	a.TypeGrants = make(map[string]permissions.Permission)
 
 	visited := make(map[string]struct{}, 0)
 	for _, role := range a.Roles {
@@ -109,7 +116,14 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 		grant := a.Grants[i]
 
 		if perm, err := permissions.NewPermission(grant.Permission); err == nil {
-			a.AllPermissions.Grant(grant.ResourceID, perm)
+			if grant.IsWildcard() {
+				key := string(grant.ResourceType)
+				if existing, ok := a.TypeGrants[key]; !ok || (existing != permissions.PermissionAll && perm == permissions.PermissionAll) {
+					a.TypeGrants[key] = perm
+				}
+			} else {
+				a.AllPermissions.Grant(grant.ResourceID, perm)
+			}
 		}
 
 		if grant.OrgID == "" {

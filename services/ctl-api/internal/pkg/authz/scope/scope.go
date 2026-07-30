@@ -16,11 +16,15 @@ import (
 )
 
 // IDSets holds the resource ids an account is granted, bucketed by tier, for a
-// single requested permission.
+// single requested permission. The *WildcardOrgs sets carry the orgs in which
+// the account holds a type-wildcard grant (all apps / all installs in that org).
 type IDSets struct {
 	OrgIDs     []string
 	AppIDs     []string
 	InstallIDs []string
+
+	AppWildcardOrgs     []string
+	InstallWildcardOrgs []string
 }
 
 // satisfies reports whether a grant's permission covers the requested one.
@@ -34,6 +38,16 @@ func ForList(acct *app.Account, perm permissions.Permission) IDSets {
 	for _, g := range acct.Grants {
 		granted, err := permissions.NewPermission(g.Permission)
 		if err != nil || !satisfies(granted, perm) {
+			continue
+		}
+
+		if g.IsWildcard() {
+			switch g.ResourceType {
+			case app.GrantResourceTypeApp:
+				s.AppWildcardOrgs = append(s.AppWildcardOrgs, g.OrgID)
+			case app.GrantResourceTypeInstall:
+				s.InstallWildcardOrgs = append(s.InstallWildcardOrgs, g.OrgID)
+			}
 			continue
 		}
 
@@ -59,7 +73,11 @@ func (s IDSets) Installs(db *gorm.DB, idCol, appCol, orgCol string) func(*gorm.D
 		return tx.Where(
 			db.Where(idCol+" IN ?", s.InstallIDs).
 				Or(appCol+" IN ?", s.AppIDs).
-				Or(orgCol+" IN ?", s.OrgIDs),
+				Or(orgCol+" IN ?", s.OrgIDs).
+				// all installs in the org (install wildcard), and all installs
+				// under all apps in the org (app wildcard cascades to installs)
+				Or(orgCol+" IN ?", s.InstallWildcardOrgs).
+				Or(orgCol+" IN ?", s.AppWildcardOrgs),
 		)
 	}
 }
@@ -75,7 +93,15 @@ func (s IDSets) Apps(db *gorm.DB, idCol, orgCol string) func(*gorm.DB) *gorm.DB 
 				Or(idCol+" IN (?)",
 					db.Model(&app.Install{}).
 						Select("app_id").
-						Where("id IN ?", s.InstallIDs)),
+						Where("id IN ?", s.InstallIDs)).
+				// all apps in the org (app wildcard)
+				Or(orgCol+" IN ?", s.AppWildcardOrgs).
+				// upward visibility: parent apps of every install in an
+				// install-wildcard org
+				Or(idCol+" IN (?)",
+					db.Model(&app.Install{}).
+						Select("app_id").
+						Where("org_id IN ?", s.InstallWildcardOrgs)),
 		)
 	}
 }
@@ -88,7 +114,10 @@ func (s IDSets) Components(db *gorm.DB, appCol, orgCol string) func(*gorm.DB) *g
 	return func(tx *gorm.DB) *gorm.DB {
 		return tx.Where(
 			db.Where(appCol+" IN ?", s.AppIDs).
-				Or(orgCol+" IN ?", s.OrgIDs),
+				Or(orgCol+" IN ?", s.OrgIDs).
+				// all apps in the org (app wildcard) — an install wildcard does
+				// not confer component visibility, matching install grants
+				Or(orgCol+" IN ?", s.AppWildcardOrgs),
 		)
 	}
 }

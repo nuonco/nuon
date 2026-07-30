@@ -143,15 +143,20 @@ func Authorize(acct, chain []string, perm) error {
 
 <h2>8. Enforcement wiring</h2>
 <h3>8a. Org-gate rework <span class="tag warn">only non-additive change</span></h3>
-<p><code>org.go</code> splits membership from authorization:</p>
-<pre><code>if !acct.HasOrg(org.ID) { 403 }                       // not a member at all
-if acct.AllPermissions.CanPerform(org.ID, perm)==nil {
-    cctx.SetOrgAuthorized(ctx, true); Next(); return  // org-wide grant: fast path
-}
-cctx.SetOrgAuthorized(ctx, false); Next()             // member; defer downstream</code></pre>
-<p><strong>Fail-closed:</strong> a handler reached with <code>OrgAuthorized=false</code> and no resource middleware having authorized &rarr; deny. Preserves today's behavior on every non-resource route.</p>
-<h3>8b. Resource middlewares (after <code>org</code> in the config chain)</h3>
-<p>One per path-parameterized group (<code>/v1/apps/:app_id</code>, <code>/v1/installs/:install_id</code>). Each: skip if <code>IsGlobal/IsPublic</code> or <code>OrgAuthorized</code>; read its path param; resolve name-or-id scoped by org; build chain; <code>Authorize</code>; stash resolved entity in context. Registered in the middleware config slices (<code>internal/config.go</code>) right after <code>"org"</code>, provided via <code>fxmodules/middlewares.go</code>.</p>
+<p>Resource authorization is folded into the existing <code>org</code> middleware rather than living in separate middlewares (see 8b for why). The whole feature is gated behind one flag, <code>ResourceGrantsEnabled</code> (<code>internal.Config</code> &rarr; env <code>RESOURCE_GRANTS_ENABLED</code>). When it is off, the gate behaves exactly as before. When on, <code>org.go</code> splits membership from authorization:</p>
+<pre><code>orgErr := acct.AllPermissions.CanPerform(org.ID, perm)
+if orgErr == nil {
+    cctx.SetOrgAuthorized(ctx, true)                  // org-wide grant/role: fast path
+} else {
+    if !acct.HasOrg(org.ID) { 403 }                   // not a member at all
+    cctx.SetOrgAuthorized(ctx, false)                 // member via a narrow grant; defer
+    if !isFilteredCollection(ctx) {
+        authorizeResource(ctx, acct, org.ID, perm)    // resolve resource in path + walk up
+    }
+}</code></pre>
+<p><strong>Fail-closed:</strong> a deferred request that names no grantable resource in its path (and is not a filtered collection) is denied. Preserves today's behavior on every non-resource route.</p>
+<h3>8b. Resource authorization lives in the org gate <span class="tag warn">revised from per-group middlewares</span></h3>
+<p>Earlier drafts registered one middleware per path-parameterized group (<code>/v1/apps/:app_id</code>, <code>/v1/installs/:install_id</code>) after <code>org</code> in the config chain. That was collapsed into the org gate itself for two reasons: (1) a single flag (<code>ResourceGrantsEnabled</code>) then enables the entire feature, with no dependence on the externally-managed middleware-order config list; and (2) it closes a safety gap &mdash; a flag-on-but-middleware-not-wired state would otherwise leave object routes unprotected. The org gate now resolves the most specific resource named in the path (<code>authorizeResource</code> &rarr; <code>resourceChain</code>: install first, then app; name-or-id, org-scoped), builds the ownership chain, and calls <code>authz.Authorize</code>. Filtered collections (8c) are let through to their handlers. All of this lives in <code>internal/middlewares/org/</code> (<code>org.go</code>, <code>collections.go</code>).</p>
 
 <h3>8c. Collection-endpoint grant-scope filtering <span class="tag bad">added post-pressure-test (F1)</span></h3>
 <p>Walk-up authorizes a single addressed resource, but list endpoints return whole collections with no per-item check. For a genuinely narrow grant, gating the whole endpoint is wrong in both directions (deny-all hides the user's own resource; allow-all leaks siblings). Fix has two parts:</p>
@@ -324,6 +329,25 @@ func (s IDSets) Apps(db *gorm.DB) func(*gorm.DB) *gorm.DB {
   </tr>
 </table>
 
+<h3>9a. Grant management API <span class="tag warn">revised: unified surface</span></h3>
+<p>Rather than a grant sub-collection per resource (<code>/v1/installs/:id/grants</code>, <code>/v1/apps/:id/grants</code>, &hellip;), which would need a fresh triple of endpoints for every grantable tier, grants are managed through a <strong>single</strong> resource-agnostic surface. The resource is named in the request body (create) or query (list), not the path. This keeps the API flat as more tiers become grantable and makes the org tier &mdash; the &ldquo;read everything in the org&rdquo; grant &mdash; a first-class target with no extra endpoints.</p>
+<table>
+  <tr><th>Method</th><th>Route</th><th>Notes</th></tr>
+  <tr><td><code>POST</code></td><td><code>/v1/grants</code></td><td>Create/upsert. Body: <code>{ resource_type, resource_id, account_id|email, permission }</code>. <code>resource_type</code> is <code>oneof=org app install</code>; <code>permission</code> is <code>oneof=read all</code>. Apps/installs accept name-or-id (resolved &amp; validated against the caller org) or the <code>"*"</code> wildcard (see 9b); <code>org</code> must be the caller's own org. Org-admin only.</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/grants</code></td><td>List grants in the org; optional <code>?resource_type=&amp;resource_id=</code> filter.</td></tr>
+  <tr><td><code>DELETE</code></td><td><code>/v1/grants/:grant_id</code></td><td>Revoke. Org-admin only.</td></tr>
+</table>
+<p><strong>Org-wide read</strong> (read <em>everything</em> in the org) is a single <code>org &middot; read</code> grant &mdash; it cascades to every app and install via walk-up authorization and is bucketed at the org tier by the &sect;8d collection filter. An <code>app &middot; read</code> grant similarly covers all installs under that app. For &ldquo;all resources of one tier&rdquo; (e.g. all installs but not apps), see the type-wildcard grant below.</p>
+
+<h3>9b. Type-wildcard grants <span class="tag good">supported</span></h3>
+<p>A grant whose <code>resource_id</code> is <code>"*"</code> scopes to <strong>every resource of its <code>resource_type</code> within the org</strong> &mdash; e.g. <code>{ resource_type: "install", resource_id: "*", permission: "all" }</code> grants write on all installs in the org, and crucially <em>not</em> apps or other tiers (which <code>org &middot; all</code> cannot express). Supported for <code>app</code> and <code>install</code>; <code>org</code> takes no wildcard (it is already a single resource).</p>
+<p>The wildcard deliberately does <strong>not</strong> reuse the <code>permissions.Set</code> <code>"*"</code> key, which <code>CanPerform</code> falls back to for <em>any</em> object regardless of tier &mdash; using it would leak an <code>install &middot; *</code> grant to apps and the org. Instead the tier is carried explicitly:</p>
+<ul>
+  <li><strong>Aggregation</strong> (<code>account.go</code> <code>AfterQuery</code>): wildcard grants are collected into <code>Account.TypeGrants map[string]permissions.Permission</code> (keyed by resource type), separate from the flat <code>AllPermissions</code> Set.</li>
+  <li><strong>Walk-up</strong> (<code>authz.Authorize</code>): the ownership chain is a <code>[]Link{Type, ID}</code> (not bare ids); a link is authorized by a specific-object grant <em>or</em> a <code>TypeGrants</code> entry matching that link's tier. An <code>install &middot; *</code> grant matches the install link but never the app or org link.</li>
+  <li><strong>Collection filter</strong> (<code>scope</code>): <code>IDSets</code> gains <code>AppWildcardOrgs</code>/<code>InstallWildcardOrgs</code>; the list queries widen to <code>org_id IN (&hellip;)</code> for the wildcard tier (an app wildcard cascades to that org's installs and components; an install wildcard grants upward visibility of parent apps but not components, matching per-install grants).</li>
+</ul>
+
 <h3>Deferred (with the deferred targets)</h3>
 <ul>
   <li><strong>Execute verb:</strong> runbooks/actions need an <code>execute</code> permission, not CRUD. Not in initial scope (those aren't initial targets), but the <code>Permission</code> enum and <code>FromRequest</code> mapping should be left extensible so adding <code>execute</code> later is additive.</li>
@@ -331,7 +355,7 @@ func (s IDSets) Apps(db *gorm.DB) func(*gorm.DB) *gorm.DB {
 </ul>
 
 <h2>10. Pressure test</h2>
-<p class="meta">Each scenario traces a concrete request through org-gate &rarr; resource middleware &rarr; handler. Findings feed back into the design above.</p>
+<p class="meta">Each scenario traces a concrete request through org-gate (with folded-in resource authorization, &sect;8b) &rarr; handler. Findings feed back into the design above.</p>
 <div id="pressure-test">
 
 <table>
@@ -441,9 +465,9 @@ func (s IDSets) Apps(db *gorm.DB) func(*gorm.DB) *gorm.DB {
   <li><code>ResourceGrant</code> model + migration + <code>AfterQuery</code> aggregation.</li>
   <li><code>Authorize</code> primitive + chain builders for <code>org/app/install</code> (design the builder to select by deepest path param so leaf targets are an additive promotion later).</li>
   <li>Org-gate rework with <code>OrgAuthorized</code> (heavy tests vs. existing role types).</li>
-  <li>Resource middlewares (app + install groups).</li>
+  <li>Resource authorization folded into the org gate (&sect;8b), enabled by the <code>ResourceGrantsEnabled</code> flag.</li>
   <li><strong>Collection-endpoint grant-scope filtering (F1, &sect;8d)</strong> &mdash; shared <code>scope</code> helper + GORM scopes + <code>OrgAuthorized</code> guard on each list handler.</li>
-  <li>Grant CRUD endpoints (org-admin only per &sect;9).</li>
+  <li>Grant CRUD endpoints (org-admin only per &sect;9) &mdash; single unified surface, see &sect;9a.</li>
   <li>Scoped-invite path (&sect;9 grantee scope): extend <code>create_invite.go</code> validation to accept a resource-scoped invite, and make acceptance create the <code>ResourceGrant</code> instead of an org-wide role.</li>
   <li>Per-handler checks for out-of-group routes where the read-only UX needs them (F3): start with <code>/v1/workflows/:workflow_id</code>.</li>
   <li>UI + CLI for managing grants and scoped invites.</li>
