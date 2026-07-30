@@ -7,9 +7,8 @@ import (
 )
 
 const (
-	// labelInstallID and labelComponentID are stamped by the runner on the
-	// resources it applies so the engine can attribute live cluster objects
-	// back to an install component.
+	// labelInstallID and labelComponentID are stamped by the runner on applied
+	// resources so the engine can attribute cluster objects to a component.
 	labelInstallID   = "nuon.co/install-id"
 	labelComponentID = "nuon.co/component-id"
 
@@ -28,11 +27,11 @@ type componentEntry struct {
 	componentType      string
 	helmReleaseName    string
 	helmNamespace      string
+	probes             []probeSpec
 }
 
 // index is the ownership map for the install this runner serves: kube-manifest
-// resources keyed by nuon.co label, helm resources by release name. Rebuilt each
-// report; guarded for concurrent access.
+// resources keyed by nuon.co label, helm resources by release name.
 type index struct {
 	mu         sync.RWMutex
 	installID  string
@@ -86,6 +85,34 @@ func (i *index) lookupHelm(releaseName string) (componentEntry, bool) {
 	return e, ok
 }
 
+// componentsOfType returns the ids of every indexed component of a type.
+func (i *index) componentsOfType(componentType string) []string {
+	i.mu.RLock()
+	defer i.mu.RUnlock()
+
+	out := make([]string, 0, len(i.components))
+	for id, e := range i.components {
+		if e.componentType == componentType {
+			out = append(out, id)
+		}
+	}
+	return out
+}
+
+// probeTargets returns the declared probes per component id.
+func (i *index) probeTargets() map[string][]probeSpec {
+	i.mu.RLock()
+	defer i.mu.RUnlock()
+
+	out := map[string][]probeSpec{}
+	for id, e := range i.components {
+		if len(e.probes) > 0 {
+			out[id] = e.probes
+		}
+	}
+	return out
+}
+
 // rebuild fetches the install component metadata from the control plane and
 // swaps it into the index. It carries no credentials — just identity metadata.
 func (e *Engine) rebuildIndex(ctx context.Context) error {
@@ -109,6 +136,7 @@ func (e *Engine) rebuildIndex(ctx context.Context) error {
 			componentType:      c.ComponentType,
 			helmReleaseName:    c.HelmReleaseName,
 			helmNamespace:      c.HelmNamespace,
+			probes:             probeSpecsFor(c),
 		})
 	}
 

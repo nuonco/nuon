@@ -44,8 +44,10 @@ func (c *cli) commonProviders() []fx.Option {
 		fx.Provide(process.NewShutdownPoller),
 		fx.Provide(drain.New),
 		fx.Provide(metrics.New),
-		// shared cluster access captured by deploy handlers for the component-health engine
+		// shared cluster access + terraform state captured by deploy handlers for
+		// the component-health engine
 		fx.Provide(componenthealth.NewClusterProvider),
+		fx.Provide(componenthealth.NewTerraformProvider),
 	}
 }
 
