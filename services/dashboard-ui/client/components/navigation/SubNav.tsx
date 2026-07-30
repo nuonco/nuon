@@ -72,7 +72,7 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
       <nav
         className={cn(
           'flex shrink-0 gap-8 px-4 py-3 h-16',
-          'md:sticky md:top-0 md:flex-col md:gap-1 md:px-4 md:py-4 md:w-full'
+          'md:sticky md:top-0 md:flex-col md:gap-1 md:px-4 md:py-4 md:w-full md:h-auto'
         )}
       >
         {links.map((item, i) =>

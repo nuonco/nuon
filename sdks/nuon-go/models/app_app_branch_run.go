@@ -28,9 +28,6 @@ type AppAppBranchRun struct {
 	// AppConfigID is the app config that was created/synced during this run
 	AppConfigID string `json:"app_config_id,omitempty"`
 
-	// trigger event dispatch id
-	TriggerEventDispatchID string `json:"trigger_event_dispatch_id,omitempty"`
-
 	// base branch
 	BaseBranch string `json:"base_branch,omitempty"`
 
@@ -107,6 +104,9 @@ type AppAppBranchRun struct {
 	// Status tracks the current state of the run
 	// Values: pending, running, success, failed, cancelled
 	Status string `json:"status,omitempty"`
+
+	// trigger event dispatch id
+	TriggerEventDispatchID string `json:"trigger_event_dispatch_id,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`

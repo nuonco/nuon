@@ -41,9 +41,6 @@ type AppTriggerRule struct {
 	// enabled
 	Enabled bool `json:"enabled,omitempty"`
 
-	// trigger id
-	TriggerID string `json:"trigger_id,omitempty"`
-
 	// event types
 	EventTypes []string `json:"event_types"`
 
@@ -82,6 +79,9 @@ type AppTriggerRule struct {
 
 	// target type
 	TargetType AppTriggerTargetType `json:"target_type,omitempty"`
+
+	// trigger id
+	TriggerID string `json:"trigger_id,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`

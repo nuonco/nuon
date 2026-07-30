@@ -49,7 +49,6 @@ export const CreateAppModalContainer = ({
     <CreateAppModal
       isSubmitting={isSubmitting}
       onSubmit={(body) => mutate(body)}
-      onCancel={() => removeModal(props.modalId)}
       {...props}
     />
   )

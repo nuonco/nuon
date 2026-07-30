@@ -1,51 +1,59 @@
-import { useState } from 'react'
+import { type FormEvent, useRef } from 'react'
 import { Input } from '@/components/common/form/Input'
+import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 
 interface ICreateAppModal extends Omit<IModal, 'onSubmit'> {
   isSubmitting: boolean
   onSubmit: (body: { name: string }) => void
-  onCancel: () => void
 }
 
 export const CreateAppModal = ({
   isSubmitting,
   onSubmit,
-  onCancel,
   ...props
 }: ICreateAppModal) => {
-  const [name, setName] = useState('')
+  const formRef = useRef<HTMLFormElement>(null)
+
+  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const name = (new FormData(e.currentTarget).get('name') as string).trim()
+    if (!name) return
+    onSubmit({ name })
+  }
 
   return (
     <Modal
-      heading="Create app"
-      size="sm"
+      heading={
+        <Text flex className="gap-4" variant="h3" weight="strong">
+          <Icon variant="AppWindowIcon" size="24" />
+          Create app
+        </Text>
+      }
       primaryActionTrigger={{
-        children: 'Create',
-        disabled: !name.trim() || isSubmitting,
-        onClick: () => onSubmit({ name: name.trim() }),
+        children: isSubmitting ? 'Creating app' : 'Create app',
+        onClick: () => formRef.current?.requestSubmit(),
+        disabled: isSubmitting,
+        variant: 'primary',
       }}
-      secondaryActionTrigger={{
-        children: 'Cancel',
-        onClick: onCancel,
-      }}
-      showFooter
       {...props}
     >
-      <div className="flex flex-col gap-4 p-6">
+      <form
+        ref={formRef}
+        onSubmit={handleFormSubmit}
+        className="flex flex-col gap-4"
+      >
         <Input
+          name="name"
+          type="text"
           labelProps={{ labelText: 'App name' }}
           placeholder="my-app"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && name.trim()) {
-              onSubmit({ name: name.trim() })
-            }
-          }}
-          autoFocus
+          required
+          maxLength={255}
+          disabled={isSubmitting}
         />
-      </div>
+      </form>
     </Modal>
   )
 }
