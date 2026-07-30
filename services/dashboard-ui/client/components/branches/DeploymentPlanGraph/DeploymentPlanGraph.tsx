@@ -145,8 +145,9 @@ export const DeploymentPlanGraph = ({ config, installsById, compact = false }: I
       <div className="rounded-lg border p-6">
         <EmptyState
           variant="diagram"
-          emptyTitle="No install groups configured"
-          emptyMessage={`Use "Deployment plan" above to add deployment groups.`}
+          size={compact ? 'sm' : 'default'}
+          emptyTitle="No install groups"
+          emptyMessage="This deployment plan doesn't have any install groups yet."
         />
       </div>
     )

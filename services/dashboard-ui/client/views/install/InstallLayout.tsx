@@ -1,4 +1,10 @@
-import { Outlet, useParams, useMatch, useSearchParams } from 'react-router'
+import {
+  Outlet,
+  useParams,
+  useMatch,
+  useSearchParams,
+  useLocation,
+} from 'react-router'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
@@ -7,6 +13,10 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Time } from '@/components/common/Time'
 import { Text } from '@/components/common/Text'
+import { Button } from '@/components/common/Button'
+import { EmptyState } from '@/components/common/EmptyState'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
+import { PageSection } from '@/components/layout/PageSection'
 import { DeprovisionBanner } from '@/components/installs/DeprovisionBanner'
 import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
@@ -15,7 +25,6 @@ import {
   useOpenInstallSettings,
   INSTALL_SETTINGS_PANEL_KEY,
 } from '@/components/installs/InstallSettingsPanel'
-import { InstallManagementDropdown } from '@/components/installs/management/InstallManagementDropdown'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
@@ -49,9 +58,25 @@ export const InstallLayout = () => {
   )
 }
 
+const InstallContentError = () => (
+  <PageSection>
+    <EmptyState
+      variant="404"
+      emptyTitle="Something went wrong"
+      emptyMessage="We couldn't load this page. Some of its data may be unavailable right now."
+      action={
+        <Button variant="secondary" onClick={() => window.location.reload()}>
+          Try again
+        </Button>
+      }
+    />
+  </PageSection>
+)
+
 const InstallTemplate = () => {
   const { org } = useOrg()
   const { install, labelColors } = useInstall()
+  const { pathname } = useLocation()
   const hasRunbooks = !!org?.features?.runbooks
   const hasNotebooks = !!org?.features?.notebooks
   const openSettings = useOpenInstallSettings()
@@ -185,7 +210,9 @@ const InstallTemplate = () => {
               links={navLinks}
             />
             <div className="flex flex-col flex-1 min-w-0">
-              <Outlet />
+              <ErrorBoundary key={pathname} fallback={<InstallContentError />}>
+                <Outlet />
+              </ErrorBoundary>
             </div>
           </PageContent>
         ) : (
@@ -251,7 +278,6 @@ const InstallTemplate = () => {
                     </Text>
                   </LabeledValue>
                   <InstallStatusesContainer collapsible />
-                  <InstallManagementDropdown />
                 </div>
               </div>
               {install?.drifted_objects?.length ? (
@@ -269,7 +295,9 @@ const InstallTemplate = () => {
                 links={navLinks}
               />
               <div className="flex flex-col flex-1 min-w-0">
-                <Outlet />
+                <ErrorBoundary key={pathname} fallback={<InstallContentError />}>
+                  <Outlet />
+                </ErrorBoundary>
               </div>
             </PageContent>
           </>

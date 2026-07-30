@@ -150,11 +150,13 @@ export const EditDeploymentPlanButton = ({
   branch,
   currentConfig,
   onSuccess,
+  label = 'Deployment plan',
   ...props
 }: {
   branch: TAppBranch
   currentConfig?: TAppBranchConfig
   onSuccess?: () => void
+  label?: string
 } & Omit<IButtonAsButton, 'children'>) => {
   const { addModal } = useSurfaces()
   const modal = (
@@ -171,7 +173,7 @@ export const EditDeploymentPlanButton = ({
       {...props}
     >
       {props?.isMenuButton ? null : <Icon variant="SlidersHorizontalIcon" size={16} />}
-      Deployment plan
+      {label}
       {props?.isMenuButton ? <Icon variant="SlidersHorizontalIcon" size={16} /> : null}
     </Button>
   )
