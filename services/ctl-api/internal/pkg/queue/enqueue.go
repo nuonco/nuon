@@ -14,8 +14,9 @@ const EnqueueUpdateName string = "enqueue"
 const enqueuUpdateType = handlerTypeUpdate
 
 type EnqueueResponse struct {
-	ID         string
-	WorkflowID string
+	ID           string
+	WorkflowID   string
+	Deduplicated bool
 }
 
 // EnqueueHandlerInput is the input to the enqueue update handler.

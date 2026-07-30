@@ -456,7 +456,6 @@ type UpdateRunnerStatusV2Request struct {
 	RunnerID          string           `validate:"required"`
 	Status            app.RunnerStatus `validate:"required"`
 	StatusDescription string           `validate:"required"`
-	Metadata          map[string]any
 }
 
 // @temporal-gen-v2 activity
@@ -474,10 +473,21 @@ func (a *Activities) UpdateRunnerStatusV2(ctx context.Context, req UpdateRunnerS
 
 	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
 	status.StatusHumanDescription = req.StatusDescription
-	for k, v := range req.Metadata {
-		status.Metadata[k] = v
-	}
 	return a.updateStatusV2(ctx, &obj, status, getter)
+}
+
+type UpdateRunnerStatusV2MetadataRequest struct {
+	RunnerID string `validate:"required"`
+	Metadata map[string]any
+}
+
+// @temporal-gen-v2 activity
+// @local
+func (a *Activities) UpdateRunnerStatusV2Metadata(ctx context.Context, req UpdateRunnerStatusV2MetadataRequest) error {
+	if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), &app.Runner{}, req.RunnerID, "status_v2", req.Metadata); err != nil {
+		return errors.Wrap(err, "unable to update runner status metadata")
+	}
+	return nil
 }
 
 type UpdateActionWorkflowStatusV2Request struct {
