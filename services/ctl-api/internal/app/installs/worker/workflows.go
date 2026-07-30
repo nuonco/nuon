@@ -62,7 +62,6 @@ func (w *Workflows) All() []any {
 		plan.CreateSyncSecretsPlan,
 		wkflow.DeprovisionDNSDelegation,
 		wkflow.ProvisionDNSDelegation,
-		w.BackfillPhoneHomeSecrets,
 	}
 
 	sub := append(append(append(w.subwfSandbox.All(), w.subwfStack.All()...), w.subwfComponents.All()...), w.subwfActions.All()...)

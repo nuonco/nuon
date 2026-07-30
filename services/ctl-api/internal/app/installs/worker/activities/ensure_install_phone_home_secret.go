@@ -33,6 +33,18 @@ const (
 
 type EnsureInstallPhoneHomeSecretRequest struct {
 	InstallID string `json:"install_id" validate:"required"`
+
+	// IgnoreOrgFeatureGate provisions even though the org has not enabled
+	// phone-home-auth yet, so an operator can pre-provision an org and then flip the
+	// flag rather than the other way round. Set only by the operator-initiated
+	// backfill; the flag remains the opt-in everywhere else.
+	//
+	// It waives the feature check and nothing else — an install still has to be on
+	// AWS, still has to carry a target account, and the control plane still has to
+	// reach Secrets Manager. Note the target account is itself only required at
+	// creation once the flag is on, so for an org that has never had it the backfill
+	// mostly trades one skip reason for another.
+	IgnoreOrgFeatureGate bool `json:"ignore_org_feature_gate,omitempty"`
 }
 
 type EnsureInstallPhoneHomeSecretResponse struct {
@@ -82,7 +94,7 @@ func (a *Activities) EnsureInstallPhoneHomeSecret(
 		return nil, generics.TemporalGormError(res.Error)
 	}
 
-	if skip, err := a.phoneHomeSecretSkipReason(ctx, &install); err != nil {
+	if skip, err := a.phoneHomeSecretSkipReason(ctx, &install, req.IgnoreOrgFeatureGate); err != nil {
 		return nil, err
 	} else if skip != "" {
 		return &EnsureInstallPhoneHomeSecretResponse{Skipped: true, SkipReason: skip}, nil
@@ -154,15 +166,20 @@ func (a *Activities) EnsureInstallPhoneHomeSecret(
 // entirely inside Config.ManagementSecretsCreds. Gating on cfg.IsAWS() would
 // silently disable phone-home auth for every AWS install on a GCP-hosted control
 // plane.
-func (a *Activities) phoneHomeSecretSkipReason(ctx context.Context, install *app.Install) (string, error) {
+func (a *Activities) phoneHomeSecretSkipReason(
+	ctx context.Context, install *app.Install, ignoreFeatureGate bool,
+) (string, error) {
 	// Checked first so an unflagged org produces no log noise on every stack
-	// generation.
-	enabled, err := a.features.OrgHasFeature(ctx, install.OrgID, app.OrgFeaturePhoneHomeAuth)
-	if err != nil {
-		return "", fmt.Errorf("unable to check phone home auth feature: %w", err)
-	}
-	if !enabled {
-		return phoneHomeSkipFeatureDisabled, nil
+	// generation. Waived only for the operator-initiated backfill, which exists to
+	// provision an org ahead of enabling the flag.
+	if !ignoreFeatureGate {
+		enabled, err := a.features.OrgHasFeature(ctx, install.OrgID, app.OrgFeaturePhoneHomeAuth)
+		if err != nil {
+			return "", fmt.Errorf("unable to check phone home auth feature: %w", err)
+		}
+		if !enabled {
+			return phoneHomeSkipFeatureDisabled, nil
+		}
 	}
 
 	if install.AWSAccount == nil {
