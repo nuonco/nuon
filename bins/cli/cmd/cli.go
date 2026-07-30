@@ -13,6 +13,8 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/oidctoken"
+	"github.com/nuonco/nuon/bins/cli/internal/services/auth"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/pkg/analytics"
 )
@@ -107,7 +109,12 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 	// Skip user initialization for auth commands (login, logout)
 	if !hasSkipAuthAnnotation(cmd) {
 		if c.cfg.APIToken == "" {
-			return errors.New("no API token configured; run `nuon login` or set api_token in config")
+			if err := c.tryAmbientOIDCExchange(cmd.Context()); err != nil {
+				return err
+			}
+		}
+		if c.cfg.APIToken == "" {
+			return errors.New("no API token configured; run `nuon login`, set api_token in config, or configure OIDC federation (NUON_OIDC_TOKEN or GitHub Actions with `permissions: id-token: write`)")
 		}
 		if err := c.initUser(); err != nil {
 			return errors.Wrap(err, "unable to initialize user")
@@ -127,5 +134,35 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 	//}
 
 	c.cfg.BindCobraFlags(cmd)
+	return nil
+}
+
+// tryAmbientOIDCExchange exchanges an ambient OIDC token (CI) for a Nuon API
+// token when no api_token is configured. The exchanged token is kept
+// in-memory only: each CLI invocation exchanges fresh, so expiry never needs
+// handling. Missing ambient credentials are not an error — the caller falls
+// through to the standard no-token message.
+func (c *cli) tryAmbientOIDCExchange(ctx context.Context) error {
+	if c.cfg.OrgID == "" || !oidctoken.Available() {
+		return nil
+	}
+
+	oidcJWT, source, _, err := oidctoken.Detect(ctx, oidctoken.Audience(""))
+	if err != nil {
+		return errors.Wrapf(err, "unable to get OIDC token from %s", source)
+	}
+
+	svc := auth.New(c.apiClient, c.cfg)
+	resp, err := svc.ExchangeOIDCToken(ctx, oidcJWT, c.cfg.OrgID)
+	if err != nil {
+		return errors.Wrapf(err, "OIDC federation with token from %s failed", source)
+	}
+
+	c.cfg.APIToken = resp.Token
+	if err := c.initAPIClient(); err != nil {
+		return errors.Wrap(err, "unable to initialize api client with federated token")
+	}
+
+	ui.PrintLn(fmt.Sprintf("authenticated via OIDC federation (%s)", source))
 	return nil
 }

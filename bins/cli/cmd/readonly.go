@@ -63,6 +63,7 @@ var readOnlyCommands = map[string]struct{}{
 	"completion":           {},
 	"select":               {},
 	"deselect":             {},
+	"exchange-token":       {},
 	"unset-current":        {},
 	"init":                 {},
 	"mcp":                  {},
