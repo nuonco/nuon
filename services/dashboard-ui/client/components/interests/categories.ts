@@ -16,12 +16,18 @@
 
 import type { ResourceCfg, ResourceKind } from './types'
 
-export type EventCategory = 'lifecycle' | 'approvals' | 'drift' | 'config_synced'
+export type EventCategory =
+  | 'lifecycle'
+  | 'approvals'
+  | 'drift'
+  | 'config_synced'
+  | 'component_health'
+  | 'install_degraded'
 
 export const RESOURCE_CATEGORIES: Record<ResourceKind, EventCategory[]> = {
-  installs: ['lifecycle', 'approvals'],
+  installs: ['lifecycle', 'approvals', 'install_degraded'],
   stacks: ['lifecycle'],
-  components: ['lifecycle', 'approvals', 'drift'],
+  components: ['lifecycle', 'approvals', 'drift', 'component_health'],
   sandboxes: ['lifecycle', 'approvals', 'drift'],
   install_configurations: ['lifecycle', 'approvals'],
   runners: ['lifecycle'],
@@ -34,6 +40,8 @@ export const CATEGORY_LABELS: Record<EventCategory, string> = {
   approvals: 'approvals',
   drift: 'drift detected',
   config_synced: 'config synced',
+  component_health: 'component health',
+  install_degraded: 'install degraded',
 }
 
 export const isCategoryOn = (
@@ -50,6 +58,10 @@ export const isCategoryOn = (
       return !!cfg.drift_detected
     case 'config_synced':
       return !!cfg.config_synced
+    case 'component_health':
+      return !!cfg.component_health
+    case 'install_degraded':
+      return !!cfg.install_degraded
   }
 }
 
@@ -68,6 +80,10 @@ export const setCategoryOn = (
       return { ...base, drift_detected: on }
     case 'config_synced':
       return { ...base, config_synced: on }
+    case 'component_health':
+      return { ...base, component_health: on }
+    case 'install_degraded':
+      return { ...base, install_degraded: on }
   }
 }
 

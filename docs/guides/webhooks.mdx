@@ -105,6 +105,8 @@ drift, set `drift_detected: true` on `components` and/or `sandboxes` (see below)
 | `approval_requests`  | `bool`    | `false` | Deliver workflow-step approval **requests** for this resource.                               |
 | `approval_responses` | `bool`    | `false` | Deliver workflow-step approval **responses** (approved / rejected) for this resource.        |
 | `drift_detected`     | `bool`    | `false` | Deliver a notification **only when drift is actually detected** during a drift scan. Only meaningful for `components` and `sandboxes`. |
+| `component_health`   | `bool`    | `false` | Deliver a notification when a component's live health crosses into degraded or unhealthy, **and when it recovers**. Only meaningful for `components`. |
+| `install_degraded`   | `bool`    | `false` | Deliver a notification when the install's composite health crosses into degraded or unhealthy, **and when it returns to healthy**. Only meaningful for `installs`. |
 
 `outcome` semantics:
 
@@ -125,6 +127,19 @@ notification fires once per component (inside `drift_run`) or once per sandbox (
 `drift_run_reprovision_sandbox`) whenever the plan-only check finds non-no-op changes. It works for
 both manually triggered and scheduled drift scans, and is gated **independently of `outcome`** — the
 same way `approval_requests` / `approval_responses` are.
+
+#### Component health
+
+To receive component health notifications, set `component_health: true` on `components`. One flag covers both
+directions: the notification fires when a component's live health crosses into `degraded` or `unhealthy`, and
+again when it recovers, so you always get the resolution to a failure you were told about. A verdict of
+`unknown` — the runner is offline or its observations are stale — never notifies; unhealthy runners have their
+own event, below. A worsening inside the bad band (`degraded` to `unhealthy`) does not re-notify. Like
+`drift_detected`, the flag is gated **independently of `outcome`**.
+
+Set `install_degraded: true` on `installs` for the same signal one level up: it fires when the install's
+composite health crosses into degraded or unhealthy, and when it returns to healthy. Subscribing to both levels
+means a single-component outage produces two messages.
 
 #### Unhealthy runners
 
@@ -465,7 +480,7 @@ deploy step), the child workflow's events include a `data.parent` block:
 | `nuonorgid`                    | Org id this event belongs to. Nuon CloudEvents extension; mirrors `data.org_id`.             |
 | `nuonkind`                     | `workflow` or `workflow_step`. Mirrors `data.kind`.                                          |
 | `nuontransition`               | `started`, `succeeded`, `failed`, or `cancelled`. Mirrors `data.transition`.                 |
-| `interests`                    | Slug list produced by Nuon's classifier for this event. Always contains a `resource:<kind>` and `op:<kind>.<sub-op>` slug, plus an `event:<…>` slug identifying the transition (e.g. `event:lifecycle.succeeded`, `event:approval.request`, `event:drift.detected`) and zero or more `outcome:<…>` slugs (`outcome:completion` on terminal events, plus `outcome:failures` on failed or cancelled transitions). Consumers can route by slug prefix without re-implementing the classifier. |
+| `interests`                    | Slug list produced by Nuon's classifier for this event. Always contains a `resource:<kind>` and `op:<kind>.<sub-op>` slug, plus an `event:<…>` slug identifying the transition (e.g. `event:lifecycle.succeeded`, `event:approval.request`, `event:drift.detected`, `event:component.unhealthy`, `event:component.recovered`, `event:install.degraded`) and zero or more `outcome:<…>` slugs (`outcome:completion` on terminal events, plus `outcome:failures` on failed or cancelled transitions). Consumers can route by slug prefix without re-implementing the classifier. |
 | `data.kind`                    | `workflow` or `workflow_step`.                                                               |
 | `data.transition`              | `started`, `succeeded`, `failed`, or `cancelled`.                                            |
 | `data.org_id`                  | Org id.                                                                                      |

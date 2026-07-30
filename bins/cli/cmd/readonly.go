@@ -17,6 +17,7 @@ const readOnlyEnvVar = "NUON_READ_ONLY"
 var readOnlyCommands = map[string]struct{}{
 	"list":                 {},
 	"get":                  {},
+	"health":               {},
 	"current":              {},
 	"current-inputs":       {},
 	"latest":               {},

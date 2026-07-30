@@ -194,6 +194,7 @@
               "guides/control-plane-integration",
               "guides/github-actions",
               "guides/webhooks",
+              "guides/component-health",
               "guides/slack",
               "guides/ai-and-apps"
             ]

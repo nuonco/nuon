@@ -3,12 +3,13 @@ import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
 
-export type TRemovedResourceKind = 'component' | 'action' | 'runbook'
+export type TRemovedResourceKind = 'component' | 'action' | 'runbook' | 'probe'
 
 const actionVerb: Record<TRemovedResourceKind, string> = {
   component: 'deployed',
   action: 'run',
   runbook: 'run',
+  probe: 'run',
 }
 
 export const RemovedFromAppConfigBadge = ({

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
@@ -20,10 +20,28 @@ export const InstallResourcesTableContainer = ({
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const [searchParams] = useSearchParams()
-  const [kind, setKind] = useState(searchParams.get('kind') ?? '')
-  const [namespace, setNamespace] = useState(searchParams.get('namespace') ?? '')
-  const [health, setHealth] = useState(searchParams.get('health') ?? '')
+  // The URL is the source of truth for filters, both ways: deep links (like a
+  // degraded-health message linking to ?health=degraded) apply even when this
+  // page is already mounted, and picking a filter updates the URL so it's
+  // shareable and survives back/forward.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const kind = searchParams.get('kind') ?? ''
+  const namespace = searchParams.get('namespace') ?? ''
+  const health = searchParams.get('health') ?? ''
+
+  const setFilter = useCallback(
+    (key: string) => (value: string) => {
+      setSearchParams(
+        (params) => {
+          if (value) params.set(key, value)
+          else params.delete(key)
+          return params
+        },
+        { replace: true }
+      )
+    },
+    [setSearchParams]
+  )
 
   const { data: resources, isLoading } = useQuery({
     queryKey: ['install-resources', org?.id, install?.id],
@@ -51,6 +69,20 @@ export const InstallResourcesTableContainer = ({
     componentsResult?.data?.forEach((component) => {
       if (component?.id) {
         map[component.id] = component?.component?.name || component.id
+      }
+    })
+    return map
+  }, [componentsResult])
+
+  // Structured twin of the "(downstream of X)" description suffix — present
+  // only while both the component and its dependency are bad.
+  const downstreamOf = useMemo(() => {
+    const map: Record<string, string> = {}
+    componentsResult?.data?.forEach((component) => {
+      const value = (component?.health_status_v2?.metadata as Record<string, unknown> | undefined)
+        ?.downstream_of
+      if (component?.id && typeof value === 'string' && value) {
+        map[component.id] = value
       }
     })
     return map
@@ -87,8 +119,8 @@ export const InstallResourcesTableContainer = ({
   )
 
   const componentGroups = useMemo(
-    () => groupComponentResources(filteredResources, componentNames),
-    [filteredResources, componentNames]
+    () => groupComponentResources(filteredResources, componentNames, downstreamOf),
+    [filteredResources, componentNames, downstreamOf]
   )
   const sandboxGroups = useMemo(
     () => groupSandboxResources(filteredResources),
@@ -105,9 +137,9 @@ export const InstallResourcesTableContainer = ({
       health={health}
       kindOptions={kindOptions}
       namespaceOptions={namespaceOptions}
-      onKindChange={setKind}
-      onNamespaceChange={setNamespace}
-      onHealthChange={setHealth}
+      onKindChange={setFilter('kind')}
+      onNamespaceChange={setFilter('namespace')}
+      onHealthChange={setFilter('health')}
     />
   )
 }

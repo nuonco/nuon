@@ -44,6 +44,7 @@ func (s *Service) Components(ctx context.Context, installID string, offset, limi
 			"ID",
 			"NAME",
 			"ENABLED",
+			"HEALTH",
 			"STATUS",
 			"LATEST DEPLOY",
 			"LATEST RELEASE",
@@ -54,10 +55,15 @@ func (s *Service) Components(ctx context.Context, installID string, offset, limi
 		if comp.Enabled != nil {
 			enabled = strconv.FormatBool(*comp.Enabled)
 		}
+		health := comp.HealthStatus
+		if health == "" || health == "not-applicable" {
+			health = "-"
+		}
 		args := []string{
 			comp.Component.ID,
 			comp.Component.Name,
 			enabled,
+			health,
 		}
 		if len(comp.InstallDeploys) > 0 {
 			args = append(args, []string{

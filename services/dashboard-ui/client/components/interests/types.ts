@@ -34,6 +34,18 @@ export interface ResourceCfg {
   // independent of lifecycle outcome. Only meaningful for app_branches
   // (see SupportsConfigSynced); harmless but never matches on others.
   config_synced?: boolean
+  // component_health is one flag covering both directions of a component's
+  // live health: it fires when health crosses into degraded/unhealthy AND
+  // when it recovers, so a channel told about a failure always hears the
+  // resolution. A verdict of unknown (runner offline / stale observations)
+  // never notifies — runner inactivity has its own event. Independent of
+  // `outcome`. Only meaningful for components (see SupportsComponentHealth).
+  component_health?: boolean
+  // install_degraded is the same idea at install level: it fires when the
+  // install's composite health crosses into degraded/unhealthy and when it
+  // returns to healthy. Independent of `outcome`. Only meaningful for
+  // installs (see SupportsInstallDegraded).
+  install_degraded?: boolean
 }
 
 export interface Interests {
@@ -67,9 +79,11 @@ export const RESOURCE_LABELS: Record<ResourceKind, string> = {
 }
 
 export const RESOURCE_DESCRIPTIONS: Record<ResourceKind, string> = {
-  installs: 'Install provision, deprovision, reprovision lifecycle.',
+  installs:
+    'Install provision, deprovision, reprovision lifecycle. Toggle install degraded to be notified when install health degrades and when it recovers.',
   stacks: 'Install stack lifecycle, including when a stack version becomes active.',
-  components: 'Per-component deploy and teardown. Toggle drift detected to be notified when drift is found.',
+  components:
+    'Per-component deploy and teardown. Toggle drift detected to be notified when drift is found. Toggle component health to be notified when a component becomes unhealthy and when it recovers.',
   sandboxes: 'Sandbox provision, reprovision, deprovision. Toggle drift detected to be notified when drift is found.',
   install_configurations: 'Install input updates and secret syncs.',
   runners: 'Runner provision and reprovision.',

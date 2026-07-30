@@ -155,7 +155,10 @@ const ENVELOPE_FIELDS: FieldRow[] = [
         identifying the transition (e.g.{' '}
         <span className="font-mono">event:lifecycle.succeeded</span>,{' '}
         <span className="font-mono">event:approval.request</span>,{' '}
-        <span className="font-mono">event:drift.detected</span>) and zero or
+        <span className="font-mono">event:drift.detected</span>,{' '}
+        <span className="font-mono">event:component.unhealthy</span>,{' '}
+        <span className="font-mono">event:component.recovered</span>,{' '}
+        <span className="font-mono">event:install.degraded</span>) and zero or
         more <span className="font-mono">outcome:&lt;…&gt;</span> slugs (
         <span className="font-mono">outcome:completion</span> on terminal
         events, plus <span className="font-mono">outcome:failures</span> on

@@ -213,6 +213,22 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	toggleSyncCmd.MarkFlagsMutuallyExclusive("enable", "disable")
 	installsCmds.AddCommand(toggleSyncCmd)
 
+	var healthAppID, healthLabels string
+	healthCmd := &cobra.Command{
+		Use:   "health",
+		Short: "Show component health across installs",
+		Long: "Show the component health rollup for every install, optionally narrowed by app or install labels.\n\n" +
+			"Intended for gating a rollout: poll this with --output agent and continue only once all_healthy is true.",
+		Args: cobra.NoArgs,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.Health(cmd.Context(), healthAppID, healthLabels, PrintJSON)
+		}),
+	}
+	healthCmd.Flags().StringVar(&healthAppID, "app-id", "", "Only include installs of this app")
+	healthCmd.Flags().StringVar(&healthLabels, "labels", "", "Only include installs matching these labels (key:value,key:value)")
+	installsCmds.AddCommand(healthCmd)
+
 	var compOffset, compLimit int
 	componentsCmd := &cobra.Command{
 		Use:   "components",
