@@ -11,6 +11,9 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/filecache"
+	pkgkafka "github.com/nuonco/nuon/pkg/kafka"
+	pkgmetrics "github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -23,6 +26,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
 	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
@@ -37,6 +41,7 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitteractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -49,6 +54,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -97,10 +103,28 @@ func (e *FlowTestSuite) SetupSuite() {
 		fx.Provide(github.New),
 		fx.Provide(metrics.New),
 		fx.Provide(propagator.New),
+		fx.Provide(func(cfg *internal.Config) *querycollector.Collector {
+			if cfg.DebugEnableQueryCollector {
+				return querycollector.NewCollector(5000)
+			}
+			return nil
+		}),
 		fx.Provide(psql.AsPSQL(psql.New)),
 		fx.Provide(ch.AsCH(ch.New)),
 
 		fx.Provide(blobstore.NewService),
+		fx.Provide(func(cfg *internal.Config, l *zap.Logger) *filecache.FileCache {
+			cache, err := filecache.New(filecache.Options{
+				Dir:      cfg.TemporalBlobCacheDir,
+				MaxCount: cfg.TemporalBlobCacheMaxCount,
+				MaxBytes: int64(cfg.TemporalBlobCacheMaxSizeMB) * 1024 * 1024,
+			})
+			if err != nil {
+				l.Warn("failed to create blob cache, caching disabled", zap.Error(err))
+				return nil
+			}
+			return cache
+		}),
 		fx.Provide(gzip.AsGzip(gzip.New)),
 		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
 		fx.Provide(blob.AsBlob(blob.New)),
@@ -114,6 +138,9 @@ func (e *FlowTestSuite) SetupSuite() {
 		fx.Provide(analytics.New),
 		fx.Provide(analytics.NewTemporal),
 		fx.Provide(cloudformation.NewTemplates),
+		fx.Provide(func(l *zap.Logger, mw pkgmetrics.Writer) *pkgkafka.Producer {
+			return pkgkafka.DisabledProducer(l, mw)
+		}),
 
 		// helpers (needed by workflowactivities)
 		fx.Provide(emitterclient.New),
@@ -126,10 +153,12 @@ func (e *FlowTestSuite) SetupSuite() {
 		fx.Provide(signaldb.NewPayloadConverter),
 		fx.Provide(workflowactivities.New),
 		fx.Provide(jobactivities.New),
+		fx.Provide(controlplanejob.NewActivities),
 		fx.Provide(emitteractivities.New),
 		fx.Provide(signal.NewSignalLifecycleActivities),
 		fx.Provide(queueactivities.New),
 		fx.Provide(handleractivities.New),
+		fx.Provide(enqueuer.New),
 		fx.Provide(queueclient.New),
 
 		// shared activities aggregation (registers all activities)
@@ -149,6 +178,7 @@ func (e *FlowTestSuite) SetupSuite() {
 
 		// invokers
 		fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
+		fx.Invoke(cleanupStaleWorkflows),
 		fx.Invoke(worker.WithWorkers(func([]worker.Worker) {})),
 
 		fx.Populate(&e.service),

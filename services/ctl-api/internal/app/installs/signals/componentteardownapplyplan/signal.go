@@ -58,6 +58,7 @@ var (
 	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
 	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
 	_ signal.SignalWithMaxAutoRetries   = (*Signal)(nil)
+	_ signal.SignalWithRetryGroup       = (*Signal)(nil)
 	_ signal.SignalWithOnRetry          = (*Signal)(nil)
 )
 
@@ -73,8 +74,9 @@ func (s *Signal) OnRetry(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) AutoRetry() bool { return true }
-func (s *Signal) MaxRetries() int { return 15 }
+func (s *Signal) AutoRetry() bool  { return true }
+func (s *Signal) MaxRetries() int  { return 15 }
+func (s *Signal) RetryGroup() bool { return true }
 
 func (s *Signal) MaxAutoRetries(ctx workflow.Context) int {
 	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)

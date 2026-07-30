@@ -364,10 +364,11 @@ func (h *WebhookSignalLifecycleHook) AfterPhase(ctx context.Context, event signa
 		return nil
 	}
 
-	suppress, err := suppressParkedFlowCompletion(ctx, h.db, event, outcome)
+	suppress, err := resolveFlowCompletionOutcome(ctx, h.db, event, &outcome)
 	if err != nil {
-		h.l.Warn("unable to verify workflow status before lifecycle completion", zap.Error(err))
-	} else if suppress {
+		return fmt.Errorf("unable to resolve workflow outcome before lifecycle completion: %w", err)
+	}
+	if suppress {
 		return nil
 	}
 
@@ -384,7 +385,6 @@ func (h *WebhookSignalLifecycleHook) AfterPhase(ctx context.Context, event signa
 type workflowStatusRow struct {
 	ID        string
 	DeletedAt soft_delete.DeletedAt
-	OwnerType string
 	Status    app.CompositeStatus `gorm:"type:jsonb;serializer:json"`
 }
 
@@ -392,7 +392,19 @@ func (workflowStatusRow) TableName() string {
 	return (&app.Workflow{}).TableName()
 }
 
-func suppressParkedFlowCompletion(ctx context.Context, db *gorm.DB, event signal.SignalPhaseEvent, outcome signal.SignalPhaseOutcome) (bool, error) {
+// resolveFlowCompletionOutcome reconciles an execute-workflow completion
+// event against the workflow row's domain outcome. Resident flows complete
+// their queue signal independently of the workflow row, so the transport
+// status can read "success" while the workflow is actually parked
+// (failed-pending-retry), errored, or cancelled.
+//
+// Returns suppress=true when the workflow is parked awaiting retry — the
+// re-warmed run emits the real completion later. For terminal error /
+// cancelled rows it rewrites outcome in place so the published transition,
+// status, and interests classification reflect the domain outcome. On DB
+// lookup failure it returns an error and callers must not publish: a
+// dropped notification is recoverable noise, a false "succeeded" is not.
+func resolveFlowCompletionOutcome(ctx context.Context, db *gorm.DB, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (bool, error) {
 	if db == nil ||
 		event.SignalType != signalTypeExecuteWorkflow ||
 		event.Phase != signal.SignalPhaseExecute ||
@@ -402,14 +414,33 @@ func suppressParkedFlowCompletion(ctx context.Context, db *gorm.DB, event signal
 	}
 
 	var flw workflowStatusRow
-	if err := db.WithContext(ctx).
-		Select("owner_type", "status").
-		Where(workflowStatusRow{ID: event.WorkflowID}).
-		First(&flw).Error; err != nil {
+	if err := retryDBRead(ctx, func() error {
+		return db.WithContext(ctx).
+			Select("status").
+			Where(workflowStatusRow{ID: event.WorkflowID}).
+			First(&flw).Error
+	}); err != nil {
 		return false, fmt.Errorf("unable to load workflow status for lifecycle completion: %w", err)
 	}
 
-	return flw.OwnerType == "installs" && flw.Status.Status == app.StatusFailedPendingRetry, nil
+	switch flw.Status.Status {
+	case app.StatusFailedPendingRetry:
+		return true, nil
+	case app.StatusError:
+		outcome.Status = signal.SignalStatusError
+		outcome.ErrMessage = flw.Status.StatusHumanDescription
+		if outcome.ErrMessage == "" {
+			outcome.ErrMessage = "workflow failed"
+		}
+	case app.StatusCancelled:
+		outcome.Status = signal.SignalStatusCancelled
+		outcome.ErrMessage = flw.Status.StatusHumanDescription
+		if outcome.ErrMessage == "" {
+			outcome.ErrMessage = "workflow cancelled"
+		}
+	}
+
+	return false, nil
 }
 
 // CloudEvents v1.0 envelope.
@@ -1608,9 +1639,11 @@ func (h *WebhookSignalLifecycleHook) listOrgWebhookTargets(ctx context.Context, 
 	}
 
 	var webhooks []app.Webhook
-	if err := h.db.WithContext(ctx).
-		Where("org_id = ?", orgID).
-		Find(&webhooks).Error; err != nil {
+	if err := retryDBRead(ctx, func() error {
+		return h.db.WithContext(ctx).
+			Where("org_id = ?", orgID).
+			Find(&webhooks).Error
+	}); err != nil {
 		return nil, fmt.Errorf("unable to list org workflow lifecycle webhooks: %w", err)
 	}
 

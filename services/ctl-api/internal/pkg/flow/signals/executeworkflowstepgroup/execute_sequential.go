@@ -37,11 +37,11 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 		}
 
 		r := result.Result
-		switch r.Directive {
-		case directive.StepContinue:
+		switch resolveStepAction(r.Directive, s.ResidentFlow, result.ManualRetry) {
+		case actionAdvance:
 			continue
 
-		case directive.StepRetry:
+		case actionRetryStep:
 			// Clone the step for individual retry. The next iteration
 			// picks up the pending clone.
 			if err := CloneStepForRetry(ctx, step.ID, s.WorkflowID); err != nil {
@@ -50,7 +50,12 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			}
 			continue
 
-		case directive.StepStop:
+		case actionStopGroup:
+			if r.Directive != directive.StepStop {
+				l.Warn("unknown step directive, failing closed to group stop",
+					zap.String("step_id", step.ID),
+					zap.String("directive", string(r.Directive)))
+			}
 			siblingStatus := r.SiblingStatus
 			if siblingStatus == "" {
 				siblingStatus = app.StatusDiscarded
@@ -58,11 +63,11 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			s.cancelRemainingSteps(ctx, l, steps, step.ID, siblingStatus)
 			return s.writeStepGroupDirective(ctx, directive.GroupStop)
 
-		case directive.StepRetryGroup:
+		case actionRetryGroup:
 			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusDiscarded)
 			return s.writeStepGroupDirective(ctx, directive.GroupRetryGroup)
 
-		case directive.StepSkipGroup:
+		case actionSkipGroup:
 			siblingStatus := r.SiblingStatus
 			if siblingStatus == "" {
 				siblingStatus = app.StatusDiscarded
@@ -70,11 +75,11 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			s.cancelRemainingSteps(ctx, l, steps, step.ID, siblingStatus)
 			return s.writeStepGroupDirective(ctx, directive.GroupSkipGroup)
 
-		case directive.StepAwaitApproval:
+		case actionAwaitApproval:
 			return s.writeStepGroupDirective(ctx, directive.GroupAwaitApproval)
 
-		default:
-			continue
+		case actionAwaitRetry:
+			return s.writeStepGroupDirective(ctx, directive.GroupAwaitRetry)
 		}
 	}
 }

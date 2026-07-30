@@ -23,6 +23,8 @@ type RetryGroupResponse struct {
 }
 
 func (s *Signal) retryGroupHandler(ctx workflow.Context, req RetryGroupRequest) (*RetryGroupResponse, error) {
+	defer s.beginUpdate()()
+
 	step, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)

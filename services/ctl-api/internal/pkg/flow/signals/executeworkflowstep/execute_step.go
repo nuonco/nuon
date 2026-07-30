@@ -113,6 +113,9 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 			}
 			return nil
 		}
+		if callback.IsCancelled(stepErr) {
+			return s.handleStepCancelled(ctx, l)
+		}
 		return s.handleStepError(ctx, l, step, flw, stepErr)
 	}
 

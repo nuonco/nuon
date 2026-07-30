@@ -127,7 +127,7 @@ func (a *Activities) createOnboardingInstall(ctx context.Context, input *CreateO
 		QueueID:   workflowsQueue.ID,
 		OwnerID:   workflow.ID,
 		OwnerType: "install_workflows",
-		Signal:    &executeflow.Signal{WorkflowID: workflow.ID},
+		Signal:    executeflow.NewSignal(workflow.ID),
 	}); err != nil {
 		return nil, fmt.Errorf("enqueue executeflow signal: %w", err)
 	}

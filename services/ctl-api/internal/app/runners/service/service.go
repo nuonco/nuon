@@ -243,6 +243,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 		runnerJobs := sandboxMode.Group("/runner-jobs")
 		runnerJobs.GET("", s.AdminListAllSandboxConfigs)
+		runnerJobs.PUT("/:job_type", s.AdminUpsertSandboxConfig)
 		runnerJobs.POST("/disable-all", s.AdminDisableAllSandboxConfigs)
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -18,7 +19,7 @@ import (
 // runner-result chokepoint writes for e.g. a missing IAM permission.
 func (e *FlowTestSuite) seedDeployWithSkipAutoRetry(ctx context.Context) *app.InstallDeploy {
 	orgID, err := cctx.OrgIDFromContext(ctx)
-	require.Nil(e.T(), err)
+	require.NoError(e.T(), err)
 
 	deploy := app.InstallDeploy{
 		OrgID:              orgID,
@@ -37,8 +38,31 @@ func (e *FlowTestSuite) seedDeployWithSkipAutoRetry(ctx context.Context) *app.In
 			},
 		},
 	}
-	res := e.service.DB.WithContext(ctx).Create(&deploy)
-	require.Nil(e.T(), res.Error)
+
+	tx := e.service.DB.WithContext(ctx).Begin()
+	require.NoError(e.T(), tx.Error)
+	require.NoError(e.T(), tx.Exec("SET LOCAL session_replication_role = replica").Error)
+	require.NoError(e.T(), tx.Omit(clause.Associations).Create(&deploy).Error)
+
+	runnerJob := app.RunnerJob{
+		OwnerID:   deploy.ID,
+		OwnerType: "install_deploys",
+		Status:    app.RunnerJobStatusFailed,
+		Group:     app.RunnerJobGroupDeploy,
+		Operation: app.RunnerJobOperationTypeApplyPlan,
+	}
+	require.NoError(e.T(), tx.Omit(clause.Associations).Create(&runnerJob).Error)
+	runnerJobExecution := app.RunnerJobExecution{
+		RunnerJobID: runnerJob.ID,
+		Status:      app.RunnerJobExecutionStatusFailed,
+	}
+	require.NoError(e.T(), tx.Omit(clause.Associations).Create(&runnerJobExecution).Error)
+	runnerJobExecutionResult := app.RunnerJobExecutionResult{
+		RunnerJobExecutionID: runnerJobExecution.ID,
+		CompositeError:       deploy.CompositeError,
+	}
+	require.NoError(e.T(), tx.Omit(clause.Associations).Create(&runnerJobExecutionResult).Error)
+	require.NoError(e.T(), tx.Commit().Error)
 	return &deploy
 }
 

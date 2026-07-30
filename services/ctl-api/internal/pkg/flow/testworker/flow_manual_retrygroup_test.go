@@ -70,11 +70,14 @@ func (e *FlowTestSuite) TestManualRetryGroup() {
 	// Clone generation (GroupRetryIdx=1) should also have 2 steps
 	require.Equal(e.T(), 2, g1Generations[1], "cloned group should have 2 steps")
 
-	// Original steps should be discarded
+	// Original steps are superseded: group retry keeps their final status
+	// (success/error) for dashboard history and marks them retried.
 	for _, step := range steps {
 		if step.GroupIdx == 1 && step.GroupRetryIdx == 0 {
-			require.Equal(e.T(), app.StatusDiscarded, step.Status.Status,
-				"original step %s should be discarded", step.Name)
+			require.True(e.T(), step.Retried,
+				"original step %s should be marked retried", step.Name)
+			require.NotEqual(e.T(), app.StatusPending, step.Status.Status,
+				"original step %s should keep a terminal status", step.Name)
 		}
 	}
 }
@@ -83,7 +86,7 @@ func (e *FlowTestSuite) TestManualRetryGroup() {
 // whose signal implements RetryGroup correctly clones the entire group (not just
 // the single step). The test uses ManualRetryGroupCountdownSignal which:
 //   - Auto-retries once (group clone, generation 1) and fails again
-//   - Exhausts max retries → workflow errors
+//   - Exhausts the auto-retry budget → parks as failed-pending-retry
 //   - Manual RetryStep triggers another group clone (generation 2)
 //   - Signal sees GroupRetryCount=2 and succeeds
 func (e *FlowTestSuite) TestManualRetryStepWithRetryGroup() {
@@ -109,8 +112,10 @@ func (e *FlowTestSuite) TestManualRetryStepWithRetryGroup() {
 
 	e.enqueueFlow(ctx, queueID, flw, ownerID, ownerType)
 
-	// Phase 1: auto-retry produces generation 1, which also fails → workflow errors
-	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusError)
+	// Phase 1: auto-retry produces generation 1, which also fails. The auto
+	// budget (MaxAutoRetries=1) is exhausted, so the step parks and the
+	// workflow reports failed-pending-retry.
+	e.waitForWorkflowStatus(ctx, flw.ID, app.StatusFailedPendingRetry)
 
 	// Find the most recent failed apply step (highest GroupRetryIdx)
 	steps := e.getStepsByWorkflow(ctx, flw.ID)

@@ -61,7 +61,7 @@ func (a *Activities) ForwardRetryStepToGroup(ctx context.Context, req ForwardRet
 
 	var resp ForwardRetryStepToGroupResponse
 	if err := handle.Get(ctx, &resp); err != nil {
-		return nil, fmt.Errorf("retry-step failed on group: %w", err)
+		return nil, updateOutcomeError("retry-step failed on group", err)
 	}
 	return &resp, nil
 }
@@ -139,7 +139,7 @@ func (a *Activities) ForwardApproveStepToGroup(ctx context.Context, req ForwardA
 
 	var resp ForwardApproveStepToGroupResponse
 	if err := handle.Get(ctx, &resp); err != nil {
-		return nil, fmt.Errorf("approve-step failed on group: %w", err)
+		return nil, updateOutcomeError("approve-step failed on group", err)
 	}
 	return &resp, nil
 }
@@ -152,7 +152,8 @@ type ForwardSkipStepToGroupRequest struct {
 
 // ForwardSkipStepToGroupResponse wraps the group's skip-step response.
 type ForwardSkipStepToGroupResponse struct {
-	Skippable bool `json:"skippable"`
+	Skippable bool   `json:"skippable"`
+	Directive string `json:"directive,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -178,7 +179,7 @@ func (a *Activities) ForwardSkipStepToGroup(ctx context.Context, req ForwardSkip
 
 	var resp ForwardSkipStepToGroupResponse
 	if err := handle.Get(ctx, &resp); err != nil {
-		return nil, fmt.Errorf("skip-step failed on group: %w", err)
+		return nil, updateOutcomeError("skip-step failed on group", err)
 	}
 	return &resp, nil
 }

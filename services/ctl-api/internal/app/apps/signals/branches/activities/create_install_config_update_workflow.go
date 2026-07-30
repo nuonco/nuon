@@ -93,7 +93,7 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 		QueueID:   queue.ID,
 		OwnerID:   wf.ID,
 		OwnerType: "install_workflows",
-		Signal:    &executeflow.Signal{WorkflowID: wf.ID},
+		Signal:    executeflow.NewSignal(wf.ID),
 		Callback:  input.Callback,
 	}); err != nil {
 		return nil, fmt.Errorf("unable to enqueue workflow for install %s: %w", input.InstallID, err)

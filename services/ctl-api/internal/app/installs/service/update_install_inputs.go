@@ -172,9 +172,7 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 	}, "", ""); err != nil {
 		return nil, fmt.Errorf("enqueue signal: %w", err)
 	}
-	if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
-		WorkflowID: workflow.ID,
-	}, workflow.ID, "install_workflows"); err != nil {
+	if err := s.enqueueInstallSignal(ctx, workflowsQueueID, executeflow.NewSignal(workflow.ID), workflow.ID, "install_workflows"); err != nil {
 		return nil, fmt.Errorf("enqueue signal: %w", err)
 	}
 

@@ -48,6 +48,25 @@ func (a *SignalLifecycleActivities) emitActivityLatency(ctx context.Context, met
 	}))
 }
 
+// emitHookDropped counts an after-phase hook failure. After-phase errors are
+// never retried at the activity level, so each increment is a notification
+// permanently dropped for that hook.
+func (a *SignalLifecycleActivities) emitHookDropped(ctx context.Context, hookName string, event SignalPhaseEvent) {
+	if a.mw == nil {
+		return
+	}
+	namespace := ""
+	if info := activity.GetInfo(ctx); info.WorkflowNamespace != "" {
+		namespace = info.WorkflowNamespace
+	}
+	a.mw.Incr("signal_lifecycle.after_phase.hook_dropped", metrics.ToTags(map[string]string{
+		"namespace":   namespace,
+		"hook":        hookName,
+		"signal_type": string(event.SignalType),
+		"phase":       string(event.Phase),
+	}))
+}
+
 type RunSignalLifecycleBeforePhaseRequest struct {
 	Event SignalPhaseEvent `json:"event" validate:"required"`
 }
@@ -150,9 +169,14 @@ func (a *SignalLifecycleActivities) RunSignalLifecycleAfterPhase(ctx context.Con
 		processedHooks++
 		if err := hook.AfterPhase(ctx, req.Event, req.Outcome); err != nil {
 			failedHooks++
-			l.Error("after-phase hook failed",
+			// Fail open: the activity never re-fires the whole hook set
+			// (that would duplicate already-delivered Slack posts and
+			// webhooks), so a hook error here means the notification is
+			// dropped for good. Make the drop loud.
+			l.Error("after-phase hook failed; notification dropped",
 				zap.String("hook", hook.Name()),
 				zap.Error(err))
+			a.emitHookDropped(ctx, hook.Name(), req.Event)
 		}
 	}
 

@@ -27,6 +27,7 @@ const (
 	DirectiveRetryGroup    = directive.StepRetryGroup
 	DirectiveSkipGroup     = directive.StepSkipGroup
 	DirectiveAwaitApproval = directive.StepAwaitApproval
+	DirectiveAwaitRetry    = directive.StepAwaitRetry
 )
 
 // Signal encapsulates the lifecycle of executing all steps within a single
@@ -69,6 +70,8 @@ type Signal struct {
 	// DerivedTimeout is set at dispatch time from the group's TimeoutSeconds.
 	// When non-zero, Timeout() returns this instead of the hardcoded fallback.
 	DerivedTimeout time.Duration `json:"derived_timeout,omitempty"`
+
+	ResidentFlow bool `json:"resident_flow,omitempty"`
 
 	// stepSignalIDs tracks in-flight step signal IDs for cancellation propagation.
 	stepSignalIDs []string

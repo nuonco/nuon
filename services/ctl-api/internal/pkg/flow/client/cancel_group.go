@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	tclient "go.temporal.io/sdk/client"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // CancelGroupRequest is the input for cancelling all steps in a group.
@@ -30,21 +27,8 @@ func (c *Client) CancelGroup(ctx context.Context, req *CancelGroupRequest) (*Can
 		return nil, fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}
 
-	handle, err := handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
-		UpdateName:   "cancel-group",
-		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		Args: []any{
-			executeflow.CancelGroupRequest{
-				StepID: req.StepID,
-			},
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to send cancel-group update: %w", err)
-	}
-
 	var resp CancelGroupResponse
-	if err := handle.Get(ctx, &resp); err != nil {
+	if err := c.updateWithStartUntilCompleted(ctx, qs, "cancel-group", &resp, executeflow.CancelGroupRequest{StepID: req.StepID}); err != nil {
 		return nil, fmt.Errorf("unable to get cancel-group response: %w", err)
 	}
 

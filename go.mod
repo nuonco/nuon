@@ -123,9 +123,9 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stoewer/go-strcase v1.3.0
 	github.com/stretchr/testify v1.11.1
-	github.com/theory/jsonpath v0.12.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/swag v1.16.6
+	github.com/theory/jsonpath v0.12.0
 	github.com/tidwall/gjson v1.17.1
 	github.com/tliron/commonlog v0.2.21
 	github.com/tliron/glsp v0.2.2
@@ -162,6 +162,7 @@ require (
 	gorm.io/driver/sqlite v1.4.3
 	gorm.io/gorm v1.25.10
 	gorm.io/plugin/soft_delete v1.2.1
+	hegel.dev/go/hegel v0.1.3
 	helm.sh/helm/v3 v3.18.6
 	helm.sh/helm/v4 v4.0.0-alpha.1
 	k8s.io/api v0.34.2
@@ -569,7 +570,7 @@ require (
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/go-cmp v0.7.0
-	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/go-querystring v1.2.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/gorilla/handlers v1.5.2 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect

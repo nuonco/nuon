@@ -433,9 +433,7 @@ func (s *Signal) processOutputs(ctx workflow.Context, install *app.Install, vers
 				OwnerID:   install.ID,
 				OwnerType: "installs",
 				QueueName: installWorkflowsQueueName,
-				Signal: &executeflow.Signal{
-					WorkflowID: inputResp.WorkflowID,
-				},
+				Signal:    executeflow.NewSignal(inputResp.WorkflowID),
 			}); err != nil {
 				l.Warn("unable to enqueue input update workflow signal", zap.Error(err))
 			}

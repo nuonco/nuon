@@ -91,6 +91,9 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		workflowmanager.WithTerminateThreshold(terminateThreshold),
 		workflowmanager.WithCheckInterval(hintPeriod),
 		workflowmanager.WithMetricsWriter(q.mw),
+		workflowmanager.WithDeferRestart(func() bool {
+			return q.activeWorkers > 0
+		}),
 		workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
 			_, err := activities.AwaitGetQueueByQueueID(gCtx, q.queueID)
 			if err != nil {
@@ -152,11 +155,19 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 	q.setStatus(ctx, l, QueueStatusReady)
 	q.ready = true
 
-	if _, err := workflow.AwaitWithTimeout(ctx, maxAliveTime, func() bool {
+	readyToFinish, err := workflow.AwaitWithTimeout(ctx, maxAliveTime, func() bool {
 		// Wait until active workers drain before restarting or stopping.
 		return (q.restarted || q.stopped || q.isIdle(ctx))
-	}); err != nil {
+	})
+	if err != nil {
 		return false, err
+	}
+	if !readyToFinish && q.activeWorkers > 0 {
+		if err := workflow.Await(ctx, func() bool {
+			return q.activeWorkers == 0 || q.stopped
+		}); err != nil {
+			return false, err
+		}
 	}
 
 	// This sets a drain timeout on the queue, such that once we've decided it needs to be idle, slept, or restarted

@@ -199,10 +199,11 @@ func (h *SlackSignalLifecycleHook) AfterPhase(ctx context.Context, event signal.
 		return nil
 	}
 
-	suppress, err := suppressParkedFlowCompletion(ctx, h.db, event, outcome)
+	suppress, err := resolveFlowCompletionOutcome(ctx, h.db, event, &outcome)
 	if err != nil {
-		h.l.Warn("unable to verify workflow status before lifecycle completion", zap.Error(err))
-	} else if suppress {
+		return fmt.Errorf("unable to resolve workflow outcome before lifecycle completion: %w", err)
+	}
+	if suppress {
 		return nil
 	}
 
@@ -250,12 +251,14 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 	// integration, so this short-circuit removes the dominant DB cost from
 	// the activity's hot path.
 	var links []app.SlackOrgLink
-	if err := h.db.WithContext(ctx).
-		Where(app.SlackOrgLink{
-			OrgID:  event.OrgID,
-			Status: app.SlackOrgLinkStatusVerified,
-		}).
-		Find(&links).Error; err != nil {
+	if err := retryDBRead(ctx, func() error {
+		return h.db.WithContext(ctx).
+			Where(app.SlackOrgLink{
+				OrgID:  event.OrgID,
+				Status: app.SlackOrgLinkStatusVerified,
+			}).
+			Find(&links).Error
+	}); err != nil {
 		h.emitError(ctx, phasePrefix)
 		return fmt.Errorf("unable to list slack org links for slack lifecycle: %w", err)
 	}
@@ -269,9 +272,11 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 	}
 
 	var installations []app.SlackInstallation
-	if err := h.db.WithContext(ctx).
-		Where("team_id IN ? AND status = ?", teamIDs, app.SlackInstallationStatusActive).
-		Find(&installations).Error; err != nil {
+	if err := retryDBRead(ctx, func() error {
+		return h.db.WithContext(ctx).
+			Where("team_id IN ? AND status = ?", teamIDs, app.SlackInstallationStatusActive).
+			Find(&installations).Error
+	}); err != nil {
 		h.emitError(ctx, phasePrefix)
 		return fmt.Errorf("unable to list slack installations for slack lifecycle: %w", err)
 	}
@@ -350,12 +355,14 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 		}
 
 		var subs []app.SlackChannelSubscription
-		if err := h.db.WithContext(ctx).
-			Where(app.SlackChannelSubscription{
-				OrgLinkID: link.ID,
-				OrgID:     event.OrgID,
-			}).
-			Find(&subs).Error; err != nil {
+		if err := retryDBRead(ctx, func() error {
+			return h.db.WithContext(ctx).
+				Where(app.SlackChannelSubscription{
+					OrgLinkID: link.ID,
+					OrgID:     event.OrgID,
+				}).
+				Find(&subs).Error
+		}); err != nil {
 			logger.Warn("failed to list channel subscriptions",
 				zap.String("team_id", link.TeamID), zap.Error(err))
 			sendErrs = append(sendErrs, err)

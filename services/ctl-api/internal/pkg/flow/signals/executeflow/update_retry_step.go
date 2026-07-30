@@ -22,15 +22,23 @@ type RetryStepResponse struct {
 	Retryable  bool   `json:"retryable"`
 }
 
-// retryStepHandler forwards the retry request to the group, which forwards to
-// the step. The step's createStepRetryHandler writes the terminal directive and
-// unblocks Execute(). The queue signal completes, the group reads the directive,
-// and the group's sequential loop handles cloning.
+// retryStepHandler forwards the retry request through the group to the step.
+// Legacy groups clone the retry themselves; resident flows clone here after
+// descendants unwind so warm and cold updates share one durable owner.
 //
-// Flow: API → flow (here) → group → step → directive → group clones
+// Flow: API → flow (here) → group → step → directive → clone owner
 func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*RetryStepResponse, error) {
-	s.updatesInFlight++
-	defer func() { s.updatesInFlight-- }()
+	defer s.beginUpdate()()
+	if s.Resident {
+		if s.retryInFlight == nil {
+			s.retryInFlight = make(map[string]bool)
+		}
+		if s.retryInFlight[req.StepID] {
+			return &RetryStepResponse{WorkflowID: s.WorkflowID, Retryable: true}, nil
+		}
+		s.retryInFlight[req.StepID] = true
+		defer delete(s.retryInFlight, req.StepID)
+	}
 
 	step, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
 	if err != nil {
@@ -40,6 +48,12 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 	if step.WorkflowStepGroupID == "" {
 		return nil, fmt.Errorf("step %s has no group ID, cannot forward retry", req.StepID)
 	}
+	stepDirective := directive.Step(step.ResultDirective)
+	residentManualRetry := s.Resident && (stepDirective == directive.StepAwaitRetry || stepDirective == directive.StepAwaitApproval)
+	if s.Resident && !residentManualRetry {
+		return &RetryStepResponse{WorkflowID: s.WorkflowID, Retryable: false}, nil
+	}
+	wasRetried := step.Retried
 
 	_, err = workflowactivities.AwaitForwardRetryStepToGroup(ctx, workflowactivities.ForwardRetryStepToGroupRequest{
 		StepID:      req.StepID,
@@ -49,29 +63,28 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 		return nil, fmt.Errorf("unable to forward retry to group: %w", err)
 	}
 
-	// Parked flow (or a resident host re-warming before the conductor has
-	// started): the group isn't live to clone, so clone here and wake/seed the
-	// loop. !executeStarted covers the re-warm race where this update lands
-	// before executeFlow() runs; executeFlow's initial run then honors the
-	// seeded resume request.
-	if s.awaitingResume || (s.Resident && !s.executeStarted) {
+	// Resident flows own manual retry cloning after the child stack unwinds.
+	// Legacy parked flows retain their existing cold clone path.
+	if residentManualRetry || s.awaitingResume {
 		updated, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
 		if err != nil {
 			return nil, fmt.Errorf("unable to re-read step %s: %w", req.StepID, err)
 		}
 
-		if directive.Step(updated.ResultDirective) == directive.StepRetryGroup {
-			if err := s.cloneGroupForRetry(ctx, updated.GroupIdx); err != nil {
-				return nil, fmt.Errorf("unable to clone group for retry: %w", err)
+		if !residentManualRetry || !wasRetried {
+			if directive.Step(updated.ResultDirective) == directive.StepRetryGroup {
+				if err := s.cloneGroupForRetry(ctx, updated.GroupIdx); err != nil {
+					return nil, fmt.Errorf("unable to clone group for retry: %w", err)
+				}
+			} else if err := executeworkflowstepgroup.CloneStepForRetry(ctx, req.StepID, s.WorkflowID); err != nil {
+				return nil, fmt.Errorf("unable to clone step for retry: %w", err)
 			}
-		} else if err := executeworkflowstepgroup.CloneStepForRetry(ctx, req.StepID, s.WorkflowID); err != nil {
-			return nil, fmt.Errorf("unable to clone step for retry: %w", err)
 		}
 
-		s.resumeRequested = true
 		s.resumeRunType = app.WorkflowRunTypeRetry
 		s.resumeStepID = req.StepID
 		s.resumeStartIdx = s.findGroupPositionForStep(ctx, req.StepID)
+		s.resumeRequested = true
 	}
 
 	return &RetryStepResponse{WorkflowID: s.WorkflowID, Retryable: true}, nil

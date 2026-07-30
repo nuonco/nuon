@@ -13,12 +13,13 @@ import (
 )
 
 type AdminUpsertSandboxConfigRequest struct {
-	JobType             string        `json:"job_type" validate:"required"`
+	JobType             string        `json:"job_type"`
 	Operation           string        `json:"operation"`
 	Enabled             *bool         `json:"enabled"`
 	Duration            time.Duration `json:"duration" swaggertype:"primitive,integer"`
 	SleepDuration       time.Duration `json:"sleep_duration" swaggertype:"primitive,integer"`
 	ShouldError         bool          `json:"should_error"`
+	ErrorMessage        string        `json:"error_message"`
 	Panic               bool          `json:"panic"`
 	TriggerShutdown     bool          `json:"trigger_shutdown"`
 	LogTemplate         string        `json:"log_template"`
@@ -35,7 +36,11 @@ func (s *service) AdminUpsertSandboxConfig(ctx *gin.Context) {
 		return
 	}
 
-	if req.JobType == "" {
+	jobType := ctx.Param("job_type")
+	if jobType == "" {
+		jobType = req.JobType
+	}
+	if jobType == "" {
 		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("job_type is required")))
 		return
 	}
@@ -46,12 +51,13 @@ func (s *service) AdminUpsertSandboxConfig(ctx *gin.Context) {
 	}
 
 	config := app.SandboxModeJobConfig{
-		JobType:             req.JobType,
+		JobType:             jobType,
 		Operation:           req.Operation,
 		Enabled:             enabled,
 		Duration:            req.Duration,
 		SleepDuration:       req.SleepDuration,
 		ShouldError:         req.ShouldError,
+		ErrorMessage:        req.ErrorMessage,
 		Panic:               req.Panic,
 		TriggerShutdown:     req.TriggerShutdown,
 		LogTemplate:         req.LogTemplate,
@@ -64,7 +70,7 @@ func (s *service) AdminUpsertSandboxConfig(ctx *gin.Context) {
 	if res := s.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "job_type"}, {Name: "operation"}, {Name: "deleted_at"}},
-			DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "sleep_duration", "should_error", "panic", "trigger_shutdown", "log_template", "plan_template", "plan_display_template", "state_template", "output_template", "updated_at"}),
+			DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "sleep_duration", "should_error", "error_message", "panic", "trigger_shutdown", "log_template", "plan_template", "plan_display_template", "state_template", "output_template", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to upsert sandbox config: %w", res.Error))

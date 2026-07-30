@@ -1,6 +1,7 @@
 package callback
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -36,6 +37,23 @@ type Result struct {
 	StatusDescription string `json:"status_description,omitempty"`
 }
 
+// CancelledErrType is the application error type returned by AwaitWithTimeout
+// when the awaited signal was cancelled. Cancellation must never be treated as
+// success — a parent that carries on past a cancelled child silently executes
+// steps the user asked to stop.
+const CancelledErrType = "SIGNAL_CANCELLED"
+
+// IsCancelled reports whether err (possibly wrapped) is a cancelled-signal
+// error from AwaitWithTimeout. Callers use this to stop without invoking
+// failure/retry handling.
+func IsCancelled(err error) bool {
+	var appErr *temporal.ApplicationError
+	if errors.As(err, &appErr) {
+		return appErr.Type() == CancelledErrType
+	}
+	return false
+}
+
 // AwaitWithTimeout waits for a completion signal on the Ref's signal channel.
 // A timeout <= 0 waits with no wall-clock deadline (for human-gated waits).
 func AwaitWithTimeout(ctx workflow.Context, ref Ref, timeout time.Duration) (*Result, error) {
@@ -59,10 +77,27 @@ func AwaitWithTimeout(ctx workflow.Context, ref Ref, timeout time.Duration) (*Re
 	sel.Select(ctx)
 
 	if received {
-		if result.Status == "error" {
+		// Senders can legitimately arrive with an empty description (status
+		// writers that only set Status, cancellations with no error text).
+		// The message below becomes user-visible failure text on the parent,
+		// so never let it be empty.
+		switch result.Status {
+		case "error":
+			msg := result.StatusDescription
+			if msg == "" {
+				msg = "failed without further detail"
+			}
 			return nil, temporal.NewNonRetryableApplicationError(
-				result.StatusDescription,
+				msg,
 				"SIGNAL_FAILED", nil)
+		case "cancelled":
+			msg := result.StatusDescription
+			if msg == "" {
+				msg = "cancelled"
+			}
+			return nil, temporal.NewNonRetryableApplicationError(
+				msg,
+				CancelledErrType, nil)
 		}
 		return &result, nil
 	}

@@ -16,6 +16,7 @@ func init() {
 	catalog.Register(FailSignalType, func() signal.Signal { return &FailSignal{} })
 	catalog.Register(SlowSignalType, func() signal.Signal { return &SlowSignal{} })
 	catalog.Register(AutoRetrySignalType, func() signal.Signal { return &AutoRetrySignal{} })
+	catalog.Register(ManualRetrySignalType, func() signal.Signal { return &ManualRetrySignal{} })
 	catalog.Register(RetryGroupSignalType, func() signal.Signal { return &RetryGroupSignal{} })
 	catalog.Register(CountdownSignalType, func() signal.Signal { return &CountdownSignal{} })
 	catalog.Register(CountdownGroupSignalType, func() signal.Signal { return &CountdownGroupSignal{} })
@@ -81,6 +82,76 @@ func (s *AutoRetrySignal) SleepAfter() time.Duration { return time.Second }
 
 var _ signal.SignalWithAutoRetry = (*AutoRetrySignal)(nil)
 var _ signal.SignalWithMaxRetries = (*AutoRetrySignal)(nil)
+
+const ManualRetrySignalType signal.SignalType = "test-flow-manual-retry"
+
+type ManualRetrySignal struct {
+	StepID string `json:"step_id,omitempty"`
+	FlowID string `json:"flow_id,omitempty"`
+}
+
+func (s *ManualRetrySignal) Type() signal.SignalType         { return ManualRetrySignalType }
+func (s *ManualRetrySignal) Validate(workflow.Context) error { return nil }
+func (s *ManualRetrySignal) AutoRetry() bool                 { return true }
+func (s *ManualRetrySignal) MaxRetries() int                 { return 2 }
+func (s *ManualRetrySignal) MaxAutoRetries(workflow.Context) int {
+	return 0
+}
+func (s *ManualRetrySignal) SetStepContext(stepID, flowID string) {
+	s.StepID = stepID
+	s.FlowID = flowID
+}
+func (s *ManualRetrySignal) Execute(ctx workflow.Context) error {
+	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, s.StepID)
+	if err != nil {
+		return fmt.Errorf("manual retry signal: unable to get step: %w", err)
+	}
+	if step.RetryIndex > 0 {
+		return nil
+	}
+	return fmt.Errorf("manual retry signal: waiting for manual retry")
+}
+func (s *ManualRetrySignal) SleepAfter() time.Duration { return time.Second }
+
+var _ signal.SignalWithAutoRetry = (*ManualRetrySignal)(nil)
+var _ signal.SignalWithMaxRetries = (*ManualRetrySignal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*ManualRetrySignal)(nil)
+var _ signal.SignalWithStepContext = (*ManualRetrySignal)(nil)
+
+const DelayedCloneManualRetrySignalType signal.SignalType = "test-flow-delayed-clone-manual-retry"
+
+type DelayedCloneManualRetrySignal struct{}
+
+func init() {
+	catalog.Register(DelayedCloneManualRetrySignalType, func() signal.Signal { return &DelayedCloneManualRetrySignal{} })
+}
+
+func (s *DelayedCloneManualRetrySignal) Type() signal.SignalType {
+	return DelayedCloneManualRetrySignalType
+}
+func (s *DelayedCloneManualRetrySignal) Validate(workflow.Context) error {
+	return nil
+}
+func (s *DelayedCloneManualRetrySignal) Execute(workflow.Context) error {
+	return fmt.Errorf("delayed clone manual retry: waiting for manual retry")
+}
+func (s *DelayedCloneManualRetrySignal) AutoRetry() bool { return true }
+func (s *DelayedCloneManualRetrySignal) MaxRetries() int { return 2 }
+func (s *DelayedCloneManualRetrySignal) MaxAutoRetries(workflow.Context) int {
+	return 0
+}
+func (s *DelayedCloneManualRetrySignal) Clone(ctx workflow.Context, name string) ([]signal.CloneStepDef, error) {
+	if err := workflow.Sleep(ctx, 5*time.Second); err != nil {
+		return nil, err
+	}
+	return []signal.CloneStepDef{{Name: name, Signal: &SuccessSignal{}}}, nil
+}
+func (s *DelayedCloneManualRetrySignal) SleepAfter() time.Duration { return time.Second }
+
+var _ signal.SignalWithAutoRetry = (*DelayedCloneManualRetrySignal)(nil)
+var _ signal.SignalWithMaxRetries = (*DelayedCloneManualRetrySignal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*DelayedCloneManualRetrySignal)(nil)
+var _ signal.SignalWithCloneSteps = (*DelayedCloneManualRetrySignal)(nil)
 
 // --- RetryGroupSignal: fails and requests group retry ---
 
@@ -232,19 +303,21 @@ var _ signal.SignalWithMaxRetries = (*PlanApplyFailSignal)(nil)
 var _ signal.SignalWithCloneSteps = (*PlanApplyFailSignal)(nil)
 
 // --- ManualRetryGroupCountdownSignal: auto-retries once (group retry), then
-// requires manual retry to succeed. Uses SignalWithRetryCount to branch on
-// the group retry generation.
+// parks for manual retry. Uses SignalWithRetryCount to branch on the group
+// retry generation; GroupRetryCount must be a serialized field because the
+// step handler applies it before enqueueing the signal onto the target queue.
 //
-// MaxRetries=2, AutoRetry=true, RetryGroup=true.
-// - GroupRetryCount < 2: fail (auto-retry produces generation 1, which also fails)
-// - GroupRetryCount >= 2: succeed (manual retry via RetryStep creates generation 2)
+// MaxRetries=2, MaxAutoRetries=1, AutoRetry=true, RetryGroup=true.
+// - Generation 0 fails → one auto group retry (generation 1)
+// - Generation 1 fails → auto budget exhausted → parks as failed-pending-retry
+// - Manual RetryStep clones the group (generation 2) → GroupRetryCount=2 → succeeds
 
 const ManualRetryGroupCountdownSignalType signal.SignalType = "test-flow-manual-retry-group-countdown"
 
 type ManualRetryGroupCountdownSignal struct {
 	StepID          string `json:"step_id,omitempty"`
 	FlowID          string `json:"flow_id,omitempty"`
-	GroupRetryCount int    `json:"-"`
+	GroupRetryCount int    `json:"group_retry_count,omitempty"`
 }
 
 func init() {
@@ -258,7 +331,10 @@ func (s *ManualRetryGroupCountdownSignal) Validate(workflow.Context) error { ret
 func (s *ManualRetryGroupCountdownSignal) AutoRetry() bool                 { return true }
 func (s *ManualRetryGroupCountdownSignal) RetryGroup() bool                { return true }
 func (s *ManualRetryGroupCountdownSignal) MaxRetries() int                 { return 2 }
-func (s *ManualRetryGroupCountdownSignal) SleepAfter() time.Duration       { return time.Second }
+func (s *ManualRetryGroupCountdownSignal) MaxAutoRetries(workflow.Context) int {
+	return 1
+}
+func (s *ManualRetryGroupCountdownSignal) SleepAfter() time.Duration { return time.Second }
 func (s *ManualRetryGroupCountdownSignal) SetStepContext(stepID, flowID string) {
 	s.StepID = stepID
 	s.FlowID = flowID
@@ -277,6 +353,7 @@ func (s *ManualRetryGroupCountdownSignal) Execute(workflow.Context) error {
 var _ signal.SignalWithAutoRetry = (*ManualRetryGroupCountdownSignal)(nil)
 var _ signal.SignalWithRetryGroup = (*ManualRetryGroupCountdownSignal)(nil)
 var _ signal.SignalWithMaxRetries = (*ManualRetryGroupCountdownSignal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*ManualRetryGroupCountdownSignal)(nil)
 var _ signal.SignalWithStepContext = (*ManualRetryGroupCountdownSignal)(nil)
 var _ signal.SignalWithRetryCount = (*ManualRetryGroupCountdownSignal)(nil)
 

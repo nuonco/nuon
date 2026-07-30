@@ -73,6 +73,15 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	var signalErr error
 	signalErr = q.processQueueSignal(ctx, l, queueSignal, queueRef)
 	if signalErr != nil {
+		// Cancellation is a domain outcome, not a dispatch failure — the
+		// cancel handler already persisted StatusCancelled; never stamp
+		// error over it.
+		if callback.IsCancelled(signalErr) {
+			l.Info("queue signal was cancelled",
+				zap.String("queue-signal-id", queueSignal.ID))
+			return nil
+		}
+
 		// Persist error status so callers don't block forever
 		if statusErr := statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID: queueSignal.ID,

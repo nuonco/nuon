@@ -68,9 +68,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		OwnerID:   s.InstallID,
 		OwnerType: "installs",
 		QueueName: helpers.InstallDriftWorkflowsQueueName,
-		Signal: &executeflow.Signal{
-			WorkflowID: wkflw.ID,
-		},
+		Signal:    executeflow.NewSignal(wkflw.ID),
 	}); err != nil {
 		return fmt.Errorf("unable to enqueue flow execution signal: %w", err)
 	}

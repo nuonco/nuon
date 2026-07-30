@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	tclient "go.temporal.io/sdk/client"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // PollNextStepRequest identifies the workflow to poll.
@@ -32,16 +29,8 @@ func (c *Client) PollNextStep(ctx context.Context, req *PollNextStepRequest) (*P
 		return nil, fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}
 
-	handle, err := handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
-		UpdateName:   "poll-next-step",
-		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to send poll-next-step update: %w", err)
-	}
-
 	var flowResp executeflow.PollNextStepResponse
-	if err := handle.Get(ctx, &flowResp); err != nil {
+	if err := c.updateWithStartUntilCompleted(ctx, qs, "poll-next-step", &flowResp); err != nil {
 		return nil, fmt.Errorf("unable to get poll-next-step response: %w", err)
 	}
 

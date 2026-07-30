@@ -48,7 +48,10 @@ func CloneStepForRetry(ctx workflow.Context, stepID string, workflowID string) e
 			if cloneErr != nil {
 				return fmt.Errorf("unable to clone signal for retry: %w", cloneErr)
 			}
-			return createCloneStepsFromDefs(ctx, step, flw, defs, newRetryIndex)
+			if err := createCloneStepsFromDefs(ctx, step, flw, defs, newRetryIndex); err != nil {
+				return err
+			}
+			return markStepRetried(ctx, step.ID)
 		}
 	}
 
@@ -80,7 +83,22 @@ func CloneStepForRetry(ctx workflow.Context, stepID string, workflowID string) e
 			},
 		},
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	return markStepRetried(ctx, step.ID)
+}
+
+// markStepRetried flags the superseded generation so isWorkflowComplete skips
+// it while the row keeps its final status for display. Only mark after the
+// clone exists — a failed clone must keep blocking completion.
+func markStepRetried(ctx workflow.Context, stepID string) error {
+	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepRetried(ctx, activities.UpdateFlowStepRetriedRequest{
+		StepID: stepID,
+	}); err != nil {
+		return fmt.Errorf("unable to mark step %s as retried: %w", stepID, err)
+	}
+	return nil
 }
 
 // createCloneStepsFromDefs builds workflow steps from Clone()-returned defs.

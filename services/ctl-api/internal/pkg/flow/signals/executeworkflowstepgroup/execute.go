@@ -70,6 +70,11 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 				},
 			})
 		}
+	} else if s.lastDirective == string(directive.GroupAwaitRetry) {
+		s.updateGroupStatus(ctx, app.CompositeStatus{
+			Status:                 app.StatusFailedPendingRetry,
+			StatusHumanDescription: "group failed, awaiting retry or skip",
+		})
 	} else if s.lastDirective == string(directive.GroupStop) {
 		s.updateGroupStatus(ctx, app.CompositeStatus{
 			Status:                 app.StatusError,
@@ -129,6 +134,7 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 	var firstErr error
 	hasStop := false
 	hasRetryGroup := false
+	hasAwaitRetry := false
 
 	for range steps {
 		var result StepResult
@@ -136,11 +142,17 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 		if result.Error != nil && firstErr == nil {
 			firstErr = result.Error
 		}
-		if result.Result.Directive == directive.StepStop {
+		switch resolveStepAction(result.Result.Directive, s.ResidentFlow, result.ManualRetry) {
+		case actionStopGroup:
+			if result.Result.Directive != directive.StepStop {
+				l.Warn("unknown step directive, failing closed to group stop",
+					zap.String("directive", string(result.Result.Directive)))
+			}
 			hasStop = true
-		}
-		if result.Result.Directive == directive.StepRetryGroup {
+		case actionRetryGroup:
 			hasRetryGroup = true
+		case actionAwaitRetry:
+			hasAwaitRetry = true
 		}
 	}
 
@@ -159,6 +171,10 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 		return s.writeStepGroupDirective(ctx, directive.GroupRetryGroup)
 	}
 
+	if hasAwaitRetry {
+		return s.writeStepGroupDirective(ctx, directive.GroupAwaitRetry)
+	}
+
 	return s.writeStepGroupDirective(ctx, directive.GroupContinue)
 }
 
@@ -174,6 +190,7 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb c
 		TargetQueueName: s.TargetQueueName,
 		TargetQueueID:   step.TargetQueueID,
 		DerivedTimeout:  step.Timeout,
+		ResidentFlow:    s.ResidentFlow,
 		// Forward stamped names so workflow_step lifecycle webhook events
 		// carry human-readable identifiers without a per-event DB lookup.
 		OrgID:     s.OrgID,

@@ -41,28 +41,53 @@ func TestCompletionCallbacksWorkflowID(t *testing.T) {
 
 func TestSendCompletionCallbacksGate(t *testing.T) {
 	tests := map[string]struct {
-		sig       signal.Signal
-		hold      bool
-		gateErr   error
-		wantCalls []string
+		sig             signal.Signal
+		outcome         *activities.WorkflowCompletionOutcome
+		gateErr         error
+		wantCalls       []string
+		wantStatus      string
+		wantDescription string
 	}{
 		"resident parked workflow holds callback": {
 			sig:       &callbackGateSignal{workflowID: "wfl_1"},
-			hold:      true,
+			outcome:   &activities.WorkflowCompletionOutcome{Status: app.StatusFailedPendingRetry},
 			wantCalls: []string{"gate"},
 		},
-		"resident terminal workflow sends callback": {
-			sig:       &callbackGateSignal{workflowID: "wfl_1"},
-			wantCalls: []string{"gate", "reload", "send"},
+		"resident successful workflow sends transport status": {
+			sig:        &callbackGateSignal{workflowID: "wfl_1"},
+			outcome:    &activities.WorkflowCompletionOutcome{Status: app.StatusSuccess},
+			wantCalls:  []string{"gate", "reload", "send"},
+			wantStatus: string(app.StatusSuccess),
 		},
-		"gate lookup failure preserves callback delivery": {
+		"resident errored workflow sends domain error": {
+			sig: &callbackGateSignal{workflowID: "wfl_1"},
+			outcome: &activities.WorkflowCompletionOutcome{
+				Status:                 app.StatusError,
+				StatusHumanDescription: "step deploy-app failed",
+			},
+			wantCalls:       []string{"gate", "reload", "send"},
+			wantStatus:      string(app.StatusError),
+			wantDescription: "step deploy-app failed",
+		},
+		"resident cancelled workflow sends domain cancelled": {
+			sig: &callbackGateSignal{workflowID: "wfl_1"},
+			outcome: &activities.WorkflowCompletionOutcome{
+				Status:                 app.StatusCancelled,
+				StatusHumanDescription: "cancelled by user",
+			},
+			wantCalls:       []string{"gate", "reload", "send"},
+			wantStatus:      string(app.StatusCancelled),
+			wantDescription: "cancelled by user",
+		},
+		"gate lookup failure holds callback": {
 			sig:       &callbackGateSignal{workflowID: "wfl_1"},
 			gateErr:   errors.New("database unavailable"),
-			wantCalls: []string{"gate", "reload", "send"},
+			wantCalls: []string{"gate"},
 		},
 		"ordinary signal does not use gate": {
-			sig:       &ordinaryCallbackSignal{},
-			wantCalls: []string{"reload", "send"},
+			sig:        &ordinaryCallbackSignal{},
+			wantCalls:  []string{"reload", "send"},
+			wantStatus: string(app.StatusSuccess),
 		},
 	}
 
@@ -72,15 +97,17 @@ func TestSendCompletionCallbacksGate(t *testing.T) {
 			env := suite.NewTestWorkflowEnvironment()
 			env.RegisterActivityWithOptions(func(context.Context, any) error { return nil }, activity.RegisterOptions{Name: "SendSignal"})
 			calls := make([]string, 0, len(tt.wantCalls))
+			var sentPayload map[string]any
 
 			if completionCallbacksWorkflowID(tt.sig) != "" {
-				env.OnActivity((*activities.Activities).HoldCompletionCallbacks, mock.Anything, mock.Anything).
+				env.OnActivity((*activities.Activities).WorkflowCompletionOutcome, mock.Anything, mock.Anything).
 					Run(func(mock.Arguments) { calls = append(calls, "gate") }).
-					Return(tt.hold, tt.gateErr).
+					Return(tt.outcome, tt.gateErr).
 					Once()
 			}
 
-			if !tt.hold {
+			sendsCallback := len(tt.wantCalls) > 1
+			if sendsCallback {
 				env.OnActivity((*activities.Activities).QueueInternalGetQueueSignal, mock.Anything, mock.Anything).
 					Run(func(mock.Arguments) { calls = append(calls, "reload") }).
 					Return(&app.QueueSignal{
@@ -91,7 +118,12 @@ func TestSendCompletionCallbacksGate(t *testing.T) {
 					}, nil).
 					Once()
 				env.OnActivity("SendSignal", mock.Anything, mock.Anything).
-					Run(func(mock.Arguments) { calls = append(calls, "send") }).
+					Run(func(args mock.Arguments) {
+						calls = append(calls, "send")
+						if req, ok := args.Get(1).(map[string]any); ok {
+							sentPayload, _ = req["payload"].(map[string]any)
+						}
+					}).
 					Return(nil).
 					Once()
 			}
@@ -109,6 +141,13 @@ func TestSendCompletionCallbacksGate(t *testing.T) {
 			require.True(t, env.IsWorkflowCompleted())
 			require.NoError(t, env.GetWorkflowError())
 			assert.Equal(t, tt.wantCalls, calls)
+			if sendsCallback {
+				require.NotNil(t, sentPayload)
+				assert.Equal(t, tt.wantStatus, sentPayload["status"])
+				if tt.wantDescription != "" {
+					assert.Equal(t, tt.wantDescription, sentPayload["status_description"])
+				}
+			}
 			env.AssertExpectations(t)
 		})
 	}

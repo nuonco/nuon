@@ -54,11 +54,14 @@ func (e *FlowTestSuite) TestRetryGroupClonesEntireGroup() {
 	require.GreaterOrEqual(e.T(), len(groupRetryIdxs), 2,
 		"expected multiple group retry generations, got %d: %v", len(groupRetryIdxs), groupRetryIdxs)
 
-	// Original group 1 steps should be discarded
+	// Original steps are superseded: group retry keeps their final status
+	// (success/error) for dashboard history and marks them retried.
 	for _, step := range steps {
 		if step.GroupIdx == 1 && step.GroupRetryIdx == 0 {
-			require.Equal(e.T(), app.StatusDiscarded, step.Status.Status,
-				"original step %s should be discarded, got %s", step.Name, step.Status.Status)
+			require.True(e.T(), step.Retried,
+				"original step %s should be marked retried", step.Name)
+			require.NotEqual(e.T(), app.StatusPending, step.Status.Status,
+				"original step %s should keep a terminal status", step.Name)
 		}
 	}
 

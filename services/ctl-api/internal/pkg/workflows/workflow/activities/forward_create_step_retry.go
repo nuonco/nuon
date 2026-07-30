@@ -53,7 +53,7 @@ func (a *Activities) ForwardCreateStepRetry(ctx context.Context, req ForwardCrea
 	}
 	var result stepRetryResult
 	if err := rawResp.Get(ctx, &result); err != nil {
-		return nil, fmt.Errorf("create-step-retry update failed for step %s: %w", req.StepID, err)
+		return nil, updateOutcomeError(fmt.Sprintf("create-step-retry update failed for step %s", req.StepID), err)
 	}
 
 	return &ForwardCreateStepRetryResponse{

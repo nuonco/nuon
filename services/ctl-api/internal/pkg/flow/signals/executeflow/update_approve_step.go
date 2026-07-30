@@ -22,6 +22,8 @@ type ApproveStepResponse struct {
 }
 
 func (s *Signal) approveStepHandler(ctx workflow.Context, req ApproveStepRequest) (*ApproveStepResponse, error) {
+	defer s.beginUpdate()()
+
 	step, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)

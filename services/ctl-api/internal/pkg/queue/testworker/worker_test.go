@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/filecache"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -21,6 +22,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
 	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
@@ -31,8 +33,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/testworker/seed"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
@@ -48,10 +52,11 @@ import (
 type TestService struct {
 	fx.In
 
-	DB   *gorm.DB `name:"psql"`
-	V    *validator.Validate
-	L    *zap.Logger
-	Seed *seed.Seeder
+	Config *internal.Config
+	DB     *gorm.DB `name:"psql"`
+	V      *validator.Validate
+	L      *zap.Logger
+	Seed   *seed.Seeder
 
 	Client *client.Client
 }
@@ -85,10 +90,28 @@ func (e *EnqueueTestSuite) SetupSuite() {
 		fx.Provide(github.New),
 		fx.Provide(metrics.New),
 		fx.Provide(propagator.New),
+		fx.Provide(func(cfg *internal.Config) *querycollector.Collector {
+			if cfg.DebugEnableQueryCollector {
+				return querycollector.NewCollector(5000)
+			}
+			return nil
+		}),
 		fx.Provide(psql.AsPSQL(psql.New)),
 		fx.Provide(ch.AsCH(ch.New)),
 
 		fx.Provide(blobstore.NewService),
+		fx.Provide(func(cfg *internal.Config, l *zap.Logger) *filecache.FileCache {
+			cache, err := filecache.New(filecache.Options{
+				Dir:      cfg.TemporalBlobCacheDir,
+				MaxCount: cfg.TemporalBlobCacheMaxCount,
+				MaxBytes: int64(cfg.TemporalBlobCacheMaxSizeMB) * 1024 * 1024,
+			})
+			if err != nil {
+				l.Warn("failed to create blob cache, caching disabled", zap.Error(err))
+				return nil
+			}
+			return cache
+		}),
 		fx.Provide(gzip.AsGzip(gzip.New)),
 		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
 		fx.Provide(blob.AsBlob(blob.New)),
@@ -107,9 +130,11 @@ func (e *EnqueueTestSuite) SetupSuite() {
 		fx.Provide(statusactivities.New),
 		fx.Provide(job.New),
 		fx.Provide(signaldb.NewPayloadConverter),
+		fx.Provide(signal.NewSignalLifecycleActivities),
 
 		// test dependencies
 		fx.Provide(seed.New),
+		fx.Provide(enqueuer.New),
 		fx.Provide(client.New),
 
 		// start the test worker for testing the queue package

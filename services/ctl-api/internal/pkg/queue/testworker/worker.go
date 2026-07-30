@@ -19,6 +19,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const (
@@ -39,6 +41,8 @@ type WorkerParams struct {
 	HandlerWkflows *handler.Workflows
 	HandlerActs    *handleractivities.Activities
 	Acts           *activities.Activities
+	StatusActs     *statusactivities.Activities
+	LifecycleActs  *signal.SignalLifecycleActivities
 	L              *zap.Logger
 	Lc             fx.Lifecycle
 	Interceptors   []interceptor.WorkerInterceptor `group:"interceptors"`
@@ -61,6 +65,8 @@ func New(params WorkerParams) (*Worker, error) {
 	// register activities
 	wkr.RegisterActivity(params.Acts)
 	wkr.RegisterActivity(params.HandlerActs)
+	wkr.RegisterActivity(params.StatusActs)
+	wkr.RegisterActivity(params.LifecycleActs)
 
 	// register workflows
 	for _, wkflow := range params.QueueWkflows.All() {

@@ -4,6 +4,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
@@ -18,14 +19,34 @@ import (
 func (h *handler) sendCompletionCallbacks(ctx workflow.Context) {
 	l, _ := log.WorkflowLogger(ctx)
 
+	result := callback.Result{
+		Status:            string(h.finishedStatus),
+		StatusDescription: h.finishedErr,
+	}
+
+	// Resident flows complete their queue signal independently of the workflow
+	// row, so the transport status can read "success" while the workflow is
+	// parked, failed, or cancelled. Gate on the domain outcome instead: hold
+	// while parked (the re-warmed run delivers later), rewrite the result for
+	// terminal failure/cancellation, and fail closed on lookup errors — a
+	// held callback surfaces as a parent timeout, a false success does not
+	// surface at all.
 	if workflowID := completionCallbacksWorkflowID(h.sig); workflowID != "" {
-		hold, err := activities.LocalAwaitHoldCompletionCallbacksByWorkflowID(ctx, workflowID)
+		outcome, err := activities.LocalAwaitWorkflowCompletionOutcomeByWorkflowID(ctx, workflowID)
 		if err != nil {
-			l.Error("unable to reload workflow before sending completion callbacks",
+			l.Error("holding completion callbacks: unable to resolve workflow outcome",
 				zap.String("workflow_id", workflowID),
 				zap.Error(err))
-		} else if hold {
 			return
+		}
+		switch outcome.Status {
+		case app.StatusFailedPendingRetry:
+			return
+		case app.StatusError, app.StatusCancelled:
+			result = callback.Result{
+				Status:            string(outcome.Status),
+				StatusDescription: outcome.HumanDescription(),
+			}
 		}
 	}
 
@@ -52,10 +73,6 @@ func (h *handler) sendCompletionCallbacks(ctx workflow.Context) {
 		return
 	}
 
-	result := callback.Result{
-		Status:            string(h.finishedStatus),
-		StatusDescription: h.finishedErr,
-	}
 	for _, cb := range h.callbacks {
 		callback.Send(ctx, l, cb, result)
 	}

@@ -50,6 +50,8 @@ type Signal struct {
 	// the loop returns cleanly and the workflow re-warms on the next dispatch.
 	Resident bool `json:"resident,omitempty"`
 
+	ResidentIdleTimeout time.Duration `json:"resident_idle_timeout,omitempty"`
+
 	// Resume state — set by update handlers (approve/retry/skip) to wake the
 	// main execute loop when it is waiting after an approval pause or error.
 	resumeRequested bool
@@ -61,13 +63,20 @@ type Signal struct {
 	// parked resident workflow and run a freshly-added step.
 	appendRequested bool
 
-	// updatesInFlight counts append-step and retry-step update handlers that
+	// updatesInFlight counts resident update handlers that
 	// are currently executing. Those handlers persist their step rows before
 	// they set appendRequested/resumeRequested, so a resident host that idles
 	// out on its timer alone could close while a step is still being written
 	// and orphan it until the next dispatch re-warms the host. parkResident
 	// will not idle out while this counter is non-zero.
 	updatesInFlight int
+	updatesStarted  int
+	// mutatingUpdatesStarted counts only updates that change flow state
+	// (retry/append/skip/cancel/...). Read-only updates (poll-next-step,
+	// is-retryable) are excluded so they can never re-warm a terminal host
+	// into re-driving the conductor (see AutoExecuteReady).
+	mutatingUpdatesStarted int
+	retryInFlight          map[string]bool
 
 	// Cancel state — set by cancel update handlers.
 	cancelRequested bool
@@ -83,12 +92,6 @@ type Signal struct {
 	// awaitingResume: true while the main loop is parked awaiting resume/cancel.
 	awaitingResume bool
 
-	// executeStarted: true once executeFlow() has begun running. A retry-step
-	// update that lands on a freshly re-warmed resident host (before the loop
-	// reaches its parked state) must still clone+queue the retry, so the retry
-	// handler treats "not started yet" like the parked case.
-	executeStarted bool
-
 	// Pause state — set by "pause-workflow" update handler. When true, the
 	// flow will pause after the current group completes.
 	pauseRequested bool
@@ -97,6 +100,13 @@ type Signal struct {
 	mw  metrics.Writer
 	v   *validator.Validate
 	tmw tmetrics.Writer
+}
+
+func NewSignal(workflowID string) *Signal {
+	return &Signal{
+		WorkflowID: workflowID,
+		Resident:   true,
+	}
 }
 
 var (
@@ -163,6 +173,32 @@ func (s *Signal) SleepAfter() time.Duration {
 // (re)started by update-with-start after it idled out and completed. See the
 // queue handler's re-warm path.
 func (s *Signal) AutoExecuteOnTerminalStart() bool { return s.Resident }
+
+func (s *Signal) AutoExecuteReady() bool { return s.mutatingUpdatesStarted > 0 }
+
+// AutoExecuteDeclined reports that this re-warm was triggered only by
+// read-only updates: at least one update ran, none of them were mutating, and
+// none are still in flight. The Handler finishes instead of re-driving the
+// conductor on a terminal flow.
+func (s *Signal) AutoExecuteDeclined() bool {
+	return s.updatesStarted > 0 && s.mutatingUpdatesStarted == 0 && s.updatesInFlight == 0
+}
+
+func (s *Signal) beginUpdate() func() {
+	s.updatesStarted++
+	s.mutatingUpdatesStarted++
+	s.updatesInFlight++
+	return func() { s.updatesInFlight-- }
+}
+
+// beginReadOnlyUpdate tracks an update that observes flow state without
+// changing it. It still holds updatesInFlight (so parkResident cannot idle
+// out mid-read) but does not arm the auto-rewarm execute path.
+func (s *Signal) beginReadOnlyUpdate() func() {
+	s.updatesStarted++
+	s.updatesInFlight++
+	return func() { s.updatesInFlight-- }
+}
 
 func (s *Signal) CompletionCallbacksWorkflowID() string {
 	if !s.Resident {

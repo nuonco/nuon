@@ -51,10 +51,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		OwnerType:       "app_branches",
 		SignalOwnerID:   *run.WorkflowID,
 		SignalOwnerType: "install_workflows",
-		Signal: &executeflow.Signal{
-			WorkflowID: *run.WorkflowID,
-		},
-		Callback: cb,
+		Signal:          executeflow.NewSignal(*run.WorkflowID),
+		Callback:        cb,
 	})
 	if err != nil {
 		logger.Error("unable to enqueue execute-workflow signal", "error", err)

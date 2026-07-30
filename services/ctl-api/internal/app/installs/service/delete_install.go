@@ -64,9 +64,7 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
-		WorkflowID: workflow.ID,
-	}, workflow.ID, "install_workflows"); err != nil {
+	if err := s.enqueueInstallSignal(ctx, workflowsQueueID, executeflow.NewSignal(workflow.ID), workflow.ID, "install_workflows"); err != nil {
 		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 		return
 	}

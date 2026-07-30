@@ -138,18 +138,15 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	mgr := workflowmanager.New(mgrOpts...)
 	mgr.Start(ctx)
 
-	// Re-warm a resident host that already completed successfully. When such a
-	// host idles out, its Handler closes with the QueueSignal marked
-	// StatusSuccess. A later update-with-start (append-step / retry-step) starts
-	// this fresh Handler run but the queue dispatcher never re-drives execute on
-	// a terminal signal, so the conductor loop would never restart. Self-drive
-	// validate→execute once so the parked-loop semantics resume and the
-	// appended/retried work runs. qs is the durable gate: only the terminal-
-	// success resident case reaches here (cold/in-progress dispatch and warm
-	// hosts are never StatusSuccess at boot), giving execute-exactly-once.
+	// Re-warm a resident host whose QueueSignal is terminal. A later
+	// update-with-start (append-step / retry-step) starts this fresh Handler run,
+	// but the queue dispatcher never re-drives terminal signals, so the conductor
+	// loop would never restart. Self-drive validate→execute once so the parked-loop
+	// semantics resume and the appended/retried work runs. Cancelled signals stay
+	// terminal and cannot be revived by a control update.
 	if r, ok := h.sig.(signal.AutoExecuteOnTerminalStart); ok &&
 		r.AutoExecuteOnTerminalStart() &&
-		qs.Status.Status == app.StatusSuccess &&
+		generics.SliceContains(qs.Status.Status, []app.Status{app.StatusSuccess, app.StatusError}) &&
 		!h.finished {
 		h.startAutoRewarm(ctx)
 	}
@@ -178,6 +175,17 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		return true, nil
 	}
 
+	// A terminal signal re-warmed by read-only updates only: it already sent
+	// its completion callbacks when it originally finished. Return without any
+	// yielding work — callback sends or cache sleeps would leave update
+	// handlers registered while yielded, so a racing mutating update could be
+	// accepted and persisted but never executed. Closing immediately makes
+	// such an update fail with "aborted by closing workflow", which the flow
+	// client retries against a fresh Handler run that will re-warm and run it.
+	if h.autoRewarmDeclined {
+		return true, nil
+	}
+
 	// Signal completed — send completion callbacks to unblock queue and parent.
 	// Always call sendCompletionCallbacks (it reloads from DB) so that callbacks
 	// added dynamically by EnsureSignal after init are picked up.
@@ -192,6 +200,11 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	if cacheDur > 0 {
 		l.Debug("handler finished, caching workflow")
 		_ = workflow.Sleep(ctx, cacheDur)
+	}
+	if err := workflow.Await(ctx, func() bool {
+		return workflow.AllHandlersFinished(ctx)
+	}); err != nil {
+		return false, err
 	}
 
 	return true, nil

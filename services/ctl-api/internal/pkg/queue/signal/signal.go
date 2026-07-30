@@ -37,8 +37,15 @@ type SleepAfter interface {
 // signal — so without this hook the conductor loop never restarts and the
 // appended/retried work is never consumed. Returning true lets the Handler
 // self-drive validate→execute exactly once on such a re-warm.
+// AutoExecuteReady reports that a mutating update (retry/append/resume/skip)
+// has started, so the Handler should re-drive validate→execute.
+// AutoExecuteDeclined reports that only read-only updates (polls,
+// retryability checks) have run and none are in flight, so the Handler should
+// finish without re-executing the terminal signal.
 type AutoExecuteOnTerminalStart interface {
 	AutoExecuteOnTerminalStart() bool
+	AutoExecuteReady() bool
+	AutoExecuteDeclined() bool
 }
 
 // CompletionCallbacksWorkflow identifies resident flow signals whose parent

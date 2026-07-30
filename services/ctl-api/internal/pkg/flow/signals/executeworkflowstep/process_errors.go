@@ -11,6 +11,36 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
+// handleStepCancelled stops the group when the step's inner signal reported a
+// cancelled completion. Cancellation is never a failure: it must not enter the
+// auto-retry path, and it must never let the group carry on to the next step.
+// When cancellation came through Cancel() the directive and statuses are
+// already written; an out-of-band cancellation (the inner queue signal was
+// cancelled directly) writes them here.
+func (s *Signal) handleStepCancelled(ctx workflow.Context, l *zap.Logger) error {
+	if s.canceled {
+		return nil
+	}
+
+	if err := setResultDirective(ctx, s.StepID, DirectiveStop); err != nil {
+		return errors.Wrap(err, "unable to set stop directive for cancelled step")
+	}
+
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: s.StepID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusCancelled,
+			StatusHumanDescription: "step cancelled",
+		},
+	}); err != nil {
+		l.Warn("failed to mark step as cancelled",
+			zap.String("step_id", s.StepID),
+			zap.Error(err))
+	}
+
+	return nil
+}
+
 // handleStepError marks the step as errored and checks for auto-retry.
 // If the inner signal implements SignalWithAutoRetry and the retry budget
 // hasn't been exhausted, it writes a directive ("retry" or "retry-group")
@@ -56,43 +86,49 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		maxAutoRetries = mar.MaxAutoRetries(ctx)
 	}
 
-	// Determine the directive based on signal capabilities. For retry-group
-	// signals the retry counter is GroupRetryIdx (reset per group clone);
-	// for plain retry it is the step-level RetryIndex.
-	directive := DirectiveRetry
+	// For retry-group signals the retry counter is GroupRetryIdx (reset per
+	// group clone); for plain retry it is the step-level RetryIndex.
+	retryGroup := false
 	retryIndex := step.RetryIndex
 	if rg, ok := sig.(signal.SignalWithRetryGroup); ok && rg.RetryGroup() {
-		directive = DirectiveRetryGroup
+		retryGroup = true
 		retryIndex = step.GroupRetryIdx
 	}
 
 	nextRetryIndex := retryIndex + 1
+	d := resolveFailureDirective(step.Skippable, retryGroup, skipAutoRetry, retryIndex, maxRetries, maxAutoRetries)
 
-	// Check the global ceiling first — no more retries of any kind.
-	if nextRetryIndex > maxRetries {
+	// Skippable failure — mark the step as failed but let the workflow
+	// continue. This allows post-trigger action steps to fail without
+	// blocking the entire workflow.
+	if d == DirectiveContinue {
+		l.Info("step is skippable, continuing workflow after exhausted retries",
+			zap.String("step_id", step.ID))
+		meta := map[string]any{
+			"max_retries":        maxRetries,
+			"retry_index":        retryIndex,
+			"skipped_on_failure": true,
+		}
+		if nextRetryIndex > maxRetries {
+			meta["retries_exhausted"] = true
+		} else {
+			meta["auto_retries_exhausted"] = nextRetryIndex > maxAutoRetries
+			meta["skip_auto_retry"] = skipAutoRetry
+			meta["max_auto_retries"] = maxAutoRetries
+		}
+		_ = s.markStepFailed(ctx, step, stepErr, meta)
+		if err := setResultDirective(ctx, step.ID, DirectiveContinue); err != nil {
+			return errors.Wrap(err, "unable to set result directive")
+		}
+		return nil
+	}
+
+	// Global ceiling — no more retries of any kind.
+	if d == DirectiveStop {
 		l.Warn("max retries exhausted",
 			zap.String("step_id", step.ID),
-			zap.String("directive", string(directive)),
 			zap.Int("max_retries", maxRetries),
 			zap.Int("retry_index", retryIndex))
-
-		// If the step is skippable, mark it as failed but continue the workflow
-		// instead of stopping. This allows post-trigger action steps to fail
-		// without blocking the entire workflow.
-		if step.Skippable {
-			l.Info("step is skippable, continuing workflow after exhausted retries",
-				zap.String("step_id", step.ID))
-			_ = s.markStepFailed(ctx, step, stepErr, map[string]any{
-				"retries_exhausted":  true,
-				"max_retries":        maxRetries,
-				"retry_index":        retryIndex,
-				"skipped_on_failure": true,
-			})
-			if err := setResultDirective(ctx, step.ID, DirectiveContinue); err != nil {
-				return errors.Wrap(err, "unable to set result directive")
-			}
-			return nil
-		}
 
 		if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
 			return errors.Wrap(err, "unable to set result directive")
@@ -107,7 +143,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 	// Park for manual retry when auto-retries are exhausted OR the composite
 	// error hinted that auto-retry won't help. The user can still manually
 	// retry up to maxRetries.
-	if skipAutoRetry || nextRetryIndex > maxAutoRetries {
+	if d == DirectiveAwaitRetry {
 		l.Warn("parking step for manual retry",
 			zap.String("step_id", step.ID),
 			zap.Bool("skip_auto_retry", skipAutoRetry),
@@ -115,27 +151,8 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			zap.Int("max_retries", maxRetries),
 			zap.Int("retry_index", retryIndex))
 
-		// If the step is skippable and all retries (including manual) are exhausted
-		// at the auto-retry level, allow the workflow to continue.
-		if step.Skippable && maxAutoRetries >= maxRetries {
-			l.Info("step is skippable, continuing workflow after exhausted retries",
-				zap.String("step_id", step.ID))
-			_ = s.markStepFailed(ctx, step, stepErr, map[string]any{
-				"auto_retries_exhausted": nextRetryIndex > maxAutoRetries,
-				"skip_auto_retry":        skipAutoRetry,
-				"max_auto_retries":       maxAutoRetries,
-				"max_retries":            maxRetries,
-				"retry_index":            retryIndex,
-				"skipped_on_failure":     true,
-			})
-			if err := setResultDirective(ctx, step.ID, DirectiveContinue); err != nil {
-				return errors.Wrap(err, "unable to set result directive")
-			}
-			return nil
-		}
-
 		// Mark step as errored and write the await-retry directive.
-		// Execute() blocks here until the user retries or cancels.
+		// Legacy Execute() blocks here until the user retries or cancels.
 		_ = s.markStepFailed(ctx, step, stepErr, map[string]any{
 			"auto_retries_exhausted": nextRetryIndex > maxAutoRetries,
 			"skip_auto_retry":        skipAutoRetry,
@@ -159,6 +176,10 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			},
 		})
 
+		if s.ResidentFlow {
+			return nil
+		}
+
 		// Block until user retries or cancels. The group's AwaitQueueSignal
 		// stays blocked naturally. When the retry update arrives (flow → group → step),
 		// s.retried is set and we unblock. The createStepRetryHandler writes the
@@ -171,7 +192,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 
 	l.Debug("auto-retry: writing directive",
 		zap.String("step_id", step.ID),
-		zap.String("directive", string(directive)),
+		zap.String("directive", string(d)),
 		zap.Int("retry_index", nextRetryIndex),
 		zap.Int("max_retries", maxRetries))
 
@@ -198,13 +219,13 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 				"retry_type":   "auto",
 				"retry_idx":    retryIndex,
 				"max_retries":  maxRetries,
-				DirectiveKey:   directive,
+				DirectiveKey:   d,
 			},
 		},
 	})
 
 	// Write the directive. The group reads it and handles cloning.
-	if err := setResultDirective(ctx, step.ID, directive); err != nil {
+	if err := setResultDirective(ctx, step.ID, d); err != nil {
 		return errors.Wrap(err, "unable to set result directive")
 	}
 

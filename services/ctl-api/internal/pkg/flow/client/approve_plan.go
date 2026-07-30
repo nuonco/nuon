@@ -4,11 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	tclient "go.temporal.io/sdk/client"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
 // ApprovePlanRequest is the input for approving a plan on a workflow step.
@@ -28,24 +25,14 @@ func (c *Client) ApprovePlan(ctx context.Context, req *ApprovePlanRequest) error
 		return fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}
 
-	handle, err := handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
-		UpdateName:   "approve-step",
-		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-		Args: []any{
-			executeflow.ApproveStepRequest{
-				StepID:             req.StepID,
-				ApprovalResponseID: req.ApprovalResponseID,
-				ResponseType:       string(req.ResponseType),
-			},
-		},
+	var resp executeflow.ApproveStepResponse
+	err = c.updateWithStartUntilCompleted(ctx, qs, "approve-step", &resp, executeflow.ApproveStepRequest{
+		StepID:             req.StepID,
+		ApprovalResponseID: req.ApprovalResponseID,
+		ResponseType:       string(req.ResponseType),
 	})
 	if err != nil {
 		return fmt.Errorf("unable to send approve-step update: %w", err)
-	}
-
-	var resp executeflow.ApproveStepResponse
-	if err := handle.Get(ctx, &resp); err != nil {
-		return fmt.Errorf("approve-step update failed: %w", err)
 	}
 
 	return nil
