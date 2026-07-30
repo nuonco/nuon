@@ -21,13 +21,7 @@ export const CancelWorkflowModal = ({
   return (
     <Modal
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-          theme="error"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong" theme="error">
           <Icon variant="WarningIcon" size="24" />
           {`Cancel ${workflowType} workflow?`}
         </Text>
@@ -49,8 +43,7 @@ export const CancelWorkflowModal = ({
       <div className="flex flex-col gap-1">
         {error ? (
           <Banner theme="error">
-            {error.error ||
-              'Something went wrong. Try refreshing the page.'}
+            {error.error || 'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
         <Text variant="base">

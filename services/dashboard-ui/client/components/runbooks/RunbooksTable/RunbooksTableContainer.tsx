@@ -28,7 +28,12 @@ export const RunbooksTableContainer = () => {
 
   return (
     <RunbooksTable
-      data={parseRunbooksToTableData(result?.data ?? [], org?.id ?? '', app?.id ?? '', labelColors)}
+      data={parseRunbooksToTableData(
+        result?.data ?? [],
+        org?.id ?? '',
+        app?.id ?? '',
+        labelColors
+      )}
       isLoading={isLoading}
       pagination={{
         hasNext: result?.pagination?.hasNext ?? false,

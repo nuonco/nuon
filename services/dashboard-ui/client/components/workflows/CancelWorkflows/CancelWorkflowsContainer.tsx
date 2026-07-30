@@ -33,15 +33,17 @@ export const CancelWorkflowsContainer = ({
     { cancelled: string[]; errors?: { workflow_id: string; error: string }[] },
     TAPIError
   >({
-    mutationFn: () =>
-      cancelWorkflows({ orgId: org.id, workflowIds }),
+    mutationFn: () => cancelWorkflows({ orgId: org.id, workflowIds }),
     onSuccess: (data) => {
       const cancelledCount = data.cancelled?.length ?? 0
       const errorCount = data.errors?.length ?? 0
 
       if (errorCount === 0) {
         addToast(
-          <Toast heading={`${cancelledCount} workflow${cancelledCount === 1 ? '' : 's'} cancelled`} theme="success">
+          <Toast
+            heading={`${cancelledCount} workflow${cancelledCount === 1 ? '' : 's'} cancelled`}
+            theme="success"
+          >
             <Text>All selected workflows were cancelled.</Text>
           </Toast>
         )
@@ -49,7 +51,10 @@ export const CancelWorkflowsContainer = ({
         onComplete()
       } else if (cancelledCount > 0) {
         addToast(
-          <Toast heading={`${cancelledCount} cancelled, ${errorCount} failed`} theme="warn">
+          <Toast
+            heading={`${cancelledCount} cancelled, ${errorCount} failed`}
+            theme="warn"
+          >
             <Text>Some workflows could not be cancelled.</Text>
           </Toast>
         )

@@ -11,10 +11,5 @@ export const ActiveWorkflowsContainer = ({
   workflows,
   install,
 }: IActiveWorkflowsContainer) => {
-  return (
-    <ActiveWorkflows
-      workflows={workflows}
-      install={install}
-    />
-  )
+  return <ActiveWorkflows workflows={workflows} install={install} />
 }

@@ -85,7 +85,13 @@ export const AdhocAction = () => (
 )
 
 export const WithApprovals = () => (
-  <WorkflowContext.Provider value={{ ...mockWorkflowContext, hasApprovals: true, pendingApprovalsCount: 2 }}>
+  <WorkflowContext.Provider
+    value={{
+      ...mockWorkflowContext,
+      hasApprovals: true,
+      pendingApprovalsCount: 2,
+    }}
+  >
     <div className="max-w-2xl p-4">
       <WorkflowHeader workflow={mockWorkflow} install={mockInstall} />
     </div>

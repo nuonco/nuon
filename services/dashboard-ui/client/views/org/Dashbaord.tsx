@@ -201,7 +201,9 @@ export const Dashboard = () => {
             </div>
           </PageSection>
           <PageSection className="w-full hidden @4xl:flex">
-            <AnnouncementsList announcements={announcementsData.announcements} />
+            <AnnouncementsList
+              announcements={announcementsData.announcements}
+            />
           </PageSection>
         </PageGrid>
       </PageContent>

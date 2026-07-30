@@ -97,10 +97,7 @@ function useCollapsedCount(
         )
       }
 
-      const count = computeCollapseCount(
-        nav.clientWidth,
-        itemWidthsRef.current
-      )
+      const count = computeCollapseCount(nav.clientWidth, itemWidthsRef.current)
       setCollapsedCount(count)
     })
     ro.observe(nav)
@@ -132,7 +129,11 @@ export const BreadcrumbNav = () => {
     : breadcrumbLinks.slice(1)
 
   return (
-    <nav ref={navRef} aria-label="Breadcrumb" className="flex-1 min-w-0 overflow-hidden">
+    <nav
+      ref={navRef}
+      aria-label="Breadcrumb"
+      className="flex-1 min-w-0 overflow-hidden"
+    >
       <ol ref={listRef} className="flex items-center gap-2 w-max">
         <li className="flex items-center gap-2">
           <BreadcrumbItem

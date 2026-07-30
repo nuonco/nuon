@@ -60,7 +60,7 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 			timeout, _ = time.ParseDuration(step.Timeout)
 		}
 
-		request.Steps = append(request.Steps, &models.ServiceCreateRunbookStepConfigRequest{
+		stepReq := &models.ServiceCreateRunbookStepConfigRequest{
 			Name:                 generics.ToPtr(step.Name),
 			Type:                 generics.ToPtr(string(step.Type)),
 			Idx:                  int64(idx),
@@ -75,7 +75,13 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 			EnvVars:              step.EnvVarMap,
 			Timeout:              timeout.Nanoseconds(),
 			Role:                 step.Role,
-		})
+			Trigger:              step.Trigger,
+			EventTypes:           step.EventTypes,
+		}
+		for _, filter := range step.Filters {
+			stepReq.Filters = append(stepReq.Filters, &models.AppTriggerFilter{From: filter.From, Path: filter.Path, Op: models.AppTriggerFilterType(filter.Op), Value: filter.Value})
+		}
+		request.Steps = append(request.Steps, stepReq)
 	}
 
 	for _, input := range runbook.Inputs {

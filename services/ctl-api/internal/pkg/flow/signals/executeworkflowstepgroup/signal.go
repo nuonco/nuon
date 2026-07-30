@@ -114,11 +114,13 @@ func (s *Signal) WithParams(params *signal.Params) {
 }
 
 func (s *Signal) Timeout() time.Duration {
-	if s.DerivedTimeout > 0 {
+	if s.DerivedTimeout != 0 {
 		return s.DerivedTimeout
 	}
 	return 30 * 24 * time.Hour
 }
+
+func (s *Signal) UnboundedTimeout() bool { return s.DerivedTimeout < 0 }
 
 func (s *Signal) Type() signal.SignalType   { return SignalType }
 func (s *Signal) SleepAfter() time.Duration { return time.Second }

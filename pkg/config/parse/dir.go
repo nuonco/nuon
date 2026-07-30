@@ -18,6 +18,7 @@ type ConfigDir struct {
 	Runbooks       []*config.RunbookConfig   `name:"runbooks"`
 	Installs       []*config.Install         `name:"installs"`
 	InstallsConfig *config.InstallsConfig    `name:"installs"`
+	Triggers       *config.TriggersConfig    `name:"triggers"`
 
 	Policies    *config.PoliciesConfig `name:"policies"`
 	PoliciesDir []config.AppPolicy     `name:"policies"`
@@ -242,6 +243,7 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 		Policies:           policies,
 		OperationRoles:     operationRoles,
 		KubernetesContexts: kubernetesContexts,
+		Triggers:           c.Triggers,
 	}
 
 	if c.Metadata != nil {

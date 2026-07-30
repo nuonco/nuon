@@ -8,7 +8,9 @@ interface ISandboxRunStepDetailsContainer {
   step?: TWorkflowStep
 }
 
-export const SandboxRunStepDetailsContainer = ({ step }: ISandboxRunStepDetailsContainer) => {
+export const SandboxRunStepDetailsContainer = ({
+  step,
+}: ISandboxRunStepDetailsContainer) => {
   const { org } = useOrg()
 
   const { data: sandboxRun, isLoading } = useQuery<TSandboxRun>({

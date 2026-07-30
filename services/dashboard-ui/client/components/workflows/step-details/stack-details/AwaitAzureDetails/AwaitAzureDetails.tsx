@@ -15,11 +15,20 @@ interface IAwaitAzureDetails extends IStackDetails {
   secrets?: TAppSecretConfig[]
 }
 
-export const AwaitAzureDetails = ({ stack, installId, azureLocation, secrets }: IAwaitAzureDetails) => {
+export const AwaitAzureDetails = ({
+  stack,
+  installId,
+  azureLocation,
+  secrets,
+}: IAwaitAzureDetails) => {
   const vaultName = installId.slice(0, 24)
   const customerSecrets = secrets?.filter((s) => !s.auto_generate)
-  const requiredSecrets = customerSecrets?.filter((s) => s.required || (!s.default && !s.required))
-  const overridableSecrets = customerSecrets?.filter((s) => !s.required && !!s.default)
+  const requiredSecrets = customerSecrets?.filter(
+    (s) => s.required || (!s.default && !s.required)
+  )
+  const overridableSecrets = customerSecrets?.filter(
+    (s) => !s.required && !!s.default
+  )
 
   const renderSecretCard = (secret: TAppSecretConfig) => {
     const kvName = secret.name.replaceAll('_', '-')
@@ -29,14 +38,9 @@ export const AwaitAzureDetails = ({ stack, installId, azureLocation, secrets }: 
         <span className="flex justify-between items-center">
           <Text>
             {secret.display_name || secret.name}
-            {secret.required && (
-              <span className="text-red-500 ml-1">*</span>
-            )}
+            {secret.required && <span className="text-red-500 ml-1">*</span>}
           </Text>
-          <ClickToCopyButton
-            className="w-fit self-end"
-            textToCopy={cmd}
-          />
+          <ClickToCopyButton className="w-fit self-end" textToCopy={cmd} />
         </span>
         {secret.description && (
           <Text variant="subtext">{secret.description}</Text>
@@ -107,14 +111,12 @@ export const AwaitAzureDetails = ({ stack, installId, azureLocation, secrets }: 
           </Text>
           <Text variant="subtext">
             Before deploying the stack, create the following secrets in the Key
-             Vault. The secret names must match exactly.
+            Vault. The secret names must match exactly.
           </Text>
 
           <Card>
             <span className="flex justify-between items-center">
-              <Text>
-                Grant yourself permission to set secrets
-              </Text>
+              <Text>Grant yourself permission to set secrets</Text>
               <ClickToCopyButton
                 className="w-fit self-end"
                 textToCopy={`az role assignment create --assignee "$(az ad signed-in-user show --query id -o tsv)" --role "Key Vault Secrets Officer" --scope "$(az keyvault show --name ${vaultName} --resource-group ${installId}-rg --query id -o tsv)"`}
@@ -125,25 +127,25 @@ export const AwaitAzureDetails = ({ stack, installId, azureLocation, secrets }: 
             `}</Code>
           </Card>
 
-            {requiredSecrets?.map(renderSecretCard)}
-              {overridableSecrets && overridableSecrets.length > 0 && (
-                <Expand
-                  id="overridable-secrets"
-                  heading={
-                    <Text variant="subtext">
-                      Optional overrides ({overridableSecrets.length})
-                    </Text>
-                  }
-                >
-                  <div className="flex flex-col gap-4 p-2">
-                    <Text variant="subtext">
-                      These secrets have default values. Set them only if you need
-                      to override the defaults.
-                    </Text>
-                    {overridableSecrets.map(renderSecretCard)}
-                  </div>
-                </Expand>
-              )}
+          {requiredSecrets?.map(renderSecretCard)}
+          {overridableSecrets && overridableSecrets.length > 0 && (
+            <Expand
+              id="overridable-secrets"
+              heading={
+                <Text variant="subtext">
+                  Optional overrides ({overridableSecrets.length})
+                </Text>
+              }
+            >
+              <div className="flex flex-col gap-4 p-2">
+                <Text variant="subtext">
+                  These secrets have default values. Set them only if you need
+                  to override the defaults.
+                </Text>
+                {overridableSecrets.map(renderSecretCard)}
+              </div>
+            </Expand>
+          )}
         </div>
       )}
 

@@ -109,6 +109,7 @@ var (
 	_ signal.SignalWithUpdateHandlers   = (*Signal)(nil)
 	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
 	_ signal.SignalWithTimeout          = (*Signal)(nil)
+	_ signal.SignalWithUnboundedTimeout = (*Signal)(nil)
 	_ signal.SignalWithParams           = (*Signal)(nil)
 )
 
@@ -117,11 +118,13 @@ func (s *Signal) WithParams(params *signal.Params) {
 }
 
 func (s *Signal) Timeout() time.Duration {
-	if s.DerivedTimeout > 0 {
+	if s.DerivedTimeout != 0 {
 		return s.DerivedTimeout
 	}
 	return 30 * 24 * time.Hour
 }
+
+func (s *Signal) UnboundedTimeout() bool { return s.DerivedTimeout < 0 }
 
 // LifecycleContext exposes the step + workflow identity to lifecycle hooks so
 // they can emit workflow_step.lifecycle.* webhook events without leaking the

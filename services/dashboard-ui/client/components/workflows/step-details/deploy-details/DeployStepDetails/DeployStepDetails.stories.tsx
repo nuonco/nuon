@@ -2,7 +2,10 @@ export default {
   title: 'Workflows/DeployStepDetails',
 }
 
-import { DeployStepDetails, DeployStepDetailsSkeleton } from './DeployStepDetails'
+import {
+  DeployStepDetails,
+  DeployStepDetailsSkeleton,
+} from './DeployStepDetails'
 import type { TWorkflowStep, TDeploy } from '@/types'
 
 const mockStep = {

@@ -8,7 +8,8 @@ const mockStack = {
   versions: [
     {
       template_url: 'https://s3.amazonaws.com/bucket/template.json',
-      quick_link_url: 'https://console.aws.amazon.com/cloudformation/home?stackName=nuon-stack&region=us-east-1',
+      quick_link_url:
+        'https://console.aws.amazon.com/cloudformation/home?stackName=nuon-stack&region=us-east-1',
       region: 'us-east-1',
     },
   ],

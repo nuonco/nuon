@@ -51,7 +51,8 @@ export const RunbookHistoryTab = () => {
     .filter(
       (s) =>
         s.step_target_type === 'install_deploys' ||
-        s.step_target_type === 'install_action_workflow_runs'
+        s.step_target_type === 'install_action_workflow_runs' ||
+        !!s.links?.event_wait
     )
     .sort((a, b) => {
       const aTime = a.created_at ?? ''

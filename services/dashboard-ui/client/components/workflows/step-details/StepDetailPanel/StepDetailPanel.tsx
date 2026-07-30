@@ -1,5 +1,6 @@
 import React, { type ReactElement, type ReactNode } from 'react'
 import { Divider } from '@/components/common/Divider'
+import { Link } from '@/components/common/Link'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import type { TWorkflowStep } from '@/types'
 import { StepBanner } from '../StepBanner'
@@ -10,12 +11,14 @@ export interface IStepDetailPanel extends IPanel {
   children: ReactNode
   step: TWorkflowStep
   planOnly?: boolean
+  triggerHref?: string
 }
 
 export const StepDetailPanel = ({
   children,
   step,
   planOnly = false,
+  triggerHref,
   ...props
 }: IStepDetailPanel) => {
   return (
@@ -38,6 +41,7 @@ export const StepDetailPanel = ({
       <Divider dividerWord="Metadata" />
 
       <StepMetadata step={step} />
+      {triggerHref ? <Link href={triggerHref}>View trigger</Link> : null}
     </Panel>
   )
 }

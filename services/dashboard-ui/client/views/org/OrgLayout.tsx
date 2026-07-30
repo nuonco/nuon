@@ -42,28 +42,28 @@ export const OrgLayout = () => {
               <SidebarProvider initIsSidebarOpen={getSidebarOpen()}>
                 <ToastProvider>
                   <OrgStatusSSEProvider>
-                  <ActiveWorkflowsProvider>
-                    <WorkflowApprovalsProvider>
-                      <SurfacesProvider>
-                      <SpotlightListener />
-                      <VCSConnectionSuccess />
-                      <MainLayout
-                        versions={{
-                          api: {
-                            git_ref: versions?.api?.git_ref ?? '',
-                            version: versions?.api?.version ?? '',
-                          },
-                          ui: {
-                            version: versions?.ui?.version ?? '',
-                          },
-                        }}
-                      >
-                        <Outlet />
-                        <OrgStatusBar />
-                      </MainLayout>
-                      </SurfacesProvider>
-                    </WorkflowApprovalsProvider>
-                  </ActiveWorkflowsProvider>
+                    <ActiveWorkflowsProvider>
+                      <WorkflowApprovalsProvider>
+                        <SurfacesProvider>
+                          <SpotlightListener />
+                          <VCSConnectionSuccess />
+                          <MainLayout
+                            versions={{
+                              api: {
+                                git_ref: versions?.api?.git_ref ?? '',
+                                version: versions?.api?.version ?? '',
+                              },
+                              ui: {
+                                version: versions?.ui?.version ?? '',
+                              },
+                            }}
+                          >
+                            <Outlet />
+                            <OrgStatusBar />
+                          </MainLayout>
+                        </SurfacesProvider>
+                      </WorkflowApprovalsProvider>
+                    </ActiveWorkflowsProvider>
                   </OrgStatusSSEProvider>
                 </ToastProvider>
               </SidebarProvider>

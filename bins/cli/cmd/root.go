@@ -86,6 +86,7 @@ nuon sync
 		c.loginCmd(),
 		c.extensionsCmd(),
 		c.runbooksCmd(),
+		c.triggersCmd(),
 		c.mcpCmd(),
 	}
 

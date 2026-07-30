@@ -76,13 +76,19 @@ export const DeployStepDetails = ({
         {deploy?.created_at ? (
           <Text theme="info" flex className="gap-1">
             <Icon variant="TimerIcon" />
-            <Duration variant="subtext" beginTime={deploy.created_at} endTime={deploy.updated_at} />
+            <Duration
+              variant="subtext"
+              beginTime={deploy.created_at}
+              endTime={deploy.updated_at}
+            />
           </Text>
         ) : null}
         {deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name ? (
           <Text theme="info" flex className="gap-1">
             <Icon variant="FileLockIcon" />
-            <Text variant="subtext">{deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name}</Text>
+            <Text variant="subtext">
+              {deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name}
+            </Text>
           </Text>
         ) : null}
       </div>

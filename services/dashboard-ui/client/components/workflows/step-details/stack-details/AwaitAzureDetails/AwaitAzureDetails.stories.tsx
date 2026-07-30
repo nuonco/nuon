@@ -2,7 +2,10 @@ export default {
   title: 'Workflows/StepDetails/AwaitAzureDetails',
 }
 
-import { AwaitAzureDetails, AwaitAzureDetailsSkeleton } from './AwaitAzureDetails'
+import {
+  AwaitAzureDetails,
+  AwaitAzureDetailsSkeleton,
+} from './AwaitAzureDetails'
 
 const mockStack = {
   versions: [

@@ -15,9 +15,10 @@ import (
 type EnsureCronWorkflowsRequest struct{}
 
 type EnsureCronWorkflowsResponse struct {
-	SweepStarted   bool `json:"sweep_started"`
-	MetricsStarted bool `json:"metrics_started"`
-	CleanupStarted bool `json:"cleanup_started"`
+	SweepStarted               bool `json:"sweep_started"`
+	MetricsStarted             bool `json:"metrics_started"`
+	CleanupStarted             bool `json:"cleanup_started"`
+	TriggerEventCleanupStarted bool `json:"trigger_event_cleanup_started"`
 }
 
 // EnsureCronWorkflows starts (or replaces) the enqueuer-sweep and
@@ -76,6 +77,21 @@ func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkfl
 	}
 	resp.CleanupStarted = true
 	a.logger.Info("queue signal cleanup cron started/replaced", zap.String("workflow-id", "general-queue-signal-cleanup-cron"))
+
+	eventCleanupOpts := tclient.StartWorkflowOptions{
+		ID:                    "general-trigger-event-cleanup-cron",
+		TaskQueue:             workflows.APITaskQueue,
+		CronSchedule:          "0 0 * * *",
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 0,
+		},
+	}
+	if _, err := a.tClient.ExecuteWorkflowInNamespace(ctx, "general", eventCleanupOpts, "CleanupTriggerEvents"); err != nil {
+		return nil, fmt.Errorf("unable to start trigger event cleanup workflow: %w", err)
+	}
+	resp.TriggerEventCleanupStarted = true
+	a.logger.Info("trigger event cleanup cron started/replaced", zap.String("workflow-id", "general-trigger-event-cleanup-cron"))
 
 	return resp, nil
 }

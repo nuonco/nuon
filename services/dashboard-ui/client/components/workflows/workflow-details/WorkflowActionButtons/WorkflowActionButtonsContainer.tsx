@@ -5,10 +5,10 @@ import { WorkflowActionButtons } from './WorkflowActionButtons'
 export const WorkflowActionButtonsContainer = () => {
   const { workflow, hasApprovals } = useWorkflow()
 
-  const {
-    canShowApproveAll,
-    canShowCancel,
-  } = useWorkflowActions(workflow, hasApprovals)
+  const { canShowApproveAll, canShowCancel } = useWorkflowActions(
+    workflow,
+    hasApprovals
+  )
 
   return (
     <WorkflowActionButtons

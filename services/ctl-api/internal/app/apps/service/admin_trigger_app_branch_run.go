@@ -1,7 +1,9 @@
 package service
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -9,8 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
-	runsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/run"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type AdminTriggerAppBranchRunRequest struct {
@@ -36,9 +37,9 @@ func (s *service) AdminTriggerAppBranchRun(ctx *gin.Context) {
 	appBranchID := ctx.Param("app_branch_id")
 
 	var req AdminTriggerAppBranchRunRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		// Allow empty body (default force=false)
-		req = AdminTriggerAppBranchRunRequest{}
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		ctx.Error(stderr.NewInvalidRequest(err))
+		return
 	}
 
 	// Load branch with queue
@@ -62,62 +63,25 @@ func (s *service) AdminTriggerAppBranchRun(ctx *gin.Context) {
 		return
 	}
 
-	// Create app branch run
-	run, err := s.helpers.CreateAppBranchRun(ctx, &helpers.CreateAppBranchRunRequest{
-		AppBranchID:       appBranchID,
-		AppBranchConfigID: config.ID,
-		Force:             req.Force,
-	})
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create app branch run: %w", err))
-		return
-	}
-
-	// Create workflow
-	wf, err := s.helpers.CreateWorkflow(
-		ctx,
-		appBranchID,
-		app.WorkflowTypeAppBranchesRun,
-		map[string]string{
-			"run_id":        run.ID,
+	triggerResp, err := s.helpers.TriggerAppBranchRun(ctx, &helpers.TriggerAppBranchRunRequest{
+		Run: helpers.CreateAppBranchRunRequest{
+			AppBranchID:       appBranchID,
+			AppBranchConfigID: config.ID,
+			Force:             req.Force,
+		},
+		QueueID: branch.Queue.ID,
+		Metadata: map[string]string{
 			"config_id":     config.ID,
 			"config_number": strconv.Itoa(config.ConfigNumber),
 			"force":         strconv.FormatBool(req.Force),
 			"event_type":    "manual",
-			"commit_sha":    run.CommitSHA,
-		},
-		false,
-	)
-	if err != nil {
-		run.Status = "failed"
-		run.ErrorMessage = fmt.Sprintf("workflow creation failed: %v", err)
-		s.db.WithContext(ctx).Save(run)
-		ctx.Error(fmt.Errorf("unable to create workflow: %w", err))
-		return
-	}
-
-	// Update run with workflow ID
-	run.WorkflowID = &wf.ID
-	res = s.db.WithContext(ctx).Save(run)
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to update run with workflow id: %w", res.Error))
-		return
-	}
-
-	// Enqueue signal
-	_, err = s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID: branch.Queue.ID,
-		Signal: &runsignal.Signal{
-			RunID: run.ID,
 		},
 	})
 	if err != nil {
-		run.Status = "failed"
-		run.ErrorMessage = fmt.Sprintf("signal enqueue failed: %v", err)
-		s.db.WithContext(ctx).Save(run)
-		ctx.Error(fmt.Errorf("unable to enqueue run signal: %w", err))
+		ctx.Error(fmt.Errorf("unable to trigger app branch run: %w", err))
 		return
 	}
+	run := triggerResp.Run
 
 	// Reload with relationships
 	res = s.db.WithContext(ctx).

@@ -11,5 +11,12 @@ export const DeployPlanContainer = ({
 }) => {
   const { plan, isLoading } = useQueryApprovalPlan({ step })
 
-  return <DeployPlan step={step} plan={plan} isLoading={isLoading} panelId={panelId} />
+  return (
+    <DeployPlan
+      step={step}
+      plan={plan}
+      isLoading={isLoading}
+      panelId={panelId}
+    />
+  )
 }

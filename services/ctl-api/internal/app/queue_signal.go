@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -28,8 +29,9 @@ type QueueSignal struct {
 	OrgID *string `json:"org_id,omitempty" temporaljson:"org_id,omitzero,omitempty"`
 	Org   *Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	QueueID string `json:"queue_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"queue_id,omitzero,omitempty"`
-	Queue   Queue  `json:"queue"`
+	QueueID   string  `json:"queue_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"queue_id,omitzero,omitempty"`
+	Queue     Queue   `json:"queue"`
+	DedupeKey *string `json:"dedupe_key,omitempty" temporaljson:"dedupe_key,omitzero,omitempty"`
 
 	// Optional: if this signal was emitted by an emitter
 	EmitterID *string       `json:"emitter_id,omitzero" gorm:"type:text;index:idx_queue_signal_emitter_id" temporaljson:"emitter_id,omitzero,omitempty"`
@@ -58,6 +60,7 @@ type QueueSignal struct {
 
 func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
+		{Name: indexes.Name(db, &QueueSignal{}, "queue_id_dedupe_key"), Columns: []string{"queue_id", "dedupe_key"}, UniqueValue: sql.NullBool{Bool: true, Valid: true}, Option: "WHERE deleted_at = 0 AND dedupe_key IS NOT NULL AND dedupe_key <> ''"},
 		{
 			Name: indexes.Name(db, &QueueSignal{}, "org_id"),
 			Columns: []string{

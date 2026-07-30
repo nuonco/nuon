@@ -237,17 +237,11 @@ const DeployInstallCard = ({
   )
 }
 
-export const InstallGroupStepDetails = ({
-  step,
-}: {
-  step?: TWorkflowStep
-}) => {
+export const InstallGroupStepDetails = ({ step }: { step?: TWorkflowStep }) => {
   const { org } = useOrg()
   const orgId = org?.id ?? ''
 
-  const metadata = step?.status?.metadata as
-    | Record<string, unknown>
-    | undefined
+  const metadata = step?.status?.metadata as Record<string, unknown> | undefined
   const installs = (metadata?.installs ?? []) as IInstallMetadataEntry[]
   const groupName = metadata?.install_group_name as string | undefined
   const totalInstalls = metadata?.total_installs as number | undefined
@@ -280,10 +274,12 @@ export const InstallGroupStepDetails = ({
     )
   }
 
-  const displayInstalls = installs?.length ? installs : planInstalls.map((p) => ({
-    install_id: p?.install_id,
-    status: 'success',
-  }))
+  const displayInstalls = installs?.length
+    ? installs
+    : planInstalls.map((p) => ({
+        install_id: p?.install_id,
+        status: 'success',
+      }))
 
   return (
     <div className="p-4 flex flex-col gap-3">
@@ -299,9 +295,7 @@ export const InstallGroupStepDetails = ({
         </div>
       ) : null}
 
-      {hasApproval && step ? (
-        <StepButtons step={step} />
-      ) : null}
+      {hasApproval && step ? <StepButtons step={step} /> : null}
 
       {isPlan && planLoading && !plan ? (
         <Skeleton height="200px" width="100%" />

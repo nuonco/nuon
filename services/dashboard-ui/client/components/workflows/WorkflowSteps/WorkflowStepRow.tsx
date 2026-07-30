@@ -27,9 +27,12 @@ export const WorkflowStepRow = ({
   attemptNumber,
 }: IWorkflowStepRow) => {
   const badges = getStepBadges(step, approvalPrompt, planOnly)
+  const eventWait = step?.links?.event_wait
 
   const hideDetails =
-    (step?.execution_type === 'system' && !step?.step_target_type) ||
+    (step?.execution_type === 'system' &&
+      !step?.step_target_type &&
+      !eventWait) ||
     step?.status?.status === 'pending' ||
     step?.status?.status === 'not-attempted'
 

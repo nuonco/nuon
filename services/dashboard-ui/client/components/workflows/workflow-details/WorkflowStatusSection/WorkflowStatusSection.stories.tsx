@@ -16,7 +16,9 @@ const makeWorkflow = (status: string, description?: string, type = 'deploy') =>
 
 export const Running = () => (
   <div className="max-w-2xl p-4">
-    <WorkflowStatusSection workflow={makeWorkflow('in-progress', 'In progress')} />
+    <WorkflowStatusSection
+      workflow={makeWorkflow('in-progress', 'In progress')}
+    />
   </div>
 )
 

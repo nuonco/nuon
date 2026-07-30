@@ -33,9 +33,5 @@ export const External = () => (
 )
 
 export const NoIcon = () => (
-  <MainNavLink
-    basePath="/org-123"
-    path="/settings"
-    text="Settings"
-  />
+  <MainNavLink basePath="/org-123" path="/settings" text="Settings" />
 )

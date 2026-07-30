@@ -25,7 +25,11 @@ const StepHistoryStatus = ({
     return (
       <span className="flex items-center gap-4 py-2">
         <Status status={status.status} variant="badge" />
-        <Time seconds={status.created_at_ts} variant="subtext" theme="neutral" />
+        <Time
+          seconds={status.created_at_ts}
+          variant="subtext"
+          theme="neutral"
+        />
       </span>
     )
   }
@@ -38,7 +42,11 @@ const StepHistoryStatus = ({
       heading={
         <span className="flex items-center gap-4 py-2">
           <Status status={status.status} variant="badge" />
-          <Time seconds={status.created_at_ts} variant="subtext" theme="neutral" />
+          <Time
+            seconds={status.created_at_ts}
+            variant="subtext"
+            theme="neutral"
+          />
         </span>
       }
     >
@@ -85,7 +93,9 @@ export const StepMetadata = ({ step }: IStepDetails) => {
           <Text variant="label" theme="neutral">
             Retry info
           </Text>
-          <Text variant="subtext">Type: {step.status.metadata.retry_type as string}</Text>
+          <Text variant="subtext">
+            Type: {step.status.metadata.retry_type as string}
+          </Text>
           {step.status.metadata?.retry_idx !== undefined && (
             <Text variant="subtext">
               Attempt: {step.status.metadata.retry_idx as number}
@@ -111,7 +121,10 @@ export const StepMetadata = ({ step }: IStepDetails) => {
         </div>
       </Expand>
 
-      <Link className="text-xs" href={`/${org?.id}/installs/${install?.id}/workflows`}>
+      <Link
+        className="text-xs"
+        href={`/${org?.id}/installs/${install?.id}/workflows`}
+      >
         View workflows
       </Link>
     </div>

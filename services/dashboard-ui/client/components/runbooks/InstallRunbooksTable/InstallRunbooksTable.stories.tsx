@@ -2,12 +2,20 @@ export default {
   title: 'Runbooks/InstallRunbooksTable',
 }
 
-import { InstallRunbooksTable, InstallRunbooksTableSkeleton, type TInstallRunbookRow } from './InstallRunbooksTable'
+import {
+  InstallRunbooksTable,
+  InstallRunbooksTableSkeleton,
+  type TInstallRunbookRow,
+} from './InstallRunbooksTable'
 
 const mockRows: TInstallRunbookRow[] = Array.from({ length: 3 }, (_, i) => ({
   runbookId: `runbook-${i + 1}`,
   runbookName: `rotate-secrets-${i + 1}`,
-  description: <span className="text-sm text-gray-500">Rotates API keys and credentials.</span>,
+  description: (
+    <span className="text-sm text-gray-500">
+      Rotates API keys and credentials.
+    </span>
+  ),
   labels: <span className="text-sm text-gray-500">production</span>,
   lastUpdated: <span className="text-sm text-gray-500">3 days ago</span>,
   lastRun: <span className="text-sm text-gray-500">2 hours ago</span>,

@@ -43,7 +43,13 @@ export function parseRunbooksToTableData(
             {Object.keys(runbook.labels)
               .sort()
               .map((k) => (
-                <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" customColor={labelColors?.[k]} />
+                <LabelBadge
+                  key={k}
+                  labelKey={k}
+                  labelValue={runbook.labels[k]}
+                  size="sm"
+                  customColor={labelColors?.[k]}
+                />
               ))}
           </span>
         ) : (
@@ -115,7 +121,11 @@ interface IRunbooksTable {
   pagination: { hasNext?: boolean; offset: number; limit: number }
 }
 
-export const RunbooksTable = ({ data, isLoading, pagination }: IRunbooksTable) => {
+export const RunbooksTable = ({
+  data,
+  isLoading,
+  pagination,
+}: IRunbooksTable) => {
   return (
     <Table<TRunbookRow>
       columns={columns}
@@ -124,7 +134,8 @@ export const RunbooksTable = ({ data, isLoading, pagination }: IRunbooksTable) =
       emptyStateProps={{
         variant: 'actions',
         emptyTitle: 'No runbooks yet',
-        emptyMessage: 'Runbooks let you define operational procedures for your installs.',
+        emptyMessage:
+          'Runbooks let you define operational procedures for your installs.',
       }}
       pagination={pagination}
       searchPlaceholder="Search by name or ID..."

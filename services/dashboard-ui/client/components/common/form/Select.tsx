@@ -1,5 +1,11 @@
 import { createPortal } from 'react-dom'
-import { type SelectHTMLAttributes, forwardRef, useState, useRef, useEffect } from 'react'
+import {
+  type SelectHTMLAttributes,
+  forwardRef,
+  useState,
+  useRef,
+  useEffect,
+} from 'react'
 import { Label, type ILabel } from '@/components/common/form/Label'
 import { Text, type IText } from '@/components/common/Text'
 import { Badge, type IBadge } from '@/components/common/Badge'
@@ -7,7 +13,7 @@ import { Icon } from '@/components/common/Icon'
 import { SearchInput } from '@/components/common/SearchInput'
 import { TransitionDiv } from '@/components/common/TransitionDiv'
 import { cn } from '@/utils/classnames'
-import "./Select.css"
+import './Select.css'
 
 export interface SelectOption {
   value: string
@@ -62,10 +68,12 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
   ) => {
     const [isOpen, setIsOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
-    const [internalValue, setInternalValue] = useState<SelectOption | null>(() => {
-      const initialValue = value !== undefined ? value : defaultValue
-      return options.find(option => option.value === initialValue) || null
-    })
+    const [internalValue, setInternalValue] = useState<SelectOption | null>(
+      () => {
+        const initialValue = value !== undefined ? value : defaultValue
+        return options.find((option) => option.value === initialValue) || null
+      }
+    )
     const [isInvalid, setIsInvalid] = useState(false)
     const [hasBlurred, setHasBlurred] = useState(false)
     const [showValidationMessage, setShowValidationMessage] = useState(false)
@@ -84,9 +92,10 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
     const portalRef = useRef<HTMLDivElement>(null)
     const optionRefs = useRef<(HTMLButtonElement | null)[]>([])
 
-    const currentValue = value !== undefined
-      ? options.find(option => option.value === value) || null
-      : internalValue
+    const currentValue =
+      value !== undefined
+        ? options.find((option) => option.value === value) || null
+        : internalValue
 
     const sizeClasses = {
       sm: 'px-2 py-1 text-sm',
@@ -118,7 +127,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
         const pos = computeDropdownPosition()
         if (pos) setDropdownPosition(pos)
       }
-      setIsOpen(prev => !prev)
+      setIsOpen((prev) => !prev)
     }
 
     const closeDropdown = (wasOpen: boolean) => {
@@ -127,7 +136,10 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       setHighlightedIndex(-1)
       if (required && wasOpen) {
         setHasBlurred(true)
-        if (validationInputRef.current && !validationInputRef.current.checkValidity()) {
+        if (
+          validationInputRef.current &&
+          !validationInputRef.current.checkValidity()
+        ) {
           setIsInvalid(true)
           setShowValidationMessage(true)
         }
@@ -227,16 +239,19 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       setSearchQuery('')
     }
 
-    const filteredOptions = searchable && searchQuery
-      ? options.filter(o => o.label.toLowerCase().includes(searchQuery.toLowerCase()))
-      : options
+    const filteredOptions =
+      searchable && searchQuery
+        ? options.filter((o) =>
+            o.label.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+        : options
 
     const openDropdown = () => {
       if (disabled || isOpen) return
       const pos = computeDropdownPosition()
       if (pos) setDropdownPosition(pos)
       const currentIdx = currentValue
-        ? filteredOptions.findIndex(o => o.value === currentValue.value)
+        ? filteredOptions.findIndex((o) => o.value === currentValue.value)
         : -1
       setHighlightedIndex(currentIdx >= 0 ? currentIdx : 0)
       setIsOpen(true)
@@ -244,13 +259,20 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
 
     useEffect(() => {
       if (isOpen && highlightedIndex >= 0) {
-        optionRefs.current[highlightedIndex]?.scrollIntoView({ block: 'nearest' })
+        optionRefs.current[highlightedIndex]?.scrollIntoView({
+          block: 'nearest',
+        })
       }
     }, [highlightedIndex, isOpen])
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
       if (!isOpen) {
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
+        if (
+          e.key === 'ArrowDown' ||
+          e.key === 'ArrowUp' ||
+          e.key === 'Enter' ||
+          e.key === ' '
+        ) {
           e.preventDefault()
           openDropdown()
         }
@@ -259,19 +281,23 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
 
       const enabledIndices = filteredOptions
         .map((o, i) => (o.disabled ? -1 : i))
-        .filter(i => i >= 0)
+        .filter((i) => i >= 0)
 
       switch (e.key) {
         case 'ArrowDown': {
           e.preventDefault()
-          const nextIdx = enabledIndices.find(i => i > highlightedIndex)
+          const nextIdx = enabledIndices.find((i) => i > highlightedIndex)
           setHighlightedIndex(nextIdx ?? enabledIndices[0] ?? -1)
           break
         }
         case 'ArrowUp': {
           e.preventDefault()
-          const prevIdx = [...enabledIndices].reverse().find(i => i < highlightedIndex)
-          setHighlightedIndex(prevIdx ?? enabledIndices[enabledIndices.length - 1] ?? -1)
+          const prevIdx = [...enabledIndices]
+            .reverse()
+            .find((i) => i < highlightedIndex)
+          setHighlightedIndex(
+            prevIdx ?? enabledIndices[enabledIndices.length - 1] ?? -1
+          )
           break
         }
         case 'Home': {
@@ -287,7 +313,11 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
         case 'Enter':
         case ' ': {
           e.preventDefault()
-          if (highlightedIndex >= 0 && filteredOptions[highlightedIndex] && !filteredOptions[highlightedIndex].disabled) {
+          if (
+            highlightedIndex >= 0 &&
+            filteredOptions[highlightedIndex] &&
+            !filteredOptions[highlightedIndex].disabled
+          ) {
             handleOptionSelect(filteredOptions[highlightedIndex])
             buttonRef.current?.focus()
           }
@@ -319,7 +349,12 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
             type="text"
             value={currentValue?.value || ''}
             required
-            style={{ position: 'absolute', left: '-9999px', opacity: 0, pointerEvents: 'none' }}
+            style={{
+              position: 'absolute',
+              left: '-9999px',
+              opacity: 0,
+              pointerEvents: 'none',
+            }}
             tabIndex={-1}
             aria-hidden="true"
             onChange={() => {}}
@@ -328,10 +363,16 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
 
         <button
           ref={buttonRef}
+          id={props.id}
           type="button"
           role="combobox"
           aria-expanded={isOpen}
           aria-haspopup="listbox"
+          aria-describedby={
+            helperText || errorMessage || showValidationMessage
+              ? `${props.id}-description`
+              : undefined
+          }
           onClick={handleToggle}
           onKeyDown={handleKeyDown}
           disabled={disabled}
@@ -343,13 +384,17 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
             'user-invalid:focus:!border-red-500 user-invalid:focus:!ring-red-500',
             sizeClasses[size],
             {
-              '!bg-cool-grey-200 text-cool-grey-500 dark:!bg-dark-grey-600 dark:text-dark-grey-900 cursor-not-allowed': disabled,
+              '!bg-cool-grey-200 text-cool-grey-500 dark:!bg-dark-grey-600 dark:text-dark-grey-900 cursor-not-allowed':
+                disabled,
               '!border-cool-grey-300 dark:!border-dark-grey-600': disabled,
               '!shadow-none': disabled,
-              'focus:!ring-transparent focus:!border-cool-grey-300 dark:focus:!border-dark-grey-600': disabled,
+              'focus:!ring-transparent focus:!border-cool-grey-300 dark:focus:!border-dark-grey-600':
+                disabled,
 
-              'bg-white dark:bg-dark-grey-900 text-cool-grey-900 dark:text-cool-grey-100': !disabled && !error && !isInvalid,
-              'border-cool-grey-500/24 dark:border-cool-grey-500/24': !disabled && !error && !isInvalid,
+              'bg-white dark:bg-dark-grey-900 text-cool-grey-900 dark:text-cool-grey-100':
+                !disabled && !error && !isInvalid,
+              'border-cool-grey-500/24 dark:border-cool-grey-500/24':
+                !disabled && !error && !isInvalid,
 
               '!border-red-500 dark:!border-red-400': error || isInvalid,
               'focus:!ring-red-500 focus:!border-red-500': error || isInvalid,
@@ -358,7 +403,11 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
           )}
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className={cn("truncate", { "text-cool-grey-500 dark:text-cool-grey-400": !currentValue })}>
+            <span
+              className={cn('truncate', {
+                'text-cool-grey-500 dark:text-cool-grey-400': !currentValue,
+              })}
+            >
               {currentValue?.label || placeholder || 'Select an option...'}
             </span>
             {currentValue?.badge && (
@@ -369,10 +418,9 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
           </div>
           <Icon
             variant="CaretDownIcon"
-            className={cn(
-              'ml-2 transition-transform flex-shrink-0',
-              { 'rotate-180': isOpen }
-            )}
+            className={cn('ml-2 transition-transform flex-shrink-0', {
+              'rotate-180': isOpen,
+            })}
           />
         </button>
 
@@ -384,90 +432,116 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       </div>
     )
 
-    const dropdownPortal = isOpen && dropdownPosition
-      ? createPortal(
-          <div
-            ref={portalRef}
-            onKeyDown={handleKeyDown}
-            style={{
-              position: 'fixed',
-              top: dropdownPosition.top,
-              bottom: dropdownPosition.bottom,
-              left: dropdownPosition.left,
-              width: dropdownPosition.width,
-              zIndex: 9999,
-            }}
-          >
-            <TransitionDiv
-              isVisible={isOpen}
-              role="listbox"
-              style={{ maxHeight: dropdownPosition.maxHeight }}
-              className="select-options bg-cool-grey-100 dark:bg-dark-grey-800 shadow-sm border rounded py-1 px-2 overflow-x-hidden overflow-y-auto"
+    const dropdownPortal =
+      isOpen && dropdownPosition
+        ? createPortal(
+            <div
+              ref={portalRef}
+              onKeyDown={handleKeyDown}
+              style={{
+                position: 'fixed',
+                top: dropdownPosition.top,
+                bottom: dropdownPosition.bottom,
+                left: dropdownPosition.left,
+                width: dropdownPosition.width,
+                zIndex: 9999,
+              }}
             >
-              <div className="flex flex-col gap-1">
-                {searchable && (
-                  <div className="pb-1 mb-1 border-b border-cool-grey-200 dark:border-dark-grey-700">
-                    <SearchInput
-                      value={searchQuery}
-                      onChange={(val) => {
-                        setSearchQuery(val)
-                        setHighlightedIndex(0)
+              <TransitionDiv
+                isVisible={isOpen}
+                role="listbox"
+                style={{ maxHeight: dropdownPosition.maxHeight }}
+                className="select-options bg-cool-grey-100 dark:bg-dark-grey-800 shadow-sm border rounded py-1 px-2 overflow-x-hidden overflow-y-auto"
+              >
+                <div className="flex flex-col gap-1">
+                  {searchable && (
+                    <div className="pb-1 mb-1 border-b border-cool-grey-200 dark:border-dark-grey-700">
+                      <SearchInput
+                        value={searchQuery}
+                        onChange={(val) => {
+                          setSearchQuery(val)
+                          setHighlightedIndex(0)
+                        }}
+                        placeholder="Search..."
+                        labelClassName="w-full"
+                        className="!min-w-0 w-full h-8 text-xs"
+                        onKeyDown={(e) => {
+                          if (
+                            [
+                              'ArrowDown',
+                              'ArrowUp',
+                              'Enter',
+                              'Escape',
+                              'Home',
+                              'End',
+                            ].includes(e.key)
+                          )
+                            return
+                          e.stopPropagation()
+                        }}
+                        autoFocus
+                      />
+                    </div>
+                  )}
+                  {filteredOptions.length === 0 && searchQuery && (
+                    <div className="px-2 py-1 text-sm text-cool-grey-500 dark:text-cool-grey-400">
+                      No results
+                    </div>
+                  )}
+                  {filteredOptions.length === 0 && !searchQuery && (
+                    <div className="px-2 py-1 text-sm">
+                      No options available
+                    </div>
+                  )}
+                  {filteredOptions.map((option, idx) => (
+                    <button
+                      key={option.value}
+                      ref={(el) => {
+                        optionRefs.current[idx] = el
                       }}
-                      placeholder="Search..."
-                      labelClassName="w-full"
-                      className="!min-w-0 w-full h-8 text-xs"
-                      onKeyDown={e => {
-                        if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Home', 'End'].includes(e.key)) return
-                        e.stopPropagation()
+                      type="button"
+                      role="option"
+                      aria-selected={currentValue?.value === option.value}
+                      onClick={() => {
+                        handleOptionSelect(option)
+                        buttonRef.current?.focus()
                       }}
-                      autoFocus
-                    />
-                  </div>
-                )}
-                {filteredOptions.length === 0 && searchQuery && (
-                  <div className="px-2 py-1 text-sm text-cool-grey-500 dark:text-cool-grey-400">No results</div>
-                )}
-                {filteredOptions.length === 0 && !searchQuery && (
-                  <div className="px-2 py-1 text-sm">No options available</div>
-                )}
-                {filteredOptions.map((option, idx) => (
-                  <button
-                    key={option.value}
-                    ref={el => { optionRefs.current[idx] = el }}
-                    type="button"
-                    role="option"
-                    aria-selected={currentValue?.value === option.value}
-                    onClick={() => {
-                      handleOptionSelect(option)
-                      buttonRef.current?.focus()
-                    }}
-                    onMouseEnter={() => setHighlightedIndex(idx)}
-                    disabled={option.disabled}
-                    className={cn(
-                      'transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none rounded text-sm font-sans text-left flex items-center justify-between gap-2',
-                      {
-                        'text-white bg-primary-600': currentValue?.value === option.value && highlightedIndex !== idx,
-                        'bg-primary-100 dark:bg-primary-900/40': highlightedIndex === idx && currentValue?.value !== option.value,
-                        'text-white bg-primary-700': highlightedIndex === idx && currentValue?.value === option.value,
-                        'hover:bg-black/5 dark:hover:bg-white/5': highlightedIndex !== idx && currentValue?.value !== option.value && !option.disabled,
-                        'opacity-50 cursor-not-allowed': option.disabled,
-                      }
-                    )}
-                  >
-                    <span className="truncate flex-1">{option.label}</span>
-                    {option.badge && (
-                      <Badge size="sm" theme={option.badge.theme}>
-                        {option.badge.label}
-                      </Badge>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </TransitionDiv>
-          </div>,
-          document.body
-        )
-      : null
+                      onMouseEnter={() => setHighlightedIndex(idx)}
+                      disabled={option.disabled}
+                      className={cn(
+                        'transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none rounded text-sm font-sans text-left flex items-center justify-between gap-2',
+                        {
+                          'text-white bg-primary-600':
+                            currentValue?.value === option.value &&
+                            highlightedIndex !== idx,
+                          'bg-primary-100 dark:bg-primary-900/40':
+                            highlightedIndex === idx &&
+                            currentValue?.value !== option.value,
+                          'text-white bg-primary-700':
+                            highlightedIndex === idx &&
+                            currentValue?.value === option.value,
+                          'hover:bg-black/5 dark:hover:bg-white/5':
+                            highlightedIndex !== idx &&
+                            currentValue?.value !== option.value &&
+                            !option.disabled,
+                          'opacity-50 cursor-not-allowed': option.disabled,
+                        }
+                      )}
+                    >
+                      <span className="truncate flex-1">{option.label}</span>
+                      {option.badge && (
+                        <Badge size="sm" theme={option.badge.theme}>
+                          {option.badge.label}
+                        </Badge>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </TransitionDiv>
+            </div>,
+            document.body
+          )
+        : null
 
     const renderDescription = () => {
       if (error && errorMessage) {

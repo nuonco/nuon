@@ -35,6 +35,12 @@ export const SETTINGS_LINKS: TNavLink[] = [
     shortcut: 'g r',
   },
   {
+    iconVariant: 'LightningIcon',
+    path: `/triggers`,
+    text: 'Triggers',
+    shortcut: 'g e',
+  },
+  {
     iconVariant: 'WebhooksLogoIcon',
     path: `/webhooks`,
     text: 'Webhooks',

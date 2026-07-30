@@ -66,12 +66,16 @@ const mockActionRunData = {
   action_workflow_id: 'aw-1',
   status: 'succeeded',
   config: {
-    steps: [
-      { id: 'sc-1', name: 'migrate', idx: 0 },
-    ],
+    steps: [{ id: 'sc-1', name: 'migrate', idx: 0 }],
   },
   steps: [
-    { id: 'rs-1', name: 'migrate', idx: 0, status: 'succeeded', execution_duration: 5000000000 },
+    {
+      id: 'rs-1',
+      name: 'migrate',
+      idx: 0,
+      status: 'succeeded',
+      execution_duration: 5000000000,
+    },
   ],
   outputs: {
     steps: {
@@ -91,12 +95,16 @@ const mockActionRunNoOutputs = {
   action_workflow_id: 'aw-2',
   status: 'succeeded',
   config: {
-    steps: [
-      { id: 'sc-2', name: 'health-check', idx: 0 },
-    ],
+    steps: [{ id: 'sc-2', name: 'health-check', idx: 0 }],
   },
   steps: [
-    { id: 'rs-2', name: 'health-check', idx: 0, status: 'succeeded', execution_duration: 2000000000 },
+    {
+      id: 'rs-2',
+      name: 'health-check',
+      idx: 0,
+      status: 'succeeded',
+      execution_duration: 2000000000,
+    },
   ],
   outputs: { steps: {} },
   created_at: '2025-05-18T11:00:00Z',
@@ -115,9 +123,27 @@ const mockMultiStepActionRun = {
     ],
   },
   steps: [
-    { id: 'rs-3', name: 'backup', idx: 0, status: 'succeeded', execution_duration: 3000000000 },
-    { id: 'rs-4', name: 'migrate', idx: 1, status: 'succeeded', execution_duration: 8000000000 },
-    { id: 'rs-5', name: 'seed', idx: 2, status: 'succeeded', execution_duration: 1000000000 },
+    {
+      id: 'rs-3',
+      name: 'backup',
+      idx: 0,
+      status: 'succeeded',
+      execution_duration: 3000000000,
+    },
+    {
+      id: 'rs-4',
+      name: 'migrate',
+      idx: 1,
+      status: 'succeeded',
+      execution_duration: 8000000000,
+    },
+    {
+      id: 'rs-5',
+      name: 'seed',
+      idx: 2,
+      status: 'succeeded',
+      execution_duration: 1000000000,
+    },
   ],
   outputs: {
     steps: {
@@ -144,11 +170,13 @@ export const DeployWithOutputs = () => (
 
 export const DeployWithNestedOutputs = () => (
   <RunbookStepCard
-    step={{
-      ...baseStep,
-      id: 'step-helm',
-      name: 'deploy monitoring stack',
-    } as unknown as TWorkflowStep}
+    step={
+      {
+        ...baseStep,
+        id: 'step-helm',
+        name: 'deploy monitoring stack',
+      } as unknown as TWorkflowStep
+    }
     workflowUrl="/org1/installs/inst-1/workflows/wf-1"
     targetData={mockHelmDeployData}
     deployOutputs={mockHelmDeployOutputs}
@@ -157,11 +185,13 @@ export const DeployWithNestedOutputs = () => (
 
 export const DeployNoOutputs = () => (
   <RunbookStepCard
-    step={{
-      ...baseStep,
-      id: 'step-no-out',
-      name: 'deploy worker',
-    } as unknown as TWorkflowStep}
+    step={
+      {
+        ...baseStep,
+        id: 'step-no-out',
+        name: 'deploy worker',
+      } as unknown as TWorkflowStep
+    }
     workflowUrl="/org1/installs/inst-1/workflows/wf-1"
     targetData={mockDeployData}
   />
@@ -169,13 +199,15 @@ export const DeployNoOutputs = () => (
 
 export const ActionRunWithOutputs = () => (
   <RunbookStepCard
-    step={{
-      ...baseStep,
-      id: 'step-2',
-      name: 'run migrations',
-      step_target_type: 'install_action_workflow_runs',
-      step_target_id: 'run-1',
-    } as unknown as TWorkflowStep}
+    step={
+      {
+        ...baseStep,
+        id: 'step-2',
+        name: 'run migrations',
+        step_target_type: 'install_action_workflow_runs',
+        step_target_id: 'run-1',
+      } as unknown as TWorkflowStep
+    }
     workflowUrl="/org1/installs/inst-1/workflows/wf-1"
     targetData={mockActionRunData}
   />
@@ -183,13 +215,15 @@ export const ActionRunWithOutputs = () => (
 
 export const ActionRunNoOutputs = () => (
   <RunbookStepCard
-    step={{
-      ...baseStep,
-      id: 'step-hc',
-      name: 'health check',
-      step_target_type: 'install_action_workflow_runs',
-      step_target_id: 'run-2',
-    } as unknown as TWorkflowStep}
+    step={
+      {
+        ...baseStep,
+        id: 'step-hc',
+        name: 'health check',
+        step_target_type: 'install_action_workflow_runs',
+        step_target_id: 'run-2',
+      } as unknown as TWorkflowStep
+    }
     workflowUrl="/org1/installs/inst-1/workflows/wf-1"
     targetData={mockActionRunNoOutputs}
   />
@@ -197,13 +231,15 @@ export const ActionRunNoOutputs = () => (
 
 export const ActionRunMultiStep = () => (
   <RunbookStepCard
-    step={{
-      ...baseStep,
-      id: 'step-multi',
-      name: 'backup migrate and seed',
-      step_target_type: 'install_action_workflow_runs',
-      step_target_id: 'run-3',
-    } as unknown as TWorkflowStep}
+    step={
+      {
+        ...baseStep,
+        id: 'step-multi',
+        name: 'backup migrate and seed',
+        step_target_type: 'install_action_workflow_runs',
+        step_target_id: 'run-3',
+      } as unknown as TWorkflowStep
+    }
     workflowUrl="/org1/installs/inst-1/workflows/wf-1"
     targetData={mockMultiStepActionRun}
   />
@@ -219,36 +255,42 @@ export const Loading = () => (
 
 export const NoData = () => (
   <RunbookStepCard
-    step={{
-      ...baseStep,
-      id: 'step-pending',
-      name: 'pending step',
-      status: { status: 'pending' },
-    } as unknown as TWorkflowStep}
+    step={
+      {
+        ...baseStep,
+        id: 'step-pending',
+        name: 'pending step',
+        status: { status: 'pending' },
+      } as unknown as TWorkflowStep
+    }
     workflowUrl="/org1/installs/inst-1/workflows/wf-1"
   />
 )
 
 export const FailedWithErrorDescription = () => (
   <RunbookStepCard
-    step={{
-      ...baseStep,
-      id: 'step-failed',
-      name: 'deploy database',
-      status: {
-        status: 'failed',
-        status_human_description: 'Terraform apply failed: resource limit exceeded',
-        history: [
-          { status: 'pending', created_at_ts: 1716000000 },
-          { status: 'running', created_at_ts: 1716000060 },
-          {
-            status: 'failed',
-            created_at_ts: 1716000120,
-            status_human_description: 'Terraform apply failed: resource limit exceeded',
-          },
-        ],
-      },
-    } as unknown as TWorkflowStep}
+    step={
+      {
+        ...baseStep,
+        id: 'step-failed',
+        name: 'deploy database',
+        status: {
+          status: 'failed',
+          status_human_description:
+            'Terraform apply failed: resource limit exceeded',
+          history: [
+            { status: 'pending', created_at_ts: 1716000000 },
+            { status: 'running', created_at_ts: 1716000060 },
+            {
+              status: 'failed',
+              created_at_ts: 1716000120,
+              status_human_description:
+                'Terraform apply failed: resource limit exceeded',
+            },
+          ],
+        },
+      } as unknown as TWorkflowStep
+    }
     workflowUrl="/org1/installs/inst-1/workflows/wf-1"
     targetData={mockDeployData}
     deployOutputs={mockDeployOutputs}

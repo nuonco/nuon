@@ -41,6 +41,7 @@ var GeneralWorkerModule = fx.Module("worker-general",
 // OrgsWorkerModule provides the orgs namespace worker.
 var OrgsWorkerModule = fx.Module("worker-orgs",
 	fx.Provide(orgsactivities.New),
+	fx.Provide(fx.Annotate(appsactivities.New, fx.ResultTags(`name:"org-trigger-activities"`))),
 	fx.Provide(orgsworker.NewWorkflows),
 	fx.Provide(worker.AsWorker(orgsworker.New)),
 )

@@ -29,7 +29,9 @@ export const WorkflowMetadata = ({ workflow }: IWorkflowMetadata) => {
               <th className="py-3 px-4 text-left font-normal font-sans rounded-tl-lg">
                 Status
               </th>
-              <th className="py-3 px-4 text-left font-normal font-sans">Time</th>
+              <th className="py-3 px-4 text-left font-normal font-sans">
+                Time
+              </th>
               <th className="py-3 px-4 text-left font-normal font-sans rounded-tr-lg">
                 Description
               </th>

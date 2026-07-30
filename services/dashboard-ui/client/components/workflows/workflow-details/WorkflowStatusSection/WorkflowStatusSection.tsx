@@ -4,7 +4,10 @@ import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import type { TWorkflowQueueItem, TWorkflowQueuePosition } from '@/lib/ctl-api/workflows/get-workflow-queue-position'
+import type {
+  TWorkflowQueueItem,
+  TWorkflowQueuePosition,
+} from '@/lib/ctl-api/workflows/get-workflow-queue-position'
 import { getStatusTheme } from '@/utils/status-utils'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import type { TWorkflow } from '@/types'
@@ -64,7 +67,8 @@ export const WorkflowStatusSection = ({
                 {queuePosition?.queue_depth ?? '?'} in queue
               </Text>
               <Badge theme="neutral" size="sm">
-                {signalsAhead.length} workflow{signalsAhead.length !== 1 ? 's' : ''} ahead
+                {signalsAhead.length} workflow
+                {signalsAhead.length !== 1 ? 's' : ''} ahead
               </Badge>
             </div>
           }
@@ -108,7 +112,11 @@ const QueueItem = ({
   return (
     <div className="flex items-center justify-between gap-3 px-3 py-2">
       <div className="flex items-center gap-3 min-w-0">
-        <Text variant="label" theme="neutral" className="w-6 text-right shrink-0">
+        <Text
+          variant="label"
+          theme="neutral"
+          className="w-6 text-right shrink-0"
+        >
           {position}
         </Text>
         <Status status={item.status} isWithoutText />

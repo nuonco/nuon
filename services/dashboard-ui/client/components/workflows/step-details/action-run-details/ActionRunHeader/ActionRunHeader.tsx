@@ -35,7 +35,9 @@ export const ActionRunHeader = ({
               </Link>
             </Text>
           ) : null}
-          {step?.owner_id && actionRun?.config?.action_workflow_id && actionRun?.id ? (
+          {step?.owner_id &&
+          actionRun?.config?.action_workflow_id &&
+          actionRun?.id ? (
             <Text variant="subtext">
               <Link
                 href={`/${orgId}/installs/${step.owner_id}/actions/${actionRun.config.action_workflow_id}/runs/${actionRun.id}`}

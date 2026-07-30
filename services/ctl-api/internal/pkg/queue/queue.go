@@ -12,6 +12,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
+const (
+	AppTriggersQueueName = "app-triggers"
+	OrgSignalsQueueName  = "org-signals"
+)
+
 type QueueWorkflowRequest struct {
 	QueueID string
 	Version string

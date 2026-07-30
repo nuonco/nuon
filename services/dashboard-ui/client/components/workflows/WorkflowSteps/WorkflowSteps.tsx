@@ -110,7 +110,9 @@ export const WorkflowSteps = ({
       />
       {filteredSteps.length ? (
         <div className="flex flex-col border rounded-md divide-y overflow-hidden">
-          {[...groupsByGroupIdx.values()].flatMap((group) => renderGroup(group))}
+          {[...groupsByGroupIdx.values()].flatMap((group) =>
+            renderGroup(group)
+          )}
 
           {eagerStepsLoaded && !allStepsLoaded ? (
             <div className="flex items-center gap-4 px-4 py-2">
@@ -131,7 +133,11 @@ export const WorkflowSteps = ({
               ? 'No workflow steps match your search. Try adjusting your search criteria.'
               : 'Steps will appear here once the workflow has been generated.'
           }
-          emptyTitle={workflowSteps.length ? 'No steps found' : 'Workflow steps not available'}
+          emptyTitle={
+            workflowSteps.length
+              ? 'No steps found'
+              : 'Workflow steps not available'
+          }
         />
       )}
     </div>

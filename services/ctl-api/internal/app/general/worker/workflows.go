@@ -24,6 +24,7 @@ type Workflows struct {
 func (w Workflows) All() []any {
 	wkflows := []any{
 		w.Metrics,
+		w.CleanupTriggerEvents,
 		w.CleanupQueueSignals,
 		w.BackfillBlobs,
 		w.BackfillBlobsDay,
@@ -38,6 +39,7 @@ func (w Workflows) All() []any {
 func (w *Workflows) ListWorkflowFns() []any {
 	return []any{
 		w.Metrics,
+		w.CleanupTriggerEvents,
 		w.CleanupQueueSignals,
 		w.BackfillBlobs,
 		w.BackfillBlobsDay,

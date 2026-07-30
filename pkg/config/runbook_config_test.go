@@ -87,6 +87,94 @@ func TestRunbookConfig_Parse(t *testing.T) {
 		require.Contains(t, err.Error(), "plan_only is only supported")
 	})
 
+	t.Run("wait for event requires a trigger and event types", func(t *testing.T) {
+		rc := &RunbookConfig{
+			Name: "wait-for-event",
+			Steps: []*RunbookStepConfig{{
+				Name: "wait",
+				Type: RunbookStepTypeWaitForEvent,
+			}},
+		}
+
+		require.Error(t, rc.parse())
+	})
+
+	t.Run("wait for event validates filters", func(t *testing.T) {
+		rc := &RunbookConfig{
+			Name: "wait-for-event",
+			Steps: []*RunbookStepConfig{{
+				Name:       "wait",
+				Type:       RunbookStepTypeWaitForEvent,
+				Trigger:    "gar",
+				EventTypes: []string{"tag.updated"},
+				Filters:    []TriggerFilterConfig{{Path: "not-jsonpath", Op: "eq", Value: "acme/api"}},
+			}},
+		}
+
+		require.Error(t, rc.parse())
+	})
+
+	t.Run("wait for event rejects empty event types", func(t *testing.T) {
+		rc := &RunbookConfig{Name: "wait-for-event", Steps: []*RunbookStepConfig{{
+			Name: "wait", Type: RunbookStepTypeWaitForEvent, Trigger: "gar", EventTypes: []string{""},
+		}}}
+
+		require.ErrorContains(t, rc.parse(), "event_types must not contain empty strings")
+	})
+
+	t.Run("wait for event rejects duplicate event types", func(t *testing.T) {
+		rc := &RunbookConfig{Name: "wait-for-event", Steps: []*RunbookStepConfig{{
+			Name: "wait", Type: RunbookStepTypeWaitForEvent, Trigger: "gar", EventTypes: []string{"tag.updated", "tag.updated"},
+		}}}
+
+		require.ErrorContains(t, rc.parse(), `event_types contains duplicate "tag.updated"`)
+	})
+
+	t.Run("wait for event rejects too many filters", func(t *testing.T) {
+		filters := make([]TriggerFilterConfig, 21)
+		rc := &RunbookConfig{Name: "wait-for-event", Steps: []*RunbookStepConfig{{
+			Name: "wait", Type: RunbookStepTypeWaitForEvent, Trigger: "gar", EventTypes: []string{"tag.updated"}, Filters: filters,
+		}}}
+
+		require.ErrorContains(t, rc.parse(), "filters must contain at most 20 filters")
+	})
+
+	t.Run("wait for event rejects exclusion-only filter sets", func(t *testing.T) {
+		rc := &RunbookConfig{Name: "wait-for-event", Steps: []*RunbookStepConfig{{
+			Name: "wait", Type: RunbookStepTypeWaitForEvent, Trigger: "gar",
+			Filters: []TriggerFilterConfig{{Path: "$.repository", Op: "neq", Value: "acme/api"}},
+		}}}
+
+		require.ErrorContains(t, rc.parse(), "must declare event_types, a positive filter, or match_all = true")
+	})
+
+	t.Run("wait for event accepts an omitted timeout", func(t *testing.T) {
+		rc := &RunbookConfig{
+			Name: "wait-for-event",
+			Steps: []*RunbookStepConfig{{
+				Name:       "wait",
+				Type:       RunbookStepTypeWaitForEvent,
+				Trigger:    "gar",
+				EventTypes: []string{"tag.updated"},
+				Filters:    []TriggerFilterConfig{{Path: "$.repository", Op: "eq", Value: "acme/api"}},
+			}},
+		}
+
+		require.NoError(t, rc.parse())
+	})
+
+	t.Run("wait for event output names are unique", func(t *testing.T) {
+		rc := &RunbookConfig{
+			Name: "wait-for-events",
+			Steps: []*RunbookStepConfig{
+				{Name: "wait", Type: RunbookStepTypeWaitForEvent, Trigger: "gar", EventTypes: []string{"tag.updated"}},
+				{Name: "wait", Type: RunbookStepTypeWaitForEvent, Trigger: "gar", EventTypes: []string{"tag.deleted"}},
+			},
+		}
+
+		require.ErrorContains(t, rc.parse(), "duplicate wait_for_event step name")
+	})
+
 	t.Run("nil runbook parses", func(t *testing.T) {
 		var rc *RunbookConfig
 		err := rc.parse()
@@ -155,4 +243,5 @@ func TestRunbookStepType_Constants(t *testing.T) {
 	require.Equal(t, RunbookStepType("action"), RunbookStepTypeAction)
 	require.Equal(t, RunbookStepType("sandbox_reprovision"), RunbookStepTypeSandboxReprovision)
 	require.Equal(t, RunbookStepType("sandbox_deprovision"), RunbookStepTypeSandboxDeprovision)
+	require.Equal(t, RunbookStepType("wait_for_event"), RunbookStepTypeWaitForEvent)
 }

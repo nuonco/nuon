@@ -64,6 +64,28 @@ func TestNewAppID(t *testing.T) {
 	})
 }
 
+func TestTriggerIDs(t *testing.T) {
+	tests := map[string]struct {
+		newID  func() string
+		prefix string
+	}{
+		"source":         {NewTriggerID, "trg"},
+		"source secret":  {NewTriggerSecretID, "trs"},
+		"source event":   {NewTriggerEventID, "tre"},
+		"rule":           {NewTriggerRuleID, "ear"},
+		"dispatch":       {NewEventDispatchID, "edp"},
+		"runbook waiter": {NewEventRunbookWaiterID, "erw"},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			id := test.newID()
+			assert.Len(t, id, 26)
+			assert.Equal(t, test.prefix, id[:3])
+		})
+	}
+}
+
 func TestNewArtifactID(t *testing.T) {
 	t.Run("get valid ID for Artifact", func(t *testing.T) {
 		id := NewArtifactID()

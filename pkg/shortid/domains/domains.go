@@ -10,6 +10,13 @@ func NewAppID() string {
 	return shortid.NewNanoID("app")
 }
 
+func NewTriggerID() string            { return shortid.NewNanoID("trg") }
+func NewTriggerSecretID() string      { return shortid.NewNanoID("trs") }
+func NewTriggerEventID() string       { return shortid.NewNanoID("tre") }
+func NewTriggerRuleID() string        { return shortid.NewNanoID("ear") }
+func NewEventDispatchID() string      { return shortid.NewNanoID("edp") }
+func NewEventRunbookWaiterID() string { return shortid.NewNanoID("erw") }
+
 func NewAppCfgID() string {
 	return shortid.NewNanoID("apc")
 }

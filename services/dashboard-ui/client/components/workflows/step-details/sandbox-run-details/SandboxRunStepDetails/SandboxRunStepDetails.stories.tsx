@@ -32,9 +32,5 @@ export const Default = () => (
 )
 
 export const Loading = () => (
-  <SandboxRunStepDetails
-    step={mockStep}
-    orgId="org-123"
-    isLoading={true}
-  />
+  <SandboxRunStepDetails step={mockStep} orgId="org-123" isLoading={true} />
 )

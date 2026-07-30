@@ -22,8 +22,23 @@ const succeededStep = {
   status: { status: 'success' },
 } as TWorkflowStep
 
+const eventWaitStep = {
+  ...succeededStep,
+  name: 'wait-for-release-approval',
+  links: {
+    event_wait: {
+      trigger_id: 'trigger-1',
+      trigger_name: 'release-approval-http',
+      event_types: ['release.approved'],
+      status: 'matched',
+    },
+  },
+} as TWorkflowStep
+
 export const InProgress = () => <StepTitle step={inProgressStep} />
 
 export const Retried = () => <StepTitle step={retriedStep} />
 
 export const Succeeded = () => <StepTitle step={succeededStep} />
+
+export const EventWait = () => <StepTitle step={eventWaitStep} />

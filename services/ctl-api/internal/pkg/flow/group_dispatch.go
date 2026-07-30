@@ -32,6 +32,7 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 		QueueName:       cfg.QueueName,
 		TargetQueueName: cfg.TargetQueueName,
 		Parallel:        group.Parallel,
+		DerivedTimeout:  group.Timeout,
 	}
 
 	// Use the step group ID as the signal owner for direct group lookup during retries.
@@ -73,7 +74,7 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 	// when no StepGroupID is available (legacy in-flight workflows).
 	groupTags := []string{"group_idx", strconv.Itoa(group.GroupIdx), "workflow_type", string(flw.Type)}
 
-	if group.ID != "" {
+	if group.ID != "" && group.Timeout > 0 {
 		resp, err := workflowactivities.AwaitForwardGroupFinished(ctx, workflowactivities.ForwardGroupFinishedRequest{
 			StepGroupID: group.ID,
 		}, timeoutOpts)
@@ -95,7 +96,11 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 	}
 
 	// Legacy fallback: no StepGroupID, use framework-level finished handler.
-	_, err = callback.AwaitWithTimeout(ctx, cb, callback.FallbackAwaitTimeout)
+	groupTimeout := group.Timeout
+	if groupTimeout == 0 {
+		groupTimeout = callback.FallbackAwaitTimeout
+	}
+	_, err = callback.AwaitWithTimeout(ctx, cb, groupTimeout)
 	if err != nil {
 		if ctx.Err() != nil {
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)

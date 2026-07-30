@@ -47,5 +47,7 @@ export const ActionRunMetadataContainer = (props: IActionRunMetadata) => {
       </InstallActionManualRunButton>
     ) : null
 
-  return <ActionRunMetadata {...props} orgId={org?.id} rerunButton={rerunButton} />
+  return (
+    <ActionRunMetadata {...props} orgId={org?.id} rerunButton={rerunButton} />
+  )
 }
