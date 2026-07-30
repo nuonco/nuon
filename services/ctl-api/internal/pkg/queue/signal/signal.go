@@ -41,6 +41,13 @@ type AutoExecuteOnTerminalStart interface {
 	AutoExecuteOnTerminalStart() bool
 }
 
+// CompletionCallbacksWorkflow identifies resident flow signals whose parent
+// callbacks must reflect the persisted workflow outcome instead of the queue
+// signal's transport outcome. An empty ID preserves the default behavior.
+type CompletionCallbacksWorkflow interface {
+	CompletionCallbacksWorkflowID() string
+}
+
 const DefaultSleepAfter = 1 * time.Minute
 
 // Raw is a signal envelope for enqueueing without importing the concrete signal

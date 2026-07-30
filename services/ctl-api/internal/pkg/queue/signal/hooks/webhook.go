@@ -21,6 +21,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -328,6 +329,13 @@ func (h *WebhookSignalLifecycleHook) AfterPhase(ctx context.Context, event signa
 		return nil
 	}
 
+	suppress, err := suppressParkedFlowCompletion(ctx, h.db, event, outcome)
+	if err != nil {
+		h.l.Warn("unable to verify workflow status before lifecycle completion", zap.Error(err))
+	} else if suppress {
+		return nil
+	}
+
 	h.l.Debug("workflow lifecycle webhook after-phase",
 		zap.String("queue_signal_id", event.QueueSignalID),
 		zap.String("phase", string(event.Phase)),
@@ -336,6 +344,37 @@ func (h *WebhookSignalLifecycleHook) AfterPhase(ctx context.Context, event signa
 	)
 
 	return h.publish(ctx, event, &outcome)
+}
+
+type workflowStatusRow struct {
+	ID        string
+	DeletedAt soft_delete.DeletedAt
+	OwnerType string
+	Status    app.CompositeStatus `gorm:"type:jsonb;serializer:json"`
+}
+
+func (workflowStatusRow) TableName() string {
+	return (&app.Workflow{}).TableName()
+}
+
+func suppressParkedFlowCompletion(ctx context.Context, db *gorm.DB, event signal.SignalPhaseEvent, outcome signal.SignalPhaseOutcome) (bool, error) {
+	if db == nil ||
+		event.SignalType != signalTypeExecuteWorkflow ||
+		event.Phase != signal.SignalPhaseExecute ||
+		event.WorkflowID == "" ||
+		outcome.Status != signal.SignalStatusSuccess {
+		return false, nil
+	}
+
+	var flw workflowStatusRow
+	if err := db.WithContext(ctx).
+		Select("owner_type", "status").
+		Where(workflowStatusRow{ID: event.WorkflowID}).
+		First(&flw).Error; err != nil {
+		return false, fmt.Errorf("unable to load workflow status for lifecycle completion: %w", err)
+	}
+
+	return flw.OwnerType == "installs" && flw.Status.Status == app.StatusFailedPendingRetry, nil
 }
 
 // CloudEvents v1.0 envelope.

@@ -2,10 +2,12 @@ package handler
 
 import (
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 // sendCompletionCallbacks sends Temporal signals to all registered parent
@@ -15,6 +17,17 @@ import (
 // added after initializeState (e.g. by EnsureSignal) are picked up.
 func (h *handler) sendCompletionCallbacks(ctx workflow.Context) {
 	l, _ := log.WorkflowLogger(ctx)
+
+	if workflowID := completionCallbacksWorkflowID(h.sig); workflowID != "" {
+		hold, err := activities.LocalAwaitHoldCompletionCallbacksByWorkflowID(ctx, workflowID)
+		if err != nil {
+			l.Error("unable to reload workflow before sending completion callbacks",
+				zap.String("workflow_id", workflowID),
+				zap.Error(err))
+		} else if hold {
+			return
+		}
+	}
 
 	// Reload from DB to pick up callbacks added after init (e.g. by EnsureSignal).
 	qs, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(ctx, h.queueSignalID)
@@ -46,6 +59,14 @@ func (h *handler) sendCompletionCallbacks(ctx workflow.Context) {
 	for _, cb := range h.callbacks {
 		callback.Send(ctx, l, cb, result)
 	}
+}
+
+func completionCallbacksWorkflowID(sig signal.Signal) string {
+	residentFlow, ok := sig.(signal.CompletionCallbacksWorkflow)
+	if !ok {
+		return ""
+	}
+	return residentFlow.CompletionCallbacksWorkflowID()
 }
 
 // hasCallbacks returns true if at least one completion callback is configured.

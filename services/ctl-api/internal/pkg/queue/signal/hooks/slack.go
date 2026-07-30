@@ -196,6 +196,13 @@ func (h *SlackSignalLifecycleHook) AfterPhase(ctx context.Context, event signal.
 		return nil
 	}
 
+	suppress, err := suppressParkedFlowCompletion(ctx, h.db, event, outcome)
+	if err != nil {
+		h.l.Warn("unable to verify workflow status before lifecycle completion", zap.Error(err))
+	} else if suppress {
+		return nil
+	}
+
 	h.l.Debug("workflow lifecycle slack after-phase",
 		zap.String("queue_signal_id", event.QueueSignalID),
 		zap.String("phase", string(event.Phase)),
