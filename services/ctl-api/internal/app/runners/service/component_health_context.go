@@ -63,6 +63,10 @@ func (s *service) PutComponentHealthContext(ctx *gin.Context) {
 }
 
 func (s *service) putComponentHealthContext(ctx context.Context, runnerID string, req ComponentHealthContextRequest) error {
+	if enabled, _ := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureComponentHealth); !enabled {
+		return nil
+	}
+
 	installID, ok, err := s.resolveComponentHealthInstallID(ctx, runnerID)
 	if err != nil {
 		return err
@@ -117,6 +121,10 @@ func (s *service) GetComponentHealthContext(ctx *gin.Context) {
 }
 
 func (s *service) getComponentHealthContext(ctx context.Context, runnerID string) (*ComponentHealthContextResponse, error) {
+	if enabled, _ := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureComponentHealth); !enabled {
+		return &ComponentHealthContextResponse{}, nil
+	}
+
 	installID, ok, err := s.resolveComponentHealthInstallID(ctx, runnerID)
 	if err != nil {
 		return nil, err

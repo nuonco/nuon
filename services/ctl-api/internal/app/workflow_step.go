@@ -46,6 +46,7 @@ const (
 	WorkflowStepTargetTypeInstallStackVersions      WorkflowStepTargetType = "install_stack_versions"
 	WorkflowStepTargetTypeInstallStates             WorkflowStepTargetType = "install_states"
 	WorkflowStepTargetTypeRunners                   WorkflowStepTargetType = "runners"
+	WorkflowStepTargetTypeInstallComponents         WorkflowStepTargetType = "install_components"
 )
 
 type WorkflowStep struct {

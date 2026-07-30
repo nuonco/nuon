@@ -48,6 +48,12 @@ func (s *syncer) createHelmChartComponentConfig(ctx context.Context, resource, c
 	if obj.DriftSchedule != nil {
 		configRequest.DriftSchedule = *obj.DriftSchedule
 	}
+	if obj.Health != nil {
+		configRequest.HealthEnabled = obj.Health.Enabled
+		configRequest.HealthStabilizationWindow = obj.Health.StabilizationWindow
+		configRequest.HealthBlockDeploy = obj.Health.BlockDeploy
+		configRequest.HealthProbes = healthProbeRequests(obj.Health)
+	}
 
 	for _, ref := range comp.References {
 		configRequest.References = append(configRequest.References, ref.String())

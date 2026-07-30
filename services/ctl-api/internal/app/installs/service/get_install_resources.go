@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -116,5 +117,160 @@ func (s *service) getInstallResources(ctx context.Context, orgID, installID stri
 		return nil, fmt.Errorf("unable to query resource states: %w", res.Error)
 	}
 
+	deployed, err := s.deployedInstallComponentIDs(ctx, orgID, installID)
+	if err != nil {
+		return nil, err
+	}
+	resources = retainDeployedComponentResources(resources, deployed)
+
+	declared, err := s.declaredProbesByInstallComponent(ctx, orgID, installID)
+	if err != nil {
+		return nil, err
+	}
+	markRemovedProbes(resources, declared)
+
 	return resources, nil
+}
+
+// declaredProbesByInstallComponent maps each install component to the probe
+// names its CURRENT config declares, from the install's pinned app config.
+func (s *service) declaredProbesByInstallComponent(ctx context.Context, orgID, installID string) (map[string]map[string]bool, error) {
+	var install app.Install
+	if err := s.db.WithContext(ctx).
+		Select("id", "app_config_id").
+		Where(app.Install{ID: installID, OrgID: orgID}).
+		First(&install).Error; err != nil {
+		return nil, fmt.Errorf("unable to get install: %w", err)
+	}
+	if install.AppConfigID == "" {
+		return map[string]map[string]bool{}, nil
+	}
+
+	var cccs []app.ComponentConfigConnection
+	if err := s.db.WithContext(ctx).
+		Where(app.ComponentConfigConnection{AppConfigID: install.AppConfigID}).
+		Find(&cccs).Error; err != nil {
+		return nil, fmt.Errorf("unable to list component configs: %w", err)
+	}
+	byComponent := map[string]map[string]bool{}
+	for i := range cccs {
+		byComponent[cccs[i].ComponentID] = probeNameSet(cccs[i].HealthProbes)
+	}
+
+	var comps []app.InstallComponent
+	if err := s.db.WithContext(ctx).
+		Select("id", "component_id").
+		Where(app.InstallComponent{InstallID: installID, OrgID: orgID}).
+		Find(&comps).Error; err != nil {
+		return nil, fmt.Errorf("unable to list install components: %w", err)
+	}
+
+	// An app config version only carries ccc rows for components CHANGED in
+	// that sync. Components missing from the pinned version resolve via the
+	// latest-configs view — the same fallback the runner probe handout uses —
+	// otherwise a no-op sync marks every live probe as removed.
+	var missing []string
+	for i := range comps {
+		if _, ok := byComponent[comps[i].ComponentID]; !ok {
+			missing = append(missing, comps[i].ComponentID)
+		}
+	}
+	if len(missing) > 0 {
+		var fallback []app.ComponentConfigConnection
+		if err := s.db.WithContext(ctx).
+			Scopes(
+				scopes.WithDisableViews,
+				scopes.WithOverrideTable("component_config_connections_latest_configs_view"),
+			).
+			Where("component_id IN ?", missing).
+			Find(&fallback).Error; err != nil {
+			return nil, fmt.Errorf("unable to resolve current component configs: %w", err)
+		}
+		for i := range fallback {
+			if _, ok := byComponent[fallback[i].ComponentID]; !ok {
+				byComponent[fallback[i].ComponentID] = probeNameSet(fallback[i].HealthProbes)
+			}
+		}
+	}
+
+	out := map[string]map[string]bool{}
+	for i := range comps {
+		if names, ok := byComponent[comps[i].ComponentID]; ok {
+			out[comps[i].ID] = names
+		} else {
+			out[comps[i].ID] = map[string]bool{}
+		}
+	}
+	return out, nil
+}
+
+func probeNameSet(probes app.ComponentHealthProbes) map[string]bool {
+	names := map[string]bool{}
+	for _, probe := range probes {
+		if probe.Name != "" {
+			names[probe.Name] = true
+		}
+	}
+	return names
+}
+
+// markRemovedProbes labels probe rows whose name is no longer declared in the
+// owning component's current config. Observations persist in ClickHouse for
+// days after a probe is deleted from config; without the label the last
+// reading keeps rendering as a live check.
+func markRemovedProbes(resources []app.InstallComponentResourceState, declared map[string]map[string]bool) {
+	for i := range resources {
+		r := &resources[i]
+		if r.Source != app.InstallComponentResourceSourceComponent || !isProbeKind(r.Kind) {
+			continue
+		}
+		names, known := declared[r.InstallComponentID]
+		if known && !names[r.Name] {
+			r.RemovedFromConfig = true
+		}
+	}
+}
+
+func isProbeKind(kind string) bool {
+	return strings.HasSuffix(kind, "Probe")
+}
+
+func (s *service) deployedInstallComponentIDs(ctx context.Context, orgID, installID string) (map[string]bool, error) {
+	var comps []app.InstallComponent
+	if err := s.db.WithContext(ctx).
+		Select("id", "status", "health_status").
+		Where(app.InstallComponent{InstallID: installID, OrgID: orgID}).
+		Find(&comps).Error; err != nil {
+		return nil, fmt.Errorf("unable to list install components: %w", err)
+	}
+
+	deployed := make(map[string]bool, len(comps))
+	for i := range comps {
+		// EverDeployed, not HasDeployed: a redeploy transiently leaves the
+		// deployed set (planning/syncing/executing), and hiding a component's
+		// resources for the duration of every deploy is exactly when someone
+		// is watching them. Torn-down components resolve false again.
+		deployed[comps[i].ID] = comps[i].Status != app.InstallComponentStatusDisabled && comps[i].EverDeployed()
+	}
+	return deployed, nil
+}
+
+// retainDeployedComponentResources drops rows belonging to a component that has
+// never deployed. Observations live in ClickHouse for days, so a row recorded
+// before a component was torn down — or during the window where it briefly
+// looked deployed — keeps rendering with a fresh timestamp long after there is
+// any workload to observe. Showing them invites the reader to judge a component
+// by resources that no longer describe anything.
+//
+// Sandbox rows are always kept: they belong to the install's own infrastructure,
+// not to a component, so no component deploy state governs them.
+func retainDeployedComponentResources(resources []app.InstallComponentResourceState, deployed map[string]bool) []app.InstallComponentResourceState {
+	kept := make([]app.InstallComponentResourceState, 0, len(resources))
+	for _, r := range resources {
+		if r.Source == app.InstallComponentResourceSourceComponent && !deployed[r.InstallComponentID] {
+			continue
+		}
+		kept = append(kept, r)
+	}
+	return kept
 }

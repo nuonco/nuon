@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
@@ -65,6 +66,81 @@ func validateDeployTimeout(timeout string) error {
 		}
 	}
 	return nil
+}
+
+// validateHealthStabilizationWindow validates a health stabilization window duration string.
+// Returns an error if the format is invalid or the value is out of range.
+func validateHealthStabilizationWindow(window string) error {
+	d, err := time.ParseDuration(window)
+	if err != nil {
+		return stderr.ErrUser{
+			Err:         errors.New("invalid_health_stabilization_window"),
+			Code:        "invalid_health_stabilization_window",
+			Description: "health stabilization_window must be a valid duration (e.g., '3m', '10m')",
+		}
+	}
+
+	if d < app.MinHealthStabilizationWindow {
+		return stderr.ErrUser{
+			Err:         errors.New("health_stabilization_window_too_short"),
+			Code:        "health_stabilization_window_too_short",
+			Description: fmt.Sprintf("health stabilization_window must be at least %s", app.MinHealthStabilizationWindow),
+		}
+	}
+	if d > app.MaxHealthStabilizationWindow {
+		return stderr.ErrUser{
+			Err:         errors.New("health_stabilization_window_too_long"),
+			Code:        "health_stabilization_window_too_long",
+			Description: fmt.Sprintf("health stabilization_window cannot exceed %s", app.MaxHealthStabilizationWindow),
+		}
+	}
+	return nil
+}
+
+// HealthProbeRequest is one synthetic health check declared on a component.
+// Command is an argv array, never a shell string.
+type HealthProbeRequest struct {
+	Type     string   `json:"type,omitempty"`
+	Name     string   `json:"name,omitempty"`
+	URL      string   `json:"url,omitempty"`
+	Command  []string `json:"command,omitempty"`
+	Interval string   `json:"interval,omitempty"`
+}
+
+func validateHealthProbes(probes []HealthProbeRequest) error {
+	for _, probe := range probes {
+		cfg := config.ComponentHealthProbeConfig{
+			Type:    probe.Type,
+			Name:    probe.Name,
+			URL:     probe.URL,
+			Command: probe.Command,
+		}
+		if err := cfg.Validate(); err != nil {
+			return stderr.ErrUser{
+				Err:         errors.New("invalid_health_probe"),
+				Code:        "invalid_health_probe",
+				Description: err.Error(),
+			}
+		}
+	}
+	return nil
+}
+
+func toAppHealthProbes(probes []HealthProbeRequest) app.ComponentHealthProbes {
+	if len(probes) == 0 {
+		return nil
+	}
+
+	out := make(app.ComponentHealthProbes, 0, len(probes))
+	for _, probe := range probes {
+		out = append(out, app.ComponentHealthProbe{
+			Type:    probe.Type,
+			Name:    probe.Name,
+			URL:     probe.URL,
+			Command: probe.Command,
+		})
+	}
+	return out
 }
 
 func validateMaxAutoRetries(maxAutoRetries int) error {

@@ -20,6 +20,7 @@ func AllModels() []any {
 		&app.PolicyReportEvent{},
 
 		&app.InstallComponentResourceState{},
+		&app.InstallComponentHealthTransition{},
 
 		// noted but not migrated
 		// &app.LatestRunnerHeartBeat{},

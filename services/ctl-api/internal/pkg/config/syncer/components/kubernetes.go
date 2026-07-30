@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/validation"
 )
 
 // SyncKubernetesManifestComponent creates or updates a Kubernetes manifest component configuration.
@@ -23,6 +24,10 @@ func SyncKubernetesManifestComponent(ctx context.Context, db *gorm.DB, vcsHelper
 			Resource:    fmt.Sprintf("component-%s", comp.Name),
 			Description: "kubernetes manifest config is required",
 		}
+	}
+
+	if err := validation.ValidateHealthProbes(comp.KubernetesManifest.Health); err != nil {
+		return "", "", err
 	}
 
 	// Get the component with app and org preloaded for VCS helpers
@@ -130,6 +135,13 @@ func SyncKubernetesManifestComponent(ctx context.Context, db *gorm.DB, vcsHelper
 		DeployTimeout:                     comp.KubernetesManifest.DeployTimeout,
 		MaxAutoRetries:                    comp.KubernetesManifest.MaxAutoRetries,
 		OperationRoles:                    operationRoles,
+	}
+
+	if comp.KubernetesManifest.Health != nil {
+		componentConfigConnection.HealthEnabled = comp.KubernetesManifest.Health.Enabled
+		componentConfigConnection.HealthStabilizationWindow = comp.KubernetesManifest.Health.StabilizationWindow
+		componentConfigConnection.HealthBlockDeploy = comp.KubernetesManifest.Health.BlockDeploy
+		componentConfigConnection.HealthProbes = validation.ToAppHealthProbes(comp.KubernetesManifest.Health)
 	}
 
 	res = db.WithContext(ctx).Create(&componentConfigConnection)

@@ -60,6 +60,12 @@ func (s *syncer) createKubernetesManifestComponentConfig(
 	if comp.KubernetesManifest.DriftSchedule != nil {
 		configRequest.DriftSchedule = *comp.KubernetesManifest.DriftSchedule
 	}
+	if comp.KubernetesManifest.Health != nil {
+		configRequest.HealthEnabled = comp.KubernetesManifest.Health.Enabled
+		configRequest.HealthStabilizationWindow = comp.KubernetesManifest.Health.StabilizationWindow
+		configRequest.HealthBlockDeploy = comp.KubernetesManifest.Health.BlockDeploy
+		configRequest.HealthProbes = healthProbeRequests(comp.KubernetesManifest.Health)
+	}
 
 	for _, ref := range comp.References {
 		configRequest.References = append(configRequest.References, ref.String())

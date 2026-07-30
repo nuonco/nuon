@@ -179,6 +179,13 @@ func SyncHelmComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.H
 		DriftSchedule:          driftSchedule,
 	}
 
+	if comp.HelmChart.Health != nil {
+		componentConfigConnection.HealthEnabled = comp.HelmChart.Health.Enabled
+		componentConfigConnection.HealthStabilizationWindow = comp.HelmChart.Health.StabilizationWindow
+		componentConfigConnection.HealthBlockDeploy = comp.HelmChart.Health.BlockDeploy
+		componentConfigConnection.HealthProbes = validation.ToAppHealthProbes(comp.HelmChart.Health)
+	}
+
 	res = db.WithContext(ctx).Create(&componentConfigConnection)
 	if res.Error != nil {
 		return "", "", sync.SyncInternalErr{
@@ -251,6 +258,16 @@ func validateHelmComponent(comp *config.Component) error {
 		if err := validation.ValidateCronSchedule(*comp.HelmChart.DriftSchedule); err != nil {
 			return err
 		}
+	}
+
+	if comp.HelmChart.Health != nil && comp.HelmChart.Health.StabilizationWindow != "" {
+		if err := validation.ValidateHealthStabilizationWindow(comp.HelmChart.Health.StabilizationWindow); err != nil {
+			return err
+		}
+	}
+
+	if err := validation.ValidateHealthProbes(comp.HelmChart.Health); err != nil {
+		return err
 	}
 
 	// Validate operation roles if provided

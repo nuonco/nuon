@@ -127,5 +127,8 @@ var TerraformWorkspaceStatesViewV1 string
 //go:embed install_component_resource_states_view_v1.sql
 var InstallComponentResourceStatesViewV1 string
 
+//go:embed installs_view_v9.sql
+var InstallsViewV9 string
+
 //go:embed workflow_step_approvals_pending_view_v1.sql
 var WorkflowStepApprovalsPendingViewV1 string

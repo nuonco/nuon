@@ -68,3 +68,33 @@ func ValidateDeployTimeout(timeout string) error {
 	}
 	return nil
 }
+
+// ValidateHealthStabilizationWindow validates a health stabilization window duration string.
+// Returns an error if the format is invalid or the value is out of range.
+// Duplicates logic from services/ctl-api/internal/app/components/service/shared_validation.go
+func ValidateHealthStabilizationWindow(window string) error {
+	d, err := time.ParseDuration(window)
+	if err != nil {
+		return stderr.ErrUser{
+			Err:         errors.New("invalid_health_stabilization_window"),
+			Code:        "invalid_health_stabilization_window",
+			Description: "health stabilization_window must be a valid duration (e.g., '3m', '10m')",
+		}
+	}
+
+	if d < app.MinHealthStabilizationWindow {
+		return stderr.ErrUser{
+			Err:         errors.New("health_stabilization_window_too_short"),
+			Code:        "health_stabilization_window_too_short",
+			Description: fmt.Sprintf("health stabilization_window must be at least %s", app.MinHealthStabilizationWindow),
+		}
+	}
+	if d > app.MaxHealthStabilizationWindow {
+		return stderr.ErrUser{
+			Err:         errors.New("health_stabilization_window_too_long"),
+			Code:        "health_stabilization_window_too_long",
+			Description: fmt.Sprintf("health stabilization_window cannot exceed %s", app.MaxHealthStabilizationWindow),
+		}
+	}
+	return nil
+}
