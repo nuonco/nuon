@@ -83,6 +83,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		general.GET("/backfill-blobs", s.GetBackfillBlobsStatus)
 		general.POST("/backfill-runner-healthcheck-emitters", s.AdminBackfillRunnerHealthcheckEmitters)
 		general.GET("/backfill-runner-healthcheck-emitters", s.GetBackfillRunnerHealthcheckEmittersStatus)
+		general.POST("/backfill-phone-home-secrets", s.AdminBackfillPhoneHomeSecrets)
+		general.GET("/backfill-phone-home-secrets", s.GetBackfillPhoneHomeSecretsStatus)
 		general.POST("/verify-blobs", s.AdminVerifyBlobs)
 		general.GET("/verify-blobs", s.GetVerifyBlobsStatus)
 
