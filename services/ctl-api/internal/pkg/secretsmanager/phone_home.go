@@ -43,34 +43,17 @@ func PhoneHomeResourcePolicy(targetAccountID, phoneHomeRoleName string) (string,
 	return string(byts), nil
 }
 
-// ReconcilePhoneHomeKeyPolicy is not implemented yet.
+// Deliberately absent: anything that edits the CMK key policy.
 //
-// TODO(phone-home-auth): the shared CMK in the management account needs one key
-// policy statement per distinct target account, granting kms:Decrypt and
-// kms:DescribeKey to the account root, conditioned on
-// kms:ViaService = secretsmanager.<management_region>.amazonaws.com — note that is
-// the region of the *secret*, not the customer's install region, so one statement
-// covers customers in every region.
+// An earlier revision planned one key-policy statement per target account, added here
+// as installs were provisioned. That cannot coexist with Terraform — PutKeyPolicy is a
+// full replacement, so every apply would revert the grants and every reconcile would
+// show as drift — and it caps out at the 32KB key-policy limit somewhere in the low
+// hundreds of accounts.
 //
-// Three hazards to build for, none of which are addressed here:
-//
-//  1. PutKeyPolicy is a full replacement, not an append. Two installs provisioning
-//     concurrently for different target accounts will read-modify-write the same
-//     policy and one statement will be lost. Serialize the update (an activity keyed
-//     on the CMK, or a Postgres advisory lock) and make it a reconcile-from-database
-//     so a lost write self-heals on the next provision.
-//  2. Reconcile on the union of target accounts, never per install. A statement for
-//     account A must exist iff at least one non-deleted install targets A — pruning
-//     when a single install is deleted would cut off sibling installs in the same
-//     account, including any leftover deployed stack still being updated.
-//  3. The key policy has a 32 KB ceiling, roughly low hundreds of accounts at ~200
-//     bytes per statement. Emit a metric on policy size and alert well before it.
-//     The escape hatch is sharding onto a second CMK keyed by
-//     hash(target_account_id), which is why PhoneHomeAuth records the CMK ARN that
-//     encrypted each secret.
-//
-// Blocked on the out-of-repo CMK and the ctl-api management-role IAM grants
-// (rollout step 1). aws-sdk-go-v2/service/kms is not yet a dependency.
-func ReconcilePhoneHomeKeyPolicy() error {
-	return nil
-}
+// The key policy is now static and owned by Terraform
+// (services/ctl-api/infra/phone_home.tf): one statement allows kms:Decrypt through
+// Secrets Manager to any principal whose role is named like a phone-home Lambda role.
+// The effective boundary is unchanged, because reaching the key at all requires
+// GetSecretValue on a specific secret, which PhoneHomeResourcePolicy above grants to
+// exactly one role. Do not reintroduce a KMS write path here.
