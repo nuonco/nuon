@@ -593,6 +593,39 @@ func (c *Config) CFTemplateUploadCreds() *credentials.Config {
 	}
 }
 
+// ManagementSecretsCreds returns credentials for the Nuon AWS account holding the
+// phone-home secret, or nil when this control plane has no path to it.
+//
+// The secret is always in AWS; only the chain differs. An AWS-hosted control plane
+// assumes the management role directly, the same one ECR management uses. A
+// GCP-hosted one takes one extra step, exchanging the pod's GCP identity for the
+// role via sts:AssumeRoleWithWebIdentity. Azure has no federation path to AWS —
+// AssumeRoleConfig offers UseGithubOIDC and UseGCPOIDC only — so it returns nil and
+// callers skip.
+//
+// Note this reports how *Nuon* authenticates, not what cloud the install is on.
+// Gating phone-home auth on Config.IsAWS instead would silently disable it for every
+// AWS install running under a GCP-hosted control plane.
+func (c *Config) ManagementSecretsCreds() *credentials.Config {
+	roleARN := c.AWSPhoneHomeSecretsRoleARN
+	if roleARN == "" && c.IsAWS() {
+		roleARN = c.ManagementIAMRoleARN
+	}
+	if roleARN == "" {
+		return nil
+	}
+
+	return &credentials.Config{
+		Region: c.ManagementRegion,
+		AssumeRole: &credentials.AssumeRoleConfig{
+			RoleARN:                roleARN,
+			SessionName:            "ctl-api-phone-home-secrets",
+			SessionDurationSeconds: 60 * 60,
+			UseGCPOIDC:             c.IsGCP(),
+		},
+	}
+}
+
 func NewConfig() (*Config, error) {
 	var cfg Config
 	if err := config.LoadInto(nil, &cfg); err != nil {
