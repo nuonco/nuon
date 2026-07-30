@@ -9,6 +9,7 @@ import (
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/actionworkflowrun"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitcomponenthealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitinstallstackversionrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployapplyplan"
@@ -27,6 +28,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/stackrun"
 	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
 // WorkflowStepOptions is a functional option for configuring WorkflowStep
@@ -46,6 +48,33 @@ func WithGroupIdx(n int) WorkflowStepOptions {
 
 // componentMaxAutoRetries looks up the max auto retries for a component from
 // the pre-fetched app config, avoiding redundant activity calls.
+// componentGateEnabled reports whether the verified-deploy gate should get its
+// own workflow step for a component: block_deploy is opt-in per component, so
+// step counts only change for components that asked for the gate. Resolution
+// goes through the pin+latest-view activity — an app config version only
+// carries ccc rows for components changed in that sync, so reading the
+// pre-fetched appCfg would silently drop the gate after any unrelated sync.
+// Resolution errors fail open (no step): the deploy must not break because
+// gate config could not be read, and the signal re-resolves at run time.
+func componentGateEnabled(ctx workflow.Context, installID string, componentID string, componentType app.ComponentType) bool {
+	if componentType != app.ComponentTypeHelmChart && componentType != app.ComponentTypeKubernetesManifest {
+		return false
+	}
+	// Without the feature the gate signal no-ops, so inserting the step would
+	// show a phantom "verify health" step that verifies nothing.
+	if enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureComponentHealth)); err != nil || !enabled {
+		return false
+	}
+	ccc, err := activities.AwaitGetCurrentComponentConfig(ctx, &activities.GetCurrentComponentConfigRequest{
+		InstallID:   installID,
+		ComponentID: componentID,
+	})
+	if err != nil || ccc == nil {
+		return false
+	}
+	return ccc.HealthCheckEnabled() && ccc.HealthBlocksDeploy()
+}
+
 func componentMaxAutoRetries(appCfg *app.AppConfig, componentID string) int {
 	for _, ccc := range appCfg.ComponentConfigConnections {
 		if ccc.ComponentID == componentID {
@@ -91,6 +120,8 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 	case awaitrunnerhealthy.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeRunners)
 		meta.retryable = false
+	case awaitcomponenthealthy.SignalType:
+		meta.targetType = string(app.WorkflowStepTargetTypeInstallComponents)
 	case componentdeployapplyplan.SignalType, componentdeploysyncandplan.SignalType, componentsyncimage.SignalType,
 		componentteardownsyncandplan.SignalType, componentteardownapplyplan.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallDeploys)
