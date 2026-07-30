@@ -40,16 +40,17 @@ type Params struct {
 	LC        fx.Lifecycle
 	Process   string `name:"process"`
 	Cluster   *ClusterProvider
+	Terraform *TerraformProvider
 }
 
 // Engine periodically reports the health of the resources the install's
-// components and sandbox manage. It is stateless: each cycle builds a fresh
-// cluster client and lists resources, holding no informers or in-process cache.
+// components and sandbox manage. It is stateless: no informers, no in-process cache.
 type Engine struct {
 	l         *zap.Logger
 	apiClient nuonrunner.Client
 	process   string
 	cluster   *ClusterProvider
+	terraform *TerraformProvider
 	idx       *index
 
 	ctx      context.Context
@@ -64,6 +65,7 @@ func New(params Params) (*Engine, error) {
 		apiClient: params.APIClient,
 		process:   params.Process,
 		cluster:   params.Cluster,
+		terraform: params.Terraform,
 		idx:       newIndex(),
 		ctx:       ctx,
 		cancelFn:  cancelFn,

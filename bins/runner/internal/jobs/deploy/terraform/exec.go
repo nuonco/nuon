@@ -156,6 +156,13 @@ func (p *handler) updateTerraformState(ctx context.Context, wkspace workspace.Wo
 		return fmt.Errorf("unable to show state: %w", err)
 	}
 
+	// Hand the component's managed cloud resources to the component-health
+	// engine: this is the only place the state is readable, since a workspace
+	// needs the artifact, backend token and cloud credentials of a deploy job.
+	if p.terraformProvider != nil {
+		p.terraformProvider.Set(p.state.plan.ComponentID, state)
+	}
+
 	stateBody, err := json.Marshal(state)
 	if err != nil {
 		p.writeErrorResult(ctx, "terraform show", err)

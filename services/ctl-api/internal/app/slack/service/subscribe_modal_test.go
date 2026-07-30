@@ -266,11 +266,102 @@ func TestBuildSubscribeModalView(t *testing.T) {
 		}
 	})
 
+	t.Run("health categories are gated per resource and seeded from Default()", func(t *testing.T) {
+		view, err := buildSubscribeModalView(state, links, subscribeModalRenderState{Notif: notifOptionSpecific}, nil)
+		if err != nil {
+			t.Fatalf("build: %v", err)
+		}
+
+		components := findBlockByID(t, view, subscribeResourceCategoriesBlockID(interests.ResourceComponents))
+		mustContainValue(t, checkboxOptionValues(t, components), categoryOptionComponentHealth)
+		mustContainValue(t, checkboxInitialValues(t, components), categoryOptionComponentHealth)
+		mustNotContainValue(t, checkboxOptionValues(t, components), categoryOptionInstallDegraded)
+
+		installs := findBlockByID(t, view, subscribeResourceCategoriesBlockID(interests.ResourceInstalls))
+		mustContainValue(t, checkboxOptionValues(t, installs), categoryOptionInstallDegraded)
+		mustContainValue(t, checkboxInitialValues(t, installs), categoryOptionInstallDegraded)
+		mustNotContainValue(t, checkboxOptionValues(t, installs), categoryOptionComponentHealth)
+
+		sandboxes := findBlockByID(t, view, subscribeResourceCategoriesBlockID(interests.ResourceSandboxes))
+		mustNotContainValue(t, checkboxOptionValues(t, sandboxes), categoryOptionComponentHealth)
+		mustNotContainValue(t, checkboxOptionValues(t, sandboxes), categoryOptionInstallDegraded)
+	})
+
+	t.Run("health categories stay ticked when reopening a stored subscription", func(t *testing.T) {
+		render := subscribeModalRenderState{
+			Notif: notifOptionSpecific,
+			Resources: renderResourcesFromInterests(interests.Interests{
+				Resources: map[interests.ResourceKind]interests.ResourceCfg{
+					interests.ResourceComponents: {Outcome: interests.OutcomeNone, ComponentHealth: true},
+					interests.ResourceInstalls:   {Outcome: interests.OutcomeNone, InstallDegraded: true},
+				},
+			}),
+		}
+		view, err := buildSubscribeModalView(state, links, render, nil)
+		if err != nil {
+			t.Fatalf("build: %v", err)
+		}
+		components := findBlockByID(t, view, subscribeResourceCategoriesBlockID(interests.ResourceComponents))
+		mustContainValue(t, checkboxInitialValues(t, components), categoryOptionComponentHealth)
+		mustNotContainValue(t, checkboxInitialValues(t, components), categoryOptionLifecycle)
+
+		installs := findBlockByID(t, view, subscribeResourceCategoriesBlockID(interests.ResourceInstalls))
+		mustContainValue(t, checkboxInitialValues(t, installs), categoryOptionInstallDegraded)
+	})
+
 	t.Run("empty links rejected", func(t *testing.T) {
 		if _, err := buildSubscribeModalView(state, nil, subscribeModalRenderState{}, nil); err == nil {
 			t.Fatal("expected error with empty links")
 		}
 	})
+}
+
+func TestReadResourceRenderStateFromValues_HealthCategories(t *testing.T) {
+	stateJSON := `{
+		"nuon_subscribe_org_block": {"nuon_subscribe_org": {"type":"static_select","selected_option": {"value":"l1"}}},
+		"nuon_subscribe_match_block": {"nuon_subscribe_match": {"type":"radio_buttons","selected_option":{"value":"all"}}},
+		"nuon_subscribe_notif_block": {"nuon_subscribe_notif": {"type":"radio_buttons","selected_option":{"value":"specific"}}},
+		"nuon_subscribe_res_components_opts_block": {"nuon_subscribe_res_components_opts": {
+			"type":"checkboxes","selected_options":[{"value":"enable"}]
+		}},
+		"nuon_subscribe_res_components_categories_block": {"nuon_subscribe_res_components_categories": {
+			"type":"checkboxes","selected_options":[{"value":"component_health"}]
+		}},
+		"nuon_subscribe_res_installs_opts_block": {"nuon_subscribe_res_installs_opts": {
+			"type":"checkboxes","selected_options":[{"value":"enable"}]
+		}},
+		"nuon_subscribe_res_installs_categories_block": {"nuon_subscribe_res_installs_categories": {
+			"type":"checkboxes","selected_options":[{"value":"install_degraded"}]
+		}}
+	}`
+	rawJSON := `{"type":"view_submission","team":{"id":"T1"},"user":{"id":"U1"},"view":{"id":"V1","callback_id":"nuon_subscribe_modal","private_metadata":"{\"team_id\":\"T1\",\"channel_id\":\"C1\",\"channel_name\":\"ops\",\"slack_user_id\":\"U1\"}","state":{"values":` + stateJSON + `}}}`
+	var p slackInteractionPayload
+	if err := json.Unmarshal([]byte(rawJSON), &p); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	got := readSubscribeRenderStateFromPayload(p)
+
+	comp := got.Resources[interests.ResourceComponents]
+	if !comp.Enabled || !comp.ComponentHealth {
+		t.Fatalf("components: expected enabled + component health, got %+v", comp)
+	}
+	if comp.Outcome != outcomeOptionNone {
+		t.Fatalf("components: health-only tick must mute lifecycle, got %q", comp.Outcome)
+	}
+
+	inst := got.Resources[interests.ResourceInstalls]
+	if !inst.Enabled || !inst.InstallDegraded {
+		t.Fatalf("installs: expected enabled + install degraded, got %+v", inst)
+	}
+
+	// The persisted config must carry the ticks through submission.
+	in := buildSpecificEventsInterests(got.Resources)
+	if !in.Resources[interests.ResourceComponents].ComponentHealth {
+		t.Fatal("components: component_health must persist")
+	}
+	if !in.Resources[interests.ResourceInstalls].InstallDegraded {
+		t.Fatal("installs: install_degraded must persist")
+	}
 }
 
 func TestReadSubscribeRenderStateFromPayload_MatchAndPredicate(t *testing.T) {
@@ -617,6 +708,41 @@ func TestRoundTripBuildSpecificEventsInterests(t *testing.T) {
 			t.Fatal("installs do not support drift_detected; flag must be dropped")
 		}
 	})
+
+	t.Run("health flags only persist for resources that support them", func(t *testing.T) {
+		i := buildSpecificEventsInterests(map[interests.ResourceKind]subscribeResourceCfg{
+			interests.ResourceComponents: {Enabled: true, ComponentHealth: true, InstallDegraded: true, Outcome: outcomeOptionAll},
+			interests.ResourceInstalls:   {Enabled: true, ComponentHealth: true, InstallDegraded: true, Outcome: outcomeOptionAll},
+			interests.ResourceSandboxes:  {Enabled: true, ComponentHealth: true, InstallDegraded: true, Outcome: outcomeOptionAll},
+		})
+		if !i.Resources[interests.ResourceComponents].ComponentHealth {
+			t.Fatal("components should keep component_health=true")
+		}
+		if i.Resources[interests.ResourceComponents].InstallDegraded {
+			t.Fatal("components do not support install_degraded; flag must be dropped")
+		}
+		if !i.Resources[interests.ResourceInstalls].InstallDegraded {
+			t.Fatal("installs should keep install_degraded=true")
+		}
+		if i.Resources[interests.ResourceInstalls].ComponentHealth {
+			t.Fatal("installs do not support component_health; flag must be dropped")
+		}
+		cfg := i.Resources[interests.ResourceSandboxes]
+		if cfg.ComponentHealth || cfg.InstallDegraded {
+			t.Fatalf("sandboxes support neither health flag, got %+v", cfg)
+		}
+	})
+
+	t.Run("health flags survive the interests round trip", func(t *testing.T) {
+		in := interests.Default()
+		round := buildSpecificEventsInterests(renderResourcesFromInterests(in))
+		if !round.Resources[interests.ResourceComponents].ComponentHealth {
+			t.Fatal("components: component_health lost in round trip")
+		}
+		if !round.Resources[interests.ResourceInstalls].InstallDegraded {
+			t.Fatal("installs: install_degraded lost in round trip")
+		}
+	})
 }
 
 func TestModalErr(t *testing.T) {
@@ -698,6 +824,56 @@ func findBlockByID(t *testing.T, view map[string]any, id string) map[string]any 
 	}
 	t.Fatalf("block %q not found", id)
 	return nil
+}
+
+func checkboxOptionValues(t *testing.T, block map[string]any) []string {
+	t.Helper()
+	element, _ := block["element"].(map[string]any)
+	opts, _ := element["options"].([]any)
+	return optionValues(t, opts)
+}
+
+func checkboxInitialValues(t *testing.T, block map[string]any) []string {
+	t.Helper()
+	element, _ := block["element"].(map[string]any)
+	opts, _ := element["initial_options"].([]any)
+	return optionValues(t, opts)
+}
+
+func optionValues(t *testing.T, opts []any) []string {
+	t.Helper()
+	out := make([]string, 0, len(opts))
+	for _, o := range opts {
+		m, ok := o.(map[string]any)
+		if !ok {
+			t.Fatalf("option is not a map: %T", o)
+		}
+		v, ok := m["value"].(string)
+		if !ok {
+			t.Fatalf("option missing string value: %+v", m)
+		}
+		out = append(out, v)
+	}
+	return out
+}
+
+func mustContainValue(t *testing.T, values []string, want string) {
+	t.Helper()
+	for _, v := range values {
+		if v == want {
+			return
+		}
+	}
+	t.Fatalf("missing value %q in %v", want, values)
+}
+
+func mustNotContainValue(t *testing.T, values []string, unwanted string) {
+	t.Helper()
+	for _, v := range values {
+		if v == unwanted {
+			t.Fatalf("unexpected value %q in %v", unwanted, values)
+		}
+	}
 }
 
 func readRadioOptions(t *testing.T, view map[string]any, blockID, _ string) []any {

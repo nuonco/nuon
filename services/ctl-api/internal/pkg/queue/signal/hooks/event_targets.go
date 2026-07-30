@@ -34,6 +34,11 @@ func EventTargetsFromEvent(ctx context.Context, db *gorm.DB, event signal.Signal
 		t.InstallID = event.OwnerID
 	case data.Workflow.OwnerType == "installs" && data.Workflow.OwnerID != "":
 		t.InstallID = data.Workflow.OwnerID
+	case event.InstallID != nil && *event.InstallID != "":
+		// Signals emitted outside a workflow (e.g. the component-health
+		// notifications) carry their identity on the lifecycle context
+		// instead of via an owner or a step target.
+		t.InstallID = *event.InstallID
 	}
 
 	// Component id --------------------------------------------------------
@@ -42,6 +47,8 @@ func EventTargetsFromEvent(ctx context.Context, db *gorm.DB, event signal.Signal
 		t.ComponentID = event.OwnerID
 	case data.Workflow.OwnerType == "components" && data.Workflow.OwnerID != "":
 		t.ComponentID = data.Workflow.OwnerID
+	case event.ComponentID != nil && *event.ComponentID != "":
+		t.ComponentID = *event.ComponentID
 	}
 
 	// Action id (action_workflows) ----------------------------------------

@@ -62,14 +62,20 @@ type AppInstallComponentResourceState struct {
 	// provider
 	Provider string `json:"provider,omitempty"`
 
+	// RemovedFromConfig is set at read time when a probe's name is no longer in
+	// the component's config — still shown, but labelled so it can't pass as live.
+	RemovedFromConfig bool `json:"removed_from_config,omitempty"`
+
 	// runner id
 	RunnerID string `json:"runner_id,omitempty"`
 
-	// Source classifies the resource owner: "component" (an app component,
-	// keyed by install_component_id) or "sandbox" (install base infra, keyed by
-	// owner_name = helm release name). OwnerName is the display group for
-	// sandbox resources.
+	// Source classifies the resource owner: "component" (keyed by
+	// install_component_id) or "sandbox" (keyed by owner_name = helm release name).
 	Source string `json:"source,omitempty"`
+
+	// StaleAfterSeconds is how long this observation stays trustworthy (0 =
+	// default); a pushed check sets its own, since it knows its cadence best.
+	StaleAfterSeconds int64 `json:"stale_after_seconds,omitempty"`
 }
 
 // Validate validates this app install component resource state

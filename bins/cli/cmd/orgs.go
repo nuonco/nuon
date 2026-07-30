@@ -341,6 +341,15 @@ INTERESTS
                         actually detected during a drift scan (independent
                         of outcome). Only meaningful for components and
                         sandboxes.
+    component_health    bool, deliver a notification when a component's live
+                        health crosses into degraded or unhealthy AND when it
+                        recovers (independent of outcome). An unknown verdict
+                        (runner offline / stale observations) never notifies.
+                        Only meaningful for components.
+    install_degraded    bool, deliver a notification when the install's
+                        composite health crosses into degraded or unhealthy
+                        AND when it returns to healthy (independent of
+                        outcome). Only meaningful for installs.
 
 MATCH
 

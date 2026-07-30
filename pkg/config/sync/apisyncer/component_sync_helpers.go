@@ -3,8 +3,28 @@ package apisyncer
 import (
 	"context"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
+
+// healthProbeRequests maps declared health probes onto the create-config request.
+func healthProbeRequests(health *config.ComponentHealthConfig) []*models.ServiceHealthProbeRequest {
+	if health == nil || len(health.Probes) == 0 {
+		return nil
+	}
+
+	out := make([]*models.ServiceHealthProbeRequest, 0, len(health.Probes))
+	for _, probe := range health.Probes {
+		out = append(out, &models.ServiceHealthProbeRequest{
+			Type:    probe.Type,
+			Name:    probe.Name,
+			URL:     probe.URL,
+			Command: probe.Command,
+		})
+	}
+	return out
+}
 
 // shouldSkipBuildDueToChecksum checks if a component build should be skipped
 // based on checksum comparison, considering the latest build status
