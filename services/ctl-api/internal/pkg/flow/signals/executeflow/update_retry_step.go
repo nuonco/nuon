@@ -30,14 +30,16 @@ type RetryStepResponse struct {
 func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*RetryStepResponse, error) {
 	s.updatesInFlight++
 	defer func() { s.updatesInFlight-- }()
-	if s.retryInFlight == nil {
-		s.retryInFlight = make(map[string]bool)
+	if s.Resident {
+		if s.retryInFlight == nil {
+			s.retryInFlight = make(map[string]bool)
+		}
+		if s.retryInFlight[req.StepID] {
+			return &RetryStepResponse{WorkflowID: s.WorkflowID, Retryable: true}, nil
+		}
+		s.retryInFlight[req.StepID] = true
+		defer delete(s.retryInFlight, req.StepID)
 	}
-	if s.retryInFlight[req.StepID] {
-		return &RetryStepResponse{WorkflowID: s.WorkflowID, Retryable: true}, nil
-	}
-	s.retryInFlight[req.StepID] = true
-	defer delete(s.retryInFlight, req.StepID)
 
 	step, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
 	if err != nil {
