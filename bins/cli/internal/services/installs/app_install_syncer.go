@@ -206,53 +206,6 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 	return appInstall, nil
 }
 
-// checkImmutableTargetAccount refuses a sync that would change the cloud account an
-// existing install targets. The API has no field to carry the change, so without this
-// the edit would either show as permanent drift or silently do nothing.
-func checkImmutableTargetAccount(installCfg, upstreamConfig *config.Install) error {
-	if upstreamConfig == nil {
-		return nil
-	}
-
-	type immutableField struct {
-		key      string
-		desired  string
-		upstream string
-	}
-	var fields []immutableField
-
-	if installCfg.AWSAccount != nil && upstreamConfig.AWSAccount != nil {
-		fields = append(fields, immutableField{
-			"aws_account.account_id", installCfg.AWSAccount.AccountID, upstreamConfig.AWSAccount.AccountID,
-		})
-	}
-	if installCfg.AzureAccount != nil && upstreamConfig.AzureAccount != nil {
-		fields = append(fields, immutableField{
-			"azure_account.subscription_id", installCfg.AzureAccount.SubscriptionID, upstreamConfig.AzureAccount.SubscriptionID,
-		})
-	}
-	if installCfg.GCPAccount != nil && upstreamConfig.GCPAccount != nil {
-		fields = append(fields, immutableField{
-			"gcp_account.project_id", installCfg.GCPAccount.ProjectID, upstreamConfig.GCPAccount.ProjectID,
-		})
-	}
-
-	var errs []error
-	for _, f := range fields {
-		// An unset value in the config is "don't care", not "clear it".
-		if f.desired == "" || f.desired == f.upstream {
-			continue
-		}
-		errs = append(errs, fmt.Errorf(
-			"refusing to change %s on existing install from %q to %q: the target cloud account is immutable after creation",
-			f.key, f.upstream, f.desired))
-	}
-	if len(errs) > 0 {
-		return fmt.Errorf("\n%w", errors.Join(errs...))
-	}
-	return nil
-}
-
 func (s *appInstallSyncer) syncExistingInstall(
 	ctx context.Context, installCfg *config.Install, appInstall *models.AppInstall, autoApprove, wait, dryRun bool,
 ) (*models.AppInstall, error) {
@@ -304,7 +257,7 @@ func (s *appInstallSyncer) syncExistingInstall(
 		return nil, fmt.Errorf("error parsing current state for install %s: %w", appInstall.Name, err)
 	}
 
-	if err := checkImmutableTargetAccount(installCfg, upstreamConfig); err != nil {
+	if err := installCfg.CheckImmutableTargetAccount(upstreamConfig); err != nil {
 		return nil, err
 	}
 
