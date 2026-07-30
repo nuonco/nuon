@@ -19,7 +19,8 @@ type EnqueueSignalToOwnerRequest struct {
 	Signal    signal.Signal `json:"signal" validate:"required"`
 
 	// QueueID short-circuits the owner/name lookup when set.
-	QueueID string `json:"queue_id,omitempty"`
+	QueueID   string  `json:"queue_id,omitempty"`
+	DedupeKey *string `json:"dedupe_key,omitempty"`
 
 	// SignalOwnerID and SignalOwnerType are set on the QueueSignal record to track
 	// which entity (e.g. workflow step) triggered this signal execution.
@@ -75,6 +76,7 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 		IdempotencyKey: req.IdempotencyKey,
 		Callback:       req.Callback,
 		Callbacks:      req.Callbacks,
+		DedupeKey:      req.DedupeKey,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to enqueue signal")

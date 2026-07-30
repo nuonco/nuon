@@ -76,11 +76,7 @@ export const CancelWorkflowButton = ({
   const { canShowCancel } = useWorkflowActions(workflow, false)
 
   return canShowCancel ? (
-    <Button
-      variant="danger"
-      onClick={() => addModal(modal)}
-      {...props}
-    >
+    <Button variant="danger" onClick={() => addModal(modal)} {...props}>
       {children ?? 'Cancel workflow'}
       {props?.isMenuButton ? <Icon variant="StopCircleIcon" /> : null}
     </Button>

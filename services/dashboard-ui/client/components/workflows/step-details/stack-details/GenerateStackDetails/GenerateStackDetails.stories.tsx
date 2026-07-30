@@ -2,7 +2,10 @@ export default {
   title: 'Workflows/GenerateStackDetails',
 }
 
-import { GenerateStackDetails, GenerateStackDetailsSkeleton } from './GenerateStackDetails'
+import {
+  GenerateStackDetails,
+  GenerateStackDetailsSkeleton,
+} from './GenerateStackDetails'
 import type { TAppConfig } from '@/types'
 
 const mockConfig = {
@@ -19,8 +22,6 @@ export const Default = () => (
   <GenerateStackDetails appConfig={mockConfig} isLoading={false} />
 )
 
-export const Loading = () => (
-  <GenerateStackDetails isLoading={true} />
-)
+export const Loading = () => <GenerateStackDetails isLoading={true} />
 
 export const Skeleton = () => <GenerateStackDetailsSkeleton />

@@ -15,10 +15,7 @@ import {
   AwaitAzureDetails,
   AwaitAzureDetailsSkeleton,
 } from '../AwaitAzureDetails'
-import {
-  AwaitGCPDetails,
-  AwaitGCPDetailsSkeleton,
-} from '../AwaitGCPDetails'
+import { AwaitGCPDetails, AwaitGCPDetailsSkeleton } from '../AwaitGCPDetails'
 import type { IStackDetails } from '../types'
 
 interface IAwaitStackDetails extends IStackDetails {
@@ -97,7 +94,9 @@ interface IAwaitStackDetailsSkeleton {
   runnerType?: string
 }
 
-export const AwaitStackDetailsSkeleton = ({ runnerType }: IAwaitStackDetailsSkeleton) => {
+export const AwaitStackDetailsSkeleton = ({
+  runnerType,
+}: IAwaitStackDetailsSkeleton) => {
   return (
     <div className="flex flex-col gap-6">
       <Card>

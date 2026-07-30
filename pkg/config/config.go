@@ -62,6 +62,8 @@ type AppConfig struct {
 	Actions []*ActionConfig `mapstructure:"actions,omitempty" toml:"actions,omitempty"`
 
 	Runbooks []*RunbookConfig `mapstructure:"runbooks,omitempty" toml:"runbooks,omitempty"`
+
+	Triggers *TriggersConfig `mapstructure:"triggers,omitempty" toml:"triggers,omitempty"`
 }
 type ComponentList []*Component
 
@@ -123,7 +125,9 @@ func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("actions").Short("action configurations").
 		Long("Custom workflows and actions that can be executed on installs").
 		Field("runbooks").Short("runbook configurations").
-		Long("Ordered release procedures with deploy and action steps that can be executed on installs")
+		Long("Ordered release procedures with deploy and action steps that can be executed on installs").
+		Field("triggers").Short("trigger configuration").
+		Long("Configure event sources and rules that trigger app branch runs")
 }
 
 type parseFn struct {

@@ -84,6 +84,7 @@ type AppConfig struct {
 	StackConfig                AppStackConfig              `json:"stack,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"stack_config,omitzero,omitempty"`
 	ComponentConfigConnections []ComponentConfigConnection `json:"component_config_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_config_connections,omitzero,omitempty"`
 	ActionWorkflowConfigs      []ActionWorkflowConfig      `json:"action_workflow_configs,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"action_workflow_configs,omitzero,omitempty"`
+	TriggerRules               []TriggerRule               `json:"trigger_rules,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"trigger_rules,omitzero,omitempty"`
 	OperationRoleConfig        AppOperationRoleConfig      `json:"operation_role_config,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"operation_role_config,omitzero,omitempty"`
 	KubernetesContextsConfig   AppKubernetesContextsConfig `json:"kubernetes_contexts,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"kubernetes_contexts_config,omitzero,omitempty"`
 

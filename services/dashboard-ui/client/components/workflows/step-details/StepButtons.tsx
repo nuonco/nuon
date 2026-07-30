@@ -34,7 +34,10 @@ export const StepButtons = ({
           <RetryStepButton size={buttonSize} variant="primary" step={step} />
         </>
       ) : null}
-      {approval && !isApproveAll && step?.approval?.type !== 'approve-all' && !hasResponded(step.id) ? (
+      {approval &&
+      !isApproveAll &&
+      step?.approval?.type !== 'approve-all' &&
+      !hasResponded(step.id) ? (
         <>
           <DenyPlanButton size={buttonSize} step={step} />
           <ApprovePlanButton size={buttonSize} variant="primary" step={step} />

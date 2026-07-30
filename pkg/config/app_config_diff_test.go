@@ -52,6 +52,21 @@ func (s *AppConfigDiffSuite) TestIdenticalConfigs() {
 	s.Equal(0, summary.Changed)
 }
 
+func (s *AppConfigDiffSuite) TestTriggerOnlyChanges() {
+	old := baseConfig()
+	new := baseConfig()
+	new.Triggers = &TriggersConfig{Rules: []*TriggerRuleConfig{{
+		Name: "deploy", Trigger: "registry", EventTypes: []string{"push"},
+		Target: &TriggerTargetConfig{Type: "app_branch_run", AppBranch: "main"},
+	}}}
+
+	d := new.Diff(old)
+	s.True(d.Summary().HasChanged)
+	triggers := findChild(d, "triggers")
+	s.Require().NotNil(triggers)
+	s.Equal(diff.OpAdd, triggers.Diff.Op)
+}
+
 // --- Test: Metadata changes ---
 
 func (s *AppConfigDiffSuite) TestMetadataChanges() {

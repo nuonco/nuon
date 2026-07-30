@@ -7,7 +7,9 @@ import { RunnerStepDetails } from './RunnerStepDetails'
 
 interface IRunnerStepDetailsContainer extends IStepDetails {}
 
-export const RunnerStepDetailsContainer = ({ step }: IRunnerStepDetailsContainer) => {
+export const RunnerStepDetailsContainer = ({
+  step,
+}: IRunnerStepDetailsContainer) => {
   const { org } = useOrg()
   const runnerId = step?.step_target_id
 

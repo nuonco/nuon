@@ -36,14 +36,20 @@ export function getStepPanelSize(step: TWorkflowStep): TPanelSize {
 }
 
 export function getStepPanelDetails(step: TWorkflowStep): ReactNode {
-  if (step.step_target_type === 'install_action_workflow_runs') return <ActionRunStepDetails />
+  if (step.step_target_type === 'install_action_workflow_runs')
+    return <ActionRunStepDetails />
   if (step.step_target_type === 'install_deploys') return <DeployStepDetails />
-  if (step.step_target_type === 'install_sandbox_runs') return <SandboxRunStepDetails />
-  if (step.step_target_type === 'install_stack_versions') return <StackStepDetails />
+  if (step.step_target_type === 'install_sandbox_runs')
+    return <SandboxRunStepDetails />
+  if (step.step_target_type === 'install_stack_versions')
+    return <StackStepDetails />
   if (step.step_target_type === 'runners') return <RunnerStepDetails />
-  if (step.step_target_type === 'install_components') return <VerifyHealthStepDetails />
-  if (step.step_target_type === 'install_workflow_steps') return <SyncSecretsStepDetails />
-  if (step.step_target_type === 'app_branches') return <InstallGroupStepDetails />
+  if (step.step_target_type === 'install_components')
+    return <VerifyHealthStepDetails />
+  if (step.step_target_type === 'install_workflow_steps')
+    return <SyncSecretsStepDetails />
+  if (step.step_target_type === 'app_branches')
+    return <InstallGroupStepDetails />
   // step_target_type only lands once the runner picks up the step;
   // hold the panel body with a placeholder until then. The container
   // fast-polls in this window so the gap is ~1-2s.
@@ -75,7 +81,12 @@ export const StepDetailPanelContainer = ({
   const { org } = useOrg()
 
   const { data: step = initStep } = useQuery<TWorkflowStep>({
-    queryKey: ['workflow-step', org?.id, initStep.install_workflow_id, initStep.id],
+    queryKey: [
+      'workflow-step',
+      org?.id,
+      initStep.install_workflow_id,
+      initStep.id,
+    ],
     queryFn: () =>
       getWorkflowStep({
         orgId: org!.id,
@@ -98,6 +109,11 @@ export const StepDetailPanelContainer = ({
     <StepDetailPanel
       step={step}
       planOnly={planOnly}
+      triggerHref={
+        org?.id && step?.links?.event_wait?.trigger_id
+          ? `/${org.id}/triggers/${step.links.event_wait.trigger_id}`
+          : undefined
+      }
       {...props}
     >
       {children}
@@ -105,7 +121,7 @@ export const StepDetailPanelContainer = ({
   )
 }
 
-export const StepDetailPanelButton = ({
+const StepPanelButton = ({
   step,
   approvalPrompt,
   planOnly = false,
@@ -150,22 +166,41 @@ export const StepDetailPanelButton = ({
     !step.finished
 
   const workflowStatus = workflow?.status?.status
-  const workflowBlocked = workflowStatus === 'cancelled' || workflowStatus === 'error'
-  const suppressAutoOpen = planOnly || workflow?.type === 'drift_run' || workflow?.type === 'drift_run_reprovision_sandbox'
+  const workflowBlocked =
+    workflowStatus === 'cancelled' || workflowStatus === 'error'
+  const suppressAutoOpen =
+    planOnly ||
+    workflow?.type === 'drift_run' ||
+    workflow?.type === 'drift_run_reprovision_sandbox'
 
   useEffect(() => {
-    if (!suppressAutoOpen && step.id && step.id === searchParams?.get('panel')) {
+    if (
+      !suppressAutoOpen &&
+      step.id &&
+      step.id === searchParams?.get('panel')
+    ) {
       handleAddPanel()
     }
   }, [])
 
   useEffect(() => {
     if (autoOpened.current || !workflow) return
-    if (!workflowBlocked && !suppressAutoOpen && (isPendingApproval || isPendingAwaitStack) && panels.length === 0) {
+    if (
+      !workflowBlocked &&
+      !suppressAutoOpen &&
+      (isPendingApproval || isPendingAwaitStack) &&
+      panels.length === 0
+    ) {
       autoOpened.current = true
       handleAddPanel()
     }
-  }, [workflow?.id, workflowBlocked, suppressAutoOpen, isPendingApproval, isPendingAwaitStack])
+  }, [
+    workflow?.id,
+    workflowBlocked,
+    suppressAutoOpen,
+    isPendingApproval,
+    isPendingAwaitStack,
+  ])
 
   useEffect(() => {
     if (autoOpened.current && panelIdRef.current && step.finished) {
@@ -185,3 +220,12 @@ export const StepDetailPanelButton = ({
     </Button>
   )
 }
+
+export const StepDetailPanelButton = ({
+  step,
+  ...props
+}: {
+  approvalPrompt?: boolean
+  step: TWorkflowStep
+  planOnly?: boolean
+}) => <StepPanelButton step={step} {...props} />

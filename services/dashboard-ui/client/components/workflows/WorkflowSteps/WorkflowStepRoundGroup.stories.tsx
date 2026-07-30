@@ -69,7 +69,11 @@ export const TwoPriorRounds = () =>
       retried: true,
       finished: true,
       execution_time: 28000000000,
-      status: { status: 'success', history: [], metadata: { status: 'approved' } },
+      status: {
+        status: 'success',
+        history: [],
+        metadata: { status: 'approved' },
+      },
     }),
     apply(0, {
       finished: true,
@@ -84,7 +88,11 @@ export const TwoPriorRounds = () =>
       retried: true,
       finished: true,
       execution_time: 25000000000,
-      status: { status: 'success', history: [], metadata: { status: 'approved' } },
+      status: {
+        status: 'success',
+        history: [],
+        metadata: { status: 'approved' },
+      },
     }),
     apply(1, {
       finished: true,
@@ -119,7 +127,11 @@ export const OnePriorRound = () =>
       retried: true,
       finished: true,
       execution_time: 28000000000,
-      status: { status: 'success', history: [], metadata: { status: 'approved' } },
+      status: {
+        status: 'success',
+        history: [],
+        metadata: { status: 'approved' },
+      },
     }),
     apply(0, {
       finished: true,
@@ -137,6 +149,10 @@ export const OnePriorRound = () =>
     }),
     apply(1, {
       started_at: undefined,
-      status: { status: 'pending', history: [], metadata: { is_retry: true, retry_idx: 1 } },
+      status: {
+        status: 'pending',
+        history: [],
+        metadata: { is_retry: true, retry_idx: 1 },
+      },
     }),
   ])

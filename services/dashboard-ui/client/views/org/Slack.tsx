@@ -89,10 +89,12 @@ export const Slack = () => {
               From any channel in a connected workspace, run{' '}
               <span className="font-mono">/nuon subscribe</span> to subscribe
               the current channel,{' '}
-              <span className="font-mono">/nuon unsubscribe</span> to remove
-              it, or <span className="font-mono">/nuon help</span> for usage.
+              <span className="font-mono">/nuon unsubscribe</span> to remove it,
+              or <span className="font-mono">/nuon help</span> for usage.
               Multi-org workspaces require disambiguating the org with{' '}
-              <span className="font-mono">/nuon subscribe org=&lt;org-id&gt;</span>
+              <span className="font-mono">
+                /nuon subscribe org=&lt;org-id&gt;
+              </span>
               .{' '}
               <a
                 href="https://docs.nuon.co/integrations/slack"

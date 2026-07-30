@@ -105,6 +105,13 @@ func (s *service) getWorkflow(ctx *gin.Context, orgID, workflowID string) (*app.
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get workflow")
 	}
+	stepPtrs := make([]*app.WorkflowStep, len(installWorkflow.Steps))
+	for i := range installWorkflow.Steps {
+		stepPtrs[i] = &installWorkflow.Steps[i]
+	}
+	if err := s.loadStepEventWaits(ctx, stepPtrs); err != nil {
+		return nil, errors.Wrap(err, "unable to load workflow event waits")
+	}
 
 	return &installWorkflow, nil
 }

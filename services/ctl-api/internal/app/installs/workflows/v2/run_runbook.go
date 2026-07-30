@@ -22,6 +22,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/waitforevent"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -137,6 +138,13 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 				return nil, errors.Wrapf(err, "unable to generate sandbox %s step %s", stepCfg.Type, stepCfg.Name)
 			}
 			steps = append(steps, sbxSteps...)
+		case app.RunbookStepTypeWaitForEvent:
+			sg.nextGroupNamed(fmt.Sprintf("wait for event: %s", stepCfg.Name))
+			waitStep, err := sg.installSignalStep(ctx, installID, stepCfg.Name, pgtype.Hstore{}, &waitforevent.Signal{InstallID: installID, TriggerID: stepCfg.TriggerID, EventTypes: stepCfg.EventTypes, Filters: stepCfg.Filters, WaitTimeout: stepCfg.Timeout}, false)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to generate wait-for-event step %s", stepCfg.Name)
+			}
+			steps = append(steps, waitStep)
 		}
 	}
 
@@ -422,14 +430,15 @@ func runbookActionStep(ctx workflow.Context, installID string, stepCfg *app.Runb
 
 	// Inline ad-hoc action: create the run record first, then reference by ID
 	adHocRun, err := activities.AwaitCreateAdHocActionRunForRunbook(ctx, activities.CreateAdHocActionRunForRunbookRequest{
-		InstallID:       installID,
-		Command:         stepCfg.Command,
-		InlineContents:  stepCfg.InlineContents,
-		EnvVars:         stepCfg.EnvVars,
-		Timeout:         stepCfg.Timeout,
-		Role:            stepCfg.Role,
-		TriggeredByID:   triggeredByID,
-		TriggeredByType: "runbook",
+		InstallID:         installID,
+		InstallWorkflowID: flw.ID,
+		Command:           stepCfg.Command,
+		InlineContents:    stepCfg.InlineContents,
+		EnvVars:           stepCfg.EnvVars,
+		Timeout:           stepCfg.Timeout,
+		Role:              stepCfg.Role,
+		TriggeredByID:     triggeredByID,
+		TriggeredByType:   "runbook",
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create ad-hoc action run for runbook")

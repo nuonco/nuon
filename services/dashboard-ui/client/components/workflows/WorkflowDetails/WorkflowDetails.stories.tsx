@@ -51,7 +51,9 @@ const Wrapper = ({
   workflow: TWorkflow
 }) => (
   <OrgContext.Provider value={{ org: mockOrg, refresh: () => {} }}>
-    <InstallContext.Provider value={{ install: mockInstall, labelColors: {}, refresh: () => {} }}>
+    <InstallContext.Provider
+      value={{ install: mockInstall, labelColors: {}, refresh: () => {} }}
+    >
       <WorkflowContext.Provider
         value={{
           workflow,
@@ -166,8 +168,18 @@ export const MultipleFailedSteps = () => {
       <WorkflowDetails
         workflow={workflow}
         failedSteps={[
-          makeStep('step-1', 'deploy database', 'error', 'Connection timeout after 300s'),
-          makeStep('step-2', 'deploy cache', 'error', 'Helm release failed: image pull backoff'),
+          makeStep(
+            'step-1',
+            'deploy database',
+            'error',
+            'Connection timeout after 300s'
+          ),
+          makeStep(
+            'step-2',
+            'deploy cache',
+            'error',
+            'Helm release failed: image pull backoff'
+          ),
           makeStep(
             'step-3',
             'deploy api-server',

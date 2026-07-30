@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -47,24 +48,43 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	metadata map[string]string,
 	planOnly bool,
 ) (*app.Workflow, error) {
+	return s.createWorkflowWithDB(ctx, s.db, ownerID, ownerType, workflowType, metadata, planOnly, app.InstallApprovalOptionPrompt)
+}
+
+func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
+	ownerID, ownerType string,
+	workflowType app.WorkflowType,
+	metadata map[string]string,
+	planOnly bool,
+	approvalOption app.InstallApprovalOption,
+) (*app.Workflow, error) {
+	status := app.NewCompositeStatus(ctx, app.StatusPending)
+	if approvalOption == app.InstallApprovalOptionApproveAll {
+		metadata["approval_type"] = "install-config"
+		status.Metadata["approval_type"] = "install-config"
+	}
 	wf := app.Workflow{
 		Type:              workflowType,
 		OwnerID:           ownerID,
 		OwnerType:         ownerType,
 		Metadata:          generics.ToHstore(metadata),
-		Status:            app.NewCompositeStatus(ctx, app.StatusPending),
+		Status:            status,
 		StepErrorBehavior: app.StepErrorBehaviorAbort,
-		ApprovalOption:    app.InstallApprovalOptionPrompt,
+		ApprovalOption:    approvalOption,
 		PlanOnly:          planOnly,
 		GenerateStepsSignal: &signaldb.SignalData{
 			Signal: &generateStepsSignal{},
 		},
 	}
 
-	res := s.db.WithContext(ctx).Create(&wf)
+	res := db.WithContext(ctx).Create(&wf)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create workflow")
 	}
 
 	return &wf, nil
+}
+
+func (s *Helpers) CreateWorkflowWithDB(ctx context.Context, db *gorm.DB, ownerID, ownerType string, workflowType app.WorkflowType, metadata map[string]string, planOnly bool, approvalOption app.InstallApprovalOption) (*app.Workflow, error) {
+	return s.createWorkflowWithDB(ctx, db, ownerID, ownerType, workflowType, metadata, planOnly, approvalOption)
 }

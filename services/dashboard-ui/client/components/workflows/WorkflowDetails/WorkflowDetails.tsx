@@ -21,7 +21,10 @@ interface IWorkflowDetails {
   failedSteps: TWorkflowStep[]
 }
 
-export const WorkflowDetails = ({ workflow, failedSteps }: IWorkflowDetails) => {
+export const WorkflowDetails = ({
+  workflow,
+  failedSteps,
+}: IWorkflowDetails) => {
   const metadata = workflow?.status?.metadata
   const retriesExhausted = metadata?.retries_exhausted === true
   const stopped = metadata?.stopped === true
@@ -36,8 +39,10 @@ export const WorkflowDetails = ({ workflow, failedSteps }: IWorkflowDetails) => 
             </Text>
             <Text variant="subtext">
               This workflow has exhausted its retry limit
-              {metadata?.max_retries ? ` (${metadata.max_retries} retries)` : ''}.
-              Rerun the workflow to start fresh.
+              {metadata?.max_retries
+                ? ` (${metadata.max_retries} retries)`
+                : ''}
+              . Rerun the workflow to start fresh.
             </Text>
           </div>
         </Banner>
@@ -50,7 +55,8 @@ export const WorkflowDetails = ({ workflow, failedSteps }: IWorkflowDetails) => 
               Workflow stopped
             </Text>
             <Text variant="subtext">
-              {(metadata?.error_message as string) || 'This workflow was stopped and cannot continue.'}
+              {(metadata?.error_message as string) ||
+                'This workflow was stopped and cannot continue.'}
             </Text>
           </div>
         </Banner>
@@ -64,9 +70,7 @@ export const WorkflowDetails = ({ workflow, failedSteps }: IWorkflowDetails) => 
 
       <WorkflowDetailsSectionContainer />
 
-      {failedSteps?.length > 0 && (
-        <FailedStepBanners steps={failedSteps} />
-      )}
+      {failedSteps?.length > 0 && <FailedStepBanners steps={failedSteps} />}
     </div>
   )
 }
@@ -121,7 +125,9 @@ const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
         <StepBanner
           step={mostRecent}
           planOnly
-          onDismiss={isRetried(mostRecent) ? () => dismiss(mostRecent.id) : undefined}
+          onDismiss={
+            isRetried(mostRecent) ? () => dismiss(mostRecent.id) : undefined
+          }
           onViewDetails={() => openPanel(mostRecent)}
         />
       </div>

@@ -32,6 +32,9 @@ type AppQueueSignal struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// dedupe key
+	DedupeKey string `json:"dedupe_key,omitempty"`
+
 	// Optional: if this signal was emitted by an emitter
 	EmitterID string `json:"emitter_id,omitempty"`
 

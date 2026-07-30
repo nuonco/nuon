@@ -30,64 +30,64 @@ export const ActionRunLogs = ({ actionRun, isAdhoc }: IActionRunLogs) => {
     <div className="flex flex-col gap-2">
       <LogStreamProvider logStreamId={actionRun.log_stream.id}>
         <LogViewerProvider>
-            {isAdhoc ? (
-              <>
-                <Text weight="strong">Action logs</Text>
-                <Tabs
-                  tabs={{
-                    logs: <SSELogs />,
-                    trace: (
-                      <TraceView
-                        logStreamId={actionRun.log_stream.id}
-                        shouldPoll={actionRun.log_stream.open}
-                      />
-                    ),
-                  }}
-                />
-              </>
-            ) : (
+          {isAdhoc ? (
+            <>
+              <Text weight="strong">Action logs</Text>
               <Tabs
                 tabs={{
-                  logs: (
-                    <div className="pt-4">
-                      <InstallActionRunLogs
-                        actionConfig={actionRun?.config}
-                        layout="horizontal"
-                        runSteps={actionRun?.steps}
-                      />
-                    </div>
-                  ),
+                  logs: <SSELogs />,
                   trace: (
-                    <div className="pt-4">
-                      <TraceView
-                        logStreamId={actionRun.log_stream.id}
-                        shouldPoll={actionRun.log_stream.open}
-                      />
-                    </div>
-                  ),
-                  summary: (
-                    <div className="pt-4 flex flex-col gap-6">
-                      <div className="flex flex-col gap-2">
-                        <Text weight="strong">Outputs</Text>
-                        <InstallActionRunOutputsComponent
-                          installActionRun={actionRun}
-                        />
-                      </div>
-                      {Object.keys(actionRun?.run_env_vars ?? {}).length > 0 && (
-                        <div className="flex flex-col gap-2">
-                          <Text weight="strong">Environment variables</Text>
-                          <KeyValueList
-                            values={Object.entries(actionRun.run_env_vars!).map(
-                              ([key, value]) => ({ key, value })
-                            )}
-                          />
-                        </div>
-                      )}
-                    </div>
+                    <TraceView
+                      logStreamId={actionRun.log_stream.id}
+                      shouldPoll={actionRun.log_stream.open}
+                    />
                   ),
                 }}
               />
-            )}
+            </>
+          ) : (
+            <Tabs
+              tabs={{
+                logs: (
+                  <div className="pt-4">
+                    <InstallActionRunLogs
+                      actionConfig={actionRun?.config}
+                      layout="horizontal"
+                      runSteps={actionRun?.steps}
+                    />
+                  </div>
+                ),
+                trace: (
+                  <div className="pt-4">
+                    <TraceView
+                      logStreamId={actionRun.log_stream.id}
+                      shouldPoll={actionRun.log_stream.open}
+                    />
+                  </div>
+                ),
+                summary: (
+                  <div className="pt-4 flex flex-col gap-6">
+                    <div className="flex flex-col gap-2">
+                      <Text weight="strong">Outputs</Text>
+                      <InstallActionRunOutputsComponent
+                        installActionRun={actionRun}
+                      />
+                    </div>
+                    {Object.keys(actionRun?.run_env_vars ?? {}).length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        <Text weight="strong">Environment variables</Text>
+                        <KeyValueList
+                          values={Object.entries(actionRun.run_env_vars!).map(
+                            ([key, value]) => ({ key, value })
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ),
+              }}
+            />
+          )}
         </LogViewerProvider>
       </LogStreamProvider>
     </div>

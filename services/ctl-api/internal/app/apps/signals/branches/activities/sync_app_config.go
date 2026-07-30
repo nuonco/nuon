@@ -5,16 +5,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/lib/pq"
 	"github.com/nuonco/nuon/pkg/config"
 	configsync "github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/triggers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type SyncAppConfigInput struct {
@@ -68,7 +71,9 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 	)
 
 	var cfg config.AppConfig
-	if err := json.Unmarshal([]byte(intermediateJSON), &cfg); err != nil {
+	decoder := json.NewDecoder(strings.NewReader(intermediateJSON))
+	decoder.UseNumber()
+	if err := decoder.Decode(&cfg); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal intermediate config: %w", err)
 	}
 
@@ -98,19 +103,38 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 		return nil, fmt.Errorf("unable to sync config: %w", err)
 	}
 
-	// Mark config as active with component and action IDs
-	a.db.WithContext(ctx).Model(&appConfig).Updates(map[string]interface{}{
-		"status":             app.AppConfigStatusActive,
-		"status_description": "synced successfully",
-		"component_ids":      pq.StringArray(s.GetComponentStateIds()),
-		"action_ids":         pq.StringArray(s.GetActionStateIds()),
-	})
-	// dual-write V2 status
 	activeStatus := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusActive))
 	activeStatus.StatusHumanDescription = "synced successfully"
-	a.db.WithContext(ctx).Model(&appConfig).Updates(map[string]any{
-		"status_v2": activeStatus,
-	})
+	if err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := triggers.Sync(ctx, tx, &cfg, appConfig.OrgID, appConfig.AppID, appConfig.ID); err != nil {
+			return fmt.Errorf("unable to sync triggers: %w", err)
+		}
+		return tx.Model(&appConfig).Updates(map[string]interface{}{
+			"status":             app.AppConfigStatusActive,
+			"status_description": "synced successfully",
+			"component_ids":      pq.StringArray(s.GetComponentStateIds()),
+			"action_ids":         pq.StringArray(s.GetActionStateIds()),
+			"status_v2":          activeStatus,
+		}).Error
+	}); err != nil {
+		humanErr := signal.HumanError(err)
+		errorStatus := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusError))
+		errorStatus.StatusHumanDescription = fmt.Sprintf("sync failed: %s", humanErr)
+		a.db.WithContext(ctx).Model(&appConfig).Updates(map[string]interface{}{
+			"status":             app.AppConfigStatusError,
+			"status_description": fmt.Sprintf("sync failed: %s", humanErr),
+			"status_v2":          errorStatus,
+		})
+		var syncErr configsync.SyncErr
+		if errors.As(err, &syncErr) {
+			return nil, temporal.NewNonRetryableApplicationError(
+				fmt.Sprintf("unable to activate app config: %s", err.Error()),
+				"SYNC_VALIDATION_ERROR",
+				err,
+			)
+		}
+		return nil, fmt.Errorf("unable to activate app config: %w", err)
+	}
 
 	return &SyncAppConfigOutput{
 		AppConfigID:  s.GetAppConfigID(),

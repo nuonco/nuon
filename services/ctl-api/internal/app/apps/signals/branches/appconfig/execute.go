@@ -150,7 +150,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		})
 		if diffErr != nil {
 			l.Warn("unable to diff intermediate configs, continuing", "error", diffErr)
-		} else if !diffResult.Changed {
+		} else if !diffResult.Changed && !run.Force {
 			_ = activities.AwaitUpdateAppBranchRunNoConfigChanges(ctx, &activities.UpdateAppBranchRunNoConfigChangesInput{
 				RunID: s.RunID,
 			})

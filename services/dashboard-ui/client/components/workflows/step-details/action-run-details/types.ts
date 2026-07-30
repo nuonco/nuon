@@ -1,8 +1,4 @@
-import type {
-  TAccount,
-  TInstallActionRun,
-  TWorkflowStep,
-} from '@/types'
+import type { TAccount, TInstallActionRun, TWorkflowStep } from '@/types'
 
 export interface IActionRunDetails {
   step?: TWorkflowStep

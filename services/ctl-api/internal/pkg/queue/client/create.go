@@ -6,6 +6,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	enumsv1 "go.temporal.io/api/enums/v1"
 	tclient "go.temporal.io/sdk/client"
@@ -41,10 +43,10 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 	// Idempotent: if a queue with the same owner + name already exists,
 	// restart its workflow and return the existing record.
 	var existing app.Queue
-	if res := c.db.WithContext(ctx).
-		Where(app.Queue{OwnerID: req.OwnerID, Name: req.Name}).
-		First(&existing); res.Error == nil {
-
+	res := c.db.WithContext(ctx).
+		Where(app.Queue{OwnerID: req.OwnerID, OwnerType: req.OwnerType, Name: req.Name}).
+		First(&existing)
+	if res.Error == nil {
 		if existing.Workflow.Namespace != req.Namespace {
 			if err := c.migrateQueueNamespace(
 				ctx,
@@ -63,6 +65,9 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 		}
 		return &existing, nil
 	}
+	if !errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		return nil, errors.Wrap(res.Error, "unable to find existing queue")
+	}
 
 	q := app.Queue{
 		OrgID:       req.OrgID,
@@ -78,8 +83,36 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 			TaskQueue:  taskqueue.For(req.Namespace, req.Name),
 		},
 	}
-	if res := c.db.WithContext(ctx).Create(&q); res.Error != nil {
+	create := c.db.WithContext(ctx)
+	conflictPredicate := ""
+	switch req.Name {
+	case queue.AppTriggersQueueName:
+		conflictPredicate = "deleted_at = 0 AND name = 'app-triggers'"
+	case queue.OrgSignalsQueueName:
+		conflictPredicate = "deleted_at = 0 AND name = 'org-signals'"
+	}
+	if conflictPredicate != "" {
+		create = create.Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "owner_id"}, {Name: "owner_type"}, {Name: "name"}},
+			TargetWhere: clause.Where{Exprs: []clause.Expression{
+				clause.Expr{SQL: conflictPredicate},
+			}},
+			DoNothing: true,
+		})
+	}
+	res = create.Create(&q)
+	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create queue")
+	}
+	if res.RowsAffected == 0 && conflictPredicate != "" {
+		if err := c.db.WithContext(ctx).Where(app.Queue{OwnerID: req.OwnerID, OwnerType: req.OwnerType, Name: req.Name}).First(&existing).Error; err != nil {
+			return nil, errors.Wrap(err, "unable to get concurrently created queue")
+		}
+		if err := c.HintRestartSingle(ctx, existing.ID); err != nil {
+			c.l.Warn("unable to hint restart concurrently created queue",
+				zap.String("queue-id", existing.ID), zap.Error(err))
+		}
+		return &existing, nil
 	}
 
 	if c.tClient == nil {

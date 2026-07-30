@@ -34,6 +34,15 @@ type ServiceCreateRunbookStepConfigRequest struct {
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
 
+	// trigger
+	Trigger string `json:"trigger,omitempty"`
+
+	// event types
+	EventTypes []string `json:"event_types,omitempty"`
+
+	// filters
+	Filters []*AppTriggerFilter `json:"filters,omitempty"`
+
 	// idx
 	Idx int64 `json:"idx,omitempty"`
 

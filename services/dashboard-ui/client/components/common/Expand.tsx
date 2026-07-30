@@ -13,6 +13,7 @@ export interface IExpand extends React.HTMLAttributes<HTMLDivElement> {
   headerClassName?: string
   id: string
   interactiveHeading?: boolean
+  onExpandedChange?: (isExpanded: boolean) => void
   toggleLabel?: string
   toggleContent?: React.ReactNode
 }
@@ -27,6 +28,7 @@ export const Expand = ({
   isIconBeforeHeading = false,
   isOpen = false,
   interactiveHeading = false,
+  onExpandedChange,
   toggleLabel,
   toggleContent,
   ...props
@@ -37,7 +39,11 @@ export const Expand = ({
     setIsExpanded(isOpen)
   }, [isOpen])
 
-  const toggle = () => setIsExpanded((prev) => !prev)
+  const toggle = () => {
+    const nextIsExpanded = !isExpanded
+    setIsExpanded(nextIsExpanded)
+    onExpandedChange?.(nextIsExpanded)
+  }
 
   const expandIcon = isExpanded ? (
     <Icon variant="CaretUpIcon" />

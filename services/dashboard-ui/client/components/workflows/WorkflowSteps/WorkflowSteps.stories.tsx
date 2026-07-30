@@ -158,7 +158,8 @@ export const StalePlan = () =>
         metadata: {
           check: 'stale-plan',
           summary: 'Plan is stale, auto-retrying',
-          detail: 'Approval was submitted 4380m after plan creation (threshold: 4320m)',
+          detail:
+            'Approval was submitted 4380m after plan creation (threshold: 4320m)',
           check_label_stale: 'true',
         },
       },
@@ -361,7 +362,11 @@ export const InterleavedGroupRetry = () =>
       retried: true,
       finished: true,
       execution_time: 28000000000,
-      status: { status: 'success', history: [], metadata: { status: 'approved' } },
+      status: {
+        status: 'success',
+        history: [],
+        metadata: { status: 'approved' },
+      },
     }),
     applyAttempt(0, {
       finished: true,
@@ -376,7 +381,11 @@ export const InterleavedGroupRetry = () =>
       retried: true,
       finished: true,
       execution_time: 25000000000,
-      status: { status: 'success', history: [], metadata: { status: 'approved' } },
+      status: {
+        status: 'success',
+        history: [],
+        metadata: { status: 'approved' },
+      },
     }),
     applyAttempt(1, {
       finished: true,
@@ -691,7 +700,8 @@ export const Discarded = () =>
       id: 'step-discarded',
       status: {
         status: 'discarded',
-        status_human_description: 'The plan step was discarded and retried by the user',
+        status_human_description:
+          'The plan step was discarded and retried by the user',
         history: [],
       },
     } as TWorkflowStep,

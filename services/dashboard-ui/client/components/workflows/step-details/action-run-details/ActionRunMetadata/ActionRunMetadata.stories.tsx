@@ -2,7 +2,10 @@ export default {
   title: 'Workflows/StepDetails/ActionRunMetadata',
 }
 
-import { ActionRunMetadata, ActionRunMetadataSkeleton } from './ActionRunMetadata'
+import {
+  ActionRunMetadata,
+  ActionRunMetadataSkeleton,
+} from './ActionRunMetadata'
 
 const mockActionRun = {
   id: 'run-1',
@@ -15,10 +18,7 @@ const mockActionRun = {
 
 export const Default = () => (
   <div className="p-4">
-    <ActionRunMetadata
-      actionRun={mockActionRun}
-      orgId="org-1"
-    />
+    <ActionRunMetadata actionRun={mockActionRun} orgId="org-1" />
   </div>
 )
 

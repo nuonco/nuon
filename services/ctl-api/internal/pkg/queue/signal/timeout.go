@@ -11,11 +11,18 @@ import (
 // SignalWithTimeout.
 const DefaultTimeout = 30 * 24 * time.Hour
 
+const UnboundedTimeout time.Duration = -1
+
 // DeriveTimeout extracts the timeout from a signal that implements
 // SignalWithTimeout. Returns DefaultTimeout if the signal doesn't declare one.
 func DeriveTimeout(sig Signal) time.Duration {
-	if t, ok := sig.(SignalWithTimeout); ok && t.Timeout() > 0 {
-		return t.Timeout()
+	if t, ok := sig.(SignalWithTimeout); ok {
+		if t.Timeout() > 0 {
+			return t.Timeout()
+		}
+		if unbounded, ok := sig.(SignalWithUnboundedTimeout); ok && unbounded.UnboundedTimeout() {
+			return UnboundedTimeout
+		}
 	}
 	return DefaultTimeout
 }

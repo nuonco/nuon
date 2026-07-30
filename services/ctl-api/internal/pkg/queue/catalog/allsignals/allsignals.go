@@ -22,6 +22,8 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/reprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/sandboxbuild"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/syncappconfiginstalls"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/triggerevent"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/triggereventdispatch"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/updatesandbox"
 
 	// general signals
@@ -84,6 +86,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateappconfig"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateinstallstackoutputs"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/waitforevent"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowapproveall"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowstepapprovalrequest"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowstepapprovalresponse"

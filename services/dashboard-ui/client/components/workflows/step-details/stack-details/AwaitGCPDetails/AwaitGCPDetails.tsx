@@ -389,12 +389,12 @@ const TerraformSubTab = ({
         <Text variant="subtext" theme="neutral">
           Unpack all three into one directory, then edit before applying: set{' '}
           <code>space_id</code> in <code>spacelift.tf</code> to the Spacelift
-          space this stack should live in (already have your own GCP
-          integration for this stack? set <code>attach_gcp_service_account</code>{' '}
-          to <code>false</code> instead), fill in <code>inputs.auto.tfvars</code>
+          space this stack should live in (already have your own GCP integration
+          for this stack? set <code>attach_gcp_service_account</code> to{' '}
+          <code>false</code> instead), fill in <code>inputs.auto.tfvars</code>
           (including <code>gcp_project_id</code>/<code>gcp_region</code> at the
-          top), and replace the placeholders in{' '}
-          <code>secrets.auto.tfvars</code> with your real secrets.
+          top), and replace the placeholders in <code>secrets.auto.tfvars</code>{' '}
+          with your real secrets.
         </Text>
         <Card>
           <span className="flex justify-between items-center">
@@ -508,12 +508,12 @@ const TerraformSubTab = ({
           4. Grant access, then run the install stack
         </Text>
         <Text variant="subtext" theme="neutral">
-          If you attached the GCP integration (the default), grant the
-          printed <code>gcp_service_account_email</code> output an IAM role on
-          your target GCP project. If you attached your own integration
-          instead, confirm its identity already has that access. Then trigger
-          the stack&apos;s first run, it&apos;s set to auto-deploy, so it
-          plans and applies your runner without further approval.
+          If you attached the GCP integration (the default), grant the printed{' '}
+          <code>gcp_service_account_email</code> output an IAM role on your
+          target GCP project. If you attached your own integration instead,
+          confirm its identity already has that access. Then trigger the
+          stack&apos;s first run, it&apos;s set to auto-deploy, so it plans and
+          applies your runner without further approval.
         </Text>
       </div>
     </div>

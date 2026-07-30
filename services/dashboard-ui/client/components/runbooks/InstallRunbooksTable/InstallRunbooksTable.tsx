@@ -57,7 +57,13 @@ export function parseInstallRunbooksToTableData(
             {Object.keys(runbook.labels)
               .sort()
               .map((k) => (
-                <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" customColor={labelColors?.[k]} />
+                <LabelBadge
+                  key={k}
+                  labelKey={k}
+                  labelValue={runbook.labels[k]}
+                  size="sm"
+                  customColor={labelColors?.[k]}
+                />
               ))}
           </span>
         ) : (
@@ -66,7 +72,12 @@ export function parseInstallRunbooksToTableData(
       lastUpdated: runbook?.updated_at ? (
         <Text flex nowrap className="gap-2">
           <Icon variant="CalendarBlankIcon" />
-          <Time time={runbook.updated_at} format="relative" variant="subtext" nowrap />
+          <Time
+            time={runbook.updated_at}
+            format="relative"
+            variant="subtext"
+            nowrap
+          />
         </Text>
       ) : (
         <Icon variant="MinusIcon" />
@@ -87,7 +98,8 @@ export function parseInstallRunbooksToTableData(
       href: `${basePath}/runbooks/${ir.runbook_id ?? ir.id}`,
       latestRunHref: (() => {
         const latestRun = ir.runs?.[0]
-        const workflowId = latestRun?.install_workflow_id ?? latestRun?.install_workflow?.id
+        const workflowId =
+          latestRun?.install_workflow_id ?? latestRun?.install_workflow?.id
         return workflowId ? `${basePath}/workflows/${workflowId}` : null
       })(),
       installRunbook: ir,
@@ -162,7 +174,11 @@ const columns: ColumnDef<TInstallRunbookRow>[] = [
                 </Text>
               }
             >
-              <Button isMenuButton disabled className="pointer-events-none w-full">
+              <Button
+                isMenuButton
+                disabled
+                className="pointer-events-none w-full"
+              >
                 Run runbook
                 <Icon variant="PlayIcon" />
               </Button>
@@ -198,7 +214,12 @@ interface IInstallRunbooksTable {
   pagination: { hasNext?: boolean; offset: number; limit: number }
 }
 
-export const InstallRunbooksTable = ({ data, isLoading, filterActions, pagination }: IInstallRunbooksTable) => {
+export const InstallRunbooksTable = ({
+  data,
+  isLoading,
+  filterActions,
+  pagination,
+}: IInstallRunbooksTable) => {
   return (
     <Table<TInstallRunbookRow>
       columns={columns}
@@ -208,7 +229,8 @@ export const InstallRunbooksTable = ({ data, isLoading, filterActions, paginatio
       emptyStateProps={{
         variant: 'actions',
         emptyTitle: 'No runbooks yet',
-        emptyMessage: 'Runbooks let you run operational procedures on this install.',
+        emptyMessage:
+          'Runbooks let you run operational procedures on this install.',
       }}
       pagination={pagination}
       searchPlaceholder="Search by name or ID..."

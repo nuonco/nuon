@@ -1,7 +1,12 @@
 import { Text } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
 import { MainNavLink } from '../MainNavLink'
-import { MAIN_LINKS, SETTINGS_LINKS, SLACK_LINK, SUPPORT_LINKS } from '../main-nav-links'
+import {
+  MAIN_LINKS,
+  SETTINGS_LINKS,
+  SLACK_LINK,
+  SUPPORT_LINKS,
+} from '../main-nav-links'
 import type { TOrg } from '@/types'
 
 interface IMainNav {
@@ -11,11 +16,18 @@ interface IMainNav {
   hasOrgSettings: boolean
   hasServiceAccountsAndTokens: boolean
   hasSlack: boolean
+  hasTriggers: boolean
   hasCustomerPortal: boolean
   customerPortalUrl: string
 }
 
-const NavLabel = ({ children, isSidebarOpen }: { children: string; isSidebarOpen: boolean }) => (
+const NavLabel = ({
+  children,
+  isSidebarOpen,
+}: {
+  children: string
+  isSidebarOpen: boolean
+}) => (
   <Text
     variant="subtext"
     className={cn(
@@ -46,6 +58,7 @@ export const MainNav = ({
   hasOrgSettings,
   hasServiceAccountsAndTokens,
   hasSlack,
+  hasTriggers,
   hasCustomerPortal,
   customerPortalUrl,
 }: IMainNav) => {
@@ -61,11 +74,12 @@ export const MainNav = ({
         },
       ]
     : MAIN_LINKS
-  const settingsLinks = hasServiceAccountsAndTokens
-    ? SETTINGS_LINKS
-    : SETTINGS_LINKS.filter(
-        (link) => link.path !== '/api-tokens' && link.path !== '/service-accounts'
-      )
+  const settingsLinks = SETTINGS_LINKS.filter(
+    (link) =>
+      (hasTriggers || link.path !== '/triggers') &&
+      (hasServiceAccountsAndTokens ||
+        (link.path !== '/api-tokens' && link.path !== '/service-accounts'))
+  )
 
   return (
     <nav className="flex flex-col gap-4">

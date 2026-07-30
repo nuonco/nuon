@@ -29,18 +29,21 @@ export const Default = () => <AdhocActionDetails actionRun={mockActionRun} />
 
 export const WithInlineContents = () => (
   <AdhocActionDetails
-    actionRun={{
-      ...mockActionRun,
-      steps: [
-        {
-          ...mockActionRun.steps?.[0],
-          adhoc_config: {
-            name: 'custom-script',
-            inline_contents: '#!/bin/bash\necho "Running custom script"\nls -la /var/log',
-            env_vars: {},
+    actionRun={
+      {
+        ...mockActionRun,
+        steps: [
+          {
+            ...mockActionRun.steps?.[0],
+            adhoc_config: {
+              name: 'custom-script',
+              inline_contents:
+                '#!/bin/bash\necho "Running custom script"\nls -la /var/log',
+              env_vars: {},
+            },
           },
-        },
-      ],
-    } as TInstallActionRun}
+        ],
+      } as TInstallActionRun
+    }
   />
 )

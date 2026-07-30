@@ -44,8 +44,7 @@ export const WorkflowStepRoundGroup = ({
       headerClassName="px-4 py-2"
       toggleContent={
         <Text variant="subtext" theme="neutral" nowrap>
-          {prior.length} previous{' '}
-          {prior.length === 1 ? 'attempt' : 'attempts'}
+          {prior.length} previous {prior.length === 1 ? 'attempt' : 'attempts'}
         </Text>
       }
       heading={

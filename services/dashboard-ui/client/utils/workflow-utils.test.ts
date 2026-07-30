@@ -4,10 +4,52 @@ import {
   getStepBadge,
   getStepButtons,
   getStepBanner,
+  getWorkflowStepTitle,
 } from './workflow-utils'
 import type { TWorkflow, TWorkflowStep } from '@/types'
 
 describe('workflow-utils', () => {
+  describe('getWorkflowStepTitle', () => {
+    const eventWaitStep = (name?: string) =>
+      ({ name, links: { event_wait: {} } }) as TWorkflowStep
+
+    test('formats wait-for event names', () => {
+      expect(getWorkflowStepTitle(eventWaitStep('wait_for_event'))).toBe(
+        'Wait for event'
+      )
+      expect(getWorkflowStepTitle(eventWaitStep('wait-for-deploy'))).toBe(
+        'Wait for deploy'
+      )
+    })
+
+    test('does not treat prefixes of words as for', () => {
+      expect(getWorkflowStepTitle(eventWaitStep('wait_forever'))).toBe(
+        'Wait forever'
+      )
+      expect(getWorkflowStepTitle(eventWaitStep('wait-format'))).toBe(
+        'Wait format'
+      )
+    })
+
+    test('falls back when the wait-for remainder is empty', () => {
+      expect(getWorkflowStepTitle(eventWaitStep('wait_for_'))).toBe(
+        'Wait for event'
+      )
+    })
+
+    test('uses sentence case for plain names', () => {
+      expect(getWorkflowStepTitle(eventWaitStep('deploy application'))).toBe(
+        'Deploy application'
+      )
+    })
+
+    test('handles undefined and empty names', () => {
+      expect(getWorkflowStepTitle(eventWaitStep())).toBe('')
+      expect(getWorkflowStepTitle(eventWaitStep(''))).toBe('')
+      expect(getWorkflowStepTitle()).toBe('')
+    })
+  })
+
   describe('getWorkflowBadge', () => {
     test('should return correct badge for success workflow', () => {
       const workflow: TWorkflow = {

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -56,6 +57,18 @@ func (r *Queue) Indexes(db *gorm.DB) []migrations.Index {
 				"owner_id",
 				"owner_type",
 			},
+		},
+		{
+			Name:        indexes.Name(db, &Queue{}, "app_triggers_owner_name"),
+			Columns:     []string{"owner_id", "owner_type", "name"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+			Option:      "WHERE deleted_at = 0 AND name = 'app-triggers'",
+		},
+		{
+			Name:        indexes.Name(db, &Queue{}, "org_signals_owner_name"),
+			Columns:     []string{"owner_id", "owner_type", "name"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+			Option:      "WHERE deleted_at = 0 AND name = 'org-signals'",
 		},
 	}
 }

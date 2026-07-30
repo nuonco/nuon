@@ -31,12 +31,7 @@ export const WorkflowHeader = ({ workflow, install }: IWorkflowHeader) => {
           <Icon variant="CaretLeftIcon" weight="bold" /> All workflows
         </Link>
         <HeadingGroup>
-          <Text
-            flex
-            className="gap-2"
-            variant="h3"
-            weight="strong"
-          >
+          <Text flex className="gap-2" variant="h3" weight="strong">
             {workflow?.type === 'action_workflow_run' &&
             workflow?.metadata?.adhoc_action
               ? `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`

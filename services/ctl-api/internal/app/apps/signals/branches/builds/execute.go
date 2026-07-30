@@ -39,7 +39,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app branch run: %w", err)
 	}
 
-	if run.NoConfigChanges {
+	if run.NoConfigChanges && !run.Force {
 		l.Info("no config changes, skipping builds")
 		return nil
 	}
@@ -75,7 +75,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	builds, err := s.buildComponents(ctx, l, appConfig, run.AppConfigID, previousAppConfigID)
+	builds, err := s.buildComponents(ctx, l, appConfig, run.AppConfigID, previousAppConfigID, run.Force)
 	if err != nil {
 		if isPreview && run.PRNumber != nil {
 			s.finalizePreview(ctx, l, run, err)
@@ -115,7 +115,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 // buildComponents enqueues queuebuild signals directly to component queues
 // (batched, parallel within each batch) and tracks progress via the parent
 // step's status metadata — no sub-steps or sub-groups are created.
-func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *app.AppConfig, appConfigID, previousAppConfigID string) ([]buildEntry, error) {
+func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *app.AppConfig, appConfigID, previousAppConfigID string, force bool) ([]buildEntry, error) {
 	componentIDs := appConfig.ComponentIDs
 
 	type componentInfo struct {
@@ -141,7 +141,7 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 
 		isNew := previousAppConfigID == ""
 
-		if previousAppConfigID != "" {
+		if previousAppConfigID != "" && !force {
 			check, err := activities.AwaitCheckBuildNeeded(ctx, &activities.CheckBuildNeededInput{
 				ComponentID:    componentID,
 				NewAppConfigID: appConfigID,

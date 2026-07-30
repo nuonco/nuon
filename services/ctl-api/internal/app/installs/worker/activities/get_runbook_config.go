@@ -82,6 +82,17 @@ func renderRunbookStep(step *app.RunbookStepConfig, data map[string]any) error {
 		}
 		step.EnvVars[k] = &rendered
 	}
+	for i := range step.Filters {
+		value, ok := step.Filters[i].Value.(string)
+		if !ok {
+			continue
+		}
+		rendered, rerr := renderRunbookInput(value, data)
+		if rerr != nil {
+			return rerr
+		}
+		step.Filters[i].Value = rendered
+	}
 	return nil
 }
 
@@ -92,7 +103,22 @@ func renderRunbookInput(field string, data map[string]any) (string, error) {
 	if !strings.Contains(field, "runbook_inputs") {
 		return field, nil
 	}
+	if strings.Contains(field, "runbook_outputs") {
+		return field, nil
+	}
 
+	return renderRunbookTemplate(field, data)
+}
+
+func renderRunbookRuntimeField(field string, data map[string]any) (string, error) {
+	if !strings.Contains(field, "runbook_inputs") && !strings.Contains(field, "runbook_outputs") {
+		return field, nil
+	}
+
+	return renderRunbookTemplate(field, data)
+}
+
+func renderRunbookTemplate(field string, data map[string]any) (string, error) {
 	tmpl, err := template.New("runbook_input").
 		Funcs(sprig.TxtFuncMap()).
 		Option("missingkey=error").

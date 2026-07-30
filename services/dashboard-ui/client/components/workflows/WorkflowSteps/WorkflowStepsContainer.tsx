@@ -18,7 +18,10 @@ export const WorkflowStepsContainer = ({
   const metadata = workflow?.status?.metadata
   const workflowStatus = workflow?.status?.status ?? ''
   const workflowTheme = getStatusTheme(workflowStatus)
-  const isTerminal = workflowTheme === 'error' || workflowTheme === 'success' || workflowTheme === 'warn'
+  const isTerminal =
+    workflowTheme === 'error' ||
+    workflowTheme === 'success' ||
+    workflowTheme === 'warn'
   const eagerStepsLoaded = !!metadata?.eager_steps_loaded
   const allStepsLoaded = !!metadata?.all_steps_loaded || isTerminal
 

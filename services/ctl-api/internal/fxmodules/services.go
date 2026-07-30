@@ -22,6 +22,7 @@ import (
 	runnerauthservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runner-auth/service"
 	runnersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/service"
 	slackservice "github.com/nuonco/nuon/services/ctl-api/internal/app/slack/service"
+	triggersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/triggers/service"
 	vcsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/service"
 	"github.com/nuonco/nuon/services/ctl-api/internal/health"
 	"github.com/nuonco/nuon/services/ctl-api/internal/httpbin"
@@ -47,6 +48,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(awsaccountconnectionsservice.New)),
 	fx.Provide(api.AsService(appsservice.New)),
 	fx.Provide(api.AsService(componentsservice.New)),
+	fx.Provide(api.AsService(triggersservice.New)),
 	fx.Provide(api.AsService(generalservice.New)),
 	fx.Provide(api.AsService(identityprovidersservice.New)),
 	fx.Provide(api.AsService(installsservice.New)),

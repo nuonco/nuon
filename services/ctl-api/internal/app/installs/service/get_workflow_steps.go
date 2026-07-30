@@ -106,6 +106,88 @@ func (s *service) getWorkflowSteps(ctx *gin.Context, workflowID string) ([]app.W
 		stepPtrs[i] = &steps[i]
 	}
 	s.loadStepLogStreams(ctx, stepPtrs)
+	if err := s.loadStepEventWaits(ctx, stepPtrs); err != nil {
+		return nil, errors.Wrap(err, "unable to load workflow event waits")
+	}
 
 	return steps, nil
+}
+
+func (s *service) loadStepEventWaits(ctx *gin.Context, steps []*app.WorkflowStep) error {
+	stepIDs := make([]string, len(steps))
+	for i := range steps {
+		stepIDs[i] = steps[i].ID
+	}
+	if len(stepIDs) == 0 {
+		return nil
+	}
+
+	var waiters []app.EventRunbookWaiter
+	if err := s.db.WithContext(ctx).Where(map[string]any{"workflow_step_id": stepIDs}).Find(&waiters).Error; err != nil {
+		return err
+	}
+	waitersByStep := make(map[string]app.EventRunbookWaiter, len(waiters))
+	triggerIDs := make([]string, 0, len(waiters))
+	eventIDs := make([]string, 0, len(waiters))
+	for i := range waiters {
+		waiter := waiters[i]
+		waitersByStep[waiter.WorkflowStepID] = waiter
+		triggerIDs = append(triggerIDs, waiter.TriggerID)
+		if waiter.MatchedEventID != nil {
+			eventIDs = append(eventIDs, *waiter.MatchedEventID)
+		}
+	}
+
+	var triggers []app.Trigger
+	if len(triggerIDs) > 0 {
+		if err := s.db.WithContext(ctx).Unscoped().Select("id", "name").Where(map[string]any{"id": triggerIDs}).Find(&triggers).Error; err != nil {
+			return err
+		}
+	}
+	triggerNames := make(map[string]string, len(triggers))
+	for i := range triggers {
+		triggerNames[triggers[i].ID] = triggers[i].Name
+	}
+
+	var events []app.TriggerEvent
+	if len(eventIDs) > 0 {
+		if err := s.db.WithContext(ctx).Select("id", "event_type").Where(map[string]any{"id": eventIDs}).Find(&events).Error; err != nil {
+			return err
+		}
+	}
+	eventTypes := make(map[string]string, len(events))
+	for i := range events {
+		eventTypes[events[i].ID] = events[i].EventType
+	}
+
+	for i := range steps {
+		step := steps[i]
+		waiter, ok := waitersByStep[step.ID]
+		if !ok {
+			continue
+		}
+		if step.Links == nil {
+			step.Links = make(map[string]any)
+		}
+		matchedEventType := ""
+		if waiter.MatchedEventID != nil {
+			matchedEventType = eventTypes[*waiter.MatchedEventID]
+		}
+		step.Links["event_wait"] = map[string]any{
+			"id":                 waiter.ID,
+			"status":             waiter.Status,
+			"trigger_id":         waiter.TriggerID,
+			"trigger_name":       triggerNames[waiter.TriggerID],
+			"event_types":        waiter.EventTypes,
+			"filters":            waiter.Filters,
+			"matched_event_id":   waiter.MatchedEventID,
+			"matched_event_type": matchedEventType,
+			"activated_at":       waiter.ActivatedAt,
+			"matched_at":         waiter.MatchedAt,
+			"notified_at":        waiter.NotifiedAt,
+			"cancelled_at":       waiter.CancelledAt,
+			"expired_at":         waiter.ExpiredAt,
+		}
+	}
+	return nil
 }

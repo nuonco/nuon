@@ -41,11 +41,7 @@ export interface IDeployPlan {
   panelId?: string
 }
 
-export const DeployPlan = ({
-  step,
-  plan,
-  isLoading,
-}: IDeployPlan) => {
+export const DeployPlan = ({ step, plan, isLoading }: IDeployPlan) => {
   return (
     <>
       {isLoading || !plan

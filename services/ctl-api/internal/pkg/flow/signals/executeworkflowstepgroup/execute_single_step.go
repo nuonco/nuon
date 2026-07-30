@@ -49,7 +49,7 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 	// retry waiting. Bound by the step's derived timeout, falling back to the
 	// human-wait cap when unset.
 	stepTimeout := step.Timeout
-	if stepTimeout <= 0 {
+	if stepTimeout == 0 {
 		stepTimeout = callback.FallbackAwaitTimeout
 	}
 

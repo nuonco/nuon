@@ -14,6 +14,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	branchactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	syncappconfiginstalls "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/syncappconfiginstalls"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/triggerevent"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/triggereventdispatch"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/ecrrepository"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"

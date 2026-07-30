@@ -70,4 +70,13 @@ export type TRunbookStep = {
   role?: string
   timeout?: number
   env_vars?: Record<string, string>
+  trigger_id?: string
+  trigger_name?: string
+  event_types?: string[]
+  filters?: Array<{
+    from?: string
+    path?: string
+    op?: string
+    value?: unknown
+  }>
 }
