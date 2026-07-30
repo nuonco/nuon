@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
 
@@ -66,8 +67,8 @@ func (jq *JSONBQuerier) WhereJSONPath(field string, path []string, operator stri
 }
 
 // MergeJSONBMetadata reads a JSONB column's "metadata" key, merges the provided
-// key-value pairs, and writes the column back. The model must be a pointer to a
-// GORM model (e.g. &app.QueueSignal{}).
+// key-value pairs, and writes the column back. Nil values remove their keys. The
+// model must be a pointer to a GORM model (e.g. &app.QueueSignal{}).
 func MergeJSONBMetadata(db *gorm.DB, model any, id string, field string, metadata map[string]any) error {
 	// Build a jsonb_set chain that merges each key into the metadata sub-object.
 	// First ensure the metadata key exists as an object, then set each key.
@@ -78,6 +79,12 @@ func MergeJSONBMetadata(db *gorm.DB, model any, id string, field string, metadat
 
 	args := make([]any, 0, len(metadata))
 	for k, v := range metadata {
+		if v == nil {
+			expr = fmt.Sprintf("(%s #- ?::text[])", expr)
+			args = append(args, pq.Array([]string{"metadata", k}))
+			continue
+		}
+
 		valJSON, err := json.Marshal(v)
 		if err != nil {
 			return fmt.Errorf("unable to marshal metadata value for key %s: %w", k, err)

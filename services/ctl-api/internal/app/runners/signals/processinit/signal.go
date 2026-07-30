@@ -55,15 +55,26 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner process")
 	}
-	metadata := make(map[string]any)
+	resetRunnerHealth := false
 	switch process.Type {
 	case app.RunnerProcessTypeInstall, app.RunnerProcessTypeBuild, app.RunnerProcessTypeOrg:
-		metadata[app.RunnerHealthCheckConsecutiveFailuresMetadataKey] = 0
+		resetRunnerHealth = true
+	}
+	processStatus := process.ProcessStatus()
+	if resetRunnerHealth && (processStatus == app.RunnerProcessStatus(app.StatusPending) || processStatus == app.RunnerProcessStatusActive) {
+		if err := statusactivities.AwaitUpdateRunnerStatusV2Metadata(ctx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
+			RunnerID: s.RunnerID,
+			Metadata: map[string]any{
+				app.RunnerOfflineTSMetadataKey: nil,
+			},
+		}); err != nil {
+			return errors.Wrap(err, "unable to clear runner offline metadata")
+		}
 	}
 
 	// Only transition pending processes to active
-	if process.ProcessStatus() != app.RunnerProcessStatus(app.StatusPending) {
-		l.Info("process not pending, skipping", "process_id", s.ProcessID, "status", string(process.ProcessStatus()))
+	if processStatus != app.RunnerProcessStatus(app.StatusPending) {
+		l.Info("process not pending, skipping", "process_id", s.ProcessID, "status", string(processStatus))
 		return nil
 	}
 
@@ -88,7 +99,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		RunnerID:          s.RunnerID,
 		Status:            app.RunnerStatusActive,
 		StatusDescription: "process initialized",
-		Metadata:          metadata,
 	}); err != nil {
 		l.Warn("unable to update runner status v2", "error", err)
 	}
