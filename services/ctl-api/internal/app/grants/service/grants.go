@@ -13,31 +13,34 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// CreateGrantRequest grants an account a permission on a resource. Exactly one
-// of AccountID or Email identifies the grantee.
+// CreateGrantRequest grants an account a permission on a single resource in the
+// caller's org. The resource is any tier of the org -> app -> install spine; an
+// org grant confers the permission on every resource in the org via walk-up.
+// Exactly one of AccountID or Email identifies the grantee.
 type CreateGrantRequest struct {
-	AccountID  string `json:"account_id"`
-	Email      string `json:"email"`
-	Permission string `json:"permission" validate:"required,oneof=read all"`
+	ResourceType string `json:"resource_type" validate:"required,oneof=org app install"`
+	ResourceID   string `json:"resource_id" validate:"required"`
+	AccountID    string `json:"account_id"`
+	Email        string `json:"email"`
+	Permission   string `json:"permission" validate:"required,oneof=read all"`
 }
 
-// CreateInstallGrant godoc
+// CreateGrant godoc
 //
-//	@ID				CreateInstallGrant
-//	@Summary		grant an account access to an install
-//	@Description	Grant an account read or full access to a single install. Org-admin only.
+//	@ID				CreateGrant
+//	@Summary		grant an account access to a resource
+//	@Description	Grant an account read or full access to a single resource (org, app, or install). An org grant covers every resource in the org, and an app grant covers its installs, via walk-up authorization. Org-admin only.
 //	@Tags			grants
 //	@Accept			json
 //	@Produce		json
 //	@Security		APIKey
 //	@Security		OrgID
-//	@Param			install_id	path		string				true	"install ID"
-//	@Param			req			body		CreateGrantRequest	true	"grant"
-//	@Success		201			{object}	app.ResourceGrant
-//	@Failure		400			{object}	stderr.ErrResponse
-//	@Failure		403			{object}	stderr.ErrResponse
-//	@Router			/v1/installs/{install_id}/grants [POST]
-func (s *service) CreateInstallGrant(ctx *gin.Context) {
+//	@Param			req	body		CreateGrantRequest	true	"grant"
+//	@Success		201	{object}	app.ResourceGrant
+//	@Failure		400	{object}	stderr.ErrResponse
+//	@Failure		403	{object}	stderr.ErrResponse
+//	@Router			/v1/grants [POST]
+func (s *service) CreateGrant(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
@@ -48,54 +51,99 @@ func (s *service) CreateInstallGrant(ctx *gin.Context) {
 		return
 	}
 
-	inst := app.Install{}
-	if err := s.resolveByNameOrID(ctx, org.ID, ctx.Param("install_id"), &inst); err != nil {
-		ctx.Error(fmt.Errorf("unable to find install: %w", err))
+	var req CreateGrantRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
+	}
+	if err := s.v.Struct(&req); err != nil {
+		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 
-	s.createGrant(ctx, org.ID, app.GrantResourceTypeInstall, inst.ID)
+	resourceType := app.GrantResourceType(req.ResourceType)
+	resourceID, err := s.resolveResource(ctx, org.ID, resourceType, req.ResourceID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	acctID, err := s.resolveGranteeID(ctx, req)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	grant := app.ResourceGrant{
+		OrgID:        org.ID,
+		AccountID:    acctID,
+		ResourceType: resourceType,
+		ResourceID:   resourceID,
+		Permission:   req.Permission,
+	}
+	res := s.db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "org_id"}, {Name: "account_id"}, {Name: "resource_type"}, {Name: "resource_id"}, {Name: "deleted_at"}},
+			DoUpdates: clause.AssignmentColumns([]string{"permission", "updated_at"}),
+		}).
+		Create(&grant)
+	if res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to create grant: %w", res.Error))
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, grant)
 }
 
-// ListInstallGrants godoc
+// ListGrants godoc
 //
-//	@ID				ListInstallGrants
-//	@Summary		list grants on an install
+//	@ID				ListGrants
+//	@Summary		list grants in an org
+//	@Description	List grants in the caller's org, optionally filtered to a single resource by resource_type and resource_id.
 //	@Tags			grants
 //	@Produce		json
 //	@Security		APIKey
 //	@Security		OrgID
-//	@Param			install_id	path		string	true	"install ID"
-//	@Success		200			{array}		app.ResourceGrant
-//	@Router			/v1/installs/{install_id}/grants [GET]
-func (s *service) ListInstallGrants(ctx *gin.Context) {
+//	@Param			resource_type	query		string	false	"filter by resource type (org, app, install)"
+//	@Param			resource_id		query		string	false	"filter by resource ID"
+//	@Success		200				{array}		app.ResourceGrant
+//	@Router			/v1/grants [GET]
+func (s *service) ListGrants(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	inst := app.Install{}
-	if err := s.resolveByNameOrID(ctx, org.ID, ctx.Param("install_id"), &inst); err != nil {
-		ctx.Error(fmt.Errorf("unable to find install: %w", err))
+	where := app.ResourceGrant{OrgID: org.ID}
+	if rt := ctx.Query("resource_type"); rt != "" {
+		where.ResourceType = app.GrantResourceType(rt)
+	}
+	if rid := ctx.Query("resource_id"); rid != "" {
+		where.ResourceID = rid
+	}
+
+	var grants []app.ResourceGrant
+	res := s.db.WithContext(ctx).Where(where).Find(&grants)
+	if res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to list grants: %w", res.Error))
 		return
 	}
 
-	s.listGrants(ctx, org.ID, app.GrantResourceTypeInstall, inst.ID)
+	ctx.JSON(http.StatusOK, grants)
 }
 
-// DeleteInstallGrant godoc
+// DeleteGrant godoc
 //
-//	@ID				DeleteInstallGrant
-//	@Summary		revoke a grant on an install
+//	@ID				DeleteGrant
+//	@Summary		revoke a grant
 //	@Tags			grants
 //	@Security		APIKey
 //	@Security		OrgID
-//	@Param			install_id	path	string	true	"install ID"
 //	@Param			grant_id	path	string	true	"grant ID"
 //	@Success		204
-//	@Router			/v1/installs/{install_id}/grants/{grant_id} [DELETE]
-func (s *service) DeleteInstallGrant(ctx *gin.Context) {
+//	@Router			/v1/grants/{grant_id} [DELETE]
+func (s *service) DeleteGrant(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
@@ -106,93 +154,15 @@ func (s *service) DeleteInstallGrant(ctx *gin.Context) {
 		return
 	}
 
-	s.deleteGrant(ctx, org.ID, ctx.Param("grant_id"))
-}
-
-// CreateAppGrant godoc
-//
-//	@ID				CreateAppGrant
-//	@Summary		grant an account access to an app
-//	@Description	Grant an account read or full access to a single app (and its installs via walk-up). Org-admin only.
-//	@Tags			grants
-//	@Accept			json
-//	@Produce		json
-//	@Security		APIKey
-//	@Security		OrgID
-//	@Param			app_id	path		string				true	"app ID"
-//	@Param			req		body		CreateGrantRequest	true	"grant"
-//	@Success		201		{object}	app.ResourceGrant
-//	@Router			/v1/apps/{app_id}/grants [POST]
-func (s *service) CreateAppGrant(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if err := s.requireOrgAdmin(ctx, org.ID); err != nil {
-		ctx.Error(err)
+	res := s.db.WithContext(ctx).
+		Where(app.ResourceGrant{OrgID: org.ID}).
+		Delete(&app.ResourceGrant{ID: ctx.Param("grant_id")})
+	if res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to delete grant: %w", res.Error))
 		return
 	}
 
-	a := app.App{}
-	if err := s.resolveByNameOrID(ctx, org.ID, ctx.Param("app_id"), &a); err != nil {
-		ctx.Error(fmt.Errorf("unable to find app: %w", err))
-		return
-	}
-
-	s.createGrant(ctx, org.ID, app.GrantResourceTypeApp, a.ID)
-}
-
-// ListAppGrants godoc
-//
-//	@ID				ListAppGrants
-//	@Summary		list grants on an app
-//	@Tags			grants
-//	@Produce		json
-//	@Security		APIKey
-//	@Security		OrgID
-//	@Param			app_id	path		string	true	"app ID"
-//	@Success		200		{array}		app.ResourceGrant
-//	@Router			/v1/apps/{app_id}/grants [GET]
-func (s *service) ListAppGrants(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	a := app.App{}
-	if err := s.resolveByNameOrID(ctx, org.ID, ctx.Param("app_id"), &a); err != nil {
-		ctx.Error(fmt.Errorf("unable to find app: %w", err))
-		return
-	}
-
-	s.listGrants(ctx, org.ID, app.GrantResourceTypeApp, a.ID)
-}
-
-// DeleteAppGrant godoc
-//
-//	@ID				DeleteAppGrant
-//	@Summary		revoke a grant on an app
-//	@Tags			grants
-//	@Security		APIKey
-//	@Security		OrgID
-//	@Param			app_id		path	string	true	"app ID"
-//	@Param			grant_id	path	string	true	"grant ID"
-//	@Success		204
-//	@Router			/v1/apps/{app_id}/grants/{grant_id} [DELETE]
-func (s *service) DeleteAppGrant(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-	if err := s.requireOrgAdmin(ctx, org.ID); err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	s.deleteGrant(ctx, org.ID, ctx.Param("grant_id"))
+	ctx.Status(http.StatusNoContent)
 }
 
 // requireOrgAdmin permits only callers with org-wide administrative access.
@@ -214,67 +184,39 @@ func (s *service) requireOrgAdmin(ctx *gin.Context, orgID string) error {
 	return nil
 }
 
-func (s *service) createGrant(ctx *gin.Context, orgID string, resourceType app.GrantResourceType, resourceID string) {
-	var req CreateGrantRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
-		return
+// resolveResource validates that the named resource exists in the org and
+// returns its canonical ID. Apps and installs are accepted by name or ID, or
+// the "*" wildcard to scope the grant to every resource of that type in the
+// org. The org target must be the caller's own org (no wildcard — the org is
+// already a single resource).
+func (s *service) resolveResource(ctx *gin.Context, orgID string, resourceType app.GrantResourceType, nameOrID string) (string, error) {
+	switch resourceType {
+	case app.GrantResourceTypeOrg:
+		if nameOrID != orgID {
+			return "", stderr.NewInvalidRequest(fmt.Errorf("org grant resource_id %q must be your own org %q", nameOrID, orgID))
+		}
+		return orgID, nil
+	case app.GrantResourceTypeApp:
+		if nameOrID == app.GrantResourceWildcard {
+			return app.GrantResourceWildcard, nil
+		}
+		var a app.App
+		if err := s.resolveByNameOrID(ctx, orgID, nameOrID, &a); err != nil {
+			return "", fmt.Errorf("unable to find app: %w", err)
+		}
+		return a.ID, nil
+	case app.GrantResourceTypeInstall:
+		if nameOrID == app.GrantResourceWildcard {
+			return app.GrantResourceWildcard, nil
+		}
+		var inst app.Install
+		if err := s.resolveByNameOrID(ctx, orgID, nameOrID, &inst); err != nil {
+			return "", fmt.Errorf("unable to find install: %w", err)
+		}
+		return inst.ID, nil
+	default:
+		return "", stderr.NewInvalidRequest(fmt.Errorf("unsupported resource type %q; must be one of org, app, install", resourceType))
 	}
-	if err := s.v.Struct(&req); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
-		return
-	}
-
-	acctID, err := s.resolveGranteeID(ctx, req)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	grant := app.ResourceGrant{
-		OrgID:        orgID,
-		AccountID:    acctID,
-		ResourceType: resourceType,
-		ResourceID:   resourceID,
-		Permission:   req.Permission,
-	}
-	res := s.db.WithContext(ctx).
-		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "org_id"}, {Name: "account_id"}, {Name: "resource_type"}, {Name: "resource_id"}, {Name: "deleted_at"}},
-			DoUpdates: clause.AssignmentColumns([]string{"permission", "updated_at"}),
-		}).
-		Create(&grant)
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to create grant: %w", res.Error))
-		return
-	}
-
-	ctx.JSON(http.StatusCreated, grant)
-}
-
-func (s *service) listGrants(ctx *gin.Context, orgID string, resourceType app.GrantResourceType, resourceID string) {
-	var grants []app.ResourceGrant
-	res := s.db.WithContext(ctx).
-		Where(app.ResourceGrant{OrgID: orgID, ResourceType: resourceType, ResourceID: resourceID}).
-		Find(&grants)
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to list grants: %w", res.Error))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, grants)
-}
-
-func (s *service) deleteGrant(ctx *gin.Context, orgID, grantID string) {
-	res := s.db.WithContext(ctx).
-		Where(app.ResourceGrant{OrgID: orgID}).
-		Delete(&app.ResourceGrant{ID: grantID})
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to delete grant: %w", res.Error))
-		return
-	}
-
-	ctx.Status(http.StatusNoContent)
 }
 
 func (s *service) resolveGranteeID(ctx *gin.Context, req CreateGrantRequest) (string, error) {

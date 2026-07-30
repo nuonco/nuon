@@ -12,13 +12,18 @@ func TestAuthorize(t *testing.T) {
 		appID     = "app_1"
 		orgID     = "org_1"
 	)
-	chain := []string{installID, appID, orgID}
+	chain := []Link{
+		{Type: "install", ID: installID},
+		{Type: "app", ID: appID},
+		{Type: "org", ID: orgID},
+	}
 
 	tests := []struct {
-		name    string
-		perms   permissions.Set
-		perm    permissions.Permission
-		allowed bool
+		name      string
+		perms     permissions.Set
+		wildcards map[string]permissions.Permission
+		perm      permissions.Permission
+		allowed   bool
 	}{
 		{
 			name:    "grant on the resource itself",
@@ -50,11 +55,33 @@ func TestAuthorize(t *testing.T) {
 			perm:    permissions.PermissionRead,
 			allowed: false,
 		},
+		{
+			name:      "install wildcard authorizes the install tier",
+			wildcards: map[string]permissions.Permission{"install": permissions.PermissionAll},
+			perm:      permissions.PermissionUpdate,
+			allowed:   true,
+		},
+		{
+			name:      "install wildcard does not authorize an app-only request",
+			wildcards: map[string]permissions.Permission{"install": permissions.PermissionAll},
+			perm:      permissions.PermissionUpdate,
+			allowed:   false,
+		},
+		{
+			name:      "app wildcard read does not satisfy a write",
+			wildcards: map[string]permissions.Permission{"app": permissions.PermissionRead},
+			perm:      permissions.PermissionUpdate,
+			allowed:   false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := Authorize(tt.perms, chain, tt.perm)
+			c := chain
+			if tt.name == "install wildcard does not authorize an app-only request" {
+				c = []Link{{Type: "app", ID: appID}, {Type: "org", ID: orgID}}
+			}
+			err := Authorize(tt.perms, tt.wildcards, c, tt.perm)
 			if got := err == nil; got != tt.allowed {
 				t.Fatalf("Authorize allowed=%v, want %v (err=%v)", got, tt.allowed, err)
 			}

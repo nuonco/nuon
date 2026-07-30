@@ -155,7 +155,7 @@ func (m middleware) authorizeResource(ctx *gin.Context, acct *app.Account, orgID
 			Description: fmt.Sprintf("Please make sure you have the correct permissions for %s", orgID),
 		}
 	}
-	if err := authz.Authorize(acct.AllPermissions, chain, perm); err != nil {
+	if err := authz.Authorize(acct.AllPermissions, acct.TypeGrants, chain, perm); err != nil {
 		return stderr.ErrAuthorization{
 			Err:         fmt.Errorf("unable to perform %s on the requested resource", perm),
 			Description: "you do not have access to the requested resource",
@@ -165,9 +165,10 @@ func (m middleware) authorizeResource(ctx *gin.Context, acct *app.Account, orgID
 }
 
 // resourceChain builds the ownership chain of the most specific resource named
-// in the path (install first, then app). resolved is false when the route names
-// no grantable resource.
-func (m middleware) resourceChain(ctx *gin.Context, orgID string) (chain []string, resolved bool, err error) {
+// in the path (install first, then app), each link tagged with its grant
+// resource type so wildcard grants can authorize by tier. resolved is false
+// when the route names no grantable resource.
+func (m middleware) resourceChain(ctx *gin.Context, orgID string) (chain []authz.Link, resolved bool, err error) {
 	if raw := ctx.Param("install_id"); raw != "" {
 		var inst app.Install
 		res := m.db.WithContext(ctx).
@@ -177,7 +178,11 @@ func (m middleware) resourceChain(ctx *gin.Context, orgID string) (chain []strin
 		if res.Error != nil {
 			return nil, false, res.Error
 		}
-		return []string{inst.ID, inst.AppID, orgID}, true, nil
+		return []authz.Link{
+			{Type: string(app.GrantResourceTypeInstall), ID: inst.ID},
+			{Type: string(app.GrantResourceTypeApp), ID: inst.AppID},
+			{Type: string(app.GrantResourceTypeOrg), ID: orgID},
+		}, true, nil
 	}
 
 	if raw := ctx.Param("app_id"); raw != "" {
@@ -189,7 +194,10 @@ func (m middleware) resourceChain(ctx *gin.Context, orgID string) (chain []strin
 		if res.Error != nil {
 			return nil, false, res.Error
 		}
-		return []string{a.ID, orgID}, true, nil
+		return []authz.Link{
+			{Type: string(app.GrantResourceTypeApp), ID: a.ID},
+			{Type: string(app.GrantResourceTypeOrg), ID: orgID},
+		}, true, nil
 	}
 
 	return nil, false, nil

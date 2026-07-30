@@ -39,18 +39,11 @@ func New(params Params) *service {
 }
 
 func (s *service) RegisterPublicRoutes(engine *gin.Engine) error {
-	installs := engine.Group("/v1/installs/:install_id/grants")
+	grants := engine.Group("/v1/grants")
 	{
-		installs.POST("", s.CreateInstallGrant)
-		installs.GET("", s.ListInstallGrants)
-		installs.DELETE("/:grant_id", s.DeleteInstallGrant)
-	}
-
-	apps := engine.Group("/v1/apps/:app_id/grants")
-	{
-		apps.POST("", s.CreateAppGrant)
-		apps.GET("", s.ListAppGrants)
-		apps.DELETE("/:grant_id", s.DeleteAppGrant)
+		grants.POST("", s.CreateGrant)
+		grants.GET("", s.ListGrants)
+		grants.DELETE("/:grant_id", s.DeleteGrant)
 	}
 
 	return nil
