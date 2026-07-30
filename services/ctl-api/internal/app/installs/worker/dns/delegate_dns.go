@@ -20,6 +20,12 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 )
 
+const (
+	cloudProviderAWS   = "aws"
+	cloudProviderGCP   = "gcp"
+	cloudProviderAzure = "azure"
+)
+
 type DelegateDNSRequest struct {
 	DNSAccessIAMRoleARN string `validate:"required"`
 	ZoneID              string `validate:"required"`
@@ -38,13 +44,23 @@ type DelegateDNSResponse struct{}
 // @temporal-gen-v2 activity
 // @schedule-to-close-timeout 1m
 func (a *Activities) DelegateDNS(ctx context.Context, req DelegateDNSRequest) (DelegateDNSResponse, error) {
-	if a.cfg.IsGCP() {
+	switch a.cfg.CloudProvider {
+	case cloudProviderGCP:
 		if err := a.upsertCloudDNSRecords(ctx, req); err != nil {
 			return DelegateDNSResponse{}, fmt.Errorf("unable to upsert cloud dns records: %w", err)
 		}
 		return DelegateDNSResponse{}, nil
+	case cloudProviderAzure:
+		activity.GetLogger(ctx).Info("dns delegation not implemented for azure, skipping", "domain", req.Domain)
+		return DelegateDNSResponse{}, nil
+	case cloudProviderAWS, "":
+		return a.delegateRoute53(ctx, req)
+	default:
+		return DelegateDNSResponse{}, fmt.Errorf("cloud provider not supported for dns delegation: %q", a.cfg.CloudProvider)
 	}
+}
 
+func (a *Activities) delegateRoute53(ctx context.Context, req DelegateDNSRequest) (DelegateDNSResponse, error) {
 	client, err := a.getRoute53Client(ctx, req.DNSAccessIAMRoleARN)
 	if err != nil {
 		return DelegateDNSResponse{}, fmt.Errorf("unable to upsert dns records: %w", err)
