@@ -6,20 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 )
-
-type fakeSecretGetter struct {
-	value *string
-	err   error
-}
-
-func (f fakeSecretGetter) GetSecretValue(context.Context, *secretsmanager.GetSecretValueInput, ...func(*secretsmanager.Options)) (*secretsmanager.GetSecretValueOutput, error) {
-	return &secretsmanager.GetSecretValueOutput{SecretString: f.value}, f.err
-}
 
 func TestReconcilePreservesLastKnownGoodConfiguration(t *testing.T) {
 	valid := "exporters:\n  otlphttp:\n    endpoint: https://otlp.example.com\n"
@@ -37,17 +26,17 @@ func TestReconcilePreservesLastKnownGoodConfiguration(t *testing.T) {
 		stopChildFn: func() { stops++ },
 	}
 
-	s.reconcile(context.Background(), fakeSecretGetter{value: &invalid})
+	s.reconcile(secretUpdate{state: secretAvailable, value: invalid})
 	if replacements != 0 || stops != 0 || s.active != valid {
 		t.Fatal("invalid update changed the active collector")
 	}
 
-	s.reconcile(context.Background(), fakeSecretGetter{err: errors.New("temporary failure")})
+	s.reconcile(secretUpdate{state: secretLookupFailed, err: errors.New("temporary failure")})
 	if replacements != 0 || stops != 0 || s.active != valid {
 		t.Fatal("transient lookup failure changed the active collector")
 	}
 
-	s.reconcile(context.Background(), fakeSecretGetter{err: &types.ResourceNotFoundException{}})
+	s.reconcile(secretUpdate{state: secretNotFound})
 	if replacements != 0 || stops != 1 || s.active != "" {
 		t.Fatal("missing secret did not disable the collector")
 	}
@@ -66,8 +55,8 @@ func TestReconcileAppliesChangedValidConfigurationOnce(t *testing.T) {
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(context.Background(), fakeSecretGetter{value: &valid})
-	s.reconcile(context.Background(), fakeSecretGetter{value: &valid})
+	s.reconcile(secretUpdate{state: secretAvailable, value: valid})
+	s.reconcile(secretUpdate{state: secretAvailable, value: valid})
 	if replacements != 1 || s.active != valid {
 		t.Fatal("valid configuration was not applied exactly once")
 	}
@@ -87,9 +76,27 @@ func TestReconcileSchedulesRestartWhenUpdateAndRollbackFail(t *testing.T) {
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(context.Background(), fakeSecretGetter{value: &updated})
+	s.reconcile(secretUpdate{state: secretAvailable, value: updated})
 	if s.nextStart.IsZero() || s.active != current {
 		t.Fatal("failed rollback did not schedule recovery of the last-known-good configuration")
+	}
+}
+
+func TestReconcileDisablesUnavailableSecret(t *testing.T) {
+	valid := "exporters:\n  otlphttp:\n    endpoint: https://otlp.example.com\n"
+	stops := 0
+	s := &Supervisor{
+		installID:   "inst-test",
+		logger:      zap.NewNop(),
+		active:      valid,
+		enabled:     true,
+		reported:    true,
+		stopChildFn: func() { stops++ },
+	}
+
+	s.reconcile(secretUpdate{state: secretUnavailable})
+	if stops != 1 || s.active != "" || s.enabled {
+		t.Fatal("unavailable secret did not disable the collector")
 	}
 }
 
@@ -110,7 +117,6 @@ func TestRunDoesNothingInLocalDevelopment(t *testing.T) {
 }
 
 func TestEmptySecretDoesNotStartCollector(t *testing.T) {
-	empty := ""
 	replacements := 0
 	s := &Supervisor{
 		installID: "inst-test",
@@ -122,7 +128,7 @@ func TestEmptySecretDoesNotStartCollector(t *testing.T) {
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(context.Background(), fakeSecretGetter{value: &empty})
+	s.reconcile(secretUpdate{state: secretAvailable})
 	if replacements != 0 || s.active != "" || s.enabled {
 		t.Fatal("empty secret started the audit export collector")
 	}
@@ -141,9 +147,9 @@ func TestReconcileLogsEnabledBackendAndDisabledTransition(t *testing.T) {
 		stopChildFn: func() {},
 	}
 
-	s.reconcile(context.Background(), fakeSecretGetter{value: &valid})
-	s.reconcile(context.Background(), fakeSecretGetter{err: &types.ResourceNotFoundException{}})
-	s.reconcile(context.Background(), fakeSecretGetter{err: &types.ResourceNotFoundException{}})
+	s.reconcile(secretUpdate{state: secretAvailable, value: valid})
+	s.reconcile(secretUpdate{state: secretNotFound})
+	s.reconcile(secretUpdate{state: secretNotFound})
 
 	entries := observed.All()
 	if len(entries) != 2 {

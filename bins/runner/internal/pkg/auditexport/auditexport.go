@@ -2,7 +2,6 @@ package auditexport
 
 import (
 	"context"
-	"errors"
 	"io"
 	"net/url"
 	"os"
@@ -13,10 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -28,41 +23,14 @@ import (
 const collectorBinary = "/bin/nuon-runner-otelcol"
 const secretSyncInterval = 30 * time.Second
 
-var Module = fx.Options(fx.Provide(newAWSFactory, New), fx.Invoke(func(*Supervisor) {}))
-
-type secretGetter interface {
-	GetSecretValue(context.Context, *secretsmanager.GetSecretValueInput, ...func(*secretsmanager.Options)) (*secretsmanager.GetSecretValueOutput, error)
-}
-
-type clientFactory interface {
-	New(context.Context) (secretGetter, error)
-}
-
-type awsFactory struct{}
-
-func newAWSFactory() clientFactory { return awsFactory{} }
-
-func (awsFactory) New(ctx context.Context) (secretGetter, error) {
-	cfg, err := awsconfig.LoadDefaultConfig(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if cfg.Region == "" {
-		region, regionErr := imds.NewFromConfig(cfg).GetRegion(ctx, nil)
-		if regionErr != nil {
-			return nil, regionErr
-		}
-		cfg.Region = region.Region
-	}
-	return secretsmanager.NewFromConfig(cfg), nil
-}
+var Module = fx.Options(fx.Provide(newAWSFactory, newAWSSecretWatcher, New), fx.Invoke(func(*Supervisor) {}))
 
 type Params struct {
 	fx.In
 	Lifecycle fx.Lifecycle
 	Settings  *settings.Settings
 	Logger    *zap.Logger `name:"system"`
-	Factory   clientFactory
+	Secrets   secretWatcher
 }
 
 type Supervisor struct {
@@ -70,7 +38,7 @@ type Supervisor struct {
 	platform  string
 	local     bool
 	logger    *zap.Logger
-	factory   clientFactory
+	secrets   secretWatcher
 	cancel    context.CancelFunc
 	done      chan struct{}
 	mu        sync.Mutex
@@ -94,7 +62,7 @@ type childProcess struct {
 }
 
 func New(params Params) *Supervisor {
-	s := &Supervisor{installID: params.Settings.Metadata["install.id"], platform: params.Settings.Platform, local: params.Settings.Cfg.IsNuonctl, logger: params.Logger, factory: params.Factory, done: make(chan struct{}), backoff: time.Second}
+	s := &Supervisor{installID: params.Settings.Metadata["install.id"], platform: params.Settings.Platform, local: params.Settings.Cfg.IsNuonctl, logger: params.Logger, secrets: params.Secrets, done: make(chan struct{}), backoff: time.Second}
 	s.replaceChildFn = s.replaceChild
 	s.stopChildFn = s.stopChild
 	params.Lifecycle.Append(fx.Hook{OnStart: s.start, OnStop: s.stop})
@@ -125,54 +93,50 @@ func (s *Supervisor) run(ctx context.Context) {
 	if s.local || s.installID == "" || !strings.HasPrefix(strings.ToLower(s.platform), "aws") {
 		return
 	}
-	secretSync := time.NewTicker(secretSyncInterval)
-	defer secretSync.Stop()
+	name := "nuon/" + s.installID + "/runner-audit-export"
+	updates := s.secrets.Watch(ctx, name, secretSyncInterval)
 	crash := time.NewTicker(time.Second)
 	defer crash.Stop()
-	var client secretGetter
-	refresh := func() {
-		if client == nil {
-			var err error
-			client, err = s.factory.New(ctx)
-			if err != nil {
-				client = nil
-				s.logger.Warn("audit export AWS initialization failed")
-				return
-			}
-		}
-		s.reconcile(ctx, client)
-	}
-	refresh()
 	for {
 		select {
 		case <-ctx.Done():
 			s.stopChildFn()
 			return
-		case <-secretSync.C:
-			refresh()
+		case update, ok := <-updates:
+			if !ok {
+				s.stopChildFn()
+				return
+			}
+			s.reconcile(update)
 		case <-crash.C:
 			s.restartCrashed(ctx)
 		}
 	}
 }
 
-func (s *Supervisor) reconcile(ctx context.Context, client secretGetter) {
-	name := "nuon/" + s.installID + "/runner-audit-export"
-	result, err := client.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{SecretId: &name})
-	if err != nil {
-		var notFound *types.ResourceNotFoundException
-		if errors.As(err, &notFound) {
-			s.disable("secret not found")
-		} else {
-			s.logger.Warn("audit export secret lookup failed")
-		}
+func (s *Supervisor) reconcile(update secretUpdate) {
+	switch update.state {
+	case secretNotFound:
+		s.disable("secret not found")
+		return
+	case secretUnavailable:
+		s.disable("secret unavailable")
+		return
+	case secretInitializationFailed:
+		s.logger.Warn("audit export AWS initialization failed", zap.Error(update.err))
+		return
+	case secretLookupFailed:
+		s.logger.Warn("audit export secret lookup failed", zap.Error(update.err))
+		return
+	case secretAvailable:
+	default:
 		return
 	}
-	if result.SecretString == nil || *result.SecretString == "" {
+	if update.value == "" {
 		s.disable("secret is empty")
 		return
 	}
-	value := *result.SecretString
+	value := update.value
 	if value == s.active {
 		return
 	}
