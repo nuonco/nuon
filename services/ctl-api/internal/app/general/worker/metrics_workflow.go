@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	metricsWorkflowCronTab string = "*/1 * * * *"
+	metricsWorkflowCronTab string = "*/15 * * * *"
 	metricsWorkflowName    string = "general-metrics-cron"
 )
 

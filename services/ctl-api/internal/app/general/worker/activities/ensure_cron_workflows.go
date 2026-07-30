@@ -50,7 +50,7 @@ func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkfl
 	metricsOpts := tclient.StartWorkflowOptions{
 		ID:                    "general-metrics-cron",
 		TaskQueue:             workflows.APITaskQueue,
-		CronSchedule:          "*/1 * * * *",
+		CronSchedule:          "*/15 * * * *",
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,
