@@ -42,6 +42,9 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			continue
 
 		case directive.StepRetry:
+			if s.ResidentFlow && result.ManualRetry {
+				return s.writeStepGroupDirective(ctx, directive.GroupAwaitRetry)
+			}
 			// Clone the step for individual retry. The next iteration
 			// picks up the pending clone.
 			if err := CloneStepForRetry(ctx, step.ID, s.WorkflowID); err != nil {
@@ -59,6 +62,9 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			return s.writeStepGroupDirective(ctx, directive.GroupStop)
 
 		case directive.StepRetryGroup:
+			if s.ResidentFlow && result.ManualRetry {
+				return s.writeStepGroupDirective(ctx, directive.GroupAwaitRetry)
+			}
 			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusDiscarded)
 			return s.writeStepGroupDirective(ctx, directive.GroupRetryGroup)
 
@@ -72,6 +78,12 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 
 		case directive.StepAwaitApproval:
 			return s.writeStepGroupDirective(ctx, directive.GroupAwaitApproval)
+
+		case directive.StepAwaitRetry:
+			if s.ResidentFlow {
+				return s.writeStepGroupDirective(ctx, directive.GroupAwaitRetry)
+			}
+			continue
 
 		default:
 			continue

@@ -19,7 +19,8 @@ type SkipStepRequest struct {
 
 // SkipStepResponse is the response from the "skip-step" group update handler.
 type SkipStepResponse struct {
-	Skippable bool `json:"skippable"`
+	Skippable bool   `json:"skippable"`
+	Directive string `json:"directive,omitempty"`
 }
 
 // skipStepHandler marks the step as user-skipped, writes a continue directive,
@@ -67,5 +68,5 @@ func (s *Signal) skipStepHandler(ctx workflow.Context, req SkipStepRequest) (*Sk
 		StepID: req.StepID,
 	})
 
-	return &SkipStepResponse{Skippable: true}, nil
+	return &SkipStepResponse{Skippable: true, Directive: string(skipDirective)}, nil
 }

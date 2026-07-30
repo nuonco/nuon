@@ -32,6 +32,7 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 		TargetQueueName: cfg.TargetQueueName,
 		Parallel:        group.Parallel,
 		DerivedTimeout:  group.Timeout,
+		ResidentFlow:    s.Resident,
 		// Forward stamped names so the step signal can expose them via
 		// LifecycleContext for workflow_step lifecycle webhooks.
 		OrgID:     s.OrgID,
