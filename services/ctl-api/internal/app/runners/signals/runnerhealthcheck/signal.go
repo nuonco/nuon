@@ -2,7 +2,6 @@ package runnerhealthcheck
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
@@ -23,7 +22,10 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-const SignalType signal.SignalType = "runner_healthcheck"
+const (
+	SignalType                signal.SignalType = "runner_healthcheck"
+	runnerUnhealthyAlertDelay                   = 15 * time.Minute
+)
 
 type Signal struct {
 	RunnerID string `json:"runner_id"`
@@ -120,19 +122,13 @@ func (s *Signal) checkOrgRunner(ctx workflow.Context, l *zap.Logger, tmw tmetric
 			)
 			tags["missing_build_process"] = "true"
 			tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "unhealthy"))...)
-			status, metadata := runnerStatusAfterHealthCheck(runner, app.RunnerStatusOffline, nil)
-			ownerName := runner.Org.Name
-			if runner.Status == app.RunnerStatusActive && status == app.RunnerStatusOffline {
-				ownerName = s.emitOfflineEvent(ctx, runner, "no active build process")
-			}
-			return s.updateRunnerStatus(ctx, runner, status, "no active build process", ownerName, metadata)
+			return s.handleRunnerOffline(ctx, tmw, runner, "no active build process")
 		}
 		return errors.Wrap(err, "unable to get current build process")
 	}
 
 	tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "healthy"))...)
-	status, metadata := runnerStatusAfterHealthCheck(runner, app.RunnerStatusActive, nil)
-	return s.updateRunnerStatus(ctx, runner, status, "runner healthy", runner.Org.Name, metadata)
+	return s.handleRunnerActive(ctx, runner)
 }
 
 func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tmetrics.Writer, runner *app.Runner, tags map[string]string) error {
@@ -163,7 +159,8 @@ func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tme
 		description = "runner healthy"
 	}
 
-	var metadata map[string]any
+	missingMngProcess := false
+	mngProcessChecked := false
 	_, mngErr := activities.LocalAwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
 		RunnerID:    s.RunnerID,
 		ProcessType: string(app.RunnerProcessTypeMng),
@@ -172,11 +169,12 @@ func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tme
 	tags["missing_mng_process"] = "false"
 	if mngErr != nil {
 		if isNotFound(mngErr) {
+			mngProcessChecked = true
+			missingMngProcess = true
 			l.Warn("install runner missing management process",
 				zap.String("runner_id", s.RunnerID),
 			)
 			tags["missing_mng_process"] = "true"
-			metadata = map[string]any{"missing_mng_process": true}
 		} else {
 			l.Warn("unable to check management process",
 				zap.String("runner_id", s.RunnerID),
@@ -184,62 +182,75 @@ func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tme
 			)
 		}
 	} else {
-		metadata = map[string]any{"missing_mng_process": false}
+		mngProcessChecked = true
 	}
 
-	ownerName := runner.Org.Name
+	currentMissingMngProcess, hasMissingMngProcess := runner.StatusV2.Metadata["missing_mng_process"].(bool)
+	if mngProcessChecked && (!hasMissingMngProcess || currentMissingMngProcess != missingMngProcess) {
+		if err := statusactivities.LocalAwaitUpdateRunnerStatusV2Metadata(ctx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
+			RunnerID: s.RunnerID,
+			Metadata: map[string]any{"missing_mng_process": missingMngProcess},
+		}); err != nil {
+			return errors.Wrap(err, "unable to update management process status metadata")
+		}
+	}
+
 	if status == app.RunnerStatusActive {
 		tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "healthy"))...)
-	} else {
-		tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "unhealthy"))...)
+		return s.handleRunnerActive(ctx, runner)
 	}
 
-	status, metadata = runnerStatusAfterHealthCheck(runner, status, metadata)
-	if runner.Status == app.RunnerStatusActive && status == app.RunnerStatusOffline {
-		ownerName = s.emitOfflineEvent(ctx, runner, description)
-	}
-
-	return s.updateRunnerStatus(ctx, runner, status, description, ownerName, metadata)
+	tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "unhealthy"))...)
+	return s.handleRunnerOffline(ctx, tmw, runner, description)
 }
 
-func runnerStatusAfterHealthCheck(runner *app.Runner, status app.RunnerStatus, metadata map[string]any) (app.RunnerStatus, map[string]any) {
-	if metadata == nil {
-		metadata = make(map[string]any)
+func (s *Signal) handleRunnerActive(ctx workflow.Context, runner *app.Runner) error {
+	if _, ok := runner.StatusV2.Metadata[app.RunnerOfflineTSMetadataKey]; ok {
+		if err := statusactivities.LocalAwaitUpdateRunnerStatusV2Metadata(ctx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
+			RunnerID: s.RunnerID,
+			Metadata: map[string]any{
+				app.RunnerOfflineTSMetadataKey: nil,
+			},
+		}); err != nil {
+			return errors.Wrap(err, "unable to clear runner offline metadata")
+		}
 	}
 
-	if status == app.RunnerStatusActive {
-		metadata[app.RunnerHealthCheckConsecutiveFailuresMetadataKey] = 0
-		return status, metadata
-	}
-	if status != app.RunnerStatusOffline {
-		return status, metadata
-	}
-
-	failures := runnerHealthCheckFailures(runner.StatusV2.Metadata) + 1
-	if runner.Status == app.RunnerStatusOffline && failures < 2 {
-		failures = 2
-	}
-	if failures > 2 {
-		failures = 2
-	}
-	metadata[app.RunnerHealthCheckConsecutiveFailuresMetadataKey] = failures
-
-	if runner.Status != app.RunnerStatusOffline && failures < 2 {
-		return runner.Status, metadata
-	}
-
-	return status, metadata
+	return s.updateRunnerStatus(ctx, runner, app.RunnerStatusActive, "runner healthy")
 }
 
-func runnerHealthCheckFailures(metadata map[string]any) int {
-	failures, err := strconv.Atoi(fmt.Sprint(metadata[app.RunnerHealthCheckConsecutiveFailuresMetadataKey]))
-	if err != nil || failures < 0 {
-		return 0
+func (s *Signal) handleRunnerOffline(ctx workflow.Context, tmw tmetrics.Writer, runner *app.Runner, reason string) error {
+	now := workflow.Now(ctx)
+	offlineAt, hasOfflineTS := runner.StatusV2.MetadataUnixTime(app.RunnerOfflineTSMetadataKey)
+
+	if !hasOfflineTS {
+		if err := statusactivities.LocalAwaitUpdateRunnerStatusV2Metadata(ctx, statusactivities.UpdateRunnerStatusV2MetadataRequest{
+			RunnerID: s.RunnerID,
+			Metadata: map[string]any{
+				app.RunnerOfflineTSMetadataKey: now.Unix(),
+			},
+		}); err != nil {
+			return errors.Wrap(err, "unable to set runner offline metadata")
+		}
+		offlineAt = now
 	}
-	return failures
+
+	if runner.Status != app.RunnerStatusOffline || runner.StatusV2.Status != app.Status(app.RunnerStatusOffline) {
+		return s.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, reason)
+	}
+
+	if now.Sub(offlineAt) < runnerUnhealthyAlertDelay {
+		return nil
+	}
+
+	if err := s.notifyRunnerUnhealthy(ctx, tmw, runner, reason, offlineAt); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *Signal) emitOfflineEvent(ctx workflow.Context, runner *app.Runner, reason string) string {
+func (s *Signal) runnerOfflineEvent(ctx workflow.Context, runner *app.Runner, reason string) (*statsd.Event, string) {
 	eventTags := []string{
 		metrics.ToTag("runner_id", s.RunnerID),
 		metrics.ToTag("runner_type", string(runner.RunnerGroup.Type)),
@@ -277,7 +288,7 @@ func (s *Signal) emitOfflineEvent(ctx workflow.Context, runner *app.Runner, reas
 		}
 	}
 
-	s.mw.Event(&statsd.Event{
+	return &statsd.Event{
 		Title:          title,
 		Text:           text,
 		Tags:           eventTags,
@@ -285,11 +296,43 @@ func (s *Signal) emitOfflineEvent(ctx workflow.Context, runner *app.Runner, reas
 		Priority:       statsd.Normal,
 		AlertType:      statsd.Error,
 		AggregationKey: "runner-health-check",
-	})
-	return ownerName
+	}, ownerName
 }
 
-func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, status app.RunnerStatus, description, ownerName string, metadata map[string]any) error {
+func (s *Signal) notifyRunnerUnhealthy(ctx workflow.Context, tmw tmetrics.Writer, runner *app.Runner, reason string, offlineAt time.Time) error {
+	event, ownerName := s.runnerOfflineEvent(ctx, runner, reason)
+	resp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		OwnerID:         runner.OrgID,
+		OwnerType:       "orgs",
+		QueueName:       "org-signals",
+		SignalOwnerID:   runner.ID,
+		SignalOwnerType: "runners",
+		IdempotencyKey:  fmt.Sprintf("runner-unhealthy:%s:%d", runner.ID, offlineAt.Unix()),
+		Signal: &runnerunhealthy.Signal{
+			RunnerID:             runner.ID,
+			RunnerName:           runner.DisplayName,
+			OrgID:                runner.OrgID,
+			OrgName:              runner.Org.Name,
+			FromStatus:           app.RunnerStatusActive,
+			ToStatus:             app.RunnerStatusOffline,
+			Reason:               reason,
+			RunnerGroupID:        runner.RunnerGroupID,
+			RunnerGroupType:      runner.RunnerGroup.Type,
+			RunnerGroupOwnerID:   runner.RunnerGroup.OwnerID,
+			RunnerGroupOwnerType: runner.RunnerGroup.OwnerType,
+			RunnerGroupOwnerName: ownerName,
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to enqueue runner unhealthy signal")
+	}
+	if !resp.Deduplicated {
+		tmw.Event(ctx, event)
+	}
+	return nil
+}
+
+func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, status app.RunnerStatus, description string) error {
 	if runner.Status != status {
 		if err := activities.LocalAwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 			RunnerID:          s.RunnerID,
@@ -298,39 +341,15 @@ func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, st
 		}); err != nil {
 			return errors.Wrap(err, "unable to update runner status")
 		}
-
-		if runner.Status == app.RunnerStatusActive && status == app.RunnerStatusOffline {
-			if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-				OwnerID:         runner.OrgID,
-				OwnerType:       "orgs",
-				QueueName:       "org-signals",
-				SignalOwnerID:   runner.ID,
-				SignalOwnerType: "runners",
-				Signal: &runnerunhealthy.Signal{
-					RunnerID:             runner.ID,
-					RunnerName:           runner.DisplayName,
-					OrgID:                runner.OrgID,
-					OrgName:              runner.Org.Name,
-					FromStatus:           runner.Status,
-					ToStatus:             status,
-					Reason:               description,
-					RunnerGroupID:        runner.RunnerGroupID,
-					RunnerGroupType:      runner.RunnerGroup.Type,
-					RunnerGroupOwnerID:   runner.RunnerGroup.OwnerID,
-					RunnerGroupOwnerType: runner.RunnerGroup.OwnerType,
-					RunnerGroupOwnerName: ownerName,
-				},
-			}); err != nil {
-				return errors.Wrap(err, "unable to enqueue runner unhealthy signal")
-			}
-		}
+	}
+	if runner.StatusV2.Status == app.Status(status) {
+		return nil
 	}
 
 	if err := statusactivities.LocalAwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
 		RunnerID:          s.RunnerID,
 		Status:            status,
 		StatusDescription: description,
-		Metadata:          metadata,
 	}); err != nil {
 		return errors.Wrap(err, "unable to update runner status v2")
 	}

@@ -3,10 +3,13 @@ package client
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -24,6 +27,9 @@ type EnqueueSignalRequest struct {
 	OwnerType string
 	ExpiresAt *time.Time
 	EmitterID *string
+
+	// IdempotencyKey deduplicates repeated requests for the same signal type and queue.
+	IdempotencyKey string `validate:"omitempty,max=255"`
 
 	// Callback describes where the handler should send a Temporal signal on completion.
 	// Deprecated: use Callbacks for new code.
@@ -89,8 +95,33 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		Callbacks: callbacks,
 	}
 
-	if res := c.db.WithContext(ctx).Create(&queueSignal); res.Error != nil {
+	db := c.db.WithContext(ctx)
+	if req.IdempotencyKey != "" {
+		queueSignal.ID = idempotentQueueSignalID(req.QueueID, req.Signal.Type(), req.IdempotencyKey)
+		queueSignal.Workflow.ID = fmt.Sprintf(queueSignal.Workflow.IDTemplate, queueSignal.ID)
+		db = db.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "id"}},
+			DoNothing: true,
+		})
+	}
+
+	res := db.Create(&queueSignal)
+	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create queue signal")
+	}
+	if res.RowsAffected == 0 {
+		var existing app.QueueSignal
+		if res := c.db.WithContext(ctx).
+			Unscoped().
+			Where(app.QueueSignal{ID: queueSignal.ID}).
+			First(&existing); res.Error != nil {
+			return nil, errors.Wrap(res.Error, "unable to get idempotent queue signal")
+		}
+		return &queue.EnqueueResponse{
+			ID:           existing.ID,
+			WorkflowID:   existing.Workflow.ID,
+			Deduplicated: true,
+		}, nil
 	}
 
 	if c.enqueuer != nil {
@@ -103,7 +134,13 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 	}))
 
 	return &queue.EnqueueResponse{
-		ID:         queueSignal.ID,
-		WorkflowID: queueSignal.Workflow.ID,
+		ID:           queueSignal.ID,
+		WorkflowID:   queueSignal.Workflow.ID,
+		Deduplicated: false,
 	}, nil
+}
+
+func idempotentQueueSignalID(queueID string, signalType signal.SignalType, idempotencyKey string) string {
+	sum := sha256.Sum256([]byte(queueID + "\x00" + string(signalType) + "\x00" + idempotencyKey))
+	return "qsi" + hex.EncodeToString(sum[:])[:23]
 }

@@ -129,6 +129,32 @@ type CompositeStatus struct {
 	History []CompositeStatus `json:"history,omitzero,omitempty" temporaljson:"history,omitzero,omitempty"`
 }
 
+// MetadataUnixTime returns a Unix timestamp from metadata regardless of whether
+// it came directly from Go or through a JSON round trip.
+func (c CompositeStatus) MetadataUnixTime(key string) (time.Time, bool) {
+	var ts int64
+	switch value := c.Metadata[key].(type) {
+	case int:
+		ts = int64(value)
+	case int64:
+		ts = value
+	case float64:
+		ts = int64(value)
+	case json.Number:
+		parsed, err := value.Int64()
+		if err != nil {
+			return time.Time{}, false
+		}
+		ts = parsed
+	default:
+		return time.Time{}, false
+	}
+	if ts <= 0 {
+		return time.Time{}, false
+	}
+	return time.Unix(ts, 0), true
+}
+
 // Scan implements the database/sql.Scanner interface.
 func (c *CompositeStatus) Scan(v interface{}) (err error) {
 	switch v := v.(type) {

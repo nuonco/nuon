@@ -25,6 +25,7 @@ type EnqueueSignalToOwnerRequest struct {
 	// which entity (e.g. workflow step) triggered this signal execution.
 	SignalOwnerID   string `json:"signal_owner_id,omitempty"`
 	SignalOwnerType string `json:"signal_owner_type,omitempty"`
+	IdempotencyKey  string `json:"idempotency_key,omitempty" validate:"omitempty,max=255"`
 
 	// Callback describes where the handler should send a Temporal signal on completion.
 	// Deprecated: use Callbacks for new code.
@@ -37,6 +38,7 @@ type EnqueueSignalToOwnerRequest struct {
 type EnqueueSignalToOwnerResponse struct {
 	QueueSignalID string `json:"queue_signal_id"`
 	WorkflowID    string `json:"workflow_id"`
+	Deduplicated  bool   `json:"deduplicated"`
 }
 
 // EnqueueSignalToOwner sends a signal to a queue owned by a specific entity (e.g., runner, install).
@@ -66,12 +68,13 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 
 	// Enqueue the signal
 	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
-		QueueID:   queueID,
-		Signal:    req.Signal,
-		OwnerID:   req.SignalOwnerID,
-		OwnerType: req.SignalOwnerType,
-		Callback:  req.Callback,
-		Callbacks: req.Callbacks,
+		QueueID:        queueID,
+		Signal:         req.Signal,
+		OwnerID:        req.SignalOwnerID,
+		OwnerType:      req.SignalOwnerType,
+		IdempotencyKey: req.IdempotencyKey,
+		Callback:       req.Callback,
+		Callbacks:      req.Callbacks,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to enqueue signal")
@@ -80,5 +83,6 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 	return &EnqueueSignalToOwnerResponse{
 		QueueSignalID: enqueueResp.ID,
 		WorkflowID:    enqueueResp.WorkflowID,
+		Deduplicated:  enqueueResp.Deduplicated,
 	}, nil
 }

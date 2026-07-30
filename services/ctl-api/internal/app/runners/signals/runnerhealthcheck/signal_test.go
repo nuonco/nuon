@@ -1,37 +1,43 @@
 package runnerhealthcheck
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/workflow"
 
+	basemetrics "github.com/nuonco/nuon/pkg/metrics"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	runneractivities "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-func TestSecondFailedHealthCheckEnqueuesUnhealthyAfterOfflineTransition(t *testing.T) {
+func TestFirstFailedHealthCheckMarksRunnerOfflineWithoutAlerting(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
+	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
+	env.SetStartTime(now)
 
-	runner := runnerWithHealthCheckFailures(app.RunnerStatusActive, float64(1))
+	runner := testRunner(app.RunnerStatusActive)
 	sig := &Signal{RunnerID: runner.ID}
 	var calls []string
 
+	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2Metadata, mock.MatchedBy(func(req statusactivities.UpdateRunnerStatusV2MetadataRequest) bool {
+		return len(req.Metadata) == 1 && req.Metadata[app.RunnerOfflineTSMetadataKey] == now.Unix()
+	})).Run(func(mock.Arguments) { calls = append(calls, "offline-ts") }).Return(nil).Once()
 	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
 		Run(func(mock.Arguments) { calls = append(calls, "status") }).
 		Return(nil).
-		Once()
-	env.OnActivity((*sharedactivities.Activities).EnqueueSignalToOwner, mock.Anything, mock.Anything, mock.Anything).
-		Run(func(mock.Arguments) {
-			calls = append(calls, "notification")
-		}).
-		Return(&sharedactivities.EnqueueSignalToOwnerResponse{}, nil).
 		Once()
 	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
 		Run(func(mock.Arguments) { calls = append(calls, "status-v2") }).
@@ -39,30 +45,108 @@ func TestSecondFailedHealthCheckEnqueuesUnhealthyAfterOfflineTransition(t *testi
 		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		status, metadata := runnerStatusAfterHealthCheck(runner, app.RunnerStatusOffline, nil)
-		return sig.updateRunnerStatus(ctx, runner, status, "no active build process", runner.Org.Name, metadata)
+		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
 	})
 
 	require.True(t, env.IsWorkflowCompleted())
 	require.NoError(t, env.GetWorkflowError())
-	require.Equal(t, []string{"status", "notification", "status-v2"}, calls)
+	require.Equal(t, []string{"offline-ts", "status", "status-v2"}, calls)
 	env.AssertExpectations(t)
 }
 
-func TestFirstFailedHealthCheckDoesNotMarkRunnerOffline(t *testing.T) {
+func TestOfflineRunnerDoesNotAlertBeforeDelay(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
+	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
+	env.SetStartTime(now)
 
-	runner := testRunner(app.RunnerStatusActive)
+	runner := runnerWithOfflineMetadata(app.RunnerStatusOffline, now.Add(-runnerUnhealthyAlertDelay+time.Second))
 	sig := &Signal{RunnerID: runner.ID}
 
-	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.MatchedBy(func(req statusactivities.UpdateRunnerStatusV2Request) bool {
-		return req.Status == app.RunnerStatusActive && req.Metadata[app.RunnerHealthCheckConsecutiveFailuresMetadataKey] == 1
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
+	})
+
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
+	env.AssertExpectations(t)
+}
+
+func TestOfflineRunnerEnqueuesIdempotentAlertAfterDelay(t *testing.T) {
+	var workflowSuite testsuite.WorkflowTestSuite
+	env := workflowSuite.NewTestWorkflowEnvironment()
+	env.SetDataConverter(signalDataConverter())
+	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
+	env.SetStartTime(now)
+
+	offlineAt := now.Add(-runnerUnhealthyAlertDelay)
+	runner := runnerWithOfflineMetadata(app.RunnerStatusOffline, offlineAt)
+	runner.RunnerGroup.Type = app.RunnerGroupTypeOrg
+	runner.RunnerGroup.OwnerID = runner.OrgID
+	runner.RunnerGroup.OwnerType = "orgs"
+	sig := &Signal{RunnerID: runner.ID}
+	tmw := testTemporalMetricsWriter(t)
+	var calls []string
+
+	env.OnActivity(new(sharedactivities.Activities).EnqueueSignalToOwner, mock.Anything, mock.MatchedBy(func(req *sharedactivities.EnqueueSignalToOwnerRequest) bool {
+		return req.IdempotencyKey == fmt.Sprintf("runner-unhealthy:%s:%d", runner.ID, offlineAt.Unix())
+	})).
+		Run(func(mock.Arguments) { calls = append(calls, "notification") }).
+		Return(&sharedactivities.EnqueueSignalToOwnerResponse{Deduplicated: false}, nil).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.handleRunnerOffline(ctx, tmw, runner, "no active build process")
+	})
+
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
+	require.Equal(t, []string{"notification"}, calls)
+	env.AssertExpectations(t)
+}
+
+func TestOfflineRunnerReusesAlertIdempotencyKey(t *testing.T) {
+	var workflowSuite testsuite.WorkflowTestSuite
+	env := workflowSuite.NewTestWorkflowEnvironment()
+	env.SetDataConverter(signalDataConverter())
+	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
+	env.SetStartTime(now)
+
+	offlineAt := now.Add(-time.Hour)
+	runner := runnerWithOfflineMetadata(app.RunnerStatusOffline, offlineAt)
+	runner.RunnerGroup.Type = app.RunnerGroupTypeOrg
+	runner.RunnerGroup.OwnerID = runner.OrgID
+	runner.RunnerGroup.OwnerType = "orgs"
+	sig := &Signal{RunnerID: runner.ID}
+
+	env.OnActivity(new(sharedactivities.Activities).EnqueueSignalToOwner, mock.Anything, mock.MatchedBy(func(req *sharedactivities.EnqueueSignalToOwnerRequest) bool {
+		return req.IdempotencyKey == fmt.Sprintf("runner-unhealthy:%s:%d", runner.ID, offlineAt.Unix())
+	})).Return(&sharedactivities.EnqueueSignalToOwnerResponse{Deduplicated: true}, nil).Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
+	})
+
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
+	env.AssertExpectations(t)
+}
+
+func TestOfflineRunnerWithoutTimestampArmsAlert(t *testing.T) {
+	var workflowSuite testsuite.WorkflowTestSuite
+	env := workflowSuite.NewTestWorkflowEnvironment()
+	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
+	env.SetStartTime(now)
+
+	runner := testRunner(app.RunnerStatusOffline)
+	sig := &Signal{RunnerID: runner.ID}
+
+	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2Metadata, mock.MatchedBy(func(req statusactivities.UpdateRunnerStatusV2MetadataRequest) bool {
+		return req.Metadata[app.RunnerOfflineTSMetadataKey] == now.Unix()
 	})).Return(nil).Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		status, metadata := runnerStatusAfterHealthCheck(runner, app.RunnerStatusOffline, nil)
-		return sig.updateRunnerStatus(ctx, runner, status, "no active install process", runner.Org.Name, metadata)
+		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
 	})
 
 	require.True(t, env.IsWorkflowCompleted())
@@ -70,11 +154,39 @@ func TestFirstFailedHealthCheckDoesNotMarkRunnerOffline(t *testing.T) {
 	env.AssertExpectations(t)
 }
 
-func TestUpdateRunnerStatusDoesNotRepeatUnhealthyWhileOffline(t *testing.T) {
+func TestActiveRunnerWithOfflineTimestampDoesNotResetDelay(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
+	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
+	env.SetStartTime(now)
 
-	runner := testRunner(app.RunnerStatusOffline)
+	runner := runnerWithOfflineMetadata(app.RunnerStatusActive, now.Add(-time.Minute))
+	sig := &Signal{RunnerID: runner.ID}
+
+	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).
+		Once()
+	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
+	})
+
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
+	env.AssertExpectations(t)
+}
+
+func TestOfflineCheckRepairsStaleStatusV2(t *testing.T) {
+	var workflowSuite testsuite.WorkflowTestSuite
+	env := workflowSuite.NewTestWorkflowEnvironment()
+	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
+	env.SetStartTime(now)
+
+	runner := runnerWithOfflineMetadata(app.RunnerStatusOffline, now.Add(-time.Minute))
+	runner.StatusV2.Status = app.Status(app.RunnerStatusActive)
 	sig := &Signal{RunnerID: runner.ID}
 
 	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
@@ -82,7 +194,7 @@ func TestUpdateRunnerStatusDoesNotRepeatUnhealthyWhileOffline(t *testing.T) {
 		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active build process", runner.Org.Name, nil)
+		return sig.handleRunnerOffline(ctx, nil, runner, "no active install process")
 	})
 
 	require.True(t, env.IsWorkflowCompleted())
@@ -90,7 +202,37 @@ func TestUpdateRunnerStatusDoesNotRepeatUnhealthyWhileOffline(t *testing.T) {
 	env.AssertExpectations(t)
 }
 
-func TestUpdateRunnerStatusDoesNotEnqueueWhenOfflineUpdateFails(t *testing.T) {
+func TestHealthyCheckClearsOfflineMetadataAndRestoresActive(t *testing.T) {
+	var workflowSuite testsuite.WorkflowTestSuite
+	env := workflowSuite.NewTestWorkflowEnvironment()
+
+	runner := runnerWithOfflineMetadata(app.RunnerStatusOffline, time.Now().Add(-time.Minute))
+	sig := &Signal{RunnerID: runner.ID}
+	var calls []string
+
+	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2Metadata, mock.MatchedBy(func(req statusactivities.UpdateRunnerStatusV2MetadataRequest) bool {
+		return len(req.Metadata) == 1 && req.Metadata[app.RunnerOfflineTSMetadataKey] == nil
+	})).Run(func(mock.Arguments) { calls = append(calls, "clear") }).Return(nil).Once()
+	env.OnActivity((*runneractivities.Activities).UpdateStatus, mock.Anything, mock.Anything, mock.Anything).
+		Run(func(mock.Arguments) { calls = append(calls, "status") }).
+		Return(nil).
+		Once()
+	env.OnActivity((*statusactivities.Activities).UpdateRunnerStatusV2, mock.Anything, mock.Anything, mock.Anything).
+		Run(func(mock.Arguments) { calls = append(calls, "status-v2") }).
+		Return(nil).
+		Once()
+
+	env.ExecuteWorkflow(func(ctx workflow.Context) error {
+		return sig.handleRunnerActive(ctx, runner)
+	})
+
+	require.True(t, env.IsWorkflowCompleted())
+	require.NoError(t, env.GetWorkflowError())
+	require.Equal(t, []string{"clear", "status", "status-v2"}, calls)
+	env.AssertExpectations(t)
+}
+
+func TestUpdateRunnerStatusStopsWhenLegacyUpdateFails(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
 
@@ -102,79 +244,12 @@ func TestUpdateRunnerStatusDoesNotEnqueueWhenOfflineUpdateFails(t *testing.T) {
 		Once()
 
 	env.ExecuteWorkflow(func(ctx workflow.Context) error {
-		return sig.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active build process", runner.Org.Name, nil)
+		return sig.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active install process")
 	})
 
 	require.True(t, env.IsWorkflowCompleted())
 	require.Error(t, env.GetWorkflowError())
 	env.AssertExpectations(t)
-}
-
-func TestRunnerStatusAfterHealthCheck(t *testing.T) {
-	tests := map[string]struct {
-		runner         *app.Runner
-		status         app.RunnerStatus
-		metadata       map[string]any
-		expectedStatus app.RunnerStatus
-		expectedCount  int
-	}{
-		"first failed check keeps active runner active": {
-			runner:         testRunner(app.RunnerStatusActive),
-			status:         app.RunnerStatusOffline,
-			expectedStatus: app.RunnerStatusActive,
-			expectedCount:  1,
-		},
-		"second consecutive failed check marks runner offline": {
-			runner:         runnerWithHealthCheckFailures(app.RunnerStatusActive, float64(1)),
-			status:         app.RunnerStatusOffline,
-			expectedStatus: app.RunnerStatusOffline,
-			expectedCount:  2,
-		},
-		"healthy check resets the failure count": {
-			runner:         runnerWithHealthCheckFailures(app.RunnerStatusActive, int64(1)),
-			status:         app.RunnerStatusActive,
-			expectedStatus: app.RunnerStatusActive,
-			expectedCount:  0,
-		},
-		"offline runner remains offline without exceeding threshold": {
-			runner:         testRunner(app.RunnerStatusOffline),
-			status:         app.RunnerStatusOffline,
-			expectedStatus: app.RunnerStatusOffline,
-			expectedCount:  2,
-		},
-		"existing metadata is preserved": {
-			runner:         testRunner(app.RunnerStatusActive),
-			status:         app.RunnerStatusActive,
-			metadata:       map[string]any{"missing_mng_process": true},
-			expectedStatus: app.RunnerStatusActive,
-			expectedCount:  0,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			status, metadata := runnerStatusAfterHealthCheck(tt.runner, tt.status, tt.metadata)
-
-			require.Equal(t, tt.expectedStatus, status)
-			require.Equal(t, tt.expectedCount, metadata[app.RunnerHealthCheckConsecutiveFailuresMetadataKey])
-			if tt.metadata != nil {
-				require.Equal(t, true, metadata["missing_mng_process"])
-			}
-		})
-	}
-}
-
-func TestHealthyCheckBreaksFailureStreak(t *testing.T) {
-	runner := runnerWithHealthCheckFailures(app.RunnerStatusActive, float64(1))
-
-	status, metadata := runnerStatusAfterHealthCheck(runner, app.RunnerStatusActive, nil)
-	require.Equal(t, app.RunnerStatusActive, status)
-	require.Equal(t, 0, metadata[app.RunnerHealthCheckConsecutiveFailuresMetadataKey])
-
-	runner.StatusV2.Metadata = metadata
-	status, metadata = runnerStatusAfterHealthCheck(runner, app.RunnerStatusOffline, nil)
-	require.Equal(t, app.RunnerStatusActive, status)
-	require.Equal(t, 1, metadata[app.RunnerHealthCheckConsecutiveFailuresMetadataKey])
 }
 
 func testRunner(status app.RunnerStatus) *app.Runner {
@@ -192,13 +267,34 @@ func testRunner(status app.RunnerStatus) *app.Runner {
 			OwnerID:   "ins_1",
 			OwnerType: "installs",
 		},
+		StatusV2: app.CompositeStatus{
+			Status: app.Status(status),
+		},
 	}
 }
 
-func runnerWithHealthCheckFailures(status app.RunnerStatus, failures any) *app.Runner {
+func runnerWithOfflineMetadata(status app.RunnerStatus, offlineAt time.Time) *app.Runner {
 	runner := testRunner(status)
 	runner.StatusV2.Metadata = map[string]any{
-		app.RunnerHealthCheckConsecutiveFailuresMetadataKey: failures,
+		app.RunnerOfflineTSMetadataKey: float64(offlineAt.Unix()),
 	}
 	return runner
+}
+
+func testTemporalMetricsWriter(t *testing.T) tmetrics.Writer {
+	v := validator.New()
+	mw, err := basemetrics.New(v, basemetrics.WithDisable(true))
+	require.NoError(t, err)
+	tmw, err := tmetrics.New(v, tmetrics.WithMetricsWriter(mw))
+	require.NoError(t, err)
+	return tmw
+}
+
+func signalDataConverter() converter.DataConverter {
+	return converter.NewCompositeDataConverter(
+		signaldb.NewPayloadConverter(),
+		converter.NewNilPayloadConverter(),
+		converter.NewByteSlicePayloadConverter(),
+		converter.NewJSONPayloadConverter(),
+	)
 }
