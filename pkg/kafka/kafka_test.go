@@ -37,6 +37,37 @@ func TestWrapUnwrapRoundTrip(t *testing.T) {
 	require.Equal(t, orig, got)
 }
 
+func TestUnwrap_VersionGuard(t *testing.T) {
+	t.Run("newer than supported is rejected", func(t *testing.T) {
+		env := Envelope{Version: EnvelopeVersion + 1, Type: "widget.created", Payload: json.RawMessage(`{}`)}
+		b, err := json.Marshal(env)
+		require.NoError(t, err)
+
+		_, err = Unwrap(b)
+		require.Error(t, err)
+	})
+
+	t.Run("equal to supported is accepted", func(t *testing.T) {
+		env := Envelope{Version: EnvelopeVersion, Type: "widget.created", Payload: json.RawMessage(`{}`)}
+		b, err := json.Marshal(env)
+		require.NoError(t, err)
+
+		got, err := Unwrap(b)
+		require.NoError(t, err)
+		require.Equal(t, EnvelopeVersion, got.Version)
+	})
+
+	t.Run("older than supported is accepted", func(t *testing.T) {
+		env := Envelope{Version: EnvelopeVersion - 1, Type: "widget.created", Payload: json.RawMessage(`{}`)}
+		b, err := json.Marshal(env)
+		require.NoError(t, err)
+
+		got, err := Unwrap(b)
+		require.NoError(t, err)
+		require.Equal(t, EnvelopeVersion-1, got.Version)
+	})
+}
+
 func TestWrapUnwrapRoundTrip_MapPayload(t *testing.T) {
 	orig := map[string]any{"foo": "bar", "count": float64(3)}
 

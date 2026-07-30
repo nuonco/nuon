@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -9,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/profiles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/consumer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/fxmodules"
+	"github.com/nuonco/nuon/services/ctl-api/internal/health"
 )
 
 var consumerName string
@@ -48,6 +50,20 @@ func (c *cli) runConsumer(cmd *cobra.Command, _ []string) error {
 
 	providers = append(providers, fx.Supply(selection))
 	providers = append(providers, fxmodules.KafkaConsumersModule)
+
+	providers = append(providers,
+		fx.Provide(health.NewConsumerHealthcheck),
+		fx.Invoke(func(lc fx.Lifecycle, hc *health.ConsumerHealthcheckServer) {
+			lc.Append(fx.Hook{
+				OnStart: func(context.Context) error {
+					return hc.Start()
+				},
+				OnStop: func(ctx context.Context) error {
+					return hc.Stop(ctx)
+				},
+			})
+		}),
+	)
 
 	fx.New(providers...).Run()
 

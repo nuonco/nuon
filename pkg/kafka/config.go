@@ -11,8 +11,9 @@ import (
 
 // maxMessageBytes mirrors the topic-level max.message.bytes that
 // images/kafka/create-topics.sh sets in every environment, so we never build a
-// batch the broker will reject.
-const maxMessageBytes = 1024 * 1024
+// batch the broker will reject. Kept in sync by convention, not enforced —
+// see infra/kafka/vars/defaults.yaml (mono) for the broker-side value.
+const maxMessageBytes = 4 * 1024 * 1024
 
 const (
 	securityPlaintext = "PLAINTEXT"

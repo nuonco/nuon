@@ -22,12 +22,14 @@ type Message = pkgkafka.Message
 const (
 	TopicRunnerHeartBeats = "runner_heart_beats"
 	TopicOtelLogRecords   = "otel_log_records"
+	TopicDLQ              = "dlq"
 )
 
 // Envelope message types.
 const (
 	TypeRunnerHeartBeat = "runner_heart_beat"
 	TypeOtelLogRecord   = "otel_log_record"
+	TypeDLQ             = "dlq_record"
 )
 
 // ClientID identifies this process to the brokers. Kafka reports it in request

@@ -22,7 +22,7 @@ type OtelLogsConsumer struct {
 }
 
 func NewOtelLogsConsumer(params Params) (*OtelLogsConsumer, error) {
-	s := newSink(params, NameOtelLogs, kafka.TopicOtelLogRecords)
+	s := newSink(params, NameOtelLogs, kafka.TopicOtelLogRecords, false)
 	if s == nil {
 		return nil, nil
 	}
@@ -36,6 +36,6 @@ func NewOtelLogsConsumer(params Params) (*OtelLogsConsumer, error) {
 }
 
 func (c *OtelLogsConsumer) handle(ctx context.Context, partition int32, recs []*kgo.Record) error {
-	logs := decode[app.OtelLogRecord](c.sink, recs, kafka.TypeOtelLogRecord)
+	logs := decode[app.OtelLogRecord](ctx, c.sink, recs, kafka.TypeOtelLogRecord)
 	return insert(ctx, c.sink, partition, recs, logs)
 }

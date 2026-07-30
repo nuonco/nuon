@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -24,6 +25,14 @@ const (
 	defaultFetchMaxPartitionBytes = 2 * 1024 * 1024
 	defaultMaxConcurrentFetches   = 2
 )
+
+// A single fetch can transiently exceed FetchMaxPartitionBytes above: a
+// broker always returns at least one full record even if it's larger than
+// the requested partition limit (KIP-74), and the broker's
+// max.message.bytes is 4MiB (mono infra/kafka/vars/defaults.yaml) — twice
+// this default. Safe, not a bug: the overshoot is bounded to one message,
+// negligible against actual pod memory limits, and only realistic for rare
+// large payloads like a dlq record.
 
 type ConsumerConfig struct {
 	Group        string
@@ -55,6 +64,11 @@ type Consumer struct {
 
 	stopCh chan struct{}
 	doneCh chan struct{}
+
+	// inFlightSince is non-nil while a handler call is running, set just before
+	// the call and cleared just after. Read by Stuck for a liveness check; never
+	// consulted on the poll loop's own hot path.
+	inFlightSince atomic.Pointer[time.Time]
 }
 
 func NewConsumer(cfg Config, ccfg ConsumerConfig, handler Handler, l *zap.Logger) (*Consumer, error) {
@@ -153,7 +167,12 @@ func (c *Consumer) run() {
 			if len(ftp.Records) == 0 {
 				return
 			}
-			if err := c.handler(ctx, ftp.Partition, ftp.Records); err != nil {
+			started := time.Now()
+			c.inFlightSince.Store(&started)
+			err := c.handler(ctx, ftp.Partition, ftp.Records)
+			c.inFlightSince.Store(nil)
+
+			if err != nil {
 				c.l.Error("kafka handler failed; not committing",
 					zap.Int32("partition", ftp.Partition),
 					zap.Int("records", len(ftp.Records)),
@@ -172,4 +191,17 @@ func (c *Consumer) run() {
 // suitable for a ClickHouse insert_deduplication_token.
 func DedupToken(topic string, partition int32, first, last int64) string {
 	return fmt.Sprintf("%s:%d:%d-%d", topic, partition, first, last)
+}
+
+// Stuck reports whether a handler call has been running longer than max, and
+// for how long. Intended for a liveness check, not the hot path: a handler
+// call is expected to be bounded by its own timeout (e.g. a ClickHouse write
+// deadline), so this only trips on a genuine hang that bound failed to catch.
+func (c *Consumer) Stuck(max time.Duration) (time.Duration, bool) {
+	p := c.inFlightSince.Load()
+	if p == nil {
+		return 0, false
+	}
+	d := time.Since(*p)
+	return d, d > max
 }

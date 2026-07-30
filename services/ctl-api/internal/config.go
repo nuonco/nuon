@@ -69,6 +69,19 @@ func init() {
 	config.RegisterDefault("kafka_consumer_fetch_max_bytes", 8*1024*1024)
 	config.RegisterDefault("kafka_consumer_fetch_max_partition_bytes", 2*1024*1024)
 	config.RegisterDefault("kafka_consumer_max_concurrent_fetches", 2)
+	// A handler call is bounded by clickhouse_db_write_timeout (10s) for the
+	// main insert, plus — only when decode() hit a bad record — up to
+	// kafka_produce_timeout (5s) trying the dead-letter topic before its own
+	// clickhouse_db_write_timeout-bounded fallback. Worst realistic case is
+	// ~25s (5s + 10s + 10s); 60s leaves a healthy margin above that without
+	// being so loose it stops meaning anything. Real p95 CREATE latency
+	// against these tables is well under 1s (see
+	// plans/08-kafka-phase5-consumer-hardening.md), so tripping this at all
+	// means a genuine stuck handler, not ordinary backend slowness.
+	config.RegisterDefault("kafka_consumer_liveness_timeout", "60s")
+	// Not 8086 (worker_healthcheck_port) — that server is always on locally
+	// too, and consumer + worker run side by side under `nuonctl dev`.
+	config.RegisterDefault("consumer_healthcheck_port", "8090")
 
 	// defaults for app
 	config.RegisterDefault("github_app_key_secret_name", "ctl-api-github-app-key")
@@ -265,6 +278,11 @@ type Config struct {
 	KafkaConsumerFetchMaxBytes          int32         `config:"kafka_consumer_fetch_max_bytes"`
 	KafkaConsumerFetchMaxPartitionBytes int32         `config:"kafka_consumer_fetch_max_partition_bytes"`
 	KafkaConsumerMaxConcurrentFetches   int           `config:"kafka_consumer_max_concurrent_fetches"`
+	// Liveness threshold for a stuck handler call — see the healthcheck server
+	// in internal/health/consumer.go. Deliberately separate from any consumer's
+	// own fetch tuning: it's a backstop against a hang, not a knob to tune.
+	KafkaConsumerLivenessTimeout time.Duration `config:"kafka_consumer_liveness_timeout"`
+	ConsumerHealthcheckPort      string        `config:"consumer_healthcheck_port"`
 
 	// temporal configuration
 	TemporalHost                          string        `config:"temporal_host"  validate:"required"`

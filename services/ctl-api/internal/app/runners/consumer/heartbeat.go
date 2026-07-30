@@ -17,7 +17,7 @@ type HeartbeatConsumer struct {
 }
 
 func NewHeartbeatConsumer(params Params) (*HeartbeatConsumer, error) {
-	s := newSink(params, NameHeartbeats, kafka.TopicRunnerHeartBeats)
+	s := newSink(params, NameHeartbeats, kafka.TopicRunnerHeartBeats, false)
 	if s == nil {
 		return nil, nil
 	}
@@ -31,6 +31,6 @@ func NewHeartbeatConsumer(params Params) (*HeartbeatConsumer, error) {
 }
 
 func (c *HeartbeatConsumer) handle(ctx context.Context, partition int32, recs []*kgo.Record) error {
-	hbs := decode[app.RunnerHeartBeat](c.sink, recs, kafka.TypeRunnerHeartBeat)
+	hbs := decode[app.RunnerHeartBeat](ctx, c.sink, recs, kafka.TypeRunnerHeartBeat)
 	return insert(ctx, c.sink, partition, recs, hbs)
 }

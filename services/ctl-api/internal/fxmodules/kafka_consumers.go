@@ -18,6 +18,8 @@ import (
 var KafkaConsumersModule = fx.Module("kafka-consumers",
 	fx.Provide(consumer.NewHeartbeatConsumer),
 	fx.Provide(consumer.NewOtelLogsConsumer),
+	fx.Provide(consumer.NewDLQConsumer),
 	fx.Invoke(func(*consumer.HeartbeatConsumer) {}),
 	fx.Invoke(func(*consumer.OtelLogsConsumer) {}),
+	fx.Invoke(func(*consumer.DLQConsumer) {}),
 )

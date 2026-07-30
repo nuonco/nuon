@@ -214,7 +214,7 @@ func (s *service) toLogStreamLogs(ctx context.Context, now time.Time, logStreamI
 // is already a lossy in-memory buffer; logs have no such slack.
 //
 // One envelope per record rather than one per export request: the topic's
-// max.message.bytes is 1MiB and a single OTLP export can carry hundreds of
+// max.message.bytes is 4MiB and a single OTLP export can carry hundreds of
 // records, so per-record keeps us clear of a broker reject. They still go in a
 // single ProduceSync call, so this is one round trip, not one per record.
 func (s *service) produceOrWriteLogStreamLogs(ctx context.Context, logs []app.OtelLogRecord) error {
