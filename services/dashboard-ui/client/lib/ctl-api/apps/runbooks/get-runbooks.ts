@@ -7,7 +7,12 @@ export interface IGetRunbooks extends TPaginationParams {
   orgId: string
 }
 
-export async function getRunbooks({ appId, orgId, limit, offset }: IGetRunbooks) {
+export async function getRunbooks({
+  appId,
+  orgId,
+  limit,
+  offset,
+}: IGetRunbooks) {
   return api<TRunbook[]>({
     orgId,
     path: `apps/${appId}/runbooks${buildQueryParams({ limit, offset })}`,
@@ -54,6 +59,7 @@ export type TRunbookStep = {
   name: string
   idx?: number
   type?: string
+  plan_only?: boolean
   component_name?: string
   deploy_dependents?: boolean
   tear_down_dependents?: boolean

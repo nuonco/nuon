@@ -44,6 +44,9 @@ type ServiceCreateRunbookStepConfigRequest struct {
 	// Required: true
 	Name *string `json:"name"`
 
+	// plan only
+	PlanOnly bool `json:"plan_only,omitempty"`
+
 	// role
 	Role string `json:"role,omitempty"`
 

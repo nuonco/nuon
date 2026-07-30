@@ -64,6 +64,7 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 			Name:                 generics.ToPtr(step.Name),
 			Type:                 generics.ToPtr(string(step.Type)),
 			Idx:                  int64(idx),
+			PlanOnly:             step.PlanOnly,
 			ComponentName:        step.ComponentName,
 			DeployDependents:     step.DeployDependents,
 			TearDownDependents:   step.TearDownDependents,

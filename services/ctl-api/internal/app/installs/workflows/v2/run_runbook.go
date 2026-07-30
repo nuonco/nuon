@@ -107,9 +107,10 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 
 	// Generate steps for each runbook step
 	for _, stepCfg := range runbookSteps {
+		stepWorkflow := runbookStepWorkflow(flw, &stepCfg)
 		switch stepCfg.Type {
 		case app.RunbookStepTypeComponentDeploy:
-			deploySteps, err := runbookDeploySteps(ctx, installID, &stepCfg, sg, flw, enabledInputs)
+			deploySteps, err := runbookDeploySteps(ctx, installID, &stepCfg, sg, stepWorkflow, enabledInputs)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to generate deploy step %s", stepCfg.Name)
 			}
@@ -131,7 +132,7 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 
 		case app.RunbookStepTypeSandboxReprovision,
 			app.RunbookStepTypeSandboxDeprovision:
-			sbxSteps, err := runbookSandboxLifecycleSteps(ctx, installID, &stepCfg, flw, sg, install)
+			sbxSteps, err := runbookSandboxLifecycleSteps(ctx, installID, &stepCfg, stepWorkflow, sg, install)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to generate sandbox %s step %s", stepCfg.Type, stepCfg.Name)
 			}
@@ -140,6 +141,14 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 	}
 
 	return sg.Result(steps), nil
+}
+
+func runbookStepWorkflow(flw *app.Workflow, stepCfg *app.RunbookStepConfig) *app.Workflow {
+	effective := *flw
+	if stepCfg.PlanOnly && (stepCfg.Type == app.RunbookStepTypeComponentDeploy || stepCfg.Type == app.RunbookStepTypeSandboxReprovision) {
+		effective.PlanOnly = true
+	}
+	return &effective
 }
 
 func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.RunbookStepConfig, sg *stepGroup, flw *app.Workflow, enabledInputs map[string]*string) ([]*app.WorkflowStep, error) {
@@ -224,6 +233,16 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 	}
 
 	if component.Type.IsImage() {
+		if flw.PlanOnly {
+			sg.nextGroupNamed(fmt.Sprintf("drift check: %s (skipped)", name))
+			skipStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("skipped image drift check %s", name), pgtype.Hstore{
+				"reason": generics.ToPtr("image components do not have infrastructure drift to check"),
+			}, nil, true)
+			if err != nil {
+				return nil, errors.Wrap(err, "unable to create image drift skip step")
+			}
+			return append(result, skipStep), nil
+		}
 		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (sync)", name))
 		syncStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("sync %s", name), pgtype.Hstore{}, &componentsyncimage.Signal{
 			InstallComponentID: installComponentID,

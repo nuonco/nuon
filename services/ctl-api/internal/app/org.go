@@ -107,6 +107,7 @@ const (
 	// HMAC signature derived from a per-install secret, and requires a target
 	// cloud account identifier at install creation.
 	OrgFeaturePhoneHomeAuth OrgFeature = "phone-home-auth"
+	OrgFeatureRunbookStudio OrgFeature = "runbook-studio"
 )
 
 type Org struct {
@@ -235,6 +236,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureAWSAccountConnections:   false,
 		OrgFeatureComponentHealth:         false,
 		OrgFeaturePhoneHomeAuth:           false,
+		OrgFeatureRunbookStudio:           false,
 
 		// Enabled by default
 		OrgFeatureControlPlaneBuilds: true,
@@ -312,6 +314,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureComponentHealth,
 		OrgFeatureServiceAccountsAndTokens,
 		OrgFeaturePhoneHomeAuth,
+		OrgFeatureRunbookStudio,
 	}
 }
 
@@ -354,6 +357,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureComponentHealth:          "Enable the live component resource explorer: the install runner reports the Kubernetes and cloud resources each component manages with per-resource health, surfaced in the install Resources tab.",
 		OrgFeatureServiceAccountsAndTokens: "Enable the API tokens and service accounts management pages in the dashboard settings navigation.",
 		OrgFeaturePhoneHomeAuth:            "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",
+		OrgFeatureRunbookStudio:            "Enable the runbook studio in the dashboard — a literate editor for authoring runbook markdown around executable steps with a live install-state preview.",
 	}
 }
 

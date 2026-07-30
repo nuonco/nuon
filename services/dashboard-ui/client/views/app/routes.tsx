@@ -8,6 +8,7 @@ import { BuildDetail } from './BuildDetail'
 import { Actions } from './Actions'
 import { ActionDetail } from './ActionDetail'
 import { Runbooks } from './Runbooks'
+import { OperationsStudio } from './OperationsStudio'
 import { RunbookDetailLayout } from './RunbookDetailLayout'
 import { RunbookReadmeTab } from './runbook-tabs/RunbookReadmeTab'
 import { RunbookStepsTab } from './runbook-tabs/RunbookStepsTab'
@@ -56,6 +57,12 @@ export const appRoutes: RouteObject[] = [
         element: <ActionDetail />,
       },
       { path: ':orgId/apps/:appId/runbooks', element: <Runbooks /> },
+      { path: ':orgId/apps/:appId/studio', element: <OperationsStudio /> },
+      {
+        path: ':orgId/apps/:appId/runbooks/builder',
+        loader: ({ params }) =>
+          redirect(`/${params.orgId}/apps/${params.appId}/studio`),
+      },
       {
         path: ':orgId/apps/:appId/runbooks/:runbookId',
         element: <RunbookDetailLayout />,
@@ -105,6 +112,11 @@ export const appRoutes: RouteObject[] = [
       { path: ':orgId/apps/:appId/installs', element: <Installs /> },
       { path: ':orgId/apps/:appId/labels', element: <Labels /> },
       { path: ':orgId/apps/:appId/readme', element: <Readme /> },
+      {
+        path: ':orgId/apps/:appId/readme-studio',
+        loader: ({ params }) =>
+          redirect(`/${params.orgId}/apps/${params.appId}/studio`),
+      },
     ],
   },
 ]
