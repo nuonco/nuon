@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type GetPSQLTableMetricsRequest struct{}
@@ -19,7 +20,9 @@ func (a *Activities) GetPSQLTableMetrics(ctx context.Context, req GetPSQLTableMe
 func (a *Activities) getTableSizes(ctx context.Context, db *gorm.DB) ([]app.PSQLTableSize, error) {
 	var tables []app.PSQLTableSize
 
+	// ForceReplica bypasses the table ACL, which would block a WithReplica opt-in.
 	res := db.WithContext(ctx).
+		Scopes(scopes.ForceReplica).
 		Find(&tables)
 
 	if res.Error != nil {
