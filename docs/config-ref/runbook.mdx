@@ -37,6 +37,10 @@ title: 'Runbook'
 | **`env_vars`**<br/>object | environment variables for inline action steps Map of environment variables passed to the inline action command | **Optional** | - |
 | **`timeout`**<br/>string | timeout for inline action steps Maximum execution time for inline action steps. Must be a valid Go duration string | **Optional** | `"30s"`, `"5m"` |
 | **`role`**<br/>string | IAM role for inline action execution IAM role name to use when executing the inline action step | **Optional** | - |
+| **`trigger`**<br/>string | trigger to wait on Required for wait_for_event steps. The matched normalized event is available to later action steps by step name, for example \{\{.runbook_outputs.wait_for_tag.event.payload.tag\}... | **Optional** | - |
+| **`event_types`**<br/>array | event types that can resume this step For wait_for_event steps, the step resumes when an event from trigger has one of these types and matches every configured filter | **Optional** | - |
+| **`filters`**<br/>array | - | **Optional** | - |
+| **`match_all`**<br/>boolean | explicitly match all event types For wait_for_event steps, permits matching all event types, including when filters contain only exclusion predicates | **Optional** | - |
 
 ### `input`
 
