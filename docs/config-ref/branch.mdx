@@ -14,9 +14,6 @@ title: 'Branch'
 | **`name`**<br/>string | name of the app branch | **✅ Required** | - |
 | **`connected_repo`**<br/>[ConnectedRepoConfig](#connected_repo) | connected GitHub repo the branch tracks | **Optional** | - |
 | **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public git repo the branch tracks | **Optional** | - |
-| **`installs_directory`**<br/>string | directory containing install config TOML files (default: installs) | **Optional** | - |
-| **`installs_connected_repo`**<br/>ConnectedRepoConfig | connected GitHub repo for install configs (falls back to branch repo if unset) | **Optional** | - |
-| **`installs_public_repo`**<br/>PublicRepoConfig | public git repo for install configs (falls back to branch repo if unset) | **Optional** | - |
 | **`install_groups`**<br/>[array](#install_groups) | ordered deployment groups for this branch | **Optional** | - |
 
 ### `connected_repo`

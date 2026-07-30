@@ -212,8 +212,7 @@ config it already built from your working directory while `trigger` fetches one 
 From step 3 on they are identical:
 
 - `building components and sandbox` rebuilds only what changed.
-- `sync install configs` is skippable, and a no-op here because this branch does not track install config files. See
-  [managing install configs in git](/guides/app-branches#manage-install-configs-in-git) if you want that.
+- `sync install configs` is skippable, and a no-op for this branch.
 - each `plan install group` computes the diff for every install in the group and then **waits** for you.
 - each `deploy install group` runs once you approve the plan before it.
 

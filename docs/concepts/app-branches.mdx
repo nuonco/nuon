@@ -5,7 +5,7 @@ description:
   "App branches connect a git branch to your app, so a push rolls the change out across your fleet of customer installs
   through ordered deployment groups with a plan and an approval at every step."
 boost: 4
-keywords: ["app branches", "app branch", "what are app branches", "continuous delivery", "git push deploy", "gitops", "deployment groups", "install groups", "install_groups", "label selector", "staged rollout", "progressive rollout", "canary", "plan and approve", "PR preview", "pull request preview", "branch run", "git-run", "git-preview-run", "manual-run", "install version history", "app config version", "installs_directory", "install configs in git", "fleet deployment", "roll out to many installs"]
+keywords: ["app branches", "app branch", "what are app branches", "continuous delivery", "git push deploy", "gitops", "deployment groups", "install groups", "install_groups", "label selector", "staged rollout", "progressive rollout", "canary", "plan and approve", "PR preview", "pull request preview", "branch run", "git-run", "git-preview-run", "manual-run", "install version history", "app config version", "fleet deployment", "roll out to many installs"]
 ---
 
 ## What is an App Branch?
@@ -32,7 +32,7 @@ flowchart TD
     push["git push to the tracked branch"] --> fetch["fetch commit<br/>clone the repo at that SHA"]
     fetch --> config["fetch app config<br/>parse and sync the app config"]
     config --> build["building components and sandbox<br/>only what changed since the last successful run"]
-    build --> sync["sync install configs<br/>optional, skippable"]
+    build --> sync["sync install configs<br/>skippable"]
     sync --> plan1["plan install group: staging<br/>diff per install"]
     plan1 -->|approve| deploy1["deploy install group: staging"]
     deploy1 --> plan2["plan install group: production<br/>diff per install"]
@@ -192,76 +192,6 @@ along with the diff between any two versions.
 Because any past version can be applied again, the history doubles as a recovery path: if a change turns out badly,
 you re-apply an earlier version rather than hunting for what the old values were. The
 [guide](/guides/app-branches#re-apply-a-previous-config-version) walks through the exact calls.
-
-## Install configs in git
-
-An app branch can also track your install config files, not just your app config, keeping the installs in your control
-plane in step with what is in git.
-
-Enabling it takes two things: a repository block for the install configs, and the directory they live in. There is no
-implicit default for the repository. A branch tracks install configs only once you set **one of**
-`installs_connected_repo` or `installs_public_repo` (they are mutually exclusive). Pointing that block at the same
-repository as the app config is perfectly normal; you just have to declare it.
-
-```toml branch.toml
-name               = "main"
-installs_directory = "installs"
-
-[connected_repo]
-repo      = "acmeco/my-app-config"
-directory = "."
-branch    = "main"
-
-[installs_connected_repo]
-repo      = "acmeco/my-app-config"
-directory = "."
-branch    = "main"
-```
-
-<Warning>
-  `installs_directory` on its own does nothing. With neither installs repository block set, the sync is skipped
-  silently: no error, no synced installs. Keep the installs repository block's `directory` at the repository root
-  (`"."`) and give `installs_directory` a path from there; that is the layout Nuon resolves consistently.
-</Warning>
-
-Each file describes one install (its labels, its cloud account, its inputs, its stack overrides, its component
-toggles) using the same format `nuon installs sync` already accepts:
-
-```toml installs/customer-acme.toml
-name            = "customer-acme"
-approval_option = "approve-all"
-
-[labels]
-env    = "prod"
-tier   = "enterprise"
-region = "us-east-1"
-
-[aws_account]
-region = "us-east-1"
-
-[component_toggles]
-monitoring = true
-```
-
-A sync can start three ways: a push that touches those files, the skippable `sync install configs` step inside a
-branch run, or a manual trigger. Whichever way it starts, Nuon clones the repo at that commit, parses each file,
-creates installs it has not seen before, and diffs the ones it has. Each sync produces a record with per-install
-version entries (file path, whether the install was created or updated, and the stored diff), plus counts of how
-many installs synced and how many failed.
-
-Because the install configs get their own repository block, they do not have to live with the app config at all. A
-separate repository (one your support team owns, say, with different reviewers) works the same way.
-
-<Note>
-  Nuon reads the installs repository block when it parses `branch.toml` **from git**, during a branch run's `fetch app
-  config` step. So the way to enable install config sync is to commit these fields and let a run pick them up. See
-  [managing install configs in git](/guides/app-branches#manage-install-configs-in-git) for the exact sequence.
-</Note>
-
-<Tip>
-  Labels set in an install config file are what deployment group label selectors match on. Managing install configs in
-  git therefore means group membership is version-controlled too.
-</Tip>
 
 ## Notifications and automation
 
