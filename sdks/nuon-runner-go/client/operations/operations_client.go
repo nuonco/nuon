@@ -1284,7 +1284,7 @@ func (a *Client) GetRunnerAppConfig(params *GetRunnerAppConfigParams, authInfo r
 /*
 GetRunnerInstallComponents lists the install components a runner serves
 
-Returns metadata (IDs, name, type) for the components of the install this runner belongs to, used by the runner component-health engine to build its ownership index. Returns no credentials or cluster access.
+Returns metadata (IDs, name, type, declared health probes) for the components of the install this runner belongs to, used by the runner component-health engine to build its ownership index. Returns no credentials or cluster access.
 */
 func (a *Client) GetRunnerInstallComponents(params *GetRunnerInstallComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerInstallComponentsOK, error) {
 	// NOTE: parameters are not validated before sending

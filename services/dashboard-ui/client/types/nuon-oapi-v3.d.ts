@@ -1265,6 +1265,13 @@ export interface paths {
      */
     post: operations["CreateInstallV2"];
   };
+  "/v1/installs/health": {
+    /**
+     * fleet health summary
+     * @description Returns the health rollup for every install the caller can see, optionally narrowed by app and by an install label selector. This is the primitive a canary or bake-period rollout polls to decide whether to continue: all_healthy is only true when every counted install is healthy, and installs whose health has never been evaluated are counted separately in unset rather than treated as a pass. Requires the component-health feature.
+     */
+    get: operations["GetInstallsHealth"];
+  };
   "/v1/installs/label-keys": {
     /**
      * get distinct label key:value pairs across all installs for an org
@@ -1657,6 +1664,34 @@ export interface paths {
      */
     post: operations["ForgetInstallComponent"];
   };
+  "/v1/installs/{install_id}/components/{component_id}/health/checks": {
+    /**
+     * list custom component health checks
+     * @description Returns the latest reported state of every custom health check for the component (provider "custom"), keyed by check name. Requires the component-health feature.
+     */
+    get: operations["GetInstallComponentHealthChecks"];
+  };
+  "/v1/installs/{install_id}/components/{component_id}/health/checks/{check_name}": {
+    /**
+     * report a custom component health check
+     * @description Lets an external system (a vendor's CI, a Datadog monitor webhook, a custom action) report a named health signal for a component. The report is written as a resource observation with provider "custom", so it flows through the same live explorer, evaluator, alerting, and timeline as runner-reported resources. Requires the component-health feature.
+     */
+    put: operations["PutInstallComponentHealthCheck"];
+  };
+  "/v1/installs/{install_id}/components/{component_id}/health/incident": {
+    /**
+     * component health incident bundle
+     * @description Returns the most recent degraded/unhealthy transition for the component (whether or not it has since recovered) along with its diagnosis, correlated deploy, and the component's currently non-healthy resources. Returns a null body when there's no incident in the retained history. Requires the component-health feature.
+     */
+    get: operations["GetInstallComponentHealthIncident"];
+  };
+  "/v1/installs/{install_id}/components/{component_id}/health/timeline": {
+    /**
+     * component health timeline
+     * @description Returns a component's health history over a window: recorded verdict transitions (newest first), daily worst-verdict buckets covering every day in the window, and an uptime percentage that excludes unknown time from both the numerator and denominator. Requires the component-health feature.
+     */
+    get: operations["GetInstallComponentHealthTimeline"];
+  };
   "/v1/installs/{install_id}/components/{component_id}/outputs": {
     /**
      * get an install component outputs
@@ -1693,6 +1728,13 @@ export interface paths {
      * @description Returns the install config version history, ordered by most recent first.
      */
     get: operations["GetInstallConfigVersions"];
+  };
+  "/v1/installs/{install_id}/config-versions/{version_id}/diff": {
+    /**
+     * get the diff for an install config version
+     * @description Returns the config diff for a specific install config version.
+     */
+    get: operations["GetInstallConfigVersionDiff"];
   };
   "/v1/installs/{install_id}/configs": {
     /**
@@ -1803,6 +1845,20 @@ export interface paths {
      * @description Generate terraform configuration for an installer.
      */
     get: operations["GenerateTerraformInstallerConfig"];
+  };
+  "/v1/installs/{install_id}/health/baseline": {
+    /**
+     * reset the install's health window
+     * @description Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime. Requires the component-health feature.
+     */
+    post: operations["ResetInstallHealthBaseline"];
+  };
+  "/v1/installs/{install_id}/health/timeline": {
+    /**
+     * install health timeline
+     * @description Returns the install's health history aggregated across its components: uptime_percent and observed_seconds are the worst component's, daily[].health is the worst verdict across components for that day, and components lists each component's own current health and uptime. Requires the component-health feature.
+     */
+    get: operations["GetInstallHealthTimeline"];
   };
   "/v1/installs/{install_id}/inputs": {
     /**
@@ -3365,9 +3421,6 @@ export interface components {
       created_by_id?: string;
       id?: string;
       install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
-      installs_connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
-      installs_directory?: string;
-      installs_public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       org_id?: string;
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       updated_at?: string;
@@ -3968,6 +4021,11 @@ export interface components {
       docker_build?: components["schemas"]["app.DockerBuildComponentConfig"];
       drift_schedule?: string;
       external_image?: components["schemas"]["app.ExternalImageComponentConfig"];
+      health_block_deploy?: boolean | null;
+      health_enabled?: boolean | null;
+      health_probes?: components["schemas"]["app.ComponentHealthProbe"][];
+      /** @description Duration string for how long health must hold after a deploy applies (e.g., "3m"). Max 1h. */
+      health_stabilization_window?: string;
       helm?: components["schemas"]["app.HelmComponentConfig"];
       id?: string;
       job?: components["schemas"]["app.JobComponentConfig"];
@@ -4001,6 +4059,12 @@ export interface components {
       component_type?: string;
       new_checksum?: string;
       old_checksum?: string;
+    };
+    "app.ComponentHealthProbe": {
+      command?: string[];
+      name?: string;
+      type?: string;
+      url?: string;
     };
     "app.ComponentRelease": {
       build_id?: string;
@@ -4254,11 +4318,22 @@ export interface components {
        * run in, and what it was observed running in. See the type for the trust model.
        */
       cloud_platform_metadata?: Record<string, never>;
+      component_health_statuses?: {
+        [key: string]: string;
+      };
       component_statuses?: {
         [key: string]: string;
       };
       composite_component_status?: string;
       composite_component_status_description?: string;
+      /**
+       * @description CompositeHealthStatus is the live-health rollup of the install's
+       * components — a parallel axis to CompositeComponentStatus (deploy
+       * lifecycle), never merged with it. Empty until the component-health
+       * evaluator has produced verdicts.
+       */
+      composite_health_status?: string;
+      composite_health_status_description?: string;
       created_at?: string;
       created_by_id?: string;
       drifted_objects?: components["schemas"]["app.DriftedObject"][];
@@ -4432,10 +4507,12 @@ export interface components {
       drifted_object?: components["schemas"]["app.DriftedObject"];
       /**
        * @description Enabled is the resolved enabled/disabled state for a toggleable component
-       * on this install (from the synthetic enabled install input, falling back to
-       * the component's default_enabled). It is nil for non-toggleable components.
+       * (from the synthetic enabled input, falling back to default_enabled); nil otherwise.
        */
       enabled?: boolean | null;
+      health_status?: string;
+      health_status_description?: string;
+      health_status_v2?: components["schemas"]["app.CompositeStatus"];
       helm_chart?: components["schemas"]["app.HelmChart"];
       id?: string;
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
@@ -4465,14 +4542,22 @@ export interface components {
       org_id?: string;
       owner_name?: string;
       provider?: string;
+      /**
+       * @description RemovedFromConfig is set at read time when a probe's name is no longer in
+       * the component's config — still shown, but labelled so it can't pass as live.
+       */
+      removed_from_config?: boolean;
       runner_id?: string;
       /**
-       * @description Source classifies the resource owner: "component" (an app component,
-       * keyed by install_component_id) or "sandbox" (install base infra, keyed by
-       * owner_name = helm release name). OwnerName is the display group for
-       * sandbox resources.
+       * @description Source classifies the resource owner: "component" (keyed by
+       * install_component_id) or "sandbox" (keyed by owner_name = helm release name).
        */
       source?: string;
+      /**
+       * @description StaleAfterSeconds is how long this observation stays trustworthy (0 =
+       * default); a pushed check sets its own, since it knows its cadence best.
+       */
+      stale_after_seconds?: number;
     };
     "app.InstallConfig": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
@@ -4506,26 +4591,21 @@ export interface components {
     "app.InstallConfigSync": {
       app_branch_config_id?: string;
       app_branch_id?: string;
-      app_branch_run?: components["schemas"]["app.AppBranchRun"];
       app_branch_run_id?: string;
-      commit_sha?: string;
+      app_install_config_sync_id?: string;
       created_at?: string;
       created_by_id?: string;
-      failed_installs?: number;
       id?: string;
+      install_id?: string;
       metadata?: {
         [key: string]: string;
       };
       org_id?: string;
       status?: components["schemas"]["app.CompositeStatus"];
-      synced_installs?: number;
-      total_installs?: number;
       triggered_by?: string;
       updated_at?: string;
       vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
       versions?: components["schemas"]["app.InstallConfigVersion"][];
-      workflow?: components["schemas"]["app.Workflow"];
-      workflow_id?: string;
     };
     "app.InstallConfigVersion": {
       created?: boolean;
@@ -4534,6 +4614,7 @@ export interface components {
       diff?: components["schemas"]["blobstore.Blob"];
       file_path?: string;
       id?: string;
+      install_config_sync?: components["schemas"]["app.InstallConfigSync"];
       install_config_sync_id?: string;
       install_id?: string;
       install_name?: string;
@@ -7280,6 +7361,13 @@ export interface components {
     "service.ComponentChildren": {
       children?: components["schemas"]["app.Component"][];
     };
+    "service.ComponentHealthIncidentBundle": {
+      current_health?: string;
+      install_component_id?: string;
+      resolved?: boolean;
+      resources?: components["schemas"]["app.InstallComponentResourceState"][];
+      transition?: components["schemas"]["service.HealthTransitionResponse"];
+    };
     "service.ConnectedGithubVCSActionWorkflowConfigRequest": {
       branch?: string;
       directory: string;
@@ -7587,6 +7675,11 @@ export interface components {
       /** @description Duration string for deploy operations (e.g., "30m", "1h") */
       deploy_timeout?: string;
       drift_schedule?: string;
+      health_block_deploy?: boolean | null;
+      health_enabled?: boolean | null;
+      health_probes?: components["schemas"]["service.HealthProbeRequest"][];
+      /** @description Duration string for the health stabilization window (e.g., "3m") */
+      health_stabilization_window?: string;
       helm_repo_config?: components["schemas"]["service.HelmRepoConfigRequest"];
       kubernetes_context?: string;
       max_auto_retries?: number;
@@ -7718,6 +7811,11 @@ export interface components {
       /** @description Duration string for deploy operations (e.g., "30m", "1h") */
       deploy_timeout?: string;
       drift_schedule?: string;
+      health_block_deploy?: boolean | null;
+      health_enabled?: boolean | null;
+      health_probes?: components["schemas"]["service.HealthProbeRequest"][];
+      /** @description Duration string for the health stabilization window (e.g., "3m") */
+      health_stabilization_window?: string;
       kubernetes_context?: string;
       /** @description Kustomize configuration (mutually exclusive with Manifest) */
       kustomize?: components["schemas"]["service.KustomizeConfigRequest"];
@@ -7956,6 +8054,24 @@ export interface components {
       url?: string;
     };
     "service.GracefulShutdownRequest": Record<string, never>;
+    "service.HealthProbeRequest": {
+      command?: string[];
+      interval?: string;
+      name?: string;
+      type?: string;
+      url?: string;
+    };
+    "service.HealthTransitionResponse": {
+      correlated_deploy_id?: string;
+      diagnosis?: string;
+      from_health?: string;
+      message?: string;
+      observed_at?: string;
+      root_resource_kind?: string;
+      root_resource_name?: string;
+      root_resource_namespace?: string;
+      to_health?: string;
+    };
     "service.HelmRepoConfigRequest": {
       chart: string;
       repo_url: string;
@@ -7968,6 +8084,26 @@ export interface components {
       maintenance_role?: components["schemas"]["service.InstallPermissionsRoleStatus"];
       provision_role?: components["schemas"]["service.InstallPermissionsRoleStatus"];
     };
+    "service.InstallComponentHealthSummary": {
+      /**
+       * @description ComponentID is what dashboard component routes are keyed by — a link
+       * built from the install-component id instead dead-ends on an empty page.
+       */
+      component_id?: string;
+      component_name?: string;
+      current_health?: string;
+      install_component_id?: string;
+      uptime_percent?: number;
+    };
+    "service.InstallComponentHealthTimelineResponse": {
+      current_health?: string;
+      daily?: components["schemas"]["service.dailyHealthBucket"][];
+      days?: number;
+      install_component_id?: string;
+      observed_seconds?: number;
+      transitions?: components["schemas"]["service.HealthTransitionResponse"][];
+      uptime_percent?: number;
+    };
     "service.InstallGroupRequest": {
       install_ids?: string[];
       /**
@@ -7978,6 +8114,24 @@ export interface components {
       name: string;
       order?: number;
       use_for_previews?: boolean;
+    };
+    "service.InstallHealthSummary": {
+      app_id?: string;
+      degraded_components?: number;
+      health?: string;
+      health_description?: string;
+      install_id?: string;
+      install_name?: string;
+      unhealthy_components?: number;
+    };
+    "service.InstallHealthTimelineResponse": {
+      components?: components["schemas"]["service.InstallComponentHealthSummary"][];
+      current_health?: string;
+      daily?: components["schemas"]["service.dailyHealthBucket"][];
+      days?: number;
+      install_id?: string;
+      observed_seconds?: number;
+      uptime_percent?: number;
     };
     "service.InstallPermissionsRoleStatus": {
       app_config_id?: string;
@@ -8003,6 +8157,16 @@ export interface components {
     };
     "service.InstallPhoneHomeRequest": {
       [key: string]: unknown;
+    };
+    "service.InstallsHealthResponse": {
+      all_healthy?: boolean;
+      degraded?: number;
+      healthy?: number;
+      installs?: components["schemas"]["service.InstallHealthSummary"][];
+      total?: number;
+      unhealthy?: number;
+      unknown?: number;
+      unset?: number;
     };
     "service.KubernetesSyncTarget": {
       key: string;
@@ -8115,6 +8279,16 @@ export interface components {
       directory: string;
       repo: string;
     };
+    "service.PutInstallComponentHealthCheckRequest": {
+      details?: Record<string, never>;
+      message?: string;
+      /**
+       * @description StaleAfter is how long this report stays trustworthy, e.g. "30m"; past
+       * it the check reads as unknown. Defaults to 5m — set higher for slower pushers.
+       */
+      stale_after?: string;
+      status: string;
+    };
     "service.Readme": {
       original?: string;
       readme?: string;
@@ -8143,6 +8317,9 @@ export interface components {
       plan_only?: boolean;
       role?: string;
       skip_components?: boolean;
+    };
+    "service.ResetInstallHealthBaselineResponse": {
+      baseline_at?: string;
     };
     "service.RetryWorkflowRequest": {
       /** @description Retry indicates whether to retry the current step or not */
@@ -8439,6 +8616,14 @@ export interface components {
       client_id?: string;
       registry_url?: string;
       tenant_id?: string;
+    };
+    "service.dailyHealthBucket": {
+      date?: string;
+      degraded_seconds?: number;
+      health?: string;
+      observed_seconds?: number;
+      unhealthy_seconds?: number;
+      unknown_seconds?: number;
     };
     "service.gcpGARImageConfigRequest": {
       gcp_project_id?: string;
@@ -18540,6 +18725,58 @@ export interface operations {
     };
   };
   /**
+   * fleet health summary
+   * @description Returns the health rollup for every install the caller can see, optionally narrowed by app and by an install label selector. This is the primitive a canary or bake-period rollout polls to decide whether to continue: all_healthy is only true when every counted install is healthy, and installs whose health has never been evaluated are counted separately in unset rather than treated as a pass. Requires the component-health feature.
+   */
+  GetInstallsHealth: {
+    parameters: {
+      query?: {
+        /** @description filter by app ID */
+        app_id?: string;
+        /** @description label filter (key:value,key:value) */
+        labels?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallsHealthResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get distinct label key:value pairs across all installs for an org
    * @description Returns all distinct label key:value pairs for installs in the current org.
    */
@@ -20862,6 +21099,226 @@ export interface operations {
     };
   };
   /**
+   * list custom component health checks
+   * @description Returns the latest reported state of every custom health check for the component (provider "custom"), keyed by check name. Requires the component-health feature.
+   */
+  GetInstallComponentHealthChecks: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallComponentResourceState"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * report a custom component health check
+   * @description Lets an external system (a vendor's CI, a Datadog monitor webhook, a custom action) report a named health signal for a component. The report is written as a resource observation with provider "custom", so it flows through the same live explorer, evaluator, alerting, and timeline as runner-reported resources. Requires the component-health feature.
+   */
+  PutInstallComponentHealthCheck: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+        /** @description check name */
+        check_name: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.PutInstallComponentHealthCheckRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallComponentResourceState"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * component health incident bundle
+   * @description Returns the most recent degraded/unhealthy transition for the component (whether or not it has since recovered) along with its diagnosis, correlated deploy, and the component's currently non-healthy resources. Returns a null body when there's no incident in the retained history. Requires the component-health feature.
+   */
+  GetInstallComponentHealthIncident: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ComponentHealthIncidentBundle"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * component health timeline
+   * @description Returns a component's health history over a window: recorded verdict transitions (newest first), daily worst-verdict buckets covering every day in the window, and an uptime percentage that excludes unknown time from both the numerator and denominator. Requires the component-health feature.
+   */
+  GetInstallComponentHealthTimeline: {
+    parameters: {
+      query?: {
+        /** @description size of the window in days, clamped to 1-90 */
+        days?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallComponentHealthTimelineResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get an install component outputs
    * @description Return the latest outputs for a component.
    *
@@ -21105,6 +21562,60 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallConfigVersion"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get the diff for an install config version
+   * @description Returns the config diff for a specific install config version.
+   */
+  GetInstallConfigVersionDiff: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description config version ID */
+        version_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Bad Request */
@@ -21950,6 +22461,110 @@ export interface operations {
       500: {
         content: {
           "application/octet-stream": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * reset the install's health window
+   * @description Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime. Requires the component-health feature.
+   */
+  ResetInstallHealthBaseline: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ResetInstallHealthBaselineResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * install health timeline
+   * @description Returns the install's health history aggregated across its components: uptime_percent and observed_seconds are the worst component's, daily[].health is the worst verdict across components for that day, and components lists each component's own current health and uptime. Requires the component-health feature.
+   */
+  GetInstallHealthTimeline: {
+    parameters: {
+      query?: {
+        /** @description size of the window in days, clamped to 1-90 */
+        days?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.InstallHealthTimelineResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };

@@ -54,6 +54,9 @@ type AppInstall struct {
 	// run in, and what it was observed running in. See the type for the trust model.
 	CloudPlatformMetadata any `json:"cloud_platform_metadata,omitempty"`
 
+	// component health statuses
+	ComponentHealthStatuses map[string]string `json:"component_health_statuses,omitempty"`
+
 	// component statuses
 	ComponentStatuses map[string]string `json:"component_statuses,omitempty"`
 
@@ -62,6 +65,15 @@ type AppInstall struct {
 
 	// composite component status description
 	CompositeComponentStatusDescription string `json:"composite_component_status_description,omitempty"`
+
+	// CompositeHealthStatus is the live-health rollup of the install's
+	// components — a parallel axis to CompositeComponentStatus (deploy
+	// lifecycle), never merged with it. Empty until the component-health
+	// evaluator has produced verdicts.
+	CompositeHealthStatus string `json:"composite_health_status,omitempty"`
+
+	// composite health status description
+	CompositeHealthStatusDescription string `json:"composite_health_status_description,omitempty"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`

@@ -580,6 +580,12 @@ type ClientService interface {
 
 	GetInstallComponentDeploys(params *GetInstallComponentDeploysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentDeploysOK, error)
 
+	GetInstallComponentHealthChecks(params *GetInstallComponentHealthChecksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentHealthChecksOK, error)
+
+	GetInstallComponentHealthIncident(params *GetInstallComponentHealthIncidentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentHealthIncidentOK, error)
+
+	GetInstallComponentHealthTimeline(params *GetInstallComponentHealthTimelineParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentHealthTimelineOK, error)
+
 	GetInstallComponentLatestDeploy(params *GetInstallComponentLatestDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentLatestDeployOK, error)
 
 	GetInstallComponentOutputs(params *GetInstallComponentOutputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentOutputsOK, error)
@@ -589,6 +595,8 @@ type ClientService interface {
 	GetInstallComponentsDeploys(params *GetInstallComponentsDeploysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentsDeploysOK, error)
 
 	GetInstallConfigSyncs(params *GetInstallConfigSyncsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallConfigSyncsOK, error)
+
+	GetInstallConfigVersionDiff(params *GetInstallConfigVersionDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallConfigVersionDiffOK, error)
 
 	GetInstallConfigVersions(params *GetInstallConfigVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallConfigVersionsOK, error)
 
@@ -603,6 +611,8 @@ type ClientService interface {
 	GetInstallGroupRun(params *GetInstallGroupRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallGroupRunOK, error)
 
 	GetInstallGroupRuns(params *GetInstallGroupRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallGroupRunsOK, error)
+
+	GetInstallHealthTimeline(params *GetInstallHealthTimelineParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallHealthTimelineOK, error)
 
 	GetInstallInputs(params *GetInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallInputsOK, error)
 
@@ -651,6 +661,8 @@ type ClientService interface {
 	GetInstallWorkflowStepApproval(params *GetInstallWorkflowStepApprovalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallWorkflowStepApprovalOK, error)
 
 	GetInstallWorkflowSteps(params *GetInstallWorkflowStepsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallWorkflowStepsOK, error)
+
+	GetInstallsHealth(params *GetInstallsHealthParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallsHealthOK, error)
 
 	GetLatestAppBreakGlassConfig(params *GetLatestAppBreakGlassConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLatestAppBreakGlassConfigOK, error)
 
@@ -848,6 +860,8 @@ type ClientService interface {
 
 	PruneTokens(params *PruneTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PruneTokensOK, error)
 
+	PutInstallComponentHealthCheck(params *PutInstallComponentHealthCheckParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutInstallComponentHealthCheckOK, error)
+
 	RemoveAppActionLabels(params *RemoveAppActionLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveAppActionLabelsOK, error)
 
 	RemoveAppComponentLabels(params *RemoveAppComponentLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveAppComponentLabelsOK, error)
@@ -863,6 +877,8 @@ type ClientService interface {
 	ReprovisionInstallSandbox(params *ReprovisionInstallSandboxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReprovisionInstallSandboxCreated, error)
 
 	ResendOrgInvite(params *ResendOrgInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResendOrgInviteOK, error)
+
+	ResetInstallHealthBaseline(params *ResetInstallHealthBaselineParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetInstallHealthBaselineOK, error)
 
 	ResetUserJourney(params *ResetUserJourneyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetUserJourneyOK, error)
 
@@ -889,6 +905,8 @@ type ClientService interface {
 	SlackOAuthCallback(params *SlackOAuthCallbackParams, opts ...ClientOption) error
 
 	SlackSlashCommand(params *SlackSlashCommandParams, opts ...ClientOption) (*SlackSlashCommandOK, error)
+
+	SyncInstallConfig(params *SyncInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncInstallConfigAccepted, error)
 
 	SyncSecrets(params *SyncSecretsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncSecretsCreated, error)
 
@@ -11817,6 +11835,144 @@ func (a *Client) GetInstallComponentDeploys(params *GetInstallComponentDeploysPa
 }
 
 /*
+GetInstallComponentHealthChecks lists custom component health checks
+
+Returns the latest reported state of every custom health check for the component (provider "custom"), keyed by check name. Requires the component-health feature.
+*/
+func (a *Client) GetInstallComponentHealthChecks(params *GetInstallComponentHealthChecksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentHealthChecksOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallComponentHealthChecksParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallComponentHealthChecks",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/components/{component_id}/health/checks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallComponentHealthChecksReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallComponentHealthChecksOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallComponentHealthChecks: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallComponentHealthIncident components health incident bundle
+
+Returns the most recent degraded/unhealthy transition for the component (whether or not it has since recovered) along with its diagnosis, correlated deploy, and the component's currently non-healthy resources. Returns a null body when there's no incident in the retained history. Requires the component-health feature.
+*/
+func (a *Client) GetInstallComponentHealthIncident(params *GetInstallComponentHealthIncidentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentHealthIncidentOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallComponentHealthIncidentParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallComponentHealthIncident",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/components/{component_id}/health/incident",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallComponentHealthIncidentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallComponentHealthIncidentOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallComponentHealthIncident: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallComponentHealthTimeline components health timeline
+
+Returns a component's health history over a window: recorded verdict transitions (newest first), daily worst-verdict buckets covering every day in the window, and an uptime percentage that excludes unknown time from both the numerator and denominator. Requires the component-health feature.
+*/
+func (a *Client) GetInstallComponentHealthTimeline(params *GetInstallComponentHealthTimelineParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponentHealthTimelineOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallComponentHealthTimelineParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallComponentHealthTimeline",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/components/{component_id}/health/timeline",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallComponentHealthTimelineReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallComponentHealthTimelineOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallComponentHealthTimeline: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallComponentLatestDeploy gets the latest deploy for an install component
 
 Returns the most recent deployment for an install component.
@@ -12045,6 +12201,52 @@ func (a *Client) GetInstallConfigSyncs(params *GetInstallConfigSyncsParams, auth
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallConfigSyncs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallConfigVersionDiff gets the diff for an install config version
+
+Returns the config diff for a specific install config version.
+*/
+func (a *Client) GetInstallConfigVersionDiff(params *GetInstallConfigVersionDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallConfigVersionDiffOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallConfigVersionDiffParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallConfigVersionDiff",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/config-versions/{version_id}/diff",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallConfigVersionDiffReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallConfigVersionDiffOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallConfigVersionDiff: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -12369,6 +12571,52 @@ func (a *Client) GetInstallGroupRuns(params *GetInstallGroupRunsParams, authInfo
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallGroupRuns: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallHealthTimeline installs health timeline
+
+Returns the install's health history aggregated across its components: uptime_percent and observed_seconds are the worst component's, daily[].health is the worst verdict across components for that day, and components lists each component's own current health and uptime. Requires the component-health feature.
+*/
+func (a *Client) GetInstallHealthTimeline(params *GetInstallHealthTimelineParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallHealthTimelineOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallHealthTimelineParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallHealthTimeline",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/health/timeline",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallHealthTimelineReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallHealthTimelineOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallHealthTimeline: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -13467,6 +13715,52 @@ func (a *Client) GetInstallWorkflowSteps(params *GetInstallWorkflowStepsParams, 
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallWorkflowSteps: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallsHealth fleets health summary
+
+Returns the health rollup for every install the caller can see, optionally narrowed by app and by an install label selector. This is the primitive a canary or bake-period rollout polls to decide whether to continue: all_healthy is only true when every counted install is healthy, and installs whose health has never been evaluated are counted separately in unset rather than treated as a pass. Requires the component-health feature.
+*/
+func (a *Client) GetInstallsHealth(params *GetInstallsHealthParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallsHealthOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallsHealthParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallsHealth",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/health",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallsHealthReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallsHealthOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallsHealth: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -17971,6 +18265,52 @@ func (a *Client) PruneTokens(params *PruneTokensParams, authInfo runtime.ClientA
 }
 
 /*
+PutInstallComponentHealthCheck reports a custom component health check
+
+Lets an external system (a vendor's CI, a Datadog monitor webhook, a custom action) report a named health signal for a component. The report is written as a resource observation with provider "custom", so it flows through the same live explorer, evaluator, alerting, and timeline as runner-reported resources. Requires the component-health feature.
+*/
+func (a *Client) PutInstallComponentHealthCheck(params *PutInstallComponentHealthCheckParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutInstallComponentHealthCheckOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewPutInstallComponentHealthCheckParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "PutInstallComponentHealthCheck",
+		Method:             "PUT",
+		PathPattern:        "/v1/installs/{install_id}/components/{component_id}/health/checks/{check_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PutInstallComponentHealthCheckReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*PutInstallComponentHealthCheckOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for PutInstallComponentHealthCheck: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 RemoveAppActionLabels removes labels from an action
 
 Remove the specified label keys from the action.
@@ -18337,6 +18677,52 @@ func (a *Client) ResendOrgInvite(params *ResendOrgInviteParams, authInfo runtime
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ResendOrgInvite: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ResetInstallHealthBaseline resets the install s health window
+
+Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime. Requires the component-health feature.
+*/
+func (a *Client) ResetInstallHealthBaseline(params *ResetInstallHealthBaselineParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetInstallHealthBaselineOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewResetInstallHealthBaselineParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ResetInstallHealthBaseline",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/health/baseline",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ResetInstallHealthBaselineReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ResetInstallHealthBaselineOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ResetInstallHealthBaseline: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -18918,6 +19304,52 @@ func (a *Client) SlackSlashCommand(params *SlackSlashCommandParams, opts ...Clie
 }
 
 /*
+SyncInstallConfig triggers install config sync for a single install
+
+Triggers a sync of this install's config from git.
+*/
+func (a *Client) SyncInstallConfig(params *SyncInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncInstallConfigAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewSyncInstallConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "SyncInstallConfig",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/sync-config",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &SyncInstallConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*SyncInstallConfigAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for SyncInstallConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 SyncSecrets syncs secrets install
 
 Execute the sync secrets workflow.
@@ -19150,7 +19582,7 @@ func (a *Client) TriggerAppBranchRun(params *TriggerAppBranchRunParams, authInfo
 /*
 TriggerInstallConfigSync triggers install config sync from git
 
-Triggers a sync of install configs from the configured installs VCS repo. Optionally specify install_name to sync a single install.
+Triggers a sync of install configs from the installs.toml VCS repo configured in the app config. Optionally specify install_name to sync a single install.
 */
 func (a *Client) TriggerInstallConfigSync(params *TriggerInstallConfigSyncParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TriggerInstallConfigSyncAccepted, error) {
 	// NOTE: parameters are not validated before sending

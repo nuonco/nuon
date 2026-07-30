@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -45,6 +46,18 @@ type ServiceCreateKubernetesManifestComponentConfigRequest struct {
 
 	// drift schedule
 	DriftSchedule string `json:"drift_schedule,omitempty"`
+
+	// health block deploy
+	HealthBlockDeploy *bool `json:"health_block_deploy,omitempty"`
+
+	// health enabled
+	HealthEnabled *bool `json:"health_enabled,omitempty"`
+
+	// health probes
+	HealthProbes []*ServiceHealthProbeRequest `json:"health_probes"`
+
+	// Duration string for the health stabilization window (e.g., "3m")
+	HealthStabilizationWindow string `json:"health_stabilization_window,omitempty"`
 
 	// kubernetes context
 	KubernetesContext string `json:"kubernetes_context,omitempty"`
@@ -87,6 +100,10 @@ func (m *ServiceCreateKubernetesManifestComponentConfigRequest) Validate(formats
 		res = append(res, err)
 	}
 
+	if err := m.validateHealthProbes(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateKustomize(formats); err != nil {
 		res = append(res, err)
 	}
@@ -119,6 +136,36 @@ func (m *ServiceCreateKubernetesManifestComponentConfigRequest) validateConnecte
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateKubernetesManifestComponentConfigRequest) validateHealthProbes(formats strfmt.Registry) error {
+	if swag.IsZero(m.HealthProbes) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.HealthProbes); i++ {
+		if swag.IsZero(m.HealthProbes[i]) { // not required
+			continue
+		}
+
+		if m.HealthProbes[i] != nil {
+			if err := m.HealthProbes[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("health_probes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("health_probes" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil
@@ -163,6 +210,10 @@ func (m *ServiceCreateKubernetesManifestComponentConfigRequest) ContextValidate(
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateHealthProbes(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateKustomize(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -197,6 +248,35 @@ func (m *ServiceCreateKubernetesManifestComponentConfigRequest) contextValidateC
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateKubernetesManifestComponentConfigRequest) contextValidateHealthProbes(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.HealthProbes); i++ {
+
+		if m.HealthProbes[i] != nil {
+
+			if swag.IsZero(m.HealthProbes[i]) { // not required
+				return nil
+			}
+
+			if err := m.HealthProbes[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("health_probes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("health_probes" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

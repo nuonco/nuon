@@ -7,7 +7,10 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
+	"strconv"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -29,23 +32,101 @@ type ServiceRunnerInstallComponent struct {
 	// helm namespace
 	HelmNamespace string `json:"helm_namespace,omitempty"`
 
-	// HelmReleaseName and HelmNamespace let the component-health engine map
-	// helm-managed cluster resources (via the meta.helm.sh/release-name and
-	// meta.helm.sh/release-namespace annotations) back to this component. Set
-	// only for helm components.
+	// HelmReleaseName and HelmNamespace map helm-managed cluster resources (via
+	// the meta.helm.sh/release-name annotations) back to this component; helm-only.
 	HelmReleaseName string `json:"helm_release_name,omitempty"`
 
 	// install component id
 	InstallComponentID string `json:"install_component_id,omitempty"`
+
+	// probes
+	Probes []*ServiceRunnerComponentProbe `json:"probes"`
 }
 
 // Validate validates this service runner install component
 func (m *ServiceRunnerInstallComponent) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateProbes(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this service runner install component based on context it is used
+func (m *ServiceRunnerInstallComponent) validateProbes(formats strfmt.Registry) error {
+	if swag.IsZero(m.Probes) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Probes); i++ {
+		if swag.IsZero(m.Probes[i]) { // not required
+			continue
+		}
+
+		if m.Probes[i] != nil {
+			if err := m.Probes[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("probes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("probes" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this service runner install component based on the context it is used
 func (m *ServiceRunnerInstallComponent) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateProbes(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceRunnerInstallComponent) contextValidateProbes(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Probes); i++ {
+
+		if m.Probes[i] != nil {
+
+			if swag.IsZero(m.Probes[i]) { // not required
+				return nil
+			}
+
+			if err := m.Probes[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("probes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("probes" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
