@@ -1,6 +1,7 @@
 package service
 
 import (
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,7 @@ import (
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
@@ -35,6 +37,7 @@ type Params struct {
 	L                    *zap.Logger
 	AccountClient        *account.Client
 	Helpers              *helpers.Helpers
+	InstallsHelpers      *installshelpers.Helpers
 	EndpointAudit        *apiPkg.EndpointAudit
 	RunnerHeartbeatCache *RunnerHeartbeatCache
 	Heartbeater          *heartbeater.Heartbeater
@@ -56,6 +59,7 @@ type service struct {
 	cfg                  *internal.Config
 	acctClient           *account.Client
 	helpers              *helpers.Helpers
+	installsHelpers      *installshelpers.Helpers
 	runnerHeartbeatCache *RunnerHeartbeatCache
 	heartbeater          *heartbeater.Heartbeater
 	featuresClient       *features.Features
@@ -70,6 +74,12 @@ type service struct {
 	// trades a 5min staleness window for one fewer Postgres round-trip
 	// per OTLP batch.
 	logStreamCache *expirable.LRU[string, *app.LogStream]
+
+	// ensuredHealthQueues memoizes which installs this process has reconciled
+	// queues for from the component-health ingest path, so installs that
+	// predate the health evaluator's queue get it lazily instead of requiring
+	// an admin queue migration.
+	ensuredHealthQueues sync.Map
 }
 
 const (
@@ -383,6 +393,7 @@ func New(params Params) *service {
 		mw:                   params.MW,
 		acctClient:           params.AccountClient,
 		helpers:              params.Helpers,
+		installsHelpers:      params.InstallsHelpers,
 		runnerHeartbeatCache: params.RunnerHeartbeatCache,
 		heartbeater:          params.Heartbeater,
 		featuresClient:       params.FeaturesClient,

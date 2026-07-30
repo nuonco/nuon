@@ -49,6 +49,8 @@ type HelmChartComponentConfig struct {
 
 	DriftSchedule *string `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty" features:"template" nuonhash:"omitempty"`
 
+	Health *ComponentHealthConfig `mapstructure:"health,omitempty" toml:"health,omitempty" nuonhash:"omitempty"`
+
 	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 
@@ -100,6 +102,8 @@ func (a HelmChartComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("drift_schedule").Short("drift detection schedule").
 		Long("Cron expression for periodic drift detection. If not set, drift detection is disabled").
 		Example("0 2 * * *").
+		Field("health").Short("component health configuration").
+		Long("Live health checking configuration for this component. Health checking is enabled by default; use this block to tune the stabilization window or make deploys block on health").
 		Field("build_timeout").Short("build operation timeout").
 		Long("Duration string for build operations (e.g., \"30m\", \"1h\"). Default: 5m. Max: 1h").
 		Default("5m").
@@ -169,5 +173,5 @@ func (h *HelmChartComponentConfig) Parse() error {
 }
 
 func (t *HelmChartComponentConfig) Validate() error {
-	return nil
+	return t.Health.Validate()
 }

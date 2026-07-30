@@ -16,6 +16,7 @@ import { InstallGroupStepDetails } from '../install-group-details'
 import { SandboxRunStepDetails } from '../sandbox-run-details/SandboxRunStepDetails'
 import { StackStepDetails } from '../stack-details/StackStepDetails'
 import { RunnerStepDetails } from '../RunnerStepDetails'
+import { VerifyHealthStepDetails } from '../verify-health-details'
 import { SyncSecretsStepDetails } from '../SyncSecretsStepDetails'
 import { StepDetailPanel } from './StepDetailPanel'
 
@@ -40,6 +41,7 @@ export function getStepPanelDetails(step: TWorkflowStep): ReactNode {
   if (step.step_target_type === 'install_sandbox_runs') return <SandboxRunStepDetails />
   if (step.step_target_type === 'install_stack_versions') return <StackStepDetails />
   if (step.step_target_type === 'runners') return <RunnerStepDetails />
+  if (step.step_target_type === 'install_components') return <VerifyHealthStepDetails />
   if (step.step_target_type === 'install_workflow_steps') return <SyncSecretsStepDetails />
   if (step.step_target_type === 'app_branches') return <InstallGroupStepDetails />
   // step_target_type only lands once the runner picks up the step;

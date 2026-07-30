@@ -1,10 +1,13 @@
 package app
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
@@ -69,6 +72,10 @@ type ComponentConfigConnection struct {
 	AutoApproveOnPoliciesPassing      *bool                              `json:"auto_approve_on_policies_passing,omitempty" gorm:"default:null" temporaljson:"auto_approve_on_policies_passing,omitzero,omitempty"`
 	Toggleable                        *bool                              `json:"toggleable,omitempty" gorm:"default:null" temporaljson:"toggleable,omitzero,omitempty"`
 	DefaultEnabled                    *bool                              `json:"default_enabled,omitempty" gorm:"default:null" temporaljson:"default_enabled,omitzero,omitempty"`
+	HealthEnabled                     *bool                              `json:"health_enabled,omitempty" gorm:"default:null" temporaljson:"health_enabled,omitzero,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
+	HealthStabilizationWindow         string                             `json:"health_stabilization_window,omitempty" gorm:"default:null" temporaljson:"health_stabilization_window,omitzero,omitempty"` // Duration string for how long health must hold after a deploy applies (e.g., "3m"). Max 1h.
+	HealthBlockDeploy                 *bool                              `json:"health_block_deploy,omitempty" gorm:"default:null" temporaljson:"health_block_deploy,omitzero,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
+	HealthProbes                      ComponentHealthProbes              `json:"health_probes,omitempty" gorm:"type:jsonb" temporaljson:"health_probes,omitzero,omitempty"`
 
 	// Operation roles map: operation type -> role name
 	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
@@ -89,6 +96,47 @@ type ComponentConfigConnection struct {
 	Version          int        `json:"version,omitzero" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
 	AppConfigVersion int        `json:"app_config_version,omitzero" gorm:"->;-:migration" temporaljson:"app_config_version,omitzero,omitempty"`
 	Refs             []refs.Ref `gorm:"-"`
+}
+
+// ComponentHealthProbe is one synthetic health check the runner executes for
+// the component. Command is an argv array, never a shell string.
+type ComponentHealthProbe struct {
+	Type    string   `json:"type,omitempty"`
+	Name    string   `json:"name,omitempty"`
+	URL     string   `json:"url,omitempty"`
+	Command []string `json:"command,omitempty"`
+}
+
+type ComponentHealthProbes []ComponentHealthProbe
+
+// Scan implements the database/sql.Scanner interface.
+func (p *ComponentHealthProbes) Scan(v interface{}) error {
+	switch v := v.(type) {
+	case nil:
+		*p = nil
+		return nil
+	case []byte:
+		if len(v) == 0 {
+			*p = nil
+			return nil
+		}
+		if err := json.Unmarshal(v, p); err != nil {
+			return errors.Wrap(err, "unable to scan component health probes")
+		}
+	}
+	return nil
+}
+
+// Value implements the driver.Valuer interface.
+func (p ComponentHealthProbes) Value() (driver.Value, error) {
+	if p == nil {
+		return nil, nil
+	}
+	return json.Marshal(p)
+}
+
+func (ComponentHealthProbes) GormDataType() string {
+	return "jsonb"
 }
 
 func (c *ComponentConfigConnection) UseView() bool {
@@ -256,6 +304,29 @@ func (c *ComponentConfigConnection) GetAutoApproveOnPoliciesPassing() bool {
 		return *c.AutoApproveOnPoliciesPassing
 	}
 	return false // default to not auto-approving — opt-in
+}
+
+func (c *ComponentConfigConnection) HealthCheckEnabled() bool {
+	if c.HealthEnabled != nil {
+		return *c.HealthEnabled
+	}
+	return true
+}
+
+func (c *ComponentConfigConnection) HealthStabilization() time.Duration {
+	if c.HealthStabilizationWindow != "" {
+		if d, err := time.ParseDuration(c.HealthStabilizationWindow); err == nil {
+			return d
+		}
+	}
+	return DefaultHealthStabilizationWindow
+}
+
+func (c *ComponentConfigConnection) HealthBlocksDeploy() bool {
+	if c.HealthBlockDeploy != nil {
+		return *c.HealthBlockDeploy
+	}
+	return false
 }
 
 func (c *ComponentConfigConnection) IsToggleable() bool {

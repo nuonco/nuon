@@ -20,9 +20,13 @@ const (
 	InstallComponentResourceHealthUnknown     InstallComponentResourceHealth = "unknown"
 )
 
-// InstallComponentResourceState is a ClickHouse observation row: one per resource
-// the runner's component-health watch engine reports for an install component. The
-// latest-state view collapses to the most recent observation per resource identity.
+const (
+	InstallComponentResourceSourceComponent = "component"
+	InstallComponentResourceSourceSandbox   = "sandbox"
+)
+
+// InstallComponentResourceState is a ClickHouse observation row: one per
+// resource per install component; latest-state view keeps the newest per identity.
 type InstallComponentResourceState struct {
 	OrgID              string `gorm:"column:org_id;type:LowCardinality(String)"      json:"org_id"`
 	InstallID          string `gorm:"column:install_id"                              json:"install_id"`
@@ -30,10 +34,8 @@ type InstallComponentResourceState struct {
 	ComponentID        string `gorm:"column:component_id;default:''"                 json:"component_id"`
 	RunnerID           string `gorm:"column:runner_id;default:''"                    json:"runner_id"`
 
-	// Source classifies the resource owner: "component" (an app component,
-	// keyed by install_component_id) or "sandbox" (install base infra, keyed by
-	// owner_name = helm release name). OwnerName is the display group for
-	// sandbox resources.
+	// Source classifies the resource owner: "component" (keyed by
+	// install_component_id) or "sandbox" (keyed by owner_name = helm release name).
 	Source    string `gorm:"column:source;type:LowCardinality(String);default:'component'" json:"source"`
 	OwnerName string `gorm:"column:owner_name;default:''"                              json:"owner_name"`
 
@@ -49,6 +51,14 @@ type InstallComponentResourceState struct {
 	Details      string `gorm:"column:details;default:''"                      json:"details"`
 
 	ObservedAt time.Time `gorm:"column:observed_at;type:DateTime64(9);codec:Delta(8),ZSTD(1)" json:"observed_at"`
+
+	// StaleAfterSeconds is how long this observation stays trustworthy (0 =
+	// default); a pushed check sets its own, since it knows its cadence best.
+	StaleAfterSeconds uint32 `gorm:"column:stale_after_seconds;default:0" json:"stale_after_seconds,omitempty"`
+
+	// RemovedFromConfig is set at read time when a probe's name is no longer in
+	// the component's config — still shown, but labelled so it can't pass as live.
+	RemovedFromConfig bool `gorm:"-" json:"removed_from_config,omitempty"`
 }
 
 func (InstallComponentResourceState) TableName() string {

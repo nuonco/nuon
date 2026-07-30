@@ -46,6 +46,11 @@ const (
 	cloudEventTypeAppConfigSynced           = "com.nuon.app.config_synced.v1"
 	cloudEventTypeUpdateAppConfig           = "com.nuon.install.app_config_updated.v1"
 	cloudEventTypeRunnerUnhealthy           = "com.nuon.runner.unhealthy.v1"
+	// Component health emits one CloudEvent type per level; `transition`
+	// distinguishes going bad from recovering, the way the approval event uses
+	// requested / approved / rejected.
+	cloudEventTypeComponentHealth = "com.nuon.component.health.v1"
+	cloudEventTypeInstallHealth   = "com.nuon.install.health.v1"
 
 	kindWorkflow             = "workflow"
 	kindWorkflowStep         = "workflow_step"
@@ -56,6 +61,8 @@ const (
 	kindAppConfigSynced      = "app_config_synced"
 	kindUpdateAppConfig      = "app_config_updated"
 	kindRunnerUnhealthy      = "runner_unhealthy"
+	kindComponentHealth      = "component_health"
+	kindInstallHealth        = "install_health"
 )
 
 // Status values surfaced to webhook consumers in the *.lifecycle events.
@@ -86,6 +93,12 @@ const (
 	// skip, or cancel. Non-terminal: the step's lifecycle event fires later
 	// once the workflow unblocks.
 	transitionAwaitingRetry = "awaiting_retry"
+
+	// Health transitions. The precise verdict (degraded / unhealthy /
+	// healthy) travels in data.metadata.health; the transition says which
+	// direction the debounced crossing went. The bad direction reuses
+	// transitionUnhealthy above, shared with the runner-unhealthy event.
+	transitionRecovered = "recovered"
 )
 
 // signalTypeExecuteWorkflow matches the SignalType produced by
@@ -121,6 +134,15 @@ const (
 	signalTypeAppConfigSynced signal.SignalType = "app-config-synced"
 	signalTypeUpdateAppConfig signal.SignalType = "update-app-config"
 	signalTypeRunnerUnhealthy signal.SignalType = "runner-unhealthy"
+
+	// Component health carriers, mirroring the componenthealthnotify
+	// SignalTypes. Emitted by the component-health evaluator on a debounced
+	// verdict crossing, outside any workflow — so unlike every signal above
+	// they carry no WorkflowID and must be handled before buildEventData's
+	// workflow-id guard.
+	signalTypeComponentUnhealthy signal.SignalType = "component-unhealthy"
+	signalTypeComponentRecovered signal.SignalType = "component-recovered"
+	signalTypeInstallDegraded    signal.SignalType = "install-degraded"
 )
 
 // approvalPlanExcerptMaxBytes caps the size of the plan excerpt embedded in
@@ -266,6 +288,9 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 		signalTypeInputsUpdated,
 		signalTypeAppConfigSynced,
 		signalTypeUpdateAppConfig,
+		signalTypeComponentUnhealthy,
+		signalTypeComponentRecovered,
+		signalTypeInstallDegraded,
 		signalTypeRunnerUnhealthy:
 		return true
 	default:
@@ -303,10 +328,20 @@ func isApprovalSignalType(t signal.SignalType) bool {
 
 func isNotificationOnlySignalType(t signal.SignalType) bool {
 	switch t {
-	case signalTypeDriftDetected, signalTypeStackRun, signalTypeRoleChange, signalTypeInputsUpdated, signalTypeAppConfigSynced, signalTypeUpdateAppConfig, signalTypeRunnerUnhealthy:
+	case signalTypeDriftDetected, signalTypeStackRun, signalTypeRoleChange, signalTypeInputsUpdated, signalTypeAppConfigSynced, signalTypeUpdateAppConfig,
+		signalTypeRunnerUnhealthy,
+		signalTypeComponentUnhealthy, signalTypeComponentRecovered, signalTypeInstallDegraded:
 		return true
 	}
 	return false
+}
+
+// isComponentHealthSignalType reports whether the signal is one of the
+// component-health notification carriers.
+func isComponentHealthSignalType(t signal.SignalType) bool {
+	return t == signalTypeComponentUnhealthy ||
+		t == signalTypeComponentRecovered ||
+		t == signalTypeInstallDegraded
 }
 
 // suppressesStartedEvent reports whether a signal type's synthetic "started"
@@ -536,6 +571,10 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		ceType = cloudEventTypeUpdateAppConfig
 	case kindRunnerUnhealthy:
 		ceType = cloudEventTypeRunnerUnhealthy
+	case kindComponentHealth:
+		ceType = cloudEventTypeComponentHealth
+	case kindInstallHealth:
+		ceType = cloudEventTypeInstallHealth
 	}
 	// Awaiting-retry shares kind=workflow_step with the normal step
 	// lifecycle but gets its own CloudEvent type so consumers can route the
@@ -637,7 +676,23 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 // buildEventData translates an internal SignalPhaseEvent into the public
 // workflow / workflow_step / workflow_step_approval payload. Returns ok=false
 // when there is nothing to emit (e.g. missing identifiers).
+// buildEventData projects a signal phase event into the public payload shape,
+// then backfills the org display name for every builder path. The name is only
+// stamped on the event by signals that originate inside a workflow; carrier
+// signals (component health, runner unhealthy) have none, and a notification
+// that identifies the org by a truncated id reads as an internal log line.
 func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
+	data, ok := h.buildEventDataForSignal(ctx, event, outcome)
+	if !ok {
+		return data, false
+	}
+	if data.OrgName == "" {
+		data.OrgName = h.lookupOrgName(ctx, event.OrgID)
+	}
+	return data, true
+}
+
+func (h *WebhookSignalLifecycleHook) buildEventDataForSignal(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
 	switch event.SignalType {
 	case signalTypeStackRun, signalTypeRoleChange, signalTypeInputsUpdated:
 		return h.buildStackEventData(ctx, event, outcome)
@@ -647,6 +702,8 @@ func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event s
 		return h.buildUpdateAppConfigEventData(ctx, event, outcome)
 	case signalTypeRunnerUnhealthy:
 		return h.buildRunnerUnhealthyEventData(event, outcome)
+	case signalTypeComponentUnhealthy, signalTypeComponentRecovered, signalTypeInstallDegraded:
+		return h.buildComponentHealthEventData(event, outcome)
 	}
 
 	if event.WorkflowID == "" {
@@ -698,10 +755,6 @@ func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event s
 	data.Workflow.CreatedByEmail = creator.CreatedByEmail
 	data.Workflow.CreatedAt = creator.CreatedAt
 	data.Workflow.RunbookName = creator.RunbookName
-
-	if data.OrgName == "" {
-		data.OrgName = h.lookupOrgName(ctx, event.OrgID)
-	}
 
 	if outcome != nil {
 		data.Outcome = h.buildOutcome(event, outcome)
@@ -826,6 +879,65 @@ func (h *WebhookSignalLifecycleHook) buildUpdateAppConfigEventData(_ context.Con
 		data.Outcome = h.buildOutcome(event, outcome)
 	}
 	return data, true
+}
+
+// buildComponentHealthEventData projects a component-health carrier into the
+// public payload. There is no workflow or step behind these events — the
+// component and install identity plus the render fields (health,
+// previous_health, message, failing resource) arrive on the signal's lifecycle
+// context and pass straight through as metadata.
+//
+// Only the carrier's successful after-phase produces an event: a failed
+// carrier means the notification plumbing broke, which is not a health
+// transition subscribers should see.
+func (h *WebhookSignalLifecycleHook) buildComponentHealthEventData(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
+	if outcome == nil || outcome.Status != signal.SignalStatusSuccess {
+		return lifecycleEventData{}, false
+	}
+
+	kind := kindComponentHealth
+	if event.SignalType == signalTypeInstallDegraded {
+		kind = kindInstallHealth
+	}
+
+	transition := transitionUnhealthy
+	if event.SignalType == signalTypeComponentRecovered {
+		transition = transitionRecovered
+	}
+	if event.SignalType == signalTypeInstallDegraded && !isBadHealthMetadata(event.Metadata) {
+		transition = transitionRecovered
+	}
+
+	data := lifecycleEventData{
+		Kind:       kind,
+		Transition: transition,
+		OrgID:      event.OrgID,
+		OrgName:    event.OrgName,
+		Workflow: workflowRef{
+			OwnerID:   event.OwnerID,
+			OwnerType: event.OwnerType,
+			OwnerName: event.OwnerName,
+		},
+		Metadata: event.Metadata,
+	}
+
+	// buildContextLinks derives the component deep link from a step's
+	// ComponentID. These events have no step, so pass a link-only stand-in —
+	// data.Step stays nil so the payload doesn't claim a step that never ran.
+	var linkStep *workflowStepRef
+	if event.ComponentID != nil && *event.ComponentID != "" {
+		linkStep = &workflowStepRef{ComponentID: *event.ComponentID}
+	}
+	data.Links = h.buildContextLinks(event, linkStep)
+
+	return data, true
+}
+
+// isBadHealthMetadata reports whether the carrier's health metadata describes
+// a problem state, used to label the install-level transition direction.
+func isBadHealthMetadata(metadata map[string]any) bool {
+	health, _ := metadata["health"].(string)
+	return health == "degraded" || health == "unhealthy"
 }
 
 func (h *WebhookSignalLifecycleHook) buildRunnerUnhealthyEventData(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {

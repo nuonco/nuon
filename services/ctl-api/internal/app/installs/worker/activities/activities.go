@@ -26,6 +26,7 @@ type Params struct {
 
 	V                 *validator.Validate
 	DB                *gorm.DB `name:"psql"`
+	CHDB              *gorm.DB `name:"ch"`
 	AppsHelpers       *appshelpers.Helpers
 	ComponentsHelpers *componentshelpers.Helpers
 	RunnersHelpers    *runnershelpers.Helpers
@@ -46,6 +47,7 @@ type Params struct {
 type Activities struct {
 	v                 *validator.Validate
 	db                *gorm.DB
+	chDB              *gorm.DB
 	cfg               *internal.Config
 	cfTemplates       *cloudformation.Templates
 	blobSvc           blobstore.Service
@@ -66,6 +68,7 @@ type Activities struct {
 func New(params Params) *Activities {
 	return &Activities{
 		db:                params.DB,
+		chDB:              params.CHDB,
 		v:                 params.V,
 		cfg:               params.Cfg,
 		cfTemplates:       params.CFTemplates,

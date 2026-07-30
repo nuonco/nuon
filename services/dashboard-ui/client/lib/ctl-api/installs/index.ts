@@ -1,6 +1,7 @@
 export * from './actions'
 export * from './runbooks'
 export * from './components'
+export * from './health'
 export * from './resources'
 export * from './sandbox'
 

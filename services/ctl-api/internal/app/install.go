@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -113,6 +114,7 @@ type Install struct {
 	SandboxStatus            InstallSandboxStatus `json:"sandbox_status,omitzero" gorm:"->;-:migration" swaggertype:"string" temporaljson:"sandbox_status,omitzero,omitempty"`
 	SandboxStatusDescription string               `json:"sandbox_status_description,omitzero" gorm:"-" swaggertype:"string" temporaljson:"sandbox_status_description,omitzero,omitempty"`
 	ComponentStatuses        pgtype.Hstore        `json:"component_statuses,omitzero" gorm:"type:hstore;->;-:migration" swaggertype:"object,string" temporaljson:"component_statuses,omitzero,omitempty"`
+	ComponentHealthStatuses  pgtype.Hstore        `json:"component_health_statuses,omitzero" gorm:"type:hstore;->;-:migration" swaggertype:"object,string" temporaljson:"component_health_statuses,omitzero,omitempty"`
 
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 
@@ -123,13 +125,20 @@ type Install struct {
 	CurrentInstallInputs                *InstallInputs         `json:"-" gorm:"-" temporaljson:"current_install_inputs,omitzero,omitempty"`
 	CompositeComponentStatus            InstallComponentStatus `json:"composite_component_status,omitzero" gorm:"-" swaggertype:"string" temporaljson:"composite_component_status,omitzero,omitempty"`
 	CompositeComponentStatusDescription string                 `json:"composite_component_status_description,omitzero" gorm:"-" swaggertype:"string" temporaljson:"composite_component_status_description,omitzero,omitempty"`
-	RunnerStatus                        RunnerStatus           `json:"runner_status,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_status,omitzero,omitempty"`
-	RunnerStatusDescription             string                 `json:"runner_status_description,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_status_description,omitzero,omitempty"`
-	RunnerID                            string                 `json:"runner_id,omitzero" gorm:"-" temporaljson:"runner_id,omitzero,omitempty"`
-	CloudPlatform                       CloudPlatform          `json:"cloud_platform,omitzero" gorm:"-" swaggertype:"string" temporaljson:"cloud_platform,omitzero,omitempty"`
-	RunnerType                          AppRunnerType          `json:"runner_type,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_type,omitzero,omitempty"`
-	DriftedObjects                      []DriftedObject        `json:"drifted_objects,omitzero" gorm:"-" temporaljson:"drifted_objects,omitzero,omitempty"`
-	Links                               map[string]any         `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
+
+	// CompositeHealthStatus is the live-health rollup of the install's
+	// components — a parallel axis to CompositeComponentStatus (deploy
+	// lifecycle), never merged with it. Empty until the component-health
+	// evaluator has produced verdicts.
+	CompositeHealthStatus            InstallComponentHealthStatus `json:"composite_health_status,omitzero" gorm:"-" swaggertype:"string" temporaljson:"composite_health_status,omitzero,omitempty"`
+	CompositeHealthStatusDescription string                       `json:"composite_health_status_description,omitzero" gorm:"-" swaggertype:"string" temporaljson:"composite_health_status_description,omitzero,omitempty"`
+	RunnerStatus                     RunnerStatus                 `json:"runner_status,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_status,omitzero,omitempty"`
+	RunnerStatusDescription          string                       `json:"runner_status_description,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_status_description,omitzero,omitempty"`
+	RunnerID                         string                       `json:"runner_id,omitzero" gorm:"-" temporaljson:"runner_id,omitzero,omitempty"`
+	CloudPlatform                    CloudPlatform                `json:"cloud_platform,omitzero" gorm:"-" swaggertype:"string" temporaljson:"cloud_platform,omitzero,omitempty"`
+	RunnerType                       AppRunnerType                `json:"runner_type,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_type,omitzero,omitempty"`
+	DriftedObjects                   []DriftedObject              `json:"drifted_objects,omitzero" gorm:"-" temporaljson:"drifted_objects,omitzero,omitempty"`
+	Links                            map[string]any               `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
 	// Expected* coalesce the target identifier with the observed one, so callers get
 	// the strongest identifier available without caring which is set.
@@ -146,14 +155,14 @@ func (i *Install) UseView() bool {
 }
 
 func (i *Install) ViewVersion() string {
-	return "v8"
+	return "v9"
 }
 
 func (i *Install) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name:          views.DefaultViewName(db, &Install{}, 8),
-			SQL:           viewsql.InstallsViewV8,
+			Name:          views.DefaultViewName(db, &Install{}, 9),
+			SQL:           viewsql.InstallsViewV9,
 			AlwaysReapply: true,
 		},
 		{
@@ -204,6 +213,8 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	// get the composite status of all the components
 	i.CompositeComponentStatus = compositeComponentStatus(i.ComponentStatuses)
 	i.CompositeComponentStatusDescription = compositeComponentStatusDescription(i.ComponentStatuses)
+
+	i.CompositeHealthStatus, i.CompositeHealthStatusDescription = compositeComponentHealthStatus(i.ComponentHealthStatuses)
 
 	// If sandbox mode not explicitly set on the install, inherit from org.
 	if !i.SandboxMode.Valid {
@@ -304,6 +315,60 @@ func compositeComponentStatusDescription(componentStatuses pgtype.Hstore) string
 
 	// if any components have not yet succeeded or failed
 	return "Waiting on components"
+}
+
+// compositeComponentHealthStatus rolls the per-component health axis up to a
+// single install-level verdict. Unset and not-applicable components carry no
+// health signal and are excluded; an install with no evaluated components has
+// no composite health (empty), so orgs without the feature surface nothing.
+func compositeComponentHealthStatus(componentHealthStatuses pgtype.Hstore) (InstallComponentHealthStatus, string) {
+	statuses := make([]InstallComponentHealthStatus, 0, len(componentHealthStatuses))
+	for _, status := range componentHealthStatuses {
+		if status == nil {
+			continue
+		}
+		statuses = append(statuses, InstallComponentHealthStatus(*status))
+	}
+	return CompositeComponentHealthStatus(statuses)
+}
+
+// CompositeComponentHealthStatus rolls per-component health verdicts up to a
+// single install-level verdict and description. Exported so the component
+// health evaluator can compute the before/after rollup without a round trip
+// through the install view.
+func CompositeComponentHealthStatus(statuses []InstallComponentHealthStatus) (InstallComponentHealthStatus, string) {
+	counts := map[InstallComponentHealthStatus]int{}
+	total := 0
+	for _, hs := range statuses {
+		if hs == InstallComponentHealthStatusUnset || hs == InstallComponentHealthStatusNotApplicable {
+			continue
+		}
+		counts[hs]++
+		total++
+	}
+	if total == 0 {
+		return InstallComponentHealthStatusUnset, ""
+	}
+
+	describe := func(n int, verb string) string {
+		if n == 1 {
+			return fmt.Sprintf("1 component is %s", verb)
+		}
+		return fmt.Sprintf("%d components are %s", n, verb)
+	}
+
+	switch {
+	case counts[InstallComponentHealthStatusUnhealthy] > 0:
+		return InstallComponentHealthStatusUnhealthy, describe(counts[InstallComponentHealthStatusUnhealthy], "unhealthy")
+	case counts[InstallComponentHealthStatusDegraded] > 0:
+		return InstallComponentHealthStatusDegraded, describe(counts[InstallComponentHealthStatusDegraded], "degraded")
+	case counts[InstallComponentHealthStatusUnknown] > 0:
+		return InstallComponentHealthStatusUnknown, describe(counts[InstallComponentHealthStatusUnknown], "in an unknown health state")
+	case counts[InstallComponentHealthStatusProgressing] > 0:
+		return InstallComponentHealthStatusProgressing, describe(counts[InstallComponentHealthStatusProgressing], "progressing")
+	default:
+		return InstallComponentHealthStatusHealthy, "All components are healthy"
+	}
 }
 
 // ComponentHealthContext persists what the runner's component-health engine

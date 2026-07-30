@@ -99,9 +99,11 @@ const (
 	// the single point of progressive disclosure: ticking Lifecycle reveals
 	// the lifecycle radio + sub-ops; ticking Approvals / Drift sets the
 	// underlying booleans with no follow-up controls.
-	categoryOptionLifecycle = "lifecycle"
-	categoryOptionApprovals = "approvals"
-	categoryOptionDrift     = "drift"
+	categoryOptionLifecycle       = "lifecycle"
+	categoryOptionApprovals       = "approvals"
+	categoryOptionDrift           = "drift"
+	categoryOptionComponentHealth = "component_health"
+	categoryOptionInstallDegraded = "install_degraded"
 
 	// Per-resource lifecycle radio values; mirrors interests.Outcome.
 	// outcomeOptionNone is no longer rendered in the radio — un-ticking the
@@ -206,6 +208,13 @@ type subscribeResourceCfg struct {
 	Approvals bool     // collapses approval_requests + approval_responses
 	Drift     bool     // only meaningful for components / sandboxes
 	Outcome   string   // outcomeOptionNone | outcomeOptionAll | outcomeOptionCompletion | outcomeOptionFailures
+
+	// ComponentHealth covers both directions of the component health axis
+	// (crossed into unhealthy + recovered); only meaningful for components.
+	ComponentHealth bool
+	// InstallDegraded is the same idea for the install-level health rollup;
+	// only meaningful for installs.
+	InstallDegraded bool
 }
 
 // subscribeModalRenderState captures the user's currently-selected modal
@@ -658,7 +667,8 @@ func buildSubscribeModalView(
 	// Each enabled resource expands progressively:
 	//   1. Enable checkbox (always rendered)
 	//   2. "Which event categories?" checkbox group (Lifecycle / Approvals
-	//      / +Drift detection on components+sandboxes) — rendered when
+	//      / +Drift detection on components+sandboxes / +Component health
+	//      on components / +Install degraded on installs) — rendered when
 	//      Enable is ticked.
 	//   3. Lifecycle radio (All / On completion / On failures) — rendered
 	//      only when the Lifecycle category is ticked.
@@ -666,8 +676,9 @@ func buildSubscribeModalView(
 	//      radio (Slack lacks accordions, so always-visible-when-lifecycle-on
 	//      is the accepted compromise vs the dashboard's secondary
 	//      disclosure).
-	// Approvals and Drift have no follow-up controls — ticking the
-	// category in the categories block is the only knob.
+	// Approvals, Drift, and the health categories have no follow-up
+	// controls — ticking the category in the categories block is the only
+	// knob.
 	//
 	// On the first render after switching to "Specific events" the render
 	// state is empty; we seed each resource from interests.Default() so
@@ -679,7 +690,7 @@ func buildSubscribeModalView(
 			"type": "section",
 			"text": map[string]any{
 				"type": "mrkdwn",
-				"text": "*Per-resource filters*\nEnable the resources you care about, then pick which event categories (lifecycle, approvals, drift detection) you want notifications for.",
+				"text": "*Per-resource filters*\nEnable the resources you care about, then pick which event categories (lifecycle, approvals, drift detection, health) you want notifications for.",
 			},
 		})
 		for _, kind := range interests.AllResources {
@@ -787,11 +798,13 @@ func seedResourcesForRender(in map[interests.ResourceKind]subscribeResourceCfg) 
 			continue
 		}
 		out[kind] = subscribeResourceCfg{
-			Enabled:   true,
-			Ops:       append([]string(nil), cfg.Ops...),
-			Approvals: cfg.ApprovalRequests || cfg.ApprovalResponses,
-			Drift:     cfg.DriftDetected,
-			Outcome:   outcomeFromInterests(cfg.Outcome),
+			Enabled:         true,
+			Ops:             append([]string(nil), cfg.Ops...),
+			Approvals:       cfg.ApprovalRequests || cfg.ApprovalResponses,
+			Drift:           cfg.DriftDetected,
+			ComponentHealth: cfg.ComponentHealth,
+			InstallDegraded: cfg.InstallDegraded,
+			Outcome:         outcomeFromInterests(cfg.Outcome),
 		}
 	}
 	return out
@@ -916,8 +929,9 @@ func buildResourceLifecycleBlock(kind interests.ResourceKind, cfg subscribeResou
 
 // buildResourceCategoriesBlock renders the per-resource "Which event
 // categories?" checkbox group — the single point of progressive
-// disclosure. Options are Lifecycle, Approvals, and (for components +
-// sandboxes) Drift detection. dispatch_action is set so ticking Lifecycle
+// disclosure. Options are Lifecycle, Approvals, (for components +
+// sandboxes) Drift detection, (for components) Component health, and (for
+// installs) Install degraded. dispatch_action is set so ticking Lifecycle
 // re-renders the modal to reveal the lifecycle radio + sub-ops blocks
 // (and un-ticking it hides them).
 func buildResourceCategoriesBlock(kind interests.ResourceKind, cfg subscribeResourceCfg) map[string]any {
@@ -949,6 +963,26 @@ func buildResourceCategoriesBlock(kind interests.ResourceKind, cfg subscribeReso
 		options = append(options, driftOpt)
 		if cfg.Drift {
 			initial = append(initial, driftOpt)
+		}
+	}
+	if interests.SupportsComponentHealth(kind) {
+		healthOpt := map[string]any{
+			"text":  map[string]any{"type": "plain_text", "text": "Component health"},
+			"value": categoryOptionComponentHealth,
+		}
+		options = append(options, healthOpt)
+		if cfg.ComponentHealth {
+			initial = append(initial, healthOpt)
+		}
+	}
+	if interests.SupportsInstallDegraded(kind) {
+		degradedOpt := map[string]any{
+			"text":  map[string]any{"type": "plain_text", "text": "Install degraded"},
+			"value": categoryOptionInstallDegraded,
+		}
+		options = append(options, degradedOpt)
+		if cfg.InstallDegraded {
+			initial = append(initial, degradedOpt)
 		}
 	}
 
@@ -1563,11 +1597,13 @@ func renderResourcesFromInterests(in interests.Interests) map[interests.Resource
 	for _, kind := range interests.AllResources {
 		if cfg, ok := in.Resources[kind]; ok {
 			out[kind] = subscribeResourceCfg{
-				Enabled:   true,
-				Ops:       append([]string(nil), cfg.Ops...),
-				Approvals: cfg.ApprovalRequests || cfg.ApprovalResponses,
-				Drift:     cfg.DriftDetected,
-				Outcome:   outcomeFromInterests(cfg.Outcome),
+				Enabled:         true,
+				Ops:             append([]string(nil), cfg.Ops...),
+				Approvals:       cfg.ApprovalRequests || cfg.ApprovalResponses,
+				Drift:           cfg.DriftDetected,
+				ComponentHealth: cfg.ComponentHealth,
+				InstallDegraded: cfg.InstallDegraded,
+				Outcome:         outcomeFromInterests(cfg.Outcome),
 			}
 			continue
 		}
@@ -1875,7 +1911,9 @@ func (s *service) validateMatchEntityIDs(ctx context.Context, orgID, appID strin
 // are filtered out — only slugs declared in interests.SubOps[kind] survive.
 // Drift only persists for resources where SupportsDriftDetected returns
 // true, so an unsupported drift selection from a tampered payload is a
-// no-op rather than a silently-dropped invariant.
+// no-op rather than a silently-dropped invariant. ComponentHealth and
+// InstallDegraded are gated the same way by SupportsComponentHealth /
+// SupportsInstallDegraded.
 func buildSpecificEventsInterests(in map[interests.ResourceKind]subscribeResourceCfg) interests.Interests {
 	out := interests.Interests{
 		Resources: make(map[interests.ResourceKind]interests.ResourceCfg),
@@ -1909,6 +1947,12 @@ func buildSpecificEventsInterests(in map[interests.ResourceKind]subscribeResourc
 		}
 		if cfg.Drift && interests.SupportsDriftDetected(kind) {
 			rc.DriftDetected = true
+		}
+		if cfg.ComponentHealth && interests.SupportsComponentHealth(kind) {
+			rc.ComponentHealth = true
+		}
+		if cfg.InstallDegraded && interests.SupportsInstallDegraded(kind) {
+			rc.InstallDegraded = true
 		}
 		out.Resources[kind] = rc
 	}
@@ -2259,6 +2303,9 @@ func readSubscribeRenderStateFromPayload(payload slackInteractionPayload) subscr
 //   - Drift ticked → cfg.Drift = true (only meaningful for
 //     components / sandboxes; the categories block omits the option for
 //     other resources).
+//   - Component health ticked → cfg.ComponentHealth = true (components
+//     only); Install degraded ticked → cfg.InstallDegraded = true
+//     (installs only). Same omit-the-option gating as Drift.
 func readResourceRenderStateFromValues(
 	values map[string]map[string]map[string]any,
 	pickValue func(string, string, string) string,
@@ -2300,6 +2347,10 @@ func readResourceRenderStateFromValues(
 				cfg.Approvals = true
 			case categoryOptionDrift:
 				cfg.Drift = true
+			case categoryOptionComponentHealth:
+				cfg.ComponentHealth = true
+			case categoryOptionInstallDegraded:
+				cfg.InstallDegraded = true
 			}
 		}
 

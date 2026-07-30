@@ -24,6 +24,7 @@ func Default() Interests {
 				Outcome:           OutcomeCompletion,
 				ApprovalRequests:  true,
 				ApprovalResponses: true,
+				InstallDegraded:   true,
 			},
 			ResourceStacks: {
 				Outcome:       OutcomeCompletion,
@@ -35,6 +36,7 @@ func Default() Interests {
 				ApprovalRequests:  true,
 				ApprovalResponses: true,
 				DriftDetected:     true,
+				ComponentHealth:   true,
 			},
 			ResourceSandboxes: {
 				Outcome:           OutcomeCompletion,

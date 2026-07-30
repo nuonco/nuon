@@ -10,11 +10,24 @@ export const allEvents = (): Interests => ({ all_events: true })
 // actions absent. Empty ops = all sub-ops; OutcomeCompletion + both approval
 // flags true. drift_detected is on for the two resources that can produce a
 // drift_detected event (components, sandboxes — see RESOURCES_WITH_DRIFT_DETECTED).
+// component_health is on for components and install_degraded for installs —
+// each covers both the degradation and the recovery.
 export const defaultInterests = (): Interests => ({
   resources: {
-    installs: { outcome: 'completion', approval_requests: true, approval_responses: true },
+    installs: {
+      outcome: 'completion',
+      approval_requests: true,
+      approval_responses: true,
+      install_degraded: true,
+    },
     stacks: { outcome: 'completion' },
-    components: { outcome: 'completion', approval_requests: true, approval_responses: true, drift_detected: true },
+    components: {
+      outcome: 'completion',
+      approval_requests: true,
+      approval_responses: true,
+      drift_detected: true,
+      component_health: true,
+    },
     sandboxes: { outcome: 'completion', approval_requests: true, approval_responses: true, drift_detected: true },
     install_configurations: { outcome: 'completion', approval_requests: true, approval_responses: true },
     app_branches: { outcome: 'completion', config_synced: true },

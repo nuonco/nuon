@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/actionworkflowrun"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitcomponenthealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeploysyncandplan"
@@ -405,6 +406,16 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 				steps = append(steps, planStep)
 			} else {
 				steps = append(steps, planStep, applyPlanStep)
+				if componentGateEnabled(ctx, dg.installID, comp.ID, comp.Type) {
+					gateStep, err := dg.sg.installSignalStep(ctx, dg.installID, "verify health "+comp.Name, pgtype.Hstore{}, &awaitcomponenthealthy.Signal{
+						InstallID:          dg.installID,
+						InstallComponentID: installComponentID,
+					}, dg.flw.PlanOnly, WithSkippable(false), WithMaxAutoRetries(3))
+					if err != nil {
+						return nil, errors.Wrap(err, "unable to create verify health step")
+					}
+					steps = append(steps, gateStep)
+				}
 			}
 		}
 		if !dg.flw.PlanOnly {

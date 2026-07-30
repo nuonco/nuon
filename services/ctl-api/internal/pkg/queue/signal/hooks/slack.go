@@ -163,6 +163,9 @@ func (h *SlackSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) bool 
 		signalTypeInputsUpdated,
 		signalTypeAppConfigSynced,
 		signalTypeUpdateAppConfig,
+		signalTypeComponentUnhealthy,
+		signalTypeComponentRecovered,
+		signalTypeInstallDegraded,
 		signalTypeRunnerUnhealthy:
 		return true
 	default:
@@ -645,6 +648,31 @@ func (h *SlackSignalLifecycleHook) postFlatUpdateAppConfig(
 	return nil
 }
 
+// postFlatComponentHealth posts a standalone health notification. Health
+// transitions have no parent workflow to thread under — each crossing lands as
+// its own top-level message linking to the affected component or install.
+func (h *SlackSignalLifecycleHook) postFlatComponentHealth(
+	ctx context.Context,
+	install *app.SlackInstallation,
+	sub app.SlackChannelSubscription,
+	rendered renderEvent,
+	signalType signal.SignalType,
+) error {
+	msg := slackrender.BuildComponentHealthMessage(
+		rendered.event,
+		signalType == signalTypeComponentRecovered,
+		signalType == signalTypeInstallDegraded,
+	)
+	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+		Channel: sub.ChannelID,
+		Text:    msg.Text,
+		Blocks:  msg.Blocks,
+	}); err != nil {
+		return fmt.Errorf("post slack component-health message: %w", err)
+	}
+	return nil
+}
+
 func (h *SlackSignalLifecycleHook) postFlatRunnerUnhealthy(
 	ctx context.Context,
 	install *app.SlackInstallation,
@@ -683,6 +711,9 @@ func (h *SlackSignalLifecycleHook) postFlatNotification(
 	}
 	if signalType == signalTypeRunnerUnhealthy {
 		return h.postFlatRunnerUnhealthy(ctx, install, sub, rendered)
+	}
+	if isComponentHealthSignalType(signalType) {
+		return h.postFlatComponentHealth(ctx, install, sub, rendered, signalType)
 	}
 	msg := slackrender.BuildFlatMessage(rendered.event)
 	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{

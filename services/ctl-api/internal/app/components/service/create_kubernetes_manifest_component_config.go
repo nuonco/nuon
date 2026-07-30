@@ -35,6 +35,11 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 	DefaultEnabled               *bool   `json:"default_enabled,omitempty"`
 	AutoApproveOnPoliciesPassing *bool   `json:"auto_approve_on_policies_passing,omitempty"`
 	DriftSchedule                *string `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
+	HealthEnabled                *bool   `json:"health_enabled,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
+	HealthStabilizationWindow    string  `json:"health_stabilization_window,omitempty"` // Duration string for the health stabilization window (e.g., "3m")
+	HealthBlockDeploy            *bool   `json:"health_block_deploy,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
+
+	HealthProbes []HealthProbeRequest `json:"health_probes,omitempty"`
 
 	// Kustomize configuration (mutually exclusive with Manifest)
 	Kustomize *KustomizeConfigRequest `json:"kustomize,omitempty"`
@@ -116,6 +121,14 @@ func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.V
 		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
 		}
+	}
+	if c.HealthStabilizationWindow != "" {
+		if err := validateHealthStabilizationWindow(c.HealthStabilizationWindow); err != nil {
+			return err
+		}
+	}
+	if err := validateHealthProbes(c.HealthProbes); err != nil {
+		return err
 	}
 
 	return nil
@@ -260,6 +273,10 @@ func (s *service) createKubernetesManifestComponentConfig(
 		Toggleable:                        req.Toggleable,
 		DefaultEnabled:                    req.DefaultEnabled,
 		AutoApproveOnPoliciesPassing:      req.AutoApproveOnPoliciesPassing,
+		HealthEnabled:                     req.HealthEnabled,
+		HealthStabilizationWindow:         req.HealthStabilizationWindow,
+		HealthBlockDeploy:                 req.HealthBlockDeploy,
+		HealthProbes:                      toAppHealthProbes(req.HealthProbes),
 		OperationRoles:                    operationRoles,
 		KubernetesContextName:             req.KubernetesContext,
 	}

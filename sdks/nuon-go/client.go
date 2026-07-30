@@ -185,6 +185,7 @@ type Client interface {
 
 	// install components
 	GetInstallComponents(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallComponent, bool, error)
+	GetInstallsHealth(ctx context.Context, appID, labels string) (*models.ServiceInstallsHealthResponse, error)
 	ToggleInstallComponent(ctx context.Context, installID, componentID string, req *models.ServiceToggleInstallComponentRequest) (*models.AppWorkflowResponse, error)
 	TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string) (*models.AppWorkflowResponse, error)
 	ForgetInstallComponent(ctx context.Context, installID, componentID string) error

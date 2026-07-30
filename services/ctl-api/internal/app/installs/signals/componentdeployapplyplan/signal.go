@@ -199,7 +199,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	l.Info("executing plan")
-	if err := s.execApplyPlan(ctx, install, installDeploy, s.InstallWorkflowStepID, s.SandboxMode); err != nil {
+	_, err = s.execApplyPlan(ctx, install, installDeploy, s.InstallWorkflowStepID, s.SandboxMode)
+	if err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to deploy")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
@@ -223,13 +224,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		return err
 	}
+
+	// The verified-deploy gate runs as its own "verify health" workflow step
+	// (added at plan time when the component opts into block_deploy), so the
+	// wait and its reasons are visible on the workflow instead of hidden
+	// inside this apply.
+
 	return nil
 }
 
-func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, installWorkflowStepID string, sandboxMode bool) error {
+func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, installWorkflowStepID string, sandboxMode bool) (*app.ComponentBuild, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusPlanning, "creating deploy plan")
@@ -238,7 +245,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	build, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, installDeploy.ComponentBuildID)
 	if err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to get component build")
-		return fmt.Errorf("unable to get build: %w", err)
+		return nil, fmt.Errorf("unable to get build: %w", err)
 	}
 
 	// get previous job
@@ -254,12 +261,12 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		Type:      runnerJobType,
 	})
 	if err != nil {
-		return errors.Wrap(err, "unable to plan runner job for current apply job")
+		return nil, errors.Wrap(err, "unable to plan runner job for current apply job")
 	}
 
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer func() {
@@ -287,7 +294,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	})
 	if err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create runner job")
-		return fmt.Errorf("unable to create runner job: %w", err)
+		return nil, fmt.Errorf("unable to create runner job: %w", err)
 	}
 	s.runnerJobID = runnerJob.ID
 
@@ -300,7 +307,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	})
 	if err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create deploy plan")
-		return errors.Wrap(err, "unable to create deploy plan")
+		return nil, errors.Wrap(err, "unable to create deploy plan")
 	}
 
 	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
@@ -308,7 +315,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		StepTargetID:   installDeploy.ID,
 		StepTargetType: "install_deploys",
 	}); err != nil {
-		return errors.Wrap(err, "unable to update install workflow")
+		return nil, errors.Wrap(err, "unable to update install workflow")
 	}
 
 	// Add Plan contents from the result to the plan
@@ -323,12 +330,12 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		l.Info("using the compressed contents from the runner job execution result")
 		applyPlanContents, err := planJob.Execution.Result.GetContentsB64String()
 		if err != nil {
-			return errors.Wrap(err, "unable to get contents string")
+			return nil, errors.Wrap(err, "unable to get contents string")
 		}
 		deployPlan.Plan.ApplyPlanContents = applyPlanContents
 		applyPlanContentsDisplay, err := planJob.Execution.Result.GetContentsDisplayString()
 		if err != nil {
-			return errors.Wrap(err, "unable to get contents display string")
+			return nil, errors.Wrap(err, "unable to get contents display string")
 		}
 		deployPlan.Plan.ApplyPlanDisplay = applyPlanContentsDisplay
 	}
@@ -336,7 +343,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 	planJSON, err := json.Marshal(deployPlan.Plan)
 	if err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to create json from deploy plan")
-		return errors.Wrap(err, "unable to create json from plan")
+		return nil, errors.Wrap(err, "unable to create json from plan")
 	}
 
 	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
@@ -347,7 +354,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		},
 	}); err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to store runner job plan")
-		return fmt.Errorf("unable to get install: %w", err)
+		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
 	if err := activities.AwaitRecordInstallRoleUsage(ctx, &activities.RecordInstallRoleUsageRequest{
@@ -356,7 +363,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		RoleSelection: deployPlan.RoleSelection,
 	}); err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to record install role usage")
-		return fmt.Errorf("unable to record install role usage: %w", err)
+		return nil, fmt.Errorf("unable to record install role usage: %w", err)
 	}
 
 	planJSON = nil
@@ -372,10 +379,10 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		msg := job.JobErrorMessage(err, "apply job failed")
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, msg)
 		l.Error("job did not succeed", zap.Error(err))
-		return fmt.Errorf("unable to get install: %w", err)
+		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
-	return nil
+	return build, nil
 }
 
 func (s *Signal) updateDeployStatus(ctx workflow.Context, deployID string, status app.InstallDeployStatus, message string) {

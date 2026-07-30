@@ -359,6 +359,42 @@ export const InstallStatuses = ({
     </ComponentsTooltip>
   )
 
+  const healthStatus = install?.composite_health_status
+  const healthContent = healthStatus ? (
+    <ContextTooltip
+      title="Component health"
+      position={tooltipPosition}
+      items={[
+        {
+          id: 'component-health',
+          title: 'Component health',
+          subtitle:
+            install?.composite_health_status_description ??
+            toSentenceCase(healthStatus),
+          href: `/${install.org_id}/installs/${install.id}/components`,
+          leftContent: (
+            <Status
+              status={healthStatus}
+              isWithoutText
+              variant="timeline"
+              iconSize={16}
+            />
+          ),
+        },
+      ]}
+    >
+      {variant === 'icon' ? (
+        <Text theme={getStatusTheme(healthStatus)}>
+          <Icon variant="HeartbeatIcon" size={14} className="cursor-default" />
+        </Text>
+      ) : (
+        <Status status={healthStatus} variant="badge">
+          {isLabelHidden ? 'Health' : healthStatus}
+        </Status>
+      )}
+    </ContextTooltip>
+  ) : null
+
   const stackContent = stackStatus ? (
     <ContextTooltip
       title="Stack"
@@ -414,6 +450,7 @@ export const InstallStatuses = ({
     effectiveStatus(install?.runner_status),
     sandboxDisplayStatus,
     effectiveStatus(install?.composite_component_status),
+    healthStatus,
     install?.drifted_objects?.length ? 'warn' : 'active',
   ]
   const { worstStatus } = getWorstStatusTheme(allStatuses)
@@ -483,6 +520,26 @@ export const InstallStatuses = ({
         />
       ),
     },
+    ...(healthStatus
+      ? [
+          {
+            id: 'component-health',
+            title: 'Component health',
+            subtitle:
+              install?.composite_health_status_description ??
+              toSentenceCase(healthStatus),
+            href: `/${install.org_id}/installs/${install.id}/components`,
+            leftContent: (
+              <Status
+                status={healthStatus}
+                isWithoutText
+                variant="timeline"
+                iconSize={16}
+              />
+            ),
+          },
+        ]
+      : []),
     ...(install?.drifted_objects
       ? [
           {
@@ -513,6 +570,7 @@ export const InstallStatuses = ({
       {wrap('Runner', runnerContent)}
       {wrap('Sandbox', sandboxContent)}
       {wrap('Components', componentsContent)}
+      {healthContent ? wrap('Health', healthContent) : null}
       {install?.drifted_objects ? wrap('Drift detection', driftContent) : null}
     </div>
   )

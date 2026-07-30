@@ -65,6 +65,18 @@ type AppComponentConfigConnection struct {
 	// external image
 	ExternalImage *AppExternalImageComponentConfig `json:"external_image,omitempty"`
 
+	// health block deploy
+	HealthBlockDeploy *bool `json:"health_block_deploy,omitempty"`
+
+	// health enabled
+	HealthEnabled *bool `json:"health_enabled,omitempty"`
+
+	// health probes
+	HealthProbes []*AppComponentHealthProbe `json:"health_probes"`
+
+	// Duration string for how long health must hold after a deploy applies (e.g., "3m"). Max 1h.
+	HealthStabilizationWindow string `json:"health_stabilization_window,omitempty"`
+
 	// helm
 	Helm *AppHelmComponentConfig `json:"helm,omitempty"`
 
@@ -129,6 +141,10 @@ func (m *AppComponentConfigConnection) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateExternalImage(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateHealthProbes(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -207,6 +223,36 @@ func (m *AppComponentConfigConnection) validateExternalImage(formats strfmt.Regi
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppComponentConfigConnection) validateHealthProbes(formats strfmt.Registry) error {
+	if swag.IsZero(m.HealthProbes) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.HealthProbes); i++ {
+		if swag.IsZero(m.HealthProbes[i]) { // not required
+			continue
+		}
+
+		if m.HealthProbes[i] != nil {
+			if err := m.HealthProbes[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("health_probes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("health_probes" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil
@@ -390,6 +436,10 @@ func (m *AppComponentConfigConnection) ContextValidate(ctx context.Context, form
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateHealthProbes(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateHelm(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -469,6 +519,35 @@ func (m *AppComponentConfigConnection) contextValidateExternalImage(ctx context.
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppComponentConfigConnection) contextValidateHealthProbes(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.HealthProbes); i++ {
+
+		if m.HealthProbes[i] != nil {
+
+			if swag.IsZero(m.HealthProbes[i]) { // not required
+				return nil
+			}
+
+			if err := m.HealthProbes[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("health_probes" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("health_probes" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

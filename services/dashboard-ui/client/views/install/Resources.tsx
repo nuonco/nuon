@@ -1,5 +1,7 @@
+import { Card } from '@/components/common/Card'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
+import { HealthTimeline } from '@/components/install-health/HealthTimeline'
 import { InstallResourcesTable } from '@/components/install-resources/InstallResourcesTable'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -33,6 +35,10 @@ export const Resources = () => {
           Live resources managed by this install's components, with per-resource health.
         </Text>
       </HeadingGroup>
+
+      <Card>
+        <HealthTimeline shouldPoll />
+      </Card>
 
       <InstallResourcesTable shouldPoll />
     </PageSection>
