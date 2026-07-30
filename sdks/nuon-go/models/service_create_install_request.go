@@ -21,13 +21,13 @@ import (
 type ServiceCreateInstallRequest struct {
 
 	// aws account
-	AwsAccount *ServiceCreateInstallRequestAwsAccount `json:"aws_account,omitempty"`
+	AwsAccount *HelpersCreateInstallAWSAccountParams `json:"aws_account,omitempty"`
 
 	// azure account
-	AzureAccount *ServiceCreateInstallRequestAzureAccount `json:"azure_account,omitempty"`
+	AzureAccount *HelpersCreateInstallAzureAccountParams `json:"azure_account,omitempty"`
 
 	// gcp account
-	GcpAccount *ServiceCreateInstallRequestGcpAccount `json:"gcp_account,omitempty"`
+	GcpAccount *HelpersCreateInstallGCPAccountParams `json:"gcp_account,omitempty"`
 
 	// inputs
 	Inputs map[string]string `json:"inputs,omitempty"`
@@ -371,123 +371,6 @@ func (m *ServiceCreateInstallRequest) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary interface implementation
 func (m *ServiceCreateInstallRequest) UnmarshalBinary(b []byte) error {
 	var res ServiceCreateInstallRequest
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// ServiceCreateInstallRequestAwsAccount service create install request aws account
-//
-// swagger:model ServiceCreateInstallRequestAwsAccount
-type ServiceCreateInstallRequestAwsAccount struct {
-
-	// connection id
-	ConnectionID string `json:"connection_id,omitempty"`
-
-	// region
-	Region string `json:"region,omitempty"`
-}
-
-// Validate validates this service create install request aws account
-func (m *ServiceCreateInstallRequestAwsAccount) Validate(formats strfmt.Registry) error {
-	return nil
-}
-
-// ContextValidate validates this service create install request aws account based on context it is used
-func (m *ServiceCreateInstallRequestAwsAccount) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *ServiceCreateInstallRequestAwsAccount) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *ServiceCreateInstallRequestAwsAccount) UnmarshalBinary(b []byte) error {
-	var res ServiceCreateInstallRequestAwsAccount
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// ServiceCreateInstallRequestAzureAccount service create install request azure account
-//
-// swagger:model ServiceCreateInstallRequestAzureAccount
-type ServiceCreateInstallRequestAzureAccount struct {
-
-	// location
-	Location string `json:"location,omitempty"`
-}
-
-// Validate validates this service create install request azure account
-func (m *ServiceCreateInstallRequestAzureAccount) Validate(formats strfmt.Registry) error {
-	return nil
-}
-
-// ContextValidate validates this service create install request azure account based on context it is used
-func (m *ServiceCreateInstallRequestAzureAccount) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *ServiceCreateInstallRequestAzureAccount) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *ServiceCreateInstallRequestAzureAccount) UnmarshalBinary(b []byte) error {
-	var res ServiceCreateInstallRequestAzureAccount
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// ServiceCreateInstallRequestGcpAccount service create install request gcp account
-//
-// swagger:model ServiceCreateInstallRequestGcpAccount
-type ServiceCreateInstallRequestGcpAccount struct {
-
-	// project id
-	ProjectID string `json:"project_id,omitempty"`
-
-	// region
-	Region string `json:"region,omitempty"`
-}
-
-// Validate validates this service create install request gcp account
-func (m *ServiceCreateInstallRequestGcpAccount) Validate(formats strfmt.Registry) error {
-	return nil
-}
-
-// ContextValidate validates this service create install request gcp account based on context it is used
-func (m *ServiceCreateInstallRequestGcpAccount) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *ServiceCreateInstallRequestGcpAccount) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *ServiceCreateInstallRequestGcpAccount) UnmarshalBinary(b []byte) error {
-	var res ServiceCreateInstallRequestGcpAccount
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

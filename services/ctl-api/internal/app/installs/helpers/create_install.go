@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"gorm.io/gorm"
 
@@ -20,22 +21,41 @@ type InstallMetadata struct {
 	ManagedBy string `json:"managed_by,omitempty"`
 }
 
+var awsAccountIDPattern = regexp.MustCompile(`^[0-9]{12}$`)
+
+type CreateInstallAWSAccountParams struct {
+	Region       string `json:"region"`
+	ConnectionID string `json:"connection_id,omitempty"`
+
+	// AccountID is the AWS account this install targets. Required when the org has
+	// the phone-home-auth feature enabled, optional otherwise. Immutable after
+	// creation — there is deliberately no equivalent field on UpdateInstallRequest.
+	AccountID string `json:"account_id,omitempty"`
+}
+
+type CreateInstallAzureAccountParams struct {
+	Location string `json:"location"`
+
+	// SubscriptionID is the Azure subscription this install targets. Required when
+	// the org has the phone-home-auth feature enabled. Immutable after creation.
+	SubscriptionID string `json:"subscription_id,omitempty"`
+}
+
+type CreateInstallGCPAccountParams struct {
+	// ProjectID is the GCP project this install targets. Required when the org has
+	// the phone-home-auth feature enabled. Immutable after creation.
+	ProjectID string `json:"project_id"`
+	Region    string `json:"region"`
+}
+
 type CreateInstallParams struct {
 	Name string `json:"name" validate:"required"`
 
-	AWSAccount *struct {
-		Region       string `json:"region"`
-		ConnectionID string `json:"connection_id,omitempty"`
-	} `json:"aws_account"`
+	AWSAccount *CreateInstallAWSAccountParams `json:"aws_account"`
 
-	AzureAccount *struct {
-		Location string `json:"location"`
-	} `json:"azure_account"`
+	AzureAccount *CreateInstallAzureAccountParams `json:"azure_account"`
 
-	GCPAccount *struct {
-		ProjectID string `json:"project_id"`
-		Region    string `json:"region"`
-	} `json:"gcp_account"`
+	GCPAccount *CreateInstallGCPAccountParams `json:"gcp_account"`
 
 	Inputs map[string]*string `json:"inputs"`
 
@@ -116,31 +136,59 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		install.Labels = labels.Labels(req.Labels)
 	}
 
+	// When enabled, every install must declare which cloud account it targets, so a
+	// later phone home can be checked against an identifier the vendor asserted up
+	// front rather than one the install reported about itself.
+	requireTargetAccount, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeaturePhoneHomeAuth)
+	if err != nil {
+		return nil, fmt.Errorf("check phone home auth feature: %w", err)
+	}
+
+	targetSource := ""
+
 	runnerType := parentApp.AppRunnerConfigs[0].Type
 	switch runnerType {
 	case app.AppRunnerTypeGCP, app.AppRunnerTypeGCPGKE:
 		if req.GCPAccount == nil {
-			req.GCPAccount = &struct {
-				ProjectID string `json:"project_id"`
-				Region    string `json:"region"`
-			}{}
+			req.GCPAccount = &CreateInstallGCPAccountParams{}
 		}
 		req.AWSAccount = nil
 		req.AzureAccount = nil
+
+		if requireTargetAccount && req.GCPAccount.ProjectID == "" {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("gcp_account.project_id is required for GCP installs"),
+				Description: "gcp_account.project_id is required because phone home authentication is enabled for this organization",
+			}
+		}
+		if req.GCPAccount.ProjectID != "" {
+			targetSource = app.CloudPlatformTargetSourceUser
+		}
 	case app.AppRunnerTypeAzure, app.AppRunnerTypeAzureAKS, app.AppRunnerTypeAzureACS:
 		if req.AzureAccount == nil {
-			req.AzureAccount = &struct {
-				Location string `json:"location"`
-			}{}
+			req.AzureAccount = &CreateInstallAzureAccountParams{}
 		}
 		req.AWSAccount = nil
 		req.GCPAccount = nil
+
+		if requireTargetAccount && req.AzureAccount.SubscriptionID == "" {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("azure_account.subscription_id is required for Azure installs"),
+				Description: "azure_account.subscription_id is required because phone home authentication is enabled for this organization",
+			}
+		}
+		if req.AzureAccount.SubscriptionID != "" {
+			targetSource = app.CloudPlatformTargetSourceUser
+		}
 	case app.AppRunnerTypeAWS, app.AppRunnerTypeAWSEKS, app.AppRunnerTypeAWSECS:
 		if req.AWSAccount == nil {
 			return nil, stderr.ErrUser{
 				Err:         fmt.Errorf("aws_account.region is required for AWS installs"),
 				Description: "aws_account.region is required for AWS installs",
 			}
+		}
+		if req.AWSAccount.AccountID != "" {
+			targetSource = app.CloudPlatformTargetSourceUser
 		}
 		if req.AWSAccount.ConnectionID != "" {
 			if runnerType != app.AppRunnerTypeAWS {
@@ -149,8 +197,35 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 					Description: "AWS account connections are only supported for AWS runner installs",
 				}
 			}
-			if err := s.validateAWSAccountConnection(ctx, req.AWSAccount.ConnectionID); err != nil {
+			connection, err := s.validateAWSAccountConnection(ctx, req.AWSAccount.ConnectionID)
+			if err != nil {
 				return nil, err
+			}
+
+			// The connection already names an account, so it is authoritative. An
+			// explicit account ID may agree with it but never override it.
+			if req.AWSAccount.AccountID != "" && req.AWSAccount.AccountID != connection.AccountID {
+				return nil, stderr.ErrUser{
+					Err: fmt.Errorf("aws_account.account_id %q conflicts with connection %s account %q",
+						req.AWSAccount.AccountID, connection.ID, connection.AccountID),
+					Description: "aws_account.account_id does not match the account of the selected AWS account connection",
+				}
+			}
+			req.AWSAccount.AccountID = connection.AccountID
+			targetSource = app.CloudPlatformTargetSourceConnection
+		}
+		if requireTargetAccount && req.AWSAccount.AccountID == "" {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("aws_account.account_id is required for AWS installs"),
+				Description: "aws_account.account_id is required because phone home authentication is enabled for this organization",
+			}
+		}
+		// Only format-checked when the feature is on: the field is advisory otherwise,
+		// and rejecting it would change behaviour for organizations that never opted in.
+		if requireTargetAccount && !awsAccountIDPattern.MatchString(req.AWSAccount.AccountID) {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("aws_account.account_id %q is not a 12-digit AWS account ID", req.AWSAccount.AccountID),
+				Description: "aws_account.account_id must be exactly 12 digits",
 			}
 		}
 	default:
@@ -169,17 +244,30 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		if req.AWSAccount.ConnectionID != "" {
 			install.AWSAccount.AWSAccountConnectionID = &req.AWSAccount.ConnectionID
 		}
+		install.CloudPlatformMetadata.TargetAccountID = req.AWSAccount.AccountID
 	}
 	if req.AzureAccount != nil {
 		install.AzureAccount = &app.AzureAccount{
-			Location: req.AzureAccount.Location,
+			Location:       req.AzureAccount.Location,
+			SubscriptionID: req.AzureAccount.SubscriptionID,
 		}
+		install.CloudPlatformMetadata.TargetSubscriptionID = req.AzureAccount.SubscriptionID
 	}
 	if req.GCPAccount != nil {
 		install.GCPAccount = &app.GCPAccount{
 			ProjectID: req.GCPAccount.ProjectID,
 			Region:    req.GCPAccount.Region,
 		}
+		install.CloudPlatformMetadata.TargetProjectID = req.GCPAccount.ProjectID
+	}
+
+	// A target is never recorded without its provenance, including on the fallback
+	// runner-type branch that does not set targetSource itself.
+	if install.CloudPlatformMetadata.HasTarget() {
+		if targetSource == "" {
+			targetSource = app.CloudPlatformTargetSourceUser
+		}
+		install.CloudPlatformMetadata.TargetSource = targetSource
 	}
 	if parentApp.AppPermissionsConfig.ID != "" && len(parentApp.AppPermissionsConfig.Roles) > 0 {
 		installRoles := make([]app.InstallRoles, 0)

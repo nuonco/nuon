@@ -71,15 +71,10 @@ func (a *Activities) createOnboardingInstall(ctx context.Context, input *CreateO
 		SandboxMode: sandboxMode,
 	}
 	if input.AWSAccount != nil {
-		installParams.AWSAccount = &struct {
-			Region       string `json:"region"`
-			ConnectionID string `json:"connection_id,omitempty"`
-		}{Region: input.AWSAccount.Region}
+		installParams.AWSAccount = &helpers.CreateInstallAWSAccountParams{Region: input.AWSAccount.Region}
 	}
 	if input.AzureAccount != nil {
-		installParams.AzureAccount = &struct {
-			Location string `json:"location"`
-		}{Location: input.AzureAccount.Location}
+		installParams.AzureAccount = &helpers.CreateInstallAzureAccountParams{Location: input.AzureAccount.Location}
 	}
 	if input.Config != nil {
 		installParams.InstallConfig = &helpers.CreateInstallConfigParams{

@@ -14,6 +14,7 @@ export interface ICreateInstallForm {
   defaultAutoApprove?: boolean
   autoApproveDescription?: string
   awsAccountConnections?: TAWSAccountConnection[]
+  requireTargetAccount?: boolean
 }
 
 export interface IUpdateInstallForm {
@@ -36,6 +37,7 @@ export interface IPlatformFields {
   platform: 'aws' | 'azure' | 'gcp'
   draftValues?: Record<string, string> | null
   awsAccountConnections?: TAWSAccountConnection[]
+  requireTargetAccount?: boolean
 }
 
 export interface IInputConfigFields {

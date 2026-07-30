@@ -31,6 +31,7 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const platform = app?.runner_config?.app_runner_type
+  const requireTargetAccount = !!org?.features?.['phone-home-auth']
   const awsConnectionsEnabled =
     platform === 'aws' && !!org?.features?.['aws-account-connections']
 
@@ -113,17 +114,21 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
           iam_role_arn: '',
           region: formDataObj.region as string,
           connection_id: (formDataObj.aws_connection_id as string) || undefined,
+          account_id: (formDataObj.aws_account_id as string) || undefined,
         }
       } else if (platform === 'azure' && formDataObj.location) {
         body.azure_account = {
           location: formDataObj.location as string,
           service_principal_app_id: '',
           service_principal_password: '',
-          subscription_id: '',
+          subscription_id:
+            (formDataObj.azure_subscription_id as string) || undefined,
           subscription_tenant_id: '',
         }
       } else if (platform === 'gcp') {
-        body.gcp_account = {}
+        body.gcp_account = {
+          project_id: (formDataObj.gcp_project_id as string) || undefined,
+        }
       }
 
       return createAppInstall({
@@ -186,6 +191,7 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
       platform={app?.runner_config?.app_runner_type as 'aws' | 'azure' | 'gcp'}
       onSubmitAction={(formData) => mutateAsync(formData)}
       onCancel={() => removeModal(props.modalId)}
+      requireTargetAccount={requireTargetAccount}
       awsAccountConnections={
         awsConnectionsEnabled ? awsAccountConnections || [] : undefined
       }

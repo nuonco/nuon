@@ -19,6 +19,7 @@ interface CreateInstallFromAppProps {
   formRef?: React.RefObject<HTMLFormElement>
   onRegisterClearDraft?: (clearFn: () => void) => void
   awsAccountConnections?: TAWSAccountConnection[]
+  requireTargetAccount?: boolean
 }
 
 export const CreateInstallFromApp = ({
@@ -34,6 +35,7 @@ export const CreateInstallFromApp = ({
   formRef: externalFormRef,
   onRegisterClearDraft,
   awsAccountConnections,
+  requireTargetAccount,
 }: CreateInstallFromAppProps) => {
   const internalFormRef = useRef<HTMLFormElement>(null)
   const formRef = externalFormRef || internalFormRef
@@ -135,6 +137,7 @@ export const CreateInstallFromApp = ({
         onCancel={onClose}
         onRegisterClearDraft={onRegisterClearDraft}
         awsAccountConnections={awsAccountConnections}
+        requireTargetAccount={requireTargetAccount}
       />
     </div>
   )
