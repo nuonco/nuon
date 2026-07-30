@@ -1,6 +1,8 @@
 package cloudformation
 
 import (
+	"fmt"
+
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
 	"github.com/awslabs/goformation/v7/cloudformation/lambda"
@@ -120,9 +122,28 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 	return resource
 }
 
+// lambdaInlineCodeLimit is AWS's hard cap on Code.ZipFile, the inline source the
+// phone-home Lambda uses.
+const lambdaInlineCodeLimit = 4096
+
+// validatePhoneHomeScriptSize fails the render rather than letting an oversized
+// script fail at CreateStack inside the customer's account, where the error is far
+// harder to attribute. The escape hatch when the script legitimately outgrows this
+// is an S3-hosted zip (Code.S3Bucket/S3Key) in the existing template bucket.
+func validatePhoneHomeScriptSize(script string) error {
+	if len(script) > lambdaInlineCodeLimit {
+		return fmt.Errorf(
+			"phone home script is %d bytes, over the %d byte limit for inline lambda source",
+			len(script), lambdaInlineCodeLimit,
+		)
+	}
+
+	return nil
+}
+
 func (a *Templates) getRunnerPhoneHomeLambda(inp *stacks.TemplateInput, t tagBuilder) *lambda.Function {
 	// This is going to be moved into a cloudformation stack template and split out, with parameters for the body
-	return &lambda.Function{
+	fn := &lambda.Function{
 		Handler:     ptr("index.lambda_handler"),
 		Runtime:     ptr("python3.12"),
 		Tags:        t.apply(nil, "phone-home-lambda"),
@@ -132,9 +153,70 @@ func (a *Templates) getRunnerPhoneHomeLambda(inp *stacks.TemplateInput, t tagBui
 		},
 		Role: cloudformation.GetAtt("RunnerPhoneHomeRole", "Arn"),
 	}
+
+	// Environment variables rather than resource properties, deliberately.
+	// phonehome.py does `props = data.pop("ResourceProperties")` and POSTs every
+	// prop, so anything added to getRunnerPhoneHomeProps is echoed back into the
+	// phone-home body and lands in InstallStackVersionRun.Data. Env vars are read
+	// via os.environ and are never echoed.
+	if inp.PhoneHomeSecretARN != "" {
+		fn.Environment = &lambda.Function_Environment{
+			Variables: map[string]string{
+				"NUON_PHONE_HOME_SECRET_ARN": inp.PhoneHomeSecretARN,
+				// The region of the *secret* — Nuon's management region, not the
+				// install's. The Lambda has no VPC config, so a cross-region
+				// Secrets Manager call is fine.
+				"NUON_PHONE_HOME_SECRET_REGION": inp.PhoneHomeSecretRegion,
+				// Which entry to read out of the token map. Scoped to the stack
+				// version this template belongs to, so it can never go stale: a
+				// template never needs a phone_home_id other than its own.
+				"NUON_PHONE_HOME_ID": inp.CloudFormationStackVersion.PhoneHomeID,
+			},
+		}
+	}
+
+	return fn
 }
 
 func (a *Templates) getRunnerPhoneHomeLambdaRole(inp *stacks.TemplateInput, t tagBuilder) *iam.Role {
+	role := a.basePhoneHomeLambdaRole(inp, t)
+
+	// The identity half of the cross-account read. The secret's resource policy in
+	// Nuon's management account names this role as a principal; this narrows what the
+	// role itself may do. Both sides are required — either alone denies.
+	if inp.PhoneHomeSecretARN != "" {
+		statements := []map[string]any{
+			{
+				"Effect":   "Allow",
+				"Action":   []string{"secretsmanager:GetSecretValue"},
+				"Resource": inp.PhoneHomeSecretARN,
+			},
+		}
+
+		// Scoped to the CMK that encrypted the secret. Without kms:Decrypt the read
+		// fails no matter how permissive the resource policy is, because the
+		// AWS-managed secretsmanager key cannot be shared cross-account.
+		if arn := a.cfg.PhoneHomeCMKARN; arn != "" {
+			statements = append(statements, map[string]any{
+				"Effect":   "Allow",
+				"Action":   []string{"kms:Decrypt", "kms:DescribeKey"},
+				"Resource": arn,
+			})
+		}
+
+		role.Policies = append(role.Policies, iam.Role_Policy{
+			PolicyName: "PhoneHomeSecretPolicy",
+			PolicyDocument: map[string]any{
+				"Version":   "2012-10-17",
+				"Statement": statements,
+			},
+		})
+	}
+
+	return role
+}
+
+func (a *Templates) basePhoneHomeLambdaRole(inp *stacks.TemplateInput, t tagBuilder) *iam.Role {
 	return &iam.Role{
 		// Named so a cross-account grant can reference this principal before the
 		// customer's stack has created it. Setting RoleName makes the role a
