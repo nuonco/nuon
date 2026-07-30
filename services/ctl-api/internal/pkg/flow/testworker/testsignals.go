@@ -16,6 +16,7 @@ func init() {
 	catalog.Register(FailSignalType, func() signal.Signal { return &FailSignal{} })
 	catalog.Register(SlowSignalType, func() signal.Signal { return &SlowSignal{} })
 	catalog.Register(AutoRetrySignalType, func() signal.Signal { return &AutoRetrySignal{} })
+	catalog.Register(ManualRetrySignalType, func() signal.Signal { return &ManualRetrySignal{} })
 	catalog.Register(RetryGroupSignalType, func() signal.Signal { return &RetryGroupSignal{} })
 	catalog.Register(CountdownSignalType, func() signal.Signal { return &CountdownSignal{} })
 	catalog.Register(CountdownGroupSignalType, func() signal.Signal { return &CountdownGroupSignal{} })
@@ -81,6 +82,41 @@ func (s *AutoRetrySignal) SleepAfter() time.Duration { return time.Second }
 
 var _ signal.SignalWithAutoRetry = (*AutoRetrySignal)(nil)
 var _ signal.SignalWithMaxRetries = (*AutoRetrySignal)(nil)
+
+const ManualRetrySignalType signal.SignalType = "test-flow-manual-retry"
+
+type ManualRetrySignal struct {
+	StepID string `json:"step_id,omitempty"`
+	FlowID string `json:"flow_id,omitempty"`
+}
+
+func (s *ManualRetrySignal) Type() signal.SignalType         { return ManualRetrySignalType }
+func (s *ManualRetrySignal) Validate(workflow.Context) error { return nil }
+func (s *ManualRetrySignal) AutoRetry() bool                 { return true }
+func (s *ManualRetrySignal) MaxRetries() int                 { return 2 }
+func (s *ManualRetrySignal) MaxAutoRetries(workflow.Context) int {
+	return 0
+}
+func (s *ManualRetrySignal) SetStepContext(stepID, flowID string) {
+	s.StepID = stepID
+	s.FlowID = flowID
+}
+func (s *ManualRetrySignal) Execute(ctx workflow.Context) error {
+	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, s.StepID)
+	if err != nil {
+		return fmt.Errorf("manual retry signal: unable to get step: %w", err)
+	}
+	if step.RetryIndex > 0 {
+		return nil
+	}
+	return fmt.Errorf("manual retry signal: waiting for manual retry")
+}
+func (s *ManualRetrySignal) SleepAfter() time.Duration { return time.Second }
+
+var _ signal.SignalWithAutoRetry = (*ManualRetrySignal)(nil)
+var _ signal.SignalWithMaxRetries = (*ManualRetrySignal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*ManualRetrySignal)(nil)
+var _ signal.SignalWithStepContext = (*ManualRetrySignal)(nil)
 
 // --- RetryGroupSignal: fails and requests group retry ---
 

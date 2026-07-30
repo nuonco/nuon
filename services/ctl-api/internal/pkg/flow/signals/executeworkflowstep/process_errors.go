@@ -135,7 +135,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		}
 
 		// Mark step as errored and write the await-retry directive.
-		// Execute() blocks here until the user retries or cancels.
+		// Legacy Execute() blocks here until the user retries or cancels.
 		_ = s.markStepFailed(ctx, step, stepErr, map[string]any{
 			"auto_retries_exhausted": nextRetryIndex > maxAutoRetries,
 			"skip_auto_retry":        skipAutoRetry,
@@ -158,6 +158,10 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 				},
 			},
 		})
+
+		if s.ResidentFlow {
+			return nil
+		}
 
 		// Block until user retries or cancels. The group's AwaitQueueSignal
 		// stays blocked naturally. When the retry update arrives (flow → group → step),

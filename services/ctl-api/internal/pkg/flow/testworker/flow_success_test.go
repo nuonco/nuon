@@ -2,6 +2,7 @@ package testworker
 
 import (
 	"context"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -31,6 +32,42 @@ func (e *FlowTestSuite) setupFlowTest(ctx context.Context, ownerID, ownerType st
 	return &flw, stepQueue.ID
 }
 
+func (e *FlowTestSuite) setupGroupedFlowTest(ctx context.Context, ownerID, ownerType string, steps []app.WorkflowStep) (*app.Workflow, string) {
+	stepQueue := e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-steps")
+	e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-step-groups")
+	e.createTestQueue(ctx, ownerID, ownerType, "install-signals")
+
+	flw := app.Workflow{
+		OwnerID:   ownerID,
+		OwnerType: ownerType,
+		Type:      "test_flow",
+		Status:    app.NewCompositeStatus(ctx, app.StatusPending),
+	}
+	res := e.service.DB.WithContext(ctx).Create(&flw)
+	require.Nil(e.T(), res.Error)
+
+	groups := make(map[int]string)
+	for i := range steps {
+		groupID, ok := groups[steps[i].GroupIdx]
+		if !ok {
+			group := app.WorkflowStepGroup{
+				WorkflowID: flw.ID,
+				GroupIdx:   steps[i].GroupIdx,
+				Parallel:   steps[i].GroupParallel,
+				Status:     app.NewCompositeStatus(ctx, app.StatusPending),
+			}
+			res := e.service.DB.WithContext(ctx).Create(&group)
+			require.Nil(e.T(), res.Error)
+			groupID = group.ID
+			groups[steps[i].GroupIdx] = groupID
+		}
+		steps[i].WorkflowStepGroupID = groupID
+	}
+
+	e.createTestSteps(ctx, &flw, steps)
+	return &flw, stepQueue.ID
+}
+
 // enqueueFlow dispatches the execute-flow signal to start the workflow.
 func (e *FlowTestSuite) enqueueFlow(ctx context.Context, queueID string, flw *app.Workflow, ownerID, ownerType string) {
 	resp, err := e.service.QueueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
@@ -44,6 +81,44 @@ func (e *FlowTestSuite) enqueueFlow(ctx context.Context, queueID string, flw *ap
 		},
 		// Set owner so the flow client can find this queue signal via
 		// findQueueSignalByOwner(workflowID, "install_workflows", ...).
+		OwnerID:   flw.ID,
+		OwnerType: "install_workflows",
+	})
+	require.Nil(e.T(), err)
+	require.NotNil(e.T(), resp)
+}
+
+func (e *FlowTestSuite) enqueueResidentFlow(ctx context.Context, queueID string, flw *app.Workflow, ownerID, ownerType string, idleTimeout time.Duration) {
+	resp, err := e.service.QueueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
+		QueueID: queueID,
+		Signal: &executeflow.Signal{
+			WorkflowID:          flw.ID,
+			StepGroupQueueName:  "install-workflow-step-groups",
+			StepQueueName:       "install-workflow-steps",
+			StepTargetQueueName: "install-signals",
+			OwnerID:             ownerID,
+			OwnerType:           ownerType,
+			Resident:            true,
+			ResidentIdleTimeout: idleTimeout,
+		},
+		OwnerID:   flw.ID,
+		OwnerType: "install_workflows",
+	})
+	require.Nil(e.T(), err)
+	require.NotNil(e.T(), resp)
+}
+
+func (e *FlowTestSuite) enqueueGroupedLegacyFlow(ctx context.Context, queueID string, flw *app.Workflow, ownerID, ownerType string) {
+	resp, err := e.service.QueueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
+		QueueID: queueID,
+		Signal: &executeflow.Signal{
+			WorkflowID:          flw.ID,
+			StepGroupQueueName:  "install-workflow-step-groups",
+			StepQueueName:       "install-workflow-steps",
+			StepTargetQueueName: "install-signals",
+			OwnerID:             ownerID,
+			OwnerType:           ownerType,
+		},
 		OwnerID:   flw.ID,
 		OwnerType: "install_workflows",
 	})

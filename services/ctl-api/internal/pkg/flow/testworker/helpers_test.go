@@ -86,6 +86,44 @@ func (e *FlowTestSuite) getStep(ctx context.Context, id string) *app.WorkflowSte
 	return &step
 }
 
+func (e *FlowTestSuite) getStepGroup(ctx context.Context, id string) *app.WorkflowStepGroup {
+	var group app.WorkflowStepGroup
+	res := e.service.DB.WithContext(ctx).Where(app.WorkflowStepGroup{ID: id}).First(&group)
+	require.Nil(e.T(), res.Error)
+	return &group
+}
+
+func (e *FlowTestSuite) getLatestQueueSignal(ctx context.Context, ownerID, ownerType string, signalType signal.SignalType) *app.QueueSignal {
+	var queueSignal app.QueueSignal
+	res := e.service.DB.WithContext(ctx).
+		Where(app.QueueSignal{
+			OwnerID:   ownerID,
+			OwnerType: ownerType,
+			Type:      signalType,
+		}).
+		Order("created_at DESC").
+		First(&queueSignal)
+	require.Nil(e.T(), res.Error)
+	return &queueSignal
+}
+
+func (e *FlowTestSuite) waitForQueueSignalStatus(ctx context.Context, ownerID, ownerType string, signalType signal.SignalType, expected app.Status) {
+	require.Eventually(e.T(), func() bool {
+		queueSignal := e.getLatestQueueSignal(ctx, ownerID, ownerType, signalType)
+		return queueSignal.Status.Status == expected
+	}, pollTimeout, pollInterval, "queue signal %s for %s did not reach %s", signalType, ownerID, expected)
+}
+
+func (e *FlowTestSuite) getWorkflowRuns(ctx context.Context, workflowID string) []app.WorkflowRun {
+	var runs []app.WorkflowRun
+	res := e.service.DB.WithContext(ctx).
+		Where(app.WorkflowRun{WorkflowID: workflowID}).
+		Order("created_at ASC").
+		Find(&runs)
+	require.Nil(e.T(), res.Error)
+	return runs
+}
+
 // getStepsByWorkflow fetches all steps for a workflow ordered by Idx.
 func (e *FlowTestSuite) getStepsByWorkflow(ctx context.Context, workflowID string) []app.WorkflowStep {
 	var steps []app.WorkflowStep

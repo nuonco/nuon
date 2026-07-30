@@ -31,6 +31,12 @@ func NewApprovalPauseErr(stepID string) *ApprovalPauseErr {
 	return &ApprovalPauseErr{StepID: stepID}
 }
 
+type AwaitRetryPauseErr struct{}
+
+func (e *AwaitRetryPauseErr) Error() string {
+	return "workflow paused awaiting retry"
+}
+
 // FlowStoppedErr is returned when a workflow is stopped due to a denial or
 // skip-dependents response. Unlike ErrNotApproved, this carries context about
 // why the flow stopped and signals to the execute-flow signal that it should

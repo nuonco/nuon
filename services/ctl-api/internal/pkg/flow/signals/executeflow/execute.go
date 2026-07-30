@@ -27,10 +27,6 @@ const residentIdleTimeout = 15 * time.Minute
 // Each execution segment (initial, retry, skip, resume) is tracked as a WorkflowRun.
 // The flow pauses at approval points and errors, waiting for update handlers to resume.
 func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
-	// Mark the conductor as started so a retry-step update that lands during a
-	// re-warm (before the loop reaches its parked state) is still cloned+queued.
-	s.executeStarted = true
-
 	// Initialize temporal metrics writer if the underlying metrics writer was injected.
 	if s.mw != nil && s.v != nil {
 		tmw, err := tmetrics.New(s.v, tmetrics.WithMetricsWriter(s.mw))
@@ -69,6 +65,8 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			initialStartIdx = s.resumeStartIdx
 			initialStepID = s.resumeStepID
 			s.resumeRequested = false
+			s.resumeRunType = ""
+			s.resumeStepID = ""
 		} else if pos, ok := s.firstPendingGroupPosition(ctx); ok {
 			initialStartIdx = pos
 		}
@@ -80,26 +78,32 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 
 	for {
 		runErr := s.executeRun(ctx, run)
+		_, awaitingRetry := runErr.(*flow.AwaitRetryPauseErr)
+		if awaitingRetry {
+			runErr = nil
+		}
 
 		// Only a resume requested while parked below is valid; drop stale ones.
 		s.resumeRequested = false
 
 		if runErr == nil {
 			if s.cancelRequested {
+				if s.Resident {
+					s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+					if err := s.awaitResidentUpdates(ctx); err != nil {
+						return err
+					}
+				}
 				return nil
 			}
 
-			// Run completed without error. Check if workflow is fully done
-			// or if we paused at an approval/directive point.
-			if s.isWorkflowComplete(ctx) {
+			if awaitingRetry {
+				s.updateRunStatus(ctx, run.ID, app.StatusFailedPendingRetry)
+			} else if s.isWorkflowComplete(ctx) {
 				s.updateRunStatus(ctx, run.ID, app.StatusSuccess)
-				if !s.Resident {
+				if !s.Resident || (s.updatesInFlight == 0 && !s.appendRequested && !s.resumeRequested) {
 					return nil
 				}
-				// Resident: stay alive to accept the next step (e.g. a
-				// appended step) instead of completing. Fall through to the
-				// shared park below, which honors appendRequested and an idle
-				// timeout in resident mode.
 			} else if !s.Resident {
 				// Paused at approval - update run status and wait for resume.
 				// Resident hosts skip this: a non-complete state just means a
@@ -108,6 +112,12 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			}
 		} else {
 			if s.cancelRequested {
+				if s.Resident {
+					s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+					if err := s.awaitResidentUpdates(ctx); err != nil {
+						return err
+					}
+				}
 				return nil
 			}
 
@@ -172,6 +182,9 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			}
 			if s.cancelRequested {
 				s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+				if err := s.awaitResidentUpdates(ctx); err != nil {
+					return err
+				}
 				return runErr
 			}
 			if !parked {
@@ -179,7 +192,14 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 				return nil
 			}
 			// parkResident set resumeStartIdx to the first pending group.
-			run, err = s.createRun(ctx, app.WorkflowRunTypeResume, "", s.resumeStartIdx)
+			resumeRunType := s.resumeRunType
+			if resumeRunType == "" {
+				resumeRunType = app.WorkflowRunTypeResume
+			}
+			resumeStepID := s.resumeStepID
+			s.resumeRunType = ""
+			s.resumeStepID = ""
+			run, err = s.createRun(ctx, resumeRunType, resumeStepID, s.resumeStartIdx)
 			if err != nil {
 				return err
 			}
@@ -441,6 +461,10 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 		group := &groups[gi]
 
+		if s.Resident && group.Status.Status == app.StatusFailedPendingRetry && !residentPending[group.GroupIdx] {
+			return &flow.AwaitRetryPauseErr{}
+		}
+
 		if s.Resident && !residentPending[group.GroupIdx] {
 			continue
 		}
@@ -517,6 +541,11 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 		case flowdirective.GroupAwaitApproval:
 			return flow.NewApprovalPauseErr("")
+
+		case flowdirective.GroupAwaitRetry:
+			if s.Resident {
+				return &flow.AwaitRetryPauseErr{}
+			}
 
 		case flowdirective.GroupRetryGroup:
 			// Clone the group and re-dispatch the same group position.
@@ -728,6 +757,9 @@ func (s *Signal) firstPendingGroupPosition(ctx workflow.Context) (int, bool) {
 		if pending[g.GroupIdx] {
 			return pos, true
 		}
+		if g.Status.Status == app.StatusFailedPendingRetry {
+			return 0, false
+		}
 	}
 	return 0, false
 }
@@ -750,7 +782,7 @@ func (s *Signal) parkResident(ctx workflow.Context) (bool, error) {
 		}
 
 		s.awaitingResume = true
-		woke, err := workflow.AwaitWithTimeout(ctx, residentIdleTimeout, func() bool {
+		woke, err := workflow.AwaitWithTimeout(ctx, s.residentIdleTimeout(), func() bool {
 			return s.resumeRequested || s.appendRequested || s.cancelRequested
 		})
 		s.awaitingResume = false
@@ -784,6 +816,17 @@ func (s *Signal) parkResident(ctx workflow.Context) (bool, error) {
 		}
 		// Woke — loop back to re-scan for a pending group.
 	}
+}
+
+func (s *Signal) residentIdleTimeout() time.Duration {
+	if s.ResidentIdleTimeout > 0 {
+		return s.ResidentIdleTimeout
+	}
+	return residentIdleTimeout
+}
+
+func (s *Signal) awaitResidentUpdates(ctx workflow.Context) error {
+	return workflow.Await(ctx, func() bool { return s.updatesInFlight == 0 })
 }
 
 // markRemainingGroupStepsDiscarded marks all remaining groups and their

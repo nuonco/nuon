@@ -152,7 +152,8 @@ type ForwardSkipStepToGroupRequest struct {
 
 // ForwardSkipStepToGroupResponse wraps the group's skip-step response.
 type ForwardSkipStepToGroupResponse struct {
-	Skippable bool `json:"skippable"`
+	Skippable bool   `json:"skippable"`
+	Directive string `json:"directive,omitempty"`
 }
 
 // @temporal-gen-v2 activity

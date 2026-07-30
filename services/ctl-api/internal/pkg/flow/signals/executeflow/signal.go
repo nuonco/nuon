@@ -50,6 +50,8 @@ type Signal struct {
 	// the loop returns cleanly and the workflow re-warms on the next dispatch.
 	Resident bool `json:"resident,omitempty"`
 
+	ResidentIdleTimeout time.Duration `json:"resident_idle_timeout,omitempty"`
+
 	// Resume state — set by update handlers (approve/retry/skip) to wake the
 	// main execute loop when it is waiting after an approval pause or error.
 	resumeRequested bool
@@ -61,13 +63,14 @@ type Signal struct {
 	// parked resident workflow and run a freshly-added step.
 	appendRequested bool
 
-	// updatesInFlight counts append-step and retry-step update handlers that
+	// updatesInFlight counts resident update handlers that
 	// are currently executing. Those handlers persist their step rows before
 	// they set appendRequested/resumeRequested, so a resident host that idles
 	// out on its timer alone could close while a step is still being written
 	// and orphan it until the next dispatch re-warms the host. parkResident
 	// will not idle out while this counter is non-zero.
 	updatesInFlight int
+	retryInFlight   map[string]bool
 
 	// Cancel state — set by cancel update handlers.
 	cancelRequested bool
@@ -82,12 +85,6 @@ type Signal struct {
 
 	// awaitingResume: true while the main loop is parked awaiting resume/cancel.
 	awaitingResume bool
-
-	// executeStarted: true once executeFlow() has begun running. A retry-step
-	// update that lands on a freshly re-warmed resident host (before the loop
-	// reaches its parked state) must still clone+queue the retry, so the retry
-	// handler treats "not started yet" like the parked case.
-	executeStarted bool
 
 	// Pause state — set by "pause-workflow" update handler. When true, the
 	// flow will pause after the current group completes.
