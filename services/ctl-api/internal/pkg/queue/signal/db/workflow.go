@@ -13,6 +13,9 @@ type WorkflowRef struct {
 	Namespace string `json:"namespace"`
 	ID        string `json:"id"`
 	RunID     string `json:"run_id,omitempty"`
+
+	// empty means workflows.APITaskQueue (back-compat for pre-isolation rows)
+	TaskQueue string `json:"task_queue,omitempty"`
 }
 
 func (s WorkflowRef) Value() (driver.Value, error) {

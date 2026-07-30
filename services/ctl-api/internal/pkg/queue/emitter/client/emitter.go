@@ -13,12 +13,12 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"gorm.io/gorm/clause"
 
-	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/taskqueue"
 )
 
 const (
@@ -95,6 +95,7 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 		Workflow: signaldb.WorkflowRef{
 			Namespace:  q.Workflow.Namespace,
 			IDTemplate: idTemplate,
+			TaskQueue:  taskqueue.For(q.Workflow.Namespace, q.Name),
 		},
 	}
 
@@ -120,7 +121,7 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 
 	opts := tclient.StartWorkflowOptions{
 		ID:                    em.Workflow.ID,
-		TaskQueue:             workflows.APITaskQueue,
+		TaskQueue:             em.Workflow.TaskQueue,
 		Memo:                  emitterMemo(&em),
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{
@@ -315,6 +316,11 @@ func (c *Client) RestartEmitterWorkflow(ctx context.Context, emitterID string) (
 		return nil, errors.New("cannot restart a scheduled emitter that has already fired")
 	}
 
+	q, err := c.getQueue(ctx, em.QueueID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get queue")
+	}
+
 	wkflowReq := emitter.EmitterWorkflowRequest{
 		QueueID:   em.QueueID,
 		EmitterID: em.ID,
@@ -322,10 +328,11 @@ func (c *Client) RestartEmitterWorkflow(ctx context.Context, emitterID string) (
 	}
 
 	opts := tclient.StartWorkflowOptions{
-		ID:                    em.Workflow.ID,
-		TaskQueue:             workflows.APITaskQueue,
-		Memo:                  emitterMemo(em),
-		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		ID:                       em.Workflow.ID,
+		TaskQueue:                taskqueue.For(q.Workflow.Namespace, q.Name),
+		Memo:                     emitterMemo(em),
+		WorkflowIDReusePolicy:    enumsv1.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+		WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_TERMINATE_EXISTING,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,
 		},

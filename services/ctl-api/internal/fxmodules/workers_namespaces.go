@@ -61,8 +61,10 @@ var ComponentsWorkerModule = fx.Module("worker-components",
 	fx.Provide(worker.AsWorker(componentsworker.New)),
 )
 
-// InstallsWorkerModule provides the installs namespace worker.
-var InstallsWorkerModule = fx.Module("worker-installs",
+// InstallWorkerProvidersModule provides the install workflow/activity
+// constructors shared by the installs worker and the install crons worker.
+// Kept separate so either worker can run standalone without double-providing.
+var InstallWorkerProvidersModule = fx.Module("worker-installs-providers",
 	fx.Provide(installsactivities.New),
 	fx.Provide(installsworker.NewWorkflows),
 	fx.Provide(installsactionsworker.NewWorkflows),
@@ -70,14 +72,33 @@ var InstallsWorkerModule = fx.Module("worker-installs",
 	fx.Provide(installssandboxworker.NewWorkflows),
 	fx.Provide(installsstackworker.NewWorkflows),
 	fx.Provide(installsstateworker.New),
+)
+
+// InstallsWorkerModule provides the installs namespace worker (api task queue).
+var InstallsWorkerModule = fx.Module("worker-installs",
 	fx.Provide(worker.AsWorker(installsworker.New)),
 )
 
-// RunnersWorkerModule provides the runners namespace worker.
-var RunnersWorkerModule = fx.Module("worker-runners",
+// InstallCronWorkerModule provides the install crons worker (install-crons task queue).
+var InstallCronWorkerModule = fx.Module("worker-install-crons",
+	fx.Provide(worker.AsWorker(installsworker.NewCronWorker)),
+)
+
+// RunnerWorkerProvidersModule provides the runner workflow/activity constructors
+// shared by the runners worker and the runner healthcheck crons worker.
+var RunnerWorkerProvidersModule = fx.Module("worker-runners-providers",
 	fx.Provide(runnersactivities.New),
 	fx.Provide(runnersworker.NewWorkflows),
+)
+
+// RunnersWorkerModule provides the runners namespace worker (api task queue).
+var RunnersWorkerModule = fx.Module("worker-runners",
 	fx.Provide(worker.AsWorker(runnersworker.New)),
+)
+
+// RunnerHealthcheckCronWorkerModule provides the runner healthcheck crons worker.
+var RunnerHealthcheckCronWorkerModule = fx.Module("worker-runner-healthcheck-crons",
+	fx.Provide(worker.AsWorker(runnersworker.NewHealthcheckCronWorker)),
 )
 
 // ActionsWorkerModule provides the actions namespace worker.

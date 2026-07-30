@@ -10,3 +10,9 @@ const APITaskQueue string = "api"
 
 // each namespace has it's own queue for executors.
 const ExecutorsTaskQueue string = "executors"
+
+// isolated cron namespaces + task queues, polled by their own worker deployments
+const RunnerHealthcheckCronsNamespace string = "runner-healthcheck-crons"
+const RunnerHealthcheckCronsTaskQueue string = "runner-healthcheck-crons"
+const InstallCronsNamespace string = "install-crons"
+const InstallCronsTaskQueue string = "install-crons"

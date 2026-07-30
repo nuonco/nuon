@@ -15,6 +15,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
 const (
@@ -50,6 +51,11 @@ const (
 	// InstallActionCronSignalsQueueName is the queue for action cron emitter signals.
 	// Separate from install-signals so action crons don't compete with other signals.
 	InstallActionCronSignalsQueueName = "install-action-cron-signals"
+
+	// InstallDriftCronSignalsQueueName is the queue for drift cron emitter signals.
+	// Separate from install-signals so drift crons don't compete with other signals
+	// and can be routed to the isolated install-crons task queue.
+	InstallDriftCronSignalsQueueName = "install-drift-cron-signals"
 )
 
 type Params struct {
@@ -65,6 +71,7 @@ type Params struct {
 	AppsHelpers      *appshelpers.Helpers
 	RunnersHelpers   *runnershelpers.Helpers
 	QueueClient      *queueclient.Client
+	EmitterClient    *emitterclient.Client
 	FeaturesClient   *features.Features
 	MW               metrics.Writer
 }
@@ -79,6 +86,7 @@ type Helpers struct {
 	runbooksHelpers  *runbookshelpers.Helpers
 	db               *gorm.DB
 	queueClient      *queueclient.Client
+	emitterClient    *emitterclient.Client
 	featuresClient   *features.Features
 	mw               metrics.Writer
 }
@@ -94,6 +102,7 @@ func New(params Params) *Helpers {
 		appsHelpers:      params.AppsHelpers,
 		db:               params.DB,
 		queueClient:      params.QueueClient,
+		emitterClient:    params.EmitterClient,
 		featuresClient:   params.FeaturesClient,
 		mw:               params.MW,
 	}

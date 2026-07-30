@@ -8,7 +8,6 @@ import (
 )
 
 // @temporal-gen-v2 activity
-// @task-queue "api"
 // @start-to-close-timeout 10s
 // @as-wrapper
 // @wrapper-prefix QueueInternal

@@ -11,10 +11,10 @@ import (
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 
-	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/taskqueue"
 )
 
 const (
@@ -44,6 +44,19 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 	if res := c.db.WithContext(ctx).
 		Where(app.Queue{OwnerID: req.OwnerID, Name: req.Name}).
 		First(&existing); res.Error == nil {
+
+		if existing.Workflow.Namespace != req.Namespace {
+			if err := c.migrateQueueNamespace(
+				ctx,
+				&existing,
+				req.Namespace,
+				taskqueue.For(req.Namespace, req.Name),
+			); err != nil {
+				return nil, errors.Wrap(err, "unable to migrate queue namespace")
+			}
+
+			return &existing, nil
+		}
 		if err := c.HintRestartSingle(ctx, existing.ID); err != nil {
 			c.l.Warn("unable to hint restart existing queue during idempotent create",
 				zap.String("queue-id", existing.ID), zap.Error(err))
@@ -62,6 +75,7 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 		Workflow: signaldb.WorkflowRef{
 			Namespace:  req.Namespace,
 			IDTemplate: defaultQueueWorkflowIDTemplate,
+			TaskQueue:  taskqueue.For(req.Namespace, req.Name),
 		},
 	}
 	if res := c.db.WithContext(ctx).Create(&q); res.Error != nil {
@@ -78,7 +92,7 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 	}
 	opts := tclient.StartWorkflowOptions{
 		ID:                    q.Workflow.ID,
-		TaskQueue:             workflows.APITaskQueue,
+		TaskQueue:             q.Workflow.TaskQueue,
 		Memo:                  queueMemo(&q),
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{
