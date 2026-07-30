@@ -30,6 +30,15 @@ type ServiceCreateGrantRequest struct {
 	// Required: true
 	// Enum: ["read","all"]
 	Permission *string `json:"permission"`
+
+	// resource id
+	// Required: true
+	ResourceID *string `json:"resource_id"`
+
+	// resource type
+	// Required: true
+	// Enum: ["org","app","install"]
+	ResourceType *string `json:"resource_type"`
 }
 
 // Validate validates this service create grant request
@@ -37,6 +46,14 @@ func (m *ServiceCreateGrantRequest) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validatePermission(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateResourceID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateResourceType(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -83,6 +100,61 @@ func (m *ServiceCreateGrantRequest) validatePermission(formats strfmt.Registry) 
 
 	// value enum
 	if err := m.validatePermissionEnum("permission", "body", *m.Permission); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateGrantRequest) validateResourceID(formats strfmt.Registry) error {
+
+	if err := validate.Required("resource_id", "body", m.ResourceID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var serviceCreateGrantRequestTypeResourceTypePropEnum []any
+
+func init() {
+	var res []string
+	if err := json.Unmarshal([]byte(`["org","app","install"]`), &res); err != nil {
+		panic(err)
+	}
+	for _, v := range res {
+		serviceCreateGrantRequestTypeResourceTypePropEnum = append(serviceCreateGrantRequestTypeResourceTypePropEnum, v)
+	}
+}
+
+const (
+
+	// ServiceCreateGrantRequestResourceTypeOrg captures enum value "org"
+	ServiceCreateGrantRequestResourceTypeOrg string = "org"
+
+	// ServiceCreateGrantRequestResourceTypeApp captures enum value "app"
+	ServiceCreateGrantRequestResourceTypeApp string = "app"
+
+	// ServiceCreateGrantRequestResourceTypeInstall captures enum value "install"
+	ServiceCreateGrantRequestResourceTypeInstall string = "install"
+)
+
+// prop value enum
+func (m *ServiceCreateGrantRequest) validateResourceTypeEnum(path, location string, value string) error {
+	if err := validate.EnumCase(path, location, value, serviceCreateGrantRequestTypeResourceTypePropEnum, true); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *ServiceCreateGrantRequest) validateResourceType(formats strfmt.Registry) error {
+
+	if err := validate.Required("resource_type", "body", m.ResourceType); err != nil {
+		return err
+	}
+
+	// value enum
+	if err := m.validateResourceTypeEnum("resource_type", "body", *m.ResourceType); err != nil {
 		return err
 	}
 

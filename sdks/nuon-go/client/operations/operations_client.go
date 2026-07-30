@@ -190,8 +190,6 @@ type ClientService interface {
 
 	CreateAppExternalImageComponentConfig(params *CreateAppExternalImageComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppExternalImageComponentConfigCreated, error)
 
-	CreateAppGrant(params *CreateAppGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppGrantCreated, error)
-
 	CreateAppHelmComponentConfig(params *CreateAppHelmComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppHelmComponentConfigCreated, error)
 
 	CreateAppInputConfig(params *CreateAppInputConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppInputConfigCreated, error)
@@ -238,6 +236,8 @@ type ClientService interface {
 
 	CreateExternalImageComponentConfig(params *CreateExternalImageComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalImageComponentConfigCreated, error)
 
+	CreateGrant(params *CreateGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateGrantCreated, error)
+
 	CreateHelmComponentConfig(params *CreateHelmComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateHelmComponentConfigCreated, error)
 
 	CreateInstall(params *CreateInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallCreated, error)
@@ -253,8 +253,6 @@ type ClientService interface {
 	CreateInstallConfig(params *CreateInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallConfigCreated, error)
 
 	CreateInstallDeploy(params *CreateInstallDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallDeployCreated, error)
-
-	CreateInstallGrant(params *CreateInstallGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallGrantCreated, error)
 
 	CreateInstallInputs(params *CreateInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallInputsCreated, error)
 
@@ -322,8 +320,6 @@ type ClientService interface {
 
 	DeleteAppComponent(params *DeleteAppComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppComponentOK, error)
 
-	DeleteAppGrant(params *DeleteAppGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppGrantNoContent, error)
-
 	DeleteAppSecret(params *DeleteAppSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppSecretOK, error)
 
 	DeleteAppSecretV2(params *DeleteAppSecretV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppSecretV2OK, error)
@@ -332,9 +328,9 @@ type ClientService interface {
 
 	DeleteCurrentOrgWebhook(params *DeleteCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteCurrentOrgWebhookNoContent, error)
 
-	DeleteInstall(params *DeleteInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallOK, error)
+	DeleteGrant(params *DeleteGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteGrantNoContent, error)
 
-	DeleteInstallGrant(params *DeleteInstallGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallGrantNoContent, error)
+	DeleteInstall(params *DeleteInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallOK, error)
 
 	DeleteNotebook(params *DeleteNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNotebookNoContent, error)
 
@@ -838,9 +834,7 @@ type ClientService interface {
 
 	GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerOK, error)
 
-	ListAppGrants(params *ListAppGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAppGrantsOK, error)
-
-	ListInstallGrants(params *ListInstallGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInstallGrantsOK, error)
+	ListGrants(params *ListGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGrantsOK, error)
 
 	ListOIDCTrustPolicies(params *ListOIDCTrustPoliciesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOIDCTrustPoliciesOK, error)
 
@@ -2790,52 +2784,6 @@ func (a *Client) CreateAppExternalImageComponentConfig(params *CreateAppExternal
 }
 
 /*
-CreateAppGrant grants an account access to an app
-
-Grant an account read or full access to a single app (and its installs via walk-up). Org-admin only.
-*/
-func (a *Client) CreateAppGrant(params *CreateAppGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppGrantCreated, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewCreateAppGrantParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "CreateAppGrant",
-		Method:             "POST",
-		PathPattern:        "/v1/apps/{app_id}/grants",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &CreateAppGrantReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*CreateAppGrantCreated)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for CreateAppGrant: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
 CreateAppHelmComponentConfig creates a helm component config
 
 Create a helm component config.
@@ -3886,6 +3834,52 @@ func (a *Client) CreateExternalImageComponentConfig(params *CreateExternalImageC
 }
 
 /*
+CreateGrant grants an account access to a resource
+
+Grant an account read or full access to a single resource (org, app, or install). An org grant covers every resource in the org, and an app grant covers its installs, via walk-up authorization. Org-admin only.
+*/
+func (a *Client) CreateGrant(params *CreateGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateGrantCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateGrantParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateGrant",
+		Method:             "POST",
+		PathPattern:        "/v1/grants",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateGrantReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateGrantCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateGrant: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateHelmComponentConfig creates a helm component config
 
 Create a helm component config.
@@ -4248,52 +4242,6 @@ func (a *Client) CreateInstallDeploy(params *CreateInstallDeployParams, authInfo
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateInstallDeploy: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-CreateInstallGrant grants an account access to an install
-
-Grant an account read or full access to a single install. Org-admin only.
-*/
-func (a *Client) CreateInstallGrant(params *CreateInstallGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallGrantCreated, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewCreateInstallGrantParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "CreateInstallGrant",
-		Method:             "POST",
-		PathPattern:        "/v1/installs/{install_id}/grants",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &CreateInstallGrantReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*CreateInstallGrantCreated)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for CreateInstallGrant: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -5812,50 +5760,6 @@ func (a *Client) DeleteAppComponent(params *DeleteAppComponentParams, authInfo r
 }
 
 /*
-DeleteAppGrant revokes a grant on an app
-*/
-func (a *Client) DeleteAppGrant(params *DeleteAppGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppGrantNoContent, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewDeleteAppGrantParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "DeleteAppGrant",
-		Method:             "DELETE",
-		PathPattern:        "/v1/apps/{app_id}/grants/{grant_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &DeleteAppGrantReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*DeleteAppGrantNoContent)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for DeleteAppGrant: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
 DeleteAppSecret deletes an app secret
 
 Delete an app secret.
@@ -6038,6 +5942,50 @@ func (a *Client) DeleteCurrentOrgWebhook(params *DeleteCurrentOrgWebhookParams, 
 }
 
 /*
+DeleteGrant revokes a grant
+*/
+func (a *Client) DeleteGrant(params *DeleteGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteGrantNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteGrantParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteGrant",
+		Method:             "DELETE",
+		PathPattern:        "/v1/grants/{grant_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteGrantReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteGrantNoContent)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteGrant: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 DeleteInstall deletes an install
 
 Delete an install.
@@ -6080,50 +6028,6 @@ func (a *Client) DeleteInstall(params *DeleteInstallParams, authInfo runtime.Cli
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-DeleteInstallGrant revokes a grant on an install
-*/
-func (a *Client) DeleteInstallGrant(params *DeleteInstallGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallGrantNoContent, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewDeleteInstallGrantParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "DeleteInstallGrant",
-		Method:             "DELETE",
-		PathPattern:        "/v1/installs/{install_id}/grants/{grant_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &DeleteInstallGrantReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*DeleteInstallGrantNoContent)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for DeleteInstallGrant: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -17774,22 +17678,24 @@ func (a *Client) GracefulShutDownRunner(params *GracefulShutDownRunnerParams, au
 }
 
 /*
-ListAppGrants lists grants on an app
+ListGrants lists grants in an org
+
+List grants in the caller's org, optionally filtered to a single resource by resource_type and resource_id.
 */
-func (a *Client) ListAppGrants(params *ListAppGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAppGrantsOK, error) {
+func (a *Client) ListGrants(params *ListGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGrantsOK, error) {
 	// NOTE: parameters are not validated before sending
 	if params == nil {
-		params = NewListAppGrantsParams()
+		params = NewListGrantsParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "ListAppGrants",
+		ID:                 "ListGrants",
 		Method:             "GET",
-		PathPattern:        "/v1/apps/{app_id}/grants",
+		PathPattern:        "/v1/grants",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &ListAppGrantsReader{formats: a.formats},
+		Reader:             &ListGrantsReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -17803,7 +17709,7 @@ func (a *Client) ListAppGrants(params *ListAppGrantsParams, authInfo runtime.Cli
 	}
 
 	// only one success response has to be checked
-	success, ok := result.(*ListAppGrantsOK)
+	success, ok := result.(*ListGrantsOK)
 	if ok {
 		return success, nil
 	}
@@ -17813,51 +17719,7 @@ func (a *Client) ListAppGrants(params *ListAppGrantsParams, authInfo runtime.Cli
 	// no default response is defined.
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for ListAppGrants: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-ListInstallGrants lists grants on an install
-*/
-func (a *Client) ListInstallGrants(params *ListInstallGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListInstallGrantsOK, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewListInstallGrantsParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "ListInstallGrants",
-		Method:             "GET",
-		PathPattern:        "/v1/installs/{install_id}/grants",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &ListInstallGrantsReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*ListInstallGrantsOK)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for ListInstallGrants: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	msg := fmt.Sprintf("unexpected success response for ListGrants: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
