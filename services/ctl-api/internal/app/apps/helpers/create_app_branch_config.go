@@ -21,7 +21,6 @@ func (h *Helpers) CreateAppBranchConfig(
 		PublicGitVCSConfig:       publicGitVCSConfig,
 	}
 
-	// Create config - GORM will automatically create VCS configs due to polymorphic relationship
 	if err := h.db.WithContext(ctx).Create(&config).Error; err != nil {
 		return nil, fmt.Errorf("unable to create app branch config: %w", err)
 	}

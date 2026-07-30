@@ -125,7 +125,7 @@ export const WorkflowRunPanelButton = ({ runId }: { runId: string }) => {
   return (
     <Button variant="secondary" onClick={openPanel}>
       <Icon variant="ListChecksIcon" size={16} />
-      View workflow progress
+      Workflow steps
     </Button>
   )
 }

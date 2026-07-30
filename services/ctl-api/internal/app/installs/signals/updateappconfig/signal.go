@@ -18,6 +18,7 @@ type Signal struct {
 	NewAppConfigID string            `json:"new_app_config_id"`
 	DryRun         bool              `json:"dry_run"`
 	Metadata       map[string]string `json:"metadata,omitempty"`
+	TriggeredBy    string            `json:"triggered_by,omitempty"`
 
 	AppBranchRunID string `json:"app_branch_run_id,omitempty"`
 	InstallGroupID string `json:"install_group_id,omitempty"`
@@ -84,16 +85,32 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to update install app_config_id: %w", err)
 	}
 
-	if _, err := activities.AwaitCreateInstallAppConfigVersion(ctx, &activities.CreateInstallAppConfigVersionInput{
-		InstallID:      s.InstallID,
-		OldAppConfigID: install.AppConfigID,
-		NewAppConfigID: s.NewAppConfigID,
-		Diff:           diffResult.Diff,
-		Metadata:       s.Metadata,
-		AppBranchRunID: s.AppBranchRunID,
-		InstallGroupID: s.InstallGroupID,
-	}); err != nil {
-		return fmt.Errorf("unable to create install app config version: %w", err)
+	metadata := s.Metadata
+	if metadata == nil {
+		metadata = map[string]string{}
+	}
+	if s.TriggeredBy != "" {
+		metadata["triggered_by"] = s.TriggeredBy
+	}
+
+	if s.AppBranchRunID != "" {
+		if _, err := activities.AwaitUpdateInstallAppConfigVersionStatus(ctx, &activities.UpdateInstallAppConfigVersionStatusInput{
+			AppBranchRunID: s.AppBranchRunID,
+			InstallID:      s.InstallID,
+			Metadata:       metadata,
+		}); err != nil {
+			return fmt.Errorf("unable to update install app config version status: %w", err)
+		}
+	} else {
+		if _, err := activities.AwaitCreateInstallAppConfigVersion(ctx, &activities.CreateInstallAppConfigVersionInput{
+			InstallID:      s.InstallID,
+			OldAppConfigID: install.AppConfigID,
+			NewAppConfigID: s.NewAppConfigID,
+			Diff:           diffResult.Diff,
+			Metadata:       metadata,
+		}); err != nil {
+			return fmt.Errorf("unable to create install app config version: %w", err)
+		}
 	}
 
 	if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{

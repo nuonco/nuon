@@ -138,6 +138,7 @@ export const DeploymentPlanEditorContainer = ({
       loadingInstalls={loadingInstalls}
       isSaving={isSaving}
       labelColors={labelColors}
+      orgId={org.id!}
       onSave={(groups) => save(groups)}
       onCancel={() => removeModal(props.modalId)}
       {...props}

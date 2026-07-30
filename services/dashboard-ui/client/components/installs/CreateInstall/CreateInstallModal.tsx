@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -11,12 +11,13 @@ interface ICreateInstall {}
 export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
   const [selectedApp, setSelectedApp] = useState<TApp | undefined>()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [installCreated, setInstallCreated] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
-  const modalRef = useRef<HTMLDivElement>(null)
   const clearDraftRef = useRef<(() => void) | null>(null)
 
   const handleClose = () => {
     setSelectedApp(undefined)
+    setInstallCreated(false)
     props.onClose?.()
   }
 
@@ -27,7 +28,7 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
   }
 
 
-  const modalProps = selectedApp
+  const modalProps = selectedApp && !installCreated
     ? {
         primaryActionTrigger: {
           children: isSubmitting ? (
@@ -63,8 +64,8 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
             variant="h3"
             weight="strong"
           >
-            <Icon variant="CubeIcon" size="24" />
-            Create install
+            <Icon variant={installCreated ? 'GitBranchIcon' : 'CubeIcon'} size="24" />
+            {installCreated ? 'Connect to app branches' : 'Create install'}
           </Text>
           {!selectedApp && (
             <Text
@@ -79,6 +80,7 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
       size={selectedApp ? 'xl' : 'default'}
       className="!max-h-[80vh]"
       childrenClassName="flex-auto overflow-y-auto"
+      showFooter={!installCreated}
       onClose={handleClose}
       {...props}
       {...modalProps}
@@ -94,6 +96,7 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
           onRegisterClearDraft={(fn) => {
             clearDraftRef.current = fn
           }}
+          onInstallCreated={() => setInstallCreated(true)}
         />
       ) : (
         <AppSelect onSelectApp={setSelectedApp} onClose={handleClose} />

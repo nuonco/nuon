@@ -13,6 +13,7 @@ import (
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -21,6 +22,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/breakglass"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/components"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/inputs"
+	installsyncer "github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/installs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/kubernetescontexts"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/operationroles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/permissions"
@@ -42,6 +44,7 @@ type syncer struct {
 	componentHelpers *componenthelpers.Helpers
 	actionsHelpers   *actionshelpers.Helpers
 	runbooksHelpers  *runbookshelpers.Helpers
+	installHelpers   *installhelpers.Helpers
 	vcsHelpers       *vcshelpers.Helpers
 	tfClient         terraform.Client
 
@@ -65,7 +68,7 @@ type Params struct {
 
 // NewDBSyncer creates a database-backed syncer for use in Temporal workflows.
 // The context must contain org and account information before calling Sync().
-func NewDBSyncer(db *gorm.DB, appsHelpers *appshelpers.Helpers, componentHelpers *componenthelpers.Helpers, actionsHelpers *actionshelpers.Helpers, runbooksHelpers *runbookshelpers.Helpers, vcsHelpers *vcshelpers.Helpers, tfClient terraform.Client, appID string, cfg *config.AppConfig, appConfigID string) sync.Syncer {
+func NewDBSyncer(db *gorm.DB, appsHelpers *appshelpers.Helpers, componentHelpers *componenthelpers.Helpers, actionsHelpers *actionshelpers.Helpers, runbooksHelpers *runbookshelpers.Helpers, installHelpers *installhelpers.Helpers, vcsHelpers *vcshelpers.Helpers, tfClient terraform.Client, appID string, cfg *config.AppConfig, appConfigID string) sync.Syncer {
 	return &syncer{
 		db:               db,
 		cfg:              cfg,
@@ -73,6 +76,7 @@ func NewDBSyncer(db *gorm.DB, appsHelpers *appshelpers.Helpers, componentHelpers
 		componentHelpers: componentHelpers,
 		actionsHelpers:   actionsHelpers,
 		runbooksHelpers:  runbooksHelpers,
+		installHelpers:   installHelpers,
 		vcsHelpers:       vcsHelpers,
 		tfClient:         tfClient,
 		appID:            appID,
@@ -333,6 +337,10 @@ func (s *syncer) syncSteps() []syncStep {
 	}
 
 	return steps
+}
+
+func (s *syncer) SyncInstall(ctx context.Context, install *config.Install) (*sync.InstallSyncResult, error) {
+	return installsyncer.SyncInstall(ctx, s.db, s.installHelpers, s.appID, install)
 }
 
 // NOTE: syncComponent() and finish() methods are defined in components.go and app_config.go respectively

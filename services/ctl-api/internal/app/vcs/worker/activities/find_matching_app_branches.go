@@ -23,13 +23,31 @@ type MatchingAppBranch struct {
 func (a *Activities) FindMatchingAppBranches(ctx context.Context, req FindMatchingAppBranchesRequest) ([]MatchingAppBranch, error) {
 	appBranchConfigTable := plugins.TableName(a.db, app.AppBranchConfig{})
 
+	results, err := a.findMatchesByConfigType(ctx, req, appBranchConfigTable)
+	if err != nil {
+		return nil, err
+	}
+
+	seen := make(map[string]bool)
+	var deduped []MatchingAppBranch
+	for _, r := range results {
+		if seen[r.AppBranchID] {
+			continue
+		}
+		seen[r.AppBranchID] = true
+		deduped = append(deduped, r)
+	}
+
+	return deduped, nil
+}
+
+func (a *Activities) findMatchesByConfigType(ctx context.Context, req FindMatchingAppBranchesRequest, configType string) ([]MatchingAppBranch, error) {
 	var results []MatchingAppBranch
 
-	// Match via connected_github_vcs_configs.
 	err := a.db.WithContext(ctx).
 		Table("connected_github_vcs_configs").
 		Select("app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id").
-		Joins("JOIN app_branch_configs ON app_branch_configs.id = connected_github_vcs_configs.component_config_id AND connected_github_vcs_configs.component_config_type = ?", appBranchConfigTable).
+		Joins("JOIN app_branch_configs ON app_branch_configs.id = connected_github_vcs_configs.component_config_id AND connected_github_vcs_configs.component_config_type = ?", configType).
 		Joins("JOIN app_branches ON app_branches.id = app_branch_configs.app_branch_id AND app_branches.deleted_at = 0").
 		Where("connected_github_vcs_configs.org_id = ?", req.OrgID).
 		Where("connected_github_vcs_configs.repo = ?", req.Repo).
@@ -42,14 +60,11 @@ func (a *Activities) FindMatchingAppBranches(ctx context.Context, req FindMatchi
 		return nil, fmt.Errorf("unable to find matching app branches (connected): %w", err)
 	}
 
-	// Match via public_git_vcs_configs.
-	// Public git configs store repo as a clone URL (e.g. "https://github.com/owner/repo.git")
-	// while GitHub webhook payloads provide "owner/repo". Match both formats.
 	var publicResults []MatchingAppBranch
 	err = a.db.WithContext(ctx).
 		Table("public_git_vcs_configs").
 		Select("app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id").
-		Joins("JOIN app_branch_configs ON app_branch_configs.id = public_git_vcs_configs.component_config_id AND public_git_vcs_configs.component_config_type = ?", appBranchConfigTable).
+		Joins("JOIN app_branch_configs ON app_branch_configs.id = public_git_vcs_configs.component_config_id AND public_git_vcs_configs.component_config_type = ?", configType).
 		Joins("JOIN app_branches ON app_branches.id = app_branch_configs.app_branch_id AND app_branches.deleted_at = 0").
 		Where("app_branch_configs.org_id = ?", req.OrgID).
 		Where("(public_git_vcs_configs.repo = ? OR public_git_vcs_configs.repo = ?)", req.Repo, "https://github.com/"+req.Repo+".git").
@@ -62,18 +77,5 @@ func (a *Activities) FindMatchingAppBranches(ctx context.Context, req FindMatchi
 		return nil, fmt.Errorf("unable to find matching app branches (public): %w", err)
 	}
 
-	results = append(results, publicResults...)
-
-	// Deduplicate: keep only the latest config per app branch
-	seen := make(map[string]bool)
-	var deduped []MatchingAppBranch
-	for _, r := range results {
-		if seen[r.AppBranchID] {
-			continue
-		}
-		seen[r.AppBranchID] = true
-		deduped = append(deduped, r)
-	}
-
-	return deduped, nil
+	return append(results, publicResults...), nil
 }

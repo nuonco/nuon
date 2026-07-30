@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -27,7 +28,11 @@ func (a *Activities) UpdateInstallGroupRun(ctx context.Context, input *UpdateIns
 	}
 
 	if input.Installs != nil {
-		updates["installs"] = input.Installs
+		installsJSON, err := json.Marshal(input.Installs)
+		if err != nil {
+			return fmt.Errorf("unable to marshal installs: %w", err)
+		}
+		updates["installs"] = string(installsJSON)
 	}
 
 	if input.CompletedAt != nil {

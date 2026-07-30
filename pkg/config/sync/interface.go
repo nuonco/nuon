@@ -3,6 +3,8 @@ package sync
 import (
 	"context"
 
+	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/diff"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -72,6 +74,19 @@ type Syncer interface {
 	// This allows consumers to notify users about removed runbooks.
 	// This should only be called after a successful Sync() operation.
 	OrphanedRunbooks() map[string]string
+
+	// SyncInstall syncs a single install config to the database.
+	// If the install does not exist, it is created. If it exists and has
+	// changed, it is updated (inputs, labels, config, component toggles).
+	SyncInstall(ctx context.Context, install *config.Install) (*InstallSyncResult, error)
+}
+
+type InstallSyncResult struct {
+	InstallID   string     `json:"install_id"`
+	InstallName string     `json:"install_name"`
+	Created     bool       `json:"created"`
+	Changed     bool       `json:"changed"`
+	Diff        *diff.Diff `json:"diff,omitempty"`
 }
 
 // ComponentState represents the synchronized state of a component.

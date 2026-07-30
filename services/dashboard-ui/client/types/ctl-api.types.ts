@@ -583,6 +583,60 @@ export type TAppStackConfig = components['schemas']['app.AppStackConfig']
 export type TInstallAppConfigVersion =
   components['schemas']['app.InstallAppConfigVersion']
 
+export type TInstallAppBranchConnection =
+  components['schemas']['app.InstallAppBranchConnection']
+
+// install config versions (from git sync)
+export type TInstallConfigVersion = {
+  id: string
+  created_at: string
+  install_config_sync_id: string
+  install_id: string
+  install_name: string
+  file_path?: string
+  created: boolean
+  status?: { status: string; status_human_description?: string }
+  diff?: unknown
+  metadata?: Record<string, string>
+  install_config_sync?: TInstallConfigSync
+}
+
+export type TInstallConfigSync = {
+  id: string
+  created_at: string
+  install_id?: string
+  app_branch_id: string
+  app_branch_run_id?: string
+  triggered_by: string
+  status?: { status: string; status_human_description?: string }
+  versions?: TInstallConfigVersion[]
+  vcs_connection_commit?: {
+    sha?: string
+    message?: string
+    author_name?: string
+    author_email?: string
+  }
+}
+
+// install config diff tree (from pkg/config/diff)
+export type TConfigDiffKey = {
+  op: 'add' | 'remove' | 'change' | 'noop' | ''
+  diff: string
+  before?: string
+  after?: string
+}
+
+export type TConfigDiffNode = {
+  key: string
+  diff?: TConfigDiffKey
+  children?: TConfigDiffNode[]
+}
+
+// install group runs
+export type TInstallGroupRun = components['schemas']['app.InstallGroupRun']
+export type TInstallGroupRunInstall =
+  components['schemas']['app.InstallGroupRunInstall']
+
 // api version
 export type TAPIVersion = {
   ui: { version: string; git_ref: string }

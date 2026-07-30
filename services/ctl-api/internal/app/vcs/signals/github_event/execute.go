@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/syncinstalls"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/vcspush"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -54,7 +55,7 @@ func (s *Signal) handlePushEvent(ctx workflow.Context, l *zap.Logger, connEvent 
 	l.Info(fmt.Sprintf("processing push event for repo=%s branch=%s vcs_connection=%s",
 		pushInfo.Repo, pushInfo.Branch, connEvent.VCSConnectionID))
 
-	return s.fanOutToAppBranches(ctx, l, connEvent, pushInfo.Repo, pushInfo.Branch, false, "push", nil, "", "", pushInfo.PusherEmails, pushInfo.SenderLogin)
+	return s.fanOutToAppBranches(ctx, l, connEvent, pushInfo.Repo, pushInfo.Branch, false, "push", nil, pushInfo.HeadSHA, "", pushInfo.PusherEmails, pushInfo.SenderLogin, pushInfo.ChangedFiles)
 }
 
 func (s *Signal) handlePullRequestEvent(ctx workflow.Context, l *zap.Logger, connEvent *app.VCSConnectionEvent, event *app.GithubEvent, payload map[string]any) error {
@@ -72,10 +73,10 @@ func (s *Signal) handlePullRequestEvent(ctx workflow.Context, l *zap.Logger, con
 	l.Info(fmt.Sprintf("processing pull_request event for repo=%s base=%s pr=%d head=%s vcs_connection=%s",
 		prInfo.Repo, prInfo.BaseBranch, prInfo.PRNumber, prInfo.HeadSHA, connEvent.VCSConnectionID))
 
-	return s.fanOutToAppBranches(ctx, l, connEvent, prInfo.Repo, prInfo.BaseBranch, true, "pull_request", &prInfo.PRNumber, prInfo.HeadSHA, prInfo.BaseBranch, nil, "")
+	return s.fanOutToAppBranches(ctx, l, connEvent, prInfo.Repo, prInfo.BaseBranch, true, "pull_request", &prInfo.PRNumber, prInfo.HeadSHA, prInfo.BaseBranch, nil, "", nil)
 }
 
-func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEvent *app.VCSConnectionEvent, repo, branch string, planOnly bool, eventType string, prNumber *int, headSHA, baseBranch string, pusherEmails []string, senderLogin string) error {
+func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEvent *app.VCSConnectionEvent, repo, branch string, planOnly bool, eventType string, prNumber *int, headSHA, baseBranch string, pusherEmails []string, senderLogin string, changedFiles []string) error {
 	matches, err := activities.AwaitFindMatchingAppBranches(ctx, activities.FindMatchingAppBranchesRequest{
 		OrgID:  connEvent.OrgID,
 		Repo:   repo,
@@ -84,13 +85,6 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 	if err != nil {
 		return errors.Wrap(err, "failed to find matching app branches")
 	}
-
-	if len(matches) == 0 {
-		l.Info(fmt.Sprintf("no matching app branches for connection %s", connEvent.VCSConnectionID))
-		return nil
-	}
-
-	l.Info(fmt.Sprintf("found %d matching app branches for connection %s", len(matches), connEvent.VCSConnectionID))
 
 	for _, match := range matches {
 		_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
@@ -113,8 +107,38 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 			l.Error(fmt.Sprintf("failed to enqueue vcs-push signal for app branch %s: %v", match.AppBranchID, err))
 			continue
 		}
-
 		l.Info(fmt.Sprintf("enqueued vcs-push signal for app branch %s (event_type=%s)", match.AppBranchID, eventType))
+	}
+
+	installSyncMatches, err := activities.AwaitFindMatchingInstallSyncApps(ctx, activities.FindMatchingInstallSyncAppsRequest{
+		OrgID:  connEvent.OrgID,
+		Repo:   repo,
+		Branch: branch,
+	})
+	if err != nil {
+		l.Error(fmt.Sprintf("failed to find matching install sync apps: %v", err))
+	}
+
+	for _, match := range installSyncMatches {
+		_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   match.AppID,
+			OwnerType: "apps",
+			Signal: &syncinstalls.Signal{
+				AppID:               match.AppID,
+				CommitSHA:           headSHA,
+				TriggeredBy:         "vcs-push",
+				FallbackCreatedByID: connEvent.CreatedByID,
+			},
+		})
+		if err != nil {
+			l.Error(fmt.Sprintf("failed to enqueue sync-installs signal for app %s: %v", match.AppID, err))
+			continue
+		}
+		l.Info(fmt.Sprintf("enqueued sync-installs signal for app %s", match.AppID))
+	}
+
+	if len(matches) == 0 && len(installSyncMatches) == 0 {
+		l.Info(fmt.Sprintf("no matching app branches or install sync apps for connection %s", connEvent.VCSConnectionID))
 	}
 
 	return nil

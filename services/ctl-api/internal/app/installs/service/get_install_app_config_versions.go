@@ -46,6 +46,10 @@ func (s *service) GetInstallAppConfigVersions(ctx *gin.Context) {
 func (s *service) getInstallAppConfigVersions(ctx *gin.Context, installID, orgID string) ([]app.InstallAppConfigVersion, error) {
 	var versions []app.InstallAppConfigVersion
 	res := s.db.WithContext(ctx).
+		Preload("Workflow").
+		Preload("Workflow.Steps").
+		Preload("AppBranchRun").
+		Preload("AppBranchRun.AppBranch").
 		Where(app.InstallAppConfigVersion{
 			InstallID: installID,
 			OrgID:     orgID,

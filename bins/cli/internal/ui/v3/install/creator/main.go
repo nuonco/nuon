@@ -44,6 +44,7 @@ type model struct {
 	appID        string
 	name         string
 	presetRegion string
+	presetLabels map[string]string
 
 	width  int
 	height int
@@ -85,6 +86,7 @@ func initialModel(
 	appID string,
 	name string,
 	region string,
+	labels map[string]string,
 ) model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
@@ -100,6 +102,7 @@ func initialModel(
 		appID:        appID,
 		name:         name,
 		presetRegion: region,
+		presetLabels: labels,
 		viewport:     vp,
 		spinner:      s,
 		help:         help.New(),
@@ -267,12 +270,13 @@ func InstallCreatorApp(
 	appID string,
 	name string,
 	region string,
+	labels map[string]string,
 ) (string, error) {
 	if !cfg.Interactive {
 		return "", errors.New("interactive terminal required for install creation; use nuon installs create --name <name> --region <region> flags")
 	}
 
-	m := initialModel(ctx, cfg, api, appID, name, region)
+	m := initialModel(ctx, cfg, api, appID, name, region, labels)
 	p := tea.NewProgram(m)
 
 	finalModel, err := p.Run()

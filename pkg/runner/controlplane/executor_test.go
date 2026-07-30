@@ -73,47 +73,55 @@ func (c *fakeClient) WriteControlPlaneTraces(ctx context.Context, runnerID strin
 }
 
 func TestExecuteSandboxBuildShortCircuits(t *testing.T) {
-	client := &fakeClient{
-		planJSON: `{"sandbox_mode":{"enabled":true,"outputs":{"image":{"tag":"v1.2.3","repository":"nuon/app-service"}}}}`,
-	}
-	e, err := NewExecutor(client, nil, Config{})
-	if err != nil {
-		t.Fatalf("NewExecutor: %v", err)
-	}
+	for _, tt := range []struct {
+		name     string
+		planJSON string
+	}{
+		{name: "inner plan", planJSON: `{"sandbox_mode":{"enabled":true,"outputs":{"image":{"tag":"v1.2.3","repository":"nuon/app-service"}}}}`},
+		{name: "composite plan", planJSON: `{"build_plan":{"sandbox_mode":{"enabled":true,"outputs":{"image":{"tag":"v1.2.3","repository":"nuon/app-service"}}}}}`},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			client := &fakeClient{planJSON: tt.planJSON}
+			e, err := NewExecutor(client, nil, Config{})
+			if err != nil {
+				t.Fatalf("NewExecutor: %v", err)
+			}
 
-	job := &models.AppRunnerJob{ID: "job1", Type: models.AppRunnerJobTypeContainerDashImageDashBuild}
-	execution := &models.AppRunnerJobExecution{ID: "exec1"}
+			job := &models.AppRunnerJob{ID: "job1", Type: models.AppRunnerJobTypeContainerDashImageDashBuild}
+			execution := &models.AppRunnerJobExecution{ID: "exec1"}
 
-	if err := e.Execute(context.Background(), job, execution); err != nil {
-		t.Fatalf("Execute: %v", err)
-	}
+			if err := e.Execute(context.Background(), job, execution); err != nil {
+				t.Fatalf("Execute: %v", err)
+			}
 
-	if client.planCalls != 1 {
-		t.Errorf("expected plan fetched exactly once, got %d", client.planCalls)
-	}
-	if client.outputsCalls != 1 {
-		t.Errorf("expected outputs written once, got %d", client.outputsCalls)
-	}
-	if client.resultCalls != 1 {
-		t.Errorf("expected result written once, got %d", client.resultCalls)
-	}
-	outputs, ok := client.outputs.(map[string]any)
-	if !ok {
-		t.Fatalf("expected map outputs, got %#v", client.outputs)
-	}
-	img, ok := outputs["image"].(map[string]any)
-	if !ok || img["tag"] != "v1.2.3" {
-		t.Errorf("expected sandbox outputs propagated, got %#v", client.outputs)
-	}
-	if len(client.statuses) == 0 || client.statuses[len(client.statuses)-1] != models.AppRunnerJobExecutionStatusFinished {
-		t.Errorf("expected execution to finish, got statuses %v", client.statuses)
+			if client.planCalls != 1 {
+				t.Errorf("expected plan fetched exactly once, got %d", client.planCalls)
+			}
+			if client.outputsCalls != 1 {
+				t.Errorf("expected outputs written once, got %d", client.outputsCalls)
+			}
+			if client.resultCalls != 1 {
+				t.Errorf("expected result written once, got %d", client.resultCalls)
+			}
+			outputs, ok := client.outputs.(map[string]any)
+			if !ok {
+				t.Fatalf("expected map outputs, got %#v", client.outputs)
+			}
+			img, ok := outputs["image"].(map[string]any)
+			if !ok || img["tag"] != "v1.2.3" {
+				t.Errorf("expected sandbox outputs propagated, got %#v", client.outputs)
+			}
+			if len(client.statuses) == 0 || client.statuses[len(client.statuses)-1] != models.AppRunnerJobExecutionStatusFinished {
+				t.Errorf("expected execution to finish, got statuses %v", client.statuses)
+			}
+		})
 	}
 }
 
 func TestExecuteNonSandboxDoesNotShortCircuit(t *testing.T) {
 	client := &fakeClient{
-		planJSON:      `{"sandbox_mode":{"enabled":false}}`,
 		compositePlan: &models.PlantypesCompositePlan{BuildPlan: &models.PlantypesBuildPlan{}},
+		planJSON:      `{"build_plan":{"sandbox_mode":{"enabled":false}}}`,
 	}
 	e, err := NewExecutor(client, nil, Config{})
 	if err != nil {
