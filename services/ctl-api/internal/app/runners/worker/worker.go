@@ -34,6 +34,11 @@ type Worker struct {
 	worker.Worker
 }
 
+// HealthcheckCronWorker polls the isolated runner-healthcheck-crons task queue.
+type HealthcheckCronWorker struct {
+	worker.Worker
+}
+
 type WorkerParams struct {
 	fx.In
 
@@ -51,7 +56,23 @@ type WorkerParams struct {
 }
 
 func New(params WorkerParams) (*Worker, error) {
-	client, err := params.Tclient.GetNamespaceClient("runners")
+	wkr, err := buildWorker(params, "runners", pkgworkflows.APITaskQueue, "runners worker")
+	if err != nil {
+		return nil, err
+	}
+	return &Worker{wkr}, nil
+}
+
+func NewHealthcheckCronWorker(params WorkerParams) (*HealthcheckCronWorker, error) {
+	wkr, err := buildWorker(params, pkgworkflows.RunnerHealthcheckCronsNamespace, pkgworkflows.RunnerHealthcheckCronsTaskQueue, "runner healthcheck cron worker")
+	if err != nil {
+		return nil, err
+	}
+	return &HealthcheckCronWorker{wkr}, nil
+}
+
+func buildWorker(params WorkerParams, namespace string, taskQueue string, logName string) (worker.Worker, error) {
+	client, err := params.Tclient.GetNamespaceClient(namespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
 	}
@@ -62,7 +83,7 @@ func New(params WorkerParams) (*Worker, error) {
 	}
 
 	worker.SetStickyWorkflowCacheSize(params.Cfg.TemporalStickyWorkflowCacheSize)
-	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
+	wkr := worker.New(client, taskQueue, worker.Options{
 		MaxConcurrentActivityExecutionSize:     params.Cfg.TemporalMaxConcurrentActivities,
 		MaxConcurrentWorkflowTaskExecutionSize: params.Cfg.TemporalMaxConcurrentWorkflowTaskExecutionSize,
 		MaxConcurrentActivityTaskPollers:       params.Cfg.TemporalMaxConcurrentActivityTaskPollers,
@@ -90,7 +111,7 @@ func New(params WorkerParams) (*Worker, error) {
 
 	params.Lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
-			params.L.Info("starting runners worker")
+			params.L.Info("starting " + logName)
 			go func() {
 				wkr.Run(worker.InterruptCh())
 			}()
@@ -101,5 +122,5 @@ func New(params WorkerParams) (*Worker, error) {
 		},
 	})
 
-	return &Worker{wkr}, nil
+	return wkr, nil
 }

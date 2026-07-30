@@ -24,6 +24,12 @@ func (f *Features) OrgHasFeature(ctx context.Context, orgID string, feature app.
 	return val, nil
 }
 
+// OrgCronNamespaceIsolationEnabled reports whether the org routes its runner
+// healthcheck + install cron queues into the dedicated cron Temporal namespaces.
+func (f *Features) OrgCronNamespaceIsolationEnabled(ctx context.Context, orgID string) (bool, error) {
+	return f.OrgHasFeature(ctx, orgID, app.OrgFeatureCronNamespaceIsolation)
+}
+
 func (f *Features) FeatureEnabled(ctx context.Context, feature app.OrgFeature) (bool, error) {
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {

@@ -12,11 +12,11 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
-	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/taskqueue"
 )
 
 type Client struct {
@@ -77,7 +77,7 @@ func (c *Client) queueStartOperation(q *app.Queue) tclient.WithStartWorkflowOper
 	}
 	startOpts := tclient.StartWorkflowOptions{
 		ID:                       q.Workflow.ID,
-		TaskQueue:                workflows.APITaskQueue,
+		TaskQueue:                taskqueue.For(q.Workflow.Namespace, q.Name),
 		Memo:                     queueMemo(q),
 		WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
 		RetryPolicy: &temporal.RetryPolicy{

@@ -10,9 +10,9 @@ import (
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 
-	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/taskqueue"
 )
 
 // ForceRestart terminates the running queue workflow and starts a fresh one.
@@ -34,7 +34,7 @@ func (c *Client) ForceRestart(ctx context.Context, queueID string) error {
 	}
 	opts := tclient.StartWorkflowOptions{
 		ID:                    q.Workflow.ID,
-		TaskQueue:             workflows.APITaskQueue,
+		TaskQueue:             taskqueue.For(q.Workflow.Namespace, q.Name),
 		Memo:                  queueMemo(q),
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{

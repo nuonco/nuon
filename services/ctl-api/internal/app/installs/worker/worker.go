@@ -28,6 +28,11 @@ type Worker struct {
 	worker.Worker
 }
 
+// CronWorker polls the isolated install-crons task queue.
+type CronWorker struct {
+	worker.Worker
+}
+
 type WorkerParams struct {
 	fx.In
 
@@ -46,7 +51,23 @@ type WorkerParams struct {
 }
 
 func New(params WorkerParams) (*Worker, error) {
-	client, err := params.Tclient.GetNamespaceClient(defaultNamespace)
+	wkr, err := buildWorker(params, defaultNamespace, pkgworkflows.APITaskQueue, "installs worker")
+	if err != nil {
+		return nil, err
+	}
+	return &Worker{wkr}, nil
+}
+
+func NewCronWorker(params WorkerParams) (*CronWorker, error) {
+	wkr, err := buildWorker(params, pkgworkflows.InstallCronsNamespace, pkgworkflows.InstallCronsTaskQueue, "install crons worker")
+	if err != nil {
+		return nil, err
+	}
+	return &CronWorker{wkr}, nil
+}
+
+func buildWorker(params WorkerParams, namespace string, taskQueue string, logName string) (worker.Worker, error) {
+	client, err := params.Tclient.GetNamespaceClient(namespace)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
 	}
@@ -57,7 +78,7 @@ func New(params WorkerParams) (*Worker, error) {
 	}
 
 	worker.SetStickyWorkflowCacheSize(params.Cfg.TemporalStickyWorkflowCacheSize)
-	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
+	wkr := worker.New(client, taskQueue, worker.Options{
 		MaxConcurrentActivityExecutionSize:     params.Cfg.TemporalMaxConcurrentActivities,
 		MaxConcurrentWorkflowTaskExecutionSize: params.Cfg.TemporalMaxConcurrentWorkflowTaskExecutionSize,
 		MaxConcurrentActivityTaskPollers:       params.Cfg.TemporalMaxConcurrentActivityTaskPollers,
@@ -89,7 +110,7 @@ func New(params WorkerParams) (*Worker, error) {
 
 	params.Lc.Append(fx.Hook{
 		OnStart: func(context.Context) error {
-			params.L.Info("starting installs worker")
+			params.L.Info("starting " + logName)
 			go func() {
 				wkr.Run(worker.InterruptCh())
 			}()
@@ -100,5 +121,5 @@ func New(params WorkerParams) (*Worker, error) {
 		},
 	})
 
-	return &Worker{wkr}, nil
+	return wkr, nil
 }

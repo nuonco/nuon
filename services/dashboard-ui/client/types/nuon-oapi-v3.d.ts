@@ -8647,6 +8647,8 @@ export interface components {
       id?: string;
       namespace?: string;
       run_id?: string;
+      /** @description empty means workflows.APITaskQueue (back-compat for pre-isolation rows) */
+      task_queue?: string;
     };
     "sql.NullBool": {
       bool?: boolean;

@@ -108,6 +108,11 @@ const (
 	// cloud account identifier at install creation.
 	OrgFeaturePhoneHomeAuth OrgFeature = "phone-home-auth"
 	OrgFeatureRunbookStudio OrgFeature = "runbook-studio"
+	// OrgFeatureCronNamespaceIsolation routes the org's runner-healthcheck and
+	// install cron queues into dedicated Temporal namespaces + task queues polled
+	// by their own workers, instead of sharing the runners/installs namespaces on
+	// the api task queue.
+	OrgFeatureCronNamespaceIsolation OrgFeature = "cron-namespace-isolation"
 )
 
 type Org struct {
@@ -237,6 +242,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureComponentHealth:         false,
 		OrgFeaturePhoneHomeAuth:           false,
 		OrgFeatureRunbookStudio:           false,
+		OrgFeatureCronNamespaceIsolation:  false,
 
 		// Enabled by default
 		OrgFeatureControlPlaneBuilds: true,
@@ -315,6 +321,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureServiceAccountsAndTokens,
 		OrgFeaturePhoneHomeAuth,
 		OrgFeatureRunbookStudio,
+		OrgFeatureCronNamespaceIsolation,
 	}
 }
 
@@ -327,37 +334,34 @@ type OrgFeatureInfo struct {
 // GetFeatureDescriptions returns a map of feature names to their descriptions
 func GetFeatureDescriptions() map[OrgFeature]string {
 	return map[OrgFeature]string{
-		OrgFeatureOrgDashboard:             "Access to the organization dashboard interface for managing org-wide settings and analytics",
-		OrgFeatureOrgRunner:                "Enable organization-specific runner functionality for executing deployments",
-		OrgFeatureOrgSettings:              "Access to organization settings management interface",
-		OrgFeatureAppBranches:              "Support for multiple application branches allowing parallel development and testing",
-		OrgFeatureUserManagedFeatures:      "Allow organization users to manage feature flags through the public API (admin-only flag)",
-		OrgFeatureQueues:                   "Enable queue-based workflow execution for improved task scheduling and resource management",
-		OrgFeatureSupportRole:              "Enable the support role option when inviting users to the organization",
-		OrgFeatureParallelRunnerJobs:       "Enable parallel runner job execution via per-job-group queues (opt-in, requires runner reprovisioning)",
-		OrgFeatureInstallRename:            "Allow renaming installs from the dashboard edit install modal",
-		OrgFeatureDeployOutputs:            "Enable tabbed deploy detail page with plan, variables, state, and outputs tabs",
-		OrgFeatureTerraformProviderMirror:  "Vendor terraform providers at build time and ship them inside the OCI artifact so install runners can `terraform init` without reaching registry.terraform.io",
-		OrgFeatureAppBranchesUI:            "Enable the app branches UI in the dashboard for managing and switching between app branches",
-		OrgFeatureTraceView:                "Enable the trace view tab on action runs, deploys, and sandbox runs to visualize OTEL spans emitted by the runner",
-		OrgFeatureStateGenV2:               "Use the new queue-based partial state regeneration system instead of the legacy full-regeneration workflow",
-		OrgFeatureAutoSkipNoop:             "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
-		OrgFeatureSlack:                    "Enable the Slack integration, including the Slack link in the dashboard sidebar and per-org Slack workspace/channel subscriptions",
-		OrgFeatureRunbooks:                 "Enable runbooks for defining and executing ordered release procedures with deploy and action steps",
-		OrgFeaturePulumiSandbox:            "Enable Pulumi-typed app sandboxes (sandbox type=pulumi) in addition to Terraform",
-		OrgFeaturePulumiUpdatePlans:        "Pin Pulumi applies to the approved preview via saved update plans; leave off for stacks using helm (the helm Release resource fails plan validation)",
-		OrgFeatureLogTailLongPoll:          "Enable the long-poll log-tail endpoint (`/v1/log-streams/:id/logs/tail`) — the dashboard BFF probes it for near-real-time log streaming and falls back to legacy 1s polling when off",
-		OrgFeatureRunnerJobLongPoll:        "Switch the runner from a 5s idle-poll loop to a long-poll endpoint (`/v1/runners/:id/jobs/tail`) so job pickup is sub-second. Surfaced via runner settings; runners pick it up on the next process restart.",
-		OrgFeatureNotebooks:                "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
-		OrgFeatureVersionsUI:               "Enable the install app config versions tab in the dashboard, showing the history of config updates and component diffs for each install.",
-		OrgFeatureSpaceliftInstallStacks:   "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
-		OrgFeatureControlPlaneBuilds:       "Run component and sandbox builds on Temporal-backed control-plane workers instead of the org runner, so build-only work does not require a live org runner.",
-		OrgFeatureStackTFProvider:          "Use the Terraform-provider install stack flow: the await step's directions clone the ja/stack-sdk branch of install-stacks (which reads config from the API via the stack provider) and use the slimmed-down tfvars.",
-		OrgFeatureAWSAccountConnections:    "Enable organization-owned cross-account AWS connections with external ID trust verification.",
-		OrgFeatureComponentHealth:          "Enable the live component resource explorer: the install runner reports the Kubernetes and cloud resources each component manages with per-resource health, surfaced in the install Resources tab.",
-		OrgFeatureServiceAccountsAndTokens: "Enable the API tokens and service accounts management pages in the dashboard settings navigation.",
-		OrgFeaturePhoneHomeAuth:            "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",
-		OrgFeatureRunbookStudio:            "Enable the runbook studio in the dashboard — a literate editor for authoring runbook markdown around executable steps with a live install-state preview.",
+		OrgFeatureOrgDashboard:            "Access to the organization dashboard interface for managing org-wide settings and analytics",
+		OrgFeatureOrgRunner:               "Enable organization-specific runner functionality for executing deployments",
+		OrgFeatureOrgSettings:             "Access to organization settings management interface",
+		OrgFeatureAppBranches:             "Support for multiple application branches allowing parallel development and testing",
+		OrgFeatureUserManagedFeatures:     "Allow organization users to manage feature flags through the public API (admin-only flag)",
+		OrgFeatureQueues:                  "Enable queue-based workflow execution for improved task scheduling and resource management",
+		OrgFeatureSupportRole:             "Enable the support role option when inviting users to the organization",
+		OrgFeatureParallelRunnerJobs:      "Enable parallel runner job execution via per-job-group queues (opt-in, requires runner reprovisioning)",
+		OrgFeatureInstallRename:           "Allow renaming installs from the dashboard edit install modal",
+		OrgFeatureDeployOutputs:           "Enable tabbed deploy detail page with plan, variables, state, and outputs tabs",
+		OrgFeatureTerraformProviderMirror: "Vendor terraform providers at build time and ship them inside the OCI artifact so install runners can `terraform init` without reaching registry.terraform.io",
+		OrgFeatureAppBranchesUI:           "Enable the app branches UI in the dashboard for managing and switching between app branches",
+		OrgFeatureTraceView:               "Enable the trace view tab on action runs, deploys, and sandbox runs to visualize OTEL spans emitted by the runner",
+		OrgFeatureStateGenV2:              "Use the new queue-based partial state regeneration system instead of the legacy full-regeneration workflow",
+		OrgFeatureAutoSkipNoop:            "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
+		OrgFeatureSlack:                   "Enable the Slack integration, including the Slack link in the dashboard sidebar and per-org Slack workspace/channel subscriptions",
+		OrgFeatureRunbooks:                "Enable runbooks for defining and executing ordered release procedures with deploy and action steps",
+		OrgFeaturePulumiSandbox:           "Enable Pulumi-typed app sandboxes (sandbox type=pulumi) in addition to Terraform",
+		OrgFeaturePulumiUpdatePlans:       "Pin Pulumi applies to the approved preview via saved update plans; leave off for stacks using helm (the helm Release resource fails plan validation)",
+		OrgFeatureLogTailLongPoll:         "Enable the long-poll log-tail endpoint (`/v1/log-streams/:id/logs/tail`) — the dashboard BFF probes it for near-real-time log streaming and falls back to legacy 1s polling when off",
+		OrgFeatureRunnerJobLongPoll:       "Switch the runner from a 5s idle-poll loop to a long-poll endpoint (`/v1/runners/:id/jobs/tail`) so job pickup is sub-second. Surfaced via runner settings; runners pick it up on the next process restart.",
+		OrgFeatureNotebooks:               "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
+		OrgFeatureVersionsUI:              "Enable the install app config versions tab in the dashboard, showing the history of config updates and component diffs for each install.",
+		OrgFeatureSpaceliftInstallStacks:  "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
+		OrgFeatureControlPlaneBuilds:      "Run component and sandbox builds on Temporal-backed control-plane workers instead of the org runner, so build-only work does not require a live org runner.",
+		OrgFeatureStackTFProvider:         "Use the Terraform-provider install stack flow: the await step's directions clone the ja/stack-sdk branch of install-stacks (which reads config from the API via the stack provider) and use the slimmed-down tfvars.",
+		OrgFeatureAWSAccountConnections:   "Enable organization-owned cross-account AWS connections with external ID trust verification.",
+		OrgFeatureCronNamespaceIsolation:  "Route the org's runner-healthcheck and install cron queues into dedicated Temporal namespaces + task queues polled by their own workers, isolating cron load from the api task queue.",
 	}
 }
 

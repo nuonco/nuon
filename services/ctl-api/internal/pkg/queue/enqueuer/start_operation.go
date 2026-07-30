@@ -7,9 +7,9 @@ import (
 	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 
-	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/taskqueue"
 )
 
 func (e *Enqueuer) queueStartOperation(q *app.Queue) tclient.WithStartWorkflowOperation {
@@ -19,7 +19,7 @@ func (e *Enqueuer) queueStartOperation(q *app.Queue) tclient.WithStartWorkflowOp
 	}
 	startOpts := tclient.StartWorkflowOptions{
 		ID:        q.Workflow.ID,
-		TaskQueue: workflows.APITaskQueue,
+		TaskQueue: taskqueue.For(q.Workflow.Namespace, q.Name),
 		Memo: map[string]any{
 			"id":           q.ID,
 			"owner-id":     q.OwnerID,
