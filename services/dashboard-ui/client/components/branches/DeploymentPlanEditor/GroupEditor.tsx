@@ -9,7 +9,6 @@ import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
 import { ToggleButton } from '@/components/common/ToggleButton'
 import { Input } from '@/components/common/form/Input'
-import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import type { TInstall } from '@/types'
 import { cn } from '@/utils/classnames'
 import { matchesSelector } from '@/components/match/matches'
@@ -107,37 +106,13 @@ export const GroupEditor = ({
                 <Icon variant="ArrowDownIcon" />
               </Button>
               <hr />
-              <Button isMenuButton className="!text-red-800 dark:!text-red-500" onClick={onDelete}>
+              <Button isMenuButton variant="danger" onClick={onDelete}>
                 Delete group
                 <Icon variant="TrashIcon" />
               </Button>
             </Menu>
           </Dropdown>
         </div>
-      </div>
-
-      <div className="flex items-center gap-4 px-4 py-2 border-b text-xs">
-        <div className="flex items-center gap-2">
-          <Text variant="subtext" theme="neutral">Max parallel</Text>
-          <Input
-            id={`group-max-parallel-${group.id}`}
-            type="number"
-            min={1}
-            value={group.max_parallel ?? 1}
-            onChange={(e) => onUpdate({ max_parallel: parseInt(e.target.value) || 1 })}
-            disabled={disabled}
-            size="sm"
-            className="!w-14"
-          />
-        </div>
-
-        <CheckboxInput
-          id={`group-preview-${group.id}`}
-          checked={group.use_for_previews ?? false}
-          onChange={(e) => onUpdate({ use_for_previews: e.target.checked })}
-          disabled={disabled}
-          labelProps={{ labelText: 'Use for previews' }}
-        />
       </div>
 
       <div className="flex flex-col gap-3 p-4">
