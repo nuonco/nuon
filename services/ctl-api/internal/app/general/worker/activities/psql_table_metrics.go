@@ -20,8 +20,7 @@ func (a *Activities) GetPSQLTableMetrics(ctx context.Context, req GetPSQLTableMe
 func (a *Activities) getTableSizes(ctx context.Context, db *gorm.DB) ([]app.PSQLTableSize, error) {
 	var tables []app.PSQLTableSize
 
-	// ForceReplica is required rather than WithReplica: the view isn't on the
-	// table ACL allow-list, so an opt-in would be routed back to primary.
+	// ForceReplica bypasses the table ACL, which would block a WithReplica opt-in.
 	res := db.WithContext(ctx).
 		Scopes(scopes.ForceReplica).
 		Find(&tables)
