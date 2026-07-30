@@ -17,6 +17,7 @@ SELECT
     argMax(s.message, s.observed_at) AS message,
     argMax(s.native_status, s.observed_at) AS native_status,
     argMax(s.details, s.observed_at) AS details,
+    argMax(s.stale_after_seconds, s.observed_at) AS stale_after_seconds,
     max(s.observed_at) AS observed_at
 FROM
     install_component_resource_states AS s

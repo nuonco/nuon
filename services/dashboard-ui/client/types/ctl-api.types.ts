@@ -219,7 +219,59 @@ export type TInstallConfig = components['schemas']['app.InstallConfig']
 export type TInstallAuditLog = components['schemas']['app.InstallAuditLog']
 export type TDriftedObject = components['schemas']['app.DriftedObject']
 export type TInstallResource =
-  components['schemas']['app.InstallComponentResourceState']
+  components['schemas']['app.InstallComponentResourceState'] & {
+    // read-time annotation, ships ahead of codegen
+    removed_from_config?: boolean
+  }
+
+// component health timelines - manually defined, ctl-api endpoints ship ahead of codegen
+export type THealthTimelineDay = {
+  date: string
+  health: string
+  unhealthy_seconds: number
+  degraded_seconds: number
+  unknown_seconds: number
+  observed_seconds: number
+}
+
+export type TInstallHealthTimelineComponent = {
+  install_component_id: string
+  component_id?: string
+  component_name: string
+  current_health: string
+  uptime_percent: number
+}
+
+export type TInstallHealthTimeline = {
+  days: number
+  uptime_percent: number
+  observed_seconds: number
+  current_health: string
+  components?: TInstallHealthTimelineComponent[]
+  daily?: THealthTimelineDay[]
+}
+
+export type TInstallComponentHealthTransition = {
+  from_health: string
+  to_health: string
+  message?: string
+  root_resource_kind?: string
+  root_resource_namespace?: string
+  root_resource_name?: string
+  correlated_deploy_id?: string
+  diagnosis?: string
+  observed_at: string
+}
+
+export type TInstallComponentHealthTimeline = {
+  days: number
+  uptime_percent: number
+  observed_seconds: number
+  current_health: string
+  daily?: THealthTimelineDay[]
+  transitions?: TInstallComponentHealthTransition[]
+}
+
 // composite errors
 export type TCompositeErrorSeverity =
   components['schemas']['compositeerrors.Severity']

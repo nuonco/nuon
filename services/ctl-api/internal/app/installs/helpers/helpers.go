@@ -52,6 +52,11 @@ const (
 	// Separate from install-signals so action crons don't compete with other signals.
 	InstallActionCronSignalsQueueName = "install-action-cron-signals"
 
+	// InstallComponentHealthQueueName is the queue for the periodic component
+	// health evaluator. Its own queue (MaxInFlight 1) so evaluations never
+	// overlap and never compete with deploys or other signals.
+	InstallComponentHealthQueueName = "install-component-health"
+
 	// InstallDriftCronSignalsQueueName is the queue for drift cron emitter signals.
 	// Separate from install-signals so drift crons don't compete with other signals
 	// and can be routed to the isolated install-crons task queue.

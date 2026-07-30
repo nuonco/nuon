@@ -18,9 +18,8 @@ import (
 )
 
 const (
-	// maxResourcesPerComponent bounds a single component's resource list so one
-	// large release cannot blow up an ingest call. The runner truncates first;
-	// this is a defensive server-side cap.
+	// maxResourcesPerComponent is a defensive server-side cap; the runner
+	// truncates first.
 	maxResourcesPerComponent = 500
 	// maxResourceDetailsBytes bounds the per-resource details JSON blob.
 	maxResourceDetailsBytes = 16 * 1024
@@ -31,13 +30,14 @@ const (
 	sourceSandbox   = "sandbox"
 
 	healthHealthy = "healthy"
+	healthUnknown = "unknown"
 )
 
 // healthSeverity ranks health so Degraded/unhealthy latch over a later
 // Progressing/unknown report; Healthy is 0 and clears the latch (in latchHealth).
 var healthSeverity = map[string]int{
 	healthHealthy: 0,
-	"unknown":     1,
+	healthUnknown: 1,
 	"progressing": 1,
 	"degraded":    2,
 	"unhealthy":   3,
@@ -65,8 +65,7 @@ type ComponentHealthComponent struct {
 }
 
 // ComponentHealthSandboxRelease is a helm release the install's sandbox manages
-// (base infra like external-dns, cert-manager, ingress controllers) that isn't
-// an app component. Surfaced in the explorer under a "sandbox" grouping.
+// (base infra like external-dns, cert-manager) rather than an app component.
 type ComponentHealthSandboxRelease struct {
 	ReleaseName string                    `json:"release_name" validate:"required"`
 	Namespace   string                    `json:"namespace"`
@@ -136,9 +135,8 @@ func resourceStateKey(installComponentID, provider, apiGroup, kind, namespace, n
 	return strings.Join([]string{installComponentID, provider, apiGroup, kind, namespace, name}, "\x00")
 }
 
-// priorHealth is the last stored health of a resource, used to latch health so
-// a resource that was Degraded doesn't fall back to Progressing when the k8s
-// Warning event ages out — only a Healthy report clears it.
+// priorHealth is a resource's last stored health, so a degraded resource doesn't
+// fall back to progressing when the k8s Warning event ages out.
 type priorHealth struct {
 	health       string
 	message      string
@@ -167,11 +165,15 @@ func (s *service) priorResourceHealth(ctx context.Context, orgID, installID stri
 	return out, nil
 }
 
-// latchHealth applies the sticky-Degraded rule: a Healthy report clears the
-// latch, otherwise the worse of incoming vs prior health is kept (carrying the
-// prior message so the surfaced reason matches the health).
+// latchHealth applies the sticky-degraded rule: a healthy report clears the latch,
+// otherwise the worse of incoming vs prior is kept, with its matching message.
 func latchHealth(inHealth, inMessage, inNative string, prior priorHealth, hasPrior bool) (string, string, string) {
 	if inHealth == healthHealthy {
+		return inHealth, inMessage, inNative
+	}
+	// unknown is absence of an assessment, so latching would republish a stale
+	// diagnosis under a fresh timestamp as if just confirmed.
+	if inHealth == healthUnknown {
 		return inHealth, inMessage, inNative
 	}
 	if hasPrior && healthSeverity[prior.health] > healthSeverity[inHealth] {
@@ -184,6 +186,12 @@ func (s *service) createComponentHealth(ctx context.Context, orgID, runnerID str
 	observedAt := req.ObservedAt
 	if observedAt.IsZero() {
 		observedAt = time.Now()
+	}
+
+	// Without the feature nothing reads these rows, so writing them bills the
+	// org storage for a product it does not have.
+	if enabled, _ := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureComponentHealth); !enabled {
+		return &CreateComponentHealthResponse{Ingested: 0}, nil
 	}
 
 	prior, err := s.priorResourceHealth(ctx, orgID, req.InstallID)
@@ -278,10 +286,8 @@ func (s *service) createComponentHealth(ctx context.Context, orgID, runnerID str
 		}
 	}
 
-	// Gate the denormalized rollup on the feature so orgs without component
-	// health never surface a degraded sandbox (whose resources page is gated).
-	chEnabled, _ := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureComponentHealth)
-	s.updateInstallSandboxHealth(ctx, req.InstallID, sandboxWorst, sandboxWorstMessage, chEnabled)
+	s.updateInstallSandboxHealth(ctx, req.InstallID, sandboxWorst, sandboxWorstMessage, true)
+	s.ensureInstallHealthQueues(ctx, req.InstallID)
 
 	if len(rows) == 0 {
 		return &CreateComponentHealthResponse{Ingested: 0}, nil
@@ -293,6 +299,22 @@ func (s *service) createComponentHealth(ctx context.Context, orgID, runnerID str
 	}
 
 	return &CreateComponentHealthResponse{Ingested: len(rows)}, nil
+}
+
+// ensureInstallHealthQueues lazily reconciles the install's health queue and its
+// evaluator emitter, so installs predating the evaluator don't sit with
+// observations flowing but no verdict. Memoized, best-effort.
+func (s *service) ensureInstallHealthQueues(ctx context.Context, installID string) {
+	if _, done := s.ensuredHealthQueues.Load(installID); done {
+		return
+	}
+
+	if err := s.installsHelpers.EnsureInstallQueues(ctx, installID); err != nil {
+		s.l.Warn("unable to ensure install queues from component health ingest",
+			zap.String("install_id", installID), zap.Error(err))
+		return
+	}
+	s.ensuredHealthQueues.Store(installID, struct{}{})
 }
 
 // updateInstallSandboxHealth denormalizes the worst sandbox-resource health onto

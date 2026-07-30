@@ -108,6 +108,18 @@ func SupportsConfigSynced(kind ResourceKind) bool {
 	return kind == ResourceAppBranches
 }
 
+// SupportsComponentHealth reports whether ComponentHealth is meaningful for the
+// given resource. Only components carry a live health verdict.
+func SupportsComponentHealth(kind ResourceKind) bool {
+	return kind == ResourceComponents
+}
+
+// SupportsInstallDegraded reports whether InstallDegraded is meaningful for the
+// given resource. The install-level health rollup is an install event.
+func SupportsInstallDegraded(kind ResourceKind) bool {
+	return kind == ResourceInstalls
+}
+
 // Interests is the full per-subscriber config. Stored as JSONB on both
 // slack_channel_subscriptions and webhooks.
 //
@@ -126,6 +138,15 @@ type Interests struct {
 // ApprovalRequests / ApprovalResponses are independent of Outcome — approval
 // events do not have a started/succeeded/failed lifecycle, only a requested /
 // approved / rejected handshake.
+//
+// ComponentHealth is independent of Outcome. It gates both directions of the
+// live health axis — component.unhealthy and component.recovered — so a
+// subscriber always gets the resolution for a failure they were told about.
+// Health verdicts of unknown (runner offline / observations stale) never
+// notify; runner inactivity has its own event. Only meaningful where
+// SupportsComponentHealth returns true. InstallDegraded is the same idea one
+// level up: it fires when the install's composite health crosses into
+// degraded/unhealthy and when it recovers.
 //
 // DriftDetected is independent of Outcome too. It gates the drift_detected
 // event that fires from inside the plan-only check of a drift_run /
@@ -148,6 +169,8 @@ type ResourceCfg struct {
 	RoleChanges       bool     `json:"role_changes,omitempty"`
 	InputsUpdated     bool     `json:"inputs_updated,omitempty"`
 	ConfigSynced      bool     `json:"config_synced,omitempty"`
+	ComponentHealth   bool     `json:"component_health,omitempty"`
+	InstallDegraded   bool     `json:"install_degraded,omitempty"`
 }
 
 // IsZero is true for the zero-value Interests (no AllEvents, no resources).

@@ -50,7 +50,6 @@ export function parseInstallComponentSummaryToTableData(
   componentToggles?: { [key: string]: boolean },
   labelColors?: Record<string, string>,
   overriddenComponentNames?: Set<string>,
-  componentHealth?: Record<string, { health: string; message: string }>,
   removed = false
 ): InstallComponentRow[] {
   return components.map((component) => {
@@ -134,8 +133,11 @@ export function parseInstallComponentSummaryToTableData(
       ) : (
         <Icon variant="MinusIcon" />
       ),
-      health: componentHealth?.[component.component_id]?.health,
-      healthMessage: componentHealth?.[component.component_id]?.message,
+      health:
+        component?.health_status === 'not-applicable'
+          ? undefined
+          : component?.health_status,
+      healthMessage: component?.health_status_description,
       dependencies: (
         <InstallComponentDependencies deps={deps?.at(depIndex)?.dependencies} />
       ),

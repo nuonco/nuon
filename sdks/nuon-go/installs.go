@@ -166,3 +166,22 @@ func (c *client) GenerateCLIInstallConfig(ctx context.Context, installID string)
 
 	return buf.Bytes(), nil
 }
+
+// GetInstallsHealth returns the fleet-wide component health rollup, optionally
+// narrowed by app and by an install label selector. Empty appID or labels omit
+// that filter.
+func (c *client) GetInstallsHealth(ctx context.Context, appID, labels string) (*models.ServiceInstallsHealthResponse, error) {
+	params := &operations.GetInstallsHealthParams{Context: ctx}
+	if appID != "" {
+		params.AppID = &appID
+	}
+	if labels != "" {
+		params.Labels = &labels
+	}
+
+	resp, err := c.genClient.Operations.GetInstallsHealth(params, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+	return resp.Payload, nil
+}

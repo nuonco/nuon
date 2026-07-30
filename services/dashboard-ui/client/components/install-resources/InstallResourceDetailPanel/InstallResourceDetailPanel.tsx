@@ -38,20 +38,8 @@ export const InstallResourceDetailPanel = ({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <LabeledValue label="Namespace">
-          {resource?.namespace || <Icon variant="MinusIcon" />}
-        </LabeledValue>
         <LabeledValue label="Provider">
           {resource?.provider || <Icon variant="MinusIcon" />}
-        </LabeledValue>
-        <LabeledValue label="API group">
-          {resource?.api_group || <Icon variant="MinusIcon" />}
-        </LabeledValue>
-        <LabeledValue label="Native status">
-          {resource?.native_status || <Icon variant="MinusIcon" />}
-        </LabeledValue>
-        <LabeledValue label="Runner ID">
-          {resource?.runner_id ? <ID>{resource.runner_id}</ID> : <Icon variant="MinusIcon" />}
         </LabeledValue>
         <LabeledValue label="Observed">
           {resource?.observed_at ? (
@@ -60,6 +48,23 @@ export const InstallResourceDetailPanel = ({
             <Icon variant="MinusIcon" />
           )}
         </LabeledValue>
+        {/* Kubernetes-shaped fields are omitted rather than shown empty: a probe
+            or custom check has no namespace, api group, or native status, and a
+            column of dashes reads as missing data rather than not applicable. */}
+        {resource?.namespace ? (
+          <LabeledValue label="Namespace">{resource.namespace}</LabeledValue>
+        ) : null}
+        {resource?.api_group ? (
+          <LabeledValue label="API group">{resource.api_group}</LabeledValue>
+        ) : null}
+        {resource?.native_status ? (
+          <LabeledValue label="Native status">{resource.native_status}</LabeledValue>
+        ) : null}
+        {resource?.runner_id ? (
+          <LabeledValue label="Runner ID">
+            <ID>{resource.runner_id}</ID>
+          </LabeledValue>
+        ) : null}
       </div>
 
       {resource?.message ? (

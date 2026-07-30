@@ -36,6 +36,14 @@ const (
 	signalTypeRoleChange                signal.SignalType = "role-change"
 	signalTypeInputsUpdated             signal.SignalType = "inputs-updated"
 	signalTypeAppConfigSynced           signal.SignalType = "app-config-synced"
+	// signalTypeComponentUnhealthy / signalTypeComponentRecovered /
+	// signalTypeInstallDegraded mirror the installs/signals component-health
+	// notification carriers. They are emitted by the component-health
+	// evaluator on a debounced verdict transition, outside any workflow — so
+	// they classify directly rather than through stepResolution.
+	signalTypeComponentUnhealthy signal.SignalType = "component-unhealthy"
+	signalTypeComponentRecovered signal.SignalType = "component-recovered"
+	signalTypeInstallDegraded    signal.SignalType = "install-degraded"
 )
 
 // stepTargetType* mirror the WorkflowStepTargetType strings declared in
@@ -69,6 +77,9 @@ const (
 	eventClassRoleChange
 	eventClassInputsUpdated
 	eventClassConfigSynced
+	eventClassComponentUnhealthy
+	eventClassComponentRecovered
+	eventClassInstallDegraded
 	eventClassRunnerUnhealthy
 )
 
@@ -290,6 +301,32 @@ func classify(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome,
 		f.Resource = ResourceAppBranches
 		f.Op = "run"
 		f.EventClass = eventClassConfigSynced
+		f.Resolved = true
+		return f
+
+	case signalTypeComponentUnhealthy:
+		// The component-health evaluator emits this from its own queue, not
+		// from a workflow step, so there is no step target to resolve — the
+		// (components, health) classification is unconditional. Like "drift",
+		// "health" is deliberately absent from SubOps: subscribers opt in via
+		// the ComponentHealth flag, never by listing it in Ops.
+		f.Resource = ResourceComponents
+		f.Op = "health"
+		f.EventClass = eventClassComponentUnhealthy
+		f.Resolved = true
+		return f
+
+	case signalTypeComponentRecovered:
+		f.Resource = ResourceComponents
+		f.Op = "health"
+		f.EventClass = eventClassComponentRecovered
+		f.Resolved = true
+		return f
+
+	case signalTypeInstallDegraded:
+		f.Resource = ResourceInstalls
+		f.Op = "health"
+		f.EventClass = eventClassInstallDegraded
 		f.Resolved = true
 		return f
 	}
@@ -603,6 +640,21 @@ func slugsForFacts(f facts) []string {
 
 	case eventClassConfigSynced:
 		slugs = append(slugs, SlugEventConfigSynced)
+		return slugs
+
+	case eventClassComponentUnhealthy:
+		// No outcome slug: health is not a workflow outcome, and emitting
+		// outcome:failures here would silently widen what existing
+		// outcome-routed consumers receive. Same choice as drift.detected.
+		slugs = append(slugs, SlugEventComponentUnhealthy)
+		return slugs
+
+	case eventClassComponentRecovered:
+		slugs = append(slugs, SlugEventComponentRecovered)
+		return slugs
+
+	case eventClassInstallDegraded:
+		slugs = append(slugs, SlugEventInstallDegraded)
 		return slugs
 
 	case eventClassRunnerUnhealthy:

@@ -71,6 +71,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// get all installs across orgs
 	ge.GET("/v1/installs", s.GetOrgInstalls)
 	ge.GET("/v1/installs/label-keys", s.GetInstallLabelKeys)
+	ge.GET("/v1/installs/health", s.GetInstallsHealth)
 	ge.POST("/v1/installs", s.CreateInstallV2)
 
 	// get / create installs for an app
@@ -113,6 +114,10 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 		// live component resource explorer
 		installs.GET("/resources", s.GetInstallResources)
+
+		// install-level component health rollup
+		installs.GET("/health/timeline", s.GetInstallHealthTimeline)
+		installs.POST("/health/baseline", s.ResetInstallHealthBaseline)
 
 		// install state
 		installs.GET("/state", s.GetInstallState)
@@ -157,6 +162,16 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 				component.GET("/outputs", s.GetInstallComponentOutputs)
 				component.GET("/deploys/latest", s.GetInstallComponentLatestDeploy)
 				component.POST("/deploys", s.CreateInstallComponentDeploy)
+
+				// component health: gin can't mix wildcard names at the same path
+				// depth, so these reuse the ":component_id" node above, but the
+				// value they expect is the install_component's own ID (matching
+				// the ClickHouse rows), not the catalog component ID the sibling
+				// routes above use. The Swagger docs name it install_component_id.
+				component.GET("/health/timeline", s.GetInstallComponentHealthTimeline)
+				component.GET("/health/incident", s.GetInstallComponentHealthIncident)
+				component.GET("/health/checks", s.GetInstallComponentHealthChecks)
+				component.PUT("/health/checks/:check_name", s.PutInstallComponentHealthCheck)
 			}
 		}
 

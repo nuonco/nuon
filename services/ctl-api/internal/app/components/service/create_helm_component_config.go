@@ -35,6 +35,11 @@ type CreateHelmComponentConfigRequest struct {
 	Toggleable                   *bool              `json:"toggleable,omitempty"`
 	DefaultEnabled               *bool              `json:"default_enabled,omitempty"`
 	AutoApproveOnPoliciesPassing *bool              `json:"auto_approve_on_policies_passing,omitempty"`
+	HealthEnabled                *bool              `json:"health_enabled,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
+	HealthStabilizationWindow    string             `json:"health_stabilization_window,omitempty"` // Duration string for the health stabilization window (e.g., "3m")
+	HealthBlockDeploy            *bool              `json:"health_block_deploy,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
+
+	HealthProbes []HealthProbeRequest `json:"health_probes,omitempty"`
 
 	AppConfigID string `json:"app_config_id"`
 
@@ -90,6 +95,14 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
 		}
+	}
+	if c.HealthStabilizationWindow != "" {
+		if err := validateHealthStabilizationWindow(c.HealthStabilizationWindow); err != nil {
+			return err
+		}
+	}
+	if err := validateHealthProbes(c.HealthProbes); err != nil {
+		return err
 	}
 
 	return nil
@@ -237,6 +250,10 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		Toggleable:                   req.Toggleable,
 		DefaultEnabled:               req.DefaultEnabled,
 		AutoApproveOnPoliciesPassing: req.AutoApproveOnPoliciesPassing,
+		HealthEnabled:                req.HealthEnabled,
+		HealthStabilizationWindow:    req.HealthStabilizationWindow,
+		HealthBlockDeploy:            req.HealthBlockDeploy,
+		HealthProbes:                 toAppHealthProbes(req.HealthProbes),
 		OperationRoles:               operationRoles,
 		KubernetesContextName:        req.KubernetesContext,
 	}

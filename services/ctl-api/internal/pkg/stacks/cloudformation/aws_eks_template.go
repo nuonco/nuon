@@ -33,6 +33,11 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	runnerParams := t.getRunnerParameters(inp)
 	maps.Copy(tmpl.Parameters, runnerParams)
 
+	// Always created: sandboxes look the runner security group up by tag to grant
+	// it access to the cluster, so omitting it fails their plan even when nothing
+	// is attached to it.
+	tmpl.Resources["RunnerSecurityGroup"] = t.getRunnerSecurityGroup(inp, tb)
+
 	// When using local runners (dev mode), skip the ASG and runner-EC2-specific
 	// resources to save ~5-6 minutes during stack creation.
 	// PhoneHome resources are always created as the provision workflow depends on
@@ -44,8 +49,6 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 			return nil, err
 		}
 		tmpl.Resources["RunnerAutoScalingGroup"] = runnerASG
-
-		tmpl.Resources["RunnerSecurityGroup"] = t.getRunnerSecurityGroup(inp, tb)
 
 		// CloudWatch: logs
 		tmpl.Resources["RunnerCloudWatchLogGroup"] = t.getRunnerCloudWatchLogGroup(inp, tb)

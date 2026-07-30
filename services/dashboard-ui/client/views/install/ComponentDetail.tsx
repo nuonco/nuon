@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
+import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -14,6 +15,7 @@ import {
   ComponentConfigCardSkeleton,
 } from '@/components/components/ComponentConfigCard'
 import { DeployTimeline } from '@/components/deploys/DeployTimeline'
+import { HealthTimeline } from '@/components/install-health/HealthTimeline'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
 import { ComponentOverrideCard } from '@/components/install-overrides/ComponentOverrideCard'
@@ -87,6 +89,8 @@ export const InstallComponentDetail = () => {
   const isDisabled =
     installComponent?.status === 'disabled' ||
     isComponentDisabled(config, install, componentId)
+
+  const showHealth = !!org?.features?.['component-health']
 
   const dependentIds = appConfig?.component_config_connections
     ?.filter((c) => c.component_dependency_ids?.includes(componentId!))
@@ -311,6 +315,12 @@ export const InstallComponentDetail = () => {
             ) : null}
           </div>
         </div>
+
+        {showHealth && component ? (
+          <Card>
+            <HealthTimeline installComponentId={componentId} shouldPoll />
+          </Card>
+        ) : null}
       </div>
 
     </PageSection>
