@@ -139,13 +139,19 @@ type OtelTraceIngestion struct {
 	// NOTE(fd): it may be useful to scan the nested columns back into Structs in AfterFind
 
 	// the items of interest here are these attrs/columns that define a `column` in the `gorm` struct tag so gorm knows what column to send these to
-	EventsTimestamp  []time.Time         `json:"-" gorm:"type:DateTime64(9);column:events.timestamp" temporaljson:"events_timestamp,omitzero,omitempty"`
-	EventsName       []string            `json:"-" gorm:"type:LowCardinality(String);column:events.name" temporaljson:"events_name,omitzero,omitempty"`
-	EventsAttributes []map[string]string `json:"-" gorm:"type:Map(LowCardinality(String), String);column:events.attributes" temporaljson:"events_attributes,omitzero,omitempty"`
-	LinksTraceID     []string            `json:"-" gorm:"type:LowCardinality(String);column:links.trace_id" temporaljson:"links_trace_id,omitzero,omitempty"`
-	LinksSpanID      []string            `json:"-" gorm:"type:LowCardinality(String);column:links.span_id" temporaljson:"links_span_id,omitzero,omitempty"`
-	LinksState       []string            `json:"-" gorm:"type:LowCardinality(String);column:links.span_state" temporaljson:"links_state,omitzero,omitempty"`
-	LinksAttributes  []map[string]string `json:"-" gorm:"type:Map(LowCardinality(String), String);column:links.attributes" temporaljson:"links_attributes,omitzero,omitempty"`
+	//
+	// These carry real json tags, not `json:"-"`, because this struct is the
+	// Kafka payload for the otel_traces topic — the producer marshals it into the
+	// envelope and the consumer unmarshals it back before inserting. Excluded
+	// from JSON, every span's events and links would survive the inline write and
+	// silently vanish on the Kafka path.
+	EventsTimestamp  []time.Time         `json:"events_timestamp" gorm:"type:DateTime64(9);column:events.timestamp" temporaljson:"events_timestamp,omitzero,omitempty"`
+	EventsName       []string            `json:"events_name" gorm:"type:LowCardinality(String);column:events.name" temporaljson:"events_name,omitzero,omitempty"`
+	EventsAttributes []map[string]string `json:"events_attributes" gorm:"type:Map(LowCardinality(String), String);column:events.attributes" temporaljson:"events_attributes,omitzero,omitempty"`
+	LinksTraceID     []string            `json:"links_trace_id" gorm:"type:LowCardinality(String);column:links.trace_id" temporaljson:"links_trace_id,omitzero,omitempty"`
+	LinksSpanID      []string            `json:"links_span_id" gorm:"type:LowCardinality(String);column:links.span_id" temporaljson:"links_span_id,omitzero,omitempty"`
+	LinksState       []string            `json:"links_state" gorm:"type:LowCardinality(String);column:links.span_state" temporaljson:"links_state,omitzero,omitempty"`
+	LinksAttributes  []map[string]string `json:"links_attributes" gorm:"type:Map(LowCardinality(String), String);column:links.attributes" temporaljson:"links_attributes,omitzero,omitempty"`
 }
 
 // TableName

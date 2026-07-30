@@ -6,6 +6,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	pkgconsumer "github.com/nuonco/nuon/services/ctl-api/internal/pkg/consumer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 )
 
@@ -18,17 +19,17 @@ import (
 // which does not exist here, and org_id leads the destination table's ORDER BY.
 // See the producers in runners/service and controlplanejob.
 type OtelLogsConsumer struct {
-	*sink
+	*pkgconsumer.Sink
 }
 
-func NewOtelLogsConsumer(params Params) (*OtelLogsConsumer, error) {
-	s := newSink(params, NameOtelLogs, kafka.TopicOtelLogRecords, false)
+func NewOtelLogsConsumer(params pkgconsumer.Params) (*OtelLogsConsumer, error) {
+	s := pkgconsumer.NewSink(params, pkgconsumer.NameOtelLogs, kafka.TopicOtelLogRecords)
 	if s == nil {
 		return nil, nil
 	}
 
-	c := &OtelLogsConsumer{sink: s}
-	if err := s.start(params, c.handle); err != nil {
+	c := &OtelLogsConsumer{Sink: s}
+	if err := s.Start(params, c.handle); err != nil {
 		return nil, err
 	}
 
@@ -36,6 +37,6 @@ func NewOtelLogsConsumer(params Params) (*OtelLogsConsumer, error) {
 }
 
 func (c *OtelLogsConsumer) handle(ctx context.Context, partition int32, recs []*kgo.Record) error {
-	logs := decode[app.OtelLogRecord](ctx, c.sink, recs, kafka.TypeOtelLogRecord)
-	return insert(ctx, c.sink, partition, recs, logs)
+	logs := pkgconsumer.Decode[app.OtelLogRecord](ctx, c.Sink, recs, kafka.TypeOtelLogRecord)
+	return pkgconsumer.Insert(ctx, c.Sink, partition, recs, logs)
 }

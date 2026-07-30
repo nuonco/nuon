@@ -22,6 +22,7 @@ type Message = pkgkafka.Message
 const (
 	TopicRunnerHeartBeats = "runner_heart_beats"
 	TopicOtelLogRecords   = "otel_log_records"
+	TopicOtelTraces       = "otel_traces"
 	TopicDLQ              = "dlq"
 )
 
@@ -29,6 +30,7 @@ const (
 const (
 	TypeRunnerHeartBeat = "runner_heart_beat"
 	TypeOtelLogRecord   = "otel_log_record"
+	TypeOtelTrace       = "otel_trace"
 	TypeDLQ             = "dlq_record"
 )
 

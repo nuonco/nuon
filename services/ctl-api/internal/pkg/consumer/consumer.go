@@ -1,3 +1,13 @@
+// Package consumer is the Kafka consumer runtime: consumer naming and
+// selection, the shared ClickHouse-writing sink, and the dead-letter path. It is
+// to `consumer` what internal/pkg/worker is to `worker` — none of it knows
+// anything about a particular domain.
+//
+// Domain consumers live with their domain (app/runners/consumer holds
+// heartbeats, otel-logs and otel-traces) and consist of little more than a Sink
+// plus a decode-and-insert handler. The one consumer that lives here is the DLQ
+// (see dlq.go), because the dead-letter topic is shared infrastructure that
+// every consumer produces to rather than any domain's data.
 package consumer
 
 import (
@@ -20,24 +30,38 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 )
 
-// Name identifies one consumer. It is the `consumer --name` value, the
-// SERVICE_DEPLOYMENT tag, the suffix of the consumer group, and the suffix of the
-// derived Kafka client id — so it is the single string that distinguishes one
-// consumer from another everywhere it shows up.
+// Name identifies one consumer: it is an element of the `consumer --name` value,
+// the suffix of the consumer group, and the prefix of the consumer's metrics.
+// One Name owns exactly one topic.
+//
+// A Name is NOT a deployment. A deployment (a pod, its resources, its
+// SERVICE_DEPLOYMENT tag, and therefore its Kafka client id) may host more than
+// one consumer — `--name=otel-logs,otel-traces` runs both in one pod under the
+// deployment named `otel`, each still with its own group and its own client.
+// Consumers sharing a pod share a client id, so they also share a Kafka client
+// quota, and share a liveness probe: if one handler wedges, the restart takes
+// the other down with it. Group them only when scaling and failing together is
+// acceptable.
+//
+// The names live here, in the runtime, rather than each with its domain:
+// NewSelection runs before the fx graph is built (see cmd/consumer.go), so the
+// set of valid names has to be statically known and can't be collected from the
+// domains at wiring time.
 type Name string
 
 const (
 	NameHeartbeats Name = "heartbeats"
 	NameOtelLogs   Name = "otel-logs"
+	NameOtelTraces Name = "otel-traces"
 	NameDLQ        Name = "dlq"
 )
 
-// NameAll selects every consumer, mirroring `worker --namespace=all`. Deployed,
-// each pod runs exactly one; locally one process runs them all.
+// NameAll selects every consumer, mirroring `worker --namespace=all`. Locally
+// one process runs them all.
 const NameAll = "all"
 
 func Names() []Name {
-	return []Name{NameHeartbeats, NameOtelLogs, NameDLQ}
+	return []Name{NameHeartbeats, NameOtelLogs, NameOtelTraces, NameDLQ}
 }
 
 // Selection is the parsed `--name` flag.
@@ -100,10 +124,10 @@ type Params struct {
 	Producer  *kafka.Producer
 }
 
-// sink is the shared half of every consumer that writes to ClickHouse: naming,
-// metrics, the ClickHouse handle, and the poll-loop lifecycle. Each consumer adds
-// only its own decode-and-insert handler.
-type sink struct {
+// Sink is the shared half of every consumer that writes to ClickHouse: naming,
+// metrics, the ClickHouse handle, and the poll-loop lifecycle. Each consumer
+// embeds one and adds only its own decode-and-insert handler.
+type Sink struct {
 	name  Name
 	topic string
 	group string
@@ -113,27 +137,24 @@ type sink struct {
 	chDB     *gorm.DB
 	producer *kafka.Producer
 
-	// writeTimeout bounds insert(), so a wedged or degraded ClickHouse fails a
+	// writeTimeout bounds Insert(), so a wedged or degraded ClickHouse fails a
 	// batch (for redelivery) rather than blocking this handler indefinitely.
 	writeTimeout time.Duration
-	// cons is set once start() builds the poll loop, so a healthcheck can ask
+	// cons is set once Start() builds the poll loop, so a healthcheck can ask
 	// whether this consumer's handler is currently stuck.
 	cons *pkgkafka.Consumer
 
 	// deadLetterFallbackOnly skips producing to the dead-letter topic and goes
-	// straight to the direct-write fallback. Set for the DLQ consumer itself,
-	// so a dead-letter-about-a-dead-letter can't recurse through the topic.
+	// straight to the direct-write fallback. Set only by the DLQ consumer, so a
+	// dead-letter-about-a-dead-letter can't recurse through the topic.
 	deadLetterFallbackOnly bool
 }
 
-// newSink returns nil when this consumer should not run in this process — either
+// NewSink returns nil when this consumer should not run in this process — either
 // it wasn't selected, or Kafka is disabled entirely. Callers return a nil
 // consumer in that case and whatever inline write path they replaced stays in
 // effect.
-//
-// fallbackOnly is true only for the DLQ consumer — see
-// sink.deadLetterFallbackOnly.
-func newSink(params Params, name Name, topic string, fallbackOnly bool) *sink {
+func NewSink(params Params, name Name, topic string) *Sink {
 	l := params.L.Named("kafka-consumer-" + string(name))
 
 	if !params.Selection.Includes(name) {
@@ -145,21 +166,20 @@ func newSink(params Params, name Name, topic string, fallbackOnly bool) *sink {
 		return nil
 	}
 
-	return &sink{
-		name:                   name,
-		topic:                  topic,
-		group:                  kafka.ConsumerGroup(params.Cfg, string(name)),
-		l:                      l,
-		mw:                     params.MW,
-		chDB:                   params.CHDB,
-		producer:               params.Producer,
-		writeTimeout:           params.Cfg.ClickhouseDBWriteTimeout,
-		deadLetterFallbackOnly: fallbackOnly,
+	return &Sink{
+		name:         name,
+		topic:        topic,
+		group:        kafka.ConsumerGroup(params.Cfg, string(name)),
+		l:            l,
+		mw:           params.MW,
+		chDB:         params.CHDB,
+		producer:     params.Producer,
+		writeTimeout: params.Cfg.ClickhouseDBWriteTimeout,
 	}
 }
 
-// start builds the consumer client and binds its poll loop to the fx lifecycle.
-func (s *sink) start(params Params, handler pkgkafka.Handler) error {
+// Start builds the consumer client and binds its poll loop to the fx lifecycle.
+func (s *Sink) Start(params Params, handler pkgkafka.Handler) error {
 	cons, err := pkgkafka.NewConsumer(
 		kafka.ClientConfig(params.Cfg),
 		kafka.ConsumerConfig(params.Cfg, string(s.name), s.topic),
@@ -185,14 +205,24 @@ func (s *sink) start(params Params, handler pkgkafka.Handler) error {
 	return nil
 }
 
-func (s *sink) metric(suffix string) string {
+func (s *Sink) metric(suffix string) string {
 	return "kafka.consumer." + string(s.name) + "." + suffix
+}
+
+// ConsumerName identifies which consumer this sink is, so a healthcheck
+// covering several sinks in one pod can report which one is stuck rather than
+// just that something is.
+func (s *Sink) ConsumerName() string {
+	if s == nil {
+		return ""
+	}
+	return string(s.name)
 }
 
 // Healthy reports whether this consumer's handler is not currently stuck past
 // max, and for how long it's been running if it is. A nil sink (consumer not
 // running in this process) always reports healthy — there's nothing to check.
-func (s *sink) Healthy(max time.Duration) (bool, time.Duration) {
+func (s *Sink) Healthy(max time.Duration) (bool, time.Duration) {
 	if s == nil || s.cons == nil {
 		return true, 0
 	}
@@ -200,7 +230,7 @@ func (s *sink) Healthy(max time.Duration) (bool, time.Duration) {
 	return !stuck, d
 }
 
-// decode unwraps a partition's records into T, skipping anything undecodable or
+// Decode unwraps a partition's records into T, skipping anything undecodable or
 // of the wrong type. A record we can't parse is dropped rather than returned as
 // an error: failing the batch would block the partition forever re-reading the
 // same bad record, so it's counted, collected, and skipped instead — every
@@ -210,7 +240,7 @@ func (s *sink) Healthy(max time.Duration) (bool, time.Duration) {
 // produce round trip per record, and a large enough burst could make this
 // handler call itself look stuck — the exact failure mode the dead-letter
 // queue exists to avoid, self-inflicted.
-func decode[T any](ctx context.Context, s *sink, recs []*kgo.Record, typ string) []T {
+func Decode[T any](ctx context.Context, s *Sink, recs []*kgo.Record, typ string) []T {
 	out := make([]T, 0, len(recs))
 	var dead []app.DLQRecord
 
@@ -250,76 +280,11 @@ func decode[T any](ctx context.Context, s *sink, recs []*kgo.Record, typ string)
 	return out
 }
 
-// buildDeadLetter is pure — no I/O — so decode can collect every failure in a
-// fetch before recordDeadLetters does anything over the network.
-func (s *sink) buildDeadLetter(rec *kgo.Record, reason string, cause error, env pkgkafka.Envelope) app.DLQRecord {
-	return app.DLQRecord{
-		Topic:         s.topic,
-		Partition:     rec.Partition,
-		Offset:        rec.Offset,
-		ConsumerGroup: s.group,
-		ConsumerName:  string(s.name),
-		Reason:        reason,
-		Error:         cause.Error(),
-		EnvelopeType:  env.Type,
-		ProducedAt:    env.ProducedAt,
-		FailedAt:      time.Now(),
-		RawValue:      string(rec.Value),
-	}
-}
-
-// recordDeadLetters durably records every record decode() couldn't process
-// from one fetch, in a single batched call — one produce round trip and, on
-// the fallback path, one ClickHouse insert, regardless of how many records
-// failed. Produces to the dead-letter topic synchronously, same durability
-// reasoning as the OTel logs path: this is the last chance to keep the
-// evidence, so fire-and-forget isn't good enough. Falls back to a batched
-// direct ClickHouse write, bounded by the same write timeout as insert(), for
-// whichever records the produce itself didn't ack.
-//
-// deadLetterFallbackOnly skips the produce step entirely: the DLQ consumer's
-// own decode failures go straight to the direct write, so a
-// dead-letter-about-a-dead-letter can't recurse through the topic.
-func (s *sink) recordDeadLetters(ctx context.Context, dead []app.DLQRecord) {
-	if !s.deadLetterFallbackOnly {
-		msgs := make([]kafka.Message, len(dead))
-		for i, dl := range dead {
-			msgs[i] = kafka.Message{
-				Key:     fmt.Sprintf("%s:%d:%d", dl.Topic, dl.Partition, dl.Offset),
-				Payload: dl,
-			}
-		}
-
-		failed := s.producer.ProduceEnvelopesSync(ctx, kafka.TopicDLQ, kafka.TypeDLQ, msgs)
-		if len(failed) == 0 {
-			return
-		}
-		s.mw.Count(s.metric("dead_letter_produce_failed"), int64(len(failed)), nil)
-
-		fallback := make([]app.DLQRecord, 0, len(failed))
-		for _, i := range failed {
-			fallback = append(fallback, dead[i])
-		}
-		dead = fallback
-	}
-
-	writeCtx, cancel := context.WithTimeout(ctx, s.writeTimeout)
-	defer cancel()
-
-	if err := s.chDB.WithContext(writeCtx).CreateInBatches(&dead, len(dead)).Error; err != nil {
-		s.l.Error("failed to record dead letters via topic or direct write",
-			zap.Int("count", len(dead)),
-			zap.Error(err),
-		)
-		s.mw.Count(s.metric("dead_letter_lost"), int64(len(dead)), nil)
-	}
-}
-
-// insert writes one partition's decoded batch to ClickHouse, keyed by the batch's
+// Insert writes one partition's decoded batch to ClickHouse, keyed by the batch's
 // offset range as an insert_deduplication_token. Offsets are only committed after
 // this returns nil, so a failed insert is redelivered; the token is what makes
 // that replay idempotent rather than duplicating rows.
-func insert[T any](ctx context.Context, s *sink, partition int32, recs []*kgo.Record, rows []T) error {
+func Insert[T any](ctx context.Context, s *Sink, partition int32, recs []*kgo.Record, rows []T) error {
 	if len(rows) == 0 {
 		return nil
 	}

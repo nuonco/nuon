@@ -10,7 +10,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/consumer"
+	runnersconsumer "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/consumer"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/consumer"
 )
 
 type ConsumerHealthcheckParams struct {
@@ -20,9 +21,10 @@ type ConsumerHealthcheckParams struct {
 	L   *zap.Logger
 
 	// Each is nil when that consumer isn't selected/enabled in this process
-	// (see consumer.newSink) — Healthy on a nil sink always reports healthy.
-	HB  *consumer.HeartbeatConsumer
-	OL  *consumer.OtelLogsConsumer
+	// (see consumer.NewSink) — Healthy on a nil sink always reports healthy.
+	HB  *runnersconsumer.HeartbeatConsumer
+	OL  *runnersconsumer.OtelLogsConsumer
+	OT  *runnersconsumer.OtelTracesConsumer
 	DLQ *consumer.DLQConsumer
 }
 
@@ -48,9 +50,10 @@ type ConsumerHealthcheckServer struct {
 	sinks    []healthySink
 }
 
-// healthySink is the subset of *consumer.HeartbeatConsumer / *OtelLogsConsumer
-// (both embed *sink) this server needs.
+// healthySink is the subset of consumer.Sink — which every consumer embeds —
+// that this server needs.
 type healthySink interface {
+	ConsumerName() string
 	Healthy(max time.Duration) (bool, time.Duration)
 }
 
@@ -61,6 +64,9 @@ func NewConsumerHealthcheck(params ConsumerHealthcheckParams) *ConsumerHealthche
 	}
 	if params.OL != nil {
 		sinks = append(sinks, params.OL)
+	}
+	if params.OT != nil {
+		sinks = append(sinks, params.OT)
 	}
 	if params.DLQ != nil {
 		sinks = append(sinks, params.DLQ)
@@ -98,22 +104,28 @@ func (h *ConsumerHealthcheckServer) Stop(ctx context.Context) error {
 	return h.srv.Shutdown(ctx)
 }
 
+// livezHandler fails the pod if any consumer it hosts is stuck. A deployment can
+// host several (the `otel` deployment runs otel-logs and otel-traces), so the
+// response names the stuck ones: otherwise a restart tells you a pod wedged but
+// not which consumer caused it, and the pod that gets killed is also carrying
+// the healthy one's partitions.
 func (h *ConsumerHealthcheckServer) livezHandler(rw http.ResponseWriter, _ *http.Request) {
 	var stuckFor time.Duration
-	stuck := false
+	var stuckNames []string
 	for _, s := range h.sinks {
 		ok, d := s.Healthy(h.maxStuck)
 		if !ok {
-			stuck = true
+			stuckNames = append(stuckNames, s.ConsumerName())
 			if d > stuckFor {
 				stuckFor = d
 			}
 		}
 	}
 
-	if stuck {
+	if len(stuckNames) > 0 {
 		writeJSON(rw, http.StatusServiceUnavailable, map[string]any{
 			"status":       "error",
+			"stuck":        stuckNames,
 			"stuck_for_ms": stuckFor.Milliseconds(),
 		})
 		return

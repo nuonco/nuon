@@ -8,9 +8,9 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/nuonco/nuon/pkg/profiles"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/consumer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/fxmodules"
 	"github.com/nuonco/nuon/services/ctl-api/internal/health"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/consumer"
 )
 
 var consumerName string
@@ -32,8 +32,10 @@ func (c *cli) registerConsumer() error {
 // here — only what the consumers depend on (config, ClickHouse, metrics,
 // logging).
 //
-// Deployed, each pod runs a single consumer (`--name=otel-logs`) so they scale
-// and fail independently; locally `--name=all` runs them together.
+// Deployed, a pod runs one consumer (`--name=heartbeats`) or a group of them
+// that can share resources and a restart (`--name=otel-logs,otel-traces`); each
+// still gets its own topic, consumer group and client. Locally `--name=all` runs
+// them together.
 func (c *cli) runConsumer(cmd *cobra.Command, _ []string) error {
 	// Parsed before the fx graph is built so a bad --name is an immediate,
 	// legible error rather than a provider failure buried in an fx trace.

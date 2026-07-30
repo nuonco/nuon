@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -121,6 +122,14 @@ func (a *Activities) WriteControlPlaneTraces(ctx context.Context, runnerID strin
 	}
 
 	ctx = a.traceWriteContext(ctx, records)
+
+	// Stamped here rather than left to BeforeCreate / GORM autofill, which
+	// resolve at insert time: on the Kafka path that happens in a consumer with
+	// no request context, so created_by_id would be empty and created_at would
+	// mean "when the sink flushed" instead of "when we got this".
+	createdByID := keys.CreatedByIDFromContext(ctx)
+	now := time.Now()
+
 	traces := make([]app.OtelTraceIngestion, 0, len(records))
 	for _, record := range records {
 		recordRunnerID := record.RunnerID
@@ -128,6 +137,11 @@ func (a *Activities) WriteControlPlaneTraces(ctx context.Context, runnerID strin
 			recordRunnerID = runnerID
 		}
 		traces = append(traces, app.OtelTraceIngestion{
+			ID:          domains.NewOtelTraceID(),
+			CreatedByID: createdByID,
+			CreatedAt:   now,
+			UpdatedAt:   now,
+
 			RunnerID:               recordRunnerID,
 			RunnerGroupID:          record.RunnerGroupID,
 			RunnerJobID:            record.RunnerJobID,
@@ -163,6 +177,43 @@ func (a *Activities) WriteControlPlaneTraces(ctx context.Context, runnerID strin
 		})
 	}
 
+	if !a.kafka.Enabled() {
+		return a.writeControlPlaneTraces(ctx, traces)
+	}
+
+	// Synchronous for the same reason as the control-plane logs path above:
+	// Temporal treats a returning activity as durably done, so a fire-and-forget
+	// produce would let this activity succeed while the spans only exist in a
+	// process buffer, and a worker restart would lose them with nothing left to
+	// retry.
+	msgs := make([]kafka.Message, 0, len(traces))
+	for _, trace := range traces {
+		key := trace.RunnerJobID
+		if key == "" {
+			key = trace.RunnerID
+		}
+		msgs = append(msgs, kafka.Message{Key: key, Payload: trace})
+	}
+
+	failed := a.kafka.ProduceEnvelopesSync(ctx, kafka.TopicOtelTraces, kafka.TypeOtelTrace, msgs)
+	if len(failed) == 0 {
+		return nil
+	}
+
+	fallback := make([]app.OtelTraceIngestion, 0, len(failed))
+	for _, i := range failed {
+		fallback = append(fallback, traces[i])
+	}
+
+	a.l.Warn("unable to produce control-plane traces to kafka; writing unacked spans inline",
+		zap.Int("acked", len(traces)-len(failed)),
+		zap.Int("fallback", len(fallback)),
+	)
+
+	return a.writeControlPlaneTraces(ctx, fallback)
+}
+
+func (a *Activities) writeControlPlaneTraces(ctx context.Context, traces []app.OtelTraceIngestion) error {
 	if err := a.chDB.WithContext(ctx).Create(&traces).Error; err != nil {
 		return fmt.Errorf("unable to ingest control-plane traces: %w", err)
 	}

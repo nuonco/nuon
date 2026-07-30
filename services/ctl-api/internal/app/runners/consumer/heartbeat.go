@@ -1,3 +1,6 @@
+// Package consumer holds the runners domain's Kafka consumers. Each is a
+// pkg/consumer Sink plus a decode-and-insert handler; the naming, selection,
+// poll-loop and dead-letter machinery all live in that runtime package.
 package consumer
 
 import (
@@ -6,6 +9,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	pkgconsumer "github.com/nuonco/nuon/services/ctl-api/internal/pkg/consumer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 )
 
@@ -13,17 +17,17 @@ import (
 // ClickHouse. When it doesn't run — not selected, or Kafka disabled — New returns
 // nil and the inline heartbeater path remains in effect.
 type HeartbeatConsumer struct {
-	*sink
+	*pkgconsumer.Sink
 }
 
-func NewHeartbeatConsumer(params Params) (*HeartbeatConsumer, error) {
-	s := newSink(params, NameHeartbeats, kafka.TopicRunnerHeartBeats, false)
+func NewHeartbeatConsumer(params pkgconsumer.Params) (*HeartbeatConsumer, error) {
+	s := pkgconsumer.NewSink(params, pkgconsumer.NameHeartbeats, kafka.TopicRunnerHeartBeats)
 	if s == nil {
 		return nil, nil
 	}
 
-	c := &HeartbeatConsumer{sink: s}
-	if err := s.start(params, c.handle); err != nil {
+	c := &HeartbeatConsumer{Sink: s}
+	if err := s.Start(params, c.handle); err != nil {
 		return nil, err
 	}
 
@@ -31,6 +35,6 @@ func NewHeartbeatConsumer(params Params) (*HeartbeatConsumer, error) {
 }
 
 func (c *HeartbeatConsumer) handle(ctx context.Context, partition int32, recs []*kgo.Record) error {
-	hbs := decode[app.RunnerHeartBeat](ctx, c.sink, recs, kafka.TypeRunnerHeartBeat)
-	return insert(ctx, c.sink, partition, recs, hbs)
+	hbs := pkgconsumer.Decode[app.RunnerHeartBeat](ctx, c.Sink, recs, kafka.TypeRunnerHeartBeat)
+	return pkgconsumer.Insert(ctx, c.Sink, partition, recs, hbs)
 }
