@@ -368,6 +368,11 @@ type CloudPlatformMetadata struct {
 	TargetSource string `json:"target_source,omitempty"`
 }
 
+// HasTarget reports whether any cloud's target identifier has been set.
+func (c CloudPlatformMetadata) HasTarget() bool {
+	return c.TargetAccountID != "" || c.TargetProjectID != "" || c.TargetSubscriptionID != ""
+}
+
 // Scan implements the database/sql.Scanner interface.
 func (c *CloudPlatformMetadata) Scan(value interface{}) error {
 	if value == nil {

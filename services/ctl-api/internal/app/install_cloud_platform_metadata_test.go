@@ -153,6 +153,24 @@ func TestPhoneHomeAuthPersistsButIsNotSerialized(t *testing.T) {
 	}
 }
 
+func TestCloudPlatformMetadataHasTarget(t *testing.T) {
+	for name, tc := range map[string]struct {
+		metadata CloudPlatformMetadata
+		want     bool
+	}{
+		"empty":               {want: false},
+		"aws target":          {metadata: CloudPlatformMetadata{TargetAccountID: "123456789012"}, want: true},
+		"gcp target":          {metadata: CloudPlatformMetadata{TargetProjectID: "p"}, want: true},
+		"azure target":        {metadata: CloudPlatformMetadata{TargetSubscriptionID: "s"}, want: true},
+		"observed only":       {metadata: CloudPlatformMetadata{ObservedAccountID: "123456789012"}, want: false},
+		"target source alone": {metadata: CloudPlatformMetadata{TargetSource: "user"}, want: false},
+	} {
+		if got := tc.metadata.HasTarget(); got != tc.want {
+			t.Errorf("%s: HasTarget() = %v, want %v", name, got, tc.want)
+		}
+	}
+}
+
 func TestSetExpectedCloudIdentifiers(t *testing.T) {
 	for name, tc := range map[string]struct {
 		metadata                    CloudPlatformMetadata

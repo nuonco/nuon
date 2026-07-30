@@ -207,11 +207,8 @@ func (s *InstallsServiceTestSuite) createTestInstallViaAPI() testInstallWithWork
 	body := CreateInstallV2Request{
 		AppID: s.testApp.ID,
 		CreateInstallParams: helpers.CreateInstallParams{
-			Name: fmt.Sprintf("api-install-%d", time.Now().UnixNano()),
-			AWSAccount: &struct {
-				Region       string `json:"region"`
-				ConnectionID string `json:"connection_id,omitempty"`
-			}{Region: "us-west-2"},
+			Name:       fmt.Sprintf("api-install-%d", time.Now().UnixNano()),
+			AWSAccount: &helpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
 		},
 	}
 
