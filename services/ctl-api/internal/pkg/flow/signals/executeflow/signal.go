@@ -100,12 +100,13 @@ type Signal struct {
 }
 
 var (
-	_ qsignal.Signal                     = (*Signal)(nil)
-	_ qsignal.SignalWithCancel           = (*Signal)(nil)
-	_ qsignal.SignalWithUpdateHandlers   = (*Signal)(nil)
-	_ qsignal.SignalWithLifecycleContext = (*Signal)(nil)
-	_ qsignal.SignalWithParams           = (*Signal)(nil)
-	_ qsignal.AutoExecuteOnTerminalStart = (*Signal)(nil)
+	_ qsignal.Signal                      = (*Signal)(nil)
+	_ qsignal.SignalWithCancel            = (*Signal)(nil)
+	_ qsignal.SignalWithUpdateHandlers    = (*Signal)(nil)
+	_ qsignal.SignalWithLifecycleContext  = (*Signal)(nil)
+	_ qsignal.SignalWithParams            = (*Signal)(nil)
+	_ qsignal.AutoExecuteOnTerminalStart  = (*Signal)(nil)
+	_ qsignal.CompletionCallbacksWorkflow = (*Signal)(nil)
 )
 
 func (s *Signal) WithParams(p *qsignal.Params) {
@@ -162,6 +163,13 @@ func (s *Signal) SleepAfter() time.Duration {
 // (re)started by update-with-start after it idled out and completed. See the
 // queue handler's re-warm path.
 func (s *Signal) AutoExecuteOnTerminalStart() bool { return s.Resident }
+
+func (s *Signal) CompletionCallbacksWorkflowID() string {
+	if !s.Resident {
+		return ""
+	}
+	return s.WorkflowID
+}
 
 // LifecycleContext exposes the workflow identity + owner so lifecycle hooks
 // can emit workflow.lifecycle.* webhook events without leaking inner-signal
