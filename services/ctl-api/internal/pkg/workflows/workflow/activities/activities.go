@@ -8,6 +8,7 @@ import (
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 )
 
 type Params struct {
@@ -18,7 +19,8 @@ type Params struct {
 	AppsHelpers *appshelpers.Helpers
 	TClient     temporalclient.Client
 	Cfg         *internal.Config
-	L           *zap.Logger `optional:"true"`
+	Audit       *audit.Emitter `optional:"true"`
+	L           *zap.Logger    `optional:"true"`
 }
 
 type Activities struct {
@@ -27,6 +29,7 @@ type Activities struct {
 	appsHelpers *appshelpers.Helpers
 	tClient     temporalclient.Client
 	cfg         *internal.Config
+	audit       *audit.Emitter
 	l           *zap.Logger
 }
 
@@ -41,6 +44,7 @@ func New(params Params) *Activities {
 		appsHelpers: params.AppsHelpers,
 		tClient:     params.TClient,
 		cfg:         params.Cfg,
+		audit:       params.Audit,
 		l:           l,
 	}
 }

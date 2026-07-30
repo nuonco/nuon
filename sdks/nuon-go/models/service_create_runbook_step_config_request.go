@@ -7,6 +7,8 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -34,14 +36,11 @@ type ServiceCreateRunbookStepConfigRequest struct {
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
 
-	// trigger
-	Trigger string `json:"trigger,omitempty"`
-
 	// event types
-	EventTypes []string `json:"event_types,omitempty"`
+	EventTypes []string `json:"event_types"`
 
 	// filters
-	Filters []*AppTriggerFilter `json:"filters,omitempty"`
+	Filters []*AppTriggerFilter `json:"filters"`
 
 	// idx
 	Idx int64 `json:"idx,omitempty"`
@@ -68,6 +67,9 @@ type ServiceCreateRunbookStepConfigRequest struct {
 	// timeout
 	Timeout int64 `json:"timeout,omitempty"`
 
+	// trigger
+	Trigger string `json:"trigger,omitempty"`
+
 	// type
 	// Required: true
 	Type *string `json:"type"`
@@ -76,6 +78,10 @@ type ServiceCreateRunbookStepConfigRequest struct {
 // Validate validates this service create runbook step config request
 func (m *ServiceCreateRunbookStepConfigRequest) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateFilters(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateName(formats); err != nil {
 		res = append(res, err)
@@ -88,6 +94,36 @@ func (m *ServiceCreateRunbookStepConfigRequest) Validate(formats strfmt.Registry
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ServiceCreateRunbookStepConfigRequest) validateFilters(formats strfmt.Registry) error {
+	if swag.IsZero(m.Filters) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Filters); i++ {
+		if swag.IsZero(m.Filters[i]) { // not required
+			continue
+		}
+
+		if m.Filters[i] != nil {
+			if err := m.Filters[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("filters" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("filters" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -109,8 +145,46 @@ func (m *ServiceCreateRunbookStepConfigRequest) validateType(formats strfmt.Regi
 	return nil
 }
 
-// ContextValidate validates this service create runbook step config request based on context it is used
+// ContextValidate validate this service create runbook step config request based on the context it is used
 func (m *ServiceCreateRunbookStepConfigRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateFilters(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceCreateRunbookStepConfigRequest) contextValidateFilters(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Filters); i++ {
+
+		if m.Filters[i] != nil {
+
+			if swag.IsZero(m.Filters[i]) { // not required
+				return nil
+			}
+
+			if err := m.Filters[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("filters" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("filters" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

@@ -304,6 +304,12 @@ type Config struct {
 	WebhookURLs    []string      `config:"webhook_urls"`
 	WebhookTimeout time.Duration `config:"webhook_timeout"`
 
+	// Audit log export. Audit records are the only telemetry ctl-api ships over
+	// OTLP; everything else keeps going to stderr untouched. Leave the endpoint
+	// empty to disable, which is the default until the gateway collector exists.
+	AuditOTLPEndpoint string `config:"audit_otlp_endpoint"`
+	AuditOTLPToken    string `config:"audit_otlp_token"`
+
 	// configuration for runners
 	RunnerContainerImageURL      string `config:"runner_container_image_url" validate:"required"`
 	RunnerContainerImageURLGCP   string `config:"runner_container_image_url_gcp"`

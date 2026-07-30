@@ -28,6 +28,7 @@ import (
 	sandboxbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/sandbox"
 	terraformbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/terraform"
 	imagemetadatasync "github.com/nuonco/nuon/pkg/runner/jobs/sync/imagemetadata"
+	runnerlog "github.com/nuonco/nuon/pkg/runner/log"
 	ocicopy "github.com/nuonco/nuon/pkg/runner/oci/copy"
 	ociresolve "github.com/nuonco/nuon/pkg/runner/oci/resolve"
 	"github.com/nuonco/nuon/pkg/runner/settings"
@@ -175,23 +176,24 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 	go e.monitorJob(executionCtx, cancelExecution, monitorDone, job.ID, l, handler)
 	ctx = executionCtx
 
-	ctx = runnerctx.SetJobMetadata(ctx, runnerctx.JobMetadata{RunnerJobID: job.ID, RunnerJobExecutionID: execution.ID})
+	ctx = runnerctx.SetJobMetadata(ctx, jobs.AuditMetadata(job, execution.ID, ""))
 	var tracer trace.Tracer
 	var rootSpan trace.Span
 	var jobErr error
 	if traceProvider != nil {
 		ctx = runnerctx.SetTracerProvider(ctx, traceProvider)
 		tracer = traceProvider.Tracer("github.com/nuonco/nuon/pkg/runner/controlplane")
+		rootSpanAttrs := append([]attribute.KeyValue{
+			attribute.String("nuon.tool", "runner"),
+			attribute.String("nuon.job.type", string(job.Type)),
+			attribute.String("nuon.job.operation", string(job.Operation)),
+			attribute.String("runner_job.id", job.ID),
+			attribute.String("runner_job.executor", "control-plane"),
+			attribute.String("runner_job_execution.id", execution.ID),
+		}, jobs.AuditAttrs(job)...)
 		ctx, rootSpan = tracer.Start(ctx, "job."+string(job.Type),
 			trace.WithSpanKind(trace.SpanKindInternal),
-			trace.WithAttributes(
-				attribute.String("nuon.tool", "runner"),
-				attribute.String("nuon.job.type", string(job.Type)),
-				attribute.String("nuon.job.operation", string(job.Operation)),
-				attribute.String("runner_job.id", job.ID),
-				attribute.String("runner_job.executor", "control-plane"),
-				attribute.String("runner_job_execution.id", execution.ID),
-			),
+			trace.WithAttributes(rootSpanAttrs...),
 		)
 		l = l.With(runnerctx.ContextField(ctx))
 		defer func() {
@@ -203,6 +205,16 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 		}()
 	}
 	ctx = runnerctx.SetLogger(ctx, l)
+
+	auditL := runnerlog.NewAudit(l, job)
+	runnerlog.AuditEvent(auditL, "job execution started", runnerlog.OutcomeStarted)
+	defer func() {
+		if jobErr != nil {
+			runnerlog.AuditEvent(auditL, "job execution failed", runnerlog.OutcomeFailed, zap.Error(jobErr))
+			return
+		}
+		runnerlog.AuditEvent(auditL, "job execution finished", runnerlog.OutcomeSucceeded)
+	}()
 
 	if isSandboxableBuildHandler(handler) {
 		sandboxMode, err := e.getSandboxMode(ctx, job.ID)
@@ -274,25 +286,32 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 			jobErr = err
 			return jobErr
 		}
-		stepCtx := runnerctx.SetJobMetadata(ctx, runnerctx.JobMetadata{RunnerJobID: job.ID, RunnerJobExecutionID: execution.ID, StepName: step.name})
+		stepCtx := runnerctx.SetJobMetadata(ctx, jobs.AuditMetadata(job, execution.ID, step.name))
 		stepL := l.With(zap.String("runner_job_execution_step.name", step.name))
 		var stepSpan trace.Span
 		if tracer != nil {
+			stepSpanAttrs := append([]attribute.KeyValue{
+				attribute.String("nuon.tool", "runner"),
+				attribute.String("runner_job_execution_step.name", step.name),
+				attribute.String("runner_job.id", job.ID),
+				attribute.String("runner_job.executor", "control-plane"),
+				attribute.String("runner_job_execution.id", execution.ID),
+			}, jobs.AuditAttrs(job)...)
 			stepCtx, stepSpan = tracer.Start(stepCtx, "step."+step.name,
 				trace.WithSpanKind(trace.SpanKindInternal),
-				trace.WithAttributes(
-					attribute.String("nuon.tool", "runner"),
-					attribute.String("runner_job_execution_step.name", step.name),
-					attribute.String("runner_job.id", job.ID),
-					attribute.String("runner_job.executor", "control-plane"),
-					attribute.String("runner_job_execution.id", execution.ID),
-				),
+				trace.WithAttributes(stepSpanAttrs...),
 			)
 			stepL = stepL.With(runnerctx.ContextField(stepCtx))
 		}
 		stepCtx = runnerctx.SetLogger(stepCtx, stepL)
 		stepL.Info("executing job step "+step.name, zap.String("step", step.name))
+
+		stepAuditL := runnerlog.NewAudit(stepL, job)
+		stepNameField := zap.String("runner_job_execution_step.name", step.name)
+		runnerlog.AuditEvent(stepAuditL, "job step started", runnerlog.OutcomeStarted, stepNameField)
+
 		if err := step.fn(stepCtx); err != nil {
+			runnerlog.AuditEvent(stepAuditL, "job step failed", runnerlog.OutcomeFailed, stepNameField, zap.Error(err))
 			if cause := context.Cause(ctx); cause != nil {
 				err = fmt.Errorf("%w: %v", cause, err)
 			}
@@ -317,6 +336,7 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 			jobErr = fmt.Errorf("%s: %w", step.name, err)
 			return jobErr
 		}
+		runnerlog.AuditEvent(stepAuditL, "job step finished", runnerlog.OutcomeSucceeded, stepNameField)
 		if stepSpan != nil {
 			stepSpan.End()
 		}

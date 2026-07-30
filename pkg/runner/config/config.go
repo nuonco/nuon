@@ -35,6 +35,12 @@ type Config struct {
 	HostIP   string `config:"host_ip" validate:"required"`
 	LogLevel string `config:"log_level"`
 
+	// OTELAuditExportEnabled forwards audit-tagged records to the audit-export
+	// collector bundled alongside the runner. Off by default: the collector
+	// only ships with the AWS EKS stack today, and exporting to a loopback
+	// port nothing is listening on retries on every batch interval.
+	OTELAuditExportEnabled bool `config:"otel_audit_export_enabled"`
+
 	// some artifacts are bundled into the runner binary, to make loading them easier.
 	BundleDir    string `config:"bundle_dir" validate:"required"`
 	RegistryDir  string `config:"registry_dir" validate:"required"`

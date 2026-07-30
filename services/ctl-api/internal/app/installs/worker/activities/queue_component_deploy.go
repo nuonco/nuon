@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 )
 
 type CreateInstallDeployRequest struct {
@@ -54,6 +55,23 @@ func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallD
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install deploy: %w", res.Error)
 	}
+
+	a.audit.Emit(ctx, audit.Event{
+		Type:        audit.EventInstallDeploy,
+		Message:     "install deploy created",
+		Outcome:     audit.OutcomeStarted,
+		InstallID:   req.InstallID,
+		ComponentID: req.ComponentID,
+		SubjectID:   installDeploy.ID,
+		SubjectType: "install_deploys",
+		Attrs: map[string]string{
+			"deploy.id":            installDeploy.ID,
+			"deploy.type":          string(installDeploy.Type),
+			"component_build.id":   req.BuildID,
+			"install_component.id": installCmp.ID,
+			"flow_workflow.id":     req.WorkflowID,
+		},
+	})
 
 	return &installDeploy, nil
 }
