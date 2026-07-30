@@ -203,7 +203,7 @@ export const BranchConnectionStep = ({
   return (
     <div className="flex flex-col gap-4">
       <Text variant="subtext" theme="neutral">
-        Add this install to a deployment group so app branch runs deploy to it. You can skip this and do it later.
+        Add this install to an install group so app branch runs deploy to it. You can skip this and do it later.
       </Text>
 
       <div className="flex flex-col gap-3">

@@ -184,16 +184,19 @@ export const DeploymentPlanEditor = ({
         </Banner>
       ) : (
         <div className="flex flex-col gap-6">
-          {groups.length > 0 && (
-            <div className="max-w-[50%]">
-              <DeploymentPlanGraph config={previewConfig} installsById={installsById} orgId={orgId} compact />
-            </div>
+          <Text variant="subtext" theme="neutral">
+            Groups deploy top to bottom. Installs in a group deploy together, up
+            to its max parallel. Any install left unassigned is skipped.
+          </Text>
+
+          {groups.length >= 2 && (
+            <DeploymentPlanGraph config={previewConfig} installsById={installsById} orgId={orgId} compact />
           )}
 
           {groups.length === 0 ? (
             <EmptyState
               variant="table"
-              emptyTitle="No deployment groups"
+              emptyTitle="No install groups yet"
               emptyMessage="Add a group, then assign installs to it."
               action={
                 <Button variant="primary" onClick={addGroup} disabled={isDisabled}>
@@ -203,51 +206,53 @@ export const DeploymentPlanEditor = ({
               }
             />
           ) : (
-            groups.map((group, index) => {
-              const nameError =
-                showValidation && !group.name.trim()
-                  ? 'Group name is required'
-                  : undefined
-              const contentError = showValidation ? groupContentError(group) : undefined
+            <>
+              {groups.map((group, index) => {
+                const nameError =
+                  showValidation && !group.name.trim()
+                    ? 'Group name is required'
+                    : undefined
+                const contentError = showValidation ? groupContentError(group) : undefined
 
-              return (
-                <GroupEditor
-                  key={group.id}
-                  group={group}
-                  index={index}
-                  totalGroups={groups.length}
-                  availableInstalls={availableInstalls}
-                  unassignedInstalls={unassignedInstalls}
-                  labelColors={labelColors}
-                  disabled={isDisabled}
-                  nameError={nameError}
-                  contentError={contentError}
-                  onUpdate={(updates) => updateGroup(group.id, updates)}
-                  onAddInstalls={(installIds) =>
-                    addInstallsToGroup(group.id, installIds)
-                  }
-                  onRemoveInstall={(installId) =>
-                    removeInstallFromGroup(group.id, installId)
-                  }
-                  onMoveUp={() => moveGroup(group.id, -1)}
-                  onMoveDown={() => moveGroup(group.id, 1)}
-                  onDelete={() => deleteGroup(group.id)}
-                />
-              )
-            })
+                return (
+                  <GroupEditor
+                    key={group.id}
+                    group={group}
+                    index={index}
+                    totalGroups={groups.length}
+                    availableInstalls={availableInstalls}
+                    unassignedInstalls={unassignedInstalls}
+                    labelColors={labelColors}
+                    disabled={isDisabled}
+                    nameError={nameError}
+                    contentError={contentError}
+                    onUpdate={(updates) => updateGroup(group.id, updates)}
+                    onAddInstalls={(installIds) =>
+                      addInstallsToGroup(group.id, installIds)
+                    }
+                    onRemoveInstall={(installId) =>
+                      removeInstallFromGroup(group.id, installId)
+                    }
+                    onMoveUp={() => moveGroup(group.id, -1)}
+                    onMoveDown={() => moveGroup(group.id, 1)}
+                    onDelete={() => deleteGroup(group.id)}
+                  />
+                )
+              })}
+
+              <Button
+                variant="secondary"
+                onClick={addGroup}
+                disabled={isDisabled}
+                className="self-start"
+              >
+                <Icon variant="PlusIcon" size={16} />
+                Add group
+              </Button>
+            </>
           )}
 
-          <Button
-            variant="secondary"
-            onClick={addGroup}
-            disabled={isDisabled}
-            className="self-start"
-          >
-            <Icon variant="PlusIcon" size={16} />
-            Add group
-          </Button>
-
-          {unassignedInstalls.length > 0 && (
+          {groups.length > 0 && unassignedInstalls.length > 0 && (
             <div className="border-t pt-4">
               <div className="flex items-baseline gap-2 mb-2">
                 <Text variant="base" weight="strong">Unassigned</Text>

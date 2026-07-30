@@ -43,7 +43,7 @@ const LabelsSection = () => {
     >
       <div className="flex flex-col gap-3 p-4 border-t">
         <Text variant="subtext" theme="neutral">
-          Labels connect this install to app branch deployment groups.
+          Labels connect this install to app branch install groups.
         </Text>
         {rows.map((row, idx) => (
           <div key={idx} className="flex items-center gap-2">

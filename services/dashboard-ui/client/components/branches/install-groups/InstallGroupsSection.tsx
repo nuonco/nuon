@@ -61,8 +61,8 @@ export const InstallGroupsSection = ({
       <div className="border rounded-lg p-6">
         <EmptyState
           variant="diagram"
-          emptyTitle="No install groups configured"
-          emptyMessage={`Use "Deployment plan" above to add deployment groups.`}
+          emptyTitle="No install groups"
+          emptyMessage="This deployment plan doesn't have any install groups yet."
         />
       </div>
     )
