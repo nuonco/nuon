@@ -23,6 +23,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/events/envelope"
 	"github.com/nuonco/nuon/pkg/metrics"
 	serviceconfig "github.com/nuonco/nuon/pkg/services/config"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -35,23 +36,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/signing"
 )
-
-func TestParseCloudEvent(t *testing.T) {
-	valid := []byte("{\"specversion\":\"1.0\",\"id\":\"evt-1\",\"source\":\"urn:test\",\"type\":\"test.created\",\"data\":{\"ok\":true}}")
-	event, err := parseCloudEvent(valid)
-	if err != nil || event.ID != "evt-1" {
-		t.Fatalf("valid CloudEvent rejected: %v", err)
-	}
-	for _, body := range []string{
-		"{\"specversion\":\"0.3\",\"id\":\"evt-1\",\"source\":\"urn:test\",\"type\":\"test\",\"data\":{}}",
-		"{\"specversion\":\"1.0\",\"source\":\"urn:test\",\"type\":\"test\",\"data\":{}}",
-		"{\"specversion\":\"1.0\",\"id\":\"evt-1\",\"source\":\"urn:test\",\"type\":\"test\"}",
-	} {
-		if _, err := parseCloudEvent([]byte(body)); err == nil {
-			t.Fatalf("invalid CloudEvent accepted: %s", body)
-		}
-	}
-}
 
 func TestDecodeGenericJSONEvent(t *testing.T) {
 	headers := http.Header{"X-Nuon-Event-Id": {"delivery-1"}, "X-Nuon-Event-Type": {"push"}, "Content-Type": {"application/json"}}
@@ -100,57 +84,16 @@ func TestDecodeAzureEventGridEvent(t *testing.T) {
 	if event.ID != "evt-1" || event.Type != "Nuon.Proof.Created" || event.OccurredAt == nil || !strings.Contains(string(event.Payload), `"subject":"proof"`) {
 		t.Fatalf("unexpected normalized event: %#v", event)
 	}
-	if _, err := decodeAzureEventGridEvent([]byte(`[{},{}]`)); err == nil {
-		t.Fatal("accepted an Event Grid batch with more than one event")
-	}
-	if _, err := decodeAzureEventGridEvent([]byte(`[{"id":"evt-1","eventType":"Nuon.Proof.Created","data":{"ok":true}}]`)); err == nil {
-		t.Fatal("accepted a regular Event Grid event without eventTime")
-	}
-}
-
-func TestAzureEventGridValidationCode(t *testing.T) {
-	event, err := decodeAzureEventGridEvent([]byte(`[{"id":"validation-1","eventType":"Microsoft.EventGrid.SubscriptionValidationEvent","data":{"validationCode":"code-1"}}]`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	code, err := azureEventGridValidationCode(event)
-	if err != nil || code != "code-1" {
-		t.Fatalf("validation code = %q: %v", code, err)
-	}
 }
 
 func TestDecodeSlackEvent(t *testing.T) {
 	body := []byte(`{"type":"event_callback","event_id":"Ev123","event_time":1785254400,"team_id":"T123","event":{"type":"message","text":"proof"}}`)
-	event, err := decodeSlackEvent(body)
+	event, err := decodeEvent(&app.Trigger{Preset: "slack-events", Envelope: app.EventEnvelopeTypeNone}, nil, body)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if event.ID != "Ev123" || event.Type != "message" || event.OccurredAt == nil || !strings.Contains(string(event.Payload), `"team_id":"T123"`) {
 		t.Fatalf("unexpected normalized event: %#v", event)
-	}
-	challengeEvent, err := decodeSlackEvent([]byte(`{"type":"url_verification","challenge":"proof-code"}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	challenge, err := slackChallenge(challengeEvent)
-	if err != nil || challenge != "proof-code" {
-		t.Fatalf("challenge = %q: %v", challenge, err)
-	}
-	for _, invalid := range []string{
-		`{"type":"url_verification"}`,
-		`{"type":"event_callback","event_time":1785254400,"event":{"type":"message"}}`,
-		`{"type":"event_callback","event_id":"Ev123","event_time":1785254400,"event":{}}`,
-	} {
-		if _, err := decodeSlackEvent([]byte(invalid)); err == nil {
-			t.Fatalf("invalid Slack event accepted: %s", invalid)
-		}
-	}
-}
-
-func TestValidSlackRequestTimestamp(t *testing.T) {
-	now := time.Unix(1785254400, 0)
-	if !validSlackRequestTimestamp("1785254400", now) || !validSlackRequestTimestamp("1785254100", now) || validSlackRequestTimestamp("1785254099", now) || validSlackRequestTimestamp("not-a-time", now) {
-		t.Fatal("Slack timestamp window was not enforced")
 	}
 }
 
@@ -740,7 +683,7 @@ func (s *ingressPersistenceTestSuite) TestIngressKeyReplacementRejectsInFlightEv
 	queue, err := s.service.orgTriggerQueue(ctx, s.trigger.OrgID)
 	require.NoError(s.T(), err)
 
-	event := &normalizedEvent{ID: "in-flight-1", Payload: json.RawMessage(`{"tag":"one"}`), ContentType: "application/json"}
+	event := &envelope.Event{ID: "in-flight-1", Payload: json.RawMessage(`{"tag":"one"}`), ContentType: "application/json"}
 	_, _, _, err = s.service.persistEvent(ctx, &staleTrigger, nil, queue.ID, event, []byte(`{"tag":"one"}`), time.Now())
 	require.ErrorIs(s.T(), err, errTriggerInactive)
 

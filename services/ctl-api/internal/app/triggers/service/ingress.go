@@ -1,18 +1,14 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
-	"crypto/subtle"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -22,23 +18,23 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/nuonco/nuon/pkg/eventfilter"
+	"github.com/nuonco/nuon/pkg/events/envelope"
+	"github.com/nuonco/nuon/pkg/events/provider"
+	"github.com/nuonco/nuon/pkg/events/providers"
+	eventsns "github.com/nuonco/nuon/pkg/events/sns"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queuepkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/signing"
 )
 
 const (
-	maxEventBody                      = 16 * 1024 * 1024
-	maxActiveEventSecrets             = 2
-	maxEventSecretMetadata            = 20
-	eventSecretRotationGrace          = 24 * time.Hour
-	azureEventGridValidationEventType = "Microsoft.EventGrid.SubscriptionValidationEvent"
-	slackRequestMaxClockSkew          = 5 * time.Minute
+	maxEventBody             = 16 * 1024 * 1024
+	maxActiveEventSecrets    = 2
+	maxEventSecretMetadata   = 20
+	eventSecretRotationGrace = 24 * time.Hour
 )
 
 var (
@@ -46,277 +42,29 @@ var (
 	errTriggerInactive     = errors.New("trigger inactive")
 	errEventSecretInactive = errors.New("trigger secret inactive")
 	errUnsupportedAuth     = errors.New("trigger auth is not implemented")
-	errUnsupportedEnvelope = errors.New("trigger envelope is not implemented")
 )
-
-type cloudEvent struct {
-	SpecVersion     string          `json:"specversion"`
-	ID              string          `json:"id"`
-	Source          string          `json:"source"`
-	Type            string          `json:"type"`
-	Subject         string          `json:"subject,omitempty"`
-	Time            *time.Time      `json:"time,omitempty"`
-	DataContentType string          `json:"datacontenttype,omitempty"`
-	Data            json.RawMessage `json:"data"`
-}
 
 type ingressResponse struct {
 	EventID   string `json:"event_id"`
 	Duplicate bool   `json:"duplicate"`
 }
 
-type normalizedEvent struct {
-	ID          string
-	DedupeID    string
-	Source      string
-	Type        string
-	OccurredAt  *time.Time
-	Payload     json.RawMessage
-	ContentType string
-}
-
-type azureEventGridEvent struct {
-	ID        string          `json:"id"`
-	EventType string          `json:"eventType"`
-	EventTime *time.Time      `json:"eventTime,omitempty"`
-	Data      json.RawMessage `json:"data"`
-}
-
-type slackEventEnvelope struct {
-	Type      string          `json:"type"`
-	Challenge string          `json:"challenge,omitempty"`
-	EventID   string          `json:"event_id,omitempty"`
-	EventTime int64           `json:"event_time,omitempty"`
-	Event     json.RawMessage `json:"event,omitempty"`
-}
-
-type pubSubPushEnvelope struct {
-	Message struct {
-		Data        string `json:"data"`
-		MessageID   string `json:"messageId"`
-		PublishTime string `json:"publishTime"`
-	} `json:"message"`
-}
-
-func parseCloudEvent(body []byte) (*cloudEvent, error) {
-	var event cloudEvent
-	decoder := json.NewDecoder(bytes.NewReader(body))
-	if err := decoder.Decode(&event); err != nil {
+func decodeEvent(trigger *app.Trigger, headers http.Header, body []byte) (*envelope.Event, error) {
+	decoder, err := providers.Resolve(trigger.Preset).Decoder(provider.EnvelopeType(trigger.Envelope))
+	if err != nil {
 		return nil, err
 	}
-	if decoder.Decode(&struct{}{}) != io.EOF || event.SpecVersion != "1.0" || event.ID == "" || event.Source == "" || event.Type == "" || len(event.Data) == 0 || !json.Valid(event.Data) {
-		return nil, errors.New("invalid structured CloudEvent 1.0")
-	}
-	return &event, nil
-}
-
-func decodeEvent(trigger *app.Trigger, headers http.Header, body []byte) (*normalizedEvent, error) {
-	if trigger.Preset == "azure-event-grid" {
-		return decodeAzureEventGridEvent(body)
-	}
-	if trigger.Preset == "slack-events" {
-		return decodeSlackEvent(body)
-	}
-	var event *normalizedEvent
-	switch trigger.Envelope {
-	case app.EventEnvelopeTypeNone:
-		if !json.Valid(body) {
-			return nil, errors.New("invalid JSON event")
-		}
-		event = &normalizedEvent{Payload: json.RawMessage(body), ContentType: headers.Get("Content-Type")}
-	case app.EventEnvelopeTypeCloudEvents:
-		cloudEvent, err := parseCloudEvent(body)
-		if err != nil {
-			return nil, err
-		}
-		event = &normalizedEvent{ID: cloudEvent.ID, Source: cloudEvent.Source, Type: cloudEvent.Type, OccurredAt: cloudEvent.Time, Payload: cloudEvent.Data, ContentType: cloudEvent.DataContentType}
-	case app.EventEnvelopeTypePubSubPush:
-		var push pubSubPushEnvelope
-		if err := json.Unmarshal(body, &push); err != nil || push.Message.Data == "" || push.Message.MessageID == "" {
-			return nil, errors.New("invalid Pub/Sub push envelope")
-		}
-		payload, err := base64.StdEncoding.DecodeString(push.Message.Data)
-		if err != nil || !json.Valid(payload) {
-			return nil, errors.New("invalid Pub/Sub message data")
-		}
-		var occurredAt *time.Time
-		if push.Message.PublishTime != "" {
-			parsed, err := time.Parse(time.RFC3339Nano, push.Message.PublishTime)
-			if err != nil {
-				return nil, errors.New("invalid Pub/Sub publish time")
-			}
-			occurredAt = &parsed
-		}
-		event = &normalizedEvent{ID: push.Message.MessageID, OccurredAt: occurredAt, Payload: payload, ContentType: "application/json"}
-	case app.EventEnvelopeTypeSNS:
-		msg, err := parseSNSMessage(body)
-		if err != nil {
-			return nil, err
-		}
-		if msg.Type != "Notification" {
-			return nil, nil
-		}
-		payload := json.RawMessage(msg.Message)
-		if !json.Valid(payload) {
-			return nil, errors.New("SNS Notification Message must contain JSON")
-		}
-		occurredAt, err := time.Parse(time.RFC3339Nano, msg.Timestamp)
-		if err != nil {
-			return nil, errors.New("invalid SNS timestamp")
-		}
-		event = &normalizedEvent{ID: msg.MessageID, OccurredAt: &occurredAt, Payload: payload, ContentType: "application/json"}
-	default:
-		return nil, errUnsupportedEnvelope
-	}
-	if event == nil {
-		return nil, nil
-	}
-	if trigger.Envelope == app.EventEnvelopeTypeCloudEvents {
-		event.DedupeID = event.ID
-	}
-	if err := applyEventSelectors(trigger, headers, event); err != nil {
+	event, err := decoder.Decode(headers, body)
+	if err != nil || event == nil {
 		return nil, err
 	}
-	if trigger.Envelope == app.EventEnvelopeTypeNone && event.ID == "" {
-		sum := sha256.Sum256(body)
-		event.ID = hex.EncodeToString(sum[:])
+	if err := envelope.ApplySelectors(event, headers, envelope.FieldSelector(trigger.TypeFrom), envelope.FieldSelector(trigger.IDFrom)); err != nil {
+		return nil, err
 	}
 	if event.DedupeID == "" {
 		event.DedupeID = event.ID
 	}
 	return event, nil
-}
-
-func decodeAzureEventGridEvent(body []byte) (*normalizedEvent, error) {
-	var events []json.RawMessage
-	decoder := json.NewDecoder(bytes.NewReader(body))
-	if err := decoder.Decode(&events); err != nil || decoder.Decode(&struct{}{}) != io.EOF || len(events) != 1 {
-		return nil, errors.New("Azure Event Grid request must contain exactly one event")
-	}
-	var event azureEventGridEvent
-	if err := json.Unmarshal(events[0], &event); err != nil || event.ID == "" || event.EventType == "" || len(event.Data) == 0 || !json.Valid(event.Data) || (event.EventType != azureEventGridValidationEventType && event.EventTime == nil) {
-		return nil, errors.New("invalid Azure Event Grid event")
-	}
-	return &normalizedEvent{ID: event.ID, Type: event.EventType, OccurredAt: event.EventTime, Payload: events[0], ContentType: "application/json"}, nil
-}
-
-func azureEventGridValidationCode(event *normalizedEvent) (string, error) {
-	if event == nil || event.Type != azureEventGridValidationEventType {
-		return "", nil
-	}
-	var payload struct {
-		Data struct {
-			ValidationCode string `json:"validationCode"`
-		} `json:"data"`
-	}
-	if err := json.Unmarshal(event.Payload, &payload); err != nil || payload.Data.ValidationCode == "" {
-		return "", errors.New("Azure Event Grid validation event is missing validationCode")
-	}
-	return payload.Data.ValidationCode, nil
-}
-
-func decodeSlackEvent(body []byte) (*normalizedEvent, error) {
-	var envelope slackEventEnvelope
-	decoder := json.NewDecoder(bytes.NewReader(body))
-	if err := decoder.Decode(&envelope); err != nil || decoder.Decode(&struct{}{}) != io.EOF {
-		return nil, errors.New("invalid Slack event envelope")
-	}
-	if envelope.Type == "url_verification" {
-		if strings.TrimSpace(envelope.Challenge) == "" {
-			return nil, errors.New("Slack URL verification request is missing challenge")
-		}
-		return &normalizedEvent{Type: envelope.Type, Payload: json.RawMessage(body), ContentType: "application/json"}, nil
-	}
-	if envelope.Type != "event_callback" || strings.TrimSpace(envelope.EventID) == "" || envelope.EventTime <= 0 || len(envelope.Event) == 0 || !json.Valid(envelope.Event) {
-		return nil, errors.New("invalid Slack event callback")
-	}
-	var inner struct {
-		Type string `json:"type"`
-	}
-	if err := json.Unmarshal(envelope.Event, &inner); err != nil || strings.TrimSpace(inner.Type) == "" {
-		return nil, errors.New("Slack event callback is missing event type")
-	}
-	occurredAt := time.Unix(envelope.EventTime, 0).UTC()
-	return &normalizedEvent{ID: envelope.EventID, Type: inner.Type, OccurredAt: &occurredAt, Payload: json.RawMessage(body), ContentType: "application/json"}, nil
-}
-
-func slackChallenge(event *normalizedEvent) (string, error) {
-	if event == nil || event.Type != "url_verification" {
-		return "", nil
-	}
-	var envelope slackEventEnvelope
-	if err := json.Unmarshal(event.Payload, &envelope); err != nil || envelope.Challenge == "" {
-		return "", errors.New("Slack URL verification request is missing challenge")
-	}
-	return envelope.Challenge, nil
-}
-
-func validSlackRequestTimestamp(value string, now time.Time) bool {
-	seconds, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		return false
-	}
-	drift := now.Sub(time.Unix(seconds, 0))
-	return drift <= slackRequestMaxClockSkew && drift >= -slackRequestMaxClockSkew
-}
-
-func applyEventSelectors(trigger *app.Trigger, headers http.Header, event *normalizedEvent) error {
-	if trigger.IDFrom.Header != "" {
-		if value := headers.Get(trigger.IDFrom.Header); value != "" {
-			event.ID = value
-		}
-	}
-	if trigger.TypeFrom.Header != "" {
-		if value := headers.Get(trigger.TypeFrom.Header); value != "" {
-			event.Type = value
-		}
-	}
-	if trigger.IDFrom.Payload == "" && trigger.TypeFrom.Payload == "" {
-		return nil
-	}
-	payload, err := decodeTriggerEventJSON(event.Payload)
-	if err != nil {
-		return err
-	}
-	if trigger.IDFrom.Payload != "" {
-		event.ID, err = selectEventString(payload, trigger.IDFrom.Payload)
-		if err != nil {
-			return fmt.Errorf("extract event ID: %w", err)
-		}
-	}
-	if trigger.TypeFrom.Payload != "" {
-		event.Type, err = selectEventString(payload, trigger.TypeFrom.Payload)
-		if err != nil {
-			return fmt.Errorf("extract event type: %w", err)
-		}
-	}
-	return nil
-}
-
-func decodeTriggerEventJSON(body []byte) (any, error) {
-	decoder := json.NewDecoder(bytes.NewReader(body))
-	decoder.UseNumber()
-	var payload any
-	if err := decoder.Decode(&payload); err != nil {
-		return nil, err
-	}
-	return payload, nil
-}
-
-func selectEventString(payload any, pathValue string) (string, error) {
-	path, err := eventfilter.ParsePath(pathValue, false)
-	if err != nil {
-		return "", err
-	}
-	selected := path.Select(payload)
-	if len(selected) != 1 {
-		return "", fmt.Errorf("selector matched %d values", len(selected))
-	}
-	value, ok := selected[0].(string)
-	if !ok || value == "" {
-		return "", errors.New("selector must match a nonempty string")
-	}
-	return value, nil
 }
 
 func readLimitedBody(body io.Reader) ([]byte, error) {
@@ -380,59 +128,37 @@ func (s *service) IngestEvent(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-	var event *normalizedEvent
-	nativeProtocolPreset := trigger.Preset == "azure-event-grid" || trigger.Preset == "slack-events"
+	prov := providers.Resolve(trigger.Preset)
 	var matched *app.TriggerSecret
 	switch trigger.AuthType {
 	case app.TriggerAuthTypeNone:
-	case app.TriggerAuthTypeHMAC:
-		if trigger.Preset == "slack-events" {
-			timestamp := ctx.GetHeader(signing.TimestampHeader)
-			provided := ctx.GetHeader(signing.SignatureHeader)
-			if !validSlackRequestTimestamp(timestamp, now) {
-				ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid Slack request timestamp"})
-				return
-			}
-			for i := range trigger.Secrets {
-				secret := &trigger.Secrets[i]
-				if activeTriggerSecret(secret, now) && signing.Verify(secret.Secret, timestamp, body, provided) {
-					matched = secret
-					break
-				}
-			}
-			if matched == nil {
-				ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid Slack signature"})
-				return
-			}
-			break
-		}
-		config := trigger.AuthConfig
-		if config.Header == "" {
-			config = app.TriggerAuthConfig{Header: "X-Nuon-Signature", Prefix: "v1=", Algorithm: "sha256", Encoding: "hex"}
-		}
-		signature, err := decodeHMACSignature(ctx.GetHeader(config.Header), config)
-		if err != nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid signature header"})
+	case app.TriggerAuthTypeHMAC, app.TriggerAuthTypeAPIKey, app.TriggerAuthTypeBasic:
+		verifier := prov.Verifier(provider.AuthType(trigger.AuthType), provider.AuthConfig(trigger.AuthConfig))
+		if verifier == nil {
+			ctx.JSON(http.StatusNotImplemented, gin.H{"error": errUnsupportedAuth.Error()})
 			return
 		}
+		active := make([]*app.TriggerSecret, 0, len(trigger.Secrets))
+		values := make([]string, 0, len(trigger.Secrets))
 		for i := range trigger.Secrets {
 			secret := &trigger.Secrets[i]
-			if !activeTriggerSecret(secret, now) {
-				continue
-			}
-			valid := verifyGenericHMAC(secret.Secret, body, signature, config.Algorithm)
-			if valid {
-				matched = secret
-				break
+			if activeTriggerSecret(secret, now) {
+				active = append(active, secret)
+				values = append(values, secret.Secret)
 			}
 		}
-		if matched == nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid signature"})
+		idx, err := verifier.Verify(ctx.Request.Header, body, values, now)
+		if err != nil {
+			if trigger.AuthType == app.TriggerAuthTypeBasic {
+				ctx.Header("WWW-Authenticate", `Basic realm="event-ingress"`)
+			}
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
+		matched = active[idx]
 	case app.TriggerAuthTypeSNSSignature:
-		msg, err := parseSNSMessage(body)
-		if err != nil || msg.TopicARN != trigger.AuthConfig.TopicARN || s.snsVerifier.verify(ctx, msg) != nil {
+		msg, err := eventsns.ParseMessage(body)
+		if err != nil || msg.TopicARN != trigger.AuthConfig.TopicARN || s.snsVerifier.Verify(ctx, msg) != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid SNS signature"})
 			return
 		}
@@ -445,31 +171,6 @@ func (s *service) IngestEvent(ctx *gin.Context) {
 		if msg.Type == "UnsubscribeConfirmation" {
 			s.l.Info("verified SNS unsubscribe confirmation", zap.String("trigger_id", trigger.ID), zap.String("topic_arn", msg.TopicARN), zap.String("message_id", msg.MessageID))
 		}
-	case app.TriggerAuthTypeAPIKey:
-		value := ctx.GetHeader(trigger.AuthConfig.Header)
-		if !strings.HasPrefix(value, trigger.AuthConfig.Prefix) {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid API key"})
-			return
-		}
-		value = strings.TrimPrefix(value, trigger.AuthConfig.Prefix)
-		matched = matchTriggerSecret(trigger.Secrets, value, now)
-		if matched == nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid API key"})
-			return
-		}
-	case app.TriggerAuthTypeBasic:
-		username, password, ok := ctx.Request.BasicAuth()
-		if !ok || subtle.ConstantTimeCompare([]byte(username), []byte(trigger.AuthConfig.Username)) != 1 {
-			ctx.Header("WWW-Authenticate", `Basic realm="event-ingress"`)
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid basic authentication"})
-			return
-		}
-		matched = matchTriggerSecret(trigger.Secrets, password, now)
-		if matched == nil {
-			ctx.Header("WWW-Authenticate", `Basic realm="event-ingress"`)
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid basic authentication"})
-			return
-		}
 	case app.TriggerAuthTypeBearerJWT:
 		if err := s.verifyBearerJWT(ctx, &trigger); err != nil {
 			ctx.Header("WWW-Authenticate", "Bearer")
@@ -480,49 +181,28 @@ func (s *service) IngestEvent(ctx *gin.Context) {
 		ctx.JSON(http.StatusNotImplemented, gin.H{"error": errUnsupportedAuth.Error()})
 		return
 	}
-	if !nativeProtocolPreset {
-		event, err = decodeEvent(&trigger, ctx.Request.Header, body)
-		if err != nil {
-			if persistErr := s.persistRejectedEvent(ctx, &trigger, body, now, "envelope decoding failed: "+err.Error()); persistErr != nil {
-				ctx.Error(persistErr)
-				return
-			}
-			ctx.JSON(http.StatusAccepted, ingressResponse{})
+	event, err := decodeEvent(&trigger, ctx.Request.Header, body)
+	if err != nil {
+		reason := "envelope decoding failed: " + err.Error()
+		if status := prov.RejectStatus(err); status != http.StatusAccepted {
+			s.rejectIngress(ctx, &trigger, body, now, status, reason)
 			return
 		}
+		if persistErr := s.persistRejectedEvent(ctx, &trigger, body, now, reason); persistErr != nil {
+			ctx.Error(persistErr)
+			return
+		}
+		ctx.JSON(http.StatusAccepted, ingressResponse{})
+		return
 	}
-	if nativeProtocolPreset {
-		event, err = decodeEvent(&trigger, ctx.Request.Header, body)
-		if err != nil {
-			status := http.StatusBadRequest
-			if trigger.Preset == "slack-events" {
-				status = http.StatusOK
-			}
-			s.rejectIngress(ctx, &trigger, body, now, status, "envelope decoding failed: "+err.Error())
-			return
-		}
-		if trigger.Preset == "azure-event-grid" {
-			validationCode, err := azureEventGridValidationCode(event)
-			if err != nil {
-				s.rejectIngress(ctx, &trigger, body, now, http.StatusBadRequest, err.Error())
-				return
-			}
-			if validationCode != "" {
-				ctx.JSON(http.StatusOK, gin.H{"validationResponse": validationCode})
-				return
-			}
-		}
-		if trigger.Preset == "slack-events" {
-			challenge, err := slackChallenge(event)
-			if err != nil {
-				s.rejectIngress(ctx, &trigger, body, now, http.StatusBadRequest, err.Error())
-				return
-			}
-			if challenge != "" {
-				ctx.JSON(http.StatusOK, gin.H{"challenge": challenge})
-				return
-			}
-		}
+	handshake, err := prov.Handshake(event)
+	if err != nil {
+		s.rejectIngress(ctx, &trigger, body, now, http.StatusBadRequest, err.Error())
+		return
+	}
+	if handshake != nil {
+		ctx.JSON(handshake.Status, handshake.Body)
+		return
 	}
 	if event == nil {
 		ctx.JSON(http.StatusAccepted, ingressResponse{})
@@ -578,18 +258,8 @@ func activeTriggerSecret(secret *app.TriggerSecret, now time.Time) bool {
 	return secret.RevokedAt == nil && !now.Before(secret.NotBefore) && (secret.ExpiresAt == nil || now.Before(*secret.ExpiresAt))
 }
 
-func matchTriggerSecret(secrets []app.TriggerSecret, value string, now time.Time) *app.TriggerSecret {
-	for i := range secrets {
-		secret := &secrets[i]
-		if activeTriggerSecret(secret, now) && subtle.ConstantTimeCompare([]byte(value), []byte(secret.Secret)) == 1 {
-			return secret
-		}
-	}
-	return nil
-}
-
-func (s *service) confirmSNSSubscription(ctx context.Context, msg *snsMessage) error {
-	if err := validateSNSSubscribeURL(msg.SubscribeURL, msg.TopicARN, msg.Token); err != nil {
+func (s *service) confirmSNSSubscription(ctx context.Context, msg *eventsns.Message) error {
+	if err := eventsns.ValidateSubscribeURL(msg.SubscribeURL, msg.TopicARN, msg.Token); err != nil {
 		return err
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, msg.SubscribeURL, nil)
@@ -638,10 +308,10 @@ func (s *service) orgTriggerQueue(ctx context.Context, orgID string) (*app.Queue
 	})
 }
 
-func (s *service) persistEvent(ctx *gin.Context, trigger *app.Trigger, secret *app.TriggerSecret, queueID string, envelope *normalizedEvent, body []byte, now time.Time) (*app.TriggerEvent, bool, bool, error) {
+func (s *service) persistEvent(ctx *gin.Context, trigger *app.Trigger, secret *app.TriggerSecret, queueID string, normalized *envelope.Event, body []byte, now time.Time) (*app.TriggerEvent, bool, bool, error) {
 	hash := sha256.Sum256(body)
 	hashHex := hex.EncodeToString(hash[:])
-	payloadValue, err := decodeTriggerEventJSON(envelope.Payload)
+	payloadValue, err := envelope.DecodeJSON(normalized.Payload)
 	if err != nil {
 		return nil, false, false, err
 	}
@@ -651,16 +321,16 @@ func (s *service) persistEvent(ctx *gin.Context, trigger *app.Trigger, secret *a
 	}
 	payloadHash := sha256.Sum256(canonicalPayload)
 	payloadHashHex := hex.EncodeToString(payloadHash[:])
-	normalizedType := strings.TrimSpace(envelope.Type)
-	dedupeID := envelope.DedupeID
+	normalizedType := strings.TrimSpace(normalized.Type)
+	dedupeID := normalized.DedupeID
 	if dedupeID == "" {
-		dedupeID = envelope.ID
+		dedupeID = normalized.ID
 	}
 	routingGenerationToken := uuid.NewString()
 	event := app.TriggerEvent{
 		TriggerID: trigger.ID, OrgID: trigger.OrgID,
-		ExternalID: envelope.ID, DedupeID: dedupeID, Source: envelope.Source, EventType: normalizedType, OccurredAt: envelope.OccurredAt,
-		ReceivedAt: now, Payload: envelope.Payload, PayloadContentType: envelope.ContentType,
+		ExternalID: normalized.ID, DedupeID: dedupeID, Source: normalized.Source, EventType: normalizedType, OccurredAt: normalized.OccurredAt,
+		ReceivedAt: now, Payload: normalized.Payload, PayloadContentType: normalized.ContentType,
 		Headers: eventHeaders(trigger, ctx.Request.Header), RawBody: body, RawBodySHA256: hashHex, PayloadSHA256: payloadHashHex, RawBodySize: int64(len(body)), RawContentType: ctx.GetHeader("Content-Type"),
 		RoutingGenerationToken: &routingGenerationToken,
 	}
@@ -705,11 +375,11 @@ func (s *service) persistEvent(ctx *gin.Context, trigger *app.Trigger, secret *a
 		if res.RowsAffected == 0 {
 			duplicate = true
 			var existing app.TriggerEvent
-			if err := tx.Unscoped().Where(app.TriggerEvent{TriggerID: trigger.ID, Source: envelope.Source, DedupeID: dedupeID}).First(&existing).Error; err != nil {
+			if err := tx.Unscoped().Where(app.TriggerEvent{TriggerID: trigger.ID, Source: normalized.Source, DedupeID: dedupeID}).First(&existing).Error; err != nil {
 				return err
 			}
 			if existing.PayloadSHA256 == "" {
-				existingPayload, err := decodeTriggerEventJSON(existing.Payload)
+				existingPayload, err := envelope.DecodeJSON(existing.Payload)
 				if err != nil {
 					return err
 				}

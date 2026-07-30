@@ -1,4 +1,4 @@
-package service
+package sns
 
 import (
 	"context"
@@ -20,13 +20,13 @@ import (
 	"time"
 )
 
-func TestSNSCanonicalStrings(t *testing.T) {
+func TestCanonicalStrings(t *testing.T) {
 	tests := []struct {
-		msg  snsMessage
+		msg  Message
 		want string
 	}{
-		{snsMessage{Type: "Notification", Message: "hello", MessageID: "id", Subject: "subject", Timestamp: "time", TopicARN: "arn"}, "Message\nhello\nMessageId\nid\nSubject\nsubject\nTimestamp\ntime\nTopicArn\narn\nType\nNotification\n"},
-		{snsMessage{Type: "SubscriptionConfirmation", Message: "confirm", MessageID: "id", SubscribeURL: "url", Timestamp: "time", Token: "token", TopicARN: "arn"}, "Message\nconfirm\nMessageId\nid\nSubscribeURL\nurl\nTimestamp\ntime\nToken\ntoken\nTopicArn\narn\nType\nSubscriptionConfirmation\n"},
+		{Message{Type: "Notification", Message: "hello", MessageID: "id", Subject: "subject", Timestamp: "time", TopicARN: "arn"}, "Message\nhello\nMessageId\nid\nSubject\nsubject\nTimestamp\ntime\nTopicArn\narn\nType\nNotification\n"},
+		{Message{Type: "SubscriptionConfirmation", Message: "confirm", MessageID: "id", SubscribeURL: "url", Timestamp: "time", Token: "token", TopicARN: "arn"}, "Message\nconfirm\nMessageId\nid\nSubscribeURL\nurl\nTimestamp\ntime\nToken\ntoken\nTopicArn\narn\nType\nSubscriptionConfirmation\n"},
 	}
 	for _, tt := range tests {
 		got, err := tt.msg.canonicalString()
@@ -36,15 +36,15 @@ func TestSNSCanonicalStrings(t *testing.T) {
 	}
 }
 
-func TestValidateSNSURL(t *testing.T) {
+func TestValidateURL(t *testing.T) {
 	accepted := []string{
 		"https://sns.us-east-1.amazonaws.com/SimpleNotificationService-deadBEEF.pem",
 		"https://sns.cn-north-1.amazonaws.com.cn/SimpleNotificationService-123.pem",
 		"https://sns.us-gov-west-1.amazonaws.com/SimpleNotificationService-ab.pem",
 	}
 	for _, raw := range accepted {
-		if err := validateSNSURL(raw, true); err != nil {
-			t.Errorf("validateSNSURL(%q): %v", raw, err)
+		if err := validateURL(raw, true); err != nil {
+			t.Errorf("validateURL(%q): %v", raw, err)
 		}
 	}
 	rejected := []string{
@@ -58,28 +58,28 @@ func TestValidateSNSURL(t *testing.T) {
 		"https://sns.us-east-1.amazonaws.com/SimpleNotificationService-ab.pem#x",
 	}
 	for _, raw := range rejected {
-		if err := validateSNSURL(raw, true); err == nil {
-			t.Errorf("validateSNSURL(%q) unexpectedly succeeded", raw)
+		if err := validateURL(raw, true); err == nil {
+			t.Errorf("validateURL(%q) unexpectedly succeeded", raw)
 		}
 	}
 }
 
-func TestParseSNSMessageValidatesConfirmationURL(t *testing.T) {
+func TestParseMessageValidatesConfirmationURL(t *testing.T) {
 	body := `{"Type":"SubscriptionConfirmation","MessageId":"id","TopicArn":"arn","Message":"message","Timestamp":"time","SignatureVersion":"1","Signature":"AA==","SigningCertURL":"https://sns.us-east-1.amazonaws.com/SimpleNotificationService-ab.pem","Token":"token","SubscribeURL":"https://evil.example/confirm"}`
-	if _, err := parseSNSMessage([]byte(body)); err == nil {
-		t.Fatal("parseSNSMessage unexpectedly accepted untrusted SubscribeURL")
+	if _, err := ParseMessage([]byte(body)); err == nil {
+		t.Fatal("ParseMessage unexpectedly accepted untrusted SubscribeURL")
 	}
 	body = strings.Replace(body, "https://evil.example/confirm", "https://sns.us-east-1.amazonaws.com/?Action=ConfirmSubscription&Token=token&TopicArn=arn", 1)
-	if _, err := parseSNSMessage([]byte(body)); err != nil {
-		t.Fatalf("parseSNSMessage rejected valid message: %v", err)
+	if _, err := ParseMessage([]byte(body)); err != nil {
+		t.Fatalf("ParseMessage rejected valid message: %v", err)
 	}
 	body = strings.Replace(body, "TopicArn=arn", "TopicArn=other", 1)
-	if _, err := parseSNSMessage([]byte(body)); err == nil {
-		t.Fatal("parseSNSMessage accepted a SubscribeURL for another topic")
+	if _, err := ParseMessage([]byte(body)); err == nil {
+		t.Fatal("ParseMessage accepted a SubscribeURL for another topic")
 	}
 }
 
-func TestSNSVerifierVersionsAndCache(t *testing.T) {
+func TestVerifierVersionsAndCache(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatal(err)
@@ -98,8 +98,8 @@ func TestSNSVerifierVersionsAndCache(t *testing.T) {
 	defer server.Close()
 
 	client := server.Client()
-	client.Transport = rewriteSNSHostTransport{base: client.Transport, target: server.URL}
-	verifier := newSNSVerifier(client)
+	client.Transport = rewriteHostTransport{base: client.Transport, target: server.URL}
+	verifier := NewVerifier(client)
 	expiredTemplate := *template
 	expiredTemplate.SerialNumber = big.NewInt(2)
 	expiredTemplate.NotBefore = time.Now().Add(-2 * time.Hour)
@@ -115,7 +115,7 @@ func TestSNSVerifierVersionsAndCache(t *testing.T) {
 	certURL := "https://sns.us-east-1.amazonaws.com/SimpleNotificationService-deadbeef.pem"
 	verifier.certs[certURL] = expiredCert
 	for _, version := range []string{"1", "2"} {
-		msg := &snsMessage{Type: "Notification", Message: "hello", MessageID: "id", Timestamp: "time", TopicARN: "arn:aws:sns:us-east-1:123456789012:events", SignatureVersion: version, SigningCertURL: certURL}
+		msg := &Message{Type: "Notification", Message: "hello", MessageID: "id", Timestamp: "time", TopicARN: "arn:aws:sns:us-east-1:123456789012:events", SignatureVersion: version, SigningCertURL: certURL}
 		canonical, _ := msg.canonicalString()
 		var hash crypto.Hash
 		var digest []byte
@@ -131,7 +131,7 @@ func TestSNSVerifierVersionsAndCache(t *testing.T) {
 			t.Fatal(err)
 		}
 		msg.Signature = base64.StdEncoding.EncodeToString(signature)
-		if err := verifier.verify(context.Background(), msg); err != nil {
+		if err := verifier.Verify(context.Background(), msg); err != nil {
 			t.Fatalf("verify version %s: %v", version, err)
 		}
 	}
@@ -140,7 +140,7 @@ func TestSNSVerifierVersionsAndCache(t *testing.T) {
 	}
 }
 
-func TestSNSVerifierRejectsCertificateHostnameAndTopicRegionMismatch(t *testing.T) {
+func TestVerifierRejectsCertificateHostnameAndTopicRegionMismatch(t *testing.T) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatal(err)
@@ -160,26 +160,26 @@ func TestSNSVerifierRejectsCertificateHostnameAndTopicRegionMismatch(t *testing.
 	}
 
 	certURL := "https://sns.us-east-1.amazonaws.com/SimpleNotificationService-deadbeef.pem"
-	msg := &snsMessage{Type: "Notification", Message: "hello", MessageID: "id", Timestamp: "time", TopicARN: "arn:aws:sns:us-east-1:123456789012:events", SignatureVersion: "2", SigningCertURL: certURL, Signature: "AA=="}
-	verifier := newSNSVerifier(nil)
+	msg := &Message{Type: "Notification", Message: "hello", MessageID: "id", Timestamp: "time", TopicARN: "arn:aws:sns:us-east-1:123456789012:events", SignatureVersion: "2", SigningCertURL: certURL, Signature: "AA=="}
+	verifier := NewVerifier(nil)
 	verifier.certs[certURL] = makeCert("sns.us-west-2.amazonaws.com")
-	if err := verifier.verify(context.Background(), msg); err == nil || !strings.Contains(err.Error(), "hostname verification failed") {
+	if err := verifier.Verify(context.Background(), msg); err == nil || !strings.Contains(err.Error(), "hostname verification failed") {
 		t.Fatalf("wrong certificate hostname error = %v", err)
 	}
 
 	verifier.certs[certURL] = makeCert("sns.us-east-1.amazonaws.com")
 	msg.TopicARN = "arn:aws:sns:us-west-2:123456789012:events"
-	if err := verifier.verify(context.Background(), msg); err == nil || !strings.Contains(err.Error(), "does not match the topic region") {
+	if err := verifier.Verify(context.Background(), msg); err == nil || !strings.Contains(err.Error(), "does not match the topic region") {
 		t.Fatalf("topic region mismatch error = %v", err)
 	}
 }
 
-type rewriteSNSHostTransport struct {
+type rewriteHostTransport struct {
 	base   http.RoundTripper
 	target string
 }
 
-func (t rewriteSNSHostTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t rewriteHostTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	copy := req.Clone(req.Context())
 	target := strings.TrimPrefix(t.target, "https://")
 	copy.URL.Host = target

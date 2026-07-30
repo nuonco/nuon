@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strings"
 	"time"
 
@@ -14,7 +13,9 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/nuonco/nuon/pkg/eventfilter"
+	"github.com/nuonco/nuon/pkg/events/envelope"
+	"github.com/nuonco/nuon/pkg/events/provider"
+	"github.com/nuonco/nuon/pkg/events/providers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -135,14 +136,15 @@ func (s *service) CreateTrigger(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if req.Preset == "slack-events" {
+	callerSecret := triggerUsesCallerSecret(req.Preset)
+	if callerSecret {
 		req.Secret = strings.TrimSpace(req.Secret)
 		if req.Secret == "" || len(req.Secret) > 1024 {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "slack-events preset requires a Slack signing secret"})
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": req.Preset + " preset requires a provider-issued signing secret"})
 			return
 		}
 	} else if req.Secret != "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "secret may only be supplied for the slack-events preset"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "secret may only be supplied for presets with provider-issued signing secrets"})
 		return
 	}
 	if req.AuthType == "" {
@@ -167,7 +169,7 @@ func (s *service) CreateTrigger(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid id_from: " + err.Error()})
 		return
 	}
-	nativeProtocolPreset := req.Preset == "azure-event-grid" || req.Preset == "slack-events"
+	nativeProtocolPreset := providers.Resolve(req.Preset).Defaults().NativeProtocol
 	if req.Envelope == app.EventEnvelopeTypeNone && !nativeProtocolPreset {
 		if req.TypeFrom == (app.EventFieldSelector{}) {
 			req.TypeFrom.Header = "X-Nuon-Event-Type"
@@ -214,7 +216,7 @@ func (s *service) CreateTrigger(ctx *gin.Context) {
 		return
 	}
 	responseSecret := secretValue
-	if req.Preset == "slack-events" {
+	if callerSecret {
 		responseSecret = ""
 	}
 	ctx.JSON(http.StatusCreated, credentialResponse{Trigger: trigger, IngressURL: buildIngressURL(s.cfg.PublicAPIURL, ingressKey), KeyID: secret.KeyID, Secret: responseSecret})
@@ -288,95 +290,45 @@ func applyTriggerPreset(req *createTriggerRequest) error {
 	if req.Preset == "" {
 		return nil
 	}
-	type preset struct {
-		auth       app.TriggerAuthType
-		envelope   app.EventEnvelopeType
-		authConfig app.TriggerAuthConfig
-		typeFrom   app.EventFieldSelector
-		idFrom     app.EventFieldSelector
-		google     bool
-		sns        bool
-	}
-	presets := map[string]preset{
-		"github":           {auth: app.TriggerAuthTypeHMAC, authConfig: app.TriggerAuthConfig{Header: "X-Hub-Signature-256", Prefix: "sha256=", Algorithm: "sha256", Encoding: "hex"}, typeFrom: app.EventFieldSelector{Header: "X-GitHub-Event"}, idFrom: app.EventFieldSelector{Header: "X-GitHub-Delivery"}},
-		"gitlab":           {auth: app.TriggerAuthTypeAPIKey, authConfig: app.TriggerAuthConfig{Header: "X-Gitlab-Token"}, typeFrom: app.EventFieldSelector{Header: "X-Gitlab-Event"}, idFrom: app.EventFieldSelector{Header: "X-Gitlab-Event-UUID"}},
-		"bitbucket":        {auth: app.TriggerAuthTypeHMAC, authConfig: app.TriggerAuthConfig{Header: "X-Hub-Signature", Prefix: "sha256=", Algorithm: "sha256", Encoding: "hex"}, typeFrom: app.EventFieldSelector{Header: "X-Event-Key"}, idFrom: app.EventFieldSelector{Header: "X-Request-UUID"}},
-		"gitea":            {auth: app.TriggerAuthTypeHMAC, authConfig: app.TriggerAuthConfig{Header: "X-Gitea-Signature", Algorithm: "sha256", Encoding: "hex"}, typeFrom: app.EventFieldSelector{Header: "X-Gitea-Event"}, idFrom: app.EventFieldSelector{Header: "X-Gitea-Delivery"}},
-		"forgejo":          {auth: app.TriggerAuthTypeHMAC, authConfig: app.TriggerAuthConfig{Header: "X-Forgejo-Signature", Algorithm: "sha256", Encoding: "hex"}, typeFrom: app.EventFieldSelector{Header: "X-Forgejo-Event"}, idFrom: app.EventFieldSelector{Header: "X-Forgejo-Delivery"}},
-		"terraform-cloud":  {auth: app.TriggerAuthTypeHMAC, authConfig: app.TriggerAuthConfig{Header: "X-TFE-Notification-Signature", Algorithm: "sha512", Encoding: "hex"}},
-		"google-pubsub":    {auth: app.TriggerAuthTypeBearerJWT, envelope: app.EventEnvelopeTypePubSubPush, authConfig: app.TriggerAuthConfig{Issuer: "https://accounts.google.com"}, google: true},
-		"azure-devops":     {auth: app.TriggerAuthTypeBasic, authConfig: app.TriggerAuthConfig{Username: "nuon"}},
-		"aws-eventbridge":  {auth: app.TriggerAuthTypeAPIKey, authConfig: app.TriggerAuthConfig{Header: "X-Nuon-API-Key"}, typeFrom: app.EventFieldSelector{Payload: `$['detail-type']`}, idFrom: app.EventFieldSelector{Payload: "$.id"}},
-		"aws-sns":          {auth: app.TriggerAuthTypeSNSSignature, envelope: app.EventEnvelopeTypeSNS, sns: true},
-		"azure-event-grid": {auth: app.TriggerAuthTypeAPIKey, authConfig: app.TriggerAuthConfig{Header: "X-Nuon-API-Key"}},
-		"slack-events":     {auth: app.TriggerAuthTypeHMAC, authConfig: app.TriggerAuthConfig{Header: "X-Slack-Signature", Prefix: "v0=", Algorithm: "sha256", Encoding: "hex"}},
-		"datadog":          {auth: app.TriggerAuthTypeAPIKey, authConfig: app.TriggerAuthConfig{Header: "X-Nuon-API-Key"}, typeFrom: app.EventFieldSelector{Payload: "$.event_type"}, idFrom: app.EventFieldSelector{Payload: "$.event_id"}},
-	}
-	p, ok := presets[req.Preset]
+	p, ok := providers.Lookup(req.Preset)
 	if !ok {
 		return fmt.Errorf("unknown trigger preset %q", req.Preset)
 	}
-	if p.envelope == "" {
-		p.envelope = app.EventEnvelopeTypeNone
+	defaults := p.Defaults()
+	auth := app.TriggerAuthType(defaults.Auth)
+	envelopeType := app.EventEnvelopeType(defaults.Envelope)
+	if envelopeType == "" {
+		envelopeType = app.EventEnvelopeTypeNone
 	}
-	if req.AuthType != "" && req.AuthType != p.auth {
-		return fmt.Errorf("%s preset requires %s auth", req.Preset, p.auth)
+	if req.AuthType != "" && req.AuthType != auth {
+		return fmt.Errorf("%s preset requires %s auth", req.Preset, auth)
 	}
-	if req.Envelope != "" && req.Envelope != p.envelope {
-		return fmt.Errorf("%s preset requires the %s envelope", req.Preset, p.envelope)
+	if req.Envelope != "" && req.Envelope != envelopeType {
+		return fmt.Errorf("%s preset requires the %s envelope", req.Preset, envelopeType)
 	}
-	desiredConfig := p.authConfig
-	if p.google {
-		desiredConfig.Audience = req.AuthConfig.Audience
-		desiredConfig.ExpectedEmail = req.AuthConfig.ExpectedEmail
-		desiredConfig.ExpectedSubject = req.AuthConfig.ExpectedSubject
-	}
-	if p.sns {
-		desiredConfig.TopicARN = req.AuthConfig.TopicARN
-	}
-	providedConfig := req.AuthConfig
-	if providedConfig.Header == "" {
-		providedConfig.Header = desiredConfig.Header
-	}
-	if providedConfig.Prefix == "" {
-		providedConfig.Prefix = desiredConfig.Prefix
-	}
-	if providedConfig.Encoding == "" {
-		providedConfig.Encoding = desiredConfig.Encoding
-	}
-	if providedConfig.Algorithm == "" {
-		providedConfig.Algorithm = desiredConfig.Algorithm
-	}
-	if providedConfig.Username == "" {
-		providedConfig.Username = desiredConfig.Username
-	}
-	if providedConfig.Issuer == "" {
-		providedConfig.Issuer = desiredConfig.Issuer
-	}
-	if !reflect.DeepEqual(providedConfig, desiredConfig) {
+	desiredConfig, err := provider.ApplyDefaults(defaults, provider.AuthConfig(req.AuthConfig))
+	if err != nil {
 		return fmt.Errorf("%s preset has conflicting auth_config", req.Preset)
 	}
-	if req.TypeFrom != (app.EventFieldSelector{}) && req.TypeFrom != p.typeFrom {
+	typeFrom := app.EventFieldSelector(defaults.TypeFrom)
+	idFrom := app.EventFieldSelector(defaults.IDFrom)
+	if req.TypeFrom != (app.EventFieldSelector{}) && req.TypeFrom != typeFrom {
 		return fmt.Errorf("%s preset does not accept custom type_from", req.Preset)
 	}
-	if req.IDFrom != (app.EventFieldSelector{}) && req.IDFrom != p.idFrom {
+	if req.IDFrom != (app.EventFieldSelector{}) && req.IDFrom != idFrom {
 		return fmt.Errorf("%s preset does not accept custom id_from", req.Preset)
 	}
-	req.AuthType, req.Envelope, req.AuthConfig = p.auth, p.envelope, desiredConfig
-	req.TypeFrom, req.IDFrom = p.typeFrom, p.idFrom
+	req.AuthType, req.Envelope, req.AuthConfig = auth, envelopeType, app.TriggerAuthConfig(desiredConfig)
+	req.TypeFrom, req.IDFrom = typeFrom, idFrom
 	return nil
 }
 
+func triggerUsesCallerSecret(preset string) bool {
+	return providers.Resolve(preset).Defaults().CallerSecret
+}
+
 func validateEventFieldSelector(selector app.EventFieldSelector) error {
-	if selector.Header != "" && selector.Payload != "" {
-		return errors.New("exactly one of header or payload may be set")
-	}
-	if selector.Payload != "" {
-		if _, err := eventfilter.ParsePath(selector.Payload, false); err != nil {
-			return fmt.Errorf("invalid payload selector: %w", err)
-		}
-	}
-	return nil
+	return envelope.ValidateSelector(envelope.FieldSelector(selector))
 }
 
 // @ID ListTriggers
@@ -569,8 +521,8 @@ func (s *service) RotateSecret(ctx *gin.Context) {
 	if !ok {
 		return
 	}
-	if trigger.Preset == "slack-events" {
-		ctx.JSON(http.StatusConflict, gin.H{"error": "update the Slack signing secret by recreating this trigger"})
+	if triggerUsesCallerSecret(trigger.Preset) {
+		ctx.JSON(http.StatusConflict, gin.H{"error": "update the provider-issued signing secret by recreating this trigger"})
 		return
 	}
 	if !authUsesSecret(trigger.AuthType) {
@@ -674,8 +626,8 @@ func (s *service) RevokeSecret(ctx *gin.Context) {
 	if !ok {
 		return
 	}
-	if trigger.Preset == "slack-events" {
-		ctx.JSON(http.StatusConflict, gin.H{"error": "disable or delete this trigger to stop Slack events"})
+	if triggerUsesCallerSecret(trigger.Preset) {
+		ctx.JSON(http.StatusConflict, gin.H{"error": "disable or delete this trigger to stop deliveries"})
 		return
 	}
 	now := time.Now()
@@ -713,8 +665,8 @@ func (s *service) RevealSecret(ctx *gin.Context) {
 	if !ok {
 		return
 	}
-	if trigger.Preset == "slack-events" {
-		ctx.JSON(http.StatusForbidden, gin.H{"error": "Slack signing secrets are write-only"})
+	if triggerUsesCallerSecret(trigger.Preset) {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "provider-issued signing secrets are write-only"})
 		return
 	}
 	var secret app.TriggerSecret

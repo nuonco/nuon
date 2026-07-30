@@ -1,8 +1,6 @@
 package service
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
 	"strings"
 	"testing"
 )
@@ -21,15 +19,5 @@ func TestCredentialGenerationAndHash(t *testing.T) {
 	}
 	if hashIngressKey(first) == first || len(hashIngressKey(first)) != 64 {
 		t.Fatal("ingress key was not SHA-256 hex hashed")
-	}
-}
-
-func TestGenericHMACAuthenticatesRawBody(t *testing.T) {
-	payload := []byte(`{"ref":"main"}`)
-	mac := hmac.New(sha256.New, []byte("secret"))
-	mac.Write(payload)
-	signature := mac.Sum(nil)
-	if !verifyGenericHMAC("secret", payload, signature, "sha256") {
-		t.Fatal("raw body signature rejected")
 	}
 }

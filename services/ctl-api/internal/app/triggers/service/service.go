@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	eventsns "github.com/nuonco/nuon/pkg/events/sns"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -39,7 +40,7 @@ type service struct {
 	queueClient  *queueclient.Client
 	features     *features.Features
 	httpClient   *http.Client
-	snsVerifier  *snsVerifier
+	snsVerifier  *eventsns.Verifier
 	jwtMu        sync.Mutex
 	jwtProviders map[string]*jwks.CachingProvider
 }
@@ -48,7 +49,7 @@ var _ api.Service = (*service)(nil)
 
 func New(p Params) *service {
 	httpClient := &http.Client{Timeout: 10 * time.Second}
-	return &service{db: p.DB, cfg: p.Cfg, l: p.L, appsHelpers: p.AppsHelpers, queueClient: p.QueueClient, features: p.Features, httpClient: httpClient, snsVerifier: newSNSVerifier(httpClient), jwtProviders: make(map[string]*jwks.CachingProvider)}
+	return &service{db: p.DB, cfg: p.Cfg, l: p.L, appsHelpers: p.AppsHelpers, queueClient: p.QueueClient, features: p.Features, httpClient: httpClient, snsVerifier: eventsns.NewVerifier(httpClient), jwtProviders: make(map[string]*jwks.CachingProvider)}
 }
 
 func (s *service) requireTriggers(ctx *gin.Context) {
