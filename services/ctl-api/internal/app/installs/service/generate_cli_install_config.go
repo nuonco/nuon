@@ -64,6 +64,15 @@ func (s *service) GenerateCLIInstallConfig(ctx *gin.Context) {
 	ctx.Data(http.StatusOK, "application/octet-stream", []byte(output))
 }
 
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
 func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*config.Install, error) {
 	install, err := s.getInstall(ctx, installID)
 	if err != nil {
@@ -75,9 +84,33 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		Labels: map[string]string(install.Labels),
 	}
 
+	// The target identifiers must be echoed back, otherwise a config that legitimately
+	// declares them diffs against an upstream that never reports them and `apps sync`
+	// shows drift on every run.
 	if install.AWSAccount != nil {
 		installCfg.AWSAccount = &config.AWSAccount{
-			Region: install.AWSAccount.Region,
+			Region:    install.AWSAccount.Region,
+			AccountID: install.CloudPlatformMetadata.TargetAccountID,
+		}
+	}
+	// Azure and GCP already carry their identifier on the account record, so installs
+	// created before CloudPlatformMetadata existed still round-trip.
+	if install.AzureAccount != nil {
+		installCfg.AzureAccount = &config.AzureAccount{
+			Location: install.AzureAccount.Location,
+			SubscriptionID: firstNonEmpty(
+				install.CloudPlatformMetadata.TargetSubscriptionID,
+				install.AzureAccount.SubscriptionID,
+			),
+		}
+	}
+	if install.GCPAccount != nil {
+		installCfg.GCPAccount = &config.GCPAccount{
+			ProjectID: firstNonEmpty(
+				install.CloudPlatformMetadata.TargetProjectID,
+				install.GCPAccount.ProjectID,
+			),
+			Region: install.GCPAccount.Region,
 		}
 	}
 

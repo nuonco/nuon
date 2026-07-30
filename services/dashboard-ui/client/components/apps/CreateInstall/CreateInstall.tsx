@@ -91,6 +91,7 @@ interface ICreateInstallModal extends ICreateInstall, IModal {
   onSubmitAction: (formData: FormData) => Promise<any>
   onCancel: () => void
   awsAccountConnections?: TAWSAccountConnection[]
+  requireTargetAccount?: boolean
 }
 
 export const CreateInstallModal = ({
@@ -107,6 +108,7 @@ export const CreateInstallModal = ({
   onSubmitAction,
   onCancel,
   awsAccountConnections,
+  requireTargetAccount,
   ...props
 }: ICreateInstallModal) => {
   const formRef = useRef<HTMLFormElement>(null)
@@ -188,6 +190,7 @@ export const CreateInstallModal = ({
           onSubmit={(formData) => onSubmitAction(formData)}
           onCancel={onCancel}
           awsAccountConnections={awsAccountConnections}
+          requireTargetAccount={requireTargetAccount}
         />
       )}
     </Modal>

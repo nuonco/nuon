@@ -32,7 +32,8 @@ func (o InstallApprovalOption) APIType() models.AppInstallApprovalOption {
 }
 
 type AWSAccount struct {
-	Region string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
+	Region    string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
+	AccountID string `mapstructure:"account_id,omitempty" toml:"account_id,omitempty"`
 }
 
 func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -41,7 +42,10 @@ func (a AWSAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("AWS region where the infrastructure will be deployed").
 		Example("us-east-1").
 		Example("us-west-2").
-		Example("eu-west-1")
+		Example("eu-west-1").
+		Field("account_id").Short("AWS account ID").
+		Long("AWS account this install targets. Required when phone home authentication is enabled for the organization. Immutable once the install exists.").
+		Example("123456789012")
 }
 
 type GCPAccount struct {
@@ -61,7 +65,8 @@ func (a GCPAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type AzureAccount struct {
-	Location string `mapstructure:"location,omitempty" toml:"location,omitempty" jsonschema:"required"`
+	Location       string `mapstructure:"location,omitempty" toml:"location,omitempty" jsonschema:"required"`
+	SubscriptionID string `mapstructure:"subscription_id,omitempty" toml:"subscription_id,omitempty"`
 }
 
 func (a AzureAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -70,7 +75,10 @@ func (a AzureAccount) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Azure location/region where the infrastructure will be deployed").
 		Example("eastus").
 		Example("westus2").
-		Example("westeurope")
+		Example("westeurope").
+		Field("subscription_id").Short("Azure subscription ID").
+		Long("Azure subscription this install targets. Required when phone home authentication is enabled for the organization. Immutable once the install exists.").
+		Example("00000000-0000-0000-0000-000000000000")
 }
 
 type InputGroup struct {
@@ -400,10 +408,10 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 			upstreamAWS = upstreamInstall.AWSAccount
 		}
 		diffs = append(diffs, diff.NewDiff(
-			diff.WithKey("aws_account"), diff.WithChildren(diff.NewDiff(
-				diff.WithKey("region"),
-				diff.WithStringDiff(upstreamAWS.Region, i.AWSAccount.Region),
-			))),
+			diff.WithKey("aws_account"), diff.WithChildren(
+				diff.NewDiff(diff.WithKey("region"), diff.WithStringDiff(upstreamAWS.Region, i.AWSAccount.Region)),
+				diff.NewDiff(diff.WithKey("account_id"), diff.WithStringDiff(upstreamAWS.AccountID, i.AWSAccount.AccountID)),
+			)),
 		)
 	}
 
@@ -428,6 +436,7 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 		diffs = append(diffs, diff.NewDiff(
 			diff.WithKey("azure_account"), diff.WithChildren(
 				diff.NewDiff(diff.WithKey("location"), diff.WithStringDiff(upstreamAzure.Location, i.AzureAccount.Location)),
+				diff.NewDiff(diff.WithKey("subscription_id"), diff.WithStringDiff(upstreamAzure.SubscriptionID, i.AzureAccount.SubscriptionID)),
 			)),
 		)
 	}

@@ -32,6 +32,19 @@ type TemplateInput struct {
 	RunnerNestedStackTemplateURL string
 }
 
+// PhoneHomeRoleName is the deterministic IAM role name for an install's phone-home
+// Lambda, matching the `<install_id>-<purpose>` convention the install stack's other
+// roles already use (`<install_id>-provision`, `-maintenance`, `-deprovision`).
+//
+// This is the single source of truth for the name. A cross-account grant naming this
+// principal cannot be validated at deploy time — IAM accepts a resource policy that
+// references a role which does not exist yet, and a mismatch only surfaces as an
+// AccessDeniedException at phone-home time. Both the template and any policy that
+// names the principal must derive it from here.
+func PhoneHomeRoleName(installID string) string {
+	return fmt.Sprintf("%s-phone-home", installID)
+}
+
 // FormatRunnerEnvVars converts an AppRunnerConfig's EnvVars hstore into a
 // newline-delimited string of "export key=value" statements. Default values
 // are injected only when not already defined in cfg.EnvVars.

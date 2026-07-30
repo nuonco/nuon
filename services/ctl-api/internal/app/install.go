@@ -96,6 +96,17 @@ type Install struct {
 	SandboxHealthStatus  string `json:"sandbox_health_status,omitzero" gorm:"column:sandbox_health_status;default:''" temporaljson:"sandbox_health_status,omitzero,omitempty"`
 	SandboxHealthMessage string `json:"sandbox_health_message,omitzero" gorm:"column:sandbox_health_message;default:''" temporaljson:"sandbox_health_message,omitzero,omitempty"`
 
+	// CloudPlatformMetadata records the cloud account this install is expected to
+	// run in, and what it was observed running in. See the type for the trust model.
+	CloudPlatformMetadata CloudPlatformMetadata `json:"cloud_platform_metadata,omitzero" gorm:"type:jsonb" swaggertype:"object" temporaljson:"cloud_platform_metadata,omitzero,omitempty"`
+
+	// PhoneHomeAuth carries the salt and root key name used to derive this install's
+	// phone-home signing secret. Kept in its own column rather than nested inside
+	// CloudPlatformMetadata because that struct is serialized to the wire and these
+	// derivation inputs must not be, and json:"-" on a nested field would exclude it
+	// from the jsonb value too, not just the API response.
+	PhoneHomeAuth *PhoneHomeAuth `json:"-" gorm:"type:jsonb" temporaljson:"-"`
+
 	// generated view current view
 
 	InstallNumber            int                  `json:"install_number,omitzero" gorm:"->;-:migration" temporaljson:"install_number,omitzero,omitempty"`
@@ -119,6 +130,12 @@ type Install struct {
 	RunnerType                          AppRunnerType          `json:"runner_type,omitzero" gorm:"-" swaggertype:"string" temporaljson:"runner_type,omitzero,omitempty"`
 	DriftedObjects                      []DriftedObject        `json:"drifted_objects,omitzero" gorm:"-" temporaljson:"drifted_objects,omitzero,omitempty"`
 	Links                               map[string]any         `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
+
+	// Expected* coalesce the target identifier with the observed one, so callers get
+	// the strongest identifier available without caring which is set.
+	ExpectedAccountID      string `json:"expected_account_id,omitzero" gorm:"-" temporaljson:"expected_account_id,omitzero,omitempty"`
+	ExpectedProjectID      string `json:"expected_project_id,omitzero" gorm:"-" temporaljson:"expected_project_id,omitzero,omitempty"`
+	ExpectedSubscriptionID string `json:"expected_subscription_id,omitzero" gorm:"-" temporaljson:"expected_subscription_id,omitzero,omitempty"`
 
 	// WorkflowID is populated by handlers that create a workflow. Not persisted.
 	WorkflowID *string `json:"workflow_id,omitempty" gorm:"-"`
@@ -207,7 +224,28 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 		i.RunnerType = AppRunnerTypeUnknown
 	}
 
+	i.setExpectedCloudIdentifiers()
+
 	return nil
+}
+
+// setExpectedCloudIdentifiers prefers the target identifier supplied at install
+// creation over the one a phone home reported, falling back to the latter so
+// installs predating the target field still resolve.
+func (i *Install) setExpectedCloudIdentifiers() {
+	cpm := i.CloudPlatformMetadata
+	i.ExpectedAccountID = firstNonEmpty(cpm.TargetAccountID, cpm.ObservedAccountID)
+	i.ExpectedProjectID = firstNonEmpty(cpm.TargetProjectID, cpm.ObservedProjectID)
+	i.ExpectedSubscriptionID = firstNonEmpty(cpm.TargetSubscriptionID, cpm.ObservedSubscriptionID)
+}
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // compositeComponentStatus coalesces a single status from the statuses of the app's components.
@@ -296,5 +334,120 @@ func (c *ComponentHealthContext) Value() (driver.Value, error) {
 }
 
 func (ComponentHealthContext) GormDataType() string {
+	return "jsonb"
+}
+
+// Where a CloudPlatformMetadata target identifier came from. A backfilled target
+// is derived from an unauthenticated phone home, so it pins whatever account last
+// phoned home rather than an independently attested one — a weaker control than a
+// user- or connection-supplied target.
+const (
+	CloudPlatformTargetSourceUser       = "user"
+	CloudPlatformTargetSourceConnection = "connection"
+	CloudPlatformTargetSourceBackfill   = "backfill"
+)
+
+// CloudPlatformMetadata records which cloud account an install is expected to run
+// in. Target values are supplied at install creation (or derived from an AWS
+// account connection); observed values are what the install's stack reported when
+// it phoned home. Once phone-home requests are signature-verified this becomes the
+// trusted copy, with InstallStackOutputs remaining the untrusted vendor-facing echo.
+type CloudPlatformMetadata struct {
+	// AWS
+	TargetAccountID   string `json:"target_account_id,omitempty"`
+	ObservedAccountID string `json:"observed_account_id,omitempty"`
+
+	// GCP
+	TargetProjectID   string `json:"target_project_id,omitempty"`
+	ObservedProjectID string `json:"observed_project_id,omitempty"`
+
+	// Azure
+	TargetSubscriptionID   string `json:"target_subscription_id,omitempty"`
+	ObservedSubscriptionID string `json:"observed_subscription_id,omitempty"`
+
+	TargetSource string `json:"target_source,omitempty"`
+}
+
+// HasTarget reports whether any cloud's target identifier has been set.
+func (c CloudPlatformMetadata) HasTarget() bool {
+	return c.TargetAccountID != "" || c.TargetProjectID != "" || c.TargetSubscriptionID != ""
+}
+
+// Scan implements the database/sql.Scanner interface.
+func (c *CloudPlatformMetadata) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	var bytes []byte
+	switch v := value.(type) {
+	case []byte:
+		bytes = v
+	case string:
+		bytes = []byte(v)
+	default:
+		return errors.Errorf("cannot scan %T into CloudPlatformMetadata", value)
+	}
+	if len(bytes) == 0 {
+		return nil
+	}
+
+	return json.Unmarshal(bytes, c)
+}
+
+// Value implements the driver.Valuer interface.
+func (c CloudPlatformMetadata) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
+func (CloudPlatformMetadata) GormDataType() string {
+	return "jsonb"
+}
+
+// PhoneHomeAuth holds the server-side state needed to verify a signed phone home
+// for this install: the salt the per-install secret is derived from, the name of
+// the root key that derived it, and where the derived secret was published for the
+// caller to fetch. Never serialized — the derivation inputs stay control-plane side.
+type PhoneHomeAuth struct {
+	Salt string `json:"salt"`
+	// KeyID is the *name* of the root key that derived this secret, not an index.
+	KeyID        string    `json:"key_id"`
+	SecretARN    string    `json:"secret_arn,omitempty"`
+	SecretRegion string    `json:"secret_region,omitempty"`
+	KMSKeyARN    string    `json:"kms_key_arn,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+
+	LastVerifiedAt *time.Time `json:"last_verified_at,omitempty"`
+	LastRejectedAt *time.Time `json:"last_rejected_at,omitempty"`
+}
+
+// Scan implements the database/sql.Scanner interface.
+func (p *PhoneHomeAuth) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	var bytes []byte
+	switch v := value.(type) {
+	case []byte:
+		bytes = v
+	case string:
+		bytes = []byte(v)
+	default:
+		return errors.Errorf("cannot scan %T into PhoneHomeAuth", value)
+	}
+	if len(bytes) == 0 {
+		return nil
+	}
+
+	return json.Unmarshal(bytes, p)
+}
+
+// Value implements the driver.Valuer interface.
+func (p PhoneHomeAuth) Value() (driver.Value, error) {
+	return json.Marshal(p)
+}
+
+func (PhoneHomeAuth) GormDataType() string {
 	return "jsonb"
 }

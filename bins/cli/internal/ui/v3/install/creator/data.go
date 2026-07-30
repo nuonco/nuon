@@ -273,11 +273,11 @@ func (m *model) submitForm() tea.Cmd {
 		}
 		switch m.cloudPlatform {
 		case models.AppCloudPlatformGcp:
-			req.GcpAccount = &models.ServiceCreateInstallRequestGcpAccount{}
+			req.GcpAccount = &models.HelpersCreateInstallGCPAccountParams{}
 		case models.AppCloudPlatformAzure:
-			req.AzureAccount = &models.ServiceCreateInstallRequestAzureAccount{}
+			req.AzureAccount = &models.HelpersCreateInstallAzureAccountParams{}
 		default:
-			req.AwsAccount = &models.ServiceCreateInstallRequestAwsAccount{
+			req.AwsAccount = &models.HelpersCreateInstallAWSAccountParams{
 				Region: awsRegions[m.regionIndex],
 			}
 		}

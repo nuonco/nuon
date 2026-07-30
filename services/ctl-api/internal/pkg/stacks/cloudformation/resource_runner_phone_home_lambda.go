@@ -136,7 +136,12 @@ func (a *Templates) getRunnerPhoneHomeLambda(inp *stacks.TemplateInput, t tagBui
 
 func (a *Templates) getRunnerPhoneHomeLambdaRole(inp *stacks.TemplateInput, t tagBuilder) *iam.Role {
 	return &iam.Role{
-		Tags: t.apply(nil, "phone-home-lambda"),
+		// Named so a cross-account grant can reference this principal before the
+		// customer's stack has created it. Setting RoleName makes the role a
+		// replacement on the next stack update for installs whose role currently has
+		// a CloudFormation-generated name.
+		RoleName: ptr(stacks.PhoneHomeRoleName(inp.Install.ID)),
+		Tags:     t.apply(nil, "phone-home-lambda"),
 		AssumeRolePolicyDocument: map[string]any{
 			"Statement": []map[string]any{
 				{
