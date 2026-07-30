@@ -57,11 +57,14 @@ func (c *cli) orgsCmd() *cobra.Command {
 
 	deprecatedAPITokenCmd := &cobra.Command{
 		Use:    "api-token",
-		Short:  "Manage API tokens (deprecated)",
+		Short:  "Get api token (deprecated)",
+		Long:   "Get api token that is active for current org",
 		Hidden: true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			printDeprecatedCommandWarning(cmd, "Use `nuon orgs api-tokens` instead")
-			return cmd.Help()
+
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.APIToken(cmd.Context(), PrintJSON)
 		}),
 	}
 	orgsCmd.AddCommand(deprecatedAPITokenCmd)
