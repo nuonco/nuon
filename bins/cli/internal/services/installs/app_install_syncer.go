@@ -152,19 +152,21 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		},
 	}
 	if installCfg.AWSAccount != nil {
-		req.AwsAccount = &models.ServiceCreateInstallRequestAwsAccount{
-			Region: installCfg.AWSAccount.Region,
+		req.AwsAccount = &models.HelpersCreateInstallAWSAccountParams{
+			Region:    installCfg.AWSAccount.Region,
+			AccountID: installCfg.AWSAccount.AccountID,
 		}
 	}
 	if installCfg.GCPAccount != nil {
-		req.GcpAccount = &models.ServiceCreateInstallRequestGcpAccount{
+		req.GcpAccount = &models.HelpersCreateInstallGCPAccountParams{
 			ProjectID: installCfg.GCPAccount.ProjectID,
 			Region:    installCfg.GCPAccount.Region,
 		}
 	}
 	if installCfg.AzureAccount != nil {
-		req.AzureAccount = &models.ServiceCreateInstallRequestAzureAccount{
-			Location: installCfg.AzureAccount.Location,
+		req.AzureAccount = &models.HelpersCreateInstallAzureAccountParams{
+			Location:       installCfg.AzureAccount.Location,
+			SubscriptionID: installCfg.AzureAccount.SubscriptionID,
 		}
 	}
 	if installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
@@ -202,6 +204,53 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		ui.PrintSuccess(fmt.Sprintf("install %s created successfully", appInstall.Name))
 	}
 	return appInstall, nil
+}
+
+// checkImmutableTargetAccount refuses a sync that would change the cloud account an
+// existing install targets. The API has no field to carry the change, so without this
+// the edit would either show as permanent drift or silently do nothing.
+func checkImmutableTargetAccount(installCfg, upstreamConfig *config.Install) error {
+	if upstreamConfig == nil {
+		return nil
+	}
+
+	type immutableField struct {
+		key      string
+		desired  string
+		upstream string
+	}
+	var fields []immutableField
+
+	if installCfg.AWSAccount != nil && upstreamConfig.AWSAccount != nil {
+		fields = append(fields, immutableField{
+			"aws_account.account_id", installCfg.AWSAccount.AccountID, upstreamConfig.AWSAccount.AccountID,
+		})
+	}
+	if installCfg.AzureAccount != nil && upstreamConfig.AzureAccount != nil {
+		fields = append(fields, immutableField{
+			"azure_account.subscription_id", installCfg.AzureAccount.SubscriptionID, upstreamConfig.AzureAccount.SubscriptionID,
+		})
+	}
+	if installCfg.GCPAccount != nil && upstreamConfig.GCPAccount != nil {
+		fields = append(fields, immutableField{
+			"gcp_account.project_id", installCfg.GCPAccount.ProjectID, upstreamConfig.GCPAccount.ProjectID,
+		})
+	}
+
+	var errs []error
+	for _, f := range fields {
+		// An unset value in the config is "don't care", not "clear it".
+		if f.desired == "" || f.desired == f.upstream {
+			continue
+		}
+		errs = append(errs, fmt.Errorf(
+			"refusing to change %s on existing install from %q to %q: the target cloud account is immutable after creation",
+			f.key, f.upstream, f.desired))
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("\n%w", errors.Join(errs...))
+	}
+	return nil
 }
 
 func (s *appInstallSyncer) syncExistingInstall(
@@ -253,6 +302,10 @@ func (s *appInstallSyncer) syncExistingInstall(
 	upstreamConfig, err := parseInstallConfig(bytes.NewReader(upstreamRawConfig))
 	if err != nil {
 		return nil, fmt.Errorf("error parsing current state for install %s: %w", appInstall.Name, err)
+	}
+
+	if err := checkImmutableTargetAccount(installCfg, upstreamConfig); err != nil {
+		return nil, err
 	}
 
 	diff, err := installCfg.Diff(upstreamConfig)

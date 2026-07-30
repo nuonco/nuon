@@ -11,10 +11,11 @@ import (
 )
 
 type createInstallInput struct {
-	App    string            `json:"app,omitempty" jsonschema:"app name or ID to create the install for; defaults to the currently selected app"`
-	Name   string            `json:"name" jsonschema:"name for the new install"`
-	Region string            `json:"region,omitempty" jsonschema:"cloud region to provision in"`
-	Inputs map[string]string `json:"inputs,omitempty" jsonschema:"app input values"`
+	App          string            `json:"app,omitempty" jsonschema:"app name or ID to create the install for; defaults to the currently selected app"`
+	Name         string            `json:"name" jsonschema:"name for the new install"`
+	Region       string            `json:"region,omitempty" jsonschema:"cloud region to provision in"`
+	AWSAccountID string            `json:"aws_account_id,omitempty" jsonschema:"AWS account ID this install targets; required when phone home authentication is enabled for the org"`
+	Inputs       map[string]string `json:"inputs,omitempty" jsonschema:"app input values"`
 }
 
 type deployComponentInput struct {
@@ -34,8 +35,9 @@ func (s *Service) registerWriteTools(server *mcp.Server) {
 		}
 		install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
 			Name: &in.Name,
-			AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
-				Region: in.Region,
+			AwsAccount: &models.HelpersCreateInstallAWSAccountParams{
+				Region:    in.Region,
+				AccountID: in.AWSAccountID,
 			},
 			Inputs: in.Inputs,
 		})

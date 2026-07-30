@@ -50,6 +50,10 @@ type AppInstall struct {
 	// cloud platform
 	CloudPlatform string `json:"cloud_platform,omitempty"`
 
+	// CloudPlatformMetadata records the cloud account this install is expected to
+	// run in, and what it was observed running in. See the type for the trust model.
+	CloudPlatformMetadata any `json:"cloud_platform_metadata,omitempty"`
+
 	// component statuses
 	ComponentStatuses map[string]string `json:"component_statuses,omitempty"`
 
@@ -67,6 +71,16 @@ type AppInstall struct {
 
 	// drifted objects
 	DriftedObjects []*AppDriftedObject `json:"drifted_objects"`
+
+	// Expected* coalesce the target identifier with the observed one, so callers get
+	// the strongest identifier available without caring which is set.
+	ExpectedAccountID string `json:"expected_account_id,omitempty"`
+
+	// expected project id
+	ExpectedProjectID string `json:"expected_project_id,omitempty"`
+
+	// expected subscription id
+	ExpectedSubscriptionID string `json:"expected_subscription_id,omitempty"`
 
 	// gcp account
 	GcpAccount *AppGCPAccount `json:"gcp_account,omitempty"`

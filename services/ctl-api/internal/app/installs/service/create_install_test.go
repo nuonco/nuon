@@ -19,11 +19,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2Success() {
 	body := CreateInstallV2Request{
 		AppID: s.testApp.ID,
 		CreateInstallParams: helpers.CreateInstallParams{
-			Name: "my-install",
-			AWSAccount: &struct {
-				Region       string `json:"region"`
-				ConnectionID string `json:"connection_id,omitempty"`
-			}{Region: "us-west-2"},
+			Name:       "my-install",
+			AWSAccount: &helpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
 		},
 	}
 
@@ -60,11 +57,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2WithInputs() {
 	body := CreateInstallV2Request{
 		AppID: s.testApp.ID,
 		CreateInstallParams: helpers.CreateInstallParams{
-			Name: "install-with-inputs",
-			AWSAccount: &struct {
-				Region       string `json:"region"`
-				ConnectionID string `json:"connection_id,omitempty"`
-			}{Region: "us-west-2"},
+			Name:       "install-with-inputs",
+			AWSAccount: &helpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
 			Inputs: map[string]*string{
 				"region": &region,
 			},
@@ -88,10 +82,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2AzureAccount() {
 	body := CreateInstallV2Request{
 		AppID: s.testApp.ID,
 		CreateInstallParams: helpers.CreateInstallParams{
-			Name: "azure-install",
-			AzureAccount: &struct {
-				Location string `json:"location"`
-			}{Location: "eastus"},
+			Name:         "azure-install",
+			AzureAccount: &helpers.CreateInstallAzureAccountParams{Location: "eastus"},
 		},
 	}
 
@@ -159,11 +151,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2InvalidAppID() {
 	body := CreateInstallV2Request{
 		AppID: "app_nonexistent_000000000",
 		CreateInstallParams: helpers.CreateInstallParams{
-			Name: "bad-app",
-			AWSAccount: &struct {
-				Region       string `json:"region"`
-				ConnectionID string `json:"connection_id,omitempty"`
-			}{Region: "us-west-2"},
+			Name:       "bad-app",
+			AWSAccount: &helpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
 		},
 	}
 
@@ -175,11 +164,8 @@ func (s *InstallsServiceTestSuite) TestCreateInstallDeprecatedRoute() {
 	s.expectQueueCreation()
 
 	body := helpers.CreateInstallParams{
-		Name: "deprecated-route-install",
-		AWSAccount: &struct {
-			Region       string `json:"region"`
-			ConnectionID string `json:"connection_id,omitempty"`
-		}{Region: "us-west-2"},
+		Name:       "deprecated-route-install",
+		AWSAccount: &helpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
 	}
 
 	path := fmt.Sprintf("/v1/apps/%s/installs", s.testApp.ID)

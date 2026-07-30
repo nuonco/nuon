@@ -23,6 +23,7 @@ interface ICreateInstallFormPresentation {
   defaultAutoApprove?: boolean
   autoApproveDescription?: string
   awsAccountConnections?: TAWSAccountConnection[]
+  requireTargetAccount?: boolean
 }
 
 const LabelsSection = () => {
@@ -96,6 +97,7 @@ export const CreateInstallForm = forwardRef<
       defaultAutoApprove,
       autoApproveDescription,
       awsAccountConnections,
+      requireTargetAccount,
     },
     ref
   ) => {
@@ -164,6 +166,7 @@ export const CreateInstallForm = forwardRef<
               platform={platform}
               draftValues={draftValues}
               awsAccountConnections={awsAccountConnections}
+              requireTargetAccount={requireTargetAccount}
             />
           )}
 

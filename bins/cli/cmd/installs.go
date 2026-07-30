@@ -18,6 +18,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		note               string
 		name               string
 		region             string
+		awsAccountID       string
 		appID              string
 		deployID           string
 		runID              string
@@ -130,7 +131,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Create(cmd.Context(), appID, name, region, inputs, labelArgs, PrintJSON, noSelect)
+			return svc.Create(cmd.Context(), appID, name, region, awsAccountID, inputs, labelArgs, PrintJSON, noSelect)
 		}),
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
@@ -140,6 +141,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		createCmd.MarkFlagRequired("name")
 	}
 	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in (required for AWS installs)")
+	createCmd.Flags().StringVar(&awsAccountID, "aws-account-id", "", "The AWS account ID this install targets (required when phone home authentication is enabled for your org; immutable after creation)")
 	createCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
 	createCmd.Flags().StringSliceVar(&labelArgs, "label", []string{}, "Labels to set on the install (repeatable, format: key=value). Example: --label env=prod --label team=platform")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "Do not automatically set the created install as the current install")

@@ -149,15 +149,10 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 		},
 	}
 	if req.AWSAccount != nil {
-		installParams.AWSAccount = &struct {
-			Region       string `json:"region"`
-			ConnectionID string `json:"connection_id,omitempty"`
-		}{Region: req.AWSAccount.Region}
+		installParams.AWSAccount = &helpers.CreateInstallAWSAccountParams{Region: req.AWSAccount.Region}
 	}
 	if req.AzureAccount != nil {
-		installParams.AzureAccount = &struct {
-			Location string `json:"location"`
-		}{Location: req.AzureAccount.Location}
+		installParams.AzureAccount = &helpers.CreateInstallAzureAccountParams{Location: req.AzureAccount.Location}
 	}
 	if req.Metadata != nil {
 		installParams.Metadata = helpers.InstallMetadata{

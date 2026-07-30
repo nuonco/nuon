@@ -4249,6 +4249,11 @@ export interface components {
       aws_account?: components["schemas"]["app.AWSAccount"];
       azure_account?: components["schemas"]["app.AzureAccount"];
       cloud_platform?: string;
+      /**
+       * @description CloudPlatformMetadata records the cloud account this install is expected to
+       * run in, and what it was observed running in. See the type for the trust model.
+       */
+      cloud_platform_metadata?: Record<string, never>;
       component_statuses?: {
         [key: string]: string;
       };
@@ -4257,6 +4262,13 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       drifted_objects?: components["schemas"]["app.DriftedObject"][];
+      /**
+       * @description Expected* coalesce the target identifier with the observed one, so callers get
+       * the strongest identifier available without caring which is set.
+       */
+      expected_account_id?: string;
+      expected_project_id?: string;
+      expected_subscription_id?: string;
       gcp_account?: components["schemas"]["app.GCPAccount"];
       id?: string;
       install_action_workflows?: components["schemas"]["app.InstallActionWorkflow"][];
@@ -6506,6 +6518,24 @@ export interface components {
       pathFilter?: string;
       repo: string;
     };
+    "helpers.CreateInstallAWSAccountParams": {
+      /**
+       * @description AccountID is the AWS account this install targets. Required when the org has
+       * the phone-home-auth feature enabled, optional otherwise. Immutable after
+       * creation — there is deliberately no equivalent field on UpdateInstallRequest.
+       */
+      account_id?: string;
+      connection_id?: string;
+      region?: string;
+    };
+    "helpers.CreateInstallAzureAccountParams": {
+      location?: string;
+      /**
+       * @description SubscriptionID is the Azure subscription this install targets. Required when
+       * the org has the phone-home-auth feature enabled. Immutable after creation.
+       */
+      subscription_id?: string;
+    };
     "helpers.CreateInstallConfigParams": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
@@ -6514,6 +6544,14 @@ export interface components {
       };
       runner_nested_template_url?: string;
       vpc_nested_template_url?: string;
+    };
+    "helpers.CreateInstallGCPAccountParams": {
+      /**
+       * @description ProjectID is the GCP project this install targets. Required when the org has
+       * the phone-home-auth feature enabled. Immutable after creation.
+       */
+      project_id?: string;
+      region?: string;
     };
     "helpers.InstallMetadata": {
       managed_by?: string;
@@ -7607,17 +7645,9 @@ export interface components {
       };
     };
     "service.CreateInstallRequest": {
-      aws_account?: {
-        connection_id?: string;
-        region?: string;
-      };
-      azure_account?: {
-        location?: string;
-      };
-      gcp_account?: {
-        project_id?: string;
-        region?: string;
-      };
+      aws_account?: components["schemas"]["helpers.CreateInstallAWSAccountParams"];
+      azure_account?: components["schemas"]["helpers.CreateInstallAzureAccountParams"];
+      gcp_account?: components["schemas"]["helpers.CreateInstallGCPAccountParams"];
       inputs?: {
         [key: string]: string;
       };
@@ -7634,17 +7664,9 @@ export interface components {
     };
     "service.CreateInstallV2Request": {
       app_id: string;
-      aws_account?: {
-        connection_id?: string;
-        region?: string;
-      };
-      azure_account?: {
-        location?: string;
-      };
-      gcp_account?: {
-        project_id?: string;
-        region?: string;
-      };
+      aws_account?: components["schemas"]["helpers.CreateInstallAWSAccountParams"];
+      azure_account?: components["schemas"]["helpers.CreateInstallAzureAccountParams"];
+      gcp_account?: components["schemas"]["helpers.CreateInstallGCPAccountParams"];
       inputs?: {
         [key: string]: string;
       };
