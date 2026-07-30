@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -42,9 +42,6 @@ export const EditBranchNameModalContainer = ({
   const vcsConnections = org?.vcs_connections || []
   const existingConnectionId =
     currentConfig?.connected_github_vcs_config?.vcs_connection_id || ''
-  const [vcsConnectionId, setVcsConnectionId] = useState(
-    existingConnectionId || vcsConnections[0]?.id || ''
-  )
 
   const existingRepo =
     currentConfig?.connected_github_vcs_config?.repo ||
@@ -55,6 +52,16 @@ export const EditBranchNameModalContainer = ({
     currentConfig?.public_git_vcs_config?.branch ||
     'main'
 
+  const repoOwner = existingRepo.split('/')[0] ?? ''
+  const [vcsConnectionId, setVcsConnectionId] = useState(
+    existingConnectionId ||
+      vcsConnections.find(
+        (c) => c.github_account_name?.toLowerCase() === repoOwner.toLowerCase()
+      )?.id ||
+      vcsConnections[0]?.id ||
+      ''
+  )
+
   const vcsBrowser = useVcsRepoBrowser({
     orgId: org.id,
     vcsConnectionId,
@@ -62,6 +69,17 @@ export const EditBranchNameModalContainer = ({
     initialRepo: existingRepo,
     initialBranch: existingBranch,
   })
+
+  const repos = useMemo(() => {
+    const list = vcsBrowser.repos ?? []
+    if (
+      vcsBrowser.selectedRepo &&
+      !list.some((r) => r.full_name === vcsBrowser.selectedRepo!.full_name)
+    ) {
+      return [vcsBrowser.selectedRepo, ...list]
+    }
+    return list
+  }, [vcsBrowser.repos, vcsBrowser.selectedRepo])
 
   const formatError = (err: TAPIError | Error): string => {
     if ('error' in err && typeof err.error === 'string') return err.error
@@ -157,7 +175,7 @@ export const EditBranchNameModalContainer = ({
       branch={branch}
       currentConfig={currentConfig}
       vcsConnections={vcsConnections}
-      repos={vcsBrowser.repos}
+      repos={repos}
       branches={vcsBrowser.branches}
       loadingRepos={vcsBrowser.loadingRepos}
       loadingBranches={vcsBrowser.loadingBranches}

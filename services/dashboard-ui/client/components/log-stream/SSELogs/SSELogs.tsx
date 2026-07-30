@@ -194,7 +194,7 @@ const RawLogs = ({
       <pre
         className={cn(
           'mt-3 overflow-x-auto rounded-md border p-4',
-          'bg-dark-grey-900 text-cool-grey-300',
+          'bg-code',
           'font-mono text-xs leading-relaxed whitespace-pre-wrap break-all'
         )}
       >
