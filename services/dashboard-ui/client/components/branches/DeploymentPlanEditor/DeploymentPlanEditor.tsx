@@ -6,7 +6,8 @@ import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-import type { TInstall } from '@/types'
+import { DeploymentPlanGraph } from '@/components/branches/DeploymentPlanGraph'
+import type { TInstall, TAppBranchConfig } from '@/types'
 import { matchesSelector } from '@/components/match/matches'
 import { GroupEditor } from './GroupEditor'
 import { InstallRow } from './InstallRow'
@@ -19,6 +20,7 @@ interface IDeploymentPlanEditor extends Omit<IModal, 'onSubmit'> {
   loadingInstalls: boolean
   isSaving: boolean
   labelColors?: Record<string, string>
+  orgId: string
   onSave: (groups: IInstallGroup[]) => void
   onCancel: () => void
 }
@@ -29,12 +31,30 @@ export const DeploymentPlanEditor = ({
   loadingInstalls,
   isSaving,
   labelColors,
+  orgId,
   onSave,
   onCancel,
   ...props
 }: IDeploymentPlanEditor) => {
   const [groups, setGroups] = useState<IInstallGroup[]>(initialGroups)
   const [showValidation, setShowValidation] = useState(false)
+
+  const installsById = useMemo(() => {
+    const map: Record<string, TInstall> = {}
+    for (const i of availableInstalls) map[i.id] = i
+    return map
+  }, [availableInstalls])
+
+  const previewConfig = useMemo<TAppBranchConfig>(() => ({
+    install_groups: groups.map((g) => ({
+      id: g.id,
+      name: g.name || `Group ${g.order + 1}`,
+      install_ids: g.selection_mode === 'manual' ? g.install_ids : [],
+      label_selector: g.selection_mode === 'labels' ? g.label_selector : undefined,
+      max_parallel: g.max_parallel,
+      use_for_previews: g.use_for_previews,
+    })),
+  } as TAppBranchConfig), [groups])
 
   const assignedInstallIds = useMemo(() => {
     const assigned = new Set<string>()
@@ -163,7 +183,13 @@ export const DeploymentPlanEditor = ({
           deployment plan.
         </Banner>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
+          {groups.length > 0 && (
+            <div className="max-w-[50%]">
+              <DeploymentPlanGraph config={previewConfig} installsById={installsById} orgId={orgId} compact />
+            </div>
+          )}
+
           {groups.length === 0 ? (
             <EmptyState
               variant="table"

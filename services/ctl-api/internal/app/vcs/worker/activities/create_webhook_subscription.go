@@ -117,7 +117,14 @@ func (a *Activities) CreateWebhookSubscription(ctx context.Context, req CreateWe
 		Status:                 app.StatusSuccess,
 		StatusHumanDescription: "webhook subscription created",
 	}
-	if err := a.db.WithContext(ctx).Save(&sub).Error; err != nil {
+	if err := a.db.WithContext(ctx).
+		Model(&sub).
+		Where("id = ?", sub.ID).
+		Updates(map[string]any{
+			"webhook_url":    webhookURL,
+			"github_hook_id": hookID,
+			"status":         sub.Status,
+		}).Error; err != nil {
 		return nil, fmt.Errorf("unable to update webhook subscription: %w", err)
 	}
 

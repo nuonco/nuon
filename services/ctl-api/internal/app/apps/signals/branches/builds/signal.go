@@ -6,6 +6,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -22,6 +23,7 @@ type Signal struct {
 
 var _ signal.Signal = (*Signal)(nil)
 var _ signal.SignalWithStepContext = (*Signal)(nil)
+var _ signal.SignalWithCancel = (*Signal)(nil)
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.StepID = stepID
@@ -42,6 +44,30 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	_, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
 		return errors.Wrap(err, "app branch not found")
+	}
+
+	return nil
+}
+
+func (s *Signal) Cancel(ctx workflow.Context) error {
+	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer cancel()
+
+	l := workflow.GetLogger(cancelCtx)
+
+	inflight, err := activities.AwaitGetInflightBuildQueueSignalsByRunID(cancelCtx, s.RunID)
+	if err != nil {
+		l.Warn("failed to get inflight build queue signals for cancel", "error", err)
+		return nil
+	}
+
+	for _, qs := range inflight {
+		if _, err := queueclient.AwaitCancelSignal(cancelCtx, qs.QueueSignalID); err != nil {
+			l.Warn("failed to cancel build signal",
+				"queue_signal_id", qs.QueueSignalID,
+				"build_id", qs.BuildID,
+				"error", err)
+		}
 	}
 
 	return nil

@@ -1,5 +1,7 @@
-import { type FormEvent, forwardRef } from 'react'
+import { type FormEvent, forwardRef, useState } from 'react'
+import { Button } from '@/components/common/Button'
 import { Expand } from '@/components/common/Expand'
+import { Icon } from '@/components/common/Icon'
 import { Input } from '@/components/common/form/Input'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Text } from '@/components/common/Text'
@@ -21,6 +23,60 @@ interface ICreateInstallFormPresentation {
   defaultAutoApprove?: boolean
   autoApproveDescription?: string
   awsAccountConnections?: TAWSAccountConnection[]
+}
+
+const LabelsSection = () => {
+  const [rows, setRows] = useState<{ key: string; value: string }[]>([])
+
+  const addRow = () => setRows((prev) => [...prev, { key: '', value: '' }])
+  const removeRow = (idx: number) => setRows((prev) => prev.filter((_, i) => i !== idx))
+  const updateRow = (idx: number, field: 'key' | 'value', val: string) =>
+    setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, [field]: val } : r)))
+
+  return (
+    <Expand
+      id="install-labels"
+      heading="Labels"
+      headerClassName="!px-4 bg-code"
+      className="border rounded-md"
+    >
+      <div className="flex flex-col gap-3 p-4 border-t">
+        <Text variant="subtext" theme="neutral">
+          Labels connect this install to app branch deployment groups.
+        </Text>
+        {rows.map((row, idx) => (
+          <div key={idx} className="flex items-center gap-2">
+            <input type="hidden" name={`label:${idx}:key`} value={row.key} />
+            <input type="hidden" name={`label:${idx}:value`} value={row.value} />
+            <Input
+              placeholder="Key"
+              value={row.key}
+              onChange={(e) => updateRow(idx, 'key', e.target.value)}
+              className="flex-1"
+            />
+            <Input
+              placeholder="Value"
+              value={row.value}
+              onChange={(e) => updateRow(idx, 'value', e.target.value)}
+              className="flex-1"
+            />
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => removeRow(idx)}
+              type="button"
+            >
+              <Icon variant="XIcon" size={14} />
+            </Button>
+          </div>
+        ))}
+        <Button variant="secondary" size="sm" onClick={addRow} type="button" className="w-fit">
+          <Icon variant="PlusIcon" size={14} />
+          Add label
+        </Button>
+      </div>
+    </Expand>
+  )
 }
 
 export const CreateInstallForm = forwardRef<
@@ -149,6 +205,8 @@ export const CreateInstallForm = forwardRef<
               }}
             />
           </div>
+
+          <LabelsSection />
 
           {/* Nested CloudFormation template overrides only apply to AWS install stacks */}
           {platform === 'aws' && (

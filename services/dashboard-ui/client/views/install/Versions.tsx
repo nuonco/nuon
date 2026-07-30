@@ -7,6 +7,7 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
+import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
@@ -185,7 +186,7 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const source = version.app_branch_run_id ? 'branch run' : 'sync'
+  const source = version.metadata?.triggered_by || (version.app_branch_run_id ? 'app-branch' : 'sync')
 
   const { data: diff, isLoading: isDiffLoading } = useQuery({
     queryKey: [
@@ -268,16 +269,22 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
           </LabeledValue>
         </div>
 
-        {version.metadata &&
-          Object.keys(version.metadata).length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {Object.entries(version.metadata).map(([key, value]) => (
-                <Badge key={key} size="sm" theme="neutral">
-                  {key}: {value}
-                </Badge>
-              ))}
-            </div>
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {version.metadata &&
+            Object.entries(version.metadata).map(([key, value]) => (
+              <Badge key={key} size="sm" theme="neutral">
+                {key}: {value}
+              </Badge>
+            ))}
+          {version.workflow_id && org?.id && install?.id && (
+            <Link
+              href={`/${org.id}/installs/${install.id}/workflows/${version.workflow_id}`}
+              className="text-xs"
+            >
+              View workflow
+            </Link>
           )}
+        </div>
 
         {isDiffLoading && !diff ? (
           <Skeleton lines={3} height="1rem" />

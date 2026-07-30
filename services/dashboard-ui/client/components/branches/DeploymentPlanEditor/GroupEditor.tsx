@@ -59,8 +59,8 @@ export const GroupEditor = ({
   }, [group.install_ids, availableInstalls])
 
   return (
-    <Card className="!p-0 !gap-0 overflow-hidden bg-white dark:bg-dark-grey-800">
-      <div className="flex items-center gap-2 px-4 py-3 border-b">
+    <Card className="!p-0 !gap-0 overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-cool-grey-50 dark:bg-dark-grey-800">
         <div className="flex-1 min-w-0">
           <Input
             id={`group-name-${group.id}`}
@@ -76,45 +76,47 @@ export const GroupEditor = ({
           />
         </div>
 
-        <Dropdown
-          id={`group-menu-${group.id}`}
-          variant="ghost"
-          alignment="right"
-          hideIcon
-          disabled={disabled}
-          buttonClassName="!p-2"
-          buttonText={<Icon variant="DotsThreeVerticalIcon" size={16} />}
-        >
-          <Menu>
-            <Button isMenuButton onClick={onMoveUp} disabled={index === 0}>
-              Move up
-              <Icon variant="ArrowUpIcon" />
-            </Button>
-            <Button isMenuButton onClick={onMoveDown} disabled={index === totalGroups - 1}>
-              Move down
-              <Icon variant="ArrowDownIcon" />
-            </Button>
-            <hr />
-            <Button isMenuButton className="!text-red-800 dark:!text-red-500" onClick={onDelete}>
-              Delete group
-              <Icon variant="TrashIcon" />
-            </Button>
-          </Menu>
-        </Dropdown>
+        <div className="flex items-center gap-1">
+          <ToggleButton<InstallSelectionMode>
+            options={[
+              { value: 'manual', label: 'Manual' },
+              { value: 'labels', label: 'Labels' },
+            ]}
+            value={group.selection_mode}
+            onChange={(mode) => onUpdate({ selection_mode: mode })}
+            size="sm"
+            className={cn(disabled && 'pointer-events-none opacity-50')}
+          />
+
+          <Dropdown
+            id={`group-menu-${group.id}`}
+            variant="ghost"
+            alignment="right"
+            hideIcon
+            disabled={disabled}
+            buttonClassName="!p-2"
+            buttonText={<Icon variant="DotsThreeVerticalIcon" size={16} />}
+          >
+            <Menu>
+              <Button isMenuButton onClick={onMoveUp} disabled={index === 0}>
+                Move up
+                <Icon variant="ArrowUpIcon" />
+              </Button>
+              <Button isMenuButton onClick={onMoveDown} disabled={index === totalGroups - 1}>
+                Move down
+                <Icon variant="ArrowDownIcon" />
+              </Button>
+              <hr />
+              <Button isMenuButton className="!text-red-800 dark:!text-red-500" onClick={onDelete}>
+                Delete group
+                <Icon variant="TrashIcon" />
+              </Button>
+            </Menu>
+          </Dropdown>
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 border-b">
-        <ToggleButton<InstallSelectionMode>
-          options={[
-            { value: 'manual', label: 'Manual' },
-            { value: 'labels', label: 'By labels' },
-          ]}
-          value={group.selection_mode}
-          onChange={(mode) => onUpdate({ selection_mode: mode })}
-          size="sm"
-          className={cn(disabled && 'pointer-events-none opacity-50')}
-        />
-
+      <div className="flex items-center gap-4 px-4 py-2 border-b text-xs">
         <div className="flex items-center gap-2">
           <Text variant="subtext" theme="neutral">Max parallel</Text>
           <Input
@@ -125,7 +127,7 @@ export const GroupEditor = ({
             onChange={(e) => onUpdate({ max_parallel: parseInt(e.target.value) || 1 })}
             disabled={disabled}
             size="sm"
-            className="!w-16"
+            className="!w-14"
           />
         </div>
 

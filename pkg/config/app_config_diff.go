@@ -63,6 +63,9 @@ func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
 	if d := diffInstalls(old.Installs, a.Installs); d != nil {
 		children = append(children, d)
 	}
+	if d := diffInstallsConfig(old.InstallsConfig, a.InstallsConfig); d != nil {
+		children = append(children, d)
+	}
 	if d := diffActions(old.Actions, a.Actions); d != nil {
 		children = append(children, d)
 	}
@@ -1092,6 +1095,26 @@ func diffInstalls(old, new []*Install) *diff.Diff {
 	}
 
 	return diff.NewDiff(diff.WithKey("installs"), diff.WithChildren(children...))
+}
+
+// --- Installs Config ---
+
+func diffInstallsConfig(old, new *InstallsConfig) *diff.Diff {
+	if old == nil && new == nil {
+		return nil
+	}
+	if old == nil {
+		old = &InstallsConfig{}
+	}
+	if new == nil {
+		new = &InstallsConfig{}
+	}
+
+	var children []*diff.Diff
+	children = append(children, diffConnectedRepo("connected_repo", old.ConnectedRepo, new.ConnectedRepo)...)
+	children = append(children, diffPublicRepo("public_repo", old.PublicRepo, new.PublicRepo)...)
+
+	return sectionDiff("installs_config", old, new, children)
 }
 
 // --- Actions ---

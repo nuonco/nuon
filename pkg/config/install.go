@@ -395,10 +395,14 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 	}
 
 	if i.AWSAccount != nil {
+		upstreamAWS := &AWSAccount{}
+		if upstreamInstall.AWSAccount != nil {
+			upstreamAWS = upstreamInstall.AWSAccount
+		}
 		diffs = append(diffs, diff.NewDiff(
 			diff.WithKey("aws_account"), diff.WithChildren(diff.NewDiff(
 				diff.WithKey("region"),
-				diff.WithStringDiff(upstreamInstall.AWSAccount.Region, i.AWSAccount.Region),
+				diff.WithStringDiff(upstreamAWS.Region, i.AWSAccount.Region),
 			))),
 		)
 	}

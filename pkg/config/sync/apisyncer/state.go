@@ -3,10 +3,12 @@ package apisyncer
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"slices"
 
 	"github.com/nuonco/nuon/sdks/nuon-go"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 )
 
@@ -63,6 +65,10 @@ func (s *syncer) OrphanedRunbooks() map[string]string {
 		}
 	}
 	return runbooks
+}
+
+func (s *syncer) SyncInstall(_ context.Context, _ *config.Install) (*sync.InstallSyncResult, error) {
+	return nil, fmt.Errorf("SyncInstall is not supported via the API syncer; use the CLI install sync instead")
 }
 
 func (s *syncer) fetchState(ctx context.Context) error {

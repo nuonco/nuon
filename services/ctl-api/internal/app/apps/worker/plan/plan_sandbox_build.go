@@ -48,10 +48,24 @@ func (p *Planner) createSandboxBuildPlan(ctx workflow.Context, req *CreateSandbo
 		tfPlan.TerraformVersion = build.AppSandboxConfig.TerraformVersion
 	}
 
-	return &plantypes.BuildPlan{
+	plan := &plantypes.BuildPlan{
 		Src:                gitSource,
 		Dst:                dstCfg,
 		DstTag:             build.ID,
 		TerraformBuildPlan: tfPlan,
-	}, nil
+	}
+
+	isSandboxOrg, err := activities.AwaitIsOrgSandboxMode(ctx, activities.IsOrgSandboxModeRequest{
+		OrgID: build.OrgID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to check org sandbox mode: %w", err)
+	}
+	if isSandboxOrg {
+		plan.SandboxMode = &plantypes.SandboxMode{
+			Enabled: true,
+		}
+	}
+
+	return plan, nil
 }

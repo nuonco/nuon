@@ -2,6 +2,7 @@ package builds
 
 import (
 	"fmt"
+	"time"
 
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
@@ -189,7 +190,10 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 		return builds, nil
 	}
 
-	// Enqueue builds in batches and await each batch
+	// Phase 1: Enqueue all queuebuild signals in batches. Each queuebuild
+	// creates a build record and enqueues the actual build signal onto the
+	// component queue. We await queuebuild completion (via callback) so we
+	// know the build records exist before moving to phase 2.
 	for batchStart := 0; batchStart < len(toBuild); batchStart += buildBatchSize {
 		batchEnd := batchStart + buildBatchSize
 		if batchEnd > len(toBuild) {
@@ -202,21 +206,19 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 			"batch_end", batchEnd,
 			"count", len(batch))
 
-		// Mark batch as in-progress
 		for _, componentID := range batch {
 			s.setBuildStatus(builds, componentID, "in-progress")
 		}
 		s.updateBuildMetadata(ctx, builds)
 
-		// Enqueue all builds in this batch with callbacks
-		type pendingBuild struct {
+		type pendingEnqueue struct {
 			componentID string
 			cb          callback.Ref
 		}
-		pending := make([]pendingBuild, 0, len(batch))
+		pending := make([]pendingEnqueue, 0, len(batch))
 
 		for _, componentID := range batch {
-			cb := callback.New(ctx, componentID)
+			cb := callback.New(ctx, fmt.Sprintf("enqueue-%s", componentID))
 			_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 				OwnerID:         componentID,
 				OwnerType:       "components",
@@ -234,23 +236,58 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 				s.updateBuildMetadata(ctx, builds)
 				return builds, fmt.Errorf("component %s: enqueue failed: %w", componentID, err)
 			}
-			pending = append(pending, pendingBuild{componentID: componentID, cb: cb})
+			pending = append(pending, pendingEnqueue{componentID: componentID, cb: cb})
 		}
 
-		// Await all builds in this batch
-		var errs []error
 		for _, p := range pending {
 			if _, err := callback.AwaitWithTimeout(ctx, p.cb, callback.FallbackAwaitTimeout); err != nil {
 				s.setBuildStatus(builds, p.componentID, "error")
-				errs = append(errs, fmt.Errorf("component %s: %w", p.componentID, err))
-			} else {
-				s.setBuildStatus(builds, p.componentID, "success")
+				s.updateBuildMetadata(ctx, builds)
+				return builds, fmt.Errorf("component %s: queuebuild failed: %w", p.componentID, err)
+			}
+		}
+	}
+
+	// Phase 2: All build records exist and build signals are enqueued. Poll
+	// until every build reaches a terminal status.
+	l.Info("all builds enqueued, awaiting build completions", "count", len(toBuild))
+
+	for {
+		result, err := activities.AwaitCheckBuildsCompleteByRunID(ctx, s.RunID)
+		if err != nil {
+			return builds, fmt.Errorf("unable to check build statuses: %w", err)
+		}
+
+		if result.AllDone {
+			for _, br := range result.Builds {
+				if br.Status == string(app.ComponentBuildStatusActive) {
+					s.setBuildStatus(builds, br.ComponentID, "success")
+				} else {
+					s.setBuildStatus(builds, br.ComponentID, "error")
+				}
+			}
+			s.updateBuildMetadata(ctx, builds)
+
+			if result.HasError {
+				return builds, fmt.Errorf("one or more component builds failed")
+			}
+			break
+		}
+
+		// Update metadata with current statuses
+		for _, br := range result.Builds {
+			switch br.Status {
+			case string(app.ComponentBuildStatusActive):
+				s.setBuildStatus(builds, br.ComponentID, "success")
+			case string(app.ComponentBuildStatusError), "cancelled":
+				s.setBuildStatus(builds, br.ComponentID, "error")
 			}
 		}
 		s.updateBuildMetadata(ctx, builds)
 
-		if len(errs) > 0 {
-			return builds, fmt.Errorf("batch had %d error(s): %v", len(errs), errs)
+		// Sleep before polling again
+		if err := workflow.Sleep(ctx, 5*time.Second); err != nil {
+			return builds, fmt.Errorf("sleep interrupted: %w", err)
 		}
 	}
 
