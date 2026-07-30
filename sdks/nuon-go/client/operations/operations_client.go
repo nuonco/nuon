@@ -264,6 +264,8 @@ type ClientService interface {
 
 	CreateNotebookCell(params *CreateNotebookCellParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateNotebookCellCreated, error)
 
+	CreateOIDCTrustPolicy(params *CreateOIDCTrustPolicyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOIDCTrustPolicyCreated, error)
+
 	CreateOnboarding(params *CreateOnboardingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOnboardingCreated, error)
 
 	CreateOrg(params *CreateOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrgCreated, error)
@@ -332,6 +334,8 @@ type ClientService interface {
 
 	DeleteNotebookCell(params *DeleteNotebookCellParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNotebookCellNoContent, error)
 
+	DeleteOIDCTrustPolicy(params *DeleteOIDCTrustPolicyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOIDCTrustPolicyNoContent, error)
+
 	DeleteOrg(params *DeleteOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOrgOK, error)
 
 	DeleteRunbook(params *DeleteRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRunbookOK, error)
@@ -353,6 +357,8 @@ type ClientService interface {
 	DeprovisionInstall(params *DeprovisionInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeprovisionInstallCreated, error)
 
 	DeprovisionInstallSandbox(params *DeprovisionInstallSandboxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeprovisionInstallSandboxCreated, error)
+
+	ExchangeOIDCToken(params *ExchangeOIDCTokenParams, opts ...ClientOption) (*ExchangeOIDCTokenOK, error)
 
 	ExportPolicyReport(params *ExportPolicyReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ExportPolicyReportOK, error)
 
@@ -686,6 +692,8 @@ type ClientService interface {
 
 	GetNotebooks(params *GetNotebooksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNotebooksOK, error)
 
+	GetOIDCTrustPolicy(params *GetOIDCTrustPolicyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOIDCTrustPolicyOK, error)
+
 	GetOnboardingExampleApps(params *GetOnboardingExampleAppsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOnboardingExampleAppsOK, error)
 
 	GetOrg(params *GetOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgOK, error)
@@ -824,6 +832,8 @@ type ClientService interface {
 
 	GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerOK, error)
 
+	ListOIDCTrustPolicies(params *ListOIDCTrustPoliciesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOIDCTrustPoliciesOK, error)
+
 	ListOrgComponentBuilds(params *ListOrgComponentBuildsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOrgComponentBuildsOK, error)
 
 	ListQueues(params *ListQueuesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListQueuesOK, error)
@@ -959,6 +969,8 @@ type ClientService interface {
 	UpdateNotebook(params *UpdateNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateNotebookOK, error)
 
 	UpdateNotebookCell(params *UpdateNotebookCellParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateNotebookCellOK, error)
+
+	UpdateOIDCTrustPolicy(params *UpdateOIDCTrustPolicyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOIDCTrustPolicyOK, error)
 
 	UpdateOrg(params *UpdateOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgOK, error)
 
@@ -4452,6 +4464,52 @@ func (a *Client) CreateNotebookCell(params *CreateNotebookCellParams, authInfo r
 }
 
 /*
+CreateOIDCTrustPolicy creates an o ID c trust policy
+
+Creates an OIDC workload identity trust policy for your current org. OIDC tokens matching the policy's issuer, audience, and claim conditions can be exchanged for short-lived Nuon API tokens. Each policy gets a dedicated service account with the configured role.
+*/
+func (a *Client) CreateOIDCTrustPolicy(params *CreateOIDCTrustPolicyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOIDCTrustPolicyCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateOIDCTrustPolicyParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateOIDCTrustPolicy",
+		Method:             "POST",
+		PathPattern:        "/v1/oidc/trust-policies",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateOIDCTrustPolicyReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateOIDCTrustPolicyCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateOIDCTrustPolicy: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateOnboarding starts a new onboarding session
 
 Creates a new active onboarding session for the current account
@@ -6010,6 +6068,52 @@ func (a *Client) DeleteNotebookCell(params *DeleteNotebookCellParams, authInfo r
 }
 
 /*
+DeleteOIDCTrustPolicy deletes an o ID c trust policy
+
+Deletes an OIDC workload identity trust policy belonging to your current org, along with its dedicated service account. Tokens already issued under the policy stop working immediately.
+*/
+func (a *Client) DeleteOIDCTrustPolicy(params *DeleteOIDCTrustPolicyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOIDCTrustPolicyNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteOIDCTrustPolicyParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteOIDCTrustPolicy",
+		Method:             "DELETE",
+		PathPattern:        "/v1/oidc/trust-policies/{policy_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteOIDCTrustPolicyReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteOIDCTrustPolicyNoContent)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteOIDCTrustPolicy: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 DeleteOrg deletes an org
 
 Delete an organization.
@@ -6515,6 +6619,51 @@ func (a *Client) DeprovisionInstallSandbox(params *DeprovisionInstallSandboxPara
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeprovisionInstallSandbox: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ExchangeOIDCToken exchanges an o ID c token for a nuon API token
+
+Exchanges an OIDC ID token (e.g. from GitHub Actions) for a short-lived Nuon API token. The token must match an enabled OIDC trust policy in the target org: its signature is verified against the policy issuer's JWKS, and its issuer, audience, and claims must satisfy the policy. No Nuon credentials are required to call this endpoint.
+*/
+func (a *Client) ExchangeOIDCToken(params *ExchangeOIDCTokenParams, opts ...ClientOption) (*ExchangeOIDCTokenOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewExchangeOIDCTokenParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ExchangeOIDCToken",
+		Method:             "POST",
+		PathPattern:        "/v1/oidc/token",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ExchangeOIDCTokenReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ExchangeOIDCTokenOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ExchangeOIDCToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -14263,6 +14412,52 @@ func (a *Client) GetNotebooks(params *GetNotebooksParams, authInfo runtime.Clien
 }
 
 /*
+GetOIDCTrustPolicy gets an o ID c trust policy
+
+Returns an OIDC workload identity trust policy belonging to your current org.
+*/
+func (a *Client) GetOIDCTrustPolicy(params *GetOIDCTrustPolicyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOIDCTrustPolicyOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetOIDCTrustPolicyParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetOIDCTrustPolicy",
+		Method:             "GET",
+		PathPattern:        "/v1/oidc/trust-policies/{policy_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetOIDCTrustPolicyReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetOIDCTrustPolicyOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetOIDCTrustPolicy: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetOnboardingExampleApps gets example apps catalog
 
 Returns the list of available example applications for onboarding
@@ -17431,6 +17626,52 @@ func (a *Client) GracefulShutDownRunner(params *GracefulShutDownRunnerParams, au
 }
 
 /*
+ListOIDCTrustPolicies lists your org s o ID c trust policies
+
+Lists the OIDC workload identity trust policies for your current org.
+*/
+func (a *Client) ListOIDCTrustPolicies(params *ListOIDCTrustPoliciesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOIDCTrustPoliciesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListOIDCTrustPoliciesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListOIDCTrustPolicies",
+		Method:             "GET",
+		PathPattern:        "/v1/oidc/trust-policies",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListOIDCTrustPoliciesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListOIDCTrustPoliciesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListOIDCTrustPolicies: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 ListOrgComponentBuilds lists component build history for the current organization
 */
 func (a *Client) ListOrgComponentBuilds(params *ListOrgComponentBuildsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOrgComponentBuildsOK, error) {
@@ -20536,6 +20777,52 @@ func (a *Client) UpdateNotebookCell(params *UpdateNotebookCellParams, authInfo r
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateNotebookCell: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateOIDCTrustPolicy updates an o ID c trust policy
+
+Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy.
+*/
+func (a *Client) UpdateOIDCTrustPolicy(params *UpdateOIDCTrustPolicyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOIDCTrustPolicyOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateOIDCTrustPolicyParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateOIDCTrustPolicy",
+		Method:             "PATCH",
+		PathPattern:        "/v1/oidc/trust-policies/{policy_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateOIDCTrustPolicyReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateOIDCTrustPolicyOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateOIDCTrustPolicy: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
