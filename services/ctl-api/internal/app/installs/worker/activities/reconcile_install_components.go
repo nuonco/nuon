@@ -3,8 +3,8 @@ package activities
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -35,6 +35,10 @@ func (a *Activities) ReconcileInstallComponents(ctx context.Context, input *Reco
 		return fmt.Errorf("unable to get app config: %w", err)
 	}
 
+	if appCfg.ComponentIDs == nil {
+		return nil
+	}
+
 	desiredSet := make(map[string]bool, len(appCfg.ComponentIDs))
 	for _, id := range appCfg.ComponentIDs {
 		desiredSet[id] = true
@@ -53,10 +57,12 @@ func (a *Activities) ReconcileInstallComponents(ctx context.Context, input *Reco
 	}
 
 	var components []app.Component
-	if err := a.db.WithContext(ctx).
-		Where("id IN ?", appCfg.ComponentIDs).
-		Find(&components).Error; err != nil {
-		return fmt.Errorf("unable to get components: %w", err)
+	if len(appCfg.ComponentIDs) > 0 {
+		if err := a.db.WithContext(ctx).
+			Where("id IN ?", []string(appCfg.ComponentIDs)).
+			Find(&components).Error; err != nil {
+			return fmt.Errorf("unable to get components: %w", err)
+		}
 	}
 	componentsByID := make(map[string]*app.Component, len(components))
 	for i := range components {
@@ -76,10 +82,18 @@ func (a *Activities) ReconcileInstallComponents(ctx context.Context, input *Reco
 
 		if ic.StatusV2.Metadata != nil {
 			if _, removed := ic.StatusV2.Metadata["removed_at_app_config_id"]; removed {
-				delete(ic.StatusV2.Metadata, "removed_at_app_config_id")
+				restoredStatus := app.CompositeStatus{
+					Status:                 app.Status(app.InstallComponentStatusPending),
+					StatusHumanDescription: fmt.Sprintf("restored by app config %s", appCfg.ID),
+					CreatedAtTS:            time.Now().Unix(),
+					Metadata:               map[string]any{},
+				}
 				if err := a.db.WithContext(ctx).
 					Model(ic).
-					Update("status_v2", ic.StatusV2).Error; err != nil {
+					Updates(map[string]any{
+						"status_v2": restoredStatus,
+						"status":    app.InstallComponentStatusPending,
+					}).Error; err != nil {
 					return fmt.Errorf("unable to restore install component %s: %w", ic.ID, err)
 				}
 			}
@@ -126,26 +140,23 @@ func (a *Activities) ReconcileInstallComponents(ctx context.Context, input *Reco
 			}
 		}
 
-		if ic.StatusV2.Metadata == nil {
-			ic.StatusV2.Metadata = make(map[string]any)
+		removedStatus := app.CompositeStatus{
+			Status:                 app.Status(app.InstallComponentStatusInactive),
+			StatusHumanDescription: fmt.Sprintf("removed from app config %s", appCfg.ID),
+			CreatedAtTS:            time.Now().Unix(),
+			Metadata: map[string]any{
+				"removed_at_app_config_id": appCfg.ID,
+			},
 		}
-		ic.StatusV2.Metadata["removed_at_app_config_id"] = appCfg.ID
 		if err := a.db.WithContext(ctx).
 			Model(ic).
-			Update("status_v2", ic.StatusV2).Error; err != nil {
+			Updates(map[string]any{
+				"status_v2": removedStatus,
+				"status":    app.InstallComponentStatusInactive,
+			}).Error; err != nil {
 			return fmt.Errorf("unable to mark install component %s as removed: %w", ic.ID, err)
 		}
 	}
 
 	return nil
-}
-
-// getInstallComponentsForReconcile is a helper to avoid loading associations we don't need.
-func (a *Activities) getInstallComponentsForReconcile(ctx context.Context, installID string) ([]app.InstallComponent, error) {
-	var components []app.InstallComponent
-	err := a.db.WithContext(ctx).
-		Session(&gorm.Session{SkipHooks: true}).
-		Where(app.InstallComponent{InstallID: installID}).
-		Find(&components).Error
-	return components, err
 }

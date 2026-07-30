@@ -4,27 +4,20 @@ import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { ChangeCountSummary } from '@/components/approvals/plan-diffs/ChangeCountSummary'
-import { ComponentType } from '@/components/components/ComponentType'
+import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import {
-  getInstallAppConfigVersions,
-  getInstallAppConfigVersionDiff,
-} from '@/lib'
-import type { TInstallConfigDiff } from '@/lib/ctl-api/installs/get-install-app-config-version-diff'
-import type { TComponentType, TInstallAppConfigVersion } from '@/types'
+import { getInstallAppConfigVersions } from '@/lib'
+import type { TInstallAppConfigVersion } from '@/types'
 
 export const Versions = () => {
   const { org } = useOrg()
@@ -56,11 +49,24 @@ export const Versions = () => {
       />
       <HeadingGroup>
         <Text variant="base" weight="strong">
-          App config versions
+          App branch runs
         </Text>
         <Text variant="subtext" theme="neutral">
           History of app config updates applied to this install.
         </Text>
+        {install?.app_branch_id && (
+          <div className="flex items-center gap-2 mt-1">
+            <Badge size="sm" theme="info">
+              {install.app_branch?.name || 'branch'}
+            </Badge>
+            <Link
+              href={`/${org?.id}/apps/${install?.app_id}/branches/${install?.app_branch_id}`}
+              className="text-xs"
+            >
+              View branch
+            </Link>
+          </div>
+        )}
       </HeadingGroup>
 
       {isLoading && (
@@ -188,35 +194,6 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
 
   const source = version.metadata?.triggered_by || (version.app_branch_run_id ? 'app-branch' : 'sync')
 
-  const { data: diff, isLoading: isDiffLoading } = useQuery({
-    queryKey: [
-      'install-app-config-version-diff',
-      org?.id,
-      install?.id,
-      version.id,
-    ],
-    queryFn: () =>
-      getInstallAppConfigVersionDiff({
-        orgId: org!.id,
-        installId: install!.id,
-        versionId: version.id!,
-      }),
-    enabled: !!org?.id && !!install?.id && !!version.id,
-    retry: 1,
-  })
-
-  const changes = diff ? collectChanges(diff) : []
-  const summary = diff
-    ? {
-        added: diff.added?.length ?? 0,
-        changed:
-          (diff.changed?.length ?? 0) +
-          (diff.sandbox_changed ? 1 : 0) +
-          (diff.stack_changed ? 1 : 0),
-        removed: diff.removed?.length ?? 0,
-      }
-    : null
-
   return (
     <Expand
       id={`version-${version.id}`}
@@ -234,14 +211,6 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
               theme="neutral"
               time={version.created_at}
               format="relative"
-            />
-          )}
-          {summary && (
-            <ChangeCountSummary
-              added={summary.added}
-              updated={summary.changed}
-              removed={summary.removed}
-              className="ml-auto"
             />
           )}
         </div>
@@ -296,9 +265,9 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
                 {key}: {value}
               </Badge>
             ))}
-          {version.app_branch_run_id && version.app_branch_run?.app_branch && org?.id && (
+          {version.app_branch_run?.workflow_id && version.app_branch_run?.app_branch_id && org?.id && (
             <Link
-              href={`/${org.id}/apps/${install?.app_id}/branches/${version.app_branch_run.app_branch_id}/runs/${version.app_branch_run_id}`}
+              href={`/${org.id}/apps/${install?.app_id}/branches/${version.app_branch_run.app_branch_id}/runs/${version.app_branch_run.workflow_id}`}
               className="text-xs"
             >
               View branch run
@@ -314,14 +283,12 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
           )}
         </div>
 
-        {isDiffLoading && !diff ? (
-          <Skeleton lines={3} height="1rem" />
-        ) : diff ? (
-          <ChangedComponents rows={changes} />
-        ) : (
-          <Text variant="subtext" theme="neutral">
-            No changes available
-          </Text>
+        {version.new_app_config_id && install?.app_id && (
+          <AppConfigDiff
+            appConfigId={version.new_app_config_id}
+            oldConfigId={version.old_app_config_id}
+            appId={install.app_id}
+          />
         )}
       </div>
     </Expand>

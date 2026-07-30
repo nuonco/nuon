@@ -3430,6 +3430,7 @@ export interface components {
       install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
       org_id?: string;
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      runbook_ids?: string[];
       updated_at?: string;
       workflows?: components["schemas"]["app.Workflow"][];
     };
@@ -3537,6 +3538,7 @@ export interface components {
       permissions?: components["schemas"]["app.AppPermissionsConfig"];
       policies?: components["schemas"]["app.AppPoliciesConfig"];
       readme?: string;
+      runbook_ids?: string[];
       runner?: components["schemas"]["app.AppRunnerConfig"];
       sandbox?: components["schemas"]["app.AppSandboxConfig"];
       secrets?: components["schemas"]["app.AppSecretsConfig"];
@@ -4421,6 +4423,7 @@ export interface components {
       runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
       /** @description after query fields filled in after querying */
       status?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
     };
     "app.InstallActionWorkflowRun": {
@@ -4797,6 +4800,7 @@ export interface components {
       runs?: components["schemas"]["app.InstallRunbookRun"][];
       /** @description after query fields */
       status?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
     };
     "app.InstallRunbookRun": {
@@ -19156,6 +19160,8 @@ export interface operations {
   GetInstallActionWorkflows: {
     parameters: {
       query?: {
+        /** @description return actions in the install's current app config; set false to return only actions no longer in it */
+        synced?: boolean;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
@@ -19625,6 +19631,8 @@ export interface operations {
   GetInstallActions: {
     parameters: {
       query?: {
+        /** @description return actions in the install's current app config; set false to return only actions no longer in it */
+        synced?: boolean;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */

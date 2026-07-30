@@ -28,7 +28,7 @@ import {
   ConfigDiffFocusContext,
   type TConfigDiffFocus,
 } from '@/components/approvals/plan-diffs/config-diff-focus'
-import { getBranchWorkflowRun } from '@/lib'
+import { getBranchWorkflowRun, getBranchWorkflowRuns } from '@/lib'
 import { getRunTitle } from '@/components/branches/shared/run-title'
 
 const BranchRunDetailContent = () => {
@@ -52,6 +52,13 @@ const BranchRunDetailContent = () => {
     refetchInterval: 5000,
   })
 
+  const { data: branchRunsResult } = useQuery({
+    queryKey: ['branch-runs', orgId, appId, branchId],
+    queryFn: () => getBranchWorkflowRuns({ orgId, appId, branchId, limit: 10 }),
+    enabled: !!orgId && !!appId && !!branchId,
+  })
+  const branchRunsList = branchRunsResult?.data
+
   if (isLoading || !run) {
     return (
       <PageSection>
@@ -73,6 +80,23 @@ const BranchRunDetailContent = () => {
   )
   const appConfigId =
     branchRun?.app_config_id || (configStep?.status?.metadata?.app_config_id as string | undefined)
+
+  const previousBranchRun = (() => {
+    if (!branchRunsList || !branchRun) return undefined
+    const sorted = [...branchRunsList].sort(
+      (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+    )
+    const currentIdx = sorted.findIndex((r) => r.app_branch_runs?.at(0)?.id === branchRun.id)
+    if (currentIdx < 0) return undefined
+    for (let i = currentIdx + 1; i < sorted.length; i++) {
+      const prevRun = sorted[i].app_branch_runs?.at(0)
+      if (prevRun?.app_config_id && prevRun.app_config_id !== appConfigId) {
+        return prevRun
+      }
+    }
+    return undefined
+  })()
+  const oldConfigId = previousBranchRun?.app_config_id
 
   return (
     <ConfigDiffFocusContext.Provider value={{ requestFocus: requestConfigFocus }}>
@@ -251,9 +275,8 @@ const BranchRunDetailContent = () => {
           runStatus={status}
         />
 
-        {appConfigId && <AppConfigDiff appConfigId={appConfigId} focus={configFocus} />}
-
         {branchRun?.id && <RuntimeChanges branchId={branchId} appBranchRunId={branchRun.id} />}
+        {appConfigId && <AppConfigDiff appConfigId={appConfigId} oldConfigId={oldConfigId} focus={configFocus} />}
       </PageSection>
     </ConfigDiffFocusContext.Provider>
   )

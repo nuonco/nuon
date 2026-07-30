@@ -3,6 +3,7 @@ package activities
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm/clause"
 
@@ -32,6 +33,10 @@ func (a *Activities) ReconcileInstallActions(ctx context.Context, input *Reconci
 		Select("id", "action_ids").
 		First(&appCfg, "id = ?", install.AppConfigID).Error; err != nil {
 		return fmt.Errorf("unable to get app config: %w", err)
+	}
+
+	if appCfg.ActionIDs == nil {
+		return nil
 	}
 
 	desiredSet := make(map[string]bool, len(appCfg.ActionIDs))
@@ -64,10 +69,15 @@ func (a *Activities) ReconcileInstallActions(ctx context.Context, input *Reconci
 
 		if iaw.StatusV2.Metadata != nil {
 			if _, removed := iaw.StatusV2.Metadata["removed_at_app_config_id"]; removed {
-				delete(iaw.StatusV2.Metadata, "removed_at_app_config_id")
+				restoredStatus := app.CompositeStatus{
+					Status:                 app.StatusPending,
+					StatusHumanDescription: fmt.Sprintf("restored by app config %s", appCfg.ID),
+					CreatedAtTS:            time.Now().Unix(),
+					Metadata:               map[string]any{},
+				}
 				if err := a.db.WithContext(ctx).
 					Model(iaw).
-					Update("status_v2", iaw.StatusV2).Error; err != nil {
+					Update("status_v2", restoredStatus).Error; err != nil {
 					return fmt.Errorf("unable to restore install action workflow %s: %w", iaw.ID, err)
 				}
 			}
@@ -93,13 +103,17 @@ func (a *Activities) ReconcileInstallActions(ctx context.Context, input *Reconci
 			}
 		}
 
-		if iaw.StatusV2.Metadata == nil {
-			iaw.StatusV2.Metadata = make(map[string]any)
+		removedStatus := app.CompositeStatus{
+			Status:                 app.Status("inactive"),
+			StatusHumanDescription: fmt.Sprintf("removed from app config %s", appCfg.ID),
+			CreatedAtTS:            time.Now().Unix(),
+			Metadata: map[string]any{
+				"removed_at_app_config_id": appCfg.ID,
+			},
 		}
-		iaw.StatusV2.Metadata["removed_at_app_config_id"] = appCfg.ID
 		if err := a.db.WithContext(ctx).
 			Model(iaw).
-			Update("status_v2", iaw.StatusV2).Error; err != nil {
+			Update("status_v2", removedStatus).Error; err != nil {
 			return fmt.Errorf("unable to mark install action workflow %s as removed: %w", iaw.ID, err)
 		}
 	}
