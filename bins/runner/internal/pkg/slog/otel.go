@@ -14,38 +14,69 @@ import (
 
 const (
 	defaultOTLPLogsEndpointTmpl string = "%s/v1/log-streams/%s/logs"
+
+	// auditCollectorEndpoint mirrors the receiver the bundled audit-export
+	// collector binds to. Both sides are fixed: the collector is supervised by
+	// this process and only ever listens on loopback.
+	auditCollectorEndpoint string = "http://127.0.0.1:4318/v1/logs"
 )
 
 func NewOTELProvider(cfg *runnerconfig.Config, set *settings.Settings, logStreamID string) (*log.LoggerProvider, error) {
-	if !set.EnableLogging {
-		return log.NewLoggerProvider(), nil
+	opts := []log.LoggerProviderOption{
+		log.WithResource(getResource(set, logStreamID)),
 	}
 
-	ctx := context.Background()
-	ctx, cancelFn := context.WithCancel(ctx)
+	if set.EnableLogging {
+		processor, err := newAPIProcessor(cfg, logStreamID)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, log.WithProcessor(processor))
+	}
 
+	if cfg.OTELAuditExportEnabled {
+		processor, err := newAuditCollectorProcessor()
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, log.WithProcessor(processor))
+	}
+
+	return log.NewLoggerProvider(opts...), nil
+}
+
+func newAPIProcessor(cfg *runnerconfig.Config, logStreamID string) (log.Processor, error) {
 	url := fmt.Sprintf(defaultOTLPLogsEndpointTmpl, cfg.RunnerAPIURL, logStreamID)
-	logExporter, err := otlploghttp.New(ctx,
+	exporter, err := otlploghttp.New(context.Background(),
 		otlploghttp.WithEndpointURL(url),
 		otlploghttp.WithHeaders(map[string]string{
 			"Authorization": "Bearer " + cfg.RunnerAPIToken,
 		}),
 	)
 	if err != nil {
-		cancelFn()
 		return nil, fmt.Errorf("unable to initialize otlp log exporter: %w", err)
 	}
 
-	rsrc := getResource(set)
-	// Create the logger provider
-	lp := log.NewLoggerProvider(
-		log.WithResource(rsrc),
-		log.WithProcessor(
-			log.NewBatchProcessor(logExporter,
-				log.WithExportMaxBatchSize(25),
-				log.WithExportInterval(time.Second*5)),
-		),
-	)
+	return newBatchProcessor(exporter), nil
+}
 
-	return lp, nil
+// newAuditCollectorProcessor ships to the audit-export collector bundled
+// alongside the runner. The collector filters to records tagged
+// nuon.audit="true" before forwarding to the customer's backend, so everything
+// else sent over this hop is dropped there.
+func newAuditCollectorProcessor() (log.Processor, error) {
+	exporter, err := otlploghttp.New(context.Background(),
+		otlploghttp.WithEndpointURL(auditCollectorEndpoint),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to initialize audit collector log exporter: %w", err)
+	}
+
+	return newBatchProcessor(exporter), nil
+}
+
+func newBatchProcessor(exporter log.Exporter) log.Processor {
+	return log.NewBatchProcessor(exporter,
+		log.WithExportMaxBatchSize(25),
+		log.WithExportInterval(time.Second*5))
 }

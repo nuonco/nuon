@@ -12,6 +12,7 @@ import (
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
@@ -42,6 +43,7 @@ type Params struct {
 	QueueClient      *queueclient.Client
 	FlowsClient      *flowclient.Client
 	BlobService      blobstore.Service
+	Audit            *audit.Emitter
 	EndpointAudit    *api.EndpointAudit
 }
 
@@ -63,6 +65,7 @@ type service struct {
 	queueClient      *queueclient.Client
 	flowsClient      *flowclient.Client
 	blobSvc          blobstore.Service
+	audit            *audit.Emitter
 }
 
 var _ api.Service = (*service)(nil)
@@ -391,6 +394,7 @@ func New(params Params) *service {
 		featuresClient:   params.FeaturesClient,
 		flowsClient:      params.FlowsClient,
 		blobSvc:          params.BlobService,
+		audit:            params.Audit,
 	}
 }
 

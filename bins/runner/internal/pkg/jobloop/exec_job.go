@@ -81,25 +81,23 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	// so the entire job execution forms a single trace. Job metadata goes onto
 	// ctx so op.Start can stamp it on every descendant span without each
 	// callsite having to repeat itself.
-	ctx = pkgctx.SetJobMetadata(ctx, pkgctx.JobMetadata{
-		RunnerJobID:          job.ID,
-		RunnerJobExecutionID: execution.ID,
-	})
+	ctx = pkgctx.SetJobMetadata(ctx, jobs.AuditMetadata(job, execution.ID, ""))
 	// Stash the process-scoped TracerProvider into ctx so op.Start sees it
 	// and we don't get poisoned by transitive deps that overwrite the OTEL
 	// global (notably the docker distribution registry).
 	tp := j.processRegistrar.TracerProvider()
 	ctx = pkgctx.SetTracerProvider(ctx, tp)
 	tracer := tp.Tracer("github.com/nuonco/nuon/bins/runner/jobloop")
+	rootSpanAttrs := append([]attribute.KeyValue{
+		attribute.String("nuon.tool", "runner"),
+		attribute.String("nuon.job.type", string(job.Type)),
+		attribute.String("nuon.job.operation", string(job.Operation)),
+		attribute.String("runner_job.id", job.ID),
+		attribute.String("runner_job_execution.id", execution.ID),
+	}, jobs.AuditAttrs(job)...)
 	ctx, rootSpan := tracer.Start(ctx, "job."+string(job.Type),
 		trace.WithSpanKind(trace.SpanKindInternal),
-		trace.WithAttributes(
-			attribute.String("nuon.tool", "runner"),
-			attribute.String("nuon.job.type", string(job.Type)),
-			attribute.String("nuon.job.operation", string(job.Operation)),
-			attribute.String("runner_job.id", job.ID),
-			attribute.String("runner_job_execution.id", execution.ID),
-		),
+		trace.WithAttributes(rootSpanAttrs...),
 	)
 	// Re-wrap `l` with pkgctx.ContextField(ctx) so the otelzap bridge can
 	// extract the rootSpan on every emit. Without this, every "creating job
@@ -119,11 +117,18 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	ctx = errcapture.NewContext(ctx, capture)
 
 	ctx = pkgctx.SetLogger(ctx, l)
+
+	auditL := log.NewAudit(l, job)
+	log.AuditEvent(auditL, "job execution started", log.OutcomeStarted)
+
 	var jobErr error
 	defer func() {
 		if jobErr != nil {
+			log.AuditEvent(auditL, "job execution failed", log.OutcomeFailed, zap.Error(jobErr))
 			rootSpan.RecordError(jobErr)
 			rootSpan.SetStatus(codes.Error, jobErr.Error())
+		} else {
+			log.AuditEvent(auditL, "job execution finished", log.OutcomeSucceeded)
 		}
 		rootSpan.End()
 	}()
@@ -145,7 +150,8 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 			j.errRecorder.Record("no handler found", updateErr)
 		}
 
-		return err
+		jobErr = err
+		return jobErr
 	}
 
 	// If sandbox mode, fetch config from API and replace handler
@@ -193,29 +199,34 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		// Stamp the step name onto JobMetadata so anything launched inside
 		// the step (op.Start callsites in deploy / sandbox handlers)
 		// inherits it.
-		stepCtx := pkgctx.SetJobMetadata(ctx, pkgctx.JobMetadata{
-			RunnerJobID:          job.ID,
-			RunnerJobExecutionID: execution.ID,
-			StepName:             step.name,
-		})
+		stepCtx := pkgctx.SetJobMetadata(ctx, jobs.AuditMetadata(job, execution.ID, step.name))
+		stepSpanAttrs := append([]attribute.KeyValue{
+			attribute.String("nuon.tool", "runner"),
+			attribute.String("runner_job_execution_step.name", step.name),
+			attribute.String("runner_job.id", job.ID),
+			attribute.String("runner_job_execution.id", execution.ID),
+		}, jobs.AuditAttrs(job)...)
 		stepCtx, stepSpan := tracer.Start(stepCtx, "step."+step.name,
 			trace.WithSpanKind(trace.SpanKindInternal),
-			trace.WithAttributes(
-				attribute.String("nuon.tool", "runner"),
-				attribute.String("runner_job_execution_step.name", step.name),
-				attribute.String("runner_job.id", job.ID),
-				attribute.String("runner_job_execution.id", execution.ID),
-			),
+			trace.WithAttributes(stepSpanAttrs...),
 		)
 		// Step-scope logger picks up the step span via ContextField so the
 		// "executing job step …" marker lands on the step span instead of
 		// the parent rootSpan.
 		stepL := l.With(pkgctx.ContextField(stepCtx))
 		stepL.Info("executing job step "+step.name, zap.String("step", step.name))
+
+		stepAuditL := log.NewAudit(stepL, job)
+		stepNameField := zap.String("runner_job_execution_step.name", step.name)
+		log.AuditEvent(stepAuditL, "job step started", log.OutcomeStarted, stepNameField)
+
 		stepErr := j.execJobStep(stepCtx, stepL, jl, step, job, execution)
 		if stepErr != nil {
+			log.AuditEvent(stepAuditL, "job step failed", log.OutcomeFailed, stepNameField, zap.Error(stepErr))
 			stepSpan.RecordError(stepErr)
 			stepSpan.SetStatus(codes.Error, stepErr.Error())
+		} else {
+			log.AuditEvent(stepAuditL, "job step finished", log.OutcomeSucceeded, stepNameField)
 		}
 		stepSpan.End()
 		if stepErr != nil {

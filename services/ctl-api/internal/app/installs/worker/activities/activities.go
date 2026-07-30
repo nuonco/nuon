@@ -15,6 +15,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
@@ -40,6 +41,7 @@ type Params struct {
 	BlobService       blobstore.Service
 	Features          *features.Features
 	L                 *zap.Logger
+	Audit             *audit.Emitter
 	AccountsHelpers   *account.Client
 	TClient           temporalclient.Client
 }
@@ -61,6 +63,7 @@ type Activities struct {
 	vcsHelpers        *vcshelpers.Helpers
 	features          *features.Features
 	l                 *zap.Logger
+	audit             *audit.Emitter
 	accountsHelpers   *account.Client
 	tClient           temporalclient.Client
 }
@@ -83,6 +86,7 @@ func New(params Params) *Activities {
 		componentsHelpers: params.ComponentsHelpers,
 		features:          params.Features,
 		l:                 params.L,
+		audit:             params.Audit,
 		accountsHelpers:   params.AccountsHelpers,
 		tClient:           params.TClient,
 	}

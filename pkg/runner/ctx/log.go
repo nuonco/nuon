@@ -77,6 +77,15 @@ type JobMetadata struct {
 	RunnerJobID          string
 	RunnerJobExecutionID string
 	StepName             string
+
+	// Audit context. Only the dimensions worth querying spans by live here;
+	// the rest of the audit envelope rides on the job logger, which every
+	// descendant log inherits.
+	JobGroup     string
+	JobOperation string
+	Executor     string
+	OrgID        string
+	InstallID    string
 }
 
 type jobMetaCtxKey struct{}

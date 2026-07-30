@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -294,6 +295,22 @@ func (s *service) createInstallDeploy(ctx context.Context, installID string, req
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create install deploy: %w", res.Error)
 	}
+
+	s.audit.Emit(ctx, audit.Event{
+		Type:        audit.EventInstallDeploy,
+		Message:     "install deploy created",
+		Outcome:     audit.OutcomeStarted,
+		InstallID:   installID,
+		ComponentID: build.ComponentConfigConnection.ComponentID,
+		SubjectID:   deploy.ID,
+		SubjectType: "install_deploys",
+		Attrs: map[string]string{
+			"deploy.id":            deploy.ID,
+			"deploy.type":          string(typ),
+			"component_build.id":   req.BuildID,
+			"install_component.id": installCmp.ID,
+		},
+	})
 
 	return &deploy, nil
 }

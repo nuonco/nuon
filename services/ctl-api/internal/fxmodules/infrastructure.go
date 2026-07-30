@@ -13,6 +13,7 @@ import (
 	notebookclient "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
@@ -60,6 +61,7 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.WithLogger(pkglog.NewFXLog),
 	fx.Provide(log.New),
 	fx.Provide(dblog.New),
+	fx.Provide(audit.New),
 
 	// Query collector (enabled by debug_enable_query_collector config)
 	fx.Provide(func(cfg *internal.Config) *querycollector.Collector {
