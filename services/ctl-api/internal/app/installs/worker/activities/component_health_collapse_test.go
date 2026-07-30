@@ -549,3 +549,52 @@ func TestUnknownCustomCheckDoesNotMaskHealthy(t *testing.T) {
 		assert.Equal(t, "audit", reports[0].RootName)
 	})
 }
+
+// A pushed check declaring a 30m window must survive past the global 5m
+// staleness cutoff. Before this, a check-only component (a terraform module
+// with a nightly audit) read unknown between pushes — the exact case the TTL
+// was added for. Helm components hid it, because runner reports kept them fresh.
+func TestCustomCheckTTLSurvivesGlobalStaleness(t *testing.T) {
+	t.Parallel()
+
+	a := &Activities{}
+	now := time.Date(2026, 7, 30, 12, 0, 0, 0, time.UTC)
+	terraform := app.Component{Type: app.ComponentTypeTerraformModule}
+
+	checkOnly := func(ttlSeconds uint32, pushedAgo time.Duration) []componentHealthReport {
+		return collapseComponentHealthRows([]app.InstallComponentResourceState{{
+			InstallComponentID: "ic1",
+			Provider:           providerCustom,
+			Kind:               "CustomCheck",
+			Name:               "nightly-audit",
+			Health:             "healthy",
+			ObservedAt:         now.Add(-pushedAgo),
+			StaleAfterSeconds:  ttlSeconds,
+		}})["ic1"]
+	}
+	ic := func() *app.InstallComponent {
+		return &app.InstallComponent{
+			Status:       app.InstallComponentStatusActive,
+			HealthStatus: app.InstallComponentHealthStatusHealthy,
+			Component:    terraform,
+		}
+	}
+
+	t.Run("30m ttl still counts at 10m", func(t *testing.T) {
+		assert.Equal(t, app.InstallComponentHealthStatusHealthy,
+			a.componentVerdict(ic(), checkOnly(1800, 10*time.Minute), now),
+			"the check declared 30m; 10m is well inside it")
+	})
+
+	t.Run("30m ttl goes unknown past 30m", func(t *testing.T) {
+		assert.Equal(t, app.InstallComponentHealthStatusUnknown,
+			a.componentVerdict(ic(), checkOnly(1800, 35*time.Minute), now),
+			"past its own window the check stops counting")
+	})
+
+	t.Run("no ttl still uses the 5m default", func(t *testing.T) {
+		assert.Equal(t, app.InstallComponentHealthStatusUnknown,
+			a.componentVerdict(ic(), checkOnly(0, 6*time.Minute), now),
+			"a check that declared nothing gets the default, not forever")
+	})
+}

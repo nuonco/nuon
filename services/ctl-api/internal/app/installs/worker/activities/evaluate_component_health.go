@@ -299,10 +299,13 @@ func applyCustomChecks(reports []componentHealthReport, customs []customCheckObs
 				continue
 			}
 			seen[c.ObservedAt.UnixNano()] = true
+			// No runner report to hang this on, so the check's own window is
+			// what keeps the component out of unknown.
 			reports = append(reports, componentHealthReport{
 				ObservedAt:     c.ObservedAt,
 				Health:         app.InstallComponentHealthStatusHealthy,
 				ResourceCounts: map[string]int{},
+				ValidFor:       c.staleAfter(),
 			})
 		}
 		sort.Slice(reports, func(i, j int) bool {
