@@ -12,6 +12,7 @@ type UpdateAppBranchConfigIDsInput struct {
 	AppBranchConfigID string   `json:"app_branch_config_id" validate:"required"`
 	ComponentIDs      []string `json:"component_ids"`
 	ActionIDs         []string `json:"action_ids"`
+	RunbookIDs        []string `json:"runbook_ids"`
 }
 
 // @temporal-gen-v2 activity
@@ -25,6 +26,7 @@ func (a *Activities) updateAppBranchConfigIDs(ctx context.Context, req *UpdateAp
 	updates := map[string]interface{}{
 		"component_ids": pq.StringArray(req.ComponentIDs),
 		"action_ids":    pq.StringArray(req.ActionIDs),
+		"runbook_ids":   pq.StringArray(req.RunbookIDs),
 	}
 
 	if res := a.db.WithContext(ctx).Model(&app.AppBranchConfig{}).

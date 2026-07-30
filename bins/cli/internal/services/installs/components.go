@@ -7,10 +7,11 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/paginate"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	nuon "github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) Components(ctx context.Context, installID string, offset, limit int, asJSON bool) error {
+func (s *Service) Components(ctx context.Context, installID string, offset, limit int, showAll, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -18,7 +19,7 @@ func (s *Service) Components(ctx context.Context, installID string, offset, limi
 	view := ui.NewListView()
 
 	fetch := func(off, lim int) ([]*models.AppInstallComponent, bool, error) {
-		return s.listComponents(ctx, installID, off, lim)
+		return s.listComponents(ctx, installID, off, lim, showAll)
 	}
 
 	var (
@@ -89,11 +90,16 @@ func (s *Service) Components(ctx context.Context, installID string, offset, limi
 	return nil
 }
 
-func (s *Service) listComponents(ctx context.Context, installID string, offset, limit int) ([]*models.AppInstallComponent, bool, error) {
+func (s *Service) listComponents(ctx context.Context, installID string, offset, limit int, showAll bool) ([]*models.AppInstallComponent, bool, error) {
+	opts := nuon.GetInstallComponentsOpts{}
+	if showAll {
+		f := false
+		opts.Synced = &f
+	}
 	cmps, hasMore, err := s.api.GetInstallComponents(ctx, installID, &models.GetPaginatedQuery{
 		Offset: offset,
 		Limit:  limit,
-	})
+	}, opts)
 	if err != nil {
 		return nil, false, err
 	}

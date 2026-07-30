@@ -247,7 +247,27 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
         </div>
       }
     >
-      <div className="p-5 border-t">
+      <div className="p-5 border-t border-cool-grey-100 dark:border-dark-grey-800">
+        {version.app_branch_run?.vcs_connection_commit && (
+          <div className="flex items-center gap-2 mb-4 px-3 py-2.5 rounded-lg bg-cool-grey-50 dark:bg-dark-grey-800">
+            {version.app_branch_run?.app_branch?.name && (
+              <Badge size="sm" theme="info">
+                {version.app_branch_run.app_branch.name}
+              </Badge>
+            )}
+            <Text variant="subtext" theme="neutral" className="font-mono">
+              {version.app_branch_run.vcs_connection_commit.sha?.slice(0, 7)}
+            </Text>
+            <Text variant="subtext" theme="neutral" className="truncate">
+              {version.app_branch_run.vcs_connection_commit.message}
+            </Text>
+            {version.app_branch_run?.pr_number && (
+              <Badge size="sm" theme="neutral">
+                PR #{version.app_branch_run.pr_number}
+              </Badge>
+            )}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <LabeledValue label="Old config">
             {version.old_app_config_id ? (
@@ -276,6 +296,14 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
                 {key}: {value}
               </Badge>
             ))}
+          {version.app_branch_run_id && version.app_branch_run?.app_branch && org?.id && (
+            <Link
+              href={`/${org.id}/apps/${install?.app_id}/branches/${version.app_branch_run.app_branch_id}/runs/${version.app_branch_run_id}`}
+              className="text-xs"
+            >
+              View branch run
+            </Link>
+          )}
           {version.workflow_id && org?.id && install?.id && (
             <Link
               href={`/${org.id}/installs/${install.id}/workflows/${version.workflow_id}`}

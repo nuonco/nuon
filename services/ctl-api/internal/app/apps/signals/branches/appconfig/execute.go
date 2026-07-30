@@ -248,6 +248,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			AppBranchConfigID: branch.Configs[0].ID,
 			ComponentIDs:      syncResp.ComponentIDs,
 			ActionIDs:         syncResp.ActionIDs,
+			RunbookIDs:        syncResp.RunbookIDs,
 		},
 	}); err != nil {
 		l.Warn("unable to update app branch config IDs", "error", err)
@@ -307,7 +308,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			ID: s.StepID,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusSuccess,
-				StatusHumanDescription: fmt.Sprintf("synced %d components, %d actions", len(syncResp.ComponentIDs), len(syncResp.ActionIDs)),
+				StatusHumanDescription: fmt.Sprintf("synced %d components, %d actions, %d runbooks", len(syncResp.ComponentIDs), len(syncResp.ActionIDs), len(syncResp.RunbookIDs)),
 				Metadata:               meta,
 			},
 		})
