@@ -56,9 +56,6 @@ type AppAppConfig struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
-	// trigger rules
-	TriggerRules []*AppTriggerRule `json:"trigger_rules"`
-
 	// id
 	ID string `json:"id,omitempty"`
 
@@ -113,6 +110,9 @@ type AppAppConfig struct {
 	// status v2
 	StatusV2 *AppCompositeStatus `json:"status_v2,omitempty"`
 
+	// trigger rules
+	TriggerRules []*AppTriggerRule `json:"trigger_rules"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
@@ -140,10 +140,6 @@ func (m *AppAppConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateComponentConfigConnections(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateTriggerRules(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -192,6 +188,10 @@ func (m *AppAppConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateStatusV2(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTriggerRules(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -300,36 +300,6 @@ func (m *AppAppConfig) validateComponentConfigConnections(formats strfmt.Registr
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
 					return ce.ValidateName("component_config_connections" + "." + strconv.Itoa(i))
-				}
-
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-func (m *AppAppConfig) validateTriggerRules(formats strfmt.Registry) error {
-	if swag.IsZero(m.TriggerRules) { // not required
-		return nil
-	}
-
-	for i := 0; i < len(m.TriggerRules); i++ {
-		if swag.IsZero(m.TriggerRules[i]) { // not required
-			continue
-		}
-
-		if m.TriggerRules[i] != nil {
-			if err := m.TriggerRules[i].Validate(formats); err != nil {
-				ve := new(errors.Validation)
-				if stderrors.As(err, &ve) {
-					return ve.ValidateName("trigger_rules" + "." + strconv.Itoa(i))
-				}
-				ce := new(errors.CompositeError)
-				if stderrors.As(err, &ce) {
-					return ce.ValidateName("trigger_rules" + "." + strconv.Itoa(i))
 				}
 
 				return err
@@ -615,6 +585,36 @@ func (m *AppAppConfig) validateStatusV2(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppAppConfig) validateTriggerRules(formats strfmt.Registry) error {
+	if swag.IsZero(m.TriggerRules) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.TriggerRules); i++ {
+		if swag.IsZero(m.TriggerRules[i]) { // not required
+			continue
+		}
+
+		if m.TriggerRules[i] != nil {
+			if err := m.TriggerRules[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("trigger_rules" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("trigger_rules" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *AppAppConfig) validateVcsConnectionCommit(formats strfmt.Registry) error {
 	if swag.IsZero(m.VcsConnectionCommit) { // not required
 		return nil
@@ -655,10 +655,6 @@ func (m *AppAppConfig) ContextValidate(ctx context.Context, formats strfmt.Regis
 	}
 
 	if err := m.contextValidateComponentConfigConnections(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateTriggerRules(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -707,6 +703,10 @@ func (m *AppAppConfig) ContextValidate(ctx context.Context, formats strfmt.Regis
 	}
 
 	if err := m.contextValidateStatusV2(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateTriggerRules(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -817,35 +817,6 @@ func (m *AppAppConfig) contextValidateComponentConfigConnections(ctx context.Con
 				ce := new(errors.CompositeError)
 				if stderrors.As(err, &ce) {
 					return ce.ValidateName("component_config_connections" + "." + strconv.Itoa(i))
-				}
-
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-func (m *AppAppConfig) contextValidateTriggerRules(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.TriggerRules); i++ {
-
-		if m.TriggerRules[i] != nil {
-
-			if swag.IsZero(m.TriggerRules[i]) { // not required
-				return nil
-			}
-
-			if err := m.TriggerRules[i].ContextValidate(ctx, formats); err != nil {
-				ve := new(errors.Validation)
-				if stderrors.As(err, &ve) {
-					return ve.ValidateName("trigger_rules" + "." + strconv.Itoa(i))
-				}
-				ce := new(errors.CompositeError)
-				if stderrors.As(err, &ce) {
-					return ce.ValidateName("trigger_rules" + "." + strconv.Itoa(i))
 				}
 
 				return err
@@ -1146,6 +1117,35 @@ func (m *AppAppConfig) contextValidateStatusV2(ctx context.Context, formats strf
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppAppConfig) contextValidateTriggerRules(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.TriggerRules); i++ {
+
+		if m.TriggerRules[i] != nil {
+
+			if swag.IsZero(m.TriggerRules[i]) { // not required
+				return nil
+			}
+
+			if err := m.TriggerRules[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("trigger_rules" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("trigger_rules" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil
