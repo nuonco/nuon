@@ -34,19 +34,6 @@ export const Default = () => (
     editButton={<MockEditButton />}
     deploymentPlanButton={<MockDeploymentPlanButton />}
     deleteButton={<MockDeleteButton />}
-    hasDeploymentPlan={true}
-    isTriggerPending={false}
-    onTriggerRun={noop}
-    onTriggerPreview={noop}
-  />
-)
-
-export const NoDeploymentPlan = () => (
-  <BranchDetailActions
-    editButton={<MockEditButton />}
-    deploymentPlanButton={<MockDeploymentPlanButton />}
-    deleteButton={<MockDeleteButton />}
-    hasDeploymentPlan={false}
     isTriggerPending={false}
     onTriggerRun={noop}
     onTriggerPreview={noop}
@@ -58,7 +45,6 @@ export const TriggerPending = () => (
     editButton={<MockEditButton />}
     deploymentPlanButton={<MockDeploymentPlanButton />}
     deleteButton={<MockDeleteButton />}
-    hasDeploymentPlan={true}
     isTriggerPending={true}
     onTriggerRun={noop}
     onTriggerPreview={noop}
