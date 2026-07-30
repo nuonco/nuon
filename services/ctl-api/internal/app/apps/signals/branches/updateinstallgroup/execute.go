@@ -95,8 +95,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		},
 	})
 
-	s.recordAppConfigVersions(ctx, enqueued, installEntries, run)
-
 	return awaitErr
 }
 

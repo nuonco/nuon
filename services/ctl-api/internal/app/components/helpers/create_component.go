@@ -46,9 +46,5 @@ func (h *Helpers) CreateComponent(ctx context.Context, params *CreateComponentPa
 		}
 	}
 
-	if err := h.EnsureInstallComponents(ctx, params.AppID, nil); err != nil {
-		return nil, fmt.Errorf("unable to ensure install components: %w", err)
-	}
-
 	return &component, nil
 }

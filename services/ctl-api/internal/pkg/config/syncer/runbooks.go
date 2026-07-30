@@ -49,14 +49,6 @@ func (s *syncer) ensureRunbook(ctx context.Context, runbook *config.RunbookConfi
 		}
 	}
 
-	// Ensure install runbooks for all existing installs
-	if err := s.runbooksHelpers.EnsureInstallRunbooks(ctx, s.appID, nil); err != nil {
-		return sync.SyncInternalErr{
-			Description: fmt.Sprintf("unable to ensure install runbooks for %s", runbook.Name),
-			Err:         err,
-		}
-	}
-
 	return nil
 }
 
