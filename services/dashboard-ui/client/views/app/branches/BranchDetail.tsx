@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
-import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -19,7 +18,8 @@ import { useBranch } from '@/hooks/use-branch'
 import { BranchProvider } from '@/providers/branch-provider'
 
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
-import { DeploymentPlanGraph } from '@/components/branches/DeploymentPlanGraph'
+import { DeploymentPlanSection } from '@/components/branches/DeploymentPlanSection'
+import { EditDeploymentPlanButton } from '@/components/branches/DeploymentPlanEditor'
 import { WorkflowTimelineComponent } from '@/components/workflows/WorkflowTimeline'
 import { getBranchWorkflowRuns, getAppInstalls } from '@/lib'
 import type { TInstall } from '@/types'
@@ -28,8 +28,8 @@ const LIMIT = 20
 
 const BranchDetailContent = () => {
   const { org } = useOrg()
-  const { app } = useApp()
-  const { branch } = useBranch()
+  const { app, labelColors } = useApp()
+  const { branch, refresh } = useBranch()
   const params = useParams()
   const [searchParams] = useSearchParams()
   const orgId = params.orgId as string
@@ -131,34 +131,30 @@ const BranchDetailContent = () => {
         />
       </div>
 
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <Text variant="base" weight="strong">
-            Install groups
-          </Text>
-          {currentConfig && (
-            <Badge theme="info" size="sm">
-              v{currentConfig.config_number}
-            </Badge>
-          )}
-        </div>
-
-        {!currentConfig ? (
-          <div className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-lg p-6">
-            <EmptyState
-              variant="diagram"
-              emptyTitle="No install groups yet"
-              emptyMessage={`Use "Deployment plan" above to group installs for staged deployment.`}
-            />
-          </div>
-        ) : (
-          <DeploymentPlanGraph
-            config={currentConfig}
-            installsById={installsById}
-            orgId={orgId}
+      <DeploymentPlanSection
+        config={currentConfig}
+        installsById={installsById}
+        orgId={orgId}
+        labelColors={labelColors}
+        createAction={
+          <EditDeploymentPlanButton
+            branch={branch}
+            currentConfig={currentConfig}
+            variant="secondary"
+            label="Create deployment plan"
+            onSuccess={refresh}
           />
-        )}
-      </div>
+        }
+        editAction={
+          <EditDeploymentPlanButton
+            branch={branch}
+            currentConfig={currentConfig}
+            variant="ghost"
+            label="Edit plan"
+            onSuccess={refresh}
+          />
+        }
+      />
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
@@ -172,7 +168,7 @@ const BranchDetailContent = () => {
             <EmptyState
               variant="history"
               emptyTitle="No workflow runs yet"
-              emptyMessage={`Use "Trigger run" above to start a deployment.`}
+              emptyMessage="Runs will appear here once you trigger a deployment of this branch."
             />
           </Card>
         ) : (

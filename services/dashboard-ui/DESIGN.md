@@ -146,6 +146,11 @@ These are the specific inconsistencies that make the UI look "off". Treat each a
 6. **No layout-thrash animation / flicker.** See §7 (container queries) — labels must not flip
    between states on interaction.
 7. **No orphaned dark mode.** Every surface/border/text color must be correct in both themes.
+8. **Never two primary buttons on a page.** A page (or any single view/surface) has exactly one
+   `variant="primary"` action — the single most important thing the user is expected to do here.
+   Every other action, including the CTA in an empty state, is `secondary`/`ghost`. This holds even
+   when the page's primary button is disabled — a disabled primary still counts, so don't add a
+   second primary elsewhere to compensate. If two actions feel equally important, one of them isn't.
 
 ---
 
@@ -213,8 +218,8 @@ inside `labelProps`:
 - Variants: `primary | secondary | ghost | danger | tab | icon`.
 - `icon` = square, icon-only (`aspect-square rounded-md !p-0`, ghost-style hover/focus). Use for
   caret/arrow affordances next to a row instead of a bordered button.
-- One **primary** action per surface; everything else `secondary`/`ghost`. `danger` only for
-  destructive actions.
+- One **primary** action per surface — never two primary buttons on the same page (see §4.8);
+  everything else `secondary`/`ghost`. `danger` only for destructive actions.
 
 ### Tables
 Prefer the Stratus `Table`. If you must hand-roll (e.g. inside a modal), mirror its styling:

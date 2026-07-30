@@ -291,7 +291,7 @@ export const InstallBranches = ({ branches, orgId, appId, installId }: IInstallB
       <EmptyState
         variant="diagram"
         emptyTitle="No app branches connected"
-        emptyMessage="Add labels to this install to connect it to an app branch deployment group."
+        emptyMessage="Add labels to this install to connect it to an app branch install group."
       />
     )
   }

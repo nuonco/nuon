@@ -15,41 +15,43 @@ export const Menu = ({ className, children, ...props }: IMenu) => {
       role="menu"
       {...props}
     >
-      {React.Children.map(children, (c) =>
-        React.isValidElement(c)
-          ? c.type === Button ||
-            c.type === Link ||
-            (c as any)?.props?.isMenuButton
-            ? React.cloneElement<IButtonAsButton | ILink>(c, {
-                variant: 'ghost',
-                className: cn(
-                  '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md',
-                  c?.props.className,
-                  {
-                    '!text-red-600 dark:!text-red-400':
-                      c?.props?.variant === 'danger',
-                  }
-                ),
-              })
-            : c.type === Dropdown || (c as any).isMenuDropdown
-              ? React.cloneElement(c as React.ReactElement<IDropdown>, {
-                  variant: 'ghost',
-                  buttonClassName:
-                    '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md',
-                })
-              : c.type === Text
-                ? React.cloneElement<IText>(c, {
-                    className: 'px-1.5 py-1',
-                    variant: 'label',
-                    theme: 'neutral',
-                  })
-                : c.type === 'hr'
-                  ? React.cloneElement<IText>(c, {
-                      className: 'my-1',
-                    })
-                  : c
-          : null
-      )}
+      {React.Children.map(children, (c) => {
+        if (!React.isValidElement(c)) return null
+
+        const childProps = (c as any).props ?? {}
+        const menuItemClass =
+          '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md'
+
+        if (c.type === Button || c.type === Link || childProps.isMenuButton) {
+          const isDanger = childProps.variant === 'danger'
+          return React.cloneElement<IButtonAsButton | ILink>(c, {
+            variant: isDanger ? 'danger' : 'ghost',
+            isMenuButton: isDanger ? true : childProps.isMenuButton,
+            className: cn(menuItemClass, childProps.className),
+          })
+        }
+
+        if (c.type === Dropdown || childProps.isMenuDropdown) {
+          return React.cloneElement(c as React.ReactElement<IDropdown>, {
+            variant: 'ghost',
+            buttonClassName: menuItemClass,
+          })
+        }
+
+        if (c.type === Text) {
+          return React.cloneElement<IText>(c, {
+            className: 'px-1.5 py-1',
+            variant: 'label',
+            theme: 'neutral',
+          })
+        }
+
+        if (c.type === 'hr') {
+          return React.cloneElement(c, { className: 'my-1' })
+        }
+
+        return c
+      })}
     </div>
   )
 }
