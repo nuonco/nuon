@@ -24,6 +24,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	pkglog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
@@ -74,6 +75,9 @@ var InfrastructureModule = fx.Module("infrastructure",
 	// Database connections
 	fx.Provide(psql.AsPSQL(psql.New)),
 	fx.Provide(ch.AsCH(ch.New)),
+
+	// Kafka producer
+	fx.Provide(kafka.New),
 
 	// Query collector ClickHouse writer (optional, writes captured queries to CH)
 	fx.Invoke(func(lc fx.Lifecycle, p queryWriterParams) {

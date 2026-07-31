@@ -22,6 +22,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
@@ -41,6 +42,7 @@ type Params struct {
 	EndpointAudit        *apiPkg.EndpointAudit
 	RunnerHeartbeatCache *RunnerHeartbeatCache
 	Heartbeater          *heartbeater.Heartbeater
+	Kafka                *kafka.Producer
 	FeaturesClient       *features.Features
 	TemporalClient       temporalclient.Client
 	RunnerJobWake        *RunnerJobWakeRegistry
@@ -62,6 +64,7 @@ type service struct {
 	installsHelpers      *installshelpers.Helpers
 	runnerHeartbeatCache *RunnerHeartbeatCache
 	heartbeater          *heartbeater.Heartbeater
+	kafka                *kafka.Producer
 	featuresClient       *features.Features
 	temporalClient       temporalclient.Client
 	runnerJobWake        *RunnerJobWakeRegistry
@@ -396,6 +399,7 @@ func New(params Params) *service {
 		installsHelpers:      params.InstallsHelpers,
 		runnerHeartbeatCache: params.RunnerHeartbeatCache,
 		heartbeater:          params.Heartbeater,
+		kafka:                params.Kafka,
 		featuresClient:       params.FeaturesClient,
 		temporalClient:       params.TemporalClient,
 		runnerJobWake:        params.RunnerJobWake,

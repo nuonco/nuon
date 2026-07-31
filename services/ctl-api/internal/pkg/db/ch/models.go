@@ -22,6 +22,8 @@ func AllModels() []any {
 		&app.InstallComponentResourceState{},
 		&app.InstallComponentHealthTransition{},
 
+		&app.DLQRecord{},
+
 		// noted but not migrated
 		// &app.LatestRunnerHeartBeat{},
 	}

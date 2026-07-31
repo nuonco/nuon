@@ -18,6 +18,7 @@ func Execute() {
 	c.registerAdminDashboardAPI()
 	c.registerSlackAPI()
 	c.registerWorker()
+	c.registerConsumer()
 	c.registerStartup()
 
 	if err := rootCmd.Execute(); err != nil {

@@ -30,6 +30,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -41,6 +42,7 @@ type Activities struct {
 	mw               metrics.Writer
 	blobSvc          blobstore.Service
 	statusActivities *statusactivities.Activities
+	kafka            *kafka.Producer
 }
 
 type ActivityParams struct {
@@ -54,6 +56,7 @@ type ActivityParams struct {
 
 	BlobSvc          blobstore.Service
 	StatusActivities *statusactivities.Activities
+	Kafka            *kafka.Producer
 }
 
 func NewActivities(params ActivityParams) *Activities {
@@ -65,6 +68,7 @@ func NewActivities(params ActivityParams) *Activities {
 		mw:               params.MW,
 		blobSvc:          params.BlobSvc,
 		statusActivities: params.StatusActivities,
+		kafka:            params.Kafka,
 	}
 }
 
