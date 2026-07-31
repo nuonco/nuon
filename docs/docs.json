@@ -124,7 +124,9 @@
               "concepts/workflows",
               "concepts/actions",
               "concepts/policies",
-              "concepts/operation-roles"
+              "concepts/operation-roles",
+              "concepts/api-tokens",
+              "concepts/service-accounts"
             ]
           }
         ]
