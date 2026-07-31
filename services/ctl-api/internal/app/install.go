@@ -97,6 +97,11 @@ type Install struct {
 	SandboxHealthStatus  string `json:"sandbox_health_status,omitzero" gorm:"column:sandbox_health_status;default:''" temporaljson:"sandbox_health_status,omitzero,omitempty"`
 	SandboxHealthMessage string `json:"sandbox_health_message,omitzero" gorm:"column:sandbox_health_message;default:''" temporaljson:"sandbox_health_message,omitzero,omitempty"`
 
+	// LastHealthReportAt is when a runner last reported component health. It is
+	// how the staleness sweep finds installs that went quiet without polling
+	// every install individually.
+	LastHealthReportAt *time.Time `json:"last_health_report_at,omitzero" gorm:"column:last_health_report_at" temporaljson:"last_health_report_at,omitzero,omitempty"`
+
 	// CloudPlatformMetadata records the cloud account this install is expected to
 	// run in, and what it was observed running in. See the type for the trust model.
 	CloudPlatformMetadata CloudPlatformMetadata `json:"cloud_platform_metadata,omitzero" gorm:"type:jsonb" swaggertype:"object" temporaljson:"cloud_platform_metadata,omitzero,omitempty"`
@@ -178,6 +183,12 @@ func (i *Install) Indexes(db *gorm.DB) []migrations.Index {
 			Name: indexes.Name(db, &Install{}, "org_id"),
 			Columns: []string{
 				"org_id",
+			},
+		},
+		{
+			Name: indexes.Name(db, &Install{}, "last_health_report_at"),
+			Columns: []string{
+				"last_health_report_at",
 			},
 		},
 	}
