@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	appconfigupdated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appconfigupdated"
 )
 
 type EnsureOrgQueueRequest struct {
@@ -34,7 +36,8 @@ type EnqueueAppConfigUpdatedRequest struct {
 // @temporal-gen-v2 activity
 // @by-field InstallID
 func (a *Activities) EnqueueAppConfigUpdated(ctx context.Context, req EnqueueAppConfigUpdatedRequest) error {
-	return a.installsHelpers.EnqueueAppConfigUpdated(ctx, req.InstallID)
+	return a.installsHelpers.EnqueueInstallSignal(ctx, req.InstallID, installshelpers.InstallSignalsQueueName,
+		&appconfigupdated.Signal{InstallID: req.InstallID})
 }
 
 type EnsureAppQueueRequest struct {

@@ -24,10 +24,3 @@ func (h *Helpers) EnqueueInstallSignal(ctx context.Context, installID, queueName
 	})
 	return err
 }
-
-// EnqueueAppConfigUpdated re-enqueues appconfig-updated so drift/action cron
-// emitters get reconciled onto the namespace-correct dedicated cron queues.
-func (h *Helpers) EnqueueAppConfigUpdated(ctx context.Context, installID string) error {
-	return h.EnqueueInstallSignal(ctx, installID, InstallSignalsQueueName,
-		queuesignal.NewRaw("appconfig-updated", map[string]any{"install_id": installID}))
-}
