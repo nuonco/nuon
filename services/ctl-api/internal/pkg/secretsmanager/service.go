@@ -11,6 +11,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awssm "github.com/aws/aws-sdk-go-v2/service/secretsmanager"
@@ -53,6 +54,7 @@ type api interface {
 	PutResourcePolicy(context.Context, *awssm.PutResourcePolicyInput, ...func(*awssm.Options)) (*awssm.PutResourcePolicyOutput, error)
 	DeleteSecret(context.Context, *awssm.DeleteSecretInput, ...func(*awssm.Options)) (*awssm.DeleteSecretOutput, error)
 	RestoreSecret(context.Context, *awssm.RestoreSecretInput, ...func(*awssm.Options)) (*awssm.RestoreSecretOutput, error)
+	TagResource(context.Context, *awssm.TagResourceInput, ...func(*awssm.Options)) (*awssm.TagResourceOutput, error)
 }
 
 type EnsureSecretInput struct {
@@ -62,6 +64,12 @@ type EnsureSecretInput struct {
 	// KMSKeyARN encrypts the secret. When empty the AWS-managed key is used, which
 	// cannot be read cross-account — acceptable only before the shared CMK exists.
 	KMSKeyARN string
+	// Tags are applied on create and reconciled on every later call, because
+	// CreateSecret is the only call that accepts them — secrets provisioned before a
+	// tag was added would otherwise never get it. Only added and updated, never
+	// removed: something outside this reconciler may have tagged the secret for cost
+	// allocation or policy and deleting those would be a surprise.
+	Tags map[string]string
 }
 
 type EnsureSecretOutput struct {
@@ -125,6 +133,7 @@ func (s *service) EnsureSecret(ctx context.Context, input EnsureSecretInput) (*E
 			SecretString: aws.String(input.Value),
 			Description:  stringOrNil(input.Description),
 			KmsKeyId:     stringOrNil(input.KMSKeyARN),
+			Tags:         awsTags(input.Tags),
 		})
 		// Lost a race with a concurrent provision; fall through to the update path.
 		if cerr != nil && isAlreadyExists(cerr) {
@@ -144,6 +153,10 @@ func (s *service) EnsureSecret(ctx context.Context, input EnsureSecretInput) (*E
 	}
 
 	arn := aws.ToString(described.ARN)
+
+	if err := s.reconcileTags(ctx, client, arn, input.Tags, described.Tags); err != nil {
+		return nil, err
+	}
 
 	// A pending deletion must be undone before the value can be written, otherwise
 	// every call fails with InvalidRequestException.
@@ -225,6 +238,68 @@ func (s *service) DeleteSecret(ctx context.Context, secretID string) error {
 
 		return fmt.Errorf("unable to delete secret: %w", err)
 	}
+
+	return nil
+}
+
+func awsTags(tags map[string]string) []types.Tag {
+	if len(tags) == 0 {
+		return nil
+	}
+
+	// Sorted so the request is deterministic and two identical reconciles produce
+	// identical calls, which matters for the fake in tests.
+	keys := make([]string, 0, len(tags))
+	for k := range tags {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	out := make([]types.Tag, 0, len(keys))
+	for _, k := range keys {
+		out = append(out, types.Tag{Key: aws.String(k), Value: aws.String(tags[k])})
+	}
+
+	return out
+}
+
+// reconcileTags adds or corrects the tags this reconciler owns on an existing secret.
+//
+// Needed because CreateSecret is the only Secrets Manager call that takes tags, so a
+// secret provisioned before a tag existed would never acquire it. Skips the call
+// entirely when everything already matches — TagResource is cheap but it is one more
+// API call on a path that runs on every stack generation.
+func (s *service) reconcileTags(
+	ctx context.Context, client api, secretID string, want map[string]string, have []types.Tag,
+) error {
+	if len(want) == 0 {
+		return nil
+	}
+
+	current := make(map[string]string, len(have))
+	for _, t := range have {
+		current[aws.ToString(t.Key)] = aws.ToString(t.Value)
+	}
+
+	missing := map[string]string{}
+	for k, v := range want {
+		if current[k] != v {
+			missing[k] = v
+		}
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+
+	if _, err := client.TagResource(ctx, &awssm.TagResourceInput{
+		SecretId: aws.String(secretID),
+		Tags:     awsTags(missing),
+	}); err != nil {
+		return fmt.Errorf("unable to tag secret: %w", err)
+	}
+
+	s.l.Info("updated phone home secret tags",
+		zap.String("secret_id", secretID), zap.Int("tags", len(missing)))
 
 	return nil
 }

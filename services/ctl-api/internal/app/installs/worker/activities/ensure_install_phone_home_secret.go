@@ -117,6 +117,9 @@ func (a *Activities) EnsureInstallPhoneHomeSecret(
 		Value:       string(payload),
 		Description: fmt.Sprintf("Nuon phone home tokens for install %s", install.ID),
 		KMSKeyARN:   a.cfg.PhoneHomeCMKARN,
+		Tags: secretsmanager.PhoneHomeSecretTags(
+			install.OrgID, install.ID, a.cfg.RunnerAPIURL, string(a.cfg.Env),
+		),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to ensure phone home secret: %w", err)

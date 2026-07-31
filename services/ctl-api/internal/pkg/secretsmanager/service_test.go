@@ -29,8 +29,22 @@ type fakeAPI struct {
 	restores int
 	policies int
 	deletes  int
+	tagCalls int
+
+	// tags is what the secret already carries; createTags/addedTags record what the
+	// service asked for.
+	tags       []types.Tag
+	createTags []types.Tag
+	addedTags  []types.Tag
 
 	createErr error
+}
+
+func (f *fakeAPI) TagResource(_ context.Context, in *awssm.TagResourceInput, _ ...func(*awssm.Options)) (*awssm.TagResourceOutput, error) {
+	f.tagCalls++
+	f.addedTags = append(f.addedTags, in.Tags...)
+
+	return &awssm.TagResourceOutput{}, nil
 }
 
 func (f *fakeAPI) DescribeSecret(_ context.Context, in *awssm.DescribeSecretInput, _ ...func(*awssm.Options)) (*awssm.DescribeSecretOutput, error) {
@@ -38,7 +52,7 @@ func (f *fakeAPI) DescribeSecret(_ context.Context, in *awssm.DescribeSecretInpu
 		return nil, &types.ResourceNotFoundException{}
 	}
 
-	out := &awssm.DescribeSecretOutput{ARN: aws.String(testSecretARN)}
+	out := &awssm.DescribeSecretOutput{ARN: aws.String(testSecretARN), Tags: f.tags}
 	if f.pendingDeletion {
 		out.DeletedDate = aws.Time(time.Now())
 	}
@@ -62,6 +76,8 @@ func (f *fakeAPI) CreateSecret(_ context.Context, in *awssm.CreateSecretInput, _
 	}
 	f.exists = true
 	f.value = aws.ToString(in.SecretString)
+	f.createTags = in.Tags
+	f.tags = in.Tags
 
 	return &awssm.CreateSecretOutput{ARN: aws.String(testSecretARN)}, nil
 }
@@ -268,5 +284,124 @@ func TestPhoneHomeResourcePolicy(t *testing.T) {
 	// Read-only, and only the one action: this grant reaches into a customer account.
 	if len(stmt.Action) != 1 || stmt.Action[0] != "secretsmanager:GetSecretValue" {
 		t.Errorf("Action = %v, want only secretsmanager:GetSecretValue", stmt.Action)
+	}
+}
+
+func tagMap(tags []types.Tag) map[string]string {
+	out := map[string]string{}
+	for _, t := range tags {
+		out[aws.ToString(t.Key)] = aws.ToString(t.Value)
+	}
+
+	return out
+}
+
+func sameTags(got, want map[string]string) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for k, v := range want {
+		if got[k] != v {
+			return false
+		}
+	}
+
+	return true
+}
+
+var testPhoneHomeTags = PhoneHomeSecretTags(
+	"org_123", "inla6dfrwtvae1o0gfmjw4wa7w", "https://runner.nuon.co", "stage",
+)
+
+func TestEnsureSecretTagsOnCreate(t *testing.T) {
+	fake := &fakeAPI{}
+	svc := testService(fake)
+
+	if _, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inla6dfrwtvae1o0gfmjw4wa7w", Value: "{}", Tags: testPhoneHomeTags,
+	}); err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	want := map[string]string{
+		"org.nuon.co/id":     "org_123",
+		"install.nuon.co/id": "inla6dfrwtvae1o0gfmjw4wa7w",
+		"runner_api_url":     "https://runner.nuon.co",
+		"env":                "stage",
+	}
+	if got := tagMap(fake.createTags); !sameTags(got, want) {
+		t.Errorf("create tags = %v, want %v", got, want)
+	}
+	if fake.tagCalls != 0 {
+		t.Errorf("tags passed to CreateSecret need no follow-up TagResource, got %d", fake.tagCalls)
+	}
+}
+
+// The reason tags are reconciled rather than only set on create: CreateSecret is the
+// only Secrets Manager call that accepts tags, so a secret provisioned before a tag
+// existed would never acquire it.
+func TestEnsureSecretTagsAnExistingUntaggedSecret(t *testing.T) {
+	fake := &fakeAPI{exists: true, value: "{}"}
+	svc := testService(fake)
+
+	if _, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inla6dfrwtvae1o0gfmjw4wa7w", Value: "{}", Tags: testPhoneHomeTags,
+	}); err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	if fake.tagCalls != 1 {
+		t.Errorf("expected one TagResource call, got %d", fake.tagCalls)
+	}
+	if got := tagMap(fake.addedTags); !sameTags(got, testPhoneHomeTags) {
+		t.Errorf("added tags = %v, want %v", got, testPhoneHomeTags)
+	}
+}
+
+func TestEnsureSecretSkipsTaggingWhenAlreadyCorrect(t *testing.T) {
+	fake := &fakeAPI{exists: true, value: "{}", tags: awsTags(testPhoneHomeTags)}
+	svc := testService(fake)
+
+	if _, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inla6dfrwtvae1o0gfmjw4wa7w", Value: "{}", Tags: testPhoneHomeTags,
+	}); err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	if fake.tagCalls != 0 {
+		t.Errorf("this runs on every stack generation, so unchanged tags must not call AWS, got %d", fake.tagCalls)
+	}
+}
+
+// Only the drifted key is sent, and a tag applied by something outside this reconciler
+// is left alone rather than deleted.
+func TestEnsureSecretCorrectsOnlyDriftedTags(t *testing.T) {
+	fake := &fakeAPI{exists: true, value: "{}", tags: awsTags(map[string]string{
+		"org.nuon.co/id":     "org_123",
+		"install.nuon.co/id": "inla6dfrwtvae1o0gfmjw4wa7w",
+		"runner_api_url":     "https://old.nuon.co",
+		"env":                "stage",
+		"cost-center":        "platform",
+	})}
+	svc := testService(fake)
+
+	if _, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inla6dfrwtvae1o0gfmjw4wa7w", Value: "{}", Tags: testPhoneHomeTags,
+	}); err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	want := map[string]string{"runner_api_url": "https://runner.nuon.co"}
+	if got := tagMap(fake.addedTags); !sameTags(got, want) {
+		t.Errorf("added tags = %v, want only the drifted key %v", got, want)
+	}
+}
+
+func TestPhoneHomeSecretTagsDropsEmptyValues(t *testing.T) {
+	tags := PhoneHomeSecretTags("org_123", "inst_1", "", "")
+
+	want := map[string]string{"org.nuon.co/id": "org_123", "install.nuon.co/id": "inst_1"}
+	if !sameTags(tags, want) {
+		t.Errorf("tags = %v, want %v — an empty config value must not become an empty tag", tags, want)
 	}
 }
