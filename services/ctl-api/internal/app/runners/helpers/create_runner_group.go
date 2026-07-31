@@ -116,14 +116,8 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		return nil, fmt.Errorf("unable to create runner signals queue: %w", err)
 	}
 
-	parallelJobs, err := h.featuresClient.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureParallelRunnerJobs)
-	if err != nil {
-		return nil, fmt.Errorf("unable to check parallel runner jobs feature: %w", err)
-	}
-	if parallelJobs {
-		if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {
-			return nil, fmt.Errorf("unable to create runner queues: %w", err)
-		}
+	if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {
+		return nil, fmt.Errorf("unable to create runner queues: %w", err)
 	}
 
 	return &runnerGroup, nil

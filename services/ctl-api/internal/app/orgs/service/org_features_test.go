@@ -175,7 +175,7 @@ func (s *OrgFeaturesTestSuite) TestGetOrgFeatures() {
 				}
 
 				assert.True(s.T(), featureNames[string(app.OrgFeatureUserManagedFeatures)])
-				assert.True(s.T(), featureNames[string(app.OrgFeatureOrgDashboard)])
+				assert.True(s.T(), featureNames[string(app.OrgFeatureTraceView)])
 				assert.True(s.T(), featureNames[string(app.OrgFeatureAppBranches)])
 			},
 		},
@@ -295,7 +295,7 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 					},
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true,
-						string(app.OrgFeatureOrgDashboard):        true,
+						string(app.OrgFeatureTraceView):           true,
 						string(app.OrgFeatureAppBranches):         false,
 					},
 				}
@@ -321,7 +321,7 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 			validateFunc: func(features map[string]bool) {
 				// Verify custom values are preserved
 				assert.True(s.T(), features[string(app.OrgFeatureUserManagedFeatures)])
-				assert.True(s.T(), features[string(app.OrgFeatureOrgDashboard)])
+				assert.True(s.T(), features[string(app.OrgFeatureTraceView)])
 				assert.False(s.T(), features[string(app.OrgFeatureAppBranches)])
 			},
 		},
@@ -384,7 +384,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					},
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true, // ENABLED
-						string(app.OrgFeatureOrgDashboard):        false,
+						string(app.OrgFeatureTraceView):           false,
 						string(app.OrgFeatureAppBranches):         true,
 					},
 				}
@@ -408,8 +408,8 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureOrgDashboard): true,  // Toggle to true
-					string(app.OrgFeatureAppBranches):  false, // Toggle to false
+					string(app.OrgFeatureTraceView):   true,  // Toggle to true
+					string(app.OrgFeatureAppBranches): false, // Toggle to false
 				},
 			},
 			expectedCode: http.StatusOK,
@@ -419,7 +419,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				assert.Equal(s.T(), "features-test-org-update-1", org.Name)
 
 				// Verify features were updated
-				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgDashboard)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
 				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
 
 				// Verify user-managed-features flag preserved
@@ -431,7 +431,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
 
-				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureOrgDashboard)])
+				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureTraceView)])
 				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAppBranches)])
 			},
 		},
@@ -473,7 +473,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureOrgDashboard): true,
+					string(app.OrgFeatureTraceView): true,
 				},
 			},
 			expectedCode:  http.StatusBadRequest,
@@ -624,7 +624,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					},
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true,
-						string(app.OrgFeatureOrgDashboard):        false,
+						string(app.OrgFeatureTraceView):           false,
 						string(app.OrgFeatureAppBranches):         false,
 						string(app.OrgFeatureOrgRunner):           false,
 					},
@@ -649,15 +649,15 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureOrgDashboard): true,
-					string(app.OrgFeatureAppBranches):  true,
-					string(app.OrgFeatureOrgRunner):    true,
+					string(app.OrgFeatureTraceView):   true,
+					string(app.OrgFeatureAppBranches): true,
+					string(app.OrgFeatureOrgRunner):   true,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				// Verify all three features were updated
-				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgDashboard)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureTraceView)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgRunner)])
 			},

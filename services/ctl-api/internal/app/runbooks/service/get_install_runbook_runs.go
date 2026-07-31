@@ -31,12 +31,6 @@ import (
 // @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/installs/{install_id}/runbook-runs [get]
 func (s *service) GetInstallRunbookRuns(ctx *gin.Context) {
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
-	if err != nil || !enabled {
-		ctx.Error(fmt.Errorf("runbooks feature is not enabled"))
-		return
-	}
-
 	installID := ctx.Param("install_id")
 	runbookIDOrName := ctx.Query("runbook_id")
 	org, err := cctx.OrgFromContext(ctx)
@@ -94,12 +88,6 @@ func (s *service) GetInstallRunbookRuns(ctx *gin.Context) {
 // @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/installs/{install_id}/runbook-runs/{run_id} [get]
 func (s *service) GetInstallRunbookRun(ctx *gin.Context) {
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
-	if err != nil || !enabled {
-		ctx.Error(fmt.Errorf("runbooks feature is not enabled"))
-		return
-	}
-
 	runID := ctx.Param("run_id")
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

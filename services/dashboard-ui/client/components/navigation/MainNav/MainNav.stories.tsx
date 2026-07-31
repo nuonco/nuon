@@ -7,10 +7,7 @@ import { MainNav } from './MainNav'
 const mockOrg = {
   id: 'org-1',
   name: 'My Org',
-  features: {
-    'org-dashboard': true,
-    'org-settings': true,
-  },
+  features: {},
 } as any
 
 export const Default = () => (
@@ -18,8 +15,6 @@ export const Default = () => (
     <MainNav
       org={mockOrg}
       isSidebarOpen
-      hasOrgDashboard
-      hasOrgSettings
       hasServiceAccountsAndTokens
       hasSlack
       hasTriggers
@@ -34,8 +29,6 @@ export const Collapsed = () => (
     <MainNav
       org={mockOrg}
       isSidebarOpen={false}
-      hasOrgDashboard
-      hasOrgSettings={false}
       hasServiceAccountsAndTokens={false}
       hasSlack={false}
       hasTriggers={false}

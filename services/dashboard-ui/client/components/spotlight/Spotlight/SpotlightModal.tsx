@@ -23,10 +23,9 @@ interface ISpotlightModal extends IModal {
   onClose: () => void
   onNavigate: (path: string) => void
   onAddModal?: (modal: React.ReactElement) => string
-  orgFeatures?: Record<string, boolean>
 }
 
-export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, orgFeatures, ...props }: ISpotlightModal) => {
+export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, ...props }: ISpotlightModal) => {
   const [raw, setRaw] = useState('')
   const [debouncedRaw, setDebouncedRaw] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
@@ -56,7 +55,7 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, orgFeat
   const parsed = useMemo(() => parseQuery(debouncedRaw), [debouncedRaw])
   const liveParsed = useMemo(() => parseQuery(raw), [raw])
 
-  const { results, isFetching } = useSpotlightResults(parsed, liveParsed, orgId, onClose, false, onAddModal, orgFeatures)
+  const { results, isFetching } = useSpotlightResults(parsed, liveParsed, orgId, onClose, false, onAddModal)
   const isSearching = raw !== debouncedRaw || isFetching
 
   useEffect(() => {

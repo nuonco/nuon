@@ -225,9 +225,7 @@ type EnableQueuesFeatureFlagRequest struct {
 // @by-field OrgID
 func (a *Activities) EnableQueuesFeatureFlag(ctx context.Context, req EnableQueuesFeatureFlagRequest) error {
 	return a.features.Enable(ctx, req.OrgID, map[string]bool{
-		string(app.OrgFeatureQueues):             true,
-		string(app.OrgFeatureAppBranches):        true,
-		string(app.OrgFeatureParallelRunnerJobs): true,
+		string(app.OrgFeatureAppBranches): true,
 	})
 }
 

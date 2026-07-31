@@ -77,7 +77,6 @@ const InstallTemplate = () => {
   const { org } = useOrg()
   const { install, labelColors } = useInstall()
   const { pathname } = useLocation()
-  const hasRunbooks = !!org?.features?.runbooks
   const hasNotebooks = !!org?.features?.notebooks
   const openSettings = useOpenInstallSettings()
   const [searchParams] = useSearchParams()
@@ -139,15 +138,11 @@ const InstallTemplate = () => {
       iconVariant: 'TerminalWindowIcon' as const,
       text: 'Actions',
     },
-    ...(hasRunbooks
-      ? [
-          {
-            path: `/runbooks`,
-            iconVariant: 'BookIcon' as const,
-            text: 'Runbooks',
-          },
-        ]
-      : []),
+    {
+      path: `/runbooks`,
+      iconVariant: 'BookIcon' as const,
+      text: 'Runbooks',
+    },
     ...(hasNotebooks
       ? [
           {

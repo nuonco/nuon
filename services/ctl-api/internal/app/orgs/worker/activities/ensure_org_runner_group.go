@@ -17,9 +17,9 @@ type EnsureOrgRunnerGroupResponse struct {
 
 // EnsureOrgRunnerGroup returns the org's runner ID, creating the org runner
 // group first if it is missing. It is used by provision/reprovision to restore
-// the org runner for orgs whose org-runner feature was re-enabled (e.g. after
-// disabling control-plane-builds). Org signals are processed serially per org,
-// so the check-then-create here is not subject to concurrent reprovisions.
+// the org runner for orgs whose org-runner feature was re-enabled. Org signals
+// are processed serially per org, so the check-then-create here is not subject
+// to concurrent reprovisions.
 //
 // @temporal-gen-v2 activity
 // @by-field OrgID

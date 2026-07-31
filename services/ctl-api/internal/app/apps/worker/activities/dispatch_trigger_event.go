@@ -62,13 +62,6 @@ func (a *Activities) DispatchTriggerEvent(ctx context.Context, req DispatchTrigg
 	}
 
 	if dispatch.TargetType == app.TriggerTargetTypeRunbook {
-		enabled, featureErr := a.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
-		if featureErr != nil {
-			return nil, a.failTriggerEventDispatch(ctx, dispatch, fmt.Errorf("unable to check runbooks feature: %w", featureErr), true)
-		}
-		if !enabled {
-			return nil, a.failTriggerEventDispatch(ctx, dispatch, errors.New("runbooks feature is not enabled"), false)
-		}
 		if dispatch.RunbookConfigID == nil {
 			return nil, a.failTriggerEventDispatch(ctx, dispatch, errors.New("runbook dispatch has no snapshotted config"), false)
 		}

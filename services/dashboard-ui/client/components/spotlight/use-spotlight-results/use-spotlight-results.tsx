@@ -45,8 +45,7 @@ export function useSpotlightResults(
   orgId: string,
   onClose: () => void,
   hasAppBranches = false,
-  addModal?: (modal: React.ReactElement) => string,
-  orgFeatures?: Record<string, boolean>
+  addModal?: (modal: React.ReactElement) => string
 ) {
   const navigate = useNavigate()
 
@@ -175,7 +174,7 @@ export function useSpotlightResults(
 
   const results = useMemo((): SpotlightResult[] => {
     if (liveParsed.prefix === null) {
-      const pages = STATIC_PAGES.filter((p) => !p.feature || !!orgFeatures?.[p.feature])
+      const pages = STATIC_PAGES
       if (!liveParsed.query) return pages
       const matched = pages.filter((p) => tokenMatch(p.label, liveParsed.query))
       const apps = (appsResult?.data ?? []).map((app): SpotlightResult => ({
@@ -574,7 +573,7 @@ export function useSpotlightResults(
     }
 
     return []
-  }, [liveParsed, parsed, appsResult, installsResult, runnerInstallsResult, globalCommandInstalls, orgsResult, actionResults, componentResults, appSubPages, addModal, orgFeatures, isGlobalCommand, navigate, orgId])
+  }, [liveParsed, parsed, appsResult, installsResult, runnerInstallsResult, globalCommandInstalls, orgsResult, actionResults, componentResults, appSubPages, addModal, isGlobalCommand, navigate, orgId])
 
   const isFetching = appsFetching || installsFetching || runnerInstallsFetching || globalCommandInstallsFetching || orgsFetching || actionsFetching || componentsFetching
 

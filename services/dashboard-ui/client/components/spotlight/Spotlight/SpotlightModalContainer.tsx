@@ -16,7 +16,6 @@ export const SpotlightModalContainer = ({ ...props }: IModal) => {
       onClose={() => removeModal(props.modalId)}
       onNavigate={(path) => navigate(path)}
       onAddModal={addModal}
-      orgFeatures={org?.features as Record<string, boolean> | undefined}
       {...props}
     />
   )

@@ -16,8 +16,8 @@ export type ParsedQuery = {
   command: string | null
 }
 
-export const STATIC_PAGES: (SpotlightResult & { feature?: string })[] = [
-  { label: 'Dashboard', path: '/', icon: 'HouseIcon', feature: 'org-dashboard' },
+export const STATIC_PAGES: SpotlightResult[] = [
+  { label: 'Dashboard', path: '/', icon: 'HouseIcon' },
   { label: 'Apps', path: '/apps', icon: 'AppWindowIcon' },
   { label: 'Installs', path: '/installs', icon: 'CubeIcon' },
   { label: 'Team', path: '/team', icon: 'UsersThreeIcon' },
