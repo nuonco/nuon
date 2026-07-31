@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/nuonco/nuon/pkg/config"
@@ -124,6 +125,40 @@ func validateHealthProbes(probes []HealthProbeRequest) error {
 		}
 	}
 	return nil
+}
+
+// validateRequiredChecks rejects names the push endpoint would refuse, so a
+// deploy cannot be gated on a check that can never be reported.
+func validateRequiredChecks(names []string) error {
+	seen := map[string]bool{}
+	for _, name := range names {
+		if !healthCheckNameRe.MatchString(name) {
+			return stderr.ErrUser{
+				Err:         errors.New("invalid_required_check"),
+				Code:        "invalid_required_check",
+				Description: fmt.Sprintf("required check name %q must be 1-100 characters of letters, digits, dots, dashes, or underscores, starting and ending with a letter or digit", name),
+			}
+		}
+		if seen[name] {
+			return stderr.ErrUser{
+				Err:         errors.New("duplicate_required_check"),
+				Code:        "duplicate_required_check",
+				Description: fmt.Sprintf("required check %q is listed more than once", name),
+			}
+		}
+		seen[name] = true
+	}
+	return nil
+}
+
+// healthCheckNameRe mirrors the push endpoint's name rule.
+var healthCheckNameRe = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9._-]{0,98}[a-zA-Z0-9])?$`)
+
+func toAppRequiredChecks(names []string) app.ComponentHealthRequiredChecks {
+	if len(names) == 0 {
+		return nil
+	}
+	return app.ComponentHealthRequiredChecks(names)
 }
 
 func toAppHealthProbes(probes []HealthProbeRequest) app.ComponentHealthProbes {
