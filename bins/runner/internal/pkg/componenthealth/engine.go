@@ -106,6 +106,12 @@ func (e *Engine) run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+			// Cluster access can be derived server-side after this process
+			// started. Re-check only while blind, so a watching engine pays
+			// nothing for it.
+			if e.cluster.Get() == nil {
+				e.cluster.Load(ctx)
+			}
 			e.reportSafe(ctx)
 		}
 	}
