@@ -532,3 +532,7 @@ func NewInstallConfigSyncID() string {
 func NewInstallConfigVersionID() string {
 	return shortid.NewNanoID("icv")
 }
+
+func NewDLQRecordID() string {
+	return shortid.NewNanoID("dlq")
+}
