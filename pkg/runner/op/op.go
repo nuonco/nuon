@@ -53,20 +53,25 @@ func Start(ctx context.Context, tool, operation string, attrs ...attribute.KeyVa
 	// the global, which transitive deps (e.g. docker distribution) overwrite.
 	tracer := pkgctx.TracerProvider(ctx).Tracer(tracerName)
 
-	spanAttrs := make([]attribute.KeyValue, 0, len(attrs)+5)
+	spanAttrs := make([]attribute.KeyValue, 0, len(attrs)+10)
 	spanAttrs = append(spanAttrs,
 		attribute.String("nuon.tool", tool),
 		attribute.String("nuon.op", operation),
 	)
 	if meta, ok := pkgctx.GetJobMetadata(ctx); ok {
-		if meta.RunnerJobID != "" {
-			spanAttrs = append(spanAttrs, attribute.String("runner_job.id", meta.RunnerJobID))
-		}
-		if meta.RunnerJobExecutionID != "" {
-			spanAttrs = append(spanAttrs, attribute.String("runner_job_execution.id", meta.RunnerJobExecutionID))
-		}
-		if meta.StepName != "" {
-			spanAttrs = append(spanAttrs, attribute.String("runner_job_execution_step.name", meta.StepName))
+		for key, value := range map[string]string{
+			"runner_job.id":                  meta.RunnerJobID,
+			"runner_job_execution.id":        meta.RunnerJobExecutionID,
+			"runner_job_execution_step.name": meta.StepName,
+			"runner_job.group":               meta.JobGroup,
+			"runner_job.operation":           meta.JobOperation,
+			"runner_job.executor":            meta.Executor,
+			"org.id":                         meta.OrgID,
+			"install.id":                     meta.InstallID,
+		} {
+			if value != "" {
+				spanAttrs = append(spanAttrs, attribute.String(key, value))
+			}
 		}
 	}
 	spanAttrs = append(spanAttrs, attrs...)

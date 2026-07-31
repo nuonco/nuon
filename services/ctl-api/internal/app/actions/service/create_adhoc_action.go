@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
@@ -230,6 +231,21 @@ func (s *service) createAdHocActionRun(
 	if err := s.db.WithContext(ctx).Create(&run).Error; err != nil {
 		return nil, err
 	}
+
+	s.audit.Emit(ctx, audit.Event{
+		Type:        audit.EventInstallActionWorkflowRun,
+		Message:     "adhoc action run created",
+		Outcome:     audit.OutcomeStarted,
+		InstallID:   install.ID,
+		SubjectID:   run.ID,
+		SubjectType: "install_action_workflow_runs",
+		Attrs: map[string]string{
+			"action_workflow_run.id": run.ID,
+			"trigger.type":           string(app.ActionWorkflowTriggerTypeAdHoc),
+			"triggered_by.id":        accountID,
+			"triggered_by.type":      "account",
+		},
+	})
 
 	return &run, nil
 }
