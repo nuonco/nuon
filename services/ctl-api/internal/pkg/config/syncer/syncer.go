@@ -165,9 +165,6 @@ func (s *syncer) validateFeatureCompatibility(ctx context.Context) error {
 	if s.cfg.Triggers != nil && len(s.cfg.Triggers.Rules) != 0 && !org.Features[string(app.OrgFeatureTriggers)] {
 		return sync.SyncErr{Resource: "triggers", Description: "the triggers feature is not enabled for this organization"}
 	}
-	if !org.Features[string(app.OrgFeatureControlPlaneBuilds)] {
-		return nil
-	}
 
 	return sync.RejectDockerBuildComponentsForFeature(s.cfg)
 }

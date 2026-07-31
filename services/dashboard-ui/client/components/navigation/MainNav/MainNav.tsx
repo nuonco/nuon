@@ -12,8 +12,6 @@ import type { TOrg } from '@/types'
 interface IMainNav {
   org: TOrg
   isSidebarOpen: boolean
-  hasOrgDashboard: boolean
-  hasOrgSettings: boolean
   hasServiceAccountsAndTokens: boolean
   hasSlack: boolean
   hasTriggers: boolean
@@ -54,8 +52,6 @@ const Divider = ({ isSidebarOpen }: { isSidebarOpen: boolean }) => (
 export const MainNav = ({
   org,
   isSidebarOpen,
-  hasOrgDashboard,
-  hasOrgSettings,
   hasServiceAccountsAndTokens,
   hasSlack,
   hasTriggers,
@@ -84,28 +80,24 @@ export const MainNav = ({
   return (
     <nav className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        {mainLinks.map((link, idx) =>
-          !hasOrgDashboard && idx === 0 ? null : (
-            <MainNavLink key={link.text} basePath={basePath} {...link} />
-          )
-        )}
+        {mainLinks.map((link) => (
+          <MainNavLink key={link.text} basePath={basePath} {...link} />
+        ))}
       </div>
 
       <Divider isSidebarOpen={isSidebarOpen} />
 
-      {hasOrgSettings ? (
-        <div className="flex flex-col gap-1">
-          <NavLabel isSidebarOpen={isSidebarOpen}>Settings</NavLabel>
+      <div className="flex flex-col gap-1">
+        <NavLabel isSidebarOpen={isSidebarOpen}>Settings</NavLabel>
 
-          {settingsLinks.map((link) => (
-            <MainNavLink key={link.text} basePath={basePath} {...link} />
-          ))}
+        {settingsLinks.map((link) => (
+          <MainNavLink key={link.text} basePath={basePath} {...link} />
+        ))}
 
-          {hasSlack ? (
-            <MainNavLink basePath={basePath} {...SLACK_LINK} />
-          ) : null}
-        </div>
-      ) : null}
+        {hasSlack ? (
+          <MainNavLink basePath={basePath} {...SLACK_LINK} />
+        ) : null}
+      </div>
 
       <Divider isSidebarOpen={isSidebarOpen} />
 

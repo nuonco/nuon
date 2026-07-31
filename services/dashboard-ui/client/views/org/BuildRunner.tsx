@@ -1,10 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
-import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
-import { Card } from '@/components/common/Card'
-import { EmptyState } from '@/components/common/EmptyState'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { ID } from '@/components/common/ID'
-import { Text } from '@/components/common/Text'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -12,80 +5,14 @@ import { PageHeadingGroup } from '@/components/layout/PageHeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import {
-  ProcessCard,
-  ProcessCardSkeleton,
-} from '@/components/runners/ProcessCard'
-import { RunnerStatusBanner } from '@/components/runners/RunnerStatusBanner'
 import { ControlPlaneRecentActivity } from '@/components/runners/ControlPlaneRecentActivity'
-import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
-import { ManagementDropdownContainer } from '@/components/runners/management/ManagementDropdown'
 import { useOrg } from '@/hooks/use-org'
-import { getRunnerSettings, getRunnerProcesses } from '@/lib'
-import { RunnerProvider } from '@/providers/runner-provider'
-import { SurfacesProvider } from '@/providers/surfaces-provider'
-import type { TRunnerSettings } from '@/types'
-
-const RunnerHeading = ({
-  controlPlaneBuilds,
-  runnerId,
-  settings,
-}: {
-  controlPlaneBuilds: boolean
-  runnerId?: string
-  settings?: TRunnerSettings
-}) => (
-  <PageHeader>
-    <div className="flex items-center justify-between w-full">
-      <HeadingGroup>
-        <div className="flex items-center gap-3">
-          <Text variant="h3" weight="strong" level={1}>
-            Builds
-          </Text>
-          {!controlPlaneBuilds && runnerId ? <ID>{runnerId}</ID> : null}
-        </div>
-        {!controlPlaneBuilds && runnerId && (
-          <AdminDashboardLink
-            path={`/queues?owner_id=${runnerId}`}
-            label="View queues in admin panel"
-          />
-        )}
-      </HeadingGroup>
-      {!controlPlaneBuilds && settings && (
-        <ManagementDropdownContainer settings={settings} />
-      )}
-    </div>
-  </PageHeader>
-)
 
 export const BuildRunner = () => {
   const { org } = useOrg()
-  const controlPlaneBuilds = Boolean(org?.features?.['control-plane-builds'])
-  const runnerId = org?.runner_group?.runners?.[0]?.id
 
-  const { data: settings } = useQuery({
-    queryKey: ['runner-settings', org?.id, runnerId],
-    queryFn: () => getRunnerSettings({ orgId: org.id, runnerId }),
-    enabled: !controlPlaneBuilds && !!org?.id && !!runnerId,
-  })
-
-  const { data: processResult, isLoading: processesLoading } = useQuery({
-    queryKey: ['runner-processes-active', org?.id, runnerId],
-    queryFn: () =>
-      getRunnerProcesses({
-        orgId: org.id,
-        runnerId: runnerId!,
-        status: 'pending,active,offline,pending-shutdown',
-        limit: 2,
-      }),
-    refetchInterval: 10000,
-    enabled: !controlPlaneBuilds && !!org?.id && !!runnerId,
-  })
-
-  const processes = processResult?.data ?? []
-
-  const breadcrumbs = (
-    <>
+  return (
+    <PageLayout className="pb-6">
       <PageTitle title={`Builds | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -93,116 +20,17 @@ export const BuildRunner = () => {
           { path: `/${org.id}/runner`, text: 'Builds' },
         ]}
       />
-    </>
-  )
-
-  if (controlPlaneBuilds) {
-    return (
-      <PageLayout className="pb-6">
-        {breadcrumbs}
-        <PageHeader>
-          <PageHeadingGroup
-            title="Builds"
-            subtitle="Component builds run on Nuon's control plane."
-          />
-        </PageHeader>
-        <PageContent>
-          <PageSection>
-            <ControlPlaneRecentActivity shouldPoll />
-          </PageSection>
-        </PageContent>
-      </PageLayout>
-    )
-  }
-
-  if (!runnerId) {
-    return (
-      <PageLayout>
-        {breadcrumbs}
-        <RunnerHeading controlPlaneBuilds={false} />
-        <PageContent>
-          <Card>
-            <EmptyState
-              emptyTitle="No builds available"
-              emptyMessage="No build executor is configured for this organization."
-              variant="table"
-            />
-          </Card>
-        </PageContent>
-      </PageLayout>
-    )
-  }
-
-  return (
-    <RunnerProvider runnerId={runnerId} shouldPoll>
-      <SurfacesProvider>
-        <PageLayout className="pb-6">
-          {breadcrumbs}
-          <RunnerHeading
-            controlPlaneBuilds={false}
-            runnerId={runnerId}
-            settings={settings}
-          />
-
-          <PageContent>
-            <PageSection>
-              <RunnerStatusBanner />
-
-              <Text variant="base" weight="strong">
-                Processes
-              </Text>
-
-              {processesLoading ? (
-                <div className="@container">
-                  <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
-                    <ProcessCardSkeleton />
-                    <ProcessCardSkeleton />
-                  </div>
-                </div>
-              ) : processes.length === 0 ? (
-                <Card>
-                  <EmptyState
-                    emptyTitle="No active processes"
-                    emptyMessage="No runner processes are currently active or offline."
-                    variant="table"
-                  />
-                </Card>
-              ) : processes.length === 1 ? (
-                <ProcessCard
-                  process={processes[0]}
-                  settings={settings}
-                  shouldPoll
-                  runnerBasePath={`/${org?.id}/runner`}
-                />
-              ) : (
-                <div className="@container">
-                  <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
-                    {processes.map((process) => (
-                      <ProcessCard
-                        key={process.id}
-                        process={process}
-                        settings={settings}
-                        shouldPoll
-                        runnerBasePath={`/${org?.id}/runner`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </PageSection>
-
-            <PageSection>
-              <Text variant="base" weight="strong">
-                Recent jobs
-              </Text>
-              <RunnerRecentActivity
-                shouldPoll
-                jobDetailBasePath={`/${org?.id}/runner`}
-              />
-            </PageSection>
-          </PageContent>
-        </PageLayout>
-      </SurfacesProvider>
-    </RunnerProvider>
+      <PageHeader>
+        <PageHeadingGroup
+          title="Builds"
+          subtitle="Component builds run on Nuon's control plane."
+        />
+      </PageHeader>
+      <PageContent>
+        <PageSection>
+          <ControlPlaneRecentActivity shouldPoll />
+        </PageSection>
+      </PageContent>
+    </PageLayout>
   )
 }

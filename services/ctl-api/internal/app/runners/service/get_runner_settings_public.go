@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -40,6 +39,6 @@ func (s *service) GetRunnerSettingsPublic(ctx *gin.Context) {
 	}
 
 	settings := runner.RunnerGroup.Settings
-	settings.LongPollJobs = runner.Org.Features[string(app.OrgFeatureRunnerJobLongPoll)]
+	settings.LongPollJobs = true
 	ctx.JSON(http.StatusOK, settings)
 }

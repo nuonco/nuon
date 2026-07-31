@@ -14,7 +14,7 @@ import { Versions } from './Versions'
 import { Workflows } from './Workflows'
 import { Readme } from './Readme'
 import { InstallComponentDetail } from './ComponentDetail'
-import { DeployDetailGate } from './DeployDetailGate'
+import { DeployLayout } from './DeployLayout'
 import { DeployLogsTab } from './deploy-tabs/DeployLogsTab'
 import { DeployTraceTab } from './deploy-tabs/DeployTraceTab'
 import { DeployPlanTab } from './deploy-tabs/DeployPlanTab'
@@ -34,7 +34,7 @@ import { ActionRunLayout } from './ActionRunLayout'
 import { ActionRunDetail } from './ActionRunDetail'
 import { ActionRunLogsPage } from './ActionRunLogs'
 import { ActionRunTracePage } from './ActionRunTrace'
-import { SandboxRunDetailGate } from './SandboxRunDetailGate'
+import { SandboxRunLayout } from './SandboxRunLayout'
 import { SandboxRunLogsTab } from './sandbox-tabs/SandboxRunLogsTab'
 import { SandboxRunPlanTab } from './sandbox-tabs/SandboxRunPlanTab'
 import { SandboxRunTraceTab } from './sandbox-tabs/SandboxRunTraceTab'
@@ -89,7 +89,7 @@ export const installRoutes: RouteObject[] = [
       },
       {
         path: ':orgId/installs/:installId/sandbox/runs/:runId',
-        element: <SandboxRunDetailGate />,
+        element: <SandboxRunLayout />,
         children: [
           { index: true, element: <SandboxRunLogsTab /> },
           { path: 'trace', element: <SandboxRunTraceTab /> },
@@ -121,7 +121,7 @@ export const installRoutes: RouteObject[] = [
       },
       {
         path: ':orgId/installs/:installId/components/:componentId/deploys/:deployId',
-        element: <DeployDetailGate />,
+        element: <DeployLayout />,
         children: [
           { index: true, element: <DeployLogsTab /> },
           { path: 'trace', element: <DeployTraceTab /> },

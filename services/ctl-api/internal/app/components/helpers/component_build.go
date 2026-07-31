@@ -16,12 +16,12 @@ func (s *Helpers) CreateComponentBuildWithID(ctx context.Context, buildID, cmpID
 	return s.createComponentBuild(ctx, buildID, cmpID, useLatest, gitRef)
 }
 
-func DockerBuildUnsupportedByFeature(feature app.OrgFeature) stderr.ErrUser {
+func DockerBuildUnsupported() stderr.ErrUser {
 	return stderr.ErrUser{
 		Err: fmt.Errorf("docker_build components have been deprecated"),
 		Description: "docker_build components have been deprecated and are no longer supported. " +
 			"Use a container_image component to reference a pre-built image instead.",
-		Code: fmt.Sprintf("docker_build_incompatible_with_%s", feature),
+		Code: "docker_build_deprecated",
 	}
 }
 
@@ -37,8 +37,8 @@ func (s *Helpers) createComponentBuild(ctx context.Context, buildID, cmpID strin
 			Description: "please create a component config before building",
 		}
 	}
-	if cmp.Type == app.ComponentTypeDockerBuild && cmp.Org.Features[string(app.OrgFeatureControlPlaneBuilds)] {
-		return nil, DockerBuildUnsupportedByFeature(app.OrgFeatureControlPlaneBuilds)
+	if cmp.Type == app.ComponentTypeDockerBuild {
+		return nil, DockerBuildUnsupported()
 	}
 
 	switch cmp.LatestConfig.VCSConnectionType {

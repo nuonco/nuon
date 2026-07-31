@@ -61,47 +61,12 @@ func (s *Features) updateOrgFeatures(ctx context.Context, orgID string, updateFe
 	// Remove the "all" key from updateFeatures if it exists
 	delete(updateFeatures, "all")
 
-	if err := syncControlPlaneBuildsAndOrgRunner(org.Features, updateFeatures); err != nil {
-		return err
-	}
-
 	res := s.db.WithContext(ctx).Model(&org).Updates(app.Org{
 		Features: updateFeatures,
 	})
 
 	if res.Error != nil {
 		return fmt.Errorf("unable to update org: %w", res.Error)
-	}
-
-	return nil
-}
-
-// syncControlPlaneBuildsAndOrgRunner keeps control-plane-builds and org-runner
-// mutually exclusive: an org either builds on the control plane (no org runner)
-// or has an org runner. Callers always send the full feature map, so we detect
-// which of the two flags actually changed against the org's current state and
-// derive the other from it. This lets disabling control-plane-builds re-enable
-// org-runner, so a subsequent reprovision restores the org runner group.
-func syncControlPlaneBuildsAndOrgRunner(current, updated map[string]bool) error {
-	cpKey := string(app.OrgFeatureControlPlaneBuilds)
-	runnerKey := string(app.OrgFeatureOrgRunner)
-
-	newCP, hasCP := updated[cpKey]
-	newRunner, hasRunner := updated[runnerKey]
-	if !hasCP || !hasRunner {
-		return nil
-	}
-
-	cpChanged := newCP != current[cpKey]
-	runnerChanged := newRunner != current[runnerKey]
-
-	switch {
-	case cpChanged && !runnerChanged:
-		updated[runnerKey] = !newCP
-	case runnerChanged && !cpChanged:
-		updated[cpKey] = !newRunner
-	case cpChanged && runnerChanged && newCP == newRunner:
-		return fmt.Errorf("control-plane-builds and org-runner are mutually exclusive and cannot both be set to %t", newCP)
 	}
 
 	return nil

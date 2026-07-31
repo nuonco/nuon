@@ -16,14 +16,10 @@ export const AdminOrgSectionContainer = ({ orgId }: IAdminOrgSectionContainer) =
   const config = useConfig()
   const adminEmail = user?.email ?? ''
   const [runner, setRunner] = useState<TRunner>()
-  const [runnerLoading, setRunnerLoading] = useState(true)
 
   useEffect(() => {
     if (orgId) {
-      adminGetOrgRunner({ orgId }).then((r) => {
-        setRunner(r)
-        setRunnerLoading(false)
-      })
+      adminGetOrgRunner({ orgId }).then(setRunner)
     }
   }, [orgId])
 
@@ -34,7 +30,6 @@ export const AdminOrgSectionContainer = ({ orgId }: IAdminOrgSectionContainer) =
       adminEmail={adminEmail}
       adminDashboardUrl={config.adminDashboardUrl}
       runner={runner}
-      runnerLoading={runnerLoading}
     />
   )
 }

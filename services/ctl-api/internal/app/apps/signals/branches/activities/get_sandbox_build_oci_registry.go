@@ -45,19 +45,12 @@ func (a *Activities) GetSandboxBuildOCIRegistry(ctx context.Context, req GetSand
 		}
 	default:
 		cfg.RegistryType = configs.OCIRegistryTypeECR
-		if currentApp.Org != nil && currentApp.Org.Features[string(app.OrgFeatureControlPlaneBuilds)] {
-			cfg.ECRAuth = &credentials.Config{
-				Region: currentApp.Repository.Region,
-				AssumeRole: &credentials.AssumeRoleConfig{
-					RoleARN:     a.cfg.ManagementIAMRoleARN,
-					SessionName: "sandbox-build",
-				},
-			}
-		} else {
-			cfg.ECRAuth = &credentials.Config{
-				Region:     currentApp.Repository.Region,
-				UseDefault: true,
-			}
+		cfg.ECRAuth = &credentials.Config{
+			Region: currentApp.Repository.Region,
+			AssumeRole: &credentials.AssumeRoleConfig{
+				RoleARN:     a.cfg.ManagementIAMRoleARN,
+				SessionName: "sandbox-build",
+			},
 		}
 	}
 
