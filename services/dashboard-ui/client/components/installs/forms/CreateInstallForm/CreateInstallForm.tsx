@@ -122,9 +122,7 @@ export const CreateInstallForm = forwardRef<
           const result = await onSubmit(formData)
           onSuccess?.(result)
           clearDraft?.()
-        } catch (err) {
-          console.error('Form submission error:', err)
-        }
+        } catch {}
       }
     }
 

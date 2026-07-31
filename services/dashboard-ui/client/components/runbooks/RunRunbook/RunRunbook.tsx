@@ -17,6 +17,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { runRunbook } from '@/lib'
+import type { TAPIError } from '@/types'
 import type { TRunbookInput } from '@/lib/ctl-api/apps/runbooks'
 import type {
   TInstallRunbook,
@@ -143,7 +144,7 @@ export const RunRunbookModal = ({
         navigate(`/${org!.id}/installs/${install!.id}/runbooks/${runbookId}`)
       }
     },
-    onError: (err: any) => {
+    onError: (err: TAPIError) => {
       addToast(
         <Toast heading="Runbook run failed" theme="error">
           <Text>{err?.error || `Unable to run ${runbookName}.`}</Text>
