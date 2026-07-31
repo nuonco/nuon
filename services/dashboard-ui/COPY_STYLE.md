@@ -259,8 +259,8 @@ Structure (not all parts required — use only what's needed, based on the sever
 "Canceling this workflow will stop all in-progress steps. You will need to trigger a new workflow."
 
 // Tier 2: Reprovision (heading: "Reprovision install?")
-"Reprovisioning {installName} will recreate all resources and redeploy all components."
-<strong>Warning:</strong> "This will cause downtime while resources are recreated."
+"Reprovisioning {installName} will redeploy all components."
+<strong>Warning:</strong> "Actions and deployments won't be available while the runner is recreated."
 
 // Tier 3: Forget install (heading: "Forget {installName}?")
 "This will permanently remove {installName} from the dashboard."
