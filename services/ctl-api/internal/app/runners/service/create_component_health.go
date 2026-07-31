@@ -328,6 +328,14 @@ func (s *service) ensureInstallHealthQueues(ctx context.Context, installID strin
 	s.ensuredHealthQueues.Store(installID, struct{}{})
 }
 
+// componentHealthEvaluateDedupeKey buckets by minute so concurrent reports for
+// one install collapse, while the next minute still gets evaluated. A constant
+// key would not: a completed signal stays undeleted until the nightly cleanup,
+// and would absorb every later enqueue — freezing the verdict indefinitely.
+func componentHealthEvaluateDedupeKey(now time.Time) string {
+	return fmt.Sprintf("%s-%d", componentHealthEvaluateSignalType, now.Truncate(time.Minute).Unix())
+}
+
 // triggerHealthEvaluation evaluates on the report that just arrived rather than
 // waiting for a timer, so a verdict lands with the data that justifies it.
 //
@@ -349,7 +357,7 @@ func (s *service) triggerHealthEvaluation(ctx context.Context, installID string)
 		return
 	}
 
-	dedupeKey := componentHealthEvaluateSignalType
+	dedupeKey := componentHealthEvaluateDedupeKey(time.Now())
 	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID:   q.ID,
 		OwnerID:   installID,

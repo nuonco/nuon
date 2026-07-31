@@ -105,7 +105,10 @@ func (a *Activities) enqueueHealthEvaluate(ctx context.Context, installID, owner
 		return false
 	}
 
-	dedupeKey := componentHealthEvaluateSignalType
+	// Same minute-bucketing as the ingest path: a finished signal is not
+	// soft-deleted until nightly cleanup, so a constant key would enqueue once
+	// and then silently stop.
+	dedupeKey := fmt.Sprintf("%s-%d", componentHealthEvaluateSignalType, time.Now().Truncate(time.Minute).Unix())
 	if _, err := a.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID:   q.ID,
 		OwnerID:   installID,
