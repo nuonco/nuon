@@ -150,7 +150,7 @@ const BranchGroupRow = ({
       <div className="flex items-center gap-2 flex-wrap min-w-0">
         <Text variant="body" weight="strong">{group.name}</Text>
         {labelEntries.map(([k, v]) => (
-          <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" variant="code" />
+          <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" />
         ))}
         {!isLabels && installIds.length > 0 && (
           <Text variant="subtext" theme="neutral">
