@@ -113,11 +113,9 @@ export const EventsTable = ({
         header:
           receivedOrder && onReceivedOrderChange
             ? () => (
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  size="xs"
-                  className="h-auto p-1"
+                  className="flex cursor-pointer items-center gap-1"
                   aria-label={`Received, ${receivedOrder === 'desc' ? 'newest first' : 'oldest first'}. Sort ${receivedOrder === 'desc' ? 'oldest first' : 'newest first'}`}
                   onClick={() =>
                     onReceivedOrderChange(
@@ -131,7 +129,7 @@ export const EventsTable = ({
                       receivedOrder === 'desc' ? 'ArrowDownIcon' : 'ArrowUpIcon'
                     }
                   />
-                </Button>
+                </button>
               )
             : 'Received',
         accessorKey: 'received_at',
@@ -179,7 +177,6 @@ export const EventsTable = ({
               </Text>
             </div>
             <Button
-              size="sm"
               variant="secondary"
               disabled={isRetrying}
               onClick={onRetry}

@@ -62,8 +62,7 @@ const LabelsSection = () => {
               className="flex-1"
             />
             <Button
-              variant="ghost"
-              size="xs"
+              variant="icon"
               onClick={() => removeRow(idx)}
               type="button"
             >
@@ -71,7 +70,7 @@ const LabelsSection = () => {
             </Button>
           </div>
         ))}
-        <Button variant="secondary" size="sm" onClick={addRow} type="button" className="w-fit">
+        <Button variant="secondary" onClick={addRow} type="button" className="w-fit">
           <Icon variant="PlusIcon" size={14} />
           Add label
         </Button>

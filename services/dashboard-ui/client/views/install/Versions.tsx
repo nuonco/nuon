@@ -220,7 +220,7 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
   return (
     <Expand
       id={`version-${version.id}`}
-      className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm overflow-hidden"
+      className="border rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm overflow-hidden"
       headerClassName="px-5 py-4"
       heading={
         <div className="flex items-center gap-3 w-full">
@@ -247,7 +247,7 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
         </div>
       }
     >
-      <div className="p-5 border-t border-cool-grey-100 dark:border-dark-grey-800">
+      <div className="p-5 border-t">
         <div className="grid grid-cols-2 gap-3 mb-4">
           <LabeledValue label="Old config">
             {version.old_app_config_id ? (

@@ -390,7 +390,6 @@ export const EventDetails = ({
               </Text>
             </div>
             <Button
-              size="sm"
               variant="secondary"
               disabled={isRetrying}
               onClick={onRetry}
@@ -564,7 +563,6 @@ export const EventDetails = ({
                 </Status>
                 {dispatch?.status === 'dead_lettered' && dispatch?.id ? (
                   <Button
-                    size="sm"
                     variant="secondary"
                     disabled={retryingDispatchId === dispatch.id}
                     onClick={() => {
@@ -675,7 +673,7 @@ export const EventDetails = ({
             ) : hasRawError ? (
               <div className="flex flex-col items-start gap-3">
                 <Text theme="error">Raw request loading failed.</Text>
-                <Button size="sm" variant="secondary" onClick={onRevealRaw}>
+                <Button variant="secondary" onClick={onRevealRaw}>
                   <Icon variant="ArrowClockwiseIcon" />
                   Retry loading raw request
                 </Button>
