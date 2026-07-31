@@ -19,6 +19,19 @@ import (
 	pkgop "github.com/nuonco/nuon/pkg/runner/op"
 )
 
+// renderedManifest is what the chart produced this run: the applied release when
+// there is one, otherwise the plan's template output. An uninstall renders the
+// objects being removed, so it is skipped rather than recorded as owned.
+func renderedManifest(rel *release.Release, plan HelmPlanContents) string {
+	if rel != nil {
+		return rel.Manifest
+	}
+	if plan.Op == "uninstall" {
+		return ""
+	}
+	return plan.TemplateOutput
+}
+
 // Use the common diff package for the plan contents
 type HelmPlanContents struct {
 	Diff           string              `json:"plan"`
@@ -203,10 +216,15 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	// Hand the rendered kinds to the health engine: a chart shipping only custom
 	// resources is otherwise invisible, since nothing else knows to list them.
-	// This is the only place the manifest is readable — it lives in the release
-	// secret, which health's identity is deliberately denied.
-	if h.manifestKinds != nil && rel != nil {
-		h.manifestKinds.Set(h.state.plan.ComponentID, rel.Manifest)
+	// The release secret is the only other copy and health is denied secret
+	// reads, so the deploy is where this has to happen.
+	//
+	// Plan-only runs count too: a drift check renders the chart without applying
+	// it, which is how a component picks up its kinds without being redeployed.
+	if h.manifestKinds != nil {
+		if manifest := renderedManifest(rel, helmPlan); manifest != "" {
+			h.manifestKinds.Set(h.state.plan.ComponentID, manifest)
+		}
 	}
 
 	var apiRes *models.ServiceCreateRunnerJobExecutionResultRequest
