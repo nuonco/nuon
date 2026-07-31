@@ -1,6 +1,7 @@
 package componenthealth
 
 import (
+	"sort"
 	"strings"
 	"sync"
 
@@ -22,7 +23,8 @@ import (
 // also makes it independent of helm's storage driver (secret, configmap, or
 // nuon's own).
 type ManifestKindsProvider struct {
-	l *zap.Logger
+	l       *zap.Logger
+	cluster *ClusterProvider
 
 	mu   sync.RWMutex
 	gvks map[string][]schema.GroupVersionKind
@@ -31,11 +33,94 @@ type ManifestKindsProvider struct {
 type ManifestKindsProviderParams struct {
 	fx.In
 
-	L *zap.Logger `name:"system"`
+	L       *zap.Logger `name:"system"`
+	Cluster *ClusterProvider
 }
 
 func NewManifestKindsProvider(params ManifestKindsProviderParams) *ManifestKindsProvider {
-	return &ManifestKindsProvider{l: params.L, gvks: map[string][]schema.GroupVersionKind{}}
+	return &ManifestKindsProvider{
+		l:       params.L,
+		cluster: params.Cluster,
+		gvks:    map[string][]schema.GroupVersionKind{},
+	}
+}
+
+// SetKinds records kinds a caller already resolved (terraform state), rather
+// than a manifest to parse.
+func (p *ManifestKindsProvider) SetKinds(componentID string, gvks []schema.GroupVersionKind) {
+	if componentID == "" {
+		return
+	}
+	p.mu.Lock()
+	if len(gvks) == 0 {
+		delete(p.gvks, componentID)
+	} else {
+		p.gvks[componentID] = gvks
+	}
+	p.mu.Unlock()
+	p.persist()
+}
+
+// Load rehydrates kinds persisted by earlier deploys of this install.
+func (p *ManifestKindsProvider) Load() {
+	if p.cluster == nil {
+		return
+	}
+	restored := map[string][]schema.GroupVersionKind{}
+	for _, entry := range p.cluster.ComponentKinds() {
+		componentID, gvk, ok := decodeComponentKind(entry)
+		if !ok {
+			continue
+		}
+		restored[componentID] = append(restored[componentID], gvk)
+	}
+	if len(restored) == 0 {
+		return
+	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for componentID, gvks := range restored {
+		if _, live := p.gvks[componentID]; !live {
+			p.gvks[componentID] = gvks
+		}
+	}
+}
+
+// persist mirrors every recorded kind so a restart does not lose them. Encoded
+// flat as "componentID|group/version/Kind" to keep the stored shape a plain
+// string list.
+func (p *ManifestKindsProvider) persist() {
+	if p.cluster == nil {
+		return
+	}
+	p.mu.RLock()
+	out := make([]string, 0, 16)
+	for componentID, gvks := range p.gvks {
+		for _, gvk := range gvks {
+			out = append(out, componentID+"|"+gvk.GroupVersion().String()+"/"+gvk.Kind)
+		}
+	}
+	p.mu.RUnlock()
+
+	sort.Strings(out)
+	p.cluster.SetComponentKinds(out)
+}
+
+func decodeComponentKind(entry string) (string, schema.GroupVersionKind, bool) {
+	componentID, rest, found := strings.Cut(entry, "|")
+	if !found || componentID == "" {
+		return "", schema.GroupVersionKind{}, false
+	}
+	idx := strings.LastIndex(rest, "/")
+	if idx <= 0 || idx == len(rest)-1 {
+		return "", schema.GroupVersionKind{}, false
+	}
+	gv, err := schema.ParseGroupVersion(rest[:idx])
+	if err != nil {
+		return "", schema.GroupVersionKind{}, false
+	}
+	return componentID, gv.WithKind(rest[idx+1:]), true
 }
 
 // Set replaces the kinds recorded for a component from a freshly rendered
@@ -48,12 +133,13 @@ func (p *ManifestKindsProvider) Set(componentID, manifest string) {
 	gvks := gvksFromManifest(manifest)
 
 	p.mu.Lock()
-	defer p.mu.Unlock()
 	if len(gvks) == 0 {
 		delete(p.gvks, componentID)
-		return
+	} else {
+		p.gvks[componentID] = gvks
 	}
-	p.gvks[componentID] = gvks
+	p.mu.Unlock()
+	p.persist()
 }
 
 // DiscoveredGVKs returns every kind the recorded releases rendered.

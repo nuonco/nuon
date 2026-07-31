@@ -240,11 +240,8 @@ func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) []schema.G
 	out = append(out, watchedGVRs...)
 
 	var discovered []schema.GroupVersionKind
-	if e.terraform != nil {
-		discovered = append(discovered, e.terraform.DiscoveredGVKs()...)
-	}
 	if e.manifestKinds != nil {
-		discovered = append(discovered, e.manifestKinds.DiscoveredGVKs()...)
+		discovered = e.manifestKinds.DiscoveredGVKs()
 	}
 	if len(discovered) == 0 {
 		return out

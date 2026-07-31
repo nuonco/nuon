@@ -111,6 +111,14 @@ func (e *Engine) run(ctx context.Context) {
 	// Rehydrate cluster access + sandbox releases persisted by earlier deploys,
 	// so a fresh process can report without waiting for a new deploy.
 	e.cluster.Load(ctx)
+	// Kinds discovered by earlier deploys are persisted with the cluster context,
+	// so a restart keeps watching them.
+	if e.manifestKinds != nil {
+		e.manifestKinds.Load()
+	}
+	if e.terraform != nil {
+		e.terraform.SetKindsSink(e.manifestKinds)
+	}
 
 	ticker := time.NewTicker(reportInterval)
 	defer ticker.Stop()
@@ -126,6 +134,14 @@ func (e *Engine) run(ctx context.Context) {
 			// nothing for it.
 			if e.cluster.Get() == nil {
 				e.cluster.Load(ctx)
+				// Kinds discovered by earlier deploys are persisted with the cluster context,
+				// so a restart keeps watching them.
+				if e.manifestKinds != nil {
+					e.manifestKinds.Load()
+				}
+				if e.terraform != nil {
+					e.terraform.SetKindsSink(e.manifestKinds)
+				}
 			}
 			e.reportSafe(ctx)
 		}

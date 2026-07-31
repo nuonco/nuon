@@ -395,6 +395,11 @@ func CompositeComponentHealthStatus(statuses []InstallComponentHealthStatus) (In
 type ComponentHealthContext struct {
 	ClusterInfoJSON     string   `json:"cluster_info_json"`
 	SandboxHelmReleases []string `json:"sandbox_helm_releases"`
+	// ComponentKinds are the resource kinds each component deploys, encoded as
+	// "componentID|group/version/Kind". Only a deploy knows them, so without
+	// persisting them a runner restart silently narrows health back to the core
+	// workload kinds until every component is redeployed.
+	ComponentKinds []string `json:"component_kinds"`
 }
 
 // Scan implements the database/sql.Scanner interface.

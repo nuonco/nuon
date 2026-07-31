@@ -26,6 +26,9 @@ type ClusterProvider struct {
 	mu              sync.RWMutex
 	clusterInfo     *kube.ClusterInfo
 	sandboxReleases map[string]struct{}
+	// componentKinds is owned by ManifestKindsProvider; mirrored here because
+	// this provider owns the single round trip to ctl-api.
+	componentKinds []string
 }
 
 type ProviderParams struct {
@@ -75,9 +78,30 @@ func (p *ClusterProvider) IsSandboxRelease(name string) bool {
 	return ok
 }
 
+// SetComponentKinds records the kinds discovered by deploys and persists them,
+// so a restarted engine keeps watching them instead of narrowing back to the
+// core workload kinds until every component is redeployed.
+func (p *ClusterProvider) SetComponentKinds(kinds []string) {
+	p.mu.Lock()
+	p.componentKinds = append([]string(nil), kinds...)
+	p.mu.Unlock()
+	p.persist()
+}
+
+// ComponentKinds returns the persisted kinds, for rehydration on boot.
+func (p *ClusterProvider) ComponentKinds() []string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	return append([]string(nil), p.componentKinds...)
+}
+
 // Load rehydrates the context from ctl-api on engine boot.
 func (p *ClusterProvider) Load(ctx context.Context) {
-	clusterInfoJSON, releases, err := p.apiClient.GetComponentHealthContext(ctx)
+	if p.apiClient == nil {
+		return
+	}
+
+	clusterInfoJSON, releases, kinds, err := p.apiClient.GetComponentHealthContext(ctx)
 	if err != nil {
 		p.l.Warn("unable to load persisted component health context", zap.Error(err))
 		return
@@ -105,18 +129,27 @@ func (p *ClusterProvider) Load(ctx context.Context) {
 	if len(set) > 0 {
 		p.sandboxReleases = set
 	}
+	if len(kinds) > 0 {
+		p.componentKinds = kinds
+	}
 	p.mu.Unlock()
 }
 
 // persist mirrors the full current context to ctl-api, best-effort and off the
 // caller's goroutine so it never slows or breaks a deploy.
 func (p *ClusterProvider) persist() {
+	// A background goroutine must never panic the runner on a missing client.
+	if p.apiClient == nil {
+		return
+	}
+
 	p.mu.RLock()
 	ci := p.clusterInfo
 	releases := make([]string, 0, len(p.sandboxReleases))
 	for name := range p.sandboxReleases {
 		releases = append(releases, name)
 	}
+	kinds := append([]string(nil), p.componentKinds...)
 	p.mu.RUnlock()
 
 	var clusterInfoJSON string
@@ -132,7 +165,7 @@ func (p *ClusterProvider) persist() {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), persistTimeout)
 		defer cancel()
-		if err := p.apiClient.PutComponentHealthContext(ctx, clusterInfoJSON, releases); err != nil {
+		if err := p.apiClient.PutComponentHealthContext(ctx, clusterInfoJSON, releases, kinds); err != nil {
 			p.l.Warn("unable to persist component health context", zap.Error(err))
 		}
 	}()

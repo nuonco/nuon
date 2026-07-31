@@ -71,8 +71,8 @@ type Client interface {
 	CreateHealthCheck(ctx context.Context, req *models.ServiceCreateRunnerHealthCheckRequest) (*models.AppRunnerHealthCheck, error)
 	CreateComponentHealth(ctx context.Context, req *models.ServiceCreateComponentHealthRequest) (*models.ServiceCreateComponentHealthResponse, error)
 	GetRunnerInstallComponents(ctx context.Context) (*models.ServiceRunnerInstallComponentsResponse, error)
-	PutComponentHealthContext(ctx context.Context, clusterInfoJSON string, sandboxReleases []string) error
-	GetComponentHealthContext(ctx context.Context) (string, []string, error)
+	PutComponentHealthContext(ctx context.Context, clusterInfoJSON string, sandboxReleases, componentKinds []string) error
+	GetComponentHealthContext(ctx context.Context) (string, []string, []string, error)
 
 	// jobs
 	GetJobs(ctx context.Context, grp models.AppRunnerJobGroup, status models.AppRunnerJobStatus, limit *int64) ([]*models.AppRunnerJob, error)

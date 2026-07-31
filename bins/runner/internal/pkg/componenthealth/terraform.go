@@ -50,10 +50,8 @@ type TerraformProvider struct {
 	byRelease map[string]string
 	// byObject does the same for individual objects a module applies directly
 	// (kubectl_manifest), keyed by resourceKey.
-	byObject map[string]string
-	// gvksByComponent records the apiVersion/kind each component applies, so the
-	// engine can watch kinds it would otherwise never list.
-	gvksByComponent map[string][]schema.GroupVersionKind
+	byObject  map[string]string
+	kindsSink *ManifestKindsProvider
 }
 
 type TerraformProviderParams struct {
@@ -64,11 +62,10 @@ type TerraformProviderParams struct {
 
 func NewTerraformProvider(params TerraformProviderParams) *TerraformProvider {
 	return &TerraformProvider{
-		l:               params.L,
-		byComponent:     map[string][]*models.ServiceComponentHealthResource{},
-		byRelease:       map[string]string{},
-		byObject:        map[string]string{},
-		gvksByComponent: map[string][]schema.GroupVersionKind{},
+		l:           params.L,
+		byComponent: map[string][]*models.ServiceComponentHealthResource{},
+		byRelease:   map[string]string{},
+		byObject:    map[string]string{},
 	}
 }
 
@@ -93,7 +90,6 @@ func (p *TerraformProvider) Set(componentID string, state *tfjson.State) {
 	objects, gvks := terraformManifestObjects(state)
 
 	p.mu.Lock()
-	defer p.mu.Unlock()
 	p.byComponent[componentID] = rows
 
 	// Drop this component's previous entries first, so anything removed from the
@@ -114,31 +110,20 @@ func (p *TerraformProvider) Set(componentID string, state *tfjson.State) {
 	for _, key := range objects {
 		p.byObject[key] = componentID
 	}
-	if len(gvks) > 0 {
-		p.gvksByComponent[componentID] = gvks
-	} else {
-		delete(p.gvksByComponent, componentID)
+	sink := p.kindsSink
+	p.mu.Unlock()
+
+	if sink != nil {
+		sink.SetKinds(componentID, gvks)
 	}
 }
 
-// DiscoveredGVKs returns every apiVersion/kind the recorded terraform state
-// applies, deduplicated across components.
-func (p *TerraformProvider) DiscoveredGVKs() []schema.GroupVersionKind {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
-	seen := map[schema.GroupVersionKind]struct{}{}
-	out := make([]schema.GroupVersionKind, 0, 8)
-	for _, gvks := range p.gvksByComponent {
-		for _, gvk := range gvks {
-			if _, dup := seen[gvk]; dup {
-				continue
-			}
-			seen[gvk] = struct{}{}
-			out = append(out, gvk)
-		}
-	}
-	return out
+// SetKindsSink lets the shared kinds store receive what terraform applied, so
+// discovery and its persistence live in one place.
+func (p *TerraformProvider) SetKindsSink(sink *ManifestKindsProvider) {
+	p.mu.Lock()
+	p.kindsSink = sink
+	p.mu.Unlock()
 }
 
 // ComponentForObject returns the terraform component that applied an object

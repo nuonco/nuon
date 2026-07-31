@@ -17,11 +17,13 @@ import (
 type ComponentHealthContextRequest struct {
 	ClusterInfoJSON     string   `json:"cluster_info_json" validate:"required"`
 	SandboxHelmReleases []string `json:"sandbox_helm_releases"`
+	ComponentKinds      []string `json:"component_kinds"`
 }
 
 type ComponentHealthContextResponse struct {
 	ClusterInfoJSON     string   `json:"cluster_info_json"`
 	SandboxHelmReleases []string `json:"sandbox_helm_releases"`
+	ComponentKinds      []string `json:"component_kinds"`
 }
 
 // @ID						PutComponentHealthContext
@@ -79,6 +81,7 @@ func (s *service) putComponentHealthContext(ctx context.Context, runnerID string
 		ComponentHealthContext: app.ComponentHealthContext{
 			ClusterInfoJSON:     req.ClusterInfoJSON,
 			SandboxHelmReleases: req.SandboxHelmReleases,
+			ComponentKinds:      req.ComponentKinds,
 		},
 	}
 
@@ -130,7 +133,7 @@ func (s *service) getComponentHealthContext(ctx context.Context, runnerID string
 		return nil, err
 	}
 	if !ok {
-		return &ComponentHealthContextResponse{SandboxHelmReleases: []string{}}, nil
+		return &ComponentHealthContextResponse{SandboxHelmReleases: []string{}, ComponentKinds: []string{}}, nil
 	}
 
 	var install app.Install
@@ -143,9 +146,13 @@ func (s *service) getComponentHealthContext(ctx context.Context, runnerID string
 	resp := &ComponentHealthContextResponse{
 		ClusterInfoJSON:     install.ComponentHealthContext.ClusterInfoJSON,
 		SandboxHelmReleases: install.ComponentHealthContext.SandboxHelmReleases,
+		ComponentKinds:      install.ComponentHealthContext.ComponentKinds,
 	}
 	if resp.SandboxHelmReleases == nil {
 		resp.SandboxHelmReleases = []string{}
+	}
+	if resp.ComponentKinds == nil {
+		resp.ComponentKinds = []string{}
 	}
 
 	return resp, nil
