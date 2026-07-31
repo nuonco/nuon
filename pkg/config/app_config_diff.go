@@ -69,16 +69,13 @@ func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
 	if d := diffActions(old.Actions, a.Actions); d != nil {
 		children = append(children, d)
 	}
-<<<<<<< HEAD
 	children = append(children, diff.NewDiff(
 		diff.WithKey("triggers"),
 		diff.WithStringDiff(sectionTOML(old.Triggers), sectionTOML(a.Triggers)),
 	))
-=======
 	if d := diffRunbooks(old.Runbooks, a.Runbooks); d != nil {
 		children = append(children, d)
 	}
->>>>>>> e96e7cbb5 (chore: update ui and reconciliation tooling)
 
 	return diff.NewDiff(
 		diff.WithKey("app_config"),

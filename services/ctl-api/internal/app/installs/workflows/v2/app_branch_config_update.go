@@ -96,6 +96,8 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	}
 
 	if diff != nil && diff.SandboxChanged {
+		flw.Metadata["skip_components"] = generics.ToPtr("true")
+
 		newAppCfg, err := activities.AwaitGetAppConfigByID(ctx, newAppConfigID)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get new app config")
