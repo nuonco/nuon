@@ -2,6 +2,7 @@ export default {
   title: 'Runbooks/RunbooksTable',
 }
 
+import { Text } from '@/components/common/Text'
 import {
   RunbooksTable,
   RunbooksTableSkeleton,
@@ -12,12 +13,12 @@ const mockRows: TRunbookRow[] = Array.from({ length: 3 }, (_, i) => ({
   runbookId: `runbook-${i + 1}`,
   runbookName: `rotate-secrets-${i + 1}`,
   description: (
-    <span className="text-sm text-gray-500">
+    <Text variant="subtext" theme="neutral">
       Rotates API keys and secrets for the install.
-    </span>
+    </Text>
   ),
-  labels: <span className="text-sm text-gray-500">production</span>,
-  lastUpdated: <span className="text-sm text-gray-500">3 days ago</span>,
+  labels: <Text variant="subtext" theme="neutral">production</Text>,
+  lastUpdated: <Text variant="subtext" theme="neutral">3 days ago</Text>,
   href: `/org-1/apps/app-1/runbooks/runbook-${i + 1}`,
 }))
 

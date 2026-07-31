@@ -40,7 +40,7 @@ const StatusIcon = ({ category }: { category: TStepStatusCategory }) => {
     return (
       <div className="w-[26px] h-[26px] rounded-full bg-blue-500 flex items-center justify-center shrink-0">
         <svg className="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+          <circle cx="8" cy="8" r="6" stroke="white" strokeOpacity="0.3" strokeWidth="2" />
           <path d="M8 2 A6 6 0 0 1 14 8" stroke="white" strokeWidth="2" strokeLinecap="round" />
         </svg>
       </div>
@@ -59,10 +59,7 @@ const StatusIcon = ({ category }: { category: TStepStatusCategory }) => {
   }
 
   return (
-    <div
-      className="w-[26px] h-[26px] rounded-full flex items-center justify-center shrink-0"
-      style={{ boxShadow: 'inset 0 0 0 1.5px rgba(150,150,170,0.35)' }}
-    >
+    <div className="w-[26px] h-[26px] rounded-full flex items-center justify-center shrink-0 ring-1 ring-inset ring-cool-grey-400/40 dark:ring-dark-grey-500/40">
       <div className="w-[5px] h-[5px] rounded-full bg-cool-grey-400 dark:bg-dark-grey-500" />
     </div>
   )
@@ -181,18 +178,18 @@ export const WorkflowStepsPipeline = ({
 
             let cardBorder = ''
             let cardBg = 'bg-cool-grey-50 dark:bg-dark-grey-800'
-            let cardShadow = ''
+            let cardRing = ''
 
             if (isSelected) {
               cardBorder = 'border-primary-500 dark:border-primary-400'
-              cardBg = 'bg-primary-50 dark:bg-[#1B1026]'
-              cardShadow = '0 0 0 3px rgba(124,58,237,0.18)'
+              cardBg = 'bg-primary-50 dark:bg-primary-500/15'
+              cardRing = 'ring-2 ring-primary-500/20'
             } else if (category === 'active') {
               cardBorder = 'border-blue-400/50 dark:border-blue-500/50'
-              cardBg = 'bg-blue-50/40 dark:bg-[#0d1b2e]'
+              cardBg = 'bg-blue-50/40 dark:bg-blue-500/10'
             } else if (category === 'awaiting') {
               cardBorder = 'border-amber-400/50 dark:border-amber-500/50'
-              cardBg = 'bg-amber-50/40 dark:bg-[#2a1f06]'
+              cardBg = 'bg-amber-50/40 dark:bg-amber-500/10'
             } else if (category === 'success') {
               cardBorder = 'border-green-400/50 dark:border-green-500/40'
               cardBg = 'bg-green-50/30 dark:bg-dark-grey-800'
@@ -207,8 +204,7 @@ export const WorkflowStepsPipeline = ({
 
                 <div
                   ref={isSelected ? selectedCardRef : undefined}
-                  className={`snap-start scroll-mx-12 flex flex-col flex-1 min-w-[168px] items-center justify-center gap-2 px-4 py-4 rounded-[10px] cursor-pointer border transition-all ${cardBorder} ${cardBg} hover:brightness-105`}
-                  style={cardShadow ? { boxShadow: cardShadow } : undefined}
+                  className={`snap-start scroll-mx-12 flex flex-col flex-1 min-w-[168px] items-center justify-center gap-2 px-4 py-4 rounded-[10px] cursor-pointer border transition-all ${cardBorder} ${cardBg} ${cardRing} hover:brightness-105`}
                   onClick={() => onSelectStep(step)}
                 >
                   <StatusIcon category={category} />

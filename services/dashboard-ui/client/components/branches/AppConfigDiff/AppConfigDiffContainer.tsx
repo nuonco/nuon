@@ -74,7 +74,7 @@ export const AppConfigDiffContainer = ({ appConfigId, className, focus }: IAppCo
         id="config-changes"
         isOpen={cardOpen}
         className={cn(
-          'border border-cool-grey-200 dark:border-dark-grey-700 rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm overflow-hidden',
+          'border rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm overflow-hidden',
           className
         )}
         headerClassName="px-5 py-4"
@@ -99,7 +99,7 @@ export const AppConfigDiffContainer = ({ appConfigId, className, focus }: IAppCo
           </div>
         }
       >
-        <div className="p-5 border-t border-cool-grey-100 dark:border-dark-grey-800 max-h-[70vh] overflow-y-auto">
+        <div className="p-5 border-t max-h-[70vh] overflow-y-auto">
           <AppConfigDiff
             sections={sections}
             summary={null}
