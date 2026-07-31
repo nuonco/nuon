@@ -1,0 +1,81 @@
+---
+title: "API Tokens"
+icon: "key"
+description: "Org-scoped tokens for authenticating to the Nuon Control Plane API."
+keywords: ["API token", "access token", "Bearer token", "authentication", "static token", "org token", "programmatic access", "token", "tokens"]
+---
+
+An **API token** authenticates requests to the [Nuon Control Plane API](/concepts/api). Use one to call the API, drive the CLI in CI/CD, or integrate Nuon into your own product.
+
+## Token properties
+
+| Property | Description |
+| --- | --- |
+| **Name** | A human-readable label to identify the token. Required. |
+| **Role** | The permissions the token grants — `org_admin` or `org_read_only`. Defaults to `org_read_only`. |
+| **Duration** | How long the token is valid. Defaults to `8760h` (one year). |
+
+Each API token is backed by a dedicated machine identity in your org. For a named, reusable machine identity that you manage explicitly and can mint multiple tokens for, use a [service account](/concepts/service-accounts) instead.
+
+Creating and managing API tokens requires **org admin** access.
+
+## Managing tokens
+
+You can manage tokens using both the Dashboard and the CLI. In the dashboard, go to **Settings → API tokens → Create token**.
+
+In the CLI, use the following commands.
+
+### Creating a token
+
+Create a token granting access to your current org:
+
+```sh
+nuon orgs api-tokens create --name my-token
+```
+
+By default, tokens will be read-only and expire after one year. Override these if you need admin access or a different expiration:
+
+```sh
+nuon orgs api-tokens create --name ci-token --role org_admin --duration 720h
+```
+
+<Note>
+Tokens are shown **only once** at creation time. Store the value somewhere safe (a secret manager or CI secret); you cannot retrieve it again later.
+</Note>
+
+### Listing tokens
+
+View all active tokens in the org.
+
+```sh
+nuon orgs api-tokens list
+```
+
+### Revoking tokens
+
+Delete a token to revoke its access immediately.
+
+```sh
+nuon orgs api-tokens delete --id <token-id>
+```
+
+## Using a token
+
+To use a token, include it in API requests as a Bearer credential in the `Authorization` header:
+
+```sh
+curl https://api.nuon.co/v1/current-user \
+  -H "Authorization: Bearer <your-api-token>"
+```
+
+You can also use a token with the CLI by setting it as the value of the `NUON_API_TOKEN` environment variable or the `api_token` config value.
+
+<CodeGroup>
+```sh env
+export NUON_API_TOKEN=<your-api-token>
+```
+
+```sh ~/.nuon
+api_token: <your-api-token>
+```
+</CodeGroup>
