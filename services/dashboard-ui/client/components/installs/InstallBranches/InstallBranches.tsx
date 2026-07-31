@@ -224,7 +224,7 @@ const BranchCard = ({
       </div>
 
       {latestRun ? (
-        <div className="flex flex-col gap-3 border-t border-cool-grey-100 dark:border-dark-grey-700 pt-3">
+        <div className="flex flex-col gap-3 border-t pt-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Text variant="subtext" weight="strong" theme="neutral">
@@ -268,7 +268,7 @@ const BranchCard = ({
           )}
         </div>
       ) : (
-        <div className="border-t border-cool-grey-100 dark:border-dark-grey-700 pt-3">
+        <div className="border-t pt-3">
           <Text variant="subtext" theme="neutral">
             No runs yet
           </Text>

@@ -7,6 +7,7 @@ import { Card } from '@/components/common/Card'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
+import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -145,16 +146,11 @@ const BranchRunDetailContent = () => {
                     <Text variant="base" weight="strong">Source</Text>
                   </div>
                   {githubUrl && (
-                    <a
-                      href={githubUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-xs text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300"
-                    >
+                    <Link href={githubUrl} isExternal className="text-xs">
                       <Icon variant="GithubLogoIcon" size={14} />
                       View in GitHub
                       <Icon variant="ArrowSquareOutIcon" size={12} />
-                    </a>
+                    </Link>
                   )}
                 </div>
 

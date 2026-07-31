@@ -86,6 +86,7 @@ title: 'Helm'
 | **`stabilization_window`**<br/>string | health stabilization window How long the component must hold healthy after a deploy applies before the deploy step is considered done. Duration string (e.g., "3m", "10m"). Default: 3m. Max: 1h | **Optional**<br/>Default: `"3m"` | `"3m"`, `"10m"` |
 | **`block_deploy`**<br/>boolean | fail the deploy when health does not stabilize When true, the deploy step fails if health does not stabilize inside the window. When false, the step still completes and only records what health did... | **Optional**<br/>Default: `"false"` | `"true"` |
 | **`probes`**<br/>array | synthetic health probes Probes the runner executes from inside the install to assert the component is actually serving. Each probe reports as its own health resource, and a failing probe makes the ... | **Optional** | - |
+| **`required_checks`**<br/>array | - | **Optional** | - |
 
 ### `value`
 

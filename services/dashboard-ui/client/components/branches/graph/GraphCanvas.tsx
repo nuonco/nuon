@@ -24,13 +24,13 @@ const GraphControls = () => {
       role="toolbar"
       aria-label="Graph controls"
     >
-      <Button size="xs" variant="ghost" onClick={() => zoomIn()} aria-label="Zoom in">
+      <Button variant="icon" onClick={() => zoomIn()} aria-label="Zoom in">
         <Icon variant="PlusIcon" size={14} />
       </Button>
-      <Button size="xs" variant="ghost" onClick={() => zoomOut()} aria-label="Zoom out">
+      <Button variant="icon" onClick={() => zoomOut()} aria-label="Zoom out">
         <Icon variant="MinusIcon" size={14} />
       </Button>
-      <Button size="xs" variant="ghost" onClick={() => fitView({ padding: 0.2 })} aria-label="Fit to view">
+      <Button variant="icon" onClick={() => fitView({ padding: 0.2 })} aria-label="Fit to view">
         <Icon variant="CornersOutIcon" size={14} />
       </Button>
     </div>
