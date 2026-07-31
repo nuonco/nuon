@@ -20,6 +20,10 @@ import (
 // swagger:model service.InstallHealthTimelineResponse
 type ServiceInstallHealthTimelineResponse struct {
 
+	// ClusterAccessError is why health cannot currently inspect the install's
+	// cluster, empty when it can. Surfaced once here rather than per component.
+	ClusterAccessError string `json:"cluster_access_error,omitempty"`
+
 	// components
 	Components []*ServiceInstallComponentHealthSummary `json:"components"`
 

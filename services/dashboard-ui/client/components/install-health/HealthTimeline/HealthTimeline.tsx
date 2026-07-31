@@ -6,6 +6,7 @@ import { Duration } from '@/components/common/Duration'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
+import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
@@ -51,7 +52,10 @@ function formatHealth(health?: string): string {
   return toSentenceCase(kebabToWords(health || 'unknown'))
 }
 
-function formatUptime(uptimePercent?: number): string {
+// A component nobody observed has 0% uptime arithmetically, which reads as
+// total downtime. Absence of data is not downtime, so it gets a dash.
+function formatUptime(uptimePercent?: number, observedSeconds?: number): string {
+  if (!observedSeconds) return '—'
   return typeof uptimePercent === 'number' ? `${uptimePercent.toFixed(2)}%` : '—'
 }
 
@@ -75,6 +79,9 @@ function DayTooltipContent({ day }: { day: THealthTimelineDay }) {
       </div>
       {hasData ? (
         <div className="flex flex-col gap-0.5">
+          <Text variant="label" theme="neutral">
+            {(100 - dayDowntimePercent(day)).toFixed(2)}% uptime
+          </Text>
           {healthySeconds > 0 ? (
             <Text variant="label" theme="success">
               Healthy{' '}
@@ -161,6 +168,7 @@ function HealthBar({ day }: { day: THealthTimelineDay }) {
 export interface IHealthTimeline {
   className?: string
   headerAction?: React.ReactNode
+  clusterAccessError?: string
   scope?: 'install' | 'component'
   days: number
   daily?: THealthTimelineDay[]
@@ -177,6 +185,7 @@ export interface IHealthTimeline {
 export const HealthTimeline = ({
   className,
   headerAction,
+  clusterAccessError,
   scope = 'install',
   days,
   daily,
@@ -213,12 +222,18 @@ export const HealthTimeline = ({
           </Text>
           <Text variant="subtext" theme="neutral">
             {hasOverallData
-              ? `${formatUptime(uptimePercent)} uptime over the last ${days} days`
+              ? `${formatUptime(uptimePercent, observedSeconds)} uptime over the last ${days} days`
               : `No uptime data for the last ${days} days`}
           </Text>
         </HeadingGroup>
         {headerAction}
       </div>
+
+      {clusterAccessError ? (
+        <Banner theme="warn">
+          <Text>Health cannot inspect this install's cluster: {clusterAccessError}</Text>
+        </Banner>
+      ) : null}
 
       {hasDaily ? (
         <div className="overflow-x-auto">
@@ -265,7 +280,10 @@ export const HealthTimeline = ({
                     theme="neutral"
                     className="w-16 text-right"
                   >
-                    {formatUptime(component.uptime_percent)}
+                    {formatUptime(
+                      component.uptime_percent,
+                      component.observed_seconds
+                    )}
                   </Text>
                 </div>
               </div>

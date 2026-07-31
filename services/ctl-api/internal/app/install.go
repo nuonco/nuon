@@ -89,6 +89,11 @@ type Install struct {
 	// itself since it can carry durable cluster access details.
 	ComponentHealthContext ComponentHealthContext `gorm:"type:jsonb" json:"-" temporaljson:"-"`
 
+	// HealthClusterError is why component health cannot currently inspect the
+	// install's cluster, empty when it can. Install-level because it is one
+	// fact about the install rather than a property of any component.
+	HealthClusterError string `json:"health_cluster_error,omitzero" gorm:"column:health_cluster_error;default:''" temporaljson:"health_cluster_error,omitzero,omitempty"`
+
 	// SandboxHealthStatus / SandboxHealthMessage are a denormalized rollup of the
 	// worst health across the sandbox-owned resources reported by the
 	// component-health engine, written on each ingest so every install read can
@@ -96,6 +101,11 @@ type Install struct {
 	// engine reports.
 	SandboxHealthStatus  string `json:"sandbox_health_status,omitzero" gorm:"column:sandbox_health_status;default:''" temporaljson:"sandbox_health_status,omitzero,omitempty"`
 	SandboxHealthMessage string `json:"sandbox_health_message,omitzero" gorm:"column:sandbox_health_message;default:''" temporaljson:"sandbox_health_message,omitzero,omitempty"`
+
+	// LastHealthReportAt is when a runner last reported component health. It is
+	// how the staleness sweep finds installs that went quiet without polling
+	// every install individually.
+	LastHealthReportAt *time.Time `json:"last_health_report_at,omitzero" gorm:"column:last_health_report_at" temporaljson:"last_health_report_at,omitzero,omitempty"`
 
 	// CloudPlatformMetadata records the cloud account this install is expected to
 	// run in, and what it was observed running in. See the type for the trust model.
@@ -178,6 +188,12 @@ func (i *Install) Indexes(db *gorm.DB) []migrations.Index {
 			Name: indexes.Name(db, &Install{}, "org_id"),
 			Columns: []string{
 				"org_id",
+			},
+		},
+		{
+			Name: indexes.Name(db, &Install{}, "last_health_report_at"),
+			Columns: []string{
+				"last_health_report_at",
 			},
 		},
 	}
@@ -372,12 +388,18 @@ func CompositeComponentHealthStatus(statuses []InstallComponentHealthStatus) (In
 }
 
 // ComponentHealthContext persists what the runner's component-health engine
-// needs to rehydrate cluster access after a restart: a durable, opaque
-// (to ctl-api) marshaled kube.ClusterInfo, and the helm release names the
-// install's sandbox manages (base infra like external-dns, cert-manager).
+// needs to rehydrate cluster access after a restart: a marshaled
+// kube.ClusterInfo, and the helm release names the install's sandbox manages
+// (base infra like external-dns, cert-manager). A deploy writes it, and
+// ctl-api can also derive the cluster half from install outputs.
 type ComponentHealthContext struct {
 	ClusterInfoJSON     string   `json:"cluster_info_json"`
 	SandboxHelmReleases []string `json:"sandbox_helm_releases"`
+	// ComponentKinds are the resource kinds each component deploys, encoded as
+	// "componentID|group/version/Kind". Only a deploy knows them, so without
+	// persisting them a runner restart silently narrows health back to the core
+	// workload kinds until every component is redeployed.
+	ComponentKinds []string `json:"component_kinds"`
 }
 
 // Scan implements the database/sql.Scanner interface.
