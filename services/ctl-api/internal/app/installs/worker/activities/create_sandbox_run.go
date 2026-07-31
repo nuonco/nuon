@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 )
 
 type CreateSandboxRunRequest struct {
@@ -55,6 +56,20 @@ func (a *Activities) CreateSandboxRun(ctx context.Context, req CreateSandboxRunR
 	if resCreateRun.Error != nil {
 		return nil, fmt.Errorf("unable to create install sandbox run: %w", resCreateRun.Error)
 	}
+
+	a.audit.Emit(ctx, audit.Event{
+		Type:        audit.EventInstallSandboxRun,
+		Message:     "install sandbox run created",
+		Outcome:     audit.OutcomeStarted,
+		InstallID:   req.InstallID,
+		SubjectID:   run.ID,
+		SubjectType: "install_sandbox_runs",
+		Attrs: map[string]string{
+			"sandbox_run.id":   run.ID,
+			"sandbox_run.type": string(req.RunType),
+			"flow_workflow.id": req.WorkflowID,
+		},
+	})
 
 	return &run, nil
 }

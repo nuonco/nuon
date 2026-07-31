@@ -5,6 +5,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/auditexport"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/drain"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -28,5 +29,6 @@ type BaseParams struct {
 	L *zap.Logger `name:"system"`
 
 	ProcessRegistrar *process.Registrar
+	AuditExport      *auditexport.Supervisor `optional:"true"`
 	Drainer          *drain.Drainer
 }

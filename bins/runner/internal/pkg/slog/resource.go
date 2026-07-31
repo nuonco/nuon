@@ -8,10 +8,13 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 )
 
-func getResource(set *settings.Settings) *resource.Resource {
+func getResource(set *settings.Settings, logStreamID string) *resource.Resource {
 	attrs := []attribute.KeyValue{}
 	builtInAttrs := map[string]string{
 		"service.name": "runner",
+	}
+	if logStreamID != "" {
+		builtInAttrs["log_stream.id"] = logStreamID
 	}
 
 	for k, v := range generics.MergeMap(set.Metadata, builtInAttrs) {

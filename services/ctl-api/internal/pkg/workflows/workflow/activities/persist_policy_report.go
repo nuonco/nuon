@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -11,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 )
 
 type PersistPolicyReportRequest struct {
@@ -131,6 +133,30 @@ func (a *Activities) PersistPolicyReport(ctx context.Context, req *PersistPolicy
 		zap.Int("warn_count", warnCount),
 		zap.Int("pass_count", passCount),
 	)
+
+	policyOutcome := audit.OutcomeSucceeded
+	if denyCount > 0 {
+		policyOutcome = audit.OutcomeFailed
+	}
+	a.audit.Emit(ctx, audit.Event{
+		Type:        audit.EventPolicyReport,
+		Message:     "policy report evaluated",
+		Outcome:     policyOutcome,
+		InstallID:   generics.FromPtrStr(req.InstallID),
+		AppID:       req.AppID,
+		ComponentID: generics.FromPtrStr(req.ComponentID),
+		SubjectID:   report.ID,
+		SubjectType: report.TableName(),
+		Attrs: map[string]string{
+			"policy_report.id":         report.ID,
+			"policy_report.deny":       strconv.Itoa(denyCount),
+			"policy_report.warn":       strconv.Itoa(warnCount),
+			"policy_report.pass":       strconv.Itoa(passCount),
+			"policy_report.owner_id":   req.OwnerID,
+			"policy_report.owner_type": req.OwnerType,
+			"runner_job.id":            generics.FromPtrStr(req.RunnerJobID),
+		},
+	})
 
 	// Write analytics events to ClickHouse (non-blocking — failures don't affect the activity)
 	a.persistPolicyAnalyticsEvents(ctx, l, report, policyResults)
