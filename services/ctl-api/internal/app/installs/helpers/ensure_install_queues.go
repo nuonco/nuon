@@ -3,7 +3,6 @@ package helpers
 import (
 	"context"
 	"fmt"
-	"time"
 
 	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -11,10 +10,7 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
-const (
-	componentHealthEvaluateEmitterName  = "component-health-evaluate"
-	componentHealthEvaluateSignalExpiry = 2 * time.Minute
-)
+const componentHealthEvaluateEmitterName = "component-health-evaluate"
 
 // EnsureInstallQueues creates the install queues if they don't already exist.
 // Safe to call multiple times — queueClient.Create is idempotent.
