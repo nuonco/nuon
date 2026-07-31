@@ -35,7 +35,11 @@ type executeJobStep struct {
 func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) error {
 	job.RunnerProcessID = j.processRegistrar.ProcessID()
 
-	jl, err := slog.NewOTELProvider(j.cfg, j.settings, job.LogStreamID)
+	var auditExportAvailable func() bool
+	if j.auditExport != nil {
+		auditExportAvailable = j.auditExport.Available
+	}
+	jl, err := slog.NewOTELProvider(j.cfg, j.settings, job.LogStreamID, auditExportAvailable)
 	if err != nil {
 		return errors.Wrap(err, "unable to create otel provider")
 	}

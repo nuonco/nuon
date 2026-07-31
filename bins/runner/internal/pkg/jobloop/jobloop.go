@@ -11,6 +11,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/auditexport"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/drain"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -55,6 +56,7 @@ type jobLoop struct {
 	shutdowner fx.Shutdowner
 
 	processRegistrar *process.Registrar
+	auditExport      *auditexport.Supervisor
 
 	drainer   *drain.Drainer
 	jobDoneCh chan struct{}
@@ -96,6 +98,7 @@ func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params B
 		shutdowner: params.Shutdowner,
 
 		processRegistrar: params.ProcessRegistrar,
+		auditExport:      params.AuditExport,
 
 		drainer:    params.Drainer,
 		jobDoneCh:  jobDoneCh,

@@ -21,14 +21,31 @@ const (
 )
 
 type auditProcessor struct {
-	next log.Processor
+	next      log.Processor
+	available func() bool
+}
+
+type availabilityExporter struct {
+	log.Exporter
+	available func() bool
+}
+
+func (e *availabilityExporter) Export(ctx context.Context, records []log.Record) error {
+	if !e.available() {
+		return nil
+	}
+	return e.Exporter.Export(ctx, records)
 }
 
 func (p *auditProcessor) Enabled(ctx context.Context, params log.EnabledParameters) bool {
-	return p.next.Enabled(ctx, params)
+	return p.available() && p.next.Enabled(ctx, params)
 }
 
 func (p *auditProcessor) OnEmit(ctx context.Context, record *log.Record) error {
+	if !p.available() {
+		return nil
+	}
+
 	isAudit := false
 	record.WalkAttributes(func(attr otellog.KeyValue) bool {
 		isAudit = attr.Key == runnerlog.AuditAttr &&
@@ -51,7 +68,7 @@ func (p *auditProcessor) ForceFlush(ctx context.Context) error {
 	return p.next.ForceFlush(ctx)
 }
 
-func NewOTELProvider(cfg *runnerconfig.Config, set *settings.Settings, logStreamID string) (*log.LoggerProvider, error) {
+func NewOTELProvider(cfg *runnerconfig.Config, set *settings.Settings, logStreamID string, auditExportAvailable func() bool) (*log.LoggerProvider, error) {
 	opts := []log.LoggerProviderOption{
 		log.WithResource(getResource(set, logStreamID)),
 	}
@@ -64,8 +81,8 @@ func NewOTELProvider(cfg *runnerconfig.Config, set *settings.Settings, logStream
 		opts = append(opts, log.WithProcessor(processor))
 	}
 
-	if cfg.OTELAuditExportEnabled {
-		processor, err := newAuditCollectorProcessor()
+	if auditExportAvailable != nil {
+		processor, err := newAuditCollectorProcessor(auditExportAvailable)
 		if err != nil {
 			return nil, err
 		}
@@ -90,15 +107,17 @@ func newAPIProcessor(cfg *runnerconfig.Config, logStreamID string) (log.Processo
 	return newBatchProcessor(exporter), nil
 }
 
-func newAuditCollectorProcessor() (log.Processor, error) {
+func newAuditCollectorProcessor(available func() bool) (log.Processor, error) {
 	exporter, err := otlploghttp.New(context.Background(),
 		otlploghttp.WithEndpointURL(auditCollectorEndpoint),
+		otlploghttp.WithRetry(otlploghttp.RetryConfig{Enabled: false}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to initialize audit collector log exporter: %w", err)
 	}
 
-	return &auditProcessor{next: newBatchProcessor(exporter)}, nil
+	availableExporter := &availabilityExporter{Exporter: exporter, available: available}
+	return &auditProcessor{next: newBatchProcessor(availableExporter), available: available}, nil
 }
 
 func newBatchProcessor(exporter log.Exporter) log.Processor {

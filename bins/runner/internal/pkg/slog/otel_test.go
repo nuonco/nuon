@@ -3,6 +3,7 @@ package slog
 import (
 	"context"
 	"testing"
+	"time"
 
 	otellog "go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/sdk/log"
@@ -15,6 +16,18 @@ type recordingProcessor struct {
 	flushed int
 	stopped int
 }
+
+type recordingExporter struct {
+	exported int
+}
+
+func (e *recordingExporter) Export(_ context.Context, records []log.Record) error {
+	e.exported += len(records)
+	return nil
+}
+
+func (*recordingExporter) ForceFlush(context.Context) error { return nil }
+func (*recordingExporter) Shutdown(context.Context) error   { return nil }
 
 func (p *recordingProcessor) Enabled(context.Context, log.EnabledParameters) bool { return true }
 
@@ -35,7 +48,8 @@ func (p *recordingProcessor) Shutdown(context.Context) error {
 
 func TestAuditProcessor(t *testing.T) {
 	next := new(recordingProcessor)
-	processor := &auditProcessor{next: next}
+	available := true
+	processor := &auditProcessor{next: next, available: func() bool { return available }}
 	ctx := context.Background()
 	logger := log.NewLoggerProvider(log.WithProcessor(processor)).Logger("test")
 
@@ -49,6 +63,11 @@ func TestAuditProcessor(t *testing.T) {
 	if next.emitted != 1 {
 		t.Fatalf("forwarded %d records, want 1", next.emitted)
 	}
+	available = false
+	logger.Emit(ctx, records[2])
+	if next.emitted != 1 {
+		t.Fatalf("forwarded %d records while unavailable, want 1", next.emitted)
+	}
 	if err := processor.ForceFlush(ctx); err != nil {
 		t.Fatalf("ForceFlush() error = %v", err)
 	}
@@ -57,5 +76,29 @@ func TestAuditProcessor(t *testing.T) {
 	}
 	if next.flushed != 1 || next.stopped != 1 {
 		t.Fatalf("delegation counts = flush %d, shutdown %d; want 1 each", next.flushed, next.stopped)
+	}
+}
+
+func TestAvailabilityExporterDropsQueuedRecordsAfterCollectorStops(t *testing.T) {
+	available := true
+	exporter := new(recordingExporter)
+	gatedExporter := &availabilityExporter{Exporter: exporter, available: func() bool { return available }}
+	batch := log.NewBatchProcessor(gatedExporter, log.WithExportInterval(time.Hour))
+	processor := &auditProcessor{next: batch, available: func() bool { return available }}
+	provider := log.NewLoggerProvider(log.WithProcessor(processor))
+	logger := provider.Logger("test")
+
+	var record otellog.Record
+	record.AddAttributes(otellog.String(runnerlog.AuditAttr, runnerlog.AuditAttrValue))
+	logger.Emit(context.Background(), record)
+	available = false
+	if err := provider.ForceFlush(context.Background()); err != nil {
+		t.Fatalf("ForceFlush() error = %v", err)
+	}
+	if exporter.exported != 0 {
+		t.Fatalf("exported %d queued records after collector stopped, want 0", exporter.exported)
+	}
+	if err := provider.Shutdown(context.Background()); err != nil {
+		t.Fatalf("Shutdown() error = %v", err)
 	}
 }
