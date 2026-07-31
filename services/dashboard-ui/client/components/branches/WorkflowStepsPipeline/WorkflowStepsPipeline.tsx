@@ -223,7 +223,7 @@ export const WorkflowStepsPipeline = ({
 
                   <div className="flex items-center gap-2">
                     <Badge size="sm" variant="code">
-                      GROUP {step.group_idx ?? idx + 1}
+                      Group {step.group_idx ?? idx + 1}
                     </Badge>
                     {step.execution_time ? (
                       <Duration

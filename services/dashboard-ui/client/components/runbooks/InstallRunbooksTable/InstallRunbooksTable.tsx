@@ -230,7 +230,7 @@ export const InstallRunbooksTable = ({
         variant: 'actions',
         emptyTitle: 'No runbooks yet',
         emptyMessage:
-          'Runbooks let you run operational procedures on this install.',
+          'Runbooks let you run operational procedures on this install. They will appear here once the app config includes runbooks.',
       }}
       pagination={pagination}
       searchPlaceholder="Search by name or ID..."

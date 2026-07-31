@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
 import { getTriggerRule } from '@/lib'
@@ -19,6 +21,14 @@ export const TriggerRuleDetailsContainer = ({
   })
   if (query.isLoading) return <Text theme="neutral">Loading rule...</Text>
   if (query.error || !query.data)
-    return <Text theme="error">Rule loading failed.</Text>
+    return (
+      <div className="flex flex-col items-start gap-3">
+        <Text theme="error">Rule loading failed.</Text>
+        <Button variant="secondary" onClick={() => void query.refetch()}>
+          <Icon variant="ArrowClockwiseIcon" />
+          Retry loading rule
+        </Button>
+      </div>
+    )
   return <TriggerRuleDetails orgId={org?.id ?? ''} rule={query.data} />
 }
