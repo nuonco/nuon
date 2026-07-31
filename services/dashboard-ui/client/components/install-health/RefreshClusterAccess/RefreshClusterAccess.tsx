@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -96,21 +94,5 @@ export const RefreshClusterAccessModal = ({
         disabled={isPending}
       />
     </Modal>
-  )
-}
-
-export const RefreshClusterAccessButton = ({
-  installId,
-}: {
-  installId: string
-}) => {
-  const { addModal } = useSurfaces()
-  const modal = <RefreshClusterAccessModal installId={installId} />
-
-  return (
-    <Button variant="ghost" size="xs" onClick={() => addModal(modal)}>
-      <Icon variant="ArrowsClockwiseIcon" size={14} />
-      Refresh cluster access
-    </Button>
   )
 }

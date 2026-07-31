@@ -1,1 +1,1 @@
-export { ResetHealthWindowButton, ResetHealthWindowModal } from './ResetHealthWindow'
+export { ResetHealthWindowModal } from './ResetHealthWindow'

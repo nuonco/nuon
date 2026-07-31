@@ -9,8 +9,7 @@ import type {
   TInstallComponentHealthTimeline,
   TInstallHealthTimeline,
 } from '@/types'
-import { RefreshClusterAccessButton } from '@/components/install-health/RefreshClusterAccess'
-import { ResetHealthWindowButton } from '@/components/install-health/ResetHealthWindow'
+import { HealthCardActions } from '@/components/install-health/HealthCardActions'
 import { HealthTimeline } from './HealthTimeline'
 
 export const HealthTimelineContainer = ({
@@ -62,10 +61,7 @@ export const HealthTimelineContainer = ({
     <HealthTimeline
       headerAction={
         !isComponentScope && install?.id ? (
-          <>
-            <RefreshClusterAccessButton installId={install.id} />
-            <ResetHealthWindowButton installId={install.id} />
-          </>
+          <HealthCardActions installId={install.id} />
         ) : undefined
       }
       scope={isComponentScope ? 'component' : 'install'}

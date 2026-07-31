@@ -1,4 +1,1 @@
-export {
-  RefreshClusterAccessButton,
-  RefreshClusterAccessModal,
-} from './RefreshClusterAccess'
+export { RefreshClusterAccessModal } from './RefreshClusterAccess'
