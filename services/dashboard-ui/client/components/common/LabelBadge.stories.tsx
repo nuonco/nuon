@@ -51,10 +51,10 @@ export const CustomKeyTheme = () => (
   </div>
 )
 
-export const CodeVariant = () => (
+export const CodeValues = () => (
   <div className="flex flex-wrap gap-2">
-    <LabelBadge label="image:nginx:latest" variant="code" theme="info" />
-    <LabelBadge label="sha:a1b2c3d" variant="code" />
+    <LabelBadge label="image:nginx:latest" theme="info" />
+    <LabelBadge label="sha:a1b2c3d" />
   </div>
 )
 
@@ -69,8 +69,8 @@ export const CustomColors = () => (
 
 export const MixedCustomAndDefault = () => (
   <div className="flex flex-wrap gap-2">
-    <LabelBadge label="env:production" customColor="#16a34a" variant="code" size="sm" />
-    <LabelBadge label="region:us-east-1" variant="code" size="sm" />
-    <LabelBadge label="team:platform" customColor="#9333ea" variant="code" size="sm" />
+    <LabelBadge label="env:production" customColor="#16a34a" size="sm" />
+    <LabelBadge label="region:us-east-1" size="sm" />
+    <LabelBadge label="team:platform" customColor="#9333ea" size="sm" />
   </div>
 )

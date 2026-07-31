@@ -162,7 +162,7 @@ export function parseInstallsToTableData(
           {Object.keys(lbls)
             .sort()
             .map((k) => (
-              <LabelBadge key={k} variant="code" size="sm" labelKey={k} labelValue={lbls[k]} customColor={labelColorsByApp?.[install.app_id ?? '']?.[k]} />
+              <LabelBadge key={k} size="sm" labelKey={k} labelValue={lbls[k]} customColor={labelColorsByApp?.[install.app_id ?? '']?.[k]} />
             ))}
         </span>
       )
