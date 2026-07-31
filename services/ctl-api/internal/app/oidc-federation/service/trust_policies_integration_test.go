@@ -27,6 +27,25 @@ func (s *OIDCFederationTestSuite) createPolicy(idp *fakeIDP, conditions map[stri
 	return policy
 }
 
+func (s *OIDCFederationTestSuite) TestFederationDisabled() {
+	idp := newFakeIDP(s.T())
+	policy := s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:ref:refs/heads/main"})
+	token := idp.signToken(s.T(), jwt.MapClaims{"sub": "repo:acme/app:ref:refs/heads/main"})
+
+	s.deps.Service.cfg.OIDCFederationEnabled = false
+	defer func() { s.deps.Service.cfg.OIDCFederationEnabled = true }()
+
+	rr := s.makeRequest(http.MethodPost, "/v1/oidc/token", ExchangeOIDCTokenRequest{OrgID: s.testOrg.ID, Token: token})
+	require.Equal(s.T(), http.StatusUnauthorized, rr.Code, rr.Body.String())
+
+	rr = s.makeRequest(http.MethodGet, "/v1/oidc/trust-policies", nil)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+	require.Contains(s.T(), rr.Body.String(), "not enabled")
+
+	rr = s.makeRequest(http.MethodDelete, "/v1/oidc/trust-policies/"+policy.ID, nil)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
+}
+
 func (s *OIDCFederationTestSuite) TestCreatePolicyCreatesServiceAccount() {
 	idp := newFakeIDP(s.T())
 	policy := s.createPolicy(idp, map[string]string{"sub": "repo:acme/app:*:*"})

@@ -421,8 +421,10 @@ changing a command, set this annotation; it is metadata LLMs and completion rely
 ### OIDC workload identity federation (CI auth without secrets)
 
 In CI, the CLI can authenticate with **no stored secrets** by exchanging the workload's ambient OIDC
-ID token for a short-lived Nuon API token (`POST /v1/oidc/token`, unauthenticated). An org admin
-first creates a trust policy binding an issuer + audience + claim conditions to an org role:
+ID token for a short-lived Nuon API token (`POST /v1/oidc/token`, unauthenticated). The control
+plane must have `oidc_federation_enabled: true` in its config (`OIDC_FEDERATION_ENABLED` env var —
+off by default). An org admin then creates a trust policy binding an issuer + audience + claim
+conditions to an org role:
 
 ```bash
 nuon orgs oidc-trust-policies create \

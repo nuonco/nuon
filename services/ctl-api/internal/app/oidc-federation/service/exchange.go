@@ -141,6 +141,12 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 		}
 	}()
 
+	if !s.cfg.OIDCFederationEnabled {
+		metricTags["status"] = "disabled"
+		ctx.Error(genericExchangeError())
+		return
+	}
+
 	var req ExchangeOIDCTokenRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(errors.New("invalid request format")))

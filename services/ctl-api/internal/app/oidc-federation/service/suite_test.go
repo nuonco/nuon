@@ -75,6 +75,7 @@ func (s *OIDCFederationTestSuite) SetupSuite() {
 
 func (s *OIDCFederationTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
+	s.deps.Service.cfg.OIDCFederationEnabled = true
 	s.setupTestData()
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{

@@ -395,7 +395,25 @@ func (s *service) getTrustPolicy(ctx *gin.Context, orgID, policyID string) (*app
 	return &policy, nil
 }
 
+// requireFederationEnabled gates the trust policy CRUD surface behind the
+// deployment-level config flag. The exchange endpoint checks the flag
+// separately and returns its uniform generic 401 instead.
+func (s *service) requireFederationEnabled() error {
+	if s.cfg.OIDCFederationEnabled {
+		return nil
+	}
+
+	return stderr.ErrUser{
+		Err:         fmt.Errorf("OIDC federation is not enabled"),
+		Description: "OIDC federation is not enabled on this control plane; set oidc_federation_enabled in the API configuration",
+	}
+}
+
 func (s *service) requireOrgAdmin(ctx *gin.Context) (*app.Org, error) {
+	if err := s.requireFederationEnabled(); err != nil {
+		return nil, err
+	}
+
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		return nil, err
