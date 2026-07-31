@@ -57,12 +57,14 @@ type TerraformProvider struct {
 type TerraformProviderParams struct {
 	fx.In
 
-	L *zap.Logger `name:"system"`
+	L     *zap.Logger `name:"system"`
+	Kinds *ManifestKindsProvider
 }
 
 func NewTerraformProvider(params TerraformProviderParams) *TerraformProvider {
 	return &TerraformProvider{
 		l:           params.L,
+		kindsSink:   params.Kinds,
 		byComponent: map[string][]*models.ServiceComponentHealthResource{},
 		byRelease:   map[string]string{},
 		byObject:    map[string]string{},
@@ -116,14 +118,6 @@ func (p *TerraformProvider) Set(componentID string, state *tfjson.State) {
 	if sink != nil {
 		sink.SetKinds(componentID, gvks)
 	}
-}
-
-// SetKindsSink lets the shared kinds store receive what terraform applied, so
-// discovery and its persistence live in one place.
-func (p *TerraformProvider) SetKindsSink(sink *ManifestKindsProvider) {
-	p.mu.Lock()
-	p.kindsSink = sink
-	p.mu.Unlock()
 }
 
 // ComponentForObject returns the terraform component that applied an object

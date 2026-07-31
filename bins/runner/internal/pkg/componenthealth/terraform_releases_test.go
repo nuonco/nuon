@@ -103,3 +103,22 @@ func TestComponentForObject(t *testing.T) {
 	_, ok = p.ComponentForObject(key)
 	assert.False(t, ok)
 }
+
+// Terraform kinds must persist from the deploy alone. They used to depend on the
+// health engine having booted first and wiring a sink, so a deploy that landed
+// earlier — or a runner whose engine never runs — dropped them silently.
+func TestTerraformPersistsKindsWithoutEngineBoot(t *testing.T) {
+	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
+	kinds := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
+
+	p := NewTerraformProvider(TerraformProviderParams{L: zap.NewNop(), Kinds: kinds})
+	p.Set("cmp-tf", tfStateWithManifest(map[string]interface{}{
+		"api_version": "cert-manager.io/v1",
+		"kind":        "Certificate",
+		"namespace":   "whoami",
+		"name":        "c",
+	}))
+
+	assert.Equal(t, []string{"cmp-tf|cert-manager.io/v1/Certificate"}, store.ComponentKinds())
+	assert.Len(t, kinds.DiscoveredGVKs(), 1)
+}
