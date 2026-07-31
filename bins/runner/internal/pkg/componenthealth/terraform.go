@@ -42,6 +42,10 @@ type TerraformProvider struct {
 
 	mu          sync.RWMutex
 	byComponent map[string][]*models.ServiceComponentHealthResource
+	// byRelease maps a helm release this component's terraform manages to the
+	// component, so the release's live workloads are attributed to it instead of
+	// being dropped as unowned.
+	byRelease map[string]string
 }
 
 type TerraformProviderParams struct {
@@ -54,6 +58,7 @@ func NewTerraformProvider(params TerraformProviderParams) *TerraformProvider {
 	return &TerraformProvider{
 		l:           params.L,
 		byComponent: map[string][]*models.ServiceComponentHealthResource{},
+		byRelease:   map[string]string{},
 	}
 }
 
@@ -74,9 +79,65 @@ func (p *TerraformProvider) Set(componentID string, state *tfjson.State) {
 		rows = rows[:maxResourcesPerComponent]
 	}
 
+	releases := terraformHelmReleases(state)
+
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.byComponent[componentID] = rows
+
+	// Drop this component's previous releases first, so a release removed from
+	// the module stops being attributed to it.
+	for release, owner := range p.byRelease {
+		if owner == componentID {
+			delete(p.byRelease, release)
+		}
+	}
+	for _, release := range releases {
+		p.byRelease[release] = componentID
+	}
+}
+
+// ComponentForRelease returns the terraform component managing a helm release.
+func (p *TerraformProvider) ComponentForRelease(release string) (string, bool) {
+	if release == "" {
+		return "", false
+	}
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	componentID, ok := p.byRelease[release]
+	return componentID, ok
+}
+
+// terraformHelmReleases walks state for helm_release resources. A terraform
+// module that installs a chart owns real workloads in the cluster; without this
+// they carry no nuon labels and no matching chart component, so they were
+// dropped as unowned and the component reported only identity rows.
+func terraformHelmReleases(state *tfjson.State) []string {
+	if state == nil || state.Values == nil || state.Values.RootModule == nil {
+		return nil
+	}
+
+	var releases []string
+	var walk func(m *tfjson.StateModule)
+	walk = func(m *tfjson.StateModule) {
+		if m == nil {
+			return
+		}
+		for _, r := range m.Resources {
+			if r == nil || r.Type != "helm_release" || r.Mode == tfjson.DataResourceMode {
+				continue
+			}
+			if name, ok := r.AttributeValues["name"].(string); ok && name != "" {
+				releases = append(releases, name)
+			}
+		}
+		for _, child := range m.ChildModules {
+			walk(child)
+		}
+	}
+	walk(state.Values.RootModule)
+
+	return releases
 }
 
 // Resources returns the rows recorded for a component, empty when this process

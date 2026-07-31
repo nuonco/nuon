@@ -45,6 +45,7 @@ func (e *Engine) report(ctx context.Context) error {
 
 	// Missing or transiently broken cluster access is not a reason to drop the
 	// surfaces that did report.
+	//
 	// Cluster access is one fact about the install, so it is reported once at
 	// install level instead of copied onto every component. A component that
 	// cannot be inspected simply reports nothing this cycle and ages into
@@ -94,9 +95,9 @@ func (e *Engine) report(ctx context.Context) error {
 	}
 
 	req := &models.ServiceCreateComponentHealthRequest{
-		InstallID:       &installID,
-		Kind:            "resync",
-		ObservedAt:      time.Now().UTC().Format(time.RFC3339),
+		InstallID:          &installID,
+		Kind:               "resync",
+		ObservedAt:         time.Now().UTC().Format(time.RFC3339),
 		Components:         components,
 		SandboxReleases:    sandboxReleases,
 		ClusterAccessError: clusterErr,
@@ -382,6 +383,16 @@ func (e *Engine) componentFor(installID string, u *unstructured.Unstructured) (s
 		if release != "" {
 			if entry, ok := e.idx.lookupHelm(release); ok {
 				return entry.componentID, true
+			}
+			// A terraform module can install a chart too; its workloads carry no
+			// nuon labels and match no chart component, so they would otherwise
+			// be dropped as unowned.
+			if e.terraform != nil {
+				if componentID, ok := e.terraform.ComponentForRelease(release); ok {
+					if _, known := e.idx.lookup(componentID); known {
+						return componentID, true
+					}
+				}
 			}
 		}
 	}

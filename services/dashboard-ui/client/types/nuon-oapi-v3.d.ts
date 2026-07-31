@@ -8198,6 +8198,11 @@ export interface components {
       unhealthy_components?: number;
     };
     "service.InstallHealthTimelineResponse": {
+      /**
+       * @description ClusterAccessError is why health cannot currently inspect the install's
+       * cluster, empty when it can. Surfaced once here rather than per component.
+       */
+      cluster_access_error?: string;
       components?: components["schemas"]["service.InstallComponentHealthSummary"][];
       current_health?: string;
       daily?: components["schemas"]["service.dailyHealthBucket"][];
