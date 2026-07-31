@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -61,7 +62,7 @@ func (a *Activities) SweepStaleComponentHealth(ctx context.Context, _ SweepStale
 	quietBefore, ignoreBefore := componentHealthSweepWindow(time.Now())
 	var installs []app.Install
 	if err := a.db.WithContext(ctx).
-		Select("id").
+		Select("id", "created_by_id").
 		Where("deleted_at = 0").
 		Where("last_health_report_at IS NOT NULL").
 		Where("last_health_report_at < ?", quietBefore).
@@ -82,7 +83,11 @@ func (a *Activities) SweepStaleComponentHealth(ctx context.Context, _ SweepStale
 
 	ownerType := plugins.TableName(a.db, app.Install{})
 	for _, install := range installs {
-		if a.enqueueHealthEvaluate(ctx, install.ID, ownerType) {
+		// queue_signals.created_by_id is NOT NULL and filled from context. An
+		// activity has no account, so attribute the signal to whoever created
+		// the install, the way the emitter backfill migration does.
+		installCtx := context.WithValue(ctx, keys.AccountIDCtxKey, install.CreatedByID)
+		if a.enqueueHealthEvaluate(installCtx, install.ID, ownerType) {
 			resp.Enqueued++
 		}
 	}
@@ -102,6 +107,8 @@ func (a *Activities) enqueueHealthEvaluate(ctx context.Context, installID, owner
 			Name:      installshelpers.InstallComponentHealthQueueName,
 		}).
 		First(&q).Error; err != nil {
+		a.l.Warn("no component health queue for stale install",
+			zap.String("install_id", installID), zap.Error(err))
 		return false
 	}
 
