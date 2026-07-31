@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -36,6 +36,7 @@ export const EditBranchNameModalContainer = ({
   const { org } = useOrg()
   const { addToast } = useToast()
   const { removeModal } = useSurfaces()
+  const queryClient = useQueryClient()
 
   const [validationError, setValidationError] = useState<string | null>(null)
 
@@ -150,6 +151,9 @@ export const EditBranchNameModalContainer = ({
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['app-branch', org.id, app.id, branch.id] })
+      queryClient.invalidateQueries({ queryKey: ['app-branches', org.id, app.id] })
+      queryClient.invalidateQueries({ queryKey: ['branch-configs', org.id, app.id, branch.id] })
       addToast(
         <Toast heading="Branch updated" theme="success">
           <Text>Updated branch <Badge variant="code" size="md">{branch.name}</Badge>.</Text>

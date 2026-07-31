@@ -100,6 +100,9 @@ export const InstallComponentsTableContainer = ({
     }
   })
 
+  const orgId = org?.id
+  const appId = install?.app_id
+
   const removedRows = parseInstallComponentSummaryToTableData(
     removedComponents,
     [],
@@ -128,10 +131,12 @@ export const InstallComponentsTableContainer = ({
       filterActions={
         <div className="flex items-center gap-3">
           <SyncedFilterContainer />
-          <LabelFilterDropdown
-            queryKey={['component-label-keys', org.id, install?.app_id]}
-            queryFn={() => getComponentLabelKeys({ orgId: org.id, appId: install.app_id })}
-          />
+          {orgId && appId ? (
+            <LabelFilterDropdown
+              queryKey={['component-label-keys', orgId, appId]}
+              queryFn={() => getComponentLabelKeys({ orgId, appId })}
+            />
+          ) : null}
           <ComponentTypeFilterDropdown />
         </div>
       }

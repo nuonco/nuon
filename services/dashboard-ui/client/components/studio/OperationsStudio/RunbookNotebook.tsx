@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   DndContext,
   PointerSensor,
@@ -367,6 +367,8 @@ function VariablesPanel({
     template: string
     result: 'inserted' | 'copied'
   }>()
+  const feedbackTimer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(feedbackTimer.current), [])
   const variables = useMemo(() => getStateVariables(state), [state])
   const filtered = variables.filter(
     (variable) =>
@@ -402,7 +404,8 @@ function VariablesPanel({
               onClick={() => {
                 const result = onInsert(variable.template)
                 setFeedback({ template: variable.template, result })
-                window.setTimeout(() => setFeedback(undefined), 1500)
+                window.clearTimeout(feedbackTimer.current)
+                feedbackTimer.current = window.setTimeout(() => setFeedback(undefined), 1500)
               }}
             >
               <code className="shrink-0 text-xs text-blue-700 dark:text-blue-400">
@@ -466,6 +469,8 @@ export function RunbookNotebook({
   const [importId, setImportId] = useState('')
   const [messages, setMessages] = useState<string[]>([])
   const [copied, setCopied] = useState<'toml' | 'markdown'>()
+  const copiedTimer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(copiedTimer.current), [])
   const [previewTab, setPreviewTab] = useState<'preview' | 'toml' | 'template'>(
     'preview'
   )
@@ -559,7 +564,8 @@ export function RunbookNotebook({
   const copy = async (kind: 'toml' | 'markdown') => {
     await navigator.clipboard.writeText(kind === 'toml' ? toml : markdown)
     setCopied(kind)
-    window.setTimeout(() => setCopied(undefined), 1500)
+    window.clearTimeout(copiedTimer.current)
+    copiedTimer.current = window.setTimeout(() => setCopied(undefined), 1500)
   }
 
   const insertVariable = (template: string): 'inserted' | 'copied' => {
