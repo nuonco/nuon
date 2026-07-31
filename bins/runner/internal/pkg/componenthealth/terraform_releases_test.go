@@ -6,6 +6,7 @@ import (
 	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func tfStateWithReleases(names ...string) *tfjson.State {
@@ -64,22 +65,25 @@ func tfStateWithManifest(attrs map[string]interface{}) *tfjson.State {
 
 func TestTerraformManifestObjects(t *testing.T) {
 	t.Run("explicit attributes are preferred", func(t *testing.T) {
-		assert.Equal(t, []string{resourceKey("ClickHouseInstallation", "clickhouse", "ch")},
-			terraformManifestObjects(tfStateWithManifest(map[string]interface{}{
-				"kind": "ClickHouseInstallation", "namespace": "clickhouse", "name": "ch",
-			})))
+		keys, _ := terraformManifestObjects(tfStateWithManifest(map[string]interface{}{
+			"kind": "ClickHouseInstallation", "namespace": "clickhouse", "name": "ch",
+		}))
+		assert.Equal(t, []string{resourceKey("ClickHouseInstallation", "clickhouse", "ch")}, keys)
 	})
 
 	t.Run("falls back to parsing the manifest body", func(t *testing.T) {
-		assert.Equal(t, []string{resourceKey("Deployment", "apps", "web")},
-			terraformManifestObjects(tfStateWithManifest(map[string]interface{}{
-				"yaml_body": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web\n  namespace: apps\n",
-			})))
+		keys, gvks := terraformManifestObjects(tfStateWithManifest(map[string]interface{}{
+			"yaml_body": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web\n  namespace: apps\n",
+		}))
+		assert.Equal(t, []string{resourceKey("Deployment", "apps", "web")}, keys)
+		assert.Equal(t, []schema.GroupVersionKind{{Group: "apps", Version: "v1", Kind: "Deployment"}}, gvks)
 	})
 
 	t.Run("unusable entries are skipped", func(t *testing.T) {
-		assert.Empty(t, terraformManifestObjects(tfStateWithManifest(map[string]interface{}{})))
-		assert.Empty(t, terraformManifestObjects(tfStateWithManifest(map[string]interface{}{"yaml_body": "not: yaml: ["})))
+		keys, _ := terraformManifestObjects(tfStateWithManifest(map[string]interface{}{}))
+		assert.Empty(t, keys)
+		keys, _ = terraformManifestObjects(tfStateWithManifest(map[string]interface{}{"yaml_body": "not: yaml: ["}))
+		assert.Empty(t, keys)
 	})
 }
 

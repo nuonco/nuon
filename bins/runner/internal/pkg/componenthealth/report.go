@@ -12,7 +12,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
 
 	"github.com/nuonco/nuon/pkg/kube"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -154,7 +157,7 @@ func (e *Engine) collectCluster(
 	var failedKinds []string
 	var firstListErr error
 
-	for _, gvr := range watchedGVRs {
+	for _, gvr := range e.watchList(ctx, restCfg) {
 		list, err := dynClient.Resource(gvr).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			e.l.Warn("unable to list resources for component health",
@@ -172,7 +175,7 @@ func (e *Engine) collectCluster(
 		}
 	}
 
-	if len(failedKinds) == len(watchedGVRs) {
+	if len(failedKinds) > 0 && len(objects) == 0 {
 		return fmt.Errorf("unable to list any watched resource kind: %w", firstListErr)
 	}
 	if len(failedKinds) > 0 {
@@ -218,6 +221,57 @@ func (e *Engine) collectCluster(
 	}
 
 	return nil
+}
+
+// watchList is the core workload kinds plus any kind the install's terraform
+// applies directly. Without this a component deploying only CRs (a NodePool, a
+// ClickHouseInstallation) reports nothing at all, since nobody lists its kind.
+//
+// Resolving kind to a listable resource needs the cluster's own discovery data,
+// so an unresolvable kind is simply skipped rather than guessed at.
+func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) []schema.GroupVersionResource {
+	out := make([]schema.GroupVersionResource, 0, len(watchedGVRs)+4)
+	out = append(out, watchedGVRs...)
+
+	if e.terraform == nil {
+		return out
+	}
+	discovered := e.terraform.DiscoveredGVKs()
+	if len(discovered) == 0 {
+		return out
+	}
+
+	disco, err := discovery.NewDiscoveryClientForConfig(restCfg)
+	if err != nil {
+		e.l.Warn("unable to build discovery client for dynamic kinds", zap.Error(err))
+		return out
+	}
+	groups, err := restmapper.GetAPIGroupResources(disco)
+	if err != nil {
+		e.l.Warn("unable to fetch api group resources for dynamic kinds", zap.Error(err))
+		return out
+	}
+	mapper := restmapper.NewDiscoveryRESTMapper(groups)
+
+	seen := map[schema.GroupVersionResource]struct{}{}
+	for _, gvr := range out {
+		seen[gvr] = struct{}{}
+	}
+	for _, gvk := range discovered {
+		m, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		if err != nil {
+			e.l.Debug("skipping kind with no rest mapping",
+				zap.String("gvk", gvk.String()), zap.Error(err))
+			continue
+		}
+		if _, dup := seen[m.Resource]; dup {
+			continue
+		}
+		seen[m.Resource] = struct{}{}
+		out = append(out, m.Resource)
+	}
+
+	return out
 }
 
 // maxOwnerHops bounds the ownerReferences walk so a cyclic chain cannot spin.

@@ -9,6 +9,7 @@ import (
 	tfjson "github.com/hashicorp/terraform-json"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/yaml"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -50,6 +51,9 @@ type TerraformProvider struct {
 	// byObject does the same for individual objects a module applies directly
 	// (kubectl_manifest), keyed by resourceKey.
 	byObject map[string]string
+	// gvksByComponent records the apiVersion/kind each component applies, so the
+	// engine can watch kinds it would otherwise never list.
+	gvksByComponent map[string][]schema.GroupVersionKind
 }
 
 type TerraformProviderParams struct {
@@ -60,10 +64,11 @@ type TerraformProviderParams struct {
 
 func NewTerraformProvider(params TerraformProviderParams) *TerraformProvider {
 	return &TerraformProvider{
-		l:           params.L,
-		byComponent: map[string][]*models.ServiceComponentHealthResource{},
-		byRelease:   map[string]string{},
-		byObject:    map[string]string{},
+		l:               params.L,
+		byComponent:     map[string][]*models.ServiceComponentHealthResource{},
+		byRelease:       map[string]string{},
+		byObject:        map[string]string{},
+		gvksByComponent: map[string][]schema.GroupVersionKind{},
 	}
 }
 
@@ -85,7 +90,7 @@ func (p *TerraformProvider) Set(componentID string, state *tfjson.State) {
 	}
 
 	releases := terraformHelmReleases(state)
-	objects := terraformManifestObjects(state)
+	objects, gvks := terraformManifestObjects(state)
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -109,6 +114,31 @@ func (p *TerraformProvider) Set(componentID string, state *tfjson.State) {
 	for _, key := range objects {
 		p.byObject[key] = componentID
 	}
+	if len(gvks) > 0 {
+		p.gvksByComponent[componentID] = gvks
+	} else {
+		delete(p.gvksByComponent, componentID)
+	}
+}
+
+// DiscoveredGVKs returns every apiVersion/kind the recorded terraform state
+// applies, deduplicated across components.
+func (p *TerraformProvider) DiscoveredGVKs() []schema.GroupVersionKind {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	seen := map[schema.GroupVersionKind]struct{}{}
+	out := make([]schema.GroupVersionKind, 0, 8)
+	for _, gvks := range p.gvksByComponent {
+		for _, gvk := range gvks {
+			if _, dup := seen[gvk]; dup {
+				continue
+			}
+			seen[gvk] = struct{}{}
+			out = append(out, gvk)
+		}
+	}
+	return out
 }
 
 // ComponentForObject returns the terraform component that applied an object
@@ -126,12 +156,13 @@ func (p *TerraformProvider) ComponentForObject(key string) (string, bool) {
 //
 // This is attribution only: a kind nobody watches still will not be listed, so
 // discovering it here cannot make it reportable on its own.
-func terraformManifestObjects(state *tfjson.State) []string {
+func terraformManifestObjects(state *tfjson.State) ([]string, []schema.GroupVersionKind) {
 	if state == nil || state.Values == nil || state.Values.RootModule == nil {
-		return nil
+		return nil, nil
 	}
 
 	var keys []string
+	var gvks []schema.GroupVersionKind
 	var walk func(m *tfjson.StateModule)
 	walk = func(m *tfjson.StateModule) {
 		if m == nil {
@@ -144,8 +175,13 @@ func terraformManifestObjects(state *tfjson.State) []string {
 			if r.Type != "kubectl_manifest" && r.Type != "kubernetes_manifest" {
 				continue
 			}
-			if key, ok := manifestObjectKey(r.AttributeValues); ok {
-				keys = append(keys, key)
+			key, gvk, ok := manifestObject(r.AttributeValues)
+			if !ok {
+				continue
+			}
+			keys = append(keys, key)
+			if gvk.Kind != "" {
+				gvks = append(gvks, gvk)
 			}
 		}
 		for _, child := range m.ChildModules {
@@ -154,37 +190,54 @@ func terraformManifestObjects(state *tfjson.State) []string {
 	}
 	walk(state.Values.RootModule)
 
-	return keys
+	return keys, gvks
 }
 
-func manifestObjectKey(attrs map[string]interface{}) (string, bool) {
+func manifestObject(attrs map[string]interface{}) (string, schema.GroupVersionKind, bool) {
 	str := func(k string) string { s, _ := attrs[k].(string); return s }
 
-	kind, namespace, name := str("kind"), str("namespace"), str("name")
-	if kind == "" || name == "" {
-		kind, namespace, name = manifestFromBody(str("yaml_body"))
+	apiVersion, kind, namespace, name := str("api_version"), str("kind"), str("namespace"), str("name")
+	if kind == "" || name == "" || apiVersion == "" {
+		bodyAPI, bodyKind, bodyNS, bodyName := manifestFromBody(str("yaml_body"))
+		if kind == "" {
+			kind = bodyKind
+		}
+		if name == "" {
+			name, namespace = bodyName, bodyNS
+		}
+		if apiVersion == "" {
+			apiVersion = bodyAPI
+		}
 	}
 	if kind == "" || name == "" {
-		return "", false
+		return "", schema.GroupVersionKind{}, false
 	}
-	return resourceKey(kind, namespace, name), true
+
+	gvk := schema.GroupVersionKind{}
+	if apiVersion != "" {
+		if gv, err := schema.ParseGroupVersion(apiVersion); err == nil {
+			gvk = gv.WithKind(kind)
+		}
+	}
+	return resourceKey(kind, namespace, name), gvk, true
 }
 
-func manifestFromBody(body string) (kind, namespace, name string) {
+func manifestFromBody(body string) (apiVersion, kind, namespace, name string) {
 	if body == "" {
-		return "", "", ""
+		return "", "", "", ""
 	}
 	var doc struct {
-		Kind     string `json:"kind"`
-		Metadata struct {
+		APIVersion string `json:"apiVersion"`
+		Kind       string `json:"kind"`
+		Metadata   struct {
 			Name      string `json:"name"`
 			Namespace string `json:"namespace"`
 		} `json:"metadata"`
 	}
 	if err := yaml.Unmarshal([]byte(body), &doc); err != nil {
-		return "", "", ""
+		return "", "", "", ""
 	}
-	return doc.Kind, doc.Metadata.Namespace, doc.Metadata.Name
+	return doc.APIVersion, doc.Kind, doc.Metadata.Namespace, doc.Metadata.Name
 }
 
 // ComponentForRelease returns the terraform component managing a helm release.
