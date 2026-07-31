@@ -5,23 +5,14 @@ boost: 10
 keywords: ["API", "api", "Nuon API", "REST API", "control plane API", "API reference", "API token", "access token", "Swagger", "OpenAPI", "programmatic install creation", "Bearer token"]
 ---
 
-You'll need an access token to use the Nuon API. Create a durable, org-scoped API token from the Nuon [Dashboard][1] or the Nuon CLI. Tokens are shown only once, so store them somewhere safe.
-
-To create a token from the Dashboard, go to **Settings → API tokens → Create token**.
-
-To create one via the Nuon CLI, first login
+You'll need an access token to use the Nuon API. Create an org-scoped [API token](/concepts/api-tokens) from the Nuon [Dashboard][1] or the Nuon CLI. Tokens are shown only once, so store them somewhere safe.
 
 ```sh
 nuon login
-```
-
-then create an API token for your current org
-
-```sh
 nuon orgs api-tokens create --name my-token
 ```
 
-You can list and revoke tokens with `nuon orgs api-tokens list` and `nuon orgs api-tokens delete --id <token-id>`. Creating and managing API tokens requires org admin access.
+For automation and CI/CD, use a [service account](/concepts/service-accounts) — a named machine identity you can assign a role and mint multiple tokens for.
 
 ## Using the Swagger API Reference
 
@@ -29,6 +20,6 @@ You can call the Nuon API endpoints from the API Reference by visiting the [Swag
 
 ## Using the API 
 
-You can call the Nuon API endpoints from the API Reference by adding `Bearer <your-api-token>` to the "Authorization" field in each endpoint card. Verify you're API token with the [current-user](/api-ref/general/get-current-user) endpoint.
+You can call the Nuon API endpoints from the API Reference by adding `Bearer <your-api-token>` to the "Authorization" field in each endpoint card. Verify your API token with the [current-user](/api-ref/general/get-current-user) endpoint.
 
 [1]: https://app.nuon.co
