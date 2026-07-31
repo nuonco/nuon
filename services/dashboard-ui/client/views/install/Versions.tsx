@@ -173,9 +173,9 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
                 {key}: {value}
               </Badge>
             ))}
-          {version.app_branch_run?.workflow_id && version.app_branch_run?.app_branch_id && org?.id && (
+          {version.app_branch_run?.workflow_id && version.app_branch_run?.app_branch?.id && org?.id && (
             <Link
-              href={`/${org.id}/apps/${install?.app_id}/branches/${version.app_branch_run.app_branch_id}/runs/${version.app_branch_run.workflow_id}`}
+              href={`/${org.id}/apps/${install?.app_id}/branches/${version.app_branch_run?.app_branch?.id}/runs/${version.app_branch_run.workflow_id}`}
               className="text-xs"
             >
               View branch run
