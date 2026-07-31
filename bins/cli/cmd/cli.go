@@ -147,7 +147,7 @@ func (c *cli) tryAmbientOIDCExchange(ctx context.Context) error {
 		return nil
 	}
 
-	oidcJWT, source, _, err := oidctoken.Detect(ctx, oidctoken.Audience(""))
+	oidcJWT, source, _, err := oidctoken.Detect(ctx, oidctoken.Audience("", c.cfg.APIURL))
 	if err != nil {
 		return errors.Wrapf(err, "unable to get OIDC token from %s", source)
 	}

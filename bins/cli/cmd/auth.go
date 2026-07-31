@@ -62,7 +62,7 @@ With the default table output, only the token is printed so it can be captured d
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			token := oidcToken
 			if token == "" {
-				detected, source, ok, err := oidctoken.Detect(cmd.Context(), oidctoken.Audience(audience))
+				detected, source, ok, err := oidctoken.Detect(cmd.Context(), oidctoken.Audience(audience, c.cfg.APIURL))
 				if err != nil {
 					return ui.PrintError(&ui.CLIUserError{Msg: fmt.Sprintf("unable to get OIDC token from %s: %v", source, err)})
 				}
@@ -91,7 +91,7 @@ With the default table output, only the token is printed so it can be captured d
 		}),
 	}
 	exchangeTokenCmd.Flags().StringVar(&oidcToken, "oidc-token", "", "The OIDC ID token to exchange (defaults to ambient detection)")
-	exchangeTokenCmd.Flags().StringVar(&audience, "audience", "", "The audience to request for ambient OIDC tokens (or NUON_OIDC_AUDIENCE)")
+	exchangeTokenCmd.Flags().StringVar(&audience, "audience", "", "The audience to request for ambient OIDC tokens (default: NUON_OIDC_AUDIENCE, then the configured API URL)")
 	exchangeTokenCmd.Flags().StringVar(&orgID, "org-id", "", "The org to exchange the token with (defaults to the selected org)")
 
 	authCmd.AddCommand(loginCmd)

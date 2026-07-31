@@ -20,6 +20,15 @@ func clearEnv(t *testing.T) {
 	}
 }
 
+func TestAudiencePrecedence(t *testing.T) {
+	clearEnv(t)
+	require.Equal(t, "https://api.nuon.co", Audience("", "https://api.nuon.co"))
+
+	t.Setenv(audienceEnvVar, "from-env")
+	require.Equal(t, "from-env", Audience("", "https://api.nuon.co"))
+	require.Equal(t, "from-flag", Audience("from-flag", "https://api.nuon.co"))
+}
+
 func TestDetectPrecedence(t *testing.T) {
 	ctx := context.Background()
 

@@ -88,7 +88,8 @@ Ambient token sources, in precedence order (`internal/oidctoken`):
 2. `NUON_OIDC_TOKEN` — a raw OIDC JWT
 3. `NUON_OIDC_TOKEN_FILE` — path to a file containing the JWT
 4. GitHub Actions — `ACTIONS_ID_TOKEN_REQUEST_URL`/`ACTIONS_ID_TOKEN_REQUEST_TOKEN` (requires
-   `permissions: id-token: write`); the audience is set from `--audience` / `NUON_OIDC_AUDIENCE`
+   `permissions: id-token: write`); the requested audience is `--audience`, then
+   `NUON_OIDC_AUDIENCE`, then the configured API URL
 
 The exchange calls `POST /v1/oidc/token` (unauthenticated) with `{org_id, token}`; the API verifies
 the JWT against the org's trust policies (issuer JWKS, audience, claim conditions) and mints a

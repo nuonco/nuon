@@ -16,13 +16,18 @@ const (
 	audienceEnvVar  = "NUON_OIDC_AUDIENCE"
 )
 
-// Audience resolves the audience for ambient token requests from the
-// explicit value (flag) or NUON_OIDC_AUDIENCE.
-func Audience(explicit string) string {
+// Audience resolves the audience for ambient token requests: the explicit
+// value (flag), then NUON_OIDC_AUDIENCE, then the fallback — callers pass the
+// configured API URL so tokens are scoped to the target control plane by
+// default.
+func Audience(explicit, fallback string) string {
 	if explicit != "" {
 		return explicit
 	}
-	return os.Getenv(audienceEnvVar)
+	if env := os.Getenv(audienceEnvVar); env != "" {
+		return env
+	}
+	return fallback
 }
 
 // Available reports whether an ambient OIDC token source is present, without

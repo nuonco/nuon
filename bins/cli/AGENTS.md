@@ -438,14 +438,15 @@ Claim patterns are exact strings or globs where `*` cannot cross `:` segments (s
 tokens immediately.
 
 In a GitHub Actions workflow, no auth setup is needed beyond the org ID and `id-token` permission —
-the CLI detects Actions and exchanges automatically (token held in-memory per invocation):
+the CLI detects Actions and exchanges automatically (token held in-memory per invocation). The
+requested audience defaults to the configured API URL, so the policy's `--audience` should match it
+(override with `--audience` / `NUON_OIDC_AUDIENCE`):
 
 ```yaml
 permissions:
   id-token: write
 env:
   NUON_ORG_ID: org_xxx
-  NUON_OIDC_AUDIENCE: https://api.nuon.co
 steps:
   - run: nuon apps list
 ```
