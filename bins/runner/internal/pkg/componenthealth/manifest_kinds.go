@@ -29,6 +29,10 @@ type ManifestKindsProvider struct {
 	mu     sync.RWMutex
 	gvks   map[string][]schema.GroupVersionKind
 	loaded bool
+	// objects maps a resourceKey to the component that applied it. Terraform
+	// objects carry neither nuon labels nor helm annotations, so this is the only
+	// record of who owns them — and it has to outlive the process.
+	objects map[string]string
 }
 
 type ManifestKindsProviderParams struct {
@@ -43,23 +47,42 @@ func NewManifestKindsProvider(params ManifestKindsProviderParams) *ManifestKinds
 		l:       params.L,
 		cluster: params.Cluster,
 		gvks:    map[string][]schema.GroupVersionKind{},
+		objects: map[string]string{},
 	}
 }
 
-// SetKinds records kinds a caller already resolved (terraform state), rather
-// than a manifest to parse.
-func (p *ManifestKindsProvider) SetKinds(componentID string, gvks []schema.GroupVersionKind) {
+// SetKinds records kinds a caller already resolved (terraform state), plus the
+// object keys that component owns.
+func (p *ManifestKindsProvider) SetKinds(componentID string, gvks []schema.GroupVersionKind, objectKeys []string) {
 	if componentID == "" {
 		return
 	}
+
 	p.mu.Lock()
 	if len(gvks) == 0 {
 		delete(p.gvks, componentID)
 	} else {
 		p.gvks[componentID] = gvks
 	}
+	for key, owner := range p.objects {
+		if owner == componentID {
+			delete(p.objects, key)
+		}
+	}
+	for _, key := range objectKeys {
+		p.objects[key] = componentID
+	}
 	p.mu.Unlock()
 	p.persist()
+}
+
+// ComponentForObject returns the component that applied an object, keyed as
+// resourceKey(kind, namespace, name).
+func (p *ManifestKindsProvider) ComponentForObject(key string) (string, bool) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	componentID, ok := p.objects[key]
+	return componentID, ok
 }
 
 // Load rehydrates kinds persisted by earlier deploys of this install.
@@ -73,15 +96,20 @@ func (p *ManifestKindsProvider) Load() {
 	p.mu.Unlock()
 
 	restored := map[string][]schema.GroupVersionKind{}
+	restoredObjects := map[string]string{}
 	for _, entry := range p.cluster.ComponentKinds() {
+		if after, isObject := strings.CutPrefix(entry, objectEntryPrefix); isObject {
+			componentID, key, found := strings.Cut(after, "|")
+			if found && componentID != "" && key != "" {
+				restoredObjects[key] = componentID
+			}
+			continue
+		}
 		componentID, gvk, ok := decodeComponentKind(entry)
 		if !ok {
 			continue
 		}
 		restored[componentID] = append(restored[componentID], gvk)
-	}
-	if len(restored) == 0 {
-		return
 	}
 
 	p.mu.Lock()
@@ -91,7 +119,16 @@ func (p *ManifestKindsProvider) Load() {
 			p.gvks[componentID] = gvks
 		}
 	}
+	for key, componentID := range restoredObjects {
+		if _, live := p.objects[key]; !live {
+			p.objects[key] = componentID
+		}
+	}
 }
+
+// objectEntryPrefix marks a persisted entry as object ownership rather than a
+// kind, so both share one stored list.
+const objectEntryPrefix = "obj:"
 
 // persist mirrors every recorded kind so a restart does not lose them. Encoded
 // flat as "componentID|group/version/Kind" to keep the stored shape a plain
@@ -117,6 +154,9 @@ func (p *ManifestKindsProvider) persist() {
 		for _, gvk := range gvks {
 			out = append(out, componentID+"|"+gvk.GroupVersion().String()+"/"+gvk.Kind)
 		}
+	}
+	for key, componentID := range p.objects {
+		out = append(out, objectEntryPrefix+componentID+"|"+key)
 	}
 	p.mu.RUnlock()
 

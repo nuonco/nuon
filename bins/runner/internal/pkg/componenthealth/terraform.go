@@ -116,7 +116,7 @@ func (p *TerraformProvider) Set(componentID string, state *tfjson.State) {
 	p.mu.Unlock()
 
 	if sink != nil {
-		sink.SetKinds(componentID, gvks)
+		sink.SetKinds(componentID, gvks, objects)
 	}
 }
 

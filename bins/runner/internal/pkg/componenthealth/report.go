@@ -494,9 +494,9 @@ func (e *Engine) componentFor(installID string, u *unstructured.Unstructured) (s
 
 	// A terraform module can apply an object directly (kubectl_manifest); it
 	// carries no nuon labels and no helm annotations, so nothing else claims it.
-	if e.terraform != nil {
+	if e.manifestKinds != nil {
 		key := resourceKey(u.GetKind(), u.GetNamespace(), u.GetName())
-		if componentID, ok := e.terraform.ComponentForObject(key); ok {
+		if componentID, ok := e.manifestKinds.ComponentForObject(key); ok {
 			if _, known := e.idx.lookup(componentID); known {
 				return componentID, true
 			}

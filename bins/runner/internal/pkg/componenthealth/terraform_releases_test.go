@@ -119,6 +119,17 @@ func TestTerraformPersistsKindsWithoutEngineBoot(t *testing.T) {
 		"name":        "c",
 	}))
 
-	assert.Equal(t, []string{"cmp-tf|cert-manager.io/v1/Certificate"}, store.ComponentKinds())
+	assert.Equal(t, []string{
+		"cmp-tf|cert-manager.io/v1/Certificate",
+		"obj:cmp-tf|" + resourceKey("Certificate", "whoami", "c"),
+	}, store.ComponentKinds())
 	assert.Len(t, kinds.DiscoveredGVKs(), 1)
+
+	// Ownership must outlive the process too, or the object is listed each cycle
+	// and then dropped as unowned.
+	restarted := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
+	restarted.Load()
+	owner, ok := restarted.ComponentForObject(resourceKey("Certificate", "whoami", "c"))
+	assert.True(t, ok)
+	assert.Equal(t, "cmp-tf", owner)
 }
