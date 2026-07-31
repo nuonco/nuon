@@ -256,7 +256,7 @@ function SortableCell({
               >
                 <Icon variant="TrashIcon" size="14" />
               </Button>
-              <Button variant="secondary" size="xs" onClick={onDone}>
+              <Button variant="secondary" onClick={onDone}>
                 Done
               </Button>
             </div>
@@ -377,7 +377,7 @@ function VariablesPanel({
   )
 
   return (
-    <Card className="!p-4 !gap-3">
+    <Card className="!p-4 !gap-4">
       <div className="flex items-center gap-2">
         <Icon variant="BracketsCurlyIcon" size="14" />
         <Text weight="strong">Install state variables</Text>
@@ -610,102 +610,104 @@ export function RunbookNotebook({
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
         <div className="flex flex-col gap-3">
-          <Card className="!py-6 !pl-11 !pr-6 !gap-0">
-            <input
-              className="w-full bg-transparent text-2xl font-semibold outline-none placeholder:text-cool-grey-400 dark:placeholder:text-cool-grey-600"
-              placeholder="Untitled runbook"
-              aria-label="Runbook name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-            <input
-              className="w-full bg-transparent text-sm outline-none mt-1 mb-4 text-cool-grey-700 dark:text-cool-grey-300 placeholder:text-cool-grey-400 dark:placeholder:text-cool-grey-600"
-              placeholder="Add a description"
-              aria-label="Runbook description"
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-            />
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={onDragEnd}
-            >
-              <SortableContext
-                items={cells.map((cell) => cell.key)}
-                strategy={verticalListSortingStrategy}
+          <Card>
+            <div className="flex flex-col pl-5">
+              <input
+                className="w-full bg-transparent text-2xl font-semibold outline-none placeholder:text-cool-grey-400 dark:placeholder:text-cool-grey-600"
+                placeholder="Untitled runbook"
+                aria-label="Runbook name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+              <input
+                className="w-full bg-transparent text-sm outline-none mt-1 mb-4 text-cool-grey-700 dark:text-cool-grey-300 placeholder:text-cool-grey-400 dark:placeholder:text-cool-grey-600"
+                placeholder="Add a description"
+                aria-label="Runbook description"
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+              />
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={onDragEnd}
               >
-                {cells.map((cell, index) => (
-                  <div key={cell.key} className="flex flex-col">
-                    <InsertZone
-                      id={`insert-${cell.key}`}
-                      onAddMarkdown={() => insertAt(index, newMarkdownCell())}
-                      onAddStep={(operation) =>
-                        insertAt(index, newStepCell(operation))
-                      }
-                    />
-                    <SortableCell
-                      cell={cell}
-                      stepNumber={stepNumbers.get(cell.key)}
-                      active={activeKey === cell.key}
-                      issues={validation.byCell[cell.key] ?? []}
-                      onActivate={() => setActiveKey(cell.key)}
-                      onDone={() => setActiveKey(null)}
-                      onRemove={() => removeCell(cell.key)}
-                    >
-                      {cell.kind === 'markdown' ? (
-                        <Textarea
-                          id={`markdown-${cell.key}`}
-                          aria-label="Markdown content"
-                          placeholder="Explain what happens next, add checklists, warnings, or links."
-                          value={cell.content}
-                          autoResize
-                          minRows={3}
-                          onChange={(event) =>
-                            setCells((current) =>
-                              current.map((item) =>
-                                item.key === cell.key &&
-                                item.kind === 'markdown'
-                                  ? { ...item, content: event.target.value }
-                                  : item
+                <SortableContext
+                  items={cells.map((cell) => cell.key)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {cells.map((cell, index) => (
+                    <div key={cell.key} className="flex flex-col">
+                      <InsertZone
+                        id={`insert-${cell.key}`}
+                        onAddMarkdown={() => insertAt(index, newMarkdownCell())}
+                        onAddStep={(operation) =>
+                          insertAt(index, newStepCell(operation))
+                        }
+                      />
+                      <SortableCell
+                        cell={cell}
+                        stepNumber={stepNumbers.get(cell.key)}
+                        active={activeKey === cell.key}
+                        issues={validation.byCell[cell.key] ?? []}
+                        onActivate={() => setActiveKey(cell.key)}
+                        onDone={() => setActiveKey(null)}
+                        onRemove={() => removeCell(cell.key)}
+                      >
+                        {cell.kind === 'markdown' ? (
+                          <Textarea
+                            id={`markdown-${cell.key}`}
+                            aria-label="Markdown content"
+                            placeholder="Explain what happens next, add checklists, warnings, or links."
+                            value={cell.content}
+                            autoResize
+                            minRows={3}
+                            onChange={(event) =>
+                              setCells((current) =>
+                                current.map((item) =>
+                                  item.key === cell.key &&
+                                  item.kind === 'markdown'
+                                    ? { ...item, content: event.target.value }
+                                    : item
+                                )
                               )
-                            )
-                          }
-                        />
-                      ) : (
-                        <StepEditor
-                          step={cell.step}
-                          components={components}
-                          actions={actions}
-                          onChange={(patch) => updateStep(cell.key, patch)}
-                        />
-                      )}
-                    </SortableCell>
-                  </div>
-                ))}
-              </SortableContext>
-            </DndContext>
-            <div className="mt-3 -ml-2">
-              <Dropdown
-                id="add-cell-end"
-                variant="ghost"
-                size="xs"
-                hideIcon
-                buttonText={
-                  <span className="flex items-center gap-1.5 text-cool-grey-500 dark:text-cool-grey-400">
-                    <Icon variant="PlusIcon" size="14" />
-                    Add content or step
-                  </span>
-                }
-              >
-                <CellMenuItems
-                  onAddMarkdown={() =>
-                    insertAt(cells.length, newMarkdownCell())
+                            }
+                          />
+                        ) : (
+                          <StepEditor
+                            step={cell.step}
+                            components={components}
+                            actions={actions}
+                            onChange={(patch) => updateStep(cell.key, patch)}
+                          />
+                        )}
+                      </SortableCell>
+                    </div>
+                  ))}
+                </SortableContext>
+              </DndContext>
+              <div className="mt-3 -ml-2">
+                <Dropdown
+                  id="add-cell-end"
+                  variant="ghost"
+                  size="xs"
+                  hideIcon
+                  buttonText={
+                    <span className="flex items-center gap-1.5 text-cool-grey-500 dark:text-cool-grey-400">
+                      <Icon variant="PlusIcon" size="14" />
+                      Add content or step
+                    </span>
                   }
-                  onAddStep={(operation) =>
-                    insertAt(cells.length, newStepCell(operation))
-                  }
-                />
-              </Dropdown>
+                >
+                  <CellMenuItems
+                    onAddMarkdown={() =>
+                      insertAt(cells.length, newMarkdownCell())
+                    }
+                    onAddStep={(operation) =>
+                      insertAt(cells.length, newStepCell(operation))
+                    }
+                  />
+                </Dropdown>
+              </div>
             </div>
           </Card>
 
@@ -806,7 +808,7 @@ export function RunbookNotebook({
                     <Icon
                       variant="WarningIcon"
                       size="14"
-                      className="text-orange-500"
+                      className="text-orange-500 dark:text-orange-400"
                     />
                     <Text variant="subtext" theme="warn">
                       {validation.errors.length}{' '}
@@ -818,7 +820,7 @@ export function RunbookNotebook({
                     <Icon
                       variant="CheckIcon"
                       size="14"
-                      className="text-green-600"
+                      className="text-green-600 dark:text-green-400"
                     />
                     <Text variant="subtext" theme="success">
                       Ready

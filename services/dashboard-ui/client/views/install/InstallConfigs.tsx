@@ -100,7 +100,6 @@ export const InstallConfigs = () => {
           <div className="shrink-0">
             <Button
               variant="secondary"
-              size="sm"
               disabled={isSyncing}
               onClick={() => syncNow()}
             >
@@ -168,7 +167,7 @@ const ConfigVersionRow = ({ version }: { version: TInstallConfigVersion }) => {
   return (
     <Expand
       id={`config-version-${version.id}`}
-      className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm overflow-hidden"
+      className="border rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm overflow-hidden"
       headerClassName="px-5 py-4"
       heading={
         <div className="flex items-center gap-3 w-full">
@@ -210,7 +209,7 @@ const ConfigVersionRow = ({ version }: { version: TInstallConfigVersion }) => {
         </div>
       }
     >
-      <div className="p-5 border-t border-cool-grey-100 dark:border-dark-grey-800 flex flex-col gap-4">
+      <div className="p-5 border-t flex flex-col gap-4">
         {commit && <CommitCard commit={commit} />}
 
         {isDiffLoading && !diff ? (

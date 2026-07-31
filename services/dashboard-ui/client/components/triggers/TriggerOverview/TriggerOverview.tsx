@@ -131,7 +131,6 @@ export const TriggerOverview = ({
             <div className="flex items-center gap-2">
               {onRevealSecret ? (
                 <Button
-                  size="sm"
                   disabled={pending}
                   onClick={() =>
                     revealed
@@ -147,7 +146,6 @@ export const TriggerOverview = ({
                 </Button>
               ) : null}
               <Button
-                size="sm"
                 variant="danger"
                 onClick={() => onRevokeSecret?.(secret.id!)}
               >
@@ -187,7 +185,6 @@ export const TriggerOverview = ({
               </Text>
               {onRevealSecret && activeSecret?.id ? (
                 <Button
-                  size="sm"
                   disabled={revealPendingSecretId === activeSecret.id}
                   onClick={() => onRevealSecret(activeSecret.id!)}
                 >
@@ -222,7 +219,7 @@ export const TriggerOverview = ({
               Send an HTTP request to this trigger to test its routing rules.
             </Text>
           </div>
-          <Button size="sm" onClick={onRotateIngressURL}>
+          <Button onClick={onRotateIngressURL}>
             {ingressUrl ? 'Replace ingress URL' : 'Generate ingress URL'}
           </Button>
         </div>
@@ -304,7 +301,7 @@ export const TriggerOverview = ({
               </Text>
             </div>
             {canRotateSecret(trigger?.preset) ? (
-              <Button size="sm" onClick={onRotateSecret}>
+              <Button onClick={onRotateSecret}>
                 Rotate secret
               </Button>
             ) : null}
