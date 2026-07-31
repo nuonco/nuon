@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	orgphonehomebackfill "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/phone_home_backfill"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -49,7 +51,18 @@ func (s *service) AdminBackfillOrgPhoneHome(ctx *gin.Context) {
 		return
 	}
 
-	resp, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+	// QueueSignal.CreatedByID is NOT NULL and its BeforeCreate hook reads the account
+	// from context, which the admin middleware only populates when X-Nuon-Admin-Email
+	// is present. Without it the insert fails on the constraint, so fall back to the
+	// org's creator rather than making a header the difference between working and a
+	// 500. Same fallback the phone-home handler uses when it enqueues outside a user
+	// request.
+	var signalCtx context.Context = ctx
+	if _, err := cctx.AccountIDFromContext(ctx); err != nil {
+		signalCtx = cctx.SetAccountIDContext(signalCtx, org.CreatedByID)
+	}
+
+	resp, err := s.queueClient.EnqueueSignal(signalCtx, &queueclient.EnqueueSignalRequest{
 		QueueID:   queueID,
 		Signal:    &orgphonehomebackfill.Signal{OrgID: org.ID},
 		OwnerID:   org.ID,
