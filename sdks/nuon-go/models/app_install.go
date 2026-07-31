@@ -133,6 +133,11 @@ type AppInstall struct {
 	// labels
 	Labels GithubComNuoncoNuonPkgLabelsLabels `json:"labels,omitempty"`
 
+	// LastHealthReportAt is when a runner last reported component health. It is
+	// how the staleness sweep finds installs that went quiet without polling
+	// every install individually.
+	LastHealthReportAt string `json:"last_health_report_at,omitempty"`
+
 	// lifecycle phase
 	LifecyclePhase any `json:"lifecycle_phase,omitempty"`
 

@@ -1853,6 +1853,13 @@ export interface paths {
      */
     post: operations["ResetInstallHealthBaseline"];
   };
+  "/v1/installs/{install_id}/health/cluster-access": {
+    /**
+     * refresh the cluster access component health reads through
+     * @description Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed since component health was enabled, or after the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute. Requires the component-health feature.
+     */
+    post: operations["RefreshInstallHealthClusterAccess"];
+  };
   "/v1/installs/{install_id}/health/timeline": {
     /**
      * install health timeline
@@ -8148,6 +8155,11 @@ export interface components {
       component_name?: string;
       current_health?: string;
       install_component_id?: string;
+      /**
+       * @description ObservedSeconds distinguishes "no data" from "0% up" — without it a
+       * component that was never observed renders as total downtime.
+       */
+      observed_seconds?: number;
       uptime_percent?: number;
     };
     "service.InstallComponentHealthTimelineResponse": {
@@ -8348,6 +8360,18 @@ export interface components {
       original?: string;
       readme?: string;
       warnings?: string[];
+    };
+    "service.RefreshInstallHealthClusterAccessRequest": {
+      /**
+       * @description RoleName is the identity health should read the cluster through. Empty
+       * means the maintenance role, the same default drift and action runs use.
+       */
+      role_name?: string;
+    };
+    "service.RefreshInstallHealthClusterAccessResponse": {
+      cluster_found?: boolean;
+      cluster_id?: string;
+      role_name?: string;
     };
     "service.RemoveActionLabelsRequest": {
       keys: string[];
@@ -22538,6 +22562,62 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["service.ResetInstallHealthBaselineResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * refresh the cluster access component health reads through
+   * @description Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed since component health was enabled, or after the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute. Requires the component-health feature.
+   */
+  RefreshInstallHealthClusterAccess: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["service.RefreshInstallHealthClusterAccessRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.RefreshInstallHealthClusterAccessResponse"];
         };
       };
       /** @description Bad Request */
