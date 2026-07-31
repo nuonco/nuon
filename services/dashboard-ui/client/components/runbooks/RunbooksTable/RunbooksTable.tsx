@@ -135,7 +135,7 @@ export const RunbooksTable = ({
         variant: 'actions',
         emptyTitle: 'No runbooks yet',
         emptyMessage:
-          'Runbooks let you define operational procedures for your installs.',
+          'Runbooks let you define operational procedures for your installs. Add runbooks to your app config and sync to see them here.',
       }}
       pagination={pagination}
       searchPlaceholder="Search by name or ID..."

@@ -158,7 +158,7 @@ export const EventsTable = ({
   if (hasError && !hasLoadedData) {
     return (
       <div className="flex flex-col items-start gap-3">
-        <Text theme="error">Unable to load events.</Text>
+        <Text theme="error">Events loading failed.</Text>
         <Button variant="secondary" disabled={isRetrying} onClick={onRetry}>
           <Icon variant={isRetrying ? 'Loading' : 'ArrowClockwiseIcon'} />
           {isRetrying ? 'Retrying events' : 'Retry loading events'}

@@ -346,7 +346,7 @@ export const EventDetails = ({
   if (!event) {
     return (
       <div className="flex flex-col items-start gap-3">
-        <Text theme="error">Unable to load this event.</Text>
+        <Text theme="error">Event loading failed.</Text>
         <Button variant="secondary" disabled={isRetrying} onClick={onRetry}>
           <Icon variant={isRetrying ? 'Loading' : 'ArrowClockwiseIcon'} />
           {isRetrying ? 'Retrying event' : 'Retry loading event'}
@@ -674,7 +674,7 @@ export const EventDetails = ({
               </CodeBlock>
             ) : hasRawError ? (
               <div className="flex flex-col items-start gap-3">
-                <Text theme="error">Unable to load the raw request.</Text>
+                <Text theme="error">Raw request loading failed.</Text>
                 <Button size="sm" variant="secondary" onClick={onRevealRaw}>
                   <Icon variant="ArrowClockwiseIcon" />
                   Retry loading raw request

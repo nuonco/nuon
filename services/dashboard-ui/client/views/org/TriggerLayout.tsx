@@ -1,5 +1,7 @@
 import { Outlet, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
@@ -64,7 +66,13 @@ export const TriggerLayout = () => {
           {query.isLoading ? (
             <Text theme="neutral">Loading trigger...</Text>
           ) : query.error || !trigger ? (
-            <Text theme="error">Trigger loading failed.</Text>
+            <div className="flex flex-col items-start gap-3">
+              <Text theme="error">Trigger loading failed.</Text>
+              <Button variant="secondary" onClick={() => void query.refetch()}>
+                <Icon variant="ArrowClockwiseIcon" />
+                Retry loading trigger
+              </Button>
+            </div>
           ) : (
             <Outlet context={{ trigger }} />
           )}
