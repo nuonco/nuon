@@ -141,6 +141,26 @@ func validatePhoneHomeScriptSize(script string) error {
 	return nil
 }
 
+// Both of these were CloudFormation defaults (3s, 128MB) until the phone-home script
+// started fetching a token, and both defaults were wrong for it.
+//
+// The timeout has to clear the script's own retry ladder — MAX_RETRIES=5 with
+// BASE_DELAY=1.75 and exponential backoff is 26.25s of sleeps before it gives up — plus
+// the requests either side of it. Under the 3s default the ladder was unreachable code
+// that had never completed a single retry.
+//
+// Memory is a CPU setting here, not a memory one: Lambda scales vCPU with it, and 128MB
+// is roughly a twelfth of one. The token fetch imports boto3 and builds a client, which
+// loads botocore's service models, and at that CPU share it does not finish inside 3
+// seconds — the function was killed before it ever called Secrets Manager, so the phone
+// home never went out and the stack hung on the custom resource until it rolled back.
+// 512MB is about 4x the CPU for roughly a quarter of the duration, so the cost is close
+// to a wash.
+const (
+	phoneHomeLambdaTimeoutSeconds = 60
+	phoneHomeLambdaMemoryMB       = 512
+)
+
 func (a *Templates) getRunnerPhoneHomeLambda(inp *stacks.TemplateInput, t tagBuilder) *lambda.Function {
 	// This is going to be moved into a cloudformation stack template and split out, with parameters for the body
 	fn := &lambda.Function{
@@ -148,6 +168,8 @@ func (a *Templates) getRunnerPhoneHomeLambda(inp *stacks.TemplateInput, t tagBui
 		Runtime:     ptr("python3.12"),
 		Tags:        t.apply(nil, "phone-home-lambda"),
 		Description: ptr("Notify the Nuon API of the stack state."),
+		Timeout:     ptr(phoneHomeLambdaTimeoutSeconds),
+		MemorySize:  ptr(phoneHomeLambdaMemoryMB),
 		Code: &lambda.Function_Code{
 			ZipFile: ptr(inp.PhonehomeScript),
 		},

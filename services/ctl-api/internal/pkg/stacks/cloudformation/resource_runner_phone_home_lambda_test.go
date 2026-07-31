@@ -133,6 +133,46 @@ func TestGetRunnerPhoneHomeProps_DoesNotEchoSecretARN(t *testing.T) {
 	}
 }
 
+// Leaving these to CloudFormation's defaults (3s, 128MB) is what stranded the first
+// enrolled install: the token fetch imports boto3 and builds a client, which at 128MB —
+// roughly a twelfth of a vCPU — does not finish in 3 seconds. The function was killed
+// before it reached Secrets Manager, so nothing was logged, no phone home was sent, and
+// the stack sat on the custom resource until it rolled back.
+//
+// Both values are asserted against the script's own retry arithmetic rather than as bare
+// literals, so shortening the timeout below what the ladder needs fails here instead of
+// in a customer account.
+func TestGetRunnerPhoneHomeLambda_TimeoutAndMemory(t *testing.T) {
+	tpl := &Templates{cfg: &internal.Config{}}
+
+	for _, tc := range []struct {
+		name string
+		inp  *stacks.TemplateInput
+	}{
+		// Applies with or without auth: the retry ladder predates the token fetch, and
+		// was equally unreachable under the 3s default.
+		{"with phone home auth", phoneHomeAuthTestInput("instabcdefghijklmnopqrstuv")},
+		{"without phone home auth", phoneHomeTestInput("instabcdefghijklmnopqrstuv")},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fn := tpl.getRunnerPhoneHomeLambda(tc.inp, tagBuilder{installID: tc.inp.Install.ID})
+
+			require.NotNil(t, fn.Timeout, "unset means CloudFormation's 3s default, which is too short for the token fetch")
+			require.NotNil(t, fn.MemorySize, "unset means CloudFormation's 128MB default, which is too little CPU to import boto3 in time")
+
+			// phonehome.py: MAX_RETRIES=5, BASE_DELAY=1.75, delay = BASE_DELAY * 2**attempt
+			// sleeps after attempts 1..4 => 1.75 * (1+2+4+8) = 26.25s
+			const scriptRetrySleepSeconds = 26.25
+			assert.Greater(t, float64(*fn.Timeout), scriptRetrySleepSeconds,
+				"timeout must clear the script's %.2fs of retry sleeps, or the ladder can never finish",
+				scriptRetrySleepSeconds)
+
+			assert.GreaterOrEqual(t, *fn.MemorySize, 512,
+				"below ~512MB the boto3 import is slow enough to threaten the timeout again")
+		})
+	}
+}
+
 // An oversized script otherwise fails at CreateStack inside the customer's account,
 // where the cause is far harder to attribute.
 func TestValidatePhoneHomeScriptSize(t *testing.T) {
@@ -143,9 +183,15 @@ func TestValidatePhoneHomeScriptSize(t *testing.T) {
 	assert.Contains(t, err.Error(), "inline lambda source")
 }
 
-// The role name is load-bearing: a cross-account grant names this principal, and IAM
-// happily accepts a policy referencing a role that does not exist, so a mismatch only
-// shows up as an AccessDeniedException at phone-home time. Assert the literal.
+// The role name is load-bearing: the secret's resource policy in the management account
+// pins its grant to this exact ARN via an aws:PrincipalArn condition, and a condition
+// that matches nothing denies silently — so a mismatch surfaces only as an
+// AccessDeniedException at phone-home time, never as an error at policy-write time.
+// Assert the literal.
+//
+// (The policy names the account root rather than this role, because Secrets Manager
+// validates principals and the role does not exist until this stack creates it. See
+// secretsmanager.PhoneHomeResourcePolicy.)
 func TestGetRunnerPhoneHomeLambdaRole_DeterministicName(t *testing.T) {
 	tpl := &Templates{cfg: &internal.Config{}}
 	inp := phoneHomeTestInput("instabcdefghijklmnopqrstuv")
