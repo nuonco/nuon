@@ -45,11 +45,18 @@ func (e *Engine) report(ctx context.Context) error {
 
 	// Missing or transiently broken cluster access is not a reason to drop the
 	// surfaces that did report.
+	// Cluster access is one fact about the install, so it is reported once at
+	// install level instead of copied onto every component. A component that
+	// cannot be inspected simply reports nothing this cycle and ages into
+	// unknown through the normal staleness path, which also clears it on
+	// recovery — a per-component row would linger forever instead.
+	var clusterErr string
 	if ci := e.cluster.Get(); ci == nil {
 		e.l.Info("component health: waiting for cluster access (not yet provided by a deploy)")
-	} else if err := e.collectCluster(ctx, installID, ci, grouped, sandbox, sandboxNS); err != nil {
+		clusterErr = "no cluster access stored for this install yet; refresh it from the install's health card"
+	} else if err := e.collectCluster(ctx, installID, ci, grouped, sandbox, sandboxNS, &clusterErr); err != nil {
 		e.l.Error("unable to collect cluster resources for component health", zap.Error(err))
-		e.noteClusterFailure(grouped, fmt.Sprintf("unable to inspect cluster resources: %v", err))
+		clusterErr = fmt.Sprintf("unable to inspect cluster resources: %v", err)
 	}
 
 	e.collectTerraform(grouped)
@@ -90,8 +97,9 @@ func (e *Engine) report(ctx context.Context) error {
 		InstallID:       &installID,
 		Kind:            "resync",
 		ObservedAt:      time.Now().UTC().Format(time.RFC3339),
-		Components:      components,
-		SandboxReleases: sandboxReleases,
+		Components:         components,
+		SandboxReleases:    sandboxReleases,
+		ClusterAccessError: clusterErr,
 	}
 	if _, err := e.apiClient.CreateComponentHealth(ctx, req); err != nil {
 		return fmt.Errorf("unable to report component health: %w", err)
@@ -120,6 +128,7 @@ func (e *Engine) collectCluster(
 	ci *kube.ClusterInfo,
 	grouped, sandbox map[string][]*models.ServiceComponentHealthResource,
 	sandboxNS map[string]string,
+	clusterErr *string,
 ) error {
 	restCfg, err := kube.ConfigForCluster(ctx, ci)
 	if err != nil {
@@ -166,10 +175,9 @@ func (e *Engine) collectCluster(
 		return fmt.Errorf("unable to list any watched resource kind: %w", firstListErr)
 	}
 	if len(failedKinds) > 0 {
-		// Partial loss still ships the kinds that did list; the row is what keeps
-		// the gap visible, since otherwise the report looks complete.
-		e.noteClusterFailure(grouped,
-			fmt.Sprintf("unable to list %s: %v", strings.Join(failedKinds, ", "), firstListErr))
+		// Partial loss still ships the kinds that did list; the message is what
+		// keeps the gap visible, since otherwise the report looks complete.
+		*clusterErr = fmt.Sprintf("unable to list %s: %v", strings.Join(failedKinds, ", "), firstListErr)
 	}
 
 	liftPodWarningsToOwners(warnings, byKey)
@@ -401,20 +409,3 @@ func (e *Engine) sandboxReleaseFor(u *unstructured.Unstructured) (string, bool) 
 // clusterWatchedTypes are the component types whose resources this engine
 // inspects in the cluster; probes and pushed checks are supplementary for them.
 var clusterWatchedTypes = []string{"helm_chart", "kubernetes_manifest"}
-
-// noteClusterFailure attaches one unknown resource per cluster-watched component
-// so the reason reaches the resources view. unknown, not unhealthy: losing the
-// ability to look is not evidence that anything is broken.
-func (e *Engine) noteClusterFailure(grouped map[string][]*models.ServiceComponentHealthResource, message string) {
-	for _, componentType := range clusterWatchedTypes {
-		for _, componentID := range e.idx.componentsOfType(componentType) {
-			grouped[componentID] = append(grouped[componentID], &models.ServiceComponentHealthResource{
-				Provider: "cluster",
-				Kind:     "ClusterAccess",
-				Name:     "cluster-inspection",
-				Health:   "unknown",
-				Message:  message,
-			})
-		}
-	}
-}

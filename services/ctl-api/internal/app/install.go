@@ -89,6 +89,11 @@ type Install struct {
 	// itself since it can carry durable cluster access details.
 	ComponentHealthContext ComponentHealthContext `gorm:"type:jsonb" json:"-" temporaljson:"-"`
 
+	// HealthClusterError is why component health cannot currently inspect the
+	// install's cluster, empty when it can. Install-level because it is one
+	// fact about the install rather than a property of any component.
+	HealthClusterError string `json:"health_cluster_error,omitzero" gorm:"column:health_cluster_error;default:''" temporaljson:"health_cluster_error,omitzero,omitempty"`
+
 	// SandboxHealthStatus / SandboxHealthMessage are a denormalized rollup of the
 	// worst health across the sandbox-owned resources reported by the
 	// component-health engine, written on each ingest so every install read can

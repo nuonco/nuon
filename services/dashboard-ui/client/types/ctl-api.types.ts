@@ -493,6 +493,7 @@ export type TInstallHealthTimeline = {
   uptime_percent: number
   observed_seconds: number
   current_health: string
+  cluster_access_error?: string
   components?: TInstallHealthTimelineComponent[]
   daily?: THealthTimelineDay[]
 }

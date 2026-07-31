@@ -85,6 +85,8 @@ type CreateComponentHealthRequest struct {
 	ObservedAt      time.Time                       `json:"observed_at"`
 	Components      []ComponentHealthComponent      `json:"components"`
 	SandboxReleases []ComponentHealthSandboxRelease `json:"sandbox_releases"`
+	// ClusterAccessError is empty when the runner can inspect the cluster.
+	ClusterAccessError string `json:"cluster_access_error"`
 }
 
 type CreateComponentHealthResponse struct {
@@ -293,7 +295,7 @@ func (s *service) createComponentHealth(ctx context.Context, orgID, runnerID str
 		}
 	}
 
-	s.updateInstallSandboxHealth(ctx, req.InstallID, sandboxWorst, sandboxWorstMessage, true)
+	s.updateInstallSandboxHealth(ctx, req.InstallID, sandboxWorst, sandboxWorstMessage, req.ClusterAccessError, true)
 	s.ensureInstallHealthQueues(ctx, req.InstallID)
 
 	if len(rows) == 0 {
@@ -375,7 +377,7 @@ func (s *service) triggerHealthEvaluation(ctx context.Context, installID string)
 // updateInstallSandboxHealth denormalizes the worst sandbox-resource health onto
 // the install so reads can surface a degraded sandbox without a ClickHouse query.
 // Only degraded/unhealthy is recorded; best-effort (never fails the ingest).
-func (s *service) updateInstallSandboxHealth(ctx context.Context, installID, worst, message string, enabled bool) {
+func (s *service) updateInstallSandboxHealth(ctx context.Context, installID, worst, message, clusterAccessError string, enabled bool) {
 	status := ""
 	msg := ""
 	if enabled && healthSeverity[worst] >= healthSeverity["degraded"] {
@@ -386,11 +388,12 @@ func (s *service) updateInstallSandboxHealth(ctx context.Context, installID, wor
 	now := time.Now()
 	if err := s.db.WithContext(ctx).
 		Model(&app.Install{ID: installID}).
-		Select("sandbox_health_status", "sandbox_health_message", "last_health_report_at").
+		Select("sandbox_health_status", "sandbox_health_message", "last_health_report_at", "health_cluster_error").
 		Updates(app.Install{
 			SandboxHealthStatus:  status,
 			SandboxHealthMessage: msg,
 			LastHealthReportAt:   &now,
+			HealthClusterError:   clusterAccessError,
 		}).Error; err != nil {
 		s.l.Warn("unable to update install sandbox health rollup",
 			zap.String("install_id", installID), zap.Error(err))

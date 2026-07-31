@@ -97,6 +97,11 @@ type AppInstall struct {
 	// gcp account
 	GcpAccount *AppGCPAccount `json:"gcp_account,omitempty"`
 
+	// HealthClusterError is why component health cannot currently inspect the
+	// install's cluster, empty when it can. Install-level because it is one
+	// fact about the install rather than a property of any component.
+	HealthClusterError string `json:"health_cluster_error,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 

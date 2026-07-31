@@ -6,6 +6,7 @@ import { Duration } from '@/components/common/Duration'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
+import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
@@ -167,6 +168,7 @@ function HealthBar({ day }: { day: THealthTimelineDay }) {
 export interface IHealthTimeline {
   className?: string
   headerAction?: React.ReactNode
+  clusterAccessError?: string
   scope?: 'install' | 'component'
   days: number
   daily?: THealthTimelineDay[]
@@ -183,6 +185,7 @@ export interface IHealthTimeline {
 export const HealthTimeline = ({
   className,
   headerAction,
+  clusterAccessError,
   scope = 'install',
   days,
   daily,
@@ -225,6 +228,12 @@ export const HealthTimeline = ({
         </HeadingGroup>
         {headerAction}
       </div>
+
+      {clusterAccessError ? (
+        <Banner theme="warn">
+          <Text>Health cannot inspect this install's cluster: {clusterAccessError}</Text>
+        </Banner>
+      ) : null}
 
       {hasDaily ? (
         <div className="overflow-x-auto">

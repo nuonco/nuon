@@ -4354,6 +4354,12 @@ export interface components {
       expected_project_id?: string;
       expected_subscription_id?: string;
       gcp_account?: components["schemas"]["app.GCPAccount"];
+      /**
+       * @description HealthClusterError is why component health cannot currently inspect the
+       * install's cluster, empty when it can. Install-level because it is one
+       * fact about the install rather than a property of any component.
+       */
+      health_cluster_error?: string;
       id?: string;
       install_action_workflows?: components["schemas"]["app.InstallActionWorkflow"][];
       install_components?: components["schemas"]["app.InstallComponent"][];

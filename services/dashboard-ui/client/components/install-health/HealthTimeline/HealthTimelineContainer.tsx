@@ -69,6 +69,11 @@ export const HealthTimelineContainer = ({
       daily={timeline?.daily}
       uptimePercent={timeline?.uptime_percent}
       observedSeconds={timeline?.observed_seconds}
+      clusterAccessError={
+        isComponentScope
+          ? undefined
+          : (timeline as TInstallHealthTimeline | undefined)?.cluster_access_error
+      }
       currentHealth={timeline?.current_health}
       components={
         isComponentScope
