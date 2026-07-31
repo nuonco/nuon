@@ -125,14 +125,8 @@ export const RunRunbookModal = ({
       }),
     onSuccess: (result) => {
       addToast(
-        <Toast heading="Runbook run started" theme="info">
-          <Text>
-            Running{' '}
-            <Badge variant="code" size="md">
-              {runbookName}
-            </Badge>
-            .
-          </Text>
+        <Toast heading="Running runbook" theme="info">
+          <Text>Running {runbookName} on {install?.name}.</Text>
         </Toast>
       )
       removeModal(props.modalId)

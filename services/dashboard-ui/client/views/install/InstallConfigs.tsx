@@ -56,7 +56,7 @@ export const InstallConfigs = () => {
         queryKey: ['install-config-versions', org?.id, install?.id],
       })
       addToast(
-        <Toast heading="Config sync triggered" theme="info">
+        <Toast heading="Syncing config" theme="info">
           <Text>Syncing configs for {install?.name}.</Text>
         </Toast>
       )
