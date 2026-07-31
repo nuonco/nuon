@@ -55,13 +55,12 @@ export const ReprovisionModal = ({
           </Banner>
         ) : null}
         <Text variant="base">
-          Reprovisioning {installName} will recreate all resources and redeploy
-          all components.
+          Reprovisioning {installName} will recreate the stack and sandbox, and redeploy all components.
         </Text>
         <Banner theme="warn">
           <Text variant="body">
-            <strong>Warning:</strong> This will cause downtime while resources
-            are recreated.
+            <strong>Warning:</strong> Actions and deployments won't be
+            available while the runner is recreated during the stack reprovision.
           </Text>
         </Banner>
 
