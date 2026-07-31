@@ -5,12 +5,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/otel"
 
 	"github.com/gin-gonic/gin"
@@ -65,14 +70,21 @@ func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 		"log_stream_type": logStream.OwnerType,
 	}))
 
-	// write the logs to the db
-	logs := s.toLogStreamLogs(logStreamID, expreq)
+	// One receive time for the whole request, so the parent fan-out below stamps
+	// the same value as the child rather than a few microseconds later.
+	now := time.Now()
 
+	// write the logs to the db
+	logs := s.toLogStreamLogs(ctx, now, logStreamID, expreq)
+
+	// Fan out to the parent stream, if any, so a parent's log view includes its
+	// children's records. The read path matches log_stream_id exactly (it's the
+	// table's sort prefix), so this duplication is what makes that read cheap.
 	if !logStream.ParentLogStreamID.Empty() {
-		logs = append(logs, s.toLogStreamLogs(logStream.ParentLogStreamID.String, expreq)...)
+		logs = append(logs, s.toLogStreamLogs(ctx, now, logStream.ParentLogStreamID.String, expreq)...)
 	}
 
-	err = s.writeLogStreamLogs(ctx, logs)
+	err = s.produceOrWriteLogStreamLogs(ctx, logs)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to write runner logs: %w", err))
 		return
@@ -81,7 +93,16 @@ func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, app.EmptyResponse{})
 }
 
-func (s *service) toLogStreamLogs(logStreamID string, logs plogotlp.ExportRequest) []app.OtelLogRecord {
+func (s *service) toLogStreamLogs(ctx context.Context, now time.Time, logStreamID string, logs plogotlp.ExportRequest) []app.OtelLogRecord {
+	// Resolved here rather than left to app.OtelLogRecord's BeforeCreate hook,
+	// which reads them off the GORM statement context. When these records are
+	// produced to Kafka the insert happens in the consumer, where there is no
+	// request context — and org_id leads the destination table's PRIMARY KEY and
+	// ORDER BY, so an empty one collapses its sort order. Stamping them at the
+	// same place for both paths also keeps the Kafka and inline writes identical.
+	orgID := keys.OrgIDFromContext(ctx)
+	createdByID := keys.CreatedByIDFromContext(ctx)
+
 	// prepare a slice to hold all of the record we will be writing
 	otelLogRecords := []app.OtelLogRecord{}
 
@@ -133,6 +154,17 @@ func (s *service) toLogStreamLogs(logStreamID string, logs plogotlp.ExportReques
 				}
 
 				otelLogRecords = append(otelLogRecords, app.OtelLogRecord{
+					ID:          domains.NewOtelLogID(),
+					OrgID:       orgID,
+					CreatedByID: createdByID,
+					// Receive time, not sink-insert time. GORM would otherwise
+					// autofill these when the row is written, which on the Kafka
+					// path happens in the consumer — turning "when we got this log
+					// line" into "when the sink flushed it", offset by the fetch
+					// interval.
+					CreatedAt: now,
+					UpdatedAt: now,
+
 					// runner info
 					// NOTE(fd): these locations are a convention
 					LogStreamID:            logStreamID,
@@ -169,6 +201,56 @@ func (s *service) toLogStreamLogs(logStreamID string, logs plogotlp.ExportReques
 	}
 
 	return otelLogRecords
+}
+
+// produceOrWriteLogStreamLogs hands the records to Kafka when it's enabled,
+// falling back to the inline ClickHouse write for anything Kafka didn't ack.
+//
+// Synchronous, unlike the heartbeat producer. This handler currently blocks on a
+// ClickHouse insert before returning 201, so the runner's success response means
+// "durably stored". Producing fire-and-forget would quietly weaken that to
+// "buffered in this process", and an OOM kill would drop log lines that nothing
+// upstream knows to resend. Heartbeats can be async because their existing path
+// is already a lossy in-memory buffer; logs have no such slack.
+//
+// One envelope per record rather than one per export request: the topic's
+// max.message.bytes is 4MiB and a single OTLP export can carry hundreds of
+// records, so per-record keeps us clear of a broker reject. They still go in a
+// single ProduceSync call, so this is one round trip, not one per record.
+func (s *service) produceOrWriteLogStreamLogs(ctx context.Context, logs []app.OtelLogRecord) error {
+	if len(logs) == 0 {
+		return nil
+	}
+
+	if !s.kafka.Enabled() {
+		return s.writeLogStreamLogs(ctx, logs)
+	}
+
+	msgs := make([]kafka.Message, 0, len(logs))
+	for _, log := range logs {
+		// Keyed by log stream so one stream's records share a partition, which
+		// keeps them ordered and lands them on the same consumer.
+		msgs = append(msgs, kafka.Message{Key: log.LogStreamID, Payload: log})
+	}
+
+	failed := s.kafka.ProduceEnvelopesSync(ctx, kafka.TopicOtelLogRecords, kafka.TypeOtelLogRecord, msgs)
+	if len(failed) == 0 {
+		return nil
+	}
+
+	// Only the unacked records, so a partial failure doesn't duplicate the ones
+	// Kafka already has.
+	fallback := make([]app.OtelLogRecord, 0, len(failed))
+	for _, i := range failed {
+		fallback = append(fallback, logs[i])
+	}
+
+	s.l.Warn("unable to produce otel logs to kafka; writing unacked records inline",
+		zap.Int("acked", len(logs)-len(failed)),
+		zap.Int("fallback", len(fallback)),
+	)
+
+	return s.writeLogStreamLogs(ctx, fallback)
 }
 
 func (s *service) writeLogStreamLogs(ctx context.Context, logs []app.OtelLogRecord) error {

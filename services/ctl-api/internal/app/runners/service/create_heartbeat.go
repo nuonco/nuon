@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 )
 
 type CreateRunnerHeartBeatRequest struct {
@@ -125,7 +126,14 @@ func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, re
 	// Compute StartedAt so the returned object is complete.
 	runnerHeartBeat.StartedAt = now.Add(-1 * req.AliveTime)
 
-	s.heartbeater.Send(runnerHeartBeat)
+	if s.kafka.Enabled() {
+		if err := s.kafka.ProduceEnvelope(ctx, kafka.TopicRunnerHeartBeats, runnerHeartBeat.RunnerID, kafka.TypeRunnerHeartBeat, runnerHeartBeat); err != nil {
+			s.l.Warn("unable to produce heartbeat to kafka; falling back to inline write", zap.Error(err))
+			s.heartbeater.Send(runnerHeartBeat)
+		}
+	} else {
+		s.heartbeater.Send(runnerHeartBeat)
+	}
 
 	return &runnerHeartBeat, nil
 }
