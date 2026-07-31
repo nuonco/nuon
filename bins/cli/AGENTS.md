@@ -437,15 +437,16 @@ Claim patterns are exact strings or globs where `*` cannot cross `:` segments (s
 `sub` format). Each policy gets a dedicated service account; deleting the policy revokes all its
 tokens immediately.
 
-In a GitHub Actions workflow, no auth setup is needed beyond the org ID and `id-token` permission —
-the CLI detects Actions and exchanges automatically (token held in-memory per invocation). The
-requested audience defaults to the configured API URL, so the policy's `--audience` should match it
-(override with `--audience` / `NUON_OIDC_AUDIENCE`):
+In a GitHub Actions workflow, auth setup is the `id-token` permission plus the control plane URL and
+org ID — the CLI detects Actions and exchanges automatically (token held in-memory per invocation).
+The requested audience defaults to the configured API URL, so the trust policy's `--audience` should
+be that same URL (override with `--audience` / `NUON_OIDC_AUDIENCE`):
 
 ```yaml
 permissions:
   id-token: write
 env:
+  NUON_API_URL: https://api.your-company.com # omit for Nuon Cloud (defaults to api.nuon.co)
   NUON_ORG_ID: org_xxx
 steps:
   - run: nuon apps list
