@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
@@ -13,6 +14,11 @@ import (
 func (s *Service) ListBranches(ctx context.Context, appID string, asJSON bool) error {
 	view := ui.NewListView()
 
+	appID, err := s.resolveAppID(ctx, appID)
+	if err != nil {
+		return view.Error(err)
+	}
+
 	branches, err := s.api.GetAppBranches(ctx, appID)
 	if err != nil {
 		return view.Error(err)
@@ -20,6 +26,11 @@ func (s *Service) ListBranches(ctx context.Context, appID string, asJSON bool) e
 
 	if asJSON {
 		ui.PrintJSON(branches)
+		return nil
+	}
+
+	if len(branches) == 0 {
+		view.Print(fmt.Sprintf("no branches found for app %s\n\ncreate one with: nuon apps branches create --app-id %s --name <name>", appID, appID))
 		return nil
 	}
 
@@ -38,6 +49,16 @@ func (s *Service) ListBranches(ctx context.Context, appID string, asJSON bool) e
 }
 
 func (s *Service) GetBranch(ctx context.Context, appID, branchID string, asJSON bool) error {
+	appID, err := s.resolveAppID(ctx, appID)
+	if err != nil {
+		return err
+	}
+
+	branchID, err = s.resolveAppBranchID(ctx, appID, branchID)
+	if err != nil {
+		return err
+	}
+
 	branch, err := s.api.GetAppBranch(ctx, appID, branchID)
 	if err != nil {
 		return err
@@ -53,6 +74,11 @@ func (s *Service) GetBranch(ctx context.Context, appID, branchID string, asJSON 
 }
 
 func (s *Service) CreateBranch(ctx context.Context, appID, name string, asJSON bool) error {
+	appID, err := s.resolveAppID(ctx, appID)
+	if err != nil {
+		return err
+	}
+
 	branch, err := s.api.CreateAppBranch(ctx, appID, &models.ServiceCreateAppBranchRequest{
 		Name: &name,
 	})
@@ -201,14 +227,9 @@ func (s *Service) selectBranchID(ctx context.Context, appID, branchID string) (s
 }
 
 func (s *Service) resolveAppID(ctx context.Context, appID string) (string, error) {
-	if appID != "" {
-		return appID, nil
+	if appID == "" {
+		appID = s.getAppID()
 	}
 
-	configured := s.getAppID()
-	if configured != "" {
-		return configured, nil
-	}
-
-	return "", fmt.Errorf("no app specified; use --app-id or select an app with: nuon config app")
+	return lookup.AppID(ctx, s.api, appID)
 }
