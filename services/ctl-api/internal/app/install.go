@@ -383,9 +383,10 @@ func CompositeComponentHealthStatus(statuses []InstallComponentHealthStatus) (In
 }
 
 // ComponentHealthContext persists what the runner's component-health engine
-// needs to rehydrate cluster access after a restart: a durable, opaque
-// (to ctl-api) marshaled kube.ClusterInfo, and the helm release names the
-// install's sandbox manages (base infra like external-dns, cert-manager).
+// needs to rehydrate cluster access after a restart: a marshaled
+// kube.ClusterInfo, and the helm release names the install's sandbox manages
+// (base infra like external-dns, cert-manager). A deploy writes it, and
+// ctl-api can also derive the cluster half from install outputs.
 type ComponentHealthContext struct {
 	ClusterInfoJSON     string   `json:"cluster_info_json"`
 	SandboxHelmReleases []string `json:"sandbox_helm_releases"`
