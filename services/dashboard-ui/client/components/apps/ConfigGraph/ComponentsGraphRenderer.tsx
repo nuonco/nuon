@@ -15,16 +15,25 @@ import {
 import dagre from '@dagrejs/dagre'
 import '@xyflow/react/dist/style.css'
 
+import { AnimatedHeight } from '@/components/common/AnimatedHeight'
 import { Banner } from '@/components/common/Banner'
 import { Code } from '@/components/common/Code'
+import {
+  DependencyViewToggle,
+  DEPENDENCY_VIEW_MODES,
+  DEPENDENCY_VIEW_STORAGE_KEY,
+  type TDependencyViewMode,
+} from '@/components/common/DependencyViewToggle'
 import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
 import { Modal } from '@/components/surfaces/Modal'
+import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import type { TComponentType } from '@/types'
 import type { TAPIError } from '@/types'
 import { ComponentsGraphInlineContainer } from './ComponentsGraphRendererContainer'
+import { parseDotGraph } from './parse-dot'
 
 const getLayoutedElements = (
   nodes: Node[],
@@ -63,6 +72,55 @@ const getLayoutedElements = (
   return { nodes: layoutedNodes, edges }
 }
 
+const ComponentsGraphModalContent = ({
+  appId,
+  configId,
+}: {
+  appId: string
+  configId: string
+}) => {
+  const [viewMode, setViewMode] = useStoredViewMode<TDependencyViewMode>(
+    DEPENDENCY_VIEW_STORAGE_KEY,
+    DEPENDENCY_VIEW_MODES,
+    'graph',
+  )
+
+  return (
+    <>
+      <div className="flex items-start justify-between gap-3">
+        <Text>
+          Nuon automatically creates a graph of all of the components in your
+          application.
+        </Text>
+        <DependencyViewToggle value={viewMode} onChange={setViewMode} />
+      </div>
+      <AnimatedHeight>
+        <div className="flex flex-col gap-4">
+          {viewMode === 'graph' ? (
+            <ul className="flex flex-col gap-1 list-disc pl-4">
+              <li className="text-sm max-w-xl">
+                Dependencies are from root to dependencies (so a red-arrow from a to
+                b, means that b depends on a, or that when a changes, b would be
+                updated when <Code variant="inline">select-dependencies</Code> is
+                true)
+              </li>
+              <li className="text-sm">
+                Blue nodes mean that the current config version has changes to that
+                component
+              </li>
+            </ul>
+          ) : null}
+          <ComponentsGraphInlineContainer
+            appId={appId}
+            configId={configId}
+            view={viewMode}
+          />
+        </div>
+      </AnimatedHeight>
+    </>
+  )
+}
+
 export const ComponentsGraphRenderer = ({
   appId,
   configId,
@@ -96,26 +154,7 @@ export const ComponentsGraphRenderer = ({
       }}
       size="xl"
     >
-      <div className="flex flex-col gap-2">
-        <Text>
-          Nuon automatically creates a graph of all of the components in your
-          application.
-        </Text>
-
-        <ul className="flex flex-col gap-1 list-disc pl-4">
-          <li className="text-sm max-w-xl">
-            Dependencies are from root to dependencies (so a red-arrow from a to
-            b, means that b depends on a, or that when a changes, b would be
-            updated when <Code variant="inline">select-dependencies</Code> is
-            true)
-          </li>
-          <li className="text-sm">
-            Blue nodes mean that the current config version has changes to that
-            component
-          </li>
-        </ul>
-      </div>
-      <ComponentsGraphInlineContainer appId={appId} configId={configId} />
+      <ComponentsGraphModalContent appId={appId} configId={configId} />
     </Modal>
   )
 }
@@ -176,62 +215,25 @@ export const ComponentsGraphInline = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
   const convertDotToFlowData = (dotGraphStr: string) => {
-    const nodesMap = new Map<string, Node>()
-    const edges: Edge[] = []
-    const allNodeIds = new Set<string>()
+    const parsed = parseDotGraph(dotGraphStr)
 
-    const nodeWithAttrsRegex = /^\s*"([^"]+)"\s*\[\s*([^\]]+?)\s*\];?\s*$/gm
-    let match
+    const nodes: Node[] = parsed.nodes.map((n) => ({
+      id: n.id,
+      type: 'customComponent',
+      data: {
+        componentLabel: n.label,
+        componentType: n.type as TComponentType,
+        color: n.changed ? 'blue' : 'red',
+      },
+      position: { x: 0, y: 0 },
+    }))
 
-    while ((match = nodeWithAttrsRegex.exec(dotGraphStr)) !== null) {
-      const [fullMatch, id, attrs] = match
-
-      allNodeIds.add(id)
-
-      const attributes: Record<string, string> = {}
-      const attrRegex = /(\w+)\s*=\s*"([^"]*)"/g
-      let attrMatch
-
-      while ((attrMatch = attrRegex.exec(attrs)) !== null) {
-        attributes[attrMatch[1]] = attrMatch[2]
-      }
-
-      const nodeData = {
-        componentLabel: String(attributes.label || attributes.name || id),
-        componentType: String(attributes.type || '') as TComponentType,
-        color: attributes.color === 'blue' ? 'blue' : 'red',
-      }
-
-      nodesMap.set(id, {
-        id: String(id),
-        type: 'customComponent',
-        data: nodeData,
-        position: { x: 0, y: 0 },
-      })
-    }
-
-    const edgeRegex =
-      /^\s*"([^"]+)"\s*->\s*"([^"]+)"\s*\[\s*([^\]]*)\s*\];?\s*$/gm
-    while ((match = edgeRegex.exec(dotGraphStr)) !== null) {
-      const [, source, target, attrs] = match
-
-      allNodeIds.add(source)
-      allNodeIds.add(target)
-
-      const attributes: Record<string, string> = {}
-      const attrRegex = /(\w+)\s*=\s*"([^"]*)"/g
-      let attrMatch
-
-      while ((attrMatch = attrRegex.exec(attrs)) !== null) {
-        attributes[attrMatch[1]] = attrMatch[2]
-      }
-
-      const edgeColor = attributes.color === 'red' ? '#991B1B' : '#1e50c0'
-
-      edges.push({
-        id: `${source}-${target}`,
-        source: String(source),
-        target: String(target),
+    const edges: Edge[] = parsed.edges.map((e) => {
+      const edgeColor = e.color === 'red' ? '#991B1B' : '#1e50c0'
+      return {
+        id: `${e.source}-${e.target}`,
+        source: e.source,
+        target: e.target,
         type: 'smoothstep',
         animated: false,
         style: {
@@ -242,25 +244,8 @@ export const ComponentsGraphInline = ({
           type: MarkerType.ArrowClosed,
           color: edgeColor,
         },
-      })
-    }
-
-    allNodeIds.forEach((id) => {
-      if (!nodesMap.has(id)) {
-        nodesMap.set(id, {
-          id: String(id),
-          type: 'customComponent',
-          data: {
-            componentLabel: String(id),
-            componentType: '' as TComponentType,
-            color: 'red',
-          },
-          position: { x: 0, y: 0 },
-        })
       }
     })
-
-    const nodes = Array.from(nodesMap.values())
 
     return getLayoutedElements(nodes, edges)
   }
