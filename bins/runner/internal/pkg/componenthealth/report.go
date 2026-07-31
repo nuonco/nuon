@@ -181,6 +181,11 @@ func (e *Engine) collectCluster(
 		*clusterErr = fmt.Sprintf("unable to list %s: %v", strings.Join(failedKinds, ", "), firstListErr)
 	}
 
+	// The owner chain is walked through byKey, so intermediate owners that are
+	// not listed have to be fetched before lifting — otherwise the walk stops
+	// short and an ImagePullBackOff reads as benign progressing for 10m.
+	e.hydrateWarningOwners(ctx, dynClient, warnings, byKey)
+
 	liftPodWarningsToOwners(warnings, byKey)
 
 	for _, obj := range objects {
@@ -217,6 +222,55 @@ func (e *Engine) collectCluster(
 
 // maxOwnerHops bounds the ownerReferences walk so a cyclic chain cannot spin.
 const maxOwnerHops = 4
+
+// hydrateWarningOwners GETs the owner chain of each unready pod that carries a
+// warning, so byKey can resolve it. Normally nothing is fetched: healthy
+// installs have no warning pods, which is the point of doing this on demand
+// instead of listing every ReplicaSet in the cluster once a minute.
+func (e *Engine) hydrateWarningOwners(
+	ctx context.Context,
+	dynClient dynamic.Interface,
+	warnings map[string]warningEvent,
+	byKey map[string]*unstructured.Unstructured,
+) {
+	if len(warnings) == 0 {
+		return
+	}
+
+	for key := range warnings {
+		u, ok := byKey[key]
+		if !ok || u.GetKind() != "Pod" || podReady(u) {
+			continue
+		}
+
+		cur := u
+		for hop := 0; hop < maxOwnerHops; hop++ {
+			ref := metav1.GetControllerOf(cur)
+			if ref == nil {
+				break
+			}
+			ownerKey := resourceKey(ref.Kind, cur.GetNamespace(), ref.Name)
+			if next, ok := byKey[ownerKey]; ok {
+				cur = next
+				continue
+			}
+			gvr, ok := ownerGVRs[ref.Kind]
+			if !ok {
+				break
+			}
+			owner, err := dynClient.Resource(gvr).
+				Namespace(cur.GetNamespace()).
+				Get(ctx, ref.Name, metav1.GetOptions{})
+			if err != nil {
+				e.l.Warn("unable to fetch owner for warning pod",
+					zap.String("kind", ref.Kind), zap.String("name", ref.Name), zap.Error(err))
+				break
+			}
+			byKey[ownerKey] = owner
+			cur = owner
+		}
+	}
+}
 
 // liftPodWarningsToOwners copies an unready pod's warning onto its controller:
 // helm annotates only what it renders, so ImagePullBackOff otherwise reads as

@@ -18,13 +18,25 @@ const (
 	reportTimeout  = 45 * time.Second
 )
 
+// ownerGVRs are fetched one object at a time while walking a warning pod up to
+// its controller. ReplicaSets are deliberately not in watchedGVRs: a Deployment
+// keeps ~10 old revisions, so listing them dominated every cycle (949 of 960
+// scaled to zero on one dev cluster) to resolve the handful of live ones.
+var ownerGVRs = map[string]schema.GroupVersionResource{
+	"ReplicaSet":              {Group: "apps", Version: "v1", Resource: "replicasets"},
+	"Deployment":              {Group: "apps", Version: "v1", Resource: "deployments"},
+	"StatefulSet":             {Group: "apps", Version: "v1", Resource: "statefulsets"},
+	"DaemonSet":               {Group: "apps", Version: "v1", Resource: "daemonsets"},
+	"Job":                     {Group: "batch", Version: "v1", Resource: "jobs"},
+	"HorizontalPodAutoscaler": {Group: "autoscaling", Version: "v2", Resource: "horizontalpodautoscalers"},
+}
+
 // watchedGVRs are the workload kinds the engine reports on. All are stable
 // across supported Kubernetes versions.
 var watchedGVRs = []schema.GroupVersionResource{
 	{Group: "apps", Version: "v1", Resource: "deployments"},
 	{Group: "apps", Version: "v1", Resource: "statefulsets"},
 	{Group: "apps", Version: "v1", Resource: "daemonsets"},
-	{Group: "apps", Version: "v1", Resource: "replicasets"},
 	{Group: "", Version: "v1", Resource: "pods"},
 	{Group: "", Version: "v1", Resource: "services"},
 	{Group: "", Version: "v1", Resource: "persistentvolumeclaims"},
