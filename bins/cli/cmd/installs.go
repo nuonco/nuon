@@ -236,7 +236,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Long:  "Manage the components on an install. With no subcommand, lists the components on an install.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Components(cmd.Context(), id, compOffset, compLimit, PrintJSON)
+			return svc.Components(cmd.Context(), id, compOffset, compLimit, false, PrintJSON)
 		}),
 	}
 	componentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
@@ -292,6 +292,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	componentsToggleCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Only plan the resulting deploy or teardown, do not apply it")
 	componentsCmd.AddCommand(componentsToggleCmd)
 
+	var compShowAll bool
 	componentsListCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -299,13 +300,14 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Long:    "List all components on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Components(cmd.Context(), id, compOffset, compLimit, PrintJSON)
+			return svc.Components(cmd.Context(), id, compOffset, compLimit, compShowAll, PrintJSON)
 		}),
 	}
 	componentsListCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	componentsListCmd.MarkFlagRequired("install-id")
 	componentsListCmd.Flags().IntVarP(&compOffset, "offset", "o", 0, "Offset for pagination")
 	componentsListCmd.Flags().IntVarP(&compLimit, "limit", "l", 0, "Maximum components to return (0 returns all)")
+	componentsListCmd.Flags().BoolVar(&compShowAll, "all", false, "Show all components including those removed from the current config")
 	componentsCmd.AddCommand(componentsListCmd)
 
 	componentsDeploysCmd := &cobra.Command{

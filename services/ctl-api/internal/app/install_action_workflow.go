@@ -31,6 +31,8 @@ type InstallActionWorkflow struct {
 
 	Runs []InstallActionWorkflowRun `faker:"-" gorm:"constraint:OnDelete:CASCADE;" json:"runs,omitzero" temporaljson:"runs,omitzero,omitempty"`
 
+	StatusV2 CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+
 	// after query fields filled in after querying
 	Status InstallActionWorkflowRunStatus `json:"status,omitzero" gorm:"-" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 }

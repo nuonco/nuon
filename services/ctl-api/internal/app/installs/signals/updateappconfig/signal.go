@@ -85,6 +85,24 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to update install app_config_id: %w", err)
 	}
 
+	if err := activities.AwaitReconcileInstallComponents(ctx, &activities.ReconcileInstallComponentsInput{
+		InstallID: s.InstallID,
+	}); err != nil {
+		return fmt.Errorf("unable to reconcile install components: %w", err)
+	}
+
+	if err := activities.AwaitReconcileInstallActions(ctx, &activities.ReconcileInstallActionsInput{
+		InstallID: s.InstallID,
+	}); err != nil {
+		return fmt.Errorf("unable to reconcile install actions: %w", err)
+	}
+
+	if err := activities.AwaitReconcileInstallRunbooks(ctx, &activities.ReconcileInstallRunbooksInput{
+		InstallID: s.InstallID,
+	}); err != nil {
+		return fmt.Errorf("unable to reconcile install runbooks: %w", err)
+	}
+
 	metadata := s.Metadata
 	if metadata == nil {
 		metadata = map[string]string{}

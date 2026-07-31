@@ -29,9 +29,5 @@ func (h *Helpers) CreateAction(ctx context.Context, params *CreateActionParams) 
 		return nil, fmt.Errorf("unable to create action workflow: %w", res.Error)
 	}
 
-	if err := h.EnsureInstallAction(ctx, params.AppID, nil); err != nil {
-		return nil, fmt.Errorf("unable to ensure install actions: %w", err)
-	}
-
 	return &newAW, nil
 }

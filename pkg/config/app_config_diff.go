@@ -73,6 +73,9 @@ func (a *AppConfig) Diff(old *AppConfig) *diff.Diff {
 		diff.WithKey("triggers"),
 		diff.WithStringDiff(sectionTOML(old.Triggers), sectionTOML(a.Triggers)),
 	))
+	if d := diffRunbooks(old.Runbooks, a.Runbooks); d != nil {
+		children = append(children, d)
+	}
 
 	return diff.NewDiff(
 		diff.WithKey("app_config"),
@@ -1239,6 +1242,94 @@ func diffActionTriggers(old, new []*ActionTriggerConfig) []*diff.Diff {
 			diffs = append(diffs, diff.NewDiff(diff.WithKey(key), diff.WithStringDiff("", new[i].Type)))
 		} else {
 			diffs = append(diffs, diff.NewDiff(diff.WithKey(key), diff.WithStringDiff(old[i].Type, "")))
+		}
+	}
+
+	return diffs
+}
+
+// --- Runbooks ---
+
+func diffRunbooks(old, new []*RunbookConfig) *diff.Diff {
+	if len(old) == 0 && len(new) == 0 {
+		return nil
+	}
+
+	oldByName := make(map[string]*RunbookConfig, len(old))
+	for _, r := range old {
+		oldByName[r.Name] = r
+	}
+
+	var children []*diff.Diff
+	seen := make(map[string]bool)
+
+	for _, r := range new {
+		seen[r.Name] = true
+		if or, ok := oldByName[r.Name]; ok {
+			children = append(children, diffRunbook(or, r))
+		} else {
+			children = append(children, diffRunbook(&RunbookConfig{}, r))
+		}
+	}
+
+	for _, r := range old {
+		if !seen[r.Name] {
+			children = append(children, diffRunbook(r, &RunbookConfig{Name: r.Name}))
+		}
+	}
+
+	return diff.NewDiff(diff.WithKey("runbooks"), diff.WithChildren(children...))
+}
+
+func diffRunbook(old, new *RunbookConfig) *diff.Diff {
+	var children []*diff.Diff
+	children = append(children,
+		diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(old.Description, new.Description)),
+	)
+
+	if d := diff.MapDiff("labels", old.Labels, new.Labels); d != nil {
+		children = append(children, d)
+	}
+
+	children = append(children, diffRunbookSteps(old.Steps, new.Steps)...)
+
+	return diff.NewDiff(diff.WithKey("runbook."+new.Name), diff.WithChildren(children...))
+}
+
+func diffRunbookSteps(old, new []*RunbookStepConfig) []*diff.Diff {
+	oldByName := make(map[string]*RunbookStepConfig, len(old))
+	for _, s := range old {
+		oldByName[s.Name] = s
+	}
+
+	var diffs []*diff.Diff
+	seen := make(map[string]bool)
+
+	diffStep := func(os, s *RunbookStepConfig) *diff.Diff {
+		return diff.NewDiff(
+			diff.WithKey("step."+s.Name),
+			diff.WithChildren(
+				diff.NewDiff(diff.WithKey("type"), diff.WithStringDiff(string(os.Type), string(s.Type))),
+				diff.NewDiff(diff.WithKey("component_name"), diff.WithStringDiff(os.ComponentName, s.ComponentName)),
+				diff.NewDiff(diff.WithKey("action_name"), diff.WithStringDiff(os.ActionName, s.ActionName)),
+				diff.NewDiff(diff.WithKey("command"), diff.WithStringDiff(os.Command, s.Command)),
+				diff.NewDiff(diff.WithKey("role"), diff.WithStringDiff(os.Role, s.Role)),
+			),
+		)
+	}
+
+	for _, s := range new {
+		seen[s.Name] = true
+		if os, ok := oldByName[s.Name]; ok {
+			diffs = append(diffs, diffStep(os, s))
+		} else {
+			diffs = append(diffs, diffStep(&RunbookStepConfig{}, s))
+		}
+	}
+
+	for _, s := range old {
+		if !seen[s.Name] {
+			diffs = append(diffs, diffStep(s, &RunbookStepConfig{Name: s.Name}))
 		}
 	}
 

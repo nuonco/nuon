@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
-import { getAppConfigs, getAppConfigDiff } from '@/lib'
-import { ConfigStep } from './ConfigStep'
-import { extractSections, computeSummary } from './lib'
+import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
+import { getBranchWorkflowRuns } from '@/lib'
+import { useParams } from 'react-router'
+import { Text } from '@/components/common/Text'
+import { Status } from '@/components/common/Status'
 
 interface IConfigStepContainer {
   metadata: Record<string, any>
@@ -14,42 +16,46 @@ interface IConfigStepContainer {
 export const ConfigStepContainer = ({ metadata, status, statusDescription }: IConfigStepContainer) => {
   const { org } = useOrg()
   const { app } = useApp()
+  const params = useParams()
+  const branchId = params.branchId as string
   const appConfigId = metadata.app_config_id as string | undefined
 
-  const { data: recentConfigs } = useQuery({
-    queryKey: ['app-configs', org?.id, app?.id],
-    queryFn: () => getAppConfigs({ orgId: org!.id, appId: app!.id, limit: 10 }),
-    enabled: !!org?.id && !!app?.id && !!appConfigId,
+  const { data: branchRunsResult } = useQuery({
+    queryKey: ['branch-runs', org?.id, app?.id, branchId],
+    queryFn: () => getBranchWorkflowRuns({ orgId: org!.id, appId: app!.id, branchId, limit: 10 }),
+    enabled: !!org?.id && !!app?.id && !!branchId,
   })
 
-  const previousConfigs = (recentConfigs || []).filter((c: any) => c.id !== appConfigId)
-  const oldConfigId = previousConfigs[0]?.id
-
-  const { data: diffData, isError: diffError } = useQuery({
-    queryKey: ['app-config-diff', org?.id, app?.id, appConfigId, oldConfigId],
-    queryFn: () =>
-      getAppConfigDiff({
-        orgId: org!.id,
-        appId: app!.id,
-        configId: appConfigId!,
-        oldConfigId,
-      }),
-    enabled: !!org?.id && !!app?.id && !!appConfigId,
-    retry: 1,
-  })
-
-  const sections = diffData?.diff ? extractSections(diffData.diff) : []
-  const summary = sections.length > 0 ? computeSummary(sections) : (diffData?.summary || null)
+  const oldConfigId = (() => {
+    const runs = branchRunsResult?.data
+    if (!runs || !appConfigId) return undefined
+    const sorted = [...runs].sort(
+      (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+    )
+    const currentIdx = sorted.findIndex((r) => r.app_branch_runs?.at(0)?.app_config_id === appConfigId)
+    if (currentIdx < 0) return undefined
+    for (let i = currentIdx + 1; i < sorted.length; i++) {
+      const prevRun = sorted[i].app_branch_runs?.at(0)
+      if (prevRun?.app_config_id && prevRun.app_config_id !== appConfigId) {
+        return prevRun.app_config_id
+      }
+    }
+    return undefined
+  })()
 
   return (
-    <ConfigStep
-      appConfigId={appConfigId}
-      status={status}
-      statusDescription={statusDescription}
-      sections={sections}
-      summary={summary}
-      diffResolved={diffError || !!diffData}
-      metadata={metadata}
-    />
+    <div className="flex flex-col gap-3">
+      {status && (
+        <div className="flex items-center gap-2">
+          <Status status={status} variant="badge" />
+          {statusDescription && (
+            <Text variant="subtext" theme="neutral">{statusDescription}</Text>
+          )}
+        </div>
+      )}
+      {appConfigId && (
+        <AppConfigDiff appConfigId={appConfigId} oldConfigId={oldConfigId} />
+      )}
+    </div>
   )
 }

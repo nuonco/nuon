@@ -13,13 +13,21 @@ type getinstallcomponentsquery struct {
 }
 
 // install components
-func (c *client) GetInstallComponents(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallComponent, bool, error) {
+type GetInstallComponentsOpts struct {
+	Synced *bool
+}
+
+func (c *client) GetInstallComponents(ctx context.Context, installID string, query *models.GetPaginatedQuery, opts ...GetInstallComponentsOpts) ([]*models.AppInstallComponent, bool, error) {
 	params := &operations.GetInstallComponentsParams{
 		InstallID: installID,
 		Context:   ctx,
 	}
 
 	params.Offset, params.Limit = applyPaginationQuery(query)
+
+	if len(opts) > 0 && opts[0].Synced != nil {
+		params.Synced = opts[0].Synced
+	}
 
 	hr := newResponseHeaderReader(&operations.GetInstallComponentsReader{})
 	resp, err := c.genClient.Operations.GetInstallComponents(params, c.getOrgIDAuthInfo(), hr.ClientOption())

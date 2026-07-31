@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
+import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
+import { Expand } from '@/components/common/Expand'
 import { Text } from '@/components/common/Text'
-import { InstallGroupDiff } from '@/components/approvals/plan-diffs/install-group/InstallGroupDiff'
-import type { InstallDiffEntry } from '@/components/approvals/plan-diffs/install-group/InstallGroupDiff'
+import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
+import { useApp } from '@/hooks/use-app'
 
 interface IPlanGroupStep {
   installs: any[]
@@ -16,97 +18,19 @@ interface IPlanGroupStep {
   actions?: ReactNode
 }
 
-function transformInstalls(installs: any[]): InstallDiffEntry[] {
-  return installs.map((inst) => {
-    const diff = inst.diff
-    const added = Array.isArray(diff?.added) ? diff.added : []
-    const changed = Array.isArray(diff?.changed) ? diff.changed : []
-    const removed = Array.isArray(diff?.removed) ? diff.removed : []
-
-    const componentEntities = [
-      ...added.map((c: any) => ({
-        name: c.component_name || c.component_id,
-        op: 'add' as const,
-        componentType: c.component_type,
-        fields: [{ key: 'type', op: 'add', diff: `'' -> '${c.component_type || ''}'` }],
-      })),
-      ...changed.map((c: any) => ({
-        name: c.component_name || c.component_id,
-        op: 'change' as const,
-        componentType: c.component_type,
-        fields: [],
-      })),
-      ...removed.map((c: any) => ({
-        name: c.component_name || c.component_id,
-        op: 'remove' as const,
-        componentType: c.component_type,
-        fields: [{ key: 'type', op: 'remove', diff: `'${c.component_type || ''}' -> ''` }],
-      })),
-    ]
-
-    const sandboxChanged = diff?.sandbox_changed || inst.sandbox_changed
-    const stackChanged = diff?.stack_changed || inst.stack_changed
-
-    const infraEntities = [
-      ...(sandboxChanged ? [{ name: 'Sandbox', op: 'change' as const, fields: [] }] : []),
-      ...(stackChanged ? [{ name: 'Stack', op: 'change' as const, fields: [] }] : []),
-    ]
-
-    const sections = [
-      ...(componentEntities.length > 0
-        ? [{
-            name: 'Components',
-            sectionKey: 'components',
-            grouped: true,
-            additions: added.length,
-            removals: removed.length,
-            changed: changed.length,
-            entities: componentEntities,
-            fields: [],
-          }]
-        : []),
-      ...(infraEntities.length > 0
-        ? [{
-            name: 'Infrastructure',
-            sectionKey: 'infrastructure',
-            grouped: true,
-            additions: 0,
-            removals: 0,
-            changed: infraEntities.length,
-            entities: infraEntities,
-            fields: [],
-          }]
-        : []),
-    ]
-
-    return {
-      installId: inst.install_id || inst.install_name,
-      installName: inst.install_name || inst.install_id,
-      installLabels: inst.install_labels,
-      status: inst.status,
-      sandboxChanged,
-      stackChanged,
-      summary: {
-        added: added.length,
-        removed: removed.length,
-        changed: changed.length,
-      },
-      sections,
-    }
-  })
-}
-
 export const PlanGroupStep = ({
   installs,
   groupName,
   orgId: _orgId,
-  labelColors,
+  labelColors: _labelColors,
   hasResponse,
   responseType,
   showApproveBar,
-  isInProgress,
+  isInProgress: _isInProgress,
   actions,
 }: IPlanGroupStep) => {
+  const { app } = useApp()
+
   return (
     <div className="flex flex-col gap-3">
       {hasResponse && (
@@ -117,12 +41,44 @@ export const PlanGroupStep = ({
         </Banner>
       )}
 
-      <InstallGroupDiff
-        groupName={groupName || 'install group'}
-        installs={transformInstalls(installs)}
-        isLoading={isInProgress}
-        labelColors={labelColors}
-      />
+      <Text variant="label" theme="neutral">
+        {groupName || 'Install group'} ({installs.length} {installs.length === 1 ? 'install' : 'installs'})
+      </Text>
+
+      {installs.map((inst) => {
+        const installName = inst.install_name || inst.install_id
+        const newConfigId = inst.new_app_config_id
+        const oldConfigId = inst.old_app_config_id
+
+        return (
+          <Expand
+            key={inst.install_id}
+            id={`plan-install-${inst.install_id}`}
+            className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-lg overflow-hidden"
+            headerClassName="px-4 py-3"
+            heading={
+              <div className="flex items-center gap-2 w-full">
+                <Text variant="subtext" weight="strong">{installName}</Text>
+                {inst.install_labels && Object.entries(inst.install_labels).map(([k, v]) => (
+                  <Badge key={k} size="sm" theme="neutral">{k}: {String(v)}</Badge>
+                ))}
+              </div>
+            }
+          >
+            <div className="p-4 border-t border-cool-grey-100 dark:border-dark-grey-800">
+              {newConfigId && app?.id ? (
+                <AppConfigDiff
+                  appConfigId={newConfigId}
+                  oldConfigId={oldConfigId}
+                  appId={app.id}
+                />
+              ) : (
+                <Text variant="subtext" theme="neutral">No config changes</Text>
+              )}
+            </div>
+          </Expand>
+        )
+      })}
 
       {showApproveBar && (
         <Banner className="@container" theme="warn">

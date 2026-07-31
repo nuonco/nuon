@@ -66,6 +66,7 @@ type AppConfig struct {
 
 	ComponentIDs pq.StringArray `gorm:"type:text[]" json:"component_ids,omitzero" temporaljson:"component_ids,omitzero,omitempty" swaggertype:"array,string"`
 	ActionIDs    pq.StringArray `gorm:"type:text[]" json:"action_ids,omitzero" temporaljson:"action_ids,omitzero,omitempty" swaggertype:"array,string"`
+	RunbookIDs   pq.StringArray `gorm:"type:text[]" json:"runbook_ids,omitzero" temporaljson:"runbook_ids,omitzero,omitempty" swaggertype:"array,string"`
 
 	IntermediateConfig *blobstore.Blob `json:"intermediate_config" temporaljson:"intermediate_config"`
 

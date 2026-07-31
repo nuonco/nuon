@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Config Lifecycle & App Branch Improvements</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-2: #1c2129;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --blue: #58a6ff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --cyan: #56d4dd;
+    --pink: #f778ba;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 40px;
+    line-height: 1.5;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  h1 + p { color: var(--text-muted); margin-bottom: 40px; }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 32px;
+  }
+
+  /* Flow diagrams */
+  .flow {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    overflow-x: auto;
+    padding: 16px 0;
+  }
+
+  .flow-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 16px 0;
+  }
+
+  .node {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    min-width: 180px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .node-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .node-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .node-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .node-file {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    margin-top: 6px;
+    opacity: 0.7;
+  }
+
+  .node.trigger { border-color: var(--blue); }
+  .node.trigger .node-label { color: var(--blue); }
+
+  .node.signal { border-color: var(--orange); }
+  .node.signal .node-label { color: var(--orange); }
+
+  .node.activity { border-color: var(--green); }
+  .node.activity .node-label { color: var(--green); }
+
+  .node.activity-new { border-color: var(--green); border-style: dashed; border-width: 2px; }
+  .node.activity-new .node-label { color: var(--green); }
+
+  .node.removed { border-color: var(--red); border-style: dashed; }
+  .node.removed .node-label { color: var(--red); }
+
+  .node.api { border-color: var(--purple); }
+  .node.api .node-label { color: var(--purple); }
+
+  .node.ui { border-color: var(--pink); }
+  .node.ui .node-label { color: var(--pink); }
+
+  .node.model { border-color: var(--cyan); }
+  .node.model .node-label { color: var(--cyan); }
+
+  .arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 48px;
+    color: var(--text-muted);
+    font-size: 20px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .arrow-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    position: absolute;
+    top: -14px;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .arrow-down {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    color: var(--text-muted);
+    font-size: 20px;
+    position: relative;
+  }
+
+  .arrow-down-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    position: absolute;
+    left: 32px;
+    white-space: nowrap;
+  }
+
+  /* Parallel activities box */
+  .parallel-box {
+    border: 1px dashed var(--green);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .parallel-box-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .parallel-items {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .parallel-item {
+    background: var(--surface-2);
+    border: 1px solid var(--green);
+    border-radius: 6px;
+    padding: 10px 14px;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .parallel-item-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--green);
+  }
+
+  .parallel-item-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    border: 2px solid;
+  }
+
+  .legend-dot.trigger { border-color: var(--blue); }
+  .legend-dot.signal { border-color: var(--orange); }
+  .legend-dot.activity { border-color: var(--green); }
+  .legend-dot.removed { border-color: var(--red); border-style: dashed; }
+  .legend-dot.api { border-color: var(--purple); }
+  .legend-dot.ui { border-color: var(--pink); }
+  .legend-dot.model { border-color: var(--cyan); }
+  .legend-dot.new { border-color: var(--green); border-style: dashed; }
+
+  /* Before/After comparison */
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .comparison-col h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+  }
+
+  .comparison-col.before h3 {
+    background: rgba(248, 81, 73, 0.1);
+    color: var(--red);
+  }
+
+  .comparison-col.after h3 {
+    background: rgba(63, 185, 80, 0.1);
+    color: var(--green);
+  }
+
+  /* Filter flow */
+  .filter-diagram {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 0;
+    flex-wrap: wrap;
+  }
+
+  .filter-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .filter-box code {
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 12px;
+    color: var(--cyan);
+  }
+
+  .filter-result {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 4px;
+  }
+
+  .filter-result.show { background: rgba(63, 185, 80, 0.15); color: var(--green); }
+  .filter-result.hide { background: rgba(248, 81, 73, 0.15); color: var(--red); }
+
+  /* Data model */
+  .model-fields {
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-top: 8px;
+  }
+
+  .model-fields .field { padding: 2px 0; }
+  .model-fields .field-name { color: var(--blue); }
+  .model-fields .field-type { color: var(--text-muted); }
+  .model-fields .field-new { color: var(--green); }
+  .model-fields .field-existing { color: var(--text-muted); opacity: 0.6; }
+
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .tag-new { background: rgba(63, 185, 80, 0.15); color: var(--green); }
+  .tag-existing { background: rgba(139, 148, 158, 0.15); color: var(--text-muted); }
+  .tag-removed { background: rgba(248, 81, 73, 0.15); color: var(--red); }
+  .tag-changed { background: rgba(210, 153, 34, 0.15); color: var(--orange); }
+  .tag-restored { background: rgba(86, 212, 221, 0.15); color: var(--cyan); }
+
+  @media (max-width: 900px) {
+    .comparison { grid-template-columns: 1fr; }
+    .flow { flex-direction: column; align-items: stretch; }
+    .arrow { transform: rotate(90deg); min-width: unset; height: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>App Config Lifecycle & App Branch Improvements</h1>
+<p>Architecture diagram for Changes 0–4: install entity reconciliation, filtering, versions enrichment, CLI headless mode</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot trigger"></div> Trigger / Entry Point</div>
+  <div class="legend-item"><div class="legend-dot signal"></div> Temporal Signal</div>
+  <div class="legend-item"><div class="legend-dot activity"></div> Temporal Activity</div>
+  <div class="legend-item"><div class="legend-dot new"></div> New (to be created)</div>
+  <div class="legend-item"><div class="legend-dot removed"></div> Removed</div>
+  <div class="legend-item"><div class="legend-dot api"></div> API Endpoint</div>
+  <div class="legend-item"><div class="legend-dot ui"></div> UI / CLI</div>
+  <div class="legend-item"><div class="legend-dot model"></div> Data Model</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Change 0: RunbookIDs on AppConfig                            -->
+<!-- ============================================================ -->
+<div class="section">
+  <h2>Change 0 — Add <code>RunbookIDs</code> to AppConfig</h2>
+
+  <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 280px;">
+      <div class="node model" style="margin-bottom: 12px;">
+        <div class="node-label">Model Change</div>
+        <div class="node-title">AppConfig</div>
+        <div class="model-fields">
+          <div class="field"><span class="field-existing">ComponentIDs pq.StringArray</span> <span class="tag tag-existing">exists</span></div>
+          <div class="field"><span class="field-existing">ActionIDs    pq.StringArray</span> <span class="tag tag-existing">exists</span></div>
+          <div class="field"><span class="field-new">RunbookIDs   pq.StringArray</span> <span class="tag tag-new">new</span></div>
+        </div>
+        <div class="node-file">internal/app/app_config.go</div>
+      </div>
+      <div class="node model">
+        <div class="node-label">Model Change</div>
+        <div class="node-title">AppBranchConfig</div>
+        <div class="model-fields">
+          <div class="field"><span class="field-existing">ComponentIDs pq.StringArray</span> <span class="tag tag-existing">exists</span></div>
+          <div class="field"><span class="field-existing">ActionIDs    pq.StringArray</span> <span class="tag tag-existing">exists</span></div>
+          <div class="field"><span class="field-new">RunbookIDs   pq.StringArray</span> <span class="tag tag-new">new</span></div>
+        </div>
+        <div class="node-file">internal/app/app_branch_config.go</div>
+      </div>
+    </div>
+
+    <div style="flex: 1; min-width: 280px;">
+      <div class="node activity" style="margin-bottom: 12px;">
+        <div class="node-label">Syncer Update</div>
+        <div class="node-title">syncAppConfig</div>
+        <div class="node-desc">Add <code>runbook_ids: pq.StringArray(s.GetRunbookStateIds())</code> alongside existing component_ids and action_ids writes</div>
+        <div class="node-file">signals/branches/activities/sync_app_config.go:105-106</div>
+      </div>
+      <div class="node activity" style="margin-bottom: 12px;">
+        <div class="node-label">Syncer Update</div>
+        <div class="node-title">updateAppBranchConfigIDs</div>
+        <div class="node-desc">Add RunbookIDs to input struct and update map</div>
+        <div class="node-file">signals/branches/activities/update_app_branch_config_ids.go</div>
+      </div>
+      <div class="node activity">
+        <div class="node-label">Output Update</div>
+        <div class="node-title">SyncAppConfigOutput</div>
+        <div class="node-desc">Add RunbookIDs []string to output, populated from GetRunbookStateIds()</div>
+        <div class="node-file">signals/branches/activities/sync_app_config.go:26-30</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Change 1: App Config Sync → Reconcile Flow                   -->
+<!-- ============================================================ -->
+<div class="section">
+  <h2>Change 1a — App Config Sync → Install Entity Reconciliation</h2>
+
+  <div class="comparison">
+    <div class="comparison-col before">
+      <h3>Before (current)</h3>
+      <div class="flow-vertical">
+        <div class="node trigger">
+          <div class="node-label">API</div>
+          <div class="node-title">PATCH /v1/apps/:id/configs/:id</div>
+          <div class="node-desc">Sets status to active</div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node signal">
+          <div class="node-label">Signal</div>
+          <div class="node-title">sync-app-config-installs</div>
+          <div class="node-desc">Fan out to all installs</div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node signal">
+          <div class="node-label">Signal (per install)</div>
+          <div class="node-title">update-app-config</div>
+          <div class="node-desc">Updates install.AppConfigID<br>Creates version record</div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node signal">
+          <div class="node-label">Signal</div>
+          <div class="node-title">appconfig-updated</div>
+          <div class="node-desc">Reconciles emitters only<br><strong style="color: var(--red);">No entity reconciliation!</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comparison-col after">
+      <h3>After (proposed)</h3>
+      <div class="flow-vertical">
+        <div class="node trigger">
+          <div class="node-label">API</div>
+          <div class="node-title">PATCH /v1/apps/:id/configs/:id</div>
+          <div class="node-desc">Sets status to active</div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node signal">
+          <div class="node-label">Signal</div>
+          <div class="node-title">sync-app-config-installs</div>
+          <div class="node-desc">Fan out to all installs</div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node signal">
+          <div class="node-label">Signal (per install)</div>
+          <div class="node-title">update-app-config</div>
+          <div class="node-desc">Updates install.AppConfigID<br>Creates version record</div>
+        </div>
+        <div class="arrow-down">
+          ↓
+          <span class="arrow-down-label" style="color: var(--green); font-weight: 600;">NEW: after AppConfigID update</span>
+        </div>
+        <div class="parallel-box">
+          <div class="parallel-box-label">New Reconcile Activities (sequential)</div>
+          <div class="parallel-items">
+            <div class="parallel-item">
+              <div class="parallel-item-title">ReconcileInstallComponents</div>
+              <div class="parallel-item-desc">Source: app_configs.component_ids<br>Create new → ON CONFLICT DO NOTHING<br>Mark removed → StatusV2.Metadata</div>
+            </div>
+            <div class="parallel-item">
+              <div class="parallel-item-title">ReconcileInstallActions</div>
+              <div class="parallel-item-desc">Source: app_configs.action_ids<br>Create new → ON CONFLICT DO NOTHING<br>Mark removed → StatusV2.Metadata</div>
+            </div>
+            <div class="parallel-item">
+              <div class="parallel-item-title">ReconcileInstallRunbooks</div>
+              <div class="parallel-item-desc">Source: app_configs.runbook_ids<br>Create new → ON CONFLICT DO NOTHING<br>Mark removed → StatusV2.Metadata</div>
+            </div>
+          </div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node signal">
+          <div class="node-label">Signal</div>
+          <div class="node-title">appconfig-updated</div>
+          <div class="node-desc">Reconciles emitters (unchanged)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Change 1b: Install Creation Flow                             -->
+<!-- ============================================================ -->
+<div class="section">
+  <h2>Change 1b — Install Creation → Entity Reconciliation</h2>
+
+  <div class="comparison">
+    <div class="comparison-col before">
+      <h3>Before (current)</h3>
+      <div class="flow-vertical">
+        <div class="node trigger">
+          <div class="node-label">API</div>
+          <div class="node-title">POST /v1/installs</div>
+          <div class="node-desc">Creates install with AppConfigID = latest active config</div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node activity">
+          <div class="node-label">Inline (synchronous)</div>
+          <div class="node-title">EnsureInstallComponents</div>
+          <div class="node-desc">Cross-product of ALL app components<br><strong style="color: var(--red);">Not filtered by app config!</strong></div>
+          <div class="node-file">installs/helpers/create_install.go:249</div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node activity">
+          <div class="node-label">Inline (synchronous)</div>
+          <div class="node-title">EnsureInstallAction</div>
+          <div class="node-desc">Cross-product of ALL app actions</div>
+          <div class="node-file">installs/helpers/create_install.go:252</div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node activity">
+          <div class="node-label">Inline (synchronous)</div>
+          <div class="node-title">EnsureInstallRunbooks</div>
+          <div class="node-desc">Cross-product of ALL app runbooks</div>
+          <div class="node-file">installs/helpers/create_install.go:255</div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node signal">
+          <div class="node-label">Signal</div>
+          <div class="node-title">install-created</div>
+          <div class="node-desc">Sends notifications only</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comparison-col after">
+      <h3>After (proposed)</h3>
+      <div class="flow-vertical">
+        <div class="node trigger">
+          <div class="node-label">API</div>
+          <div class="node-title">POST /v1/installs</div>
+          <div class="node-desc">Creates install with AppConfigID = latest active config<br><span class="tag tag-removed">Removed: inline Ensure* calls</span></div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node signal">
+          <div class="node-label">Signal</div>
+          <div class="node-title">install-created</div>
+          <div class="node-desc">Sends notifications (unchanged)</div>
+        </div>
+        <div class="arrow-down">
+          ↓
+          <span class="arrow-down-label" style="color: var(--green); font-weight: 600;">NEW: after notifications</span>
+        </div>
+        <div class="parallel-box">
+          <div class="parallel-box-label">Reconcile Activities (same as config update)</div>
+          <div class="parallel-items">
+            <div class="parallel-item">
+              <div class="parallel-item-title">ReconcileInstallComponents</div>
+              <div class="parallel-item-desc">Source: install.AppConfig.component_ids<br>Creates only config-relevant components</div>
+            </div>
+            <div class="parallel-item">
+              <div class="parallel-item-title">ReconcileInstallActions</div>
+              <div class="parallel-item-desc">Source: install.AppConfig.action_ids</div>
+            </div>
+            <div class="parallel-item">
+              <div class="parallel-item-title">ReconcileInstallRunbooks</div>
+              <div class="parallel-item-desc">Source: install.AppConfig.runbook_ids</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Reconcile Activity Detail                                    -->
+<!-- ============================================================ -->
+<div class="section">
+  <h2>Reconcile Activity Logic (each of the 3 activities)</h2>
+
+  <div class="flow-vertical" style="max-width: 500px;">
+    <div class="node activity-new">
+      <div class="node-label">Step 1</div>
+      <div class="node-title">Fetch install + app config</div>
+      <div class="node-desc">Get install by ID → get app config → read denormalized ID array (component_ids / action_ids / runbook_ids)</div>
+    </div>
+    <div class="arrow-down">↓</div>
+    <div class="node activity-new">
+      <div class="node-label">Step 2</div>
+      <div class="node-title">Fetch existing install entities</div>
+      <div class="node-desc">Query all InstallComponents / InstallActionWorkflows / InstallRunbooks for this install (including soft-deleted = no, but including previously removed)</div>
+    </div>
+    <div class="arrow-down">↓</div>
+    <div class="node activity-new">
+      <div class="node-label">Step 3</div>
+      <div class="node-title">Diff: desired vs existing</div>
+      <div class="node-desc">
+        <strong>To add:</strong> IDs in config but no matching install entity<br>
+        <strong>To restore:</strong> IDs in config AND entity exists but has <code>removed_at_app_config_id</code> metadata<br>
+        <strong>To remove:</strong> Install entities whose source ID is NOT in config array (and not already marked)
+      </div>
+    </div>
+    <div class="arrow-down">↓</div>
+    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+      <div class="node activity-new" style="flex: 1; min-width: 180px; border-color: var(--green);">
+        <div class="node-label" style="color: var(--green);">Add</div>
+        <div class="node-title">Create missing entities</div>
+        <div class="node-desc">INSERT with ON CONFLICT DO NOTHING<br>+ TerraformWorkspace / HelmChart for components</div>
+      </div>
+      <div class="node activity-new" style="flex: 1; min-width: 180px; border-color: var(--cyan);">
+        <div class="node-label" style="color: var(--cyan);">Restore (undelete)</div>
+        <div class="node-title">Clear removal metadata</div>
+        <div class="node-desc">Entity exists but was previously removed — clear <code>removed_at_app_config_id</code> from StatusV2.Metadata</div>
+        <div class="model-fields" style="margin-top: 8px;">
+          <div class="field"><span class="field-name">StatusV2.Metadata</span></div>
+          <div class="field">&nbsp;&nbsp;<del style="color: var(--red);">"removed_at_app_config_id": "cfg..."</del></div>
+        </div>
+      </div>
+      <div class="node activity-new" style="flex: 1; min-width: 180px; border-color: var(--red);">
+        <div class="node-label" style="color: var(--red);">Remove</div>
+        <div class="node-title">Mark stale entities</div>
+        <div class="model-fields" style="margin-top: 8px;">
+          <div class="field"><span class="field-name">StatusV2.Metadata</span></div>
+          <div class="field">&nbsp;&nbsp;<span class="field-new">"removed_at_app_config_id"</span>: <span class="field-type">"cfg..."</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px; background: rgba(86,212,221,0.08); border: 1px solid rgba(86,212,221,0.2); border-radius: 8px; padding: 16px;">
+      <div style="font-size: 13px; font-weight: 600; color: var(--cyan); margin-bottom: 8px;">Example: Component "foo" lifecycle</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px;">
+        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; flex: 1; min-width: 140px;">
+          <div style="color: var(--text-muted); font-size: 10px; text-transform: uppercase; margin-bottom: 4px;">Config v1</div>
+          <div style="color: var(--green);">foo added</div>
+          <div style="color: var(--text-muted);">→ INSERT InstallComponent</div>
+        </div>
+        <div style="display: flex; align-items: center; color: var(--text-muted);">→</div>
+        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; flex: 1; min-width: 140px;">
+          <div style="color: var(--text-muted); font-size: 10px; text-transform: uppercase; margin-bottom: 4px;">Config v2</div>
+          <div style="color: var(--red);">foo removed</div>
+          <div style="color: var(--text-muted);">→ SET removed_at = v2</div>
+        </div>
+        <div style="display: flex; align-items: center; color: var(--text-muted);">→</div>
+        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; flex: 1; min-width: 140px;">
+          <div style="color: var(--text-muted); font-size: 10px; text-transform: uppercase; margin-bottom: 4px;">Config v3</div>
+          <div style="color: var(--text-muted);">foo still absent</div>
+          <div style="color: var(--text-muted);">→ no-op (already marked)</div>
+        </div>
+        <div style="display: flex; align-items: center; color: var(--text-muted);">→</div>
+        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; flex: 1; min-width: 140px;">
+          <div style="color: var(--text-muted); font-size: 10px; text-transform: uppercase; margin-bottom: 4px;">Config v4</div>
+          <div style="color: var(--cyan);">foo re-added</div>
+          <div style="color: var(--text-muted);">→ CLEAR removed_at (restore)</div>
+          <div style="color: var(--text-muted);">→ ON CONFLICT DO NOTHING (row exists)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Change 1c: Removed inline creation                           -->
+<!-- ============================================================ -->
+<div class="section">
+  <h2>Change 1c — Removed Inline Creation Points</h2>
+
+  <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+    <div class="node removed" style="flex: 1; min-width: 250px;">
+      <div class="node-label">Removed</div>
+      <div class="node-title">Lazy InstallComponent creation in deploy</div>
+      <div class="node-desc">Previously created missing InstallComponent inline during deploy if it didn't exist</div>
+      <div class="node-file">installs/service/create_install_deploy.go:259-271</div>
+    </div>
+    <div class="node removed" style="flex: 1; min-width: 250px;">
+      <div class="node-label">Removed</div>
+      <div class="node-title">Inline Ensure* in CreateInstall</div>
+      <div class="node-desc">Previously created cross-product of ALL app entities synchronously during install creation</div>
+      <div class="node-file">installs/helpers/create_install.go:249-257</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Change 2: Synced Filter Flow                                 -->
+<!-- ============================================================ -->
+<div class="section">
+  <h2>Change 2 — Synced Filter (Active-Only by Default)</h2>
+
+  <div style="margin-bottom: 20px;">
+    <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">API Endpoints — <code>synced</code> query parameter</div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="filter-diagram">
+        <div class="node api" style="min-width: 300px;">
+          <div class="node-title" style="font-size: 13px;">GET /v1/installs/:id/components</div>
+          <div class="node-desc"><code>synced</code> param <span class="tag tag-existing">exists, default=true</span></div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="filter-box">
+          <code>WHERE component_id = ANY(app_configs.component_ids)</code>
+        </div>
+      </div>
+
+      <div class="filter-diagram">
+        <div class="node api" style="min-width: 300px;">
+          <div class="node-title" style="font-size: 13px;">GET /v1/installs/:id/actions</div>
+          <div class="node-desc"><code>synced</code> param <span class="tag tag-new">new, default=true</span> (was hardcoded true)</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="filter-box">
+          <code>WHERE EXISTS (action_workflow_configs JOIN installs)</code>
+        </div>
+      </div>
+
+      <div class="filter-diagram">
+        <div class="node api" style="min-width: 300px;">
+          <div class="node-title" style="font-size: 13px;">GET /v1/installs/:id/runbooks</div>
+          <div class="node-desc"><code>synced</code> param <span class="tag tag-existing">exists, default=true</span></div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="filter-box">
+          <code>WHERE EXISTS (runbook_configs JOIN installs)</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+    <div class="node ui" style="flex: 1; min-width: 220px;">
+      <div class="node-label">CLI</div>
+      <div class="node-title">--all flag</div>
+      <div class="node-desc">
+        <code>nuon installs components list</code> → synced=true (default)<br>
+        <code>nuon installs components list --all</code> → synced=false
+      </div>
+    </div>
+    <div class="node ui" style="flex: 1; min-width: 220px;">
+      <div class="node-label">Dashboard UI</div>
+      <div class="node-title">"Show removed" toggle</div>
+      <div class="node-desc">
+        Toggle off (default) → synced=true → show current entities<br>
+        Toggle on → synced=false → show all including removed
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 200px;">
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">synced=true (default)</div>
+      <div class="filter-result show">Component A (in current config) → shown</div>
+      <div class="filter-result show" style="margin-top: 4px;">Component B (in current config) → shown</div>
+      <div class="filter-result hide" style="margin-top: 4px;">Component C (removed in v3) → hidden</div>
+    </div>
+    <div style="flex: 1; min-width: 200px;">
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">synced=false (--all)</div>
+      <div class="filter-result show">Component A (in current config) → shown</div>
+      <div class="filter-result show" style="margin-top: 4px;">Component B (in current config) → shown</div>
+      <div class="filter-result show" style="margin-top: 4px;">Component C (removed_at_app_config_id: cfg...) → shown</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Change 3: Versions Page Enrichment                           -->
+<!-- ============================================================ -->
+<div class="section">
+  <h2>Change 3 — Install Versions Page Enrichment</h2>
+
+  <div class="comparison">
+    <div class="comparison-col before">
+      <h3>Before (current VersionCard)</h3>
+      <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+          <span style="background: rgba(63,185,80,0.2); color: var(--green); padding: 2px 8px; border-radius: 4px; font-size: 12px;">success</span>
+          <span style="background: rgba(139,148,158,0.15); color: var(--text-muted); padding: 2px 8px; border-radius: 4px; font-size: 12px;">sync</span>
+          <span style="color: var(--text-muted); font-size: 12px;">2 hours ago</span>
+          <span style="margin-left: auto; font-size: 11px; color: var(--green);">+1</span>
+          <span style="font-size: 11px; color: var(--orange);">~2</span>
+        </div>
+        <div style="border-top: 1px solid var(--border); padding-top: 12px;">
+          <div style="font-size: 12px; color: var(--text-muted);">Old config: <code style="color: var(--cyan);">cfg...</code></div>
+          <div style="font-size: 12px; color: var(--text-muted);">New config: <code style="color: var(--cyan);">cfg...</code></div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Changed components (3)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comparison-col after">
+      <h3>After (enriched VersionCard)</h3>
+      <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+          <span style="background: rgba(63,185,80,0.2); color: var(--green); padding: 2px 8px; border-radius: 4px; font-size: 12px;">success</span>
+          <span style="background: rgba(188,140,255,0.2); color: var(--purple); padding: 2px 8px; border-radius: 4px; font-size: 12px;">app-branch</span>
+          <span style="color: var(--text-muted); font-size: 12px;">2 hours ago</span>
+          <span style="margin-left: auto; font-size: 11px; color: var(--green);">+1</span>
+          <span style="font-size: 11px; color: var(--orange);">~2</span>
+        </div>
+        <div style="border-top: 1px solid var(--border); padding-top: 12px;">
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; background: rgba(86,212,221,0.08); padding: 8px 10px; border-radius: 6px;">
+            <span style="font-size: 12px; color: var(--cyan); font-weight: 600;">main</span>
+            <code style="font-size: 11px; color: var(--text-muted);">abc1234</code>
+            <span style="font-size: 11px; color: var(--text-muted);">fix: update helm chart values</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted);">Old config: <code style="color: var(--cyan);">cfg...</code></div>
+          <div style="font-size: 12px; color: var(--text-muted);">New config: <code style="color: var(--cyan);">cfg...</code></div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Changed components (3)</div>
+          <a style="font-size: 12px; color: var(--blue); margin-top: 8px; display: block;">View branch run →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 16px;">
+    <div class="node model" style="display: inline-block;">
+      <div class="node-label">Backend Change</div>
+      <div class="node-title">Preload branch run data on versions endpoint</div>
+      <div class="node-desc">Add preloads: AppBranchRun.AppBranch, AppBranchRun.VCSConnectionCommit</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Change 4: CLI Headless Mode                                  -->
+<!-- ============================================================ -->
+<div class="section">
+  <h2>Change 4 — CLI App Branch Run Headless Mode</h2>
+
+  <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 300px;">
+      <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Interactive (default)</div>
+      <div class="flow-vertical">
+        <div class="node ui">
+          <div class="node-label">CLI</div>
+          <div class="node-title">nuon apps branches trigger-run</div>
+          <div class="node-desc">--force, --plan-only</div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node trigger">
+          <div class="node-label">API Call</div>
+          <div class="node-title">POST /v1/apps/:id/branches/:id/runs</div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node ui">
+          <div class="node-label">TUI</div>
+          <div class="node-title">workflow.WorkflowApp()</div>
+          <div class="node-desc">Interactive workflow viewer<br>Blocks until completion</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex: 1; min-width: 300px;">
+      <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Headless <span class="tag tag-new">new</span></div>
+      <div class="flow-vertical">
+        <div class="node ui">
+          <div class="node-label">CLI</div>
+          <div class="node-title">nuon apps branches trigger-run --no-wait</div>
+          <div class="node-desc">--force, --plan-only, --no-wait</div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node trigger">
+          <div class="node-label">API Call</div>
+          <div class="node-title">POST /v1/apps/:id/branches/:id/runs</div>
+        </div>
+        <div class="arrow-down">↓</div>
+        <div class="node activity-new">
+          <div class="node-label">Output</div>
+          <div class="node-title">Print response & exit</div>
+          <div class="model-fields" style="margin-top: 8px;">
+            <div class="field">Normal: table with run ID, status</div>
+            <div class="field">--output agent: JSON envelope</div>
+            <div class="field" style="margin-top: 4px;">
+              <span class="field-type">{</span><br>
+              <span class="field-type">&nbsp;&nbsp;"ok": true,</span><br>
+              <span class="field-type">&nbsp;&nbsp;"data": {</span><br>
+              <span class="field-type">&nbsp;&nbsp;&nbsp;&nbsp;"id": "run...",</span><br>
+              <span class="field-type">&nbsp;&nbsp;&nbsp;&nbsp;"workflow_id": "wf...",</span><br>
+              <span class="field-type">&nbsp;&nbsp;&nbsp;&nbsp;"status": "pending"</span><br>
+              <span class="field-type">&nbsp;&nbsp;}</span><br>
+              <span class="field-type">}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Implementation Order                                         -->
+<!-- ============================================================ -->
+<div class="section">
+  <h2>Implementation Order</h2>
+  <div class="flow" style="gap: 0;">
+    <div class="node model" style="text-align: center;">
+      <div class="node-label">Step 1</div>
+      <div class="node-title">Change 0</div>
+      <div class="node-desc">RunbookIDs on AppConfig</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node activity-new" style="text-align: center;">
+      <div class="node-label">Step 2</div>
+      <div class="node-title">Change 1</div>
+      <div class="node-desc">Reconcile activities + signal wiring</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node api" style="text-align: center;">
+      <div class="node-label">Step 3</div>
+      <div class="node-title">Change 2</div>
+      <div class="node-desc">Synced filter + CLI --all + UI toggle</div>
+    </div>
+    <div class="arrow">→</div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="node ui" style="text-align: center;">
+        <div class="node-label">Step 4a</div>
+        <div class="node-title">Change 3</div>
+        <div class="node-desc">Versions page enrichment</div>
+      </div>
+      <div class="node ui" style="text-align: center;">
+        <div class="node-label">Step 4b</div>
+        <div class="node-title">Change 4</div>
+        <div class="node-desc">CLI --no-wait</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

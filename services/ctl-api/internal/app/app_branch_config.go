@@ -35,6 +35,7 @@ type AppBranchConfig struct {
 
 	ComponentIDs pq.StringArray `gorm:"type:text[]" json:"component_ids,omitzero" temporaljson:"component_ids,omitzero,omitempty" swaggertype:"array,string"`
 	ActionIDs    pq.StringArray `gorm:"type:text[]" json:"action_ids,omitzero" temporaljson:"action_ids,omitzero,omitempty" swaggertype:"array,string"`
+	RunbookIDs   pq.StringArray `gorm:"type:text[]" json:"runbook_ids,omitzero" temporaljson:"runbook_ids,omitzero,omitempty" swaggertype:"array,string"`
 
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 
