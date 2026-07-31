@@ -21,6 +21,9 @@ import (
 // swagger:model service.CreateComponentHealthRequest
 type ServiceCreateComponentHealthRequest struct {
 
+	// ClusterAccessError is empty when the runner can inspect the cluster.
+	ClusterAccessError string `json:"cluster_access_error,omitempty"`
+
 	// components
 	Components []*ServiceComponentHealthComponent `json:"components"`
 

@@ -30,6 +30,10 @@ type ServiceInstallComponentHealthSummary struct {
 	// install component id
 	InstallComponentID string `json:"install_component_id,omitempty"`
 
+	// ObservedSeconds distinguishes "no data" from "0% up" — without it a
+	// component that was never observed renders as total downtime.
+	ObservedSeconds int64 `json:"observed_seconds,omitempty"`
+
 	// uptime percent
 	UptimePercent float64 `json:"uptime_percent,omitempty"`
 }

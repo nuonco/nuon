@@ -11,10 +11,14 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 const (
@@ -23,6 +27,9 @@ const (
 	maxResourcesPerComponent = 500
 	// maxResourceDetailsBytes bounds the per-resource details JSON blob.
 	maxResourceDetailsBytes = 16 * 1024
+	// componentHealthEvaluateSignalType doubles as the dedupe key: one pending
+	// evaluation per install queue is all that is ever useful.
+	componentHealthEvaluateSignalType = "component-health-evaluate"
 	// componentHealthInsertBatchSize bounds each ClickHouse insert.
 	componentHealthInsertBatchSize = 500
 
@@ -78,6 +85,8 @@ type CreateComponentHealthRequest struct {
 	ObservedAt      time.Time                       `json:"observed_at"`
 	Components      []ComponentHealthComponent      `json:"components"`
 	SandboxReleases []ComponentHealthSandboxRelease `json:"sandbox_releases"`
+	// ClusterAccessError is empty when the runner can inspect the cluster.
+	ClusterAccessError string `json:"cluster_access_error"`
 }
 
 type CreateComponentHealthResponse struct {
@@ -286,7 +295,7 @@ func (s *service) createComponentHealth(ctx context.Context, orgID, runnerID str
 		}
 	}
 
-	s.updateInstallSandboxHealth(ctx, req.InstallID, sandboxWorst, sandboxWorstMessage, true)
+	s.updateInstallSandboxHealth(ctx, req.InstallID, sandboxWorst, sandboxWorstMessage, req.ClusterAccessError, true)
 	s.ensureInstallHealthQueues(ctx, req.InstallID)
 
 	if len(rows) == 0 {
@@ -297,6 +306,10 @@ func (s *service) createComponentHealth(ctx context.Context, orgID, runnerID str
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to write resource states: %w", res.Error)
 	}
+
+	// Only after the observations are durable — evaluating before the write
+	// lands would read the previous report and draw last cycle's verdict.
+	s.triggerHealthEvaluation(ctx, req.InstallID)
 
 	return &CreateComponentHealthResponse{Ingested: len(rows)}, nil
 }
@@ -317,10 +330,54 @@ func (s *service) ensureInstallHealthQueues(ctx context.Context, installID strin
 	s.ensuredHealthQueues.Store(installID, struct{}{})
 }
 
+// componentHealthEvaluateDedupeKey buckets by minute so concurrent reports for
+// one install collapse, while the next minute still gets evaluated. A constant
+// key would not: a completed signal stays undeleted until the nightly cleanup,
+// and would absorb every later enqueue — freezing the verdict indefinitely.
+func componentHealthEvaluateDedupeKey(now time.Time) string {
+	return fmt.Sprintf("%s-%d", componentHealthEvaluateSignalType, now.Truncate(time.Minute).Unix())
+}
+
+// triggerHealthEvaluation evaluates on the report that just arrived rather than
+// waiting for a timer, so a verdict lands with the data that justifies it.
+//
+// Deduped per queue: while an evaluation is still pending, further reports
+// collapse into it, so multiple runners on one install cannot pile up. Entirely
+// best-effort — a queue problem must never fail a runner's health report.
+func (s *service) triggerHealthEvaluation(ctx context.Context, installID string) {
+	ownerType := plugins.TableName(s.db, app.Install{})
+
+	var q app.Queue
+	if err := s.db.WithContext(ctx).
+		Select("id").
+		Where(app.Queue{
+			OwnerID:   installID,
+			OwnerType: ownerType,
+			Name:      installshelpers.InstallComponentHealthQueueName,
+		}).
+		First(&q).Error; err != nil {
+		return
+	}
+
+	dedupeKey := componentHealthEvaluateDedupeKey(time.Now())
+	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID:   q.ID,
+		OwnerID:   installID,
+		OwnerType: ownerType,
+		Signal: queuesignal.NewRaw(componentHealthEvaluateSignalType, map[string]any{
+			"install_id": installID,
+		}),
+		DedupeKey: &dedupeKey,
+	}); err != nil {
+		s.l.Warn("unable to trigger component health evaluation",
+			zap.String("install_id", installID), zap.Error(err))
+	}
+}
+
 // updateInstallSandboxHealth denormalizes the worst sandbox-resource health onto
 // the install so reads can surface a degraded sandbox without a ClickHouse query.
 // Only degraded/unhealthy is recorded; best-effort (never fails the ingest).
-func (s *service) updateInstallSandboxHealth(ctx context.Context, installID, worst, message string, enabled bool) {
+func (s *service) updateInstallSandboxHealth(ctx context.Context, installID, worst, message, clusterAccessError string, enabled bool) {
 	status := ""
 	msg := ""
 	if enabled && healthSeverity[worst] >= healthSeverity["degraded"] {
@@ -328,10 +385,16 @@ func (s *service) updateInstallSandboxHealth(ctx context.Context, installID, wor
 		msg = message
 	}
 
+	now := time.Now()
 	if err := s.db.WithContext(ctx).
 		Model(&app.Install{ID: installID}).
-		Select("sandbox_health_status", "sandbox_health_message").
-		Updates(app.Install{SandboxHealthStatus: status, SandboxHealthMessage: msg}).Error; err != nil {
+		Select("sandbox_health_status", "sandbox_health_message", "last_health_report_at", "health_cluster_error").
+		Updates(app.Install{
+			SandboxHealthStatus:  status,
+			SandboxHealthMessage: msg,
+			LastHealthReportAt:   &now,
+			HealthClusterError:   clusterAccessError,
+		}).Error; err != nil {
 		s.l.Warn("unable to update install sandbox health rollup",
 			zap.String("install_id", installID), zap.Error(err))
 	}

@@ -12,7 +12,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
 
 	"github.com/nuonco/nuon/pkg/kube"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -45,11 +48,19 @@ func (e *Engine) report(ctx context.Context) error {
 
 	// Missing or transiently broken cluster access is not a reason to drop the
 	// surfaces that did report.
+	//
+	// Cluster access is one fact about the install, so it is reported once at
+	// install level instead of copied onto every component. A component that
+	// cannot be inspected simply reports nothing this cycle and ages into
+	// unknown through the normal staleness path, which also clears it on
+	// recovery — a per-component row would linger forever instead.
+	var clusterErr string
 	if ci := e.cluster.Get(); ci == nil {
 		e.l.Info("component health: waiting for cluster access (not yet provided by a deploy)")
-	} else if err := e.collectCluster(ctx, installID, ci, grouped, sandbox, sandboxNS); err != nil {
+		clusterErr = "no cluster access stored for this install yet; refresh it from the install's health card"
+	} else if err := e.collectCluster(ctx, installID, ci, grouped, sandbox, sandboxNS, &clusterErr); err != nil {
 		e.l.Error("unable to collect cluster resources for component health", zap.Error(err))
-		e.noteClusterFailure(grouped, fmt.Sprintf("unable to inspect cluster resources: %v", err))
+		clusterErr = fmt.Sprintf("unable to inspect cluster resources: %v", err)
 	}
 
 	e.collectTerraform(grouped)
@@ -87,11 +98,12 @@ func (e *Engine) report(ctx context.Context) error {
 	}
 
 	req := &models.ServiceCreateComponentHealthRequest{
-		InstallID:       &installID,
-		Kind:            "resync",
-		ObservedAt:      time.Now().UTC().Format(time.RFC3339),
-		Components:      components,
-		SandboxReleases: sandboxReleases,
+		InstallID:          &installID,
+		Kind:               "resync",
+		ObservedAt:         time.Now().UTC().Format(time.RFC3339),
+		Components:         components,
+		SandboxReleases:    sandboxReleases,
+		ClusterAccessError: clusterErr,
 	}
 	if _, err := e.apiClient.CreateComponentHealth(ctx, req); err != nil {
 		return fmt.Errorf("unable to report component health: %w", err)
@@ -120,6 +132,7 @@ func (e *Engine) collectCluster(
 	ci *kube.ClusterInfo,
 	grouped, sandbox map[string][]*models.ServiceComponentHealthResource,
 	sandboxNS map[string]string,
+	clusterErr *string,
 ) error {
 	restCfg, err := kube.ConfigForCluster(ctx, ci)
 	if err != nil {
@@ -144,7 +157,7 @@ func (e *Engine) collectCluster(
 	var failedKinds []string
 	var firstListErr error
 
-	for _, gvr := range watchedGVRs {
+	for _, gvr := range e.watchList(ctx, restCfg) {
 		list, err := dynClient.Resource(gvr).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			e.l.Warn("unable to list resources for component health",
@@ -162,15 +175,19 @@ func (e *Engine) collectCluster(
 		}
 	}
 
-	if len(failedKinds) == len(watchedGVRs) {
+	if len(failedKinds) > 0 && len(objects) == 0 {
 		return fmt.Errorf("unable to list any watched resource kind: %w", firstListErr)
 	}
 	if len(failedKinds) > 0 {
-		// Partial loss still ships the kinds that did list; the row is what keeps
-		// the gap visible, since otherwise the report looks complete.
-		e.noteClusterFailure(grouped,
-			fmt.Sprintf("unable to list %s: %v", strings.Join(failedKinds, ", "), firstListErr))
+		// Partial loss still ships the kinds that did list; the message is what
+		// keeps the gap visible, since otherwise the report looks complete.
+		*clusterErr = fmt.Sprintf("unable to list %s: %v", strings.Join(failedKinds, ", "), firstListErr)
 	}
+
+	// The owner chain is walked through byKey, so intermediate owners that are
+	// not listed have to be fetched before lifting — otherwise the walk stops
+	// short and an ImagePullBackOff reads as benign progressing for 10m.
+	e.hydrateWarningOwners(ctx, dynClient, warnings, byKey)
 
 	liftPodWarningsToOwners(warnings, byKey)
 
@@ -206,8 +223,114 @@ func (e *Engine) collectCluster(
 	return nil
 }
 
+// watchList is the core workload kinds plus any kind this install's components
+// actually deploy. Without it a component shipping only CRs (a Karpenter
+// NodePool, a ClickHouseInstallation) reports nothing at all, because nobody
+// lists its kind.
+//
+// Kinds come from terraform state. Helm-rendered kinds cannot be discovered
+// from the runner: the manifest lives in the release Secret and health's
+// identity is deliberately denied secret reads, so a chart shipping only CRs
+// still needs its kind reachable another way.
+//
+// Resolving kind to a listable resource needs the cluster's own discovery data,
+// so an unresolvable kind is simply skipped rather than guessed at.
+func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) []schema.GroupVersionResource {
+	out := make([]schema.GroupVersionResource, 0, len(watchedGVRs)+8)
+	out = append(out, watchedGVRs...)
+
+	var discovered []schema.GroupVersionKind
+	if e.manifestKinds != nil {
+		discovered = e.manifestKinds.DiscoveredGVKs()
+	}
+	if len(discovered) == 0 {
+		return out
+	}
+
+	disco, err := discovery.NewDiscoveryClientForConfig(restCfg)
+	if err != nil {
+		e.l.Warn("unable to build discovery client for dynamic kinds", zap.Error(err))
+		return out
+	}
+	groups, err := restmapper.GetAPIGroupResources(disco)
+	if err != nil {
+		e.l.Warn("unable to fetch api group resources for dynamic kinds", zap.Error(err))
+		return out
+	}
+	mapper := restmapper.NewDiscoveryRESTMapper(groups)
+
+	seen := map[schema.GroupVersionResource]struct{}{}
+	for _, gvr := range out {
+		seen[gvr] = struct{}{}
+	}
+	for _, gvk := range discovered {
+		m, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		if err != nil {
+			e.l.Debug("skipping kind with no rest mapping",
+				zap.String("gvk", gvk.String()), zap.Error(err))
+			continue
+		}
+		if _, dup := seen[m.Resource]; dup {
+			continue
+		}
+		seen[m.Resource] = struct{}{}
+		out = append(out, m.Resource)
+	}
+
+	return out
+}
+
 // maxOwnerHops bounds the ownerReferences walk so a cyclic chain cannot spin.
 const maxOwnerHops = 4
+
+// hydrateWarningOwners GETs the owner chain of each unready pod that carries a
+// warning, so byKey can resolve it. Normally nothing is fetched: healthy
+// installs have no warning pods, which is the point of doing this on demand
+// instead of listing every ReplicaSet in the cluster once a minute.
+func (e *Engine) hydrateWarningOwners(
+	ctx context.Context,
+	dynClient dynamic.Interface,
+	warnings map[string]warningEvent,
+	byKey map[string]*unstructured.Unstructured,
+) {
+	if len(warnings) == 0 {
+		return
+	}
+
+	for key := range warnings {
+		u, ok := byKey[key]
+		if !ok || u.GetKind() != "Pod" || podReady(u) {
+			continue
+		}
+
+		cur := u
+		for hop := 0; hop < maxOwnerHops; hop++ {
+			ref := metav1.GetControllerOf(cur)
+			if ref == nil {
+				break
+			}
+			ownerKey := resourceKey(ref.Kind, cur.GetNamespace(), ref.Name)
+			if next, ok := byKey[ownerKey]; ok {
+				cur = next
+				continue
+			}
+			gvr, ok := ownerGVRs[ref.Kind]
+			if !ok {
+				break
+			}
+			owner, err := dynClient.Resource(gvr).
+				Namespace(cur.GetNamespace()).
+				Get(ctx, ref.Name, metav1.GetOptions{})
+			if err != nil {
+				e.l.Warn("unable to fetch owner for warning pod",
+					zap.String("kind", ref.Kind), zap.String("name", ref.Name), zap.Error(err))
+				break
+			}
+			byKey[ownerKey] = owner
+			cur = owner
+		}
+	}
+}
 
 // liftPodWarningsToOwners copies an unready pod's warning onto its controller:
 // helm annotates only what it renders, so ImagePullBackOff otherwise reads as
@@ -336,11 +459,18 @@ func resourceModel(gvr schema.GroupVersionResource, u *unstructured.Unstructured
 
 	// A current Warning event means the resource is failing even when its own
 	// status looks benign (an Ingress stuck Progressing on a listener error).
-	if warn != nil {
+	//
+	// Unless the resource has since said otherwise: kubernetes keeps events for
+	// about an hour, so an event older than the object's latest condition
+	// transition describes a problem that is already over. Honouring it anyway
+	// pins a recovered resource to degraded until the event expires.
+	if warn != nil && !supersededByStatus(u, warn) {
 		if health == healthHealthy || health == healthProgressing {
 			health = healthDegraded
 		}
 		message = warn.reason + ": " + warn.message
+	} else {
+		warn = nil
 	}
 
 	return &models.ServiceComponentHealthResource{
@@ -356,6 +486,41 @@ func resourceModel(gvr schema.GroupVersionResource, u *unstructured.Unstructured
 	}
 }
 
+// supersededByStatus reports whether the object transitioned after the warning
+// fired, which means its own status is the newer evidence.
+func supersededByStatus(u *unstructured.Unstructured, warn *warningEvent) bool {
+	if warn == nil || warn.at.IsZero() {
+		return false
+	}
+
+	conds, ok, err := unstructured.NestedSlice(u.Object, "status", "conditions")
+	if err != nil || !ok {
+		return false
+	}
+	for _, c := range conds {
+		cond, ok := c.(map[string]any)
+		if !ok {
+			continue
+		}
+		// Only a condition that now reads healthy can retire a warning.
+		if status, _ := cond["status"].(string); status != "True" {
+			continue
+		}
+		if t, _ := cond["type"].(string); !isReadyConditionType(t) {
+			continue
+		}
+		raw, _ := cond["lastTransitionTime"].(string)
+		at, err := time.Parse(time.RFC3339, raw)
+		if err != nil {
+			continue
+		}
+		if at.After(warn.at) {
+			return true
+		}
+	}
+	return false
+}
+
 // componentFor attributes a live object to an install component: manifests by the
 // nuon.co ownership labels stamped at apply, helm by release name.
 func (e *Engine) componentFor(installID string, u *unstructured.Unstructured) (string, bool) {
@@ -369,11 +534,32 @@ func (e *Engine) componentFor(installID string, u *unstructured.Unstructured) (s
 		}
 	}
 
+	// A terraform module can apply an object directly (kubectl_manifest); it
+	// carries no nuon labels and no helm annotations, so nothing else claims it.
+	if e.manifestKinds != nil {
+		key := resourceKey(u.GetKind(), u.GetNamespace(), u.GetName())
+		if componentID, ok := e.manifestKinds.ComponentForObject(key); ok {
+			if _, known := e.idx.lookup(componentID); known {
+				return componentID, true
+			}
+		}
+	}
+
 	if lbls[helmManagedByLabel] == helmManagedByValue {
 		release := u.GetAnnotations()[helmReleaseNameAnnotation]
 		if release != "" {
 			if entry, ok := e.idx.lookupHelm(release); ok {
 				return entry.componentID, true
+			}
+			// A terraform module can install a chart too; its workloads carry no
+			// nuon labels and match no chart component, so they would otherwise
+			// be dropped as unowned.
+			if e.terraform != nil {
+				if componentID, ok := e.terraform.ComponentForRelease(release); ok {
+					if _, known := e.idx.lookup(componentID); known {
+						return componentID, true
+					}
+				}
 			}
 		}
 	}
@@ -401,20 +587,3 @@ func (e *Engine) sandboxReleaseFor(u *unstructured.Unstructured) (string, bool) 
 // clusterWatchedTypes are the component types whose resources this engine
 // inspects in the cluster; probes and pushed checks are supplementary for them.
 var clusterWatchedTypes = []string{"helm_chart", "kubernetes_manifest"}
-
-// noteClusterFailure attaches one unknown resource per cluster-watched component
-// so the reason reaches the resources view. unknown, not unhealthy: losing the
-// ability to look is not evidence that anything is broken.
-func (e *Engine) noteClusterFailure(grouped map[string][]*models.ServiceComponentHealthResource, message string) {
-	for _, componentType := range clusterWatchedTypes {
-		for _, componentID := range e.idx.componentsOfType(componentType) {
-			grouped[componentID] = append(grouped[componentID], &models.ServiceComponentHealthResource{
-				Provider: "cluster",
-				Kind:     "ClusterAccess",
-				Name:     "cluster-inspection",
-				Health:   "unknown",
-				Message:  message,
-			})
-		}
-	}
-}

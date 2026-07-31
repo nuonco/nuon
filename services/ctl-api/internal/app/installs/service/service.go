@@ -121,6 +121,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		// install-level component health rollup
 		installs.GET("/health/timeline", s.GetInstallHealthTimeline)
 		installs.POST("/health/baseline", s.ResetInstallHealthBaseline)
+		installs.POST("/health/cluster-access", s.RefreshInstallHealthClusterAccess)
 
 		// install state
 		installs.GET("/state", s.GetInstallState)

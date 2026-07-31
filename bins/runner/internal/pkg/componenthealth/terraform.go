@@ -9,6 +9,8 @@ import (
 	tfjson "github.com/hashicorp/terraform-json"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/yaml"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
@@ -42,18 +44,30 @@ type TerraformProvider struct {
 
 	mu          sync.RWMutex
 	byComponent map[string][]*models.ServiceComponentHealthResource
+	// byRelease maps a helm release this component's terraform manages to the
+	// component, so the release's live workloads are attributed to it instead of
+	// being dropped as unowned.
+	byRelease map[string]string
+	// byObject does the same for individual objects a module applies directly
+	// (kubectl_manifest), keyed by resourceKey.
+	byObject  map[string]string
+	kindsSink *ManifestKindsProvider
 }
 
 type TerraformProviderParams struct {
 	fx.In
 
-	L *zap.Logger `name:"system"`
+	L     *zap.Logger `name:"system"`
+	Kinds *ManifestKindsProvider
 }
 
 func NewTerraformProvider(params TerraformProviderParams) *TerraformProvider {
 	return &TerraformProvider{
 		l:           params.L,
+		kindsSink:   params.Kinds,
 		byComponent: map[string][]*models.ServiceComponentHealthResource{},
+		byRelease:   map[string]string{},
+		byObject:    map[string]string{},
 	}
 }
 
@@ -74,9 +88,178 @@ func (p *TerraformProvider) Set(componentID string, state *tfjson.State) {
 		rows = rows[:maxResourcesPerComponent]
 	}
 
+	releases := terraformHelmReleases(state)
+	objects, gvks := terraformManifestObjects(state)
+
 	p.mu.Lock()
-	defer p.mu.Unlock()
 	p.byComponent[componentID] = rows
+
+	// Drop this component's previous entries first, so anything removed from the
+	// module stops being attributed to it.
+	for release, owner := range p.byRelease {
+		if owner == componentID {
+			delete(p.byRelease, release)
+		}
+	}
+	for key, owner := range p.byObject {
+		if owner == componentID {
+			delete(p.byObject, key)
+		}
+	}
+	for _, release := range releases {
+		p.byRelease[release] = componentID
+	}
+	for _, key := range objects {
+		p.byObject[key] = componentID
+	}
+	sink := p.kindsSink
+	p.mu.Unlock()
+
+	if sink != nil {
+		sink.SetKinds(componentID, gvks, objects)
+	}
+}
+
+// ComponentForObject returns the terraform component that applied an object
+// directly, keyed as resourceKey(kind, namespace, name).
+func (p *TerraformProvider) ComponentForObject(key string) (string, bool) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	componentID, ok := p.byObject[key]
+	return componentID, ok
+}
+
+// terraformManifestObjects walks state for kubectl_manifest resources and keys
+// each applied object. The provider records kind/name/namespace as attributes,
+// so the manifest body only needs parsing when they are absent.
+//
+// This is attribution only: a kind nobody watches still will not be listed, so
+// discovering it here cannot make it reportable on its own.
+func terraformManifestObjects(state *tfjson.State) ([]string, []schema.GroupVersionKind) {
+	if state == nil || state.Values == nil || state.Values.RootModule == nil {
+		return nil, nil
+	}
+
+	var keys []string
+	var gvks []schema.GroupVersionKind
+	var walk func(m *tfjson.StateModule)
+	walk = func(m *tfjson.StateModule) {
+		if m == nil {
+			return
+		}
+		for _, r := range m.Resources {
+			if r == nil || r.Mode == tfjson.DataResourceMode {
+				continue
+			}
+			if r.Type != "kubectl_manifest" && r.Type != "kubernetes_manifest" {
+				continue
+			}
+			key, gvk, ok := manifestObject(r.AttributeValues)
+			if !ok {
+				continue
+			}
+			keys = append(keys, key)
+			if gvk.Kind != "" {
+				gvks = append(gvks, gvk)
+			}
+		}
+		for _, child := range m.ChildModules {
+			walk(child)
+		}
+	}
+	walk(state.Values.RootModule)
+
+	return keys, gvks
+}
+
+func manifestObject(attrs map[string]interface{}) (string, schema.GroupVersionKind, bool) {
+	str := func(k string) string { s, _ := attrs[k].(string); return s }
+
+	apiVersion, kind, namespace, name := str("api_version"), str("kind"), str("namespace"), str("name")
+	if kind == "" || name == "" || apiVersion == "" {
+		bodyAPI, bodyKind, bodyNS, bodyName := manifestFromBody(str("yaml_body"))
+		if kind == "" {
+			kind = bodyKind
+		}
+		if name == "" {
+			name, namespace = bodyName, bodyNS
+		}
+		if apiVersion == "" {
+			apiVersion = bodyAPI
+		}
+	}
+	if kind == "" || name == "" {
+		return "", schema.GroupVersionKind{}, false
+	}
+
+	gvk := schema.GroupVersionKind{}
+	if apiVersion != "" {
+		if gv, err := schema.ParseGroupVersion(apiVersion); err == nil {
+			gvk = gv.WithKind(kind)
+		}
+	}
+	return resourceKey(kind, namespace, name), gvk, true
+}
+
+func manifestFromBody(body string) (apiVersion, kind, namespace, name string) {
+	if body == "" {
+		return "", "", "", ""
+	}
+	var doc struct {
+		APIVersion string `json:"apiVersion"`
+		Kind       string `json:"kind"`
+		Metadata   struct {
+			Name      string `json:"name"`
+			Namespace string `json:"namespace"`
+		} `json:"metadata"`
+	}
+	if err := yaml.Unmarshal([]byte(body), &doc); err != nil {
+		return "", "", "", ""
+	}
+	return doc.APIVersion, doc.Kind, doc.Metadata.Namespace, doc.Metadata.Name
+}
+
+// ComponentForRelease returns the terraform component managing a helm release.
+func (p *TerraformProvider) ComponentForRelease(release string) (string, bool) {
+	if release == "" {
+		return "", false
+	}
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	componentID, ok := p.byRelease[release]
+	return componentID, ok
+}
+
+// terraformHelmReleases walks state for helm_release resources. A terraform
+// module that installs a chart owns real workloads in the cluster; without this
+// they carry no nuon labels and no matching chart component, so they were
+// dropped as unowned and the component reported only identity rows.
+func terraformHelmReleases(state *tfjson.State) []string {
+	if state == nil || state.Values == nil || state.Values.RootModule == nil {
+		return nil
+	}
+
+	var releases []string
+	var walk func(m *tfjson.StateModule)
+	walk = func(m *tfjson.StateModule) {
+		if m == nil {
+			return
+		}
+		for _, r := range m.Resources {
+			if r == nil || r.Type != "helm_release" || r.Mode == tfjson.DataResourceMode {
+				continue
+			}
+			if name, ok := r.AttributeValues["name"].(string); ok && name != "" {
+				releases = append(releases, name)
+			}
+		}
+		for _, child := range m.ChildModules {
+			walk(child)
+		}
+	}
+	walk(state.Values.RootModule)
+
+	return releases
 }
 
 // Resources returns the rows recorded for a component, empty when this process

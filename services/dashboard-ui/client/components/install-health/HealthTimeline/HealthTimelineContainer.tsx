@@ -9,7 +9,7 @@ import type {
   TInstallComponentHealthTimeline,
   TInstallHealthTimeline,
 } from '@/types'
-import { ResetHealthWindowButton } from '@/components/install-health/ResetHealthWindow'
+import { HealthCardActions } from '@/components/install-health/HealthCardActions'
 import { HealthTimeline } from './HealthTimeline'
 
 export const HealthTimelineContainer = ({
@@ -61,7 +61,7 @@ export const HealthTimelineContainer = ({
     <HealthTimeline
       headerAction={
         !isComponentScope && install?.id ? (
-          <ResetHealthWindowButton installId={install.id} />
+          <HealthCardActions installId={install.id} />
         ) : undefined
       }
       scope={isComponentScope ? 'component' : 'install'}
@@ -69,6 +69,11 @@ export const HealthTimelineContainer = ({
       daily={timeline?.daily}
       uptimePercent={timeline?.uptime_percent}
       observedSeconds={timeline?.observed_seconds}
+      clusterAccessError={
+        isComponentScope
+          ? undefined
+          : (timeline as TInstallHealthTimeline | undefined)?.cluster_access_error
+      }
       currentHealth={timeline?.current_health}
       components={
         isComponentScope
