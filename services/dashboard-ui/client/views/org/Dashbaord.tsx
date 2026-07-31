@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { AnnouncementsList } from '@/components/orgs/AnnouncementsList'
@@ -70,21 +70,11 @@ function formatDuration(ms: number): string {
 }
 
 export const Dashboard = () => {
-  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
   const { org } = useOrg()
   const { approvals } = useWorkflowApprovals()
   const { activeWorkflows } = useActiveWorkflows()
-
-  useEffect(() => {
-    if (!org) return
-    if (!org.features?.['org-dashboard']) {
-      navigate(
-        org.features?.['org-runner'] ? `/${org.id}/runner` : `/${org.id}/apps`
-      )
-    }
-  }, [org])
 
   const [sandboxBannerDismissed, setSandboxBannerDismissed] = useState(() =>
     isSandboxBannerDismissed(org?.id)

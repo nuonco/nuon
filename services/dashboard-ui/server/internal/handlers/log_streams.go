@@ -20,8 +20,7 @@ const maxDownloadLogs = 50000
 const (
 	streamingThreshold = 40
 	streamingDelay     = 200 * time.Millisecond
-	// pollInterval is the legacy 1s-poll cadence, used when the org
-	// doesn't have log-tail-long-poll enabled.
+	// pollInterval is the legacy 1s-poll cadence, used for DESC sessions.
 	pollInterval    = 1 * time.Second
 	errorRetryDelay = 5 * time.Second
 	// streamStatusCheck bounds how long we'll sit on an open long-poll
@@ -33,9 +32,6 @@ const (
 	// quickly so a completed-and-empty stream emits "complete" before
 	// the user perceives a stall on page load.
 	tailInitialWait = "1s"
-	// logTailFeatureName mirrors app.OrgFeatureLogTailLongPoll; the
-	// BFF intentionally doesn't import ctl-api's internal/app package.
-	logTailFeatureName = "log-tail-long-poll"
 )
 
 type LogStreamsHandler struct {
@@ -137,27 +133,11 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 	}
 
 	// Tail endpoint only supports ASC; DESC stays on the legacy path.
-	useTail := order == "asc" && h.orgHasLogTail(ctx, client, logStreamID)
-	if useTail {
+	if order == "asc" {
 		sess.runTail(ctx)
 		return
 	}
 	sess.runLegacy(ctx, "")
-}
-
-// orgHasLogTail reads the org feature flag once to pick the streaming
-// path up-front. We don't probe the tail endpoint to discover the flag is
-// off — that would burn a request on every legacy session. Read failures
-// fall through to the legacy path rather than failing the SSE.
-func (h *LogStreamsHandler) orgHasLogTail(ctx context.Context, client nuon.Client, logStreamID string) bool {
-	org, err := client.GetOrg(ctx)
-	if err != nil {
-		h.l.Warn("failed to read org for log-tail feature gate; using legacy poll",
-			zap.String("logStreamID", logStreamID),
-			zap.Error(err))
-		return false
-	}
-	return org.Features[logTailFeatureName]
 }
 
 // runTail drives the long-poll tail endpoint. Transient errors retry on
@@ -250,8 +230,7 @@ func (s *streamSession) runTail(ctx context.Context) {
 	}
 }
 
-// runLegacy is the pre-feature-flag 1s-poll loop, used for DESC sessions
-// and orgs without log-tail-long-poll enabled.
+// runLegacy is the legacy 1s-poll loop, used for DESC sessions.
 func (s *streamSession) runLegacy(ctx context.Context, currentOffset string) {
 	for {
 		select {

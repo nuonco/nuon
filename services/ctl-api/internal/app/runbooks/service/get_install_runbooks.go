@@ -51,12 +51,6 @@ func appConfigRunbookFilter(syncedOnly bool) string {
 // @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/installs/{install_id}/runbooks [get]
 func (s *service) GetInstallRunbooks(ctx *gin.Context) {
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
-	if err != nil || !enabled {
-		ctx.Error(fmt.Errorf("runbooks feature is not enabled"))
-		return
-	}
-
 	installID := ctx.Param("install_id")
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

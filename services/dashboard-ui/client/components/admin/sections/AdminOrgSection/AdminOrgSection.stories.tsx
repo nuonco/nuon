@@ -16,7 +16,6 @@ export const Default = () => (
     org={mockOrg}
     adminEmail="admin@nuon.co"
     runner={{ id: 'runner-xyz789' } as any}
-    runnerLoading={false}
   />
 )
 
@@ -26,6 +25,5 @@ export const Loading = () => (
     org={mockOrg}
     adminEmail="admin@nuon.co"
     runner={undefined}
-    runnerLoading={true}
   />
 )

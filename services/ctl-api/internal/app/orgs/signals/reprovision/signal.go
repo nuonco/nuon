@@ -65,8 +65,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// The org runner group may be missing (e.g. the org was created with
-	// control-plane-builds and later had org-runner re-enabled), so create it
+	// The org runner group may be missing (e.g. the org was created without
+	// an org runner and later had org-runner re-enabled), so create it
 	// before provisioning IAM and the runner.
 	runnerID := ""
 	if len(org.RunnerGroup.Runners) > 0 {

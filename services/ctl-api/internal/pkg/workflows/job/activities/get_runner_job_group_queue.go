@@ -13,13 +13,13 @@ type GetRunnerJobGroupQueueRequest struct {
 }
 
 type GetRunnerJobGroupQueueResponse struct {
-	// QueueID is the ID of the job-group queue to use, or empty string if the
-	// parallel-runner-jobs feature is not enabled or no queue exists for the group.
+	// QueueID is the ID of the job-group queue to use, or empty string if no
+	// queue exists for the group.
 	QueueID string
 }
 
-// GetRunnerJobGroupQueue returns the per-job-group queue ID for the given runner+job pair
-// when the parallel-runner-jobs feature flag is enabled, or empty string otherwise.
+// GetRunnerJobGroupQueue returns the per-job-group queue ID for the given runner+job pair,
+// or empty string if no queue exists for the group.
 //
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
@@ -29,10 +29,6 @@ func (a *Activities) PkgWorkflowsJobGetRunnerJobGroupQueue(ctx context.Context, 
 		Preload("Org").
 		Preload("Queues").
 		First(&runner, "id = ?", req.RunnerID); res.Error != nil {
-		return &GetRunnerJobGroupQueueResponse{}, nil
-	}
-
-	if !runner.Org.Features[string(app.OrgFeatureParallelRunnerJobs)] {
 		return &GetRunnerJobGroupQueueResponse{}, nil
 	}
 

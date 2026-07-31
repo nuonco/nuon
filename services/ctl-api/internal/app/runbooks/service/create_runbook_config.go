@@ -71,12 +71,6 @@ type CreateRunbookStepConfigRequest struct {
 // @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/apps/{app_id}/runbooks/{runbook_id}/configs [post]
 func (s *service) CreateRunbookConfig(ctx *gin.Context) {
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
-	if err != nil || !enabled {
-		ctx.Error(fmt.Errorf("runbooks feature is not enabled"))
-		return
-	}
-
 	runbookID := ctx.Param("runbook_id")
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {

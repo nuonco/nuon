@@ -19,8 +19,6 @@ import (
 // output legible.
 const syncConcurrency = 10
 
-const controlPlaneBuildsFeature = "control-plane-builds"
-
 // syncer implements sync.Syncer using API calls to ctl-api.
 // This is the original implementation that communicates over HTTP.
 type syncer struct {
@@ -142,18 +140,7 @@ func (s *syncer) Sync(ctx context.Context) error {
 	return nil
 }
 
-func (s *syncer) validateFeatureCompatibility(ctx context.Context) error {
-	org, err := s.apiClient.GetOrg(ctx)
-	if err != nil {
-		return sync.SyncInternalErr{
-			Description: "unable to check org feature compatibility",
-			Err:         err,
-		}
-	}
-	if org == nil || !org.Features[controlPlaneBuildsFeature] {
-		return nil
-	}
-
+func (s *syncer) validateFeatureCompatibility(_ context.Context) error {
 	return sync.RejectDockerBuildComponentsForFeature(s.cfg)
 }
 

@@ -65,17 +65,8 @@ const (
 func (s *service) TailRunnerJobs(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
-	runner, err := s.getRunner(ctx, runnerID)
-	if err != nil {
+	if _, err := s.getRunner(ctx, runnerID); err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get runner"))
-		return
-	}
-
-	// Feature gate. 404 lets the runner SDK treat the endpoint as if it
-	// doesn't exist for this org and stay on the legacy poll. 403/501
-	// would force callers to surface this as a real error.
-	if !runner.Org.Features[string(app.OrgFeatureRunnerJobLongPoll)] {
-		ctx.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 

@@ -146,20 +146,6 @@ func (s *service) LogStreamTailLogs(ctx *gin.Context) {
 		return
 	}
 
-	// Feature gate — when off, return 404 so callers (BFF / SDK) can
-	// treat the tail endpoint as if it doesn't exist for this org and
-	// fall back to the legacy polling read path. 403/501 would force
-	// callers to surface this as a real error.
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureLogTailLongPoll)
-	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to check log-tail-long-poll feature"))
-		return
-	}
-	if !enabled {
-		ctx.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-
 	if _, err := s.getOrgLogStream(ctx, logStreamID, orgID); err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get log stream"))
 		return

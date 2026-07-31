@@ -3,7 +3,7 @@ import { ID } from '@/components/common/ID'
 import { AdminSection } from '../../shared/AdminSection'
 import { AdminActionGroup } from '../../shared/AdminActionGroup'
 import { AdminActionCard } from '../../shared/AdminActionCard'
-import { AdminMetadataPanel, AdminInfoCard } from '../../shared/AdminMetadata'
+import { AdminMetadataPanel } from '../../shared/AdminMetadata'
 import { TemporalLink } from '@/components/admin/TemporalLink'
 import { AdminFeatureToggleCard } from '../../shared/AdminFeatureToggleCard'
 import { AdminRunnersCard } from '../../shared/AdminRunnersCard'
@@ -34,7 +34,6 @@ interface IAdminOrgSection {
   adminEmail: string
   adminDashboardUrl: string | undefined
   runner: TRunner | undefined
-  runnerLoading: boolean
 }
 
 export const AdminOrgSection = ({
@@ -43,12 +42,8 @@ export const AdminOrgSection = ({
   adminEmail,
   adminDashboardUrl,
   runner,
-  runnerLoading,
 }: IAdminOrgSection) => {
   const runnerId = runner?.id ?? ''
-  // Orgs that build on the control plane have no org runner, so hide the
-  // (empty) Org Runner ID card for them.
-  const controlPlaneBuilds = Boolean(org?.features?.['control-plane-builds'])
   // Destructive org-level actions require typing the org's name (falling back
   // to the org id) so admins must explicitly confirm the exact target org.
   const orgConfirmText = org?.name || orgId
@@ -57,14 +52,6 @@ export const AdminOrgSection = ({
     <AdminMetadataPanel>
       <div className="flex justify-between items-start gap-4">
         <div className="flex flex-col gap-4">
-          {!controlPlaneBuilds && (
-            <AdminInfoCard
-              title="Org Runner ID"
-              value={runner?.id}
-              copyable
-              loading={runnerLoading}
-            />
-          )}
           <AdminRunnersCard orgId={orgId} />
         </div>
         <div className="flex-shrink-0">
@@ -139,11 +126,11 @@ export const AdminOrgSection = ({
         />
         <AdminActionCard
           title="Migrate org queues"
-          description="Create all missing queues and enable the queues feature flag"
+          description="Create all missing queues for this organization"
           action={() => adminMigrateOrgQueues({ orgId, adminEmail })}
           variant="warning"
           requiresConfirmation
-          confirmationText="This will create all missing queues for apps, installs, runners, and components, then enable the queues feature flag. Continue?"
+          confirmationText="This will create all missing queues for apps, installs, runners, and components. Continue?"
         />
       </AdminActionGroup>
 
