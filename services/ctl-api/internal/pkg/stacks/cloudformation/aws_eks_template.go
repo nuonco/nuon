@@ -32,6 +32,7 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	// override the defaults; the runner ASG nested stack references these.
 	runnerParams := t.getRunnerParameters(inp)
 	maps.Copy(tmpl.Parameters, runnerParams)
+	paramlabels := map[string]any{}
 
 	// Always created: sandboxes look the runner security group up by tag to grant
 	// it access to the cluster, so omitting it fails their plan even when nothing
@@ -43,6 +44,11 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	// PhoneHome resources are always created as the provision workflow depends on
 	// the phone home callback to proceed.
 	if !t.cfg.UseLocalRunners {
+		auditExportParams := t.getRunnerAuditExportParameters()
+		maps.Copy(tmpl.Parameters, auditExportParams)
+		maps.Copy(runnerParams, auditExportParams)
+		maps.Copy(tmpl.Conditions, t.getRunnerAuditExportConditions())
+
 		// NOTE(fd): this uses the configurable nested runner asg cf stack
 		runnerASG, err := t.getRunnerASGNestedStack(inp, tb)
 		if err != nil {
@@ -54,9 +60,9 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 		tmpl.Resources["RunnerCloudWatchLogGroup"] = t.getRunnerCloudWatchLogGroup(inp, tb)
 		tmpl.Resources["RunnerCloudWatchLogStream"] = t.getRunnerCloudWatchLogStream(inp, tb)
 		tmpl.Resources["RunnerCloudWatchLogPolicy"] = t.getRunnerCloudWatchLogPolicy(inp, tb)
+		maps.Copy(tmpl.Resources, t.getRunnerAuditExportResources(inp, tb))
+		maps.Copy(paramlabels, t.getRunnerAuditExportParamLabels())
 	}
-
-	paramlabels := map[string]any{}
 
 	// build roles (before custom nested stacks so they can depend on them)
 	roles := t.getRolesResources(inp, tb)
