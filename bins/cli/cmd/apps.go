@@ -363,8 +363,7 @@ func (c *cli) branchesCmd() *cobra.Command {
 			return svc.ListBranches(cmd.Context(), appID, PrintJSON)
 		}),
 	}
-	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
-	listCmd.MarkFlagRequired("app-id")
+	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app. Defaults to the selected app.")
 	branchesCmd.AddCommand(listCmd)
 
 	getCmd := &cobra.Command{
@@ -375,9 +374,8 @@ func (c *cli) branchesCmd() *cobra.Command {
 			return svc.GetBranch(cmd.Context(), appID, branchID, PrintJSON)
 		}),
 	}
-	getCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
-	getCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID of the branch")
-	getCmd.MarkFlagRequired("app-id")
+	getCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app. Defaults to the selected app.")
+	getCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID or name of the branch")
 	getCmd.MarkFlagRequired("branch-id")
 	branchesCmd.AddCommand(getCmd)
 
