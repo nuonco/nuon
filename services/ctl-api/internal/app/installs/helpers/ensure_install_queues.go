@@ -9,8 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
-	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
-	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 const (
@@ -88,10 +86,13 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 	return nil
 }
 
-// ensureComponentHealthQueue creates the component-health queue and its cron
-// emitter. The evaluator itself no-ops for orgs without the component-health
-// feature, so the emitter is created unconditionally and enabling the feature
-// needs no backfill.
+// ensureComponentHealthQueue creates the component-health queue, which
+// serializes evaluation for one install.
+//
+// It deliberately creates no cron emitter. Evaluation is driven by the runner's
+// report and, for installs that go quiet, by one fleet-wide sweep — an emitter
+// per install cost a workflow execution a minute forever and grew 1:1 with the
+// fleet. Any emitter left over from that design is removed here.
 func (s *Helpers) ensureComponentHealthQueue(ctx context.Context, installID, ownerType, namespace string) error {
 	q, err := s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     installID,
@@ -116,25 +117,12 @@ func (s *Helpers) ensureComponentHealthQueue(ctx context.Context, installID, own
 		return fmt.Errorf("unable to list emitters for %s queue: %w", InstallComponentHealthQueueName, err)
 	}
 	for _, em := range emitters {
-		if em.Name == componentHealthEvaluateEmitterName {
-			return nil
+		if em.Name != componentHealthEvaluateEmitterName {
+			continue
 		}
-	}
-
-	if _, err := s.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-		QueueID:         q.ID,
-		Name:            componentHealthEvaluateEmitterName,
-		Description:     "Periodic component health evaluation",
-		Mode:            app.QueueEmitterModeCron,
-		CronSchedule:    "* * * * *",
-		JitterWindow:    30 * time.Second,
-		SignalType:      "component-health-evaluate",
-		SignalExpiresIn: componentHealthEvaluateSignalExpiry,
-		SignalTemplate: queuesignal.NewRaw("component-health-evaluate", map[string]any{
-			"install_id": installID,
-		}),
-	}); err != nil {
-		return fmt.Errorf("unable to create component health evaluate emitter: %w", err)
+		if err := s.emitterClient.DeleteEmitter(ctx, em.ID); err != nil {
+			return fmt.Errorf("unable to remove legacy component health emitter: %w", err)
+		}
 	}
 
 	return nil

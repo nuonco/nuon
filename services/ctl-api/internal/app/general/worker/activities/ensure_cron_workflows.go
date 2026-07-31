@@ -15,10 +15,11 @@ import (
 type EnsureCronWorkflowsRequest struct{}
 
 type EnsureCronWorkflowsResponse struct {
-	SweepStarted               bool `json:"sweep_started"`
-	MetricsStarted             bool `json:"metrics_started"`
-	CleanupStarted             bool `json:"cleanup_started"`
-	TriggerEventCleanupStarted bool `json:"trigger_event_cleanup_started"`
+	SweepStarted                bool `json:"sweep_started"`
+	ComponentHealthSweepStarted bool `json:"component_health_sweep_started"`
+	MetricsStarted              bool `json:"metrics_started"`
+	CleanupStarted              bool `json:"cleanup_started"`
+	TriggerEventCleanupStarted  bool `json:"trigger_event_cleanup_started"`
 }
 
 // EnsureCronWorkflows starts (or replaces) the enqueuer-sweep and
@@ -92,6 +93,24 @@ func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkfl
 	}
 	resp.TriggerEventCleanupStarted = true
 	a.logger.Info("trigger event cleanup cron started/replaced", zap.String("workflow-id", "general-trigger-event-cleanup-cron"))
+
+	// One fleet-wide sweep replaces what used to be a cron emitter per install:
+	// live installs are evaluated when their report lands, so all that is left
+	// to schedule is noticing the ones that went quiet.
+	healthSweepOpts := tclient.StartWorkflowOptions{
+		ID:                    "component-health-sweep-cron",
+		TaskQueue:             workflows.APITaskQueue,
+		CronSchedule:          "* * * * *",
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 0,
+		},
+	}
+	if _, err := a.tClient.ExecuteWorkflowInNamespace(ctx, "general", healthSweepOpts, "ComponentHealthSweep"); err != nil {
+		return nil, fmt.Errorf("unable to start component health sweep workflow: %w", err)
+	}
+	resp.ComponentHealthSweepStarted = true
+	a.logger.Info("component health sweep cron started/replaced", zap.String("workflow-id", "component-health-sweep-cron"))
 
 	return resp, nil
 }
