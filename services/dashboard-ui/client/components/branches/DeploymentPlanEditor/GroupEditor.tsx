@@ -243,7 +243,6 @@ const LabelSelectorEditor = ({
               labelKey={key}
               labelValue={value}
               size="sm"
-              variant="code"
               disabled={disabled}
               customColor={labelColors?.[key]}
               onRemove={() => removeLabel(key)}
@@ -288,7 +287,6 @@ const LabelSelectorEditor = ({
                     labelKey={key}
                     labelValue={value}
                     size="sm"
-                    variant="code"
                     keyTheme={isActive ? 'brand' : 'neutral'}
                     theme={isActive ? 'brand' : 'default'}
                   />

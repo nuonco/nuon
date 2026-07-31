@@ -24,7 +24,6 @@ export const LabelRow = ({ label, disabled, onOverride, onRemoveOverride }: ILab
             labelValue={values[0] ?? ''}
             customColor={label.color}
             size="sm"
-            variant="code"
           />
           <span className="flex flex-wrap gap-1">
             {entityTypes.map((et) => (

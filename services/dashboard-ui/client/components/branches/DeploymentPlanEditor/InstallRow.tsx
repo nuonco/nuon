@@ -30,7 +30,7 @@ export const InstallRow = ({ install, labelColors, onRemove, disabled }: IInstal
             {install.name || install.id}
           </Text>
           {labelEntries.map(([k, v]) => (
-            <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" variant="code" customColor={labelColors?.[k]} />
+            <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" customColor={labelColors?.[k]} />
           ))}
         </div>
         <div className="flex items-center gap-2 min-w-0">

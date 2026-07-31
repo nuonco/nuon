@@ -108,7 +108,6 @@ const BranchDetailContent = () => {
                 labelKey="managed by"
                 labelValue={branch.managed_by}
                 size="sm"
-                variant="code"
                 theme={branch.managed_by === 'config' ? 'brand' : 'default'}
               />
             )}

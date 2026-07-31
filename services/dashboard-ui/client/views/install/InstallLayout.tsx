@@ -223,7 +223,7 @@ const InstallTemplate = () => {
 
                     {install.labels &&
                       Object.entries(install.labels).map(([key, value]) => (
-                        <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} customColor={labelColors?.[key]} />
+                        <LabelBadge key={key} size="sm" labelKey={key} labelValue={value} customColor={labelColors?.[key]} />
                       ))}
                   </div>
                   <ID>{install.id}</ID>

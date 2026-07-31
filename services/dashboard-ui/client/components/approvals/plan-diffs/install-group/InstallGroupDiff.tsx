@@ -131,7 +131,7 @@ export const InstallGroupDiff = ({ groupName, installs, isLoading = false, label
             <div className="flex items-center gap-3 w-full">
               <Text weight="strong">{install.installName || install.installId}</Text>
               {labelEntries.map(([k, v]) => (
-                <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" variant="code" className="shrink-0" customColor={labelColors?.[k]} />
+                <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" className="shrink-0" customColor={labelColors?.[k]} />
               ))}
               <ChangeSummary install={install} />
             </div>
