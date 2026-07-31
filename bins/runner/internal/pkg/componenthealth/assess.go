@@ -44,6 +44,15 @@ func assessResource(obj *unstructured.Unstructured) (health, message, nativeStat
 // mean "this object is serving". Ordered by preference.
 var readyConditionTypes = []string{"Ready", "Available", "Established", "Synced"}
 
+func isReadyConditionType(t string) bool {
+	for _, want := range readyConditionTypes {
+		if t == want {
+			return true
+		}
+	}
+	return false
+}
+
 // assessByConditions reads the status.conditions convention. A True ready-style
 // condition is healthy, False is degraded with its message, Unknown is
 // progressing. An object with no such condition is not-applicable: we read it

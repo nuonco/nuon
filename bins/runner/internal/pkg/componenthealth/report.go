@@ -459,11 +459,18 @@ func resourceModel(gvr schema.GroupVersionResource, u *unstructured.Unstructured
 
 	// A current Warning event means the resource is failing even when its own
 	// status looks benign (an Ingress stuck Progressing on a listener error).
-	if warn != nil {
+	//
+	// Unless the resource has since said otherwise: kubernetes keeps events for
+	// about an hour, so an event older than the object's latest condition
+	// transition describes a problem that is already over. Honouring it anyway
+	// pins a recovered resource to degraded until the event expires.
+	if warn != nil && !supersededByStatus(u, warn) {
 		if health == healthHealthy || health == healthProgressing {
 			health = healthDegraded
 		}
 		message = warn.reason + ": " + warn.message
+	} else {
+		warn = nil
 	}
 
 	return &models.ServiceComponentHealthResource{
@@ -477,6 +484,41 @@ func resourceModel(gvr schema.GroupVersionResource, u *unstructured.Unstructured
 		NativeStatus: native,
 		Details:      resourceDetails(u, resourceDiagnosis(u, health, warn)),
 	}
+}
+
+// supersededByStatus reports whether the object transitioned after the warning
+// fired, which means its own status is the newer evidence.
+func supersededByStatus(u *unstructured.Unstructured, warn *warningEvent) bool {
+	if warn == nil || warn.at.IsZero() {
+		return false
+	}
+
+	conds, ok, err := unstructured.NestedSlice(u.Object, "status", "conditions")
+	if err != nil || !ok {
+		return false
+	}
+	for _, c := range conds {
+		cond, ok := c.(map[string]any)
+		if !ok {
+			continue
+		}
+		// Only a condition that now reads healthy can retire a warning.
+		if status, _ := cond["status"].(string); status != "True" {
+			continue
+		}
+		if t, _ := cond["type"].(string); !isReadyConditionType(t) {
+			continue
+		}
+		raw, _ := cond["lastTransitionTime"].(string)
+		at, err := time.Parse(time.RFC3339, raw)
+		if err != nil {
+			continue
+		}
+		if at.After(warn.at) {
+			return true
+		}
+	}
+	return false
 }
 
 // componentFor attributes a live object to an install component: manifests by the
