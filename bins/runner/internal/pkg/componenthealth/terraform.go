@@ -9,6 +9,7 @@ import (
 	tfjson "github.com/hashicorp/terraform-json"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+	"sigs.k8s.io/yaml"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
@@ -46,6 +47,9 @@ type TerraformProvider struct {
 	// component, so the release's live workloads are attributed to it instead of
 	// being dropped as unowned.
 	byRelease map[string]string
+	// byObject does the same for individual objects a module applies directly
+	// (kubectl_manifest), keyed by resourceKey.
+	byObject map[string]string
 }
 
 type TerraformProviderParams struct {
@@ -59,6 +63,7 @@ func NewTerraformProvider(params TerraformProviderParams) *TerraformProvider {
 		l:           params.L,
 		byComponent: map[string][]*models.ServiceComponentHealthResource{},
 		byRelease:   map[string]string{},
+		byObject:    map[string]string{},
 	}
 }
 
@@ -80,21 +85,106 @@ func (p *TerraformProvider) Set(componentID string, state *tfjson.State) {
 	}
 
 	releases := terraformHelmReleases(state)
+	objects := terraformManifestObjects(state)
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.byComponent[componentID] = rows
 
-	// Drop this component's previous releases first, so a release removed from
-	// the module stops being attributed to it.
+	// Drop this component's previous entries first, so anything removed from the
+	// module stops being attributed to it.
 	for release, owner := range p.byRelease {
 		if owner == componentID {
 			delete(p.byRelease, release)
 		}
 	}
+	for key, owner := range p.byObject {
+		if owner == componentID {
+			delete(p.byObject, key)
+		}
+	}
 	for _, release := range releases {
 		p.byRelease[release] = componentID
 	}
+	for _, key := range objects {
+		p.byObject[key] = componentID
+	}
+}
+
+// ComponentForObject returns the terraform component that applied an object
+// directly, keyed as resourceKey(kind, namespace, name).
+func (p *TerraformProvider) ComponentForObject(key string) (string, bool) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	componentID, ok := p.byObject[key]
+	return componentID, ok
+}
+
+// terraformManifestObjects walks state for kubectl_manifest resources and keys
+// each applied object. The provider records kind/name/namespace as attributes,
+// so the manifest body only needs parsing when they are absent.
+//
+// This is attribution only: a kind nobody watches still will not be listed, so
+// discovering it here cannot make it reportable on its own.
+func terraformManifestObjects(state *tfjson.State) []string {
+	if state == nil || state.Values == nil || state.Values.RootModule == nil {
+		return nil
+	}
+
+	var keys []string
+	var walk func(m *tfjson.StateModule)
+	walk = func(m *tfjson.StateModule) {
+		if m == nil {
+			return
+		}
+		for _, r := range m.Resources {
+			if r == nil || r.Mode == tfjson.DataResourceMode {
+				continue
+			}
+			if r.Type != "kubectl_manifest" && r.Type != "kubernetes_manifest" {
+				continue
+			}
+			if key, ok := manifestObjectKey(r.AttributeValues); ok {
+				keys = append(keys, key)
+			}
+		}
+		for _, child := range m.ChildModules {
+			walk(child)
+		}
+	}
+	walk(state.Values.RootModule)
+
+	return keys
+}
+
+func manifestObjectKey(attrs map[string]interface{}) (string, bool) {
+	str := func(k string) string { s, _ := attrs[k].(string); return s }
+
+	kind, namespace, name := str("kind"), str("namespace"), str("name")
+	if kind == "" || name == "" {
+		kind, namespace, name = manifestFromBody(str("yaml_body"))
+	}
+	if kind == "" || name == "" {
+		return "", false
+	}
+	return resourceKey(kind, namespace, name), true
+}
+
+func manifestFromBody(body string) (kind, namespace, name string) {
+	if body == "" {
+		return "", "", ""
+	}
+	var doc struct {
+		Kind     string `json:"kind"`
+		Metadata struct {
+			Name      string `json:"name"`
+			Namespace string `json:"namespace"`
+		} `json:"metadata"`
+	}
+	if err := yaml.Unmarshal([]byte(body), &doc); err != nil {
+		return "", "", ""
+	}
+	return doc.Kind, doc.Metadata.Namespace, doc.Metadata.Name
 }
 
 // ComponentForRelease returns the terraform component managing a helm release.

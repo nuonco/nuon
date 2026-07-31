@@ -53,3 +53,49 @@ func TestComponentForRelease(t *testing.T) {
 	_, ok = p.ComponentForRelease("temporal")
 	assert.False(t, ok)
 }
+
+func tfStateWithManifest(attrs map[string]interface{}) *tfjson.State {
+	return &tfjson.State{Values: &tfjson.StateValues{
+		RootModule: &tfjson.StateModule{Resources: []*tfjson.StateResource{{
+			Type: "kubectl_manifest", Address: "kubectl_manifest.x", AttributeValues: attrs,
+		}}},
+	}}
+}
+
+func TestTerraformManifestObjects(t *testing.T) {
+	t.Run("explicit attributes are preferred", func(t *testing.T) {
+		assert.Equal(t, []string{resourceKey("ClickHouseInstallation", "clickhouse", "ch")},
+			terraformManifestObjects(tfStateWithManifest(map[string]interface{}{
+				"kind": "ClickHouseInstallation", "namespace": "clickhouse", "name": "ch",
+			})))
+	})
+
+	t.Run("falls back to parsing the manifest body", func(t *testing.T) {
+		assert.Equal(t, []string{resourceKey("Deployment", "apps", "web")},
+			terraformManifestObjects(tfStateWithManifest(map[string]interface{}{
+				"yaml_body": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web\n  namespace: apps\n",
+			})))
+	})
+
+	t.Run("unusable entries are skipped", func(t *testing.T) {
+		assert.Empty(t, terraformManifestObjects(tfStateWithManifest(map[string]interface{}{})))
+		assert.Empty(t, terraformManifestObjects(tfStateWithManifest(map[string]interface{}{"yaml_body": "not: yaml: ["})))
+	})
+}
+
+func TestComponentForObject(t *testing.T) {
+	p := NewTerraformProvider(TerraformProviderParams{L: zap.NewNop()})
+	key := resourceKey("ClickHouseInstallation", "clickhouse", "ch")
+
+	p.Set("cmp-ch", tfStateWithManifest(map[string]interface{}{
+		"kind": "ClickHouseInstallation", "namespace": "clickhouse", "name": "ch",
+	}))
+	id, ok := p.ComponentForObject(key)
+	assert.True(t, ok)
+	assert.Equal(t, "cmp-ch", id)
+
+	// Removed from the module: attribution must not linger.
+	p.Set("cmp-ch", tfStateWithReleases())
+	_, ok = p.ComponentForObject(key)
+	assert.False(t, ok)
+}
