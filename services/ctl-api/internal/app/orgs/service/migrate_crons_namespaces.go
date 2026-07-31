@@ -72,7 +72,7 @@ func (s *service) MigrateCronsNamespaces(ctx *gin.Context) {
 	// now migrate cron queues to the namespace dictated by the feature flag.
 	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID: queue.ID,
-		Signal:  &queuemigration.Signal{OrgID: org.ID},
+		Signal:  &queuemigration.Signal{OrgID: org.ID, ReconcileCronEmitters: true},
 	}); err != nil {
 		s.l.Error("unable to enqueue migration signal", zap.String("org_id", org.ID), zap.Error(err))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "unable to enqueue migration signal: " + err.Error()})

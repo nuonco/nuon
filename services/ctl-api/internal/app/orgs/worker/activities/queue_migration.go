@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	appconfigupdated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appconfigupdated"
 )
 
 type EnsureOrgQueueRequest struct {
@@ -25,6 +27,17 @@ type EnsureInstallQueuesRequest struct {
 // @by-field InstallID
 func (a *Activities) EnsureInstallQueues(ctx context.Context, req EnsureInstallQueuesRequest) error {
 	return a.installsHelpers.EnsureInstallQueues(ctx, req.InstallID)
+}
+
+type EnqueueAppConfigUpdatedRequest struct {
+	InstallID string `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+// @by-field InstallID
+func (a *Activities) EnqueueAppConfigUpdated(ctx context.Context, req EnqueueAppConfigUpdatedRequest) error {
+	return a.installsHelpers.EnqueueInstallSignal(ctx, req.InstallID, installshelpers.InstallSignalsQueueName,
+		&appconfigupdated.Signal{InstallID: req.InstallID})
 }
 
 type EnsureAppQueueRequest struct {
