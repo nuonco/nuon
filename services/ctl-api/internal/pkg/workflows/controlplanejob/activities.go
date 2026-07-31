@@ -276,7 +276,10 @@ func (a *Activities) GetJobCompositePlan(ctx context.Context, jobID string) (*mo
 		return nil, fmt.Errorf("unable to get runner job plan: %w", err)
 	}
 
-	compositePlan, _ := plan.GetCompositePlan(ctx, a.cfg.BlobReadEnabled)
+	compositePlan, err := plan.GetCompositePlan(blobstore.WithBlobService(ctx, a.blobSvc))
+	if err != nil {
+		return nil, err
+	}
 	if compositePlan.IsEmpty() {
 		job, err := a.getJob(ctx, jobID)
 		if err != nil {

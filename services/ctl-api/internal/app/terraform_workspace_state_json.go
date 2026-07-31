@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -19,7 +20,9 @@ type TerraformWorkspaceStateJSON struct {
 	CreatedAt time.Time `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 
-	Contents     []byte          `json:"contents,omitzero" gorm:"type:bytea" temporaljson:"contents,omitzero,omitempty"`
+	// Contents is served from ContentsBlob and is no longer persisted; the legacy
+	// column is dropped in a follow-up release.
+	Contents     []byte          `json:"contents,omitzero" gorm:"-" temporaljson:"contents,omitzero,omitempty"`
 	ContentsBlob *blobstore.Blob `json:"-" temporaljson:"-"`
 
 	OrgID string `json:"org_id,omitzero" gorm:"default:null" temporaljson:"org_id,omitzero,omitempty"`
@@ -64,16 +67,16 @@ func (t *TerraformWorkspaceStateJSON) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-// GetContents returns the state contents. When blobRead is enabled it prefers
-// the S3 blob, falling back to the legacy bytea column when the blob is unset or
-// unreadable. When disabled it always reads the legacy column. The second return
-// reports whether the contents came from the blob.
-func (t *TerraformWorkspaceStateJSON) GetContents(ctx context.Context, blobRead bool) ([]byte, bool) {
-	if blobRead {
-		if raw, err := t.ContentsBlob.Get(ctx); err == nil && raw != "" {
-			return []byte(raw), true
-		}
+// GetContents reads the state contents from the S3 blob. Returns nil when the
+// blob is unset.
+func (t *TerraformWorkspaceStateJSON) GetContents(ctx context.Context) ([]byte, error) {
+	raw, err := t.ContentsBlob.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read terraform workspace state json blob: %w", err)
+	}
+	if raw == "" {
+		return nil, nil
 	}
 
-	return t.Contents, false
+	return []byte(raw), nil
 }

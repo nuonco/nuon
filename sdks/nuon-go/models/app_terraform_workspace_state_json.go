@@ -19,7 +19,8 @@ import (
 // swagger:model app.TerraformWorkspaceStateJSON
 type AppTerraformWorkspaceStateJSON struct {
 
-	// contents
+	// Contents is served from ContentsBlob and is no longer persisted; the legacy
+	// column is dropped in a follow-up release.
 	Contents []int64 `json:"contents"`
 
 	// created at

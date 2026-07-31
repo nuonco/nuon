@@ -32,7 +32,8 @@ type AppRunnerJobExecutionOutputs struct {
 	// outputs
 	Outputs map[string]any `json:"outputs,omitempty"`
 
-	// outputs json
+	// Outputs is served from OutputsBlob and is no longer persisted; the legacy
+	// column is dropped in a follow-up release.
 	OutputsJSON string `json:"outputs_json,omitempty"`
 
 	// runner job execution id

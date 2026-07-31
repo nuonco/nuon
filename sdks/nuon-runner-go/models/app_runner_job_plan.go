@@ -18,8 +18,8 @@ import (
 // swagger:model app.RunnerJobPlan
 type AppRunnerJobPlan struct {
 
-	// Deprecated: composite plans are read from CompositePlanBlob (S3). This
-	// jsonb column is retained only as a fallback for rows not yet backfilled.
+	// CompositePlan is served from CompositePlanBlob and is no longer persisted;
+	// the legacy column is dropped in a follow-up release.
 	CompositePlan struct {
 		PlantypesCompositePlan
 	} `json:"composite_plan,omitempty"`

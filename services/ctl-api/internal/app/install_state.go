@@ -42,7 +42,9 @@ type InstallState struct {
 	Install   Install `json:"-" faker:"-" temporaljson:"install,omitzero,omitempty"`
 	InstallID string  `json:"install_id,omitzero" gorm:"notnull" temporaljson:"install_id,omitzero,omitempty"`
 
-	State     *state.State    `json:"contents,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"-"`
+	// State is served from StateBlob and is no longer persisted; the legacy
+	// column is dropped in a follow-up release.
+	State     *state.State    `json:"contents,omitzero" gorm:"-" swaggertype:"string" temporaljson:"-"`
 	StateBlob *blobstore.Blob `json:"-" temporaljson:"-"`
 	Version   int             `json:"version,omitzero" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
 
@@ -127,22 +129,23 @@ func (a *InstallState) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// GetState returns the install state. When blobRead is enabled it prefers the S3
-// blob, falling back to the legacy jsonb column when the blob is unset or
-// unreadable. When disabled it always reads the legacy column. The second return
-// reports whether the state came from the blob. Archived rows null out the
-// column, so the blob is their only source.
-func (i *InstallState) GetState(ctx context.Context, blobRead bool) (*state.State, bool) {
-	if blobRead {
-		if raw, err := i.StateBlob.Get(ctx); err == nil && raw != "" {
-			var st state.State
-			if err := json.Unmarshal([]byte(raw), &st); err == nil {
-				return &st, true
-			}
-		}
+// GetState reads the install state from the S3 blob. Returns a nil state when
+// the blob is unset.
+func (i *InstallState) GetState(ctx context.Context) (*state.State, error) {
+	raw, err := i.StateBlob.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read install state blob: %w", err)
+	}
+	if raw == "" {
+		return nil, nil
 	}
 
-	return i.State, false
+	var st state.State
+	if err := json.Unmarshal([]byte(raw), &st); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal install state blob: %w", err)
+	}
+
+	return &st, nil
 }
 
 func (i *InstallState) UseView() bool {

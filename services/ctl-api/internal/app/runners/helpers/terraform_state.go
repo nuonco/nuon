@@ -49,5 +49,11 @@ func (s *Helpers) GetTerraformStateByID(ctx context.Context, workspaceID, id str
 		return nil, fmt.Errorf("unable to get terraform state: %w", res.Error)
 	}
 
+	contents, err := tfState.GetContents(blobstore.WithBlobService(ctx, s.blobSvc))
+	if err != nil {
+		return nil, err
+	}
+	tfState.Contents = contents
+
 	return tfState, nil
 }

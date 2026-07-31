@@ -31,9 +31,9 @@ type RunnerJobPlan struct {
 	RunnerJobID string `json:"runner_job_id,omitzero" gorm:"defaultnull;notnull;index:idx_runner_job_plan,unique" temporaljson:"runner_job_id,omitzero,omitempty"`
 
 	PlanJSON string `json:"plan_json,omitzero" temporaljson:"plan_json,omitzero,omitempty"`
-	// Deprecated: composite plans are read from CompositePlanBlob (S3). This
-	// jsonb column is retained only as a fallback for rows not yet backfilled.
-	CompositePlan     plantypes.CompositePlan `json:"composite_plan,omitzero" gorm:"type:jsonb" temporaljson:"composite_plan,omitzero,omitempty"`
+	// CompositePlan is served from CompositePlanBlob and is no longer persisted;
+	// the legacy column is dropped in a follow-up release.
+	CompositePlan     plantypes.CompositePlan `json:"composite_plan,omitzero" gorm:"-" temporaljson:"composite_plan,omitzero,omitempty"`
 	CompositePlanBlob *blobstore.Blob         `json:"-" temporaljson:"-"`
 }
 
@@ -68,22 +68,23 @@ func (r *RunnerJobPlan) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-// GetCompositePlan returns the composite plan. When blobRead is enabled it reads
-// from the S3 blob, falling back to the legacy jsonb column when the blob is
-// unset or unreadable (rows not yet backfilled). When disabled it always reads
-// the legacy column. The second return reports whether the plan came from the
-// blob.
-func (r *RunnerJobPlan) GetCompositePlan(ctx context.Context, blobRead bool) (*plantypes.CompositePlan, bool) {
-	if blobRead {
-		if raw, err := r.CompositePlanBlob.Get(ctx); err == nil && raw != "" {
-			var cp plantypes.CompositePlan
-			if err := json.Unmarshal([]byte(raw), &cp); err == nil {
-				return &cp, true
-			}
-		}
+// GetCompositePlan reads the composite plan from the S3 blob. Returns an empty
+// plan when the blob is unset.
+func (r *RunnerJobPlan) GetCompositePlan(ctx context.Context) (*plantypes.CompositePlan, error) {
+	raw, err := r.CompositePlanBlob.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read composite plan blob: %w", err)
+	}
+	if raw == "" {
+		return &plantypes.CompositePlan{}, nil
 	}
 
-	return &r.CompositePlan, false
+	var cp plantypes.CompositePlan
+	if err := json.Unmarshal([]byte(raw), &cp); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal composite plan blob: %w", err)
+	}
+
+	return &cp, nil
 }
 
 func (r *RunnerJobPlan) DeriveCompositePlan(runnerJob *RunnerJob) (*plantypes.CompositePlan, error) {

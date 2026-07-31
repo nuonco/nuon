@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 
 	_ "github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -56,14 +56,13 @@ func (s *service) getInstallStateHistory(ctx *gin.Context, installID string) ([]
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
+	blobCtx := blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc)
 	for _, st := range states {
-		contents, fromBlob := st.GetState(ctx, s.cfg.BlobReadEnabled)
-		st.State = contents
-		if fromBlob {
-			s.l.Debug("read install state from blob",
-				zap.String("install_id", installID),
-				zap.String("state_id", st.ID))
+		contents, err := st.GetState(blobCtx)
+		if err != nil {
+			return nil, fmt.Errorf("unable to read install state %s: %w", st.ID, err)
 		}
+		st.State = contents
 	}
 
 	return states, nil

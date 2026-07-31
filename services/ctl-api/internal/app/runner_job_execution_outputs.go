@@ -30,7 +30,9 @@ type RunnerJobExecutionOutputs struct {
 	RunnerJobExecutionID string             `json:"runner_job_execution_id,omitzero" gorm:"defaultnull;notnull;index:idx_runner_job_execution_outputs,unique" temporaljson:"runner_job_execution_id,omitzero,omitempty"`
 	RunnerJobExecution   RunnerJobExecution `json:"-" temporaljson:"runner_job_execution,omitzero,omitempty"`
 
-	Outputs     []byte          `json:"outputs_json,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"outputs,omitzero,omitempty"`
+	// Outputs is served from OutputsBlob and is no longer persisted; the legacy
+	// column is dropped in a follow-up release.
+	Outputs     []byte          `json:"outputs_json,omitzero" gorm:"-" swaggertype:"string" temporaljson:"outputs,omitzero,omitempty"`
 	OutputsBlob *blobstore.Blob `json:"-" temporaljson:"-"`
 
 	// after query
@@ -70,20 +72,21 @@ func (r *RunnerJobExecutionOutputs) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (r *RunnerJobExecutionOutputs) AfterQuery(tx *gorm.DB) error {
-	raw := r.Outputs
-	if blobstore.IsBlobReadEnabled(tx.Statement.Context) {
-		if v, err := r.OutputsBlob.Get(tx.Statement.Context); err == nil && v != "" {
-			raw = []byte(v)
-		}
+	v, err := r.OutputsBlob.Get(tx.Statement.Context)
+	if err != nil {
+		return errors.Wrap(err, "unable to read runner job execution outputs blob")
+	}
+	if v == "" {
+		return nil
 	}
 
-	if len(raw) > 0 {
-		var outputs map[string]interface{}
-		if err := json.Unmarshal(raw, &outputs); err != nil {
-			return errors.Wrap(err, "unable to parse outputs json")
-		}
-		r.ParsedOutputs = outputs
+	r.Outputs = []byte(v)
+
+	var outputs map[string]interface{}
+	if err := json.Unmarshal(r.Outputs, &outputs); err != nil {
+		return errors.Wrap(err, "unable to parse outputs json")
 	}
+	r.ParsedOutputs = outputs
 
 	return nil
 }

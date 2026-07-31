@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
@@ -85,9 +84,7 @@ func (s *service) getWorkflowSteps(ctx *gin.Context, workflowID string) ([]app.W
 			InstallWorkflowID: workflowID,
 		}).
 		Preload("CreatedBy").
-		Preload("Approval", func(gdb *gorm.DB) *gorm.DB {
-			return gdb.Omit("contents")
-		}).
+		Preload("Approval").
 		Preload("Approval.Response").
 		Preload("PolicyValidation").
 		Order("group_idx, group_retry_idx, idx, created_at asc").

@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -90,9 +89,7 @@ func (s *service) getWorkflowStep(ctx *gin.Context, orgID, workflowID, stepID st
 	res := s.db.WithContext(ctx).
 		Where("id = ? AND install_workflow_id = ? AND org_id = ?", stepID, workflowID, orgID).
 		Preload("CreatedBy").
-		Preload("Approval", func(db *gorm.DB) *gorm.DB {
-			return db.Omit("contents")
-		}).
+		Preload("Approval").
 		Preload("Approval.Response").
 		Preload("PolicyValidation").
 		First(&installWorkflowStep)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -32,7 +33,9 @@ type TerraformWorkspaceState struct {
 	OrgID string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Contents     []byte          `json:"contents,omitzero" gorm:"type:bytea" temporaljson:"contents,omitzero,omitempty"`
+	// Contents is served from ContentsBlob and is no longer persisted; the legacy
+	// column is dropped in a follow-up release.
+	Contents     []byte          `json:"contents,omitzero" gorm:"-" temporaljson:"contents,omitzero,omitempty"`
 	ContentsBlob *blobstore.Blob `json:"-" temporaljson:"-"`
 
 	TerraformWorkspaceID string             `json:"terraform_workspace_id,omitzero" temporaljson:"terraform_workspace_id,omitzero,omitempty"`
@@ -75,18 +78,18 @@ func (t *TerraformWorkspaceState) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-// GetContents returns the state contents. When blobRead is enabled it prefers
-// the S3 blob, falling back to the legacy bytea column when the blob is unset or
-// unreadable. When disabled it always reads the legacy column. The second return
-// reports whether the contents came from the blob.
-func (t *TerraformWorkspaceState) GetContents(ctx context.Context, blobRead bool) ([]byte, bool) {
-	if blobRead {
-		if raw, err := t.ContentsBlob.Get(ctx); err == nil && raw != "" {
-			return []byte(raw), true
-		}
+// GetContents reads the state contents from the S3 blob. Returns nil when the
+// blob is unset.
+func (t *TerraformWorkspaceState) GetContents(ctx context.Context) ([]byte, error) {
+	raw, err := t.ContentsBlob.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read terraform workspace state blob: %w", err)
+	}
+	if raw == "" {
+		return nil, nil
 	}
 
-	return t.Contents, false
+	return []byte(raw), nil
 }
 
 func (i *TerraformWorkspaceState) UseView() bool {

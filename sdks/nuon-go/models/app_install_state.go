@@ -23,7 +23,8 @@ type AppInstallState struct {
 	// archived
 	Archived bool `json:"archived,omitempty"`
 
-	// contents
+	// State is served from StateBlob and is no longer persisted; the legacy
+	// column is dropped in a follow-up release.
 	Contents string `json:"contents,omitempty"`
 
 	// created at

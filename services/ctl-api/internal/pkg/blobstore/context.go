@@ -10,7 +10,6 @@ type blobContextKey string
 
 const (
 	BlobWriteEnabledKey blobContextKey = "blob_write_enabled"
-	BlobReadEnabledKey  blobContextKey = "blob_read_enabled"
 	BlobAutoLoadKey     blobContextKey = "blob_auto_load"
 	BlobServiceKey      blobContextKey = "blob_service"
 )
@@ -18,13 +17,6 @@ const (
 // WithBlobWriteEnabled controls whether blobs upload to S3 on save
 func WithBlobWriteEnabled(ctx context.Context, enabled bool) context.Context {
 	return context.WithValue(ctx, BlobWriteEnabledKey, enabled)
-}
-
-// WithBlobReadEnabled controls whether blob-backed reads prefer the S3 blob.
-// When disabled, reads fall back to the legacy column. Used by hook-based reads
-// (e.g. GORM AfterQuery) that have no service call site to thread the flag through.
-func WithBlobReadEnabled(ctx context.Context, enabled bool) context.Context {
-	return context.WithValue(ctx, BlobReadEnabledKey, enabled)
 }
 
 // WithBlobAutoLoad controls whether blobs auto-load from S3 on query
@@ -48,15 +40,6 @@ func IsBlobWriteEnabled(ctx context.Context) bool {
 		return v.(bool)
 	}
 	return true // Default: enabled
-}
-
-// IsBlobReadEnabled checks if blob-backed reads are enabled (default: false).
-// Must be explicitly enabled, mirroring the BlobReadEnabled config gate.
-func IsBlobReadEnabled(ctx context.Context) bool {
-	if v := ctx.Value(BlobReadEnabledKey); v != nil {
-		return v.(bool)
-	}
-	return false
 }
 
 // IsBlobAutoLoad checks if auto-load is enabled (default: false)

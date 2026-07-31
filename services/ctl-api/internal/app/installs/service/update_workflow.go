@@ -150,9 +150,7 @@ func (s *service) approveStuckSteps(ctx *gin.Context, workflowID string) {
 	res := s.db.WithContext(ctx).
 		Where("install_workflow_id = ?", workflowID).
 		Where("status->>'status' IN ?", []string{string(app.AwaitingApproval), "awaiting-approval"}).
-		Preload("Approval", func(db *gorm.DB) *gorm.DB {
-			return db.Omit("contents")
-		}).
+		Preload("Approval").
 		Preload("Approval.Response").
 		Find(&steps)
 	if res.Error != nil {

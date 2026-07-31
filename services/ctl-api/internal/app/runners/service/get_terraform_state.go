@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -44,12 +44,10 @@ func (s *service) GetTerraformCurrentStateData(ctx *gin.Context) {
 		return
 	}
 
-	contents, fromBlob := state.GetContents(ctx, s.cfg.BlobReadEnabled)
-	if fromBlob {
-		s.l.Debug("read terraform workspace state contents from blob",
-			zap.String("workspace_id", workspaceID),
-			zap.String("state_id", state.ID),
-			zap.Int("bytes", len(contents)))
+	contents, err := state.GetContents(blobstore.WithBlobService(ctx.Request.Context(), s.blobSvc))
+	if err != nil {
+		ctx.Error(err)
+		return
 	}
 	if len(contents) == 0 {
 		ctx.JSON(http.StatusNoContent, "")

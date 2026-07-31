@@ -10,8 +10,7 @@ import (
 
 func New(l *zap.Logger, blobSvc blobstore.Service, cfg *internal.Config) interceptor.WorkerInterceptor {
 	return &workerInterceptor{
-		blobSvc:         blobSvc,
-		l:               l,
-		blobReadEnabled: cfg.BlobReadEnabled,
+		blobSvc: blobSvc,
+		l:       l,
 	}
 }

@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -51,7 +52,9 @@ type WorkflowStepApproval struct {
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
-	Contents     string          `json:"-" temporaljson:"-"`
+	// Contents is served from ContentsBlob and is no longer persisted; the legacy
+	// column is dropped in a follow-up release.
+	Contents     string          `json:"-" gorm:"-" temporaljson:"-"`
 	ContentsBlob *blobstore.Blob `json:"-" temporaljson:"-"`
 
 	Type WorkflowStepApprovalType `json:"type"`
@@ -93,18 +96,15 @@ func (c *WorkflowStepApproval) AfterQuery(tx *gorm.DB) error {
 	return nil
 }
 
-// GetContents returns the approval contents. When blobRead is enabled it prefers
-// the S3 blob, falling back to the legacy column when the blob is unset or
-// unreadable. When disabled it always reads the legacy column. The second return
-// reports whether the contents came from the blob.
-func (c *WorkflowStepApproval) GetContents(ctx context.Context, blobRead bool) (string, bool) {
-	if blobRead {
-		if raw, err := c.ContentsBlob.Get(ctx); err == nil && raw != "" {
-			return raw, true
-		}
+// GetContents reads the approval contents from the S3 blob. Returns an empty
+// string when the blob is unset.
+func (c *WorkflowStepApproval) GetContents(ctx context.Context) (string, error) {
+	raw, err := c.ContentsBlob.Get(ctx)
+	if err != nil {
+		return "", fmt.Errorf("unable to read workflow step approval blob: %w", err)
 	}
 
-	return c.Contents, false
+	return raw, nil
 }
 
 func (c *WorkflowStepApproval) Indexes(db *gorm.DB) []migrations.Index {

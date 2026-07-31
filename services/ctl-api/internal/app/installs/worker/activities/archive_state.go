@@ -25,10 +25,9 @@ func (a *Activities) ArchiveState(ctx context.Context, req *ArchiveStateRequest)
 				Order("created_at DESC").
 				Limit(retainCount),
 		).
-		Select("archived", "state").
+		Select("archived").
 		Updates(&app.InstallState{
 			Archived: true,
-			State:    nil, // Clear the state to avoid keeping large data in archived states
 		}).Error
 	if err != nil {
 		return err

@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/pkg/types/outputs"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
@@ -26,11 +28,12 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 
 	latestState, err := h.getLatestInstallStateRow(ctx, installID)
 	if err == nil {
-		es, fromBlob := latestState.GetState(ctx, h.cfg.BlobReadEnabled)
-		if fromBlob {
-			cctx.GetLogger(ctx, h.l).Debug("read install state from blob",
-				zap.String("install_id", installID),
-				zap.String("state_id", latestState.ID))
+		es, blobErr := latestState.GetState(blobstore.WithBlobService(ctx, h.blobSvc))
+		if blobErr != nil {
+			return nil, errors.Wrap(blobErr, "unable to read install state")
+		}
+		if es == nil {
+			es = state.New()
 		}
 		switch {
 		case !latestState.StaleAt.Empty() && len(latestState.StalePartials) > 0:
@@ -318,10 +321,11 @@ func (h *Helpers) getLatestInstallStateRow(ctx context.Context, installID string
 // regenerateStalePartials regenerates only the partials listed in row.StalePartials, merges them into
 // the cached state, persists the result in place (clearing the stale markers), and returns it.
 func (h *Helpers) regenerateStalePartials(ctx context.Context, row *app.InstallState, redacted, skipVersionCheck bool) (*state.State, error) {
-	is, fromBlob := row.GetState(ctx, h.cfg.BlobReadEnabled)
-	if fromBlob {
-		cctx.GetLogger(ctx, h.l).Debug("read install state from blob (stale partials)",
-			zap.String("state_id", row.ID))
+	blobCtx := blobstore.WithBlobService(ctx, h.blobSvc)
+
+	is, err := row.GetState(blobCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to read install state")
 	}
 	if is == nil {
 		is = state.New()
@@ -342,10 +346,22 @@ func (h *Helpers) regenerateStalePartials(ctx context.Context, row *app.InstallS
 
 	MapLegacyFields(is)
 
+	stateJSON, err := json.Marshal(is)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to marshal regenerated install state")
+	}
+
+	// Updates never runs the create hook, so the blob has to be uploaded here.
+	stateBlob := &blobstore.Blob{}
+	stateBlob.Set(string(stateJSON))
+	if err := stateBlob.Save(cctx.SetOrgIDContext(blobCtx, row.OrgID)); err != nil {
+		return nil, errors.Wrap(err, "unable to upload regenerated install state")
+	}
+
 	if res := h.db.WithContext(ctx).Model(row).
-		Select("state", "stale_at", "stale_partials").
+		Select("state_blob", "stale_at", "stale_partials").
 		Updates(app.InstallState{
-			State:         is,
+			StateBlob:     stateBlob,
 			StaleAt:       pkggenerics.NullTime{},
 			StalePartials: []pkgstate.PartialName{},
 		}); res.Error != nil {

@@ -15,9 +15,8 @@ var (
 )
 
 type workerInterceptor struct {
-	blobSvc         blobstore.Service
-	l               *zap.Logger
-	blobReadEnabled bool
+	blobSvc blobstore.Service
+	l       *zap.Logger
 
 	interceptor.InterceptorBase
 }
@@ -31,8 +30,7 @@ func (w *workerInterceptor) InterceptActivity(
 		ActivityInboundInterceptorBase: interceptor.ActivityInboundInterceptorBase{
 			Next: next,
 		},
-		blobSvc:         w.blobSvc,
-		l:               w.l,
-		blobReadEnabled: w.blobReadEnabled,
+		blobSvc: w.blobSvc,
+		l:       w.l,
 	}
 }

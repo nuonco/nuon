@@ -26,6 +26,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/interests"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -156,21 +157,22 @@ const orgNameCacheTTL = 10 * time.Minute
 type Params struct {
 	fx.In
 
-	Cfg *internal.Config `optional:"true"`
-	L   *zap.Logger      `optional:"true"`
-	DB  *gorm.DB         `name:"psql" optional:"true"`
-	MW  metrics.Writer   `optional:"true"`
+	Cfg     *internal.Config  `optional:"true"`
+	L       *zap.Logger       `optional:"true"`
+	DB      *gorm.DB          `name:"psql" optional:"true"`
+	MW      metrics.Writer    `optional:"true"`
+	BlobSvc blobstore.Service `optional:"true"`
 }
 
 type WebhookSignalLifecycleHook struct {
-	l               *zap.Logger
-	httpClient      *http.Client
-	webhookURLs     []string
-	db              *gorm.DB
-	appURL          string
-	publicAPIURL    string
-	mw              metrics.Writer
-	blobReadEnabled bool
+	l            *zap.Logger
+	httpClient   *http.Client
+	webhookURLs  []string
+	db           *gorm.DB
+	appURL       string
+	publicAPIURL string
+	mw           metrics.Writer
+	blobSvc      blobstore.Service
 
 	// workflowCreatorCache holds workflowCreatorRow values keyed by workflow
 	// id. The underlying row is write-once, so entries never expire.
@@ -205,12 +207,10 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 	webhookURLs := []string{}
 	appURL := ""
 	publicAPIURL := ""
-	blobReadEnabled := false
 	if params.Cfg != nil {
 		webhookURLs = params.Cfg.WebhookURLs
 		appURL = strings.TrimSpace(params.Cfg.AppURL)
 		publicAPIURL = strings.TrimSpace(params.Cfg.PublicAPIURL)
-		blobReadEnabled = params.Cfg.BlobReadEnabled
 	}
 
 	return &WebhookSignalLifecycleHook{
@@ -218,12 +218,12 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 		httpClient: &http.Client{
 			Timeout: timeout,
 		},
-		webhookURLs:     normalizeWebhookURLs(webhookURLs),
-		db:              params.DB,
-		appURL:          appURL,
-		publicAPIURL:    publicAPIURL,
-		mw:              params.MW,
-		blobReadEnabled: blobReadEnabled,
+		webhookURLs:  normalizeWebhookURLs(webhookURLs),
+		db:           params.DB,
+		appURL:       appURL,
+		publicAPIURL: publicAPIURL,
+		mw:           params.MW,
+		blobSvc:      params.BlobSvc,
 	}
 }
 
@@ -1107,14 +1107,20 @@ func mapApprovalResponseTransition(t app.WorkflowStepResponseType) string {
 // truncateApprovalPlan trims a plan blob to approvalPlanExcerptMaxBytes,
 // appending an explicit "(truncated)" marker when truncation occurred so the
 // receiving consumer can render the right indicator.
-// approvalContents reads the approval plan, honoring the blob-read flag, and
-// logs when the read is served from the S3 blob.
+// approvalContents reads the approval plan from the S3 blob, logging rather than
+// failing the delivery when the read errors.
 func (h *WebhookSignalLifecycleHook) approvalContents(ctx context.Context, approval *app.WorkflowStepApproval) string {
-	contents, fromBlob := approval.GetContents(ctx, h.blobReadEnabled)
-	if fromBlob {
-		h.l.Debug("read workflow step approval contents from blob",
+	// Activities already carry the service; only fall back to the injected one.
+	if h.blobSvc != nil {
+		ctx = blobstore.WithBlobService(ctx, h.blobSvc)
+	}
+
+	contents, err := approval.GetContents(ctx)
+	if err != nil {
+		h.l.Warn("unable to read workflow step approval contents",
 			zap.String("approval_id", approval.ID),
-			zap.Int("bytes", len(contents)))
+			zap.Error(err))
+		return ""
 	}
 	return contents
 }

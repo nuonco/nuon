@@ -86,18 +86,33 @@ func (b Blob) GormDataType() string {
 	return "jsonb"
 }
 
-// BeforeSave implements GORM hook for automatic S3 upload
+// BeforeCreate implements GORM hook for automatic S3 upload
 func (b *Blob) BeforeCreate(tx *gorm.DB) error {
 	if b == nil {
 		return nil
 	}
+
+	return b.upload(tx.Statement.Context)
+}
+
+// Save uploads the blob for writes that never run the create hook, such as GORM
+// Updates. Callers must persist the blob column themselves.
+func (b *Blob) Save(ctx context.Context) error {
+	if b == nil {
+		return nil
+	}
+
+	return b.upload(ctx)
+}
+
+func (b *Blob) upload(ctx context.Context) error {
 	// Skip if not dirty (no changes)
 	if !b.dirty {
 		return nil
 	}
 
 	// Check context - is blob write enabled?
-	if !IsBlobWriteEnabled(tx.Statement.Context) {
+	if !IsBlobWriteEnabled(ctx) {
 		return nil
 	}
 
@@ -111,7 +126,7 @@ func (b *Blob) BeforeCreate(tx *gorm.DB) error {
 	if b.s3Prefix != "" {
 		s3Key = fmt.Sprintf("%s/%s", b.s3Prefix, b.metadata.BlobID)
 	} else {
-		orgID, err := cctxOrgIDFromContext(tx.Statement.Context)
+		orgID, err := cctxOrgIDFromContext(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to get org_id from context: %w", err)
 		}
@@ -120,7 +135,7 @@ func (b *Blob) BeforeCreate(tx *gorm.DB) error {
 	b.metadata.S3Key = s3Key
 
 	// Get account ID for created_by
-	if accountID, err := cctxAccountIDFromContext(tx.Statement.Context); err == nil {
+	if accountID, err := cctxAccountIDFromContext(ctx); err == nil {
 		b.metadata.CreatedBy = accountID
 	}
 
@@ -140,14 +155,14 @@ func (b *Blob) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	// Get blobstore service from context
-	svc := GetBlobService(tx.Statement.Context)
+	svc := GetBlobService(ctx)
 	if svc == nil {
 		return fmt.Errorf("blob service not set in context")
 	}
 
 	// Upload to S3 with streaming
 	reader := strings.NewReader(*b.value)
-	checksum, err := svc.UploadStream(tx.Statement.Context, s3Key, reader)
+	checksum, err := svc.UploadStream(ctx, s3Key, reader)
 	if err != nil {
 		return fmt.Errorf("failed to upload blob to S3 key (%s): %w", s3Key, err)
 	}

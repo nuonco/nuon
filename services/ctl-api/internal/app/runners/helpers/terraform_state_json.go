@@ -3,7 +3,6 @@ package helpers
 import (
 	"context"
 
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -27,15 +26,7 @@ func (s *Helpers) GetTerraformStateJSON(ctx context.Context, workspaceID string)
 		return nil, res.Error
 	}
 
-	contents, fromBlob := tfs.GetContents(blobstore.WithBlobService(ctx, s.blobSvc), s.cfg.BlobReadEnabled)
-	if fromBlob {
-		s.l.Debug("read terraform workspace state json contents from blob",
-			zap.String("workspace_id", workspaceID),
-			zap.String("state_id", tfs.ID),
-			zap.Int("bytes", len(contents)))
-	}
-
-	return contents, nil
+	return tfs.GetContents(blobstore.WithBlobService(ctx, s.blobSvc))
 }
 
 func (s *Helpers) CreateStateJSON(ctx context.Context, workspaceID string, jobID *string, contents []byte) error {

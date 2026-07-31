@@ -13,6 +13,7 @@ import (
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
@@ -79,6 +80,7 @@ type Params struct {
 	EmitterClient    *emitterclient.Client
 	FeaturesClient   *features.Features
 	MW               metrics.Writer
+	BlobSvc          blobstore.Service
 }
 
 type Helpers struct {
@@ -94,6 +96,7 @@ type Helpers struct {
 	emitterClient    *emitterclient.Client
 	featuresClient   *features.Features
 	mw               metrics.Writer
+	blobSvc          blobstore.Service
 }
 
 func New(params Params) *Helpers {
@@ -110,5 +113,6 @@ func New(params Params) *Helpers {
 		emitterClient:    params.EmitterClient,
 		featuresClient:   params.FeaturesClient,
 		mw:               params.MW,
+		blobSvc:          params.BlobSvc,
 	}
 }
