@@ -17,11 +17,13 @@ import (
 type ComponentHealthContextRequest struct {
 	ClusterInfoJSON     string   `json:"cluster_info_json" validate:"required"`
 	SandboxHelmReleases []string `json:"sandbox_helm_releases"`
+	ComponentKinds      []string `json:"component_kinds"`
 }
 
 type ComponentHealthContextResponse struct {
 	ClusterInfoJSON     string   `json:"cluster_info_json"`
 	SandboxHelmReleases []string `json:"sandbox_helm_releases"`
+	ComponentKinds      []string `json:"component_kinds"`
 }
 
 // @ID						PutComponentHealthContext
@@ -63,7 +65,13 @@ func (s *service) PutComponentHealthContext(ctx *gin.Context) {
 }
 
 func (s *service) putComponentHealthContext(ctx context.Context, runnerID string, req ComponentHealthContextRequest) error {
-	if enabled, _ := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureComponentHealth); !enabled {
+	// Ownership facts are recorded even with the feature off: they are only
+	// knowable at deploy time, so discarding them means an org that enables
+	// health later sees nothing until every component and its sandbox are
+	// redeployed. Cluster access is withheld — it is credentials-shaped and
+	// ctl-api can derive it on demand once the feature is on.
+	enabled, _ := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureComponentHealth)
+	if !enabled && len(req.SandboxHelmReleases) == 0 && len(req.ComponentKinds) == 0 {
 		return nil
 	}
 
@@ -75,10 +83,25 @@ func (s *service) putComponentHealthContext(ctx context.Context, runnerID string
 		return nil
 	}
 
+	clusterInfoJSON := req.ClusterInfoJSON
+	if !enabled {
+		// Keep whatever is already stored: the column is rewritten whole, so
+		// blanking it here would discard access recorded while the feature was on.
+		var existing app.Install
+		if err := s.db.WithContext(ctx).
+			Select("id", "component_health_context").
+			Where(app.Install{ID: installID}).
+			First(&existing).Error; err != nil {
+			return fmt.Errorf("unable to read existing component health context: %w", err)
+		}
+		clusterInfoJSON = existing.ComponentHealthContext.ClusterInfoJSON
+	}
+
 	update := app.Install{
 		ComponentHealthContext: app.ComponentHealthContext{
-			ClusterInfoJSON:     req.ClusterInfoJSON,
+			ClusterInfoJSON:     clusterInfoJSON,
 			SandboxHelmReleases: req.SandboxHelmReleases,
+			ComponentKinds:      req.ComponentKinds,
 		},
 	}
 
@@ -130,7 +153,7 @@ func (s *service) getComponentHealthContext(ctx context.Context, runnerID string
 		return nil, err
 	}
 	if !ok {
-		return &ComponentHealthContextResponse{SandboxHelmReleases: []string{}}, nil
+		return &ComponentHealthContextResponse{SandboxHelmReleases: []string{}, ComponentKinds: []string{}}, nil
 	}
 
 	var install app.Install
@@ -143,9 +166,13 @@ func (s *service) getComponentHealthContext(ctx context.Context, runnerID string
 	resp := &ComponentHealthContextResponse{
 		ClusterInfoJSON:     install.ComponentHealthContext.ClusterInfoJSON,
 		SandboxHelmReleases: install.ComponentHealthContext.SandboxHelmReleases,
+		ComponentKinds:      install.ComponentHealthContext.ComponentKinds,
 	}
 	if resp.SandboxHelmReleases == nil {
 		resp.SandboxHelmReleases = []string{}
+	}
+	if resp.ComponentKinds == nil {
+		resp.ComponentKinds = []string{}
 	}
 
 	return resp, nil

@@ -1853,6 +1853,13 @@ export interface paths {
      */
     post: operations["ResetInstallHealthBaseline"];
   };
+  "/v1/installs/{install_id}/health/cluster-access": {
+    /**
+     * refresh the cluster access component health reads through
+     * @description Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed since component health was enabled, or after the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute. Requires the component-health feature.
+     */
+    post: operations["RefreshInstallHealthClusterAccess"];
+  };
   "/v1/installs/{install_id}/health/timeline": {
     /**
      * install health timeline
@@ -4347,6 +4354,12 @@ export interface components {
       expected_project_id?: string;
       expected_subscription_id?: string;
       gcp_account?: components["schemas"]["app.GCPAccount"];
+      /**
+       * @description HealthClusterError is why component health cannot currently inspect the
+       * install's cluster, empty when it can. Install-level because it is one
+       * fact about the install rather than a property of any component.
+       */
+      health_cluster_error?: string;
       id?: string;
       install_action_workflows?: components["schemas"]["app.InstallActionWorkflow"][];
       install_components?: components["schemas"]["app.InstallComponent"][];
@@ -4360,6 +4373,12 @@ export interface components {
       install_stack?: components["schemas"]["app.InstallStack"];
       install_states?: components["schemas"]["app.InstallState"][];
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
+      /**
+       * @description LastHealthReportAt is when a runner last reported component health. It is
+       * how the staleness sweep finds installs that went quiet without polling
+       * every install individually.
+       */
+      last_health_report_at?: string;
       lifecycle_phase?: Record<string, never>;
       links?: {
         [key: string]: unknown;
@@ -8142,6 +8161,11 @@ export interface components {
       component_name?: string;
       current_health?: string;
       install_component_id?: string;
+      /**
+       * @description ObservedSeconds distinguishes "no data" from "0% up" — without it a
+       * component that was never observed renders as total downtime.
+       */
+      observed_seconds?: number;
       uptime_percent?: number;
     };
     "service.InstallComponentHealthTimelineResponse": {
@@ -8174,6 +8198,11 @@ export interface components {
       unhealthy_components?: number;
     };
     "service.InstallHealthTimelineResponse": {
+      /**
+       * @description ClusterAccessError is why health cannot currently inspect the install's
+       * cluster, empty when it can. Surfaced once here rather than per component.
+       */
+      cluster_access_error?: string;
       components?: components["schemas"]["service.InstallComponentHealthSummary"][];
       current_health?: string;
       daily?: components["schemas"]["service.dailyHealthBucket"][];
@@ -8342,6 +8371,18 @@ export interface components {
       original?: string;
       readme?: string;
       warnings?: string[];
+    };
+    "service.RefreshInstallHealthClusterAccessRequest": {
+      /**
+       * @description RoleName is the identity health should read the cluster through. Empty
+       * means the maintenance role, the same default drift and action runs use.
+       */
+      role_name?: string;
+    };
+    "service.RefreshInstallHealthClusterAccessResponse": {
+      cluster_found?: boolean;
+      cluster_id?: string;
+      role_name?: string;
     };
     "service.RemoveActionLabelsRequest": {
       keys: string[];
@@ -22532,6 +22573,62 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["service.ResetInstallHealthBaselineResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * refresh the cluster access component health reads through
+   * @description Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed since component health was enabled, or after the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute. Requires the component-health feature.
+   */
+  RefreshInstallHealthClusterAccess: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["service.RefreshInstallHealthClusterAccessRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.RefreshInstallHealthClusterAccessResponse"];
         };
       };
       /** @description Bad Request */

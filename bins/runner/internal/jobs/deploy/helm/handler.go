@@ -22,6 +22,7 @@ type handler struct {
 	errRecorder     *errs.Recorder
 	cfg             *runnerconfig.Config
 	clusterProvider *componenthealth.ClusterProvider
+	manifestKinds   *componenthealth.ManifestKindsProvider
 
 	// created on initialization of the plugin struct
 	state *handlerState
@@ -32,11 +33,12 @@ var _ jobs.JobHandler = (*handler)(nil)
 type HandlerParams struct {
 	fx.In
 
-	V               *validator.Validate
-	APIClient       nuonrunner.Client
-	Config          *runnerconfig.Config
-	ErrRecorder     *errs.Recorder
-	ClusterProvider *componenthealth.ClusterProvider
+	V                     *validator.Validate
+	APIClient             nuonrunner.Client
+	Config                *runnerconfig.Config
+	ErrRecorder           *errs.Recorder
+	ClusterProvider       *componenthealth.ClusterProvider
+	ManifestKindsProvider *componenthealth.ManifestKindsProvider
 }
 
 func New(params HandlerParams) (*handler, error) {
@@ -46,6 +48,7 @@ func New(params HandlerParams) (*handler, error) {
 		cfg:             params.Config,
 		errRecorder:     params.ErrRecorder,
 		clusterProvider: params.ClusterProvider,
+		manifestKinds:   params.ManifestKindsProvider,
 	}, nil
 }
 

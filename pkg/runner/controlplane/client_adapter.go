@@ -51,11 +51,11 @@ func (c *clientAdapter) CreateComponentHealth(context.Context, *models.ServiceCr
 func (c *clientAdapter) GetRunnerInstallComponents(context.Context) (*models.ServiceRunnerInstallComponentsResponse, error) {
 	return nil, unsupported("GetRunnerInstallComponents")
 }
-func (c *clientAdapter) PutComponentHealthContext(context.Context, string, []string) error {
+func (c *clientAdapter) PutComponentHealthContext(context.Context, string, []string, []string) error {
 	return unsupported("PutComponentHealthContext")
 }
-func (c *clientAdapter) GetComponentHealthContext(context.Context) (string, []string, error) {
-	return "", nil, unsupported("GetComponentHealthContext")
+func (c *clientAdapter) GetComponentHealthContext(context.Context) (string, []string, []string, error) {
+	return "", nil, nil, unsupported("GetComponentHealthContext")
 }
 func (c *clientAdapter) GetJobs(context.Context, models.AppRunnerJobGroup, models.AppRunnerJobStatus, *int64) ([]*models.AppRunnerJob, error) {
 	return nil, unsupported("GetJobs")

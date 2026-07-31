@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -22,6 +23,9 @@ type InstallComponentHealthSummary struct {
 	ComponentName string  `json:"component_name"`
 	CurrentHealth string  `json:"current_health"`
 	UptimePercent float64 `json:"uptime_percent"`
+	// ObservedSeconds distinguishes "no data" from "0% up" — without it a
+	// component that was never observed renders as total downtime.
+	ObservedSeconds int64 `json:"observed_seconds"`
 }
 
 type InstallHealthTimelineResponse struct {
@@ -32,6 +36,10 @@ type InstallHealthTimelineResponse struct {
 	ObservedSeconds int64                           `json:"observed_seconds"`
 	Daily           []dailyHealthBucket             `json:"daily"`
 	Components      []InstallComponentHealthSummary `json:"components"`
+
+	// ClusterAccessError is why health cannot currently inspect the install's
+	// cluster, empty when it can. Surfaced once here rather than per component.
+	ClusterAccessError string `json:"cluster_access_error,omitzero"`
 }
 
 // @ID						GetInstallHealthTimeline
@@ -100,6 +108,15 @@ func (s *service) getInstallHealthTimeline(ctx context.Context, orgID, installID
 	if err != nil {
 		return nil, err
 	}
+	if baseline.IsZero() {
+		// No explicit reset: start from the first verdict this install ever
+		// produced, so enabling the feature doesn't read as 90 days of downtime.
+		firstSeen, err := s.firstHealthObservedAt(ctx, orgID, installID)
+		if err != nil {
+			return nil, err
+		}
+		baseline = firstSeen
+	}
 	spanFrom := clampToBaseline(windowFrom, baseline)
 
 	statuses := make([]app.InstallComponentHealthStatus, 0, len(comps))
@@ -132,6 +149,7 @@ func (s *service) getInstallHealthTimeline(ctx context.Context, orgID, installID
 			ComponentName:      c.Component.Name,
 			CurrentHealth:      string(c.HealthStatus),
 			UptimePercent:      uptime,
+			ObservedSeconds:    totals.observedSeconds(),
 		})
 		dailyPerComponent = append(dailyPerComponent, foldDailyHealth(spans, windowFrom, days))
 
@@ -147,12 +165,25 @@ func (s *service) getInstallHealthTimeline(ctx context.Context, orgID, installID
 
 	currentHealth, _ := app.CompositeComponentHealthStatus(statuses)
 
+	// Best-effort: the cluster-access reason is context on top of the timeline,
+	// never a reason to fail it. Blanking the whole health view because one
+	// column could not be read would be far worse than omitting the banner.
+	var install app.Install
+	if err := s.db.WithContext(ctx).
+		Select("id", "health_cluster_error").
+		Where(app.Install{ID: installID, OrgID: orgID}).
+		First(&install).Error; err != nil {
+		s.l.Warn("unable to read install cluster access error",
+			zap.String("install_id", installID), zap.Error(err))
+	}
+
 	resp := &InstallHealthTimelineResponse{
-		InstallID:     installID,
-		Days:          days,
-		CurrentHealth: string(currentHealth),
-		Daily:         worstDailyAcrossComponents(dailyPerComponent, windowFrom, days),
-		Components:    summaries,
+		InstallID:          installID,
+		Days:               days,
+		CurrentHealth:      string(currentHealth),
+		Daily:              worstDailyAcrossComponents(dailyPerComponent, windowFrom, days),
+		Components:         summaries,
+		ClusterAccessError: install.HealthClusterError,
 	}
 	if worstFound {
 		resp.UptimePercent = worstUptime

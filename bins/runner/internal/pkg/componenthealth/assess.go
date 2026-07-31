@@ -14,6 +14,11 @@ const (
 	healthDegraded    = "degraded"
 	healthUnhealthy   = "unhealthy"
 	healthUnknown     = "unknown"
+	// healthNotApplicable is for a resource we successfully read but which
+	// exposes no health signal at all. Distinct from unknown, which means we
+	// could not tell — claiming unknown here would report a permanent absence of
+	// information for something that simply has none to give.
+	healthNotApplicable = "not-applicable"
 
 	// maxDetailsBytes bounds the per-resource status blob the runner sends.
 	maxDetailsBytes = 8 * 1024
@@ -23,10 +28,73 @@ const (
 // Argo's gitops-engine assessment, preserving the native status string.
 func assessResource(obj *unstructured.Unstructured) (health, message, nativeStatus string) {
 	hs, err := gitopshealth.GetResourceHealth(obj, nil)
-	if err != nil || hs == nil {
+	if err != nil {
 		return healthUnknown, "", ""
 	}
+	if hs == nil {
+		// The library knows ~10 kinds and returns nil for the rest. Rather than
+		// call every CRD unknown forever, try the convention most controllers
+		// follow, then admit the resource has no signal.
+		return assessByConditions(obj)
+	}
 	return mapHealth(hs.Status), hs.Message, string(hs.Status)
+}
+
+// readyConditionTypes are the condition types controllers conventionally use to
+// mean "this object is serving". Ordered by preference.
+var readyConditionTypes = []string{"Ready", "Available", "Established", "Synced"}
+
+func isReadyConditionType(t string) bool {
+	for _, want := range readyConditionTypes {
+		if t == want {
+			return true
+		}
+	}
+	return false
+}
+
+// assessByConditions reads the status.conditions convention. A True ready-style
+// condition is healthy, False is degraded with its message, Unknown is
+// progressing. An object with no such condition is not-applicable: we read it
+// successfully and it has nothing to say about its own health.
+func assessByConditions(obj *unstructured.Unstructured) (health, message, nativeStatus string) {
+	conds, ok, err := unstructured.NestedSlice(obj.Object, "status", "conditions")
+	if err != nil || !ok || len(conds) == 0 {
+		return healthNotApplicable, "", ""
+	}
+
+	byType := map[string]map[string]any{}
+	for _, c := range conds {
+		cond, ok := c.(map[string]any)
+		if !ok {
+			continue
+		}
+		if t, ok := cond["type"].(string); ok {
+			byType[t] = cond
+		}
+	}
+
+	for _, want := range readyConditionTypes {
+		cond, ok := byType[want]
+		if !ok {
+			continue
+		}
+		status, _ := cond["status"].(string)
+		msg, _ := cond["message"].(string)
+		if msg == "" {
+			msg, _ = cond["reason"].(string)
+		}
+		switch status {
+		case "True":
+			return healthHealthy, "", want + "=True"
+		case "False":
+			return healthDegraded, msg, want + "=False"
+		default:
+			return healthProgressing, msg, want + "=" + status
+		}
+	}
+
+	return healthNotApplicable, "", ""
 }
 
 func mapHealth(code gitopshealth.HealthStatusCode) string {

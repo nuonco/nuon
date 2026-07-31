@@ -97,6 +97,11 @@ type AppInstall struct {
 	// gcp account
 	GcpAccount *AppGCPAccount `json:"gcp_account,omitempty"`
 
+	// HealthClusterError is why component health cannot currently inspect the
+	// install's cluster, empty when it can. Install-level because it is one
+	// fact about the install rather than a property of any component.
+	HealthClusterError string `json:"health_cluster_error,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 
@@ -132,6 +137,11 @@ type AppInstall struct {
 
 	// labels
 	Labels GithubComNuoncoNuonPkgLabelsLabels `json:"labels,omitempty"`
+
+	// LastHealthReportAt is when a runner last reported component health. It is
+	// how the staleness sweep finds installs that went quiet without polling
+	// every install individually.
+	LastHealthReportAt string `json:"last_health_report_at,omitempty"`
 
 	// lifecycle phase
 	LifecyclePhase any `json:"lifecycle_phase,omitempty"`

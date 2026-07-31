@@ -23,6 +23,9 @@ type ServiceComponentHealthContextRequest struct {
 	// Required: true
 	ClusterInfoJSON *string `json:"cluster_info_json"`
 
+	// component kinds
+	ComponentKinds []string `json:"component_kinds"`
+
 	// sandbox helm releases
 	SandboxHelmReleases []string `json:"sandbox_helm_releases"`
 }

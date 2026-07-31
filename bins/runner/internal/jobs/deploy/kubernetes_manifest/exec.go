@@ -65,6 +65,13 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		h.clusterProvider.Set(h.state.plan.KubernetesManifestDeployPlan.ClusterInfo)
 	}
 
+	// Hand the applied kinds over too: a manifest of nothing but custom
+	// resources is invisible to health otherwise, since nothing knows to list
+	// them.
+	if h.manifestKinds != nil {
+		h.manifestKinds.Set(h.state.plan.ComponentID, h.state.plan.KubernetesManifestDeployPlan.Manifest)
+	}
+
 	l.Debug("Starting Exec function",
 		zap.String("jobID", job.ID),
 		zap.String("operation", string(job.Operation)))
