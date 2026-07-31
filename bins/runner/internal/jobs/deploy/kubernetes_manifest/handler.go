@@ -22,6 +22,7 @@ type handler struct {
 	errRecorder     *errs.Recorder
 	cfg             *runnerconfig.Config
 	clusterProvider *componenthealth.ClusterProvider
+	manifestKinds   *componenthealth.ManifestKindsProvider
 
 	// created on initialization of the plugin struct
 	state *handlerState
@@ -37,6 +38,7 @@ type HandlerParams struct {
 	Config          *runnerconfig.Config
 	ErrRecorder     *errs.Recorder
 	ClusterProvider *componenthealth.ClusterProvider
+	ManifestKinds   *componenthealth.ManifestKindsProvider
 }
 
 func New(params HandlerParams) (*handler, error) {
@@ -46,6 +48,7 @@ func New(params HandlerParams) (*handler, error) {
 		cfg:             params.Config,
 		errRecorder:     params.ErrRecorder,
 		clusterProvider: params.ClusterProvider,
+		manifestKinds:   params.ManifestKinds,
 	}, nil
 }
 

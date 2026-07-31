@@ -10,33 +10,37 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// HelmProvider records the kinds each chart component rendered, handed over by
+// ManifestKindsProvider records the kinds each chart component rendered, handed over by
 // the deploy job.
 //
 // Discovery cannot run the other way round: to find a release's objects the
 // engine must already know which kinds to list, and the rendered manifest lives
 // in the release Secret, which health's identity is deliberately denied. The
 // deploy already holds the manifest, so it is the one place that knows.
-type HelmProvider struct {
+//
+// Fed by both helm and kubernetes_manifest deploys. Reading it at deploy time
+// also makes it independent of helm's storage driver (secret, configmap, or
+// nuon's own).
+type ManifestKindsProvider struct {
 	l *zap.Logger
 
 	mu   sync.RWMutex
 	gvks map[string][]schema.GroupVersionKind
 }
 
-type HelmProviderParams struct {
+type ManifestKindsProviderParams struct {
 	fx.In
 
 	L *zap.Logger `name:"system"`
 }
 
-func NewHelmProvider(params HelmProviderParams) *HelmProvider {
-	return &HelmProvider{l: params.L, gvks: map[string][]schema.GroupVersionKind{}}
+func NewManifestKindsProvider(params ManifestKindsProviderParams) *ManifestKindsProvider {
+	return &ManifestKindsProvider{l: params.L, gvks: map[string][]schema.GroupVersionKind{}}
 }
 
 // Set replaces the kinds recorded for a component from a freshly rendered
 // release manifest. An empty manifest clears them.
-func (p *HelmProvider) Set(componentID, manifest string) {
+func (p *ManifestKindsProvider) Set(componentID, manifest string) {
 	if componentID == "" {
 		return
 	}
@@ -53,7 +57,7 @@ func (p *HelmProvider) Set(componentID, manifest string) {
 }
 
 // DiscoveredGVKs returns every kind the recorded releases rendered.
-func (p *HelmProvider) DiscoveredGVKs() []schema.GroupVersionKind {
+func (p *ManifestKindsProvider) DiscoveredGVKs() []schema.GroupVersionKind {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 

@@ -46,8 +46,8 @@ func TestGvksFromManifestDeduplicates(t *testing.T) {
 	assert.Len(t, gvksFromManifest(m), 1, "the same kind twice is one kind to watch")
 }
 
-func TestHelmProviderSetAndDiscover(t *testing.T) {
-	p := NewHelmProvider(HelmProviderParams{L: zap.NewNop()})
+func TestManifestKindsProviderSetAndDiscover(t *testing.T) {
+	p := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop()})
 
 	p.Set("cmp-a", nodePoolManifest)
 	assert.Len(t, p.DiscoveredGVKs(), 3)

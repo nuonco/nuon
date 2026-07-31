@@ -47,25 +47,25 @@ var watchedGVRs = []schema.GroupVersionResource{
 type Params struct {
 	fx.In
 
-	APIClient nuonrunner.Client
-	L         *zap.Logger `name:"system"`
-	LC        fx.Lifecycle
-	Process   string `name:"process"`
-	Cluster   *ClusterProvider
-	Terraform *TerraformProvider
-	Helm      *HelmProvider
+	APIClient     nuonrunner.Client
+	L             *zap.Logger `name:"system"`
+	LC            fx.Lifecycle
+	Process       string `name:"process"`
+	Cluster       *ClusterProvider
+	Terraform     *TerraformProvider
+	ManifestKinds *ManifestKindsProvider
 }
 
 // Engine periodically reports the health of the resources the install's
 // components and sandbox manage. It is stateless: no informers, no in-process cache.
 type Engine struct {
-	l         *zap.Logger
-	apiClient nuonrunner.Client
-	process   string
-	cluster   *ClusterProvider
-	terraform *TerraformProvider
-	helm      *HelmProvider
-	idx       *index
+	l             *zap.Logger
+	apiClient     nuonrunner.Client
+	process       string
+	cluster       *ClusterProvider
+	terraform     *TerraformProvider
+	manifestKinds *ManifestKindsProvider
+	idx           *index
 
 	ctx      context.Context
 	cancelFn func()
@@ -75,16 +75,16 @@ type Engine struct {
 func New(params Params) (*Engine, error) {
 	ctx, cancelFn := context.WithCancel(context.Background())
 	e := &Engine{
-		l:         params.L,
-		apiClient: params.APIClient,
-		process:   params.Process,
-		cluster:   params.Cluster,
-		terraform: params.Terraform,
-		helm:      params.Helm,
-		idx:       newIndex(),
-		ctx:       ctx,
-		cancelFn:  cancelFn,
-		wg:        conc.NewWaitGroup(),
+		l:             params.L,
+		apiClient:     params.APIClient,
+		process:       params.Process,
+		cluster:       params.Cluster,
+		terraform:     params.Terraform,
+		manifestKinds: params.ManifestKinds,
+		idx:           newIndex(),
+		ctx:           ctx,
+		cancelFn:      cancelFn,
+		wg:            conc.NewWaitGroup(),
 	}
 
 	params.LC.Append(fx.Hook{

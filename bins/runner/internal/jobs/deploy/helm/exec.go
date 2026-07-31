@@ -205,8 +205,8 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	// resources is otherwise invisible, since nothing else knows to list them.
 	// This is the only place the manifest is readable — it lives in the release
 	// secret, which health's identity is deliberately denied.
-	if h.helmProvider != nil && rel != nil {
-		h.helmProvider.Set(h.state.plan.ComponentID, rel.Manifest)
+	if h.manifestKinds != nil && rel != nil {
+		h.manifestKinds.Set(h.state.plan.ComponentID, rel.Manifest)
 	}
 
 	var apiRes *models.ServiceCreateRunnerJobExecutionResultRequest

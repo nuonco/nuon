@@ -243,8 +243,8 @@ func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) []schema.G
 	if e.terraform != nil {
 		discovered = append(discovered, e.terraform.DiscoveredGVKs()...)
 	}
-	if e.helm != nil {
-		discovered = append(discovered, e.helm.DiscoveredGVKs()...)
+	if e.manifestKinds != nil {
+		discovered = append(discovered, e.manifestKinds.DiscoveredGVKs()...)
 	}
 	if len(discovered) == 0 {
 		return out
