@@ -27,6 +27,16 @@ func (a *Activities) EnsureInstallQueues(ctx context.Context, req EnsureInstallQ
 	return a.installsHelpers.EnsureInstallQueues(ctx, req.InstallID)
 }
 
+type EnqueueAppConfigUpdatedRequest struct {
+	InstallID string `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+// @by-field InstallID
+func (a *Activities) EnqueueAppConfigUpdated(ctx context.Context, req EnqueueAppConfigUpdatedRequest) error {
+	return a.installsHelpers.EnqueueAppConfigUpdated(ctx, req.InstallID)
+}
+
 type EnsureAppQueueRequest struct {
 	AppID string `validate:"required"`
 }
