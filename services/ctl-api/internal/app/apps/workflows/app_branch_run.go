@@ -13,7 +13,6 @@ import (
 	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/planinstallgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/setuppreview"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/syncinstalls"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 )
 
@@ -115,19 +114,6 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		}
 		steps = append(steps, step)
 	}
-
-	// Step 4: Sync install configs from VCS (if installs VCS config is set)
-	sg.nextGroup()
-	syncStep, err := sg.appBranchSignalStep(ctx, appBranchID, "sync install configs", pgtype.Hstore{}, &syncinstalls.Signal{
-		AppBranchID:       appBranchID,
-		AppBranchConfigID: configID,
-		AppBranchRunID:    runID,
-		TriggeredBy:       "app-branch-run",
-	}, WithSkippable(true))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create install config sync step")
-	}
-	steps = append(steps, syncStep)
 
 	// Preview runs don't touch installs — skip install group steps entirely.
 	if isPreview {

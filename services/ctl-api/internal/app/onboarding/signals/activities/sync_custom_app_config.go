@@ -14,6 +14,7 @@ type SyncCustomAppConfigOutput struct {
 	AppConfigID  string   `json:"app_config_id"`
 	ComponentIDs []string `json:"component_ids"`
 	ActionIDs    []string `json:"action_ids"`
+	RunbookIDs   []string `json:"runbook_ids"`
 }
 
 // @temporal-gen-v2 activity
@@ -86,6 +87,7 @@ func (a *Activities) syncCustomAppConfig(ctx context.Context, onboardingID strin
 		"status_description": "synced successfully",
 		"component_ids":      pq.StringArray(s.GetComponentStateIds()),
 		"action_ids":         pq.StringArray(s.GetActionStateIds()),
+		"runbook_ids":        pq.StringArray(s.GetRunbookStateIds()),
 	})
 	// dual-write V2 status
 	activeStatus := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusActive))
@@ -98,5 +100,6 @@ func (a *Activities) syncCustomAppConfig(ctx context.Context, onboardingID strin
 		AppConfigID:  appConfig.ID,
 		ComponentIDs: s.GetComponentStateIds(),
 		ActionIDs:    s.GetActionStateIds(),
+		RunbookIDs:   s.GetRunbookStateIds(),
 	}, nil
 }

@@ -35,6 +35,7 @@ func appConfigActionFilter(syncedOnly bool) string {
 // @Summary				get an installs action workflows
 // @Description.markdown	get_install_action_workflows.md
 // @Param					install_id					path	string	true	"install ID"
+// @Param					synced						query	bool	false	"return actions in the install's current app config; set false to return only actions no longer in it"	Default(true)
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -52,7 +53,8 @@ func appConfigActionFilter(syncedOnly bool) string {
 // @Router					/v1/installs/{install_id}/actions [GET]
 func (s *service) GetInstallActions(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-	installActionWorkflows, err := s.getInstallActionWorkflows(ctx, installID)
+	synced := ctx.Query("synced") != "false"
+	installActionWorkflows, err := s.getInstallActionWorkflows(ctx, installID, synced)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install components: %w", err))
 		return
@@ -65,6 +67,7 @@ func (s *service) GetInstallActions(ctx *gin.Context) {
 // @Summary				get an installs action workflows
 // @Description.markdown	get_install_action_workflows.md
 // @Param					install_id					path	string	true	"install ID"
+// @Param					synced						query	bool	false	"return actions in the install's current app config; set false to return only actions no longer in it"	Default(true)
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -83,7 +86,8 @@ func (s *service) GetInstallActions(ctx *gin.Context) {
 // @Router					/v1/installs/{install_id}/action-workflows [GET]
 func (s *service) GetInstallActionWorkflows(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-	installActionWorkflows, err := s.getInstallActionWorkflows(ctx, installID)
+	synced := ctx.Query("synced") != "false"
+	installActionWorkflows, err := s.getInstallActionWorkflows(ctx, installID, synced)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install components: %w", err))
 		return
@@ -92,13 +96,13 @@ func (s *service) GetInstallActionWorkflows(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installActionWorkflows)
 }
 
-func (s *service) getInstallActionWorkflows(ctx *gin.Context, installID string) ([]app.InstallActionWorkflow, error) {
+func (s *service) getInstallActionWorkflows(ctx *gin.Context, installID string, syncedOnly bool) ([]app.InstallActionWorkflow, error) {
 	install := &app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("InstallActionWorkflows", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Scopes(scopes.WithOffsetPagination).
-				Where(appConfigActionFilter(true)).
+				Where(appConfigActionFilter(syncedOnly)).
 				Order("install_action_workflows.created_at DESC")
 		}).
 		Preload("InstallActionWorkflows.ActionWorkflow").

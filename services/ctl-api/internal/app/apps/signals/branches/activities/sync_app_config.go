@@ -8,16 +8,17 @@ import (
 	"strings"
 
 	"github.com/lib/pq"
+	"go.temporal.io/sdk/activity"
+	"go.temporal.io/sdk/temporal"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/pkg/config"
 	configsync "github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/triggers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	"go.temporal.io/sdk/activity"
-	"go.temporal.io/sdk/temporal"
-	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 type SyncAppConfigInput struct {
@@ -30,6 +31,7 @@ type SyncAppConfigOutput struct {
 	AppConfigID  string   `json:"app_config_id"`
 	ComponentIDs []string `json:"component_ids"`
 	ActionIDs    []string `json:"action_ids"`
+	RunbookIDs   []string `json:"runbook_ids"`
 }
 
 // @temporal-gen-v2 activity
@@ -103,6 +105,15 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 		return nil, fmt.Errorf("unable to sync config: %w", err)
 	}
 
+	// Mark config as active with component and action IDs
+	a.db.WithContext(ctx).Model(&appConfig).Updates(map[string]interface{}{
+		"status":             app.AppConfigStatusActive,
+		"status_description": "synced successfully",
+		"component_ids":      pq.StringArray(s.GetComponentStateIds()),
+		"action_ids":         pq.StringArray(s.GetActionStateIds()),
+		"runbook_ids":        pq.StringArray(s.GetRunbookStateIds()),
+	})
+	// dual-write V2 status
 	activeStatus := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusActive))
 	activeStatus.StatusHumanDescription = "synced successfully"
 	if err := a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -140,5 +151,6 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 		AppConfigID:  s.GetAppConfigID(),
 		ComponentIDs: s.GetComponentStateIds(),
 		ActionIDs:    s.GetActionStateIds(),
+		RunbookIDs:   s.GetRunbookStateIds(),
 	}, nil
 }

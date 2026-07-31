@@ -334,19 +334,8 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 
-	if err := s.componentHelpers.EnsureInstallComponents(ctx, appID, []string{install.ID}); err != nil {
-		return nil, fmt.Errorf("unable to ensure install components: %w", err)
-	}
-	if err := s.actionsHelpers.EnsureInstallAction(ctx, appID, []string{install.ID}); err != nil {
-		return nil, fmt.Errorf("unable to ensure install action workflows: %w", err)
-	}
-	if err := s.runbooksHelpers.EnsureInstallRunbooks(ctx, appID, []string{install.ID}); err != nil {
-		return nil, fmt.Errorf("unable to ensure install runbooks: %w", err)
-	}
-
-	//if err := s.EnsureInstallSandbox(ctx, appID, []string{install.ID}); err != nil {
-	//return nil, fmt.Errorf("unable to ensure install components: %w", err)
-	//}
+	// Install components, actions, and runbooks are created asynchronously
+	// by the install-created signal's reconcile activities.
 
 	loadedInstall, err := s.getInstall(ctx, install.ID)
 	if err != nil {
