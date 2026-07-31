@@ -94,3 +94,20 @@ func TestManifestKindsRoundTripsThroughPersistence(t *testing.T) {
 	restarted.Load()
 	assert.ElementsMatch(t, first.DiscoveredGVKs(), restarted.DiscoveredGVKs())
 }
+
+// A deploy that lands before the engine rehydrates must not wipe the kinds
+// other components already persisted.
+func TestPersistDoesNotClobberOtherComponents(t *testing.T) {
+	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
+
+	a := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
+	a.Set("cmp-a", "---\napiVersion: karpenter.sh/v1\nkind: NodePool\nmetadata:\n  name: n\n")
+	assert.Len(t, store.ComponentKinds(), 1)
+
+	// Fresh process; a deploy for a different component arrives with no Load yet.
+	b := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
+	b.Set("cmp-b", "---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: c\n")
+
+	assert.Len(t, store.ComponentKinds(), 2, "cmp-a's kind must survive cmp-b's deploy")
+	assert.Len(t, b.DiscoveredGVKs(), 2)
+}

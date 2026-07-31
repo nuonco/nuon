@@ -26,8 +26,9 @@ type ManifestKindsProvider struct {
 	l       *zap.Logger
 	cluster *ClusterProvider
 
-	mu   sync.RWMutex
-	gvks map[string][]schema.GroupVersionKind
+	mu     sync.RWMutex
+	gvks   map[string][]schema.GroupVersionKind
+	loaded bool
 }
 
 type ManifestKindsProviderParams struct {
@@ -66,6 +67,11 @@ func (p *ManifestKindsProvider) Load() {
 	if p.cluster == nil {
 		return
 	}
+
+	p.mu.Lock()
+	p.loaded = true
+	p.mu.Unlock()
+
 	restored := map[string][]schema.GroupVersionKind{}
 	for _, entry := range p.cluster.ComponentKinds() {
 		componentID, gvk, ok := decodeComponentKind(entry)
@@ -94,6 +100,17 @@ func (p *ManifestKindsProvider) persist() {
 	if p.cluster == nil {
 		return
 	}
+
+	// A deploy can land before the engine has rehydrated. Persisting the
+	// in-memory map alone would then drop every other component's kinds, so
+	// load first — the stored list is the union across components.
+	p.mu.RLock()
+	loaded := p.loaded
+	p.mu.RUnlock()
+	if !loaded {
+		p.Load()
+	}
+
 	p.mu.RLock()
 	out := make([]string, 0, 16)
 	for componentID, gvks := range p.gvks {
