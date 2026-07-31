@@ -219,7 +219,7 @@ export const HealthTimeline = ({
           </Text>
           <Text variant="subtext" theme="neutral">
             {hasOverallData
-              ? `${formatUptime(uptimePercent)} uptime over the last ${days} days`
+              ? `${formatUptime(uptimePercent, observedSeconds)} uptime over the last ${days} days`
               : `No uptime data for the last ${days} days`}
           </Text>
         </HeadingGroup>
