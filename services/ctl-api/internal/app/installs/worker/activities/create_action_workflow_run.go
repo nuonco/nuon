@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 )
 
 type CreateActionWorkflowRunRequest struct {
@@ -105,6 +106,24 @@ func (a *Activities) createActionWorkflowRun(ctx context.Context,
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create action workflow")
 	}
+
+	a.audit.Emit(ctx, audit.Event{
+		Type:        audit.EventInstallActionWorkflowRun,
+		Message:     "install action workflow run created",
+		Outcome:     audit.OutcomeStarted,
+		InstallID:   installID,
+		SubjectID:   newRun.ID,
+		SubjectType: "install_action_workflow_runs",
+		Attrs: map[string]string{
+			"action_workflow_run.id": newRun.ID,
+			"action_workflow.id":     installActionWorkflowID,
+			"action_workflow.config": cfg.ID,
+			"trigger.type":           string(triggerType),
+			"triggered_by.id":        triggeredByID,
+			"triggered_by.type":      string(triggeredByType),
+			"flow_workflow.id":       installWorkflowID,
+		},
+	})
 
 	return &newRun, nil
 }

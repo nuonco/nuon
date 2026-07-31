@@ -26,8 +26,22 @@ func (a *Activities) CreateSandboxJob(ctx context.Context, req *CreateSandboxJob
 		jobType = app.RunnerJobTypeSandboxTerraform
 	}
 
-	// RunnerJob.BeforeCreate reads these from ctx into job metadata for telemetry.
-	ctx = cctx.SetFlowInstallIDContext(ctx, req.InstallID)
+	var run app.InstallSandboxRun
+	res := a.db.WithContext(ctx).
+		Select("install_id", "install_workflow_id").
+		Where(app.InstallSandboxRun{ID: req.OwnerID}).
+		First(&run)
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to get install sandbox run: %w", res.Error)
+	}
+	if run.InstallID != req.InstallID {
+		return nil, fmt.Errorf("sandbox run install %s does not match request install %s", run.InstallID, req.InstallID)
+	}
+
+	if run.InstallWorkflowID != nil {
+		ctx = cctx.SetFlowWorkflowIDContext(ctx, *run.InstallWorkflowID)
+	}
+	ctx = cctx.SetFlowInstallIDContext(ctx, run.InstallID)
 
 	job, err := a.runnersHelpers.CreateInstallSandboxJob(ctx,
 		req.RunnerID,

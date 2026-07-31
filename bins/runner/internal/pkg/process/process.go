@@ -87,7 +87,7 @@ func New(params Params) (Result, error) {
 	r.logStreamID = process.LogStreamID
 
 	if r.logStreamID != "" {
-		lp, err := slog.NewOTELProvider(r.cfg, r.settings, r.logStreamID)
+		lp, err := slog.NewOTELProvider(r.cfg, r.settings, r.logStreamID, nil)
 		if err == nil {
 			r.logProvider = lp
 		}

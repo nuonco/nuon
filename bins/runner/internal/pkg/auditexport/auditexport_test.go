@@ -134,6 +134,24 @@ func TestEmptySecretDoesNotStartCollector(t *testing.T) {
 	}
 }
 
+func TestAvailableTracksCollectorProcess(t *testing.T) {
+	s := &Supervisor{}
+	if s.Available() {
+		t.Fatal("supervisor without a collector is available")
+	}
+
+	done := make(chan struct{})
+	s.child = &childProcess{done: done}
+	if !s.Available() {
+		t.Fatal("running collector is unavailable")
+	}
+
+	close(done)
+	if s.Available() {
+		t.Fatal("exited collector is available")
+	}
+}
+
 func TestReconcileLogsEnabledBackendAndDisabledTransition(t *testing.T) {
 	core, observed := observer.New(zap.InfoLevel)
 	logger := zap.New(core)

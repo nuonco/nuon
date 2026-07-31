@@ -88,6 +88,20 @@ func (s *Supervisor) stop(ctx context.Context) error {
 	return nil
 }
 
+func (s *Supervisor) Available() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.child == nil {
+		return false
+	}
+	select {
+	case <-s.child.done:
+		return false
+	default:
+		return true
+	}
+}
+
 func (s *Supervisor) run(ctx context.Context) {
 	defer close(s.done)
 	if s.local || s.installID == "" {
