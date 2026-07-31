@@ -1,0 +1,199 @@
+---
+title: "Configure Triggers"
+description: "Create a trigger, route events with rules, and inspect events and dispatches."
+icon: "bolt"
+keywords: ["trigger", "triggers", "webhook", "event ingress", "trigger rules", "dispatch", "app branch run", "runbook", "filters", "event types"]
+---
+
+[Triggers](/concepts/triggers) turn external events into Nuon actions. This guide walks through creating a trigger, exposing its ingress URL, routing events with rules in your app config, and inspecting the events and dispatches that result.
+
+## 1. Create a trigger
+
+Create a trigger with the CLI. Use a `--preset` to configure authentication and payload parsing for a known provider:
+
+```sh
+nuon triggers create my-trigger --preset github
+```
+
+Without a preset, set the authentication type explicitly. For secret-based types like `hmac`, Nuon generates a signing secret for the trigger — reveal and rotate it with the secret commands below.
+
+```sh
+nuon triggers create my-trigger --auth-type hmac
+```
+
+Use `--auth-config` to supply advanced settings as a JSON object — for example the header to read the signature from, the signature algorithm, or the expected JWT audience.
+
+Common flags:
+
+| Flag | Description |
+| --- | --- |
+| `--description` | A human-readable description. |
+| `--preset` | Provider preset (`github`, `gitlab`, `aws-sns`, `google-pubsub`, `slack-events`, `datadog`, …). |
+| `--auth-type` | `none`, `hmac`, `api_key`, `basic`, `bearer_jwt`, or `sns_signature`. |
+| `--auth-config` | JSON configuration for the chosen auth type. |
+| `--envelope` | Transport envelope to unwrap: `none`, `pubsub_push`, `cloudevents`, or `sns`. |
+| `--type-header` / `--type-payload` | Where to read the event type from — a header name or a payload JSONPath. |
+| `--id-header` / `--id-payload` | Where to read the event ID (used for deduplication) from. |
+
+## 2. Get the ingress URL
+
+The ingress URL is the secret endpoint external systems POST events to. Reveal it, then configure it in the sending system:
+
+```sh
+nuon triggers reveal-ingress-url <trigger-id>
+```
+
+If a URL is ever leaked, rotate it:
+
+```sh
+nuon triggers replace-ingress-url <trigger-id>
+```
+
+## 3. Route events with rules
+
+Rules decide which events start which targets. Author them in your app config's `triggers.toml`, where each `[[rules]]` entry references a trigger by name, matches events, and declares a target.
+
+```toml triggers.toml
+[[rules]]
+name = "runbook-on-main-push"
+trigger = "my-trigger"
+event_types = ["push"]
+
+[[rules.filters]]
+from = "payload"
+op = "eq"
+path = "$.ref"
+value = "refs/heads/main"
+
+[rules.target]
+type = "runbook"
+runbook = "redeploy"
+install = "acme-prod"
+```
+
+This example targets a **runbook**, which runs on an existing install and requires no app branch. To run an app branch instead, use the `app_branch_run` target — see [Targets](#targets) below.
+
+### Rule fields
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `name` | yes | Unique name for the rule. |
+| `trigger` | yes | The name of the trigger this rule listens to. |
+| `event_types` | no | List of exact event type strings to match. |
+| `filters` | no | Payload or header predicates, ANDed together (max 20). |
+| `match_all` | no | Match every event. Cannot be combined with `event_types`. |
+| `target` | yes | The app branch run or runbook to start. |
+
+A rule must declare at least one of: `event_types`, a positive filter, or `match_all = true`.
+
+### Filters
+
+Each filter compares a value from the payload or headers.
+
+```toml triggers.toml
+[[rules.filters]]
+from = "payload"   # "payload" (default) or "headers"
+op = "eq"
+path = "$.action"  # JSONPath for payload filters, or a header name for header filters
+value = "opened"
+```
+
+Supported `op` values: `eq`, `neq`, `in`, `prefix`, `suffix`, `contains`, `gt`, `gte`, `lt`, `lte`, `regex`, `exists`, `not_exists`. Omit `value` for `exists` and `not_exists`. Each filter's value must encode to at most 4096 bytes.
+
+To discover which payload paths and headers are available to filter on, use `nuon triggers events paths` against a received event — see [Test and inspect events](#4-test-and-inspect-events).
+
+### Targets
+
+A target is either an **install runbook** or an **app branch run**.
+
+Run a runbook on a specific install, mapping payload values into runbook inputs. This target requires no app branch:
+
+```toml triggers.toml
+[rules.target]
+type = "runbook"
+runbook = "rotate-credentials"
+install = "acme-prod"
+
+[rules.target.inputs]
+requested_by = "$.sender.login"
+reason = "$.action"
+```
+
+Each entry under `inputs` maps a runbook input name to a singular payload JSONPath. The `runbook` must be declared in your app config, and `install` must name an existing install.
+
+Alternatively, run an app branch:
+
+```toml triggers.toml
+[rules.target]
+type = "app_branch_run"
+app_branch = "main"
+```
+
+The named `app_branch` must already be declared in your app config — the rule fails to sync if it doesn't exist.
+
+## 4. Test and inspect events
+
+List received events for a trigger:
+
+```sh
+nuon triggers events list --trigger <trigger-id>
+```
+
+Filter by type or outcome:
+
+```sh
+nuon triggers events list --trigger <trigger-id> --event-type push --outcome failed
+```
+
+Inspect a single event, then replay it to re-run its routing:
+
+```sh
+nuon triggers events get <event-id>
+nuon triggers events replay <event-id>
+```
+
+Tail events live as they arrive:
+
+```sh
+nuon triggers events tail --trigger <trigger-id>
+```
+
+Dry-run a local app config against a received event to see what would match, without dispatching. Pass the path to your app TOML with `--app-config`, and select the event with either `--last` (most recent event for a trigger) or `--event <event-id>`:
+
+```sh
+nuon triggers events test --last --trigger <trigger-id> --app-config ./app.toml
+nuon triggers events test --event <event-id> --app-config ./app.toml
+```
+
+To discover which fields you can filter on, list the filterable payload paths and request headers for an event:
+
+```sh
+nuon triggers events paths --last --trigger <trigger-id>
+nuon triggers events paths <event-id>
+```
+
+## 5. Inspect dispatches
+
+A dispatch is one target execution produced by a matching rule. List, inspect, and retry them:
+
+```sh
+nuon triggers dispatches list
+nuon triggers dispatches get <dispatch-id>
+nuon triggers dispatches retry <dispatch-id>
+```
+
+## Rotating secrets and suspending
+
+Rotate a trigger's signing secret, or revoke a specific secret, without downtime:
+
+```sh
+nuon triggers rotate-secret <trigger-id>
+nuon triggers revoke-secret <trigger-id> <secret-id>
+```
+
+Suspend a trigger to stop processing events without deleting it, then re-enable it later:
+
+```sh
+nuon triggers disable <trigger-id>
+nuon triggers enable <trigger-id>
+```
