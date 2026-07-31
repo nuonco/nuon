@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -46,6 +46,7 @@ export const DeploymentPlanEditorContainer = ({
   const { app, labelColors } = useApp()
   const { addToast } = useToast()
   const { removeModal } = useSurfaces()
+  const queryClient = useQueryClient()
 
   const { data: installsResult, isLoading: loadingInstalls } = useQuery({
     queryKey: ['app-installs', org.id, app.id],
@@ -114,6 +115,8 @@ export const DeploymentPlanEditorContainer = ({
       })
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['app-branch', org.id, app.id, branch.id] })
+      queryClient.invalidateQueries({ queryKey: ['branch-configs', org.id, app.id, branch.id] })
       addToast(
         <Toast heading="Deployment plan saved" theme="success">
           <Text>A new config version has been created.</Text>
