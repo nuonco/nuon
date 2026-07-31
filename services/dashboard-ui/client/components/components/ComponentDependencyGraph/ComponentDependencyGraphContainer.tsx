@@ -1,10 +1,19 @@
 import { useMemo } from 'react'
+import { AnimatedHeight } from '@/components/common/AnimatedHeight'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
+import {
+  DependencyViewToggle,
+  DEPENDENCY_VIEW_MODES,
+  DEPENDENCY_VIEW_STORAGE_KEY,
+  type TDependencyViewMode,
+} from '@/components/common/DependencyViewToggle'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
+import { useStoredViewMode } from '@/hooks/use-stored-view-mode'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { ComponentDependencyGraph, type GraphNode, type GraphEdge } from './ComponentDependencyGraph'
+import { ComponentDependencyTable } from './ComponentDependencyTable'
 import type { TAppConfig, TComponentType } from '@/types'
 
 type Connection = NonNullable<TAppConfig['component_config_connections']>[number]
@@ -99,6 +108,11 @@ export const ComponentDependencyGraphModal = ({
 }: IComponentDependencyGraphModal) => {
   const { removeModal } = useSurfaces()
   const connections = appConfig?.component_config_connections ?? []
+  const [viewMode, setViewMode] = useStoredViewMode<TDependencyViewMode>(
+    DEPENDENCY_VIEW_STORAGE_KEY,
+    DEPENDENCY_VIEW_MODES,
+    'graph',
+  )
 
   const { nodes, edges } = useMemo(
     () => buildTransitiveGraph(connections, componentId, componentName, componentType),
@@ -116,14 +130,31 @@ export const ComponentDependencyGraphModal = ({
       size="xl"
       {...props}
     >
-      <div style={{ width: '100%', height: '32rem' }}>
-        <ComponentDependencyGraph
-          nodes={nodes}
-          edges={edges}
-          currentId={componentId}
-          basePath={basePath}
-          onNavigate={() => removeModal(props.modalId)}
-        />
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-end">
+          <DependencyViewToggle value={viewMode} onChange={setViewMode} />
+        </div>
+        <AnimatedHeight>
+          {viewMode === 'graph' ? (
+            <div style={{ width: '100%', height: '32rem' }}>
+              <ComponentDependencyGraph
+                nodes={nodes}
+                edges={edges}
+                currentId={componentId}
+                basePath={basePath}
+                onNavigate={() => removeModal(props.modalId)}
+              />
+            </div>
+          ) : (
+            <ComponentDependencyTable
+              nodes={nodes}
+              edges={edges}
+              currentId={componentId}
+              basePath={basePath}
+              onNavigate={() => removeModal(props.modalId)}
+            />
+          )}
+        </AnimatedHeight>
       </div>
     </Modal>
   )
