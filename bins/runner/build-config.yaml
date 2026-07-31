@@ -1,8 +1,22 @@
 ---
 dist:
   name: nuon-runner-otelcol
-  description: Nuon Runner Custom OTEL Collector
-  otelcol_version: 0.104.0
-  output_path: ./internal/app/collector
+  description: Nuon Runner Audit Log Collector
+  otelcol_version: 0.150.0
+  output_path: ./otelcol-build
   version: 1.0.0
-  module: github.com/nuonco/nuon/bins/runner/internal/app/collector
+  module: github.com/nuonco/nuon/bins/runner/otelcol
+
+receivers:
+  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.150.0
+
+processors:
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.150.0
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.150.0
+  - gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.150.0
+
+exporters:
+  - gomod: go.opentelemetry.io/collector/exporter/otlphttpexporter v0.150.0
+
+extensions:
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.150.0
