@@ -6,6 +6,8 @@ package awaitcomponenthealthy
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -129,7 +131,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	declaredProbes := make([]string, 0, len(ccc.HealthProbes))
+	// Required checks wait exactly like probes, except the runner cannot produce
+	// them — something external must push before the deploy proceeds.
+	declaredProbes := make([]string, 0, len(ccc.HealthProbes)+len(ccc.HealthRequiredChecks))
+	declaredProbes = append(declaredProbes, ccc.HealthRequiredChecks...)
 	for _, probe := range ccc.HealthProbes {
 		if probe.Name != "" {
 			declaredProbes = append(declaredProbes, probe.Name)
@@ -145,6 +150,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	var lastReport *activities.GateHealthReport
 	var sawData bool
 	var lastNarration string
+	lastCheckHealth := map[string]string{}
 	var failMsg string
 	var awaitingProbes []string
 	pollErr := poll.Poll(ctx, s.v, poll.PollOpts{
@@ -179,22 +185,43 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				checks = nil
 			}
 			markRemovedCheckRows(checks, declaredProbes)
+			checks = withAwaitedChecks(checks, declaredProbes, gateStartedAt)
 
-			// The runner picks probes up a cycle late after a first deploy, so
-			// without this an all-healthy window could verify a deploy whose
-			// declared checks never ran once.
+			// An all-healthy window must not verify a deploy whose declared
+			// checks never ran. This is terminal at the window boundary rather
+			// than a retry: the stabilization window is the wait, so anyone
+			// needing longer for a pusher to arrive lengthens the window.
 			awaitingProbes = nil
 			if outcome == windowPass && len(declaredProbes) > 0 {
 				if missing := missingProbes(declaredProbes, checks, gateStartedAt); len(missing) > 0 {
 					awaitingProbes = missing
-					s.narrate(ctx, &lastNarration, fmt.Sprintf(
-						"window elapsed all-healthy — waiting for declared probes to report (%d of %d): missing %s",
-						len(declaredProbes)-len(missing), len(declaredProbes), strings.Join(missing, ", ")), checks)
-					return errors.Errorf("declared probes have not reported yet")
+					failMsg = missingChecksMessage(missing, window)
+					s.narrate(ctx, &lastNarration, failMsg, checks)
+					return errors.Wrap(poll.NonRetryableError, failMsg)
+				}
+				// Reporting is not passing: a declared check that reports failing
+				// has to fail the window, or gating on it means nothing.
+				if failed := failedChecks(declaredProbes, checks, gateStartedAt); len(failed) > 0 {
+					failMsg = "declared checks reported failing: " + strings.Join(failed, ", ")
+					s.narrate(ctx, &lastNarration, failMsg, checks)
+					return errors.Wrap(poll.NonRetryableError, failMsg)
 				}
 			}
 
-			s.narrate(ctx, &lastNarration, windowNarration(outcome, report, gateStartedAt, now, window), checks)
+			// The step's status already shows every check's current state, so the
+			// timeline carries transitions only — a readable record of what moved
+			// during the window instead of a line per poll.
+			// Narrate every poll so the detail view always carries the current
+			// state of every check, including the ones still unknown. The dedupe
+			// keys on state rather than the countdown, so a quiet poll adds no
+			// timeline entry; when a check moves, the line says what moved.
+			// One line per poll, carrying the snapshot either way, deduped on
+			// state — so the first poll still writes it while all checks are unknown.
+			if moved := checkTransitions(lastCheckHealth, checks); moved != "" {
+				s.narrate(ctx, &lastNarration, moved, checks)
+			}
+			s.narrate(ctx, &lastNarration, windowNarration(outcome, report, gateStartedAt, now, window, checks), checks)
+			rememberCheckHealth(lastCheckHealth, checks)
 
 			switch outcome {
 			case windowPass:
@@ -226,8 +253,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				window+noObservationExtension, window, noObservationExtension)
 		}
 		if len(awaitingProbes) > 0 {
-			return fmt.Errorf("declared health probes never reported after the apply: %s — a passing window must include every configured check",
-				strings.Join(awaitingProbes, ", "))
+			return errors.New(missingChecksMessage(awaitingProbes, window))
 		}
 		return fmt.Errorf("component did not hold healthy for %s: window ended %s", window, describeReport(lastReport))
 	}
@@ -268,6 +294,37 @@ func badReportMessage(r *activities.GateHealthReport) string {
 	return msg
 }
 
+// missingChecksMessage names the checks that never reported inside the window.
+// Lengthening stabilization_window is the way to wait longer, so the message
+// says so rather than leaving the reader to guess.
+func missingChecksMessage(missing []string, window time.Duration) string {
+	return fmt.Sprintf("no report inside the %s window for: %s — push these before the window closes, or lengthen stabilization_window",
+		window, strings.Join(missing, ", "))
+}
+
+// describeChecks summarises the whole set, so a pass does not read as though a
+// single resource was all that was looked at.
+func describeChecks(checks []activities.ComponentHealthCheckRow) string {
+	if len(checks) == 0 {
+		return "no checks reported"
+	}
+	byHealth := map[string]int{}
+	order := make([]string, 0, 4)
+	for _, c := range checks {
+		if _, seen := byHealth[c.Health]; !seen {
+			order = append(order, c.Health)
+		}
+		byHealth[c.Health]++
+	}
+	sort.Strings(order)
+
+	parts := make([]string, 0, len(order))
+	for _, h := range order {
+		parts = append(parts, fmt.Sprintf("%d %s", byHealth[h], h))
+	}
+	return fmt.Sprintf("%d checks: %s", len(checks), strings.Join(parts, ", "))
+}
+
 func describeReport(r *activities.GateHealthReport) string {
 	if r == nil {
 		return "with no health observations"
@@ -285,11 +342,24 @@ func describeReport(r *activities.GateHealthReport) string {
 
 // narrate writes the gate's progress onto its workflow step, so it isn't a silent
 // step that eventually flips. Best-effort — a failure here must not fail the gate.
+// remainingRe matches the "— 39s of the 1m0s window left" fragment so two polls
+// that differ only by the clock dedupe to one entry.
+var remainingRe = regexp.MustCompile(`— [0-9hms.]+ of (the )?[0-9hms.]* ?window left`)
+
+func stripRemaining(narration string) string {
+	return remainingRe.ReplaceAllString(narration, "— window running")
+}
+
+// narrate writes the gate's progress and its check snapshot onto the workflow
+// step. Deduped on state, not on the countdown, so the detail view stays current
+// without the timeline growing a line per poll.
 func (s *Signal) narrate(ctx workflow.Context, lastNarration *string, narration string, checks []activities.ComponentHealthCheckRow) {
 	if s.WorkflowStepID == "" || narration == "" {
 		return
 	}
-	key := narration
+	// Keying on the raw narration would defeat the dedupe, since the countdown
+	// changes every poll — 46 lines on a 10m window.
+	key := stripRemaining(narration)
 	for _, c := range checks {
 		key += "|" + c.Kind + "/" + c.Name + "=" + c.Health
 	}
@@ -333,10 +403,10 @@ func (s *Signal) narrate(ctx workflow.Context, lastNarration *string, narration 
 
 // windowNarration renders one poll reading as a human sentence with the real
 // remaining budget.
-func windowNarration(outcome windowOutcome, report *activities.GateHealthReport, gateStartedAt, now time.Time, window time.Duration) string {
+func windowNarration(outcome windowOutcome, report *activities.GateHealthReport, gateStartedAt, now time.Time, window time.Duration, checks []activities.ComponentHealthCheckRow) string {
 	switch outcome {
 	case windowPass:
-		return fmt.Sprintf("held healthy for %s — %s", window, describeReport(report))
+		return fmt.Sprintf("held healthy for %s — %s", window, describeChecks(checks))
 	case windowFailBad:
 		// Written just before the step's error lands, so the failing snapshot
 		// is locked in the step history with the checks that caused it.

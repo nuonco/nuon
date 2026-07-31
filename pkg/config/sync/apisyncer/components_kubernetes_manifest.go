@@ -65,6 +65,7 @@ func (s *syncer) createKubernetesManifestComponentConfig(
 		configRequest.HealthStabilizationWindow = comp.KubernetesManifest.Health.StabilizationWindow
 		configRequest.HealthBlockDeploy = comp.KubernetesManifest.Health.BlockDeploy
 		configRequest.HealthProbes = healthProbeRequests(comp.KubernetesManifest.Health)
+		configRequest.HealthRequiredChecks = comp.KubernetesManifest.Health.RequiredChecks
 	}
 
 	for _, ref := range comp.References {

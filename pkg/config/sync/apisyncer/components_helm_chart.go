@@ -53,6 +53,7 @@ func (s *syncer) createHelmChartComponentConfig(ctx context.Context, resource, c
 		configRequest.HealthStabilizationWindow = obj.Health.StabilizationWindow
 		configRequest.HealthBlockDeploy = obj.Health.BlockDeploy
 		configRequest.HealthProbes = healthProbeRequests(obj.Health)
+		configRequest.HealthRequiredChecks = obj.Health.RequiredChecks
 	}
 
 	for _, ref := range comp.References {

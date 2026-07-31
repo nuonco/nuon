@@ -1,6 +1,8 @@
 package awaitcomponenthealthy
 
 import (
+	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -97,6 +99,37 @@ func missingProbes(declared []string, checks []activities.ComponentHealthCheckRo
 	return missing
 }
 
+// withAwaitedChecks scopes the snapshot to in-window evidence: a verdict from
+// before the apply says nothing about this deploy, so every check starts unknown
+// and the first in-window report sets it.
+func withAwaitedChecks(checks []activities.ComponentHealthCheckRow, declared []string, gateStartedAt time.Time) []activities.ComponentHealthCheckRow {
+	present := map[string]bool{}
+	out := make([]activities.ComponentHealthCheckRow, 0, len(checks)+len(declared))
+
+	for _, c := range checks {
+		present[c.Name] = true
+		if c.ObservedAtTS <= 0 || time.Unix(c.ObservedAtTS, 0).Before(gateStartedAt) {
+			c.Health = "unknown"
+			c.Message = "no report since the deploy applied"
+		}
+		out = append(out, c)
+	}
+
+	for _, name := range declared {
+		if present[name] {
+			continue
+		}
+		out = append(out, activities.ComponentHealthCheckRow{
+			Kind:    "CustomCheck",
+			Name:    name,
+			Health:  "unknown",
+			Message: "waiting for a report",
+		})
+	}
+
+	return out
+}
+
 // markRemovedCheckRows labels probe rows that are no longer declared in the
 // component's current config, computed fresh each poll so a re-added probe
 // loses the label immediately.
@@ -114,4 +147,63 @@ func markRemovedCheckRows(checks []activities.ComponentHealthCheckRow, declared 
 
 func isProbeKind(kind string) bool {
 	return strings.HasSuffix(kind, "Probe")
+}
+
+// failedChecks returns declared checks whose in-window report is failing.
+// Presence alone is not enough: a required check exists so the deploy can be
+// gated on its verdict, so one reporting degraded or unhealthy must fail the
+// window rather than satisfy it.
+func failedChecks(declared []string, checks []activities.ComponentHealthCheckRow, gateStartedAt time.Time) []string {
+	want := map[string]bool{}
+	for _, name := range declared {
+		if name != "" {
+			want[name] = true
+		}
+	}
+
+	var failed []string
+	for _, c := range checks {
+		if !want[c.Name] {
+			continue
+		}
+		if c.ObservedAtTS <= 0 || time.Unix(c.ObservedAtTS, 0).Before(gateStartedAt) {
+			continue
+		}
+		if isBadReportHealth(c.Health) {
+			failed = append(failed, c.Name+" is "+c.Health)
+		}
+	}
+	sort.Strings(failed)
+	return failed
+}
+
+// checkTransitions describes only what moved since the last poll, so a quiet
+// window writes nothing to the timeline.
+func checkTransitions(prev map[string]string, checks []activities.ComponentHealthCheckRow) string {
+	var moved []string
+	for _, c := range checks {
+		was, seen := prev[c.Name]
+		if !seen {
+			// First sight of a check is only worth reporting once it says
+			// something; unknown is the state everything starts in.
+			if c.Health != "" && c.Health != "unknown" {
+				moved = append(moved, fmt.Sprintf("%s unknown → %s", c.Name, c.Health))
+			}
+			continue
+		}
+		if was != c.Health {
+			moved = append(moved, fmt.Sprintf("%s %s → %s", c.Name, was, c.Health))
+		}
+	}
+	if len(moved) == 0 {
+		return ""
+	}
+	sort.Strings(moved)
+	return strings.Join(moved, ", ")
+}
+
+func rememberCheckHealth(prev map[string]string, checks []activities.ComponentHealthCheckRow) {
+	for _, c := range checks {
+		prev[c.Name] = c.Health
+	}
 }
