@@ -20,6 +20,11 @@ type ComponentHealthConfig struct {
 	StabilizationWindow string                       `mapstructure:"stabilization_window,omitempty" toml:"stabilization_window,omitempty" features:"template" nuonhash:"omitempty"`
 	BlockDeploy         *bool                        `mapstructure:"block_deploy,omitempty" toml:"block_deploy,omitempty" nuonhash:"omitempty"`
 	Probes              []ComponentHealthProbeConfig `mapstructure:"probes,omitempty" toml:"probes,omitempty" nuonhash:"omitempty"`
+	// RequiredChecks are pushed check names a deploy waits for. Unlike probes the
+	// runner cannot produce these, so the gate holds until something external
+	// reports them healthy — the point being that a deploy can depend on a fact
+	// only the vendor's own system knows.
+	RequiredChecks []string `mapstructure:"required_checks,omitempty" toml:"required_checks,omitempty" nuonhash:"omitempty"`
 }
 
 // ComponentHealthProbeConfig is one synthetic health check the runner executes

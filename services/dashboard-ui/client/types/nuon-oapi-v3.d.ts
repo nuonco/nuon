@@ -4033,6 +4033,7 @@ export interface components {
       health_block_deploy?: boolean | null;
       health_enabled?: boolean | null;
       health_probes?: components["schemas"]["app.ComponentHealthProbe"][];
+      health_required_checks?: string[];
       /** @description Duration string for how long health must hold after a deploy applies (e.g., "3m"). Max 1h. */
       health_stabilization_window?: string;
       helm?: components["schemas"]["app.HelmComponentConfig"];
@@ -7743,6 +7744,7 @@ export interface components {
       health_block_deploy?: boolean | null;
       health_enabled?: boolean | null;
       health_probes?: components["schemas"]["service.HealthProbeRequest"][];
+      health_required_checks?: string[];
       /** @description Duration string for the health stabilization window (e.g., "3m") */
       health_stabilization_window?: string;
       helm_repo_config?: components["schemas"]["service.HelmRepoConfigRequest"];
@@ -7879,6 +7881,7 @@ export interface components {
       health_block_deploy?: boolean | null;
       health_enabled?: boolean | null;
       health_probes?: components["schemas"]["service.HealthProbeRequest"][];
+      health_required_checks?: string[];
       /** @description Duration string for the health stabilization window (e.g., "3m") */
       health_stabilization_window?: string;
       kubernetes_context?: string;
