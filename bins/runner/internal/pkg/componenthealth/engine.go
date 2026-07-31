@@ -53,6 +53,7 @@ type Params struct {
 	Process   string `name:"process"`
 	Cluster   *ClusterProvider
 	Terraform *TerraformProvider
+	Helm      *HelmProvider
 }
 
 // Engine periodically reports the health of the resources the install's
@@ -63,6 +64,7 @@ type Engine struct {
 	process   string
 	cluster   *ClusterProvider
 	terraform *TerraformProvider
+	helm      *HelmProvider
 	idx       *index
 
 	ctx      context.Context
@@ -78,6 +80,7 @@ func New(params Params) (*Engine, error) {
 		process:   params.Process,
 		cluster:   params.Cluster,
 		terraform: params.Terraform,
+		helm:      params.Helm,
 		idx:       newIndex(),
 		ctx:       ctx,
 		cancelFn:  cancelFn,

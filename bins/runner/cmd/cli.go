@@ -48,6 +48,7 @@ func (c *cli) commonProviders() []fx.Option {
 		// the component-health engine
 		fx.Provide(componenthealth.NewClusterProvider),
 		fx.Provide(componenthealth.NewTerraformProvider),
+		fx.Provide(componenthealth.NewHelmProvider),
 	}
 }
 

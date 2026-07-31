@@ -201,6 +201,14 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unable to %s helm chart: %w", op, err)
 	}
 
+	// Hand the rendered kinds to the health engine: a chart shipping only custom
+	// resources is otherwise invisible, since nothing else knows to list them.
+	// This is the only place the manifest is readable — it lives in the release
+	// secret, which health's identity is deliberately denied.
+	if h.helmProvider != nil && rel != nil {
+		h.helmProvider.Set(h.state.plan.ComponentID, rel.Manifest)
+	}
+
 	var apiRes *models.ServiceCreateRunnerJobExecutionResultRequest
 	var planContents HelmPlanContents
 

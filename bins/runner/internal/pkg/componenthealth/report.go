@@ -223,20 +223,29 @@ func (e *Engine) collectCluster(
 	return nil
 }
 
-// watchList is the core workload kinds plus any kind the install's terraform
-// applies directly. Without this a component deploying only CRs (a NodePool, a
-// ClickHouseInstallation) reports nothing at all, since nobody lists its kind.
+// watchList is the core workload kinds plus any kind this install's components
+// actually deploy. Without it a component shipping only CRs (a Karpenter
+// NodePool, a ClickHouseInstallation) reports nothing at all, because nobody
+// lists its kind.
+//
+// Kinds come from terraform state. Helm-rendered kinds cannot be discovered
+// from the runner: the manifest lives in the release Secret and health's
+// identity is deliberately denied secret reads, so a chart shipping only CRs
+// still needs its kind reachable another way.
 //
 // Resolving kind to a listable resource needs the cluster's own discovery data,
 // so an unresolvable kind is simply skipped rather than guessed at.
 func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) []schema.GroupVersionResource {
-	out := make([]schema.GroupVersionResource, 0, len(watchedGVRs)+4)
+	out := make([]schema.GroupVersionResource, 0, len(watchedGVRs)+8)
 	out = append(out, watchedGVRs...)
 
-	if e.terraform == nil {
-		return out
+	var discovered []schema.GroupVersionKind
+	if e.terraform != nil {
+		discovered = append(discovered, e.terraform.DiscoveredGVKs()...)
 	}
-	discovered := e.terraform.DiscoveredGVKs()
+	if e.helm != nil {
+		discovered = append(discovered, e.helm.DiscoveredGVKs()...)
+	}
 	if len(discovered) == 0 {
 		return out
 	}
