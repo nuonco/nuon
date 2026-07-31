@@ -15,6 +15,10 @@ const SignalType signal.SignalType = "org-queue-migration"
 
 type Signal struct {
 	OrgID string `json:"org_id"`
+	// ReconcileCronEmitters, when true, re-enqueues appconfig-updated per install so
+	// drift/action cron emitters move onto the namespace-correct dedicated cron queues.
+	// Only the cron-migrate endpoint sets this; defaults false (no-op) for other callers.
+	ReconcileCronEmitters bool `json:"reconcile_cron_emitters"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -95,6 +99,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		l.Info("ensuring install queues", zap.String("install_id", install.ID))
 		if err := activities.AwaitEnsureInstallQueuesByInstallID(ctx, install.ID); err != nil {
 			l.Warn("unable to ensure install queues", zap.String("install_id", install.ID), zap.Error(err))
+		}
+
+		if s.ReconcileCronEmitters {
+			if err := activities.AwaitEnqueueAppConfigUpdatedByInstallID(ctx, install.ID); err != nil {
+				l.Warn("unable to enqueue appconfig-updated for emitter reconcile",
+					zap.String("install_id", install.ID), zap.Error(err))
+			}
 		}
 
 		// Ensure install-level runner queues

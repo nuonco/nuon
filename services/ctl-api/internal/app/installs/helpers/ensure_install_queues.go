@@ -81,7 +81,7 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 		}
 	}
 
-	if err := s.ensureComponentHealthQueue(ctx, installID, ownerType); err != nil {
+	if err := s.ensureComponentHealthQueue(ctx, installID, ownerType, cronsNamespace); err != nil {
 		return err
 	}
 
@@ -92,17 +92,23 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 // emitter. The evaluator itself no-ops for orgs without the component-health
 // feature, so the emitter is created unconditionally and enabling the feature
 // needs no backfill.
-func (s *Helpers) ensureComponentHealthQueue(ctx context.Context, installID, ownerType string) error {
+func (s *Helpers) ensureComponentHealthQueue(ctx context.Context, installID, ownerType, namespace string) error {
 	q, err := s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     installID,
 		OwnerType:   ownerType,
-		Namespace:   "installs",
+		Namespace:   namespace,
 		Name:        InstallComponentHealthQueueName,
 		MaxInFlight: 1,
 		MaxDepth:    10,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to ensure %s queue: %w", InstallComponentHealthQueueName, err)
+	}
+
+	// Create migrates the queue workflow when its namespace changed; move the
+	// emitter to match (no-op if unchanged).
+	if err := s.emitterClient.MigrateQueueEmitters(ctx, q.ID, namespace); err != nil {
+		return fmt.Errorf("unable to migrate %s queue emitters: %w", InstallComponentHealthQueueName, err)
 	}
 
 	emitters, err := s.emitterClient.GetEmittersByQueueID(ctx, q.ID)
