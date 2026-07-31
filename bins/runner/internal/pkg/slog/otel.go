@@ -6,20 +6,50 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
+	otellog "go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/sdk/log"
 
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	runnerlog "github.com/nuonco/nuon/pkg/runner/log"
 	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
 const (
 	defaultOTLPLogsEndpointTmpl string = "%s/v1/log-streams/%s/logs"
 
-	// auditCollectorEndpoint mirrors the receiver the bundled audit-export
-	// collector binds to. Both sides are fixed: the collector is supervised by
-	// this process and only ever listens on loopback.
 	auditCollectorEndpoint string = "http://127.0.0.1:4318/v1/logs"
 )
+
+type auditProcessor struct {
+	next log.Processor
+}
+
+func (p *auditProcessor) Enabled(ctx context.Context, params log.EnabledParameters) bool {
+	return p.next.Enabled(ctx, params)
+}
+
+func (p *auditProcessor) OnEmit(ctx context.Context, record *log.Record) error {
+	isAudit := false
+	record.WalkAttributes(func(attr otellog.KeyValue) bool {
+		isAudit = attr.Key == runnerlog.AuditAttr &&
+			attr.Value.Kind() == otellog.KindString &&
+			attr.Value.AsString() == runnerlog.AuditAttrValue
+		return !isAudit
+	})
+	if !isAudit {
+		return nil
+	}
+
+	return p.next.OnEmit(ctx, record)
+}
+
+func (p *auditProcessor) Shutdown(ctx context.Context) error {
+	return p.next.Shutdown(ctx)
+}
+
+func (p *auditProcessor) ForceFlush(ctx context.Context) error {
+	return p.next.ForceFlush(ctx)
+}
 
 func NewOTELProvider(cfg *runnerconfig.Config, set *settings.Settings, logStreamID string) (*log.LoggerProvider, error) {
 	opts := []log.LoggerProviderOption{
@@ -60,10 +90,6 @@ func newAPIProcessor(cfg *runnerconfig.Config, logStreamID string) (log.Processo
 	return newBatchProcessor(exporter), nil
 }
 
-// newAuditCollectorProcessor ships to the audit-export collector bundled
-// alongside the runner. The collector filters to records tagged
-// nuon.audit="true" before forwarding to the customer's backend, so everything
-// else sent over this hop is dropped there.
 func newAuditCollectorProcessor() (log.Processor, error) {
 	exporter, err := otlploghttp.New(context.Background(),
 		otlploghttp.WithEndpointURL(auditCollectorEndpoint),
@@ -72,7 +98,7 @@ func newAuditCollectorProcessor() (log.Processor, error) {
 		return nil, fmt.Errorf("unable to initialize audit collector log exporter: %w", err)
 	}
 
-	return newBatchProcessor(exporter), nil
+	return &auditProcessor{next: newBatchProcessor(exporter)}, nil
 }
 
 func newBatchProcessor(exporter log.Exporter) log.Processor {

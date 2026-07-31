@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type CreateActionWorkflowRunRunnerJob struct {
@@ -28,6 +29,10 @@ func (a *Activities) CreateActionWorkflowRunRunnerJob(ctx context.Context, req *
 	if cfg.Timeout == 0 {
 		cfg.Timeout = run.Timeout
 	}
+	if run.InstallWorkflowID != nil {
+		ctx = cctx.SetFlowWorkflowIDContext(ctx, *run.InstallWorkflowID)
+	}
+	ctx = cctx.SetFlowInstallIDContext(ctx, run.InstallID)
 
 	job, err := a.runnersHelpers.CreateActionsWorkflowRunJob(ctx,
 		req.RunnerID,

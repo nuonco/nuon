@@ -25,10 +25,12 @@ func TestAuditPairsPopulatedJob(t *testing.T) {
 		OrgID:           "org123",
 		RunnerProcessID: "proc123",
 		Metadata: map[string]string{
-			"install_id":       "inst123",
-			"component_name":   "api",
-			"deploy_id":        "dep123",
-			"flow_workflow_id": "wf123",
+			"install_id":           "inst123",
+			"component_name":       "api",
+			"deploy_id":            "dep123",
+			"flow_workflow_id":     "wf123",
+			"install_component_id": "instcmp123",
+			"notebook_cell_run_id": "cellrun123",
 		},
 	}
 
@@ -46,6 +48,8 @@ func TestAuditPairsPopulatedJob(t *testing.T) {
 		"component.name":           "api",
 		"deploy.id":                "dep123",
 		"flow_workflow.id":         "wf123",
+		"install_component.id":     "instcmp123",
+		"notebook_cell_run.id":     "cellrun123",
 	}
 
 	got := fieldMap(job)

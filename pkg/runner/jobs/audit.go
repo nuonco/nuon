@@ -22,6 +22,8 @@ var auditMetadataAttrs = map[string]string{
 	"action_workflow_id":     "action_workflow.id",
 	"action_workflow_run_id": "action_workflow_run.id",
 	"deploy_id":              "deploy.id",
+	"install_component_id":   "install_component.id",
+	"notebook_cell_run_id":   "notebook_cell_run.id",
 	"sandbox_run_id":         "sandbox_run.id",
 	"sandbox_run_type":       "sandbox_run.type",
 }

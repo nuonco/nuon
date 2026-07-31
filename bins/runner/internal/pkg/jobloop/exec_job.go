@@ -33,10 +33,19 @@ type executeJobStep struct {
 }
 
 func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) error {
+	job.RunnerProcessID = j.processRegistrar.ProcessID()
+
 	jl, err := slog.NewOTELProvider(j.cfg, j.settings, job.LogStreamID)
 	if err != nil {
 		return errors.Wrap(err, "unable to create otel provider")
 	}
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := jl.Shutdown(shutdownCtx); err != nil {
+			j.l.Error("unable to shut down job logger", zap.Error(err))
+		}
+	}()
 
 	l, err := log.NewOTELJobLogger(j.cfg, jl)
 	if err != nil {
@@ -46,15 +55,6 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	l = l.With(zap.String("runner_job.id", job.ID))
 	l = l.With(zap.String("runner_job.type", string(job.Type)))
 	l = l.With(zap.String("log_stream.id", job.LogStreamID))
-
-	defer func() {
-		if err := jl.ForceFlush(ctx); err != nil {
-			if errors.Is(err, context.Canceled) {
-				return
-			}
-			l.Error("unable to flush logger", zap.Error(err))
-		}
-	}()
 
 	// create an execution in the API
 	l.Info("creating job execution")
