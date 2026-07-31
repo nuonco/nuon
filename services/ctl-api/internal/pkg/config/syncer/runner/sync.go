@@ -33,6 +33,8 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 		RunnerAPIURL:  cfg.Runner.RunnerAPIURL,
 		PublicAPIURL:  cfg.Runner.PublicAPIURL,
 		Type:          app.AppRunnerType(cfg.Runner.RunnerType),
+
+		PhoneHomeScriptURL: cfg.Runner.PhoneHomeScriptURL,
 	}
 
 	res := db.WithContext(ctx).Create(&appRunnerConfig)

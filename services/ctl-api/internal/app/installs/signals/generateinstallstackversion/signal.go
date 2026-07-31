@@ -270,7 +270,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	switch cfg.RunnerConfig.Type {
 	case app.AppRunnerTypeAWS:
-		phoneHomeScript, err := activities.AwaitGetPhoneHomeScriptRaw(ctx, &activities.GetPhoneHomeScriptRequest{})
+		phoneHomeScript, err := activities.AwaitGetPhoneHomeScriptRaw(ctx, &activities.GetPhoneHomeScriptRequest{
+			URL: cfg.RunnerConfig.PhoneHomeScriptURL,
+		})
 		if err != nil {
 			return errors.Wrap(err, "unable to get phone home script")
 		}

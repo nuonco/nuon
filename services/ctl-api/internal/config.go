@@ -425,6 +425,11 @@ type Config struct {
 	// secret. Set it on GCP-hosted control planes, where ManagementIAMRoleARN is
 	// legitimately empty; on AWS it defaults to ManagementIAMRoleARN.
 	AWSPhoneHomeSecretsRoleARN string `config:"aws_phone_home_secrets_role_arn"`
+	// PhoneHomeScriptURL overrides the phone-home Lambda source for every app in this
+	// environment, below a per-app AppRunnerConfig.PhoneHomeScriptURL and above the
+	// pinned default. Exists so a dev or staging control plane can exercise an
+	// unreleased script without moving the default that production shares.
+	PhoneHomeScriptURL string `config:"phone_home_script_url"`
 
 	// GCP management (not required for AWS)
 	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`

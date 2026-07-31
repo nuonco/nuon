@@ -233,7 +233,9 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 			inp.RunnerInitScriptURL = DefaultAWSRunnerInitScript
 		}
 
-		phoneHomeScript, err := activities.AwaitGetPhoneHomeScriptRaw(ctx, &activities.GetPhoneHomeScriptRequest{})
+		phoneHomeScript, err := activities.AwaitGetPhoneHomeScriptRaw(ctx, &activities.GetPhoneHomeScriptRequest{
+			URL: cfg.RunnerConfig.PhoneHomeScriptURL,
+		})
 		if err != nil {
 			return errors.Wrap(err, "unable to get phone home script")
 		}
