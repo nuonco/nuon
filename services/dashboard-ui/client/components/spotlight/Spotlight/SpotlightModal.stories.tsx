@@ -18,12 +18,11 @@ export const Default = () => (
 )
 
 export const WithResults = () => (
-  <ModalStory label="Open with org features">
+  <ModalStory label="Open with results">
     <SpotlightModal
       orgId="org-1"
       onClose={noop}
       onNavigate={noop}
-      orgFeatures={{ 'org-dashboard': true }}
     />
   </ModalStory>
 )

@@ -298,14 +298,11 @@ func (s *GetOrgFeaturesTestSuite) TestGetOrgFeaturesKnownFeatureFlags() {
 
 		// Verify some known feature flags are present
 		knownFeatures := []string{
-			"api-pagination",
-			"org-dashboard",
 			"org-runner",
-			"org-settings",
-			"install-break-glass",
-			"terraform-workspace",
-			"stratus-layout",
-			"stratus-workflow",
+			"app-branches",
+			"user-managed-features",
+			"slack",
+			"trace-view",
 		}
 
 		for _, knownFeature := range knownFeatures {

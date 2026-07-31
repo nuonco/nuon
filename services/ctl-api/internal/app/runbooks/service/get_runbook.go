@@ -28,12 +28,6 @@ import (
 // @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/apps/{app_id}/runbooks/{runbook_id} [get]
 func (s *service) GetRunbook(ctx *gin.Context) {
-	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
-	if err != nil || !enabled {
-		ctx.Error(fmt.Errorf("runbooks feature is not enabled"))
-		return
-	}
-
 	runbookIDOrName := ctx.Param("runbook_id")
 	appID := ctx.Param("app_id")
 	org, err := cctx.OrgFromContext(ctx)

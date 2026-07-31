@@ -17,10 +17,7 @@ const authCookie = "X-Nuon-Auth"
 const orgCookie = "org_session"
 
 func orgLandingPath(org *models.AppOrg) string {
-	if org.Features != nil && org.Features["org-dashboard"] {
-		return "/" + org.ID + ""
-	}
-	return "/" + org.ID + "/apps"
+	return "/" + org.ID
 }
 
 type RootHandler struct {

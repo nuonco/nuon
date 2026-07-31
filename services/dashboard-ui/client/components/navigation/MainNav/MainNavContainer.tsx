@@ -21,8 +21,6 @@ export const MainNavContainer = () => {
     <MainNav
       org={org}
       isSidebarOpen={isSidebarOpen}
-      hasOrgDashboard={!!org?.features?.['org-dashboard']}
-      hasOrgSettings={!!org?.features?.['org-settings']}
       hasServiceAccountsAndTokens={!!org?.features?.['service-accounts-and-tokens']}
       hasSlack={!!org?.features?.['slack']}
       hasTriggers={!!org?.features?.['triggers']}
