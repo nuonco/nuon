@@ -62,3 +62,27 @@ func TestGetRepoDoesNotShareAuthCache(t *testing.T) {
 	secondRepo := getRepo("second")
 	require.NoError(t, secondRepo.Tags(context.Background(), "", func(tags []string) error { return nil }))
 }
+
+// TestGetRepoAnonymousDoesNotUseSharedGlobalClient guards the fix for
+// anonymous/public pulls leaking credentials through oras-go's process-global
+// auth.DefaultClient/auth.DefaultCache. GetRepo must always install an isolated
+// per-repo auth client with its own cache — never leave repo.Client nil (which
+// falls back to the shared global) and never reuse auth.DefaultCache.
+func TestGetRepoAnonymousDoesNotUseSharedGlobalClient(t *testing.T) {
+	repo, err := GetRepo(context.Background(), &configs.OCIRegistryRepository{
+		RegistryType: configs.OCIRegistryTypePublicOCI,
+		Repository:   "public.ecr.aws/p7e3r5y0/kitchen-sink-ui",
+		OCIAuth:      &configs.OCIRegistryAuth{},
+	})
+	require.NoError(t, err)
+
+	remoteRepo := repo.(*remote.Repository)
+	require.NotNil(t, remoteRepo.Client, "anonymous repo must get an isolated client, not fall back to auth.DefaultClient")
+
+	authClient, ok := remoteRepo.Client.(*auth.Client)
+	require.True(t, ok)
+	require.NotSame(t, auth.DefaultClient, authClient, "must not reuse the process-global default client")
+	require.NotNil(t, authClient.Cache, "anonymous repo must have its own cache")
+	require.NotSame(t, auth.DefaultCache, authClient.Cache, "must not reuse the process-global default cache")
+	require.Nil(t, authClient.Credential, "anonymous repo must not attach static credentials")
+}

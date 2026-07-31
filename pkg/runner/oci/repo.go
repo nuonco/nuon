@@ -57,19 +57,29 @@ func GetRepo(ctx context.Context, cfg *configs.OCIRegistryRepository) (registry.
 		return nil, fmt.Errorf("unable to get repository: %w", err)
 	}
 
-	// Only configure static credentials if we actually have them.
-	// For anonymous pulls (empty credentials), rely on oras-go's default
-	// anonymous bearer token flow which handles the 401 challenge properly.
-	if accessInfo.Auth != nil && accessInfo.Auth.Username != "" {
-		repo.Client = &auth.Client{
-			Client: retry.DefaultClient,
-			Cache:  auth.NewCache(),
-			Credential: auth.StaticCredential(strings.TrimPrefix(accessInfo.Auth.ServerAddress, "https://"), auth.Credential{
-				Username: accessInfo.Auth.Username,
-				Password: accessInfo.Auth.Password,
-			}),
-		}
+	// Always give every repository its own isolated auth client and cache.
+	// Leaving repo.Client nil makes oras-go fall back to the process-global
+	// auth.DefaultClient/auth.DefaultCache, which is shared across every job in
+	// a long-lived worker process. That lets a token cached for a host by one
+	// job leak into another job's request to the same host — e.g. an
+	// authenticated pull caching a credential under "public.ecr.aws" (the
+	// runner image and vendor public images share that host), which is then
+	// attached to a later anonymous public pull and rejected with a 400
+	// "Your Authorization Token is invalid". A per-repo cache keeps each pull
+	// isolated. Credentials are attached only when we actually have them; for
+	// anonymous pulls the nil Credential drives oras-go's anonymous bearer
+	// token flow with a clean cache.
+	authClient := &auth.Client{
+		Client: retry.DefaultClient,
+		Cache:  auth.NewCache(),
 	}
+	if accessInfo.Auth != nil && accessInfo.Auth.Username != "" {
+		authClient.Credential = auth.StaticCredential(strings.TrimPrefix(accessInfo.Auth.ServerAddress, "https://"), auth.Credential{
+			Username: accessInfo.Auth.Username,
+			Password: accessInfo.Auth.Password,
+		})
+	}
+	repo.Client = authClient
 
 	return repo, nil
 }
