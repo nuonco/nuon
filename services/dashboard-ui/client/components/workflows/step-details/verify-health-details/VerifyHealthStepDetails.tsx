@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon'
 import { EmptyState } from '@/components/common/EmptyState'
 import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig/RemovedFromAppConfig'
 import { Badge } from '@/components/common/Badge'
@@ -205,7 +206,7 @@ export const VerifyHealthStepDetails = ({
                   <Time
                     variant="label"
                     className="shrink-0"
-                    time={new Date(entry.created_at_ts * 1000).toISOString()}
+                    time={DateTime.fromSeconds(entry.created_at_ts).toISO() ?? ''}
                     format="time-only"
                   />
                 ) : null}
