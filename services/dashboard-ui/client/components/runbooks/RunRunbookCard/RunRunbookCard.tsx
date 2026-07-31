@@ -32,8 +32,8 @@ export const RunRunbookCard = ({
 
   if (error) {
     return (
-      <div className="flex w-fit items-center gap-3 rounded-lg border border-red-300 dark:border-red-700 px-3 py-2.5">
-        <Text variant="subtext" className="text-red-600 dark:text-red-400">
+      <div className="flex w-fit items-center gap-3 rounded-lg border px-3 py-2.5">
+        <Text variant="subtext" theme="error">
           {error}
         </Text>
       </div>
