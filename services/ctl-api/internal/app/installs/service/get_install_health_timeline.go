@@ -22,6 +22,9 @@ type InstallComponentHealthSummary struct {
 	ComponentName string  `json:"component_name"`
 	CurrentHealth string  `json:"current_health"`
 	UptimePercent float64 `json:"uptime_percent"`
+	// ObservedSeconds distinguishes "no data" from "0% up" — without it a
+	// component that was never observed renders as total downtime.
+	ObservedSeconds int64 `json:"observed_seconds"`
 }
 
 type InstallHealthTimelineResponse struct {
@@ -100,6 +103,15 @@ func (s *service) getInstallHealthTimeline(ctx context.Context, orgID, installID
 	if err != nil {
 		return nil, err
 	}
+	if baseline.IsZero() {
+		// No explicit reset: start from the first verdict this install ever
+		// produced, so enabling the feature doesn't read as 90 days of downtime.
+		firstSeen, err := s.firstHealthObservedAt(ctx, orgID, installID)
+		if err != nil {
+			return nil, err
+		}
+		baseline = firstSeen
+	}
 	spanFrom := clampToBaseline(windowFrom, baseline)
 
 	statuses := make([]app.InstallComponentHealthStatus, 0, len(comps))
@@ -132,6 +144,7 @@ func (s *service) getInstallHealthTimeline(ctx context.Context, orgID, installID
 			ComponentName:      c.Component.Name,
 			CurrentHealth:      string(c.HealthStatus),
 			UptimePercent:      uptime,
+			ObservedSeconds:    totals.observedSeconds(),
 		})
 		dailyPerComponent = append(dailyPerComponent, foldDailyHealth(spans, windowFrom, days))
 

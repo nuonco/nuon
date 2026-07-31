@@ -51,7 +51,10 @@ function formatHealth(health?: string): string {
   return toSentenceCase(kebabToWords(health || 'unknown'))
 }
 
-function formatUptime(uptimePercent?: number): string {
+// A component nobody observed has 0% uptime arithmetically, which reads as
+// total downtime. Absence of data is not downtime, so it gets a dash.
+function formatUptime(uptimePercent?: number, observedSeconds?: number): string {
+  if (!observedSeconds) return '—'
   return typeof uptimePercent === 'number' ? `${uptimePercent.toFixed(2)}%` : '—'
 }
 
@@ -75,6 +78,9 @@ function DayTooltipContent({ day }: { day: THealthTimelineDay }) {
       </div>
       {hasData ? (
         <div className="flex flex-col gap-0.5">
+          <Text variant="label" theme="neutral">
+            {(100 - dayDowntimePercent(day)).toFixed(2)}% uptime
+          </Text>
           {healthySeconds > 0 ? (
             <Text variant="label" theme="success">
               Healthy{' '}
@@ -265,7 +271,10 @@ export const HealthTimeline = ({
                     theme="neutral"
                     className="w-16 text-right"
                   >
-                    {formatUptime(component.uptime_percent)}
+                    {formatUptime(
+                      component.uptime_percent,
+                      component.observed_seconds
+                    )}
                   </Text>
                 </div>
               </div>

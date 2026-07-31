@@ -104,6 +104,13 @@ func (s *service) getInstallComponentHealthTimeline(ctx context.Context, orgID, 
 	if err != nil {
 		return nil, err
 	}
+	if baseline.IsZero() {
+		firstSeen, err := s.firstHealthObservedAt(ctx, orgID, installID)
+		if err != nil {
+			return nil, err
+		}
+		baseline = firstSeen
+	}
 	spanFrom := clampToBaseline(windowFrom, baseline)
 
 	// Transitions are history and ignore the baseline — a reset changes what

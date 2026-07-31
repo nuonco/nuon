@@ -485,6 +485,7 @@ export type TInstallHealthTimelineComponent = {
   component_name: string
   current_health: string
   uptime_percent: number
+  observed_seconds?: number
 }
 
 export type TInstallHealthTimeline = {

@@ -4360,6 +4360,12 @@ export interface components {
       install_stack?: components["schemas"]["app.InstallStack"];
       install_states?: components["schemas"]["app.InstallState"][];
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
+      /**
+       * @description LastHealthReportAt is when a runner last reported component health. It is
+       * how the staleness sweep finds installs that went quiet without polling
+       * every install individually.
+       */
+      last_health_report_at?: string;
       lifecycle_phase?: Record<string, never>;
       links?: {
         [key: string]: unknown;
