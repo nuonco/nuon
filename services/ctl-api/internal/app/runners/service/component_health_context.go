@@ -65,7 +65,13 @@ func (s *service) PutComponentHealthContext(ctx *gin.Context) {
 }
 
 func (s *service) putComponentHealthContext(ctx context.Context, runnerID string, req ComponentHealthContextRequest) error {
-	if enabled, _ := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureComponentHealth); !enabled {
+	// Ownership facts are recorded even with the feature off: they are only
+	// knowable at deploy time, so discarding them means an org that enables
+	// health later sees nothing until every component and its sandbox are
+	// redeployed. Cluster access is withheld — it is credentials-shaped and
+	// ctl-api can derive it on demand once the feature is on.
+	enabled, _ := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureComponentHealth)
+	if !enabled && len(req.SandboxHelmReleases) == 0 && len(req.ComponentKinds) == 0 {
 		return nil
 	}
 
@@ -77,9 +83,23 @@ func (s *service) putComponentHealthContext(ctx context.Context, runnerID string
 		return nil
 	}
 
+	clusterInfoJSON := req.ClusterInfoJSON
+	if !enabled {
+		// Keep whatever is already stored: the column is rewritten whole, so
+		// blanking it here would discard access recorded while the feature was on.
+		var existing app.Install
+		if err := s.db.WithContext(ctx).
+			Select("id", "component_health_context").
+			Where(app.Install{ID: installID}).
+			First(&existing).Error; err != nil {
+			return fmt.Errorf("unable to read existing component health context: %w", err)
+		}
+		clusterInfoJSON = existing.ComponentHealthContext.ClusterInfoJSON
+	}
+
 	update := app.Install{
 		ComponentHealthContext: app.ComponentHealthContext{
-			ClusterInfoJSON:     req.ClusterInfoJSON,
+			ClusterInfoJSON:     clusterInfoJSON,
 			SandboxHelmReleases: req.SandboxHelmReleases,
 			ComponentKinds:      req.ComponentKinds,
 		},
