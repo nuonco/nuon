@@ -24,6 +24,14 @@ COPY --link pkg /src/pkg/
 COPY --link cmd  ./cmd/
 COPY --link internal ./internal/
 COPY --link main.go .
+COPY --link build-config.yaml .
+
+FROM code AS build-otelcol
+
+RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
+    --mount=type=cache,target=/go/pkg/mod,id=gomod \
+    go run go.opentelemetry.io/collector/cmd/builder --config build-config.yaml --skip-compilation && \
+    CGO_ENABLED=0 GOOS=linux go build -C ./otelcol-build -o /bin/nuon-runner-otelcol
 
 FROM code AS build
 
@@ -237,6 +245,7 @@ WORKDIR /src/bins/runner
 
 COPY ./bundle /bundle
 COPY --from=build-versioned /bin/runner /bin/runner
+COPY --from=build-otelcol /bin/nuon-runner-otelcol /bin/nuon-runner-otelcol
 
 ARG tag
 ENV GIT_REF=$tag
