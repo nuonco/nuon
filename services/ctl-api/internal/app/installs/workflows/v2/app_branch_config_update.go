@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateinstallstackversion"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateappconfig"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
@@ -39,8 +40,26 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		}
 	}
 
+	appBranchRunID := generics.FromPtrStr(flw.Metadata["app_branch_run_id"])
+	installGroupID := generics.FromPtrStr(flw.Metadata["install_group_id"])
+
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup(flw)
+
+	sg.nextGroupEager()
+	configStep, err := sg.installSignalStep(ctx, installID, "update app config", pgtype.Hstore{}, &updateappconfig.Signal{
+		InstallID:      installID,
+		NewAppConfigID: newAppConfigID,
+		DryRun:         flw.PlanOnly,
+		AppBranchRunID: appBranchRunID,
+		InstallGroupID: installGroupID,
+		TriggeredBy:    "app-branch",
+		Metadata:       map[string]string{"source": "app-branch"},
+	}, flw.PlanOnly, WithSkippable(false))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create update app config step")
+	}
+	steps = append(steps, configStep)
 
 	sg.nextGroupEager()
 	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
@@ -77,6 +96,8 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	}
 
 	if diff != nil && diff.SandboxChanged {
+		flw.Metadata["skip_components"] = generics.ToPtr("true")
+
 		newAppCfg, err := activities.AwaitGetAppConfigByID(ctx, newAppConfigID)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get new app config")

@@ -95,7 +95,7 @@ func (s *Service) CreateBranch(ctx context.Context, appID, name string, asJSON b
 	return nil
 }
 
-func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, planOnly, force, asJSON bool) error {
+func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, planOnly, force, noWait, asJSON bool) error {
 	appID, err := s.resolveAppID(ctx, appID)
 	if err != nil {
 		return err
@@ -114,7 +114,7 @@ func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, 
 		return err
 	}
 
-	if asJSON {
+	if asJSON || noWait {
 		ui.PrintJSON(run)
 		return nil
 	}

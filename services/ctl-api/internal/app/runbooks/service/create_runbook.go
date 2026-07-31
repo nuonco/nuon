@@ -63,11 +63,5 @@ func (s *service) CreateRunbook(ctx *gin.Context) {
 		return
 	}
 
-	// Ensure install runbooks for all existing installs
-	if err := s.helpers.EnsureInstallRunbooks(ctx, appID, nil); err != nil {
-		ctx.Error(fmt.Errorf("unable to ensure install runbooks: %w", err))
-		return
-	}
-
 	ctx.JSON(http.StatusCreated, runbook)
 }

@@ -3,10 +3,9 @@ package created
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
-
-	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
@@ -53,13 +52,29 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Get the install
 	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	// Send notification for first install
+	if err := activities.AwaitReconcileInstallComponents(ctx, &activities.ReconcileInstallComponentsInput{
+		InstallID: s.InstallID,
+	}); err != nil {
+		return fmt.Errorf("unable to reconcile install components: %w", err)
+	}
+
+	if err := activities.AwaitReconcileInstallActions(ctx, &activities.ReconcileInstallActionsInput{
+		InstallID: s.InstallID,
+	}); err != nil {
+		return fmt.Errorf("unable to reconcile install actions: %w", err)
+	}
+
+	if err := activities.AwaitReconcileInstallRunbooks(ctx, &activities.ReconcileInstallRunbooksInput{
+		InstallID: s.InstallID,
+	}); err != nil {
+		return fmt.Errorf("unable to reconcile install runbooks: %w", err)
+	}
+
 	if install.InstallNumber == 1 {
 		s.sendNotification(ctx, notifications.NotificationsTypeFirstInstallCreated, install.AppID, map[string]string{
 			"install_name": install.Name,

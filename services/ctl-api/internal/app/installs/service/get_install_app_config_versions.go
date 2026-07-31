@@ -50,6 +50,7 @@ func (s *service) getInstallAppConfigVersions(ctx *gin.Context, installID, orgID
 		Preload("Workflow.Steps").
 		Preload("AppBranchRun").
 		Preload("AppBranchRun.AppBranch").
+		Preload("AppBranchRun.VCSConnectionCommit").
 		Where(app.InstallAppConfigVersion{
 			InstallID: installID,
 			OrgID:     orgID,

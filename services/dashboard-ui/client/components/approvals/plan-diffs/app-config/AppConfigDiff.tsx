@@ -17,6 +17,7 @@ import type { TConfigDiffFocus } from '../config-diff-focus'
 const SECTION_CONFIG: Record<string, { displayName: string; icon: TIconVariant; grouped: boolean }> = {
   components: { displayName: 'Components', icon: 'CubeIcon', grouped: true },
   actions: { displayName: 'Actions', icon: 'LightningIcon', grouped: true },
+  runbooks: { displayName: 'Runbooks', icon: 'BookOpenIcon', grouped: true },
   inputs: { displayName: 'Install inputs', icon: 'ListBulletsIcon', grouped: true },
   secrets: { displayName: 'Secrets', icon: 'KeyIcon', grouped: true },
   sandbox: { displayName: 'Sandbox', icon: 'TerminalWindowIcon', grouped: false },

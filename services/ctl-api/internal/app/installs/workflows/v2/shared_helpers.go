@@ -284,7 +284,7 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 
 		comp, has := dg.components[compID]
 		if !has {
-			return nil, errors.Errorf("component %s not found in app config", compID)
+			continue
 		}
 
 		// Skip a component that is not effectively enabled: either its own

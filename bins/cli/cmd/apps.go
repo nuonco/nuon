@@ -397,6 +397,7 @@ func (c *cli) branchesCmd() *cobra.Command {
 	var (
 		planOnly bool
 		force    bool
+		noWait   bool
 	)
 	triggerCmd := &cobra.Command{
 		Use:         "trigger",
@@ -404,13 +405,14 @@ func (c *cli) branchesCmd() *cobra.Command {
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.TriggerBranchRun(cmd.Context(), appID, branchID, planOnly, force, PrintJSON)
+			return svc.TriggerBranchRun(cmd.Context(), appID, branchID, planOnly, force, noWait, PrintJSON)
 		}),
 	}
 	triggerCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
 	triggerCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID or name of the branch")
 	triggerCmd.Flags().BoolVar(&planOnly, "preview", false, "Plan-only preview mode (no apply)")
 	triggerCmd.Flags().BoolVar(&force, "force", false, "Force rebuild all components")
+	triggerCmd.Flags().BoolVar(&noWait, "no-wait", false, "Return immediately after triggering without launching the workflow viewer")
 	branchesCmd.AddCommand(triggerCmd)
 
 	var confirmDelete bool

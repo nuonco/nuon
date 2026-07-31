@@ -8,8 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -245,33 +243,6 @@ func (s *service) createInstallDeploy(ctx context.Context, installID string, req
 		return nil, fmt.Errorf("unable to get build %s: %w", req.BuildID, res.Error)
 	}
 
-	// ensure that the install component exists
-	var install app.Install
-	res = s.db.WithContext(ctx).
-		Preload("InstallComponents", func(db *gorm.DB) *gorm.DB {
-			return db.Where("component_id = ?", build.ComponentConfigConnection.ComponentID).
-				Where("install_id = ?", installID)
-		}).
-		First(&install, "id = ?", installID)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install: %w", res.Error)
-	}
-
-	// if the install component does not exist, create it.
-	if len(install.InstallComponents) != 1 {
-		err := s.db.WithContext(ctx).
-			Clauses(clause.OnConflict{DoNothing: true}).
-			First(&install, "id = ?", installID).
-			Association("InstallComponents").
-			Append(&app.InstallComponent{
-				ComponentID: build.ComponentConfigConnection.ComponentID,
-			})
-		if err != nil {
-			return nil, fmt.Errorf("unable to create missing install component: %w", err)
-		}
-	}
-
-	// create deploy
 	var installCmp app.InstallComponent
 	res = s.db.WithContext(ctx).Where(app.InstallComponent{
 		InstallID:   installID,
