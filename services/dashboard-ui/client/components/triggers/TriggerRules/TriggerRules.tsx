@@ -123,7 +123,7 @@ export const TriggerRules = ({
   if (hasError) {
     return (
       <div className="flex flex-col items-start gap-3">
-        <Text theme="error">Unable to load rules.</Text>
+        <Text theme="error">Rules loading failed.</Text>
         <Button variant="secondary" onClick={onRetry}>
           <Icon variant="ArrowClockwiseIcon" />
           Retry loading rules
