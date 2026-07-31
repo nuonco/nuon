@@ -74,6 +74,9 @@ type AppComponentConfigConnection struct {
 	// health probes
 	HealthProbes []*AppComponentHealthProbe `json:"health_probes"`
 
+	// health required checks
+	HealthRequiredChecks []string `json:"health_required_checks"`
+
 	// Duration string for how long health must hold after a deploy applies (e.g., "3m"). Max 1h.
 	HealthStabilizationWindow string `json:"health_stabilization_window,omitempty"`
 

@@ -63,6 +63,9 @@ type ServiceCreateHelmComponentConfigRequest struct {
 	// health probes
 	HealthProbes []*ServiceHealthProbeRequest `json:"health_probes"`
 
+	// health required checks
+	HealthRequiredChecks []string `json:"health_required_checks"`
+
 	// Duration string for the health stabilization window (e.g., "3m")
 	HealthStabilizationWindow string `json:"health_stabilization_window,omitempty"`
 

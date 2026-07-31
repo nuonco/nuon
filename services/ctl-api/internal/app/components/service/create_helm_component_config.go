@@ -39,7 +39,8 @@ type CreateHelmComponentConfigRequest struct {
 	HealthStabilizationWindow    string             `json:"health_stabilization_window,omitempty"` // Duration string for the health stabilization window (e.g., "3m")
 	HealthBlockDeploy            *bool              `json:"health_block_deploy,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 
-	HealthProbes []HealthProbeRequest `json:"health_probes,omitempty"`
+	HealthProbes         []HealthProbeRequest `json:"health_probes,omitempty"`
+	HealthRequiredChecks []string             `json:"health_required_checks,omitempty"`
 
 	AppConfigID string `json:"app_config_id"`
 
@@ -102,6 +103,9 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 		}
 	}
 	if err := validateHealthProbes(c.HealthProbes); err != nil {
+		return err
+	}
+	if err := validateRequiredChecks(c.HealthRequiredChecks); err != nil {
 		return err
 	}
 
@@ -254,6 +258,7 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		HealthStabilizationWindow:    req.HealthStabilizationWindow,
 		HealthBlockDeploy:            req.HealthBlockDeploy,
 		HealthProbes:                 toAppHealthProbes(req.HealthProbes),
+		HealthRequiredChecks:         toAppRequiredChecks(req.HealthRequiredChecks),
 		OperationRoles:               operationRoles,
 		KubernetesContextName:        req.KubernetesContext,
 	}

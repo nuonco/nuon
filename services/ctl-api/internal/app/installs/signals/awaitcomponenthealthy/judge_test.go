@@ -102,17 +102,18 @@ func TestWindowNarration(t *testing.T) {
 	window := time.Minute
 	healthy := report(gateAt.Add(7*time.Second), "healthy", "Deployment", "whoami", "")
 
-	got := windowNarration(windowWait, &healthy, gateAt, gateAt.Add(25*time.Second), window)
+	got := windowNarration(windowWait, &healthy, gateAt, gateAt.Add(25*time.Second), window, nil)
 	assert.Equal(t, "healthy so far — 35s of the 1m0s window left — healthy (Deployment whoami)", got)
 
-	got = windowNarration(windowWait, nil, gateAt, gateAt.Add(10*time.Second), window)
+	got = windowNarration(windowWait, nil, gateAt, gateAt.Add(10*time.Second), window, nil)
 	assert.Contains(t, got, "waiting for the first health report")
 
-	got = windowNarration(windowPass, &healthy, gateAt, gateAt.Add(window), window)
+	got = windowNarration(windowPass, &healthy, gateAt, gateAt.Add(window), window,
+		[]activities.ComponentHealthCheckRow{{Name: "cert", Health: "healthy"}})
 	assert.Contains(t, got, "held healthy for 1m0s")
 
 	bad := report(gateAt.Add(30*time.Second), "unhealthy", "ExecProbe", "gate-test-always-fails", "exit code 1")
-	got = windowNarration(windowFailBad, &bad, gateAt, gateAt.Add(31*time.Second), window)
+	got = windowNarration(windowFailBad, &bad, gateAt, gateAt.Add(31*time.Second), window, nil)
 	assert.Equal(t, "component is unhealthy: ExecProbe gate-test-always-fails: exit code 1", got)
 }
 

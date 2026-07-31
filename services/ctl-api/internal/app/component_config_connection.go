@@ -76,6 +76,7 @@ type ComponentConfigConnection struct {
 	HealthStabilizationWindow         string                             `json:"health_stabilization_window,omitempty" gorm:"default:null" temporaljson:"health_stabilization_window,omitzero,omitempty"` // Duration string for how long health must hold after a deploy applies (e.g., "3m"). Max 1h.
 	HealthBlockDeploy                 *bool                              `json:"health_block_deploy,omitempty" gorm:"default:null" temporaljson:"health_block_deploy,omitzero,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 	HealthProbes                      ComponentHealthProbes              `json:"health_probes,omitempty" gorm:"type:jsonb" temporaljson:"health_probes,omitzero,omitempty"`
+	HealthRequiredChecks              ComponentHealthRequiredChecks      `json:"health_required_checks,omitempty" gorm:"type:jsonb" temporaljson:"health_required_checks,omitzero,omitempty"`
 
 	// Operation roles map: operation type -> role name
 	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
@@ -136,6 +137,39 @@ func (p ComponentHealthProbes) Value() (driver.Value, error) {
 }
 
 func (ComponentHealthProbes) GormDataType() string {
+	return "jsonb"
+}
+
+// ComponentHealthRequiredChecks are pushed check names a deploy gate waits for.
+type ComponentHealthRequiredChecks []string
+
+// Scan implements the database/sql.Scanner interface.
+func (c *ComponentHealthRequiredChecks) Scan(v interface{}) error {
+	switch v := v.(type) {
+	case nil:
+		*c = nil
+		return nil
+	case []byte:
+		if len(v) == 0 {
+			*c = nil
+			return nil
+		}
+		if err := json.Unmarshal(v, c); err != nil {
+			return errors.Wrap(err, "unable to scan component health required checks")
+		}
+	}
+	return nil
+}
+
+// Value implements the driver.Valuer interface.
+func (c ComponentHealthRequiredChecks) Value() (driver.Value, error) {
+	if c == nil {
+		return nil, nil
+	}
+	return json.Marshal(c)
+}
+
+func (ComponentHealthRequiredChecks) GormDataType() string {
 	return "jsonb"
 }
 
