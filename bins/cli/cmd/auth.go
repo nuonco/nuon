@@ -5,6 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/nuonco/nuon/sdks/nuon-go"
+
 	"github.com/nuonco/nuon/bins/cli/internal/oidctoken"
 	"github.com/nuonco/nuon/bins/cli/internal/services/auth"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
@@ -62,10 +64,10 @@ With the default table output, only the token is printed so it can be captured d
 			if token == "" {
 				detected, source, ok, err := oidctoken.Detect(cmd.Context(), oidctoken.Audience(audience))
 				if err != nil {
-					return ui.PrintError(fmt.Errorf("unable to get OIDC token from %s: %w", source, err))
+					return ui.PrintError(&ui.CLIUserError{Msg: fmt.Sprintf("unable to get OIDC token from %s: %v", source, err)})
 				}
 				if !ok {
-					return ui.PrintError(fmt.Errorf("no OIDC token found: pass --oidc-token, set NUON_OIDC_TOKEN or NUON_OIDC_TOKEN_FILE, or run in GitHub Actions with `permissions: id-token: write`"))
+					return ui.PrintError(&ui.CLIUserError{Msg: "no OIDC token found: pass --oidc-token, set NUON_OIDC_TOKEN or NUON_OIDC_TOKEN_FILE, or run in GitHub Actions with `permissions: id-token: write`"})
 				}
 				token = detected
 			}
@@ -73,7 +75,10 @@ With the default table output, only the token is printed so it can be captured d
 			svc := auth.New(c.apiClient, c.cfg)
 			resp, err := svc.ExchangeOIDCToken(cmd.Context(), token, orgID)
 			if err != nil {
-				return ui.PrintError(err)
+				if _, ok := nuon.ToAPIError(err); ok {
+					return ui.PrintError(err)
+				}
+				return ui.PrintError(&ui.CLIUserError{Msg: err.Error()})
 			}
 
 			if PrintJSON {
