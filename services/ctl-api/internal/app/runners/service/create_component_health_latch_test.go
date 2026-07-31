@@ -2,6 +2,7 @@ package service
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -44,4 +45,24 @@ func TestLatchHealth(t *testing.T) {
 		health, _, _ := latchHealth("progressing", "rolling out", "Progressing", priorHealth{}, false)
 		assert.Equal(t, "progressing", health)
 	})
+}
+
+// A constant dedupe key would be absorbed by the previous, already-finished
+// signal (completed signals stay undeleted until nightly cleanup), so health
+// would evaluate once and then freeze. Bucketing by minute collapses concurrent
+// reports without ever blocking the next minute.
+func TestComponentHealthEvaluateDedupeKey(t *testing.T) {
+	t.Parallel()
+
+	base := time.Date(2026, 7, 31, 3, 16, 0, 0, time.UTC)
+
+	assert.Equal(t,
+		componentHealthEvaluateDedupeKey(base.Add(5*time.Second)),
+		componentHealthEvaluateDedupeKey(base.Add(50*time.Second)),
+		"two reports in the same minute collapse into one evaluation")
+
+	assert.NotEqual(t,
+		componentHealthEvaluateDedupeKey(base),
+		componentHealthEvaluateDedupeKey(base.Add(time.Minute)),
+		"the next minute must not be absorbed by the previous signal")
 }

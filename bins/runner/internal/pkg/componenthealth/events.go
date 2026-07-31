@@ -21,6 +21,9 @@ const eventWarningWindow = 15 * time.Minute
 type warningEvent struct {
 	reason  string
 	message string
+	// at is when the event last fired, so a resource that has since recovered is
+	// not held down by it.
+	at time.Time
 }
 
 // latestWarnings returns, keyed by resource identity, the resources whose latest
@@ -60,7 +63,7 @@ func (e *Engine) latestWarnings(ctx context.Context, dynClient dynamic.Interface
 
 	out := make(map[string]warningEvent, len(byObject))
 	for key, l := range byObject {
-		out[key] = warningEvent{reason: l.reason, message: l.message}
+		out[key] = warningEvent{reason: l.reason, message: l.message, at: l.ts}
 	}
 	return out
 }

@@ -14,6 +14,7 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/autolink"
 	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
 )
@@ -31,6 +32,7 @@ type Activities struct {
 	slackClient    *slackclient.Client
 	autoLinkHelper *autolink.Helper
 	blobSvc        blobstore.Service
+	queueClient    *queueclient.Client
 }
 
 type Params struct {
@@ -39,6 +41,7 @@ type Params struct {
 	Cfg            *internal.Config
 	DB             *gorm.DB `name:"psql"`
 	CHDB           *gorm.DB `name:"ch"`
+	QueueClient    *queueclient.Client
 	AppsHelpers    *appshelpers.Helpers
 	RunnersHelpers *runnershelpers.Helpers
 	MW             metrics.Writer
@@ -67,5 +70,6 @@ func New(params Params) (*Activities, error) {
 		slackClient:    params.SlackClient,
 		autoLinkHelper: params.AutoLinkHelper,
 		blobSvc:        params.BlobSvc,
+		queueClient:    params.QueueClient,
 	}, nil
 }

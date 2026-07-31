@@ -20,6 +20,9 @@ type ServiceComponentHealthContextResponse struct {
 	// cluster info json
 	ClusterInfoJSON string `json:"cluster_info_json,omitempty"`
 
+	// component kinds
+	ComponentKinds []string `json:"component_kinds"`
+
 	// sandbox helm releases
 	SandboxHelmReleases []string `json:"sandbox_helm_releases"`
 }

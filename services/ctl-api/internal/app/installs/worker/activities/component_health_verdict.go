@@ -53,6 +53,18 @@ type componentHealthReport struct {
 	// ClusterEvidence is true if this report has any cluster-derived
 	// observation; distinguishes "looks fine" from "can't see the workload".
 	ClusterEvidence bool
+
+	// ValidFor is how long this report stays trustworthy; zero means the
+	// default. A report synthesized from a pushed check inherits that check's
+	// window, since the runner's clock says nothing about it.
+	ValidFor time.Duration
+}
+
+func (r componentHealthReport) validFor() time.Duration {
+	if r.ValidFor <= 0 {
+		return componentHealthStaleAfter
+	}
+	return r.ValidFor
 }
 
 // nextComponentHealthVerdict debounces a verdict against its recent report
@@ -67,7 +79,9 @@ func nextComponentHealthVerdict(current app.InstallComponentHealthStatus, report
 	}
 
 	latest := reports[0]
-	if now.Sub(latest.ObservedAt) > componentHealthStaleAfter {
+	// Measured against the report's own window, not a global constant: a
+	// pushed check declaring 30m must not be discarded at 5m.
+	if now.Sub(latest.ObservedAt) > latest.validFor() {
 		return app.InstallComponentHealthStatusUnknown
 	}
 
@@ -122,7 +136,7 @@ func componentHealthDescription(verdict app.InstallComponentHealthStatus, latest
 		if latest == nil {
 			return "no health observations reported"
 		}
-		if now.Sub(latest.ObservedAt) > componentHealthStaleAfter {
+		if now.Sub(latest.ObservedAt) > latest.validFor() {
 			return "no recent health observations from the runner"
 		}
 		// Observations arrived but none could be assessed — name what couldn't

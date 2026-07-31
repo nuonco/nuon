@@ -1,6 +1,4 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -64,17 +62,5 @@ export const ResetHealthWindowModal = ({
         stay recorded but no longer count toward uptime.
       </Text>
     </Modal>
-  )
-}
-
-export const ResetHealthWindowButton = ({ installId }: { installId: string }) => {
-  const { addModal } = useSurfaces()
-  const modal = <ResetHealthWindowModal installId={installId} />
-
-  return (
-    <Button variant="ghost" size="xs" onClick={() => addModal(modal)}>
-      <Icon variant="ClockCounterClockwiseIcon" size={14} />
-      Reset window
-    </Button>
   )
 }
