@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -45,7 +44,7 @@ type ComponentHealthCheckRow struct {
 func (a *Activities) GetComponentHealthCheckRows(ctx context.Context, req *GetComponentHealthCheckRowsRequest) ([]ComponentHealthCheckRow, error) {
 	var rows []app.InstallComponentResourceState
 	if err := a.chDB.WithContext(ctx).
-		Scopes(scopes.WithOverrideTable(views.CurrentViewName(a.chDB, &app.InstallComponentResourceState{}))).
+		Scopes(scopes.WithOverrideTable(app.InstallComponentResourceStatesLatestView)).
 		Select("kind", "name", "health", "message", "observed_at").
 		Where(app.InstallComponentResourceState{
 			InstallID:          req.InstallID,

@@ -36,5 +36,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "08-add-queries-indexes",
 			Fn:   m.Migration008AddQueriesIndexes,
 		},
+		{
+			Name: "09-install-component-resource-states-latest",
+			Fn:   m.Migration009InstallComponentResourceStatesLatest,
+		},
 	}
 }
