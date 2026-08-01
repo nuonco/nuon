@@ -1,4 +1,11 @@
-import { type InputHTMLAttributes, forwardRef, useState, useRef, useEffect } from 'react'
+import {
+  type InputHTMLAttributes,
+  type ChangeEvent,
+  type FocusEvent,
+  type FormEvent,
+  forwardRef,
+  useState,
+} from 'react'
 import { Label, type ILabel } from '@/components/common/form/Label'
 import { Text, type IText } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
@@ -30,6 +37,9 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
       size = 'md',
       disabled,
       required,
+      onChange,
+      onBlur,
+      onInvalid,
       ...props
     },
     ref
@@ -37,63 +47,34 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
     const [isInvalid, setIsInvalid] = useState(false)
     const [hasBlurred, setHasBlurred] = useState(false)
     const [showValidationMessage, setShowValidationMessage] = useState(false)
-    const inputRef = useRef<HTMLInputElement>(null)
 
-    // Monitor validation state
-    useEffect(() => {
-      if (required && inputRef.current) {
-        const input = inputRef.current
-        
-        const checkValidity = () => {
-          // Only show invalid state after user blur or form submission attempt
-          if (hasBlurred) {
-            setIsInvalid(!input.checkValidity())
-          }
-        }
-        
-        // Check validity on value changes (only if already blurred)
-        if (hasBlurred) {
-          checkValidity()
-        }
-        
-        // Listen for validation events (form submission attempts)
-        const handleInvalid = (e: Event) => {
-          e.preventDefault() // Prevent default browser validation message
-          setHasBlurred(true)
-          setIsInvalid(true)
-          setShowValidationMessage(true)
-        }
-        
-        const handleInput = () => {
-          if (hasBlurred) {
-            checkValidity()
-            // Hide validation message when user enters valid input
-            if (input.checkValidity()) {
-              setShowValidationMessage(false)
-            }
-          }
-        }
-        
-        const handleBlur = () => {
-          setHasBlurred(true)
-          // Check validity after blur
-          if (!input.checkValidity()) {
-            setIsInvalid(true)
-            setShowValidationMessage(true)
-          }
-        }
-        
-        input.addEventListener('invalid', handleInvalid)
-        input.addEventListener('input', handleInput)
-        input.addEventListener('blur', handleBlur)
-        
-        return () => {
-          input.removeEventListener('invalid', handleInvalid)
-          input.removeEventListener('input', handleInput)
-          input.removeEventListener('blur', handleBlur)
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+      if (required && hasBlurred) {
+        const valid = e.currentTarget.checkValidity()
+        setIsInvalid(!valid)
+        if (valid) {
+          setShowValidationMessage(false)
         }
       }
-    }, [required, hasBlurred])
+      onChange?.(e)
+    }
+
+    const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
+      setHasBlurred(true)
+      if (required && !e.currentTarget.checkValidity()) {
+        setIsInvalid(true)
+        setShowValidationMessage(true)
+      }
+      onBlur?.(e)
+    }
+
+    const handleInvalid = (e: FormEvent<HTMLInputElement>) => {
+      e.preventDefault()
+      setHasBlurred(true)
+      setIsInvalid(true)
+      setShowValidationMessage(true)
+      onInvalid?.(e)
+    }
 
     const sizeClasses = {
       sm: 'px-2 py-1 text-sm h-8',
@@ -134,14 +115,7 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
 
     const input = (
       <input
-        ref={(node) => {
-          inputRef.current = node
-          if (typeof ref === 'function') {
-            ref(node)
-          } else if (ref) {
-            ref.current = node
-          }
-        }}
+        ref={ref}
         className={baseClasses}
         disabled={disabled}
         required={required}
@@ -149,6 +123,9 @@ export const Input = forwardRef<HTMLInputElement, IInput>(
         aria-describedby={
           helperText || errorMessage || showValidationMessage ? `${props.id}-description` : undefined
         }
+        onChange={handleChange}
+        onBlur={handleBlur}
+        onInvalid={handleInvalid}
         {...props}
       />
     )
