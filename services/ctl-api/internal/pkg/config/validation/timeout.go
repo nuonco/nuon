@@ -11,7 +11,6 @@ import (
 
 // ValidateBuildTimeout validates a build timeout duration string.
 // Returns an error if the format is invalid or the value is out of range.
-// Duplicates logic from services/ctl-api/internal/app/components/service/shared_validation.go
 func ValidateBuildTimeout(timeout string) error {
 	d, err := time.ParseDuration(timeout)
 	if err != nil {
@@ -41,7 +40,6 @@ func ValidateBuildTimeout(timeout string) error {
 
 // ValidateDeployTimeout validates a deploy timeout duration string.
 // Returns an error if the format is invalid or the value is out of range.
-// Duplicates logic from services/ctl-api/internal/app/components/service/shared_validation.go
 func ValidateDeployTimeout(timeout string) error {
 	d, err := time.ParseDuration(timeout)
 	if err != nil {
@@ -71,7 +69,6 @@ func ValidateDeployTimeout(timeout string) error {
 
 // ValidateHealthStabilizationWindow validates a health stabilization window duration string.
 // Returns an error if the format is invalid or the value is out of range.
-// Duplicates logic from services/ctl-api/internal/app/components/service/shared_validation.go
 func ValidateHealthStabilizationWindow(window string) error {
 	d, err := time.ParseDuration(window)
 	if err != nil {

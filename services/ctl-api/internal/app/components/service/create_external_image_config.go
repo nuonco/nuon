@@ -8,30 +8,20 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/oci/updatepolicy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type awsECRImageConfigRequest struct {
 	IAMRoleARN string `json:"iam_role_arn"`
 	AWSRegion  string `json:"aws_region"`
-}
-
-func (a *awsECRImageConfigRequest) getAWSECRImageConfig() *app.AWSECRImageConfig {
-	if a == nil {
-		return nil
-	}
-
-	return &app.AWSECRImageConfig{
-		IAMRoleARN: a.IAMRoleARN,
-		AWSRegion:  a.AWSRegion,
-	}
 }
 
 type gcpGARImageConfigRequest struct {
@@ -43,35 +33,10 @@ type gcpGARImageConfigRequest struct {
 	WorkloadIdentityProvider string `json:"workload_identity_provider,omitempty"`
 }
 
-func (g *gcpGARImageConfigRequest) getGCPGARImageConfig() *app.GCPGARImageConfig {
-	if g == nil {
-		return nil
-	}
-
-	return &app.GCPGARImageConfig{
-		GCPProjectID:             g.GCPProjectID,
-		GCPRegion:                g.GCPRegion,
-		ServiceAccountEmail:      g.ServiceAccountEmail,
-		WorkloadIdentityProvider: g.WorkloadIdentityProvider,
-	}
-}
-
 type azureACRImageConfigRequest struct {
 	RegistryURL string `json:"registry_url"`
 	TenantID    string `json:"tenant_id,omitempty"`
 	ClientID    string `json:"client_id,omitempty"`
-}
-
-func (a *azureACRImageConfigRequest) getAzureACRImageConfig() *app.AzureACRImageConfig {
-	if a == nil {
-		return nil
-	}
-
-	return &app.AzureACRImageConfig{
-		RegistryURL: a.RegistryURL,
-		TenantID:    a.TenantID,
-		ClientID:    a.ClientID,
-	}
 }
 
 type CreateExternalImageComponentConfigRequest struct {
@@ -102,6 +67,66 @@ type CreateExternalImageComponentConfigRequest struct {
 	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
 }
 
+func (c *CreateExternalImageComponentConfigRequest) toConfig() *config.ExternalImageComponentConfig {
+	obj := &config.ExternalImageComponentConfig{}
+
+	switch {
+	case c.AWSECRImageConfig != nil:
+		obj.AWSECRImageConfig = &config.AWSECRConfig{
+			IAMRoleARN:   c.AWSECRImageConfig.IAMRoleARN,
+			AWSRegion:    c.AWSECRImageConfig.AWSRegion,
+			ImageURL:     c.ImageURL,
+			Tag:          c.Tag,
+			UpdatePolicy: c.UpdatePolicy,
+		}
+	case c.GCPGARImageConfig != nil:
+		obj.GCPGARImageConfig = &config.GCPGARConfig{
+			GCPProjectID:             c.GCPGARImageConfig.GCPProjectID,
+			GCPRegion:                c.GCPGARImageConfig.GCPRegion,
+			ServiceAccountEmail:      c.GCPGARImageConfig.ServiceAccountEmail,
+			WorkloadIdentityProvider: c.GCPGARImageConfig.WorkloadIdentityProvider,
+			ImageURL:                 c.ImageURL,
+			Tag:                      c.Tag,
+			UpdatePolicy:             c.UpdatePolicy,
+		}
+	case c.AzureACRImageConfig != nil:
+		obj.AzureACRImageConfig = &config.AzureACRConfig{
+			RegistryURL:  c.AzureACRImageConfig.RegistryURL,
+			TenantID:     c.AzureACRImageConfig.TenantID,
+			ClientID:     c.AzureACRImageConfig.ClientID,
+			ImageURL:     c.ImageURL,
+			Tag:          c.Tag,
+			UpdatePolicy: c.UpdatePolicy,
+		}
+	default:
+		obj.PublicImageConfig = &config.PublicImageConfig{
+			ImageURL:     c.ImageURL,
+			Tag:          c.Tag,
+			UpdatePolicy: c.UpdatePolicy,
+		}
+	}
+
+	return obj
+}
+
+func (c *CreateExternalImageComponentConfigRequest) buildInput(componentID string, depIDs []string) build.ComponentConnectionInput {
+	return build.ComponentConnectionInput{
+		ComponentID:                  componentID,
+		AppConfigID:                  c.AppConfigID,
+		References:                   c.References,
+		Checksum:                     c.Checksum,
+		DependencyIDs:                depIDs,
+		BuildTimeout:                 c.BuildTimeout,
+		DeployTimeout:                c.DeployTimeout,
+		MaxAutoRetries:               c.MaxAutoRetries,
+		SkipNoops:                    c.SkipNoops,
+		Toggleable:                   c.Toggleable,
+		DefaultEnabled:               c.DefaultEnabled,
+		AutoApproveOnPoliciesPassing: c.AutoApproveOnPoliciesPassing,
+		OperationRoles:               toConfigOperationRoles(c.OperationRoles),
+	}
+}
+
 func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
@@ -116,17 +141,17 @@ func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Valida
 	}
 
 	if c.BuildTimeout != "" {
-		if err := validateBuildTimeout(c.BuildTimeout); err != nil {
+		if err := validation.ValidateBuildTimeout(c.BuildTimeout); err != nil {
 			return err
 		}
 	}
 	if c.DeployTimeout != "" {
-		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+		if err := validation.ValidateDeployTimeout(c.DeployTimeout); err != nil {
 			return err
 		}
 	}
 	if c.MaxAutoRetries != nil {
-		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
+		if err := validation.ValidateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
 		}
 	}
@@ -227,39 +252,20 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 		return nil, errors.Wrap(err, "unable to get component ids")
 	}
 
-	cfg := app.ExternalImageComponentConfig{
-		ImageURL:            req.ImageURL,
-		Tag:                 req.Tag,
-		UpdatePolicy:        req.UpdatePolicy,
-		AWSECRImageConfig:   req.AWSECRImageConfig.getAWSECRImageConfig(),
-		GCPGARImageConfig:   req.GCPGARImageConfig.getGCPGARImageConfig(),
-		AzureACRImageConfig: req.AzureACRImageConfig.getAzureACRImageConfig(),
+	cfg, err := build.ExternalImageComponentConfig(req.toConfig())
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
 
-	operationRoles := make(pgtype.Hstore)
-	for operation, role := range req.OperationRoles {
-		operationRoles[string(operation)] = role
+	componentConfigConnection, err := build.ComponentConnection(req.buildInput(parentCmp.ID, depIDs))
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
+	componentConfigConnection.ExternalImageComponentConfig = cfg
 
-	componentConfigConnection := app.ComponentConfigConnection{
-		ExternalImageComponentConfig: &cfg,
-		ComponentID:                  parentCmp.ID,
-		AppConfigID:                  req.AppConfigID,
-		ComponentDependencyIDs:       pq.StringArray(depIDs),
-		References:                   pq.StringArray(req.References),
-		Checksum:                     req.Checksum,
-		BuildTimeout:                 req.BuildTimeout,
-		DeployTimeout:                req.DeployTimeout,
-		MaxAutoRetries:               req.MaxAutoRetries,
-		SkipNoops:                    req.SkipNoops,
-		Toggleable:                   req.Toggleable,
-		DefaultEnabled:               req.DefaultEnabled,
-		AutoApproveOnPoliciesPassing: req.AutoApproveOnPoliciesPassing,
-		OperationRoles:               operationRoles,
-	}
-	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
+	if res := s.db.WithContext(ctx).Create(componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create external image component config connection: %w", res.Error)
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }

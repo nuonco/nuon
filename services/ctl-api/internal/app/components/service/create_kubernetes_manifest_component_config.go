@@ -4,16 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -70,72 +69,48 @@ func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.V
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
 	}
-
-	if c.OperationRoles != nil {
-		for operation := range c.OperationRoles {
-			if !slices.Contains(app.ValidOperations, operation) {
-				return fmt.Errorf("invalid operation type: %s. Valid operations: %v", operation, app.ValidOperations)
-			}
-		}
-	}
-
-	// Exactly one of manifest or kustomize must be set
-	hasManifest := c.Manifest != ""
-	hasKustomize := c.Kustomize != nil
-
-	if !hasManifest && !hasKustomize {
-		return errors.New("one of 'manifest' or 'kustomize' must be specified")
-	}
-	if hasManifest && hasKustomize {
-		return errors.New("only one of 'manifest' or 'kustomize' can be specified")
-	}
-
-	// Validate kustomize.path is set when kustomize is used
-	if c.Kustomize != nil && c.Kustomize.Path == "" {
-		return errors.New("kustomize.path is required")
-	}
-
-	// Validate VCS config: required for kustomize, not allowed for inline manifest
-	if c.Kustomize != nil {
-		if err := c.basicVCSConfigRequest.Validate(); err != nil {
-			return errors.Wrap(err, "kustomize requires a git source")
-		}
-	} else {
-		// Inline manifest should not have VCS config
-		if c.PublicGitVCSConfig != nil || c.ConnectedGithubVCSConfig != nil {
-			return errors.New("VCS config is only valid for kustomize sources, not inline manifests")
-		}
-	}
-
-	// Validate timeouts if provided
-	if c.BuildTimeout != "" {
-		if err := validateBuildTimeout(c.BuildTimeout); err != nil {
-			return err
-		}
-	}
-	if c.DeployTimeout != "" {
-		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
-			return err
-		}
-	}
-	if c.MaxAutoRetries != nil {
-		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
-			return err
-		}
-	}
-	if c.HealthStabilizationWindow != "" {
-		if err := validateHealthStabilizationWindow(c.HealthStabilizationWindow); err != nil {
-			return err
-		}
-	}
-	if err := validateHealthProbes(c.HealthProbes); err != nil {
-		return err
-	}
-	if err := validateRequiredChecks(c.HealthRequiredChecks); err != nil {
-		return err
-	}
-
 	return nil
+}
+
+func (c *CreateKubernetesManifestComponentConfigRequest) toConfig() *config.KubernetesManifestComponentConfig {
+	obj := &config.KubernetesManifestComponentConfig{
+		Manifest:  c.Manifest,
+		Namespace: c.Namespace,
+	}
+	if c.Kustomize != nil {
+		obj.Kustomize = &config.KustomizeConfig{
+			Path:           c.Kustomize.Path,
+			Patches:        c.Kustomize.Patches,
+			EnableHelm:     c.Kustomize.EnableHelm,
+			LoadRestrictor: c.Kustomize.LoadRestrictor,
+		}
+	}
+	return obj
+}
+
+func (c *CreateKubernetesManifestComponentConfigRequest) buildInput(componentID string, depIDs []string) build.ComponentConnectionInput {
+	return build.ComponentConnectionInput{
+		ComponentID:                  componentID,
+		AppConfigID:                  c.AppConfigID,
+		References:                   c.References,
+		Checksum:                     c.Checksum,
+		DependencyIDs:                depIDs,
+		BuildTimeout:                 c.BuildTimeout,
+		DeployTimeout:                c.DeployTimeout,
+		MaxAutoRetries:               c.MaxAutoRetries,
+		SkipNoops:                    c.SkipNoops,
+		Toggleable:                   c.Toggleable,
+		DefaultEnabled:               c.DefaultEnabled,
+		AutoApproveOnPoliciesPassing: c.AutoApproveOnPoliciesPassing,
+		DriftSchedule:                c.DriftSchedule,
+		HealthEnabled:                c.HealthEnabled,
+		HealthStabilizationWindow:    c.HealthStabilizationWindow,
+		HealthBlockDeploy:            c.HealthBlockDeploy,
+		HealthProbes:                 toConfigHealthProbes(c.HealthProbes),
+		HealthRequiredChecks:         c.HealthRequiredChecks,
+		OperationRoles:               toConfigOperationRoles(c.OperationRoles),
+		KubernetesContextName:        c.KubernetesContext,
+	}
 }
 
 // @ID						CreateAppKubernetesManifestComponentConfig
@@ -240,59 +215,22 @@ func (s *service) createKubernetesManifestComponentConfig(
 		return nil, fmt.Errorf("invalid public vcs config: %w", err)
 	}
 
-	// build component config
-	cfg := app.KubernetesManifestComponentConfig{
-		Manifest:                 req.Manifest, // Empty for kustomize sources
-		Namespace:                req.Namespace,
-		PublicGitVCSConfig:       publicGitVCSConfig,
-		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
+	vcs := build.VCS{Github: connectedGithubVCSConfig, Public: publicGitVCSConfig}
+
+	cfg, err := build.KubernetesManifestComponentConfig(req.toConfig(), vcs)
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
 
-	// Populate kustomize config (mutually exclusive with Manifest)
-	if req.Kustomize != nil {
-		cfg.Kustomize = &app.KustomizeConfig{
-			Path:           req.Kustomize.Path,
-			Patches:        req.Kustomize.Patches,
-			EnableHelm:     req.Kustomize.EnableHelm,
-			LoadRestrictor: req.Kustomize.LoadRestrictor,
-		}
+	componentConfigConnection, err := build.ComponentConnection(req.buildInput(parentCmp.ID, depIDs))
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
+	componentConfigConnection.KubernetesManifestComponentConfig = cfg
 
-	operationRoles := make(pgtype.Hstore)
-	for operation, role := range req.OperationRoles {
-		operationRoles[string(operation)] = role
-	}
-
-	componentConfigConnection := app.ComponentConfigConnection{
-		KubernetesManifestComponentConfig: &cfg,
-		ComponentID:                       parentCmp.ID,
-		AppConfigID:                       req.AppConfigID,
-		References:                        pq.StringArray(req.References),
-		Checksum:                          req.Checksum,
-		ComponentDependencyIDs:            pq.StringArray(depIDs),
-		BuildTimeout:                      req.BuildTimeout,
-		DeployTimeout:                     req.DeployTimeout,
-		MaxAutoRetries:                    req.MaxAutoRetries,
-		SkipNoops:                         req.SkipNoops,
-		Toggleable:                        req.Toggleable,
-		DefaultEnabled:                    req.DefaultEnabled,
-		AutoApproveOnPoliciesPassing:      req.AutoApproveOnPoliciesPassing,
-		HealthEnabled:                     req.HealthEnabled,
-		HealthStabilizationWindow:         req.HealthStabilizationWindow,
-		HealthBlockDeploy:                 req.HealthBlockDeploy,
-		HealthProbes:                      toAppHealthProbes(req.HealthProbes),
-		HealthRequiredChecks:              toAppRequiredChecks(req.HealthRequiredChecks),
-		OperationRoles:                    operationRoles,
-		KubernetesContextName:             req.KubernetesContext,
-	}
-
-	if req.DriftSchedule != nil {
-		componentConfigConnection.DriftSchedule = *req.DriftSchedule
-	}
-
-	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
+	if res := s.db.WithContext(ctx).Create(componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create kubernetes component config connection: %w", res.Error)
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }

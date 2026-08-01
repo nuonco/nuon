@@ -8,12 +8,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -58,6 +59,56 @@ type HelmRepoConfigRequest struct {
 	Version string `json:"version,omitempty"`
 }
 
+func (c *CreateHelmComponentConfigRequest) toConfig() *config.HelmChartComponentConfig {
+	valuesFiles := make([]config.HelmValuesFile, 0, len(c.ValuesFiles))
+	for _, contents := range c.ValuesFiles {
+		valuesFiles = append(valuesFiles, config.HelmValuesFile{Contents: contents})
+	}
+
+	obj := &config.HelmChartComponentConfig{
+		ChartName:     c.ChartName,
+		Namespace:     c.Namespace,
+		StorageDriver: c.StorageDriver,
+		TakeOwnership: c.TakeOwnership,
+		SkipCRDs:      c.SkipCRDs,
+		ValuesMap:     build.DerefMap(c.Values),
+		ValuesFiles:   valuesFiles,
+	}
+	if c.HelmRepoConfig != nil {
+		obj.HelmRepo = &config.HelmRepoConfig{
+			RepoURL: c.HelmRepoConfig.RepoURL,
+			Chart:   c.HelmRepoConfig.Chart,
+			Version: c.HelmRepoConfig.Version,
+		}
+	}
+	return obj
+}
+
+func (c *CreateHelmComponentConfigRequest) buildInput(componentID string, depIDs []string) build.ComponentConnectionInput {
+	return build.ComponentConnectionInput{
+		ComponentID:                  componentID,
+		AppConfigID:                  c.AppConfigID,
+		References:                   c.References,
+		Checksum:                     c.Checksum,
+		DependencyIDs:                depIDs,
+		BuildTimeout:                 c.BuildTimeout,
+		DeployTimeout:                c.DeployTimeout,
+		MaxAutoRetries:               c.MaxAutoRetries,
+		SkipNoops:                    c.SkipNoops,
+		Toggleable:                   c.Toggleable,
+		DefaultEnabled:               c.DefaultEnabled,
+		AutoApproveOnPoliciesPassing: c.AutoApproveOnPoliciesPassing,
+		DriftSchedule:                c.DriftSchedule,
+		HealthEnabled:                c.HealthEnabled,
+		HealthStabilizationWindow:    c.HealthStabilizationWindow,
+		HealthBlockDeploy:            c.HealthBlockDeploy,
+		HealthProbes:                 toConfigHealthProbes(c.HealthProbes),
+		HealthRequiredChecks:         c.HealthRequiredChecks,
+		OperationRoles:               toConfigOperationRoles(c.OperationRoles),
+		KubernetesContextName:        c.KubernetesContext,
+	}
+}
+
 func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
@@ -83,29 +134,29 @@ func (c *CreateHelmComponentConfigRequest) Validate(v *validator.Validate) error
 
 	// Validate timeouts if provided
 	if c.BuildTimeout != "" {
-		if err := validateBuildTimeout(c.BuildTimeout); err != nil {
+		if err := validation.ValidateBuildTimeout(c.BuildTimeout); err != nil {
 			return err
 		}
 	}
 	if c.DeployTimeout != "" {
-		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+		if err := validation.ValidateDeployTimeout(c.DeployTimeout); err != nil {
 			return err
 		}
 	}
 	if c.MaxAutoRetries != nil {
-		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
+		if err := validation.ValidateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
 		}
 	}
 	if c.HealthStabilizationWindow != "" {
-		if err := validateHealthStabilizationWindow(c.HealthStabilizationWindow); err != nil {
+		if err := validation.ValidateHealthStabilizationWindow(c.HealthStabilizationWindow); err != nil {
 			return err
 		}
 	}
-	if err := validateHealthProbes(c.HealthProbes); err != nil {
+	if err := validation.ValidateHealthProbeList(toConfigHealthProbes(c.HealthProbes)); err != nil {
 		return err
 	}
-	if err := validateRequiredChecks(c.HealthRequiredChecks); err != nil {
+	if err := validation.ValidateRequiredChecks(c.HealthRequiredChecks); err != nil {
 		return err
 	}
 
@@ -212,63 +263,22 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		return nil, fmt.Errorf("invalid public vcs config: %w", err)
 	}
 
-	var hrc app.HelmRepoConfig
-	if req.HelmRepoConfig != nil {
-		hrc = app.HelmRepoConfig{
-			RepoURL: req.HelmRepoConfig.RepoURL,
-			Chart:   req.HelmRepoConfig.Chart,
-			Version: req.HelmRepoConfig.Version,
-		}
-	}
-	cfg := app.HelmComponentConfig{
-		PublicGitVCSConfig:       publicGitVCSConfig,
-		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
-		HelmConfig: &app.HelmConfig{
-			ChartName:      req.ChartName,
-			Namespace:      req.Namespace,
-			StorageDriver:  req.StorageDriver,
-			HelmRepoConfig: &hrc,
-			Values:         req.Values,
-			ValuesFiles:    req.ValuesFiles,
-			TakeOwnership:  req.TakeOwnership,
-			SkipCRDs:       req.SkipCRDs,
-		},
+	vcs := build.VCS{Github: connectedGithubVCSConfig, Public: publicGitVCSConfig}
+
+	cfg, err := build.HelmComponentConfig(req.toConfig(), vcs)
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
 
-	operationRoles := make(pgtype.Hstore)
-	for operation, role := range req.OperationRoles {
-		operationRoles[string(operation)] = role
+	componentConfigConnection, err := build.ComponentConnection(req.buildInput(parentCmp.ID, depIDs))
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
+	componentConfigConnection.HelmComponentConfig = cfg
 
-	componentConfigConnection := app.ComponentConfigConnection{
-		HelmComponentConfig:          &cfg,
-		ComponentID:                  parentCmp.ID,
-		AppConfigID:                  req.AppConfigID,
-		ComponentDependencyIDs:       pq.StringArray(depIDs),
-		References:                   pq.StringArray(req.References),
-		Checksum:                     req.Checksum,
-		BuildTimeout:                 req.BuildTimeout,
-		DeployTimeout:                req.DeployTimeout,
-		MaxAutoRetries:               req.MaxAutoRetries,
-		SkipNoops:                    req.SkipNoops,
-		Toggleable:                   req.Toggleable,
-		DefaultEnabled:               req.DefaultEnabled,
-		AutoApproveOnPoliciesPassing: req.AutoApproveOnPoliciesPassing,
-		HealthEnabled:                req.HealthEnabled,
-		HealthStabilizationWindow:    req.HealthStabilizationWindow,
-		HealthBlockDeploy:            req.HealthBlockDeploy,
-		HealthProbes:                 toAppHealthProbes(req.HealthProbes),
-		HealthRequiredChecks:         toAppRequiredChecks(req.HealthRequiredChecks),
-		OperationRoles:               operationRoles,
-		KubernetesContextName:        req.KubernetesContext,
-	}
-	if req.DriftSchedule != nil {
-		componentConfigConnection.DriftSchedule = *req.DriftSchedule
-	}
-
-	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
+	if res := s.db.WithContext(ctx).Create(componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create helm component config connection: %w", res.Error)
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }

@@ -8,10 +8,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
-	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -71,30 +70,15 @@ func (s *service) CreateAppBreakGlasssConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppBreakGlassConfig(ctx context.Context, appID string, req *CreateAppBreakGlassConfigRequest) (*app.AppBreakGlassConfig, error) {
-	obj := app.AppBreakGlassConfig{
-		AppID:       appID,
-		AppConfigID: req.AppConfigID,
-		Roles:       make([]app.AppAWSIAMRoleConfig, 0),
+	obj, err := build.BreakGlassConfig(appID, req.AppConfigID, toConfigRoles(&req.Roles))
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
 
-	for _, role := range req.Roles {
-		obj.Roles = append(obj.Roles, app.AppAWSIAMRoleConfig{
-			AppConfigID:             req.AppConfigID,
-			CloudPlatform:           role.CloudPlatform,
-			Type:                    app.AWSIAMRoleTypeBreakGlass,
-			Name:                    role.Name,
-			Description:             role.Description,
-			DisplayName:             role.DisplayName,
-			PermissionsBoundaryJSON: generics.ToJSON(role.PermissionsBoundary),
-			Policies:                role.getPolicies(req.AppConfigID),
-			EnabledInStack:          pkggenerics.NewNullBoolFromPtr(role.EnabledInStack),
-		})
-	}
-
-	res := s.db.WithContext(ctx).Create(&obj)
+	res := s.db.WithContext(ctx).Create(obj)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create app break glass config")
 	}
 
-	return &obj, nil
+	return obj, nil
 }

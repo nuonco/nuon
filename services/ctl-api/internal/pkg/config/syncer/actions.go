@@ -16,7 +16,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/validation"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
 
 // ensureAction creates an action workflow if it doesn't exist, using the shared helpers
@@ -145,7 +146,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 	vcsHelper := s.vcsHelpers
 	steps := make([]app.ActionWorkflowStepConfig, 0, len(action.Steps))
 
-	for _, step := range action.Steps {
+	for idx, step := range action.Steps {
 		var githubVCSConfig *app.ConnectedGithubVCSConfig
 		var publicGitConfig *app.PublicGitVCSConfig
 		var err error
@@ -190,9 +191,11 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 			envVars[k] = &v
 		}
 
+		// Steps are loaded ORDER BY idx, so an unset Idx runs them arbitrarily.
 		steps = append(steps, app.ActionWorkflowStepConfig{
 			AppID:                    s.appID,
 			AppConfigID:              s.appConfigID,
+			Idx:                      idx,
 			Name:                     step.Name,
 			EnvVars:                  envVars,
 			Command:                  step.Command,
@@ -209,19 +212,33 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		actionReferences = append(actionReferences, ref.String())
 	}
 
-	// Create action workflow config
-	awc := app.ActionWorkflowConfig{
-		AppID:                  s.appID,
-		AppConfigID:            s.appConfigID,
-		ActionWorkflowID:       actionWorkflow.ID,
-		Timeout:                timeout,
-		ComponentDependencyIDs: pq.StringArray(action.Dependencies),
-		References:             pq.StringArray(actionReferences),
-		BreakGlassRoleARN:      generics.NewNullString(action.BreakGlassRole),
-		KubernetesContextName:  action.KubernetesContext,
-		Triggers:               triggers,
-		Steps:                  steps,
+	depIDs := []string{}
+	if len(action.Dependencies) > 0 {
+		depIDs, err = s.componentHelpers.GetComponentIDs(ctx, s.appID, action.Dependencies)
+		if err != nil {
+			return sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to resolve dependencies for action %s", action.Name),
+				Err:         err,
+			}
+		}
 	}
+
+	built := build.ActionWorkflowConfig(build.ActionWorkflowInput{
+		AppID:                 s.appID,
+		AppConfigID:           s.appConfigID,
+		OrgID:                 s.orgID,
+		ActionWorkflowID:      actionWorkflow.ID,
+		Timeout:               timeout,
+		DependencyIDs:         depIDs,
+		References:            actionReferences,
+		BreakGlassRole:        action.BreakGlassRole,
+		Role:                  action.Role,
+		EnableKubeConfig:      action.EnableKubeConfig,
+		KubernetesContextName: action.KubernetesContext,
+	})
+	built.Triggers = triggers
+	built.Steps = steps
+	awc := *built
 
 	// Check if config already exists (idempotent for retries)
 	var existing app.ActionWorkflowConfig

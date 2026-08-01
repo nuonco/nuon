@@ -964,6 +964,28 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error { return n
 - Example: `GithubComNuoncoNuonServicesCtlAPIInternalAppRunnerAuthServiceRunnerAuthAWSRequest`
 - These names appear in generated SDK code but don't affect functionality
 
+## App Config Sync — Shared Builders (IMPORTANT)
+
+An app config reaches the database via two paths: the CLI (`nuon apps sync` → `pkg/config/sync/apisyncer` → HTTP
+handlers) and app branch sync (VCS push/preview → `internal/pkg/config/syncer`, direct DB).
+
+**Both MUST convert config into `app.*` models through `internal/pkg/config/build`.** They previously had
+independent conversions and silently drifted, dropping custom roles, break-glass roles, Pulumi sandboxes, `job`
+components, inline manifests, `custom_nested_stacks`, `toggleable`, action `role`, and more.
+
+When adding anything an app config can express:
+
+1. Mapping goes in `internal/pkg/config/build` — pure, no gorm/gin. The caller resolves anything needing a
+   database (VCS configs, dependency name→ID, latest Terraform version, org features).
+2. Validation goes in `internal/pkg/config/validation`, called from the builder, so both paths reject the same
+   input at sync rather than one failing later at provision.
+3. Wire both callers: the HTTP handler and the syncer step.
+4. Never change a `Create*Request` JSON shape — it is the API contract and feeds the generated SDKs. Map the
+   request onto builder input instead.
+5. Cover the field in `build/build_test.go`. A dropped field is invisible without a test.
+
+Writing `// Duplicates logic from ...` means you should be extracting a builder instead.
+
 ## Query Path Optimization
 
 Before adding multi-step lookups or separate Temporal activity calls, trace the GORM model relationships to find the

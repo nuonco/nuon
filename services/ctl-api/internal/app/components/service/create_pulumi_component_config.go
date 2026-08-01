@@ -8,11 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/lib/pq"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -43,6 +44,35 @@ type CreatePulumiComponentConfigRequest struct {
 
 var validPulumiRuntimes = []string{"go", "nodejs", "python", "dotnet", "java", "yaml"}
 
+func (c *CreatePulumiComponentConfigRequest) toConfig() *config.PulumiComponentConfig {
+	return &config.PulumiComponentConfig{
+		Runtime:       c.Runtime,
+		PulumiVersion: c.Version,
+		ConfigMap:     build.DerefMap(c.Config),
+		EnvVarMap:     build.DerefMap(c.EnvVars),
+	}
+}
+
+func (c *CreatePulumiComponentConfigRequest) buildInput(componentID string, depIDs []string) build.ComponentConnectionInput {
+	return build.ComponentConnectionInput{
+		ComponentID:                  componentID,
+		AppConfigID:                  c.AppConfigID,
+		References:                   c.References,
+		Checksum:                     c.Checksum,
+		DependencyIDs:                depIDs,
+		BuildTimeout:                 c.BuildTimeout,
+		DeployTimeout:                c.DeployTimeout,
+		MaxAutoRetries:               c.MaxAutoRetries,
+		SkipNoops:                    c.SkipNoops,
+		Toggleable:                   c.Toggleable,
+		DefaultEnabled:               c.DefaultEnabled,
+		AutoApproveOnPoliciesPassing: c.AutoApproveOnPoliciesPassing,
+		DriftSchedule:                c.DriftSchedule,
+		OperationRoles:               toConfigOperationRoles(c.OperationRoles),
+		KubernetesContextName:        c.KubernetesContext,
+	}
+}
+
 func (c *CreatePulumiComponentConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
@@ -65,17 +95,17 @@ func (c *CreatePulumiComponentConfigRequest) Validate(v *validator.Validate) err
 	}
 
 	if c.BuildTimeout != "" {
-		if err := validateBuildTimeout(c.BuildTimeout); err != nil {
+		if err := validation.ValidateBuildTimeout(c.BuildTimeout); err != nil {
 			return err
 		}
 	}
 	if c.DeployTimeout != "" {
-		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+		if err := validation.ValidateDeployTimeout(c.DeployTimeout); err != nil {
 			return err
 		}
 	}
 	if c.MaxAutoRetries != nil {
-		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
+		if err := validation.ValidateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
 		}
 	}
@@ -180,44 +210,20 @@ func (s *service) createPulumiComponentConfig(ctx context.Context, cmpID string,
 		return nil, fmt.Errorf("invalid public vcs config: %w", err)
 	}
 
-	cfg := app.PulumiComponentConfig{
-		Runtime:                  req.Runtime,
-		Version:                  req.Version,
-		PublicGitVCSConfig:       publicGitVCSConfig,
-		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
-		Config:                   pgtype.Hstore(req.Config),
-		EnvVars:                  pgtype.Hstore(req.EnvVars),
+	vcs := build.VCS{Github: connectedGithubVCSConfig, Public: publicGitVCSConfig}
+
+	cfg, err := build.PulumiComponentConfig(req.toConfig(), vcs)
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
 
-	var operationRoles pgtype.Hstore
-	if req.OperationRoles != nil {
-		operationRoles = make(pgtype.Hstore)
-		for operation, role := range req.OperationRoles {
-			operationRoles[string(operation)] = role
-		}
+	componentConfigConnection, err := build.ComponentConnection(req.buildInput(parentCmp.ID, depIDs))
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
+	componentConfigConnection.PulumiComponentConfig = cfg
 
-	componentConfigConnection := app.ComponentConfigConnection{
-		PulumiComponentConfig:        &cfg,
-		ComponentID:                  parentCmp.ID,
-		AppConfigID:                  req.AppConfigID,
-		ComponentDependencyIDs:       pq.StringArray(depIDs),
-		References:                   pq.StringArray(req.References),
-		Checksum:                     req.Checksum,
-		BuildTimeout:                 req.BuildTimeout,
-		DeployTimeout:                req.DeployTimeout,
-		MaxAutoRetries:               req.MaxAutoRetries,
-		SkipNoops:                    req.SkipNoops,
-		Toggleable:                   req.Toggleable,
-		DefaultEnabled:               req.DefaultEnabled,
-		AutoApproveOnPoliciesPassing: req.AutoApproveOnPoliciesPassing,
-		OperationRoles:               operationRoles,
-		KubernetesContextName:        req.KubernetesContext,
-	}
-	if req.DriftSchedule != nil {
-		componentConfigConnection.DriftSchedule = *req.DriftSchedule
-	}
-	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
+	if res := s.db.WithContext(ctx).Create(componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create pulumi component config connection: %w", res.Error)
 	}
 
@@ -226,5 +232,5 @@ func (s *service) createPulumiComponentConfig(ctx context.Context, cmpID string,
 		return nil, fmt.Errorf("unable to update component type: %w", err)
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }

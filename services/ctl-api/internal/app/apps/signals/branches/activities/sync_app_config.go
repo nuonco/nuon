@@ -8,9 +8,7 @@ import (
 	"strings"
 
 	"github.com/lib/pq"
-	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/temporal"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
@@ -60,17 +58,10 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 		"status_v2": syncingStatus,
 	})
 
-	// Deserialize the intermediate config
-	l := activity.GetLogger(ctx)
-
 	intermediateJSON, err := appConfig.IntermediateConfig.Get(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get intermediate config: %w", err)
 	}
-	l.Error("app-config",
-		zap.Any("intermediate-config", appConfig.IntermediateConfig),
-		zap.Any("intermediate-json", intermediateJSON),
-	)
 
 	var cfg config.AppConfig
 	decoder := json.NewDecoder(strings.NewReader(intermediateJSON))
