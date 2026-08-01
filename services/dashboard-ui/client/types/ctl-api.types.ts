@@ -384,6 +384,13 @@ export type TCreateWebhookBody = Omit<
   match?: TSubscriptionMatch
 }
 
+// oidc trust policies
+export type TOIDCTrustPolicy = components['schemas']['app.OIDCTrustPolicy']
+export type TCreateOIDCTrustPolicyBody =
+  components['schemas']['service.CreateOIDCTrustPolicyRequest']
+export type TUpdateOIDCTrustPolicyBody =
+  components['schemas']['service.UpdateOIDCTrustPolicyRequest']
+
 // slack
 export type TSlackInstallation = components['schemas']['app.SlackInstallation']
 export type TSlackInstallationStatus =
@@ -1043,3 +1050,6 @@ export type TMe = {
 }
 // TODO(nnnnat): use the generated type once it is ready
 // components['schemas']['service.AuthMeResponse']
+
+// general
+export type TCLIConfig = components['schemas']['service.CLIConfig']

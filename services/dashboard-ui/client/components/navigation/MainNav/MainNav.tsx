@@ -15,6 +15,7 @@ interface IMainNav {
   hasServiceAccountsAndTokens: boolean
   hasSlack: boolean
   hasTriggers: boolean
+  hasOIDCFederation: boolean
   hasCustomerPortal: boolean
   customerPortalUrl: string
 }
@@ -55,6 +56,7 @@ export const MainNav = ({
   hasServiceAccountsAndTokens,
   hasSlack,
   hasTriggers,
+  hasOIDCFederation,
   hasCustomerPortal,
   customerPortalUrl,
 }: IMainNav) => {
@@ -73,6 +75,7 @@ export const MainNav = ({
   const settingsLinks = SETTINGS_LINKS.filter(
     (link) =>
       (hasTriggers || link.path !== '/triggers') &&
+      (hasOIDCFederation || link.path !== '/oidc-trust-policies') &&
       (hasServiceAccountsAndTokens ||
         (link.path !== '/api-tokens' && link.path !== '/service-accounts'))
   )

@@ -13,6 +13,8 @@ type CLIConfig struct {
 	DashboardURL    string `json:"dashboard_url"`
 	NuonAuthEnabled bool   `json:"nuon_auth_enabled"`
 	RootDomain      string `json:"root_domain"`
+
+	OIDCFederationEnabled bool `json:"oidc_federation_enabled"`
 }
 
 // @ID						GetCLIConfig
@@ -36,5 +38,7 @@ func (s *service) GetCLIConfig(ctx *gin.Context) {
 		DashboardURL:    s.cfg.AppURL,
 		NuonAuthEnabled: true,
 		RootDomain:      s.cfg.RootDomain,
+
+		OIDCFederationEnabled: s.cfg.OIDCFederationEnabled,
 	})
 }

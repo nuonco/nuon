@@ -6093,8 +6093,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-<<<<<<< HEAD
-    "app.TokenType": "auth" | "auth0" | "admin" | "static" | "integration" | "canary" | "nuon";
+    "app.TokenType": "auth" | "auth0" | "admin" | "static" | "integration" | "canary" | "nuon" | "federated";
     "app.TriggerFilter": {
       from?: string;
       op?: components["schemas"]["app.TriggerFilterType"];
@@ -6133,9 +6132,6 @@ export interface components {
     };
     /** @enum {string} */
     "app.TriggerTargetType": "app_branch_run" | "runbook";
-=======
-    "app.TokenType": "auth" | "auth0" | "admin" | "static" | "integration" | "canary" | "nuon" | "federated";
->>>>>>> 7a9ceae2b (chore(sdk): regenerate clients with OIDC federation endpoints)
     "app.UserJourney": {
       name?: string;
       steps?: components["schemas"]["app.UserJourneyStep"][];
@@ -7421,6 +7417,7 @@ export interface components {
       auth_domain?: string;
       dashboard_url?: string;
       nuon_auth_enabled?: boolean;
+      oidc_federation_enabled?: boolean;
       root_domain?: string;
     };
     "service.CancelRunnerJobRequest": Record<string, never>;
