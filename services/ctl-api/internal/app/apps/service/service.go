@@ -219,6 +219,21 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			branches.POST("/:app_branch_id/sync-install-configs", s.TriggerInstallConfigSync)
 		}
 
+		installSyncs := app.Group("/install-syncs")
+		{
+			installSyncs.GET("", s.GetAppInstallSyncs)
+			installSyncs.POST("", s.TriggerAppInstallSync)
+			installSyncs.GET("/:sync_id", s.GetAppInstallSync)
+			installSyncs.POST("/:sync_id/approvals/:approval_id/response", s.RespondInstallCreationApproval)
+		}
+
+		installsConfigs := app.Group("/installs-configs")
+		{
+			installsConfigs.GET("", s.GetAppInstallsConfig)
+			installsConfigs.POST("", s.CreateAppInstallsConfig)
+			installsConfigs.DELETE("/:config_id", s.DeleteAppInstallsConfig)
+		}
+
 		// TODO deprecate - latest config routes
 		app.GET("/latest-break-glass-config", s.GetLatestAppBreakGlassConfig)
 		app.GET("/runner-latest-config", s.GetAppRunnerLatestConfig)

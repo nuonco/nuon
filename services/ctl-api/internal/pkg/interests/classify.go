@@ -44,6 +44,9 @@ const (
 	signalTypeComponentUnhealthy signal.SignalType = "component-unhealthy"
 	signalTypeComponentRecovered signal.SignalType = "component-recovered"
 	signalTypeInstallDegraded    signal.SignalType = "install-degraded"
+
+	signalTypeSyncInstalls      signal.SignalType = "sync-installs"
+	signalTypeInstallConfigSync signal.SignalType = "install-config-sync"
 )
 
 // stepTargetType* mirror the WorkflowStepTargetType strings declared in
@@ -301,6 +304,20 @@ func classify(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome,
 		f.Resource = ResourceAppBranches
 		f.Op = "run"
 		f.EventClass = eventClassConfigSynced
+		f.Resolved = true
+		return f
+
+	case signalTypeSyncInstalls:
+		f.Resource = ResourceInstallConfigurations
+		f.Op = "sync"
+		f.EventClass = eventClassLifecycle
+		f.Resolved = true
+		return f
+
+	case signalTypeInstallConfigSync:
+		f.Resource = ResourceInstallConfigurations
+		f.Op = "sync"
+		f.EventClass = eventClassLifecycle
 		f.Resolved = true
 		return f
 
