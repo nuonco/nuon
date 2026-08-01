@@ -26,4 +26,4 @@ COPY --from=aws-iam-authenticator /bin/aws-iam-authenticator /usr/local/bin/aws-
 COPY --from=certs /global-bundle.pem /etc/ssl/cert.pem
 
 # Install basic runtime dependencies
-RUN apk add --update --no-cache ca-certificates
+RUN apk add --update --no-cache ca-certificates git
