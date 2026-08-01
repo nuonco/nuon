@@ -13,6 +13,7 @@ import { ServiceAccounts } from './ServiceAccounts'
 import { VCSConnectionDetail } from './VCSConnectionDetail'
 import { Slack } from './Slack'
 import { Webhooks } from './Webhooks'
+import { OIDCTrustPolicies } from './OIDCTrustPolicies'
 import { Triggers } from './Triggers'
 import { TriggerLayout } from './TriggerLayout'
 import { TriggerOverview } from './trigger-tabs/TriggerOverview'
@@ -24,12 +25,21 @@ import { NotFound } from '@/views/NotFound'
 import { appRoutes } from '@/views/app/routes'
 import { installRoutes } from '@/views/install/routes'
 import { useOrg } from '@/hooks/use-org'
+import { useCLIConfig } from '@/hooks/use-cli-config'
 
 const TriggersGate = () => {
   const { org } = useOrg()
 
   if (!org) return null
   if (!org?.features?.['triggers']) return <NotFound />
+  return <Outlet />
+}
+
+const OIDCFederationGate = () => {
+  const { data: cliConfig, isLoading } = useCLIConfig()
+
+  if (isLoading) return null
+  if (!cliConfig?.oidc_federation_enabled) return <NotFound />
   return <Outlet />
 }
 
@@ -51,6 +61,12 @@ export const orgRoutes: RouteObject[] = [
       { path: ':orgId/api-tokens', element: <ApiTokens /> },
       { path: ':orgId/service-accounts', element: <ServiceAccounts /> },
       { path: ':orgId/webhooks', element: <Webhooks /> },
+      {
+        element: <OIDCFederationGate />,
+        children: [
+          { path: ':orgId/oidc-trust-policies', element: <OIDCTrustPolicies /> },
+        ],
+      },
       {
         element: <TriggersGate />,
         children: [

@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/nuonco/nuon/bins/cli/internal/services/orgs"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (c *cli) orgsCmd() *cobra.Command {
@@ -54,6 +57,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 	orgsCmd.AddCommand(currentCmd)
 
 	orgsCmd.AddCommand(c.apiTokensCmd())
+	orgsCmd.AddCommand(c.oidcTrustPoliciesCmd())
 
 	deprecatedAPITokenCmd := &cobra.Command{
 		Use:    "api-token",
@@ -285,6 +289,152 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 	apiTokensCmd.AddCommand(deleteCmd)
 
 	return apiTokensCmd
+}
+
+func (c *cli) oidcTrustPoliciesCmd() *cobra.Command {
+	trustPoliciesCmd := &cobra.Command{
+		Use:               "oidc-trust-policies",
+		Short:             "Manage OIDC workload identity trust policies for the current org",
+		Long:              "OIDC trust policies let CI workloads (e.g. GitHub Actions) exchange their OIDC ID tokens for short-lived Nuon API tokens via `nuon auth exchange-token`, with no stored secrets",
+		PersistentPreRunE: c.persistentPreRunE,
+	}
+
+	var (
+		name     string
+		issuer   string
+		audience string
+		role     string
+		ttl      int64
+		claims   []string
+		policyID string
+	)
+
+	createCmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create an OIDC trust policy for the current org",
+		Long: `Create an OIDC trust policy. Tokens whose issuer, audience, and claims match the
+policy can be exchanged for Nuon API tokens with the policy's role.
+
+Claim patterns are exact strings, or globs where '*' does not cross ':' segments. A --claim
+condition on "sub" is required.
+
+Example (GitHub Actions, main branch of acme/app only):
+
+  nuon orgs oidc-trust-policies create \
+    --name gh-actions-main \
+    --issuer https://token.actions.githubusercontent.com \
+    --audience https://api.nuon.co \
+    --claim "sub=repo:acme/app:ref:refs/heads/main"`,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			conditions, err := orgs.ParseClaimConditions(claims)
+			if err != nil {
+				return err
+			}
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.CreateOIDCTrustPolicy(cmd.Context(), name, issuer, audience, role, ttl, conditions, PrintJSON)
+		}),
+	}
+	createCmd.Flags().StringVarP(&name, "name", "n", "", "A human-friendly name to identify the policy")
+	createCmd.MarkFlagRequired("name")
+	createCmd.Flags().StringVar(&issuer, "issuer", "", "The OIDC issuer URL (exact `iss` claim value)")
+	createCmd.MarkFlagRequired("issuer")
+	createCmd.Flags().StringVar(&audience, "audience", "", "The expected `aud` claim value")
+	createCmd.MarkFlagRequired("audience")
+	createCmd.Flags().StringArrayVar(&claims, "claim", nil, "A claim condition as claim=pattern (repeatable; a sub condition is required)")
+	createCmd.MarkFlagRequired("claim")
+	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to exchanged tokens (org_admin, org_support, or org_read_only)")
+	createCmd.Flags().Int64Var(&ttl, "ttl", 0, "Lifetime of exchanged tokens in seconds (default 3600, max 86400)")
+	trustPoliciesCmd.AddCommand(createCmd)
+
+	listCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List OIDC trust policies for the current org",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.ListOIDCTrustPolicies(cmd.Context(), PrintJSON)
+		}),
+	}
+	trustPoliciesCmd.AddCommand(listCmd)
+
+	getCmd := &cobra.Command{
+		Use:   "get",
+		Short: "Get an OIDC trust policy",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.GetOIDCTrustPolicy(cmd.Context(), policyID, PrintJSON)
+		}),
+	}
+	getCmd.Flags().StringVar(&policyID, "id", "", "The ID of the policy")
+	getCmd.MarkFlagRequired("id")
+	trustPoliciesCmd.AddCommand(getCmd)
+
+	var (
+		updateName     string
+		updateIssuer   string
+		updateAudience string
+		updateRole     string
+		updateTTL      int64
+		updateClaims   []string
+		enable         bool
+		disable        bool
+	)
+	updateCmd := &cobra.Command{
+		Use:   "update",
+		Short: "Update an OIDC trust policy",
+		Long:  "Update an OIDC trust policy. Only the provided flags are changed; --claim replaces all existing claim conditions.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			if enable && disable {
+				return fmt.Errorf("--enable and --disable are mutually exclusive")
+			}
+
+			conditions, err := orgs.ParseClaimConditions(updateClaims)
+			if err != nil {
+				return err
+			}
+
+			req := &models.ServiceUpdateOIDCTrustPolicyRequest{
+				Name:                 updateName,
+				IssuerURL:            updateIssuer,
+				Audience:             updateAudience,
+				ClaimConditions:      conditions,
+				Role:                 updateRole,
+				TokenDurationSeconds: updateTTL,
+			}
+			if enable || disable {
+				req.Enabled = &enable
+			}
+
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.UpdateOIDCTrustPolicy(cmd.Context(), policyID, req, PrintJSON)
+		}),
+	}
+	updateCmd.Flags().StringVar(&policyID, "id", "", "The ID of the policy")
+	updateCmd.MarkFlagRequired("id")
+	updateCmd.Flags().StringVar(&updateName, "name", "", "A new name for the policy")
+	updateCmd.Flags().StringVar(&updateIssuer, "issuer", "", "A new OIDC issuer URL")
+	updateCmd.Flags().StringVar(&updateAudience, "audience", "", "A new expected `aud` claim value")
+	updateCmd.Flags().StringArrayVar(&updateClaims, "claim", nil, "Replacement claim conditions as claim=pattern (repeatable)")
+	updateCmd.Flags().StringVar(&updateRole, "role", "", "A new org role for exchanged tokens (also updates the policy's service account)")
+	updateCmd.Flags().Int64Var(&updateTTL, "ttl", 0, "A new lifetime for exchanged tokens in seconds")
+	updateCmd.Flags().BoolVar(&enable, "enable", false, "Enable the policy")
+	updateCmd.Flags().BoolVar(&disable, "disable", false, "Disable the policy")
+	trustPoliciesCmd.AddCommand(updateCmd)
+
+	deleteCmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete an OIDC trust policy",
+		Long:  "Delete an OIDC trust policy and its service account. Tokens already exchanged under the policy stop working immediately.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.DeleteOIDCTrustPolicy(cmd.Context(), policyID, PrintJSON)
+		}),
+	}
+	deleteCmd.Flags().StringVar(&policyID, "id", "", "The ID of the policy to delete")
+	deleteCmd.MarkFlagRequired("id")
+	trustPoliciesCmd.AddCommand(deleteCmd)
+
+	return trustPoliciesCmd
 }
 
 // subscriptionJSONHelp documents the shape accepted by --subscription-json

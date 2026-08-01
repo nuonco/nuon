@@ -19,6 +19,7 @@ func AllModels() []any {
 		&app.IdentityProvider{},
 		&app.AccountIdentity{},
 		&app.DeviceCode{},
+		&app.OIDCTrustPolicy{},
 
 		&app.NotificationsConfig{},
 

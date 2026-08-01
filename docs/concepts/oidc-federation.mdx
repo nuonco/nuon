@@ -1,0 +1,140 @@
+---
+title: "OIDC Federation"
+icon: "id-badge"
+description: "Exchange OIDC tokens from any trusted workload for short-lived Nuon API tokens — no stored secrets."
+keywords: ["OIDC", "workload identity federation", "token exchange", "GitHub Actions", "GitLab", "Buildkite", "Kubernetes", "CI/CD", "secretless", "trust policy", "federation"]
+---
+
+**OIDC federation** lets a workload exchange an OIDC token it already has for a short-lived [Nuon API token](/concepts/api-tokens) — with no long-lived secret stored anywhere. You configure a **trust policy** that tells Nuon which issuer to trust and which token claims to require; any workload presenting a matching token gets a short-lived token in return.
+
+This works with **any OIDC-compatible identity**, and from any client, since the exchange is a plain API call. Unlike an [API token](/concepts/api-tokens) or a token minted for a [service account](/concepts/service-accounts), there is no credential to store, distribute, or rotate.
+
+## How it works
+
+1. A workload obtains its ambient OIDC token from its platform (for example, the ID token GitHub Actions issues to a job).
+2. It calls the Nuon token-exchange endpoint with that token and your org ID.
+3. Nuon verifies the token's signature against the issuer's JWKS and checks its issuer, audience, and claims against your trust policies.
+4. On a match, Nuon mints a short-lived API token bound to the policy's service account and returns it. The workload uses it like any other Nuon API token.
+
+The exchange endpoint requires no Nuon credentials — trust is established entirely by the OIDC token and your trust policy.
+
+## Trust policy properties
+
+| Property | Description |
+| --- | --- |
+| **Name** | A human-readable label to identify the policy. Required. |
+| **Issuer URL** | The exact `iss` of the OIDC provider to trust, e.g. `https://token.actions.githubusercontent.com`. Nuon fetches this issuer's JWKS to verify signatures. Required. |
+| **Audience** | The expected `aud` claim on the presented token. Required. |
+| **Claim conditions** | Claims the token must satisfy. A `sub` condition is required. |
+| **Role** | The permissions granted to exchanged tokens — `org_admin` or `org_read_only`. Defaults to `org_read_only`. |
+| **Token duration** | Lifetime of the exchanged token, in seconds. Defaults to `3600`; maximum `86400`. |
+| **Enabled** | Whether the policy accepts exchanges. |
+
+Each trust policy is backed by a dedicated [service account](/concepts/service-accounts) that carries its role. Creating and managing trust policies requires **org admin** access.
+
+## Claim matching
+
+Every claim condition must match the presented token for a policy to apply — conditions are combined with AND. A `sub` condition is always required, so a policy can never trust *every* token from an issuer.
+
+Values support glob patterns. The `*` wildcard does not cross `:` segment boundaries, which makes it safe to match structured subjects like GitHub's `repo:acme/app:ref:refs/heads/main`:
+
+| Pattern | Matches |
+| --- | --- |
+| `repo:acme/app:ref:refs/heads/main` | Exactly that subject |
+| `repo:acme/app:*` | Any subject for the `acme/app` repo |
+| `repo:acme/*:ref:refs/heads/main` | The `main` ref of any repo in `acme` |
+
+## Managing trust policies
+
+You can manage trust policies in the Dashboard under **Settings → OIDC federation**, or with the CLI.
+
+### Creating a policy
+
+```sh
+nuon orgs oidc-trust-policies create \
+  --name github-actions \
+  --issuer https://token.actions.githubusercontent.com \
+  --audience https://api.nuon.co \
+  --role org_read_only \
+  --claim sub=repo:acme/app:ref:refs/heads/main
+```
+
+Pass `--claim` multiple times to require additional claims. Use `--ttl` to set a custom token duration in seconds.
+
+### Listing and inspecting
+
+```sh
+nuon orgs oidc-trust-policies list
+nuon orgs oidc-trust-policies get --id <policy-id>
+```
+
+### Updating and deleting
+
+```sh
+nuon orgs oidc-trust-policies update --id <policy-id> --role org_admin
+nuon orgs oidc-trust-policies delete --id <policy-id>
+```
+
+## Exchanging a token
+
+### Direct API exchange
+
+The exchange is a single unauthenticated API call — use it from any language or runtime. Send the workload's OIDC token and your org ID:
+
+```sh
+curl -X POST $NUON_API_URL/v1/oidc/token \
+  -H "Content-Type: application/json" \
+  -d '{"org_id": "<your-org-id>", "token": "<oidc-jwt>"}'
+```
+
+A successful response returns a short-lived token:
+
+```json
+{
+  "authenticated": true,
+  "token": "<nuon-api-token>",
+  "expires_at": "2026-01-01T00:00:00Z",
+  "role": "org_read_only"
+}
+```
+
+Use the returned `token` as a Bearer credential on subsequent requests, exactly like an [API token](/concepts/api-tokens):
+
+```sh
+curl $NUON_API_URL/v1/current-user \
+  -H "Authorization: Bearer <nuon-api-token>"
+```
+
+### Using the CLI
+
+The [Nuon CLI](/cli) can perform the exchange for you. In GitHub Actions it detects the ambient OIDC token automatically — set your org ID and run any command:
+
+```sh
+export NUON_ORG_ID=<your-org-id>
+nuon apps list
+```
+
+In other environments, provide the OIDC token yourself via `NUON_OIDC_TOKEN` (a raw JWT) or `NUON_OIDC_TOKEN_FILE` (a path to one), and the CLI will exchange it the same way.
+
+You can also exchange explicitly and capture the token, for example to export it for other tools:
+
+```sh
+export NUON_API_TOKEN=$(nuon auth exchange-token)
+```
+
+## Example issuers
+
+Any OIDC provider that exposes a discovery document and JWKS can be used as a trust policy issuer, including:
+
+- **GitHub Actions** — `https://token.actions.githubusercontent.com` (see the [GitHub Actions guide](/guides/github-actions))
+- **GitLab CI/CD** — your GitLab instance URL
+- **Buildkite** — `https://agent.buildkite.com`
+- **Cloud workloads** and **Kubernetes** service accounts with OIDC-issued tokens
+
+Set the policy's issuer to the provider's `iss` and its claim conditions to whatever uniquely identifies the workload you want to trust.
+
+## Revocation
+
+Deleting a trust policy revokes its outstanding tokens immediately — the backing service account is removed, so any token minted through the policy stops working at once.
+
+Disabling a policy only stops new exchanges; tokens already issued remain valid until they expire.

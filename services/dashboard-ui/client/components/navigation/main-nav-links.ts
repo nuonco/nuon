@@ -58,6 +58,12 @@ export const SETTINGS_LINKS: TNavLink[] = [
     text: 'Service accounts',
     shortcut: 'g v',
   },
+  {
+    iconVariant: 'ShieldCheckIcon',
+    path: `/oidc-trust-policies`,
+    text: 'OIDC federation',
+    shortcut: 'g f',
+  },
 ]
 
 export const SLACK_LINK: TNavLink = {

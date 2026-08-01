@@ -53,6 +53,9 @@ type AppAppBranchConfig struct {
 	// public git vcs config
 	PublicGitVcsConfig *AppPublicGitVCSConfig `json:"public_git_vcs_config,omitempty"`
 
+	// runbook ids
+	RunbookIds []string `json:"runbook_ids"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 

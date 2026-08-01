@@ -418,6 +418,47 @@ Annotations: annotations(tuiAnnotation(TUIAltScreen), outputsAnnotation(OutputTa
 `resolveOutput` enforces this — requesting an unsupported format errors with the supported list. **When adding or
 changing a command, set this annotation; it is metadata LLMs and completion rely on and is not inferred.**
 
+### OIDC workload identity federation (CI auth without secrets)
+
+In CI, the CLI can authenticate with **no stored secrets** by exchanging the workload's ambient OIDC
+ID token for a short-lived Nuon API token (`POST /v1/oidc/token`, unauthenticated). The control
+plane must have `oidc_federation_enabled: true` in its config (`OIDC_FEDERATION_ENABLED` env var —
+off by default). An org admin then creates a trust policy binding an issuer + audience + claim
+conditions to an org role:
+
+```bash
+nuon orgs oidc-trust-policies create \
+  --name gh-actions-main \
+  --issuer https://token.actions.githubusercontent.com \
+  --audience https://api.nuon.co \
+  --claim "sub=repo:acme/app:ref:refs/heads/main" \
+  --role org_read_only
+```
+
+Claim patterns are exact strings or globs where `*` cannot cross `:` segments (safe for GitHub's
+`sub` format). Each policy gets a dedicated service account; deleting the policy revokes all its
+tokens immediately.
+
+In a GitHub Actions workflow, auth setup is the `id-token` permission plus the control plane URL and
+org ID — the CLI detects Actions and exchanges automatically (token held in-memory per invocation).
+The requested audience defaults to the configured API URL, so the trust policy's `--audience` should
+be that same URL (override with `--audience` / `NUON_OIDC_AUDIENCE`):
+
+```yaml
+permissions:
+  id-token: write
+env:
+  NUON_API_URL: https://api.your-company.com # omit for Nuon Cloud (defaults to api.nuon.co)
+  NUON_ORG_ID: org_xxx
+steps:
+  - run: nuon apps list
+```
+
+Other CI systems: set `NUON_OIDC_TOKEN` (raw JWT) or `NUON_OIDC_TOKEN_FILE`. Explicit exchange for
+scripting: `export NUON_API_TOKEN=$(nuon auth exchange-token)`. Implementation:
+`internal/oidctoken` (ambient detection), `internal/services/auth/exchange.go` (exchange),
+`tryAmbientOIDCExchange` in `cmd/cli.go` (transparent hook).
+
 ### Read-only mode (`--read-only` / `NUON_READ_ONLY=1`)
 
 Safety guardrail for agent-driven use: blocks any command that may mutate remote state. Enforced in

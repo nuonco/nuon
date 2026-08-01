@@ -2142,6 +2142,42 @@ export interface paths {
      */
     get: operations["LogStreamReadSpans"];
   };
+  "/v1/oidc/token": {
+    /**
+     * exchange an OIDC token for a Nuon API token
+     * @description Exchanges an OIDC ID token (e.g. from GitHub Actions) for a short-lived Nuon API token. The token must match an enabled OIDC trust policy in the target org: its signature is verified against the policy issuer's JWKS, and its issuer, audience, and claims must satisfy the policy. No Nuon credentials are required to call this endpoint.
+     */
+    post: operations["ExchangeOIDCToken"];
+  };
+  "/v1/oidc/trust-policies": {
+    /**
+     * list your org's OIDC trust policies
+     * @description Lists the OIDC workload identity trust policies for your current org.
+     */
+    get: operations["ListOIDCTrustPolicies"];
+    /**
+     * create an OIDC trust policy
+     * @description Creates an OIDC workload identity trust policy for your current org. OIDC tokens matching the policy's issuer, audience, and claim conditions can be exchanged for short-lived Nuon API tokens. Each policy gets a dedicated service account with the configured role.
+     */
+    post: operations["CreateOIDCTrustPolicy"];
+  };
+  "/v1/oidc/trust-policies/{policy_id}": {
+    /**
+     * get an OIDC trust policy
+     * @description Returns an OIDC workload identity trust policy belonging to your current org.
+     */
+    get: operations["GetOIDCTrustPolicy"];
+    /**
+     * delete an OIDC trust policy
+     * @description Deletes an OIDC workload identity trust policy belonging to your current org, along with its dedicated service account. Tokens already issued under the policy stop working immediately.
+     */
+    delete: operations["DeleteOIDCTrustPolicy"];
+    /**
+     * update an OIDC trust policy
+     * @description Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy.
+     */
+    patch: operations["UpdateOIDCTrustPolicy"];
+  };
   "/v1/onboarding": {
     /**
      * Start a new onboarding session
@@ -5142,6 +5178,34 @@ export interface components {
       urls?: string[];
       variant?: string;
     };
+    "app.OIDCTrustPolicy": {
+      audience?: string;
+      /**
+       * @description ClaimConditions maps claim names to patterns. All conditions must match
+       * for the policy to apply. Patterns are exact strings, or globs where `*`
+       * does not cross `:` segments.
+       */
+      claim_conditions?: {
+        [key: string]: string;
+      };
+      created_at?: string;
+      created_by_id?: string;
+      enabled?: boolean;
+      id?: string;
+      /**
+       * @description IssuerURL is the exact `iss` claim value and the base URL used for OIDC
+       * discovery + JWKS fetching. It is always the stored, admin-configured
+       * value — never taken from the presented token.
+       */
+      issuer_url?: string;
+      last_used_at?: string;
+      name?: string;
+      org_id?: string;
+      role?: string;
+      service_account_id?: string;
+      token_duration_seconds?: number;
+      updated_at?: string;
+    };
     "app.Onboarding": {
       account_id?: string;
       app_attributes?: string[];
@@ -6029,7 +6093,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.TokenType": "auth" | "auth0" | "admin" | "static" | "integration" | "canary" | "nuon";
+    "app.TokenType": "auth" | "auth0" | "admin" | "static" | "integration" | "canary" | "nuon" | "federated";
     "app.TriggerFilter": {
       from?: string;
       op?: components["schemas"]["app.TriggerFilterType"];
@@ -7353,6 +7417,7 @@ export interface components {
       auth_domain?: string;
       dashboard_url?: string;
       nuon_auth_enabled?: boolean;
+      oidc_federation_enabled?: boolean;
       root_domain?: string;
     };
     "service.CancelRunnerJobRequest": Record<string, never>;
@@ -7885,6 +7950,29 @@ export interface components {
       description?: string;
       name?: string;
     };
+    "service.CreateOIDCTrustPolicyRequest": {
+      /** @description expected `aud` claim value */
+      audience: string;
+      /**
+       * @description map of claim name -> pattern; all must match. A `sub` condition is
+       * required. Patterns are exact strings or globs where `*` cannot cross
+       * `:` segments.
+       */
+      claim_conditions: {
+        [key: string]: string;
+      };
+      /** @description exact `iss` claim value; also used for OIDC discovery + JWKS fetching */
+      issuer_url: string;
+      /** @description human-friendly name to identify the policy */
+      name: string;
+      /**
+       * @description org role granted to exchanged tokens. one of org_admin, org_support,
+       * org_read_only. defaults to org_read_only.
+       */
+      role?: string;
+      /** @description lifetime of exchanged tokens in seconds. defaults to 3600, max 86400. */
+      token_duration_seconds?: number;
+    };
     "service.CreateOrgInviteRequest": {
       email: string;
       role_type?: components["schemas"]["app.RoleType"];
@@ -8099,6 +8187,18 @@ export interface components {
       display_name?: string;
       slug?: string;
       tags?: string[];
+    };
+    "service.ExchangeOIDCTokenRequest": {
+      org_id: string;
+      token: string;
+    };
+    "service.ExchangeOIDCTokenResponse": {
+      authenticated?: boolean;
+      expires_at?: string;
+      org_id?: string;
+      role?: string;
+      token?: string;
+      trust_policy_id?: string;
     };
     "service.ForceShutdownRequest": Record<string, never>;
     "service.ForgetInstallComponentRequest": Record<string, never>;
@@ -8552,6 +8652,17 @@ export interface components {
       name?: string;
       /** @enum {string} */
       status?: "active" | "archived";
+    };
+    "service.UpdateOIDCTrustPolicyRequest": {
+      audience?: string;
+      claim_conditions?: {
+        [key: string]: string;
+      };
+      enabled?: boolean;
+      issuer_url?: string;
+      name?: string;
+      role?: string;
+      token_duration_seconds?: number;
     };
     "service.UpdateOrgAccountRoleRequest": {
       role_type: components["schemas"]["app.RoleType"];
@@ -24944,6 +25055,202 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * exchange an OIDC token for a Nuon API token
+   * @description Exchanges an OIDC ID token (e.g. from GitHub Actions) for a short-lived Nuon API token. The token must match an enabled OIDC trust policy in the target org: its signature is verified against the policy issuer's JWKS, and its issuer, audience, and claims must satisfy the policy. No Nuon credentials are required to call this endpoint.
+   */
+  ExchangeOIDCToken: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ExchangeOIDCTokenRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ExchangeOIDCTokenResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * list your org's OIDC trust policies
+   * @description Lists the OIDC workload identity trust policies for your current org.
+   */
+  ListOIDCTrustPolicies: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OIDCTrustPolicy"][];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create an OIDC trust policy
+   * @description Creates an OIDC workload identity trust policy for your current org. OIDC tokens matching the policy's issuer, audience, and claim conditions can be exchanged for short-lived Nuon API tokens. Each policy gets a dedicated service account with the configured role.
+   */
+  CreateOIDCTrustPolicy: {
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateOIDCTrustPolicyRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.OIDCTrustPolicy"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an OIDC trust policy
+   * @description Returns an OIDC workload identity trust policy belonging to your current org.
+   */
+  GetOIDCTrustPolicy: {
+    parameters: {
+      path: {
+        /** @description policy ID */
+        policy_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OIDCTrustPolicy"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete an OIDC trust policy
+   * @description Deletes an OIDC workload identity trust policy belonging to your current org, along with its dedicated service account. Tokens already issued under the policy stop working immediately.
+   */
+  DeleteOIDCTrustPolicy: {
+    parameters: {
+      path: {
+        /** @description policy ID */
+        policy_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update an OIDC trust policy
+   * @description Updates an OIDC workload identity trust policy belonging to your current org. Changing the role also updates the policy's service account role, which affects tokens already issued under the policy.
+   */
+  UpdateOIDCTrustPolicy: {
+    parameters: {
+      path: {
+        /** @description policy ID */
+        policy_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateOIDCTrustPolicyRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OIDCTrustPolicy"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
