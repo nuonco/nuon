@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -232,9 +233,23 @@ func (s *service) ExchangeOIDCToken(ctx *gin.Context) {
 	}
 
 	if matched == nil {
-		s.l.Warn("oidc exchange: no trust policy matched",
+		fields := []zap.Field{
 			zap.String("org_id", req.OrgID),
-			zap.String("issuer", issuer))
+			zap.String("issuer", issuer),
+		}
+		// When at least one policy verified the token, claims are populated;
+		// logging the sub and claim keys lets operators see why no policy's
+		// conditions matched without weakening the generic client-facing 401.
+		if claims != nil {
+			sub, _ := claims["sub"].(string)
+			keys := make([]string, 0, len(claims))
+			for k := range claims {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			fields = append(fields, zap.String("sub", sub), zap.Strings("claim_keys", keys))
+		}
+		s.l.Warn("oidc exchange: no trust policy matched", fields...)
 		ctx.Error(genericExchangeError())
 		return
 	}
