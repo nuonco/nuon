@@ -13,7 +13,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -65,7 +64,7 @@ func (s *service) getInstallComponentHealthChecks(ctx context.Context, orgID, in
 
 	checks := make([]app.InstallComponentResourceState, 0)
 	if err := s.chDB.WithContext(ctx).
-		Scopes(scopes.WithOverrideTable(views.CurrentViewName(s.chDB, &app.InstallComponentResourceState{}))).
+		Scopes(scopes.WithOverrideTable(app.InstallComponentResourceStatesLatestView)).
 		Where(app.InstallComponentResourceState{
 			OrgID:              orgID,
 			InstallID:          installID,

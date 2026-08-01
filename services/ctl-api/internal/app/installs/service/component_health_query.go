@@ -10,7 +10,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -132,7 +131,7 @@ func (s *service) findLatestBadTransition(ctx context.Context, orgID, installID,
 func (s *service) nonHealthyResources(ctx context.Context, orgID, installID, installComponentID string) ([]app.InstallComponentResourceState, error) {
 	resources := make([]app.InstallComponentResourceState, 0)
 	if err := s.chDB.WithContext(ctx).
-		Scopes(scopes.WithOverrideTable(views.CurrentViewName(s.chDB, &app.InstallComponentResourceState{}))).
+		Scopes(scopes.WithOverrideTable(app.InstallComponentResourceStatesLatestView)).
 		Where(app.InstallComponentResourceState{
 			OrgID:              orgID,
 			InstallID:          installID,

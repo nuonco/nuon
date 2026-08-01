@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -155,7 +154,7 @@ type priorHealth struct {
 func (s *service) priorResourceHealth(ctx context.Context, orgID, installID string) (map[string]priorHealth, error) {
 	var rows []app.InstallComponentResourceState
 	err := s.chDB.WithContext(ctx).
-		Scopes(scopes.WithOverrideTable(views.CurrentViewName(s.chDB, &app.InstallComponentResourceState{}))).
+		Scopes(scopes.WithOverrideTable(app.InstallComponentResourceStatesLatestView)).
 		Select("install_component_id", "provider", "api_group", "kind", "namespace", "name", "health", "message", "native_status").
 		Where(app.InstallComponentResourceState{OrgID: orgID, InstallID: installID}).
 		Find(&rows).Error

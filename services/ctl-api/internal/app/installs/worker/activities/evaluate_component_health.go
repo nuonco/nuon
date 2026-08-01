@@ -13,7 +13,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -759,7 +758,7 @@ func (a *Activities) resourceDiagnoses(ctx context.Context, orgID, installID str
 
 	var rows []app.InstallComponentResourceState
 	if err := a.chDB.WithContext(ctx).
-		Scopes(scopes.WithOverrideTable(views.CurrentViewName(a.chDB, &app.InstallComponentResourceState{}))).
+		Scopes(scopes.WithOverrideTable(app.InstallComponentResourceStatesLatestView)).
 		Select("install_component_id", "kind", "namespace", "name", "details").
 		Where(app.InstallComponentResourceState{OrgID: orgID, InstallID: installID}).
 		Where("install_component_id IN ?", installComponentIDs).
