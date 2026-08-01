@@ -23,6 +23,7 @@ import (
 	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
 	notebooksservice "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/service"
+	oidcfederationservice "github.com/nuonco/nuon/services/ctl-api/internal/app/oidc-federation/service"
 	onboardingservice "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/service"
 	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
 	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
@@ -64,6 +65,7 @@ func testDomainServices(ea *api.EndpointAudit) []api.Service {
 		}),
 		vcsservice.New(vcsservice.Params{}),
 		onboardingservice.New(onboardingservice.Params{EndpointAudit: ea}),
+		oidcfederationservice.New(oidcfederationservice.Params{}),
 	}
 }
 

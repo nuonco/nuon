@@ -21,6 +21,7 @@ const (
 	TokenTypeIntegration TokenType = "integration"
 	TokenTypeCanary      TokenType = "canary"
 	TokenTypeNuon        TokenType = "nuon"
+	TokenTypeFederated   TokenType = "federated"
 )
 
 type Token struct {

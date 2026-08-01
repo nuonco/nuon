@@ -152,5 +152,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "119-backfill-workflow-names",
 			Fn:   m.Migration119BackfillWorkflowNames,
 		},
+		{
+			Name: "120-installs-last-health-report-at-index",
+			Fn:   m.Migration120InstallsLastHealthReportAtIndex,
+		},
 	}
 }

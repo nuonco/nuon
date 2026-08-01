@@ -25,6 +25,15 @@ const (
 	InstallComponentResourceSourceSandbox   = "sandbox"
 )
 
+// InstallComponentResourceStatesLatestView is the read path for latest state: a
+// ReplacingMergeTree keyed by resource identity, wrapped in a FINAL view.
+// Aggregating the observation table instead costs ~65 MB per read on prod to
+// return a few dozen rows, because it re-reads every 60s snapshot in the TTL.
+//
+// Created by CH migration 09 rather than Views() below, since the views phase
+// runs before custom migrations and so cannot reference the table it selects from.
+const InstallComponentResourceStatesLatestView = "install_component_resource_states_latest_view_v1"
+
 // InstallComponentResourceState is a ClickHouse observation row: one per
 // resource per install component; latest-state view keeps the newest per identity.
 type InstallComponentResourceState struct {
@@ -86,6 +95,11 @@ func (*InstallComponentResourceState) ViewVersion() string {
 	return "v1"
 }
 
+// Views keeps the aggregating latest-state view alive even though nothing reads it
+// any more — see InstallComponentResourceStatesLatestView for the live read path.
+// Dropping it in the same release that repoints the readers would 5xx the pods still
+// draining behind the rollout, on the exact endpoint this change exists to speed up.
+// Safe to delete once a release carrying the constant above has fully rolled out.
 func (i *InstallComponentResourceState) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{

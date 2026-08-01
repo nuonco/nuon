@@ -44,6 +44,9 @@ type AppInstallActionWorkflow struct {
 	// after query fields filled in after querying
 	Status string `json:"status,omitempty"`
 
+	// status v2
+	StatusV2 *AppCompositeStatus `json:"status_v2,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 }
@@ -57,6 +60,10 @@ func (m *AppInstallActionWorkflow) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRuns(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStatusV2(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -119,6 +126,29 @@ func (m *AppInstallActionWorkflow) validateRuns(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppInstallActionWorkflow) validateStatusV2(formats strfmt.Registry) error {
+	if swag.IsZero(m.StatusV2) { // not required
+		return nil
+	}
+
+	if m.StatusV2 != nil {
+		if err := m.StatusV2.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("status_v2")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("status_v2")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app install action workflow based on the context it is used
 func (m *AppInstallActionWorkflow) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -128,6 +158,10 @@ func (m *AppInstallActionWorkflow) ContextValidate(ctx context.Context, formats 
 	}
 
 	if err := m.contextValidateRuns(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStatusV2(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -186,6 +220,31 @@ func (m *AppInstallActionWorkflow) contextValidateRuns(ctx context.Context, form
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppInstallActionWorkflow) contextValidateStatusV2(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.StatusV2 != nil {
+
+		if swag.IsZero(m.StatusV2) { // not required
+			return nil
+		}
+
+		if err := m.StatusV2.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("status_v2")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("status_v2")
+			}
+
+			return err
+		}
 	}
 
 	return nil

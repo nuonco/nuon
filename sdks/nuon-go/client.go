@@ -170,6 +170,14 @@ type Client interface {
 	GetCurrentUser(ctx context.Context) (*models.AppAccount, error)
 	GetCloudPlatformRegions(ctx context.Context, cloudPlatform string) ([]*models.AppCloudPlatformRegion, error)
 
+	// oidc workload identity federation
+	ExchangeOIDCToken(ctx context.Context, req *models.ServiceExchangeOIDCTokenRequest) (*models.ServiceExchangeOIDCTokenResponse, error)
+	CreateOIDCTrustPolicy(ctx context.Context, req *models.ServiceCreateOIDCTrustPolicyRequest) (*models.AppOIDCTrustPolicy, error)
+	ListOIDCTrustPolicies(ctx context.Context) ([]*models.AppOIDCTrustPolicy, error)
+	GetOIDCTrustPolicy(ctx context.Context, policyID string) (*models.AppOIDCTrustPolicy, error)
+	UpdateOIDCTrustPolicy(ctx context.Context, policyID string, req *models.ServiceUpdateOIDCTrustPolicyRequest) (*models.AppOIDCTrustPolicy, error)
+	DeleteOIDCTrustPolicy(ctx context.Context, policyID string) error
+
 	// vcs connections
 	CreateVCSConnection(ctx context.Context, req *models.ServiceCreateConnectionRequest) (*models.AppVCSConnection, error)
 	CreateVCSConnectionCallback(ctx context.Context, req *models.ServiceCreateConnectionCallbackRequest) (*models.AppVCSConnection, error)
