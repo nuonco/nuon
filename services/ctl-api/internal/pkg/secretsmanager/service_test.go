@@ -250,9 +250,17 @@ func TestPhoneHomeSecretName(t *testing.T) {
 	}
 }
 
-// The role named here does not exist when the policy is first applied — it is
-// created by the CloudFormation stack the customer has yet to run — so a typo fails
-// silently as an AccessDeniedException at phone-home time. Hence pinning the shape.
+// Both halves of this shape are load-bearing and each fails in a different direction.
+//
+// Naming the role as the Principal is what a reader would write, and it is wrong:
+// Secrets Manager validates principals, the role does not exist until the customer's
+// stack creates it, and the call fails outright with "This resource policy contains an
+// unsupported principal". Root as the Principal is what makes the call succeed.
+//
+// Root *alone* would be the opposite mistake — a grant to every principal in the
+// account that holds an identity policy for this ARN, rather than to the one role. The
+// condition is what narrows it back down, so a change that drops it widens the grant
+// while leaving every other assertion here passing.
 func TestPhoneHomeResourcePolicy(t *testing.T) {
 	raw, err := PhoneHomeResourcePolicy("123456789012", "inst123-phone-home")
 	if err != nil {
@@ -261,9 +269,10 @@ func TestPhoneHomeResourcePolicy(t *testing.T) {
 
 	var policy struct {
 		Statement []struct {
-			Effect    string            `json:"Effect"`
-			Principal map[string]string `json:"Principal"`
-			Action    []string          `json:"Action"`
+			Effect    string                       `json:"Effect"`
+			Principal map[string]string            `json:"Principal"`
+			Action    []string                     `json:"Action"`
+			Condition map[string]map[string]string `json:"Condition"`
 		} `json:"Statement"`
 	}
 	if err := json.Unmarshal([]byte(raw), &policy); err != nil {
@@ -278,9 +287,17 @@ func TestPhoneHomeResourcePolicy(t *testing.T) {
 	if stmt.Effect != "Allow" {
 		t.Errorf("Effect = %q", stmt.Effect)
 	}
-	if want := "arn:aws:iam::123456789012:role/inst123-phone-home"; stmt.Principal["AWS"] != want {
-		t.Errorf("Principal = %q, want %q", stmt.Principal["AWS"], want)
+
+	roleARN := "arn:aws:iam::123456789012:role/inst123-phone-home"
+	if want := "arn:aws:iam::123456789012:root"; stmt.Principal["AWS"] != want {
+		t.Errorf("Principal = %q, want %q — naming the role here fails PutResourcePolicy "+
+			"until the customer's stack has created it", stmt.Principal["AWS"], want)
 	}
+	if got := stmt.Condition["ArnEquals"]["aws:PrincipalArn"]; got != roleARN {
+		t.Errorf("Condition ArnEquals aws:PrincipalArn = %q, want %q — without this the "+
+			"statement grants the whole account, not one role", got, roleARN)
+	}
+
 	// Read-only, and only the one action: this grant reaches into a customer account.
 	if len(stmt.Action) != 1 || stmt.Action[0] != "secretsmanager:GetSecretValue" {
 		t.Errorf("Action = %v, want only secretsmanager:GetSecretValue", stmt.Action)

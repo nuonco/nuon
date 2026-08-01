@@ -52,23 +52,50 @@ func PhoneHomeSecretTags(orgID, installID, runnerAPIURL, env string) map[string]
 // own secret. Per-install isolation comes from this policy rather than from the CMK
 // key policy, which is why one shared key is sufficient.
 //
-// The named role does not exist yet when this is first applied — it is created by
-// the CloudFormation stack the customer has not run. That is fine: an IAM resource
-// policy may reference a principal ARN that does not exist, and simply matches
-// nothing until it appears. The consequence is that a typo in the role name fails
-// silently as an AccessDeniedException at phone-home time, which is why the render
-// tests assert the name.
+// The role is named in a Condition rather than as the Principal, because the role
+// does not exist when this first runs and Secrets Manager validates principals:
+// naming it directly fails the whole call with
+//
+//	MalformedPolicyDocumentException: This resource policy contains an unsupported principal
+//
+// The ordering that forces this cannot be reversed. The role is created by the
+// customer's CloudFormation stack, but the Lambda reads this secret *during* that
+// stack's creation, so the policy has to be in place first. (An install whose stack
+// already ran does have the role, which is why this only ever failed on fresh
+// installs — a difference worth knowing about before "it worked before" is taken as
+// evidence of a regression.)
+//
+// The account root always resolves, so it is the Principal, and aws:PrincipalArn
+// pins the grant to the one role at evaluation time. The effective boundary is the
+// same as naming the role directly, with one caveat: root as Principal delegates to
+// the target account's own IAM, so a principal there needs an identity policy
+// allowing GetSecretValue on this ARN as well. The stack grants exactly that to the
+// phone-home role and nothing else (getRunnerPhoneHomeLambdaRole), so reaching the
+// secret still takes both halves — but a customer administrator in that account
+// could write themselves a third. Account-level containment is the real boundary
+// here, and the target account is the customer's own.
+//
+// A typo in the role name still fails silently, as an AccessDeniedException at
+// phone-home time rather than an error here, which is why the render tests assert
+// the name.
 func PhoneHomeResourcePolicy(targetAccountID, phoneHomeRoleName string) (string, error) {
+	roleARN := fmt.Sprintf("arn:aws:iam::%s:role/%s", targetAccountID, phoneHomeRoleName)
+
 	policy := map[string]any{
 		"Version": "2012-10-17",
 		"Statement": []map[string]any{
 			{
 				"Effect": "Allow",
 				"Principal": map[string]any{
-					"AWS": fmt.Sprintf("arn:aws:iam::%s:role/%s", targetAccountID, phoneHomeRoleName),
+					"AWS": fmt.Sprintf("arn:aws:iam::%s:root", targetAccountID),
 				},
 				"Action":   []string{"secretsmanager:GetSecretValue"},
 				"Resource": "*",
+				"Condition": map[string]any{
+					"ArnEquals": map[string]any{
+						"aws:PrincipalArn": roleARN,
+					},
+				},
 			},
 		},
 	}
