@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -280,28 +281,22 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 		return nil, errors.Wrap(err, "unable to get component ids")
 	}
 
-	defaultEnableKubeConfig := true
-	enableKubeConfig := generics.NewNullBoolFromPtr(&defaultEnableKubeConfig)
-	if req.EnableKubeConfig != nil {
-		enableKubeConfig = generics.NewNullBoolFromPtr(req.EnableKubeConfig)
-	}
-
-	awc := app.ActionWorkflowConfig{
-		AppID:                  parentApp.ID,
-		AppConfigID:            req.AppConfigID,
-		OrgID:                  orgID,
-		ActionWorkflowID:       awID,
-		Timeout:                timeout,
-		ComponentDependencyIDs: pq.StringArray(depIDs),
-		References:             pq.StringArray(req.References),
-		BreakGlassRoleARN:      generics.NewNullString(req.BreakGlassRoleARN),
-		Role:                   req.Role,
-		EnableKubeConfig:       enableKubeConfig,
-		KubernetesContextName:  req.KubernetesContext,
-	}
+	awc := build.ActionWorkflowConfig(build.ActionWorkflowInput{
+		AppID:                 parentApp.ID,
+		AppConfigID:           req.AppConfigID,
+		OrgID:                 orgID,
+		ActionWorkflowID:      awID,
+		Timeout:               timeout,
+		DependencyIDs:         depIDs,
+		References:            req.References,
+		BreakGlassRole:        req.BreakGlassRoleARN,
+		Role:                  req.Role,
+		EnableKubeConfig:      req.EnableKubeConfig,
+		KubernetesContextName: req.KubernetesContext,
+	})
 
 	res := s.db.WithContext(ctx).
-		Create(&awc)
+		Create(awc)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create action workflow config: %w", res.Error)
 	}
@@ -314,7 +309,7 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 		return nil, fmt.Errorf("unable to create action workflow steps: %w", err)
 	}
 
-	return &awc, nil
+	return awc, nil
 }
 
 func (s *service) createActionWorkflowTriggers(ctx context.Context, orgId, appID, appConfigID, awcID string, triggers []CreateActionWorkflowConfigTriggerRequest) error {

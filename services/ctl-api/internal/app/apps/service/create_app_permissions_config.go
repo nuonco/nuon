@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -10,10 +9,10 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	pkggenerics "github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -39,25 +38,6 @@ type AppAWSIAMRoleConfig struct {
 	Policies []AppAWSIAMPolicyConfig `json:"policies" validate:"min=1,dive"`
 }
 
-func (a AppAWSIAMRoleConfig) getPolicies(appConfigID string) []app.AppAWSIAMPolicyConfig {
-	policies := make([]app.AppAWSIAMPolicyConfig, 0, len(a.Policies))
-
-	for _, policy := range a.Policies {
-		policies = append(policies, app.AppAWSIAMPolicyConfig{
-			AppConfigID:       appConfigID,
-			ManagedPolicyName: policy.ManagedPolicyName,
-			Name:              policy.Name,
-			Contents:          generics.ToJSON(policy.Contents),
-			GCPPermissions:    policy.GCPPermissions,
-			GCPPredefinedRole: policy.GCPPredefinedRole,
-			AzureActions:      policy.AzureActions,
-			AzureBuiltInRoles: policy.AzureBuiltInRoles,
-		})
-	}
-
-	return policies
-}
-
 type AppAWSIAMPolicyConfig struct {
 	ManagedPolicyName string `json:"managed_policy_name"`
 
@@ -69,60 +49,46 @@ type AppAWSIAMPolicyConfig struct {
 	AzureBuiltInRoles []string `json:"azure_built_in_roles,omitempty"`
 }
 
-func (p *AppAWSIAMPolicyConfig) validateMutualExclusivity(roleName string) error {
-	if p.Contents != "" && p.ManagedPolicyName != "" {
-		return fmt.Errorf("role %q policy %q: contents and managed_policy_name are mutually exclusive; specify one or the other", roleName, p.Name)
+func (a AppAWSIAMRoleConfig) toConfig() *config.AppAWSIAMRole {
+	policies := make([]config.AppAWSIAMPolicy, 0, len(a.Policies))
+	for _, policy := range a.Policies {
+		policies = append(policies, config.AppAWSIAMPolicy{
+			ManagedPolicyName: policy.ManagedPolicyName,
+			Name:              policy.Name,
+			Contents:          policy.Contents,
+			GCPPermissions:    policy.GCPPermissions,
+			GCPPredefinedRole: policy.GCPPredefinedRole,
+			AzureActions:      policy.AzureActions,
+			AzureBuiltInRoles: policy.AzureBuiltInRoles,
+		})
 	}
 
-	if len(p.GCPPermissions) > 0 && p.GCPPredefinedRole != "" {
-		return fmt.Errorf("role %q policy %q: gcp_permissions and gcp_predefined_role are mutually exclusive; use gcp_permissions for fine-grained custom permissions or gcp_predefined_role for a Google-managed role, not both", roleName, p.Name)
+	return &config.AppAWSIAMRole{
+		CloudPlatform:       a.CloudPlatform,
+		Name:                a.Name,
+		Description:         a.Description,
+		DisplayName:         a.DisplayName,
+		PermissionsBoundary: a.PermissionsBoundary,
+		EnabledInStack:      a.EnabledInStack,
+		Policies:            policies,
 	}
+}
 
-	if len(p.AzureActions) > 0 && len(p.AzureBuiltInRoles) > 0 {
-		return fmt.Errorf("role %q policy %q: azure_actions and azure_built_in_roles are mutually exclusive; use azure_actions for a fine-grained custom role or azure_built_in_roles for Azure-managed roles, not both", roleName, p.Name)
+func toConfigRoles(roles *[]AppAWSIAMRoleConfig) []*config.AppAWSIAMRole {
+	if roles == nil {
+		return nil
 	}
-
-	return nil
+	out := make([]*config.AppAWSIAMRole, 0, len(*roles))
+	for _, role := range *roles {
+		out = append(out, role.toConfig())
+	}
+	return out
 }
 
 func (c *CreateAppPermissionsConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
 	}
-
-	allRoles := []struct {
-		name string
-		role AppAWSIAMRoleConfig
-	}{
-		{"provision_role", c.ProvisionRole},
-		{"deprovision_role", c.DeprovisionRole},
-		{"maintenance_role", c.MaintenanceRole},
-	}
-	if c.BreakGlassRoles != nil {
-		for _, r := range *c.BreakGlassRoles {
-			allRoles = append(allRoles, struct {
-				name string
-				role AppAWSIAMRoleConfig
-			}{r.Name, r})
-		}
-	}
-	if c.CustomRoles != nil {
-		for _, r := range *c.CustomRoles {
-			allRoles = append(allRoles, struct {
-				name string
-				role AppAWSIAMRoleConfig
-			}{r.Name, r})
-		}
-	}
-
-	for _, entry := range allRoles {
-		for i := range entry.role.Policies {
-			if err := entry.role.Policies[i].validateMutualExclusivity(entry.name); err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -167,108 +133,34 @@ func (s *service) CreateAppPermissionsConfig(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
-func (s *service) getCustomRoleConfigs(roles []AppAWSIAMRoleConfig, appConfigID string) []app.AppAWSIAMRoleConfig {
-	roleConfigs := make([]app.AppAWSIAMRoleConfig, 0, len(roles))
-
-	for _, role := range roles {
-		roleConfig := app.AppAWSIAMRoleConfig{
-			AppConfigID:             appConfigID,
-			CloudPlatform:           role.CloudPlatform,
-			Type:                    app.AWSIAMRoleTypeCustom,
-			Name:                    role.Name,
-			Description:             role.Description,
-			DisplayName:             role.DisplayName,
-			PermissionsBoundaryJSON: generics.ToJSON(role.PermissionsBoundary),
-			EnabledInStack:          pkggenerics.NewNullBoolFromPtr(role.EnabledInStack),
-			Policies:                role.getPolicies(appConfigID),
-		}
-		roleConfigs = append(roleConfigs, roleConfig)
-	}
-
-	return roleConfigs
-}
-
-func (s *service) getBreakGlassRoleConfigs(roles []AppAWSIAMRoleConfig, appConfigID string) []app.AppAWSIAMRoleConfig {
-	roleConfigs := make([]app.AppAWSIAMRoleConfig, 0, len(roles))
-
-	for _, role := range roles {
-		roleConfig := app.AppAWSIAMRoleConfig{
-			AppConfigID:             appConfigID,
-			CloudPlatform:           role.CloudPlatform,
-			Type:                    app.AWSIAMRoleTypeBreakGlass,
-			Name:                    role.Name,
-			Description:             role.Description,
-			DisplayName:             role.DisplayName,
-			PermissionsBoundaryJSON: generics.ToJSON(role.PermissionsBoundary),
-			EnabledInStack:          pkggenerics.NewNullBoolFromPtr(role.EnabledInStack),
-			Policies:                role.getPolicies(appConfigID),
-		}
-		roleConfigs = append(roleConfigs, roleConfig)
-	}
-
-	return roleConfigs
-}
-
 func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, req *CreateAppPermissionsConfigRequest) (*app.AppPermissionsConfig, error) {
-	obj := app.AppPermissionsConfig{
+	obj, err := build.PermissionsConfig(build.PermissionsInput{
 		AppID:       appID,
 		AppConfigID: req.AppConfigID,
-		Roles: []app.AppAWSIAMRoleConfig{
-			{
-				AppConfigID:             req.AppConfigID,
-				CloudPlatform:           req.ProvisionRole.CloudPlatform,
-				Type:                    app.AWSIAMRoleTypeRunnerProvision,
-				Name:                    req.ProvisionRole.Name,
-				Description:             req.ProvisionRole.Description,
-				DisplayName:             req.ProvisionRole.DisplayName,
-				PermissionsBoundaryJSON: generics.ToJSON(req.ProvisionRole.PermissionsBoundary),
-				EnabledInStack:          pkggenerics.NewNullBoolFromPtr(req.ProvisionRole.EnabledInStack),
-				Policies:                req.ProvisionRole.getPolicies(req.AppConfigID),
-			},
-			{
-				AppConfigID:             req.AppConfigID,
-				CloudPlatform:           req.MaintenanceRole.CloudPlatform,
-				Type:                    app.AWSIAMRoleTypeRunnerMaintenance,
-				Name:                    req.MaintenanceRole.Name,
-				Description:             req.MaintenanceRole.Description,
-				DisplayName:             req.MaintenanceRole.DisplayName,
-				PermissionsBoundaryJSON: generics.ToJSON(req.MaintenanceRole.PermissionsBoundary),
-				EnabledInStack:          pkggenerics.NewNullBoolFromPtr(req.MaintenanceRole.EnabledInStack),
-				Policies:                req.MaintenanceRole.getPolicies(req.AppConfigID),
-			},
-			{
-				AppConfigID:             req.AppConfigID,
-				CloudPlatform:           req.DeprovisionRole.CloudPlatform,
-				Type:                    app.AWSIAMRoleTypeRunnerDeprovision,
-				Name:                    req.DeprovisionRole.Name,
-				Description:             req.DeprovisionRole.Description,
-				DisplayName:             req.DeprovisionRole.DisplayName,
-				PermissionsBoundaryJSON: generics.ToJSON(req.DeprovisionRole.PermissionsBoundary),
-				EnabledInStack:          pkggenerics.NewNullBoolFromPtr(req.DeprovisionRole.EnabledInStack),
-				Policies:                req.DeprovisionRole.getPolicies(req.AppConfigID),
-			},
+		Permissions: &config.PermissionsConfig{
+			ProvisionRole:   req.ProvisionRole.toConfig(),
+			DeprovisionRole: req.DeprovisionRole.toConfig(),
+			MaintenanceRole: req.MaintenanceRole.toConfig(),
+			CustomRoles:     toConfigRoles(req.CustomRoles),
 		},
-	}
-	if req.BreakGlassRoles != nil {
-		obj.Roles = append(obj.Roles, s.getBreakGlassRoleConfigs(*req.BreakGlassRoles, req.AppConfigID)...)
-	}
-
-	if req.CustomRoles != nil {
-		obj.Roles = append(obj.Roles, s.getCustomRoleConfigs(*req.CustomRoles, req.AppConfigID)...)
+		BreakGlassRoles: toConfigRoles(req.BreakGlassRoles),
+	})
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
 
-	res := s.db.WithContext(ctx).Create(&obj)
+	res := s.db.WithContext(ctx).Create(obj)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create app permissions config")
 	}
 
 	tx := s.db.WithContext(ctx).Begin()
-	if err := s.installsHelpers.MigrateInstallRoles(ctx, tx, appID, obj); err != nil {
+	if err := s.installsHelpers.MigrateInstallRoles(ctx, tx, appID, *obj); err != nil {
 		tx.Rollback()
 		s.l.Warn("failed to migrate install roles", zap.Error(err))
 	} else {
 		tx.Commit()
 	}
 
-	return &obj, nil
+	return obj, nil
 }

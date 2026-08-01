@@ -11,7 +11,26 @@ var (
 	interpolatedNameRegex = regexp.MustCompile(`^[a-z0-9_{}\.]*$`)
 	entityNameRegex       = regexp.MustCompile(`^[a-z0-9_-]*$`)
 	dnsRFC1035Regex       = regexp.MustCompile(`^[a-z]([-a-z0-9]*[a-z0-9])?$`)
+	dnsRFC1123Regex       = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`)
 )
+
+// ValidateDNSSubdomain validates a DNS RFC 1123 subdomain, the form Kubernetes
+// object names take.
+func ValidateDNSSubdomain(name string) error {
+	if len(name) > 253 {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("name too long: %s", name),
+			Description: fmt.Sprintf("Name '%s' cannot exceed 253 characters", name),
+		}
+	}
+	if !dnsRFC1123Regex.MatchString(name) {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("invalid DNS subdomain: %s", name),
+			Description: fmt.Sprintf("Name '%s' must be a valid DNS RFC 1123 subdomain", name),
+		}
+	}
+	return nil
+}
 
 // ValidateInterpolatedName validates a name that allows interpolation syntax.
 // Allows: lowercase letters, numbers, underscores, dots, and curly braces

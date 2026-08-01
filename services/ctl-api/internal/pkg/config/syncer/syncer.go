@@ -136,6 +136,7 @@ func (s *syncer) Sync(ctx context.Context) error {
 		Actions:    []sync.ActionState{},
 		Runbooks:   []sync.RunbookState{},
 	}
+	s.fetchState(ctx)
 
 	// Build sync steps
 	steps := s.syncSteps()
@@ -147,7 +148,7 @@ func (s *syncer) Sync(ctx context.Context) error {
 		}
 	}
 
-	return nil
+	return s.persistState(ctx)
 }
 
 func (s *syncer) validateFeatureCompatibility(ctx context.Context) error {
@@ -164,6 +165,9 @@ func (s *syncer) validateFeatureCompatibility(ctx context.Context) error {
 	}
 	if s.cfg.Triggers != nil && len(s.cfg.Triggers.Rules) != 0 && !org.Features[string(app.OrgFeatureTriggers)] {
 		return sync.SyncErr{Resource: "triggers", Description: "the triggers feature is not enabled for this organization"}
+	}
+	if s.cfg.Sandbox != nil && s.cfg.Sandbox.Type == config.AppSandboxTypePulumi && !org.Features[string(app.OrgFeaturePulumiSandbox)] {
+		return sync.SyncErr{Resource: "app-sandbox", Description: "pulumi sandboxes are not enabled for this organization"}
 	}
 
 	return sync.RejectDockerBuildComponentsForFeature(s.cfg)
@@ -213,7 +217,7 @@ func (s *syncer) syncSteps() []syncStep {
 		{
 			Resource: "app-permissions",
 			Method: func(ctx context.Context) error {
-				return permissions.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
+				return permissions.Sync(ctx, s.db, s.installHelpers, s.cfg, s.appID, s.appConfigID)
 			},
 		},
 		{
@@ -243,7 +247,7 @@ func (s *syncer) syncSteps() []syncStep {
 		{
 			Resource: "app-cloudformation-stack",
 			Method: func(ctx context.Context) error {
-				return stack.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
+				return stack.Sync(ctx, s.db, s.appsHelpers, s.cfg, s.appID, s.appConfigID)
 			},
 		},
 	}

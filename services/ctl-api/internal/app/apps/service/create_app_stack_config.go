@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/customstacks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -33,47 +34,18 @@ func (c *CreateAppStackConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
 	}
-	if c.VPCNestedTemplateURL != "" {
-		if c.Type == app.StackTypeAzure {
-			if err := config.ValidateHTTPSURL(c.VPCNestedTemplateURL, "vpc_nested_template_url"); err != nil {
-				return err
-			}
-		} else {
-			if err := config.ValidateTemplateURL(c.VPCNestedTemplateURL, "vpc_nested_template_url"); err != nil {
-				return err
-			}
-		}
-	}
-	if c.RunnerNestedTemplateURL != "" {
-		if c.Type == app.StackTypeAzure {
-			if err := config.ValidateHTTPSURL(c.RunnerNestedTemplateURL, "runner_nested_template_url"); err != nil {
-				return err
-			}
-		} else {
-			if err := config.ValidateTemplateURL(c.RunnerNestedTemplateURL, "runner_nested_template_url"); err != nil {
-				return err
-			}
-		}
-	}
-	for i, stack := range c.CustomNestedStacks {
-		if stack.Name == "" {
-			return fmt.Errorf("custom_nested_stacks[%d]: name is required", i)
-		}
-		if stack.TemplateURL == "" {
-			return fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name)
-		}
-		if stack.Contents == "" {
-			return fmt.Errorf("custom_nested_stacks[%d] (%s): contents is required when template_url is set", i, stack.Name)
-		}
-		// Also validated at config sync, but a bad parameter persisted here would
-		// fail stack generation for every install of the app.
-		for paramName, paramValue := range stack.Parameters {
-			if err := config.ValidateStackParameterTemplate(paramValue); err != nil {
-				return fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q: %w", i, stack.Name, paramName, err)
-			}
-		}
-	}
 	return nil
+}
+
+func (c *CreateAppStackConfigRequest) toConfig() *config.StackConfig {
+	return &config.StackConfig{
+		Type:                    string(c.Type),
+		Name:                    c.Name,
+		Description:             c.Description,
+		VPCNestedTemplateURL:    c.VPCNestedTemplateURL,
+		RunnerNestedTemplateURL: c.RunnerNestedTemplateURL,
+		CustomNestedStacks:      c.CustomNestedStacks,
+	}
 }
 
 // @ID						CreateAppStackConfig
@@ -117,25 +89,13 @@ func (s *service) CreateAppStackConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppStackConfig(ctx context.Context, appID string, req *CreateAppStackConfigRequest) (*app.AppStackConfig, error) {
-	customNestedStacks := req.CustomNestedStacks
-	// Mark each custom nested stack pending until its template contents have
-	// been uploaded to S3 by the sync_custom_stacks signal below.
-	for i := range customNestedStacks {
-		customNestedStacks[i].Status = config.CustomNestedStackStatusPending
+	appCloudFormationStackConfig, err := build.StackConfig(req.toConfig(), appID, req.AppConfigID)
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
 
-	appCloudFormationStackConfig := app.AppStackConfig{
-		Type:                    req.Type,
-		AppConfigID:             req.AppConfigID,
-		AppID:                   appID,
-		Name:                    req.Name,
-		Description:             req.Description,
-		VPCNestedTemplateURL:    req.VPCNestedTemplateURL,
-		RunnerNestedTemplateURL: req.RunnerNestedTemplateURL,
-		CustomNestedStacks:      customNestedStacks,
-	}
 	res := s.db.WithContext(ctx).
-		Create(&appCloudFormationStackConfig)
+		Create(appCloudFormationStackConfig)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -159,5 +119,5 @@ func (s *service) createAppStackConfig(ctx context.Context, appID string, req *C
 		}
 	}
 
-	return &appCloudFormationStackConfig, nil
+	return appCloudFormationStackConfig, nil
 }

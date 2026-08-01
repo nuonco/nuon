@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -107,32 +108,19 @@ func (s *service) createAppKubernetesContextsConfig(ctx context.Context, appID s
 		}
 	}
 
-	children := make([]app.AppKubernetesContextConfig, 0, len(req.Contexts))
+	inputs := make([]build.KubernetesContextInput, 0, len(req.Contexts))
 	for _, c := range req.Contexts {
-		compID, ok := componentIDByName[c.Component]
-		if !ok {
-			return nil, stderr.ErrInvalidRequest{
-				Err: fmt.Errorf("kubernetes_context %q references unknown component %q", c.Name, c.Component),
-			}
-		}
-		children = append(children, app.AppKubernetesContextConfig{
-			AppID:               appID,
-			AppConfigID:         req.AppConfigID,
-			Name:                c.Name,
-			SourceComponentName: c.Component,
-			SourceComponentID:   compID,
-		})
+		inputs = append(inputs, build.KubernetesContextInput{Name: c.Name, ComponentName: c.Component})
 	}
 
-	obj := app.AppKubernetesContextsConfig{
-		AppID:       appID,
-		AppConfigID: req.AppConfigID,
-		Contexts:    children,
+	obj, err := build.KubernetesContextsConfig(inputs, componentIDByName, appID, req.AppConfigID)
+	if err != nil {
+		return nil, stderr.ErrInvalidRequest{Err: err}
 	}
 
-	if res := s.db.WithContext(ctx).Create(&obj); res.Error != nil {
+	if res := s.db.WithContext(ctx).Create(obj); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create app kubernetes contexts config")
 	}
 
-	return &obj, nil
+	return obj, nil
 }
