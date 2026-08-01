@@ -331,6 +331,10 @@ type Config struct {
 	NuonAuthAllowedDomains []string `config:"nuon_auth_allowed_domains"` // domains from which emails can register
 	NuonAuthAllowAllUsers  bool     `config:"nuon_auth_allow_all_users"` // if true, any user with an allowedDomain can sign in
 
+	// OIDC workload identity federation
+	OIDCFederationEnabled              bool `config:"oidc_federation_enabled"`                // enables the /v1/oidc token exchange and trust policy endpoints (default off)
+	OIDCFederationAllowInsecureIssuers bool `config:"oidc_federation_allow_insecure_issuers"` // allow http:// issuer URLs in trust policies (local dev only)
+
 	// Nuon Auth: Default Provider ConfigS
 	NuonAuthProviderType string `config:"nuon_auth_provider_type"` // NOTE: becomes required after auth is in GA
 	NuonAuthClientID     string `config:"nuon_auth_client_id"`

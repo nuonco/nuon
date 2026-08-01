@@ -126,7 +126,8 @@
               "concepts/policies",
               "concepts/operation-roles",
               "concepts/api-tokens",
-              "concepts/service-accounts"
+              "concepts/service-accounts",
+              "concepts/oidc-federation"
             ]
           }
         ]

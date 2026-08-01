@@ -1,0 +1,86 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
+import { Toast } from '@/components/surfaces/Toast'
+import { useOrg } from '@/hooks/use-org'
+import { useToast } from '@/hooks/use-toast'
+import { useSurfaces } from '@/hooks/use-surfaces'
+import { createCurrentOrgOIDCTrustPolicy } from '@/lib'
+import type { TAPIError } from '@/types'
+import {
+  CreateOIDCTrustPolicyModal,
+  type OIDCTrustPolicyFormInput,
+} from './CreateOIDCTrustPolicy'
+
+const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
+  const { org } = useOrg()
+  const queryClient = useQueryClient()
+  const { removeModal } = useSurfaces()
+  const { addToast } = useToast()
+
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: (input: OIDCTrustPolicyFormInput) =>
+      createCurrentOrgOIDCTrustPolicy({
+        body: {
+          name: input.name,
+          issuer_url: input.issuerUrl,
+          audience: input.audience,
+          role: input.role,
+          ...(input.tokenDurationSeconds
+            ? { token_duration_seconds: Number(input.tokenDurationSeconds) }
+            : {}),
+          claim_conditions: Object.fromEntries(
+            input.claimConditions
+              .filter((condition) => condition.key.trim())
+              .map((condition) => [
+                condition.key.trim(),
+                condition.value.trim(),
+              ])
+          ),
+        },
+        orgId: org.id,
+      }),
+    onSuccess: (policy) => {
+      queryClient.invalidateQueries({
+        queryKey: ['oidc-trust-policies', org.id],
+      })
+      addToast(
+        <Toast heading="Trust policy created" theme="success">
+          <Text>{policy.name} can now exchange OIDC tokens for org access.</Text>
+        </Toast>
+      )
+      removeModal(props.modalId)
+    },
+    onError: (err: TAPIError) => {
+      addToast(
+        <Toast heading="Unable to create trust policy" theme="error">
+          <Text>{err?.description || err?.error || 'Try again.'}</Text>
+        </Toast>
+      )
+    },
+  })
+
+  return (
+    <CreateOIDCTrustPolicyModal
+      isPending={isPending}
+      error={error}
+      onSubmit={(input) => mutate(input)}
+      {...props}
+    />
+  )
+}
+
+export const CreateOIDCTrustPolicyButton = ({
+  ...props
+}: Omit<IButtonAsButton, 'children'>) => {
+  const { addModal } = useSurfaces()
+  const modal = <CreateOIDCTrustPolicyModalContainer />
+
+  return (
+    <Button variant="primary" onClick={() => addModal(modal)} {...props}>
+      <Icon variant="PlusIcon" />
+      Create trust policy
+    </Button>
+  )
+}

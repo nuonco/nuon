@@ -32,6 +32,9 @@ type ServiceCLIConfig struct {
 	// nuon auth enabled
 	NuonAuthEnabled bool `json:"nuon_auth_enabled,omitempty"`
 
+	// oidc federation enabled
+	OidcFederationEnabled bool `json:"oidc_federation_enabled,omitempty"`
+
 	// root domain
 	RootDomain string `json:"root_domain,omitempty"`
 }

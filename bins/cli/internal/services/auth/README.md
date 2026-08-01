@@ -68,3 +68,29 @@ The API URL is resolved by viper in priority order:
 1. `NUON_API_URL` environment variable
 2. `api_url` in `~/.nuon` config file
 3. Struct default: `https://api.nuon.co` (not visible to viper, used only when no explicit value is set)
+
+## OIDC Workload Identity Federation (CI)
+
+For automation, the CLI can exchange an ambient OIDC ID token for a short-lived Nuon API token — no
+stored secrets. The org must have a matching OIDC trust policy (`nuon orgs oidc-trust-policies`).
+
+Two entry points:
+
+- **Transparent**: when no `api_token` is configured, an org is selected (`NUON_ORG_ID` or config),
+  and an ambient OIDC source is available, `doPersistentPreRunE` exchanges automatically. The token
+  is kept in-memory only — every invocation exchanges fresh, so expiry never needs handling.
+- **Explicit**: `nuon auth exchange-token` prints the exchanged token (table output prints only the
+  token, for `export NUON_API_TOKEN=$(nuon auth exchange-token)`).
+
+Ambient token sources, in precedence order (`internal/oidctoken`):
+
+1. `--oidc-token` flag (explicit command only)
+2. `NUON_OIDC_TOKEN` — a raw OIDC JWT
+3. `NUON_OIDC_TOKEN_FILE` — path to a file containing the JWT
+4. GitHub Actions — `ACTIONS_ID_TOKEN_REQUEST_URL`/`ACTIONS_ID_TOKEN_REQUEST_TOKEN` (requires
+   `permissions: id-token: write`); the requested audience is `--audience`, then
+   `NUON_OIDC_AUDIENCE`, then the configured API URL
+
+The exchange calls `POST /v1/oidc/token` (unauthenticated) with `{org_id, token}`; the API verifies
+the JWT against the org's trust policies (issuer JWKS, audience, claim conditions) and mints a
+short-lived token bound to the policy's service account.
