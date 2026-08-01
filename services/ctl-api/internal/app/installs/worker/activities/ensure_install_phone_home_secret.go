@@ -116,7 +116,7 @@ func (a *Activities) EnsureInstallPhoneHomeSecret(
 		Name:        secretsmanager.PhoneHomeSecretName(install.ID),
 		Value:       string(payload),
 		Description: fmt.Sprintf("Nuon phone home tokens for install %s", install.ID),
-		KMSKeyARN:   a.cfg.PhoneHomeCMKARN,
+		KMSKeyARN:   a.cfg.AWSPhoneHomeCMKARN,
 		Tags: secretsmanager.PhoneHomeSecretTags(
 			install.OrgID, install.ID, a.cfg.RunnerAPIURL, string(a.cfg.Env),
 		),
@@ -362,13 +362,13 @@ func (a *Activities) persistInstallPhoneHomeAuth(
 
 	if auth.SecretARN == secret.ARN &&
 		auth.SecretRegion == secret.Region &&
-		auth.KMSKeyARN == a.cfg.PhoneHomeCMKARN {
+		auth.KMSKeyARN == a.cfg.AWSPhoneHomeCMKARN {
 		return nil
 	}
 
 	auth.SecretARN = secret.ARN
 	auth.SecretRegion = secret.Region
-	auth.KMSKeyARN = a.cfg.PhoneHomeCMKARN
+	auth.KMSKeyARN = a.cfg.AWSPhoneHomeCMKARN
 
 	if res := a.db.WithContext(ctx).
 		Model(&app.Install{ID: install.ID}).

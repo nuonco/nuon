@@ -416,11 +416,11 @@ type Config struct {
 	// reach. CloudProvider only selects the credential chain — see
 	// ManagementSecretsCreds.
 	//
-	// PhoneHomeCMKARN is the shared CMK encrypting the secret. It is required for
+	// AWSPhoneHomeCMKARN is the shared CMK encrypting the secret. It is required for
 	// cross-account reads: the AWS-managed aws/secretsmanager key policy cannot be
 	// edited and is scoped to kms:CallerAccount, so a customer principal fails
 	// kms:Decrypt no matter how permissive the secret's resource policy is.
-	PhoneHomeCMKARN string `config:"phone_home_cmk_arn"`
+	AWSPhoneHomeCMKARN string `config:"aws_phone_home_cmk_arn"`
 	// AWSPhoneHomeSecretsRoleARN is the role in the Nuon AWS account that owns the
 	// secret. Set it on GCP-hosted control planes, where ManagementIAMRoleARN is
 	// legitimately empty; on AWS it defaults to ManagementIAMRoleARN.

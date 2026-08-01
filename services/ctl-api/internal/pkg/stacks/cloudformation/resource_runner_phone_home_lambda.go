@@ -218,7 +218,7 @@ func (a *Templates) getRunnerPhoneHomeLambdaRole(inp *stacks.TemplateInput, t ta
 		// Scoped to the CMK that encrypted the secret. Without kms:Decrypt the read
 		// fails no matter how permissive the resource policy is, because the
 		// AWS-managed secretsmanager key cannot be shared cross-account.
-		if arn := a.cfg.PhoneHomeCMKARN; arn != "" {
+		if arn := a.cfg.AWSPhoneHomeCMKARN; arn != "" {
 			statements = append(statements, map[string]any{
 				"Effect":   "Allow",
 				"Action":   []string{"kms:Decrypt", "kms:DescribeKey"},

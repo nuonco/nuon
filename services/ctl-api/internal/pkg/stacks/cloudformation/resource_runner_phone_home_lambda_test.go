@@ -67,7 +67,7 @@ func TestGetRunnerPhoneHomeLambda_NoEnvWithoutSecret(t *testing.T) {
 // matter how permissive the secret's resource policy is, because the AWS-managed
 // secretsmanager key cannot be shared cross-account.
 func TestGetRunnerPhoneHomeLambdaRole_SecretPolicy(t *testing.T) {
-	tpl := &Templates{cfg: &internal.Config{PhoneHomeCMKARN: testPhoneHomeCMKARN}}
+	tpl := &Templates{cfg: &internal.Config{AWSPhoneHomeCMKARN: testPhoneHomeCMKARN}}
 	inp := phoneHomeAuthTestInput("instabcdefghijklmnopqrstuv")
 
 	role := tpl.getRunnerPhoneHomeLambdaRole(inp, tagBuilder{installID: inp.Install.ID})
@@ -117,7 +117,7 @@ func TestGetRunnerPhoneHomeLambdaRole_OmitsKMSWhenUnset(t *testing.T) {
 // an ARN added there would be echoed into the phone-home body and persisted to the
 // install's stack outputs.
 func TestGetRunnerPhoneHomeProps_DoesNotEchoSecretARN(t *testing.T) {
-	tpl := &Templates{cfg: &internal.Config{PhoneHomeCMKARN: testPhoneHomeCMKARN}}
+	tpl := &Templates{cfg: &internal.Config{AWSPhoneHomeCMKARN: testPhoneHomeCMKARN}}
 	inp := phoneHomeAuthTestInput("instabcdefghijklmnopqrstuv")
 
 	props := tpl.getRunnerPhoneHomeProps(inp, nil)
