@@ -50,6 +50,7 @@ type api interface {
 	DescribeSecret(context.Context, *awssm.DescribeSecretInput, ...func(*awssm.Options)) (*awssm.DescribeSecretOutput, error)
 	GetSecretValue(context.Context, *awssm.GetSecretValueInput, ...func(*awssm.Options)) (*awssm.GetSecretValueOutput, error)
 	CreateSecret(context.Context, *awssm.CreateSecretInput, ...func(*awssm.Options)) (*awssm.CreateSecretOutput, error)
+	UpdateSecret(context.Context, *awssm.UpdateSecretInput, ...func(*awssm.Options)) (*awssm.UpdateSecretOutput, error)
 	PutSecretValue(context.Context, *awssm.PutSecretValueInput, ...func(*awssm.Options)) (*awssm.PutSecretValueOutput, error)
 	PutResourcePolicy(context.Context, *awssm.PutResourcePolicyInput, ...func(*awssm.Options)) (*awssm.PutResourcePolicyOutput, error)
 	DeleteSecret(context.Context, *awssm.DeleteSecretInput, ...func(*awssm.Options)) (*awssm.DeleteSecretOutput, error)
@@ -137,7 +138,13 @@ func (s *service) EnsureSecret(ctx context.Context, input EnsureSecretInput) (*E
 		})
 		// Lost a race with a concurrent provision; fall through to the update path.
 		if cerr != nil && isAlreadyExists(cerr) {
-			return s.putExisting(ctx, client, input, input.Name, out)
+			described, err = client.DescribeSecret(ctx, &awssm.DescribeSecretInput{
+				SecretId: aws.String(input.Name),
+			})
+			if err != nil {
+				return nil, fmt.Errorf("unable to describe secret after create race: %w", err)
+			}
+			break
 		}
 		if cerr != nil {
 			return nil, fmt.Errorf("unable to create secret: %w", cerr)
@@ -153,13 +160,8 @@ func (s *service) EnsureSecret(ctx context.Context, input EnsureSecretInput) (*E
 	}
 
 	arn := aws.ToString(described.ARN)
-
-	if err := s.reconcileTags(ctx, client, arn, input.Tags, described.Tags); err != nil {
-		return nil, err
-	}
-
-	// A pending deletion must be undone before the value can be written, otherwise
-	// every call fails with InvalidRequestException.
+	// A pending deletion must be undone before any update, otherwise Secrets Manager
+	// rejects KMS, tag, and value changes with InvalidRequestException.
 	if described.DeletedDate != nil {
 		if _, rerr := client.RestoreSecret(ctx, &awssm.RestoreSecretInput{
 			SecretId: aws.String(arn),
@@ -169,7 +171,30 @@ func (s *service) EnsureSecret(ctx context.Context, input EnsureSecretInput) (*E
 		s.l.Info("restored phone home secret that was pending deletion", zap.String("secret_arn", arn))
 	}
 
+	if err := s.reconcileKMSKey(ctx, client, arn, aws.ToString(described.KmsKeyId), input.KMSKeyARN); err != nil {
+		return nil, err
+	}
+
+	if err := s.reconcileTags(ctx, client, arn, input.Tags, described.Tags); err != nil {
+		return nil, err
+	}
+
 	return s.putExisting(ctx, client, input, arn, out)
+}
+
+func (s *service) reconcileKMSKey(ctx context.Context, client api, secretID, current, desired string) error {
+	if desired == "" || current == desired {
+		return nil
+	}
+
+	if _, err := client.UpdateSecret(ctx, &awssm.UpdateSecretInput{
+		SecretId: aws.String(secretID),
+		KmsKeyId: aws.String(desired),
+	}); err != nil {
+		return fmt.Errorf("unable to update secret KMS key: %w", err)
+	}
+
+	return nil
 }
 
 // putExisting writes the value only when it differs from what is stored. Without

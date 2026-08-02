@@ -1,11 +1,19 @@
 package service
 
 import (
+	"bytes"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
 func TestBearerToken(t *testing.T) {
@@ -28,6 +36,79 @@ func TestBearerToken(t *testing.T) {
 			assert.Equal(t, tc.want, bearerToken(tc.header))
 		})
 	}
+}
+
+func TestInstallPhoneHomeRejectsNonStringRequestType(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = httptest.NewRequest(http.MethodPost, "/", bytes.NewBufferString(`{"request_type":123}`))
+	ctx.Request.Header.Set("Content-Type", "application/json")
+
+	require.NotPanics(t, func() {
+		(&service{}).InstallPhoneHome(ctx)
+	})
+	require.Len(t, ctx.Errors, 1)
+	assert.Contains(t, ctx.Errors[0].Error(), "request type param must be a string")
+	var invalidRequest stderr.ErrInvalidRequest
+	assert.ErrorAs(t, ctx.Errors[0].Err, &invalidRequest)
+}
+
+func (s *InstallsServiceTestSuite) TestAuthorizePhoneHomeRejectsPreviousToken() {
+	install := s.createTestInstall()
+	stackVersion := s.deps.Seeder.CreateInstallStackVersion(
+		s.ctx, s.T(), install.ID, install.InstallStack.ID, install.AppConfigID,
+	)
+
+	serviceAccountEmail := account.ServiceAccountEmail(stackVersion.ID)
+	serviceAccount := &app.Account{
+		Email:       serviceAccountEmail,
+		Subject:     serviceAccountEmail,
+		AccountType: app.AccountTypeService,
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(serviceAccount).Error)
+
+	now := time.Now()
+	previous := &app.Token{
+		CreatedByID: s.testAcc.ID,
+		AccountID:   serviceAccount.ID,
+		Token:       "previous-phone-home-token",
+		ExpiresAt:   now.Add(time.Hour),
+		IssuedAt:    now,
+		Issuer:      "test",
+	}
+	current := &app.Token{
+		CreatedByID: s.testAcc.ID,
+		AccountID:   serviceAccount.ID,
+		Token:       "current-phone-home-token",
+		ExpiresAt:   now.Add(time.Hour),
+		IssuedAt:    now,
+		Issuer:      "test",
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(previous).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(current).Error)
+
+	stackVersion.PhoneHomeTokenID = current.ID
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Model(stackVersion).
+		Update("phone_home_token_id", current.ID).Error)
+
+	s.testOrg.Features[string(app.OrgFeaturePhoneHomeAuth)] = true
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Model(s.testOrg).
+		Update("features", s.testOrg.Features).Error)
+
+	reason, err := s.installsService.authorizePhoneHome(
+		s.ctx, install, stackVersion, "Bearer "+previous.Token,
+	)
+	assert.Equal(s.T(), phoneHomeRejectUnknownToken, reason)
+	assert.Error(s.T(), err)
+
+	reason, err = s.installsService.authorizePhoneHome(
+		s.ctx, install, stackVersion, "Bearer "+current.Token,
+	)
+	assert.Equal(s.T(), phoneHomeAuthOK, reason)
+	assert.NoError(s.T(), err)
 }
 
 // The payload's account is compared against the coalesced expected identifier, so a

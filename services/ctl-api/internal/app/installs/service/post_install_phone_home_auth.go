@@ -113,7 +113,10 @@ func (s *service) authorizePhoneHome(
 	}
 
 	var token app.Token
-	res := s.db.WithContext(ctx).Where(&app.Token{Token: raw}).First(&token)
+	res := s.db.WithContext(ctx).Where(&app.Token{
+		ID:    stackVersion.PhoneHomeTokenID,
+		Token: raw,
+	}).First(&token)
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return phoneHomeRejectUnknownToken, rejectPhoneHome(
 			phoneHomeRejectUnknownToken, errors.New("token not recognized"),

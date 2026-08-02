@@ -60,16 +60,20 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 
 	var requestType string
 	if v, ok := req["request_type"]; ok {
-		requestType = v.(string)
+		requestType, ok = v.(string)
+		if !ok {
+			ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("request type param must be a string")))
+			return
+		}
 	} else {
-		ctx.Error(fmt.Errorf("request type param not present"))
+		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("request type param not present")))
 		return
 	}
 
 	switch requestType {
 	case phoneHomeRequestTypeCreate, phoneHomeRequestTypeUpdate, phoneHomeRequestTypeDelete:
 	default:
-		ctx.Error(fmt.Errorf("request type param not present"))
+		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("invalid request type %q", requestType)))
 		return
 	}
 

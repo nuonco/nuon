@@ -21,9 +21,11 @@ const testSecretARN = "arn:aws:secretsmanager:us-west-2:123456789012:secret:nuon
 type fakeAPI struct {
 	exists          bool
 	value           string
+	kmsKeyID        string
 	pendingDeletion bool
 
 	creates  int
+	updates  int
 	puts     int
 	gets     int
 	restores int
@@ -52,7 +54,11 @@ func (f *fakeAPI) DescribeSecret(_ context.Context, in *awssm.DescribeSecretInpu
 		return nil, &types.ResourceNotFoundException{}
 	}
 
-	out := &awssm.DescribeSecretOutput{ARN: aws.String(testSecretARN), Tags: f.tags}
+	out := &awssm.DescribeSecretOutput{
+		ARN:      aws.String(testSecretARN),
+		KmsKeyId: stringOrNil(f.kmsKeyID),
+		Tags:     f.tags,
+	}
 	if f.pendingDeletion {
 		out.DeletedDate = aws.Time(time.Now())
 	}
@@ -72,14 +78,26 @@ func (f *fakeAPI) GetSecretValue(_ context.Context, in *awssm.GetSecretValueInpu
 func (f *fakeAPI) CreateSecret(_ context.Context, in *awssm.CreateSecretInput, _ ...func(*awssm.Options)) (*awssm.CreateSecretOutput, error) {
 	f.creates++
 	if f.createErr != nil {
+		f.exists = true
 		return nil, f.createErr
 	}
 	f.exists = true
 	f.value = aws.ToString(in.SecretString)
+	f.kmsKeyID = aws.ToString(in.KmsKeyId)
 	f.createTags = in.Tags
 	f.tags = in.Tags
 
 	return &awssm.CreateSecretOutput{ARN: aws.String(testSecretARN)}, nil
+}
+
+func (f *fakeAPI) UpdateSecret(_ context.Context, in *awssm.UpdateSecretInput, _ ...func(*awssm.Options)) (*awssm.UpdateSecretOutput, error) {
+	if f.pendingDeletion {
+		return nil, &types.InvalidRequestException{}
+	}
+	f.updates++
+	f.kmsKeyID = aws.ToString(in.KmsKeyId)
+
+	return &awssm.UpdateSecretOutput{ARN: aws.String(testSecretARN)}, nil
 }
 
 func (f *fakeAPI) PutSecretValue(_ context.Context, in *awssm.PutSecretValueInput, _ ...func(*awssm.Options)) (*awssm.PutSecretValueOutput, error) {
@@ -185,13 +203,69 @@ func TestEnsureSecretWritesChangedValue(t *testing.T) {
 	}
 }
 
+func TestEnsureSecretUpdatesExistingKMSKey(t *testing.T) {
+	const desiredKMSKey = "arn:aws:kms:us-west-2:123456789012:key/desired"
+
+	fake := &fakeAPI{
+		exists:   true,
+		value:    `{"a":"t1"}`,
+		kmsKeyID: "alias/aws/secretsmanager",
+	}
+	svc := testService(fake)
+
+	out, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name:      "nuon/phone-home/inst1",
+		Value:     `{"a":"t1"}`,
+		KMSKeyARN: desiredKMSKey,
+	})
+	if err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	if fake.updates != 1 {
+		t.Fatalf("expected one KMS key update, got %d", fake.updates)
+	}
+	if fake.kmsKeyID != desiredKMSKey {
+		t.Errorf("KMS key = %q, want %q", fake.kmsKeyID, desiredKMSKey)
+	}
+	if fake.puts != 0 || out.Wrote {
+		t.Error("changing only the KMS key must not write a new secret value")
+	}
+}
+
+func TestEnsureSecretSkipsMatchingKMSKey(t *testing.T) {
+	const kmsKey = "arn:aws:kms:us-west-2:123456789012:key/current"
+
+	fake := &fakeAPI{exists: true, value: `{}`, kmsKeyID: kmsKey}
+	svc := testService(fake)
+
+	if _, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inst1", Value: `{}`, KMSKeyARN: kmsKey,
+	}); err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	if fake.updates != 0 {
+		t.Errorf("matching KMS key should not be updated, got %d updates", fake.updates)
+	}
+}
+
 // AWS's default 7-30 day recovery window otherwise makes re-provisioning the same
 // install ID fail with InvalidRequestException forever.
 func TestEnsureSecretRestoresPendingDeletion(t *testing.T) {
-	fake := &fakeAPI{exists: true, value: "{}", pendingDeletion: true}
+	const desiredKMSKey = "arn:aws:kms:us-west-2:123456789012:key/desired"
+
+	fake := &fakeAPI{
+		exists:          true,
+		value:           "{}",
+		kmsKeyID:        "alias/aws/secretsmanager",
+		pendingDeletion: true,
+	}
 	svc := testService(fake)
 
-	if _, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{Name: "nuon/phone-home/inst1", Value: `{"a":"t1"}`}); err != nil {
+	if _, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inst1", Value: `{"a":"t1"}`, KMSKeyARN: desiredKMSKey,
+	}); err != nil {
 		t.Fatalf("EnsureSecret: %v", err)
 	}
 
@@ -200,6 +274,9 @@ func TestEnsureSecretRestoresPendingDeletion(t *testing.T) {
 	}
 	if fake.puts != 1 {
 		t.Errorf("expected the value to be written after restore, got %d puts", fake.puts)
+	}
+	if fake.updates != 1 || fake.kmsKeyID != desiredKMSKey {
+		t.Errorf("KMS key was not updated after restore: updates=%d key=%q", fake.updates, fake.kmsKeyID)
 	}
 }
 
@@ -219,6 +296,35 @@ func TestEnsureSecretHandlesCreateRace(t *testing.T) {
 	}
 	if !out.Wrote {
 		t.Error("Wrote should be true after the fallback put")
+	}
+}
+
+func TestEnsureSecretCreateRaceReturnsARNAndUpdatesKMSKey(t *testing.T) {
+	const desiredKMSKey = "arn:aws:kms:us-west-2:123456789012:key/desired"
+	const value = `{"a":"t1"}`
+
+	fake := &fakeAPI{
+		value:     value,
+		kmsKeyID:  "alias/aws/secretsmanager",
+		createErr: &types.ResourceExistsException{},
+	}
+	svc := testService(fake)
+
+	out, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inst1", Value: value, KMSKeyARN: desiredKMSKey,
+	})
+	if err != nil {
+		t.Fatalf("EnsureSecret should recover from a create race: %v", err)
+	}
+
+	if out.ARN != testSecretARN {
+		t.Errorf("ARN = %q, want %q", out.ARN, testSecretARN)
+	}
+	if fake.updates != 1 || fake.kmsKeyID != desiredKMSKey {
+		t.Errorf("KMS key was not reconciled: updates=%d key=%q", fake.updates, fake.kmsKeyID)
+	}
+	if fake.puts != 0 || out.Wrote {
+		t.Error("a matching value must not be rewritten after a create race")
 	}
 }
 
