@@ -37,7 +37,11 @@ export const GitHubAccountSection = ({
               className="inline-flex items-center gap-1.5 hover:underline"
             >
               <ID theme="default">{vcs_connection.github_install_id}</ID>
-              <Icon variant="ArrowSquareOutIcon" size={12} className="text-cool-grey-400" />
+              <Icon
+                variant="ArrowSquareOutIcon"
+                size={12}
+                className="text-cool-grey-400"
+              />
             </a>
           ) : (
             <ID theme="default">—</ID>

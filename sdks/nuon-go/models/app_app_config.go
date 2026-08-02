@@ -86,6 +86,9 @@ type AppAppConfig struct {
 	// readme
 	Readme string `json:"readme,omitempty"`
 
+	// runbook ids
+	RunbookIds []string `json:"runbook_ids"`
+
 	// runner
 	Runner *AppAppRunnerConfig `json:"runner,omitempty"`
 

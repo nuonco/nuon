@@ -87,16 +87,20 @@ export const Empty = () => (
 export const Error = () => (
   <RepositoriesSection
     isLoading={false}
-    error={{ error: 'Failed to load repositories. Check your GitHub connection.' }}
+    error={{
+      error: 'Failed to load repositories. Check your GitHub connection.',
+    }}
   />
 )
 
 export const SingleRepo = () => (
   <RepositoriesSection
-    repos={{
-      total_count: 1,
-      repositories: [mockRepos.repositories![0]],
-    } as TVCSConnectionReposResponse}
+    repos={
+      {
+        total_count: 1,
+        repositories: [mockRepos.repositories![0]],
+      } as TVCSConnectionReposResponse
+    }
     isLoading={false}
   />
 )

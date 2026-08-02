@@ -16,6 +16,8 @@ type RunnerInput struct {
 	InstanceType  string
 	RunnerAPIURL  string
 	PublicAPIURL  string
+
+	PhoneHomeScriptURL string
 }
 
 func RunnerInputFromConfig(runner config.AppRunnerConfig, appID, appConfigID string) RunnerInput {
@@ -29,6 +31,8 @@ func RunnerInputFromConfig(runner config.AppRunnerConfig, appID, appConfigID str
 		InstanceType:  runner.InstanceType,
 		RunnerAPIURL:  runner.RunnerAPIURL,
 		PublicAPIURL:  runner.PublicAPIURL,
+
+		PhoneHomeScriptURL: runner.PhoneHomeScriptURL,
 	}
 }
 
@@ -43,5 +47,7 @@ func RunnerConfig(in RunnerInput) *app.AppRunnerConfig {
 		InstanceType:  in.InstanceType,
 		RunnerAPIURL:  in.RunnerAPIURL,
 		PublicAPIURL:  in.PublicAPIURL,
+
+		PhoneHomeScriptURL: in.PhoneHomeScriptURL,
 	}
 }

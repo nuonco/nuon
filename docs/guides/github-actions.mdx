@@ -2,7 +2,7 @@
 title: 'GitHub Actions'
 description: 'Automatically update your Apps from GitHub Actions.'
 icon: "github"
-keywords: ["CI/CD", "automated sync", "GitHub workflow", "continuous deployment", "nuon apps sync CI", "CI/CD integration", "automate Nuon deploys", "continuous deployment Nuon"]
+keywords: ["CI/CD", "automated sync", "GitHub workflow", "continuous deployment", "nuon apps sync CI", "CI/CD integration", "automate Nuon deploys", "continuous deployment Nuon", "OIDC", "workload identity federation", "secretless authentication"]
 ---
 
 You can use GitHub Actions to automatically build and release your Components as part of your workflow. This can be used
@@ -48,20 +48,77 @@ jobs:
 
 ## Configuration
 
-Both an API token and an org ID are required to configure Nuon GitHub Actions.
-
-It is recommended to set the API token using a [GitHub Action secret](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions).
+Each workflow needs to authenticate to Nuon with an org ID and a credential. GitHub Actions is an OIDC issuer, so the recommended approach is [OIDC federation](/concepts/oidc-federation) — no stored secret to manage. A static API token is also supported as a fallback.
 
 <Note>
 If you do not yet have an org setup, please follow the [quickstart guide](/get-started/quickstart).
 </Note>
 
-## API Tokens
+## Authenticate without secrets (OIDC)
 
-Create a durable, org-scoped API token and store it as a GitHub Actions secret:
+GitHub Actions is one OIDC issuer; see [OIDC federation](/concepts/oidc-federation) for the general model and other providers. With a trust policy in place, workflows authenticate using the OIDC token GitHub issues to each job — nothing is stored in your repository.
+
+First, create a trust policy for your repository once. The quickest path is from your GitHub connection page in the Dashboard (**Connections → your GitHub connection**), where each repository has a **Manage OIDC** button that prefills the issuer, audience, and `sub` for you. You can also create one under **Settings → OIDC federation**, or with the CLI:
+
+```sh
+nuon orgs oidc-trust-policies create \
+  --name github-actions \
+  --issuer https://token.actions.githubusercontent.com \
+  --audience https://api.nuon.co \
+  --role org_read_only \
+  --claim sub=repo:acme/app:ref:refs/heads/main
+```
+
+Set the `sub` condition to match the repository and ref you want to trust. See [claim matching](/concepts/oidc-federation#claim-matching) for the supported patterns.
+
+Then grant the job permission to request an OIDC token and set your org ID. The [Nuon CLI](/cli) detects the ambient GitHub Actions token and exchanges it automatically — no `api_token` secret required:
+
+```yaml
+---
+on:
+  push:
+    branches:
+      - main
+permissions:
+  id-token: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    env:
+      NUON_ORG_ID: ${{ vars.nuon_org_id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build component
+        uses: nuonco/actions-build@v1
+        with:
+          org: ${{ vars.nuon_org_id }}
+          component_id: backend
+```
+
+The `--audience` you set on the trust policy must match the audience the CLI requests, which defaults to your configured API URL. Set `NUON_OIDC_AUDIENCE` if your policy uses a different audience.
+
+## API tokens (fallback)
+
+If you can't use OIDC — for example, your organization's policy disallows the `id-token: write` permission, or the run happens outside a context that can mint an OIDC token — you can authenticate with a durable, org-scoped [API token](/concepts/api-tokens) stored as a [GitHub Actions secret](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions).
+
+Create the token and copy it straight into your repository secret (it's shown only once):
 
 ```sh
 nuon orgs api-tokens create --name github-actions --output json | jq -r .api_token
 ```
 
-The token is shown only once, so copy it straight into your repository secret. Rotate it any time by creating a new token and revoking the old one with `nuon orgs api-tokens delete --id <token-id>`. Creating tokens requires org admin access.
+Then pass it to the action:
+
+```yaml
+      - name: Build component
+        uses: nuonco/actions-build@v1
+        with:
+          api_token: ${{ secrets.nuon_api_token }}
+          org: ${{ vars.nuon_org_id }}
+          component_id: backend
+```
+
+Rotate it any time by creating a new token and revoking the old one with `nuon orgs api-tokens delete --id <token-id>`. Creating tokens requires org admin access.

@@ -1,4 +1,8 @@
-import type { TVCSConnection, TVCSConnectionReposResponse, TVCSWebhookSubscription } from '@/types'
+import type {
+  TVCSConnection,
+  TVCSConnectionReposResponse,
+  TVCSWebhookSubscription,
+} from '@/types'
 import { GitHubAccountSection } from './GitHubAccountSection'
 import { RepositoriesSection } from './RepositoriesSection'
 import { WebhookSubscriptionSection } from './WebhookSubscriptionSection'
@@ -12,6 +16,7 @@ interface IConnectionDetail {
   subscriptionQueried?: boolean
   onCreateSubscription?: () => void
   isCreatingSubscription?: boolean
+  oidcEnabled?: boolean
 }
 
 export const ConnectionDetail = ({
@@ -23,6 +28,7 @@ export const ConnectionDetail = ({
   subscriptionQueried = false,
   onCreateSubscription,
   isCreatingSubscription,
+  oidcEnabled = false,
 }: IConnectionDetail) => (
   <>
     <GitHubAccountSection vcs_connection={vcs_connection} />
@@ -33,6 +39,11 @@ export const ConnectionDetail = ({
         isCreating={isCreatingSubscription}
       />
     )}
-    <RepositoriesSection repos={repos} error={reposError} isLoading={isLoadingRepos} />
+    <RepositoriesSection
+      repos={repos}
+      error={reposError}
+      isLoading={isLoadingRepos}
+      oidcEnabled={oidcEnabled}
+    />
   </>
 )

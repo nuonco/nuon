@@ -88,6 +88,14 @@ type GetInstallActionWorkflowsParams struct {
 	*/
 	Page *int64
 
+	/* Synced.
+
+	   return actions in the install's current app config; set false to return only actions no longer in it
+
+	   Default: true
+	*/
+	Synced *bool
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -111,12 +119,15 @@ func (o *GetInstallActionWorkflowsParams) SetDefaults() {
 		offsetDefault = int64(0)
 
 		pageDefault = int64(0)
+
+		syncedDefault = bool(true)
 	)
 
 	val := GetInstallActionWorkflowsParams{
 		Limit:  &limitDefault,
 		Offset: &offsetDefault,
 		Page:   &pageDefault,
+		Synced: &syncedDefault,
 	}
 
 	val.timeout = o.timeout
@@ -202,6 +213,17 @@ func (o *GetInstallActionWorkflowsParams) SetPage(page *int64) {
 	o.Page = page
 }
 
+// WithSynced adds the synced to the get install action workflows params
+func (o *GetInstallActionWorkflowsParams) WithSynced(synced *bool) *GetInstallActionWorkflowsParams {
+	o.SetSynced(synced)
+	return o
+}
+
+// SetSynced adds the synced to the get install action workflows params
+func (o *GetInstallActionWorkflowsParams) SetSynced(synced *bool) {
+	o.Synced = synced
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetInstallActionWorkflowsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -261,6 +283,23 @@ func (o *GetInstallActionWorkflowsParams) WriteToRequest(r runtime.ClientRequest
 		if qPage != "" {
 
 			if err := r.SetQueryParam("page", qPage); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Synced != nil {
+
+		// query param synced
+		var qrSynced bool
+
+		if o.Synced != nil {
+			qrSynced = *o.Synced
+		}
+		qSynced := swag.FormatBool(qrSynced)
+		if qSynced != "" {
+
+			if err := r.SetQueryParam("synced", qSynced); err != nil {
 				return err
 			}
 		}

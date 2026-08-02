@@ -65,6 +65,10 @@ func NewAccountIdentityID() string {
 	return shortid.NewNanoID("aid")
 }
 
+func NewOIDCTrustPolicyID() string {
+	return shortid.NewNanoID("otr")
+}
+
 func NewDeviceCodeID() string {
 	return shortid.NewNanoID("dco")
 }

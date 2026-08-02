@@ -7,12 +7,28 @@ import { CheckboxInputWithButton } from '@/components/common/form/CheckboxInput'
 
 export type TRepoFilterType = 'public' | 'private' | 'fork'
 
-export const REPO_FILTER_OPTIONS: TRepoFilterType[] = ['public', 'private', 'fork']
+export const REPO_FILTER_OPTIONS: TRepoFilterType[] = [
+  'public',
+  'private',
+  'fork',
+]
 
 const FILTER_LABELS: Record<TRepoFilterType, React.ReactNode> = {
-  public: <><Icon variant="GlobeIcon" size={12} /> public</>,
-  private: <><Icon variant="LockIcon" size={12} /> private</>,
-  fork: <><Icon variant="GitForkIcon" size={12} /> fork</>,
+  public: (
+    <>
+      <Icon variant="GlobeIcon" size={12} /> public
+    </>
+  ),
+  private: (
+    <>
+      <Icon variant="LockIcon" size={12} /> private
+    </>
+  ),
+  fork: (
+    <>
+      <Icon variant="GitForkIcon" size={12} /> fork
+    </>
+  ),
 }
 
 interface IRepoTypeFilter {
@@ -33,7 +49,11 @@ export const RepoTypeFilter = ({ selected, onChange }: IRepoTypeFilter) => {
 
   const handleOnly = (e: React.MouseEvent<HTMLButtonElement>) => {
     const value = e.currentTarget.value as TRepoFilterType
-    onChange(selected.length === 1 && selected[0] === value ? REPO_FILTER_OPTIONS : [value])
+    onChange(
+      selected.length === 1 && selected[0] === value
+        ? REPO_FILTER_OPTIONS
+        : [value]
+    )
   }
 
   const handleReset = () => onChange(REPO_FILTER_OPTIONS)
@@ -47,7 +67,8 @@ export const RepoTypeFilter = ({ selected, onChange }: IRepoTypeFilter) => {
       buttonClassName="!p-1"
       buttonText={
         <>
-          <Icon variant="FunnelIcon" size="14" /> Filter{!allSelected && ` (${selected.length})`}
+          <Icon variant="FunnelIcon" size="14" /> Filter
+          {!allSelected && ` (${selected.length})`}
         </>
       }
     >
@@ -56,14 +77,17 @@ export const RepoTypeFilter = ({ selected, onChange }: IRepoTypeFilter) => {
           <div className="flex items-center" key={opt}>
             <CheckboxInputWithButton
               buttonProps={{
-                className: '!p-1 flex items-center justify-between group w-full',
+                className:
+                  '!p-1 flex items-center justify-between group w-full',
                 children: (
                   <>
                     <span className="flex items-center gap-1 text-xs font-semibold">
                       {FILTER_LABELS[opt]}
                     </span>
                     <span className="ml-2 text-xs opacity-0 group-hover:opacity-100 w-[40px]">
-                      {selected.length === 1 && selected[0] === opt ? 'Reset' : 'Only'}
+                      {selected.length === 1 && selected[0] === opt
+                        ? 'Reset'
+                        : 'Only'}
                     </span>
                   </>
                 ),

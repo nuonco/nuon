@@ -30,6 +30,15 @@ type TemplateInput struct {
 	// Custom template URLs for VPC/VNet and runner nested/linked deployments (AWS CloudFormation, Azure ARM)
 	VPCNestedStackTemplateURL    string
 	RunnerNestedStackTemplateURL string
+
+	// Where the phone-home token map lives, for the Lambda to fetch at invocation
+	// time. Never the token itself: the rendered template is fetched
+	// unauthenticated from S3 via the quick-link, so it may only carry the secret's
+	// location. Empty whenever phone-home auth is not active for the install, which
+	// is why these are unvalidated — the GCP path shares this struct and never sets
+	// them.
+	PhoneHomeSecretARN    string
+	PhoneHomeSecretRegion string
 }
 
 // PhoneHomeRoleName is the deterministic IAM role name for an install's phone-home

@@ -331,6 +331,10 @@ type Config struct {
 	NuonAuthAllowedDomains []string `config:"nuon_auth_allowed_domains"` // domains from which emails can register
 	NuonAuthAllowAllUsers  bool     `config:"nuon_auth_allow_all_users"` // if true, any user with an allowedDomain can sign in
 
+	// OIDC workload identity federation
+	OIDCFederationEnabled              bool `config:"oidc_federation_enabled"`                // enables the /v1/oidc token exchange and trust policy endpoints (default off)
+	OIDCFederationAllowInsecureIssuers bool `config:"oidc_federation_allow_insecure_issuers"` // allow http:// issuer URLs in trust policies (local dev only)
+
 	// Nuon Auth: Default Provider ConfigS
 	NuonAuthProviderType string `config:"nuon_auth_provider_type"` // NOTE: becomes required after auth is in GA
 	NuonAuthClientID     string `config:"nuon_auth_client_id"`
@@ -393,10 +397,39 @@ type Config struct {
 	// configuration for managing cloud infra for orgs, apps and installs
 	ManagementAccountID string `config:"management_account_id" validate:"required"`
 
+	// ManagementRegion is where management-account resources live. Distinct from
+	// AppRegion: it is baked into customer-deployed artifacts (the phone-home
+	// Lambda's NUON_PHONE_HOME_SECRET_REGION), so it must be stated explicitly
+	// rather than inherited from the pod's AWS_REGION.
+	ManagementRegion string `config:"management_region"`
+
 	// AWS management (not required for GCP)
 	ManagementIAMRoleARN     string `config:"management_iam_role_arn"`
 	ManagementECRRegistryID  string `config:"management_ecr_registry_id"`
 	ManagementECRRegistryARN string `config:"management_ecr_registry_arn"`
+
+	// phone home auth (see plans/phone-home-auth-shared-secret.md)
+	//
+	// The phone-home secret always lives in AWS Secrets Manager in a Nuon-owned AWS
+	// account, whichever cloud this control plane runs on, because the reader is the
+	// customer's phone-home Lambda and Secrets Manager is the only store it can
+	// reach. CloudProvider only selects the credential chain — see
+	// ManagementSecretsCreds.
+	//
+	// AWSPhoneHomeCMKARN is the shared CMK encrypting the secret. It is required for
+	// cross-account reads: the AWS-managed aws/secretsmanager key policy cannot be
+	// edited and is scoped to kms:CallerAccount, so a customer principal fails
+	// kms:Decrypt no matter how permissive the secret's resource policy is.
+	AWSPhoneHomeCMKARN string `config:"aws_phone_home_cmk_arn"`
+	// AWSPhoneHomeSecretsRoleARN is the role in the Nuon AWS account that owns the
+	// secret. Set it on GCP-hosted control planes, where ManagementIAMRoleARN is
+	// legitimately empty; on AWS it defaults to ManagementIAMRoleARN.
+	AWSPhoneHomeSecretsRoleARN string `config:"aws_phone_home_secrets_role_arn"`
+	// PhoneHomeScriptURL overrides the phone-home Lambda source for every app in this
+	// environment, below a per-app AppRunnerConfig.PhoneHomeScriptURL and above the
+	// pinned default. Exists so a dev or staging control plane can exercise an
+	// unreleased script without moving the default that production shares.
+	PhoneHomeScriptURL string `config:"phone_home_script_url"`
 
 	// GCP management (not required for AWS)
 	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
@@ -562,6 +595,39 @@ func (c *Config) CFTemplateUploadCreds() *credentials.Config {
 	return &credentials.Config{
 		Region:     c.AWSCloudFormationStackTemplateBucketRegion,
 		UseDefault: true,
+	}
+}
+
+// ManagementSecretsCreds returns credentials for the Nuon AWS account holding the
+// phone-home secret, or nil when this control plane has no path to it.
+//
+// The secret is always in AWS; only the chain differs. An AWS-hosted control plane
+// assumes the management role directly, the same one ECR management uses. A
+// GCP-hosted one takes one extra step, exchanging the pod's GCP identity for the
+// role via sts:AssumeRoleWithWebIdentity. Azure has no federation path to AWS —
+// AssumeRoleConfig offers UseGithubOIDC and UseGCPOIDC only — so it returns nil and
+// callers skip.
+//
+// Note this reports how *Nuon* authenticates, not what cloud the install is on.
+// Gating phone-home auth on Config.IsAWS instead would silently disable it for every
+// AWS install running under a GCP-hosted control plane.
+func (c *Config) ManagementSecretsCreds() *credentials.Config {
+	roleARN := c.AWSPhoneHomeSecretsRoleARN
+	if roleARN == "" && c.IsAWS() {
+		roleARN = c.ManagementIAMRoleARN
+	}
+	if roleARN == "" {
+		return nil
+	}
+
+	return &credentials.Config{
+		Region: c.ManagementRegion,
+		AssumeRole: &credentials.AssumeRoleConfig{
+			RoleARN:                roleARN,
+			SessionName:            "ctl-api-phone-home-secrets",
+			SessionDurationSeconds: 60 * 60,
+			UseGCPOIDC:             c.IsGCP(),
+		},
 	}
 }
 

@@ -33,6 +33,17 @@ func rolesByType(roles []app.AppAWSIAMRoleConfig, typ app.AWSIAMRoleType) []stri
 	return names
 }
 
+func TestRunnerConfigKeepsPhoneHomeScriptURL(t *testing.T) {
+	const scriptURL = "https://example.com/phonehome.py"
+
+	obj := RunnerConfig(RunnerInputFromConfig(config.AppRunnerConfig{
+		RunnerType:         string(app.AppRunnerTypeAWS),
+		PhoneHomeScriptURL: scriptURL,
+	}, "app1", "cfg1"))
+
+	assert.Equal(t, scriptURL, obj.PhoneHomeScriptURL)
+}
+
 func TestPermissionsConfigKeepsCustomAndBreakGlassRoles(t *testing.T) {
 	obj, err := PermissionsConfig(PermissionsInput{
 		AppID:       "app1",
