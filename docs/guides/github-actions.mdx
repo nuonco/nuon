@@ -58,7 +58,7 @@ If you do not yet have an org setup, please follow the [quickstart guide](/get-s
 
 GitHub Actions is one OIDC issuer; see [OIDC federation](/concepts/oidc-federation) for the general model and other providers. With a trust policy in place, workflows authenticate using the OIDC token GitHub issues to each job — nothing is stored in your repository.
 
-First, create a trust policy for your repository once (from the Dashboard under **Settings → OIDC federation**, or with the CLI):
+First, create a trust policy for your repository once. The quickest path is from your GitHub connection page in the Dashboard (**Connections → your GitHub connection**), where each repository has a **Manage OIDC** button that prefills the issuer, audience, and `sub` for you. You can also create one under **Settings → OIDC federation**, or with the CLI:
 
 ```sh
 nuon orgs oidc-trust-policies create \
