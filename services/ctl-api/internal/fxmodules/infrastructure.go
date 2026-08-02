@@ -35,6 +35,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/salesforce"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/secretsmanager"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/arm"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
@@ -155,6 +156,7 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(analytics.NewTemporal),
 	fx.Provide(cloudformation.NewTemplates),
 	fx.Provide(arm.NewTemplates),
+	fx.Provide(secretsmanager.NewService),
 	fx.Provide(enqueuer.New),
 	fx.Provide(queueclient.New),
 	fx.Provide(emitterclient.New),

@@ -118,6 +118,14 @@ func createInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 
 func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, existing *app.Install, installCfg *config.Install) (*sync.InstallSyncResult, error) {
 	upstream := existingToConfig(existing)
+
+	// Refused rather than ignored: nothing below writes the account, so without this
+	// a changed identifier would diff forever and never converge. Shared with the CLI
+	// syncer so the rule cannot differ by interface.
+	if err := installCfg.CheckImmutableTargetAccount(upstream); err != nil {
+		return nil, err
+	}
+
 	d, err := installCfg.Diff(upstream)
 	if err != nil {
 		return nil, fmt.Errorf("unable to compute diff for install %s: %w", installCfg.Name, err)
@@ -222,17 +230,35 @@ func existingToConfig(install *app.Install) *config.Install {
 		Labels: install.Labels,
 	}
 
+	// The target identifiers must be echoed back, otherwise a config that legitimately
+	// declares them diffs against an upstream that never reports them and every sync
+	// shows drift that no update can ever resolve. Kept in step with genCLIInstallConfig,
+	// which does the same for the CLI's view of upstream.
 	if install.AWSAccount != nil {
-		cfg.AWSAccount = &config.AWSAccount{Region: install.AWSAccount.Region}
+		cfg.AWSAccount = &config.AWSAccount{
+			Region:    install.AWSAccount.Region,
+			AccountID: install.CloudPlatformMetadata.TargetAccountID,
+		}
 	}
+	// Azure and GCP already carry their identifier on the account record, so installs
+	// created before CloudPlatformMetadata existed still round-trip.
 	if install.GCPAccount != nil {
 		cfg.GCPAccount = &config.GCPAccount{
-			ProjectID: install.GCPAccount.ProjectID,
-			Region:    install.GCPAccount.Region,
+			ProjectID: firstNonEmpty(
+				install.CloudPlatformMetadata.TargetProjectID,
+				install.GCPAccount.ProjectID,
+			),
+			Region: install.GCPAccount.Region,
 		}
 	}
 	if install.AzureAccount != nil {
-		cfg.AzureAccount = &config.AzureAccount{Location: install.AzureAccount.Location}
+		cfg.AzureAccount = &config.AzureAccount{
+			Location: install.AzureAccount.Location,
+			SubscriptionID: firstNonEmpty(
+				install.CloudPlatformMetadata.TargetSubscriptionID,
+				install.AzureAccount.SubscriptionID,
+			),
+		}
 	}
 
 	if install.InstallConfig != nil {
@@ -253,6 +279,16 @@ func existingToConfig(install *app.Install) *config.Install {
 	}
 
 	return cfg
+}
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+
+	return ""
 }
 
 var _ func(ctx context.Context, db *gorm.DB, h *installhelpers.Helpers, appID string, i *config.Install) (*sync.InstallSyncResult, error) = SyncInstall

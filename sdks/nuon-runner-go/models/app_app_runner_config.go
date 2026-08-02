@@ -55,6 +55,12 @@ type AppAppRunnerConfig struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// PhoneHomeScriptURL overrides the phone-home Lambda source fetched at stack
+	// render time. Per app so a single app can be moved onto a new script version
+	// without touching anyone else: the default is shared by every org, so changing
+	// it ships to the whole fleet on their next stack regeneration.
+	PhoneHomeScriptURL string `json:"phone_home_script_url,omitempty"`
+
 	// PublicAPIURL overrides the Nuon public API endpoint used for phone-home callbacks.
 	PublicAPIURL string `json:"public_api_url,omitempty"`
 

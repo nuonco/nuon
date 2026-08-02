@@ -82,6 +82,12 @@ type AppRunnerConfig struct {
 	// takes a URL to a bash script ⤵  which will be `curl | bash`-ed on the VM. usually via user-data or equivalent.
 	InitScriptURL string `json:"init_script,omitzero" gorm:"default null" temporaljson:"init_script,omitzero,omitempty" features:"get,omitzero"`
 
+	// PhoneHomeScriptURL overrides the phone-home Lambda source fetched at stack
+	// render time. Per app so a single app can be moved onto a new script version
+	// without touching anyone else: the default is shared by every org, so changing
+	// it ships to the whole fleet on their next stack regeneration.
+	PhoneHomeScriptURL string `json:"phone_home_script_url,omitzero" gorm:"default null" temporaljson:"phone_home_script_url,omitzero,omitempty" features:"get,omitzero"`
+
 	// InstanceType is the cloud machine/instance type for the install runner host, mapped per cloud platform.
 	InstanceType string `json:"instance_type,omitzero" gorm:"default null" temporaljson:"instance_type,omitzero,omitempty"`
 
