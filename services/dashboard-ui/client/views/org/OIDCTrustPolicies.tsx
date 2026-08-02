@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageLayout } from '@/components/layout/PageLayout'
@@ -11,9 +12,15 @@ import {
   OIDCTrustPoliciesTable,
 } from '@/components/oidc-trust-policies'
 import { useOrg } from '@/hooks/use-org'
+import { getCurrentOrgOIDCTrustPolicies } from '@/lib'
 
 export const OIDCTrustPolicies = () => {
   const { org } = useOrg()
+
+  const { data: policies } = useQuery({
+    queryKey: ['oidc-trust-policies', org.id],
+    queryFn: () => getCurrentOrgOIDCTrustPolicies({ orgId: org.id }),
+  })
 
   return (
     <PageLayout className="pb-6">
@@ -30,11 +37,13 @@ export const OIDCTrustPolicies = () => {
             OIDC federation
           </Text>
           <Text theme="neutral">
-            Let CI/CD providers exchange OIDC tokens for short-lived org
-            access without storing a static API token.
+            Let CI/CD providers exchange OIDC tokens for short-lived org access
+            without storing a static API token.
           </Text>
         </HeadingGroup>
-        <CreateOIDCTrustPolicyButton />
+        <CreateOIDCTrustPolicyButton
+          reservedNames={(policies ?? []).map((policy) => policy.name ?? '')}
+        />
       </PageHeader>
       <PageContent>
         <PageSection>

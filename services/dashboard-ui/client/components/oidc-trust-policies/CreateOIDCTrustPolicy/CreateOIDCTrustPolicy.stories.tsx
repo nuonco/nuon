@@ -9,7 +9,11 @@ const noop = () => {}
 
 export const Default = () => (
   <ModalStory>
-    <CreateOIDCTrustPolicyModal isPending={false} error={null} onSubmit={noop} />
+    <CreateOIDCTrustPolicyModal
+      isPending={false}
+      error={null}
+      onSubmit={noop}
+    />
   </ModalStory>
 )
 

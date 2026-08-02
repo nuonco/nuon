@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -47,7 +48,9 @@ const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
       })
       addToast(
         <Toast heading="Trust policy created" theme="success">
-          <Text>{policy.name} can now exchange OIDC tokens for org access.</Text>
+          <Text>
+            {policy.name} can now exchange OIDC tokens for org access.
+          </Text>
         </Toast>
       )
       removeModal(props.modalId)
@@ -72,15 +75,35 @@ const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
 }
 
 export const CreateOIDCTrustPolicyButton = ({
+  initialValues,
+  lockIssuer,
+  reservedNames,
+  children,
+  variant = 'primary',
   ...props
-}: Omit<IButtonAsButton, 'children'>) => {
+}: Omit<IButtonAsButton, 'children'> & {
+  initialValues?: Partial<OIDCTrustPolicyFormInput>
+  lockIssuer?: boolean
+  reservedNames?: string[]
+  children?: ReactNode
+}) => {
   const { addModal } = useSurfaces()
-  const modal = <CreateOIDCTrustPolicyModalContainer />
+  const modal = (
+    <CreateOIDCTrustPolicyModalContainer
+      initialValues={initialValues}
+      lockIssuer={lockIssuer}
+      reservedNames={reservedNames}
+    />
+  )
 
   return (
-    <Button variant="primary" onClick={() => addModal(modal)} {...props}>
-      <Icon variant="PlusIcon" />
-      Create trust policy
+    <Button variant={variant} onClick={() => addModal(modal)} {...props}>
+      {children ?? (
+        <>
+          <Icon variant="PlusIcon" />
+          Create trust policy
+        </>
+      )}
     </Button>
   )
 }

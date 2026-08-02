@@ -62,7 +62,9 @@ export const LoadingRepos = () => (
 export const ReposError = () => (
   <ConnectionDetail
     vcs_connection={mockConnection}
-    reposError={{ error: 'Failed to load repositories. Check your GitHub connection.' }}
+    reposError={{
+      error: 'Failed to load repositories. Check your GitHub connection.',
+    }}
   />
 )
 
