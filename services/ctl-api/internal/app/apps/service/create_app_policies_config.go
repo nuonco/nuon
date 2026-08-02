@@ -2,19 +2,16 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/config"
-	"github.com/nuonco/nuon/pkg/config/validate"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -24,12 +21,10 @@ type CreateAppPoliciesConfigRequest struct {
 	Policies []AppPolicyConfig `json:"policies"`
 }
 
-func (c CreateAppPoliciesConfigRequest) getPolicies(appID, appConfigID string) []app.AppPolicyConfig {
-	objs := make([]app.AppPolicyConfig, 0)
+func (c CreateAppPoliciesConfigRequest) buildInputs() []build.PolicyInput {
+	objs := make([]build.PolicyInput, 0, len(c.Policies))
 	for _, policy := range c.Policies {
-		objs = append(objs, app.AppPolicyConfig{
-			AppID:       appID,
-			AppConfigID: appConfigID,
+		objs = append(objs, build.PolicyInput{
 			Type:        policy.Type,
 			Engine:      policy.Engine,
 			Name:        policy.Name,
@@ -54,27 +49,6 @@ func (c *CreateAppPoliciesConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
 	}
-
-	for idx, policy := range c.Policies {
-		if !generics.SliceContains(policy.Type, app.AllPolicyTypes) {
-			return stderr.ErrUser{
-				Err:         fmt.Errorf("policy type must be one of (%s)", strings.Join(generics.ToStringSlice(app.AllPolicyTypes), ",")),
-				Description: "invalid policy type " + string(policy.Type),
-			}
-		}
-
-		policyName := policy.Name
-		if policyName == "" {
-			policyName = fmt.Sprintf("#%d", idx)
-		}
-		if err := validate.ValidatePolicyComponents(policyName, policy.Type, policy.Components); err != nil {
-			return stderr.ErrUser{
-				Err:         err,
-				Description: err.Error(),
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -120,16 +94,15 @@ func (s *service) CreateAppPoliciesConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppPoliciesConfig(ctx context.Context, appID string, req *CreateAppPoliciesConfigRequest) (*app.AppPoliciesConfig, error) {
-	obj := app.AppPoliciesConfig{
-		AppID:       appID,
-		AppConfigID: req.AppConfigID,
-		Policies:    req.getPolicies(appID, req.AppConfigID),
+	obj, err := build.PoliciesConfig(req.buildInputs(), appID, req.AppConfigID)
+	if err != nil {
+		return nil, stderr.ErrUser{Err: err, Description: err.Error()}
 	}
 
-	res := s.db.WithContext(ctx).Create(&obj)
+	res := s.db.WithContext(ctx).Create(obj)
 	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to create app break glass config")
+		return nil, errors.Wrap(res.Error, "unable to create app policies config")
 	}
 
-	return &obj, nil
+	return obj, nil
 }

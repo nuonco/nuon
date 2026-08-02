@@ -13,6 +13,7 @@ import (
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	createdsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/created"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 )
@@ -72,7 +73,9 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 	return nil
 }
 
-// SyncComponent updates a component and creates its configuration based on type.
+// SyncComponent updates a component and creates its configuration via the shared
+// builders in internal/pkg/config/build, which the per-type
+// Create*ComponentConfig handlers also use.
 func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.Helpers, vcsHelper *vcshelpers.Helpers, tfClient terraform.Client, comp *config.Component, appID, appConfigID string, state *sync.State) error {
 	apiComp, err := getComponent(ctx, db, comp.Name, appID)
 	if err != nil {
@@ -100,32 +103,67 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 		}
 	}
 
-	// Create component config based on type
-	var configID string
-	var checksum string
+	depIDs := []string{}
+	if len(comp.Dependencies) > 0 {
+		depIDs, err = helpers.GetComponentIDs(ctx, appID, comp.Dependencies)
+		if err != nil {
+			return sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to resolve dependencies for component %s", comp.Name),
+				Err:         err,
+			}
+		}
+	}
 
-	switch comp.Type.APIType() {
-	case "docker_build":
-		configID, checksum, err = SyncDockerBuildComponent(ctx, db, vcsHelper, helpers, comp, apiComp.ID, appID, appConfigID)
-		if err != nil {
-			return err
-		}
-	case "helm_chart":
-		configID, checksum, err = SyncHelmComponent(ctx, db, vcsHelper, helpers, comp, apiComp.ID, appID, appConfigID)
-		if err != nil {
-			return err
-		}
-	case "terraform_module":
-		configID, checksum, err = SyncTerraformModuleComponent(ctx, db, vcsHelper, helpers, tfClient, comp, apiComp.ID, appID, appConfigID)
-		if err != nil {
-			return err
-		}
-	case "external_image":
-		configID, checksum, err = SyncExternalImageComponent(ctx, db, helpers, comp, apiComp.ID, appID, appConfigID)
-		if err != nil {
-			return err
-		}
+	vcs, err := resolveVCS(ctx, db, vcsHelper, comp, appID)
+	if err != nil {
+		return err
+	}
 
+	terraformVersion := ""
+	if comp.TerraformModule != nil {
+		terraformVersion = comp.TerraformModule.TerraformVersion
+	}
+	if build.NeedsTerraformVersion(comp) {
+		terraformVersion, err = tfClient.GetLatestVersion()
+		if err != nil {
+			return sync.SyncInternalErr{
+				Description: "unable to fetch latest terraform version",
+				Err:         err,
+			}
+		}
+	}
+
+	in, err := build.ComponentConnectionInputFromConfig(comp, apiComp.ID, appConfigID, depIDs)
+	if err != nil {
+		return sync.SyncErr{
+			Resource:    fmt.Sprintf("component-%s", comp.Name),
+			Description: err.Error(),
+		}
+	}
+
+	ccc, err := build.ComponentConnection(in)
+	if err != nil {
+		return sync.SyncErr{
+			Resource:    fmt.Sprintf("component-%s", comp.Name),
+			Description: err.Error(),
+		}
+	}
+
+	if err := build.AttachTypeConfig(ccc, comp, vcs, terraformVersion); err != nil {
+		return sync.SyncErr{
+			Resource:    fmt.Sprintf("component-%s", comp.Name),
+			Description: err.Error(),
+		}
+	}
+
+	if res := db.WithContext(ctx).Create(ccc); res.Error != nil {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to create component config for %s", comp.Name),
+			Err:         res.Error,
+		}
+	}
+
+	if comp.ExternalImage != nil {
 		// Always queue a build per fresh CCC. Strict CCC-pinning at deploy
 		// time (see installs/workflows/v2/shared_helpers.go and
 		// installs/signals/componentsyncimage) requires every CCC to
@@ -134,30 +172,12 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 		// deploy for the image. The runner's NoOp dedup
 		// (ComponentBuild.NoOp) handles unchanged-digest cases without
 		// re-pushing the artifact, so the cost is one extra DB row per
-		// (image component × `nuon apps sync`).
-		if _, qErr := helpers.CreateComponentBuild(ctx, apiComp.ID, false, nil); qErr != nil {
+		// (image component × sync).
+		if _, err := helpers.CreateComponentBuild(ctx, apiComp.ID, false, nil); err != nil {
 			return sync.SyncInternalErr{
 				Description: fmt.Sprintf("unable to queue build for component %s", comp.Name),
-				Err:         qErr,
+				Err:         err,
 			}
-		}
-	case "pulumi":
-		configID, checksum, err = SyncPulumiComponent(ctx, db, vcsHelper, helpers, comp, apiComp.ID, appID, appConfigID)
-		if err != nil {
-			return err
-		}
-	case "job":
-		configID = ""
-		checksum = ""
-	case "kubernetes_manifest":
-		configID, checksum, err = SyncKubernetesManifestComponent(ctx, db, vcsHelper, helpers, comp, apiComp.ID, appID, appConfigID)
-		if err != nil {
-			return err
-		}
-	default:
-		return sync.SyncInternalErr{
-			Description: fmt.Sprintf("unsupported component type: %s", comp.Type.APIType()),
-			Err:         fmt.Errorf("component type %s is not supported", comp.Type.APIType()),
 		}
 	}
 
@@ -165,11 +185,63 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 		Name:     apiComp.Name,
 		Type:     comp.Type.APIType(),
 		ID:       apiComp.ID,
-		ConfigID: configID,
-		Checksum: checksum,
+		ConfigID: ccc.ID,
+		Checksum: comp.Checksum,
 	})
 
 	return nil
+}
+
+func resolveVCS(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, comp *config.Component, appID string) (build.VCS, error) {
+	connected, public := build.ComponentRepos(comp)
+	if connected == nil && public == nil {
+		return build.VCS{}, nil
+	}
+
+	var vcs build.VCS
+
+	if connected != nil {
+		var parentApp app.App
+		if res := db.WithContext(ctx).
+			Preload("Org").
+			Preload("Org.VCSConnections").
+			First(&parentApp, "id = ?", appID); res.Error != nil {
+			return build.VCS{}, sync.SyncInternalErr{
+				Description: "unable to get app for component vcs config",
+				Err:         res.Error,
+			}
+		}
+
+		cfg, err := vcsHelper.BuildConnectedGithubVCSConfig(ctx, &vcshelpers.ConnectedGithubVCSConfigRequest{
+			Repo:      connected.Repo,
+			Branch:    connected.Branch,
+			Directory: connected.Directory,
+		}, parentApp.Org)
+		if err != nil {
+			return build.VCS{}, sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to create connected github vcs config for component %s", comp.Name),
+				Err:         err,
+			}
+		}
+		vcs.Github = cfg
+	}
+
+	if public != nil {
+		cfg, err := vcsHelper.BuildPublicGitVCSConfig(ctx, &vcshelpers.PublicGitVCSConfigRequest{
+			Repo:      public.Repo,
+			Branch:    public.Branch,
+			Directory: public.Directory,
+		})
+		if err != nil {
+			return build.VCS{}, sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to create public git vcs config for component %s", comp.Name),
+				Err:         err,
+			}
+		}
+		vcs.Public = cfg
+	}
+
+	return vcs, nil
 }
 
 // EnsureComponentDependencies resolves and sets dependencies for a component.

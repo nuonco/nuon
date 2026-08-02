@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -52,17 +53,17 @@ func (c *CreateDockerBuildComponentConfigRequest) Validate(v *validator.Validate
 	}
 
 	if c.BuildTimeout != "" {
-		if err := validateBuildTimeout(c.BuildTimeout); err != nil {
+		if err := validation.ValidateBuildTimeout(c.BuildTimeout); err != nil {
 			return err
 		}
 	}
 	if c.DeployTimeout != "" {
-		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+		if err := validation.ValidateDeployTimeout(c.DeployTimeout); err != nil {
 			return err
 		}
 	}
 	if c.MaxAutoRetries != nil {
-		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
+		if err := validation.ValidateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
 		}
 	}

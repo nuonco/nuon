@@ -8,8 +8,10 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -26,26 +28,30 @@ func (c *CreateAppSecretsConfigRequest) Validate(v *validator.Validate) error {
 	return nil
 }
 
-func (c CreateAppSecretsConfigRequest) getSecrets(appID, appConfigID string) []app.AppSecretConfig {
-	objs := make([]app.AppSecretConfig, 0)
+func (c CreateAppSecretsConfigRequest) buildInputs() []build.SecretInput {
+	objs := make([]build.SecretInput, 0, len(c.Secrets))
 	for _, secr := range c.Secrets {
-		objs = append(objs, app.AppSecretConfig{
-			AppID:       appID,
-			AppConfigID: appConfigID,
+		targets := make([]config.KubernetesSyncTarget, 0, len(secr.KubernetesSyncTargets))
+		for _, t := range secr.KubernetesSyncTargets {
+			targets = append(targets, config.KubernetesSyncTarget{
+				Namespaces: t.Namespaces,
+				Name:       t.Name,
+				Key:        t.Key,
+			})
+		}
 
-			Name:         secr.Name,
-			DisplayName:  secr.DisplayName,
-			Description:  secr.Description,
-			Required:     secr.Required,
-			AutoGenerate: secr.AutoGenerate,
-			Default:      secr.Default,
-			Format:       app.AppSecretConfigFmt(secr.Format),
-
-			KubernetesSync:            secr.KubernetesSync,
+		objs = append(objs, build.SecretInput{
+			Name:                      secr.Name,
+			DisplayName:               secr.DisplayName,
+			Description:               secr.Description,
+			Required:                  secr.Required,
+			AutoGenerate:              secr.AutoGenerate,
+			Format:                    secr.Format,
+			Default:                   secr.Default,
+			KubernetesSync:            secr.KubernetesSync || len(targets) > 0,
 			KubernetesSecretNamespace: secr.KubernetesSecretNamespace,
 			KubernetesSecretName:      secr.KubernetesSecretName,
-
-			KubernetesSyncTargets: secr.getKubernetesSyncTargets(appID),
+			KubernetesSyncTargets:     targets,
 		})
 	}
 	return objs
@@ -128,16 +134,15 @@ func (s *service) CreateAppSecretsConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppSecretsConfig(ctx context.Context, appID string, req *CreateAppSecretsConfigRequest) (*app.AppSecretsConfig, error) {
-	obj := app.AppSecretsConfig{
-		AppID:       appID,
-		AppConfigID: req.AppConfigID,
-		Secrets:     req.getSecrets(appID, req.AppConfigID),
+	obj, err := build.SecretsConfig(req.buildInputs(), appID, req.AppConfigID)
+	if err != nil {
+		return nil, err
 	}
 
-	res := s.db.WithContext(ctx).Create(&obj)
+	res := s.db.WithContext(ctx).Create(obj)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create app secrets config")
 	}
 
-	return &obj, nil
+	return obj, nil
 }

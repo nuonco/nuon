@@ -9,12 +9,13 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -45,6 +46,39 @@ type CreateTerraformModuleComponentConfigRequest struct {
 
 const MinTerraformVersion = "1.8.0"
 
+func (c *CreateTerraformModuleComponentConfigRequest) toConfig() *config.TerraformModuleComponentConfig {
+	variablesFiles := make([]config.TerraformVariablesFile, 0, len(c.VariablesFiles))
+	for _, contents := range c.VariablesFiles {
+		variablesFiles = append(variablesFiles, config.TerraformVariablesFile{Contents: contents})
+	}
+
+	return &config.TerraformModuleComponentConfig{
+		VarsMap:        build.DerefMap(c.Variables),
+		EnvVarMap:      build.DerefMap(c.EnvVars),
+		VariablesFiles: variablesFiles,
+	}
+}
+
+func (c *CreateTerraformModuleComponentConfigRequest) buildInput(componentID string, depIDs []string) build.ComponentConnectionInput {
+	return build.ComponentConnectionInput{
+		ComponentID:                  componentID,
+		AppConfigID:                  c.AppConfigID,
+		References:                   c.References,
+		Checksum:                     c.Checksum,
+		DependencyIDs:                depIDs,
+		BuildTimeout:                 c.BuildTimeout,
+		DeployTimeout:                c.DeployTimeout,
+		MaxAutoRetries:               c.MaxAutoRetries,
+		SkipNoops:                    c.SkipNoops,
+		Toggleable:                   c.Toggleable,
+		DefaultEnabled:               c.DefaultEnabled,
+		AutoApproveOnPoliciesPassing: c.AutoApproveOnPoliciesPassing,
+		DriftSchedule:                c.DriftSchedule,
+		OperationRoles:               toConfigOperationRoles(c.OperationRoles),
+		KubernetesContextName:        c.KubernetesContext,
+	}
+}
+
 func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Validate, latestVersion string) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
@@ -70,17 +104,17 @@ func (c *CreateTerraformModuleComponentConfigRequest) Validate(v *validator.Vali
 
 	// Validate timeouts if provided
 	if c.BuildTimeout != "" {
-		if err := validateBuildTimeout(c.BuildTimeout); err != nil {
+		if err := validation.ValidateBuildTimeout(c.BuildTimeout); err != nil {
 			return err
 		}
 	}
 	if c.DeployTimeout != "" {
-		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+		if err := validation.ValidateDeployTimeout(c.DeployTimeout); err != nil {
 			return err
 		}
 	}
 	if c.MaxAutoRetries != nil {
-		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
+		if err := validation.ValidateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
 		}
 	}
@@ -219,44 +253,20 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		return nil, fmt.Errorf("invalid public vcs config: %w", err)
 	}
 
-	cfg := app.TerraformModuleComponentConfig{
-		Version:                  req.Version,
-		PublicGitVCSConfig:       publicGitVCSConfig,
-		ConnectedGithubVCSConfig: connectedGithubVCSConfig,
-		Variables:                pgtype.Hstore(req.Variables),
-		EnvVars:                  pgtype.Hstore(req.EnvVars),
-		VariablesFiles:           pq.StringArray(req.VariablesFiles),
+	vcs := build.VCS{Github: connectedGithubVCSConfig, Public: publicGitVCSConfig}
+
+	cfg, err := build.TerraformModuleComponentConfig(req.toConfig(), vcs, req.Version)
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
 
-	var operationRoles pgtype.Hstore
-	if req.OperationRoles != nil {
-		operationRoles = make(pgtype.Hstore)
-		for operation, role := range req.OperationRoles {
-			operationRoles[string(operation)] = role
-		}
+	componentConfigConnection, err := build.ComponentConnection(req.buildInput(parentCmp.ID, depIDs))
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
+	componentConfigConnection.TerraformModuleComponentConfig = cfg
 
-	componentConfigConnection := app.ComponentConfigConnection{
-		TerraformModuleComponentConfig: &cfg,
-		ComponentID:                    parentCmp.ID,
-		AppConfigID:                    req.AppConfigID,
-		ComponentDependencyIDs:         pq.StringArray(depIDs),
-		References:                     pq.StringArray(req.References),
-		Checksum:                       req.Checksum,
-		BuildTimeout:                   req.BuildTimeout,
-		DeployTimeout:                  req.DeployTimeout,
-		MaxAutoRetries:                 req.MaxAutoRetries,
-		SkipNoops:                      req.SkipNoops,
-		Toggleable:                     req.Toggleable,
-		DefaultEnabled:                 req.DefaultEnabled,
-		AutoApproveOnPoliciesPassing:   req.AutoApproveOnPoliciesPassing,
-		OperationRoles:                 operationRoles,
-		KubernetesContextName:          req.KubernetesContext,
-	}
-	if req.DriftSchedule != nil {
-		componentConfigConnection.DriftSchedule = *req.DriftSchedule
-	}
-	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
+	if res := s.db.WithContext(ctx).Create(componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create terraform component config connection: %w", res.Error)
 	}
 
@@ -265,5 +275,5 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		return nil, fmt.Errorf("unable to update component type: %w", err)
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }

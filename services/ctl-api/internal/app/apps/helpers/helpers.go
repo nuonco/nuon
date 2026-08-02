@@ -50,3 +50,8 @@ func New(params Params) *Helpers {
 func (h *Helpers) VCSHelpers() *vcshelpers.Helpers {
 	return h.vcsHelpers
 }
+
+// QueueClient returns the queue client for enqueueing app-owned signals.
+func (h *Helpers) QueueClient() *queueclient.Client {
+	return h.queueClient
+}
