@@ -15,7 +15,9 @@ const mockConnection: TVCSConnection = {
   vcs_connection_commit: [],
 } as TVCSConnection
 
-export const Default = () => <GitHubAccountSection vcs_connection={mockConnection} />
+export const Default = () => (
+  <GitHubAccountSection vcs_connection={mockConnection} />
+)
 
 export const WithCommits = () => (
   <GitHubAccountSection

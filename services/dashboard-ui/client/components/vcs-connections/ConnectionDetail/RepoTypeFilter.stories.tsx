@@ -3,10 +3,15 @@ export default {
 }
 
 import { useState } from 'react'
-import { RepoTypeFilter, REPO_FILTER_OPTIONS, type TRepoFilterType } from './RepoTypeFilter'
+import {
+  RepoTypeFilter,
+  REPO_FILTER_OPTIONS,
+  type TRepoFilterType,
+} from './RepoTypeFilter'
 
 export const Default = () => {
-  const [selected, setSelected] = useState<TRepoFilterType[]>(REPO_FILTER_OPTIONS)
+  const [selected, setSelected] =
+    useState<TRepoFilterType[]>(REPO_FILTER_OPTIONS)
   return <RepoTypeFilter selected={selected} onChange={setSelected} />
 }
 
@@ -16,6 +21,9 @@ export const OneSelected = () => {
 }
 
 export const TwoSelected = () => {
-  const [selected, setSelected] = useState<TRepoFilterType[]>(['public', 'fork'])
+  const [selected, setSelected] = useState<TRepoFilterType[]>([
+    'public',
+    'fork',
+  ])
   return <RepoTypeFilter selected={selected} onChange={setSelected} />
 }

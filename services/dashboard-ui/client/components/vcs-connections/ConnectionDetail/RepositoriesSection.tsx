@@ -8,6 +8,7 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { ManageRepoOIDCButton } from '@/components/vcs-connections/ManageRepoOIDC'
 import type { TVCSConnectionReposResponse } from '@/types'
 import {
   REPO_FILTER_OPTIONS,
@@ -19,12 +20,14 @@ interface IRepositoriesSection {
   repos?: TVCSConnectionReposResponse
   error?: any
   isLoading: boolean
+  oidcEnabled?: boolean
 }
 
 export const RepositoriesSection = ({
   repos,
   error,
   isLoading,
+  oidcEnabled = false,
 }: IRepositoriesSection) => {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] =
@@ -153,6 +156,13 @@ export const RepositoriesSection = ({
                       {repo.description}
                     </Text>
                   )}
+                  {oidcEnabled && (
+                    <ManageRepoOIDCButton
+                      repoFullName={repo.full_name}
+                      size="sm"
+                      className="w-fit"
+                    />
+                  )}
                 </div>
               ))
             ) : (
@@ -160,7 +170,11 @@ export const RepositoriesSection = ({
                 variant="search"
                 size="sm"
                 emptyTitle={isFiltering ? 'No results' : 'No repositories'}
-                emptyMessage={isFiltering ? 'Try adjusting your search or filters.' : 'No repositories found for this connection.'}
+                emptyMessage={
+                  isFiltering
+                    ? 'Try adjusting your search or filters.'
+                    : 'No repositories found for this connection.'
+                }
               />
             )}
           </div>
