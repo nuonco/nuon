@@ -1,0 +1,530 @@
+package secretsmanager
+
+import (
+	"context"
+	"encoding/json"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awssm "github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
+	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal"
+)
+
+const testSecretARN = "arn:aws:secretsmanager:us-west-2:123456789012:secret:nuon/phone-home/inst1-aB3xYz"
+
+// fakeAPI models a single secret's server-side state.
+type fakeAPI struct {
+	exists          bool
+	value           string
+	kmsKeyID        string
+	pendingDeletion bool
+
+	creates  int
+	updates  int
+	puts     int
+	gets     int
+	restores int
+	policies int
+	deletes  int
+	tagCalls int
+
+	// tags is what the secret already carries; createTags/addedTags record what the
+	// service asked for.
+	tags       []types.Tag
+	createTags []types.Tag
+	addedTags  []types.Tag
+
+	createErr error
+}
+
+func (f *fakeAPI) TagResource(_ context.Context, in *awssm.TagResourceInput, _ ...func(*awssm.Options)) (*awssm.TagResourceOutput, error) {
+	f.tagCalls++
+	f.addedTags = append(f.addedTags, in.Tags...)
+
+	return &awssm.TagResourceOutput{}, nil
+}
+
+func (f *fakeAPI) DescribeSecret(_ context.Context, in *awssm.DescribeSecretInput, _ ...func(*awssm.Options)) (*awssm.DescribeSecretOutput, error) {
+	if !f.exists {
+		return nil, &types.ResourceNotFoundException{}
+	}
+
+	out := &awssm.DescribeSecretOutput{
+		ARN:      aws.String(testSecretARN),
+		KmsKeyId: stringOrNil(f.kmsKeyID),
+		Tags:     f.tags,
+	}
+	if f.pendingDeletion {
+		out.DeletedDate = aws.Time(time.Now())
+	}
+
+	return out, nil
+}
+
+func (f *fakeAPI) GetSecretValue(_ context.Context, in *awssm.GetSecretValueInput, _ ...func(*awssm.Options)) (*awssm.GetSecretValueOutput, error) {
+	f.gets++
+	if !f.exists {
+		return nil, &types.ResourceNotFoundException{}
+	}
+
+	return &awssm.GetSecretValueOutput{SecretString: aws.String(f.value)}, nil
+}
+
+func (f *fakeAPI) CreateSecret(_ context.Context, in *awssm.CreateSecretInput, _ ...func(*awssm.Options)) (*awssm.CreateSecretOutput, error) {
+	f.creates++
+	if f.createErr != nil {
+		f.exists = true
+		return nil, f.createErr
+	}
+	f.exists = true
+	f.value = aws.ToString(in.SecretString)
+	f.kmsKeyID = aws.ToString(in.KmsKeyId)
+	f.createTags = in.Tags
+	f.tags = in.Tags
+
+	return &awssm.CreateSecretOutput{ARN: aws.String(testSecretARN)}, nil
+}
+
+func (f *fakeAPI) UpdateSecret(_ context.Context, in *awssm.UpdateSecretInput, _ ...func(*awssm.Options)) (*awssm.UpdateSecretOutput, error) {
+	if f.pendingDeletion {
+		return nil, &types.InvalidRequestException{}
+	}
+	f.updates++
+	f.kmsKeyID = aws.ToString(in.KmsKeyId)
+
+	return &awssm.UpdateSecretOutput{ARN: aws.String(testSecretARN)}, nil
+}
+
+func (f *fakeAPI) PutSecretValue(_ context.Context, in *awssm.PutSecretValueInput, _ ...func(*awssm.Options)) (*awssm.PutSecretValueOutput, error) {
+	f.puts++
+	f.exists = true
+	f.value = aws.ToString(in.SecretString)
+
+	return &awssm.PutSecretValueOutput{ARN: aws.String(testSecretARN)}, nil
+}
+
+func (f *fakeAPI) PutResourcePolicy(_ context.Context, in *awssm.PutResourcePolicyInput, _ ...func(*awssm.Options)) (*awssm.PutResourcePolicyOutput, error) {
+	f.policies++
+
+	return &awssm.PutResourcePolicyOutput{}, nil
+}
+
+func (f *fakeAPI) DeleteSecret(_ context.Context, in *awssm.DeleteSecretInput, _ ...func(*awssm.Options)) (*awssm.DeleteSecretOutput, error) {
+	f.deletes++
+	if !f.exists {
+		return nil, &types.ResourceNotFoundException{}
+	}
+	f.exists = false
+
+	return &awssm.DeleteSecretOutput{}, nil
+}
+
+func (f *fakeAPI) RestoreSecret(_ context.Context, in *awssm.RestoreSecretInput, _ ...func(*awssm.Options)) (*awssm.RestoreSecretOutput, error) {
+	f.restores++
+	f.pendingDeletion = false
+
+	return &awssm.RestoreSecretOutput{}, nil
+}
+
+func testService(fake *fakeAPI) *service {
+	return &service{
+		cfg:    &internal.Config{ManagementRegion: "us-west-2"},
+		l:      zap.NewNop(),
+		newAPI: func(context.Context) (api, error) { return fake, nil },
+	}
+}
+
+func TestEnsureSecretCreatesWhenMissing(t *testing.T) {
+	fake := &fakeAPI{}
+	svc := testService(fake)
+
+	out, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{Name: "nuon/phone-home/inst1", Value: `{"a":"t1"}`})
+	if err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	if fake.creates != 1 || fake.puts != 0 {
+		t.Errorf("expected one create and no put, got creates=%d puts=%d", fake.creates, fake.puts)
+	}
+	// The ARN is not derivable from the name, so it has to come back from AWS.
+	if out.ARN != testSecretARN {
+		t.Errorf("ARN = %q, want %q", out.ARN, testSecretARN)
+	}
+	if !out.Wrote {
+		t.Error("Wrote should be true on create")
+	}
+}
+
+// The regression test for the idempotency guard. Without it, every stack generation
+// across all four provisioning workflows mints a new Secrets Manager version — a
+// cost and noise problem, and it makes version history useless for auditing.
+func TestEnsureSecretSkipsUnchangedValue(t *testing.T) {
+	fake := &fakeAPI{exists: true, value: `{"a":"t1"}`}
+	svc := testService(fake)
+
+	out, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{Name: "nuon/phone-home/inst1", Value: `{"a":"t1"}`})
+	if err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	if fake.puts != 0 {
+		t.Errorf("an unchanged map must not write a new version, got %d puts", fake.puts)
+	}
+	if out.Wrote {
+		t.Error("Wrote should be false when the value is unchanged")
+	}
+	if out.ARN != testSecretARN {
+		t.Errorf("ARN = %q, want %q", out.ARN, testSecretARN)
+	}
+}
+
+func TestEnsureSecretWritesChangedValue(t *testing.T) {
+	fake := &fakeAPI{exists: true, value: `{"a":"t1"}`}
+	svc := testService(fake)
+
+	out, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{Name: "nuon/phone-home/inst1", Value: `{"a":"t1","b":"t2"}`})
+	if err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	if fake.puts != 1 || fake.creates != 0 {
+		t.Errorf("expected one put and no create, got puts=%d creates=%d", fake.puts, fake.creates)
+	}
+	if !out.Wrote {
+		t.Error("Wrote should be true when the value changed")
+	}
+	if fake.value != `{"a":"t1","b":"t2"}` {
+		t.Errorf("stored value = %q", fake.value)
+	}
+}
+
+func TestEnsureSecretUpdatesExistingKMSKey(t *testing.T) {
+	const desiredKMSKey = "arn:aws:kms:us-west-2:123456789012:key/desired"
+
+	fake := &fakeAPI{
+		exists:   true,
+		value:    `{"a":"t1"}`,
+		kmsKeyID: "alias/aws/secretsmanager",
+	}
+	svc := testService(fake)
+
+	out, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name:      "nuon/phone-home/inst1",
+		Value:     `{"a":"t1"}`,
+		KMSKeyARN: desiredKMSKey,
+	})
+	if err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	if fake.updates != 1 {
+		t.Fatalf("expected one KMS key update, got %d", fake.updates)
+	}
+	if fake.kmsKeyID != desiredKMSKey {
+		t.Errorf("KMS key = %q, want %q", fake.kmsKeyID, desiredKMSKey)
+	}
+	if fake.puts != 0 || out.Wrote {
+		t.Error("changing only the KMS key must not write a new secret value")
+	}
+}
+
+func TestEnsureSecretSkipsMatchingKMSKey(t *testing.T) {
+	const kmsKey = "arn:aws:kms:us-west-2:123456789012:key/current"
+
+	fake := &fakeAPI{exists: true, value: `{}`, kmsKeyID: kmsKey}
+	svc := testService(fake)
+
+	if _, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inst1", Value: `{}`, KMSKeyARN: kmsKey,
+	}); err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	if fake.updates != 0 {
+		t.Errorf("matching KMS key should not be updated, got %d updates", fake.updates)
+	}
+}
+
+// AWS's default 7-30 day recovery window otherwise makes re-provisioning the same
+// install ID fail with InvalidRequestException forever.
+func TestEnsureSecretRestoresPendingDeletion(t *testing.T) {
+	const desiredKMSKey = "arn:aws:kms:us-west-2:123456789012:key/desired"
+
+	fake := &fakeAPI{
+		exists:          true,
+		value:           "{}",
+		kmsKeyID:        "alias/aws/secretsmanager",
+		pendingDeletion: true,
+	}
+	svc := testService(fake)
+
+	if _, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inst1", Value: `{"a":"t1"}`, KMSKeyARN: desiredKMSKey,
+	}); err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	if fake.restores != 1 {
+		t.Errorf("expected the secret to be restored, got %d restores", fake.restores)
+	}
+	if fake.puts != 1 {
+		t.Errorf("expected the value to be written after restore, got %d puts", fake.puts)
+	}
+	if fake.updates != 1 || fake.kmsKeyID != desiredKMSKey {
+		t.Errorf("KMS key was not updated after restore: updates=%d key=%q", fake.updates, fake.kmsKeyID)
+	}
+}
+
+// Two installs in the same target account can provision concurrently, so losing the
+// describe/create race must fall through to the update path rather than erroring.
+func TestEnsureSecretHandlesCreateRace(t *testing.T) {
+	fake := &fakeAPI{createErr: &types.ResourceExistsException{}}
+	svc := testService(fake)
+
+	out, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{Name: "nuon/phone-home/inst1", Value: `{"a":"t1"}`})
+	if err != nil {
+		t.Fatalf("EnsureSecret should recover from a create race: %v", err)
+	}
+
+	if fake.creates != 1 || fake.puts != 1 {
+		t.Errorf("expected a failed create then a put, got creates=%d puts=%d", fake.creates, fake.puts)
+	}
+	if !out.Wrote {
+		t.Error("Wrote should be true after the fallback put")
+	}
+}
+
+func TestEnsureSecretCreateRaceReturnsARNAndUpdatesKMSKey(t *testing.T) {
+	const desiredKMSKey = "arn:aws:kms:us-west-2:123456789012:key/desired"
+	const value = `{"a":"t1"}`
+
+	fake := &fakeAPI{
+		value:     value,
+		kmsKeyID:  "alias/aws/secretsmanager",
+		createErr: &types.ResourceExistsException{},
+	}
+	svc := testService(fake)
+
+	out, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inst1", Value: value, KMSKeyARN: desiredKMSKey,
+	})
+	if err != nil {
+		t.Fatalf("EnsureSecret should recover from a create race: %v", err)
+	}
+
+	if out.ARN != testSecretARN {
+		t.Errorf("ARN = %q, want %q", out.ARN, testSecretARN)
+	}
+	if fake.updates != 1 || fake.kmsKeyID != desiredKMSKey {
+		t.Errorf("KMS key was not reconciled: updates=%d key=%q", fake.updates, fake.kmsKeyID)
+	}
+	if fake.puts != 0 || out.Wrote {
+		t.Error("a matching value must not be rewritten after a create race")
+	}
+}
+
+func TestDeleteSecretIsIdempotent(t *testing.T) {
+	fake := &fakeAPI{}
+	svc := testService(fake)
+
+	if err := svc.DeleteSecret(context.Background(), testSecretARN); err != nil {
+		t.Fatalf("deleting an absent secret should not error: %v", err)
+	}
+}
+
+func TestUnsupportedCloudSurfacesSentinel(t *testing.T) {
+	// Azure-hosted: no federation path to AWS, so ManagementSecretsCreds returns nil.
+	svc := NewService(&internal.Config{CloudProvider: "azure", ManagementRegion: "us-west-2"}, zap.NewNop())
+
+	_, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{Name: "n", Value: "{}"})
+	if err == nil {
+		t.Fatal("expected an error when the control plane cannot reach secrets manager")
+	}
+	if !strings.Contains(err.Error(), ErrUnsupportedCloud.Error()) {
+		t.Errorf("expected ErrUnsupportedCloud, got %v", err)
+	}
+}
+
+func TestPhoneHomeSecretName(t *testing.T) {
+	if got, want := PhoneHomeSecretName("inst123"), "nuon/phone-home/inst123"; got != want {
+		t.Errorf("PhoneHomeSecretName = %q, want %q", got, want)
+	}
+}
+
+// Both halves of this shape are load-bearing and each fails in a different direction.
+//
+// Naming the role as the Principal is what a reader would write, and it is wrong:
+// Secrets Manager validates principals, the role does not exist until the customer's
+// stack creates it, and the call fails outright with "This resource policy contains an
+// unsupported principal". Root as the Principal is what makes the call succeed.
+//
+// Root *alone* would be the opposite mistake — a grant to every principal in the
+// account that holds an identity policy for this ARN, rather than to the one role. The
+// condition is what narrows it back down, so a change that drops it widens the grant
+// while leaving every other assertion here passing.
+func TestPhoneHomeResourcePolicy(t *testing.T) {
+	raw, err := PhoneHomeResourcePolicy("123456789012", "inst123-phone-home")
+	if err != nil {
+		t.Fatalf("PhoneHomeResourcePolicy: %v", err)
+	}
+
+	var policy struct {
+		Statement []struct {
+			Effect    string                       `json:"Effect"`
+			Principal map[string]string            `json:"Principal"`
+			Action    []string                     `json:"Action"`
+			Condition map[string]map[string]string `json:"Condition"`
+		} `json:"Statement"`
+	}
+	if err := json.Unmarshal([]byte(raw), &policy); err != nil {
+		t.Fatalf("unmarshal policy: %v", err)
+	}
+
+	if len(policy.Statement) != 1 {
+		t.Fatalf("expected exactly one statement, got %d", len(policy.Statement))
+	}
+	stmt := policy.Statement[0]
+
+	if stmt.Effect != "Allow" {
+		t.Errorf("Effect = %q", stmt.Effect)
+	}
+
+	roleARN := "arn:aws:iam::123456789012:role/inst123-phone-home"
+	if want := "arn:aws:iam::123456789012:root"; stmt.Principal["AWS"] != want {
+		t.Errorf("Principal = %q, want %q — naming the role here fails PutResourcePolicy "+
+			"until the customer's stack has created it", stmt.Principal["AWS"], want)
+	}
+	if got := stmt.Condition["ArnEquals"]["aws:PrincipalArn"]; got != roleARN {
+		t.Errorf("Condition ArnEquals aws:PrincipalArn = %q, want %q — without this the "+
+			"statement grants the whole account, not one role", got, roleARN)
+	}
+
+	// Read-only, and only the one action: this grant reaches into a customer account.
+	if len(stmt.Action) != 1 || stmt.Action[0] != "secretsmanager:GetSecretValue" {
+		t.Errorf("Action = %v, want only secretsmanager:GetSecretValue", stmt.Action)
+	}
+}
+
+func tagMap(tags []types.Tag) map[string]string {
+	out := map[string]string{}
+	for _, t := range tags {
+		out[aws.ToString(t.Key)] = aws.ToString(t.Value)
+	}
+
+	return out
+}
+
+func sameTags(got, want map[string]string) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for k, v := range want {
+		if got[k] != v {
+			return false
+		}
+	}
+
+	return true
+}
+
+var testPhoneHomeTags = PhoneHomeSecretTags(
+	"org_123", "inla6dfrwtvae1o0gfmjw4wa7w", "https://runner.nuon.co", "stage",
+)
+
+func TestEnsureSecretTagsOnCreate(t *testing.T) {
+	fake := &fakeAPI{}
+	svc := testService(fake)
+
+	if _, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inla6dfrwtvae1o0gfmjw4wa7w", Value: "{}", Tags: testPhoneHomeTags,
+	}); err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	want := map[string]string{
+		"org.nuon.co/id":     "org_123",
+		"install.nuon.co/id": "inla6dfrwtvae1o0gfmjw4wa7w",
+		"runner_api_url":     "https://runner.nuon.co",
+		"env":                "stage",
+	}
+	if got := tagMap(fake.createTags); !sameTags(got, want) {
+		t.Errorf("create tags = %v, want %v", got, want)
+	}
+	if fake.tagCalls != 0 {
+		t.Errorf("tags passed to CreateSecret need no follow-up TagResource, got %d", fake.tagCalls)
+	}
+}
+
+// The reason tags are reconciled rather than only set on create: CreateSecret is the
+// only Secrets Manager call that accepts tags, so a secret provisioned before a tag
+// existed would never acquire it.
+func TestEnsureSecretTagsAnExistingUntaggedSecret(t *testing.T) {
+	fake := &fakeAPI{exists: true, value: "{}"}
+	svc := testService(fake)
+
+	if _, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inla6dfrwtvae1o0gfmjw4wa7w", Value: "{}", Tags: testPhoneHomeTags,
+	}); err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	if fake.tagCalls != 1 {
+		t.Errorf("expected one TagResource call, got %d", fake.tagCalls)
+	}
+	if got := tagMap(fake.addedTags); !sameTags(got, testPhoneHomeTags) {
+		t.Errorf("added tags = %v, want %v", got, testPhoneHomeTags)
+	}
+}
+
+func TestEnsureSecretSkipsTaggingWhenAlreadyCorrect(t *testing.T) {
+	fake := &fakeAPI{exists: true, value: "{}", tags: awsTags(testPhoneHomeTags)}
+	svc := testService(fake)
+
+	if _, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inla6dfrwtvae1o0gfmjw4wa7w", Value: "{}", Tags: testPhoneHomeTags,
+	}); err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	if fake.tagCalls != 0 {
+		t.Errorf("this runs on every stack generation, so unchanged tags must not call AWS, got %d", fake.tagCalls)
+	}
+}
+
+// Only the drifted key is sent, and a tag applied by something outside this reconciler
+// is left alone rather than deleted.
+func TestEnsureSecretCorrectsOnlyDriftedTags(t *testing.T) {
+	fake := &fakeAPI{exists: true, value: "{}", tags: awsTags(map[string]string{
+		"org.nuon.co/id":     "org_123",
+		"install.nuon.co/id": "inla6dfrwtvae1o0gfmjw4wa7w",
+		"runner_api_url":     "https://old.nuon.co",
+		"env":                "stage",
+		"cost-center":        "platform",
+	})}
+	svc := testService(fake)
+
+	if _, err := svc.EnsureSecret(context.Background(), EnsureSecretInput{
+		Name: "nuon/phone-home/inla6dfrwtvae1o0gfmjw4wa7w", Value: "{}", Tags: testPhoneHomeTags,
+	}); err != nil {
+		t.Fatalf("EnsureSecret: %v", err)
+	}
+
+	want := map[string]string{"runner_api_url": "https://runner.nuon.co"}
+	if got := tagMap(fake.addedTags); !sameTags(got, want) {
+		t.Errorf("added tags = %v, want only the drifted key %v", got, want)
+	}
+}
+
+func TestPhoneHomeSecretTagsDropsEmptyValues(t *testing.T) {
+	tags := PhoneHomeSecretTags("org_123", "inst_1", "", "")
+
+	want := map[string]string{"org.nuon.co/id": "org_123", "install.nuon.co/id": "inst_1"}
+	if !sameTags(tags, want) {
+		t.Errorf("tags = %v, want %v — an empty config value must not become an empty tag", tags, want)
+	}
+}

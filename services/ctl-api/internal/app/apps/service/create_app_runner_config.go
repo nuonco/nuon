@@ -22,6 +22,8 @@ type CreateAppRunnerConfigRequest struct {
 	InstanceType  string                            `json:"instance_type"`
 	RunnerAPIURL  string                            `json:"runner_api_url"`
 	PublicAPIURL  string                            `json:"public_api_url"`
+	// PhoneHomeScriptURL overrides the phone-home Lambda source for this app.
+	PhoneHomeScriptURL string `json:"phone_home_script_url"`
 
 	AppConfigID string `json:"app_config_id"`
 }
@@ -84,6 +86,8 @@ func (s *service) createAppRunnerConfig(ctx context.Context, appID string, req *
 		RunnerAPIURL:  req.RunnerAPIURL,
 		PublicAPIURL:  req.PublicAPIURL,
 		Type:          req.Type,
+
+		PhoneHomeScriptURL: req.PhoneHomeScriptURL,
 	}
 	res := s.db.WithContext(ctx).
 		Create(&appRunnerConfig)

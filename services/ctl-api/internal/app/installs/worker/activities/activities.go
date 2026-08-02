@@ -19,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/secretsmanager"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 )
 
@@ -44,6 +45,7 @@ type Params struct {
 	Audit             *audit.Emitter
 	AccountsHelpers   *account.Client
 	TClient           temporalclient.Client
+	SecretsService    secretsmanager.Service
 }
 
 type Activities struct {
@@ -66,6 +68,7 @@ type Activities struct {
 	audit             *audit.Emitter
 	accountsHelpers   *account.Client
 	tClient           temporalclient.Client
+	secretsSvc        secretsmanager.Service
 }
 
 func New(params Params) *Activities {
@@ -89,5 +92,6 @@ func New(params Params) *Activities {
 		audit:             params.Audit,
 		accountsHelpers:   params.AccountsHelpers,
 		tClient:           params.TClient,
+		secretsSvc:        params.SecretsService,
 	}
 }

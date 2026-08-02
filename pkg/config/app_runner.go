@@ -20,6 +20,9 @@ type AppRunnerConfig struct {
 
 	InitScriptURL string `mapstructure:"init_script_url" toml:"init_script_url"`
 
+	// PhoneHomeScriptURL overrides the phone-home Lambda source for this app.
+	PhoneHomeScriptURL string `mapstructure:"phone_home_script_url,omitempty" toml:"phone_home_script_url,omitempty"`
+
 	// InstanceType sets the cloud machine/instance type for the install runner host.
 	InstanceType string `mapstructure:"instance_type,omitempty" toml:"instance_type,omitempty"`
 
@@ -51,6 +54,9 @@ func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("init_script_url").Short("initialization script URL").
 		Long("URL to a script that runs during runner initialization. Supports HTTP(S), git, file, and relative paths (./). Examples: https://example.com/script.sh, ./scripts/init.sh, git::https://github.com/org/repo//script.sh, file:///path/to/script.sh").
 		Example("https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init-mng-v2.sh").
+		Field("phone_home_script_url").Short("phone-home Lambda source URL").
+		Long("URL to the Python source for the install stack's phone-home Lambda, fetched when the stack template is rendered and embedded inline. Leave unset to use the pinned default. Set this to move a single app onto a different script version without affecting other apps.").
+		Example("https://raw.githubusercontent.com/nuonco/runner/refs/tags/aws-v0.1.4/scripts/aws/phonehome.py").
 		Field("instance_type").Short("machine/instance type for the install runner").
 		Long("Cloud machine/instance type used for the install runner host. Cloud-specific value mapped per runner_type (e.g. an EC2 instance type for aws). Defaults to the platform default when unset").
 		Example("t3a.medium").

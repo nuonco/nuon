@@ -111,11 +111,11 @@ type Install struct {
 	// run in, and what it was observed running in. See the type for the trust model.
 	CloudPlatformMetadata CloudPlatformMetadata `json:"cloud_platform_metadata,omitzero" gorm:"type:jsonb" swaggertype:"object" temporaljson:"cloud_platform_metadata,omitzero,omitempty"`
 
-	// PhoneHomeAuth carries the salt and root key name used to derive this install's
-	// phone-home signing secret. Kept in its own column rather than nested inside
-	// CloudPlatformMetadata because that struct is serialized to the wire and these
-	// derivation inputs must not be, and json:"-" on a nested field would exclude it
-	// from the jsonb value too, not just the API response.
+	// PhoneHomeAuth records where this install's phone-home token map was published
+	// and when a phone home was last verified. Kept in its own column rather than
+	// nested inside CloudPlatformMetadata because that struct is serialized to the
+	// wire and the secret's location must not be, and json:"-" on a nested field
+	// would exclude it from the jsonb value too, not just the API response.
 	PhoneHomeAuth *PhoneHomeAuth `json:"-" gorm:"type:jsonb" temporaljson:"-"`
 
 	// generated view current view
@@ -491,15 +491,20 @@ func (CloudPlatformMetadata) GormDataType() string {
 	return "jsonb"
 }
 
-// PhoneHomeAuth holds the server-side state needed to verify a signed phone home
-// for this install: the salt the per-install secret is derived from, the name of
-// the root key that derived it, and where the derived secret was published for the
-// caller to fetch. Never serialized — the derivation inputs stay control-plane side.
+// PhoneHomeAuth records where this install's phone-home credentials were published
+// and when a phone home was last verified or rejected. It holds no credential
+// material: the credentials themselves are ordinary tokens rows, keyed per stack
+// version by InstallStackVersion.PhoneHomeTokenID. Never serialized — the secret's
+// location stays control-plane side.
 type PhoneHomeAuth struct {
-	Salt string `json:"salt"`
-	// KeyID is the *name* of the root key that derived this secret, not an index.
-	KeyID        string    `json:"key_id"`
-	SecretARN    string    `json:"secret_arn,omitempty"`
+	// SecretARN is not derivable. AWS appends a random 6-char suffix to the name,
+	// and cross-account GetSecretValue rejects a bare name, so the full ARN is read
+	// back after the secret is created and persisted here for the renderer.
+	SecretARN string `json:"secret_arn,omitempty"`
+	// SecretRegion pins where the secret actually lives. It is the management region
+	// today, so it looks redundant — but if that region ever changes, already
+	// provisioned installs keep their secret where it is and their deployed Lambdas
+	// keep reading the old region.
 	SecretRegion string    `json:"secret_region,omitempty"`
 	KMSKeyARN    string    `json:"kms_key_arn,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`

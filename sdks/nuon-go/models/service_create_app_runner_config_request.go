@@ -35,6 +35,9 @@ type ServiceCreateAppRunnerConfigRequest struct {
 	// instance type
 	InstanceType string `json:"instance_type,omitempty"`
 
+	// PhoneHomeScriptURL overrides the phone-home Lambda source for this app.
+	PhoneHomeScriptURL string `json:"phone_home_script_url,omitempty"`
+
 	// public api url
 	PublicAPIURL string `json:"public_api_url,omitempty"`
 

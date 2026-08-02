@@ -202,6 +202,14 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		return errors.Wrap(err, "unable to create runner token")
 	}
 
+	// Must precede the render: the template carries the secret's location, so the
+	// secret and its cross-account grant have to exist before the customer can apply
+	// the stack. No-ops unless phone-home auth is active for this install.
+	phoneHome, err := activities.AwaitEnsureInstallPhoneHomeSecretByInstallID(ctx, install.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to ensure install phone home secret")
+	}
+
 	tmplByts := []byte{}
 	checksum := ""
 	inp := &stacks.TemplateInput{
@@ -213,6 +221,8 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		Settings:                   &runner.RunnerGroup.Settings,
 		APIToken:                   generics.FromPtrStr(token),
 		RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, w.cfg.RunnerContainerImageTag),
+		PhoneHomeSecretARN:         phoneHome.SecretARN,
+		PhoneHomeSecretRegion:      phoneHome.SecretRegion,
 	}
 
 	switch cfg.RunnerConfig.Type {
@@ -223,7 +233,9 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 			inp.RunnerInitScriptURL = DefaultAWSRunnerInitScript
 		}
 
-		phoneHomeScript, err := activities.AwaitGetPhoneHomeScriptRaw(ctx, &activities.GetPhoneHomeScriptRequest{})
+		phoneHomeScript, err := activities.AwaitGetPhoneHomeScriptRaw(ctx, &activities.GetPhoneHomeScriptRequest{
+			URL: cfg.RunnerConfig.PhoneHomeScriptURL,
+		})
 		if err != nil {
 			return errors.Wrap(err, "unable to get phone home script")
 		}
