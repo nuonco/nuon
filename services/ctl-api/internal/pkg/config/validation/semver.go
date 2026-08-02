@@ -10,7 +10,6 @@ import (
 const MinTerraformVersion = "1.8.0"
 
 // ValidateTerraformVersion validates a Terraform version string against min/max constraints.
-// Duplicates logic from services/ctl-api/internal/app/components/service/create_terraform_module_component_config.go
 func ValidateTerraformVersion(version string, minVersion string, maxVersion string) error {
 	if version == "" {
 		return stderr.ErrUser{

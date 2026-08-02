@@ -7,10 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -76,21 +76,21 @@ func (s *service) CreateAppRunnerConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppRunnerConfig(ctx context.Context, appID string, req *CreateAppRunnerConfigRequest) (*app.AppRunnerConfig, error) {
-	appRunnerConfig := app.AppRunnerConfig{
-		AppConfigID:   req.AppConfigID,
+	appRunnerConfig := build.RunnerConfig(build.RunnerInput{
 		AppID:         appID,
-		HelmDriver:    req.HelmDriver,
-		EnvVars:       pgtype.Hstore(req.EnvVars),
+		AppConfigID:   req.AppConfigID,
+		Type:          string(req.Type),
+		HelmDriver:    string(req.HelmDriver),
+		EnvVars:       build.DerefMap(req.EnvVars),
 		InitScriptURL: req.InitScriptURL,
 		InstanceType:  req.InstanceType,
 		RunnerAPIURL:  req.RunnerAPIURL,
 		PublicAPIURL:  req.PublicAPIURL,
-		Type:          req.Type,
 
 		PhoneHomeScriptURL: req.PhoneHomeScriptURL,
-	}
+	})
 	res := s.db.WithContext(ctx).
-		Create(&appRunnerConfig)
+		Create(appRunnerConfig)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -103,5 +103,5 @@ func (s *service) createAppRunnerConfig(ctx context.Context, appID string, req *
 		return nil, fmt.Errorf("unable to update app installs to reference new runner config: %w", res.Error)
 	}
 
-	return &appRunnerConfig, nil
+	return appRunnerConfig, nil
 }

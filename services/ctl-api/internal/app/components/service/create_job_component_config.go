@@ -8,11 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/lib/pq"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -36,6 +37,34 @@ type CreateJobComponentConfigRequest struct {
 	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
 }
 
+func (c *CreateJobComponentConfigRequest) toConfig() *config.JobComponentConfig {
+	return &config.JobComponentConfig{
+		ImageURL:  c.ImageURL,
+		Tag:       c.Tag,
+		Cmd:       c.Cmd,
+		Args:      c.Args,
+		EnvVarMap: build.DerefMap(c.EnvVars),
+	}
+}
+
+func (c *CreateJobComponentConfigRequest) buildInput(componentID string, depIDs []string) build.ComponentConnectionInput {
+	return build.ComponentConnectionInput{
+		ComponentID:                  componentID,
+		AppConfigID:                  c.AppConfigID,
+		References:                   c.References,
+		Checksum:                     c.Checksum,
+		DependencyIDs:                depIDs,
+		BuildTimeout:                 c.BuildTimeout,
+		DeployTimeout:                c.DeployTimeout,
+		MaxAutoRetries:               c.MaxAutoRetries,
+		SkipNoops:                    c.SkipNoops,
+		Toggleable:                   c.Toggleable,
+		DefaultEnabled:               c.DefaultEnabled,
+		AutoApproveOnPoliciesPassing: c.AutoApproveOnPoliciesPassing,
+		OperationRoles:               toConfigOperationRoles(c.OperationRoles),
+	}
+}
+
 func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
@@ -50,17 +79,17 @@ func (c *CreateJobComponentConfigRequest) Validate(v *validator.Validate) error 
 	}
 
 	if c.BuildTimeout != "" {
-		if err := validateBuildTimeout(c.BuildTimeout); err != nil {
+		if err := validation.ValidateBuildTimeout(c.BuildTimeout); err != nil {
 			return err
 		}
 	}
 	if c.DeployTimeout != "" {
-		if err := validateDeployTimeout(c.DeployTimeout); err != nil {
+		if err := validation.ValidateDeployTimeout(c.DeployTimeout); err != nil {
 			return err
 		}
 	}
 	if c.MaxAutoRetries != nil {
-		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
+		if err := validation.ValidateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
 		}
 	}
@@ -151,38 +180,20 @@ func (s *service) createJobComponentConfig(ctx context.Context, cmpID string, re
 		return nil, err
 	}
 
-	// build component config
-	cfg := app.JobComponentConfig{
-		ImageURL: req.ImageURL,
-		Tag:      req.Tag,
-		Cmd:      req.Cmd,
-		EnvVars:  pgtype.Hstore(req.EnvVars),
-		Args:     req.Args,
+	cfg, err := build.JobComponentConfig(req.toConfig())
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
 
-	operationRoles := make(pgtype.Hstore)
-	for operation, role := range req.OperationRoles {
-		operationRoles[string(operation)] = role
+	componentConfigConnection, err := build.ComponentConnection(req.buildInput(parentCmp.ID, nil))
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
+	componentConfigConnection.JobComponentConfig = cfg
 
-	componentConfigConnection := app.ComponentConfigConnection{
-		JobComponentConfig:           &cfg,
-		ComponentID:                  parentCmp.ID,
-		AppConfigID:                  req.AppConfigID,
-		References:                   pq.StringArray(req.References),
-		Checksum:                     req.Checksum,
-		BuildTimeout:                 req.BuildTimeout,
-		DeployTimeout:                req.DeployTimeout,
-		MaxAutoRetries:               req.MaxAutoRetries,
-		SkipNoops:                    req.SkipNoops,
-		Toggleable:                   req.Toggleable,
-		DefaultEnabled:               req.DefaultEnabled,
-		AutoApproveOnPoliciesPassing: req.AutoApproveOnPoliciesPassing,
-		OperationRoles:               operationRoles,
-	}
-	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
+	if res := s.db.WithContext(ctx).Create(componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create job component config connection: %w", res.Error)
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }

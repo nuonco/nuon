@@ -18,8 +18,22 @@ import (
 // ensureRunbook creates a runbook if it doesn't exist, using the shared helpers
 // for full initialization (install runbooks).
 func (s *syncer) ensureRunbook(ctx context.Context, runbook *config.RunbookConfig) error {
-	_, err := s.getRunbook(ctx, runbook.Name)
+	existing, err := s.getRunbook(ctx, runbook.Name)
 	if err == nil {
+		res := s.db.WithContext(ctx).
+			Model(&existing).
+			Select("description", "labels").
+			Updates(app.Runbook{
+				Description: runbook.Description,
+				Labeled:     labels.Labeled{Labels: labels.Labels(runbook.Labels)},
+			})
+		if res.Error != nil {
+			return sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to update runbook %s", runbook.Name),
+				Err:         res.Error,
+			}
+		}
+
 		if err := s.runbooksHelpers.EnsureInstallRunbooks(ctx, s.appID, nil); err != nil {
 			return sync.SyncInternalErr{Description: fmt.Sprintf("unable to ensure install runbooks for %s", runbook.Name), Err: err}
 		}

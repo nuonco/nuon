@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
 
-	"github.com/nuonco/nuon/pkg/principal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -91,17 +90,14 @@ func (s *service) CreateAppOperationRoleConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppOperationRoleConfigRecord(ctx context.Context, tx *gorm.DB, appID string, req *CreateAppOperationRoleConfigRequest) (*app.AppOperationRoleConfig, error) {
-	cfg := app.AppOperationRoleConfig{
-		AppConfigID: req.AppConfigID,
-		AppID:       appID,
-	}
+	cfg := build.OperationRoleConfig(appID, req.AppConfigID)
 
-	res := tx.Create(&cfg)
+	res := tx.Create(cfg)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create operation role config: %w", res.Error)
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }
 
 func (s *service) createOperationRoleRules(ctx context.Context, tx *gorm.DB, cfg *app.AppOperationRoleConfig, req *CreateAppOperationRoleConfigRequest) ([]*app.AppOperationRoleRule, error) {
@@ -109,28 +105,18 @@ func (s *service) createOperationRoleRules(ctx context.Context, tx *gorm.DB, cfg
 		return []*app.AppOperationRoleRule{}, nil
 	}
 
-	rules := make([]*app.AppOperationRoleRule, 0, len(req.Rules))
-
+	inputs := make([]build.OperationRoleRuleInput, 0, len(req.Rules))
 	for _, ruleReq := range req.Rules {
-		operationType := app.OperationType(ruleReq.Operation)
-
-		if !slices.Contains(app.ValidOperations, operationType) {
-			return nil, fmt.Errorf("invalid operation type: %s", ruleReq.Operation)
-		}
-
-		// Parse principal to extract type and name
-		p, err := principal.ParsePrincipal(ruleReq.Principal)
-		if err != nil {
-			return nil, fmt.Errorf("invalid principal %q: %w", ruleReq.Principal, err)
-		}
-
-		rules = append(rules, &app.AppOperationRoleRule{
-			AppOperationRoleConfigID: cfg.ID,
-			PrincipalType:            p.Type,
-			PrincipalName:            p.Name,
-			Operation:                operationType,
-			Role:                     ruleReq.Role,
+		inputs = append(inputs, build.OperationRoleRuleInput{
+			Principal: ruleReq.Principal,
+			Operation: ruleReq.Operation,
+			Role:      ruleReq.Role,
 		})
+	}
+
+	rules, err := build.OperationRoleRules(inputs, cfg.ID)
+	if err != nil {
+		return nil, err
 	}
 
 	res := tx.Create(&rules)

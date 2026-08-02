@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 	validatoradapter "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -145,9 +146,9 @@ func (s *service) CreateAppInputsConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppInputGroups(ctx context.Context, orgID, appID string, req *CreateAppInputConfigRequest) (*app.AppInputConfig, error) {
-	groups := make([]app.AppInputGroup, 0, len(req.Groups))
+	groups := make([]build.InputGroupInput, 0, len(req.Groups))
 	for name, grp := range req.Groups {
-		groups = append(groups, app.AppInputGroup{
+		groups = append(groups, build.InputGroupInput{
 			Name:        name,
 			Description: grp.Description,
 			DisplayName: grp.DisplayName,
@@ -155,19 +156,14 @@ func (s *service) createAppInputGroups(ctx context.Context, orgID, appID string,
 		})
 	}
 
-	cfg := app.AppInputConfig{
-		AppConfigID:    req.AppConfigID,
-		OrgID:          orgID,
-		AppID:          appID,
-		AppInputGroups: groups,
-	}
+	cfg := build.InputConfig(groups, appID, req.AppConfigID, orgID)
 
-	res := s.db.WithContext(ctx).Create(&cfg)
+	res := s.db.WithContext(ctx).Create(cfg)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create app groups: %w", res.Error)
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }
 
 func (s *service) createAppInputs(ctx context.Context, cfg *app.AppInputConfig, req *CreateAppInputConfigRequest) ([]app.AppInput, error) {
@@ -175,36 +171,25 @@ func (s *service) createAppInputs(ctx context.Context, cfg *app.AppInputConfig, 
 		return []app.AppInput{}, nil
 	}
 
-	inputs := make([]app.AppInput, 0, len(req.Inputs))
-
+	in := make([]build.AppInputInput, 0, len(req.Inputs))
 	for name, input := range req.Inputs {
-		var groupID string
-		for _, group := range cfg.AppInputGroups {
-			if group.Name == input.Group {
-				groupID = group.ID
-				break
-			}
-		}
-
-		source := input.Source
-		if source == "" {
-			source = app.AppInputSourceVendor
-		}
-
-		inputs = append(inputs, app.AppInput{
-			OrgID:            cfg.OrgID,
-			AppInputConfigID: cfg.ID,
-			AppInputGroupID:  groupID,
-			Name:             name,
-			Description:      input.Description,
-			DisplayName:      input.DisplayName,
-			Required:         input.Required,
-			Default:          input.Default,
-			Sensitive:        input.Sensitive,
-			Type:             app.AppInputType(input.Type),
-			Index:            input.Index,
-			Source:           source,
+		in = append(in, build.AppInputInput{
+			Name:        name,
+			DisplayName: input.DisplayName,
+			Description: input.Description,
+			Default:     input.Default,
+			Group:       input.Group,
+			Type:        input.Type,
+			Required:    input.Required,
+			Sensitive:   input.Sensitive,
+			Index:       input.Index,
+			Source:      input.Source,
 		})
+	}
+
+	inputs, err := build.AppInputs(in, cfg)
+	if err != nil {
+		return nil, err
 	}
 
 	res := s.db.WithContext(ctx).Create(&inputs)

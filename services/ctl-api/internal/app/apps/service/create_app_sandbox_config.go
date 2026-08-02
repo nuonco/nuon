@@ -4,18 +4,16 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"slices"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/lib/pq"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -47,43 +45,39 @@ func (c *CreateAppSandboxConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
 	}
-
-	sandboxType := c.Type
-	if sandboxType == "" {
-		sandboxType = config.AppSandboxTypeTerraform
-	}
-
-	switch sandboxType {
-	case config.AppSandboxTypeTerraform:
-		if c.TerraformVersion == "" {
-			return fmt.Errorf("terraform_version is required when type=terraform")
-		}
-	case config.AppSandboxTypePulumi:
-		if c.Runtime == "" {
-			return fmt.Errorf("runtime is required when type=pulumi")
-		}
-		if !slices.Contains(config.ValidPulumiRuntimes, c.Runtime) {
-			return fmt.Errorf("invalid pulumi runtime: %s. Valid runtimes: %v", c.Runtime, config.ValidPulumiRuntimes)
-		}
-	default:
-		return fmt.Errorf("invalid sandbox type: %s. Valid types: terraform, pulumi", sandboxType)
-	}
-
-	if c.OperationRoles != nil {
-		for operation := range c.OperationRoles {
-			if !slices.Contains(app.ValidOperations, operation) {
-				return fmt.Errorf("invalid operation type: %s. Valid operations: %v", operation, app.ValidOperations)
-			}
-		}
-	}
-
-	if c.MaxAutoRetries != nil {
-		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
-			return err
-		}
-	}
-
 	return nil
+}
+
+func (c *CreateAppSandboxConfigRequest) buildInput(appID string) build.SandboxInput {
+	operationRoles := make([]config.EntityOperationRole, 0, len(c.OperationRoles))
+	for operation, role := range c.OperationRoles {
+		if role == nil {
+			continue
+		}
+		operationRoles = append(operationRoles, config.EntityOperationRole{
+			Operation: config.OperationType(operation),
+			RoleName:  *role,
+		})
+	}
+
+	return build.SandboxInput{
+		AppID:                        appID,
+		AppConfigID:                  c.AppConfigID,
+		Type:                         c.Type,
+		TerraformVersion:             c.TerraformVersion,
+		Runtime:                      c.Runtime,
+		PulumiVersion:                c.PulumiVersion,
+		PulumiConfig:                 build.DerefMap(c.PulumiConfig),
+		Variables:                    build.DerefMap(c.Variables),
+		EnvVars:                      build.DerefMap(c.EnvVars),
+		VariablesFiles:               c.VariablesFiles,
+		References:                   c.References,
+		OperationRoles:               operationRoles,
+		DriftSchedule:                c.DriftSchedule,
+		MaxAutoRetries:               c.MaxAutoRetries,
+		SkipNoops:                    c.SkipNoops,
+		AutoApproveOnPoliciesPassing: c.AutoApproveOnPoliciesPassing,
+	}
 }
 
 // @ID						CreateAppSandboxConfigV2
@@ -180,9 +174,9 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		return nil, fmt.Errorf("unable to get app sandbox: %w", res.Error)
 	}
 
-	sandboxType := req.Type
-	if sandboxType == "" {
-		sandboxType = config.AppSandboxTypeTerraform
+	sandboxType, err := build.ResolveSandboxType(req.Type, req.TerraformVersion, req.Runtime)
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
 	if sandboxType == config.AppSandboxTypePulumi {
 		enabled, err := s.featuresClient.OrgHasFeature(ctx, parentApp.OrgID, app.OrgFeaturePulumiSandbox)
@@ -205,40 +199,20 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		return nil, fmt.Errorf("unable to get public git config: %w", err)
 	}
 
-	operationRoles := make(pgtype.Hstore)
-	for operation, role := range req.OperationRoles {
-		operationRoles[string(operation)] = role
-	}
+	in := req.buildInput(appID)
+	in.GithubVCSConfig = githubVCSConfig
+	in.PublicGitVCSConfig = publicGitConfig
 
-	appSandboxConfig := app.AppSandboxConfig{
-		AppID:                        appID,
-		AppConfigID:                  req.AppConfigID,
-		PublicGitVCSConfig:           publicGitConfig,
-		ConnectedGithubVCSConfig:     githubVCSConfig,
-		Variables:                    pgtype.Hstore(req.Variables),
-		EnvVars:                      pgtype.Hstore(req.EnvVars),
-		VariablesFiles:               pq.StringArray(req.VariablesFiles),
-		Type:                         sandboxType,
-		TerraformVersion:             req.TerraformVersion,
-		Runtime:                      req.Runtime,
-		PulumiVersion:                req.PulumiVersion,
-		PulumiConfig:                 pgtype.Hstore(req.PulumiConfig),
-		References:                   pq.StringArray(req.References),
-		OperationRoles:               operationRoles,
-		MaxAutoRetries:               req.MaxAutoRetries,
-		SkipNoops:                    req.SkipNoops,
-		AutoApproveOnPoliciesPassing: req.AutoApproveOnPoliciesPassing,
-	}
-
-	if req.DriftSchedule != nil {
-		appSandboxConfig.DriftSchedule = *req.DriftSchedule
+	appSandboxConfig, err := build.SandboxConfig(in)
+	if err != nil {
+		return nil, stderr.NewInvalidRequest(err)
 	}
 
 	res = s.db.WithContext(ctx).
-		Create(&appSandboxConfig)
+		Create(appSandboxConfig)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create app sandbox config: %w", res.Error)
 	}
 
-	return &appSandboxConfig, nil
+	return appSandboxConfig, nil
 }
