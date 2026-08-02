@@ -6,13 +6,16 @@ import (
 	"os"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
+	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
 	pkgsync "github.com/nuonco/nuon/pkg/config/sync"
+	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -53,6 +56,17 @@ type SyncFieldsTestSuite struct {
 	deps syncDeps
 }
 
+type syncFieldsWorkflowRun struct{}
+
+func (r *syncFieldsWorkflowRun) GetID() string    { return "test-workflow-id" }
+func (r *syncFieldsWorkflowRun) GetRunID() string { return "test-run-id" }
+func (r *syncFieldsWorkflowRun) Get(context.Context, interface{}) error {
+	return nil
+}
+func (r *syncFieldsWorkflowRun) GetWithOptions(context.Context, interface{}, tclient.WorkflowRunGetOptions) error {
+	return nil
+}
+
 func TestSyncFieldsSuite(t *testing.T) {
 	if os.Getenv("INTEGRATION") != "true" {
 		t.Skip("INTEGRATION is not set, skipping")
@@ -64,7 +78,19 @@ func TestSyncFieldsSuite(t *testing.T) {
 func (s *SyncFieldsTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 
-	options := append(tests.CtlApiFXOptions(s.T()), fx.Populate(&s.deps))
+	ctrl := gomock.NewController(s.T())
+	mockTC := temporal.NewMockClient(ctrl)
+	mockTC.EXPECT().ExecuteWorkflowInNamespace(
+		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+	).Return(&syncFieldsWorkflowRun{}, nil).AnyTimes()
+
+	options := append(tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+		T: s.T(),
+		Mocks: &tests.TestMocks{
+			MockTC: mockTC,
+		},
+		CustomValidator: true,
+	}), fx.Populate(&s.deps))
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 
@@ -317,7 +343,9 @@ func (s *SyncFieldsTestSuite) TestPolicyNameIsPersisted() {
 
 func (s *SyncFieldsTestSuite) TestSyncStateIsPersisted() {
 	cfg := testseedconfig.BuildMinimalAppConfig()
-	cfg.Components = config.ComponentList{testseedconfig.BuildTerraformComponent("tf")}
+	terraformComponent := testseedconfig.BuildTerraformComponent("tf")
+	terraformComponent.TerraformModule.TerraformVersion = "1.9.0"
+	cfg.Components = config.ComponentList{terraformComponent}
 
 	_, _, appCfg := s.sync(cfg)
 
