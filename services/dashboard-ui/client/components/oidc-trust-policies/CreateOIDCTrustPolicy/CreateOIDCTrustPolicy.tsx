@@ -35,28 +35,40 @@ export const CreateOIDCTrustPolicyModal = ({
   isPending,
   error,
   onSubmit,
+  initialValues,
+  lockIssuer,
+  reservedNames,
   ...props
 }: {
   isPending: boolean
   error: TAPIError | null
   onSubmit: (input: OIDCTrustPolicyFormInput) => void
+  initialValues?: Partial<OIDCTrustPolicyFormInput>
+  lockIssuer?: boolean
+  reservedNames?: string[]
 } & Omit<IModal, 'onSubmit'>) => {
-  const [name, setName] = useState('')
-  const [issuerUrl, setIssuerUrl] = useState('')
-  const [audience, setAudience] = useState('')
-  const [role, setRole] = useState('org_read_only')
-  const [tokenDurationSeconds, setTokenDurationSeconds] = useState('')
-  const [claimConditions, setClaimConditions] = useState<ClaimCondition[]>([
-    { key: 'sub', value: '' },
-  ])
+  const [name, setName] = useState(initialValues?.name ?? '')
+  const [issuerUrl, setIssuerUrl] = useState(initialValues?.issuerUrl ?? '')
+  const [audience, setAudience] = useState(initialValues?.audience ?? '')
+  const [role, setRole] = useState(initialValues?.role ?? 'org_read_only')
+  const [tokenDurationSeconds, setTokenDurationSeconds] = useState(
+    initialValues?.tokenDurationSeconds ?? ''
+  )
+  const [claimConditions, setClaimConditions] = useState<ClaimCondition[]>(
+    initialValues?.claimConditions ?? [{ key: 'sub', value: '' }]
+  )
 
   const trimmedName = name.trim()
   const trimmedIssuerUrl = issuerUrl.trim()
   const trimmedAudience = audience.trim()
   const isValidIssuerUrl = /^https?:\/\/.+/i.test(trimmedIssuerUrl)
+  const isNameTaken = !!reservedNames?.some(
+    (reserved) => reserved.trim().toLowerCase() === trimmedName.toLowerCase()
+  )
   const canSubmit =
     !isPending &&
     !!trimmedName &&
+    !isNameTaken &&
     isValidIssuerUrl &&
     !!trimmedAudience &&
     hasSubCondition(claimConditions)
@@ -133,6 +145,12 @@ export const CreateOIDCTrustPolicyModal = ({
             onChange={(e) => setName(e.target.value)}
             required
           />
+          {isNameTaken ? (
+            <Text variant="subtext" theme="error">
+              A trust policy named {trimmedName} already exists. Choose a
+              different name.
+            </Text>
+          ) : null}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -144,6 +162,8 @@ export const CreateOIDCTrustPolicyModal = ({
             value={issuerUrl}
             onChange={(e) => setIssuerUrl(e.target.value)}
             required
+            readOnly={lockIssuer}
+            disabled={lockIssuer}
           />
           <Text variant="subtext" theme="neutral">
             Must be an absolute http or https URL.
@@ -193,8 +213,8 @@ export const CreateOIDCTrustPolicyModal = ({
         <div className="flex flex-col gap-2">
           <Label>Claim conditions</Label>
           <Text variant="subtext" theme="neutral">
-            All conditions must match the presented token. A `sub` condition
-            is required.
+            All conditions must match the presented token. A `sub` condition is
+            required.
           </Text>
           <div className="flex flex-col gap-2">
             {claimConditions.map((condition, index) => (
