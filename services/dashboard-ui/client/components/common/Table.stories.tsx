@@ -11,7 +11,6 @@ import { Status } from './Status'
 import { Button } from './Button'
 import { Icon } from './Icon'
 
-// Sample data types
 type SampleUser = {
   id: string
   name: string
@@ -33,7 +32,6 @@ type SampleApp = {
   actionHref: string
 }
 
-// Sample users data
 const sampleUsers: SampleUser[] = [
   {
     id: 'user-1',
@@ -73,7 +71,6 @@ const sampleUsers: SampleUser[] = [
   },
 ]
 
-// Sample apps data
 const sampleApps: SampleApp[] = [
   {
     id: 'app-1',
@@ -107,7 +104,6 @@ const sampleApps: SampleApp[] = [
   },
 ]
 
-// User columns definition
 const userColumns: ColumnDef<SampleUser>[] = [
   {
     accessorKey: 'name',
@@ -166,7 +162,6 @@ const userColumns: ColumnDef<SampleUser>[] = [
   },
 ]
 
-// App columns definition
 const appColumns: ColumnDef<SampleApp>[] = [
   {
     accessorKey: 'name',
@@ -215,7 +210,6 @@ const appColumns: ColumnDef<SampleApp>[] = [
   },
 ]
 
-// Basic pagination
 const basicPagination = {
   limit: 10,
   offset: 0,

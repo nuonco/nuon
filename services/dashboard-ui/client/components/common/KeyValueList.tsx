@@ -24,7 +24,6 @@ export const KeyValueList = ({
       className={cn('grid grid-cols-[max-content_1fr] gap-0', className)}
       {...props}
     >
-      {/* Header row */}
       <Text className="py-2 border-b" variant="subtext" theme="neutral">
         Name
       </Text>
@@ -32,7 +31,6 @@ export const KeyValueList = ({
         Value
       </Text>
 
-      {/* Data rows */}
       {values.map(({ key, value, type }, index) => {
         const isLast = index === values.length - 1
 
@@ -110,7 +108,6 @@ export const KeyValueList = ({
 export const KeyValueListSkeleton = ({ count = 5 }) => {
   return (
     <div className="grid grid-cols-[max-content_1fr] gap-0">
-      {/* Header */}
       <Text className="py-2 border-b" variant="subtext" theme="neutral">
         Name
       </Text>
@@ -118,7 +115,6 @@ export const KeyValueListSkeleton = ({ count = 5 }) => {
         Value
       </Text>
 
-      {/* Skeleton rows */}
       {Array.from({ length: count }).map((_, idx) => {
         const isLast = idx === count - 1
 

@@ -49,8 +49,6 @@ func (h *LogStreamsHandler) RegisterRoutes(e *gin.Engine) error {
 	return nil
 }
 
-// streamSession holds per-request state shared by the tail and legacy
-// fetchers — cursor, open-state, and the SSE sinks.
 type streamSession struct {
 	client      nuon.Client
 	l           *zap.Logger
@@ -230,7 +228,6 @@ func (s *streamSession) runTail(ctx context.Context) {
 	}
 }
 
-// runLegacy is the legacy 1s-poll loop, used for DESC sessions.
 func (s *streamSession) runLegacy(ctx context.Context, currentOffset string) {
 	for {
 		select {

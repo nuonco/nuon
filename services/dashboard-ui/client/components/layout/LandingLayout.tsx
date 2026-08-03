@@ -25,10 +25,6 @@ export const LandingLayout = ({ children }: { children: ReactNode }) => {
                 >
                   Docs
                 </Link>
-                {/* <Suspense fallback="Loading...">
-              <HeaderVersions />
-              </Suspense>
-              <SignOutButton /> */}
               </div>
             </div>
           </header>

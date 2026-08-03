@@ -60,9 +60,7 @@ export const ComponentTypeFilterDropdown: React.FC<
 > = ({ isNotDropdown = false }) => {
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Parse types from search param
   const typesParam = searchParams.get('types')
-  // If types is missing or empty, treat all as selected
   const allSelected = !typesParam || typesParam === ''
   const selectedTypes: TComponentConfigTypeText[] = allSelected
     ? FILTER_OPTIONS
@@ -101,27 +99,22 @@ export const ComponentTypeFilterDropdown: React.FC<
     }, { replace: true })
   }
 
-  // Checkbox toggle handler
   const handleTypeFilter = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value as TComponentConfigTypeText
     let newTypes: TComponentConfigTypeText[]
     if (e.target.checked) {
-      // Add type if not present
       newTypes = Array.from(new Set([...selectedTypes, value]))
     } else {
-      // Remove type
       newTypes = selectedTypes.filter((t) => t !== value)
     }
     setTypesInUrl(newTypes)
   }
 
-  // "Only" button handler
   const handleTypeOnlyFilter = (e: React.MouseEvent<HTMLButtonElement>) => {
     const value = e.currentTarget.value as TComponentConfigTypeText
     setTypesInUrl([value])
   }
 
-  // Show all: check all, remove param
   const handleShowAll = () => setTypesInUrl(FILTER_OPTIONS)
 
   const renderFilters = (buttonLabelClass: string, onlyLabelClass: string) =>

@@ -16,11 +16,9 @@ export function parseKubernetesPlan(plan: TKubernetesPlan): {
   const errors: TKubernetesPlanError[] = []
   const summary: TKubernetesPlanSummary = { add: 0, change: 0, destroy: 0 }
 
-  // Handle the new structure where the plan data is in k8s_content_diff
   const diffItems = plan?.k8s_content_diff || []
 
   diffItems.forEach((item) => {
-    // Skip items with errors - handle separately
     if (item.error) {
       errors.push({
         namespace: item.namespace,
@@ -34,7 +32,6 @@ export function parseKubernetesPlan(plan: TKubernetesPlan): {
 
     let action: THelmK8sChangeAction
 
-    // Determine action type based on op and type
     if (item.op === 'delete') {
       action = 'destroyed'
       summary.destroy += 1
@@ -49,7 +46,6 @@ export function parseKubernetesPlan(plan: TKubernetesPlan): {
         action = 'destroyed'
         summary.destroy += 1
       } else {
-        // Default to changed if type is present but unknown
         action = 'changed'
         summary.change += 1
       }
@@ -57,7 +53,6 @@ export function parseKubernetesPlan(plan: TKubernetesPlan): {
       action = item.op as THelmK8sChangeAction
     }
 
-    // Extract before/after from entries by building a formatted string
     const { before, after } = buildBeforeAfterStrings(item.entries || [])
 
     changes.push({
@@ -82,7 +77,6 @@ function buildBeforeAfterStrings(entries: any[]): {
   const beforeLines: string[] = []
   const afterLines: string[] = []
 
-  // Group entries by path to handle before/after pairs
   const pathGroups = new Map<string, { before?: string; after?: string }>()
 
   entries.forEach((entry) => {
@@ -113,7 +107,6 @@ function buildBeforeAfterStrings(entries: any[]): {
     pathGroups.set(path, existing)
   })
 
-  // Build the formatted strings
   pathGroups.forEach((values, path) => {
     if (values.before !== undefined) {
       beforeLines.push(`${path}: ${values.before || ''}`)

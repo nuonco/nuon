@@ -51,7 +51,6 @@ export function NotificationProvider({
   const [hasRequestedPermission, setHasRequestedPermission] = useState(false)
   const [muted, setMuted] = useState(false)
 
-  // Load settings from localStorage
   useEffect(() => {
     if (typeof window === 'undefined') return
 
@@ -68,7 +67,6 @@ export function NotificationProvider({
     }
   }, [])
 
-  // Check browser support and current permission
   useEffect(() => {
     if (typeof window === 'undefined') return
 
@@ -78,7 +76,6 @@ export function NotificationProvider({
     }
   }, [])
 
-  // Auto-request permission on page load
   useEffect(() => {
     if (!isSupported || !autoRequestOnLoad) return
     if (permission !== 'default') return
@@ -91,7 +88,6 @@ export function NotificationProvider({
     return () => clearTimeout(timer)
   }, [isSupported, permission, hasRequestedPermission, autoRequestOnLoad, autoRequestDelay])
 
-  // Save settings to localStorage
   const saveSettings = useCallback((newSettings: NotificationSettings) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings))
@@ -154,7 +150,6 @@ export function NotificationProvider({
         data: options.data,
       })
 
-      // Handle click on the notification
       if (options.onClick) {
         notification.onclick = () => {
           options.onClick!(options.data)
@@ -162,7 +157,6 @@ export function NotificationProvider({
         }
       }
 
-      // Play sound if provided
       if (options.sound) {
         try {
           const audio = new Audio(options.sound)
@@ -172,7 +166,6 @@ export function NotificationProvider({
         }
       }
 
-      // Auto close after 5 seconds unless requireInteraction is true
       if (!options.requireInteraction) {
         setTimeout(() => {
           notification.close()

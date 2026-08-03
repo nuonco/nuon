@@ -24,7 +24,6 @@ const makeConfig = (
 
 const basePath = '/org-1/apps/app-1/components'
 
-// Typical web app: VPC → EKS cluster → Helm services → frontend
 const webAppConfig = makeConfig([
   { id: 'vpc', name: 'vpc', type: 'terraform_module' },
   { id: 'eks', name: 'eks_cluster', type: 'terraform_module', depIds: ['vpc'] },
@@ -83,7 +82,6 @@ export const WebAppFromEksCluster = () => (
   </ModalStory>
 )
 
-// Cross-dependent edges: ALB → kubelogstream, coder → kubelogstream
 const crossDepConfig = makeConfig([
   { id: 'cert', name: 'certificate', type: 'terraform_module' },
   { id: 'rds', name: 'rds_cluster_coder', type: 'terraform_module' },
@@ -105,7 +103,6 @@ export const CrossDependentEdges = () => (
   </ModalStory>
 )
 
-// Deep chain: A → B → C → D → E
 const deepChainConfig = makeConfig([
   { id: 'a', name: 'network', type: 'terraform_module' },
   { id: 'b', name: 'dns_zone', type: 'terraform_module', depIds: ['a'] },
@@ -126,7 +123,6 @@ export const DeepChainFromMiddle = () => (
   </ModalStory>
 )
 
-// Simple: single dependency
 const simpleConfig = makeConfig([
   { id: 'infra', name: 'base_infrastructure', type: 'terraform_module' },
   { id: 'svc', name: 'service', type: 'helm_chart', depIds: ['infra'] },

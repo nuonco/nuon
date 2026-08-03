@@ -244,7 +244,6 @@ export const useLogFilters = <T extends TOTELLog>(
     sortDirection,
   ])
 
-  // Severity handlers
   const handleSeverityInputToggle = useCallback(
     (severity: string) => {
       const next = new Set(selectedSeverities)
@@ -270,7 +269,6 @@ export const useLogFilters = <T extends TOTELLog>(
     setMultiValue(PARAM_SEVERITY, [])
   }, [setMultiValue])
 
-  // Single-value attribute setters
   const setTool = useCallback((v: string) => setSingleValue(PARAM_TOOL, v), [setSingleValue])
   const setHelmReleaseName = useCallback((v: string) => setSingleValue(PARAM_HELM_RELEASE, v), [setSingleValue])
   const setHelmOperation = useCallback((v: string) => setSingleValue(PARAM_HELM_OPERATION, v), [setSingleValue])
@@ -365,18 +363,15 @@ export const useLogFilters = <T extends TOTELLog>(
   ])
 
   return {
-    // Severity filter
     selectedSeverities,
     availableSeverities,
     handleSeverityInputToggle,
     handleSeverityButtonClick,
     handleSeverityReset,
 
-    // System logs toggle
     includeSystemLogs,
     handleSystemLogsToggle,
 
-    // Tool / attribute filters
     availableTools,
     tool,
     setTool,
@@ -395,11 +390,9 @@ export const useLogFilters = <T extends TOTELLog>(
     k8sName,
     setK8sName,
 
-    // View mode
     viewMode,
     handleViewModeChange,
 
-    // Search and sort
     searchQuery,
     sortDirection,
     filteredLogs,
@@ -407,14 +400,11 @@ export const useLogFilters = <T extends TOTELLog>(
     handleSortToggle,
     handleSortChange,
 
-    // Reset
     isFiltered,
     handleResetAll,
 
-    // Server-side filter shape (pass to getLogStreamLogs)
     serverFilters,
 
-    // Stats
     filterStats: {
       selectedCount: filteredLogs?.length || 0,
       totalCount: logs?.length || 0,

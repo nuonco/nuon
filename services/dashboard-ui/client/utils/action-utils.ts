@@ -13,11 +13,6 @@ export type THydratedActionRunSteps = Array<
   TInstallActionRun['steps'][number] & { name?: string; idx?: number }
 >
 
-/**
- * Hydrates action run steps with their corresponding idx and name from the config.
- * @param params Object with steps and stepConfigs
- * @returns Array of hydrated steps.
- */
 export function hydrateActionRunSteps({
   steps,
   stepConfigs,
@@ -27,7 +22,6 @@ export function hydrateActionRunSteps({
 }): THydratedActionRunSteps {
   if (!steps) return []
 
-  // Build a map for fast lookup by step id
   const configMap = (stepConfigs ?? []).reduce<
     Record<string, { name?: string; idx?: number }>
   >((acc, cfg) => {

@@ -16,7 +16,6 @@ const initDatadogRUM = (env: 'local' | 'stage' | 'prod') => {
     env,
     service: 'dashboard',
 
-    // collection settings
     sessionSampleRate: 100,
     sessionReplaySampleRate: 20,
     trackUserInteractions: true,

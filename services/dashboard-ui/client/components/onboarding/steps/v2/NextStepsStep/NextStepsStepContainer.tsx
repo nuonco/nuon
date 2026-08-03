@@ -13,8 +13,6 @@ import { completeGetStartedStep } from '@/lib'
 import { useConfetti } from '@/hooks/use-confetti'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 
-// --- Data model ---
-
 interface INextStep {
   icon: TIconVariant
   title: string
@@ -131,8 +129,6 @@ function buildSections(): ISection[] {
   ]
 }
 
-// --- Step row ---
-
 function StepRow({ step }: { step: INextStep }) {
   return (
     <Card className="!p-4 !gap-0 flex-row items-center">
@@ -151,8 +147,6 @@ function StepRow({ step }: { step: INextStep }) {
     </Card>
   )
 }
-
-// --- Tab content for a section ---
 
 function SectionContent({ section }: { section: ISection }) {
   return (
@@ -178,8 +172,6 @@ function SectionContent({ section }: { section: ISection }) {
     </div>
   )
 }
-
-// --- Main step ---
 
 export const NextStepsStepContainer = ({ onAdvance, sharedData }: IWizardStepComponentProps) => {
   const onboarding = sharedData.onboarding as TOnboarding | undefined
@@ -219,7 +211,6 @@ export const NextStepsStepContainer = ({ onAdvance, sharedData }: IWizardStepCom
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
@@ -241,7 +232,6 @@ export const NextStepsStepContainer = ({ onAdvance, sharedData }: IWizardStepCom
         </Button>
       </div>
 
-      {/* Tabbed sections */}
       {sections.length > 0 && <Tabs tabs={tabs} />}
     </div>
   )

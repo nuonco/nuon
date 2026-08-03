@@ -290,14 +290,12 @@ function buildLayout(
     childSubgraphs.set(sg.id, subs)
   }
 
-  // Find top-level nodes (not in any subgraph)
   const nodesInAnySg = new Set<string>()
   for (const sg of subgraphs) {
     for (const c of sg.children) {
       if (allNodeIds.has(c)) nodesInAnySg.add(c)
     }
   }
-  // Find top-level subgraphs (not children of any other subgraph)
   const sgsInAnySg = new Set<string>()
   for (const sg of subgraphs) {
     for (const c of sg.children) {
@@ -305,7 +303,6 @@ function buildLayout(
     }
   }
 
-  // Layout a set of items (nodes + subgraph boxes) with edges between them
   type LayoutItem = { id: string; width: number; height: number }
   type LayoutResult = Map<string, { x: number; y: number }>
 
@@ -331,7 +328,6 @@ function buildLayout(
   }
 
   // Recursively layout subgraphs from leaves up
-  // Returns: { positions (absolute), boxSize }
   type SgLayout = { positions: Map<string, { x: number; y: number }>; width: number; height: number }
   const sgLayouts = new Map<string, SgLayout>()
 
@@ -341,10 +337,8 @@ function buildLayout(
     const childNodeIds = directChildNodes.get(sgId) || []
     const childSgIds = childSubgraphs.get(sgId) || []
 
-    // Layout child subgraphs first
     for (const csId of childSgIds) layoutSubgraph(csId)
 
-    // Build items: real nodes + subgraph boxes
     const items: LayoutItem[] = []
     for (const nid of childNodeIds) {
       const dims = nodeDims.get(nid)!
@@ -355,7 +349,6 @@ function buildLayout(
       items.push({ id: csId, width: csLayout.width, height: csLayout.height })
     }
 
-    // Collect all descendant node IDs for edge filtering
     const allDescendantNodes = new Set(childNodeIds)
     for (const csId of childSgIds) {
       const desc = collectAllChildren(subgraphs.find((s) => s.id === csId)!, subgraphs)
@@ -388,7 +381,6 @@ function buildLayout(
 
     const localPositions = layoutItems(items, internalEdges)
 
-    // Compute bounding box
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
     for (const item of items) {
       const pos = localPositions.get(item.id)
@@ -399,7 +391,6 @@ function buildLayout(
       maxY = Math.max(maxY, pos.y + item.height)
     }
 
-    // Normalize to 0,0 origin with padding
     const pad = SUBGRAPH_PADDING
     const labelH = 22
     const offsetX = -minX + pad
@@ -407,22 +398,18 @@ function buildLayout(
 
     const positions = new Map<string, { x: number; y: number }>()
 
-    // Place direct child nodes
     for (const nid of childNodeIds) {
       const lp = localPositions.get(nid)
       if (lp) positions.set(nid, { x: lp.x + offsetX, y: lp.y + offsetY })
     }
 
-    // Place child subgraph contents (offset their positions)
     for (const csId of childSgIds) {
       const csLayout = sgLayouts.get(csId)!
       const lp = localPositions.get(csId)
       if (!lp) continue
       const ox = lp.x + offsetX
       const oy = lp.y + offsetY
-      // Store subgraph box position
       positions.set(csId, { x: ox, y: oy })
-      // Offset all child node positions
       for (const [nid, npos] of csLayout.positions) {
         positions.set(nid, { x: npos.x + ox, y: npos.y + oy })
       }
@@ -436,11 +423,9 @@ function buildLayout(
     return result
   }
 
-  // Layout all top-level subgraphs
   const topSgs = subgraphs.filter((sg) => !sgsInAnySg.has(sg.id))
   for (const sg of topSgs) layoutSubgraph(sg.id)
 
-  // Top-level layout: orphan nodes + subgraph boxes
   const topItems: LayoutItem[] = []
   const topOrphanNodes = parsedNodes.filter((n) => !nodesInAnySg.has(n.id))
   for (const n of topOrphanNodes) {
@@ -451,7 +436,6 @@ function buildLayout(
     topItems.push({ id: sg.id, width: layout.width, height: layout.height })
   }
 
-  // Top-level edges: map node→top-level item
   const nodeToTopItem = new Map<string, string>()
   for (const n of topOrphanNodes) nodeToTopItem.set(n.id, n.id)
   for (const sg of topSgs) {
@@ -468,7 +452,6 @@ function buildLayout(
 
   const topPositions = layoutItems(topItems, topEdges)
 
-  // Assemble final absolute positions
   const positions = new Map<string, { x: number; y: number }>()
 
   for (const n of topOrphanNodes) {
@@ -486,7 +469,6 @@ function buildLayout(
     }
   }
 
-  // Build ReactFlow nodes
   const nodes: Node[] = []
 
   // Subgraph boxes (render inner-most first for z-ordering)

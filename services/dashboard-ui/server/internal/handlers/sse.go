@@ -35,8 +35,6 @@ var terminalStatuses = map[string]bool{
 	"not-attempted": true,
 }
 
-// sseToken extracts the auth cookie. On failure it writes the 401 JSON
-// response and returns ok=false.
 func sseToken(c *gin.Context) (string, bool) {
 	token, err := c.Cookie(authCookie)
 	if err != nil || token == "" {

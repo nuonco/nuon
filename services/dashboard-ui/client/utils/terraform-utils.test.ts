@@ -263,7 +263,6 @@ describe('terraform-utils', () => {
 
       const result = parseTerraformPlan(mockPlan)
 
-      // Check structure
       expect(result).toHaveProperty('resources')
       expect(result).toHaveProperty('outputs')
       expect(result.resources).toHaveProperty('summary')
@@ -271,12 +270,10 @@ describe('terraform-utils', () => {
       expect(result.outputs).toHaveProperty('summary')
       expect(result.outputs).toHaveProperty('changes')
 
-      // Check resource summary
       expect(result.resources.summary.create).toBe(1)
       expect(result.resources.summary.update).toBe(1)
       expect(result.resources.summary.delete).toBe(1)
 
-      // Check resource changes
       expect(result.resources.changes).toHaveLength(3)
 
       expect(result.resources.changes[0]).toEqual({
@@ -289,11 +286,9 @@ describe('terraform-utils', () => {
         after: { instance_type: 't3.micro', id: 'Known after apply' },
       })
 
-      // Check output summary
       expect(result.outputs.summary.create).toBe(1)
       expect(result.outputs.summary.update).toBe(1)
 
-      // Check output changes
       expect(result.outputs.changes).toHaveLength(2)
 
       expect(result.outputs.changes[0]).toMatchObject({
@@ -359,7 +354,6 @@ describe('terraform-utils', () => {
       expect(result.resources.changes).toEqual([])
       expect(result.outputs.changes).toEqual([])
 
-      // All operation counts should be 0
       expect(result.resources.summary.create).toBe(0)
       expect(result.resources.summary.update).toBe(0)
       expect(result.resources.summary.delete).toBe(0)

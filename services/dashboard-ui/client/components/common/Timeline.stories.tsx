@@ -267,7 +267,6 @@ export const CustomEventRendering = () => {
         status={event.status}
         title={event.title}
       />
-      {/* Custom additional content */}
       {event.user && (
         <div className="ml-8 mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded border-l-2 border-blue-200 dark:border-blue-800">
           <Text variant="subtext" weight="strong">

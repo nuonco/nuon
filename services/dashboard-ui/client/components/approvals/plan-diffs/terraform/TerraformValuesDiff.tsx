@@ -176,20 +176,18 @@ type KeyValuePair = {
   key: string
   before: any
   after: any
-  changed: boolean // Flag to indicate if this property actually changed
+  changed: boolean
 }
 
 function mapBeforeAfterToKeyValues(obj: BeforeAfterObject): KeyValuePair[] {
   const result: KeyValuePair[] = []
 
-  // Get all unique keys from both before and after objects
   const beforeKeys =
     obj.before && typeof obj.before === 'object' ? Object.keys(obj.before) : []
   const afterKeys =
     obj.after && typeof obj.after === 'object' ? Object.keys(obj.after) : []
   const allKeys = [...new Set([...beforeKeys, ...afterKeys])]
 
-  // Include ALL keys, but mark which ones actually changed
   allKeys.forEach((key) => {
     const beforeValue =
       obj.before && typeof obj.before === 'object' ? obj.before[key] : undefined

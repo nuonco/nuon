@@ -10,7 +10,7 @@ export function TableSkeleton<TData extends object>({
 }) {
   return (
     <Table<TData>
-      data={[]} // Empty, no data
+      data={[]}
       columns={columns}
       isLoading={true}
       skeletonRows={skeletonRows}

@@ -53,9 +53,7 @@ export const ModalBase = ({
     removeModal(modalId, modalKey)
   }
   const modalRef = useRef<HTMLDivElement>(null)
-  // auto focus modal when in view
   useAutoFocusOnVisible(modalRef, isVisible)
-  // handle close on esc key
   useEscapeKey(handleClose)
 
   return (
