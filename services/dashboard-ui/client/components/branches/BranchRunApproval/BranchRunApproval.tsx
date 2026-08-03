@@ -26,8 +26,7 @@ export const BranchRunApproval = ({ items }: IBranchRunApproval) => {
             <div className="flex flex-col">
               <Text weight="strong">Plan for {item.groupName} requires approval</Text>
               <Text variant="subtext" theme="neutral">
-                Review the proposed changes before deploying to this install group, or skip it to
-                continue the workflow without applying them.
+                Review the proposed changes, then approve to deploy to this install group.
               </Text>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">

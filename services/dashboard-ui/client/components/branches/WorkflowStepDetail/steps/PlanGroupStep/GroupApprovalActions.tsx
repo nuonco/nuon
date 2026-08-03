@@ -122,27 +122,35 @@ const ConfirmGroupActionModal = ({ action, target, ...props }: IConfirmGroupActi
   )
 }
 
+const ACTION_LABEL: Record<GroupAction, { label: string; variant: 'primary' | 'danger' }> = {
+  approve: { label: 'Approve', variant: 'primary' },
+  'deny-skip-current': { label: 'Skip', variant: 'danger' },
+}
+
+export const GroupActionButton = ({
+  action,
+  target,
+}: {
+  action: GroupAction
+  target: IGroupActionTarget
+}) => {
+  const { addModal } = useSurfaces()
+  const { label, variant } = ACTION_LABEL[action]
+
+  return (
+    <Button variant={variant} onClick={() => addModal(<ConfirmGroupActionModal action={action} target={target} />)}>
+      {label}
+    </Button>
+  )
+}
+
 interface IGroupApprovalActions {
   target: IGroupActionTarget
 }
 
-export const GroupApprovalActions = ({ target }: IGroupApprovalActions) => {
-  const { addModal } = useSurfaces()
-
-  return (
-    <>
-      <Button
-        variant="danger"
-        onClick={() => addModal(<ConfirmGroupActionModal action="deny-skip-current" target={target} />)}
-      >
-        Skip
-      </Button>
-      <Button
-        variant="primary"
-        onClick={() => addModal(<ConfirmGroupActionModal action="approve" target={target} />)}
-      >
-        Approve
-      </Button>
-    </>
-  )
-}
+export const GroupApprovalActions = ({ target }: IGroupApprovalActions) => (
+  <>
+    <GroupActionButton action="deny-skip-current" target={target} />
+    <GroupActionButton action="approve" target={target} />
+  </>
+)
