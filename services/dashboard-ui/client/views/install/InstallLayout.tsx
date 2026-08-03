@@ -97,7 +97,7 @@ const InstallTemplate = () => {
     },
     {
       path: `/versions`,
-      iconVariant: 'ClockCounterClockwiseIcon' as const,
+      iconVariant: 'GitBranchIcon' as const,
       text: 'App branch runs',
     },
     {
@@ -176,7 +176,7 @@ const InstallTemplate = () => {
     { type: 'section', label: 'Advanced' },
     {
       path: `/configs`,
-      iconVariant: 'GearIcon' as const,
+      iconVariant: 'FadersIcon' as const,
       text: 'Configs',
     },
     {
