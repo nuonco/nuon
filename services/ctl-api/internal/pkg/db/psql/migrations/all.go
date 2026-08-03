@@ -156,5 +156,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "120-installs-last-health-report-at-index",
 			Fn:   m.Migration120InstallsLastHealthReportAtIndex,
 		},
+		{
+			Name: "121-backfill-org-builder-role",
+			Fn:   m.Migration121BackfillOrgBuilderRole,
+		},
 	}
 }

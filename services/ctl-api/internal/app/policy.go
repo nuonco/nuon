@@ -21,6 +21,7 @@ const (
 	PolicyNameOrgAdmin    PolicyName = "org_admin"
 	PolicyNameOrgSupport  PolicyName = "org_support"
 	PolicyNameOrgReadOnly PolicyName = "org_read_only"
+	PolicyNameOrgBuilder  PolicyName = "org_builder"
 	PolicyNameInstaller   PolicyName = "installer"
 	PolicyNameRunner      PolicyName = "runner"
 

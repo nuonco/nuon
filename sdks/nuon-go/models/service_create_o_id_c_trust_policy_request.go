@@ -38,7 +38,7 @@ type ServiceCreateOIDCTrustPolicyRequest struct {
 	Name *string `json:"name"`
 
 	// org role granted to exchanged tokens. one of org_admin, org_support,
-	// org_read_only. defaults to org_read_only.
+	// org_read_only, org_builder. defaults to org_read_only.
 	Role string `json:"role,omitempty"`
 
 	// lifetime of exchanged tokens in seconds. defaults to 3600, max 86400.

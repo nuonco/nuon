@@ -14,6 +14,7 @@ export const API_TOKENS_TABLE_LIMIT = 20
 
 const ROLE_LABELS: Record<string, string> = {
   org_admin: 'Admin',
+  org_builder: 'Builder',
   org_support: 'Support',
   org_read_only: 'Read-only',
 }
@@ -66,12 +67,16 @@ export const ApiTokensTable = ({
       {
         header: 'Created',
         accessorKey: 'created_at',
-        cell: (props) => <Time time={props.getValue<string>()} format="relative" />,
+        cell: (props) => (
+          <Time time={props.getValue<string>()} format="relative" />
+        ),
       },
       {
         header: 'Expires',
         accessorKey: 'expires_at',
-        cell: (props) => <Time time={props.getValue<string>()} format="short-datetime" />,
+        cell: (props) => (
+          <Time time={props.getValue<string>()} format="short-datetime" />
+        ),
       },
       {
         id: 'action',
