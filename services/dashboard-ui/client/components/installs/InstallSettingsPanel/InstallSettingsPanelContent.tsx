@@ -5,11 +5,13 @@ import { Text } from '@/components/common/Text'
 import { ShutdownRunnerControl } from '@/components/runners/management/ShutdownRunnerControl'
 import { ReprovisionSandboxButton } from '@/components/sandbox/management/ReprovisionSandbox'
 import { useInstall } from '@/hooks/use-install'
+import { useOrg } from '@/hooks/use-org'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction/RunAdhocActionContainer'
 import { AuditHistoryButton } from '@/components/installs/management/AuditHistory'
 import { DeprovisionButton } from '@/components/installs/management/Deprovision'
 import { DeprovisionStackButton } from '@/components/installs/management/DeprovisionStack'
+import { EditInputsButton } from '@/components/installs/management/EditInputs'
 import { EditLabelsButton } from '@/components/installs/management/EditLabels'
 import { EnableConfigSyncButton } from '@/components/installs/management/EnableConfigSync'
 import { ForgetButton } from '@/components/installs/management/Forget'
@@ -56,10 +58,18 @@ const ActionCard = ({
 
 const InstallSettingsPanelContentInner = () => {
   const { install } = useInstall()
+  const { org } = useOrg()
+  const canRenameInstall = !!org?.features?.['install-rename']
 
   return (
     <div className="@container flex flex-col gap-6">
       <Section label="Configuration">
+        <ActionCard
+          title="Install"
+          description="Edit this install's inputs and settings."
+        >
+          <EditInputsButton showNameField={canRenameInstall} />
+        </ActionCard>
         <ActionCard
           title="Labels"
           description="Add or update key-value labels to organize and target this install."
