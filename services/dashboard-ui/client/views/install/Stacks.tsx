@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { EditStackOverridesButton } from '@/components/installs/management/EditStackOverrides'
 import { InstallStackVersionCards } from '@/components/stacks/InstallStackVersionCards'
+import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -24,19 +25,31 @@ export const Stacks = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const { appConfig: config, isLoading: isLoadingConfig } = useInstallAppConfig()
+  const { appConfig: config, isLoading: isLoadingConfig } =
+    useInstallAppConfig()
 
   const { data: latestConfigs } = useQuery({
     queryKey: ['app-configs', org?.id, install?.app_id, 'latest'],
     queryFn: () =>
-      getAppConfigs({ orgId: org.id, appId: install.app_id, limit: 1, offset: 0 }),
+      getAppConfigs({
+        orgId: org.id,
+        appId: install.app_id,
+        limit: 1,
+        offset: 0,
+      }),
     enabled: !!org?.id && !!install?.app_id,
   })
   const latestConfigSummary = latestConfigs?.[0]
   const newerAppConfig = hasNewerAppConfig(latestConfigSummary, install)
 
   const { data: latestFullConfig } = useQuery({
-    queryKey: ['app-config', org?.id, install?.app_id, latestConfigSummary?.id, 'recurse'],
+    queryKey: [
+      'app-config',
+      org?.id,
+      install?.app_id,
+      latestConfigSummary?.id,
+      'recurse',
+    ],
     queryFn: () =>
       getAppConfig({
         orgId: org.id,
@@ -90,8 +103,8 @@ export const Stacks = () => {
             <div className="flex flex-col">
               <Text weight="strong">New stack config available</Text>
               <Text variant="subtext" theme="neutral">
-                A newer stack config (v{latestFullConfig?.version}) is available. This install
-                is using v{config?.version}.
+                A newer stack config (v{latestFullConfig?.version}) is
+                available. This install is using v{config?.version}.
               </Text>
             </div>
             <Button
@@ -108,11 +121,17 @@ export const Stacks = () => {
       {(() => {
         const installConfig = install?.install_config
 
-        const isRunnerOverridden = Boolean(installConfig?.runner_nested_template_url)
-        const effectiveRunnerURL = installConfig?.runner_nested_template_url || config?.stack?.runner_nested_template_url
+        const isRunnerOverridden = Boolean(
+          installConfig?.runner_nested_template_url
+        )
+        const effectiveRunnerURL =
+          installConfig?.runner_nested_template_url ||
+          config?.stack?.runner_nested_template_url
 
         const isVpcOverridden = Boolean(installConfig?.vpc_nested_template_url)
-        const effectiveVpcURL = installConfig?.vpc_nested_template_url || config?.stack?.vpc_nested_template_url
+        const effectiveVpcURL =
+          installConfig?.vpc_nested_template_url ||
+          config?.stack?.vpc_nested_template_url
 
         const appStacks = config?.stack?.custom_nested_stacks || []
         const installStacks = installConfig?.custom_nested_stacks || []
@@ -122,7 +141,10 @@ export const Stacks = () => {
           ...appStacks.map((s) => {
             seen.add(s.name!)
             if (overrideMap.has(s.name!)) {
-              return { ...overrideMap.get(s.name!)!, _status: 'overridden' as const }
+              return {
+                ...overrideMap.get(s.name!)!,
+                _status: 'overridden' as const,
+              }
             }
             return { ...s, _status: 'default' as const }
           }),
@@ -180,8 +202,14 @@ export const Stacks = () => {
                   className="col-span-6"
                   label={
                     <span className="flex items-center gap-2">
-                      <Text variant="subtext" theme="neutral">Runner nested template URL</Text>
-                      {isRunnerOverridden && <Badge size="sm" theme="info">install override</Badge>}
+                      <Text variant="subtext" theme="neutral">
+                        Runner nested template URL
+                      </Text>
+                      {isRunnerOverridden && (
+                        <Badge size="sm" theme="info">
+                          install override
+                        </Badge>
+                      )}
                     </span>
                   }
                 >
@@ -197,8 +225,14 @@ export const Stacks = () => {
                   className="col-span-6"
                   label={
                     <span className="flex items-center gap-2">
-                      <Text variant="subtext" theme="neutral">VPC nested template URL</Text>
-                      {isVpcOverridden && <Badge size="sm" theme="info">install override</Badge>}
+                      <Text variant="subtext" theme="neutral">
+                        VPC nested template URL
+                      </Text>
+                      {isVpcOverridden && (
+                        <Badge size="sm" theme="info">
+                          install override
+                        </Badge>
+                      )}
                     </span>
                   }
                 >
@@ -212,19 +246,59 @@ export const Stacks = () => {
             </div>
             {effectiveStacks.length > 0 && (
               <div className="flex flex-col gap-2 mt-2">
-                <Text variant="subtext" weight="strong">Custom nested stacks</Text>
-                <div className="flex flex-col gap-1">
-                  {effectiveStacks.map((s) => (
-                    <div key={s.name} className="flex items-center gap-3 text-sm">
-                      <Text variant="subtext" family="mono">{s.name}</Text>
-                      <Text variant="subtext">
-                        <Link href={s.template_url!} isExternal>{s.template_url}</Link>
-                      </Text>
-                      {s._status === 'overridden' && <Badge size="sm" theme="info">install override</Badge>}
-                      {s._status === 'new' && <Badge size="sm" theme="success">install-only</Badge>}
-                    </div>
-                  ))}
-                </div>
+                <Text variant="subtext" weight="strong">
+                  Custom nested stacks
+                </Text>
+                <PropertyGrid
+                  values={[...effectiveStacks].sort(
+                    (a, b) => (a.index ?? 0) - (b.index ?? 0)
+                  )}
+                  columns={[
+                    { key: 'index', header: 'Index' },
+                    { key: 'name', header: 'Name' },
+                    {
+                      key: 'template_url',
+                      header: 'Template URL',
+                      render: (value) =>
+                        value ? (
+                          <Text variant="subtext">
+                            <Link href={String(value)} isExternal>
+                              {String(value)}
+                            </Link>
+                          </Text>
+                        ) : null,
+                    },
+                    {
+                      key: 'parameters',
+                      header: 'Parameters',
+                      render: (value) => (
+                        <Text variant="subtext" family="mono">
+                          {Object.keys(value ?? {}).length}
+                        </Text>
+                      ),
+                    },
+                    {
+                      key: '_status',
+                      header: 'Source',
+                      render: (value) =>
+                        value === 'overridden' ? (
+                          <Badge size="sm" theme="info">
+                            install override
+                          </Badge>
+                        ) : value === 'new' ? (
+                          <Badge size="sm" theme="success">
+                            install-only
+                          </Badge>
+                        ) : (
+                          <Text variant="subtext" theme="neutral">
+                            app config
+                          </Text>
+                        ),
+                    },
+                  ]}
+                  gridTemplate="min-content 1fr 2fr min-content min-content"
+                  rowProps={(s) => ({ 'data-index': s.index })}
+                />
               </div>
             )}
           </Card>

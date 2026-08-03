@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
+import { Banner } from '@/components/common/Banner'
+import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { LabeledValue } from '@/components/common/LabeledValue'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
@@ -29,9 +32,44 @@ import {
   getInputDisplayName,
 } from '@/utils/install-utils'
 
+// Mirrors app.CloudPlatformMetadata in ctl-api — the generated type is an
+// opaque object because the field is serialized as a plain JSON object
+type TCloudPlatformMetadata = {
+  target_account_id?: string
+  observed_account_id?: string
+  target_project_id?: string
+  observed_project_id?: string
+  target_subscription_id?: string
+  observed_subscription_id?: string
+  target_source?: string
+}
+
+const CLOUD_METADATA_LABELS: Array<{
+  key: keyof TCloudPlatformMetadata
+  label: string
+}> = [
+  { key: 'target_account_id', label: 'Target AWS account' },
+  { key: 'observed_account_id', label: 'Observed AWS account' },
+  { key: 'target_project_id', label: 'Target GCP project' },
+  { key: 'observed_project_id', label: 'Observed GCP project' },
+  { key: 'target_subscription_id', label: 'Target Azure subscription' },
+  { key: 'observed_subscription_id', label: 'Observed Azure subscription' },
+  { key: 'target_source', label: 'Target source' },
+]
+
 export const CurrentInputs = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+
+  const phoneHomeAuthEnabled = !!org?.features?.['phone-home-auth']
+  const cloudMetadata = (install?.cloud_platform_metadata ??
+    {}) as TCloudPlatformMetadata
+  const cloudMetadataRows = CLOUD_METADATA_LABELS.filter(
+    ({ key }) => cloudMetadata[key]
+  )
+  const hasCloudIdentifier = cloudMetadataRows.some(
+    ({ key }) => key !== 'target_source'
+  )
 
   const { data: inputs, isLoading: inputsLoading } = useQuery({
     queryKey: ['install-inputs', org?.id, install?.id],
@@ -99,6 +137,18 @@ export const CurrentInputs = () => {
           },
         ]}
       />
+      {phoneHomeAuthEnabled && !hasCloudIdentifier && (
+        <Banner theme="warn">
+          <div className="flex flex-col">
+            <Text weight="strong">No cloud platform metadata</Text>
+            <Text variant="subtext" theme="neutral">
+              Phone-home auth is enabled for this org, but this install has no
+              target or observed cloud account recorded.
+            </Text>
+          </div>
+        </Banner>
+      )}
+
       <div className="flex items-start justify-between gap-4">
         <HeadingGroup>
           <Text variant="base" weight="strong">
@@ -112,6 +162,21 @@ export const CurrentInputs = () => {
           <EditInputsButton variant="secondary" />
         </div>
       </div>
+
+      {phoneHomeAuthEnabled && hasCloudIdentifier && (
+        <Card className="flex flex-col gap-4">
+          <Text weight="strong">Cloud platform metadata</Text>
+          <div className="flex flex-wrap gap-6 items-start">
+            {cloudMetadataRows.map(({ key, label }) => (
+              <LabeledValue key={key} label={label}>
+                <Text family="mono" variant="subtext">
+                  {cloudMetadata[key]}
+                </Text>
+              </LabeledValue>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {!isLoading && (hasConfig || hasInputs) ? (
         <div className="flex justify-end">
@@ -204,11 +269,7 @@ export const CurrentInputs = () => {
                             />
                           ),
                           default: (
-                            <Text
-                              variant="label"
-                              family="mono"
-                              theme="neutral"
-                            >
+                            <Text variant="label" family="mono" theme="neutral">
                               {input?.default}
                             </Text>
                           ),

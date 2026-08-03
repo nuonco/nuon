@@ -1,6 +1,6 @@
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
-import { PropertyGrid } from "@/components/common/PropertyGrid"
+import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Text } from '@/components/common/Text'
 import type { TAppConfig } from '@/types'
 
@@ -44,15 +44,40 @@ export const AppStack = ({ appConfig }: IAppStack) => {
         </LabeledValue>
       ) : null}
 
-    {stackConfig?.custom_nested_stacks?.length ? (
-        <PropertyGrid
-          values={stackConfig?.custom_nested_stacks?.map((s) => ({
-            name: s?.name,
-            template_url: s?.template_url,
-            contents_hash: s?.contents_hash,
-          }))}
-          gridTemplate="1fr 2fr 2fr"
-        />
+      {stackConfig?.custom_nested_stacks?.length ? (
+        <div className="flex flex-col gap-2">
+          <Text variant="subtext" weight="strong">
+            Custom nested stacks
+          </Text>
+          <PropertyGrid
+            values={[...stackConfig.custom_nested_stacks]
+              .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+              .map((s) => ({
+                index: s?.index,
+                name: s?.name,
+                template_url: s?.template_url,
+                contents_hash: s?.contents_hash,
+              }))}
+            columns={[
+              { key: 'index', header: 'Index' },
+              { key: 'name', header: 'Name' },
+              {
+                key: 'template_url',
+                header: 'Template URL',
+                render: (value) =>
+                  value ? (
+                    <Text variant="subtext">
+                      <Link href={String(value)} isExternal>
+                        {String(value)}
+                      </Link>
+                    </Text>
+                  ) : null,
+              },
+              { key: 'contents_hash', header: 'Contents hash' },
+            ]}
+            gridTemplate="min-content 1fr 2fr 2fr"
+          />
+        </div>
       ) : null}
     </div>
   )
