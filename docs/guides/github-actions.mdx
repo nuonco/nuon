@@ -42,7 +42,7 @@ jobs:
         uses: nuonco/actions-build@v1
         with:
           api_token: ${{ secrets.nuon_api_token }}
-          org: ${{ vars.nuon_org_id }}
+          org_id: ${{ vars.nuon_org_id }}
           component_id: backend
 ```
 
@@ -94,7 +94,7 @@ jobs:
       - name: Build component
         uses: nuonco/actions-build@v1
         with:
-          org: ${{ vars.nuon_org_id }}
+          org_id: ${{ vars.nuon_org_id }}
           component_id: backend
 ```
 
@@ -117,7 +117,7 @@ Then pass it to the action:
         uses: nuonco/actions-build@v1
         with:
           api_token: ${{ secrets.nuon_api_token }}
-          org: ${{ vars.nuon_org_id }}
+          org_id: ${{ vars.nuon_org_id }}
           component_id: backend
 ```
 
