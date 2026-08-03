@@ -43,6 +43,12 @@ var roleCatalog = []RoleInfo{
 		AppliesTo:   []string{roleAppliesToUser, roleAppliesToServiceAccount},
 	},
 	{
+		RoleType:    app.RoleTypeOrgBuilder,
+		Title:       "Builder",
+		Description: "Read access to the organization and its resources, with permission to create component builds.",
+		AppliesTo:   []string{roleAppliesToServiceAccount},
+	},
+	{
 		RoleType:    app.RoleTypeRunner,
 		Title:       "Runner",
 		Description: "Permissions for runners executing deployments.",

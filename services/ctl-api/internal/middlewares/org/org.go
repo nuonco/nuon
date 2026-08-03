@@ -81,11 +81,12 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 		// make sure account has access to org
 		perm := permissions.FromRequest(ctx)
-		err = acct.AllPermissions.CanPerform(org.ID, perm)
+		object := permissions.RequestObject(ctx, org.ID)
+		err = acct.AllPermissions.CanPerform(object, perm)
 		if err != nil {
 			ctx.Error(stderr.ErrAuthorization{
-				Err:         fmt.Errorf("unable to perform %s on org %s", perm, org.ID),
-				Description: fmt.Sprintf("Please make sure you have the correct permissions for %s", org.ID),
+				Err:         fmt.Errorf("unable to perform %s on object %s", perm, object),
+				Description: fmt.Sprintf("Please make sure you have the correct permissions for %s", object),
 			})
 			ctx.Abort()
 			return

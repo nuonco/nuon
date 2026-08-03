@@ -11,7 +11,20 @@ import (
 )
 
 func (c *Client) CreateOrgRoles(ctx context.Context, orgID string) error {
-	roles := []app.Role{
+	roles := standardOrgRoles(orgID)
+
+	res := c.db.
+		WithContext(ctx).
+		Create(roles)
+	if res.Error != nil {
+		return res.Error
+	}
+
+	return nil
+}
+
+func standardOrgRoles(orgID string) []app.Role {
+	return []app.Role{
 		// create admin role
 		{
 			OrgID:    generics.NewNullString(orgID),
@@ -22,6 +35,21 @@ func (c *Client) CreateOrgRoles(ctx context.Context, orgID string) error {
 					Name:  app.PolicyNameOrgAdmin,
 					Permissions: pgtype.Hstore(map[string]*string{
 						orgID: permissions.PermissionAll.ToStrPtr(),
+					}),
+				},
+			},
+		},
+
+		{
+			OrgID:    generics.NewNullString(orgID),
+			RoleType: app.RoleTypeOrgBuilder,
+			Policies: []app.Policy{
+				{
+					OrgID: generics.NewNullString(orgID),
+					Name:  app.PolicyNameOrgBuilder,
+					Permissions: pgtype.Hstore(map[string]*string{
+						orgID:                                    permissions.PermissionRead.ToStrPtr(),
+						permissions.ComponentBuildsObject(orgID): permissions.PermissionCreate.ToStrPtr(),
 					}),
 				},
 			},
@@ -87,13 +115,4 @@ func (c *Client) CreateOrgRoles(ctx context.Context, orgID string) error {
 			},
 		},
 	}
-
-	res := c.db.
-		WithContext(ctx).
-		Create(roles)
-	if res.Error != nil {
-		return res.Error
-	}
-
-	return nil
 }

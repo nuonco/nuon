@@ -22,6 +22,7 @@ export type OIDCTrustPolicyFormInput = {
 
 const ROLE_OPTIONS = [
   { value: 'org_read_only', label: 'org_read_only' },
+  { value: 'org_builder', label: 'org_builder' },
   { value: 'org_support', label: 'org_support' },
   { value: 'org_admin', label: 'org_admin' },
 ]

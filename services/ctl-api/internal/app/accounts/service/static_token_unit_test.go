@@ -50,6 +50,7 @@ func TestParseTokenRole(t *testing.T) {
 		{name: "admin", raw: "org_admin", want: app.RoleTypeOrgAdmin},
 		{name: "support", raw: "org_support", want: app.RoleTypeOrgSupport},
 		{name: "read-only", raw: "org_read_only", want: app.RoleTypeOrgReadOnly},
+		{name: "builder", raw: "org_builder", want: app.RoleTypeOrgBuilder},
 		{name: "internal role is rejected", raw: "installer", wantErr: true},
 		{name: "unknown role is rejected", raw: "superuser", wantErr: true},
 	}

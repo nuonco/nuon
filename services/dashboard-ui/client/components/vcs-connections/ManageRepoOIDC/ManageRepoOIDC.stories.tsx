@@ -26,9 +26,10 @@ const policies: TOIDCTrustPolicy[] = [
   {
     id: 'oidcpolicy1',
     name: 'github-app',
-    role: 'org_read_only',
+    role: 'org_builder',
     enabled: true,
-    claim_conditions: { sub: 'repo:acme/app:ref:refs/heads/*' },
+    token_duration_seconds: 900,
+    claim_conditions: { sub: 'repo:acme/app:ref:refs/heads/main' },
   },
 ]
 
