@@ -97,6 +97,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.POST("/labels", s.AddInstallLabels)
 		installs.DELETE("/labels", s.RemoveInstallLabels)
 		installs.POST("/reprovision", s.ReprovisionInstall)
+		installs.POST("/reprovision-stack", s.ReprovisionInstallStack)
 		installs.POST("/deprovision", s.DeprovisionInstall)
 		installs.POST("/forget", s.ForgetInstall)
 		s.POST(installs, "/retry-workflow", s.RetryWorkflow, api.APIContextTypePublic, true) // Deprecated

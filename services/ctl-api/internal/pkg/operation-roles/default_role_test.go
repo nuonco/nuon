@@ -23,6 +23,7 @@ func TestDefaultRoleForWorkflowType(t *testing.T) {
 	}{
 		{app.WorkflowTypeProvision, "provision"},
 		{app.WorkflowTypeReprovision, "provision"},
+		{app.WorkflowTypeReprovisionStack, "provision"},
 		{app.WorkflowTypeReprovisionSandbox, "provision"},
 		{app.WorkflowTypeDriftRunReprovisionSandbox, "provision"},
 		{app.WorkflowTypeDeprovision, "deprovision"},
