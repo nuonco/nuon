@@ -180,7 +180,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 	}
 
 	if params.DispatchBuilds {
-		reusableID, err := reusableConfigID(ctx, db, apiComp.ID, ccc.Checksum)
+		reusableID, err := reusableConfigID(ctx, db, apiComp.ID, ccc)
 		if err != nil {
 			return err
 		}
@@ -244,8 +244,9 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 // the incoming checksum and has a non-failed build, "" when a fresh connection
 // is needed. Reusing (not skip-building a fresh one) keeps the invariant that
 // every config connection has a build behind it, which CCC pinning depends on.
-func reusableConfigID(ctx context.Context, db *gorm.DB, cmpID, checksum string) (string, error) {
-	if checksum == "" {
+func reusableConfigID(ctx context.Context, db *gorm.DB, cmpID string, incoming *app.ComponentConfigConnection) (string, error) {
+	checksum := incoming.Checksum
+	if checksum == "" || build.RequiresFreshBuild(incoming) {
 		return "", nil
 	}
 

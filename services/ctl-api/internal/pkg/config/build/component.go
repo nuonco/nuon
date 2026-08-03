@@ -210,3 +210,12 @@ func refStrings(in []refs.Ref) []string {
 	}
 	return out
 }
+
+// RequiresFreshBuild reports whether a component must build even when its config
+// is unchanged. An external image with an update_policy resolves tags against
+// the registry at build time, so an unchanged config does not imply an unchanged
+// artifact; the runner no-ops when the digest matches.
+func RequiresFreshBuild(ccc *app.ComponentConfigConnection) bool {
+	cfg := ccc.ExternalImageComponentConfig
+	return cfg != nil && cfg.UpdatePolicy != ""
+}

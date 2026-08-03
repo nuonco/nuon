@@ -165,3 +165,24 @@ func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchAlwaysCreatesFreshConfig()
 	s.Equal(int64(2), s.componentConfigCount(ctx, cmpID),
 		"branch sync must create a config connection per sync")
 }
+
+// An external image with an update_policy resolves its tag against the registry
+// at build time, so an unchanged config does not mean an unchanged artifact. It
+// must rebuild every sync or installs silently stop picking up new tags.
+func (s *SyncFieldsTestSuite) TestBuildDispatchAlwaysRebuildsUpdatePolicyImage() {
+	cfg := testseedconfig.BuildMinimalAppConfig()
+	cmp := testseedconfig.BuildExternalImageComponent("tracked-image")
+	cmp.ExternalImage.PublicImageConfig.UpdatePolicy = ">= 1.0.0"
+	cfg.Components = config.ComponentList{cmp}
+
+	ctx, testApp, _ := s.syncEmpty()
+
+	s.syncWithBuildDispatch(ctx, testApp.ID, cfg)
+	cmpID := s.componentID(ctx, testApp.ID, "tracked-image")
+	s.markBuilt(ctx, cmpID)
+
+	s.syncWithBuildDispatch(ctx, testApp.ID, cfg)
+
+	s.Len(s.scheduled, 1, "update_policy image must rebuild despite unchanged config")
+	s.Equal(int64(2), s.componentConfigCount(ctx, cmpID))
+}
