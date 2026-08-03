@@ -26,6 +26,7 @@ export type EditOIDCTrustPolicyFormInput = {
 
 const ROLE_OPTIONS = [
   { value: 'org_read_only', label: 'org_read_only' },
+  { value: 'org_builder', label: 'org_builder' },
   { value: 'org_support', label: 'org_support' },
   { value: 'org_admin', label: 'org_admin' },
 ]
@@ -34,9 +35,9 @@ const conditionsToRows = (
   claimConditions: TOIDCTrustPolicy['claim_conditions']
 ): ClaimCondition[] => {
   const entries = Object.entries(claimConditions ?? {})
-  return entries.length ? entries.map(([key, value]) => ({ key, value })) : [
-    { key: 'sub', value: '' },
-  ]
+  return entries.length
+    ? entries.map(([key, value]) => ({ key, value }))
+    : [{ key: 'sub', value: '' }]
 }
 
 export const EditOIDCTrustPolicyModal = ({
@@ -59,8 +60,8 @@ export const EditOIDCTrustPolicyModal = ({
     policy.token_duration_seconds ? String(policy.token_duration_seconds) : ''
   )
   const [enabled, setEnabled] = useState(policy.enabled ?? true)
-  const [claimConditions, setClaimConditions] = useState<ClaimCondition[]>(
-    () => conditionsToRows(policy.claim_conditions)
+  const [claimConditions, setClaimConditions] = useState<ClaimCondition[]>(() =>
+    conditionsToRows(policy.claim_conditions)
   )
 
   const trimmedName = name.trim()
@@ -203,8 +204,8 @@ export const EditOIDCTrustPolicyModal = ({
         <div className="flex flex-col gap-2">
           <Label>Claim conditions</Label>
           <Text variant="subtext" theme="neutral">
-            All conditions must match the presented token. A `sub` condition
-            is required.
+            All conditions must match the presented token. A `sub` condition is
+            required.
           </Text>
           <div className="flex flex-col gap-2">
             {claimConditions.map((condition, index) => (

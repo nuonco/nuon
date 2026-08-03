@@ -5067,7 +5067,7 @@ func (a *Client) CreateSlackOrgLink(params *CreateSlackOrgLinkParams, authInfo r
 /*
 CreateStaticToken creates a static API token for your org
 
-Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, or org_read_only) and defaults to org_read_only.
+Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, org_read_only, or org_builder) and defaults to org_read_only.
 */
 func (a *Client) CreateStaticToken(params *CreateStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateStaticTokenCreated, error) {
 	// NOTE: parameters are not validated before sending

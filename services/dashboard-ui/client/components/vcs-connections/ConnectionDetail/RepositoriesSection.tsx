@@ -156,8 +156,9 @@ export const RepositoriesSection = ({
                       {repo.description}
                     </Text>
                   )}
-                  {oidcEnabled && (
+                  {oidcEnabled && repo.default_branch && (
                     <ManageRepoOIDCButton
+                      defaultBranch={repo.default_branch}
                       repoFullName={repo.full_name}
                       size="sm"
                       className="w-fit"
