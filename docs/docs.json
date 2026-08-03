@@ -199,6 +199,7 @@
               "guides/github-actions",
               "guides/webhooks",
               "guides/triggers",
+              "guides/export-runner-audit-logs",
               "guides/component-health",
               "guides/slack",
               "guides/ai-and-apps"

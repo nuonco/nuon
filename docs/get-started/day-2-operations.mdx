@@ -15,6 +15,14 @@ Each workflow run's logs and step state are visible in the dashboard, CLI, and T
 
 [How it works → Workflows](/concepts/workflows)
 
+## Audit Logs
+
+AWS install runners can forward deployment, action workflow, and sandbox audit events directly to a
+customer-controlled OTLP logging backend. Only Nuon audit events are forwarded, not application logs or general
+runner logs.
+
+[How to → Export Runner Audit Logs](/guides/export-runner-audit-logs)
+
 ## Actions
 
 An action is a custom script you run on a live install. Define it in TOML, point it at a repo, set environment variables. It runs inside the customer's account — on a cron, on a lifecycle event (`post-deploy-component`, `pre-reprovision`, etc.), on a manual trigger, or as a one-off from the dashboard.
