@@ -45,8 +45,8 @@ func extractTablesAndKeys(data map[string]any, parentPath []string, doc *TomlDoc
 			// Recursively extract nested keys
 			extractTablesAndKeys(valueMap, currentPath, doc)
 		} else if valueSlice, ok := value.([]any); ok {
-			// Check if it's an array of tables
-			allMaps := true
+			// An empty array is a value, not an array of tables
+			allMaps := len(valueSlice) > 0
 			for _, item := range valueSlice {
 				if _, isMap := item.(map[string]any); !isMap {
 					allMaps = false
