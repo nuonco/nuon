@@ -279,7 +279,6 @@ export const RunRunbookModal = ({
           </form>
         ) : null}
 
-        {/* Steps selection page — toggle which steps run. */}
         {showStepsSummary ? (
           <Expand
             id="runbook-select-steps"
@@ -320,7 +319,6 @@ export const RunRunbookModal = ({
           </Expand>
         ) : null}
 
-        {/* Confirm page — inputs summary + steps summary. */}
         {showInputsSummary ? (
           <>
             <Expand

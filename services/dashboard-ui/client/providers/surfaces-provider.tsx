@@ -13,7 +13,6 @@ import { type IModal } from '@/components/surfaces/Modal'
 
 const uuid = () => crypto.randomUUID()
 
-// Panel types
 type TPanelEl = ReactElement<IPanel & { ref?: React.Ref<HTMLDivElement> }>
 type TPanels = {
   id: string
@@ -22,7 +21,6 @@ type TPanels = {
   isVisible: boolean
 }[]
 
-// Modal types
 type TModalEl = ReactElement<IModal & { ref?: React.Ref<HTMLDivElement> }>
 type TModals = {
   id: string
@@ -47,7 +45,6 @@ export const SurfacesContext = createContext<TSurfacesContext | undefined>(
 )
 
 export function SurfacesProvider({ children }: { children: ReactNode }) {
-  // Panels
   const [panels, setPanels] = useState<TPanels>([])
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -107,7 +104,6 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
     }, 160)
   }, [navigate])
 
-  // Modals
   const [modals, setModals] = useState<TModals>([])
 
   const addModal = useCallback(
@@ -158,7 +154,6 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-      {/* Panels */}
       {panels.map((p) => (
         <React.Fragment key={p.id}>
           {React.isValidElement(p.content)
@@ -174,7 +169,6 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
         </React.Fragment>
       ))}
       <div id="panel-root" />
-      {/* Modals */}
       {modals.map((m) => (
         <React.Fragment key={m.id}>
           {React.isValidElement(m.content)

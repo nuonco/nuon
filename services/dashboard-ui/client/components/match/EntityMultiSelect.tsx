@@ -55,7 +55,6 @@ export const EntityMultiSelect = ({
   const needsApp = kind === 'components' || kind === 'actions' || kind === 'app_branches'
   const fetchEnabled = !needsApp || !!appId
 
-  // Search results for the current `search` query.
   const searchQuery = useQuery({
     queryKey: ['match-picker-search', kind, org.id, appId ?? '', search],
     queryFn: () => fetchEntities({ kind, orgId: org.id, appId, q: search }),
@@ -229,9 +228,6 @@ const entityPickerLabel = (id: string, name: string): string => {
   return `${name} (${id})`
 }
 
-// fetchEntities is the single place this component reaches for entity
-// listings. Installs are org-scoped; components and actions are scoped to
-// the supplied `appId` (callers gate rendering until one is picked).
 const fetchEntities = async ({
   kind,
   orgId,
@@ -278,5 +274,4 @@ const fetchEntities = async ({
   }
 }
 
-// Re-export so MatchPicker stories / consumers can render the helper.
 export { entityPickerLabel }

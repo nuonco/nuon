@@ -18,7 +18,6 @@ export const InitPylonChat = ({ PYLON_APP_ID }: { PYLON_APP_ID: string }) => {
       },
     }
 
-    // Only load the widget script once
     if (scriptLoadedRef.current) return
     scriptLoadedRef.current = true
 

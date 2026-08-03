@@ -25,7 +25,6 @@ export const Pagination = ({
   const [searchParams] = useSearchParams()
   const { isPaginating, setIsPaginating } = usePagination()
 
-  // Helper to update the offset param, preserving others
   const buildPathWithOffset = (newOffset: number) => {
     const params = new URLSearchParams(searchParams.toString())
     if (newOffset === 0) {
@@ -36,7 +35,6 @@ export const Pagination = ({
     return `${pathname}?${params.toString()}`
   }
 
-  // Handlers
   const handlePrev = () => {
     setIsPaginating(true)
     startTransition(() => {

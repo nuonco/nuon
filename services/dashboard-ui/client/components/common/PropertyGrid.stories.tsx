@@ -218,7 +218,7 @@ export const CustomGridTemplate = () => (
       { applicationName: 'API Service', deploymentStatus: 'Stopped', lastDeploy: '2024-01-08' },
       { applicationName: 'Worker', deploymentStatus: 'Running', lastDeploy: '2024-01-09' }
     ]}
-    gridTemplate="auto auto 1fr"  // Application Name gets 2 parts, others get 1 part each
+    gridTemplate="auto auto 1fr"
   />
 )
 
@@ -229,6 +229,6 @@ export const BalancedColumns = () => (
       { applicationName: 'API Service', deploymentStatus: 'Stopped', lastDeploy: '2024-01-08' },
       { applicationName: 'Long Application Name Here', deploymentStatus: 'Running', lastDeploy: '2024-01-09' }
     ]}
-    gridTemplate="minmax(150px, 2fr) minmax(100px, 1fr) minmax(100px, 1fr)"  // More control over min/max widths
+    gridTemplate="minmax(150px, 2fr) minmax(100px, 1fr) minmax(100px, 1fr)"
   />
 )

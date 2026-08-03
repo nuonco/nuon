@@ -16,7 +16,6 @@ export const AdminSection = ({
 }: AdminSectionProps) => {
   return (
     <div className="space-y-6">
-      {/* Section Header */}
       <div className="flex flex-col space-y-2">
         <Text variant="h3" weight="strong">{title}</Text>
         {subtitle && (
@@ -31,7 +30,6 @@ export const AdminSection = ({
         )}
       </div>
       
-      {/* Section Content */}
       <div className="space-y-6">
         {children}
       </div>

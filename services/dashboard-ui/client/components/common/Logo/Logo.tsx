@@ -19,7 +19,6 @@ const LogoBase = ({
   isSidebarOpen,
   variant = 'system',
 }: ILogoBase) => {
-  // Sidebar mode may animate logo or text
   const LOGO_LIGHT_CLASSES = cn('shrink-0', {
     'md:translate-x-[0.55rem]': sidebar && !isSidebarOpen,
     'block dark:hidden': variant === 'system',

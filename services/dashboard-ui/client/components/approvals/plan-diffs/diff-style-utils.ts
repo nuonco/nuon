@@ -5,7 +5,6 @@ import type {
   TTerraformChangeAction,
 } from '@/types'
 
-// terraform style utils
 export const TERRAFORM_ACTION_BADGE_THEME: Record<
   TTerraformChangeAction,
   TBadgeTheme
@@ -86,7 +85,6 @@ export function getTerraformActionBorderColor(
   }
 }
 
-// helm / k8s style utils
 export const HELM_ACTION_BADGE_THEME: Record<
   THelmK8sChangeAction,
   TBadgeTheme
@@ -172,7 +170,6 @@ export function getHelmActionBorderColor(action: THelmK8sChangeAction): string {
   }
 }
 
-// pulumi style utils
 export const PULUMI_ACTION_BADGE_THEME: Record<
   TPulumiChangeAction,
   TBadgeTheme

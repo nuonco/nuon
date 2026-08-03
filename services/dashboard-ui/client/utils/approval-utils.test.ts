@@ -12,7 +12,6 @@ describe('approval-utils', () => {
     })
 
     test('should handle all defined approval types', () => {
-      // Test all the approval types from the APPROVAL_TYPE record
       const approvalTypes = [
         'approve-all',
         'terraform_plan',
@@ -39,7 +38,6 @@ describe('approval-utils', () => {
     })
 
     test('should handle all defined response types', () => {
-      // Test all the response types from the RESPONSE_TYPE record
       const responseTypes = [
         'approve',
         'auto-approve',
@@ -56,7 +54,6 @@ describe('approval-utils', () => {
     })
 
     test('should return specific mappings correctly', () => {
-      // Test specific mappings that might be confusing
       expect(getApprovalResponseType('retry')).toBe('retired') // Note: "retired" not "retried"
       expect(getApprovalResponseType('auto-approve')).toBe('auto-approved')
     })

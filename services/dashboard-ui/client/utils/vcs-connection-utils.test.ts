@@ -16,7 +16,6 @@ describe('vcs-connection-utils', () => {
     })
 
     test('should return neutral theme for any other status', () => {
-      // Test default case with various invalid inputs
       expect(getStatusTheme('pending' as any)).toBe('neutral')
       expect(getStatusTheme('inactive' as any)).toBe('neutral')
       expect(getStatusTheme('' as any)).toBe('neutral')

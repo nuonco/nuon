@@ -9,7 +9,6 @@ import { Button } from './Button'
 import { Text } from './Text'
 import { Icon } from './Icon'
 
-// Sample data types for skeleton
 type SampleUser = {
   id: string
   name: string
@@ -28,7 +27,6 @@ type SampleApp = {
   deployedAt: string
 }
 
-// Simple columns for skeleton
 const userColumns: ColumnDef<SampleUser>[] = [
   {
     accessorKey: 'name',
@@ -85,7 +83,6 @@ const appColumns: ColumnDef<SampleApp>[] = [
   },
 ]
 
-// Two column layout for comparison
 const twoColumns: ColumnDef<SampleUser>[] = [
   {
     accessorKey: 'name',
@@ -99,7 +96,6 @@ const twoColumns: ColumnDef<SampleUser>[] = [
   },
 ]
 
-// Many columns layout
 const manyColumns: ColumnDef<SampleUser>[] = [
   {
     accessorKey: 'name',

@@ -1,6 +1,5 @@
 import type { TIconVariant } from '@/components/common/Icon'
 
-// fetch wrapper types
 export type TAPIError = {
   description: string
   error: string
@@ -28,7 +27,6 @@ export type TPaginationParams = {
   limit?: number | string
 }
 
-// theme types
 export type TTheme =
   | 'default'
   | 'neutral'
@@ -38,7 +36,6 @@ export type TTheme =
   | 'brand'
   | 'error'
 
-// page nav link types
 export type TNavLink = {
   badge?: boolean
   iconVariant?: TIconVariant
@@ -64,7 +61,6 @@ export type TNavAction = {
 
 export type TNavItem = TNavLink | TNavSectionHeader | TNavAction
 
-// UI variant types
 export type TEmptyVariant =
   | '404'
   | 'actions'
@@ -75,14 +71,12 @@ export type TEmptyVariant =
   | 'search'
   | 'table'
 
-// Key value type
 export type TKeyValue = {
   key: string
   value: string
   type?: string
 }
 
-// Terraform plan types
 export type TTerraformChangeAction =
   | 'create'
   | 'update'
@@ -148,7 +142,6 @@ export type TTerraformPlan = {
   }
 }
 
-// Pulumi plan types
 export type TPulumiChangeAction =
   | 'create'
   | 'update'
@@ -160,7 +153,6 @@ export type TPulumiChangeAction =
   | 'read'
   | 'refresh'
 
-// Helm & K8s plan types
 export type THelmK8sChangeAction =
   | 'add'
   | 'added'
@@ -249,10 +241,8 @@ export type THelmPlan = {
   }[]
 }
 
-// cloud platform
 export type TCloudPlatform = 'aws' | 'azure' | 'gcp' | 'unknown'
 
-// nuon version
 export type TNuonVersion = {
   api: {
     git_ref: string
@@ -265,7 +255,6 @@ export type TNuonVersion = {
 
 export type TAPIHealth = { status: 'ok' | 'degraded'; degraded: string[] }
 
-// User interface for authentication
 export interface IUser {
   email?: string
   name?: string

@@ -5,12 +5,10 @@ import { cn } from '@/utils/classnames'
 import { kebabToWords, toSentenceCase } from '@/utils/string-utils'
 import { getStatusTheme, getStatusIconVariant } from '@/utils/status-utils'
 
-// Status type and variant
 export type TStatusTheme = TTheme
 export type TStatusType = string | 'success' | 'error'
 type TStatusVariant = 'default' | 'badge' | 'timeline'
 
-// Classes for variants
 const VARIANT_CLASSES: Record<TStatusVariant, string> = {
   default:
     'text-[12px] font-sans font-strong leading-[17px] tracking-[-0.2px] flex items-center gap-1.5 shrink-0 grow-0 text-cool-grey-950 dark:text-white',
@@ -20,7 +18,6 @@ const VARIANT_CLASSES: Record<TStatusVariant, string> = {
     'text-[12px] font-sans font-strong leading-[17px] tracking-[-0.2px] flex items-center gap-1.5 shrink-0 grow-0 text-cool-grey-950 dark:text-white',
 }
 
-// Classes for indicator by theme and variant
 const INDICATOR_BASE =
   'flex items-center justify-center rounded-full shrink-0 grow-0'
 const INDICATOR_SIZE: Record<TStatusVariant, string> = {
@@ -67,7 +64,7 @@ const INDICATOR_THEME_CLASSES: Record<
 const STATUS_TEXT_CLASSES = {
   timeline: 'hidden',
   default: '',
-  badge: '', // "block text-nowrap truncate max-w-16",
+  badge: '',
 }
 
 export interface IStatus
