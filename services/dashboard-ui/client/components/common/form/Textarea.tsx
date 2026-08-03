@@ -51,31 +51,26 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
 
     const currentValue = value !== undefined ? value : internalValue
 
-    // Auto-resize functionality
     useEffect(() => {
       if (autoResize && textareaRef.current) {
         const textarea = textareaRef.current
-        
+
         const adjustHeight = () => {
           // Reset height to calculate scrollHeight properly
           textarea.style.height = 'auto'
-          
-          // Calculate line height and row constraints
+
           const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight)
           const minHeight = lineHeight * minRows
           const maxHeight = lineHeight * maxRows
-          
-          // Set height based on content, respecting min/max constraints
+
           const newHeight = Math.min(Math.max(textarea.scrollHeight, minHeight), maxHeight)
           textarea.style.height = `${newHeight}px`
-          
-          // Show scrollbar if content exceeds maxRows
+
           textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden'
         }
-        
+
         adjustHeight()
-        
-        // Adjust on content changes
+
         const handleInput = () => adjustHeight()
         textarea.addEventListener('input', handleInput)
         
@@ -83,44 +78,39 @@ export const Textarea = forwardRef<HTMLTextAreaElement, ITextarea>(
       }
     }, [autoResize, minRows, maxRows, currentValue])
 
-    // Monitor validation state
     useEffect(() => {
       if (required && textareaRef.current) {
         const textarea = textareaRef.current
-        
+
         const checkValidity = () => {
           // Only show invalid state after user blur or form submission attempt
           if (hasBlurred) {
             setIsInvalid(!textarea.checkValidity())
           }
         }
-        
-        // Check validity on value changes (only if already blurred)
+
         if (hasBlurred) {
           checkValidity()
         }
-        
-        // Listen for validation events (form submission attempts)
+
         const handleInvalid = (e: Event) => {
           e.preventDefault() // Prevent default browser validation message
           setHasBlurred(true)
           setIsInvalid(true)
           setShowValidationMessage(true)
         }
-        
+
         const handleInput = () => {
           if (hasBlurred) {
             checkValidity()
-            // Hide validation message when user enters valid input
             if (textarea.checkValidity()) {
               setShowValidationMessage(false)
             }
           }
         }
-        
+
         const handleBlur = () => {
           setHasBlurred(true)
-          // Check validity after blur
           if (!textarea.checkValidity()) {
             setIsInvalid(true)
             setShowValidationMessage(true)

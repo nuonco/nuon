@@ -9,7 +9,6 @@ export type TStatusTheme =
   | 'brand'
 
 const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
-  // Success
   active: 'success',
   ok: 'success',
   finished: 'success',
@@ -19,7 +18,6 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   approved: 'success',
   success: 'success',
 
-  // Error
   failed: 'error',
   error: 'error',
   bad: 'error',
@@ -33,7 +31,6 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   policy_failed: 'error',
   'failed-pending-retry': 'error',
 
-  // Warn
   'approval-denied': 'warn',
   'approval-awaiting': 'warn',
   cancelled: 'warn',
@@ -46,7 +43,6 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   offline: 'warn',
   degraded: 'warn',
 
-  // Info
   executing: 'info',
   waiting: 'info',
   started: 'info',
@@ -67,7 +63,6 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   reprovisioning: 'info',
   progressing: 'info',
 
-  // Neutral
   noop: 'neutral',
   'shut-down': 'neutral',
   unknown: 'neutral',
@@ -80,13 +75,11 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   deprovisioned: 'warn',
   skeleton: 'neutral',
 
-  // Brand
   special: 'brand',
   brand: 'brand',
 }
 
 const STATUS_ICON_MAP: Record<string, TIconVariant> = {
-  // Success
   active: 'CheckCircleIcon',
   ok: 'CheckCircleIcon',
   finished: 'CheckCircleIcon',
@@ -96,7 +89,6 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   approved: 'CheckCircleIcon',
   success: 'CheckCircleIcon',
 
-  // Error
   failed: 'XCircleIcon',
   error: 'XCircleIcon',
   bad: 'XCircleIcon',
@@ -110,7 +102,6 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   policy_failed: 'XCircleIcon',
   'failed-pending-retry': 'XCircleIcon',
 
-  // Warn
   'approval-denied': 'WarningIcon',
   'approval-awaiting': 'WarningIcon',
   cancelled: 'WarningIcon',
@@ -118,7 +109,6 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   warn: 'WarningIcon',
   degraded: 'WarningIcon',
 
-  // Info
   executing: 'Loading',
   waiting: 'Loading',
   started: 'Loading',
@@ -136,7 +126,6 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   reprovisioning: 'Loading',
   progressing: 'Loading',
 
-  // Neutral
   noop: 'ClockCountdownIcon',
   inactive: 'WarningIcon',
   disabled: 'ProhibitIcon',
@@ -146,17 +135,14 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   'No build': 'ClockCountdownIcon',
   deprovisioned: 'WarningIcon',
 
-  // skipped
   'auto-skipped': 'MinusCircleIcon',
   'user-skipped': 'MinusCircleIcon',
   retried: 'RepeatIcon',
 
-  // Brand
   special: 'ProhibitIcon',
   'not-attempted': 'ProhibitIcon',
   discarded: 'ProhibitIcon',
 
-  // skeleton
   skeleton: 'none' as TIconVariant,
 }
 

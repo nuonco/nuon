@@ -174,7 +174,6 @@ describe('Text component', () => {
     )
     expect(screen.getByText('Mono H3')).toHaveClass('tracking-[-0.2px]')
 
-    // Should not apply special tracking for non-heading variants
     rerender(
       <Text family="mono" variant="body">
         Mono body
@@ -202,7 +201,7 @@ describe('Text component', () => {
 
     const element = screen.getByText('Custom styled text')
     expect(element).toHaveClass('custom-class')
-    expect(element).toHaveClass('font-sans') // Should still have default classes
+    expect(element).toHaveClass('font-sans')
   })
 
   test('handles all heading levels', () => {

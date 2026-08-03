@@ -16,13 +16,8 @@ const Story = ({ initial }: { initial?: SubscriptionMatch }) => {
   )
 }
 
-// Default: org-wide subscription. value is undefined; the "Everything in
-// this org" radio is checked and no kind / predicate / entity controls
-// are rendered.
 export const Default = () => <Story />
 
-// Preselected installs by ids — landing on the modal with a per-install
-// scope already configured (mirrors the dashboard's edit flow).
 export const PreselectedInstallIds = () => (
   <Story
     initial={{
@@ -31,8 +26,6 @@ export const PreselectedInstallIds = () => (
   />
 )
 
-// Preselected components by labels — labels textinput is pre-filled with
-// the canonical k=v,k=v string.
 export const PreselectedComponentsByLabels = () => (
   <Story
     initial={{
@@ -43,8 +36,6 @@ export const PreselectedComponentsByLabels = () => (
   />
 )
 
-// Preselected installs by exclusion only — "everything except env=stage".
-// Include textinput stays empty, exclude textinput is pre-filled.
 export const PreselectedInstallsExcludeOnly = () => (
   <Story
     initial={{
@@ -55,8 +46,6 @@ export const PreselectedInstallsExcludeOnly = () => (
   />
 )
 
-// Preselected installs by both include + exclude — production tier=critical
-// installs except the canary ones.
 export const PreselectedInstallsIncludeAndExclude = () => (
   <Story
     initial={{
@@ -70,8 +59,6 @@ export const PreselectedInstallsIncludeAndExclude = () => (
   />
 )
 
-// Preselected actions with empty TargetMatch{} — predicate radio lands on
-// "Any" so toggling kinds doesn't surprise the user.
 export const PreselectedActionsAny = () => (
   <Story initial={{ actions: {} }} />
 )
@@ -84,7 +71,6 @@ export const PreselectedComponentIds = () => (
   <Story initial={{ components: { ids: ['comp_a', 'comp_b'] } }} />
 )
 
-// Disabled — every control is greyed out and non-interactive.
 export const Disabled = () => (
   <div className="max-w-lg p-4">
     <MatchPicker

@@ -1,5 +1,4 @@
 export const AWS_REGIONS = [
-  // usa
   {
     helpText: "us-east-1",
     iconVariant: "flag-US",
@@ -25,7 +24,6 @@ export const AWS_REGIONS = [
     value: "us-west-2",
   },
 
-  // africa
   {
     helpText: "af-south-1",
     iconVariant: "flag-ZA",
@@ -33,7 +31,6 @@ export const AWS_REGIONS = [
     value: "af-south-1",
   },
 
-  // asia
   {
     helpText: "ap-east-1",
     iconVariant: "flag-HK",
@@ -95,7 +92,6 @@ export const AWS_REGIONS = [
     value: "ap-northeast-1",
   },
 
-  // canada
   {
     helpText: "ca-central-1",
     iconVariant: "flag-CA",
@@ -109,7 +105,6 @@ export const AWS_REGIONS = [
     value: "ca-west-1",
   },
 
-  // europe
   {
     helpText: "eu-central-1",
     iconVariant: "flag-DE",
@@ -159,7 +154,6 @@ export const AWS_REGIONS = [
     value: "eu-central-2",
   },
 
-  // israel
   {
     helpText: "il-central-1",
     iconVariant: "flag-IL",
@@ -167,7 +161,6 @@ export const AWS_REGIONS = [
     value: "il-central-1",
   },
 
-  // middle east
   {
     helpText: "me-south-1",
     iconVariant: "flag-BH",
@@ -181,7 +174,6 @@ export const AWS_REGIONS = [
     value: "me-central-1",
   },
 
-  // south america
   {
     helpText: "sa-east-1",
     iconVariant: "flag-BR",
@@ -189,7 +181,6 @@ export const AWS_REGIONS = [
     value: "sa-east-1",
   },
 
-  // gov cloud
   {
     helpText: "us-gov-east-1",
     iconVariant: "flag-US",

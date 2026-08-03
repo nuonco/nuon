@@ -75,7 +75,6 @@ export const TARGET_KIND_LABELS: Record<TargetKind, string> = {
   app_branches: 'App branches',
 }
 
-// Singular forms for prose like "Any install" / "Match by".
 export const TARGET_KIND_LABELS_SINGULAR: Record<TargetKind, string> = {
   installs: 'install',
   components: 'component',
@@ -83,7 +82,6 @@ export const TARGET_KIND_LABELS_SINGULAR: Record<TargetKind, string> = {
   app_branches: 'app branch',
 }
 
-// Plural forms (lowercase) for prose like "Search installs", "Match every component in this org".
 export const TARGET_KIND_LABELS_PLURAL: Record<TargetKind, string> = {
   installs: 'installs',
   components: 'components',

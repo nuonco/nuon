@@ -16,7 +16,6 @@ import {
   getPulumiActionBorderColor,
 } from './diff-style-utils'
 
-// Terraform plan actions
 const TERRAFORM_ACTIONS: {
   value: TTerraformChangeAction
   label: string
@@ -29,7 +28,6 @@ const TERRAFORM_ACTIONS: {
   { value: 'no-op', label: 'No-op' },
 ]
 
-// Other helm/k8s actions
 const HELM_DIFF_ACTIONS: {
   value: string
   label: string
@@ -39,7 +37,6 @@ const HELM_DIFF_ACTIONS: {
   { value: 'changed', label: 'Changed' },
 ]
 
-// Pulumi actions
 const PULUMI_ACTIONS: {
   value: string
   label: string
@@ -82,15 +79,12 @@ export function DiffFilter({
   diffType = 'terraform',
 }: IDiffFilter) {
   const getButtonText = (action: string) => {
-    // If only this action is selected, show "Reset"
     if (selectedActions.size === 1 && selectedActions.has(action)) {
       return 'Reset'
     }
-    // Otherwise, show "Only"
     return 'Only'
   }
 
-  // Choose which actions to display based on diffType
   const actionOptions =
     diffType === 'terraform'
       ? TERRAFORM_ACTIONS

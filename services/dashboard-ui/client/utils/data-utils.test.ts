@@ -110,7 +110,7 @@ describe('data-utils', () => {
 
     test('should handle objects with circular references', () => {
       const obj: any = { name: 'test' }
-      obj.circular = obj // Create circular reference
+      obj.circular = obj
 
       const result = objectToKeyValueArray(obj)
 

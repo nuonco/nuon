@@ -153,7 +153,6 @@ export const Button = forwardRef<
           </Link>
         )
       }
-      // External link
       return (
         <a
           ref={ref as React.Ref<HTMLAnchorElement>}
@@ -168,7 +167,6 @@ export const Button = forwardRef<
       )
     }
 
-    // Regular button
     return (
       <button
         ref={ref as React.Ref<HTMLButtonElement>}

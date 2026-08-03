@@ -1,7 +1,6 @@
 import { components } from '@/types/nuon-oapi-v3'
 import type { Interests as TInterests } from '@/components/interests/types'
 
-// app branches
 export type TAppBranch = components['schemas']['app.AppBranch']
 export type TAppBranchConfig = components['schemas']['app.AppBranchConfig']
 export type TAppBranchInstallGroup =
@@ -11,7 +10,6 @@ export type TCreateAppBranchRequest =
   components['schemas']['service.CreateAppBranchRequest']
 export type TVCSBranch = { name: string }
 
-// app
 export type TApp = components['schemas']['app.App']
 export type TAppConfig = components['schemas']['app.AppConfig']
 export type TAppInputConfig = components['schemas']['app.AppInputConfig']
@@ -320,7 +318,6 @@ export type TTriggerRule = {
   plan_only?: boolean
 }
 
-// policy reports
 export type TPolicyReport = components['schemas']['app.PolicyReport']
 export type TPolicyReportOwnerType =
   components['schemas']['app.PolicyReportOwnerType']
@@ -328,7 +325,6 @@ export type TPolicyResult = components['schemas']['app.PolicyResult']
 export type TPolicyViolation = components['schemas']['app.PolicyViolation']
 export type TPolicyInputRef = components['schemas']['app.PolicyInputRef']
 
-// policy analytics
 export type TPolicyAnalyticsSummary =
   components['schemas']['service.PolicyAnalyticsSummary']
 export type TPolicyAnalyticsTimeseries =
@@ -340,20 +336,17 @@ export type TPolicyAnalyticsBreakdown =
   components['schemas']['service.PolicyAnalyticsBreakdown']
 export type TBreakdownEntry = components['schemas']['service.BreakdownEntry']
 
-// component
 export type TComponent = components['schemas']['app.Component']
 export type TComponentConfig =
   components['schemas']['app.ComponentConfigConnection']
 export type TComponentType = components['schemas']['app.ComponentType']
 
-// build
 export type TComponentBuild = components['schemas']['app.ComponentBuild']
 export type TBuild = TComponentBuild & {
   org_id: string
   build_runner_job_id?: string | null
 }
 
-// org
 export type TOrg = components['schemas']['app.Org']
 export type TOrgInvite = components['schemas']['app.OrgInvite']
 export type TOrgStats = {
@@ -362,8 +355,6 @@ export type TOrgStats = {
   install_count: number
 }
 
-// webhooks
-//
 // `interests` and `match` are both stamped `swaggertype:"object"` on the
 // Go side, so the auto-generated SDK shape is a generic object. Re-cast
 // each to its hand-written mirror at the API boundary so dashboard code
@@ -384,14 +375,12 @@ export type TCreateWebhookBody = Omit<
   match?: TSubscriptionMatch
 }
 
-// oidc trust policies
 export type TOIDCTrustPolicy = components['schemas']['app.OIDCTrustPolicy']
 export type TCreateOIDCTrustPolicyBody =
   components['schemas']['service.CreateOIDCTrustPolicyRequest']
 export type TUpdateOIDCTrustPolicyBody =
   components['schemas']['service.UpdateOIDCTrustPolicyRequest']
 
-// slack
 export type TSlackInstallation = components['schemas']['app.SlackInstallation']
 export type TSlackInstallationStatus =
   components['schemas']['app.SlackInstallationStatus']
@@ -438,7 +427,6 @@ export type TSubscriptionMatch =
 
 export type TInstallSandbox = components['schemas']['app.InstallSandbox']
 
-// install
 export type TInstall = Omit<components['schemas']['app.Install'], 'sandbox'> & {
   app?: components['schemas']['app.App']
   created_by?: components['schemas']['app.Account']
@@ -526,7 +514,6 @@ export type TInstallComponentHealthTimeline = {
   transitions?: TInstallComponentHealthTransition[]
 }
 
-// composite errors
 export type TCompositeErrorSeverity =
   components['schemas']['compositeerrors.Severity']
 export type TCompositeErrorSection =
@@ -536,7 +523,6 @@ export type TCompositeErrorSectionKind =
 export type TCompositeError =
   components['schemas']['compositeerrors.CompositeErrorData']
 
-// deploys
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
   org_id: string
   composite_error?: TCompositeError
@@ -622,7 +608,6 @@ export type TInstallDeployPlan = {
   }
 }
 
-// sandbox
 export type TSandboxType = 'terraform' | 'pulumi'
 export type TPulumiRuntime = 'go' | 'nodejs' | 'python'
 
@@ -641,7 +626,6 @@ export type TSandboxRun = Omit<
   app_sandbox_config?: TSandboxConfig
 }
 
-// vcs configs
 export type TVCSConnection = components['schemas']['app.VCSConnection']
 export type TVCSGitHub = components['schemas']['app.ConnectedGithubVCSConfig']
 export type TVCSGit = components['schemas']['app.PublicGitVCSConfig']
@@ -710,10 +694,8 @@ export type TVCSWebhookSubscription = {
   status?: TCompositeStatus
 }
 
-// OTEL logs
 export type TOTELLog = components['schemas']['app.OtelLogRecord']
 
-// runner
 export type TRunnerGroup = components['schemas']['app.RunnerGroup']
 export type TRunnerGroupSettings =
   components['schemas']['app.RunnerGroupSettings']
@@ -736,7 +718,6 @@ export type TRunnerProcess = components['schemas']['app.RunnerProcess'] & {
 export type TRunnerProcessShutdown =
   components['schemas']['app.RunnerProcessShutdown']
 
-// log stream
 export type TLogStream = components['schemas']['app.LogStream']
 
 // otel spans (Phase 4 spans endpoint — defined manually until ctl-api ships
@@ -778,17 +759,13 @@ export type TInstallActionRunStep =
   components['schemas']['app.InstallActionWorkflowRunStep']
 export type TInstallAction = components['schemas']['app.InstallActionWorkflow']
 
-// App / Install Readme
 export type TReadme = components['schemas']['service.Readme']
 
-// Waitlist
 export type TWaitlist = components['schemas']['app.Waitlist']
 
-// User / Account
 export type TAccount = components['schemas']['app.Account'] & { name?: string }
 export type TInvite = components['schemas']['app.OrgInvite']
 
-// API tokens
 export interface TStaticToken {
   id: string
   name?: string
@@ -813,7 +790,6 @@ export interface TCreateStaticTokenResponse {
   api_token?: string
 }
 
-// Roles
 export interface TRoleInfo {
   role_type: string
   title: string
@@ -821,7 +797,6 @@ export interface TRoleInfo {
   applies_to: string[]
 }
 
-// Service accounts
 export interface TCreateServiceAccountBody {
   name: string
   role: string
@@ -844,7 +819,6 @@ export interface TCreateServiceAccountTokenResponse {
   token: string
 }
 
-// User Journey (Enhanced with completion tracking and metadata)
 export interface TUserJourneyStep {
   name: string
   title: string
@@ -861,7 +835,6 @@ export interface TUserJourney {
   steps: TUserJourneyStep[]
 }
 
-// install workflows
 export type TInstallWorkflow = components['schemas']['app.Workflow']
 export type TInstallWorkflowStep = components['schemas']['app.WorkflowStep']
 export type TWorkflow = components['schemas']['app.Workflow']
@@ -894,11 +867,9 @@ export type TWorkflowStepApprovalType =
   components['schemas']['app.WorkflowStepApprovalType']
 export type TWorkflowResponse = components['schemas']['app.WorkflowResponse']
 
-// app secrets
 export type TAppSecretConfig = components['schemas']['app.AppSecretConfig']
 export type TAppSecretsConfig = components['schemas']['app.AppSecretsConfig']
 
-// app / install stack
 export type TInstallStack = components['schemas']['app.InstallStack']
 export type TInstallStackVersion =
   components['schemas']['app.InstallStackVersion']
@@ -908,14 +879,12 @@ export type TInstallStackOutputs =
   components['schemas']['app.InstallStackOutputs']
 export type TAppStackConfig = components['schemas']['app.AppStackConfig']
 
-// install app config versions
 export type TInstallAppConfigVersion =
   components['schemas']['app.InstallAppConfigVersion']
 
 export type TInstallAppBranchConnection =
   components['schemas']['app.InstallAppBranchConnection']
 
-// install config versions (from git sync)
 export type TInstallConfigVersion = {
   id: string
   created_at: string
@@ -961,18 +930,15 @@ export type TConfigDiffNode = {
   children?: TConfigDiffNode[]
 }
 
-// install group runs
 export type TInstallGroupRun = components['schemas']['app.InstallGroupRun']
 export type TInstallGroupRunInstall =
   components['schemas']['app.InstallGroupRunInstall']
 
-// api version
 export type TAPIVersion = {
   ui: { version: string; git_ref: string }
   api: { version: string; git_ref: string }
 }
 
-// terraform workspaces
 export type TTerraformWorkspaceState =
   components['schemas']['app.TerraformWorkspaceStateJSON']
 export type TTerraformWorkspaceLock =
@@ -1018,17 +984,14 @@ export type TTerraformState = {
   }
 }
 
-// available roles
 export type TAvailableRole = components['schemas']['service.AvailableRole']
 export type TAvailableRolesResponse =
   components['schemas']['service.AvailableRolesResponse']
 export type TOperationType = components['schemas']['app.OperationType']
 export type TPrincipalType = 'component' | 'sandbox' | 'action'
 
-// composite status
 export type TCompositeStatus = components['schemas']['app.CompositeStatus']
 
-// onboarding
 export type TOnboarding = components['schemas']['app.Onboarding']
 export type TExampleApp = components['schemas']['service.ExampleApp']
 export type TCompleteOrganizationStepRequest =
@@ -1038,7 +1001,6 @@ export type TCompleteYourStackStepRequest =
 export type TCompleteInstallStepRequest =
   components['schemas']['service.CompleteInstallStepRequest']
 
-// auth
 export type TMe = {
   id: string
   email: string
@@ -1051,5 +1013,4 @@ export type TMe = {
 // TODO(nnnnat): use the generated type once it is ready
 // components['schemas']['service.AuthMeResponse']
 
-// general
 export type TCLIConfig = components['schemas']['service.CLIConfig']

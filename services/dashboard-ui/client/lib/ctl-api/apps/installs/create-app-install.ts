@@ -32,7 +32,7 @@ export type TCreateAppInstallBody = {
     }>
   }
   metadata?: {
-    managed_by: 'nuon/dashboard' // 'nuon/cli/config'
+    managed_by: 'nuon/dashboard'
   }
   labels?: Record<string, string>
   name: string

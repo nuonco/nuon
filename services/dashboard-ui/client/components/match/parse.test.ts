@@ -47,7 +47,6 @@ describe('parseLabelsQuery', () => {
   })
 
   test('empty key after trim is skipped (treated as invalid)', () => {
-    // `=value` has an empty key — drop it.
     expect(parseLabelsQuery('=foo, env=prod')).toEqual({ env: 'prod' })
   })
 

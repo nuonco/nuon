@@ -47,7 +47,6 @@ const WORKFLOW_BADGE_MAP: Record<
 
 export function getWorkflowBadge(workflow: TWorkflow): TBadgeCfg {
   const status = workflow?.status?.status
-  // fallback to empty object if status not found
   return status && WORKFLOW_BADGE_MAP[status] ? WORKFLOW_BADGE_MAP[status] : {}
 }
 
@@ -139,7 +138,6 @@ function getStepOutcomeBadge(
     return WORKFLOW_BADGE_MAP[checkType === 'stale-plan' ? 'stale-plan' : 'superseded']
   }
 
-  // Show retryable/skippable hints for failed steps awaiting user action.
   if (status === 'failed-pending-retry' || (status === 'error' && step?.retryable && !step?.retried && !step?.status?.metadata?.retries_exhausted)) {
     const hints: string[] = []
     if (step?.retryable) hints.push('retryable')

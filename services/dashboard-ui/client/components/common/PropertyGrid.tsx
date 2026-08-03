@@ -15,7 +15,7 @@ export interface IPropertyGrid<T = Record<string, any>> extends React.HTMLAttrib
   values: T[]
   columns?: IPropertyGridColumn<T>[]
   emptyStateProps?: IEmptyState
-  gridTemplate?: string  // Custom grid-template-columns CSS value
+  gridTemplate?: string
   align?: 'start' | 'center'
 }
 
@@ -28,7 +28,6 @@ export const PropertyGrid = <T extends Record<string, any>>({
   emptyStateProps = { variant: 'table', size: 'sm' },
   ...props
 }: IPropertyGrid<T>) => {
-  // Auto-detect columns from first object if not provided
   const detectedColumns: IPropertyGridColumn<T>[] = React.useMemo(() => {
     if (columns) return columns
     
@@ -43,13 +42,12 @@ export const PropertyGrid = <T extends Record<string, any>>({
 
   const gridColumns = detectedColumns.length
   
-  // Use custom gridTemplate or create smart defaults
   const gridColsClass = gridTemplate || (
     gridColumns === 1
       ? '1fr'
-      : gridColumns === 2 
-      ? 'max-content 1fr'  // Two columns: first fits content, second expands (good for key-value pairs)
-      : `repeat(${gridColumns}, minmax(120px, 1fr))`  // Multiple columns: all flexible with 120px minimum
+      : gridColumns === 2
+      ? 'max-content 1fr'
+      : `repeat(${gridColumns}, minmax(120px, 1fr))`
   )
 
   if (!values?.length) {
@@ -64,7 +62,6 @@ export const PropertyGrid = <T extends Record<string, any>>({
       }}
       {...props}
     >
-      {/* Header row */}
       {detectedColumns.map((column, index) => (
         <Text
           key={String(column.key)}
@@ -80,7 +77,6 @@ export const PropertyGrid = <T extends Record<string, any>>({
         </Text>
       ))}
 
-      {/* Data rows */}
       {values.map((item, itemIndex) => {
         const isLast = itemIndex === values.length - 1
 
@@ -133,12 +129,11 @@ export const PropertyGridSkeleton = ({
   count?: number
   columns?: number 
 }) => {
-  // Use same flexible grid logic as main component
   const gridColsClass = columns === 1
     ? '1fr'
-    : columns === 2 
-    ? 'max-content 1fr'  // Two columns: first fits content, second expands
-    : `repeat(${columns}, minmax(120px, 1fr))`  // Multiple columns: all flexible with 120px minimum
+    : columns === 2
+    ? 'max-content 1fr'
+    : `repeat(${columns}, minmax(120px, 1fr))`
 
   return (
     <div
@@ -147,7 +142,6 @@ export const PropertyGridSkeleton = ({
         gridTemplateColumns: gridColsClass
       }}
     >
-      {/* Header skeleton */}
       {Array.from({ length: columns }).map((_, columnIndex) => (
         <div 
           key={`header-${columnIndex}`}
@@ -157,7 +151,6 @@ export const PropertyGridSkeleton = ({
         </div>
       ))}
 
-      {/* Data skeleton rows */}
       {Array.from({ length: count }).map((_, rowIndex) => {
         const isLast = rowIndex === count - 1
 

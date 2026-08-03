@@ -23,13 +23,8 @@ const Wrapper = ({
   )
 }
 
-// New-subscription baseline — every event matches. The button summary reads
-// "All events". Click to open the modal with the All-events radio selected
-// and the checklist hidden.
 export const AllEvents = () => <Wrapper initial={allEvents()} />
 
-// "Choose specific events" mode populated with a typical four-resource set.
-// Summary chip shows the rolled-up "N events selected" count.
 export const SpecificEventsPopulated = () => (
   <Wrapper
     initial={{
@@ -74,5 +69,4 @@ export const DriftOnly = () => (
 // switches to the warn tone "No events selected" so it's obvious at a glance.
 export const EmptyWarn = () => <Wrapper initial={{ resources: {} }} />
 
-// Disabled — button is non-interactive. Useful for read-only contexts.
 export const Disabled = () => <Wrapper initial={allEvents()} disabled />

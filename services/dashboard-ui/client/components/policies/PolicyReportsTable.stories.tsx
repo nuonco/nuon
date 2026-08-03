@@ -175,7 +175,6 @@ export const ReprovisionHistory = () => (
   // each with a 'Show N earlier evaluations' toggle.
   <PolicyReportsTable
     reports={[
-      // Sandbox reprovisions
       {
         ...reportSandboxWarn,
         id: 'rpt-sb-1',
@@ -207,7 +206,6 @@ export const ReprovisionHistory = () => (
         pass_count: 1,
         policies: [passed('pol-3')],
       } as TPolicyReport,
-      // api-server deploys
       reportWithDeny,
       {
         ...reportWithDeny,
@@ -222,7 +220,6 @@ export const ReprovisionHistory = () => (
         pass_count: 2,
         policies: [passed('pol-1'), passed('pol-4')],
       } as TPolicyReport,
-      // worker deploy (single)
       reportAllPassed,
     ]}
     orgId="org-1"
