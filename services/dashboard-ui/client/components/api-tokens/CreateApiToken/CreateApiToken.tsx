@@ -19,6 +19,7 @@ export const DURATION_OPTIONS = [
 
 export const ROLE_OPTIONS = [
   { value: 'org_read_only', label: 'Read-only' },
+  { value: 'org_builder', label: 'Builder' },
   { value: 'org_admin', label: 'Admin' },
 ]
 

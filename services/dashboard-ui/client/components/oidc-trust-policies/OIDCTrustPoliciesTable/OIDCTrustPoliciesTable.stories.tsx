@@ -16,7 +16,7 @@ const mockPolicies: TOIDCTrustPolicy[] = [
     issuer_url: 'https://token.actions.githubusercontent.com',
     audience: 'https://api.nuon.co',
     claim_conditions: { sub: 'repo:acme/app:ref:refs/heads/main' },
-    role: 'org_support',
+    role: 'org_builder',
     token_duration_seconds: 3600,
     enabled: true,
     created_by_id: 'acct-1',

@@ -19,9 +19,10 @@ import { ManageRepoOIDCModal } from './ManageRepoOIDC'
 const GITHUB_ACTIONS_ISSUER = 'https://token.actions.githubusercontent.com'
 
 const ManageRepoOIDCModalContainer = ({
+  defaultBranch,
   repoFullName,
   ...props
-}: { repoFullName: string } & Record<string, any>) => {
+}: { defaultBranch: string; repoFullName: string } & Record<string, any>) => {
   const { org } = useOrg()
   const config = useConfig()
   const queryClient = useQueryClient()
@@ -110,9 +111,13 @@ const ManageRepoOIDCModalContainer = ({
             name: defaultName,
             issuerUrl: GITHUB_ACTIONS_ISSUER,
             audience: config.apiUrl ?? '',
-            role: 'org_read_only',
+            role: 'org_builder',
+            tokenDurationSeconds: '900',
             claimConditions: [
-              { key: 'sub', value: `repo:${repoFullName}:ref:refs/heads/*` },
+              {
+                key: 'sub',
+                value: `repo:${repoFullName}:ref:refs/heads/${defaultBranch}`,
+              },
             ],
           }}
           reservedNames={reservedNames}
@@ -128,11 +133,20 @@ const ManageRepoOIDCModalContainer = ({
 }
 
 export const ManageRepoOIDCButton = ({
+  defaultBranch,
   repoFullName,
   ...props
-}: { repoFullName: string } & Omit<IButtonAsButton, 'children'>) => {
+}: { defaultBranch: string; repoFullName: string } & Omit<
+  IButtonAsButton,
+  'children'
+>) => {
   const { addModal } = useSurfaces()
-  const modal = <ManageRepoOIDCModalContainer repoFullName={repoFullName} />
+  const modal = (
+    <ManageRepoOIDCModalContainer
+      defaultBranch={defaultBranch}
+      repoFullName={repoFullName}
+    />
+  )
 
   return (
     <Button variant="secondary" onClick={() => addModal(modal)} {...props}>
