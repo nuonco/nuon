@@ -5,10 +5,14 @@ import (
 	"os"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
+	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 	"gorm.io/gorm"
+
+	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
@@ -39,10 +43,30 @@ func TestMigrateInstallInputsSuite(t *testing.T) {
 	suite.Run(t, new(MigrateInstallInputsTestSuite))
 }
 
+type migrateInputsWorkflowRun struct{}
+
+func (r *migrateInputsWorkflowRun) GetID() string    { return "test-workflow-id" }
+func (r *migrateInputsWorkflowRun) GetRunID() string { return "test-run-id" }
+func (r *migrateInputsWorkflowRun) Get(context.Context, any) error {
+	return nil
+}
+func (r *migrateInputsWorkflowRun) GetWithOptions(context.Context, any, tclient.WorkflowRunGetOptions) error {
+	return nil
+}
+
 func (s *MigrateInstallInputsTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 
-	options := append(tests.CtlApiFXOptions(s.T()), fx.Populate(&s.deps))
+	ctrl := gomock.NewController(s.T())
+	mockTC := temporal.NewMockClient(ctrl)
+	mockTC.EXPECT().ExecuteWorkflowInNamespace(
+		gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+	).Return(&migrateInputsWorkflowRun{}, nil).AnyTimes()
+
+	options := append(tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
+		T:     s.T(),
+		Mocks: &tests.TestMocks{MockTC: mockTC},
+	}), fx.Populate(&s.deps))
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()
 	s.SetDB(s.deps.DB)
@@ -153,4 +177,49 @@ func (s *MigrateInstallInputsTestSuite) TestDropsValuesRemovedFromNewConfig() {
 	got := s.latestInstallInputs(ctx, install.ID)
 	s.Equal("us-west-2", *got.Values["region"])
 	s.NotContains(got.Values, "gone")
+}
+
+// The install's inputs must pin to the input config of the app config the
+// install itself is pinned to. Pinning to the app's newest input config instead
+// lets the two diverge as soon as a newer app config exists, which is what makes
+// the migration lookup miss.
+func (s *MigrateInstallInputsTestSuite) TestCreateInstallPinsInputsToItsOwnAppConfig() {
+	ctx := context.Background()
+	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
+	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
+
+	testApp := s.deps.Seed.CreateApp(ctx, s.T())
+	activeCfg := s.deps.Seed.CreateAppConfig(ctx, s.T(), testApp.ID)
+
+	// A newer, non-active config with its own input config: the app's "latest"
+	// input config now belongs to a config no install is pinned to.
+	newerCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), testApp.ID)
+	// The active filter reads status_v2, so both columns have to move.
+	pending := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusPending))
+	s.Require().NoError(s.deps.DB.WithContext(ctx).Model(&app.AppConfig{}).
+		Where("id = ?", newerCfg.ID).
+		Updates(map[string]any{
+			"status":    app.AppConfigStatusPending,
+			"status_v2": pending,
+		}).Error)
+	s.deps.Seed.CreateAppInputConfig(ctx, s.T(), testApp.ID, newerCfg.ID)
+
+	install, err := s.deps.Helpers.CreateInstall(ctx, testApp.ID, &installhelpers.CreateInstallParams{
+		Name:        "pin-check",
+		SandboxMode: true,
+		AWSAccount:  &installhelpers.CreateInstallAWSAccountParams{Region: "us-west-2"},
+		Inputs:      map[string]*string{"region": ptrTo("us-west-2")},
+	})
+	s.Require().NoError(err)
+
+	var pinnedInputCfg app.AppInputConfig
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Where(app.AppInputConfig{AppConfigID: install.AppConfigID}).First(&pinnedInputCfg).Error)
+
+	got := s.latestInstallInputs(ctx, install.ID)
+	s.Equal(pinnedInputCfg.ID, got.AppInputConfigID,
+		"inputs must pin to the install's own app config, not the app's newest")
+	s.Require().NotNil(got.Values["region"])
+	s.Equal("us-west-2", *got.Values["region"])
+	s.Equal(activeCfg.ID, install.AppConfigID)
 }
