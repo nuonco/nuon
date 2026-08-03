@@ -26,13 +26,11 @@ export interface IText extends HTMLAttributes<HTMLSpanElement> {
   weight?: TTextWeight
 }
 
-// Font family
 const FAMILY_CLASSES: Record<TTextFamily, string> = {
-  sans: 'font-sans', // should be mapped to your --font-inter in Tailwind config
-  mono: 'font-mono', // should be mapped to your --font-hack in Tailwind config
+  sans: 'font-sans',
+  mono: 'font-mono',
 }
 
-// Font size, line height, letter spacing (tracking)
 const VARIANT_CLASSES: Record<TTextVariant, string> = {
   h1: 'text-[34px] leading-10 tracking-[-0.8px]',
   h2: 'text-2xl leading-[30px] tracking-[-0.8px]',
@@ -43,7 +41,6 @@ const VARIANT_CLASSES: Record<TTextVariant, string> = {
   label: 'text-[11px] leading-[14px] tracking-[-0.2px]',
 }
 
-// Font weight
 const WEIGHT_CLASSES: Record<TTextWeight, string> = {
   normal: 'font-normal',
   strong: 'font-strong',
@@ -51,10 +48,8 @@ const WEIGHT_CLASSES: Record<TTextWeight, string> = {
 }
 
 // Special case: headings + mono = reduced letter spacing
-// We'll add this with an extra class if matched
 const headingMonoTracking = 'tracking-[-0.2px]'
 
-// Theme colors
 const THEME_CLASSES: Record<TTextTheme, string> = {
   default: '',
   neutral: 'text-cool-grey-600 dark:text-white/70',

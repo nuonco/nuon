@@ -33,29 +33,6 @@ export const IngressesDetails = ({ ingresses }) => {
 
       {hasIngresses ? (
         <>
-          {/* <div className="flex items-center gap-10">
-              <LabeledValue label="Total ingresses">
-              <Text variant="base" weight="strong" theme="brand">
-              {allIngresses?.length}
-              </Text>
-              </LabeledValue>
-              <LabeledValue label="Public">
-              <Text variant="base" weight="strong" theme="warn">
-              {publicCount}
-              </Text>
-              </LabeledValue>
-              <LabeledValue label="Internal">
-              <Text variant="base" weight="strong" theme="info">
-              {internalCount}
-              </Text>
-              </LabeledValue>
-
-              <LabeledValue label="SSL Enabled">
-              <Text variant="base" weight="strong" theme="success">
-              {sslEnabledCount}
-              </Text>
-              </LabeledValue>
-              </div> */}
           {Object.entries(ingresses).map(([namespace, namespaceIngresses]) => (
             <Card className="!p-0 !gap-0" key={namespace}>
               <div className="px-6 py-3">
@@ -97,7 +74,6 @@ const IngressHeading = ({ name, ingress }) => {
     annotations['alb.ingress.kubernetes.io/certificate-arn']
   const listenPorts = annotations['alb.ingress.kubernetes.io/listen-ports']
 
-  // Parse listen ports
   let ports = []
   try {
     if (listenPorts) {
@@ -148,7 +124,6 @@ const IngressDetails = ({ ingress }) => {
     annotations['alb.ingress.kubernetes.io/certificate-arn']
   const listenPorts = annotations['alb.ingress.kubernetes.io/listen-ports']
 
-  // Parse listen ports
   let ports = []
   try {
     if (listenPorts) {

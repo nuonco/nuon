@@ -25,12 +25,9 @@ export const useTerraformResourceFilter = <
   )
   const [searchQuery, setSearchQuery] = useState<string>('')
 
-  // Filter items based on selected actions and search query
   const filteredItems = useMemo(() => {
-    // First filter by selected actions
     let filtered = items.filter((item) => selectedActions.has(item.action))
 
-    // Then filter by search query (search by address, resource, and name)
     if (searchQuery.trim()) {
       const searchLower = searchQuery.toLowerCase().trim()
       filtered = filtered.filter(
@@ -44,7 +41,6 @@ export const useTerraformResourceFilter = <
     return filtered
   }, [items, selectedActions, searchQuery])
 
-  // Checkbox behavior: toggle the action
   const handleInputToggle = (action: string) => {
     setSelectedActions((prev) => {
       const newSet = new Set(prev)
@@ -57,14 +53,11 @@ export const useTerraformResourceFilter = <
     })
   }
 
-  // Button behavior: select only this action OR reset if only this action is selected
   const handleButtonClick = (action: string) => {
     setSelectedActions((prev) => {
-      // If only this action is selected, reset to default selected actions
       if (prev.size === 1 && prev.has(action)) {
         return new Set(DEFAULT_SELECTED_ACTIONS)
       }
-      // Otherwise, select only this action
       return new Set([action])
     })
   }

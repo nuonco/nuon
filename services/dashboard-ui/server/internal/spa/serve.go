@@ -70,7 +70,6 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 	}
 }
 
-// Handler serves SPA static assets and the index.html fallback.
 type Handler struct {
 	cfg *internal.Config
 	l   *zap.Logger
@@ -92,7 +91,6 @@ func (h *Handler) publicFS() fs.FS {
 	return f
 }
 
-// RegisterRoutes registers the SPA catch-all routes on the Gin engine.
 // This MUST be called after all API routes are registered so that API routes
 // take precedence.
 func (h *Handler) RegisterRoutes(e *gin.Engine) error {

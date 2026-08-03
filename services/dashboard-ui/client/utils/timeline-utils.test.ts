@@ -58,7 +58,7 @@ describe('timeline-utils', () => {
       const result = parseActivityTimeline(items)
 
       expect(typeof result).toBe('object')
-      expect(Object.keys(result)).toHaveLength(2) // 2 different dates
+      expect(Object.keys(result)).toHaveLength(2)
     })
 
     test('should handle empty array', () => {
@@ -88,7 +88,6 @@ describe('timeline-utils', () => {
 
       const result = parseActivityTimeline(items)
 
-      // Get the first (and only) group
       const dateKey = Object.keys(result)[0]
       const groupedItems = result[dateKey]
 
@@ -106,7 +105,6 @@ describe('timeline-utils', () => {
       const dateKey = Object.keys(result)[0]
       const groupedItems = result[dateKey]
 
-      // Should be sorted by creation time (typically newest first)
       expect(groupedItems).toHaveLength(2)
     })
   })

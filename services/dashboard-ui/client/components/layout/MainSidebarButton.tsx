@@ -18,7 +18,6 @@ export const MainSidebarButton = ({
 }: IMainSidebarButton) => {
   const { isSidebarOpen, toggleSidebar } = useSidebar()
 
-  // Dynamic labels based on sidebar state
   const ariaLabel = isSidebarOpen ? 'Close sidebar' : 'Open sidebar'
 
   if (variant === 'mobile-close') {
@@ -47,7 +46,6 @@ export const MainSidebarButton = ({
     )
   }
 
-  // default (desktop) variant
   return (
     <Tooltip
       position="bottom"

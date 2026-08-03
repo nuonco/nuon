@@ -33,8 +33,6 @@ const gcpInstall = mkInstall({
 const wfHref = '/org_1/installs/ins_acme/workflows/wf_1'
 const installHref = '/org_1/installs/ins_acme'
 
-// ── Single row permutations ──
-
 export const RowDeployed = () => (
   <InstallDeployRow installId="ins_acme" install={mkInstall()} deployStatus="success" workflowHref={wfHref} installHref={installHref} />
 )
@@ -54,8 +52,6 @@ export const RowPending = () => (
 export const RowUnresolved = () => (
   <InstallDeployRow installId="inlyompj5ren1oqpnvsc3xcksn" deployStatus="in-progress" workflowHref={wfHref} installHref={installHref} />
 )
-
-// ── Full group permutations ──
 
 const rows: IInstallDeployRow[] = [
   { installId: 'ins_acme', install: mkInstall(), deployStatus: 'success', workflowHref: wfHref, installHref },

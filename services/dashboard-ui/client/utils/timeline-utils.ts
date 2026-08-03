@@ -27,7 +27,6 @@ export function parseActivityTimeline<T extends IHasCreatedAt>(
   items: Array<T>
 ): TActivityTimeline<T> {
   return items.reduce<TActivityTimeline<T>>((acc, item) => {
-    // Skip items without a valid created_at
     if (!item?.created_at) {
       console.warn('Skipping item without created_at:', item)
       return acc

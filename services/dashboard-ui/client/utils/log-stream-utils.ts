@@ -8,7 +8,6 @@ export function getSeverityBgClasses(severityNumber: number): string {
   if (severityNumber <= 20) return 'bg-red-600 dark:bg-red-500'
   if (severityNumber <= 24) return 'bg-red-700 dark:bg-red-600'
 
-  // Fallback for values > 24
   return 'bg-red-700 dark:bg-red-600'
 }
 
@@ -16,7 +15,6 @@ type TBorderPosition = 't' | 'l' | 'b' | 'r' | ''
 type TSeverityLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
 
 const SEVERITY_BORDERS = {
-  // Top borders
   t: {
     trace: '!border-t-primary-400 dark:!border-t-primary-300',
     debug: '!border-t-cool-grey-600 dark:!border-t-cool-grey-500',
@@ -25,7 +23,6 @@ const SEVERITY_BORDERS = {
     error: '!border-t-red-600 dark:!border-t-red-500',
     fatal: '!border-t-red-700 dark:!border-t-red-600',
   },
-  // Left borders
   l: {
     trace: '!border-l-primary-400 dark:!border-l-primary-300',
     debug: '!border-l-cool-grey-600 dark:!border-l-cool-grey-500',
@@ -34,7 +31,6 @@ const SEVERITY_BORDERS = {
     error: '!border-l-red-600 dark:!border-l-red-500',
     fatal: '!border-l-red-700 dark:!border-l-red-600',
   },
-  // Bottom borders
   b: {
     trace: '!border-b-primary-400 dark:!border-b-primary-300',
     debug: '!border-b-cool-grey-600 dark:!border-b-cool-grey-500',
@@ -43,7 +39,6 @@ const SEVERITY_BORDERS = {
     error: '!border-b-red-600 dark:!border-b-red-500',
     fatal: '!border-b-red-700 dark:!border-b-red-600',
   },
-  // Right borders
   r: {
     trace: '!border-r-primary-400 dark:!border-r-primary-300',
     debug: '!border-r-cool-grey-600 dark:!border-r-cool-grey-500',
@@ -52,7 +47,6 @@ const SEVERITY_BORDERS = {
     error: '!border-r-red-600 dark:!border-r-red-500',
     fatal: '!border-r-red-700 dark:!border-r-red-600',
   },
-  // Standard borders (no position)
   '': {
     trace: '!border-primary-400 dark:!border-primary-300',
     debug: '!border-cool-grey-600 dark:!border-cool-grey-500',
@@ -67,7 +61,6 @@ export function getSeverityBorderClasses(
   severityNumber: number,
   position: TBorderPosition = ''
 ): string {
-  // Map severity number to severity level name
   let severityLevel: TSeverityLevel
   if (severityNumber <= 4) severityLevel = 'trace'
   else if (severityNumber <= 8) severityLevel = 'debug'
@@ -96,6 +89,5 @@ export function getBadgeThemeFromSeverity(severityNumber: number): TBadgeTheme {
   if (severityNumber <= 20) return 'error'
   if (severityNumber <= 24) return 'error'
 
-  // Fallback for values > 24
   return 'error'
 }

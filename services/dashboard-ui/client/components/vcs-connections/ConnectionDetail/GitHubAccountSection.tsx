@@ -14,7 +14,6 @@ export const GitHubAccountSection = ({
   vcs_connection,
 }: IGitHubAccountSection) => (
   <div className="flex flex-col gap-6">
-    {/* GitHub Account Info */}
     <div className="flex flex-col gap-4">
       <Text variant="body" weight="strong">
         GitHub account
@@ -50,7 +49,6 @@ export const GitHubAccountSection = ({
       </div>
     </div>
 
-    {/* Connection Details */}
     <div className="flex flex-col gap-4">
       <Text variant="body" weight="strong">
         Connection details
@@ -90,7 +88,6 @@ export const GitHubAccountSection = ({
       </div>
     </div>
 
-    {/* Related Commits (if available) */}
     {vcs_connection?.vcs_connection_commit?.length ? (
       <div className="flex flex-col gap-4">
         <Text variant="body" weight="strong">

@@ -17,7 +17,6 @@ export function useScrollToBottom({
     if (!element) return
 
     const handleScroll = () => {
-      // Don't trigger if already triggered
       if (hasTriggered) return
 
       const { scrollTop, scrollHeight, clientHeight } = element

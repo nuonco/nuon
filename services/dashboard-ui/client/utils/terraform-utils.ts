@@ -329,7 +329,6 @@ export function cleanString(str: string): string {
   if (s.startsWith('"') && s.endsWith('"')) {
     s = s.slice(1, -1)
   }
-  // Replace double-escaped newlines with real newlines
   s = s.replace(/\\n/g, '\n')
   return s
 }
@@ -356,14 +355,11 @@ export function isTerraformEscapedYaml(str: string): {
   isTerraformYaml: boolean
   yamlContent?: string
 } {
-  // Check if this looks like escaped YAML content (has \" patterns and YAML structure)
   if (str.includes('\\"') && str.includes(':')) {
-    // Try to clean it up
     const cleaned = str
-      .replace(/\\n/g, '\n') // Convert \n to actual newlines
-      .replace(/\\"/g, '"') // Convert \" to actual quotes
+      .replace(/\\n/g, '\n')
+      .replace(/\\"/g, '"')
 
-    // Check if the cleaned version looks like YAML structure
     if (
       cleaned.includes(':') &&
       (cleaned.includes('-') || cleaned.includes('  '))
@@ -389,25 +385,20 @@ export function isTerraformArrayWithYaml(str: string): TIsTerraformWithYaml {
       parsed.length === 1 &&
       typeof parsed[0] === 'string'
     ) {
-      // Clean the string element more thoroughly
       let cleanedElement = parsed[0]
 
-      // Remove outer quotes if present
       if (cleanedElement.startsWith('"') && cleanedElement.endsWith('"')) {
         cleanedElement = cleanedElement.slice(1, -1)
       }
 
-      // Replace escaped newlines and quotes
       cleanedElement = cleanedElement.replace(/\\n/g, '\n').replace(/\\"/g, '"')
 
-      // Try to parse as YAML - but be more lenient about what constitutes valid YAML
       try {
         const yamlParsed = YAML.parse(cleanedElement)
         if (yamlParsed && typeof yamlParsed === 'object') {
           return { isArrayYaml: true, yamlContent: cleanedElement }
         }
       } catch (yamlError) {
-        // If YAML parsing fails, but it looks like YAML structure, still treat it as YAML
         if (
           cleanedElement.includes(':') &&
           (cleanedElement.includes('-') || cleanedElement.includes('  '))
@@ -432,7 +423,6 @@ export function detectValueFormat(value: string): {
   // Check for Terraform escaped YAML FIRST - before any other checks
   const terraformEscapedCheck = isTerraformEscapedYaml(cleanValue)
 
-  // Only proceed with other checks if it's NOT Terraform escaped YAML
   let isJSON = false
   let isYAML = false
   let terraformArrayCheck: TIsTerraformWithYaml = { isArrayYaml: false }
@@ -478,7 +468,6 @@ export function detectValueFormat(value: string): {
       showLineNumbers: true,
     }
   } else {
-    // Default behavior for all other cases
     return {
       displayValue: cleanValue,
       language: 'sh',
@@ -494,7 +483,7 @@ const OPERATION_TYPES = [
   'replace',
   'read',
   'no-op',
-  'drift', // Add drift to operation types
+  'drift',
 ]
 
 export function isOutputAfterUnknown(afterUnknown: any): boolean {
@@ -573,7 +562,6 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
     )
   }
 
-  // Resource Drift (new section)
   if (Array.isArray(plan.resource_drift)) {
     for (const rd of plan.resource_drift) {
       const mergedAfter = mergeAfterUnknown(
@@ -614,7 +602,6 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
     }
   }
 
-  // Resource Changes
   for (const rc of plan.resource_changes ?? []) {
     const mergedAfter = mergeAfterUnknown(
       rc.change.after,
@@ -663,7 +650,6 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
     }
   }
 
-  // Output Changes (existing logic)
   if (plan.output_changes) {
     for (const [output, oc] of Object.entries(plan.output_changes)) {
       const mergedAfter = mergeAfterUnknown(oc.after, oc.after_unknown)
@@ -711,7 +697,6 @@ export function parseTerraformPlan(plan: TTerraformPlan): {
     }
   }
 
-  // Ensure all operation types are represented
   OPERATION_TYPES.forEach((op) => {
     resourceSummary[op] = resourceSummary[op] || 0
     outputSummary[op] = outputSummary[op] || 0

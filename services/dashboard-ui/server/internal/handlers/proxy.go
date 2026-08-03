@@ -87,7 +87,6 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 	return nil
 }
 
-// newProxy builds a reverse proxy that strips stripPrefix and prepends addPrefix.
 func (h *ProxyHandler) newProxy(upstreamBase, stripPrefix, addPrefix string) *httputil.ReverseProxy {
 	target, _ := url.Parse(upstreamBase)
 	return &httputil.ReverseProxy{

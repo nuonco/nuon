@@ -89,7 +89,6 @@ const Frame = ({
   </div>
 )
 
-// 1) Two-line: split issue and remediation
 export const Variant1_TwoLine = () => (
   <Frame title="1) Two-line: issue on top, remediation below">
     <ul className="px-4 py-3 space-y-3">
@@ -112,7 +111,6 @@ export const Variant1_TwoLine = () => (
   </Frame>
 )
 
-// 2) Inline code chip for quoted resource
 export const Variant2_CodeChip = () => (
   <Frame title="2) Inline code chip for the resource">
     <ul className="px-4 py-3 space-y-2">
@@ -141,7 +139,6 @@ export const Variant2_CodeChip = () => (
   </Frame>
 )
 
-// 3) Numbered list with left-border accent
 export const Variant3_NumberedAccent = () => (
   <Frame title="3) Numbered list with left-border accent">
     <ol className="px-4 py-3 space-y-3">
@@ -176,7 +173,6 @@ export const Variant3_NumberedAccent = () => (
   </Frame>
 )
 
-// 4) Subtle bordered card per row with hover
 export const Variant4_RowCards = () => (
   <Frame title="4) Bordered card per row with hover">
     <div className="flex flex-col gap-2 px-4 py-3">

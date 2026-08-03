@@ -86,14 +86,12 @@ describe('kubernetes-utils', () => {
       expect(Array.isArray(result.changes)).toBe(true)
       expect(result.changes).toHaveLength(3)
 
-      // Check summary
       expect(result.summary).toEqual({
         add: 1,
         change: 1,
         destroy: 1,
       })
 
-      // Check first change (apply with type 2 = added)
       expect(result.changes[0]).toEqual({
         namespace: 'default',
         name: 'myapp-deployment',
@@ -105,7 +103,6 @@ describe('kubernetes-utils', () => {
         diff: '+ spec:\n+   replicas: 3',
       })
 
-      // Check second change (apply with type 3 = changed)
       expect(result.changes[1]).toEqual({
         namespace: 'default',
         name: 'myapp-service',
@@ -117,7 +114,6 @@ describe('kubernetes-utils', () => {
         diff: '  spec:\n    ports:\n~   - port: 8080 -> 9090',
       })
 
-      // Check third change (delete op = destroyed)
       expect(result.changes[2]).toEqual({
         namespace: 'default',
         name: 'myapp-configmap',

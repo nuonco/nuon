@@ -37,7 +37,6 @@ export const THEME_CLASSES = {
     'bg-[#FCFAFF] text-primary-800 !border-primary-400 dark:bg-[#251932] dark:!border-primary-600/40 dark:text-primary-500',
 }
 
-// Helper function to determine the appropriate role and aria-live based on theme
 const getToastAccessibilityProps = (theme: TToastTheme) => {
   switch (theme) {
     case 'error':

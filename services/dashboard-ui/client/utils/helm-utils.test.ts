@@ -47,14 +47,12 @@ Plan: 1 to add, 1 to change, 1 to destroy
       expect(Array.isArray(result.changes)).toBe(true)
       expect(result.changes).toHaveLength(3)
 
-      // Check summary
       expect(result.summary).toEqual({
         add: 1,
         change: 1,
         destroy: 1,
       })
 
-      // Check changes structure
       expect(result.changes[0]).toEqual({
         workspace: 'default',
         release: 'myapp-release',
@@ -282,7 +280,6 @@ Plan: 1 to add, 0 to change, 0 to destroy
 
       const result = parseHelmPlan(mockPlan)
 
-      // Should only parse the valid line
       expect(result.changes).toHaveLength(1)
       expect(result.changes[0].resource).toBe('ConfigMap')
       expect(result.summary.add).toBe(1)

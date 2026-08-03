@@ -15,25 +15,23 @@ export const useArrowKeys = ({
     if (!enabled) return
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Check if the event is from an input field to avoid conflicts
       const target = event.target as HTMLElement
       const isInputField =
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
         target.contentEditable === 'true'
 
-      // Skip if user is typing in an input field
       if (isInputField) return
 
       switch (event.key) {
         case 'ArrowUp':
         case 'k':
-          event.preventDefault() // Prevent default scroll behavior
+          event.preventDefault()
           onUpArrow()
           break
         case 'ArrowDown':
         case 'j':
-          event.preventDefault() // Prevent default scroll behavior
+          event.preventDefault()
           onDownArrow()
           break
         default:
@@ -41,10 +39,8 @@ export const useArrowKeys = ({
       }
     }
 
-    // Add event listener to document for global key handling
     document.addEventListener('keydown', handleKeyDown)
 
-    // Cleanup function
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }

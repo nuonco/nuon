@@ -29,22 +29,16 @@ export const RESOURCES_WITH_DRIFT_DETECTED: ReadonlySet<ResourceKind> =
   new Set<ResourceKind>(['components', 'sandboxes'])
 
 const SUB_OP_LABELS: Record<string, string> = {
-  // shared lifecycle ops
   provision: 'Provision',
   deprovision: 'Deprovision',
   reprovision: 'Reprovision',
-  // components
   deploy: 'Deploy',
   teardown: 'Teardown',
-  // install_configurations
   inputs: 'Input updates',
   secrets: 'Secret syncs',
-  // runners
   inactive: 'Inactive',
   unhealthy: 'Unhealthy',
-  // actions
   run: 'Run',
-  // stacks
   version_active: 'Version active',
 }
 

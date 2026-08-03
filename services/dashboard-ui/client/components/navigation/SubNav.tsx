@@ -129,7 +129,6 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
           'md:flex md:absolute md:right-[-1rem] md:w-4 md:h-full md:cursor-pointer md:border-l md:border-transparent',
           'md:transition-[border-color] md:duration-fastest md:ease-cubic',
           'page-nav-handle', // for event handling
-          // Add border color on hover
           'hover:!border-primary-600'
         )}
         onMouseDown={handleDragStart}
@@ -141,12 +140,10 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
       >
         <button
           className={cn(
-            // Base styles (hidden by default)
             'fixed top-1/2 opacity-0 md:cursor-pointer',
             'border rounded-lg shadow-md p-1 bg-white dark:bg-dark-grey-300',
             'transition-opacity duration-fastest ease-cubic',
             '-translate-x-1/2 -translate-y-1/2',
-            // Show when hovering anywhere on the sidebar
             'group-hover/sidebar:opacity-100'
           )}
           onClick={() => {
