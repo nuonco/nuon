@@ -65,26 +65,27 @@ func (s *service) CreateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	if len(install.App.AppInputConfigs) < 1 {
+	// Pin to the install's app config, matching the inputs PATCH path. The app's
+	// newest input config may belong to a config this install is not on.
+	pinnedAppInputConfig, err := s.helpers.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get pinned app input config: %w", err))
+		return
+	}
+	if pinnedAppInputConfig == nil || pinnedAppInputConfig.ID == "" {
 		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("no app input configs defined on app"),
+			Err:         fmt.Errorf("no app input config on app config %s", install.AppConfigID),
 			Description: "no app input configs defined",
 		})
 		return
 	}
 
-	latestAppInputConfig, err := s.helpers.GetLatestAppInputConfig(ctx, install.AppID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get latest app input config: %w", err))
-		return
-	}
-
-	if err := s.helpers.ValidateInstallInputs(ctx, latestAppInputConfig, req.Inputs); err != nil {
+	if err := s.helpers.ValidateInstallInputs(ctx, pinnedAppInputConfig, req.Inputs); err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	inputs, err := s.createInstallInputs(ctx, install, req.Inputs)
+	inputs, err := s.createInstallInputs(ctx, install, pinnedAppInputConfig, req.Inputs)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
@@ -105,9 +106,9 @@ func (s *service) CreateInstallInputs(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, inputs)
 }
 
-func (s *service) createInstallInputs(ctx context.Context, install *app.Install, inputs map[string]*string) (*app.InstallInputs, error) {
+func (s *service) createInstallInputs(ctx context.Context, install *app.Install, appInputConfig *app.AppInputConfig, inputs map[string]*string) (*app.InstallInputs, error) {
 	obj := &app.InstallInputs{
-		AppInputConfigID: install.App.AppInputConfigs[0].ID,
+		AppInputConfigID: appInputConfig.ID,
 		InstallID:        install.ID,
 		Values:           pgtype.Hstore(inputs),
 	}

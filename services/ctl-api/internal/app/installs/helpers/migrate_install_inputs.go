@@ -82,24 +82,28 @@ func (h *Helpers) migrateInstallInputs(
 		Order("created_at DESC").
 		Limit(1).
 		Find(&existingInputs)
+	if res.Error != nil {
+		return fmt.Errorf("unable to fetch existing inputs: %w", res.Error)
+	}
 
-	if res.Error != nil && res.Error == gorm.ErrRecordNotFound {
-		// for backward compatibility for older installs where older installs dont have install in puts set
-		// at latest app config
-		res := txn.WithContext(ctx).
+	// Find reports "no rows" through RowsAffected, never gorm.ErrRecordNotFound.
+	// Testing the error instead leaves existingInputs zero-valued on a miss, which
+	// writes empty values over the install's inputs and, because the next
+	// migration then reads that empty row, keeps them empty for good.
+	if res.RowsAffected == 0 {
+		// An install whose inputs were never tied to the outgoing config — created
+		// before this migration existed, or tied to a different config version —
+		// still has values worth carrying forward.
+		res = txn.WithContext(ctx).
 			Where(app.InstallInputs{
 				InstallID: installID,
 			}).
 			Order("created_at DESC").
 			Limit(1).
 			Find(&existingInputs)
-
-		// error out if install exists but there are no install inputs associated with it
 		if res.Error != nil {
 			return errors.Wrap(res.Error, fmt.Sprintf("unable to fetch install inputs for installID %s", installID))
 		}
-	} else if res.Error != nil {
-		return fmt.Errorf("unable to fetch existing inputs: %w", res.Error)
 	}
 
 	migratedValues := make(pgtype.Hstore)

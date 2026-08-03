@@ -16,8 +16,10 @@ import (
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
-	// Get the run with VCS commit
-	run, err := activities.AwaitGetAppBranchRunWithCommitByRunID(ctx, s.RunID)
+	// The commit is optional here — it only pins a SHA below. A run triggered with
+	// a pre-existing app config (the CLI's branch-targeted sync) skips fetch-commit
+	// and has none, so requiring it wedges this step forever.
+	run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
 	if err != nil {
 		return fmt.Errorf("unable to get app branch run: %w", err)
 	}

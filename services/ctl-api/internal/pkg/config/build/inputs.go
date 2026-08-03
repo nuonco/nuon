@@ -86,7 +86,7 @@ func InputsFromConfig(cfg *config.AppConfig) ([]InputGroupInput, []AppInputInput
 
 	synthetic := config.SyntheticComponentOverrideInputs(cfg.Components)
 	if len(synthetic) == 0 {
-		return groups, inputs
+		return dedupeByName(groups, groupName), dedupeByName(inputs, inputName)
 	}
 
 	groups = append(groups, InputGroupInput{
@@ -110,7 +110,28 @@ func InputsFromConfig(cfg *config.AppConfig) ([]InputGroupInput, []AppInputInput
 		})
 	}
 
-	return groups, inputs
+	return dedupeByName(groups, groupName), dedupeByName(inputs, inputName)
+}
+
+func groupName(g InputGroupInput) string { return g.Name }
+func inputName(i AppInputInput) string   { return i.Name }
+
+// dedupeByName keeps the last declaration of each name. A config may declare the
+// same input or group twice; the request types this replaced were name-keyed
+// maps, so those configs sync today and must keep syncing.
+func dedupeByName[T any](items []T, name func(T) string) []T {
+	lastAt := make(map[string]int, len(items))
+	for idx, item := range items {
+		lastAt[name(item)] = idx
+	}
+
+	out := make([]T, 0, len(lastAt))
+	for idx, item := range items {
+		if lastAt[name(item)] == idx {
+			out = append(out, item)
+		}
+	}
+	return out
 }
 
 func ComponentOverrideInputCopy(syn config.SyntheticOverrideInput) (description, displayName string) {

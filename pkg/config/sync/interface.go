@@ -9,10 +9,12 @@ import (
 )
 
 // Syncer defines the interface for syncing app configurations to a backing store.
-// Implementations can sync via API calls (apisyncer) or direct database access (dbsyncer).
 //
-// The Syncer interface provides a pluggable architecture that allows different sync
-// strategies while maintaining a consistent API for consumers.
+// The only implementation is the database-backed syncer in
+// services/ctl-api/internal/pkg/config/syncer. Clients do not sync directly:
+// they push a config to the API in its intermediate form and ask the API to
+// apply it. This interface lives here because the state and error types it
+// works with are shared with those clients.
 type Syncer interface {
 	// Sync performs the full synchronization operation, creating or updating
 	// app configs, components, and their configurations.
@@ -41,10 +43,12 @@ type Syncer interface {
 	// This should only be called after a successful Sync() operation.
 	GetActionStateIds() []string
 
-	// GetComponentsScheduled returns the components that had builds scheduled
-	// during the most recent sync operation.
+	// GetComponentsScheduled returns the components that need a build as a
+	// result of the most recent sync — those whose config changed. It is empty
+	// unless the sync was configured to own build scheduling.
 	//
-	// The CLI uses this to poll build status after syncing.
+	// The set is persisted in State.Result so the CLI, which only sees the app
+	// config it polls, can wait on those builds.
 	// This should only be called after a successful Sync() operation.
 	GetComponentsScheduled() []ComponentState
 

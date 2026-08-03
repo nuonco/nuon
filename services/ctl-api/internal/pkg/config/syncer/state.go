@@ -37,18 +37,26 @@ func (s *syncer) GetActionStateIds() []string {
 
 // GetComponentsScheduled implements sync.Syncer
 func (s *syncer) GetComponentsScheduled() []sync.ComponentState {
-	states := make([]sync.ComponentState, 0)
-	if s.state.Components == nil {
-		return states
+	if s.state == nil || s.state.Result == nil {
+		return []sync.ComponentState{}
 	}
-	for _, comp := range s.state.Components {
-		for _, cmpID := range s.cmpBuildsScheduled {
-			if cmpID == comp.ID {
-				states = append(states, comp)
-			}
-		}
+	return s.state.Result.ComponentsScheduled
+}
+
+// orphanedResult collects the orphan maps for persistence, returning nil when
+// nothing was orphaned so the state stays free of empty objects.
+func (s *syncer) orphanedResult() *sync.Result {
+	components := s.OrphanedComponents()
+	actions := s.OrphanedActions()
+	runbooks := s.OrphanedRunbooks()
+	if len(components) == 0 && len(actions) == 0 && len(runbooks) == 0 {
+		return nil
 	}
-	return states
+	return &sync.Result{
+		OrphanedComponents: components,
+		OrphanedActions:    actions,
+		OrphanedRunbooks:   runbooks,
+	}
 }
 
 // OrphanedComponents implements sync.Syncer

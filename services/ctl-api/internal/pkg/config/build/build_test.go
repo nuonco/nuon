@@ -393,3 +393,73 @@ func TestInlinePolicyStillRejectsMalformed(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Effect")
 }
+
+// The checksum drives the sync's "did this component change" decision, so it
+// must move for a change anywhere in the resolved component and stay put when
+// nothing moved. Hashing only the component's own file would miss vars folded in
+// from elsewhere.
+func TestComponentChecksumTracksResolvedComponent(t *testing.T) {
+	comp := func() *config.Component {
+		return &config.Component{
+			Name: "api",
+			TerraformModule: &config.TerraformModuleComponentConfig{
+				TerraformVersion: "1.9.0",
+				EnvVarMap:        map[string]string{"REGION": "us-west-2"},
+			},
+		}
+	}
+
+	base, err := ComponentChecksum(comp())
+	require.NoError(t, err)
+	assert.NotEmpty(t, base)
+
+	same, err := ComponentChecksum(comp())
+	require.NoError(t, err)
+	assert.Equal(t, base, same, "identical components must checksum the same")
+
+	changed := comp()
+	changed.TerraformModule.EnvVarMap["REGION"] = "us-east-1"
+	changedSum, err := ComponentChecksum(changed)
+	require.NoError(t, err)
+	assert.NotEqual(t, base, changedSum, "a resolved value change must move the checksum")
+
+	// The per-file Checksum field is excluded: it is an input to hashing, not
+	// part of the component's meaning.
+	withFileChecksum := comp()
+	withFileChecksum.Checksum = "some-file-hash"
+	fileSum, err := ComponentChecksum(withFileChecksum)
+	require.NoError(t, err)
+	assert.Equal(t, base, fileSum, "the per-file checksum must not affect the hash")
+}
+
+// The request types this builder replaced were name-keyed maps, so a config
+// declaring the same input or group twice deduped silently and synced fine.
+// Emitting both rows instead fails the insert on the unique index.
+func TestInputsFromConfigDedupesByName(t *testing.T) {
+	cfg := &config.AppConfig{
+		Inputs: &config.AppInputConfig{
+			Groups: []config.AppInputGroup{
+				{Name: "types", DisplayName: "first"},
+				{Name: "types", DisplayName: "second"},
+			},
+			Inputs: []config.AppInput{
+				{Name: "dupe", Description: "first", Type: "string"},
+				{Name: "unique", Description: "only", Type: "string"},
+				{Name: "dupe", Description: "second", Type: "string"},
+			},
+		},
+	}
+
+	groups, inputs := InputsFromConfig(cfg)
+
+	require.Len(t, groups, 1)
+	assert.Equal(t, "second", groups[0].DisplayName, "last group declaration wins")
+
+	require.Len(t, inputs, 2)
+	byName := map[string]AppInputInput{}
+	for _, in := range inputs {
+		byName[in.Name] = in
+	}
+	assert.Equal(t, "second", byName["dupe"].Description, "last input declaration wins")
+	assert.Equal(t, "only", byName["unique"].Description)
+}

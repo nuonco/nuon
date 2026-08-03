@@ -55,7 +55,7 @@ type syncer struct {
 	state     *sync.State
 	prevState *sync.State
 
-	cmpBuildsScheduled []string
+	dispatchBuilds bool
 }
 
 // Params defines the dependencies required by the syncer.
@@ -68,8 +68,8 @@ type Params struct {
 
 // NewDBSyncer creates a database-backed syncer for use in Temporal workflows.
 // The context must contain org and account information before calling Sync().
-func NewDBSyncer(db *gorm.DB, appsHelpers *appshelpers.Helpers, componentHelpers *componenthelpers.Helpers, actionsHelpers *actionshelpers.Helpers, runbooksHelpers *runbookshelpers.Helpers, installHelpers *installhelpers.Helpers, vcsHelpers *vcshelpers.Helpers, tfClient terraform.Client, appID string, cfg *config.AppConfig, appConfigID string) sync.Syncer {
-	return &syncer{
+func NewDBSyncer(db *gorm.DB, appsHelpers *appshelpers.Helpers, componentHelpers *componenthelpers.Helpers, actionsHelpers *actionshelpers.Helpers, runbooksHelpers *runbookshelpers.Helpers, installHelpers *installhelpers.Helpers, vcsHelpers *vcshelpers.Helpers, tfClient terraform.Client, appID string, cfg *config.AppConfig, appConfigID string, opts ...Option) sync.Syncer {
+	s := &syncer{
 		db:               db,
 		cfg:              cfg,
 		appsHelpers:      appsHelpers,
@@ -82,6 +82,10 @@ func NewDBSyncer(db *gorm.DB, appsHelpers *appshelpers.Helpers, componentHelpers
 		appID:            appID,
 		appConfigID:      appConfigID,
 	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 // New creates a new database-based syncer that directly accesses the database.
@@ -99,8 +103,6 @@ func NewDBSyncer(db *gorm.DB, appsHelpers *appshelpers.Helpers, componentHelpers
 // Returns a sync.Syncer interface that can be used to perform the sync operation.
 // Sync implements sync.Syncer
 func (s *syncer) Sync(ctx context.Context) error {
-	s.cmpBuildsScheduled = make([]string, 0)
-
 	if s.cfg == nil {
 		return sync.SyncInternalErr{
 			Description: "nil config",
@@ -282,7 +284,17 @@ func (s *syncer) syncSteps() []syncStep {
 		steps = append(steps, syncStep{
 			Resource: fmt.Sprintf("component-sync-%s", c.Name),
 			Method: func(ctx context.Context) error {
-				return components.SyncComponent(ctx, s.db, s.componentHelpers, s.vcsHelpers, s.tfClient, c, s.appID, s.appConfigID, s.state)
+				return components.SyncComponent(ctx, components.SyncComponentParams{
+					DB:             s.db,
+					Helpers:        s.componentHelpers,
+					VCSHelper:      s.vcsHelpers,
+					TFClient:       s.tfClient,
+					Component:      c,
+					AppID:          s.appID,
+					AppConfigID:    s.appConfigID,
+					State:          s.state,
+					DispatchBuilds: s.dispatchBuilds,
+				})
 			},
 		})
 	}

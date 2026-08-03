@@ -12,6 +12,7 @@ import (
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	appconfigsync "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/appconfigsync"
 	branchactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	syncappconfiginstalls "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/syncappconfiginstalls"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/triggerevent"
@@ -39,6 +40,7 @@ type WorkerParams struct {
 	Acts                  *activities.Activities
 	BranchActs            *branchactivities.Activities
 	SyncInstallConfigActs *syncappconfiginstalls.Activities
+	AppConfigSyncActs     *appconfigsync.Activities
 
 	SharedActs      *workflows.Activities
 	SharedWorkflows *workflows.Workflows
@@ -86,6 +88,7 @@ func New(params WorkerParams) (*Worker, error) {
 	wkr.RegisterActivity(params.Acts)
 	wkr.RegisterActivity(params.BranchActs)
 	wkr.RegisterActivity(params.SyncInstallConfigActs)
+	wkr.RegisterActivity(params.AppConfigSyncActs)
 	for _, acts := range params.SharedActs.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}

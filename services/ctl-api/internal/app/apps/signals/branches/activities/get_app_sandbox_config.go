@@ -16,6 +16,7 @@ func (a *Activities) getLatestAppSandboxConfig(ctx context.Context, appID string
 	var cfg app.AppSandboxConfig
 	res := a.db.WithContext(ctx).
 		Preload("ConnectedGithubVCSConfig").
+		Preload("ConnectedGithubVCSConfig.VCSConnection").
 		Preload("PublicGitVCSConfig").
 		Where("app_id = ?", appID).
 		Order("created_at DESC").
@@ -36,6 +37,9 @@ func (a *Activities) GetSandboxBuildGitSource(ctx context.Context, req GetSandbo
 	var cfg app.AppSandboxConfig
 	res := a.db.WithContext(ctx).
 		Preload("ConnectedGithubVCSConfig").
+		// The connection carries the github install id the installation token is
+		// minted from; unloaded it is a zero struct and Atoi("") fails.
+		Preload("ConnectedGithubVCSConfig.VCSConnection").
 		Preload("PublicGitVCSConfig").
 		First(&cfg, "id = ?", req.SandboxConfigID)
 	if res.Error != nil {
