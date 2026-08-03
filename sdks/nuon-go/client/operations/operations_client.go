@@ -888,6 +888,8 @@ type ClientService interface {
 
 	ReprovisionInstallSandbox(params *ReprovisionInstallSandboxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReprovisionInstallSandboxCreated, error)
 
+	ReprovisionInstallStack(params *ReprovisionInstallStackParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReprovisionInstallStackCreated, error)
+
 	ResendOrgInvite(params *ResendOrgInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResendOrgInviteOK, error)
 
 	ResetInstallHealthBaseline(params *ResetInstallHealthBaselineParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetInstallHealthBaselineOK, error)
@@ -18920,6 +18922,52 @@ func (a *Client) ReprovisionInstallSandbox(params *ReprovisionInstallSandboxPara
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ReprovisionInstallSandbox: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ReprovisionInstallStack reprovisions an install stack
+
+Reprovision an install stack, recreating the runner and its infrastructure. Set `skip_components` to avoid redeploying components on top of the new stack.
+*/
+func (a *Client) ReprovisionInstallStack(params *ReprovisionInstallStackParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReprovisionInstallStackCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewReprovisionInstallStackParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ReprovisionInstallStack",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/reprovision-stack",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ReprovisionInstallStackReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ReprovisionInstallStackCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ReprovisionInstallStack: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

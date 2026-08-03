@@ -1459,8 +1459,8 @@ Available service names: api, runner (or any service name present in the logs)`,
 
 	stacksCmd := &cobra.Command{
 		Use:   "stacks",
-		Short: "View install stacks",
-		Long:  "View install stacks and stack versions",
+		Short: "Manage install stacks",
+		Long:  "View install stacks and stack versions, and reprovision an install stack",
 	}
 	installsCmds.AddCommand(stacksCmd)
 
@@ -1504,6 +1504,21 @@ Available service names: api, runner (or any service name present in the logs)`,
 	stacksLatestCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	stacksLatestCmd.MarkFlagRequired("install-id")
 	stacksCmd.AddCommand(stacksLatestCmd)
+
+	var stackSkipComponents bool
+	stacksReprovisionCmd := &cobra.Command{
+		Use:   "reprovision",
+		Short: "Reprovision an install stack",
+		Long:  "Reprovision an install stack, recreating the runner and its infrastructure",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ReprovisionStack(cmd.Context(), id, stackSkipComponents, PrintJSON)
+		}),
+	}
+	stacksReprovisionCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	stacksReprovisionCmd.MarkFlagRequired("install-id")
+	stacksReprovisionCmd.Flags().BoolVar(&stackSkipComponents, "skip-components", false, "Skip deploying components after reprovisioning the stack")
+	stacksCmd.AddCommand(stacksReprovisionCmd)
 
 	// NOTE(fd): this may not be the place where this ends up living
 	actionsCmd := &cobra.Command{

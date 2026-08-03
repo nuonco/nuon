@@ -15,6 +15,7 @@ import { EnableConfigSyncButton } from '../EnableConfigSync'
 import { ForgetButton } from '../Forget'
 import { GenerateInstallConfigButton } from '../GenerateInstallConfig'
 import { ReprovisionButton } from '../Reprovision'
+import { ReprovisionStackButton } from '../ReprovisionStack'
 import { SyncSecretsButton } from '../SyncSecrets'
 
 const InstallManagementDropdownContent = () => {
@@ -46,6 +47,7 @@ const InstallManagementDropdownContent = () => {
         </Text>
         <RunAdhocActionButton isMenuButton />
         <ReprovisionButton isMenuButton />
+        <ReprovisionStackButton isMenuButton />
         <ReprovisionSandboxButton isMenuButton />
         {install?.runner_id ? (
           <ShutdownRunnerControl

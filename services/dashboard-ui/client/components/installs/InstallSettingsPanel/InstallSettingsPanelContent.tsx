@@ -17,6 +17,7 @@ import { EnableConfigSyncButton } from '@/components/installs/management/EnableC
 import { ForgetButton } from '@/components/installs/management/Forget'
 import { GenerateInstallConfigButton } from '@/components/installs/management/GenerateInstallConfig'
 import { ReprovisionButton } from '@/components/installs/management/Reprovision'
+import { ReprovisionStackButton } from '@/components/installs/management/ReprovisionStack'
 import { SyncSecretsButton } from '@/components/installs/management/SyncSecrets'
 
 const Section = ({
@@ -108,6 +109,12 @@ const InstallSettingsPanelContentInner = () => {
           description="Recreate all resources and redeploy every component. This causes downtime."
         >
           <ReprovisionButton />
+        </ActionCard>
+        <ActionCard
+          title="Stack"
+          description="Recreate the stack and runner for this install."
+        >
+          <ReprovisionStackButton />
         </ActionCard>
         <ActionCard
           title="Sandbox"
