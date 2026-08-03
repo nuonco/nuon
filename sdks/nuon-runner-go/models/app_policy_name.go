@@ -39,6 +39,9 @@ const (
 	// AppPolicyNameOrgReadOnly captures enum value "org_read_only"
 	AppPolicyNameOrgReadOnly AppPolicyName = "org_read_only"
 
+	// AppPolicyNameOrgBuilder captures enum value "org_builder"
+	AppPolicyNameOrgBuilder AppPolicyName = "org_builder"
+
 	// AppPolicyNameInstaller captures enum value "installer"
 	AppPolicyNameInstaller AppPolicyName = "installer"
 
@@ -54,7 +57,7 @@ var appPolicyNameEnum []any
 
 func init() {
 	var res []AppPolicyName
-	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","installer","runner","hosted_installer"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["org_admin","org_support","org_read_only","org_builder","installer","runner","hosted_installer"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
