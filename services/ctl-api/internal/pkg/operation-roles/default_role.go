@@ -15,6 +15,7 @@ func DefaultRoleForWorkflowType(appCfg *app.AppConfig, workflowType app.Workflow
 	switch workflowType {
 	case app.WorkflowTypeProvision,
 		app.WorkflowTypeReprovision,
+		app.WorkflowTypeReprovisionStack,
 		app.WorkflowTypeReprovisionSandbox,
 		app.WorkflowTypeDriftRunReprovisionSandbox:
 		return appCfg.PermissionsConfig.ProvisionRole.Name

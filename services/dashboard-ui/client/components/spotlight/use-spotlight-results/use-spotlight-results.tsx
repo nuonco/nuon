@@ -14,6 +14,7 @@ import {
   InstallEditInputsModal,
   InstallSyncSecretsModal,
   InstallReprovisionModal,
+  InstallReprovisionStackModal,
   InstallReprovisionSandboxModal,
   InstallDeployAllComponentsModal,
   InstallViewCurrentInputsModal,
@@ -235,6 +236,13 @@ export function useSpotlightResults(
               action: () => addModal?.(<InstallReprovisionModal installId={installId} />),
             },
             {
+              label: `${name} › Reprovision stack`,
+              subtitle: install.app?.name,
+              tag: 'command',
+              icon: 'StackPlusIcon',
+              action: () => addModal?.(<InstallReprovisionStackModal installId={installId} />),
+            },
+            {
               label: `${name} › Sync secrets`,
               subtitle: install.app?.name,
               tag: 'command',
@@ -368,6 +376,13 @@ export function useSpotlightResults(
             tag: 'command',
             icon: 'LightningIcon',
             action: () => addModal?.(<InstallReprovisionModal installId={installId} />),
+          },
+          {
+            label: `${name} › Reprovision stack`,
+            subtitle: install.app?.name,
+            tag: 'command',
+            icon: 'StackPlusIcon',
+            action: () => addModal?.(<InstallReprovisionStackModal installId={installId} />),
           },
           {
             label: `${name} › Reprovision sandbox`,

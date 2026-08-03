@@ -54,11 +54,13 @@ func (c *client) DeprovisionInstallSandbox(ctx context.Context, installID string
 }
 
 func (c *client) ReprovisionInstallSandbox(ctx context.Context, installID string, skipComponents ...bool) (*models.AppWorkflowResponse, error) {
+	skip := len(skipComponents) > 0 && skipComponents[0]
 	resp, err := c.genClient.Operations.ReprovisionInstallSandbox(&operations.ReprovisionInstallSandboxParams{
 		InstallID: installID,
 		Context:   ctx,
 		Req: &models.ServiceReprovisionInstallSandboxRequest{
-			PlanOnly: false,
+			PlanOnly:       false,
+			SkipComponents: skip,
 		},
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
