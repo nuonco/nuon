@@ -24,10 +24,20 @@ const (
 // CreateProcessQueues creates a queue for the given runner process with a cron health check
 // emitter and a scheduled uptime TTL emitter, then enqueues the process_init signal.
 func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, process *app.RunnerProcess) (*app.Queue, error) {
+	var runner app.Runner
+	if res := h.db.WithContext(ctx).Where(app.Runner{ID: runnerID}).First(&runner); res.Error != nil {
+		return nil, fmt.Errorf("unable to get runner: %w", res.Error)
+	}
+
+	namespace, err := h.processQueueNamespace(ctx, runner.OrgID)
+	if err != nil {
+		return nil, err
+	}
+
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerID,
 		OwnerType:   "runners",
-		Namespace:   "runners",
+		Namespace:   namespace,
 		Name:        fmt.Sprintf("runner-process-%s", process.ID),
 		MaxInFlight: 1,
 		MaxDepth:    10,

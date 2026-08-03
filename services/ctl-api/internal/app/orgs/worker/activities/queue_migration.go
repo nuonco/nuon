@@ -94,6 +94,10 @@ func (a *Activities) EnsureRunnerQueues(ctx context.Context, req EnsureRunnerQue
 		return fmt.Errorf("unable to ensure runner job group queues: %w", err)
 	}
 
+	if err := a.runnersHelpers.EnsureProcessQueueNamespaces(ctx, &runner); err != nil {
+		return fmt.Errorf("unable to ensure process queue namespaces: %w", err)
+	}
+
 	return nil
 }
 
