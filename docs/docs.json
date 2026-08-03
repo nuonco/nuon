@@ -125,6 +125,7 @@
               "concepts/actions",
               "concepts/policies",
               "concepts/operation-roles",
+              "concepts/triggers",
               "concepts/api-tokens",
               "concepts/service-accounts",
               "concepts/oidc-federation"
@@ -197,6 +198,7 @@
               "guides/control-plane-integration",
               "guides/github-actions",
               "guides/webhooks",
+              "guides/triggers",
               "guides/component-health",
               "guides/slack",
               "guides/ai-and-apps"
