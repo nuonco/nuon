@@ -550,6 +550,7 @@ func workflowSubjectIcon(e Event) string {
 	switch e.Workflow.Type {
 	case WorkflowTypeProvision,
 		WorkflowTypeReprovision,
+		WorkflowTypeReprovisionStack,
 		WorkflowTypeDeprovision,
 		WorkflowTypeInputUpdate,
 		WorkflowTypeSyncSecrets:

@@ -89,6 +89,8 @@ func titleFromWorkflowType(wfType string) string {
 		return "Deprovisioning sandbox"
 	case WorkflowTypeReprovisionSandbox:
 		return "Reprovisioning sandbox"
+	case WorkflowTypeReprovisionStack:
+		return "Reprovisioning stack"
 	case WorkflowTypeAppConfigBuild:
 		return "Building app config"
 	case WorkflowTypeAppBranchesRun,

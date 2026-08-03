@@ -44,6 +44,9 @@ const (
 	// reprovision everything
 	WorkflowTypeReprovision WorkflowType = "reprovision"
 
+	// reprovision the install stack only
+	WorkflowTypeReprovisionStack WorkflowType = "reprovision_stack"
+
 	// app config builds
 	WorkflowTypeAppConfigBuild WorkflowType = "app_config_build"
 
@@ -72,6 +75,8 @@ func (i WorkflowType) PastTenseName() string {
 		return "Reprovisioned install"
 	case WorkflowTypeReprovisionSandbox, WorkflowTypeDriftRunReprovisionSandbox:
 		return "Reprovisioned sandbox"
+	case WorkflowTypeReprovisionStack:
+		return "Reprovisioned stack"
 	case WorkflowTypeDeprovision:
 		return "Deprovisioned install"
 	case WorkflowTypeDeprovisionSandbox:
@@ -132,6 +137,8 @@ func (i WorkflowType) Name() string {
 		return "Deploying all components"
 	case WorkflowTypeReprovisionSandbox, WorkflowTypeDriftRunReprovisionSandbox:
 		return "Reprovisioning sandbox"
+	case WorkflowTypeReprovisionStack:
+		return "Reprovisioning stack"
 	case WorkflowTypeSyncSecrets:
 		return "Syncing secrets"
 	case WorkflowTypeActionWorkflowRun:
@@ -164,6 +171,8 @@ func (i WorkflowType) Description() string {
 		return "Creates a new runner stack, waits for it to be applied and then reprovisions the sandbox and deploys all components."
 	case WorkflowTypeReprovisionSandbox, WorkflowTypeDriftRunReprovisionSandbox:
 		return "Reprovisions the sandbox and redeploys everything on top of it."
+	case WorkflowTypeReprovisionStack:
+		return "Creates a new runner stack, waits for it to be applied and then regenerates install state. Optionally redeploys all components."
 	case WorkflowTypeDeprovision:
 		return "Deprovisions all components, deprovisions the sandbox and then waits for the cloudformation stack to be deleted."
 	case WorkflowTypeManualDeploy, WorkflowTypeActionWorkflowRun:

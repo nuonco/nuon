@@ -8,19 +8,11 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitinstallstackversionrun"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateinstallstackversion"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisiondns"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionrunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxplan"
-	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/syncsecrets"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -34,76 +26,11 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	sg := newStepGroup(flw)
 
-	sg.nextGroupEager() // reprovision service account
-	step, err := sg.installSignalStep(ctx, installID, "reprovision runner service account", pgtype.Hstore{}, &reprovisionrunner.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly)
+	stackSteps, err := getStackReprovisionSteps(ctx, sg, install, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
-	steps = append(steps, step)
-
-	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, installID)
-	if err != nil {
-		return nil, err
-	}
-
-	sg.nextGroupEager() // install stack
-
-	step, err = sg.installSignalStep(ctx, installID, "generate install stack", pgtype.Hstore{}, &generateinstallstackversion.Signal{
-		InstallStackID: stack.ID,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
-
-	step, err = sg.installSignalStep(ctx, installID, "await install stack", pgtype.Hstore{}, &awaitinstallstackversionrun.Signal{
-		InstallStackID: stack.ID,
-	}, flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
-
-	sg.nextGroupEager() // generate install state (after stack is ready)
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
-	var stateSignal signal.Signal
-	if stateGenV2 {
-		stateSignal = &statepartialgenerate.Signal{
-			InstallID:       installID,
-			Targets:         statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),
-			TriggeredByID:   installID,
-			TriggeredByType: "installs",
-		}
-	} else {
-		stateSignal = &generatestate.Signal{InstallID: installID}
-	}
-	step, err = sg.installSignalStep(
-		ctx,
-		installID,
-		"generate install state",
-		pgtype.Hstore{},
-		stateSignal,
-		flw.PlanOnly,
-		WithSkippable(false),
-	)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
-
-	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
+	steps = append(steps, stackSteps...)
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
@@ -132,7 +59,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	sg.nextGroup() // reprovision sandbox plan + apply
 
-	step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox plan", pgtype.Hstore{}, &reprovisionsandboxplan.Signal{
+	step, err := sg.installSignalStep(ctx, installID, "reprovision sandbox plan", pgtype.Hstore{}, &reprovisionsandboxplan.Signal{
 		InstallSandboxID: sandbox.ID,
 		InstallID:        installID,
 		Role:             flw.Role,

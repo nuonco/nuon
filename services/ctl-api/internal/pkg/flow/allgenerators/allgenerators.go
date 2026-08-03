@@ -40,6 +40,7 @@ func installGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
 		app.WorkflowTypeActionWorkflowRun:          v2workflows.RunActionWorkflow,
 		app.WorkflowTypeProvision:                  v2workflows.Provision,
 		app.WorkflowTypeReprovision:                v2workflows.Reprovision,
+		app.WorkflowTypeReprovisionStack:           v2workflows.ReprovisionStack,
 		app.WorkflowTypeReprovisionSandbox:         v2workflows.ReprovisionSandbox,
 		app.WorkflowTypeDriftRunReprovisionSandbox: v2workflows.ReprovisionSandbox,
 		app.WorkflowTypeDeprovision:                v2workflows.Deprovision,
