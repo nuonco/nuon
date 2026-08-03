@@ -43,7 +43,7 @@ export interface paths {
   "/v1/account/static-token": {
     /**
      * create a static API token for your org
-     * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, org_read_only, or org_builder) and defaults to org_read_only.
+     * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, or org_read_only) and defaults to org_read_only.
      */
     post: operations["CreateStaticToken"];
   };
@@ -5379,7 +5379,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "installer" | "runner" | "hosted_installer";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -5569,7 +5569,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "installer" | "runner" | "hosted-installer";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -8015,7 +8015,7 @@ export interface components {
       name: string;
       /**
        * @description org role granted to exchanged tokens. one of org_admin, org_support,
-       * org_read_only, org_builder. defaults to org_read_only.
+       * org_read_only. defaults to org_read_only.
        */
       role?: string;
       /** @description lifetime of exchanged tokens in seconds. defaults to 3600, max 86400. */
@@ -8147,7 +8147,7 @@ export interface components {
       /** @description human-friendly name to identify the token later */
       name: string;
       /**
-       * @description org role granted to the token. one of org_admin, org_support, org_read_only, org_builder.
+       * @description org role granted to the token. one of org_admin, org_support, org_read_only.
        * defaults to org_read_only.
        */
       role?: string;
@@ -9147,7 +9147,7 @@ export interface operations {
   };
   /**
    * create a static API token for your org
-   * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, org_read_only, or org_builder) and defaults to org_read_only.
+   * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, or org_read_only) and defaults to org_read_only.
    */
   CreateStaticToken: {
     /** @description Input */
