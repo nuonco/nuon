@@ -16,6 +16,7 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
+import { BranchRunApproval } from '@/components/branches/BranchRunApproval'
 import { BranchRunSummary } from '@/components/branches/BranchRunSummary'
 import { RuntimeChanges } from '@/components/branches/RuntimeChanges'
 import { WorkflowRunPanelButton } from '@/components/branches/WorkflowRunPanel'
@@ -149,6 +150,8 @@ const BranchRunDetailContent = () => {
             )}
           </div>
         </HeadingGroup>
+
+        <BranchRunApproval run={run} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {(branchRun?.vcs_connection_commit || branchRun?.pr_number) && (() => {
