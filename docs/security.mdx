@@ -36,6 +36,10 @@ Vendors can define break glass roles for temporary elevated access during emerge
 
 Nuon only stores logs of infrastructure operations (e.g., creating a Kubernetes cluster, deploying a Helm chart, running Terraform). Application logs are never sent to the Control Plane. [Actions](/concepts/actions) can execute operational scripts, but the IAM roles they use are defined by the vendor and approved by the customer through the Stack.
 
+Customers can optionally [export detailed runner audit logs](/guides/export-runner-audit-logs) directly from their cloud account
+to an OTLP-compatible logging backend they control. Only Nuon audit events are forwarded. Application logs and general
+runner logs are excluded, and exporter credentials remain in the customer's cloud secret manager.
+
 ## Build Isolation
 
 [Build Runners](/architecture/platform#build-runner) are always single-tenant. Each is deployed to its own host and does not share resources with other Runners. Build artifacts are stored as OCI images in the customer's cloud registry.
