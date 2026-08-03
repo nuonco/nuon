@@ -43,7 +43,7 @@ export interface paths {
   "/v1/account/static-token": {
     /**
      * create a static API token for your org
-     * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, or org_read_only) and defaults to org_read_only.
+     * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, org_read_only, or org_builder) and defaults to org_read_only.
      */
     post: operations["CreateStaticToken"];
   };
@@ -631,6 +631,23 @@ export interface paths {
      * viewer](https://dreampuf.github.io/GraphvizOnline).
      */
     get: operations["GetAppConfigGraphV2"];
+  };
+  "/v1/apps/{app_id}/configs/{config_id}/sync": {
+    /**
+     * @description Sync an app config that was created with an intermediate config.
+     *
+     * The config is applied asynchronously: this returns `202` immediately and the
+     * config moves through `syncing` to `active` or `error`. Poll
+     * `GET /v1/apps/{app_id}/configs/{config_id}` for the outcome — `status`,
+     * `status_description`, and the resolved `component_ids` / `action_ids` /
+     * `runbook_ids`. Scheduled component builds and resources orphaned by this sync are
+     * reported under `state.result`.
+     *
+     * Component builds are scheduled as part of the sync. A component whose config is
+     * unchanged since the previous sync, and whose last build did not fail, keeps its
+     * existing config connection and is not rebuilt.
+     */
+    post: operations["SyncAppConfig"];
   };
   "/v1/apps/{app_id}/configs/{config_id}/update-installs": {
     /** @description Update app configuration across multiple installs. */
@@ -1852,6 +1869,13 @@ export interface paths {
      * @description Sets the install's health baseline to now: uptime and the health timeline start counting from this moment. Past observations stay recorded but no longer count toward uptime. Requires the component-health feature.
      */
     post: operations["ResetInstallHealthBaseline"];
+  };
+  "/v1/installs/{install_id}/health/cluster-access": {
+    /**
+     * refresh the cluster access component health reads through
+     * @description Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed since component health was enabled, or after the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute. Requires the component-health feature.
+     */
+    post: operations["RefreshInstallHealthClusterAccess"];
   };
   "/v1/installs/{install_id}/health/timeline": {
     /**
@@ -3742,6 +3766,13 @@ export interface components {
       /** @description InstanceType is the cloud machine/instance type for the install runner host, mapped per cloud platform. */
       instance_type?: string;
       org_id?: string;
+      /**
+       * @description PhoneHomeScriptURL overrides the phone-home Lambda source fetched at stack
+       * render time. Per app so a single app can be moved onto a new script version
+       * without touching anyone else: the default is shared by every org, so changing
+       * it ships to the whole fleet on their next stack regeneration.
+       */
+      phone_home_script_url?: string;
       /** @description PublicAPIURL overrides the Nuon public API endpoint used for phone-home callbacks. */
       public_api_url?: string;
       /** @description RunnerAPIURL overrides the Nuon runner API endpoint for installs using this config. */
@@ -4064,6 +4095,7 @@ export interface components {
       health_block_deploy?: boolean | null;
       health_enabled?: boolean | null;
       health_probes?: components["schemas"]["app.ComponentHealthProbe"][];
+      health_required_checks?: string[];
       /** @description Duration string for how long health must hold after a deploy applies (e.g., "3m"). Max 1h. */
       health_stabilization_window?: string;
       helm?: components["schemas"]["app.HelmComponentConfig"];
@@ -4385,6 +4417,12 @@ export interface components {
       expected_project_id?: string;
       expected_subscription_id?: string;
       gcp_account?: components["schemas"]["app.GCPAccount"];
+      /**
+       * @description HealthClusterError is why component health cannot currently inspect the
+       * install's cluster, empty when it can. Install-level because it is one
+       * fact about the install rather than a property of any component.
+       */
+      health_cluster_error?: string;
       id?: string;
       install_action_workflows?: components["schemas"]["app.InstallActionWorkflow"][];
       install_components?: components["schemas"]["app.InstallComponent"][];
@@ -4398,6 +4436,12 @@ export interface components {
       install_stack?: components["schemas"]["app.InstallStack"];
       install_states?: components["schemas"]["app.InstallState"][];
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
+      /**
+       * @description LastHealthReportAt is when a runner last reported component health. It is
+       * how the staleness sweep finds installs that went quiet without polling
+       * every install individually.
+       */
+      last_health_report_at?: string;
       lifecycle_phase?: Record<string, never>;
       links?: {
         [key: string]: unknown;
@@ -5335,7 +5379,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "installer" | "runner" | "hosted_installer";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -5525,7 +5569,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "installer" | "runner" | "hosted-installer";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -7630,6 +7674,8 @@ export interface components {
       helm_driver?: components["schemas"]["app.AppRunnerConfigHelmDriverType"];
       init_script_url?: string;
       instance_type?: string;
+      /** @description PhoneHomeScriptURL overrides the phone-home Lambda source for this app. */
+      phone_home_script_url?: string;
       public_api_url?: string;
       runner_api_url?: string;
       type: components["schemas"]["app.AppRunnerType"];
@@ -7793,6 +7839,7 @@ export interface components {
       health_block_deploy?: boolean | null;
       health_enabled?: boolean | null;
       health_probes?: components["schemas"]["service.HealthProbeRequest"][];
+      health_required_checks?: string[];
       /** @description Duration string for the health stabilization window (e.g., "3m") */
       health_stabilization_window?: string;
       helm_repo_config?: components["schemas"]["service.HelmRepoConfigRequest"];
@@ -7929,6 +7976,7 @@ export interface components {
       health_block_deploy?: boolean | null;
       health_enabled?: boolean | null;
       health_probes?: components["schemas"]["service.HealthProbeRequest"][];
+      health_required_checks?: string[];
       /** @description Duration string for the health stabilization window (e.g., "3m") */
       health_stabilization_window?: string;
       kubernetes_context?: string;
@@ -7967,7 +8015,7 @@ export interface components {
       name: string;
       /**
        * @description org role granted to exchanged tokens. one of org_admin, org_support,
-       * org_read_only. defaults to org_read_only.
+       * org_read_only, org_builder. defaults to org_read_only.
        */
       role?: string;
       /** @description lifetime of exchanged tokens in seconds. defaults to 3600, max 86400. */
@@ -8099,7 +8147,7 @@ export interface components {
       /** @description human-friendly name to identify the token later */
       name: string;
       /**
-       * @description org role granted to the token. one of org_admin, org_support, org_read_only.
+       * @description org role granted to the token. one of org_admin, org_support, org_read_only, org_builder.
        * defaults to org_read_only.
        */
       role?: string;
@@ -8246,6 +8294,11 @@ export interface components {
       component_name?: string;
       current_health?: string;
       install_component_id?: string;
+      /**
+       * @description ObservedSeconds distinguishes "no data" from "0% up" — without it a
+       * component that was never observed renders as total downtime.
+       */
+      observed_seconds?: number;
       uptime_percent?: number;
     };
     "service.InstallComponentHealthTimelineResponse": {
@@ -8278,6 +8331,11 @@ export interface components {
       unhealthy_components?: number;
     };
     "service.InstallHealthTimelineResponse": {
+      /**
+       * @description ClusterAccessError is why health cannot currently inspect the install's
+       * cluster, empty when it can. Surfaced once here rather than per component.
+       */
+      cluster_access_error?: string;
       components?: components["schemas"]["service.InstallComponentHealthSummary"][];
       current_health?: string;
       daily?: components["schemas"]["service.dailyHealthBucket"][];
@@ -8446,6 +8504,18 @@ export interface components {
       original?: string;
       readme?: string;
       warnings?: string[];
+    };
+    "service.RefreshInstallHealthClusterAccessRequest": {
+      /**
+       * @description RoleName is the identity health should read the cluster through. Empty
+       * means the maintenance role, the same default drift and action runs use.
+       */
+      role_name?: string;
+    };
+    "service.RefreshInstallHealthClusterAccessResponse": {
+      cluster_found?: boolean;
+      cluster_id?: string;
+      role_name?: string;
     };
     "service.RemoveActionLabelsRequest": {
       keys: string[];
@@ -8658,7 +8728,7 @@ export interface components {
       claim_conditions?: {
         [key: string]: string;
       };
-      enabled?: boolean;
+      enabled?: boolean | null;
       issuer_url?: string;
       name?: string;
       role?: string;
@@ -9077,7 +9147,7 @@ export interface operations {
   };
   /**
    * create a static API token for your org
-   * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, or org_read_only) and defaults to org_read_only.
+   * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, org_read_only, or org_builder) and defaults to org_read_only.
    */
   CreateStaticToken: {
     /** @description Input */
@@ -13999,6 +14069,74 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * @description Sync an app config that was created with an intermediate config.
+   *
+   * The config is applied asynchronously: this returns `202` immediately and the
+   * config moves through `syncing` to `active` or `error`. Poll
+   * `GET /v1/apps/{app_id}/configs/{config_id}` for the outcome — `status`,
+   * `status_description`, and the resolved `component_ids` / `action_ids` /
+   * `runbook_ids`. Scheduled component builds and resources orphaned by this sync are
+   * reported under `state.result`.
+   *
+   * Component builds are scheduled as part of the sync. A component whose config is
+   * unchanged since the previous sync, and whose last build did not fail, keeps its
+   * existing config connection and is not rebuilt.
+   */
+  SyncAppConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": components["schemas"]["app.AppConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -22651,6 +22789,62 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["service.ResetInstallHealthBaselineResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * refresh the cluster access component health reads through
+   * @description Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed since component health was enabled, or after the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute. Requires the component-health feature.
+   */
+  RefreshInstallHealthClusterAccess: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["service.RefreshInstallHealthClusterAccessRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.RefreshInstallHealthClusterAccessResponse"];
         };
       };
       /** @description Bad Request */
