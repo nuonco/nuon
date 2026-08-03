@@ -8,6 +8,7 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -70,6 +71,7 @@ export const CurrentInputs = () => {
   const hasCloudIdentifier = cloudMetadataRows.some(
     ({ key }) => key !== 'target_source'
   )
+  const phoneHomeAuth = install?.phone_home_auth
 
   const { data: inputs, isLoading: inputsLoading } = useQuery({
     queryKey: ['install-inputs', org?.id, install?.id],
@@ -163,19 +165,68 @@ export const CurrentInputs = () => {
         </div>
       </div>
 
-      {phoneHomeAuthEnabled && hasCloudIdentifier && (
-        <Card className="flex flex-col gap-4">
-          <Text weight="strong">Cloud platform metadata</Text>
-          <div className="flex flex-wrap gap-6 items-start">
-            {cloudMetadataRows.map(({ key, label }) => (
-              <LabeledValue key={key} label={label}>
-                <Text family="mono" variant="subtext">
-                  {cloudMetadata[key]}
-                </Text>
-              </LabeledValue>
-            ))}
-          </div>
-        </Card>
+      {phoneHomeAuthEnabled && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {hasCloudIdentifier && (
+            <Card className="flex flex-col gap-4 h-full">
+              <Text weight="strong">Cloud Platform Metadata</Text>
+              <div className="flex flex-wrap gap-6 items-start">
+                {cloudMetadataRows.map(({ key, label }) => (
+                  <LabeledValue key={key} label={label}>
+                    <Text family="mono" variant="subtext">
+                      {cloudMetadata[key]}
+                    </Text>
+                  </LabeledValue>
+                ))}
+              </div>
+            </Card>
+          )}
+          <Card className="flex flex-col gap-4 h-full">
+            <Text weight="strong">Phone Home Auth</Text>
+            {phoneHomeAuth ? (
+              <div className="flex flex-wrap gap-6 items-start">
+                <LabeledValue label="Provisioned">
+                  <Time
+                    format="relative"
+                    variant="subtext"
+                    time={phoneHomeAuth.provisioned_at}
+                  />
+                </LabeledValue>
+                <LabeledValue label="Last verified">
+                  {phoneHomeAuth.last_verified_at ? (
+                    <Time
+                      format="relative"
+                      variant="subtext"
+                      time={phoneHomeAuth.last_verified_at}
+                    />
+                  ) : (
+                    <Text variant="subtext" theme="neutral">
+                      —
+                    </Text>
+                  )}
+                </LabeledValue>
+                <LabeledValue label="Last rejected">
+                  {phoneHomeAuth.last_rejected_at ? (
+                    <Time
+                      format="relative"
+                      variant="subtext"
+                      time={phoneHomeAuth.last_rejected_at}
+                    />
+                  ) : (
+                    <Text variant="subtext" theme="neutral">
+                      —
+                    </Text>
+                  )}
+                </LabeledValue>
+              </div>
+            ) : (
+              <Text variant="subtext" theme="neutral">
+                Phone-home credentials have not been provisioned for this
+                install yet.
+              </Text>
+            )}
+          </Card>
+        </div>
       )}
 
       {!isLoading && (hasConfig || hasInputs) ? (
