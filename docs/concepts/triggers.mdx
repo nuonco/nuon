@@ -1,0 +1,67 @@
+---
+title: "Triggers"
+icon: "bolt"
+description: "Automate Nuon using external events with triggers."
+keywords: ["trigger", "triggers", "webhook", "inbound webhook", "event", "event ingress", "dispatch", "trigger rule", "app branch run", "runbook", "GitHub trigger", "SNS", "Pub/Sub"]
+---
+
+A **trigger** is an inbound webhook endpoint. External systems — a Git host, a cloud pub/sub topic, a CI provider — send events to a per-trigger **ingress URL**, and Nuon authenticates, deduplicates, and routes each event to a target: an **app branch run** or an **install runbook**.
+
+Use triggers to react to external events automatically — for example, kick off a build when a branch is pushed, or run a runbook when a cloud alert fires.
+
+## How it works
+
+1. You create a trigger, which gives you a unique, secret **ingress URL**.
+2. An external system POSTs an event to that URL. Nuon verifies its authenticity, unwraps any envelope, and stores it as an **event**.
+3. The event is evaluated against your **rules** (authored in your app config). Each matching rule produces a **dispatch**.
+4. Each dispatch starts its target — an app branch run or an install runbook — passing along values mapped from the event payload.
+
+## Concepts
+
+| Concept | Description |
+| --- | --- |
+| **Trigger** | The inbound endpoint. Holds the ingress URL, authentication settings, and signing secrets. |
+| **Rule** | A routing rule that matches events and starts a target. Authored in your app config — see [Configure triggers](/guides/triggers). |
+| **Event** | A single received payload, stored with its headers, body, and routing outcome. |
+| **Dispatch** | One target execution produced by a matching rule, with its own status and retry state. |
+
+## Authentication
+
+Triggers verify that incoming events are genuine. Choose an authentication type when you create a trigger:
+
+| Auth type | Description |
+| --- | --- |
+| `none` | No verification. Use only for testing or when the ingress URL is the sole secret. |
+| `hmac` | Verify an HMAC signature computed over the request body with a shared secret. The default. |
+| `api_key` | Verify a static key sent in a header. |
+| `basic` | Verify HTTP Basic credentials. |
+| `bearer_jwt` | Verify a bearer JWT (optionally against an expected audience, subject, or email). |
+| `sns_signature` | Verify an AWS SNS message signature. |
+
+### Presets
+
+Presets configure authentication and payload parsing for a known provider so you don't have to set the details by hand. Supported presets: `github`, `slack-events`, `datadog`, `aws-eventbridge`, `aws-sns`, `google-pubsub`, and `azure-event-grid`.
+
+### Envelopes
+
+Some providers wrap the real payload in a transport envelope. Set an envelope so Nuon unwraps it before evaluating rules: `none` (default), `pubsub_push`, `cloudevents`, or `sns`.
+
+## Secrets
+
+Each trigger has one or more signing secrets used to verify incoming events. Secrets support rotation: you can add a new secret, reveal it once, and revoke old ones without downtime.
+
+## Status
+
+A trigger is either `active` (accepting events) or `suspended` (rejecting them). Disable a trigger to stop processing events without deleting it.
+
+## Managing triggers
+
+Manage triggers in the Dashboard on the **Triggers** page, or with the `nuon triggers` CLI commands.
+
+```sh
+nuon triggers create my-trigger --preset github
+nuon triggers list
+nuon triggers reveal-ingress-url <trigger-id>
+```
+
+To define how events are routed, author rules in your app config and inspect received events and dispatches — see [Configure triggers](/guides/triggers).
