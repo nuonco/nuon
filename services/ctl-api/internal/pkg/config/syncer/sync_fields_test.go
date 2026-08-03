@@ -45,15 +45,18 @@ type syncDeps struct {
 	TFClient         terraform.Client
 }
 
-// SyncFieldsTestSuite runs the branch-sync path against a real database and
-// asserts the config fields it is expected to persist. The CLI path reaches the
-// same builders through the HTTP handlers, so a field covered here is covered
-// for both.
+// SyncFieldsTestSuite runs the syncer against a real database and asserts the
+// config fields it is expected to persist. Both the CLI path and app branch sync
+// go through this syncer, so a field covered here is covered for both.
 type SyncFieldsTestSuite struct {
 	tests.BaseDBTestSuite
 
 	app  *fxtest.App
 	deps syncDeps
+
+	// scheduled holds the components the most recent sync reported as needing a
+	// build. Only populated by syncs that own build scheduling.
+	scheduled []pkgsync.ComponentState
 }
 
 type syncFieldsWorkflowRun struct{}
@@ -104,12 +107,24 @@ func (s *SyncFieldsTestSuite) TearDownSuite() {
 // sync seeds an org/app/app-config, runs the branch-sync path over cfg, and
 // returns the app config it synced into.
 func (s *SyncFieldsTestSuite) sync(cfg *config.AppConfig) (context.Context, *app.App, *app.AppConfig) {
+	ctx, testApp, _ := s.syncEmpty()
+	return ctx, testApp, s.syncInto(ctx, testApp.ID, cfg)
+}
+
+// syncEmpty seeds an org and app without syncing anything, for tests that sync
+// more than once against the same app.
+func (s *SyncFieldsTestSuite) syncEmpty() (context.Context, *app.App, *app.AppConfig) {
 	ctx := context.Background()
 	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
 	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
 
-	testApp := s.deps.Seed.CreateApp(ctx, s.T())
-	appCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), testApp.ID)
+	return ctx, s.deps.Seed.CreateApp(ctx, s.T()), nil
+}
+
+// syncInto runs the branch-sync path — build dispatch off — into a fresh app
+// config on an existing app.
+func (s *SyncFieldsTestSuite) syncInto(ctx context.Context, appID string, cfg *config.AppConfig) *app.AppConfig {
+	appCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), appID)
 
 	syncer := NewDBSyncer(
 		s.deps.DB,
@@ -120,13 +135,13 @@ func (s *SyncFieldsTestSuite) sync(cfg *config.AppConfig) (context.Context, *app
 		s.deps.InstallHelpers,
 		s.deps.VCSHelpers,
 		s.deps.TFClient,
-		testApp.ID,
+		appID,
 		cfg,
 		appCfg.ID,
 	)
 	s.Require().NoError(syncer.Sync(ctx), "sync should succeed")
 
-	return ctx, testApp, appCfg
+	return appCfg
 }
 
 func iamRole(name string) *config.AppAWSIAMRole {

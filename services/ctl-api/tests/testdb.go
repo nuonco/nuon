@@ -215,6 +215,7 @@ func runMigrator(ctx context.Context, db *gorm.DB) error {
 
 	psqlMigs := psqlmigrations.New(psqlmigrations.Params{
 		AcctClient: acctClient,
+		L:          logger,
 	})
 
 	migrator := migrations.New(migrations.Params{

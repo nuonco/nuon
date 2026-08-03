@@ -32,4 +32,17 @@ type State struct {
 	Components      []ComponentState `json:"components"`
 	Actions         []ActionState    `json:"actions"`
 	Runbooks        []RunbookState   `json:"runbooks"`
+
+	Result *Result `json:"result,omitempty"`
+}
+
+// Result carries sync outcomes persisted in the state so a client polling the
+// app config can report scheduled builds and orphaned resources.
+type Result struct {
+	ComponentsScheduled []ComponentState `json:"components_scheduled,omitempty"`
+
+	// Orphaned* map name to ID for resources dropped since the previous config.
+	OrphanedComponents map[string]string `json:"orphaned_components,omitempty"`
+	OrphanedActions    map[string]string `json:"orphaned_actions,omitempty"`
+	OrphanedRunbooks   map[string]string `json:"orphaned_runbooks,omitempty"`
 }

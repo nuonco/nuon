@@ -16,7 +16,7 @@ import (
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/parse"
-	"github.com/nuonco/nuon/pkg/config/sync/apisyncer"
+	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/config/validate"
 	"github.com/nuonco/nuon/pkg/errs"
 )
@@ -26,9 +26,7 @@ const (
 	defaultSyncSleep                 time.Duration = time.Second * 20
 	componentBuildStatusError                      = "error"
 	componentBuildStatusPolicyFailed               = "policy_failed"
-	componentBuildStatusBuilding                   = "building"
 	componentBuildStatusActive                     = "active"
-	componentStatusQueued                          = "queued"
 )
 
 // SyncOptions controls how the target app is resolved when syncing a directory.
@@ -139,14 +137,12 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 	}
 
 	var branchID string
-	var syncerOpts []apisyncer.SyncerOption
 	if opts.Branch != "" {
 		var branchErr error
 		branchID, branchErr = s.resolveAppBranchID(ctx, appID, opts.Branch)
 		if branchErr != nil {
 			return ui.PrintError(branchErr)
 		}
-		syncerOpts = append(syncerOpts, apisyncer.WithAppBranch(branchID, opts.Preview))
 		ui.PrintLn(fmt.Sprintf("targeting app branch %q", opts.Branch))
 	} else if opts.AppBranch {
 		var branchErr error
@@ -154,20 +150,17 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		if branchErr != nil {
 			return ui.PrintError(branchErr)
 		}
-		syncerOpts = append(syncerOpts, apisyncer.WithAppBranch(branchID, opts.Preview))
 	}
 
-	syncer := apisyncer.New(s.api, appID, version, cfg, syncerOpts...)
-	err = syncer.Sync(ctx)
+	appConfig, state, err := s.pushConfig(ctx, appID, version, cfg, opts, branchID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
 
 	// When targeting a branch, trigger a branch run with the synced app config
 	if branchID != "" {
-		appConfigID := syncer.GetAppConfigID()
 		run, triggerErr := s.api.TriggerAppBranchRun(ctx, appID, branchID, &models.ServiceTriggerAppBranchRunRequest{
-			AppConfigID: appConfigID,
+			AppConfigID: appConfig.ID,
 			PlanOnly:    opts.Preview,
 		})
 		if triggerErr != nil {
@@ -181,11 +174,13 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 	}
 
 	ui.PrintSuccess("successfully synced " + dir)
-	s.notifyOrphanedComponents(syncer.OrphanedComponents())
-	s.notifyOrphanedActions(syncer.OrphanedActions())
+	s.notifySyncResult(state.Result)
 
 	result := syncResult{AppID: appID, Dir: dir}
-	cmpsScheduled := syncer.GetComponentsScheduled()
+	var cmpsScheduled []sync.ComponentState
+	if state.Result != nil {
+		cmpsScheduled = state.Result.ComponentsScheduled
+	}
 	if len(cmpsScheduled) == 0 {
 		if opts.PrintJSON {
 			ui.PrintJSON(result)
