@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { useSearchParams } from 'react-router'
 import { useOrg } from '@/hooks/use-org'
 import type { TInstallWorkflow } from '@/types'
-import { GroupApprovalActions } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
+import { GroupActionButton } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep/GroupApprovalActions'
 import { BranchRunApproval, type IBranchRunApprovalItem } from './BranchRunApproval'
 
 interface IBranchRunApprovalContainer {
@@ -47,7 +47,8 @@ export const BranchRunApprovalContainer = ({ run }: IBranchRunApprovalContainer)
         groupName,
         onReview: () => openStep(step.id),
         actions: (
-          <GroupApprovalActions
+          <GroupActionButton
+            action="approve"
             target={{
               orgId,
               workflowId: step.install_workflow_id ?? run.id ?? '',
