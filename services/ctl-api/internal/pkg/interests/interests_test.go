@@ -49,6 +49,16 @@ func TestMatches(t *testing.T) {
 		WorkflowType: "reprovision_sandbox",
 		Phase:        signal.SignalPhaseExecute,
 	}
+	stackReprovisionSuccess := signal.SignalPhaseEvent{
+		SignalType:   signalTypeExecuteWorkflow,
+		WorkflowType: "reprovision_stack",
+		Phase:        signal.SignalPhaseExecute,
+	}
+	stackReprovisionStepSuccess := signal.SignalPhaseEvent{
+		SignalType:   signalTypeExecuteWorkflowStep,
+		WorkflowType: "reprovision_stack",
+		Phase:        signal.SignalPhaseExecute,
+	}
 	unknownType := signal.SignalPhaseEvent{
 		SignalType:   signalTypeExecuteWorkflow,
 		WorkflowType: "app_branches_manual_update", // not in the v1 taxonomy
@@ -357,6 +367,49 @@ func TestMatches(t *testing.T) {
 				ResourceSandboxes: {Ops: []string{"reprovision"}, Outcome: OutcomeAll},
 			}},
 			want: true,
+		},
+		{
+			name:    "stack reprovision matches installs.reprovision",
+			event:   stackReprovisionSuccess,
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceInstalls: {Ops: []string{"reprovision"}, Outcome: OutcomeAll},
+			}},
+			want: true,
+		},
+		{
+			name:    "stack reprovision matches AllEvents",
+			event:   stackReprovisionSuccess,
+			outcome: successOutcome,
+			in:      Interests{AllEvents: true},
+			want:    true,
+		},
+		{
+			name:    "stack reprovision does not match sandboxes.reprovision",
+			event:   stackReprovisionSuccess,
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceSandboxes: {Ops: []string{"reprovision"}, Outcome: OutcomeAll},
+			}},
+			want: false,
+		},
+		{
+			name:    "stack reprovision step matches runners.reprovision",
+			event:   stackReprovisionStepSuccess,
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceRunners: {Ops: []string{"reprovision"}, Outcome: OutcomeAll},
+			}},
+			want: true,
+		},
+		{
+			name:    "stack reprovision step does not match runners.provision",
+			event:   stackReprovisionStepSuccess,
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceRunners: {Ops: []string{"provision"}, Outcome: OutcomeAll},
+			}},
+			want: false,
 		},
 		{
 			name:    "sandbox manual reprovision does not match sandboxes.drift",

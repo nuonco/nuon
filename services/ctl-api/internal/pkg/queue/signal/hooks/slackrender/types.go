@@ -68,6 +68,7 @@ const (
 	WorkflowTypeDeprovision                    = "deprovision"
 	WorkflowTypeDeprovisionSandbox             = "deprovision_sandbox"
 	WorkflowTypeReprovisionSandbox             = "reprovision_sandbox"
+	WorkflowTypeReprovisionStack               = "reprovision_stack"
 	WorkflowTypeAppConfigBuild                 = "app_config_build"
 	WorkflowTypeAppBranchesRun                 = "app_branches_manual_update"
 	WorkflowTypeAppBranchesConfigRepoUpdate    = "app_branches_config_repo_update"

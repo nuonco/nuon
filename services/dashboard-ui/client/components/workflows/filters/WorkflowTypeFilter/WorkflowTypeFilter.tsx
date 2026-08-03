@@ -20,6 +20,7 @@ const WORKFLOW_TYPE_OPTIONS = [
   'sync_secrets',
   'drift_run',
   'reprovision',
+  'reprovision_stack',
 ] as const
 
 interface IWorkflowTypeFilter {

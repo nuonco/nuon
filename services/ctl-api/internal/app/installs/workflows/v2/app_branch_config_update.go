@@ -88,9 +88,9 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	steps = append(steps, step)
 
 	if diff != nil && diff.StackChanged {
-		stackSteps, err := getStackReprovisionSteps(ctx, sg, installID, flw.PlanOnly)
+		stackSteps, err := getStackVersionSteps(ctx, sg, installID, flw.PlanOnly)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to generate stack reprovision steps")
+			return nil, errors.Wrap(err, "unable to generate stack version steps")
 		}
 		steps = append(steps, stackSteps...)
 	}
@@ -182,7 +182,11 @@ func filterComponentsByDiff(componentIDs []string, newAppCfg *app.AppConfig, dif
 	return filtered
 }
 
-func getStackReprovisionSteps(ctx workflow.Context, sg *stepGroup, installID string, planOnly bool) ([]*app.WorkflowStep, error) {
+// getStackVersionSteps emits a new install stack version and the wait for its run.
+// This regenerates the stack template only — see getStackReprovisionSteps for the
+// full stack recreation, which also recycles the runner service account and install
+// state around it.
+func getStackVersionSteps(ctx workflow.Context, sg *stepGroup, installID string, planOnly bool) ([]*app.WorkflowStep, error) {
 	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, installID)
 	if err != nil {
 		return nil, err
