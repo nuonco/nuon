@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Icon } from '@/components/common/Icon'
 import { KeyValueList } from '@/components/common/KeyValueList'
+import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TKeyValue } from '@/types'
@@ -105,6 +107,16 @@ export const SandboxVariablesFilesModal = ({
   ...props
 }: SandboxVariablesFilesModalProps) => {
   const variablesFilesContent = variablesFiles.join('\n---\n')
+  const hasMultipleFiles = variablesFiles.length > 1
+
+  const fileTabs: Record<string, ReactNode> = {}
+  variablesFiles.forEach((file, idx) => {
+    fileTabs[`file ${idx + 1}`] = (
+      <CodeBlock language="hcl" className="!max-h-fit">
+        {file}
+      </CodeBlock>
+    )
+  })
 
   return (
     <Modal
@@ -128,9 +140,13 @@ export const SandboxVariablesFilesModal = ({
             <ClickToCopyButton textToCopy={variablesFilesContent} className="w-fit" />
           </div>
         </div>
-        <CodeBlock language="hcl" className="!max-h-fit">
-          {variablesFilesContent}
-        </CodeBlock>
+        {hasMultipleFiles ? (
+          <Tabs tabs={fileTabs} />
+        ) : (
+          <CodeBlock language="hcl" className="!max-h-fit">
+            {variablesFilesContent}
+          </CodeBlock>
+        )}
       </div>
     </Modal>
   )
