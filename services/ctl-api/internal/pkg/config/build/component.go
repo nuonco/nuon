@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/refs"
+	"github.com/nuonco/nuon/pkg/hasher"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/validation"
 )
@@ -107,13 +108,27 @@ func ComponentConnection(in ComponentConnectionInput) (*app.ComponentConfigConne
 	return ccc, nil
 }
 
+// ComponentChecksum hashes the resolved component. Sync compares this against
+// the checksum on the previous config connection to decide whether a component
+// changed, so it must cover everything that resolution folded in — vars from
+// other files, interpolated values — not just the component's own file. The
+// config's own Checksum field is a per-file hash and misses those.
+func ComponentChecksum(comp *config.Component) (string, error) {
+	return hasher.HashStruct(comp, hasher.StructHasherOptions{EnableOmitEmpty: true})
+}
+
 // ComponentConnectionInputFromConfig is the single place that knows which
 // shared connection fields each component type exposes.
 func ComponentConnectionInputFromConfig(comp *config.Component, componentID, appConfigID string, dependencyIDs []string) (ComponentConnectionInput, error) {
+	checksum, err := ComponentChecksum(comp)
+	if err != nil {
+		return ComponentConnectionInput{}, fmt.Errorf("unable to checksum component %s: %w", comp.Name, err)
+	}
+
 	in := ComponentConnectionInput{
 		ComponentID:           componentID,
 		AppConfigID:           appConfigID,
-		Checksum:              comp.Checksum,
+		Checksum:              checksum,
 		DependencyIDs:         dependencyIDs,
 		References:            refStrings(comp.References),
 		Toggleable:            comp.Toggleable,

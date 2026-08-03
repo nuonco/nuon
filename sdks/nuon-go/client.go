@@ -88,6 +88,7 @@ type Client interface {
 	// app config methods
 	GetAppConfigTemplate(ctx context.Context, appID string, typ models.ServiceAppConfigTemplateType) (*models.ServiceAppConfigTemplate, error)
 	CreateAppConfig(ctx context.Context, appID string, req *models.ServiceCreateAppConfigRequest) (*models.AppAppConfig, error)
+	SyncAppConfig(ctx context.Context, appID, appConfigID string) (*models.AppAppConfig, error)
 	UpdateAppConfigInstalls(ctx context.Context, appID, appConfigID string, req *models.ServiceUpdateAppConfigInstallsRequest) error
 	GetAppConfig(ctx context.Context, appID, appConfigID string, recurse *bool) (*models.AppAppConfig, error)
 	GetAppLatestConfig(ctx context.Context, appID string) (*models.AppAppConfig, error)

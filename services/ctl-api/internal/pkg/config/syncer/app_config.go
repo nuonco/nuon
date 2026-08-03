@@ -34,6 +34,15 @@ func (s *syncer) fetchState(ctx context.Context) {
 
 // persistState writes state the CLI sync reads back on its next run.
 func (s *syncer) persistState(ctx context.Context) error {
+	if orphans := s.orphanedResult(); orphans != nil {
+		if s.state.Result == nil {
+			s.state.Result = &sync.Result{}
+		}
+		s.state.Result.OrphanedComponents = orphans.OrphanedComponents
+		s.state.Result.OrphanedActions = orphans.OrphanedActions
+		s.state.Result.OrphanedRunbooks = orphans.OrphanedRunbooks
+	}
+
 	stateJSON, err := json.Marshal(s.state)
 	if err != nil {
 		return sync.SyncInternalErr{

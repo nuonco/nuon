@@ -378,6 +378,23 @@ internal/ui/v3/<feature>/
 └── selector/        # Sub-components if needed
 ```
 
+### How `nuon apps sync` works
+
+The CLI does **not** walk the API's per-resource `Create*Config` endpoints. It parses and validates the config
+locally, then hands the whole thing to the API in one shot (`internal/services/apps/sync_push.go`):
+
+1. `POST /v1/apps/:app_id/configs` with `intermediate_config_json` — the serialized parsed config.
+2. `POST /v1/apps/:app_id/configs/:config_id/sync` — asks the API to apply it. Returns `202`; the work runs on the
+   app's queue.
+3. Poll `GET /v1/apps/:app_id/configs/:config_id` until `status` is `active` or `error`, surfacing
+   `status_description` as it moves.
+4. Read `state.result` off the synced config for the components that had builds scheduled and for resources orphaned
+   by this sync, then wait on those builds.
+
+All config-to-database conversion lives server-side in `services/ctl-api/internal/pkg/config/syncer`. **Do not add
+config knowledge to the CLI beyond parsing and validation** — a client-side syncer (`pkg/config/sync/apisyncer`) is
+exactly what this replaced, after it silently drifted from the server's conversion for months.
+
 ### Output format (`--output table|json|agent`)
 
 The global `--output` flag selects the output format (default `table`). `--json`/`-j` is a **deprecated** shorthand for

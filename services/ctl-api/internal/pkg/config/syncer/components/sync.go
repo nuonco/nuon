@@ -2,6 +2,7 @@ package components
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -73,10 +74,32 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 	return nil
 }
 
+// SyncComponentParams carries the dependencies and target of a single
+// component sync.
+type SyncComponentParams struct {
+	DB          *gorm.DB
+	Helpers     *componenthelpers.Helpers
+	VCSHelper   *vcshelpers.Helpers
+	TFClient    terraform.Client
+	Component   *config.Component
+	AppID       string
+	AppConfigID string
+	State       *sync.State
+
+	// DispatchBuilds reuses unchanged config connections and records changed
+	// components in State.Result.ComponentsScheduled for the caller to enqueue
+	// build signals for (the signal packages would import-cycle from here).
+	// Leave off when a later step schedules builds (branch run's builds step).
+	DispatchBuilds bool
+}
+
 // SyncComponent updates a component and creates its configuration via the shared
 // builders in internal/pkg/config/build, which the per-type
 // Create*ComponentConfig handlers also use.
-func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.Helpers, vcsHelper *vcshelpers.Helpers, tfClient terraform.Client, comp *config.Component, appID, appConfigID string, state *sync.State) error {
+func SyncComponent(ctx context.Context, params SyncComponentParams) error {
+	db, helpers, vcsHelper, tfClient := params.DB, params.Helpers, params.VCSHelper, params.TFClient
+	comp, appID, appConfigID, state := params.Component, params.AppID, params.AppConfigID, params.State
+
 	apiComp, err := getComponent(ctx, db, comp.Name, appID)
 	if err != nil {
 		return sync.SyncInternalErr{
@@ -156,6 +179,23 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 		}
 	}
 
+	if params.DispatchBuilds {
+		reusableID, err := reusableConfigID(ctx, db, apiComp.ID, ccc.Checksum)
+		if err != nil {
+			return err
+		}
+		if reusableID != "" {
+			state.Components = append(state.Components, sync.ComponentState{
+				Name:     apiComp.Name,
+				Type:     comp.Type.APIType(),
+				ID:       apiComp.ID,
+				ConfigID: reusableID,
+				Checksum: comp.Checksum,
+			})
+			return nil
+		}
+	}
+
 	if res := db.WithContext(ctx).Create(ccc); res.Error != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create component config for %s", comp.Name),
@@ -163,7 +203,15 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 		}
 	}
 
-	if comp.ExternalImage != nil {
+	if params.DispatchBuilds {
+		state.Result = appendScheduled(state.Result, sync.ComponentState{
+			Name:     apiComp.Name,
+			Type:     comp.Type.APIType(),
+			ID:       apiComp.ID,
+			ConfigID: ccc.ID,
+			Checksum: comp.Checksum,
+		})
+	} else if comp.ExternalImage != nil {
 		// Always queue a build per fresh CCC. Strict CCC-pinning at deploy
 		// time (see installs/workflows/v2/shared_helpers.go and
 		// installs/signals/componentsyncimage) requires every CCC to
@@ -190,6 +238,65 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 	})
 
 	return nil
+}
+
+// reusableConfigID returns the latest config connection's ID when it matches
+// the incoming checksum and has a non-failed build, "" when a fresh connection
+// is needed. Reusing (not skip-building a fresh one) keeps the invariant that
+// every config connection has a build behind it, which CCC pinning depends on.
+func reusableConfigID(ctx context.Context, db *gorm.DB, cmpID, checksum string) (string, error) {
+	if checksum == "" {
+		return "", nil
+	}
+
+	var latest app.ComponentConfigConnection
+	res := db.WithContext(ctx).
+		Select("id", "checksum", "latest_build_id").
+		Where(app.ComponentConfigConnection{ComponentID: cmpID}).
+		Order("created_at DESC").
+		First(&latest)
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return "", nil
+		}
+		return "", sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to look up latest config for component %s", cmpID),
+			Err:         res.Error,
+		}
+	}
+
+	if latest.Checksum != checksum || !latest.LatestBuildID.Valid {
+		return "", nil
+	}
+
+	var bld app.ComponentBuild
+	res = db.WithContext(ctx).
+		Select("id", "status").
+		Where(app.ComponentBuild{ID: latest.LatestBuildID.String}).
+		First(&bld)
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return "", nil
+		}
+		return "", sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to look up latest build for component %s", cmpID),
+			Err:         res.Error,
+		}
+	}
+
+	if bld.Status == "error" {
+		return "", nil
+	}
+
+	return latest.ID, nil
+}
+
+func appendScheduled(result *sync.Result, state sync.ComponentState) *sync.Result {
+	if result == nil {
+		result = &sync.Result{}
+	}
+	result.ComponentsScheduled = append(result.ComponentsScheduled, state)
+	return result
 }
 
 func resolveVCS(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, comp *config.Component, appID string) (build.VCS, error) {

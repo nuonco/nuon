@@ -918,6 +918,8 @@ type ClientService interface {
 
 	SlackSlashCommand(params *SlackSlashCommandParams, opts ...ClientOption) (*SlackSlashCommandOK, error)
 
+	SyncAppConfig(params *SyncAppConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncAppConfigAccepted, error)
+
 	SyncInstallConfig(params *SyncInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncInstallConfigAccepted, error)
 
 	SyncSecrets(params *SyncSecretsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncSecretsCreated, error)
@@ -19589,6 +19591,61 @@ func (a *Client) SlackSlashCommand(params *SlackSlashCommandParams, opts ...Clie
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for SlackSlashCommand: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	SyncAppConfig Sync an app config that was created with an intermediate config.
+
+The config is applied asynchronously: this returns `202` immediately and the
+config moves through `syncing` to `active` or `error`. Poll
+`GET /v1/apps/{app_id}/configs/{config_id}` for the outcome — `status`,
+`status_description`, and the resolved `component_ids` / `action_ids` /
+`runbook_ids`. Scheduled component builds and resources orphaned by this sync are
+reported under `state.result`.
+
+Component builds are scheduled as part of the sync. A component whose config is
+unchanged since the previous sync, and whose last build did not fail, keeps its
+existing config connection and is not rebuilt.
+*/
+func (a *Client) SyncAppConfig(params *SyncAppConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncAppConfigAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewSyncAppConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "SyncAppConfig",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/configs/{config_id}/sync",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &SyncAppConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*SyncAppConfigAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for SyncAppConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

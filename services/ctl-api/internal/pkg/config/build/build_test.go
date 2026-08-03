@@ -393,3 +393,41 @@ func TestInlinePolicyStillRejectsMalformed(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Effect")
 }
+
+// The checksum drives the sync's "did this component change" decision, so it
+// must move for a change anywhere in the resolved component and stay put when
+// nothing moved. Hashing only the component's own file would miss vars folded in
+// from elsewhere.
+func TestComponentChecksumTracksResolvedComponent(t *testing.T) {
+	comp := func() *config.Component {
+		return &config.Component{
+			Name: "api",
+			TerraformModule: &config.TerraformModuleComponentConfig{
+				TerraformVersion: "1.9.0",
+				EnvVarMap:        map[string]string{"REGION": "us-west-2"},
+			},
+		}
+	}
+
+	base, err := ComponentChecksum(comp())
+	require.NoError(t, err)
+	assert.NotEmpty(t, base)
+
+	same, err := ComponentChecksum(comp())
+	require.NoError(t, err)
+	assert.Equal(t, base, same, "identical components must checksum the same")
+
+	changed := comp()
+	changed.TerraformModule.EnvVarMap["REGION"] = "us-east-1"
+	changedSum, err := ComponentChecksum(changed)
+	require.NoError(t, err)
+	assert.NotEqual(t, base, changedSum, "a resolved value change must move the checksum")
+
+	// The per-file Checksum field is excluded: it is an input to hashing, not
+	// part of the component's meaning.
+	withFileChecksum := comp()
+	withFileChecksum.Checksum = "some-file-hash"
+	fileSum, err := ComponentChecksum(withFileChecksum)
+	require.NoError(t, err)
+	assert.Equal(t, base, fileSum, "the per-file checksum must not affect the hash")
+}
