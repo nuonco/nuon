@@ -49,8 +49,8 @@ func (s *Signal) Validate(_ workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	result, err := AwaitSyncAppConfig(ctx, SyncAppConfigRequest{
-		Req: &SyncAppConfigInput{
+	result, err := AwaitApplyAppConfig(ctx, ApplyAppConfigRequest{
+		Req: &ApplyAppConfigInput{
 			AppID:       s.AppID,
 			AppConfigID: s.AppConfigID,
 		},

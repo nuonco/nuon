@@ -431,3 +431,35 @@ func TestComponentChecksumTracksResolvedComponent(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, base, fileSum, "the per-file checksum must not affect the hash")
 }
+
+// The request types this builder replaced were name-keyed maps, so a config
+// declaring the same input or group twice deduped silently and synced fine.
+// Emitting both rows instead fails the insert on the unique index.
+func TestInputsFromConfigDedupesByName(t *testing.T) {
+	cfg := &config.AppConfig{
+		Inputs: &config.AppInputConfig{
+			Groups: []config.AppInputGroup{
+				{Name: "types", DisplayName: "first"},
+				{Name: "types", DisplayName: "second"},
+			},
+			Inputs: []config.AppInput{
+				{Name: "dupe", Description: "first", Type: "string"},
+				{Name: "unique", Description: "only", Type: "string"},
+				{Name: "dupe", Description: "second", Type: "string"},
+			},
+		},
+	}
+
+	groups, inputs := InputsFromConfig(cfg)
+
+	require.Len(t, groups, 1)
+	assert.Equal(t, "second", groups[0].DisplayName, "last group declaration wins")
+
+	require.Len(t, inputs, 2)
+	byName := map[string]AppInputInput{}
+	for _, in := range inputs {
+		byName[in.Name] = in
+	}
+	assert.Equal(t, "second", byName["dupe"].Description, "last input declaration wins")
+	assert.Equal(t, "only", byName["unique"].Description)
+}

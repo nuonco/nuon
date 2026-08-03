@@ -69,12 +69,12 @@ func NewActivities(params ActivitiesParams) *Activities {
 	}
 }
 
-type SyncAppConfigInput struct {
+type ApplyAppConfigInput struct {
 	AppID       string `json:"app_id" validate:"required"`
 	AppConfigID string `json:"app_config_id" validate:"required"`
 }
 
-type SyncAppConfigOutput struct {
+type ApplyAppConfigOutput struct {
 	AppConfigID  string   `json:"app_config_id"`
 	ComponentIDs []string `json:"component_ids"`
 	ActionIDs    []string `json:"action_ids"`
@@ -92,7 +92,7 @@ type ComponentToBuild struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 10m
 // @as-wrapper
-func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput) (*SyncAppConfigOutput, error) {
+func (a *Activities) applyAppConfig(ctx context.Context, req *ApplyAppConfigInput) (*ApplyAppConfigOutput, error) {
 	result, err := syncer.Run(ctx, a.deps, syncer.RunRequest{
 		AppID:          req.AppID,
 		AppConfigID:    req.AppConfigID,
@@ -118,7 +118,7 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 		})
 	}
 
-	return &SyncAppConfigOutput{
+	return &ApplyAppConfigOutput{
 		AppConfigID:         result.AppConfigID,
 		ComponentIDs:        result.ComponentIDs,
 		ActionIDs:           result.ActionIDs,

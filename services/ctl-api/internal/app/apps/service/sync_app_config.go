@@ -58,8 +58,7 @@ func (s *service) SyncAppConfig(ctx *gin.Context) {
 		return
 	}
 
-	intermediateConfig, err := appConfig.IntermediateConfig.Get(ctx)
-	if err != nil || intermediateConfig == "" {
+	if appConfig.IntermediateConfig == nil || !appConfig.IntermediateConfig.IsSet() {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("app config %s has no intermediate config", configID),
 			Description: "this app config was not created with an intermediate config, so there is nothing to sync",
