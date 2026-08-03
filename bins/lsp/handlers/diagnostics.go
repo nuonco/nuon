@@ -532,6 +532,8 @@ func tomlTypeOf(value any) string {
 		return "number"
 	case bool:
 		return "boolean"
+	case []any, []string, []map[string]any:
+		return "array"
 	case map[string]any:
 		return "object"
 	default:
@@ -601,20 +603,25 @@ func extractRawValues(text string, doc *tomlparser.TomlDocument) map[string]any 
 		// This helps catch cases like "1.2.3" which are invalid floats
 		var value any = rawValue
 
-		// Try parsing as number
-		if f, err := strconv.ParseFloat(rawValue, 64); err == nil {
-			// Check if it looks like a float or integer
-			if strings.Contains(rawValue, ".") {
-				value = f
-			} else {
-				value = int64(f)
-			}
-		} else {
-			// For values that failed to parse as floats, check if they look like
-			// they were attempting to be numbers (e.g., "1.2.3" which has multiple dots)
-			// We want to treat these as numeric types for type checking purposes
-			if looksLikeNumber(rawValue) {
-				// Can't parse as valid float, but looks like a number attempt
+		switch {
+		case strings.HasPrefix(rawValue, "["):
+			value = []any{}
+		case strings.HasPrefix(rawValue, "{"):
+			value = map[string]any{}
+		case rawValue == "true" || rawValue == "false":
+			value = rawValue == "true"
+		default:
+			// Try parsing as number
+			if f, err := strconv.ParseFloat(rawValue, 64); err == nil {
+				// Check if it looks like a float or integer
+				if strings.Contains(rawValue, ".") {
+					value = f
+				} else {
+					value = int64(f)
+				}
+			} else if looksLikeNumber(rawValue) {
+				// For values that failed to parse as floats, check if they look like
+				// they were attempting to be numbers (e.g., "1.2.3" which has multiple dots)
 				// Treat as a float64 for type mismatch detection
 				value = 0.0
 			}

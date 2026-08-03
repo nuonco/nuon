@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"math"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -92,6 +93,114 @@ func TestDiagnostics_TerraformVersionTypeMismatch(t *testing.T) {
 	}
 }
 
+// TestDiagnostics_ArrayTypes tests that array values are typed as arrays rather than
+// falling through to "unknown", which produced a bogus
+// "Type mismatch for 'dependencies': expected array, got unknown" on every array field.
+func TestDiagnostics_ArrayTypes(t *testing.T) {
+	props := jsonschema.NewProperties()
+	props.Set("dependencies", &jsonschema.Schema{
+		Type:  "array",
+		Items: &jsonschema.Schema{Type: "string"},
+	})
+	props.Set("name", &jsonschema.Schema{Type: "string"})
+
+	schema := &jsonschema.Schema{
+		Type:        "object",
+		Properties:  props,
+		Definitions: map[string]*jsonschema.Schema{},
+	}
+
+	testCases := []struct {
+		name            string
+		tomlContent     string
+		shouldHaveError bool
+	}{
+		{
+			name:            "String array should not error",
+			tomlContent:     `dependencies = ["a", "b"]`,
+			shouldHaveError: false,
+		},
+		{
+			name:            "Empty array should not error",
+			tomlContent:     `dependencies = []`,
+			shouldHaveError: false,
+		},
+		{
+			name:            "Multiline array should not error",
+			tomlContent:     "dependencies = [\n  \"a\",\n  \"b\",\n]",
+			shouldHaveError: false,
+		},
+		{
+			name:            "Array in a document with invalid syntax should not error",
+			tomlContent:     "name = unquoted\ndependencies = [\"a\", \"b\"]",
+			shouldHaveError: false,
+		},
+		{
+			name:            "String value should error",
+			tomlContent:     `dependencies = "a"`,
+			shouldHaveError: true,
+		},
+		{
+			name:            "Integer value should error",
+			tomlContent:     `dependencies = 42`,
+			shouldHaveError: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			doc := tomlparser.ParseToml(tc.tomlContent)
+			if strictDoc, err := tomlparser.ParseStrict(tc.tomlContent); err == nil {
+				doc.Values = strictDoc.Values
+			} else {
+				doc.Values = extractRawValues(tc.tomlContent, doc)
+			}
+
+			diags := DiagnoseDocument("file:///test.toml", doc, schema)
+
+			hasTypeMismatch := false
+			for _, diag := range diags {
+				if strings.Contains(diag.Message, "Type mismatch for 'dependencies'") {
+					hasTypeMismatch = true
+					break
+				}
+			}
+
+			if tc.shouldHaveError && !hasTypeMismatch {
+				t.Errorf("Expected type mismatch error for %q, but got none. Diagnostics: %v", tc.tomlContent, diags)
+			}
+			if !tc.shouldHaveError && hasTypeMismatch {
+				t.Errorf("Expected no type mismatch error for %q, but got one: %v", tc.tomlContent, diags)
+			}
+		})
+	}
+}
+
+// TestTomlTypeOf covers the value-to-JSON-schema type mapping used for type checking.
+func TestTomlTypeOf(t *testing.T) {
+	testCases := []struct {
+		value    any
+		expected string
+	}{
+		{"str", "string"},
+		{int64(1), "integer"},
+		{1.5, "number"},
+		{true, "boolean"},
+		{[]any{"a", "b"}, "array"},
+		{[]any{}, "array"},
+		{[]string{"a"}, "array"},
+		{[]map[string]any{{"a": 1}}, "array"},
+		{map[string]any{"a": 1}, "object"},
+		{nil, "unknown"},
+	}
+
+	for _, tc := range testCases {
+		if got := tomlTypeOf(tc.value); got != tc.expected {
+			t.Errorf("tomlTypeOf(%#v) = %q, want %q", tc.value, got, tc.expected)
+		}
+	}
+}
+
 // TestExtractRawValues_ParsesValuesFromInvalidTOML tests that extractRawValues
 // correctly extracts values even when TOML is syntactically invalid
 func TestExtractRawValues_ParsesValuesFromInvalidTOML(t *testing.T) {
@@ -125,6 +234,30 @@ func TestExtractRawValues_ParsesValuesFromInvalidTOML(t *testing.T) {
 			expectedKey:   "url",
 			expectedValue: "https://example.com",
 		},
+		{
+			name:          "Should parse array as array, not string",
+			tomlContent:   `dependencies = ["a", "b"]`,
+			expectedKey:   "dependencies",
+			expectedValue: []any{},
+		},
+		{
+			name:          "Should parse multiline array opener as array",
+			tomlContent:   "dependencies = [",
+			expectedKey:   "dependencies",
+			expectedValue: []any{},
+		},
+		{
+			name:          "Should parse inline table as object",
+			tomlContent:   `env = { a = "b" }`,
+			expectedKey:   "env",
+			expectedValue: map[string]any{},
+		},
+		{
+			name:          "Should parse bool as bool, not string",
+			tomlContent:   `deploy_dependencies = true`,
+			expectedKey:   "deploy_dependencies",
+			expectedValue: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -146,8 +279,8 @@ func TestExtractRawValues_ParsesValuesFromInvalidTOML(t *testing.T) {
 				} else {
 					t.Errorf("Expected float64, got %T with value %v", val, val)
 				}
-			} else if tc.expectedValue != val {
-				t.Errorf("Expected value %v, got %v", tc.expectedValue, val)
+			} else if !reflect.DeepEqual(tc.expectedValue, val) {
+				t.Errorf("Expected value %#v, got %#v", tc.expectedValue, val)
 			}
 		})
 	}
