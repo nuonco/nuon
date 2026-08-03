@@ -21,12 +21,21 @@ export const EnvironmentVariables = () => (
   </ModalStory>
 )
 
+export const VariablesFilesSingle = () => (
+  <ModalStory label="Open variables files modal">
+    <SandboxVariablesFilesModal
+      variablesFiles={['region = "us-west-2"\ninstance_type = "t3.medium"']}
+    />
+  </ModalStory>
+)
+
 export const VariablesFiles = () => (
   <ModalStory label="Open variables files modal">
     <SandboxVariablesFilesModal
       variablesFiles={[
         'region = "us-west-2"\ninstance_type = "t3.medium"',
         'vpc_id = "vpc-12345"\nsubnet_ids = ["subnet-1", "subnet-2"]',
+        'tags = {\n  Environment = "production"\n  Team        = "platform"\n}',
       ]}
     />
   </ModalStory>

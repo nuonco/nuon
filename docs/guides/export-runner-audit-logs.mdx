@@ -1,0 +1,130 @@
+---
+title: 'Export Runner Audit Logs'
+description: 'Forward Nuon runner audit events to your own OTLP-compatible logging backend.'
+icon: 'file-shield'
+keywords: ["runner audit logs", "OTLP logs", "OpenTelemetry", "audit log export", "customer observability", "runner logs"]
+---
+
+Nuon runners can forward audit events directly from your cloud account to an OTLP-compatible logging backend. This
+gives your security and operations teams a customer-owned record of deployment, action workflow, and sandbox activity.
+
+Only records marked with `nuon.audit="true"` are forwarded. Application logs, general runner logs, and other
+infrastructure logs are not included.
+
+## Supported environments
+
+Runner audit log export currently supports AWS install runners provisioned with a generated CloudFormation stack.
+Support for Terraform install stacks, Azure, and GCP is planned.
+
+## Prerequisites
+
+You will need:
+
+- An AWS install with a current Nuon runner and generated CloudFormation stack
+- Permission to create or update the install's CloudFormation stack
+- An OTLP/HTTP logs endpoint available over HTTPS
+- Any headers required to authenticate with your logging backend
+
+## Configure AWS CloudFormation
+
+Create a YAML file containing your OTLP/HTTP exporter configuration:
+
+```yaml exporter.yaml
+exporters:
+  otlphttp:
+    endpoint: https://otlp.example.com
+    headers:
+      Authorization: Bearer <token>
+```
+
+The endpoint must be an HTTPS URL. Omit `headers` if your backend does not require them.
+
+Encode the configuration as a single-line base64 value:
+
+```sh
+base64 < exporter.yaml | tr -d '\n'
+```
+
+When creating the generated CloudFormation stack, set **Runner Audit Export Configuration (Base64-encoded YAML)**,
+also named `RunnerAuditExportConfig`, to the encoded value.
+
+For an existing install, reprovision the install to generate the latest template, then update the existing
+CloudFormation stack and supply `RunnerAuditExportConfig`. The update creates the required IAM permission and stores
+the configuration in AWS Secrets Manager at:
+
+```text
+nuon/<install-id>/runner-audit-export
+```
+
+The runner checks this secret for configuration changes. The endpoint and authentication headers remain in your AWS
+account and are not stored by the Nuon control plane.
+
+## Exported attributes
+
+Every exported record includes attributes that identify it as a Nuon runner audit event:
+
+| Attribute | Value |
+| --- | --- |
+| `nuon.audit` | `true` |
+| `nuon.audit.event` | The audited operation type |
+| `nuon.audit.outcome` | `started`, `succeeded`, or `failed` |
+| `service.namespace` | `nuon` |
+| `service.name` | `runner` |
+| `service.version` | The runner version, when available |
+| `service.instance.id` | The runner ID, when available |
+
+Records also include relevant identifiers such as `org.id`, `install.id`, `runner_job.group`,
+`runner_job.operation`, and entity-specific component, deploy, action workflow, or sandbox identifiers when available.
+
+## Verify export
+
+1. Update the stack with a valid exporter configuration.
+2. Check the runner logs for `runner audit export enabled`.
+3. Trigger a deployment, action workflow, or sandbox operation.
+4. Query your logging backend for records where `service.namespace="nuon"` and `nuon.audit="true"`.
+
+Audit events are produced when supported runner operations occur. A newly enabled exporter may remain quiet until one
+of these operations runs.
+
+## Update, rotate, or disable export
+
+Update `RunnerAuditExportConfig` on the existing CloudFormation stack to change the endpoint or rotate authentication
+headers. The runner detects configuration changes without a restart.
+
+To disable export, update the stack and clear `RunnerAuditExportConfig`. This removes the managed secret and stops the
+local collector. Normal runner operations and Nuon-managed runner logging continue unchanged.
+
+## Failure behavior
+
+Audit export does not block runner jobs. If the secret is missing or inaccessible, the configuration is invalid, or
+the logging backend is unavailable, the runner continues operating normally. Once a valid configuration becomes
+available, the runner detects it automatically.
+
+## Troubleshooting
+
+### The stack does not show `RunnerAuditExportConfig`
+
+Reprovision the install to generate the latest CloudFormation template, then apply it as an update to the existing
+stack.
+
+### The runner reports that audit export is disabled
+
+Confirm that the `nuon/<install-id>/runner-audit-export` secret exists and that the runner instance role can read it.
+The generated CloudFormation template creates both the secret and the required IAM permission when
+`RunnerAuditExportConfig` is set.
+
+### The configuration is rejected
+
+Confirm that:
+
+- The value supplied to CloudFormation is single-line base64-encoded YAML
+- The YAML contains only `exporters.otlphttp.endpoint` and optional `exporters.otlphttp.headers`
+- The endpoint uses HTTPS and does not contain credentials, a query string, or a fragment
+- Header names are valid HTTP header names and header values do not contain line breaks
+
+### Export is enabled, but no records appear
+
+- Trigger a deployment, action workflow, or sandbox operation to produce an audit event.
+- Query for both `service.namespace="nuon"` and `nuon.audit="true"`.
+- Confirm that the OTLP endpoint accepts logs over OTLP/HTTP.
+- Check the runner logs for TLS, proxy, authentication, or exporter errors.
