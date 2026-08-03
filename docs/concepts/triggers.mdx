@@ -1,11 +1,11 @@
 ---
 title: "Triggers"
 icon: "bolt"
-description: "Inbound webhook endpoints that route external events to app branch runs and install runbooks."
+description: "Automate Nuon using external events with triggers."
 keywords: ["trigger", "triggers", "webhook", "inbound webhook", "event", "event ingress", "dispatch", "trigger rule", "app branch run", "runbook", "GitHub trigger", "SNS", "Pub/Sub"]
 ---
 
-A **trigger** is an org-scoped inbound webhook endpoint. External systems — a Git host, a cloud pub/sub topic, a CI provider — send events to a per-trigger **ingress URL**, and Nuon authenticates, deduplicates, and routes each event to a target: an **app branch run** or an **install runbook**.
+A **trigger** is an inbound webhook endpoint. External systems — a Git host, a cloud pub/sub topic, a CI provider — send events to a per-trigger **ingress URL**, and Nuon authenticates, deduplicates, and routes each event to a target: an **app branch run** or an **install runbook**.
 
 Use triggers to react to external events automatically — for example, kick off a build when a branch is pushed, or run a runbook when a cloud alert fires.
 
