@@ -23,6 +23,7 @@ var allWorkflowTypes = []WorkflowType{
 	WorkflowTypeAppBranchesComponentRepoUpdate,
 	WorkflowTypeAppBranchConfigUpdate,
 	WorkflowTypeReprovision,
+	WorkflowTypeReprovisionStack,
 	WorkflowTypeAppConfigBuild,
 	WorkflowTypeRunbookRun,
 	WorkflowTypeComponentEnabled,

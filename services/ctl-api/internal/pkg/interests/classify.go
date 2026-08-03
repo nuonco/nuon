@@ -354,6 +354,11 @@ func workflowResolution(wfType string) (ResourceKind, string, bool) {
 		return ResourceInstalls, "deprovision", true
 	case "reprovision":
 		return ResourceInstalls, "reprovision", true
+	// A stack reprovision recreates the runner rather than the sandbox, but it is
+	// still an install-level reprovision as far as subscribers are concerned —
+	// there is no separate stacks.reprovision op in the taxonomy.
+	case "reprovision_stack":
+		return ResourceInstalls, "reprovision", true
 
 	// install_configurations.*
 	case "input_update":
@@ -456,7 +461,7 @@ func stepResolution(stepTargetType, parentWorkflowType string) (ResourceKind, st
 
 	case stepTargetInstallRunnerUpdate, stepTargetInstallCloudFormation, stepTargetRunners:
 		switch parentWorkflowType {
-		case "reprovision", "reprovision_sandbox", "drift_run_reprovision_sandbox":
+		case "reprovision", "reprovision_stack", "reprovision_sandbox", "drift_run_reprovision_sandbox":
 			return ResourceRunners, "reprovision", true
 		}
 		return ResourceRunners, "provision", true
@@ -483,6 +488,11 @@ func stepResolutionFromParent(parentWorkflowType string) (ResourceKind, string, 
 		return ResourceSandboxes, "provision", true
 	case "reprovision", "reprovision_sandbox":
 		return ResourceSandboxes, "reprovision", true
+	// A stack reprovision has no sandbox steps at all — its steps are the runner
+	// service account, the stack version, install state and the runner health
+	// wait — so runners is the representative kind here, not sandboxes.
+	case "reprovision_stack":
+		return ResourceRunners, "reprovision", true
 	case "drift_run_reprovision_sandbox":
 		return ResourceSandboxes, "drift", true
 	case "deprovision", "deprovision_sandbox":

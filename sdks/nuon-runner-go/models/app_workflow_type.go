@@ -84,6 +84,9 @@ const (
 	// AppWorkflowTypeReprovision captures enum value "reprovision"
 	AppWorkflowTypeReprovision AppWorkflowType = "reprovision"
 
+	// AppWorkflowTypeReprovisionStack captures enum value "reprovision_stack"
+	AppWorkflowTypeReprovisionStack AppWorkflowType = "reprovision_stack"
+
 	// AppWorkflowTypeAppConfigBuild captures enum value "app_config_build"
 	AppWorkflowTypeAppConfigBuild AppWorkflowType = "app_config_build"
 
@@ -102,7 +105,7 @@ var appWorkflowTypeEnum []any
 
 func init() {
 	var res []AppWorkflowType
-	if err := json.Unmarshal([]byte(`["provision","deprovision","deprovision_sandbox","manual_deploy","input_update","deploy_components","teardown_component","teardown_components","reprovision_sandbox","drift_run_reprovision_sandbox","action_workflow_run","sync_secrets","drift_run","app_branches_manual_update","app_branches_config_repo_update","app_branches_component_repo_update","app_branch_config_update","reprovision","app_config_build","runbook_run","component_enabled","component_disabled"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["provision","deprovision","deprovision_sandbox","manual_deploy","input_update","deploy_components","teardown_component","teardown_components","reprovision_sandbox","drift_run_reprovision_sandbox","action_workflow_run","sync_secrets","drift_run","app_branches_manual_update","app_branches_config_repo_update","app_branches_component_repo_update","app_branch_config_update","reprovision","reprovision_stack","app_config_build","runbook_run","component_enabled","component_disabled"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {
