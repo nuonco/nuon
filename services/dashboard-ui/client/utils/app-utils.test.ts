@@ -254,7 +254,6 @@ describe('app-utils', () => {
           name: 'Advanced Group',
           description: 'Advanced configuration options',
           index: 10,
-          // Additional properties that might exist
           custom_field: 'custom_value',
         } as any,
       ]

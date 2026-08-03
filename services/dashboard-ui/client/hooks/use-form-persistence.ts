@@ -202,12 +202,10 @@ export function useFormPersistence({
     form.addEventListener('input', handleChange, true)
     form.addEventListener('change', handleChange, true)
 
-    // Observe for structural changes and value attribute changes
     const observer = new MutationObserver((mutations) => {
       let shouldSave = false
 
       for (const mutation of mutations) {
-        // Check if it's a value attribute change on an input element
         if (
           mutation.type === 'attributes' &&
           mutation.attributeName === 'value' &&
@@ -228,7 +226,6 @@ export function useFormPersistence({
       }
     })
 
-    // Observe entire form for changes
     observer.observe(form, {
       attributes: true,
       attributeFilter: ['value'],

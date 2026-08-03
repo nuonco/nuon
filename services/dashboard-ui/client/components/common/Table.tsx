@@ -16,7 +16,6 @@ import { Icon } from './Icon'
 import { Pagination, type IPagination } from './Pagination'
 import { Skeleton } from './Skeleton'
 
-// Skeleton cell for loading state
 function SkeletonCell() {
   return <Skeleton height="24px" width="100%" />
 }
@@ -47,10 +46,10 @@ export function TableBase<TData extends object>({
   enableSearch = true,
   filterActions,
   initialSorting = [],
-  isLoading = false, // default isLoading to false
+  isLoading = false,
   pagination,
   searchPlaceholder,
-  skeletonRows = 5, // default skeleton row count
+  skeletonRows = 5,
 }: ITable<TData>) {
   const { isPaginating, setIsPaginating } = usePagination()
   const [sorting, setSorting] = useState<SortingState>(initialSorting)

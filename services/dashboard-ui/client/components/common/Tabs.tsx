@@ -50,7 +50,6 @@ export const Tabs = ({
   const heightMeasurementTimeout = useRef<NodeJS.Timeout | null>(null)
   const resizeObserver = useRef<ResizeObserver | null>(null)
 
-  // Measure active tab button's width and left position
   useEffect(() => {
     const activeButton = activeTab ? tabButtonRefs.current[activeTab] : null
     if (activeButton) {
@@ -65,19 +64,16 @@ export const Tabs = ({
     }
   }, [activeTab, tabKeys.length])
 
-  // Clear hovered tab width and set left to active tab left when mouse leaves the tab group
   const handleTabsMouseLeave = () => {
     setHoveredTabWidth(undefined)
     setHoveredTabLeft(activeTabLeft)
   }
 
-  // Set hovered left to active tab left on blur
   const handleTabsBlur = () => {
     setHoveredTabWidth(undefined)
     setHoveredTabLeft(activeTabLeft)
   }
 
-  // Handlers for hover/focus
   const handleTabHoverOrFocus = (tabKey: string) => {
     const button = tabButtonRefs.current[tabKey]
     if (button) {
@@ -102,7 +98,6 @@ export const Tabs = ({
       }
     }
 
-    // Clear any existing timeout and observer
     if (heightMeasurementTimeout.current) {
       clearTimeout(heightMeasurementTimeout.current)
     }
@@ -114,7 +109,6 @@ export const Tabs = ({
     heightMeasurementTimeout.current = setTimeout(() => {
       updateHeight()
 
-      // Set up ResizeObserver for the active content
       const activeContent = activeTab ? contentRefs.current[activeTab] : null
       if (activeContent) {
         resizeObserver.current = new ResizeObserver(updateHeight)
@@ -169,11 +163,6 @@ export const Tabs = ({
           </Button>
         ))}
       </div>
-      {/* Example usage: Display active/hovered tab width and left (for debug/UI) */}
-      {/* <div>
-        Active Tab Width: {activeTabWidth}px, Active Tab Left: {activeTabLeft}px<br />
-        Hovered Tab Width: {hoveredTabWidth}px, Hovered Tab Left: {hoveredTabLeft}px
-      </div> */}
       <div
         ref={containerRef}
         className={cn(

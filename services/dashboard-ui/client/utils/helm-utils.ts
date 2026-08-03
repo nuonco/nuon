@@ -31,7 +31,6 @@ export function parseHelmPlan(plan: THelmPlan): {
       /^([^,]+),\s*([^,]+),\s*([^(]+)\s*\(([^)]+)\)\s*to\s*be\s*(\w+)/
     )
     if (match) {
-      // Try to find a matching diff item
       const diff = diffs?.find(
         (d) =>
           d.kind === match[3].trim() &&

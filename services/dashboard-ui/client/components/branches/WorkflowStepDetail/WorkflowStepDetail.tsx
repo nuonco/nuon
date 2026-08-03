@@ -47,7 +47,6 @@ export const WorkflowStepDetail = ({ step, appBranchRunId, onClose: _onClose }: 
       className={`rounded-xl border bg-white dark:bg-dark-grey-900 overflow-hidden transition-all ${cardBorderClass}`}
       style={cardShadow ? { boxShadow: cardShadow } : undefined}
     >
-      {/* ── Header row ── */}
       <div className="flex items-center gap-3 px-5 py-4 border-b">
         <DetailStatusIcon status={step.status?.status} />
         <Text variant="subtext" family="mono" theme="neutral" className="shrink-0">
@@ -71,7 +70,6 @@ export const WorkflowStepDetail = ({ step, appBranchRunId, onClose: _onClose }: 
         )}
       </div>
 
-      {/* ── Sub-bar: metadata row ── */}
       <div className="flex items-start gap-6 px-5 py-3 bg-cool-grey-50 dark:bg-dark-grey-800 border-b flex-wrap">
         <LabeledValue label="Step ID">
           <ID className="text-[12px]">{step.id}</ID>
@@ -93,7 +91,6 @@ export const WorkflowStepDetail = ({ step, appBranchRunId, onClose: _onClose }: 
         )}
       </div>
 
-      {/* ── Content area ── */}
       <div className="p-5 flex flex-col gap-4">
         {isCommitStep && <CommitStep metadata={metadata} />}
         {isConfigStep && <ConfigStep metadata={metadata} status={step.status?.status} statusDescription={step.status?.status_human_description} />}
@@ -101,14 +98,12 @@ export const WorkflowStepDetail = ({ step, appBranchRunId, onClose: _onClose }: 
         {isPlanGroupStep && <PlanGroupStep step={step} metadata={metadata} />}
         {isDeployGroupStep && <DeployGroupStep step={step} metadata={metadata} />}
 
-        {/* Generic fallback */}
         {!isCommitStep && !isBuildStep && !isConfigStep && !isPlanGroupStep && !isDeployGroupStep && step.status?.status_human_description && (
           <div className="p-3 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
             <Text variant="base">{step.status.status_human_description}</Text>
           </div>
         )}
 
-        {/* Footer */}
         {step.install_workflow_id && (
           <div className="flex items-center gap-4 pt-3 border-t">
             <AdminDashboardLink path={`/workflows/${step.install_workflow_id}`} label="admin panel" />

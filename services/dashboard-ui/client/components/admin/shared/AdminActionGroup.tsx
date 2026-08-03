@@ -42,7 +42,6 @@ export const AdminActionGroup = ({
   return (
     <Card className={`border-l-4 ${getVariantClasses(variant)}`}>
       <div className="space-y-4">
-        {/* Group Header */}
         <div className="flex flex-col">
           <div className="flex items-center gap-3">
             {icon && (
@@ -58,7 +57,6 @@ export const AdminActionGroup = ({
           </div>
         </div>
         
-        {/* Actions Grid */}
         <div className="grid gap-3 md:grid-cols-2">
           {children}
         </div>

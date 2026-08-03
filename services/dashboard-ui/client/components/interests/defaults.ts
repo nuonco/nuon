@@ -6,12 +6,6 @@ import type { Interests } from './types'
 // New-subscription default: matches every supported lifecycle + approval event.
 export const allEvents = (): Interests => ({ all_events: true })
 
-// Power-user opted out of AllEvents baseline. Four resources present, runners +
-// actions absent. Empty ops = all sub-ops; OutcomeCompletion + both approval
-// flags true. drift_detected is on for the two resources that can produce a
-// drift_detected event (components, sandboxes — see RESOURCES_WITH_DRIFT_DETECTED).
-// component_health is on for components and install_degraded for installs —
-// each covers both the degradation and the recovery.
 export const defaultInterests = (): Interests => ({
   resources: {
     installs: {

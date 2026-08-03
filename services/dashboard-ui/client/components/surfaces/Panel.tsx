@@ -50,9 +50,7 @@ export const PanelBase = ({
     removePanel(panels?.at(-1)?.id, panelKey)
   }
   const panelRef = useRef<HTMLDivElement>(null)
-  // auto focus panel when in view
   useAutoFocusOnVisible(panelRef, isVisible)
-  // handle close on esc key
   useEscapeKey(handleClose)
 
   return (

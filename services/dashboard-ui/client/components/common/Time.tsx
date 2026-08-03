@@ -30,7 +30,6 @@ const TIME_ONLY_FORMAT: DateTimeFormatOptions = {
   hour12: true,
 }
 
-// Updated to include timezone abbreviation
 const LOG_DATETIME_FORMAT_STRING = 'M/d/yyyy, h:mm:ss.SSSs a ZZZZ'
 
 export interface ITime extends Omit<IText, 'role'> {

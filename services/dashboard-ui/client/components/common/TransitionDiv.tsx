@@ -13,21 +13,21 @@ export const TransitionDiv = forwardRef<HTMLDivElement, ITransitionDiv>(
 
     useEffect(() => {
       if (isVisible) {
-        setIsMounted(true) // Mount the component
-        setIsExiting(false) // Remove the exit class
+        setIsMounted(true)
+        setIsExiting(false)
       } else {
-        setIsExiting(true) // Add the exit class
+        setIsExiting(true)
         const timeout = setTimeout(() => {
-          setIsMounted(false) // Unmount the component after the animation
-          onExited?.() // Notify parent that the component has exited
+          setIsMounted(false)
+          onExited?.()
         }, 155) // Duration should match CSS animation duration
 
-        return () => clearTimeout(timeout) // Cleanup timeout on unmount
+        return () => clearTimeout(timeout)
       }
     }, [isVisible, onExited])
 
     if (!isMounted) {
-      return null // Don't render anything if the component is not mounted
+      return null
     }
 
     return (

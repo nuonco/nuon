@@ -9,7 +9,6 @@ export const useScrollToTop = (options: IUseScrollToTop = {}) => {
 
   const scrollToTop = useCallback(
     (elementId?: string, offset: number = 0) => {
-      // Determine the target element
       let targetElement: HTMLElement | Window
 
       if (elementId) {
@@ -26,10 +25,8 @@ export const useScrollToTop = (options: IUseScrollToTop = {}) => {
         targetElement = window
       }
 
-      // Calculate scroll position with offset
       const scrollPosition = Math.max(0, offset)
 
-      // Scroll to position
       if (targetElement === window) {
         window.scrollTo({
           top: scrollPosition,

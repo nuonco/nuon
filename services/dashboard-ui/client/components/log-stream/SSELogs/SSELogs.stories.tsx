@@ -404,7 +404,6 @@ const helmDeployLogs: TOTELLog[] = [
   makeLog('h-050', t(BASE, 45500), 'Info', 'Post-upgrade hook "smoke-test" completed successfully'),
   makeLog('h-051', t(BASE, 46000), 'Info', 'Release "api-gateway" upgraded to revision 13'),
   makeLog('h-052', t(BASE, 46500), 'Info', 'Helm deploy completed successfully in 46.5s'),
-  // system logs interspersed
   makeLog('h-sys-1', t(BASE, 500), 'Trace', 'ECR auth token cached, expires in 11h58m', 'runner', 'system'),
   makeLog('h-sys-2', t(BASE, 8000), 'Debug', 'kube client: PATCH deployments/api-gateway 200 OK (82ms)', 'runner', 'system'),
   makeLog('h-sys-3', t(BASE, 16000), 'Trace', 'kube watcher: deployment api-gateway event MODIFIED', 'runner', 'system'),
@@ -468,7 +467,6 @@ const dockerBuildLogs: TOTELLog[] = [
   makeLog('d-051', t(BASE, 33500), 'Info', 'Pushing manifest', 'runner', 'oteljob', 'docker_build'),
   makeLog('d-052', t(BASE, 34000), 'Info', 'Image pushed: 766121324316.dkr.ecr.us-west-2.amazonaws.com/org123/app456:bld-abc123', 'runner', 'oteljob', 'docker_build'),
   makeLog('d-053', t(BASE, 34200), 'Info', 'Docker build completed successfully in 34.2s', 'runner', 'oteljob', 'docker_build'),
-  // system logs
   makeLog('d-sys-1', t(BASE, 50), 'Trace', 'docker buildx create --use --name nuon-builder', 'runner', 'system', 'docker_build'),
   makeLog('d-sys-2', t(BASE, 150), 'Debug', 'ECR auth: refreshing token for registry 766121324316.dkr.ecr.us-west-2.amazonaws.com', 'runner', 'system', 'docker_build'),
   makeLog('d-sys-3', t(BASE, 250), 'Trace', 'ECR auth token obtained, valid for 12h', 'runner', 'system', 'docker_build'),
@@ -518,7 +516,6 @@ const failedTerraformLogs: TOTELLog[] = [
   makeLog('tf-038', t(BASE, 181000), 'Error', 'Apply complete! Resources: 2 added, 0 changed, 0 destroyed.'),
   makeLog('tf-039', t(BASE, 181200), 'Error', 'Note: the EKS node group update was rolled back by AWS. The new subnet was created but nodes could not be launched into it.'),
   makeLog('tf-040', t(BASE, 181500), 'Info', 'Terraform state saved to remote backend (S3)'),
-  // system logs
   makeLog('tf-sys-1', t(BASE, 100), 'Trace', 'terraform workspace select install-ins123', 'runner', 'system', 'terraform'),
   makeLog('tf-sys-2', t(BASE, 400), 'Debug', 'S3 state lock acquired: terraform-state/vpc-network/ins123.tflock', 'runner', 'system', 'terraform'),
   makeLog('tf-sys-3', t(BASE, 9500), 'Trace', 'AWS API call count: 47 (ec2: 31, eks: 12, iam: 4)', 'runner', 'system', 'terraform'),

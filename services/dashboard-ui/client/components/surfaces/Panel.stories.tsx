@@ -5,7 +5,6 @@ import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
 import { Card } from '@/components/common/Card'
 
-// Simple panel demo component
 const SimplePanelDemo = () => {
   const { addPanel } = useSurfaces()
 
@@ -28,7 +27,6 @@ const SimplePanelDemo = () => {
   return <Button onClick={openPanel}>Open Simple Panel</Button>
 }
 
-// Panel sizes demo component
 const PanelSizesDemo = () => {
   const { addPanel } = useSurfaces()
 
@@ -151,7 +149,6 @@ const PanelSizesDemo = () => {
   )
 }
 
-// Panel usage examples demo component
 const PanelUsageDemo = () => {
   const { addPanel } = useSurfaces()
 
@@ -470,7 +467,6 @@ function UserList() {
             <img src={user.avatar} alt={user.name} />
             <h3>{user.name}</h3>
             <p>{user.email}</p>
-            {/* Additional profile content */}
           </div>
         </div>
       </Panel>

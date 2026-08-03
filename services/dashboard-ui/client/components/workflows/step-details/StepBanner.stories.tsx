@@ -13,11 +13,7 @@ const baseStep = {
   status: { status: 'in-progress', history: [] },
 } as TWorkflowStep
 
-// --- No banner (in-progress, no special state) ---
-
 export const InProgress = () => <StepBanner step={baseStep} />
-
-// --- Error states ---
 
 export const Error = () => (
   <StepBanner
@@ -210,8 +206,6 @@ export const SupersededPlan = () => (
   />
 )
 
-// --- Failed pending retry ---
-
 export const FailedPendingRetry = () => (
   <StepBanner
     step={
@@ -244,8 +238,6 @@ export const FailedPendingRetryOnlyRetryable = () => (
     }
   />
 )
-
-// --- Terminal states ---
 
 export const Cancelled = () => (
   <StepBanner
@@ -338,8 +330,6 @@ export const Retried = () => (
   />
 )
 
-// --- Policy banners ---
-
 export const PolicyAllPassed = () => (
   <StepBanner
     step={
@@ -409,8 +399,6 @@ export const PolicyViolations = () => (
     }
   />
 )
-
-// --- With callbacks ---
 
 export const ErrorWithViewDetails = () => (
   <StepBanner

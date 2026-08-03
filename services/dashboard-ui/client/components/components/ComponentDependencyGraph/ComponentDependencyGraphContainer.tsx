@@ -29,7 +29,6 @@ function buildTransitiveGraph(
   const depIds = new Set<string>()
   const deptIds = new Set<string>()
 
-  // Walk upstream: collect all transitive dependencies
   const walkDeps = (id: string) => {
     const conn = connById.get(id)
     for (const depId of conn?.component_dependency_ids ?? []) {
@@ -41,7 +40,6 @@ function buildTransitiveGraph(
   }
   walkDeps(componentId)
 
-  // Walk downstream: collect all transitive dependents
   const dependentsOf = new Map<string, string[]>()
   for (const conn of connections) {
     for (const depId of conn.component_dependency_ids ?? []) {

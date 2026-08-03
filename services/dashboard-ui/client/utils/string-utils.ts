@@ -1,19 +1,6 @@
-/**
- * String utility functions.
- * All helpers are pure and safe for general use.
- */
-
-/**
- * Transform a string to sentence case.
- * Example: "hello world" -> "Hello world"
- */
 export const toSentenceCase = (str: string = ''): string =>
   str.length ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : ''
 
-/**
- * Transform a string to title case.
- * Example: "hello_world-foo" -> "Hello World Foo"
- */
 export const toTitleCase = (str: string = ''): string =>
   str
     .replace(/[-_]/g, ' ')
@@ -22,12 +9,6 @@ export const toTitleCase = (str: string = ''): string =>
     .replace(/\s+/g, ' ')
     .trim()
 
-/**
- * Get the initials from a string.
- * Examples:
- *   "John Doe" -> "JD"
- *   "alice" -> "A"
- */
 export const getInitials = (str: string = ''): string => {
   if (!str) return ''
   const words = str
@@ -43,31 +24,15 @@ export const getInitials = (str: string = ''): string => {
   ).toUpperCase()
 }
 
-/**
- * Convert kebab-case to words (spaces).
- * Example: "foo-bar-baz" -> "foo bar baz"
- */
 export const kebabToWords = (str: string = ''): string =>
   str ? str.replace(/-/g, ' ') : ''
 
-/**
- * Convert snake_case to words (spaces).
- * Example: "foo_bar_baz" -> "foo bar baz"
- */
 export const snakeToWords = (str: string = ''): string =>
   str ? str.replace(/_/g, ' ') : ''
 
-/**
- * Convert camelCase to words (spaces).
- * Example: "exampleString" -> "example String"
- */
 export const camelToWords = (str: string = ''): string =>
   str ? str.replace(/([A-Z])/g, ' $1') : ''
 
-/**
- * Slugify a string (URL-safe, lowercase, removes diacritics).
- * Example: "Hello World!" -> "hello-world"
- */
 export const slugify = (str: string = ''): string =>
   str
     .toString()
@@ -80,11 +45,6 @@ export const slugify = (str: string = ''): string =>
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '')
 
-/**
- * Get the parent path of a given path string.
- * Example: "/foo/bar/baz/" -> "/foo/bar"
- *          "/foo" -> "/"
- */
 export const getParentPath = (pathname: string = ''): string => {
   const path =
     pathname.endsWith('/') && pathname.length > 1
@@ -98,10 +58,6 @@ export const getParentPath = (pathname: string = ''): string => {
   return path.slice(0, lastSlashIndex) || '/'
 }
 
-/**
- * Format a byte value as a human-readable string (GB, MB, KB, Bytes).
- * Example: 1048576 -> "1.00 MB"
- */
 export const formatBytes = (bytes: number): string => {
   const KB = 1024
   const MB = KB * KB
@@ -116,10 +72,6 @@ export const formatBytes = (bytes: number): string => {
         : `${bytes} Bytes`
 }
 
-/**
- * Get the flag emoji for the given country code.
- * Example: "us" -> 🇺🇸
- */
 export function getFlagEmoji(countryCode: string = 'us'): string {
   const upperCode = countryCode.toUpperCase()
   return Array.from(upperCode)
@@ -127,15 +79,6 @@ export function getFlagEmoji(countryCode: string = 'us'): string {
     .join('')
 }
 
-/**
- * Convert a number to its ordinal form.
- * Examples:
- *   1 -> "1st"
- *   2 -> "2nd"
- *   3 -> "3rd"
- *   11 -> "11th"
- *   21 -> "21st"
- */
 export function toOrdinal(n: number): string {
   const j = n % 10
   const k = n % 100
@@ -146,13 +89,6 @@ export function toOrdinal(n: number): string {
   return `${n}th`
 }
 
-/**
- * Convert a zero-based array index to its ordinal form.
- * Examples:
- *   0 -> "1st"
- *   1 -> "2nd"
- *   2 -> "3rd"
- */
 export function indexToOrdinal(idx: number): string {
   return toOrdinal(idx + 1)
 }

@@ -88,8 +88,6 @@ export const MatchPicker = ({
   const { org } = useOrg()
   const needsApp = kind === 'components' || kind === 'actions' || kind === 'app_branches'
 
-  // Apps list for the app picker. Loaded lazily — only when the user
-  // navigates into the components/actions branch.
   const appsQuery = useQuery({
     queryKey: ['match-picker-apps', org.id],
     queryFn: () => getApps({ orgId: org.id, limit: 100 }),
@@ -122,7 +120,6 @@ export const MatchPicker = ({
       onChange({ [kind]: { ids } })
       return
     }
-    // labels
     const include = parseLabelsQuery(labelsRaw)
     const exclude = parseLabelsQuery(excludeLabelsRaw)
     // Mirror the Slack modal: emit only the populated halves so the
