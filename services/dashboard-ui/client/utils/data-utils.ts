@@ -39,7 +39,7 @@ function getValueType(value: any): string {
     }
   }
 
-  return typeof value // 'string', 'number', 'boolean', 'function', etc.
+  return typeof value
 }
 
 function formatValue(value: any): string {

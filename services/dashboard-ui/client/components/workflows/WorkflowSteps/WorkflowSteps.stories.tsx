@@ -51,8 +51,6 @@ const wrap = (steps: TWorkflowStep[]) => (
   </WorkflowContext.Provider>
 )
 
-// --- Basic statuses ---
-
 export const InProgress = () => wrap([base])
 
 export const Success = () =>
@@ -84,8 +82,6 @@ export const Noop = () =>
       status: { status: 'noop', history: [] },
     } as TWorkflowStep,
   ])
-
-// --- Error states ---
 
 export const Error = () =>
   wrap([
@@ -186,8 +182,6 @@ export const SupersededPlan = () =>
       },
     } as TWorkflowStep,
   ])
-
-// --- Retry / retried states ---
 
 export const AutoRetried = () =>
   wrap([
@@ -331,8 +325,6 @@ export const RetriedGroupAmongSteps = () =>
     } as TWorkflowStep,
   ])
 
-// --- Group retries (interleaved plan/apply) ---
-
 const planAttempt = (round: number, overrides: Partial<TWorkflowStep>) =>
   ({
     ...base,
@@ -422,8 +414,6 @@ export const InterleavedGroupRetry = () =>
       status: { status: 'pending', history: [] },
     } as TWorkflowStep,
   ])
-
-// --- Policy results ---
 
 export const PolicyWarning = () =>
   wrap([
@@ -578,8 +568,6 @@ export const PolicyResultsAmongSteps = () =>
     } as TWorkflowStep,
   ])
 
-// --- Approval states ---
-
 export const ApprovalAwaiting = () =>
   wrap([
     {
@@ -678,8 +666,6 @@ export const ApprovalRetry = () =>
     } as TWorkflowStep,
   ])
 
-// --- Terminal / skip states ---
-
 export const Cancelled = () =>
   wrap([
     {
@@ -753,8 +739,6 @@ export const NotAttempted = () =>
     } as TWorkflowStep,
   ])
 
-// --- Multi-step workflows ---
-
 export const MixedSteps = () =>
   wrap([
     {
@@ -781,8 +765,6 @@ export const MixedSteps = () =>
       status: { status: 'pending', history: [] },
     } as TWorkflowStep,
   ])
-
-// --- Loading ---
 
 export const Loading = () => <WorkflowStepsSkeleton />
 

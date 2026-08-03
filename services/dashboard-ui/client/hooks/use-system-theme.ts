@@ -14,7 +14,6 @@ export function useSystemTheme(): 'dark' | 'light' {
     const matcher = window.matchMedia('(prefers-color-scheme: dark)')
     const update = () => setTheme(matcher.matches ? 'dark' : 'light')
     matcher.addEventListener('change', update)
-    // Initialize on mount
     update()
 
     return () => matcher.removeEventListener('change', update)

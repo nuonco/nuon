@@ -6,7 +6,6 @@ import { Text } from '@/components/common/Text'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
 
-// Simple modal demo component
 const SimpleModalDemo = () => {
   const { addModal } = useSurfaces()
 
@@ -29,7 +28,6 @@ const SimpleModalDemo = () => {
   return <Button onClick={openModal}>Open Simple Modal</Button>
 }
 
-// Modal variants demo component
 const ModalVariantsDemo = () => {
   const { addModal } = useSurfaces()
 
@@ -144,7 +142,6 @@ const ModalVariantsDemo = () => {
   )
 }
 
-// User management demo component
 const UserManagementDemo = () => {
   const { addModal } = useSurfaces()
 
@@ -238,7 +235,6 @@ const UserManagementDemo = () => {
   )
 }
 
-// Data operations demo component
 const DataOperationsDemo = () => {
   const { addModal } = useSurfaces()
 
@@ -350,7 +346,6 @@ const DataOperationsDemo = () => {
   )
 }
 
-// Footer actions demo component
 const FooterActionsDemo = () => {
   const { addModal } = useSurfaces()
 

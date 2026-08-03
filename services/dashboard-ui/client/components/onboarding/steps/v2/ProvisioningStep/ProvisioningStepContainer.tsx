@@ -55,8 +55,6 @@ function useOnboardingWorkflow(onboarding: TOnboarding | undefined, setSharedDat
   return { workflow, steps, workflowId: effectiveWorkflowId }
 }
 
-// --- Row model ---
-
 interface IRow {
   id: string
   label: string
@@ -216,8 +214,6 @@ function toTitleCase(str: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-// --- ETA ---
-
 const AVG_SECONDS_PER_STEP = 90
 
 function useEta(doneCount: number, totalCount: number, isActive: boolean) {
@@ -257,8 +253,6 @@ function formatEta(seconds: number): string {
   return `~${m} min`
 }
 
-// --- Runner metadata ---
-
 interface IRunnerMeta {
   version?: string
   connected: boolean
@@ -288,8 +282,6 @@ function useRunnerMeta(orgId?: string, installId?: string, runnerDone?: boolean)
     connected: isRecentTimestamp(heartbeat?.created_at),
   }
 }
-
-// --- Progress Ring ---
 
 const ROW_RING_STROKE = 2.5
 const APP_RING_STROKE = 5
@@ -422,8 +414,6 @@ function ProgressRing({
   )
 }
 
-// --- Install stack quick link ---
-
 function useInstallStackQuickLink(orgId?: string, installId?: string) {
   const { data: stack } = useQuery({
     queryKey: ['onboarding-install-stack', installId],
@@ -435,8 +425,6 @@ function useInstallStackQuickLink(orgId?: string, installId?: string) {
 
   return stack?.versions?.[0]?.quick_link_url ?? undefined
 }
-
-// --- Row component ---
 
 function ProvisioningRow({ row, isLast, runnerMeta, quickLinkUrl, workflowUrl }: { row: IRow; isLast: boolean; runnerMeta?: IRunnerMeta; quickLinkUrl?: string; workflowUrl?: string }) {
   const isActive = row.status === 'active'
@@ -513,8 +501,6 @@ function ProvisioningRow({ row, isLast, runnerMeta, quickLinkUrl, workflowUrl }:
   )
 }
 
-// --- Main step ---
-
 export const ProvisioningStepContainer = ({
   onAdvance,
   onGoBack,
@@ -578,7 +564,6 @@ export const ProvisioningStepContainer = ({
         <Banner theme="error">{toSentenceCase(workflow.status.status_human_description)}</Banner>
       )}
 
-      {/* App card */}
       <Card className="!gap-0 !p-4">
         <div className="flex items-center gap-4">
           <CloudPlatform platform={cloudProvider} colorVariant="color" displayVariant="icon-only" iconSize="24" className="shrink-0" />
@@ -606,7 +591,6 @@ export const ProvisioningStepContainer = ({
         </div>
       </Card>
 
-      {/* Install rows */}
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <Text variant="base" weight="strong">
@@ -660,7 +644,6 @@ export const ProvisioningStepContainer = ({
         </Card>
       </div>
 
-      {/* Navigation */}
       <div className="flex justify-between">
         {onGoBack ? (
           <Button type="button" variant="secondary" onClick={onGoBack}>

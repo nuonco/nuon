@@ -49,7 +49,6 @@ export function ClickToCopy({
   noticeClassName,
   ...props
 }: IClickToCopy) {
-  // Try to infer text to copy from children, fallback to rendering children as is.
   let text = ''
   if (typeof children === 'string' || typeof children === 'number') {
     text = String(children)

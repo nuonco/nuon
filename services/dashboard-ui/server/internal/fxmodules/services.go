@@ -7,7 +7,6 @@ import (
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal/handlers"
 )
 
-// Service is the interface that handler groups implement to register routes.
 type Service interface {
 	RegisterRoutes(*gin.Engine) error
 }

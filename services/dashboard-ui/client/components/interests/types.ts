@@ -66,7 +66,6 @@ export const ALL_RESOURCES: ResourceKind[] = [
   'app_branches',
 ]
 
-// Human label per resource. Sentence-case.
 export const RESOURCE_LABELS: Record<ResourceKind, string> = {
   installs: 'Installs',
   stacks: 'Stacks',

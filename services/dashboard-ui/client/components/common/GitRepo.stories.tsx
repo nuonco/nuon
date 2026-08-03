@@ -5,7 +5,6 @@ export default {
 import type { TVCSGit, TVCSGitHub } from '@/types/ctl-api.types'
 import { GitRepo } from './GitRepo'
 
-// Mock data for TVCSGitHub
 const mockGitHubConfig: TVCSGitHub = {
   id: 'vcs-github-1',
   repo: 'https://github.com/acme-corp/api-service',
@@ -18,7 +17,6 @@ const mockGitHubConfig: TVCSGitHub = {
   updated_at: '2024-01-15T10:30:00Z',
 }
 
-// Mock data for TVCSGit
 const mockGitConfig: TVCSGit = {
   id: 'vcs-git-1',
   repo: 'https://gitlab.com/myorg/backend-service.git',
@@ -28,7 +26,6 @@ const mockGitConfig: TVCSGit = {
   updated_at: '2024-01-15T10:30:00Z',
 }
 
-// Mock data for minimal config
 const mockMinimalConfig: TVCSGit = {
   id: 'vcs-git-2',
   repo: 'https://github.com/company/frontend',
@@ -37,7 +34,6 @@ const mockMinimalConfig: TVCSGit = {
   updated_at: '2024-01-15T10:30:00Z',
 }
 
-// Mock data with all GitHub fields
 const mockAllFieldsConfig: TVCSGitHub = {
   id: 'vcs-github-2',
   repo: 'https://github.com/platform-team/infrastructure',

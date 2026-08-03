@@ -65,10 +65,8 @@ const InputGroupFields = ({
 }) => {
   const installInputs = install ? install?.install_inputs?.at(0)?.values : {}
 
-  // Only use draft values if they actually exist (not null, not undefined, not empty object)
   const hasDraftValues = draftValues && Object.keys(draftValues).length > 0
 
-  // Normalize draft values by removing 'inputs:' prefix
   const normalizedDraftValues: Record<string, string> = {}
   if (hasDraftValues) {
     Object.entries(draftValues!).forEach(([key, value]) => {
@@ -79,7 +77,6 @@ const InputGroupFields = ({
     })
   }
 
-  // Only merge draft values if they exist, otherwise use install values only
   const mergedValues = hasDraftValues
     ? { ...installInputs, ...normalizedDraftValues }
     : installInputs
@@ -90,7 +87,6 @@ const InputGroupFields = ({
     return null
   }
 
-  // Sort inputs first, then separate required from optional
   const sortedInputs = allInputs.sort(
     (a, b) => (a?.index || 0) - (b?.index || 0)
   )
@@ -220,10 +216,8 @@ const InputGroupFields = ({
         <span className="text-sm font-normal">{groupInputs?.description}</span>
       </legend>
 
-      {/* Required fields - always visible */}
       {requiredInputs.map(renderInput)}
 
-      {/* Optional fields - inside Expand component */}
       {optionalInputs.length > 0 && (
         <Expand
           key={`${groupInputs.id}-${hasDraftValues ? 'draft' : 'no-draft'}`}
@@ -255,7 +249,6 @@ export const InputConfigFields = ({
     (a, b) => (a?.index || 0) - (b?.index || 0)
   )
 
-  // Separate groups into vendor and customer groups
   const vendorGroups: typeof sortedGroups = []
   const customerGroups: typeof sortedGroups = []
 
@@ -285,8 +278,6 @@ export const InputConfigFields = ({
 
   return (
     <>
-      {/* Render vendor input groups normally, except the reserved
-          component-overrides group which renders as per-component cards. */}
       {vendorGroups.map((group) =>
         group.name === COMPONENT_OVERRIDE_INPUT_GROUP ? (
           <ComponentOverridesSection
@@ -306,7 +297,6 @@ export const InputConfigFields = ({
         )
       )}
 
-      {/* Render customer input groups with header */}
       {customerGroups.length > 0 && (
         <>
           <div className="flex flex-col gap-2 border-t pt-6 mt-6">

@@ -3,10 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { getCurrentOnboarding } from '@/lib'
 import type { TOnboarding } from '@/types'
 
-/**
- * Polls getCurrentOnboarding while status_v2 is "in-progress".
- * When the step resolves (active or error), calls onResolved with the updated onboarding.
- */
 export function useOnboardingPoll({
   enabled,
   onResolved,

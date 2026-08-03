@@ -5,7 +5,6 @@ export * from './health'
 export * from './resources'
 export * from './sandbox'
 
-// install query
 export * from './get-install-config-versions'
 export * from './get-install-config-version-diff'
 export * from './get-install-config-syncs'
@@ -24,16 +23,12 @@ export * from './get-install-app-permissions-config'
 export * from './get-latest-install-roles'
 export * from './get-install-role-usages'
 
-// workflows
 export * from './get-install-workflows'
 
-// policy reports
 export * from './get-install-policy-reports'
 
-// label keys
 export * from './get-install-label-keys'
 
-// mutations
 export * from './add-install-labels'
 export * from './remove-install-labels'
 export * from './generate-cli-install-config'

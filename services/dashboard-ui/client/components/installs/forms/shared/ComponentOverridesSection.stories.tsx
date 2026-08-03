@@ -79,7 +79,6 @@ export const Default = () => (
   </form>
 )
 
-// api_gateway starts disabled via a draft value; its config editor greys out.
 export const WithDisabledComponent = () => (
   <form className="max-w-2xl p-6 flex flex-col gap-6">
     <ComponentOverridesSection
@@ -91,7 +90,6 @@ export const WithDisabledComponent = () => (
   </form>
 )
 
-// A component with only an enabled toggle and no config override.
 const toggleOnlyGroup: TGroup = {
   id: 'group-overrides-toggle-only',
   name: 'nuon_component_overrides',

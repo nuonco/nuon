@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { CodeBlock } from '@/components/common/CodeBlock'
 
-// Types
 interface HelmDeploymentData {
   deployments: Record<string, any>
   services: Record<string, any>
@@ -16,7 +15,6 @@ interface TKeyValueWithType {
   type: string
 }
 
-// Utility Functions
 function objectToKeyValueArray(obj: Record<string, any>): TKeyValueWithType[] {
   return Object.entries(obj).map(([key, value]) => ({
     key,
@@ -80,7 +78,6 @@ function cn(...classes: (string | undefined | false)[]): string {
   return classes.filter(Boolean).join(' ')
 }
 
-// Components
 function StatusBadge({ status }: { status: string }) {
   const statusConfig = {
     healthy: { bg: 'bg-green-100', text: 'text-green-800' },
@@ -104,11 +101,9 @@ function StatusBadge({ status }: { status: string }) {
 function KeyValueList({ values }: { values: TKeyValueWithType[] }) {
   return values?.length ? (
     <div className="grid grid-cols-[max-content_1fr] gap-0 text-sm">
-      {/* Header row */}
       <div className="py-2 border-b font-medium text-gray-600">Name</div>
       <div className="py-2 pl-4 border-b font-medium text-gray-600">Value</div>
 
-      {/* Data rows */}
       {values.map(({ key, value, type }, index) => {
         const isLast = index === values.length - 1
         const isObject = type === 'object' || type === 'array'
@@ -177,7 +172,6 @@ function ResourceCard({
 }
 
 function DeploymentHeader({ data }: { data: HelmDeploymentData }) {
-  // Extract release info from first deployment
   const firstDeployment = Object.values(
     Object.values(data.deployments)[0] || {}
   )[0] as any
@@ -274,7 +268,6 @@ function DeploymentStatusSummary({
 function OverviewTab({ data }: { data: HelmDeploymentData }) {
   return (
     <div className="space-y-6">
-      {/* Resource Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <ResourceCard
           title="Deployments"
@@ -302,7 +295,6 @@ function OverviewTab({ data }: { data: HelmDeploymentData }) {
         />
       </div>
 
-      {/* Quick Status */}
       <div className="bg-white rounded-lg border p-6">
         <h3 className="text-lg font-semibold mb-4">Deployment Status</h3>
         <DeploymentStatusSummary deployments={data.deployments} />
@@ -360,7 +352,6 @@ function DeploymentCard({
       {isExpanded && (
         <div className="border-t bg-gray-50">
           <div className="p-4 space-y-4">
-            {/* Replica Status */}
             <div className="grid grid-cols-4 gap-4">
               <div className="text-center">
                 <div className="text-lg font-semibold text-blue-600">
@@ -388,7 +379,6 @@ function DeploymentCard({
               </div>
             </div>
 
-            {/* Conditions */}
             {status?.conditions && (
               <div className="space-y-2">
                 <h5 className="font-medium text-sm text-gray-700">
@@ -417,7 +407,6 @@ function DeploymentCard({
               </div>
             )}
 
-            {/* Metadata */}
             <div className="space-y-2">
               <h5 className="font-medium text-sm text-gray-700">Details</h5>
               <KeyValueList
@@ -561,7 +550,6 @@ function ResourcesTab({ resources }: { resources: Record<string, any> }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Resource List */}
       <div className="lg:col-span-1">
         <div className="bg-white rounded-lg border">
           <div className="px-4 py-3 border-b bg-gray-50">
@@ -607,7 +595,6 @@ function ResourcesTab({ resources }: { resources: Record<string, any> }) {
         </div>
       </div>
 
-      {/* Resource Detail */}
       <div className="lg:col-span-2">
         {selectedResource ? (
           <ResourceDetail
@@ -655,7 +642,6 @@ function ManifestTab({ manifest }: { manifest: string }) {
   )
 }
 
-// Custom Tabs Components
 function Tabs({
   value,
   onValueChange,
@@ -741,7 +727,6 @@ function TabsContent({
   return <div className="mt-6">{children}</div>
 }
 
-// Main Component
 export function HelmDeploymentViewer({ data }: { data: HelmDeploymentData }) {
   const [activeTab, setActiveTab] = useState('overview')
 
@@ -753,7 +738,6 @@ export function HelmDeploymentViewer({ data }: { data: HelmDeploymentData }) {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header with Release Info */}
         <DeploymentHeader data={data} />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
