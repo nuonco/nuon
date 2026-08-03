@@ -5,12 +5,7 @@ export default {
   title: 'Branches/BranchRunApproval',
 }
 
-const mockActions = (
-  <>
-    <Button variant="danger">Skip</Button>
-    <Button variant="primary">Approve</Button>
-  </>
-)
+const mockActions = <Button variant="primary">Approve</Button>
 
 export const Default = () => (
   <BranchRunApproval

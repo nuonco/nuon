@@ -11,12 +11,21 @@ export interface IPropertyGridColumn<T> {
   className?: string
 }
 
-export interface IPropertyGrid<T = Record<string, any>> extends React.HTMLAttributes<HTMLDivElement> {
+export interface IPropertyGrid<T = Record<string, any>>
+  extends React.HTMLAttributes<HTMLDivElement> {
   values: T[]
   columns?: IPropertyGridColumn<T>[]
   emptyStateProps?: IEmptyState
-  gridTemplate?: string
+  gridTemplate?: string // Custom grid-template-columns CSS value
   align?: 'start' | 'center'
+  // Wraps each row's cells in a display:contents element carrying these
+  // attributes (e.g. data-* tags) without affecting the grid layout
+  rowProps?: (
+    item: T,
+    rowIndex: number
+  ) => React.HTMLAttributes<HTMLDivElement> & {
+    [dataAttr: `data-${string}`]: string | number | undefined
+  }
 }
 
 export const PropertyGrid = <T extends Record<string, any>>({
@@ -26,29 +35,36 @@ export const PropertyGrid = <T extends Record<string, any>>({
   gridTemplate,
   align = 'center',
   emptyStateProps = { variant: 'table', size: 'sm' },
+  rowProps,
   ...props
 }: IPropertyGrid<T>) => {
   const detectedColumns: IPropertyGridColumn<T>[] = React.useMemo(() => {
     if (columns) return columns
-    
+
     if (!values?.length) return []
-    
+
     const firstItem = values[0]
-    return Object.keys(firstItem).map(key => ({
+    return Object.keys(firstItem).map((key) => ({
       key: key as keyof T,
-      header: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim()
+      header:
+        key.charAt(0).toUpperCase() +
+        key
+          .slice(1)
+          .replace(/([A-Z])/g, ' $1')
+          .trim(),
     }))
   }, [values, columns])
 
   const gridColumns = detectedColumns.length
-  
-  const gridColsClass = gridTemplate || (
-    gridColumns === 1
+
+  // Use custom gridTemplate or create smart defaults
+  const gridColsClass =
+    gridTemplate ||
+    (gridColumns === 1
       ? '1fr'
       : gridColumns === 2
-      ? 'max-content 1fr'
-      : `repeat(${gridColumns}, minmax(120px, 1fr))`
-  )
+        ? 'max-content 1fr' // Two columns: first fits content, second expands (good for key-value pairs)
+        : `repeat(${gridColumns}, minmax(120px, 1fr))`) // Multiple columns: all flexible with 120px minimum
 
   if (!values?.length) {
     return <EmptyState {...emptyStateProps} />
@@ -58,7 +74,7 @@ export const PropertyGrid = <T extends Record<string, any>>({
     <div
       className={cn('grid gap-0', className)}
       style={{
-        gridTemplateColumns: gridColsClass
+        gridTemplateColumns: gridColsClass,
       }}
       {...props}
     >
@@ -80,9 +96,9 @@ export const PropertyGrid = <T extends Record<string, any>>({
       {values.map((item, itemIndex) => {
         const isLast = itemIndex === values.length - 1
 
-        return detectedColumns.map((column, columnIndex) => {
+        const cells = detectedColumns.map((column, columnIndex) => {
           const value = item[column.key]
-          const renderedValue = column.render 
+          const renderedValue = column.render
             ? column.render(value, item, column.key)
             : value
 
@@ -117,33 +133,51 @@ export const PropertyGrid = <T extends Record<string, any>>({
             </div>
           )
         })
+
+        if (!rowProps) return cells
+
+        const { className: rowClassName, ...restRowProps } = rowProps(
+          item,
+          itemIndex
+        )
+        return (
+          <div
+            key={itemIndex}
+            className={cn('contents', rowClassName)}
+            {...restRowProps}
+          >
+            {cells}
+          </div>
+        )
       })}
     </div>
   )
 }
 
-export const PropertyGridSkeleton = ({ 
-  count = 5, 
-  columns = 2 
-}: { 
+export const PropertyGridSkeleton = ({
+  count = 5,
+  columns = 2,
+}: {
   count?: number
-  columns?: number 
+  columns?: number
 }) => {
-  const gridColsClass = columns === 1
-    ? '1fr'
-    : columns === 2
-    ? 'max-content 1fr'
-    : `repeat(${columns}, minmax(120px, 1fr))`
+  // Use same flexible grid logic as main component
+  const gridColsClass =
+    columns === 1
+      ? '1fr'
+      : columns === 2
+        ? 'max-content 1fr' // Two columns: first fits content, second expands
+        : `repeat(${columns}, minmax(120px, 1fr))` // Multiple columns: all flexible with 120px minimum
 
   return (
     <div
       className="grid gap-0"
       style={{
-        gridTemplateColumns: gridColsClass
+        gridTemplateColumns: gridColsClass,
       }}
     >
       {Array.from({ length: columns }).map((_, columnIndex) => (
-        <div 
+        <div
           key={`header-${columnIndex}`}
           className={cn('py-2 border-b', columnIndex > 0 && 'pl-8')}
         >
@@ -163,7 +197,10 @@ export const PropertyGridSkeleton = ({
               !isLast && 'border-b'
             )}
           >
-            <Skeleton height="17px" width={columnIndex === 0 ? '120px' : '60%'} />
+            <Skeleton
+              height="17px"
+              width={columnIndex === 0 ? '120px' : '60%'}
+            />
           </div>
         ))
       })}

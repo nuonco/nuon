@@ -1,0 +1,17 @@
+---
+title: 039 - OIDC federation
+description: Grant access to your Nuon org without storing long-lived tokens.
+---
+
+_August 3, 2026_
+
+## OIDC federation
+
+Instead of saving a long-lived secret, any workload that supports OIDC can be trusted by Nuon to fetch short-lived access tokens.
+You no longer need to store and rotate long-lived access tokens to access the Nuon API.
+This works for CI/CD pipelines, Kubernetes workloads, cloud compute, and any other trusted OIDC issuer.
+
+You control what to trust with a **trust policy**: which issuer to accept, which token claims to require (such as a repository, branch, service account, or cloud identity), and which role and token lifetime to grant.
+Manage trust policies from the **OIDC federation** page in the dashboard, with the CLI, or — for GitHub repositories — directly from your GitHub connection, where each repository has a **Manage OIDC** button that creates a trust policy prefilled with the right issuer, audience, and `sub`.
+
+See [OIDC federation](/concepts/oidc-federation) for the full model and supported providers.

@@ -42,15 +42,18 @@ const BuildsSection = ({
       </Text>
       <div className="flex flex-col border rounded-lg divide-y overflow-hidden">
         {builds.map((build) => {
-          const componentType = build.component_config_connection?.type as TComponentType | undefined
-          const buildUrl = build.component_id && build.id
-            ? `/${orgId}/apps/${appId}/components/${build.component_id}/builds/${build.id}`
-            : undefined
+          const componentType = build.component_config_connection?.type as
+            | TComponentType
+            | undefined
+          const buildUrl =
+            build.component_id && build.id
+              ? `/${orgId}/apps/${appId}/components/${build.component_id}/builds/${build.id}`
+              : undefined
 
           return (
             <div
               key={build.id}
-              className="flex items-center justify-between gap-3 px-4 py-3"
+              className="flex items-center justify-between gap-3 px-4 py-3 even:bg-black/[0.02] dark:even:bg-white/[0.03]"
             >
               <div className="flex items-center gap-3 min-w-0">
                 {componentType && componentType !== 'unknown' ? (
@@ -61,7 +64,11 @@ const BuildsSection = ({
                     iconSize="16"
                   />
                 ) : (
-                  <Icon variant="PackageIcon" size={16} className="shrink-0 text-cool-grey-400" />
+                  <Icon
+                    variant="PackageIcon"
+                    size={16}
+                    className="shrink-0 text-cool-grey-400"
+                  />
                 )}
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <div className="flex items-center gap-2">
@@ -82,7 +89,10 @@ const BuildsSection = ({
                 </div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <Status status={build.status_v2?.status || 'unknown'} variant="badge" />
+                <Status
+                  status={build.status_v2?.status || 'unknown'}
+                  variant="badge"
+                />
                 {buildUrl && (
                   <Link href={buildUrl} className="text-xs">
                     View
