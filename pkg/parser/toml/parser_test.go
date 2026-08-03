@@ -134,6 +134,33 @@ name = "second"
 	}
 }
 
+func TestParseStrict_ArrayValues(t *testing.T) {
+	input := `
+dependencies = ["a", "b"]
+empty = []
+`
+	doc, err := ParseStrict(input)
+	if err != nil {
+		t.Fatalf("unexpected parse error: %v", err)
+	}
+
+	for _, key := range []string{"dependencies", "empty"} {
+		val, ok := doc.Values[key]
+		if !ok {
+			t.Fatalf("Expected %q to be recorded as a value, got values: %#v", key, doc.Values)
+		}
+		if _, isSlice := val.([]any); !isSlice {
+			t.Errorf("Expected %q to be []any, got %T", key, val)
+		}
+	}
+
+	for _, table := range doc.Tables {
+		if table.Name == "empty" {
+			t.Error("Empty array was misclassified as an array of tables")
+		}
+	}
+}
+
 func TestParseToml_OnlyComments(t *testing.T) {
 	input := `
 # This is a comment
