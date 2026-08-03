@@ -105,13 +105,16 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 
-	// make sure the inputs are valid
-	latestAppInputConfig, err := s.GetLatestAppInputConfig(ctx, appID)
+	// Validate and pin against the input config belonging to the app config this
+	// install is pinned to. Using the app's newest input config instead lets the
+	// two diverge whenever a newer app config exists, and the config-migration
+	// lookup then misses the install's inputs.
+	pinnedAppInputConfig, err := s.GetPinnedAppInputConfig(ctx, appID, parentApp.AppConfigs[0].ID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get latest app input config: %w", err)
+		return nil, fmt.Errorf("unable to get pinned app input config: %w", err)
 	}
 
-	if err := s.ValidateInstallInputs(ctx, latestAppInputConfig, req.Inputs); err != nil {
+	if err := s.ValidateInstallInputs(ctx, pinnedAppInputConfig, req.Inputs); err != nil {
 		return nil, err
 	}
 	install := app.Install{
@@ -281,11 +284,11 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		install.InstallRoles = installRoles
 	}
 
-	if len(parentApp.AppInputConfigs) > 0 {
+	if pinnedAppInputConfig != nil && pinnedAppInputConfig.ID != "" {
 		install.InstallInputs = []app.InstallInputs{
 			{
 				Values:           req.Inputs,
-				AppInputConfigID: parentApp.AppInputConfig.ID,
+				AppInputConfigID: pinnedAppInputConfig.ID,
 			},
 		}
 	}

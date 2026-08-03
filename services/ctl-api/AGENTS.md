@@ -966,12 +966,26 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error { return n
 
 ## App Config Sync — Shared Builders (IMPORTANT)
 
-An app config reaches the database via two paths: the CLI (`nuon apps sync` → `pkg/config/sync/apisyncer` → HTTP
-handlers) and app branch sync (VCS push/preview → `internal/pkg/config/syncer`, direct DB).
+`internal/pkg/config/syncer` is the **only** implementation that turns an app config into database records. Both
+entry points reach it through `syncer.Run`, which reads the intermediate config stored on the `AppConfig`:
 
-**Both MUST convert config into `app.*` models through `internal/pkg/config/build`.** They previously had
-independent conversions and silently drifted, dropping custom roles, break-glass roles, Pulumi sandboxes, `job`
-components, inline manifests, `custom_nested_stacks`, `toggleable`, action `role`, and more.
+| Entry point                                | Path                                                                                     |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| CLI (`nuon apps sync`)                     | `POST /configs` (intermediate config) → `POST /configs/:id/sync` → `appconfigsync` signal |
+| App branch sync (VCS push / PR preview)    | branch run's fetch-app-config step → `branches/activities.syncAppConfig`                 |
+
+The CLI does not walk the per-resource `Create*Config` endpoints — it parses, validates, and pushes the whole config
+in one request. Those endpoints remain part of the public API surface, so they must keep working, but they are no
+longer how a sync happens.
+
+The one behavioural difference between the two entry points is build scheduling, and it is explicit:
+`syncer.RunRequest.DispatchBuilds` (CLI path) makes the syncer reuse an unchanged component's existing config
+connection and report the changed ones for the caller to enqueue `configcreated` signals for. The branch run leaves
+it off because its own builds step schedules builds. Turning it on in both places would double-build.
+
+**Config MUST be converted into `app.*` models through `internal/pkg/config/build`.** The syncer and the per-type
+HTTP handlers previously had independent conversions and silently drifted, dropping custom roles, break-glass roles,
+Pulumi sandboxes, `job` components, inline manifests, `custom_nested_stacks`, `toggleable`, action `role`, and more.
 
 When adding anything an app config can express:
 
@@ -986,10 +1000,9 @@ When adding anything an app config can express:
 
 Writing `// Duplicates logic from ...` means you should be extracting a builder instead.
 
-**Do not add new config behaviour to `pkg/config/sync/apisyncer`.** It is being removed in favour of the CLI
-building the app config locally and pushing it to the API in its intermediate form, so the DB syncer is the only
-sync implementation. New fields, validation and side effects go in `internal/pkg/config/build` (+ the DB syncer),
-never in the api syncer.
+**Never add a second sync implementation.** `pkg/config/sync/apisyncer` was one, and it drifted from the DB syncer
+for months before anyone noticed. New fields, validation, and side effects go in `internal/pkg/config/build` plus a
+step in `internal/pkg/config/syncer` — never in a client, and never in a new per-caller conversion.
 
 ## Query Path Optimization
 

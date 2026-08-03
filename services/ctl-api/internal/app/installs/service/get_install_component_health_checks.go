@@ -140,13 +140,30 @@ func (s *service) currentComponentConfig(ctx context.Context, installID, compone
 		Scan(&appConfigID).Error; err != nil {
 		return nil, err
 	}
-	if appConfigID == "" {
-		return nil, nil
-	}
 
 	var ccc app.ComponentConfigConnection
+	if appConfigID != "" {
+		err := s.db.WithContext(ctx).
+			Where(app.ComponentConfigConnection{AppConfigID: appConfigID, ComponentID: componentID}).
+			First(&ccc).Error
+		if err == nil {
+			return &ccc, nil
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+	}
+
+	// An app config version only carries ccc rows for components CHANGED in that
+	// sync, so the pin alone misses unchanged components — the same fallback the
+	// deploy gate and probe handout use. Without it a component's declared checks
+	// vanish from this list instead of reporting as not-yet-reported.
 	if err := s.db.WithContext(ctx).
-		Where(app.ComponentConfigConnection{AppConfigID: appConfigID, ComponentID: componentID}).
+		Scopes(
+			scopes.WithDisableViews,
+			scopes.WithOverrideTable("component_config_connections_latest_configs_view"),
+		).
+		Where(app.ComponentConfigConnection{ComponentID: componentID}).
 		First(&ccc).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil

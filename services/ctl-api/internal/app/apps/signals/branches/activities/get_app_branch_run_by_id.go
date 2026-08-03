@@ -19,6 +19,9 @@ func (a *Activities) getAppBranchRunByID(ctx context.Context, runID string) (*ap
 		Preload("AppBranchConfig.InstallGroups").
 		Preload("Workflow").
 		Preload("CreatedBy").
+		// Optional: a run triggered with a pre-existing app config skips the
+		// fetch-commit step and has none.
+		Preload("VCSConnectionCommit").
 		First(&run, "id = ?", runID)
 
 	if res.Error != nil {

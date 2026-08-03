@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"go.temporal.io/sdk/temporal"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -21,8 +23,14 @@ func (a *Activities) getAppBranchRunWithCommit(ctx context.Context, runID string
 		return nil, fmt.Errorf("unable to find app branch run: %w", res.Error)
 	}
 
+	// Non-retryable: a run either has a commit or never will, and retrying holds
+	// the signal in-flight, which blocks every later run on the branch queue.
 	if run.VCSConnectionCommit == nil {
-		return nil, fmt.Errorf("app branch run %s has no VCS connection commit", runID)
+		return nil, temporal.NewNonRetryableApplicationError(
+			fmt.Sprintf("app branch run %s has no VCS connection commit", runID),
+			"APP_BRANCH_RUN_MISSING_COMMIT",
+			nil,
+		)
 	}
 
 	return &run, nil

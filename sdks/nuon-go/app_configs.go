@@ -47,6 +47,21 @@ func (c *client) CreateAppConfig(ctx context.Context, appID string, req *models.
 	return resp.Payload, nil
 }
 
+// SyncAppConfig asks the API to apply the intermediate config stored on an app
+// config. The sync runs asynchronously — poll GetAppConfig for the outcome.
+func (c *client) SyncAppConfig(ctx context.Context, appID, appConfigID string) (*models.AppAppConfig, error) {
+	resp, err := c.genClient.Operations.SyncAppConfig(&operations.SyncAppConfigParams{
+		AppID:    appID,
+		ConfigID: appConfigID,
+		Context:  ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) GetAppLatestConfig(ctx context.Context, appID string) (*models.AppAppConfig, error) {
 	resp, err := c.genClient.Operations.GetAppLatestConfig(&operations.GetAppLatestConfigParams{
 		AppID:   appID,
