@@ -39,6 +39,15 @@ type TemplateInput struct {
 	// them.
 	PhoneHomeSecretARN    string
 	PhoneHomeSecretRegion string
+
+	// TargetAWSAccountID pins the rendered CloudFormation template to a single AWS
+	// account: the template carries a Rules assertion that fails create/update
+	// before any resource is touched when applied in any other account. Set only
+	// when the org has phone-home-auth enabled and the install carries a
+	// well-formed target account ID — with the flag off the stored value is
+	// unvalidated, so pinning to it could brick a stack on junk data. Always empty
+	// on the GCP and Azure paths.
+	TargetAWSAccountID string
 }
 
 // PhoneHomeRoleName is the deterministic IAM role name for an install's phone-home
