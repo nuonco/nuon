@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"net/http"
 	"sync"
 	"time"
@@ -60,8 +59,7 @@ func (s *service) requireTriggers(ctx *gin.Context) {
 		return
 	}
 	if !enabled {
-		ctx.Error(errors.New("triggers feature is not enabled"))
-		ctx.Abort()
+		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "triggers feature is not enabled"})
 		return
 	}
 	ctx.Next()
