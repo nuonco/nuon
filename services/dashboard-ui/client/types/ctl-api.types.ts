@@ -878,6 +878,7 @@ export type TInstallStackVersionRun =
 export type TInstallStackOutputs =
   components['schemas']['app.InstallStackOutputs']
 export type TAppStackConfig = components['schemas']['app.AppStackConfig']
+export type TStackType = components['schemas']['app.StackType']
 
 export type TInstallAppConfigVersion =
   components['schemas']['app.InstallAppConfigVersion']
