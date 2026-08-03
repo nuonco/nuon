@@ -106,6 +106,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/enable_feature_flags"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/force_restart_queues"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/force_sandbox_mode"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/forget_install"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/invite_accepted"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/invite_created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/phone_home_backfill"
