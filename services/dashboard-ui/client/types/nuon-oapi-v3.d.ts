@@ -4450,6 +4450,11 @@ export interface components {
         [key: string]: string;
       };
       name?: string;
+      /**
+       * @description PhoneHomeAuthSummary is the API-safe view of PhoneHomeAuth: provisioning and
+       * verification timestamps only, never the secret's location.
+       */
+      phone_home_auth?: components["schemas"]["app.PhoneHomeAuthSummary"];
       queues?: components["schemas"]["app.Queue"][];
       runner_id?: string;
       runner_status?: string;
@@ -5360,6 +5365,11 @@ export interface components {
       trace_flags?: number;
       trace_id?: string;
       updated_at?: string;
+    };
+    "app.PhoneHomeAuthSummary": {
+      last_rejected_at?: string;
+      last_verified_at?: string;
+      provisioned_at?: string;
     };
     "app.Policy": {
       created_at?: string;
