@@ -36,10 +36,11 @@ type configSourceResolver interface {
 type sourceResolver struct {
 	awsFactory   awsClientFactory
 	azureFactory azureClientFactory
+	gcpFactory   gcpClientFactory
 }
 
-func newConfigSourceResolver(awsFactory awsClientFactory, azureFactory azureClientFactory) configSourceResolver {
-	return &sourceResolver{awsFactory: awsFactory, azureFactory: azureFactory}
+func newConfigSourceResolver(awsFactory awsClientFactory, azureFactory azureClientFactory, gcpFactory gcpClientFactory) configSourceResolver {
+	return &sourceResolver{awsFactory: awsFactory, azureFactory: azureFactory, gcpFactory: gcpFactory}
 }
 
 func (r *sourceResolver) Resolve(platform, installID string) configSource {
@@ -52,15 +53,20 @@ func (r *sourceResolver) Resolve(platform, installID string) configSource {
 		return newAWSConfigSource(r.awsFactory, installID)
 	case strings.HasPrefix(platform, "azure"):
 		return newAzureConfigSource(r.azureFactory, installID)
+	case platform == "gcp":
+		return newGCPConfigSource(r.gcpFactory, installID)
 	default:
 		return nil
 	}
 }
 
-func watchConfig(ctx context.Context, interval time.Duration, fetch func() configUpdate) <-chan configUpdate {
+func watchConfig(ctx context.Context, interval time.Duration, fetch func() configUpdate, cleanup func()) <-chan configUpdate {
 	updates := make(chan configUpdate)
 	go func() {
 		defer close(updates)
+		if cleanup != nil {
+			defer cleanup()
+		}
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
