@@ -1,4 +1,4 @@
-package auditexport
+package telemetryexport
 
 import (
 	"encoding/base64"
@@ -38,7 +38,7 @@ func TestParseSecret(t *testing.T) {
 func TestChildEnvironmentOmitsRunnerCredentials(t *testing.T) {
 	t.Setenv("RUNNER_API_TOKEN", "runner-secret")
 	t.Setenv("HTTPS_PROXY", "https://proxy.example.com")
-	environment := childEnvironment([]string{"NUON_AUDIT_HEADER_0=customer-secret"})
+	environment := childEnvironment([]string{"NUON_TELEMETRY_EXPORT_HEADER_0=customer-secret"})
 	joined := strings.Join(environment, "\n")
 	if strings.Contains(joined, "runner-secret") || strings.Contains(joined, "RUNNER_API_TOKEN") {
 		t.Fatal("collector child inherited the runner API credential")
@@ -46,7 +46,7 @@ func TestChildEnvironmentOmitsRunnerCredentials(t *testing.T) {
 	if !strings.Contains(joined, "HTTPS_PROXY=https://proxy.example.com") {
 		t.Fatal("collector child did not inherit HTTPS proxy configuration")
 	}
-	if !strings.Contains(joined, "NUON_AUDIT_HEADER_0=customer-secret") {
+	if !strings.Contains(joined, "NUON_TELEMETRY_EXPORT_HEADER_0=customer-secret") {
 		t.Fatal("collector child did not receive the customer header")
 	}
 }
@@ -63,7 +63,7 @@ func TestCollectorConfigKeepsHeaderValuesOutOfFile(t *testing.T) {
 	if strings.Contains(string(contents), "super-secret-value") {
 		t.Fatal("generated collector configuration contains a header value")
 	}
-	if !strings.Contains(string(contents), "${env:NUON_AUDIT_HEADER_0}") {
+	if !strings.Contains(string(contents), "${env:NUON_TELEMETRY_EXPORT_HEADER_0}") {
 		t.Fatal("generated collector configuration does not reference header environment variable")
 	}
 	if len(environment) != 1 || !strings.HasSuffix(environment[0], "=super-secret-value") {

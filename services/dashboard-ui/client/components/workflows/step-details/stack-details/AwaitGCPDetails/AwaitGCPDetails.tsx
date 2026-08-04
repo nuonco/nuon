@@ -96,11 +96,11 @@ export const AwaitGCPDetails = ({
     !!spaceliftEnabled &&
     (envelope.spaceliftAdminTf.length > 0 ||
       envelope.spaceliftBlueprintYaml.length > 0)
-  const auditExportConfigCmd = `export RUNNER_AUDIT_EXPORT_CONFIG="<base64-encoded YAML>"`
-  const auditExportSecretID = `${installId || '<install-id>'}-runner-audit-export`
+  const telemetryExportConfigCmd = `export NUON_TELEMETRY_EXPORT_CONFIG="<base64-encoded YAML>"`
+  const telemetryExportSecretID = `${installId || '<install-id>'}-telemetry-export-config`
   const projectID = gcpProjectId || '<gcp-project-id>'
-  const createAuditExportSecretVersionCmd = `printf '%s' "$RUNNER_AUDIT_EXPORT_CONFIG" | \
-  gcloud secrets versions add "${auditExportSecretID}" \
+  const createTelemetryExportSecretVersionCmd = `printf '%s' "$NUON_TELEMETRY_EXPORT_CONFIG" | \
+  gcloud secrets versions add "${telemetryExportSecretID}" \
     --project "${projectID}" \
     --data-file=-`
 
@@ -145,7 +145,7 @@ export const AwaitGCPDetails = ({
       )}
 
       <Expand
-        id="runner-audit-export"
+        id="telemetry-export"
         heading={
           <Text variant="base" weight="strong">
             Configure runner audit export (optional)
@@ -161,10 +161,10 @@ export const AwaitGCPDetails = ({
 
           <Card>
             <span className="flex justify-between items-center">
-              <Text>Export the audit export configuration</Text>
+              <Text>Export the telemetry export configuration</Text>
               <ClickToCopyButton
                 className="w-fit self-end"
-                textToCopy={auditExportConfigCmd}
+                textToCopy={telemetryExportConfigCmd}
               />
             </span>
             <Text variant="subtext">
@@ -178,19 +178,19 @@ export const AwaitGCPDetails = ({
               to encode the exporter configuration, then export it as an
               environment variable.
             </Text>
-            <Code variant="preformated">{auditExportConfigCmd}</Code>
+            <Code variant="preformated">{telemetryExportConfigCmd}</Code>
           </Card>
 
           <Card>
             <span className="flex justify-between items-center">
-              <Text>Add the audit export secret version</Text>
+              <Text>Add the telemetry export secret version</Text>
               <ClickToCopyButton
                 className="w-fit self-end"
-                textToCopy={createAuditExportSecretVersionCmd}
+                textToCopy={createTelemetryExportSecretVersionCmd}
               />
             </span>
             <Code variant="preformated">
-              {createAuditExportSecretVersionCmd}
+              {createTelemetryExportSecretVersionCmd}
             </Code>
           </Card>
         </div>
