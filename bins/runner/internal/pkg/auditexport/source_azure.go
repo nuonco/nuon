@@ -72,7 +72,7 @@ func (s *azureConfigSource) Watch(ctx context.Context, interval time.Duration) <
 
 		result, err := client.GetSecret(ctx, s.name, "", nil)
 		return newAzureConfigUpdate(result, err)
-	})
+	}, nil)
 }
 
 func newAzureConfigUpdate(result azsecrets.GetSecretResponse, err error) configUpdate {
