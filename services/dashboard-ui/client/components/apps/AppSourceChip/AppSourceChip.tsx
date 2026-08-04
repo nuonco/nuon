@@ -3,31 +3,17 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 
 export interface IAppSourceChip {
-  connectHref: string
   isLoading?: boolean
   repo?: string
   repoHref?: string
 }
 
 export const AppSourceChip = ({
-  connectHref,
   isLoading = false,
   repo,
   repoHref,
 }: IAppSourceChip) => {
-  if (isLoading) return null
-
-  if (!repo) {
-    return (
-      <Link
-        href={connectHref}
-        className="flex items-center gap-1.5 w-fit text-sm"
-      >
-        <Icon variant="GitHub" size={14} />
-        Connect repository
-      </Link>
-    )
-  }
+  if (isLoading || !repo) return null
 
   return (
     <div className="flex items-center gap-2 w-fit border rounded-full px-2.5 py-1">

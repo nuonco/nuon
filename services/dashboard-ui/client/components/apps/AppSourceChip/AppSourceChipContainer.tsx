@@ -31,7 +31,6 @@ export const AppSourceChipContainer = () => {
 
   return (
     <AppSourceChip
-      connectHref={`/${org?.id}/apps/${app?.id}`}
       isLoading={isLoading}
       repo={primary?.repo}
       repoHref={toRepoHref(primary?.repo)}
