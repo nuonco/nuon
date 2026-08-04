@@ -1,4 +1,4 @@
-package auditexport
+package telemetryexport
 
 import (
 	"context"
@@ -12,8 +12,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-const gcpAuditExportSecretSuffix = "runner-audit-export"
 
 type gcpSecretClient interface {
 	AccessSecretVersion(context.Context, *secretmanagerpb.AccessSecretVersionRequest, ...gax.CallOption) (*secretmanagerpb.AccessSecretVersionResponse, error)
@@ -48,7 +46,7 @@ type gcpConfigSource struct {
 func newGCPConfigSource(factory gcpClientFactory, installID string) configSource {
 	return &gcpConfigSource{
 		factory:  factory,
-		secretID: installID + "-" + gcpAuditExportSecretSuffix,
+		secretID: installID + "-" + telemetryExportConfigSecretName,
 	}
 }
 

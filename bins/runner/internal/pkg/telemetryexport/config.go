@@ -1,4 +1,4 @@
-package auditexport
+package telemetryexport
 
 import (
 	"encoding/base64"
@@ -35,43 +35,43 @@ type secretConfig struct {
 func parseSecret(value string) (secretConfig, error) {
 	var cfg secretConfig
 	if len(value) == 0 || len(value) > maxSecretSize {
-		return cfg, fmt.Errorf("audit export configuration has invalid size")
+		return cfg, fmt.Errorf("telemetry export configuration has invalid size")
 	}
 	if decoded, err := base64.StdEncoding.DecodeString(strings.TrimSpace(value)); err == nil {
 		value = string(decoded)
 	}
 	if len(value) == 0 || len(value) > maxSecretSize {
-		return cfg, fmt.Errorf("decoded audit export configuration has invalid size")
+		return cfg, fmt.Errorf("decoded telemetry export configuration has invalid size")
 	}
 	decoder := yaml.NewDecoder(strings.NewReader(value))
 	decoder.KnownFields(true)
 	if err := decoder.Decode(&cfg); err != nil {
-		return cfg, fmt.Errorf("decode audit export configuration: %w", err)
+		return cfg, fmt.Errorf("decode telemetry export configuration: %w", err)
 	}
 	var trailing any
 	if err := decoder.Decode(&trailing); err == nil {
-		return cfg, fmt.Errorf("audit export configuration contains trailing document")
+		return cfg, fmt.Errorf("telemetry export configuration contains trailing document")
 	} else if !errors.Is(err, io.EOF) {
-		return cfg, fmt.Errorf("decode trailing audit export configuration: %w", err)
+		return cfg, fmt.Errorf("decode trailing telemetry export configuration: %w", err)
 	}
 
 	endpoint := cfg.Exporters.OTLPHTTP.Endpoint
 	if endpoint == "" || len(endpoint) > maxEndpointLen {
-		return cfg, fmt.Errorf("audit export endpoint is required or too long")
+		return cfg, fmt.Errorf("telemetry export endpoint is required or too long")
 	}
 	u, err := url.Parse(endpoint)
 	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.Fragment != "" || u.RawQuery != "" || strings.Contains(endpoint, "${") {
-		return cfg, fmt.Errorf("audit export endpoint must be an HTTPS URL with a host and no userinfo, query, fragment, or environment expansion")
+		return cfg, fmt.Errorf("telemetry export endpoint must be an HTTPS URL with a host and no userinfo, query, fragment, or environment expansion")
 	}
 	if len(cfg.Exporters.OTLPHTTP.Headers) > maxHeaders {
-		return cfg, fmt.Errorf("audit export configuration has too many headers")
+		return cfg, fmt.Errorf("telemetry export configuration has too many headers")
 	}
 	for name, value := range cfg.Exporters.OTLPHTTP.Headers {
 		if name == "" || len(name) > 256 || http.CanonicalHeaderKey(name) == "" || !headerNamePattern.MatchString(name) {
-			return cfg, fmt.Errorf("audit export configuration has an invalid header name")
+			return cfg, fmt.Errorf("telemetry export configuration has an invalid header name")
 		}
 		if value == "" || len(value) > maxHeaderLen || strings.ContainsAny(value, "\r\n\x00") || strings.Contains(value, "${") {
-			return cfg, fmt.Errorf("audit export configuration has an invalid header value")
+			return cfg, fmt.Errorf("telemetry export configuration has an invalid header value")
 		}
 	}
 	return cfg, nil
@@ -88,7 +88,7 @@ func collectorConfig(cfg secretConfig) ([]byte, []string, error) {
 	environment := make([]string, 0, len(headerNames))
 	for i, name := range headerNames {
 		value := cfg.Exporters.OTLPHTTP.Headers[name]
-		envName := fmt.Sprintf("NUON_AUDIT_HEADER_%d", i)
+		envName := fmt.Sprintf("NUON_TELEMETRY_EXPORT_HEADER_%d", i)
 		headers[name] = "${env:" + envName + "}"
 		environment = append(environment, envName+"="+value)
 	}
