@@ -203,7 +203,31 @@ func (a *Activities) componentVerdict(ic *app.InstallComponent, reports []compon
 		return app.InstallComponentHealthStatusUnknown
 	}
 
-	return nextComponentHealthVerdict(ic.HealthStatus, reports, now)
+	verdict := nextComponentHealthVerdict(ic.HealthStatus, reports, now)
+	return escalateStuckProgressing(verdict, ic, now)
+}
+
+// escalateStuckProgressing turns a progressing verdict that has not moved in a
+// long time into degraded.
+//
+// Progressing means "on its way", and the resource libraries have no clock, so a
+// workload that never becomes ready reports progressing forever. Since
+// progressing never alerts, the most durable failure state was also the
+// quietest: a live install sat progressing for 15h because its ingress had no
+// class and nothing ever told anyone.
+func escalateStuckProgressing(verdict app.InstallComponentHealthStatus, ic *app.InstallComponent, now time.Time) app.InstallComponentHealthStatus {
+	if verdict != app.InstallComponentHealthStatusProgressing {
+		return verdict
+	}
+	// CreatedAtTS is only meaningful while the verdict is unchanged; a fresh
+	// progressing verdict has no elapsed time to judge yet.
+	if ic.HealthStatus != app.InstallComponentHealthStatusProgressing || ic.HealthStatusV2.CreatedAtTS <= 0 {
+		return verdict
+	}
+	if now.Sub(time.Unix(ic.HealthStatusV2.CreatedAtTS, 0)) < componentHealthProgressingLimit {
+		return verdict
+	}
+	return app.InstallComponentHealthStatusDegraded
 }
 
 func clusterWatchedComponent(t app.ComponentType) bool {
