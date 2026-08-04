@@ -1,4 +1,4 @@
-package auditexport
+package telemetryexport
 
 import (
 	"context"
@@ -43,7 +43,7 @@ func (awsFactory) New(ctx context.Context) (awsSecretClient, error) {
 func newAWSConfigSource(factory awsClientFactory, installID string) configSource {
 	return &awsConfigSource{
 		factory: factory,
-		name:    "nuon/" + installID + "/runner-audit-export",
+		name:    "nuon/" + installID + "/" + telemetryExportConfigSecretName,
 	}
 }
 

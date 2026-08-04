@@ -1,4 +1,4 @@
-package auditexport
+package telemetryexport
 
 import (
 	"context"
@@ -78,7 +78,7 @@ func TestGCPConfigSourceReadsLatestSecretAndClosesClient(t *testing.T) {
 	if update.state != configAvailable || update.value != "config" {
 		t.Fatalf("unexpected configuration update: %#v", update)
 	}
-	if client.name != "projects/test-project/secrets/inst-test-runner-audit-export/versions/latest" {
+	if client.name != "projects/test-project/secrets/inst-test-telemetry-export-config/versions/latest" {
 		t.Fatalf("unexpected secret version name: %q", client.name)
 	}
 

@@ -1,4 +1,4 @@
-package auditexport
+package telemetryexport
 
 import (
 	"context"
@@ -87,7 +87,7 @@ func TestAzureConfigSourceReadsLatestSecret(t *testing.T) {
 	if factory.vaultURL != "https://instabcdefghijklmnopqrst.vault.azure.net" {
 		t.Fatalf("unexpected vault URL: %q", factory.vaultURL)
 	}
-	if client.name != azureAuditExportSecretName || client.version != "" {
+	if client.name != telemetryExportConfigSecretName || client.version != "" {
 		t.Fatalf("unexpected secret request: name=%q version=%q", client.name, client.version)
 	}
 }
