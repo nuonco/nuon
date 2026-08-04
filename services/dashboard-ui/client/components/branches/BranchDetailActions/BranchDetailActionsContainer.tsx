@@ -22,10 +22,11 @@ interface IBranchDetailActionsContainer {
   currentConfig?: TAppBranchConfig
   appId: string
   orgId: string
+  showManage?: boolean
   showTriggerNudge?: boolean
 }
 
-const DeleteBranchModal = ({
+export const DeleteBranchModal = ({
   branch,
   appId,
   ...props
@@ -85,6 +86,7 @@ export const BranchDetailActionsContainer = ({
   currentConfig,
   appId,
   orgId,
+  showManage,
   showTriggerNudge,
 }: IBranchDetailActionsContainer) => {
   const { refresh } = useBranch()
@@ -135,6 +137,7 @@ export const BranchDetailActionsContainer = ({
         </Button>
       }
       isTriggerPending={false}
+      showManage={showManage}
       showTriggerNudge={showTriggerNudge}
       onTriggerRun={() => openTriggerModal(false)}
       onTriggerPreview={() => openTriggerModal(true)}

@@ -96,6 +96,8 @@ type AppBranchRun struct {
 	// QueueSignal is the signal that was enqueued to trigger this run
 	QueueSignal *QueueSignal `json:"queue_signal,omitempty" gorm:"polymorphic:Owner;" temporaljson:"queue_signal,omitzero,omitempty"`
 
+	AwaitingApproval bool `json:"awaiting_approval,omitzero" gorm:"-" temporaljson:"awaiting_approval,omitzero,omitempty"`
+
 	labels.Labeled
 }
 
