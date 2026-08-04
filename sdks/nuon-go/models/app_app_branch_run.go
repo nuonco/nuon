@@ -28,6 +28,9 @@ type AppAppBranchRun struct {
 	// AppConfigID is the app config that was created/synced during this run
 	AppConfigID string `json:"app_config_id,omitempty"`
 
+	// awaiting approval
+	AwaitingApproval bool `json:"awaiting_approval,omitempty"`
+
 	// base branch
 	BaseBranch string `json:"base_branch,omitempty"`
 
