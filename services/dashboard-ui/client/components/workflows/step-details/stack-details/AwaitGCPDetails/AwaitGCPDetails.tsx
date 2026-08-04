@@ -80,6 +80,20 @@ interface IAwaitGCPDetails extends IStackDetails {
   tfProvider?: boolean
 }
 
+const telemetryExportConfigFilename = 'telemetry-export-config.yaml'
+const telemetryExportConfig = `version: v1
+
+telemetry:
+  logs:
+    audit:
+      enabled: true
+
+exporters:
+  otlphttp:
+    endpoint: https://otlp.example.com
+    headers:
+      Authorization: Bearer <token>`
+
 export const AwaitGCPDetails = ({
   stack,
   installId,
@@ -96,13 +110,11 @@ export const AwaitGCPDetails = ({
     !!spaceliftEnabled &&
     (envelope.spaceliftAdminTf.length > 0 ||
       envelope.spaceliftBlueprintYaml.length > 0)
-  const telemetryExportConfigCmd = `export NUON_TELEMETRY_EXPORT_CONFIG="<base64-encoded YAML>"`
   const telemetryExportSecretID = `${installId || '<install-id>'}-telemetry-export-config`
   const projectID = gcpProjectId || '<gcp-project-id>'
-  const createTelemetryExportSecretVersionCmd = `printf '%s' "$NUON_TELEMETRY_EXPORT_CONFIG" | \
-  gcloud secrets versions add "${telemetryExportSecretID}" \
-    --project "${projectID}" \
-    --data-file=-`
+  const createTelemetryExportSecretVersionCmd = `gcloud secrets versions add "${telemetryExportSecretID}" \\
+  --data-file="${telemetryExportConfigFilename}" \\
+  --project="${projectID}"`
 
   return (
     <div className="flex flex-col gap-4">
@@ -148,42 +160,51 @@ export const AwaitGCPDetails = ({
         id="telemetry-export"
         heading={
           <Text variant="base" weight="strong">
-            Configure runner audit export (optional)
+            Configure telemetry export (optional)
           </Text>
         }
       >
         <div className="flex flex-col gap-4 p-2">
           <Text variant="subtext">
-            After the install stack is applied, add an OTLP exporter
-            configuration to Secret Manager. Skip this step to leave audit
-            export disabled.
+            To export runner audit logs and other telemetry to your own backend,
+            update the <code>telemetry-export-config</code> secret in Secret
+            Manager after the stack is applied. See the{' '}
+            <Link
+              href="https://docs.nuon.co/guides/export-runner-audit-logs"
+              isExternal
+            >
+              telemetry export reference
+            </Link>{' '}
+            for available settings.
           </Text>
 
           <Card>
             <span className="flex justify-between items-center">
-              <Text>Export the telemetry export configuration</Text>
-              <ClickToCopyButton
-                className="w-fit self-end"
-                textToCopy={telemetryExportConfigCmd}
-              />
+              <Text>
+                Save this as <code>{telemetryExportConfigFilename}</code>
+              </Text>
+              <span className="flex gap-2 items-center">
+                <ClickToCopyButton textToCopy={telemetryExportConfig} />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    createFileDownload(
+                      telemetryExportConfig,
+                      telemetryExportConfigFilename
+                    )
+                  }
+                >
+                  Download
+                </Button>
+              </span>
             </span>
-            <Text variant="subtext">
-              Use the{' '}
-              <Link
-                href="https://docs.nuon.co/guides/export-runner-audit-logs"
-                isExternal
-              >
-                audit export guide
-              </Link>{' '}
-              to encode the exporter configuration, then export it as an
-              environment variable.
-            </Text>
-            <Code variant="preformated">{telemetryExportConfigCmd}</Code>
+            <Code variant="preformated">{telemetryExportConfig}</Code>
           </Card>
 
           <Card>
             <span className="flex justify-between items-center">
-              <Text>Add the telemetry export secret version</Text>
+              <Text>Update the telemetry export secret</Text>
               <ClickToCopyButton
                 className="w-fit self-end"
                 textToCopy={createTelemetryExportSecretVersionCmd}
