@@ -265,12 +265,13 @@ func (w *workspace) applyPlan(ctx context.Context, client Terraform, log hclog.L
 		return nil, fmt.Errorf("unable to get writer: %w", err)
 	}
 
+	// Applying a saved plan: the variable values are already baked into tfplan
+	// at plan time, and Terraform rejects -var-file (and -var) when a plan file
+	// is supplied ("Can't set variables when applying a saved plan"). So, unlike
+	// the fresh apply/plan paths, we must NOT append w.varsPaths here.
 	opts := []tfexec.ApplyOption{
 		tfexec.Refresh(true),
 		tfexec.DirOrPlan(filepath.Join(w.Root(), "tfplan")),
-	}
-	for _, fp := range w.varsPaths {
-		opts = append(opts, tfexec.VarFile(fp))
 	}
 
 	if err := client.ApplyJSON(ctx,
