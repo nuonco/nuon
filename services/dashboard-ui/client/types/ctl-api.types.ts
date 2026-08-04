@@ -1,11 +1,15 @@
 import { components } from '@/types/nuon-oapi-v3'
 import type { Interests as TInterests } from '@/components/interests/types'
 
-export type TAppBranch = components['schemas']['app.AppBranch']
+export type TAppBranch = components['schemas']['app.AppBranch'] & {
+  latest_run?: TAppBranchRun
+}
 export type TAppBranchConfig = components['schemas']['app.AppBranchConfig']
 export type TAppBranchInstallGroup =
   components['schemas']['app.AppBranchInstallGroup']
-export type TAppBranchRun = components['schemas']['app.AppBranchRun']
+export type TAppBranchRun = components['schemas']['app.AppBranchRun'] & {
+  awaiting_approval?: boolean
+}
 export type TCreateAppBranchRequest =
   components['schemas']['service.CreateAppBranchRequest']
 export type TVCSBranch = { name: string }
@@ -341,7 +345,9 @@ export type TComponentConfig =
   components['schemas']['app.ComponentConfigConnection']
 export type TComponentType = components['schemas']['app.ComponentType']
 
-export type TComponentBuild = components['schemas']['app.ComponentBuild']
+export type TComponentBuild = components['schemas']['app.ComponentBuild'] & {
+  app_branch_id?: string
+}
 export type TBuild = TComponentBuild & {
   org_id: string
   build_runner_job_id?: string | null

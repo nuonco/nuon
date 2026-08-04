@@ -11,9 +11,11 @@ import { ComponentsTable, parseComponentToTableData } from './ComponentsTable'
 const LIMIT = 20
 
 export const ComponentsTableContainer = ({
+  filterIds,
   pollInterval = 20000,
   shouldPoll = true,
 }: {
+  filterIds?: string[]
   pollInterval?: number
   shouldPoll?: boolean
 } = {}) => {
@@ -48,7 +50,14 @@ export const ComponentsTableContainer = ({
 
   return (
     <ComponentsTable
-      data={parseComponentToTableData(result?.data ?? [], org.id, app.id, labelColors)}
+      data={parseComponentToTableData(
+        (result?.data ?? []).filter(
+          (row) => !filterIds || filterIds.includes(row.id ?? '')
+        ),
+        org.id,
+        app.id,
+        labelColors
+      )}
       isLoading={isLoading}
       filterActions={
         <div className="flex items-center gap-3">

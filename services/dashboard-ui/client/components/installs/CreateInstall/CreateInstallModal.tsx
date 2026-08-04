@@ -6,17 +6,22 @@ import type { TApp } from '@/types'
 import { AppSelectContainer as AppSelect } from './AppSelectContainer'
 import { LoadAppConfigsContainer as LoadAppConfigs } from './LoadAppConfigsContainer'
 
-interface ICreateInstall {}
+interface ICreateInstall {
+  initialApp?: TApp
+}
 
-export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
-  const [selectedApp, setSelectedApp] = useState<TApp | undefined>()
+export const CreateInstallModal = ({
+  initialApp,
+  ...props
+}: ICreateInstall & IModal) => {
+  const [selectedApp, setSelectedApp] = useState<TApp | undefined>(initialApp)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [installCreated, setInstallCreated] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
   const clearDraftRef = useRef<(() => void) | null>(null)
 
   const handleClose = () => {
-    setSelectedApp(undefined)
+    setSelectedApp(initialApp)
     setInstallCreated(false)
     props.onClose?.()
   }

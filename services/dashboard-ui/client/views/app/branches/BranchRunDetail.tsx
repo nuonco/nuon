@@ -174,7 +174,7 @@ const BranchRunDetailContent = () => {
                   </div>
                   {githubUrl && (
                     <Link href={githubUrl} isExternal className="text-xs">
-                      <Icon variant="GithubLogoIcon" size={14} />
+                      <Icon variant="GitHub" size={14} />
                       View in GitHub
                       <Icon variant="ArrowSquareOutIcon" size={12} />
                     </Link>
@@ -224,7 +224,7 @@ const BranchRunDetailContent = () => {
 
                 {repoSlug && (
                   <div className="flex items-center gap-1.5">
-                    <Icon variant="GithubLogoIcon" size={14} className="text-cool-grey-400" />
+                    <Icon variant="GitHub" size={14} className="text-cool-grey-400" />
                     <Text variant="subtext" theme="neutral">{repoSlug}</Text>
                   </div>
                 )}
