@@ -447,6 +447,7 @@ func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[s
 	// nothing in that report could be assessed.
 	knownSeen := map[reportKey]bool{}
 	unknownFallback := map[reportKey]app.InstallComponentResourceState{}
+	naFallback := map[reportKey]app.InstallComponentResourceState{}
 
 	for _, r := range rows {
 		if !bearsVerdict(r.Provider) {
@@ -491,6 +492,16 @@ func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[s
 			}
 			continue
 		}
+		// not-applicable is not a severity either: it says this resource has no
+		// signal, which must never outrank one that does. It shares unknown's
+		// zero severity, so whichever row the store returned first won and the
+		// same cluster state reported healthy or not-applicable at random.
+		if health == app.InstallComponentHealthStatusNotApplicable {
+			if _, seen := naFallback[key]; !seen {
+				naFallback[key] = r
+			}
+			continue
+		}
 
 		if !knownSeen[key] || componentHealthSeverity[health] > componentHealthSeverity[rep.Health] {
 			knownSeen[key] = true
@@ -502,16 +513,23 @@ func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[s
 		}
 	}
 
-	// Only a report in which nothing at all could be assessed is unknown.
+	// Only a report in which nothing at all could be assessed falls back, and
+	// unknown outranks not-applicable: "tried and could not tell" is more
+	// informative than "nothing here exposes health".
 	for key, rep := range merged {
 		if knownSeen[key] {
 			continue
 		}
 		fallback, ok := unknownFallback[key]
+		health := app.InstallComponentHealthStatusUnknown
+		if !ok {
+			fallback, ok = naFallback[key]
+			health = app.InstallComponentHealthStatusNotApplicable
+		}
 		if !ok {
 			continue
 		}
-		rep.Health = app.InstallComponentHealthStatusUnknown
+		rep.Health = health
 		rep.RootKind = fallback.Kind
 		rep.RootNamespace = fallback.Namespace
 		rep.RootName = fallback.Name
