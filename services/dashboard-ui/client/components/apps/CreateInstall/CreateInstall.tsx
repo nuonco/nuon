@@ -155,7 +155,7 @@ export const CreateInstallModal = ({
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <Icon variant="CubeIcon" />
+                  <Icon variant="PlusIcon" />
                   Create install
                 </span>
               ),
@@ -203,7 +203,7 @@ export const CreateInstallButton = ({
 }: { onClick: () => void } & Omit<IButtonAsButton, 'onClick'>) => {
   return (
     <Button onClick={onClick} {...props}>
-      <Icon variant="CubeIcon" />
+      <Icon variant="PlusIcon" size={16} />
       Create install
     </Button>
   )
