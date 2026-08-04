@@ -44,10 +44,10 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	// PhoneHome resources are always created as the provision workflow depends on
 	// the phone home callback to proceed.
 	if !t.cfg.UseLocalRunners {
-		auditExportParams := t.getRunnerAuditExportParameters()
-		maps.Copy(tmpl.Parameters, auditExportParams)
-		maps.Copy(runnerParams, auditExportParams)
-		maps.Copy(tmpl.Conditions, t.getRunnerAuditExportConditions())
+		telemetryExportParams := t.getTelemetryExportParameters()
+		maps.Copy(tmpl.Parameters, telemetryExportParams)
+		maps.Copy(runnerParams, telemetryExportParams)
+		maps.Copy(tmpl.Conditions, t.getTelemetryExportConditions())
 
 		// NOTE(fd): this uses the configurable nested runner asg cf stack
 		runnerASG, err := t.getRunnerASGNestedStack(inp, tb)
@@ -60,8 +60,8 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 		tmpl.Resources["RunnerCloudWatchLogGroup"] = t.getRunnerCloudWatchLogGroup(inp, tb)
 		tmpl.Resources["RunnerCloudWatchLogStream"] = t.getRunnerCloudWatchLogStream(inp, tb)
 		tmpl.Resources["RunnerCloudWatchLogPolicy"] = t.getRunnerCloudWatchLogPolicy(inp, tb)
-		maps.Copy(tmpl.Resources, t.getRunnerAuditExportResources(inp, tb))
-		maps.Copy(paramlabels, t.getRunnerAuditExportParamLabels())
+		maps.Copy(tmpl.Resources, t.getTelemetryExportResources(inp, tb))
+		maps.Copy(paramlabels, t.getTelemetryExportParamLabels())
 	}
 
 	// build roles (before custom nested stacks so they can depend on them)

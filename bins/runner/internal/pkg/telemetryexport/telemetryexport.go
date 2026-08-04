@@ -1,4 +1,4 @@
-package auditexport
+package telemetryexport
 
 import (
 	"context"
@@ -140,10 +140,10 @@ func (s *Supervisor) reconcile(update configUpdate) {
 		s.disable("secret unavailable")
 		return
 	case configSourceInitializationFailed:
-		s.logger.Warn("audit export configuration source initialization failed", zap.Error(update.err))
+		s.logger.Warn("telemetry export configuration source initialization failed", zap.Error(update.err))
 		return
 	case configLookupFailed:
-		s.logger.Warn("audit export secret lookup failed", zap.Error(update.err))
+		s.logger.Warn("telemetry export configuration lookup failed", zap.Error(update.err))
 		return
 	case configAvailable:
 	default:
@@ -159,7 +159,7 @@ func (s *Supervisor) reconcile(update configUpdate) {
 	}
 	cfg, err := parseSecret(value)
 	if err != nil {
-		s.logger.Warn("audit export configuration is invalid")
+		s.logger.Warn("telemetry export configuration is invalid")
 		return
 	}
 	if err := s.replaceChildFn(cfg); err != nil {
