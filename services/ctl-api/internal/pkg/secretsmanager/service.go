@@ -26,6 +26,18 @@ import (
 // management account's Secrets Manager. Callers treat it as "skip", not "fail".
 var ErrUnsupportedCloud = errors.New("control plane cannot reach management secrets manager")
 
+// IsPermanentInputError reports whether AWS rejected the request content, so a
+// retry can only fail the same way.
+func IsPermanentInputError(err error) bool {
+	var malformed *types.MalformedPolicyDocumentException
+	var invalidParam *types.InvalidParameterException
+	var invalidReq *types.InvalidRequestException
+
+	return errors.As(err, &malformed) ||
+		errors.As(err, &invalidParam) ||
+		errors.As(err, &invalidReq)
+}
+
 // Service manages secrets in the management account.
 type Service interface {
 	// EnsureSecret creates the secret or updates its value, and returns the full

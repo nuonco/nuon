@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -59,6 +60,31 @@ func TestPhoneHomeSecretSkipReasonIgnoringFeatureGate(t *testing.T) {
 				CloudPlatformMetadata: app.CloudPlatformMetadata{TargetAccountID: targetAccount},
 			},
 			want: phoneHomeSkipNoManagement,
+		},
+		{
+			name: "a sandbox install is still skipped",
+			cfg:  reachableCfg,
+			install: &app.Install{
+				ID:                    "inst",
+				SandboxMode:           sql.NullBool{Bool: true, Valid: true},
+				AWSAccount:            &app.AWSAccount{},
+				CloudPlatformMetadata: app.CloudPlatformMetadata{TargetAccountID: targetAccount},
+			},
+			want: phoneHomeSkipSandboxMode,
+		},
+		{
+			// An install created before AdminForceSandboxMode flipped the org keeps an
+			// explicit false that Install.AfterQuery will not override.
+			name: "an install in a sandboxed org is skipped even when its own flag is false",
+			cfg:  reachableCfg,
+			install: &app.Install{
+				ID:                    "inst",
+				SandboxMode:           sql.NullBool{Bool: false, Valid: true},
+				Org:                   app.Org{SandboxMode: true},
+				AWSAccount:            &app.AWSAccount{},
+				CloudPlatformMetadata: app.CloudPlatformMetadata{TargetAccountID: targetAccount},
+			},
+			want: phoneHomeSkipSandboxMode,
 		},
 		{
 			name: "an otherwise eligible install proceeds even with the flag off",
