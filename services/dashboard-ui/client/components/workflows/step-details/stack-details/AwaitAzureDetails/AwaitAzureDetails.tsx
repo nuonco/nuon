@@ -31,8 +31,8 @@ export const AwaitAzureDetails = ({
     (s) => !s.required && !!s.default
   )
   const grantSecretsPermissionCmd = `az role assignment create --assignee "$(az ad signed-in-user show --query id -o tsv)" --role "Key Vault Secrets Officer" --scope "$(az keyvault show --name ${vaultName} --resource-group ${installId}-rg --query id -o tsv)"`
-  const auditExportConfigCmd = `export RUNNER_AUDIT_EXPORT_CONFIG="<base64-encoded YAML>"`
-  const createAuditExportSecretCmd = `az keyvault secret set --vault-name ${vaultName} --name runner-audit-export --value "$RUNNER_AUDIT_EXPORT_CONFIG"`
+  const telemetryExportConfigCmd = `export NUON_TELEMETRY_EXPORT_CONFIG="<base64-encoded YAML>"`
+  const createTelemetryExportSecretCmd = `az keyvault secret set --vault-name ${vaultName} --name telemetry-export-config --value "$NUON_TELEMETRY_EXPORT_CONFIG"`
 
   const renderSecretCard = (secret: TAppSecretConfig) => {
     const kvName = secret.name.replaceAll('_', '-')
@@ -152,7 +152,7 @@ export const AwaitAzureDetails = ({
       )}
 
       <Expand
-        id="runner-audit-export"
+        id="telemetry-export"
         heading={
           <Text variant="base" weight="strong">
             Configure runner audit export (optional)
@@ -169,7 +169,7 @@ export const AwaitAzureDetails = ({
           {!hasCustomerSecrets && (
             <Card>
               <span className="flex justify-between items-center">
-                <Text>Grant permission to set the audit export secret</Text>
+                <Text>Grant permission to set the telemetry export secret</Text>
                 <ClickToCopyButton
                   className="w-fit self-end"
                   textToCopy={grantSecretsPermissionCmd}
@@ -181,10 +181,10 @@ export const AwaitAzureDetails = ({
 
           <Card>
             <span className="flex justify-between items-center">
-              <Text>Export the audit export configuration</Text>
+              <Text>Export the telemetry export configuration</Text>
               <ClickToCopyButton
                 className="w-fit self-end"
-                textToCopy={auditExportConfigCmd}
+                textToCopy={telemetryExportConfigCmd}
               />
             </span>
             <Text variant="subtext">
@@ -198,18 +198,18 @@ export const AwaitAzureDetails = ({
               to build the exporter configuration, then export it as an
               environment variable.
             </Text>
-            <Code>{auditExportConfigCmd}</Code>
+            <Code>{telemetryExportConfigCmd}</Code>
           </Card>
 
           <Card>
             <span className="flex justify-between items-center">
-              <Text>Create the audit export secret</Text>
+              <Text>Create the telemetry export secret</Text>
               <ClickToCopyButton
                 className="w-fit self-end"
-                textToCopy={createAuditExportSecretCmd}
+                textToCopy={createTelemetryExportSecretCmd}
               />
             </span>
-            <Code>{createAuditExportSecretCmd}</Code>
+            <Code>{createTelemetryExportSecretCmd}</Code>
           </Card>
         </div>
       </Expand>
