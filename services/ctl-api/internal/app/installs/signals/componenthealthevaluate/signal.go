@@ -6,6 +6,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componenthealthnotify"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -69,7 +70,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 func (s *Signal) notify(ctx workflow.Context, resp *activities.EvaluateComponentHealthResponse) error {
 	l := workflow.GetLogger(ctx)
 
-	for _, n := range resp.Notifications {
+	// A crossing driven by a suppressed component has no carrier, so it still
+	// needs the standalone alert.
+	carrier := installCarrierIndex(resp)
+
+	for i, n := range resp.Notifications {
 		body := componenthealthnotify.ComponentSignal{
 			InstallID:             s.InstallID,
 			InstallName:           resp.InstallName,
@@ -82,6 +87,10 @@ func (s *Signal) notify(ctx workflow.Context, resp *activities.EvaluateComponent
 			RootResourceKind:      n.RootResourceKind,
 			RootResourceNamespace: n.RootResourceNamespace,
 			RootResourceName:      n.RootResourceName,
+		}
+		if i == carrier {
+			body.InstallHealth = resp.InstallNotification.Health
+			body.InstallPreviousHealth = resp.InstallNotification.PreviousHealth
 		}
 
 		var sig signal.Signal
@@ -100,7 +109,7 @@ func (s *Signal) notify(ctx workflow.Context, resp *activities.EvaluateComponent
 		}
 	}
 
-	if in := resp.InstallNotification; in != nil {
+	if in := resp.InstallNotification; in != nil && carrier < 0 {
 		sig := &componenthealthnotify.InstallDegradedSignal{
 			InstallID:               s.InstallID,
 			InstallName:             resp.InstallName,
@@ -129,4 +138,20 @@ func (s *Signal) enqueue(ctx workflow.Context, sig signal.Signal) error {
 		Signal:    sig,
 	})
 	return err
+}
+
+// installCarrierIndex returns -1 when no component notification can carry the
+// install crossing.
+func installCarrierIndex(resp *activities.EvaluateComponentHealthResponse) int {
+	in := resp.InstallNotification
+	if in == nil {
+		return -1
+	}
+	recovered := !app.InstallComponentHealthStatus(in.Health).IsBadHealth()
+	for i, n := range resp.Notifications {
+		if n.Recovered == recovered {
+			return i
+		}
+	}
+	return -1
 }
