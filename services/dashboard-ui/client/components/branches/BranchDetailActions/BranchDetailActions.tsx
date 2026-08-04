@@ -13,6 +13,7 @@ interface IBranchDetailActions {
   deploymentPlanButton: ReactNode
   deleteButton: ReactNode
   isTriggerPending: boolean
+  showManage?: boolean
   showTriggerNudge?: boolean
   onTriggerRun: () => void
   onTriggerPreview: () => void
@@ -23,6 +24,7 @@ export const BranchDetailActions = ({
   deploymentPlanButton,
   deleteButton,
   isTriggerPending,
+  showManage = true,
   showTriggerNudge = false,
   onTriggerRun,
   onTriggerPreview,
@@ -41,24 +43,26 @@ export const BranchDetailActions = ({
 
   return (
     <div className="flex items-center gap-3">
-      <Dropdown
-        id="branch-manage"
-        variant="secondary"
-        alignment="right"
-        buttonText={
-          <>
-            <Icon variant="SlidersHorizontalIcon" size={16} />
-            Manage
-          </>
-        }
-      >
-        <Menu className="min-w-56">
-          {deploymentPlanButton}
-          {editButton}
-          <hr />
-          <span className="contents">{deleteButton}</span>
-        </Menu>
-      </Dropdown>
+      {showManage ? (
+        <Dropdown
+          id="branch-manage"
+          variant="secondary"
+          alignment="right"
+          buttonText={
+            <>
+              <Icon variant="SlidersHorizontalIcon" size={16} />
+              Manage
+            </>
+          }
+        >
+          <Menu className="min-w-56">
+            {deploymentPlanButton}
+            {editButton}
+            <hr />
+            <span className="contents">{deleteButton}</span>
+          </Menu>
+        </Dropdown>
+      ) : null}
 
       <div className="flex items-center">
         <Tooltip

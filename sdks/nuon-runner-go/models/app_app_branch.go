@@ -35,6 +35,9 @@ type AppAppBranch struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// latest run
+	LatestRun *AppAppBranchRun `json:"latest_run,omitempty"`
+
 	// managed by
 	ManagedBy string `json:"managed_by,omitempty"`
 
@@ -62,6 +65,10 @@ func (m *AppAppBranch) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateConfigs(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLatestRun(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -104,6 +111,29 @@ func (m *AppAppBranch) validateConfigs(formats strfmt.Registry) error {
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppAppBranch) validateLatestRun(formats strfmt.Registry) error {
+	if swag.IsZero(m.LatestRun) { // not required
+		return nil
+	}
+
+	if m.LatestRun != nil {
+		if err := m.LatestRun.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("latest_run")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("latest_run")
+			}
+
+			return err
+		}
 	}
 
 	return nil
@@ -170,6 +200,10 @@ func (m *AppAppBranch) ContextValidate(ctx context.Context, formats strfmt.Regis
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateLatestRun(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateQueue(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -208,6 +242,31 @@ func (m *AppAppBranch) contextValidateConfigs(ctx context.Context, formats strfm
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppAppBranch) contextValidateLatestRun(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.LatestRun != nil {
+
+		if swag.IsZero(m.LatestRun) { // not required
+			return nil
+		}
+
+		if err := m.LatestRun.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("latest_run")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("latest_run")
+			}
+
+			return err
+		}
 	}
 
 	return nil

@@ -10,6 +10,7 @@ import { cn } from '@/utils/classnames'
 export const SubNavLink = ({
   basePath,
   iconVariant,
+  matchPaths,
   path,
   text,
 }: TNavLink & { basePath: string }) => {
@@ -21,7 +22,14 @@ export const SubNavLink = ({
   const fullPath = normalizePath(`${basePath}${path}`)
   const isActive =
     fullPath === normalizedPathName ||
-    (path !== `/` && normalizedPathName.startsWith(`${fullPath}/`))
+    (path !== `/` && normalizedPathName.startsWith(`${fullPath}/`)) ||
+    (matchPaths ?? []).some((matchPath) => {
+      const fullMatchPath = normalizePath(`${basePath}${matchPath}`)
+      return (
+        fullMatchPath === normalizedPathName ||
+        normalizedPathName.startsWith(`${fullMatchPath}/`)
+      )
+    })
 
   const link = (
     <Link
