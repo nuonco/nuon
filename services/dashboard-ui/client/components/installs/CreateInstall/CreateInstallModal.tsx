@@ -38,7 +38,7 @@ export const CreateInstallModal = ({ ...props }: ICreateInstall & IModal) => {
             </span>
           ) : (
             <span className="flex items-center gap-2">
-              <Icon variant="CubeIcon" />
+              <Icon variant="PlusIcon" />
               Create install
             </span>
           ),
