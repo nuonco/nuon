@@ -1,5 +1,7 @@
 package permissions
 
+import "strings"
+
 type Set map[string]Permission
 
 func NewSet() map[string]Permission {
@@ -29,6 +31,15 @@ func (p Set) Add(set map[string]*string) error {
 
 func (p Set) CanPerform(obj string, perm Permission) error {
 	val, ok := p[obj]
+
+	// A scoped object like "<orgID>:component_builds" inherits the org-wide
+	// grant unless the set holds a more specific grant for it. Without this,
+	// an org admin's "<orgID>: all" grant would not cover scoped objects.
+	if !ok {
+		if parent, _, found := strings.Cut(obj, ":"); found {
+			val, ok = p[parent]
+		}
+	}
 
 	// if the object is not in the permission set, look up the "*" wildcard.
 	if !ok {

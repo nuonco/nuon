@@ -203,7 +203,31 @@ func (a *Activities) componentVerdict(ic *app.InstallComponent, reports []compon
 		return app.InstallComponentHealthStatusUnknown
 	}
 
-	return nextComponentHealthVerdict(ic.HealthStatus, reports, now)
+	verdict := nextComponentHealthVerdict(ic.HealthStatus, reports, now)
+	return escalateStuckProgressing(verdict, ic, now)
+}
+
+// escalateStuckProgressing turns a progressing verdict that has not moved in a
+// long time into degraded.
+//
+// Progressing means "on its way", and the resource libraries have no clock, so a
+// workload that never becomes ready reports progressing forever. Since
+// progressing never alerts, the most durable failure state was also the
+// quietest: a live install sat progressing for 15h because its ingress had no
+// class and nothing ever told anyone.
+func escalateStuckProgressing(verdict app.InstallComponentHealthStatus, ic *app.InstallComponent, now time.Time) app.InstallComponentHealthStatus {
+	if verdict != app.InstallComponentHealthStatusProgressing {
+		return verdict
+	}
+	// CreatedAtTS is only meaningful while the verdict is unchanged; a fresh
+	// progressing verdict has no elapsed time to judge yet.
+	if ic.HealthStatus != app.InstallComponentHealthStatusProgressing || ic.HealthStatusV2.CreatedAtTS <= 0 {
+		return verdict
+	}
+	if now.Sub(time.Unix(ic.HealthStatusV2.CreatedAtTS, 0)) < componentHealthProgressingLimit {
+		return verdict
+	}
+	return app.InstallComponentHealthStatusDegraded
 }
 
 func clusterWatchedComponent(t app.ComponentType) bool {
@@ -423,6 +447,7 @@ func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[s
 	// nothing in that report could be assessed.
 	knownSeen := map[reportKey]bool{}
 	unknownFallback := map[reportKey]app.InstallComponentResourceState{}
+	naFallback := map[reportKey]app.InstallComponentResourceState{}
 
 	for _, r := range rows {
 		if !bearsVerdict(r.Provider) {
@@ -467,6 +492,16 @@ func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[s
 			}
 			continue
 		}
+		// not-applicable is not a severity either: it says this resource has no
+		// signal, which must never outrank one that does. It shares unknown's
+		// zero severity, so whichever row the store returned first won and the
+		// same cluster state reported healthy or not-applicable at random.
+		if health == app.InstallComponentHealthStatusNotApplicable {
+			if _, seen := naFallback[key]; !seen {
+				naFallback[key] = r
+			}
+			continue
+		}
 
 		if !knownSeen[key] || componentHealthSeverity[health] > componentHealthSeverity[rep.Health] {
 			knownSeen[key] = true
@@ -478,16 +513,23 @@ func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[s
 		}
 	}
 
-	// Only a report in which nothing at all could be assessed is unknown.
+	// Only a report in which nothing at all could be assessed falls back, and
+	// unknown outranks not-applicable: "tried and could not tell" is more
+	// informative than "nothing here exposes health".
 	for key, rep := range merged {
 		if knownSeen[key] {
 			continue
 		}
 		fallback, ok := unknownFallback[key]
+		health := app.InstallComponentHealthStatusUnknown
+		if !ok {
+			fallback, ok = naFallback[key]
+			health = app.InstallComponentHealthStatusNotApplicable
+		}
 		if !ok {
 			continue
 		}
-		rep.Health = app.InstallComponentHealthStatusUnknown
+		rep.Health = health
 		rep.RootKind = fallback.Kind
 		rep.RootNamespace = fallback.Namespace
 		rep.RootName = fallback.Name
