@@ -45,6 +45,6 @@ This means the customer always has a killswitch. See [Customer-Controlled Runner
 
 Stacks accept customer-provided values at deploy time. They come in three forms:
 
-- **[Secrets](/concepts/app-secrets)** — entered by the customer as CloudFormation/Bicep parameters or Terraform variables, then stored in the customer's cloud secret manager (e.g., AWS Secrets Manager).
+- **[Secrets](/concepts/app-secrets)** — entered by the customer as CloudFormation/Bicep parameters or Terraform variables, then stored in AWS Secrets Manager, Azure Key Vault, or GCP Secret Manager.
 - **[Customer-facing inputs](/concepts/app-inputs#customer-facing-inputs)** marked `user_configurable` — passed through the Stack at deploy time.
 - **VPC and cluster IDs** — required when the app uses the [Customer VPC](/concepts/stacks/customer-vpc) or [Customer Cluster](/concepts/stacks/customer-cluster) pattern. The customer enters them in the Stack's parameter form alongside any other inputs.

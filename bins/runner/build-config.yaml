@@ -1,7 +1,7 @@
 ---
 dist:
   name: nuon-runner-otelcol
-  description: Nuon Runner Audit Log Collector
+  description: Nuon Runner Telemetry Export Collector
   otelcol_version: 0.150.0
   output_path: ./otelcol-build
   version: 1.0.0

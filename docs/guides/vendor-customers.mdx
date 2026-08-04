@@ -11,7 +11,7 @@ For a technical overview of all security properties, see the [Security](/securit
 
 ### Secrets and Sensitive Values
 
-In Nuon, secrets and sensitive values are entered by the customer, not the vendor, when they deploy the [Stack](/concepts/stacks). They are then stored in the customer's cloud secret manager (e.g., AWS Secrets Manager) and are retrieved programmatically by the Nuon [Runner](/concepts/runners) in the customer cloud account to insert into [components](/concepts/components) as the vendor's software is provisioned or updated.
+In Nuon, secrets and sensitive values are entered by the customer, not the vendor, when they deploy the [Stack](/concepts/stacks). They are then stored in AWS Secrets Manager, Azure Key Vault, or GCP Secret Manager and are retrieved programmatically by the Nuon [Runner](/concepts/runners) in the customer cloud account to insert into [components](/concepts/components) as the vendor's software is provisioned or updated.
 
 Nuon can automatically sync secrets to a Kubernetes cluster deployed by the Runner, which can then be referenced in components like Helm charts, Kubernetes manifests, and Terraform modules.
 
@@ -20,6 +20,10 @@ The vendor by default cannot access the secrets unless the customer happened to 
 ### Log Viewing and Exfiltration Prevention
 
 By default, Nuon only stores logs of the infrastructure changing in the customer account, e.g., creating a Kubernetes cluster, deploying a Helm chart, running Terraform. Application logs are not accessible or sent to the Nuon control plane.
+
+Customers can independently [export runner audit logs](/guides/export-runner-audit-logs) from AWS, Azure, or GCP to an
+OTLP-compatible backend they control. The destination and credentials remain in the customer's cloud secret manager;
+they are not sent to the Nuon control plane.
 
 One of Nuon's concepts is an [action](/concepts/actions), which are vendor-defined scripts to deploy infrastructure but are also useful in troubleshooting and debugging. Outputs of actions are stored in the Nuon control plane. Actions are defined by IAM roles and permissions that vendor's customers would approve beforehand. If those roles were elevated enough to execute commands that can access sensitive data like a database table with `psql` or view a Kubernetes secret with `kubectl`, the outputs would be stored in the Nuon control plane.
 

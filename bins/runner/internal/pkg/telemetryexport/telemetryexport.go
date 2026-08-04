@@ -34,22 +34,23 @@ type Params struct {
 }
 
 type Supervisor struct {
-	installID string
-	platform  string
-	local     bool
-	logger    *zap.Logger
-	sources   configSourceResolver
-	cancel    context.CancelFunc
-	done      chan struct{}
-	mu        sync.Mutex
-	child     *childProcess
-	active    string
-	backoff   time.Duration
-	nextStart time.Time
-	reported  bool
-	enabled   bool
+	installID          string
+	platform           string
+	local              bool
+	logger             *zap.Logger
+	sources            configSourceResolver
+	cancel             context.CancelFunc
+	done               chan struct{}
+	mu                 sync.Mutex
+	child              *childProcess
+	active             string
+	backoff            time.Duration
+	nextStart          time.Time
+	reported           bool
+	collectorEnabled   bool
+	auditExportEnabled bool
 
-	replaceChildFn func(secretConfig) error
+	replaceChildFn func(config) error
 	stopChildFn    func()
 }
 
@@ -88,10 +89,10 @@ func (s *Supervisor) stop(ctx context.Context) error {
 	return nil
 }
 
-func (s *Supervisor) Available() bool {
+func (s *Supervisor) AuditExportAvailable() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.child == nil {
+	if !s.auditExportEnabled || s.child == nil {
 		return false
 	}
 	select {
@@ -163,7 +164,7 @@ func (s *Supervisor) reconcile(update configUpdate) {
 		return
 	}
 	if err := s.replaceChildFn(cfg); err != nil {
-		s.logger.Warn("audit export collector failed to start")
+		s.logger.Warn("telemetry export collector failed to start")
 		if s.active != "" {
 			if previous, parseErr := parseSecret(s.active); parseErr == nil {
 				if rollbackErr := s.replaceChildFn(previous); rollbackErr != nil {
@@ -176,35 +177,50 @@ func (s *Supervisor) reconcile(update configUpdate) {
 	s.active = value
 	s.backoff = time.Second
 	s.nextStart = time.Time{}
+	s.setAuditExportEnabled(cfg.AuditLogsEnabled)
 	s.logEnabled(cfg)
 }
 
 func (s *Supervisor) disable(reason string) {
 	s.stopChildFn()
+	s.setAuditExportEnabled(false)
 	s.active = ""
 	s.nextStart = time.Time{}
-	if !s.reported || s.enabled {
-		s.logger.Info("runner audit export disabled",
+	if !s.reported || s.collectorEnabled {
+		s.logger.Info("runner telemetry export collector disabled",
+			zap.Bool("telemetry_export.enabled", false),
 			zap.Bool("audit_export.enabled", false),
-			zap.String("audit_export.reason", reason),
+			zap.String("telemetry_export.reason", reason),
 		)
 	}
 	s.reported = true
-	s.enabled = false
+	s.collectorEnabled = false
 }
 
-func (s *Supervisor) logEnabled(cfg secretConfig) {
-	endpoint, _ := url.Parse(cfg.Exporters.OTLPHTTP.Endpoint)
-	s.logger.Info("runner audit export enabled",
-		zap.Bool("audit_export.enabled", true),
-		zap.String("audit_export.exporter", "otlphttp"),
-		zap.String("audit_export.backend", endpoint.Host),
-	)
+func (s *Supervisor) logEnabled(cfg config) {
+	fields := []zap.Field{
+		zap.Bool("telemetry_export.enabled", true),
+		zap.Bool("audit_export.enabled", cfg.AuditLogsEnabled),
+	}
+	if cfg.AuditLogsEnabled {
+		endpoint, _ := url.Parse(cfg.OTLPHTTP.Endpoint)
+		fields = append(fields,
+			zap.String("audit_export.exporter", "otlphttp"),
+			zap.String("audit_export.backend", endpoint.Host),
+		)
+	}
+	s.logger.Info("runner telemetry export collector enabled", fields...)
 	s.reported = true
-	s.enabled = true
+	s.collectorEnabled = true
 }
 
-func (s *Supervisor) replaceChild(cfg secretConfig) error {
+func (s *Supervisor) setAuditExportEnabled(enabled bool) {
+	s.mu.Lock()
+	s.auditExportEnabled = enabled
+	s.mu.Unlock()
+}
+
+func (s *Supervisor) replaceChild(cfg config) error {
 	if _, err := os.Stat(collectorBinary); err != nil {
 		return err
 	}
@@ -212,7 +228,7 @@ func (s *Supervisor) replaceChild(cfg secretConfig) error {
 	if err != nil {
 		return err
 	}
-	tempDir, err := os.MkdirTemp("", "nuon-audit-export-")
+	tempDir, err := os.MkdirTemp("", "nuon-telemetry-export-")
 	if err != nil {
 		return err
 	}
@@ -221,10 +237,10 @@ func (s *Supervisor) replaceChild(cfg secretConfig) error {
 		os.RemoveAll(tempDir)
 		return err
 	}
-	cmd := exec.Command(collectorBinary, "--config", path)
+	cmd := exec.Command(collectorBinary, "--config", path, "--feature-gates=service.AllowNoPipelines")
 	cmd.Env = childEnvironment(environment)
-	stdout := &zapio.Writer{Log: s.logger.Named("audit-export-collector").With(zap.String("stream", "stdout")), Level: zapcore.WarnLevel}
-	stderr := &zapio.Writer{Log: s.logger.Named("audit-export-collector").With(zap.String("stream", "stderr")), Level: zapcore.WarnLevel}
+	stdout := &zapio.Writer{Log: s.logger.Named("telemetry-export-collector").With(zap.String("stream", "stdout")), Level: zapcore.WarnLevel}
+	stderr := &zapio.Writer{Log: s.logger.Named("telemetry-export-collector").With(zap.String("stream", "stderr")), Level: zapcore.WarnLevel}
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	s.stopChild()
@@ -237,6 +253,7 @@ func (s *Supervisor) replaceChild(cfg secretConfig) error {
 	child := &childProcess{cmd: cmd, tempDir: tempDir, done: make(chan struct{}), startedAt: time.Now(), outputWriters: []io.Closer{stdout, stderr}}
 	s.mu.Lock()
 	s.child = child
+	s.auditExportEnabled = cfg.AuditLogsEnabled
 	s.mu.Unlock()
 	go func() {
 		_ = cmd.Wait()
@@ -276,7 +293,7 @@ func (s *Supervisor) restartCrashed(_ context.Context) {
 		select {
 		case <-child.done:
 			s.stopChild()
-			s.logger.Warn("audit export collector exited; scheduling restart")
+			s.logger.Warn("telemetry export collector exited; scheduling restart")
 			if time.Since(child.startedAt) >= 30*time.Second {
 				s.backoff = time.Second
 			}
@@ -299,7 +316,7 @@ func (s *Supervisor) restartCrashed(_ context.Context) {
 	}
 	s.nextStart = time.Now().Add(s.backoff)
 	if err := s.replaceChildFn(cfg); err != nil {
-		s.logger.Warn("audit export collector restart failed")
+		s.logger.Warn("telemetry export collector restart failed")
 		return
 	}
 	s.nextStart = time.Time{}

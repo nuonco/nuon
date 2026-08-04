@@ -51,7 +51,8 @@ func TestNewGCPConfigUpdateClassifiesResults(t *testing.T) {
 		{name: "empty", result: &secretmanagerpb.AccessSecretVersionResponse{}, state: configAvailable},
 		{name: "not found", err: status.Error(codes.NotFound, "secret version not found"), state: configNotFound},
 		{name: "disabled", err: status.Error(codes.FailedPrecondition, "secret version is disabled"), state: configUnavailable},
-		{name: "permission denied", err: status.Error(codes.PermissionDenied, "permission denied"), state: configLookupFailed},
+		{name: "permission denied", err: status.Error(codes.PermissionDenied, "permission denied"), state: configUnavailable},
+		{name: "unauthenticated", err: status.Error(codes.Unauthenticated, "unauthenticated"), state: configUnavailable},
 		{name: "lookup failure", err: errors.New("lookup failed"), state: configLookupFailed},
 	}
 

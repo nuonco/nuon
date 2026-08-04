@@ -15,31 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-func TestTelemetryExportParameterAndCondition(t *testing.T) {
-	tpl := &Templates{}
-	parameter := tpl.getTelemetryExportParameters()[telemetryExportConfigParameter]
-
-	assert.Equal(t, "String", parameter.Type)
-	require.NotNil(t, parameter.NoEcho)
-	assert.True(t, *parameter.NoEcho)
-	require.NotNil(t, parameter.MaxLength)
-	assert.Equal(t, 4096, *parameter.MaxLength)
-	defaultValue, ok := parameter.Default.(*string)
-	require.True(t, ok)
-	assert.Empty(t, *defaultValue)
-	require.NotNil(t, parameter.Description)
-	assert.Contains(t, *parameter.Description, "base64-encoded YAML")
-	assert.Contains(t, *parameter.Description, "exporters.otlphttp.endpoint")
-	assert.Contains(t, *parameter.Description, "optional headers")
-	assert.Contains(t, *parameter.Description, "current release exports runner audit logs")
-	assert.Equal(t, "Telemetry Export Configuration (Base64-encoded YAML)", tpl.getTelemetryExportParamLabels()[telemetryExportConfigParameter])
-
-	assert.Equal(t,
-		cloudformation.Not([]string{cloudformation.Equals(cloudformation.Ref(telemetryExportConfigParameter), "")}),
-		tpl.getTelemetryExportConditions()[telemetryExportCondition],
-	)
-}
-
 func TestTelemetryExportResources(t *testing.T) {
 	tpl := &Templates{cfg: &internal.Config{}}
 	inp := &stacks.TemplateInput{
@@ -53,8 +28,8 @@ func TestTelemetryExportResources(t *testing.T) {
 	secret, ok := resources[telemetryExportSecret].(*secretsmanager.Secret)
 	require.True(t, ok)
 	assert.Equal(t, "nuon/inst-test/telemetry-export-config", *secret.Name)
-	assert.Equal(t, cloudformation.Ref(telemetryExportConfigParameter), *secret.SecretString)
-	assert.Equal(t, telemetryExportCondition, secret.AWSCloudFormationCondition)
+	assert.Nil(t, secret.SecretString)
+	assert.Empty(t, secret.AWSCloudFormationCondition)
 
 	policy, ok := resources["TelemetryExportSecretPolicy"].(*iam.Policy)
 	require.True(t, ok)
@@ -77,6 +52,5 @@ func TestTelemetryExportIsNotAddedToPhoneHome(t *testing.T) {
 
 	phoneHomeJSON, err := json.Marshal(tpl.getRunnerPhoneHomeProps(inp, nil))
 	require.NoError(t, err)
-	assert.NotContains(t, string(phoneHomeJSON), telemetryExportConfigParameter)
 	assert.NotContains(t, string(phoneHomeJSON), telemetryExportSecret)
 }

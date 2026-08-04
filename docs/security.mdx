@@ -30,15 +30,16 @@ Vendors can define break glass roles for temporary elevated access during emerge
 
 ## Secrets Stay in the Customer's Cloud
 
-[Secrets](/concepts/app-secrets) are entered by the customer when deploying the Stack and stored in their cloud's secret manager (e.g., AWS Secrets Manager). Neither Nuon nor the vendor ever sees secret values.
+[Secrets](/concepts/app-secrets) are entered by the customer when deploying the Stack and stored in their cloud's secret manager: AWS Secrets Manager, Azure Key Vault, or GCP Secret Manager. Neither Nuon nor the vendor ever sees secret values.
 
 ## Log Visibility
 
 Nuon only stores logs of infrastructure operations (e.g., creating a Kubernetes cluster, deploying a Helm chart, running Terraform). Application logs are never sent to the Control Plane. [Actions](/concepts/actions) can execute operational scripts, but the IAM roles they use are defined by the vendor and approved by the customer through the Stack.
 
-Customers can optionally [export detailed runner audit logs](/guides/export-runner-audit-logs) directly from their cloud account
-to an OTLP-compatible logging backend they control. Only Nuon audit events are forwarded. Application logs and general
-runner logs are excluded, and exporter credentials remain in the customer's cloud secret manager.
+Customers running installs on AWS, Azure, or GCP can optionally [export detailed runner audit
+logs](/guides/export-runner-audit-logs) directly from their cloud account to an OTLP-compatible logging backend they
+control. Only Nuon audit events are forwarded. Application logs and general runner logs are excluded, and the
+destination and credentials remain in the customer's cloud secret manager.
 
 ## Build Isolation
 
