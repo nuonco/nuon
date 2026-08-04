@@ -1997,6 +1997,13 @@ export interface paths {
      */
     post: operations["ReprovisionInstallSandbox"];
   };
+  "/v1/installs/{install_id}/reprovision-stack": {
+    /**
+     * reprovision an install stack
+     * @description Reprovision an install stack, recreating the runner and its infrastructure. Set `skip_components` to avoid redeploying components on top of the new stack.
+     */
+    post: operations["ReprovisionInstallStack"];
+  };
   "/v1/installs/{install_id}/resources": {
     /**
      * live resource explorer for an install
@@ -3462,6 +3469,7 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       id?: string;
+      latest_run?: components["schemas"]["app.AppBranchRun"];
       managed_by?: string;
       name?: string;
       org_id?: string;
@@ -3507,6 +3515,7 @@ export interface components {
       app_branch_config?: components["schemas"]["app.AppBranchConfig"];
       /** @description AppConfigID is the app config that was created/synced during this run */
       app_config_id?: string;
+      awaiting_approval?: boolean;
       base_branch?: string;
       /**
        * @description CommitSHA is the VCS commit that triggered or is associated with this run
@@ -3995,6 +4004,7 @@ export interface components {
       var_name?: string;
     };
     "app.ComponentBuild": {
+      app_branch_id?: string;
       app_branch_run_id?: string;
       build_runner_job_id?: string;
       /** @description checksum of our intermediate component config */
@@ -4450,11 +4460,6 @@ export interface components {
         [key: string]: string;
       };
       name?: string;
-      /**
-       * @description PhoneHomeAuthSummary is the API-safe view of PhoneHomeAuth: provisioning and
-       * verification timestamps only, never the secret's location.
-       */
-      phone_home_auth?: components["schemas"]["app.PhoneHomeAuthSummary"];
       queues?: components["schemas"]["app.Queue"][];
       runner_id?: string;
       runner_status?: string;
@@ -5365,11 +5370,6 @@ export interface components {
       trace_flags?: number;
       trace_id?: string;
       updated_at?: string;
-    };
-    "app.PhoneHomeAuthSummary": {
-      last_rejected_at?: string;
-      last_verified_at?: string;
-      provisioned_at?: string;
     };
     "app.Policy": {
       created_at?: string;
@@ -6479,7 +6479,7 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
     /** @enum {string} */
-    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "reprovision" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled";
+    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "reprovision" | "reprovision_stack" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled";
     "blobstore.Blob": Record<string, never>;
     "callback.Ref": {
       namespace?: string;
@@ -8547,6 +8547,11 @@ export interface components {
       role?: string;
     };
     "service.ReprovisionInstallSandboxRequest": {
+      plan_only?: boolean;
+      role?: string;
+      skip_components?: boolean;
+    };
+    "service.ReprovisionInstallStackRequest": {
       plan_only?: boolean;
       role?: string;
       skip_components?: boolean;
@@ -14447,6 +14452,8 @@ export interface operations {
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
+        /** @description filter installs connected to an app branch */
+        app_branch_id?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
@@ -23757,6 +23764,62 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": components["schemas"]["service.ReprovisionInstallSandboxRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * reprovision an install stack
+   * @description Reprovision an install stack, recreating the runner and its infrastructure. Set `skip_components` to avoid redeploying components on top of the new stack.
+   */
+  ReprovisionInstallStack: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ReprovisionInstallStackRequest"];
       };
     };
     responses: {

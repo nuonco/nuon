@@ -71,7 +71,7 @@ export const CurrentInputs = () => {
   const hasCloudIdentifier = cloudMetadataRows.some(
     ({ key }) => key !== 'target_source'
   )
-  const phoneHomeAuth = install?.phone_home_auth
+  const phoneHomeAuth = install?.['phone_home_auth']
 
   const { data: inputs, isLoading: inputsLoading } = useQuery({
     queryKey: ['install-inputs', org?.id, install?.id],

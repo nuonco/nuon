@@ -10,9 +10,11 @@ import { ActionsTable, parseActionsToTableData } from './ActionsTable'
 const LIMIT = 20
 
 export const ActionsTableContainer = ({
+  filterIds,
   pollInterval = 20000,
   shouldPoll = true,
 }: {
+  filterIds?: string[]
   pollInterval?: number
   shouldPoll?: boolean
 } = {}) => {
@@ -48,7 +50,14 @@ export const ActionsTableContainer = ({
 
   return (
     <ActionsTable
-      data={parseActionsToTableData(result?.data ?? [], org.id, app.id, labelColors)}
+      data={parseActionsToTableData(
+        (result?.data ?? []).filter(
+          (row) => !filterIds || filterIds.includes(row.id ?? '')
+        ),
+        org.id,
+        app.id,
+        labelColors
+      )}
       isLoading={isLoading}
       filterActions={
         <div className="flex items-center gap-4 flex-wrap">

@@ -25,6 +25,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
@@ -188,6 +189,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 
 		// Endpoint audit
 		fx.Provide(api.NewEndpointAudit),
+		fx.Provide(audit.New),
 
 		// Test fixtures
 		fx.Provide(testseed.New),

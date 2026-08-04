@@ -20,6 +20,9 @@ import (
 // swagger:model app.ComponentBuild
 type AppComponentBuild struct {
 
+	// app branch id
+	AppBranchID string `json:"app_branch_id,omitempty"`
+
 	// app branch run id
 	AppBranchRunID string `json:"app_branch_run_id,omitempty"`
 

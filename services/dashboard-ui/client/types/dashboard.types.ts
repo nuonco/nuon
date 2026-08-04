@@ -43,6 +43,7 @@ export type TNavLink = {
   text: string
   isExternal?: boolean
   shortcut?: string
+  matchPaths?: string[]
 }
 
 export type TNavSectionHeader = {
