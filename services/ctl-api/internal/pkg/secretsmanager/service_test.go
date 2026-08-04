@@ -3,6 +3,8 @@ package secretsmanager
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -347,6 +349,54 @@ func TestUnsupportedCloudSurfacesSentinel(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), ErrUnsupportedCloud.Error()) {
 		t.Errorf("expected ErrUnsupportedCloud, got %v", err)
+	}
+}
+
+// A permanent rejection must stay distinguishable from a transient one even after
+// being wrapped on the way out of the service.
+func TestIsPermanentInputError(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{
+			// What a nonexistent target account id produces.
+			name: "malformed policy document",
+			err:  fmt.Errorf("unable to put resource policy: %w", &types.MalformedPolicyDocumentException{}),
+			want: true,
+		},
+		{
+			name: "invalid parameter",
+			err:  fmt.Errorf("wrapped: %w", &types.InvalidParameterException{}),
+			want: true,
+		},
+		{
+			name: "invalid request",
+			err:  &types.InvalidRequestException{},
+			want: true,
+		},
+		{
+			name: "throttling is transient and must keep retrying",
+			err:  fmt.Errorf("wrapped: %w", &types.InternalServiceError{}),
+			want: false,
+		},
+		{
+			name: "an unrelated error is not permanent",
+			err:  errors.New("dial tcp: connection refused"),
+			want: false,
+		},
+		{
+			name: "nil is not permanent",
+			err:  nil,
+			want: false,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := IsPermanentInputError(tc.err); got != tc.want {
+				t.Errorf("IsPermanentInputError(%v) = %v, want %v", tc.err, got, tc.want)
+			}
+		})
 	}
 }
 
