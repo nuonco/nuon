@@ -24,6 +24,9 @@ func init() {
 	config.RegisterDefault("disable_metrics", true)
 	config.RegisterDefault("service_deployment", "local")
 	config.RegisterDefault("nuon_admin_dashboard_url", "http://localhost:8087")
+	// docker-compose's kafka-ui, which serves under the same /admin/kafka context
+	// path it does in the cluster
+	config.RegisterDefault("nuon_kafka_ui_url", "http://localhost:8092")
 }
 
 type Config struct {
@@ -39,6 +42,7 @@ type Config struct {
 	APIUrl                string `config:"nuon_api_url"`
 	AdminAPIUrl           string `config:"nuon_admin_api_url"`
 	TemporalUIUrl         string `config:"nuon_temporal_ui_url"`
+	KafkaUIUrl            string `config:"nuon_kafka_ui_url"`
 	AuthServiceUrl        string `config:"nuon_auth_service_url"`
 	AppUrl                string `config:"nuon_app_url"`
 	GithubAppName         string `config:"github_app_name"`

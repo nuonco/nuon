@@ -106,6 +106,11 @@ export const UserDropdown = ({
           </Link>
         )}
         {!hideOrgSettings && isAdmin && (
+          <Link href="/admin/kafka" isExternal>
+            Kafka UI <Icon variant="ArrowSquareOutIcon" />
+          </Link>
+        )}
+        {!hideOrgSettings && isAdmin && (
           <Link href="/public/swagger" isExternal>
             Public API <Icon variant="ArrowSquareOutIcon" />
           </Link>
