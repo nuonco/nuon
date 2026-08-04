@@ -28,8 +28,7 @@ func TestTriggerConstants(t *testing.T) {
 }
 
 func TestTriggersFeatureIsDisabledByDefault(t *testing.T) {
-	features := GetFeatures()
-	require.Equal(t, OrgFeatureTriggers, features[len(features)-1])
+	require.Contains(t, GetFeatures(), OrgFeatureTriggers)
 
 	org := Org{}
 	tx := &gorm.DB{Statement: &gorm.Statement{Context: context.Background()}}

@@ -62,6 +62,12 @@ GetAppInstallsParams contains all the parameters to send to the API endpoint
 */
 type GetAppInstallsParams struct {
 
+	/* AppBranchID.
+
+	   filter installs connected to an app branch
+	*/
+	AppBranchID *string
+
 	/* AppID.
 
 	   app ID
@@ -170,6 +176,17 @@ func (o *GetAppInstallsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithAppBranchID adds the appBranchID to the get app installs params
+func (o *GetAppInstallsParams) WithAppBranchID(appBranchID *string) *GetAppInstallsParams {
+	o.SetAppBranchID(appBranchID)
+	return o
+}
+
+// SetAppBranchID adds the appBranchId to the get app installs params
+func (o *GetAppInstallsParams) SetAppBranchID(appBranchID *string) {
+	o.AppBranchID = appBranchID
+}
+
 // WithAppID adds the appID to the get app installs params
 func (o *GetAppInstallsParams) WithAppID(appID string) *GetAppInstallsParams {
 	o.SetAppID(appID)
@@ -243,6 +260,23 @@ func (o *GetAppInstallsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		return err
 	}
 	var res []error
+
+	if o.AppBranchID != nil {
+
+		// query param app_branch_id
+		var qrAppBranchID string
+
+		if o.AppBranchID != nil {
+			qrAppBranchID = *o.AppBranchID
+		}
+		qAppBranchID := qrAppBranchID
+		if qAppBranchID != "" {
+
+			if err := r.SetQueryParam("app_branch_id", qAppBranchID); err != nil {
+				return err
+			}
+		}
+	}
 
 	// path param app_id
 	if err := r.SetPathParam("app_id", o.AppID); err != nil {

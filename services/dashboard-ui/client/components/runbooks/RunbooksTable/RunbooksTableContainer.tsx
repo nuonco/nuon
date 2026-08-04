@@ -7,7 +7,11 @@ import { RunbooksTable, parseRunbooksToTableData } from './RunbooksTable'
 
 const LIMIT = 20
 
-export const RunbooksTableContainer = () => {
+export const RunbooksTableContainer = ({
+  filterIds,
+}: {
+  filterIds?: string[]
+} = {}) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
   const { app, labelColors } = useApp()
@@ -29,7 +33,9 @@ export const RunbooksTableContainer = () => {
   return (
     <RunbooksTable
       data={parseRunbooksToTableData(
-        result?.data ?? [],
+        (result?.data ?? []).filter(
+          (row) => !filterIds || filterIds.includes(row.id ?? '')
+        ),
         org?.id ?? '',
         app?.id ?? '',
         labelColors
