@@ -8,7 +8,7 @@ interface ICreateInstallButton extends IButtonAsButton {
 export const CreateInstallButton = ({ onOpen, ...props }: ICreateInstallButton) => {
   return (
     <Button onClick={onOpen} {...props}>
-      <Icon variant="CubeIcon" />
+      <Icon variant="PlusIcon" size={16} />
       Create install
     </Button>
   )
