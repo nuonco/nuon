@@ -156,8 +156,14 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "eager-step-groups",
 		func(ctx workflow.Context) (*app.GenerateStepsResult, error) {
 			defer func() { s.eagerStepGroupsCalled = true }()
-			// Block until eager step groups are ready.
-			if err := workflow.Await(ctx, func() bool { return s.eagerStepGroupsReady }); err != nil {
+			// Block until eager step groups are ready OR generation finished with
+			// an error. eagerStepGroupsReady is only set on the success path, so we
+			// must also unblock on s.done — otherwise a failed generation (e.g. a
+			// runbook step whose generator errors) leaves this handler awaiting
+			// forever, the FetchEagerStepGroups activity's update never completes,
+			// and it retries until its StartToClose timeout indefinitely. This
+			// mirrors the FetchSteps handler below, which waits on s.done.
+			if err := workflow.Await(ctx, func() bool { return s.eagerStepGroupsReady || s.done }); err != nil {
 				return nil, err
 			}
 			if s.err != nil {
