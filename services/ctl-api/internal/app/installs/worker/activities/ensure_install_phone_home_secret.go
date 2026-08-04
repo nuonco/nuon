@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -29,6 +30,7 @@ const (
 	phoneHomeSkipNotAWS          = "install is not an AWS install"
 	phoneHomeSkipNoTargetAccount = "install has no target account id"
 	phoneHomeSkipNoManagement    = "control plane cannot reach management secrets manager"
+	phoneHomeSkipSandboxMode     = "install is in sandbox mode"
 )
 
 type EnsureInstallPhoneHomeSecretRequest struct {
@@ -39,11 +41,11 @@ type EnsureInstallPhoneHomeSecretRequest struct {
 	// flag rather than the other way round. Set only by the operator-initiated
 	// backfill; the flag remains the opt-in everywhere else.
 	//
-	// It waives the feature check and nothing else — an install still has to be on
-	// AWS, still has to carry a target account, and the control plane still has to
-	// reach Secrets Manager. Note the target account is itself only required at
-	// creation once the flag is on, so for an org that has never had it the backfill
-	// mostly trades one skip reason for another.
+	// It waives the feature check and nothing else: an install still has to be on
+	// AWS, must not be a sandbox, still has to carry a target account, and the
+	// control plane still has to reach Secrets Manager. Note the target account is
+	// itself only required at creation once the flag is on, so for an org that has
+	// never had it the backfill mostly trades one skip reason for another.
 	IgnoreOrgFeatureGate bool `json:"ignore_org_feature_gate,omitempty"`
 }
 
@@ -88,6 +90,7 @@ func (a *Activities) EnsureInstallPhoneHomeSecret(
 	var install app.Install
 	if res := a.db.WithContext(ctx).
 		Preload("AWSAccount").
+		Preload("Org").
 		Preload("InstallStack.InstallStackVersions").
 		Where(app.Install{ID: req.InstallID}).
 		First(&install); res.Error != nil {
@@ -140,6 +143,17 @@ func (a *Activities) EnsureInstallPhoneHomeSecret(
 	// Re-applied every run rather than only on create, so a changed target account
 	// or a policy lost to a concurrent write self-heals.
 	if err := a.secretsSvc.PutResourcePolicy(ctx, secret.ARN, policy); err != nil {
+		// An invalid target account never becomes valid, and the default policy would
+		// retry forever, stranding the provisioning step.
+		if secretsmanager.IsPermanentInputError(err) {
+			return nil, temporal.NewNonRetryableApplicationError(
+				fmt.Sprintf("unable to grant cross account read to target account %s",
+					install.CloudPlatformMetadata.TargetAccountID),
+				"phone_home_resource_policy_rejected",
+				err,
+			)
+		}
+
 		return nil, fmt.Errorf("unable to grant cross account read: %w", err)
 	}
 
@@ -183,6 +197,12 @@ func (a *Activities) phoneHomeSecretSkipReason(
 		if !enabled {
 			return phoneHomeSkipFeatureDisabled, nil
 		}
+	}
+
+	// Sandbox installs reach no real infrastructure. The org is checked too because
+	// AdminForceSandboxMode flips the org without updating installs.sandbox_mode.
+	if install.SandboxMode.Bool || install.Org.SandboxMode {
+		return phoneHomeSkipSandboxMode, nil
 	}
 
 	if install.AWSAccount == nil {
