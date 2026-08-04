@@ -95,6 +95,7 @@ const (
 	// the api task queue.
 	OrgFeatureCronNamespaceIsolation OrgFeature = "cron-namespace-isolation"
 	OrgFeatureTriggers               OrgFeature = "triggers"
+	OrgFeatureNewAppIA               OrgFeature = "new-app-ia"
 )
 
 type Org struct {
@@ -224,6 +225,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureRunbookStudio:           false,
 		OrgFeatureCronNamespaceIsolation:  false,
 		OrgFeatureTriggers:                false,
+		OrgFeatureNewAppIA:                false,
 
 		// Enabled by default
 		OrgFeatureAppBranches: true,
@@ -281,6 +283,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureRunbookStudio,
 		OrgFeatureCronNamespaceIsolation,
 		OrgFeatureTriggers,
+		OrgFeatureNewAppIA,
 	}
 }
 
@@ -317,6 +320,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureRunbookStudio:            "Enable the runbook studio in the dashboard — a literate editor for authoring runbook markdown around executable steps with a live install-state preview.",
 		OrgFeatureCronNamespaceIsolation:   "Route the org's runner-healthcheck and install cron queues into dedicated Temporal namespaces + task queues polled by their own workers, isolating cron load from the api task queue.",
 		OrgFeatureTriggers:                 "Enable triggers and payload-driven rules that start app branch runs or install runbooks.",
+		OrgFeatureNewAppIA:                 "Enable the branch-centric app information architecture in the dashboard: branches as the app landing page, grouped navigation, and the app source header. Requires app-branches-ui.",
 	}
 }
 

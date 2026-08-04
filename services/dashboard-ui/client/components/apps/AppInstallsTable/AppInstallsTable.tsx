@@ -16,6 +16,7 @@ export type InstallRow = {
   installId: string
   name: string
   nameHref: string
+  branch?: ReactNode
   region?: ReactNode
   statuses: ReactNode
   platform: ReactNode
@@ -32,6 +33,20 @@ export function parseInstallsToTableData(
     name: install.name,
     nameHref: `/${orgId}/installs/${install.id}`,
     installId: install.id,
+    branch: install?.app_branch?.id ? (
+      <span className="flex items-center gap-1.5">
+        <Icon variant="GitBranchIcon" size={14} />
+        <Link
+          href={`/${orgId}/apps/${appId ?? install.app_id}/branches/${install.app_branch.id}`}
+        >
+          {install.app_branch.name}
+        </Link>
+      </span>
+    ) : (
+      <Text variant="subtext" theme="neutral">
+        —
+      </Text>
+    ),
     region: (
       <CloudRegion
         variant="subtext"
@@ -51,6 +66,13 @@ export function parseInstallsToTableData(
       />
     ),
   }))
+}
+
+const branchColumn: ColumnDef<InstallRow> = {
+  enableSorting: false,
+  accessorKey: 'branch',
+  header: 'Branch',
+  cell: (info) => info.getValue() as ReactNode,
 }
 
 const columns: ColumnDef<InstallRow>[] = [
@@ -109,25 +131,34 @@ const columns: ColumnDef<InstallRow>[] = [
 interface IAppInstallsTable {
   data: InstallRow[]
   isLoading: boolean
+  emptyTitle?: string
+  emptyMessage?: string
   emptyAction?: ReactNode
   pagination: { hasNext?: boolean; offset: number; limit: number }
+  showBranchColumn?: boolean
 }
 
 export const AppInstallsTable = ({
   data,
   isLoading,
+  emptyTitle = 'No installs created',
+  emptyMessage = 'An install is an instance of an application running in a customer cloud account.',
   emptyAction,
   pagination,
+  showBranchColumn = false,
 }: IAppInstallsTable) => {
+  const tableColumns = showBranchColumn
+    ? [...columns.slice(0, 2), branchColumn, ...columns.slice(2)]
+    : columns
+
   return (
     <Table<InstallRow>
-      columns={columns}
+      columns={tableColumns}
       data={data}
       isLoading={isLoading}
       emptyStateProps={{
-        emptyMessage:
-          'An install is an instance of an application running in a customer cloud account.',
-        emptyTitle: 'No installs created',
+        emptyMessage,
+        emptyTitle,
         action: emptyAction,
       }}
       pagination={pagination}

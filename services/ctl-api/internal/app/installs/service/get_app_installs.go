@@ -21,6 +21,7 @@ import (
 // @Param					app_id						path	string	true	"app ID"
 // @Param					q							query	string	false	"search query to filter installs by name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
+// @Param					app_branch_id				query	string	false	"filter installs connected to an app branch"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -45,6 +46,7 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 
 	appID := ctx.Param("app_id")
 	q := ctx.Query("q")
+	appBranchID := ctx.Query("app_branch_id")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 
 	// Validate app belongs to org before fetching installs
@@ -54,7 +56,7 @@ func (s *service) GetAppInstalls(ctx *gin.Context) {
 		return
 	}
 
-	installs, err := s.getAppInstalls(ctx, org.ID, currentApp.ID, q, lbls)
+	installs, err := s.getAppInstalls(ctx, org.ID, currentApp.ID, q, appBranchID, lbls)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install: %w", err))
 		return
@@ -76,7 +78,7 @@ func (s *service) findAppByNameOrID(ctx *gin.Context, orgID, appID string) (*app
 	return &currentApp, nil
 }
 
-func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q string, lbls labels.Labels) ([]app.Install, error) {
+func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBranchID string, lbls labels.Labels) ([]app.Install, error) {
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -87,6 +89,10 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q string
 		idCol := views.TableOrViewName(s.db, &app.Install{}, ".id")
 		queryPattern := "%" + q + "%"
 		tx = tx.Where(nameCol+" ILIKE ? OR "+idCol+" ILIKE ?", queryPattern, queryPattern)
+	}
+
+	if appBranchID != "" {
+		tx = tx.Where(views.TableOrViewName(s.db, &app.Install{}, ".app_branch_id")+" = ?", appBranchID)
 	}
 
 	tx = tx.Where("app_id = ? AND org_id = ?", appID, orgID).
