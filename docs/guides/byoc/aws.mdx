@@ -146,10 +146,10 @@ base64 -i your-github-app-key.pem
 
 ### Runner Audit Log Export (Optional)
 
-The generated CloudFormation stack can forward Nuon runner audit events to an OTLP-compatible logging backend. Set the
-`RunnerAuditExportConfig` stack parameter when provisioning, or update the parameter on an existing stack. See
-[Export Runner Audit Logs](/guides/export-runner-audit-logs#configure-aws-cloudformation) for the configuration format
-and verification steps.
+The generated CloudFormation stack creates the `nuon/<install-id>/telemetry-export-config` secret and grants the
+runner read access. After provisioning, update the secret to forward Nuon runner audit events to an
+OTLP-compatible logging backend. See [Export Runner Audit Logs](/guides/export-runner-audit-logs) for the configuration,
+update, and verification steps.
 
 ## Provision
 
