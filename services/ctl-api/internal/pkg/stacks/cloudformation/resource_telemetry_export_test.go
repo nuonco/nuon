@@ -15,9 +15,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-func TestRunnerAuditExportParameterAndCondition(t *testing.T) {
+func TestTelemetryExportParameterAndCondition(t *testing.T) {
 	tpl := &Templates{}
-	parameter := tpl.getRunnerAuditExportParameters()[runnerAuditExportConfigParameter]
+	parameter := tpl.getTelemetryExportParameters()[telemetryExportConfigParameter]
 
 	assert.Equal(t, "String", parameter.Type)
 	require.NotNil(t, parameter.NoEcho)
@@ -31,15 +31,16 @@ func TestRunnerAuditExportParameterAndCondition(t *testing.T) {
 	assert.Contains(t, *parameter.Description, "base64-encoded YAML")
 	assert.Contains(t, *parameter.Description, "exporters.otlphttp.endpoint")
 	assert.Contains(t, *parameter.Description, "optional headers")
-	assert.Equal(t, "Runner Audit Export Configuration (Base64-encoded YAML)", tpl.getRunnerAuditExportParamLabels()[runnerAuditExportConfigParameter])
+	assert.Contains(t, *parameter.Description, "current release exports runner audit logs")
+	assert.Equal(t, "Telemetry Export Configuration (Base64-encoded YAML)", tpl.getTelemetryExportParamLabels()[telemetryExportConfigParameter])
 
 	assert.Equal(t,
-		cloudformation.Not([]string{cloudformation.Equals(cloudformation.Ref(runnerAuditExportConfigParameter), "")}),
-		tpl.getRunnerAuditExportConditions()[runnerAuditExportCondition],
+		cloudformation.Not([]string{cloudformation.Equals(cloudformation.Ref(telemetryExportConfigParameter), "")}),
+		tpl.getTelemetryExportConditions()[telemetryExportCondition],
 	)
 }
 
-func TestRunnerAuditExportResources(t *testing.T) {
+func TestTelemetryExportResources(t *testing.T) {
 	tpl := &Templates{cfg: &internal.Config{}}
 	inp := &stacks.TemplateInput{
 		Install:                    &app.Install{ID: "inst-test"},
@@ -47,25 +48,25 @@ func TestRunnerAuditExportResources(t *testing.T) {
 		CloudFormationStackVersion: &app.InstallStackVersion{},
 		Settings:                   &app.RunnerGroupSettings{},
 	}
-	resources := tpl.getRunnerAuditExportResources(inp, tagBuilder{installID: inp.Install.ID})
+	resources := tpl.getTelemetryExportResources(inp, tagBuilder{installID: inp.Install.ID})
 
-	secret, ok := resources[runnerAuditExportSecret].(*secretsmanager.Secret)
+	secret, ok := resources[telemetryExportSecret].(*secretsmanager.Secret)
 	require.True(t, ok)
-	assert.Equal(t, "nuon/inst-test/runner-audit-export", *secret.Name)
-	assert.Equal(t, cloudformation.Ref(runnerAuditExportConfigParameter), *secret.SecretString)
-	assert.Equal(t, runnerAuditExportCondition, secret.AWSCloudFormationCondition)
+	assert.Equal(t, "nuon/inst-test/telemetry-export-config", *secret.Name)
+	assert.Equal(t, cloudformation.Ref(telemetryExportConfigParameter), *secret.SecretString)
+	assert.Equal(t, telemetryExportCondition, secret.AWSCloudFormationCondition)
 
-	policy, ok := resources["RunnerAuditExportSecretPolicy"].(*iam.Policy)
+	policy, ok := resources["TelemetryExportSecretPolicy"].(*iam.Policy)
 	require.True(t, ok)
 	assert.Empty(t, policy.AWSCloudFormationCondition)
 	assert.Equal(t, []string{cloudformation.GetAtt("RunnerAutoScalingGroup", "Outputs.RunnerInstanceRole")}, policy.Roles)
 
 	statement := policy.PolicyDocument.(map[string]interface{})["Statement"].([]interface{})[0].(map[string]interface{})
 	assert.ElementsMatch(t, []string{"secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"}, statement["Action"])
-	assert.Equal(t, []interface{}{cloudformation.Sub("arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:nuon/inst-test/runner-audit-export-*")}, statement["Resource"])
+	assert.Equal(t, []interface{}{cloudformation.Sub("arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:nuon/inst-test/telemetry-export-config-*")}, statement["Resource"])
 }
 
-func TestRunnerAuditExportIsNotAddedToPhoneHome(t *testing.T) {
+func TestTelemetryExportIsNotAddedToPhoneHome(t *testing.T) {
 	tpl := &Templates{cfg: &internal.Config{}}
 	inp := &stacks.TemplateInput{
 		Install:                    &app.Install{ID: "inst-test"},
@@ -76,6 +77,6 @@ func TestRunnerAuditExportIsNotAddedToPhoneHome(t *testing.T) {
 
 	phoneHomeJSON, err := json.Marshal(tpl.getRunnerPhoneHomeProps(inp, nil))
 	require.NoError(t, err)
-	assert.NotContains(t, string(phoneHomeJSON), runnerAuditExportConfigParameter)
-	assert.NotContains(t, string(phoneHomeJSON), runnerAuditExportSecret)
+	assert.NotContains(t, string(phoneHomeJSON), telemetryExportConfigParameter)
+	assert.NotContains(t, string(phoneHomeJSON), telemetryExportSecret)
 }
