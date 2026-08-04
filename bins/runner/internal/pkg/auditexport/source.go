@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -30,6 +31,59 @@ type configSource interface {
 
 type configSourceResolver interface {
 	Resolve(string, string) configSource
+}
+
+type sourceResolver struct {
+	awsFactory   awsClientFactory
+	azureFactory azureClientFactory
+}
+
+func newConfigSourceResolver(awsFactory awsClientFactory, azureFactory azureClientFactory) configSourceResolver {
+	return &sourceResolver{awsFactory: awsFactory, azureFactory: azureFactory}
+}
+
+func (r *sourceResolver) Resolve(platform, installID string) configSource {
+	if installID == "" {
+		return nil
+	}
+	platform = strings.ToLower(platform)
+	switch {
+	case strings.HasPrefix(platform, "aws"):
+		return newAWSConfigSource(r.awsFactory, installID)
+	case strings.HasPrefix(platform, "azure"):
+		return newAzureConfigSource(r.azureFactory, installID)
+	default:
+		return nil
+	}
+}
+
+func watchConfig(ctx context.Context, interval time.Duration, fetch func() configUpdate) <-chan configUpdate {
+	updates := make(chan configUpdate)
+	go func() {
+		defer close(updates)
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		var observation configObservation
+		refresh := func() bool {
+			return publishConfigUpdate(ctx, updates, &observation, fetch())
+		}
+
+		if !refresh() {
+			return
+		}
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if !refresh() {
+					return
+				}
+			}
+		}
+	}()
+	return updates
 }
 
 func publishConfigUpdate(ctx context.Context, updates chan<- configUpdate, observation *configObservation, update configUpdate) bool {
