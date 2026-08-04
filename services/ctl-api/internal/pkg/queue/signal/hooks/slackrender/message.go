@@ -1018,6 +1018,13 @@ func componentHealthHeadline(e Event, recovered, installLevel bool) string {
 		text = "🔴 Component unhealthy"
 	}
 
+	if !installLevel && !recovered && metadataString(e, "install_health") != "" {
+		text += " · install degraded"
+	}
+	if !installLevel && recovered && metadataString(e, "install_health") != "" {
+		text += " · install recovered"
+	}
+
 	if subject != "" {
 		text = text + " · " + slackEscape(subject)
 	}
@@ -1045,6 +1052,13 @@ func componentHealthFields(e Event, installLevel bool) []kv {
 	// responder would go looking for in the cluster.
 	if resource := componentHealthResource(e); resource != "" {
 		fields = append(fields, kv{"Resource", slackEscape(resource)})
+	}
+	if ih := metadataString(e, "install_health"); ih != "" && !installLevel {
+		label := slackEscape(ih)
+		if prev := metadataString(e, "install_previous_health"); prev != "" {
+			label = slackEscape(prev) + " → " + label
+		}
+		fields = append(fields, kv{"Install health", label})
 	}
 	if name := e.Workflow.OwnerName; name != "" && !installLevel {
 		fields = append(fields, kv{"Install", slackEscape(name)})
