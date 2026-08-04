@@ -1,4 +1,4 @@
-package auditexport
+package telemetryexport
 
 import (
 	"context"
@@ -13,8 +13,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets"
 )
-
-const azureAuditExportSecretName = "runner-audit-export"
 
 type azureSecretClient interface {
 	GetSecret(context.Context, string, string, *azsecrets.GetSecretOptions) (azsecrets.GetSecretResponse, error)
@@ -50,7 +48,7 @@ func newAzureConfigSource(factory azureClientFactory, installID string) configSo
 	return &azureConfigSource{
 		factory:  factory,
 		vaultURL: "https://" + vaultName + ".vault.azure.net",
-		name:     azureAuditExportSecretName,
+		name:     telemetryExportConfigSecretName,
 	}
 }
 
