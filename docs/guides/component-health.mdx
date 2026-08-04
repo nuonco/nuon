@@ -144,7 +144,7 @@ single per-resource flag:
 Two things are deliberately quiet. A verdict of `unknown` never alerts, because a runner going
 offline is already reported as runner inactivity and would otherwise page you once per component. And
 when a component fails because something it depends on failed, the dependents are labelled
-"downstream of <component>" and only the root cause alerts — one outage, one alert.
+`downstream of <component>` and only the root cause alerts — one outage, one alert.
 
 See [Webhooks](/guides/webhooks) for the full subscription model.
 
