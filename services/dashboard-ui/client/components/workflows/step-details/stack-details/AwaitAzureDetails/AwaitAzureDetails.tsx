@@ -1,3 +1,4 @@
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
@@ -7,6 +8,7 @@ import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import type { TAppSecretConfig } from '@/types'
+import { createFileDownload } from '@/utils/file-download'
 import type { IStackDetails } from '../types'
 
 interface IAwaitAzureDetails extends IStackDetails {
@@ -14,6 +16,20 @@ interface IAwaitAzureDetails extends IStackDetails {
   azureLocation?: string
   secrets?: TAppSecretConfig[]
 }
+
+const telemetryExportConfigFilename = 'telemetry-export-config.yaml'
+const telemetryExportConfig = `version: v1
+
+telemetry:
+  logs:
+    audit:
+      enabled: true
+
+exporters:
+  otlphttp:
+    endpoint: https://otlp.example.com
+    headers:
+      Authorization: Bearer <token>`
 
 export const AwaitAzureDetails = ({
   stack,
@@ -31,8 +47,11 @@ export const AwaitAzureDetails = ({
     (s) => !s.required && !!s.default
   )
   const grantSecretsPermissionCmd = `az role assignment create --assignee "$(az ad signed-in-user show --query id -o tsv)" --role "Key Vault Secrets Officer" --scope "$(az keyvault show --name ${vaultName} --resource-group ${installId}-rg --query id -o tsv)"`
-  const telemetryExportConfigCmd = `export NUON_TELEMETRY_EXPORT_CONFIG="<base64-encoded YAML>"`
-  const createTelemetryExportSecretCmd = `az keyvault secret set --vault-name ${vaultName} --name telemetry-export-config --value "$NUON_TELEMETRY_EXPORT_CONFIG"`
+  const createTelemetryExportSecretCmd = `az keyvault secret set \\
+  --vault-name "${vaultName}" \\
+  --name "telemetry-export-config" \\
+  --file "${telemetryExportConfigFilename}" \\
+  --encoding utf-8`
 
   const renderSecretCard = (secret: TAppSecretConfig) => {
     const kvName = secret.name.replaceAll('_', '-')
@@ -151,69 +170,6 @@ export const AwaitAzureDetails = ({
         </div>
       )}
 
-      <Expand
-        id="telemetry-export"
-        heading={
-          <Text variant="base" weight="strong">
-            Configure runner audit export (optional)
-          </Text>
-        }
-      >
-        <div className="flex flex-col gap-4 p-2">
-          <Text variant="subtext">
-            Store a base64-encoded OTLP exporter configuration in Key Vault to
-            send runner audit logs to an OTLP/HTTP backend. Skip this step to
-            leave audit export disabled.
-          </Text>
-
-          {!hasCustomerSecrets && (
-            <Card>
-              <span className="flex justify-between items-center">
-                <Text>Grant permission to set the telemetry export secret</Text>
-                <ClickToCopyButton
-                  className="w-fit self-end"
-                  textToCopy={grantSecretsPermissionCmd}
-                />
-              </span>
-              <Code>{grantSecretsPermissionCmd}</Code>
-            </Card>
-          )}
-
-          <Card>
-            <span className="flex justify-between items-center">
-              <Text>Export the telemetry export configuration</Text>
-              <ClickToCopyButton
-                className="w-fit self-end"
-                textToCopy={telemetryExportConfigCmd}
-              />
-            </span>
-            <Text variant="subtext">
-              Use the{' '}
-              <Link
-                href="https://docs.nuon.co/guides/export-runner-audit-logs"
-                isExternal
-              >
-                audit export guide
-              </Link>{' '}
-              to build the exporter configuration, then export it as an
-              environment variable.
-            </Text>
-            <Code>{telemetryExportConfigCmd}</Code>
-          </Card>
-
-          <Card>
-            <span className="flex justify-between items-center">
-              <Text>Create the telemetry export secret</Text>
-              <ClickToCopyButton
-                className="w-fit self-end"
-                textToCopy={createTelemetryExportSecretCmd}
-              />
-            </span>
-            <Code>{createTelemetryExportSecretCmd}</Code>
-          </Card>
-        </div>
-      </Expand>
-
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
           Deploy the install stack
@@ -245,6 +201,78 @@ export const AwaitAzureDetails = ({
           `}</Code>
         </Card>
       </div>
+
+      <Expand
+        id="telemetry-export"
+        heading={
+          <Text variant="base" weight="strong">
+            Configure telemetry export (optional)
+          </Text>
+        }
+      >
+        <div className="flex flex-col gap-4 p-2">
+          <Text variant="subtext">
+            To export runner audit logs and other telemetry to your own backend,
+            update the <code>telemetry-export-config</code> secret in Azure Key
+            Vault after the stack is provisioned. See the{' '}
+            <Link
+              href="https://docs.nuon.co/guides/export-runner-audit-logs"
+              isExternal
+            >
+              telemetry export reference
+            </Link>{' '}
+            for available settings.
+          </Text>
+
+          {!hasCustomerSecrets && (
+            <Card>
+              <span className="flex justify-between items-center">
+                <Text>Grant permission to set the telemetry export secret</Text>
+                <ClickToCopyButton
+                  className="w-fit self-end"
+                  textToCopy={grantSecretsPermissionCmd}
+                />
+              </span>
+              <Code>{grantSecretsPermissionCmd}</Code>
+            </Card>
+          )}
+
+          <Card>
+            <span className="flex justify-between items-center">
+              <Text>
+                Save this as <code>{telemetryExportConfigFilename}</code>
+              </Text>
+              <span className="flex gap-2 items-center">
+                <ClickToCopyButton textToCopy={telemetryExportConfig} />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    createFileDownload(
+                      telemetryExportConfig,
+                      telemetryExportConfigFilename
+                    )
+                  }
+                >
+                  Download
+                </Button>
+              </span>
+            </span>
+            <Code variant="preformated">{telemetryExportConfig}</Code>
+          </Card>
+
+          <Card>
+            <span className="flex justify-between items-center">
+              <Text>Update the telemetry export secret</Text>
+              <ClickToCopyButton
+                className="w-fit self-end"
+                textToCopy={createTelemetryExportSecretCmd}
+              />
+            </span>
+            <Code variant="preformated">{createTelemetryExportSecretCmd}</Code>
+          </Card>
+        </div>
+      </Expand>
 
       <Divider dividerWord="or" />
 

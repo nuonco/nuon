@@ -84,7 +84,7 @@ func newGCPConfigUpdate(result *secretmanagerpb.AccessSecretVersionResponse, err
 		switch status.Code(err) {
 		case codes.NotFound:
 			state = configNotFound
-		case codes.FailedPrecondition:
+		case codes.FailedPrecondition, codes.PermissionDenied, codes.Unauthenticated:
 			state = configUnavailable
 		}
 		return configUpdate{state: state, err: err, errorIdentity: gcpErrorIdentity(err)}
