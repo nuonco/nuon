@@ -463,6 +463,7 @@ export type TInstallResource =
     // read-time annotation, ships ahead of codegen
     removed_from_config?: boolean
   }
+export type THelmRelease = components['schemas']['app.HelmRelease']
 
 // component health timelines - manually defined, ctl-api endpoints ship ahead of codegen
 export type THealthTimelineDay = {
