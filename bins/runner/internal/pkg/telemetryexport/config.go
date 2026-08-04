@@ -17,23 +17,45 @@ import (
 var headerNamePattern = regexp.MustCompile(`^[!#$%&'*+.^_` + "`" + `|~0-9A-Za-z-]+$`)
 
 const (
-	maxSecretSize  = 64 * 1024
-	maxEndpointLen = 4096
-	maxHeaders     = 32
-	maxHeaderLen   = 4096
+	configVersionV1 = "v1"
+	maxSecretSize   = 64 * 1024
+	maxEndpointLen  = 4096
+	maxHeaders      = 32
+	maxHeaderLen    = 4096
 )
 
-type secretConfig struct {
+type configEnvelope struct {
+	Version string `yaml:"version"`
+}
+
+type configV1 struct {
+	Version   string            `yaml:"version"`
+	Telemetry telemetryConfigV1 `yaml:"telemetry,omitempty"`
 	Exporters struct {
-		OTLPHTTP struct {
-			Endpoint string            `yaml:"endpoint"`
-			Headers  map[string]string `yaml:"headers,omitempty"`
-		} `yaml:"otlphttp"`
+		OTLPHTTP otlpHTTPExporter `yaml:"otlphttp,omitempty"`
 	} `yaml:"exporters"`
 }
 
-func parseSecret(value string) (secretConfig, error) {
-	var cfg secretConfig
+type telemetryConfigV1 struct {
+	Logs struct {
+		Audit struct {
+			Enabled bool `yaml:"enabled"`
+		} `yaml:"audit,omitempty"`
+	} `yaml:"logs,omitempty"`
+}
+
+type config struct {
+	AuditLogsEnabled bool
+	OTLPHTTP         otlpHTTPExporter
+}
+
+type otlpHTTPExporter struct {
+	Endpoint string            `yaml:"endpoint"`
+	Headers  map[string]string `yaml:"headers,omitempty"`
+}
+
+func parseSecret(value string) (config, error) {
+	var cfg config
 	if len(value) == 0 || len(value) > maxSecretSize {
 		return cfg, fmt.Errorf("telemetry export configuration has invalid size")
 	}
@@ -43,79 +65,124 @@ func parseSecret(value string) (secretConfig, error) {
 	if len(value) == 0 || len(value) > maxSecretSize {
 		return cfg, fmt.Errorf("decoded telemetry export configuration has invalid size")
 	}
-	decoder := yaml.NewDecoder(strings.NewReader(value))
-	decoder.KnownFields(true)
-	if err := decoder.Decode(&cfg); err != nil {
-		return cfg, fmt.Errorf("decode telemetry export configuration: %w", err)
-	}
-	var trailing any
-	if err := decoder.Decode(&trailing); err == nil {
-		return cfg, fmt.Errorf("telemetry export configuration contains trailing document")
-	} else if !errors.Is(err, io.EOF) {
-		return cfg, fmt.Errorf("decode trailing telemetry export configuration: %w", err)
-	}
 
-	endpoint := cfg.Exporters.OTLPHTTP.Endpoint
-	if endpoint == "" || len(endpoint) > maxEndpointLen {
-		return cfg, fmt.Errorf("telemetry export endpoint is required or too long")
+	var envelope configEnvelope
+	if err := decodeConfigDocument(value, &envelope, false); err != nil {
+		return cfg, fmt.Errorf("decode telemetry export configuration version: %w", err)
 	}
-	u, err := url.Parse(endpoint)
-	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.Fragment != "" || u.RawQuery != "" || strings.Contains(endpoint, "${") {
-		return cfg, fmt.Errorf("telemetry export endpoint must be an HTTPS URL with a host and no userinfo, query, fragment, or environment expansion")
+	switch envelope.Version {
+	case "":
+		return cfg, fmt.Errorf("telemetry export configuration version is required")
+	case configVersionV1:
+		return parseConfigV1(value)
+	default:
+		return cfg, fmt.Errorf("unsupported telemetry export configuration version %q", envelope.Version)
 	}
-	if len(cfg.Exporters.OTLPHTTP.Headers) > maxHeaders {
-		return cfg, fmt.Errorf("telemetry export configuration has too many headers")
+}
+
+func parseConfigV1(value string) (config, error) {
+	var wire configV1
+	if err := decodeConfigDocument(value, &wire, true); err != nil {
+		return config{}, fmt.Errorf("decode telemetry export configuration: %w", err)
 	}
-	for name, value := range cfg.Exporters.OTLPHTTP.Headers {
-		if name == "" || len(name) > 256 || http.CanonicalHeaderKey(name) == "" || !headerNamePattern.MatchString(name) {
-			return cfg, fmt.Errorf("telemetry export configuration has an invalid header name")
-		}
-		if value == "" || len(value) > maxHeaderLen || strings.ContainsAny(value, "\r\n\x00") || strings.Contains(value, "${") {
-			return cfg, fmt.Errorf("telemetry export configuration has an invalid header value")
-		}
+	cfg := config{
+		AuditLogsEnabled: wire.Telemetry.Logs.Audit.Enabled,
+		OTLPHTTP:         wire.Exporters.OTLPHTTP,
+	}
+	if !cfg.AuditLogsEnabled {
+		return cfg, nil
+	}
+	if err := validateOTLPHTTPExporter(cfg.OTLPHTTP); err != nil {
+		return config{}, err
 	}
 	return cfg, nil
 }
 
-func collectorConfig(cfg secretConfig) ([]byte, []string, error) {
-	headers := make(map[string]string, len(cfg.Exporters.OTLPHTTP.Headers))
-	headerNames := make([]string, 0, len(cfg.Exporters.OTLPHTTP.Headers))
-	for name := range cfg.Exporters.OTLPHTTP.Headers {
+func decodeConfigDocument(value string, destination any, knownFields bool) error {
+	decoder := yaml.NewDecoder(strings.NewReader(value))
+	decoder.KnownFields(knownFields)
+	if err := decoder.Decode(destination); err != nil {
+		return err
+	}
+	var trailing any
+	if err := decoder.Decode(&trailing); err == nil {
+		return fmt.Errorf("telemetry export configuration contains trailing document")
+	} else if !errors.Is(err, io.EOF) {
+		return fmt.Errorf("decode trailing telemetry export configuration: %w", err)
+	}
+	return nil
+}
+
+func validateOTLPHTTPExporter(exporter otlpHTTPExporter) error {
+	endpoint := exporter.Endpoint
+	if endpoint == "" || len(endpoint) > maxEndpointLen {
+		return fmt.Errorf("telemetry export endpoint is required or too long")
+	}
+	u, err := url.Parse(endpoint)
+	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.Fragment != "" || u.RawQuery != "" || strings.Contains(endpoint, "${") {
+		return fmt.Errorf("telemetry export endpoint must be an HTTPS URL with a host and no userinfo, query, fragment, or environment expansion")
+	}
+	if len(exporter.Headers) > maxHeaders {
+		return fmt.Errorf("telemetry export configuration has too many headers")
+	}
+	for name, value := range exporter.Headers {
+		if name == "" || len(name) > 256 || http.CanonicalHeaderKey(name) == "" || !headerNamePattern.MatchString(name) {
+			return fmt.Errorf("telemetry export configuration has an invalid header name")
+		}
+		if value == "" || len(value) > maxHeaderLen || strings.ContainsAny(value, "\r\n\x00") || strings.Contains(value, "${") {
+			return fmt.Errorf("telemetry export configuration has an invalid header value")
+		}
+	}
+	return nil
+}
+
+func collectorConfig(cfg config) ([]byte, []string, error) {
+	pipelines := make(map[string]any)
+	document := map[string]any{
+		"extensions": map[string]any{"health_check": map[string]any{"endpoint": "127.0.0.1:13133"}},
+		"service": map[string]any{
+			"extensions": []string{"health_check"},
+			"pipelines":  pipelines,
+			"telemetry":  map[string]any{"logs": map[string]any{"level": "warn"}},
+		},
+	}
+	if !cfg.AuditLogsEnabled {
+		contents, err := yaml.Marshal(document)
+		return contents, nil, err
+	}
+
+	headers := make(map[string]string, len(cfg.OTLPHTTP.Headers))
+	headerNames := make([]string, 0, len(cfg.OTLPHTTP.Headers))
+	for name := range cfg.OTLPHTTP.Headers {
 		headerNames = append(headerNames, name)
 	}
 	sort.Strings(headerNames)
 
 	environment := make([]string, 0, len(headerNames))
 	for i, name := range headerNames {
-		value := cfg.Exporters.OTLPHTTP.Headers[name]
+		value := cfg.OTLPHTTP.Headers[name]
 		envName := fmt.Sprintf("NUON_TELEMETRY_EXPORT_HEADER_%d", i)
 		headers[name] = "${env:" + envName + "}"
 		environment = append(environment, envName+"="+value)
 	}
-	document := map[string]any{
-		"receivers": map[string]any{"otlp": map[string]any{"protocols": map[string]any{"http": map[string]any{"endpoint": "127.0.0.1:4318"}}}},
-		"processors": map[string]any{
-			"memory_limiter": map[string]any{"check_interval": "1s", "limit_mib": 128, "spike_limit_mib": 32},
-			"filter/audit": map[string]any{
-				"error_mode": "ignore",
-				"logs": map[string]any{
-					"log_record": []string{`attributes["nuon.audit"] != "true"`},
-				},
+	document["receivers"] = map[string]any{"otlp": map[string]any{"protocols": map[string]any{"http": map[string]any{"endpoint": "127.0.0.1:4318"}}}}
+	document["processors"] = map[string]any{
+		"memory_limiter": map[string]any{"check_interval": "1s", "limit_mib": 128, "spike_limit_mib": 32},
+		"filter/audit": map[string]any{
+			"error_mode": "ignore",
+			"logs": map[string]any{
+				"log_record": []string{`attributes["nuon.audit"] != "true"`},
 			},
-			"batch": map[string]any{"send_batch_size": 512, "timeout": "5s"},
 		},
-		"exporters": map[string]any{"otlp_http": map[string]any{
-			"endpoint": cfg.Exporters.OTLPHTTP.Endpoint, "headers": headers, "compression": "gzip",
-			"sending_queue":    map[string]any{"enabled": true, "queue_size": 1000, "num_consumers": 2},
-			"retry_on_failure": map[string]any{"enabled": true, "initial_interval": "1s", "max_interval": "30s", "max_elapsed_time": "5m"},
-		}},
-		"extensions": map[string]any{"health_check": map[string]any{"endpoint": "127.0.0.1:13133"}},
-		"service": map[string]any{
-			"extensions": []string{"health_check"},
-			"pipelines":  map[string]any{"logs": map[string]any{"receivers": []string{"otlp"}, "processors": []string{"memory_limiter", "filter/audit", "batch"}, "exporters": []string{"otlp_http"}}},
-			"telemetry":  map[string]any{"logs": map[string]any{"level": "warn"}},
-		},
+		"batch": map[string]any{"send_batch_size": 512, "timeout": "5s"},
 	}
+	document["exporters"] = map[string]any{"otlp_http": map[string]any{
+		"endpoint": cfg.OTLPHTTP.Endpoint, "headers": headers, "compression": "gzip",
+		"sending_queue":    map[string]any{"enabled": true, "queue_size": 1000, "num_consumers": 2},
+		"retry_on_failure": map[string]any{"enabled": true, "initial_interval": "1s", "max_interval": "30s", "max_elapsed_time": "5m"},
+	}}
+	pipelines["logs/audit"] = map[string]any{"receivers": []string{"otlp"}, "processors": []string{"memory_limiter", "filter/audit", "batch"}, "exporters": []string{"otlp_http"}}
+
 	contents, err := yaml.Marshal(document)
 	return contents, environment, err
 }

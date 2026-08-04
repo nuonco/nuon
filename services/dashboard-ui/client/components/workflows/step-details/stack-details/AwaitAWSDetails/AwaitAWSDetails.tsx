@@ -4,6 +4,7 @@ import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
+import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
@@ -17,6 +18,20 @@ interface IAwaitAWSDetails extends IStackDetails {
   installAwsRegion?: string
   tfProvider?: boolean
 }
+
+const telemetryExportConfigFilename = 'telemetry-export-config.yaml'
+const telemetryExportConfig = `version: v1
+
+telemetry:
+  logs:
+    audit:
+      enabled: true
+
+exporters:
+  otlphttp:
+    endpoint: https://otlp.example.com
+    headers:
+      Authorization: Bearer <token>`
 
 // The tfvars envelope ctl-api stores in `terraform_contents` is a JSON
 // document of shape `{"inputs_tfvars": "<hcl>", "secrets_tfvars": "<hcl>"}`.
@@ -61,7 +76,6 @@ function parseTfvars(contents: unknown): TfvarsEnvelope {
 
 export const AwaitAWSDetails = ({
   stack,
-  orgId,
   installId,
   installAwsRegion,
   tfProvider = false,
@@ -102,6 +116,7 @@ export const AwaitAWSDetails = ({
             terraform: (
               <TerraformTab
                 inputsTfvars={tfvars.inputs}
+                installAwsRegion={installAwsRegion}
                 providerTfvars={tfvars.providerInputs}
                 tfProvider={tfProvider}
                 secretsTfvars={tfvars.secrets}
@@ -281,12 +296,18 @@ const CloudFormationTab = ({
           </Button>
         </Card>
       </div>
+
+      <AWSTelemetryExportInstructions
+        installAwsRegion={regionForCmd}
+        installId={installId}
+      />
     </div>
   )
 }
 
 interface ITerraformTab {
   inputsTfvars: string
+  installAwsRegion?: string
   providerTfvars: string
   tfProvider: boolean
   secretsTfvars: string
@@ -295,6 +316,7 @@ interface ITerraformTab {
 
 const TerraformTab = ({
   inputsTfvars,
+  installAwsRegion,
   providerTfvars,
   tfProvider,
   secretsTfvars,
@@ -426,7 +448,84 @@ cd install-stacks/aws`
           <Code variant="preformated">{applyCmd}</Code>
         </Card>
       </div>
+
+      <AWSTelemetryExportInstructions
+        installAwsRegion={installAwsRegion}
+        installId={installId}
+      />
     </div>
+  )
+}
+
+const AWSTelemetryExportInstructions = ({
+  installAwsRegion,
+  installId,
+}: {
+  installAwsRegion?: string
+  installId?: string
+}) => {
+  const secretID = `nuon/${installId || '<install-id>'}/telemetry-export-config`
+  const uploadCmd = `aws secretsmanager put-secret-value \\
+  --secret-id "${secretID}" \\
+  --secret-string file://${telemetryExportConfigFilename} \\
+  --region "${installAwsRegion || '<aws-region>'}"`
+
+  return (
+    <Expand
+      id="telemetry-export"
+      heading={
+        <Text variant="base" weight="strong">
+          Configure telemetry export (optional)
+        </Text>
+      }
+    >
+      <div className="flex flex-col gap-4 p-2">
+        <Text variant="subtext">
+          To export runner audit logs and other telemetry to your own backend,
+          update the <code>telemetry-export-config</code> secret in AWS Secrets
+          Manager after the stack is provisioned. See the{' '}
+          <Link
+            href="https://docs.nuon.co/guides/export-runner-audit-logs"
+            isExternal
+          >
+            telemetry export reference
+          </Link>{' '}
+          for available settings.
+        </Text>
+
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>
+              Save this as <code>{telemetryExportConfigFilename}</code>
+            </Text>
+            <span className="flex gap-2 items-center">
+              <ClickToCopyButton textToCopy={telemetryExportConfig} />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  createFileDownload(
+                    telemetryExportConfig,
+                    telemetryExportConfigFilename
+                  )
+                }
+              >
+                Download
+              </Button>
+            </span>
+          </span>
+          <Code variant="preformated">{telemetryExportConfig}</Code>
+        </Card>
+
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>Update the telemetry export secret</Text>
+            <ClickToCopyButton textToCopy={uploadCmd} />
+          </span>
+          <Code variant="preformated">{uploadCmd}</Code>
+        </Card>
+      </div>
+    </Expand>
   )
 }
 

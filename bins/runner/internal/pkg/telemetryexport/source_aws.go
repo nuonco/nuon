@@ -80,7 +80,7 @@ func newAWSConfigUpdate(result *secretsmanager.GetSecretValueOutput, err error) 
 		switch {
 		case errors.As(err, &notFound):
 			return configUpdate{state: configNotFound, err: err, errorIdentity: awsErrorIdentity(err)}
-		case errors.As(err, &invalidRequest):
+		case errors.As(err, &invalidRequest), awsAccessDenied(err):
 			return configUpdate{state: configUnavailable, err: err, errorIdentity: awsErrorIdentity(err)}
 		default:
 			return configUpdate{state: configLookupFailed, err: err, errorIdentity: awsErrorIdentity(err)}
@@ -90,6 +90,11 @@ func newAWSConfigUpdate(result *secretsmanager.GetSecretValueOutput, err error) 
 		return configUpdate{state: configAvailable}
 	}
 	return configUpdate{state: configAvailable, value: *result.SecretString}
+}
+
+func awsAccessDenied(err error) bool {
+	var apiError smithy.APIError
+	return errors.As(err, &apiError) && apiError.ErrorCode() == "AccessDeniedException"
 }
 
 func awsErrorIdentity(err error) string {
