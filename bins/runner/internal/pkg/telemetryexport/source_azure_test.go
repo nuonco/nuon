@@ -58,7 +58,8 @@ func TestNewAzureConfigUpdateClassifiesResults(t *testing.T) {
 		{name: "empty", result: azsecrets.GetSecretResponse{}, state: configAvailable},
 		{name: "disabled", err: disabledError, state: configUnavailable},
 		{name: "not found", err: &azcore.ResponseError{StatusCode: http.StatusNotFound, ErrorCode: "SecretNotFound"}, state: configNotFound},
-		{name: "permission denied", err: &azcore.ResponseError{StatusCode: http.StatusForbidden, ErrorCode: "Forbidden"}, state: configLookupFailed},
+		{name: "permission denied", err: &azcore.ResponseError{StatusCode: http.StatusForbidden, ErrorCode: "Forbidden"}, state: configUnavailable},
+		{name: "unauthenticated", err: &azcore.ResponseError{StatusCode: http.StatusUnauthorized, ErrorCode: "Unauthorized"}, state: configUnavailable},
 		{name: "lookup failure", err: errors.New("lookup failed"), state: configLookupFailed},
 	}
 
