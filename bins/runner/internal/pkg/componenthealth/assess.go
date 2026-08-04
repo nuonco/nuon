@@ -37,7 +37,38 @@ func assessResource(obj *unstructured.Unstructured) (health, message, nativeStat
 		// follow, then admit the resource has no signal.
 		return assessByConditions(obj)
 	}
-	return mapHealth(hs.Status), hs.Message, string(hs.Status)
+	msg := hs.Message
+	if msg == "" {
+		msg = explainVerdict(obj, hs.Status)
+	}
+	return mapHealth(hs.Status), msg, string(hs.Status)
+}
+
+// explainVerdict fills in a message the library leaves blank. A verdict with no
+// message is the least actionable thing health can show — an Ingress waiting on
+// a load balancer address reported "progressing" and nothing else for 15 hours,
+// while the reason sat in the status it had already read.
+func explainVerdict(obj *unstructured.Unstructured, status gitopshealth.HealthStatusCode) string {
+	if status != gitopshealth.HealthStatusProgressing {
+		return ""
+	}
+
+	switch obj.GetKind() {
+	case "Ingress":
+		if !hasLoadBalancerAddress(obj) {
+			return "no load balancer address assigned yet"
+		}
+	case "Service":
+		if !hasLoadBalancerAddress(obj) {
+			return "waiting for a load balancer address"
+		}
+	}
+	return ""
+}
+
+func hasLoadBalancerAddress(obj *unstructured.Unstructured) bool {
+	addrs, found, err := unstructured.NestedSlice(obj.Object, "status", "loadBalancer", "ingress")
+	return err == nil && found && len(addrs) > 0
 }
 
 // readyConditionTypes are the condition types controllers conventionally use to
