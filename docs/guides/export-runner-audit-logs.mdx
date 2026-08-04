@@ -2,7 +2,7 @@
 title: 'Export Runner Audit Logs'
 description: 'Forward Nuon runner audit events to your own OTLP-compatible logging backend.'
 icon: 'file-shield'
-keywords: ["runner audit logs", "OTLP logs", "OpenTelemetry", "audit log export", "customer observability", "runner logs"]
+keywords: ["runner audit logs", "OTLP logs", "OpenTelemetry", "audit log export", "customer observability", "runner logs", "telemetry-export-config", "AWS Secrets Manager", "Azure Key Vault", "GCP Secret Manager"]
 ---
 
 Nuon runners can forward audit events directly from your cloud account to an OTLP-compatible logging backend. This
@@ -17,9 +17,9 @@ Runner audit log export supports AWS, Azure, and GCP install runners:
 
 | Provider | Supported install stack | Configuration secret |
 | --- | --- | --- |
-| AWS | Generated CloudFormation stack or Nuon Terraform install stack | `nuon/<install-id>/telemetry-export-config` |
+| AWS | Generated CloudFormation stack or [Nuon Terraform install stack](https://github.com/nuonco/install-stacks) | `nuon/<install-id>/telemetry-export-config` |
 | Azure | Generated Azure install stack | `telemetry-export-config` in the install Key Vault |
-| GCP | Nuon Terraform install stack | `<install-id>-telemetry-export-config` |
+| GCP | [Nuon Terraform install stack](https://github.com/nuonco/install-stacks) | `<install-id>-telemetry-export-config` |
 
 The AWS and GCP stacks create the configuration secret and grant the runner read access. On Azure, create the install
 Key Vault before deploying the stack; the stack grants its runner managed identity read access. In every case, update
@@ -31,7 +31,7 @@ Nuon control plane or in Terraform state.
 You will need:
 
 - A current Nuon runner on AWS, Azure, or GCP
-- The current install stack, applied to create the configuration secret and runner read permissions
+- The current install stack, applied to configure runner access to the cloud secret manager
 - An OTLP/HTTP logs endpoint available over HTTPS
 - Any headers required to authenticate with your logging backend
 - Permission to add a secret value in your cloud account
@@ -55,10 +55,17 @@ exporters:
       Authorization: Bearer <token>
 ```
 
-The endpoint must be an HTTPS URL. Omit `headers` if your backend does not require them.
+## Configuration reference
 
-Keep `version` set to `v1`. Set `telemetry.logs.audit.enabled` to control audit log export, and use
-`exporters.otlphttp` to configure your destination.
+| Field | Required | Description |
+| --- | --- | --- |
+| `version` | Yes | Configuration format version. Set to `v1`. |
+| `telemetry.logs.audit.enabled` | No | Set to `true` to enable runner audit log export. Defaults to `false`. |
+| `exporters.otlphttp.endpoint` | Yes, when telemetry is enabled | HTTPS URL for the OTLP/HTTP backend. |
+| `exporters.otlphttp.headers` | No | Headers used to authenticate with the backend. |
+
+The endpoint cannot contain credentials, a query string, a fragment, or environment-variable expansion. Omit
+`headers` if your backend does not require them.
 
 ## Update the configuration secret
 
@@ -77,7 +84,7 @@ aws secretsmanager put-secret-value \
 ```
 
 For an existing CloudFormation install, reprovision the install to generate the current template and update the stack
-before uploading the value. For a Terraform install, update the install stack module and run `terraform apply` first.
+before updating the secret. For a Terraform install, update the install stack module and run `terraform apply` first.
 
 ### Azure
 
@@ -104,6 +111,17 @@ gcloud secrets versions add "<install-id>-telemetry-export-config" \
 
 The runner checks for changes every 30 seconds and applies a changed valid configuration without restarting the runner.
 
+## Runner access to the configuration
+
+Nuon-generated Stacks grant the runner the required read access:
+
+| Provider | Runner identity | Access |
+| --- | --- | --- |
+| AWS | Runner instance role | `secretsmanager:GetSecretValue` and `secretsmanager:DescribeSecret` |
+| Azure | Runner VMSS system-assigned managed identity | Key Vault Secrets User |
+| GCP | Runner service account | Secret Manager Secret Accessor |
+
+
 ## Exported attributes
 
 Every exported record includes attributes that identify it as a Nuon runner audit event:
@@ -123,7 +141,7 @@ Records also include relevant identifiers such as `org.id`, `install.id`, `runne
 
 ## Verify export
 
-1. Upload a valid configuration.
+1. Update the secret with a valid configuration.
 2. Check the runner logs for `runner telemetry export collector enabled` with `audit_export.enabled=true`.
 3. Trigger a deployment, action workflow, or sandbox operation.
 4. Query your logging backend for records where `service.namespace="nuon"` and `nuon.audit="true"`.
@@ -137,15 +155,18 @@ Edit `telemetry-export-config.yaml` and run the same provider upload command to 
 authentication headers. The runner detects the new secret value automatically.
 
 To disable audit export while leaving the telemetry collector available for future telemetry types, set
-`telemetry.logs.audit.enabled` to `false` and upload the file. The collector runs without an audit log pipeline. To stop
+`telemetry.logs.audit.enabled` to `false` and update the secret. The collector runs without an audit log pipeline. To stop
 the telemetry collector entirely, remove or disable the secret value or remove runner access to it. Normal runner
 operations and Nuon-managed logging continue unchanged.
 
 ## Failure behavior
 
-Audit export does not block runner jobs. If the secret is missing or inaccessible, or the logging backend is
-unavailable, the runner continues operating normally. An invalid changed value does not replace the last valid
+Audit export does not block runner jobs. A missing, empty, disabled, or inaccessible secret stops the telemetry
+collector. An invalid changed value or a transient read or startup failure does not replace a previously active valid
 configuration. Once a valid configuration becomes available, the runner detects it automatically.
+
+Delivery is best effort. The collector queues and retries exports, but records may be dropped during a prolonged backend
+outage. Runner jobs continue operating normally while the backend is unavailable.
 
 ## Troubleshooting
 
@@ -156,9 +177,8 @@ Vault shown in the dashboard before deploying the install stack.
 
 ### AWS reports that the secret is scheduled for deletion
 
-An older conditional CloudFormation stack may have scheduled the secret for deletion when audit export was cleared.
-If the value does not need to be retained, permanently delete the scheduled secret, wait for deletion to complete, and
-retry the stack update:
+If a secret with the same name is already scheduled for deletion, the Stack cannot create it. If the value does not
+need to be retained, permanently delete the scheduled secret, wait for deletion to complete, and retry the Stack update:
 
 ```sh
 aws secretsmanager delete-secret \
@@ -182,7 +202,7 @@ Confirm that:
 - The YAML has `version: v1`
 - `telemetry.logs.audit.enabled` is a boolean
 - The YAML contains `exporters.otlphttp.endpoint` and optional `exporters.otlphttp.headers` when audit export is enabled
-- The endpoint uses HTTPS and does not contain credentials, a query string, or a fragment
+- The endpoint uses HTTPS and does not contain credentials, a query string, a fragment, or environment-variable expansion
 - Header names are valid HTTP header names and header values do not contain line breaks
 
 ### Export is enabled, but no records appear

@@ -212,7 +212,7 @@ the Slack integration.
 
 #### Secrets
 
-The `secrets` map must be popoulated with the following:
+The `secrets` map must be populated with the following:
 
 | Secret                    | Value                                                                         |
 | ------------------------- | ----------------------------------------------------------------------------- |
@@ -222,7 +222,7 @@ The `secrets` map must be popoulated with the following:
 | `slack_signing_secret`    | Signing Secret from your Slack app (optional — required only if using Slack). |
 
 <Note>
-The GitHub App PEM key must be base64 encoded because AWS CloudFormation doesn't preserve newlines in text fields.
+The `github_app_key` secret expects a base64-encoded GitHub App PEM key.
 
 To encode your PEM key:
 
@@ -243,6 +243,19 @@ terraform apply
 
 All of the core-infra will be created with your `gcloud` permissions. After this, the Nuon Runner will be deployed in
 your project and will poll Nuon Cloud for jobs to deploy the control plane components.
+
+### 5. Configure telemetry export (optional)
+
+Terraform creates the `<install-id>-telemetry-export-config` secret and grants the runner service account permission to
+read it. To configure telemetry export to your own backend, starting with runner audit logs, create
+`telemetry-export-config.yaml` using the [telemetry export reference](/guides/export-runner-audit-logs), then update the
+secret:
+
+```bash
+gcloud secrets versions add "<install-id>-telemetry-export-config" \
+  --data-file="telemetry-export-config.yaml" \
+  --project="<gcp-project-id>"
+```
 
 ## Configure DNS
 
