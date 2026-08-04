@@ -70,7 +70,7 @@ func (s *awsConfigSource) Watch(ctx context.Context, interval time.Duration) <-c
 
 		result, err := client.GetSecretValue(ctx, &secretsmanager.GetSecretValueInput{SecretId: &s.name})
 		return newAWSConfigUpdate(result, err)
-	})
+	}, nil)
 }
 
 func newAWSConfigUpdate(result *secretsmanager.GetSecretValueOutput, err error) configUpdate {
