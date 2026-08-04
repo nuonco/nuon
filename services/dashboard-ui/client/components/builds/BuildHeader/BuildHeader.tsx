@@ -116,6 +116,18 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
               <CommitDetails commit={build?.vcs_connection_commit} />
             </LabeledValue>
           ) : null}
+          {build?.app_branch_id && build?.app_branch_run_id ? (
+            <LabeledValue label="Branch run">
+              <Text variant="subtext" flex className="gap-1 items-center">
+                <Icon variant="GitBranchIcon" size={14} />
+                <Link
+                  href={`/${app?.org_id}/apps/${app?.id}/branches/${build.app_branch_id}/runs/${build.app_branch_run_id}`}
+                >
+                  View run
+                </Link>
+              </Text>
+            </LabeledValue>
+          ) : null}
         </div>
       </div>
 

@@ -62,6 +62,7 @@ type ComponentBuild struct {
 	ComponentID            string `gorm:"-" json:"component_id,omitzero" temporaljson:"component_id,omitzero,omitempty"`
 	ComponentName          string `gorm:"-" json:"component_name,omitzero" temporaljson:"component_name,omitzero,omitempty"`
 	ComponentConfigVersion int    `gorm:"-" json:"component_config_version,omitzero" temporaljson:"component_config_version,omitzero,omitempty"`
+	AppBranchID            string `gorm:"-" json:"app_branch_id,omitzero" temporaljson:"app_branch_id,omitzero,omitempty"`
 
 	// checksum of our intermediate component config
 	Checksum string `json:"checksum,omitzero" gorm:"default null" temporaljson:"checksum,omitzero,omitempty"`
@@ -155,6 +156,10 @@ func (c *ComponentBuild) AfterQuery(tx *gorm.DB) error {
 	c.ComponentID = c.ComponentConfigConnection.ComponentID
 	c.ComponentName = c.ComponentConfigConnection.Component.Name
 	c.ComponentConfigVersion = c.ComponentConfigConnection.Version
+
+	if c.AppBranchRun != nil {
+		c.AppBranchID = c.AppBranchRun.AppBranchID
+	}
 
 	if c.StatusV2.Status != "" {
 		c.Status = ComponentBuildStatus(c.StatusV2.Status)
