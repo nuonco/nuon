@@ -5,6 +5,7 @@ import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
+import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
@@ -74,6 +75,7 @@ function withSpaceliftGCPPlaceholders(tfvars: string): string {
 
 interface IAwaitGCPDetails extends IStackDetails {
   installId?: string
+  gcpProjectId?: string
   spaceliftEnabled?: boolean
   tfProvider?: boolean
 }
@@ -81,6 +83,7 @@ interface IAwaitGCPDetails extends IStackDetails {
 export const AwaitGCPDetails = ({
   stack,
   installId,
+  gcpProjectId,
   spaceliftEnabled,
   tfProvider = false,
 }: IAwaitGCPDetails) => {
@@ -93,6 +96,13 @@ export const AwaitGCPDetails = ({
     !!spaceliftEnabled &&
     (envelope.spaceliftAdminTf.length > 0 ||
       envelope.spaceliftBlueprintYaml.length > 0)
+  const auditExportConfigCmd = `export RUNNER_AUDIT_EXPORT_CONFIG="<base64-encoded YAML>"`
+  const auditExportSecretID = `${installId || '<install-id>'}-runner-audit-export`
+  const projectID = gcpProjectId || '<gcp-project-id>'
+  const createAuditExportSecretVersionCmd = `printf '%s' "$RUNNER_AUDIT_EXPORT_CONFIG" | \
+  gcloud secrets versions add "${auditExportSecretID}" \
+    --project "${projectID}" \
+    --data-file=-`
 
   return (
     <div className="flex flex-col gap-4">
@@ -133,6 +143,58 @@ export const AwaitGCPDetails = ({
           installId={installId}
         />
       )}
+
+      <Expand
+        id="runner-audit-export"
+        heading={
+          <Text variant="base" weight="strong">
+            Configure runner audit export (optional)
+          </Text>
+        }
+      >
+        <div className="flex flex-col gap-4 p-2">
+          <Text variant="subtext">
+            After the install stack is applied, add an OTLP exporter
+            configuration to Secret Manager. Skip this step to leave audit
+            export disabled.
+          </Text>
+
+          <Card>
+            <span className="flex justify-between items-center">
+              <Text>Export the audit export configuration</Text>
+              <ClickToCopyButton
+                className="w-fit self-end"
+                textToCopy={auditExportConfigCmd}
+              />
+            </span>
+            <Text variant="subtext">
+              Use the{' '}
+              <Link
+                href="https://docs.nuon.co/guides/export-runner-audit-logs"
+                isExternal
+              >
+                audit export guide
+              </Link>{' '}
+              to encode the exporter configuration, then export it as an
+              environment variable.
+            </Text>
+            <Code variant="preformated">{auditExportConfigCmd}</Code>
+          </Card>
+
+          <Card>
+            <span className="flex justify-between items-center">
+              <Text>Add the audit export secret version</Text>
+              <ClickToCopyButton
+                className="w-fit self-end"
+                textToCopy={createAuditExportSecretVersionCmd}
+              />
+            </span>
+            <Code variant="preformated">
+              {createAuditExportSecretVersionCmd}
+            </Code>
+          </Card>
+        </div>
+      </Expand>
     </div>
   )
 }
