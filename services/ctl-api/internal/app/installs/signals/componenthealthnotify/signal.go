@@ -27,6 +27,8 @@ const (
 	MetadataKeyResourceName   = "root_resource_name"
 	MetadataKeyUnhealthyCount = "unhealthy_component_count"
 	MetadataKeyDegradedCount  = "degraded_component_count"
+	MetadataKeyInstallHealth  = "install_health"
+	MetadataKeyInstallPrev    = "install_previous_health"
 )
 
 // ComponentSignal is the shared body of the two component-level health
@@ -45,6 +47,10 @@ type ComponentSignal struct {
 	RootResourceKind      string `json:"root_resource_kind"`
 	RootResourceNamespace string `json:"root_resource_namespace"`
 	RootResourceName      string `json:"root_resource_name"`
+
+	// Set only when this crossing also moved the install composite.
+	InstallHealth         string `json:"install_health,omitempty"`
+	InstallPreviousHealth string `json:"install_previous_health,omitempty"`
 }
 
 func (s *ComponentSignal) validate() error {
@@ -82,6 +88,8 @@ func (s *ComponentSignal) lifecycleContext(operation string) signal.SignalLifecy
 			MetadataKeyResourceKind:   s.RootResourceKind,
 			MetadataKeyResourceNS:     s.RootResourceNamespace,
 			MetadataKeyResourceName:   s.RootResourceName,
+			MetadataKeyInstallHealth:  s.InstallHealth,
+			MetadataKeyInstallPrev:    s.InstallPreviousHealth,
 		},
 	}
 }
