@@ -140,6 +140,7 @@ export const Default = () => (
       stack={mockStack}
       step={mockStep}
       installId="install-1"
+      gcpProjectId="my-gcp-project"
       spaceliftEnabled
     />
   </div>
