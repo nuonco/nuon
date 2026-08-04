@@ -11,6 +11,11 @@ const (
 	// componentHealthObservationWindow bounds how far back the evaluator reads
 	// observations from ClickHouse (~10 reports at the runner's ~60s cadence).
 	componentHealthObservationWindow = 10 * time.Minute
+	// componentHealthProgressingLimit is how long a component may stay
+	// progressing before it is treated as degraded. Long enough for a slow
+	// rollout or a cluster autoscaler cold start, short enough that a genuinely
+	// stuck workload is reported the same day.
+	componentHealthProgressingLimit = 30 * time.Minute
 	// componentHealthStaleAfter marks a stale verdict unknown, never unhealthy —
 	// absence of data isn't health data. Matches the 5m runner-inactive cutoff.
 	componentHealthStaleAfter = 5 * time.Minute
