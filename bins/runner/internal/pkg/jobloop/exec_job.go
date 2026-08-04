@@ -37,7 +37,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 
 	var auditExportAvailable func() bool
 	if j.telemetryExport != nil {
-		auditExportAvailable = j.telemetryExport.Available
+		auditExportAvailable = j.telemetryExport.AuditExportAvailable
 	}
 	jl, err := slog.NewOTELProvider(j.cfg, j.settings, job.LogStreamID, auditExportAvailable)
 	if err != nil {

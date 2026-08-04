@@ -2,12 +2,25 @@ package telemetryexport
 
 import (
 	"encoding/base64"
+	"fmt"
 	"strings"
 	"testing"
 )
 
-func TestParseSecret(t *testing.T) {
-	valid := "exporters:\n  otlphttp:\n    endpoint: https://otlp.example.com\n    headers:\n      Authorization: Bearer token\n"
+func auditEnabledConfig(endpoint string) string {
+	return fmt.Sprintf(`version: v1
+telemetry:
+  logs:
+    audit:
+      enabled: true
+exporters:
+  otlphttp:
+    endpoint: %s
+`, endpoint)
+}
+
+func TestParseSecretV1(t *testing.T) {
+	valid := auditEnabledConfig("https://otlp.example.com") + "    headers:\n      Authorization: Bearer token\n"
 	if _, err := parseSecret(valid); err != nil {
 		t.Fatalf("expected valid configuration: %v", err)
 	}
@@ -15,23 +28,55 @@ func TestParseSecret(t *testing.T) {
 	if _, err := parseSecret(encoded); err != nil {
 		t.Fatalf("expected valid base64-encoded configuration: %v", err)
 	}
+	cfg, err := parseSecret(valid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.AuditLogsEnabled || cfg.OTLPHTTP.Endpoint != "https://otlp.example.com" {
+		t.Fatalf("unexpected parsed configuration: %#v", cfg)
+	}
+}
 
+func TestParseSecretAllowsAuditLogsToBeDisabled(t *testing.T) {
 	tests := []string{
-		"exporters:\n  otlphttp:\n    endpoint: http://otlp.example.com\n",
-		"exporters:\n  otlphttp:\n    endpoint: https://user@example.com\n",
-		"exporters:\n  otlphttp:\n    endpoint: https://example.com/#fragment\n",
-		"exporters:\n  otlphttp:\n    endpoint: https://example.com/?token=value\n",
-		"exporters:\n  otlphttp:\n    endpoint: https://${env:RUNNER_API_TOKEN}\n",
-		"exporters:\n  otlphttp:\n    endpoint: https://example.com\n    unknown: true\n",
-		"exporters:\n  otlphttp:\n    endpoint: https://example.com\n---\nexporters: {}\n",
-		"exporters:\n  otlphttp:\n    endpoint: https://example.com\n    headers:\n      'bad header': value\n",
-		"exporters:\n  otlphttp:\n    endpoint: https://example.com\n    headers:\n      Authorization: ''\n",
-		"exporters:\n  otlphttp:\n    endpoint: https://example.com\n    headers:\n      Authorization: '${env:RUNNER_API_TOKEN}'\n",
+		"version: v1\n",
+		"version: v1\ntelemetry:\n  logs:\n    audit:\n      enabled: false\n",
 	}
 	for _, value := range tests {
-		if _, err := parseSecret(value); err == nil {
-			t.Errorf("expected configuration to be rejected: %q", value)
+		cfg, err := parseSecret(value)
+		if err != nil {
+			t.Fatalf("expected disabled configuration to be valid: %v", err)
 		}
+		if cfg.AuditLogsEnabled {
+			t.Fatal("disabled configuration enabled audit logs")
+		}
+	}
+}
+
+func TestParseSecretRejectsInvalidV1(t *testing.T) {
+	tests := map[string]string{
+		"missing version":            strings.TrimPrefix(auditEnabledConfig("https://example.com"), "version: v1\n"),
+		"unsupported version":        "version: v2\n",
+		"enabled without exporter":   "version: v1\ntelemetry:\n  logs:\n    audit:\n      enabled: true\n",
+		"insecure endpoint":          auditEnabledConfig("http://otlp.example.com"),
+		"endpoint with user info":    auditEnabledConfig("https://user@example.com"),
+		"endpoint with fragment":     auditEnabledConfig("https://example.com/#fragment"),
+		"endpoint with query":        auditEnabledConfig("https://example.com/?token=value"),
+		"endpoint with expansion":    auditEnabledConfig("https://${env:RUNNER_API_TOKEN}"),
+		"unknown exporter field":     auditEnabledConfig("https://example.com") + "    unknown: true\n",
+		"unknown telemetry category": "version: v1\ntelemetry:\n  logs:\n    billing:\n      enabled: true\n",
+		"unknown top-level field":    "version: v1\nunknown: true\n",
+		"trailing document":          auditEnabledConfig("https://example.com") + "---\nversion: v1\n",
+		"invalid header name":        auditEnabledConfig("https://example.com") + "    headers:\n      'bad header': value\n",
+		"empty header value":         auditEnabledConfig("https://example.com") + "    headers:\n      Authorization: ''\n",
+		"header with expansion":      auditEnabledConfig("https://example.com") + "    headers:\n      Authorization: '${env:RUNNER_API_TOKEN}'\n",
+	}
+	for name, value := range tests {
+		t.Run(name, func(t *testing.T) {
+			if _, err := parseSecret(value); err == nil {
+				t.Errorf("expected configuration to be rejected: %q", value)
+			}
+		})
 	}
 }
 
@@ -52,7 +97,7 @@ func TestChildEnvironmentOmitsRunnerCredentials(t *testing.T) {
 }
 
 func TestCollectorConfigKeepsHeaderValuesOutOfFile(t *testing.T) {
-	cfg, err := parseSecret("exporters:\n  otlphttp:\n    endpoint: https://otlp.example.com\n    headers:\n      Authorization: super-secret-value\n")
+	cfg, err := parseSecret(auditEnabledConfig("https://otlp.example.com") + "    headers:\n      Authorization: super-secret-value\n")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +114,7 @@ func TestCollectorConfigKeepsHeaderValuesOutOfFile(t *testing.T) {
 	if len(environment) != 1 || !strings.HasSuffix(environment[0], "=super-secret-value") {
 		t.Fatalf("unexpected child environment: %q", environment)
 	}
-	if !strings.Contains(string(contents), "127.0.0.1:4318") || !strings.Contains(string(contents), "logs:") {
+	if !strings.Contains(string(contents), "127.0.0.1:4318") || !strings.Contains(string(contents), "logs/audit:") {
 		t.Fatal("generated collector configuration lacks loopback logs pipeline")
 	}
 	if !strings.Contains(string(contents), `attributes["nuon.audit"] != "true"`) {
@@ -77,5 +122,28 @@ func TestCollectorConfigKeepsHeaderValuesOutOfFile(t *testing.T) {
 	}
 	if !strings.Contains(string(contents), "- filter/audit") {
 		t.Fatal("generated collector pipeline does not use the audit filter")
+	}
+}
+
+func TestCollectorConfigOmitsAuditPipelineWhenDisabled(t *testing.T) {
+	cfg, err := parseSecret("version: v1\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	contents, environment, err := collectorConfig(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(environment) != 0 {
+		t.Fatalf("disabled audit pipeline produced an environment: %q", environment)
+	}
+	config := string(contents)
+	if !strings.Contains(config, "health_check:") || !strings.Contains(config, "pipelines: {}") {
+		t.Fatalf("generated collector configuration does not contain an empty service: %s", config)
+	}
+	for _, unexpected := range []string{"127.0.0.1:4318", "logs/audit:", "filter/audit:", "otlp_http:"} {
+		if strings.Contains(config, unexpected) {
+			t.Fatalf("generated collector configuration contains disabled audit component %q", unexpected)
+		}
 	}
 }
