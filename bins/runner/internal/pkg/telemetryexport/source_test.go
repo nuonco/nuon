@@ -62,6 +62,7 @@ func TestNewAWSConfigUpdateClassifiesResults(t *testing.T) {
 		{name: "available", value: &secretsmanager.GetSecretValueOutput{SecretString: &value}, state: configAvailable},
 		{name: "not found", err: &types.ResourceNotFoundException{}, state: configNotFound},
 		{name: "unavailable", err: &types.InvalidRequestException{}, state: configUnavailable},
+		{name: "permission denied", err: &smithy.GenericAPIError{Code: "AccessDeniedException", Message: "access denied"}, state: configUnavailable},
 		{name: "lookup failure", err: errors.New("lookup failed"), state: configLookupFailed},
 	}
 
