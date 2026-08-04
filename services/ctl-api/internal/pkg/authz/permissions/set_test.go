@@ -37,3 +37,52 @@ func TestSetAddKeepsStrongerGrant(t *testing.T) {
 		assert.Error(t, set.CanPerform(org, PermissionDelete))
 	})
 }
+
+func TestCanPerformScopedObjects(t *testing.T) {
+	const org = "org_abc"
+	scoped := ComponentBuildsObject(org)
+
+	t.Run("org-wide all grant covers scoped objects", func(t *testing.T) {
+		set := Set(NewSet())
+		require.NoError(t, set.Add(map[string]*string{org: strPtr(string(PermissionAll))}))
+
+		assert.NoError(t, set.CanPerform(scoped, PermissionCreate))
+	})
+
+	t.Run("org-wide read grant does not allow scoped create", func(t *testing.T) {
+		set := Set(NewSet())
+		require.NoError(t, set.Add(map[string]*string{org: strPtr(string(PermissionRead))}))
+
+		assert.NoError(t, set.CanPerform(scoped, PermissionRead))
+		assert.Error(t, set.CanPerform(scoped, PermissionCreate))
+	})
+
+	t.Run("builder grant allows scoped create but not org-wide mutation", func(t *testing.T) {
+		set := Set(NewSet())
+		require.NoError(t, set.Add(map[string]*string{
+			org:    strPtr(string(PermissionRead)),
+			scoped: strPtr(string(PermissionCreate)),
+		}))
+
+		assert.NoError(t, set.CanPerform(scoped, PermissionCreate))
+		assert.NoError(t, set.CanPerform(org, PermissionRead))
+		assert.Error(t, set.CanPerform(org, PermissionCreate))
+	})
+
+	t.Run("specific scoped grant is not widened by org grant lookup order", func(t *testing.T) {
+		set := Set(NewSet())
+		require.NoError(t, set.Add(map[string]*string{
+			org:    strPtr(string(PermissionAll)),
+			scoped: strPtr(string(PermissionCreate)),
+		}))
+
+		assert.NoError(t, set.CanPerform(scoped, PermissionCreate))
+		assert.Error(t, set.CanPerform(scoped, PermissionDelete))
+	})
+
+	t.Run("no grants at all is denied", func(t *testing.T) {
+		set := Set(NewSet())
+
+		assert.Error(t, set.CanPerform(scoped, PermissionCreate))
+	})
+}
