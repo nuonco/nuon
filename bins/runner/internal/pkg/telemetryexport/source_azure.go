@@ -2,14 +2,12 @@ package telemetryexport
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	azruntime "github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets"
 )
@@ -81,7 +79,7 @@ func newAzureConfigUpdate(result azsecrets.GetSecretResponse, err error) configU
 			switch {
 			case responseError.StatusCode == http.StatusNotFound:
 				state = configNotFound
-			case responseError.StatusCode == http.StatusForbidden && azureSecretDisabled(responseError):
+			case responseError.StatusCode == http.StatusForbidden || responseError.StatusCode == http.StatusUnauthorized:
 				state = configUnavailable
 			}
 		}
@@ -91,30 +89,6 @@ func newAzureConfigUpdate(result azsecrets.GetSecretResponse, err error) configU
 		return configUpdate{state: configAvailable}
 	}
 	return configUpdate{state: configAvailable, value: *result.Value}
-}
-
-func azureSecretDisabled(responseError *azcore.ResponseError) bool {
-	if responseError.ErrorCode == "SecretDisabled" {
-		return true
-	}
-	if responseError.RawResponse == nil {
-		return false
-	}
-	payload, err := azruntime.Payload(responseError.RawResponse)
-	if err != nil {
-		return false
-	}
-	var envelope struct {
-		Error struct {
-			InnerError struct {
-				Code string `json:"code"`
-			} `json:"innererror"`
-		} `json:"error"`
-	}
-	if err := json.Unmarshal(payload, &envelope); err != nil {
-		return false
-	}
-	return envelope.Error.InnerError.Code == "SecretDisabled"
 }
 
 func azureErrorIdentity(err error) string {
