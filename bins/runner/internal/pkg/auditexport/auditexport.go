@@ -23,7 +23,7 @@ import (
 const collectorBinary = "/bin/nuon-runner-otelcol"
 const secretSyncInterval = 30 * time.Second
 
-var Module = fx.Options(fx.Provide(newAWSFactory, newConfigSourceResolver, New), fx.Invoke(func(*Supervisor) {}))
+var Module = fx.Options(fx.Provide(newAWSFactory, newAzureFactory, newConfigSourceResolver, New), fx.Invoke(func(*Supervisor) {}))
 
 type Params struct {
 	fx.In
