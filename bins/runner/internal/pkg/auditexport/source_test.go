@@ -78,17 +78,20 @@ func TestNewAWSConfigUpdateClassifiesResults(t *testing.T) {
 	}
 }
 
-func TestConfigSourceResolverSelectsAWS(t *testing.T) {
-	resolver := newConfigSourceResolver(awsFactory{})
+func TestConfigSourceResolverSelectsPlatformSource(t *testing.T) {
+	resolver := newConfigSourceResolver(awsFactory{}, azureFactory{})
 	tests := []struct {
-		name      string
-		platform  string
-		installID string
-		wantName  string
+		name         string
+		platform     string
+		installID    string
+		wantName     string
+		wantVaultURL string
 	}{
 		{name: "aws", platform: "aws", installID: "inst-test", wantName: "nuon/inst-test/runner-audit-export"},
 		{name: "aws variant", platform: "aws-eks", installID: "inst-test", wantName: "nuon/inst-test/runner-audit-export"},
-		{name: "unsupported platform", platform: "azure", installID: "inst-test"},
+		{name: "azure", platform: "azure", installID: "instabcdefghijklmnopqrstuv", wantName: azureAuditExportSecretName, wantVaultURL: "https://instabcdefghijklmnopqrst.vault.azure.net"},
+		{name: "azure variant", platform: "azure-aks", installID: "inst-test", wantName: azureAuditExportSecretName, wantVaultURL: "https://inst-test.vault.azure.net"},
+		{name: "unsupported platform", platform: "gcp", installID: "inst-test"},
 		{name: "missing install", platform: "aws"},
 	}
 
@@ -101,12 +104,19 @@ func TestConfigSourceResolverSelectsAWS(t *testing.T) {
 				}
 				return
 			}
-			awsSource, ok := source.(*awsConfigSource)
-			if !ok {
-				t.Fatalf("expected AWS configuration source, got %T", source)
+			if test.wantVaultURL != "" {
+				azureSource, ok := source.(*azureConfigSource)
+				if !ok {
+					t.Fatalf("expected Azure configuration source, got %T", source)
+				}
+				if azureSource.name != test.wantName || azureSource.vaultURL != test.wantVaultURL {
+					t.Fatalf("unexpected Azure source: name=%q vault=%q", azureSource.name, azureSource.vaultURL)
+				}
+				return
 			}
-			if awsSource.name != test.wantName {
-				t.Fatalf("expected secret name %q, got %q", test.wantName, awsSource.name)
+			awsSource, ok := source.(*awsConfigSource)
+			if !ok || awsSource.name != test.wantName {
+				t.Fatalf("unexpected AWS source: %#v", source)
 			}
 		})
 	}

@@ -23,12 +23,16 @@ export const AwaitAzureDetails = ({
 }: IAwaitAzureDetails) => {
   const vaultName = installId.slice(0, 24)
   const customerSecrets = secrets?.filter((s) => !s.auto_generate)
+  const hasCustomerSecrets = (customerSecrets?.length ?? 0) > 0
   const requiredSecrets = customerSecrets?.filter(
     (s) => s.required || (!s.default && !s.required)
   )
   const overridableSecrets = customerSecrets?.filter(
     (s) => !s.required && !!s.default
   )
+  const grantSecretsPermissionCmd = `az role assignment create --assignee "$(az ad signed-in-user show --query id -o tsv)" --role "Key Vault Secrets Officer" --scope "$(az keyvault show --name ${vaultName} --resource-group ${installId}-rg --query id -o tsv)"`
+  const auditExportConfigCmd = `export RUNNER_AUDIT_EXPORT_CONFIG="<base64-encoded YAML>"`
+  const createAuditExportSecretCmd = `az keyvault secret set --vault-name ${vaultName} --name runner-audit-export --value "$RUNNER_AUDIT_EXPORT_CONFIG"`
 
   const renderSecretCard = (secret: TAppSecretConfig) => {
     const kvName = secret.name.replaceAll('_', '-')
@@ -104,7 +108,7 @@ export const AwaitAzureDetails = ({
         </Card>
       </div>
 
-      {customerSecrets && customerSecrets.length > 0 && (
+      {hasCustomerSecrets && (
         <div className="flex flex-col gap-4">
           <Text variant="base" weight="strong">
             Create secrets in the Key Vault
@@ -119,12 +123,10 @@ export const AwaitAzureDetails = ({
               <Text>Grant yourself permission to set secrets</Text>
               <ClickToCopyButton
                 className="w-fit self-end"
-                textToCopy={`az role assignment create --assignee "$(az ad signed-in-user show --query id -o tsv)" --role "Key Vault Secrets Officer" --scope "$(az keyvault show --name ${vaultName} --resource-group ${installId}-rg --query id -o tsv)"`}
+                textToCopy={grantSecretsPermissionCmd}
               />
             </span>
-            <Code>{`
-              az role assignment create --assignee "$(az ad signed-in-user show --query id -o tsv)" --role "Key Vault Secrets Officer" --scope "$(az keyvault show --name ${vaultName} --resource-group ${installId}-rg --query id -o tsv)"
-            `}</Code>
+            <Code>{grantSecretsPermissionCmd}</Code>
           </Card>
 
           {requiredSecrets?.map(renderSecretCard)}
@@ -148,6 +150,69 @@ export const AwaitAzureDetails = ({
           )}
         </div>
       )}
+
+      <Expand
+        id="runner-audit-export"
+        heading={
+          <Text variant="base" weight="strong">
+            Configure runner audit export (optional)
+          </Text>
+        }
+      >
+        <div className="flex flex-col gap-4 p-2">
+          <Text variant="subtext">
+            Store a base64-encoded OTLP exporter configuration in Key Vault to
+            send runner audit logs to an OTLP/HTTP backend. Skip this step to
+            leave audit export disabled.
+          </Text>
+
+          {!hasCustomerSecrets && (
+            <Card>
+              <span className="flex justify-between items-center">
+                <Text>Grant permission to set the audit export secret</Text>
+                <ClickToCopyButton
+                  className="w-fit self-end"
+                  textToCopy={grantSecretsPermissionCmd}
+                />
+              </span>
+              <Code>{grantSecretsPermissionCmd}</Code>
+            </Card>
+          )}
+
+          <Card>
+            <span className="flex justify-between items-center">
+              <Text>Export the audit export configuration</Text>
+              <ClickToCopyButton
+                className="w-fit self-end"
+                textToCopy={auditExportConfigCmd}
+              />
+            </span>
+            <Text variant="subtext">
+              Use the{' '}
+              <Link
+                href="https://docs.nuon.co/guides/export-runner-audit-logs"
+                isExternal
+              >
+                audit export guide
+              </Link>{' '}
+              to build the exporter configuration, then export it as an
+              environment variable.
+            </Text>
+            <Code>{auditExportConfigCmd}</Code>
+          </Card>
+
+          <Card>
+            <span className="flex justify-between items-center">
+              <Text>Create the audit export secret</Text>
+              <ClickToCopyButton
+                className="w-fit self-end"
+                textToCopy={createAuditExportSecretCmd}
+              />
+            </span>
+            <Code>{createAuditExportSecretCmd}</Code>
+          </Card>
+        </div>
+      </Expand>
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
