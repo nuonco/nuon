@@ -4004,6 +4004,7 @@ export interface components {
       var_name?: string;
     };
     "app.ComponentBuild": {
+      app_branch_id?: string;
       app_branch_run_id?: string;
       build_runner_job_id?: string;
       /** @description checksum of our intermediate component config */
@@ -14451,6 +14452,8 @@ export interface operations {
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
+        /** @description filter installs connected to an app branch */
+        app_branch_id?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
