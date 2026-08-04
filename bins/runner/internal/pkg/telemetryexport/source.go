@@ -1,4 +1,4 @@
-package auditexport
+package telemetryexport
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 )
+
+const telemetryExportConfigSecretName = "telemetry-export-config"
 
 type configUpdateState uint8
 

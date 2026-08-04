@@ -1,4 +1,4 @@
-package auditexport
+package telemetryexport
 
 import (
 	"errors"
@@ -88,11 +88,11 @@ func TestConfigSourceResolverSelectsPlatformSource(t *testing.T) {
 		wantVaultURL    string
 		wantGCPSecretID string
 	}{
-		{name: "aws", platform: "aws", installID: "inst-test", wantName: "nuon/inst-test/runner-audit-export"},
-		{name: "aws variant", platform: "aws-eks", installID: "inst-test", wantName: "nuon/inst-test/runner-audit-export"},
-		{name: "azure", platform: "azure", installID: "instabcdefghijklmnopqrstuv", wantName: azureAuditExportSecretName, wantVaultURL: "https://instabcdefghijklmnopqrst.vault.azure.net"},
-		{name: "azure variant", platform: "azure-aks", installID: "inst-test", wantName: azureAuditExportSecretName, wantVaultURL: "https://inst-test.vault.azure.net"},
-		{name: "gcp", platform: "gcp", installID: "inst-test", wantGCPSecretID: "inst-test-runner-audit-export"},
+		{name: "aws", platform: "aws", installID: "inst-test", wantName: "nuon/inst-test/telemetry-export-config"},
+		{name: "aws variant", platform: "aws-eks", installID: "inst-test", wantName: "nuon/inst-test/telemetry-export-config"},
+		{name: "azure", platform: "azure", installID: "instabcdefghijklmnopqrstuv", wantName: telemetryExportConfigSecretName, wantVaultURL: "https://instabcdefghijklmnopqrst.vault.azure.net"},
+		{name: "azure variant", platform: "azure-aks", installID: "inst-test", wantName: telemetryExportConfigSecretName, wantVaultURL: "https://inst-test.vault.azure.net"},
+		{name: "gcp", platform: "gcp", installID: "inst-test", wantGCPSecretID: "inst-test-telemetry-export-config"},
 		{name: "unsupported gcp variant", platform: "gcp-gke", installID: "inst-test"},
 		{name: "unsupported platform", platform: "local", installID: "inst-test"},
 		{name: "missing install", platform: "aws"},
