@@ -79,26 +79,29 @@ func TestNewAWSConfigUpdateClassifiesResults(t *testing.T) {
 }
 
 func TestConfigSourceResolverSelectsPlatformSource(t *testing.T) {
-	resolver := newConfigSourceResolver(awsFactory{}, azureFactory{})
+	resolver := newConfigSourceResolver(awsFactory{}, azureFactory{}, gcpFactory{})
 	tests := []struct {
-		name         string
-		platform     string
-		installID    string
-		wantName     string
-		wantVaultURL string
+		name            string
+		platform        string
+		installID       string
+		wantName        string
+		wantVaultURL    string
+		wantGCPSecretID string
 	}{
 		{name: "aws", platform: "aws", installID: "inst-test", wantName: "nuon/inst-test/runner-audit-export"},
 		{name: "aws variant", platform: "aws-eks", installID: "inst-test", wantName: "nuon/inst-test/runner-audit-export"},
 		{name: "azure", platform: "azure", installID: "instabcdefghijklmnopqrstuv", wantName: azureAuditExportSecretName, wantVaultURL: "https://instabcdefghijklmnopqrst.vault.azure.net"},
 		{name: "azure variant", platform: "azure-aks", installID: "inst-test", wantName: azureAuditExportSecretName, wantVaultURL: "https://inst-test.vault.azure.net"},
-		{name: "unsupported platform", platform: "gcp", installID: "inst-test"},
+		{name: "gcp", platform: "gcp", installID: "inst-test", wantGCPSecretID: "inst-test-runner-audit-export"},
+		{name: "unsupported gcp variant", platform: "gcp-gke", installID: "inst-test"},
+		{name: "unsupported platform", platform: "local", installID: "inst-test"},
 		{name: "missing install", platform: "aws"},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			source := resolver.Resolve(test.platform, test.installID)
-			if test.wantName == "" {
+			if test.wantName == "" && test.wantGCPSecretID == "" {
 				if source != nil {
 					t.Fatal("expected no configuration source")
 				}
@@ -111,6 +114,16 @@ func TestConfigSourceResolverSelectsPlatformSource(t *testing.T) {
 				}
 				if azureSource.name != test.wantName || azureSource.vaultURL != test.wantVaultURL {
 					t.Fatalf("unexpected Azure source: name=%q vault=%q", azureSource.name, azureSource.vaultURL)
+				}
+				return
+			}
+			if test.wantGCPSecretID != "" {
+				gcpSource, ok := source.(*gcpConfigSource)
+				if !ok {
+					t.Fatalf("expected GCP configuration source, got %T", source)
+				}
+				if gcpSource.secretID != test.wantGCPSecretID {
+					t.Fatalf("expected GCP secret ID %q, got %q", test.wantGCPSecretID, gcpSource.secretID)
 				}
 				return
 			}
