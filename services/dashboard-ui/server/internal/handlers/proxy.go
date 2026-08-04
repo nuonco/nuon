@@ -54,6 +54,11 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 
 	temporalProxy := h.newTemporalProxy(h.cfg.TemporalUIUrl)
 
+	// kafbat runs with SERVER_SERVLET_CONTEXT_PATH=/admin/kafka, so it already
+	// emits every asset and API URL under that prefix — nothing to strip and
+	// nothing to rewrite.
+	kafkaUIProxy := h.newPassthroughProxy(h.cfg.KafkaUIUrl)
+
 	e.GET("/public/swagger/*path", gin.WrapH(publicSwaggerProxy))
 
 	authed := e.Group("/", h.requireAuth())
@@ -81,6 +86,7 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 	nuonOnly.GET("/admin/swagger/*path", gin.WrapH(adminSwaggerProxy))
 	nuonOnly.Any("/admin/temporal/*path", gin.WrapH(temporalProxy))
 	nuonOnly.GET("/_app/*path", gin.WrapH(temporalProxy))
+	nuonOnly.Any("/admin/kafka/*path", gin.WrapH(kafkaUIProxy))
 	nuonOnly.Any("/admin/v1/*path", gin.WrapH(adminAPIProxy))
 	nuonOnly.Any("/admin/dashboard/*path", gin.WrapH(adminDashboardProxy))
 
@@ -97,6 +103,32 @@ func (h *ProxyHandler) newProxy(upstreamBase, stripPrefix, addPrefix string) *ht
 			req.URL.Path = addPrefix + path
 			req.Host = target.Host
 			req.Header.Del("Accept-Encoding")
+		},
+		ErrorLog: zap.NewStdLog(h.l),
+	}
+}
+
+// newPassthroughProxy forwards a request to an upstream that already serves under
+// the same path the BFF exposes it at, so there is no prefix to rewrite and no
+// body to touch.
+//
+// Two differences from newProxy, both because nothing here reads the response
+// body: Accept-Encoding survives, so the upstream's gzip reaches the browser
+// instead of us pulling multi-MB bundles down uncompressed; and leaving the body
+// alone lets ReverseProxy flush text/event-stream immediately, which a
+// ModifyResponse would buffer.
+//
+// The session cookie is dropped: the upstream is authenticated by being
+// unreachable except through this proxy, so handing it a bearer-equivalent token
+// only risks it landing in that service's access logs.
+func (h *ProxyHandler) newPassthroughProxy(upstreamBase string) *httputil.ReverseProxy {
+	target, _ := url.Parse(upstreamBase)
+	return &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL.Scheme = target.Scheme
+			req.URL.Host = target.Host
+			req.Host = target.Host
+			req.Header.Del("Cookie")
 		},
 		ErrorLog: zap.NewStdLog(h.l),
 	}
