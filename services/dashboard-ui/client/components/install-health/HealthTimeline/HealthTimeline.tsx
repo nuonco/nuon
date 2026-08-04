@@ -150,6 +150,10 @@ function HealthBar({ day }: { day: THealthTimelineDay }) {
   return (
     <Tooltip
       position="top"
+      // The tooltip wrapper span is the actual flex child of the bar row, so
+      // it must grow — `grow` on the inner div alone leaves the bars at their
+      // 6px base width instead of filling the container.
+      className="flex grow min-w-0"
       tipContentClassName="!whitespace-normal !w-auto !p-2"
       tipContent={<DayTooltipContent day={day} />}
     >
