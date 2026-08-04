@@ -69,3 +69,52 @@ func TestNextComponentHealthVerdict(t *testing.T) {
 		})
 	}
 }
+
+// Pins the gap a live install exposed: an ingress with no class never gets a
+// load balancer address, so it reports progressing forever — and because
+// progressing never alerts, 15 hours passed with nobody told.
+func TestEscalateStuckProgressing(t *testing.T) {
+	now := time.Now()
+	progressingSince := func(d time.Duration) *app.InstallComponent {
+		return &app.InstallComponent{
+			HealthStatus: app.InstallComponentHealthStatusProgressing,
+			HealthStatusV2: app.CompositeStatus{
+				Status:      app.Status(app.InstallComponentHealthStatusProgressing),
+				CreatedAtTS: now.Add(-d).Unix(),
+			},
+		}
+	}
+
+	t.Run("a slow rollout is left alone", func(t *testing.T) {
+		got := escalateStuckProgressing(app.InstallComponentHealthStatusProgressing,
+			progressingSince(10*time.Minute), now)
+		assert.Equal(t, app.InstallComponentHealthStatusProgressing, got)
+	})
+
+	t.Run("stuck past the limit becomes degraded", func(t *testing.T) {
+		got := escalateStuckProgressing(app.InstallComponentHealthStatusProgressing,
+			progressingSince(16*time.Hour), now)
+		assert.Equal(t, app.InstallComponentHealthStatusDegraded, got)
+	})
+
+	t.Run("a freshly progressing component has no elapsed time to judge", func(t *testing.T) {
+		fresh := &app.InstallComponent{
+			HealthStatus:   app.InstallComponentHealthStatusHealthy,
+			HealthStatusV2: app.CompositeStatus{CreatedAtTS: now.Add(-16 * time.Hour).Unix()},
+		}
+		got := escalateStuckProgressing(app.InstallComponentHealthStatusProgressing, fresh, now)
+		assert.Equal(t, app.InstallComponentHealthStatusProgressing, got,
+			"the old timestamp belongs to the previous verdict, not this one")
+	})
+
+	t.Run("other verdicts pass through untouched", func(t *testing.T) {
+		for _, v := range []app.InstallComponentHealthStatus{
+			app.InstallComponentHealthStatusHealthy,
+			app.InstallComponentHealthStatusUnknown,
+			app.InstallComponentHealthStatusUnhealthy,
+			app.InstallComponentHealthStatusNotApplicable,
+		} {
+			assert.Equal(t, v, escalateStuckProgressing(v, progressingSince(16*time.Hour), now))
+		}
+	})
+}
