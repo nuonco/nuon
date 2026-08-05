@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -25,6 +27,19 @@ type cli struct {
 	ctx             context.Context
 	cfg             *config.Config
 	analyticsClient analytics.Writer
+
+	currentUserOnce sync.Once
+	currentUser     *models.AppAccount
+	currentUserErr  error
+}
+
+// Cached per process: the response carries every role the account holds, and
+// several call sites need it.
+func (c *cli) getCurrentUser(ctx context.Context) (*models.AppAccount, error) {
+	c.currentUserOnce.Do(func() {
+		c.currentUser, c.currentUserErr = c.apiClient.GetCurrentUser(ctx)
+	})
+	return c.currentUser, c.currentUserErr
 }
 
 func NewCLI() (*cli, error) {
