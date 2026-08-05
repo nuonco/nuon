@@ -6,7 +6,9 @@
       "date": "August 5, 2026",
       "description": "Connect a git branch to your app and roll changes out across your customer fleet through ordered deployment groups, with a plan and an approval at every step.",
       "ctaText": "Learn more",
-      "cteUrl": "https://docs.nuon.co/updates/040-app-branches",
+      "ctaUrl": "https://docs.nuon.co/updates/040-app-branches",
+      "image": "/images/announcements/nuon-app-branches-light.png",
+      "imageDark": "/images/announcements/nuon-app-branches-dark.png",
       "dismissible": false
     },
     {
