@@ -1,5 +1,5 @@
 export default {
-  title: 'InstallResources/InstallResourceDetailPanel',
+  title: 'Install Resources/InstallResourceDetailPanel',
 }
 
 import { PanelStory } from '@/components/__stories__/helpers'
