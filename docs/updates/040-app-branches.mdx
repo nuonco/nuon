@@ -1,0 +1,104 @@
+---
+title: 040 - App Branches
+description: Connect a git branch to your app and roll changes out across your customer fleet through ordered deployment groups. Plus a read-only role and a cleaner installs CLI.
+boost: 0.3
+---
+
+_August 5, 2026_
+
+## App Branches
+
+[App branches](/concepts/app-branches) connect one git branch to your app. Push to that branch and Nuon fetches the
+config at that commit, rebuilds what changed, and rolls the new version out across your customer installs, in an
+order you define, with a plan and an approval gate in front of every group.
+
+<div style={{ display: 'flex', justifyContent: 'center', margin: '24px 0' }}>
+  <video
+    src="/images/changelog/040-highlight-reel.mp4"
+    autoPlay
+    loop
+    muted
+    playsInline
+    style={{
+      width: '100%',
+      maxWidth: '820px',
+      borderRadius: '12px'
+    }}
+  />
+</div>
+
+Declare it in a `branch.toml` at the root of your app config:
+
+```toml
+name = "main"
+
+[connected_repo]
+repo      = "acmeco/my-app-config"
+directory = "."
+branch    = "main"
+
+[[install_groups]]
+name  = "staging"
+order = 1
+[install_groups.label_selector]
+env = "staging"
+
+[[install_groups]]
+name  = "production"
+order = 2
+[install_groups.label_selector]
+env = "prod"
+```
+
+A deployment group is a named subset of installs that updates as a unit (membership by label selector or explicit
+list), and groups run in the order you declare. Each group plans first, then waits for your approval, and any group
+can be skipped. Open a pull request against the tracked branch and Nuon posts a plan-only preview of the config diff
+on the pull request itself. And every config change to an install is now recorded as a version, with diffs between
+any two, and any earlier version can be applied again.
+
+<div style={{
+  backgroundImage: 'url(/images/changelog/038-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '48px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/040-deployment-plan-editor.png"
+    alt="The deployment plan editor in the Nuon dashboard: a 'GA customers' group flowing into a 'Sensitive Customers' group, each with its installs, max parallel setting, and manual or label-based membership"
+    style={{
+      width: '100%',
+      maxWidth: '820px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+<Tip>
+  Start with the [walkthrough](/get-started/app-branches-walkthrough), which adds a branch to the
+  [`eks-simple`](https://github.com/nuonco/example-app-configs/tree/main/eks-simple) example app end to end. The
+  [guide](/guides/app-branches) covers day-to-day operation, [`branch.toml`](/config-ref/branch) is fully documented
+  in the config reference, and the new `nuon apps branches` and `nuon installs labels` commands are in the
+  [CLI reference](/cli-commands).
+</Tip>
+
+---
+
+## Other updates in this release
+
+### Read-only role
+
+- A new `org_read_only` role grants visibility into an org's apps, installs, and workflows without the ability to
+  change anything.
+- Assign it to members and service accounts when someone needs to observe a fleet, not operate it.
+- Set and update org member roles from the dashboard or the CLI: `nuon roles list`, `nuon orgs update-user-role`.
+
+### A more consistent installs CLI
+
+- `nuon installs` is reorganized into a consistent sub-command hierarchy: related commands nest under
+  `nuon installs components`, `nuon installs actions`, and friends instead of compound top-level names.
+- Command output is more predictable across the group.
