@@ -66,10 +66,11 @@ func TestCanPerformScopedObjects(t *testing.T) {
 
 		assert.NoError(t, set.CanPerform(scoped, PermissionCreate))
 		assert.NoError(t, set.CanPerform(org, PermissionRead))
+		assert.Error(t, set.CanPerform(scoped, PermissionDelete))
 		assert.Error(t, set.CanPerform(org, PermissionCreate))
 	})
 
-	t.Run("specific scoped grant is not widened by org grant lookup order", func(t *testing.T) {
+	t.Run("org-wide all remains additive with a scoped grant", func(t *testing.T) {
 		set := Set(NewSet())
 		require.NoError(t, set.Add(map[string]*string{
 			org:    strPtr(string(PermissionAll)),
@@ -77,7 +78,17 @@ func TestCanPerformScopedObjects(t *testing.T) {
 		}))
 
 		assert.NoError(t, set.CanPerform(scoped, PermissionCreate))
-		assert.Error(t, set.CanPerform(scoped, PermissionDelete))
+		assert.NoError(t, set.CanPerform(scoped, PermissionDelete))
+	})
+
+	t.Run("wildcard all remains additive with a scoped grant", func(t *testing.T) {
+		set := Set(NewSet())
+		require.NoError(t, set.Add(map[string]*string{
+			"*":    strPtr(string(PermissionAll)),
+			scoped: strPtr(string(PermissionCreate)),
+		}))
+
+		assert.NoError(t, set.CanPerform(scoped, PermissionDelete))
 	})
 
 	t.Run("no grants at all is denied", func(t *testing.T) {
