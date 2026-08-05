@@ -14,6 +14,7 @@ import (
 var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	// please maintain a lexographical order here
 	"action":              ActionConfigSchema,
+	"branch":              AppBranchConfigSchema,
 	"break-glass":         BreakGlassConfigSchema,
 	"container-image":     ContainerImageConfigSchema,
 	"docker-build":        DockerBuildConfigSchema,
@@ -90,6 +91,19 @@ func ActionConfigSchema() (*jsonschema.Schema, error) {
 	}
 
 	return r.Reflect(config.ActionConfig{}), nil
+}
+
+func AppBranchConfigSchema() (*jsonschema.Schema, error) {
+	if err := ValidateJSONSchemaExtend(config.AppBranchConfig{}); err != nil {
+		return nil, errors.Wrap(err, "AppBranchConfig validation failed")
+	}
+
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.AppBranchConfig{}), nil
 }
 
 func AppConfigSchema() (*jsonschema.Schema, error) {

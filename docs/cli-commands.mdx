@@ -35,14 +35,32 @@ The commands you'll use most. Run `nuon --help` (or `nuon <command> --help`) for
 | `nuon apps list` | List your apps. |
 | `nuon apps select` | Set your active app. |
 
+## App branches
+
+These subcommands take the app **ID** (`app...`) — get it from `nuon apps list`. Running `nuon apps select` with no
+flags and picking from the list stores the ID, which lets you omit `--app-id` from `trigger` and `runs`.
+
+| Command | What it does |
+|---------|--------------|
+| `nuon sync --branch <name>` | Sync the current directory, then trigger a run on that [app branch](/guides/app-branches). Add `--preview` for a plan-only run, or use `--app-branch` to pick the branch interactively. These flags are on `nuon sync`, not `nuon apps sync`. |
+| `nuon apps branches list --app-id <app-id>` | List an app's branches. Alias: `nuon apps br`. |
+| `nuon apps branches get --app-id <app-id> --branch-id <branch-id>` | Show a branch and its deployment groups. |
+| `nuon apps branches create --app-id <app-id> --name <name>` | Create a branch without syncing a config file. |
+| `nuon apps branches trigger --branch-id <branch>` | Trigger a branch run against the selected app. `--preview` plans every group but applies nothing, `--force` rebuilds every component. |
+| `nuon apps branches runs --branch-id <branch>` | List the selected app's branch runs and open one in the workflow TUI. |
+| `nuon apps branches delete --app-id <app-id> --branch-id <branch> --confirm` | Delete a branch. |
+
 ## Installs
 
 | Command | What it does |
 |---------|--------------|
 | `nuon installs create` | Create an install of the selected app. |
-| `nuon installs list` | List installs. |
+| `nuon installs list` | List installs. Add `--labels k=v` (repeatable) to filter; all labels must match. |
 | `nuon installs get` | Show an install's details. |
-| `nuon installs deploy-components` | Deploy all components to an install. |
+| `nuon installs labels set --install-id <install> k=v ...` | Set labels on an install. Deployment group [label selectors](/guides/app-branches#selecting-installs-for-a-group) match on these. |
+| `nuon installs labels list --install-id <install>` | List an install's labels. |
+| `nuon installs labels unset --install-id <install> <key> ...` | Remove labels from an install. |
+| `nuon installs components deploy-all` | Deploy all components to an install. |
 | `nuon installs outputs` | View an install's outputs. |
 
 ## Operate
