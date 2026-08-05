@@ -20,6 +20,7 @@ func Execute() {
 	c.registerWorker()
 	c.registerConsumer()
 	c.registerStartup()
+	c.registerPreflight()
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(2)
