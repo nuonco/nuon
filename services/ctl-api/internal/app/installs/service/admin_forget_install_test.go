@@ -20,7 +20,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/forgotten"
+	forgetinstall "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/forget_install"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -149,7 +149,7 @@ func (s *AdminForgetInstallTestSuite) TestAdminForgetInstall() {
 				// Verify signal was sent
 				sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), sigs, 1)
-				assert.Equal(s.T(), forgotten.SignalType, sigs[0].Type)
+				assert.Equal(s.T(), forgetinstall.SignalType, sigs[0].Type)
 			},
 		},
 		{
