@@ -24,10 +24,21 @@ type Signal struct {
 
 var _ signal.Signal = (*Signal)(nil)
 var _ signal.SignalWithStepContext = (*Signal)(nil)
+var _ signal.SignalWithEmptyGroupCheck = (*Signal)(nil)
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.StepID = stepID
 	s.FlowID = flowID
+}
+
+// IsEmptyInstallGroup reports whether this group resolves to zero installs;
+// empty groups are auto-skipped (see checks/emptygroup).
+func (s *Signal) IsEmptyInstallGroup(ctx workflow.Context) (bool, error) {
+	installIDs, _, err := s.resolveInstallIDs(ctx)
+	if err != nil {
+		return false, err
+	}
+	return len(installIDs) == 0, nil
 }
 
 func (s *Signal) Type() signal.SignalType {
