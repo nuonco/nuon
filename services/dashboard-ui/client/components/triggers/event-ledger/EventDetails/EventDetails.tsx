@@ -439,9 +439,9 @@ export const EventDetails = ({
           <LabeledValue label="Trigger">
             {event?.trigger_name || event?.trigger_id || 'Unknown'}
           </LabeledValue>
-          <LabeledValue label="External ID">
-            <ClickToCopy>
-              <Text family="mono" variant="subtext">
+          <LabeledValue label="External ID" className="min-w-0">
+            <ClickToCopy className="max-w-full">
+              <Text family="mono" variant="subtext" className="truncate">
                 {event?.external_id || '—'}
               </Text>
             </ClickToCopy>
