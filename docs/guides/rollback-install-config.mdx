@@ -1,0 +1,72 @@
+---
+title: "Roll back an install"
+description: "Re-apply a previous app config version to one install, or to a whole deployment group, with a plan in front of it."
+icon: "clock-rotate-left"
+keywords: ["rollback", "roll back install", "revert config", "previous version", "app config version", "config version history", "undo deploy", "re-apply version", "recover from bad deploy", "version diff"]
+---
+
+Every config change to an install is recorded as an app config version, and any earlier version can be applied again.
+That is the recovery path when a rollout, or a mistyped input, turns out badly.
+
+You will need an API token (create one in the dashboard's org settings), your org ID, and the install's ID from
+`nuon installs list`.
+
+## Roll back one install
+
+<Steps>
+  <Step title="List the install's versions">
+    ```sh
+    curl -H "Authorization: Bearer $NUON_API_TOKEN" \
+      -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+      "https://api.nuon.co/v1/installs/$INSTALL_ID/app-config-versions"
+    ```
+
+    Each entry carries the app config it pinned. The install's **Versions** view in the dashboard shows the same
+    history.
+  </Step>
+  <Step title="Confirm what changed">
+    ```sh
+    curl -H "Authorization: Bearer $NUON_API_TOKEN" \
+      -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+      "https://api.nuon.co/v1/installs/$INSTALL_ID/app-config-versions/$VERSION_ID/diff"
+    ```
+  </Step>
+  <Step title="Apply the older version">
+    ```sh
+    curl -X POST \
+      -H "Authorization: Bearer $NUON_API_TOKEN" \
+      -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+      -H "Content-Type: application/json" \
+      -d '{"app_config_id": "'"$OLD_APP_CONFIG_ID"'"}' \
+      "https://api.nuon.co/v1/installs/$INSTALL_ID/app-config-updates"
+    ```
+
+    Send `{"plan_only": true}` alongside it first if you want to see the plan without applying.
+  </Step>
+</Steps>
+
+## Roll back a deployment group
+
+To move a whole deployment group back rather than one install, trigger a branch run against the older app config and
+skip the build step, since the artifacts for that config already exist:
+
+```sh
+curl -X POST \
+  -H "Authorization: Bearer $NUON_API_TOKEN" \
+  -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+  -H "Content-Type: application/json" \
+  -d '{"app_config_id": "'"$OLD_APP_CONFIG_ID"'", "skip_builds": true}' \
+  "https://api.nuon.co/v1/apps/$APP_ID/branches/$APP_BRANCH_ID/runs"
+```
+
+The run still plans each group and still waits for approval, so you see the reverse diff before it is applied.
+
+<Note>
+  This is a pattern built from the version history and the branch run API, not a one-click button. Nothing about it is
+  automatic: you choose the version and you approve the plan.
+</Note>
+
+## See also
+
+- [App branches](/concepts/app-branches) — how runs, groups, and version history fit together.
+- [Configure app branches](/guides/app-branches) — set up the branch this recovery path builds on.
