@@ -43,6 +43,9 @@ type SlackInstallation struct {
 	AppID     string `json:"app_id,omitzero" temporaljson:"app_id,omitzero,omitempty"`
 	Scope     string `json:"scope,omitzero" temporaljson:"scope,omitzero,omitempty"`
 
+	// Only the owner org may list channels / create subscriptions; other verified links deliver only.
+	OwnerOrgID string `json:"owner_org_id,omitzero" gorm:"index" temporaljson:"owner_org_id,omitzero,omitempty"`
+
 	Status SlackInstallationStatus `json:"status,omitzero" gorm:"notnull;default:'active'" temporaljson:"status,omitzero,omitempty"`
 
 	// BotAccessToken is stored PLAINTEXT for now (mirrors app.Webhook.WebhookSecret).

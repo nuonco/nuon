@@ -41,22 +41,15 @@ func (s *service) ListInstallations(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installs)
 }
 
-// listOrgInstallations returns the active SlackInstallations whose TeamID is
-// referenced by a verified SlackOrgLink belonging to orgID. We do the join in
-// SQL to avoid an N+1 round-trip per link.
+// Gated by ownership, not a verified link: the auto-link gives non-owner orgs links they must not act on.
 func (s *service) listOrgInstallations(ctx context.Context, orgID string) ([]app.SlackInstallation, error) {
 	var installs []app.SlackInstallation
 
-	linkTable := app.SlackOrgLink{}.TableName()
 	res := s.db.WithContext(ctx).
-		Joins(
-			"JOIN "+linkTable+" ON "+linkTable+".team_id = slack_installations.team_id"+
-				" AND "+linkTable+".org_id = ?"+
-				" AND "+linkTable+".status = ?"+
-				" AND "+linkTable+".deleted_at = 0",
-			orgID, app.SlackOrgLinkStatusVerified,
-		).
-		Where(app.SlackInstallation{Status: app.SlackInstallationStatusActive}).
+		Where(app.SlackInstallation{
+			OwnerOrgID: orgID,
+			Status:     app.SlackInstallationStatusActive,
+		}).
 		Order("slack_installations.created_at DESC").
 		Find(&installs)
 	if res.Error != nil {

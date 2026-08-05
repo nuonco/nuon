@@ -92,26 +92,14 @@ func (s *service) ListChannels(ctx *gin.Context) {
 	})
 }
 
-// getInstallationForOrg loads a SlackInstallation by ID and verifies it is
-// reachable from the calling org via a verified SlackOrgLink. ABAC at the DB
-// query level — no row returned means either the install doesn't exist or
-// the org isn't authorized to see it. We don't distinguish the two so we
-// don't leak existence of installations across orgs.
+// Only the owner org may enumerate a workspace's channels; 404 hides existence from non-owners.
 func (s *service) getInstallationForOrg(ctx context.Context, orgID, installationID string) (*app.SlackInstallation, error) {
-	linkTable := app.SlackOrgLink{}.TableName()
-
 	var install app.SlackInstallation
 	res := s.db.WithContext(ctx).
-		Joins(
-			"JOIN "+linkTable+" ON "+linkTable+".team_id = slack_installations.team_id"+
-				" AND "+linkTable+".org_id = ?"+
-				" AND "+linkTable+".status = ?"+
-				" AND "+linkTable+".deleted_at = 0",
-			orgID, app.SlackOrgLinkStatusVerified,
-		).
 		Where(app.SlackInstallation{
-			ID:     installationID,
-			Status: app.SlackInstallationStatusActive,
+			ID:         installationID,
+			OwnerOrgID: orgID,
+			Status:     app.SlackInstallationStatusActive,
 		}).
 		First(&install)
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {

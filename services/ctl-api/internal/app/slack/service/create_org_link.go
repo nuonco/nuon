@@ -78,10 +78,7 @@ func (s *service) CreateOrgLink(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, link)
 }
 
-// canLinkWorkspace reports whether the calling account may bind the given
-// Slack installation to an org. Only the account that installed the Nuon app
-// to the workspace qualifies; any looser rule lets a user attach a workspace
-// they don't control using a (non-secret) team_id.
+// canLinkWorkspace reports whether acctID installed the workspace (the only account allowed to bind it).
 func canLinkWorkspace(install app.SlackInstallation, acctID string) bool {
 	return acctID != "" && install.InstalledByAccountID == acctID
 }
@@ -104,13 +101,7 @@ func (s *service) createOrgLink(ctx context.Context, acct *app.Account, orgID, t
 		return nil, res.Error
 	}
 
-	// Authorization: only the account that installed the Nuon app to this
-	// workspace may bind it to an org. Slack team IDs are not secret (every
-	// workspace member can see them), so without this check any authenticated
-	// user could attach an arbitrary workspace to their own org via a guessed
-	// team_id and then enumerate its channels / inject notifications. Return
-	// the same not-found error as a missing installation so callers can't
-	// probe which team_ids have an active installation.
+	// Only the installer may bind the workspace; team_ids aren't secret. Same 404 as missing-install to avoid probing.
 	if !canLinkWorkspace(install, acct.ID) {
 		return nil, stderr.ErrNotFound{Err: fmt.Errorf("no active slack installation for team %q", teamID)}
 	}

@@ -178,6 +178,7 @@ func (s *service) persistSlackInstall(
 				BotAccessToken:         resp.AccessToken,
 				InstalledBySlackUserID: resp.AuthedUser.ID,
 				InstalledByAccountID:   accountID,
+				OwnerOrgID:             orgID,
 			}
 			if err := tx.Create(install).Error; err != nil {
 				return fmt.Errorf("create installation: %w", err)
@@ -197,6 +198,10 @@ func (s *service) persistSlackInstall(
 			existing.InstalledBySlackUserID = resp.AuthedUser.ID
 			existing.InstalledByAccountID = accountID
 			existing.DeletedAt = 0
+			// Set only if unset so a re-install can't move ownership orgs.
+			if existing.OwnerOrgID == "" {
+				existing.OwnerOrgID = orgID
+			}
 			if err := tx.Unscoped().Save(&existing).Error; err != nil {
 				return fmt.Errorf("update installation: %w", err)
 			}

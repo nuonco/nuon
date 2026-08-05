@@ -105,6 +105,11 @@ func (s *service) CreateChannelSubscription(ctx *gin.Context) {
 // keyed on (team, channel, link, match_canonical). Re-creating with an
 // identical Match upserts in place rather than 23505-ing — same semantics
 // the modal relies on.
+// ownsWorkspace reports whether orgID installed the workspace (the only org allowed to read/subscribe it).
+func ownsWorkspace(install app.SlackInstallation, orgID string) bool {
+	return orgID != "" && install.OwnerOrgID == orgID
+}
+
 func (s *service) createChannelSubscription(
 	ctx context.Context,
 	acct *app.Account,
@@ -129,6 +134,23 @@ func (s *service) createChannelSubscription(
 			}
 		}
 		return nil, fmt.Errorf("lookup slack org link: %w", err)
+	}
+
+	// Only the workspace owner may subscribe; a verified link alone isn't enough (auto-link gives non-owners links).
+	var install app.SlackInstallation
+	if err := s.db.WithContext(ctx).
+		Where(app.SlackInstallation{TeamID: link.TeamID, Status: app.SlackInstallationStatusActive}).
+		First(&install).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, stderr.ErrNotFound{Err: fmt.Errorf("no active slack installation for link %q", req.OrgLinkID)}
+		}
+		return nil, fmt.Errorf("lookup slack installation: %w", err)
+	}
+	if !ownsWorkspace(install, orgID) {
+		return nil, stderr.ErrNotFound{
+			Err:         fmt.Errorf("org %q does not own the workspace for link %q", orgID, req.OrgLinkID),
+			Description: "Slack org link not found",
+		}
 	}
 
 	// Default Interests to AllEvents=true so a bare {org_link_id, channel_id}
