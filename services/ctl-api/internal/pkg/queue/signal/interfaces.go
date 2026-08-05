@@ -128,6 +128,13 @@ type SignalWithPolicyEvaluation interface {
 	RequiresPolicyEvaluation() bool
 }
 
+// SignalWithEmptyGroupCheck is implemented by approval-type signals whose install
+// group can resolve to zero installs. Empty groups are auto-skipped instead of
+// parking in AwaitingApproval with no approval to grant.
+type SignalWithEmptyGroupCheck interface {
+	IsEmptyInstallGroup(ctx workflow.Context) (bool, error)
+}
+
 // SignalWithSkipNoops is implemented by plan signals that can control whether
 // noop plans are auto-skipped. When SkipNoops returns false, noop plans proceed
 // through the normal approval flow instead of being auto-skipped.
