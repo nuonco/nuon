@@ -135,6 +135,12 @@ All labels passed to `--labels` must match, so this is the same AND semantics a 
   raise `--limit` past your install count or the output will under-report matches without saying so.
 </Warning>
 
+<Tip>
+  Prefer keeping labels in install config files (a `[labels]` table, one file per install) so they are reviewed like
+  the rest of your config, and apply them with `nuon installs sync -d installs/`. To start from an install that
+  already exists, export it: `nuon installs generate-config -i <install-id> > installs/<name>.toml`.
+</Tip>
+
 
 ## Sync the branch config
 
