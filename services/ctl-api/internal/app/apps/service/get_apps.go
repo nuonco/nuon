@@ -57,7 +57,11 @@ func (s *service) getApps(ctx *gin.Context, orgID, q string) ([]*app.App, error)
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(scopes.WithOverrideTable("app_configs_latest_view_v1"))
+			// readme and state are large blobs no list consumer reads. version must
+			// be omitted too: Omit switches to an explicit column list, and Version
+			// has no backing column.
+			return db.Omit("readme", "state", "version").
+				Scopes(scopes.WithOverrideTable("app_configs_latest_view_v1"))
 		}).
 		Preload("AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithOverrideTable("app_runner_configs_latest_view_v1"))
