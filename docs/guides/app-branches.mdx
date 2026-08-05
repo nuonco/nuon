@@ -57,10 +57,10 @@ Three things to get right:
 - **Group order.** `order` decides which group deploys first, lowest first. List your groups in the order you want
   them to run.
 
-<Warning>
-  If you leave out both `[connected_repo]` and `[public_repo]`, the branch is still created but its deployment groups
-  are silently dropped. Always include a repo block.
-</Warning>
+<Note>
+  Every branch needs one of `[connected_repo]` or `[public_repo]` — the repo block is what the deployment groups sync
+  against.
+</Note>
 
 Every field is documented in the [branch config reference](/config-ref/branch).
 
@@ -97,8 +97,8 @@ install_ids = ["inlbmky2fz8qvrxp3d7twahjc9"]
 ```
 
 <Tip>
-  Prefer `label_selector`. `install_names` are resolved to IDs at sync time and an unknown name fails the whole sync,
-  so renaming an install detaches it from its group until you sync again. Label selectors re-evaluate on every run.
+  Prefer `label_selector`: it re-evaluates on every run, so group membership follows your labels with no re-sync.
+  Explicit `install_names` are resolved to IDs once, at sync time.
 </Tip>
 
 ### One branch or several
@@ -130,12 +130,8 @@ You can also confirm which installs a selector will match before you run anythin
 nuon installs list --labels env=prod --labels tier=enterprise --limit 200
 ```
 
-All labels passed to `--labels` must match, so this is the same AND semantics a group's `label_selector` uses.
-
-<Warning>
-  `--labels` filters the page of installs the CLI fetched, and `--limit` defaults to 20. On a fleet larger than that,
-  raise `--limit` past your install count or the output will under-report matches without saying so.
-</Warning>
+All labels passed to `--labels` must match, so this is the same AND semantics a group's `label_selector` uses. On a
+fleet of more than 20 installs, pass `--limit` at least your install count to list every match.
 
 <Tip>
   Prefer keeping labels in install config files (a `[labels]` table, one file per install) so they are reviewed like
@@ -166,15 +162,10 @@ nuon apps branches get --app-id <your-app-id> --branch-id <branch-id>
 `list` prints each branch's name and ID; `get` takes the branch ID and returns the full branch, deployment groups
 included.
 
-<Warning>
-  The `nuon apps branches` subcommands take the app **ID** (`app...`), not the app name. Pass a name and `list` returns
-  an empty result, and `trigger`, `runs`, and `delete` report that the branch was not found. `create` silently
-  succeeds and creates a branch that neither `list` nor the dashboard will ever show. Get the ID from `nuon apps list`.
-
-  You can also select the app once and then omit `--app-id` wherever it is optional, but run `nuon apps select` with
-  **no flags** and pick from the list, which stores the app's ID. `nuon apps select --app <name>` succeeds and stores
-  the name exactly as you typed it, which leaves the branch commands failing the same way.
-</Warning>
+<Note>
+  The `nuon apps branches` subcommands take the app **ID** (`app...`) — get it from `nuon apps list`. Or select the
+  app once with `nuon apps select` (no flags, pick from the list) and omit `--app-id` wherever it is optional.
+</Note>
 
 ## Trigger a run
 
@@ -227,12 +218,11 @@ a webhook.
   group steps at all.
 </Note>
 
-<Warning>
-  `nuon sync --branch` runs against your **local, uncommitted files**, not the tracked branch's commit. It is the
-  right tool for iterating on a change; it is not a substitute for pushing. Note also that `--branch`, `--app-branch`,
-  and `--preview` exist on `nuon sync`, not on `nuon apps sync`, and that bare `nuon sync --preview`, without
-  `--branch` or `--app-branch`, ignores the flag and performs a real sync.
-</Warning>
+<Note>
+  `nuon sync --branch` runs against your **local, uncommitted files**, not the tracked branch's commit — the right
+  tool for iterating on a change before pushing it. The `--branch`, `--app-branch`, and `--preview` flags live on
+  `nuon sync` (not `nuon apps sync`), and `--preview` takes effect alongside `--branch` or `--app-branch`.
+</Note>
 
 Because `nuon sync --branch` hands Nuon a config it already built locally, that run's first two steps appear as
 `fetch commit (skipped)` and `fetch app config (skipped)`. A run started from a push or from
@@ -282,11 +272,10 @@ What previews *do* need is a **GitHub App connection in your org for the reposit
 is an org-level setting, not a property of the branch config: a `[public_repo]` branch pointing at `acmeco/my-app` gets
 previews just like a `[connected_repo]` one, provided your org has connected `acmeco`.
 
-<Warning>
-  When no matching connection exists, previews fail **silently**. The run executes and shows up in the dashboard, but
-  the pull request comment and the commit status are skipped and nothing reports an error. If previews never appear,
-  check the GitHub App connection for the repository's owner, not your `branch.toml`.
-</Warning>
+<Note>
+  Previews start posting as soon as your org has the GitHub App connection for the repository's owner. If they have
+  not appeared yet, that connection is the thing to check — not your `branch.toml`.
+</Note>
 
 To reproduce a preview locally before opening the pull request:
 

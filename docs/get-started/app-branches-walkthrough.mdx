@@ -11,8 +11,8 @@ keywords: ["app branches walkthrough", "eks-simple", "branch.toml example", "fir
 </Note>
 
 [App branches](/concepts/app-branches) turn a change to your app config into a single, reviewable rollout across your
-installs. `eks-simple` already ships its branch config — nothing needs writing. This walkthrough syncs it into your
-org and takes a change through it end to end: preview the diff, plan each deployment group, approve, deploy.
+installs. `eks-simple` already ships its branch config. This walkthrough syncs it into your org and takes a change
+through it end to end: preview the diff, plan each deployment group, approve, deploy.
 
 ## Prerequisites
 
@@ -114,8 +114,7 @@ domain = "nuon.run"
 sub_domain = "whoami"
 ```
 
-Either route sets the same label — but install config files are **not** applied by `nuon apps sync` (it prints a
-deprecation notice and skips them). They are applied with their own command:
+Either route sets the same label. Install config files have their own sync command, separate from `nuon apps sync`:
 
 ```sh
 nuon installs sync -a <your-app-id> -d installs/
@@ -141,14 +140,11 @@ nuon apps list                   # prints each app's name and ID
 nuon apps branches list --app-id <your-app-id>
 ```
 
-<Warning>
-	`nuon apps branches list` needs the app **ID** (`app...`), not the app name. A name returns an empty result rather
-	than an error. Copy the ID for `eks-simple` out of `nuon apps list`.
-
-	Run `nuon apps select` with **no flags** and choose from the list: that stores the app's ID, which is what lets the
-	rest of this walkthrough drop `--app-id` from `trigger` and `runs`. Do not use `nuon apps select --app eks-simple`:
-	it succeeds, but stores the name, and the branch commands then fail as though the branch did not exist.
-</Warning>
+<Note>
+	Branch commands take the app **ID** (`app...`) — copy it from `nuon apps list`. Selecting the app with
+	`nuon apps select` (no flags, pick from the list) stores it once, which is what lets the rest of this walkthrough
+	drop `--app-id` from `trigger` and `runs`.
+</Note>
 
 You should see one branch, `main`. In the dashboard, the app now has a **Branches** view showing the branch and its
 **Deployment plan**: `stage`, then `production`.

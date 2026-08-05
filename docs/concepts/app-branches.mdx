@@ -162,11 +162,10 @@ must have the Nuon GitHub App connected for the repository's owner. That is sati
 and equally by a `[public_repo]` branch whose owner your org has connected. A public `acmeco/*` repo gets
 previews as long as the org has connected `acmeco`. See [connecting a repository](/guides/vcs).
 
-<Warning>
-  If no such connection exists, the preview run still executes and appears in the dashboard, but the comment and the
-  commit status are skipped **without an error**. When previews go missing, check the GitHub App connection for the
-  repository's owner rather than the branch config.
-</Warning>
+<Note>
+  Previews start posting as soon as the GitHub App connection for the repository's owner is in place. If they have
+  not appeared yet, that connection is the thing to check — not the branch config.
+</Note>
 
 ## Plans, diffs, and who approves
 
