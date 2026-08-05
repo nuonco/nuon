@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
+// Deprecated: superseded by orgs/signals/forget_install; only DeleteInstall still enqueues this.
 const SignalType signal.SignalType = "forgotten"
 
 type Signal struct {
