@@ -63,7 +63,7 @@ touch.
 | --- | --- | --- |
 | `git-run` | A push to the tracked branch | Builds, then plans and deploys each deployment group in order. |
 | `git-preview-run` | Opening or updating a pull request against the tracked branch | Plan only. Builds and reports the config diff, then stops. Never touches an install. |
-| `manual-run` | `nuon apps branches trigger`, the API, the dashboard, or your CI | Same steps as a `git-run`. Add `--preview` and it still plans every group — approvals auto-approve and nothing is applied. |
+| `manual-run` | `nuon apps branches trigger`, the API, the dashboard, or your CI | Same steps as a `git-run`. Add `--preview` and it still plans every group; approvals auto-approve and nothing is applied. |
 
 ```mermaid
 flowchart LR

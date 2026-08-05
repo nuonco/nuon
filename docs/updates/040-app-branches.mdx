@@ -50,8 +50,8 @@ order = 2
 env = "prod"
 ```
 
-A deployment group is a named subset of installs that updates as a unit — membership by label selector or explicit
-list — and groups run in the order you declare. Each group plans first, then waits for your approval, and any group
+A deployment group is a named subset of installs that updates as a unit (membership by label selector or explicit
+list), and groups run in the order you declare. Each group plans first, then waits for your approval, and any group
 can be skipped. Open a pull request against the tracked branch and Nuon posts a plan-only preview of the config diff
 on the pull request itself. And every config change to an install is now recorded as a version, with diffs between
 any two, and any earlier version can be applied again.
@@ -92,7 +92,7 @@ any two, and any earlier version can be applied again.
 
 ### Read-only role
 
-- A new `org_read_only` role grants visibility into an org — apps, installs, workflows — without the ability to
+- A new `org_read_only` role grants visibility into an org's apps, installs, and workflows without the ability to
   change anything.
 - Assign it to members and service accounts when someone needs to observe a fleet, not operate it.
 - Set and update org member roles from the dashboard or the CLI: `nuon roles list`, `nuon orgs update-user-role`.

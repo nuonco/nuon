@@ -169,7 +169,7 @@ group        = "dns"
 
 <Note>
 	A changed **default** only shows up in the diff for installs that inherit it. An install that sets `sub_domain`
-	explicitly — including `eks-simple-ci-stage`, whose config file pins it — shows an empty diff for this change. To
+	explicitly (including `eks-simple-ci-stage`, whose config file pins it) shows an empty diff for this change. To
 	see the diff on every install, change something unconditional instead, or remove the explicit value from your
 	install first.
 </Note>
@@ -231,26 +231,16 @@ From step 3 on they are identical:
 
 ### Approve the plan
 
-Open the run in the dashboard. At `plan install group: stage` you will find the per-install diff and an **Approve
-install group plan** action. Read the diff. For the change above, installs that inherit the default show `sub_domain`
+The run pauses at `plan install group: stage`. In the diff, installs that inherit the default show `sub_domain`
 moving from `whoami` to `hello`; installs that pin `sub_domain` explicitly show no change for it (see the note in
-Preview a Change). Then approve it.
+Preview a Change). Approve the plan and the group deploys.
 
-{/* SCREENSHOT NEEDED — see ~/app-branches-launch/SCREENSHOTS-NEEDED.md
-<Frame caption="Approving the stage group's plan, with the sub_domain input change visible in the diff.">
-  <img src="/images/get-started/app-branches/approve-stage-plan.png" alt="The Approve install group plan step for the stage group, showing the sub_domain input changing from whoami to hello" />
-</Frame>
-*/}
-
-The `stage` group deploys, and the run then stops at `plan install group: production`. If you have no `env = "prod"`
-installs, that group has nothing to deploy to; use **Skip install group** to move the run past it.
-
-The pause before each group is what makes the rollout reviewable. You decide group by group, with the diff in front
-of you, instead of committing the whole fleet at once.
+The run then stops at `plan install group: production`. A group with no matching installs still pauses; **Skip
+install group** moves the run past it.
 
 <Note>
-	Every group's plan needs an approval, from a person in the dashboard or from an API caller. There is no setting
-	that auto-approves a deployment group.
+	Every group's plan waits for an approval, from the dashboard or an API caller. There is no setting that
+	auto-approves a deployment group.
 </Note>
 
 ### Watch runs from the CLI
@@ -341,7 +331,7 @@ Where to go next:
 
 <CardGroup cols={2}>
   <Card title="Configure app branches" icon="screwdriver-wrench" href="/guides/app-branches">
-    Multiple branches, separate install repos, and the full command reference.
+    Multiple branches, label-driven groups, and the full command reference.
   </Card>
   <Card title="How app branches work" icon="lightbulb" href="/concepts/app-branches">
     Run types, previews, and version history in depth.

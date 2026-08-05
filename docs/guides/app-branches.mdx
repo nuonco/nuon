@@ -58,7 +58,7 @@ Three things to get right:
   them to run.
 
 <Note>
-  Every branch needs one of `[connected_repo]` or `[public_repo]` — the repo block is what the deployment groups sync
+  Every branch needs one of `[connected_repo]` or `[public_repo]`: the repo block is what the deployment groups sync
   against.
 </Note>
 
@@ -67,7 +67,7 @@ Every field is documented in the [branch config reference](/config-ref/branch).
 ### Selecting installs for a group
 
 Each group picks its installs one of two ways: a `label_selector`, or an explicit list (`install_ids` and
-`install_names`, which may be combined — names resolve to IDs at sync time). A label selector cannot be combined with
+`install_names`, which may be combined; names resolve to IDs at sync time). A label selector cannot be combined with
 an explicit list in the same group:
 
 ```toml
@@ -163,7 +163,7 @@ nuon apps branches get --app-id <your-app-id> --branch-id <branch-id>
 included.
 
 <Note>
-  The `nuon apps branches` subcommands take the app **ID** (`app...`) — get it from `nuon apps list`. Or select the
+  The `nuon apps branches` subcommands take the app **ID** (`app...`), which `nuon apps list` prints. Or select the
   app once with `nuon apps select` (no flags, pick from the list) and omit `--app-id` wherever it is optional.
 </Note>
 
@@ -283,8 +283,8 @@ nuon sync --branch main --preview
 
 ## Roll back when a change goes badly
 
-Every config change to an install is recorded as an app config version, and any earlier version can be applied again
-— to one install or to a whole deployment group, with a plan in front of it. The
+Every config change to an install is recorded as an app config version, and any earlier version can be applied again,
+to one install or to a whole deployment group, with a plan in front of it. The
 [rollback guide](/guides/rollback-install-config) walks through the exact calls.
 
 ## Command reference
