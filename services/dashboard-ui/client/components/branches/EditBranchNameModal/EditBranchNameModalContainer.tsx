@@ -125,12 +125,20 @@ export const EditBranchNameModalContainer = ({
       }
 
       if (currentConfig?.install_groups && currentConfig.install_groups.length > 0) {
-        request.install_groups = currentConfig.install_groups.map((g, idx) => ({
-          name: g.name,
-          install_ids: g.install_ids || [],
-          order: g.order ?? idx,
-          max_parallel: g.max_parallel || 1,
-        }))
+        request.install_groups = currentConfig.install_groups.map((g, idx) => {
+          const hasSelector =
+            !!g.label_selector?.match_labels &&
+            Object.keys(g.label_selector.match_labels).length > 0
+          return {
+            name: g.name ?? '',
+            order: g.order ?? idx,
+            max_parallel: g.max_parallel || 1,
+            use_for_previews: g.use_for_previews,
+            ...(hasSelector
+              ? { label_selector: g.label_selector }
+              : { install_ids: g.install_ids || [] }),
+          }
+        })
       }
 
       const hasVCS = request.connected_github_vcs_config || request.public_git_vcs_config
