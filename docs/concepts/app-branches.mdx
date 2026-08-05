@@ -50,11 +50,9 @@ are the real ones you will see. Two of them behave specially:
 Groups run in the order you declare, and the approval in front of each group is what makes the rollout staged: group
 two does not start until you approve it.
 
-{/* SCREENSHOT NEEDED — see ~/app-branches-launch/SCREENSHOTS-NEEDED.md
-<Frame caption="A branch run's deployment plan: the staging group plans, waits for approval, then deploys before production begins.">
-  <img src="/images/concepts/app-branches/deployment-plan-graph.png" alt="A branch run's deployment plan graph in the Nuon dashboard, showing a staging group and a production group" />
+<Frame caption="An app branch's deployment plan: the stage group deploys first, then production, each selecting its installs by label.">
+  <img src="/images/concepts/app-branches/deployment-plan-graph.png" alt="A branch's deployment plan in the Nuon dashboard: a stage group selecting installs labelled env=stage flowing into a production group selecting env=prod, with each group's installs listed below" />
 </Frame>
-*/}
 
 ## Run types
 
