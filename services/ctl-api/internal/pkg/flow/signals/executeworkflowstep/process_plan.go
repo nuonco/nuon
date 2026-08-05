@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/autoapproval"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/emptygroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/noop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/planonly"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/policy"
@@ -122,6 +123,8 @@ func (s *Signal) approvalCreateChecks(ctx workflow.Context, sig qsignal.Signal, 
 	// Load org feature flags needed by checks. Best-effort: default false on error.
 	orgAutoSkipNoop, _ := activities.AwaitCheckOrgFeatureByFeature(ctx, string(app.OrgFeatureAutoSkipNoop))
 	return []directive.ApprovalCreateCheck{
+		// Empty install groups have nothing to approve; skip before the approval wait.
+		emptygroup.New(sig, setResultDirective),
 		noop.New(sig, checkCtx, orgAutoSkipNoop, setResultDirective),
 		policy.New(sig),
 		autoapproval.New(stepSignal, setResultDirective),
