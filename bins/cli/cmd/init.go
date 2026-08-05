@@ -125,7 +125,7 @@ func (c *cli) initUser() error {
 	if c.cfg.APIToken == "" {
 		return nil
 	}
-	user, err := c.apiClient.GetCurrentUser(c.ctx)
+	user, err := c.getCurrentUser(c.ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to get current user")
 	}
@@ -135,7 +135,7 @@ func (c *cli) initUser() error {
 }
 
 func (c *cli) identifyFn(ctx context.Context) (*segment.Identify, error) {
-	user, err := c.apiClient.GetCurrentUser(ctx)
+	user, err := c.getCurrentUser(ctx)
 
 	if err != nil {
 		wrappedErr := errors.Wrap(err, "unable to get current user")
@@ -150,7 +150,7 @@ func (c *cli) identifyFn(ctx context.Context) (*segment.Identify, error) {
 }
 
 func (c *cli) analyticsIDFn(ctx context.Context) (string, error) {
-	user, err := c.apiClient.GetCurrentUser(ctx)
+	user, err := c.getCurrentUser(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to get current user")
 	}

@@ -11,14 +11,14 @@ import (
 )
 
 func (w *writer) Identify(ctx context.Context) {
-	ident, err := w.IdentifyFn(ctx)
-	if err != nil {
-		w.handleErr("identify", errors.Wrap(err, "unable to get identity"))
+	if w.Disable {
+		w.Logger.Debug("skipping identify")
 		return
 	}
 
-	if w.Disable {
-		w.Logger.Debug("skipping identify")
+	ident, err := w.IdentifyFn(ctx)
+	if err != nil {
+		w.handleErr("identify", errors.Wrap(err, "unable to get identity"))
 		return
 	}
 
@@ -28,14 +28,14 @@ func (w *writer) Identify(ctx context.Context) {
 }
 
 func (w *writer) Group(ctx context.Context) {
-	grp, err := w.GroupFn(ctx)
-	if err != nil {
-		w.handleErr("group", errors.Wrap(err, "unable to get group using fn"))
+	if w.Disable {
+		w.Logger.Debug("skipping group")
 		return
 	}
 
-	if w.Disable {
-		w.Logger.Debug("skipping group")
+	grp, err := w.GroupFn(ctx)
+	if err != nil {
+		w.handleErr("group", errors.Wrap(err, "unable to get group using fn"))
 		return
 	}
 
@@ -45,14 +45,14 @@ func (w *writer) Group(ctx context.Context) {
 }
 
 func (w *writer) Track(ctx context.Context, ev events.Event, props map[string]interface{}) {
-	userID, err := w.UserIDFn(ctx)
-	if err != nil {
-		w.handleErr("track", errors.Wrap(err, "unable to get user id"))
+	if w.Disable {
+		w.Logger.Debug("tracking event", zap.String("event", string(ev)))
 		return
 	}
 
-	if w.Disable {
-		w.Logger.Debug("tracking event", zap.String("event", string(ev)))
+	userID, err := w.UserIDFn(ctx)
+	if err != nil {
+		w.handleErr("track", errors.Wrap(err, "unable to get user id"))
 		return
 	}
 
