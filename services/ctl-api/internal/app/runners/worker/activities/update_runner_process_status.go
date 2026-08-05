@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -20,7 +22,7 @@ type UpdateRunnerProcessStatusRequest struct {
 func (a *Activities) UpdateRunnerProcessStatus(ctx context.Context, req UpdateRunnerProcessStatusRequest) (*app.RunnerProcess, error) {
 	var current app.RunnerProcess
 	if res := a.db.WithContext(ctx).First(&current, "id = ?", req.ProcessID); res.Error != nil {
-		return nil, fmt.Errorf("unable to get runner process: %w", res.Error)
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get runner process")
 	}
 
 	newComposite := app.NewCompositeStatus(ctx, app.Status(req.Status))
@@ -45,7 +47,7 @@ func (a *Activities) UpdateRunnerProcessStatus(ctx context.Context, req UpdateRu
 
 	var updated app.RunnerProcess
 	if res := a.db.WithContext(ctx).Preload("Shutdowns").First(&updated, "id = ?", req.ProcessID); res.Error != nil {
-		return nil, fmt.Errorf("unable to get updated runner process: %w", res.Error)
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get updated runner process")
 	}
 
 	return &updated, nil

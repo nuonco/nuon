@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
-	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/autolink"
@@ -24,7 +23,6 @@ type Activities struct {
 	db             *gorm.DB
 	chDB           *gorm.DB
 	appsHelpers    *appshelpers.Helpers
-	runnersHelpers *runnershelpers.Helpers
 	mw             metrics.Writer
 	logger         *temporalzap.Logger
 	l              *zap.Logger
@@ -43,7 +41,6 @@ type Params struct {
 	CHDB           *gorm.DB `name:"ch"`
 	QueueClient    *queueclient.Client
 	AppsHelpers    *appshelpers.Helpers
-	RunnersHelpers *runnershelpers.Helpers
 	MW             metrics.Writer
 	TemporalClient temporalclient.Client
 	SlackClient    *slackclient.Client
@@ -62,7 +59,6 @@ func New(params Params) (*Activities, error) {
 		db:             params.DB,
 		chDB:           params.CHDB,
 		appsHelpers:    params.AppsHelpers,
-		runnersHelpers: params.RunnersHelpers,
 		mw:             params.MW,
 		logger:         tlogger,
 		l:              logger,

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -26,7 +28,7 @@ func (a *Activities) getRunnerJobExecution(ctx context.Context, jobExecutionID s
 	res := a.db.WithContext(ctx).
 		First(&jobExecution, "id = ?", jobExecutionID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get runner job execution: %w", res.Error)
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get runner job execution")
 	}
 
 	return &jobExecution, nil

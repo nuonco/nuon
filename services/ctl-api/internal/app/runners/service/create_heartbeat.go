@@ -59,7 +59,6 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 		return
 	}
 
-	// Trigger initial health check on first heartbeat for this process
 	if req.ProcessID != "" {
 		if err := s.helpers.MaybeEnqueueInitialHealthCheck(ctx, runnerID, req.ProcessID); err != nil {
 			s.l.Warn("unable to maybe enqueue initial health check", zap.String("process_id", req.ProcessID), zap.Error(err))

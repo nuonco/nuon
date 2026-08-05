@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -32,7 +34,7 @@ func (a *Activities) getCurrentJobExecution(ctx context.Context, jobID string) (
 		Limit(1).
 		First(&jobExecution)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get current job execution: %w", res.Error)
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get current job execution")
 	}
 
 	return &jobExecution, nil
