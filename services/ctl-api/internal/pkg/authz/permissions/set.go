@@ -30,32 +30,15 @@ func (p Set) Add(set map[string]*string) error {
 }
 
 func (p Set) CanPerform(obj string, perm Permission) error {
-	val, ok := p[obj]
+	objects := []string{obj, "*"}
+	if parent, _, found := strings.Cut(obj, ":"); found {
+		objects = []string{obj, parent, "*"}
+	}
 
-	// A scoped object like "<orgID>:component_builds" inherits the org-wide
-	// grant unless the set holds a more specific grant for it. Without this,
-	// an org admin's "<orgID>: all" grant would not cover scoped objects.
-	if !ok {
-		if parent, _, found := strings.Cut(obj, ":"); found {
-			val, ok = p[parent]
+	for _, object := range objects {
+		if val, ok := p[object]; ok && (val == PermissionAll || val == perm) {
+			return nil
 		}
-	}
-
-	// if the object is not in the permission set, look up the "*" wildcard.
-	if !ok {
-		val, ok = p["*"]
-	}
-
-	// if still not found, return an error
-	if !ok {
-		return NoAccessError{
-			Permission: perm,
-			ObjectID:   obj,
-		}
-	}
-
-	if val == PermissionAll || val == perm {
-		return nil
 	}
 
 	return NoAccessError{
