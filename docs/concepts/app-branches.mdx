@@ -32,8 +32,7 @@ flowchart TD
     push["git push to the tracked branch"] --> fetch["fetch commit<br/>clone the repo at that SHA"]
     fetch --> config["fetch app config<br/>parse and sync the app config"]
     config --> build["building components and sandbox<br/>only what changed since the last successful run"]
-    build --> sync["sync install configs<br/>skippable"]
-    sync --> plan1["plan install group: staging<br/>diff per install"]
+    build --> plan1["plan install group: staging<br/>diff per install"]
     plan1 -->|approve| deploy1["deploy install group: staging"]
     deploy1 --> plan2["plan install group: production<br/>diff per install"]
     plan2 -->|approve| deploy2["deploy install group: production"]
@@ -45,8 +44,8 @@ are the real ones you will see. Two of them behave specially:
 - **`plan install group: <name>`** is an approval step. It computes the config diff for every install in the group and
   then waits. Nothing is applied to those installs until a human approves it in the dashboard, or an API caller
   advances it.
-- **`deploy install group: <name>`** and **`sync install configs`** are skippable, so you can let a rollout move past
-  a group without deploying to it.
+- **`plan install group: <name>`** and **`deploy install group: <name>`** are skippable, so you can let a rollout
+  move past a group without deploying to it.
 
 Groups run in the order you declare, and the approval in front of each group is what makes the rollout staged: group
 two does not start until you approve it.
@@ -66,7 +65,7 @@ touch.
 | --- | --- | --- |
 | `git-run` | A push to the tracked branch | Builds, then plans and deploys each deployment group in order. |
 | `git-preview-run` | Opening or updating a pull request against the tracked branch | Plan only. Builds and reports the config diff, then stops. Never touches an install. |
-| `manual-run` | `nuon apps branches trigger`, the API, the dashboard, or your CI | Same steps as a `git-run`. Add `--preview` and it still plans every group and waits at each approval gate. It just applies nothing. |
+| `manual-run` | `nuon apps branches trigger`, the API, the dashboard, or your CI | Same steps as a `git-run`. Add `--preview` and it still plans every group — approvals auto-approve and nothing is applied. |
 
 ```mermaid
 flowchart LR
@@ -85,13 +84,13 @@ flowchart LR
 A merge is not a special case: closing a pull request is ignored, and the push to the tracked branch that follows the
 merge is what starts the `git-run`.
 
-A `git-preview-run` stops after `sync install configs`. The per-group plan and deploy steps are not created at all,
-so a pull request cannot reach an install even in principle.
+A `git-preview-run` stops after `building components and sandbox`. The per-group plan and deploy steps are not
+created at all, so a pull request cannot reach an install even in principle.
 
-A manual plan-only run works differently, and the difference matters in practice. `--preview` suppresses the *apply*,
-not the workflow: the run creates every group's `plan install group` and `deploy install group` step and pauses at the
-first approval gate, so you see the same per-install diffs you would in a real rollout. Approving them applies
-nothing. Expect a manual plan-only run to sit waiting for you rather than finishing on its own.
+A manual plan-only run works differently, and the difference matters in practice. `--preview` suppresses the *apply*
+and the waiting, not the workflow: the run creates every group's `plan install group` and `deploy install group`
+step, each approval gate auto-approves with "Auto-approved in plan-only mode", and the run finishes on its own with
+nothing applied. You get the same per-install diffs you would in a real rollout, readable from the completed run.
 
 ## Deployment groups
 
@@ -149,13 +148,14 @@ have an external system approve it through the API once your own checks have pas
 When you open a pull request against a tracked branch, or push another commit to one, Nuon runs a plan-only preview
 and reports it on the pull request itself:
 
-- a comment titled `## Nuon Preview — <AppName>`, containing a table of config changes broken down by section
+- a comment titled `## Nuon Preview — <BranchName>` (the branch's `name`, so usually `main`), containing a table of
+  config changes broken down by section
   (Section / Added / Changed / Removed) with the individual entries expandable underneath. The same comment is edited
   in place on every later push, so the pull request never accumulates a pile of stale bot comments.
 - a commit status with the context `nuon/preview`, which moves from pending to success or failure.
 
 If the pull request does not change the app config at all, the run stops early and says so
-(`No changes to nuon.toml detected in this PR. Preview skipped.`) rather than doing pointless work.
+(``No changes to `nuon.toml` detected in this PR. Preview skipped.``) rather than doing pointless work.
 
 Posting to the pull request needs an **org-level GitHub connection**, not a particular kind of branch config: your org
 must have the Nuon GitHub App connected for the repository's owner. That is satisfied by a `[connected_repo]` branch,

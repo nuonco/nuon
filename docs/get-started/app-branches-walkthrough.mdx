@@ -91,41 +91,51 @@ Then confirm the selector matches it:
 nuon installs list --labels env=stage
 ```
 
-The example app also declares its CI install as a tracked config file, and sets the label there instead:
+The example app also declares its CI installs as tracked config files, and sets the labels there instead:
 
 ```toml installs/eks-simple-ci-stage.toml
+#:schema https://api.nuon.co/v1/general/config-schema?type=install
+
 name = "eks-simple-ci-stage"
-approval_option = "approve-all"
 
 [labels]
 env = "stage"
 
+approval_option = "approve-all"
+
 [aws_account]
-  region = "us-east-1"
+region = "us-east-1"
 
 [[inputs]]
-domain = "stage.nuon.run"
+domain = "nuon.run"
 sub_domain = "whoami"
 ```
 
-Either route works. A label set by the CLI and a label set in an install config file are the same label. Managing it
-in the file means group membership is version-controlled along with everything else about the install.
+Either route sets the same label — but install config files are **not** applied by `nuon apps sync` (it prints a
+deprecation notice and skips them). They are applied with their own command:
+
+```sh
+nuon installs sync -a <your-app-id> -d installs/
+```
+
+Managing labels in the files means group membership is version-controlled along with everything else about the
+install.
 
 ### Sync the app
 
-From the `eks-simple` directory:
+From the `eks-simple` directory (start in the directory where you cloned `example-app-configs`):
 
 ```sh
 cd example-app-configs/eks-simple
+nuon apps select                 # no flags: pick eks-simple from the list
 nuon apps sync
 ```
 
 The sync creates the branch and its two deployment groups. Check what Nuon now has:
 
 ```sh
-nuon apps select                 # no flags: pick eks-simple from the list
 nuon apps list                   # prints each app's name and ID
-nuon apps branches list --app-id app...
+nuon apps branches list --app-id <your-app-id>
 ```
 
 <Warning>
@@ -148,10 +158,10 @@ You should see one branch, `main`. In the dashboard, the app now has a **Branche
 
 ## Preview a Change
 
-Before deploying anything, see what a change would do. Edit an input default in `inputs.toml`. Change the `whoami`
-subdomain, for instance:
+Before deploying anything, see what a change would do. Edit the `sub_domain` input default in `inputs.toml` (this is
+an excerpt — leave the rest of the file as it is):
 
-```toml inputs.toml
+```toml inputs.toml (excerpt)
 [[input]]
 name         = "sub_domain"
 description  = "The sub domain for the Whoami service"
@@ -160,6 +170,13 @@ display_name = "Sub Domain"
 group        = "dns"
 ```
 
+<Note>
+	A changed **default** only shows up in the diff for installs that inherit it. An install that sets `sub_domain`
+	explicitly — including `eks-simple-ci-stage`, whose config file pins it — shows an empty diff for this change. To
+	see the diff on every install, change something unconditional instead, or remove the explicit value from your
+	install first.
+</Note>
+
 Then run a plan-only preview against your local files:
 
 ```sh
@@ -167,14 +184,14 @@ nuon sync --branch main --preview
 ```
 
 This syncs the config in the current directory and triggers a **plan-only** run for it. Nothing is applied to any
-install. Watch it in the workflow TUI the command opens, or in the dashboard.
+install. The command prints the run's ID and returns; watch the run in the dashboard, or with
+`nuon apps branches runs --app-id <your-app-id> --branch-id main`, which opens the workflow TUI.
 
 <Note>
 	A manual plan-only run still walks the deployment groups: it creates each group's `plan install group` and
-	`deploy install group` step and then **pauses at the first approval gate**, showing you the same per-install diff a
-	real rollout would. `--preview` suppresses the apply, not the workflow, so this run waits for you rather than
-	finishing on its own. Approving it applies nothing. (A pull request preview behaves differently and never creates
-	the group steps at all.)
+	`deploy install group` step, but each approval gate **auto-approves** ("Auto-approved in plan-only mode") and
+	nothing is applied, so the run finishes on its own. Read the per-install diffs from the completed run. (A pull
+	request preview behaves differently and never creates the group steps at all.)
 </Note>
 
 <Tip>
@@ -204,24 +221,23 @@ config it already built from your working directory while `trigger` fetches one 
 | 1 | `fetch commit (skipped)` | `fetch commit` |
 | 2 | `fetch app config (skipped)` | `fetch app config` |
 | 3 | `building components and sandbox` | `building components and sandbox` |
-| 4 | `sync install configs` | `sync install configs` |
-| 5 | `plan install group: stage` | `plan install group: stage` |
-| 6 | `deploy install group: stage` | `deploy install group: stage` |
-| 7 | `plan install group: production` | `plan install group: production` |
-| 8 | `deploy install group: production` | `deploy install group: production` |
+| 4 | `plan install group: stage` | `plan install group: stage` |
+| 5 | `deploy install group: stage` | `deploy install group: stage` |
+| 6 | `plan install group: production` | `plan install group: production` |
+| 7 | `deploy install group: production` | `deploy install group: production` |
 
 From step 3 on they are identical:
 
 - `building components and sandbox` rebuilds only what changed.
-- `sync install configs` is skippable, and a no-op for this branch.
 - each `plan install group` computes the diff for every install in the group and then **waits** for you.
 - each `deploy install group` runs once you approve the plan before it.
 
 ### Approve the plan
 
 Open the run in the dashboard. At `plan install group: stage` you will find the per-install diff and an **Approve
-install group plan** action. Read the diff. For the change above it should show the `sub_domain` input default moving
-from `whoami` to `hello`. Then approve it.
+install group plan** action. Read the diff. For the change above, installs that inherit the default show `sub_domain`
+moving from `whoami` to `hello`; installs that pin `sub_domain` explicitly show no change for it (see the note in
+Preview a Change). Then approve it.
 
 {/* SCREENSHOT NEEDED — see ~/app-branches-launch/SCREENSHOTS-NEEDED.md
 <Frame caption="Approving the stage group's plan, with the sub_domain input change visible in the diff.">
@@ -299,15 +315,16 @@ you cannot push to. To get the push-triggered behavior, point the branch at a re
   </Step>
   <Step title="Open a pull request">
     Open a pull request against `main` with a config change in it. Nuon runs a plan-only preview and posts a comment
-    headed `## Nuon Preview — eks-simple` with a table of what changed, plus a `nuon/preview` commit status. Push
-    another commit and the same comment is updated in place.
+    headed `## Nuon Preview — main` (the branch's `name`, not the app's) with a table of what changed, plus a
+    `nuon/preview` commit status. Push another commit and the same comment is updated in place.
   </Step>
 </Steps>
 
 ## Inspect the History
 
 Every config change to an install is recorded as an app config version. Open the install in the dashboard and look at
-its **Versions** view, or list them over the API:
+its **Versions** view, or list them over the API (create an API token in the dashboard's org settings; the install ID
+comes from `nuon installs list`):
 
 ```sh
 curl -H "Authorization: Bearer $NUON_API_TOKEN" \
