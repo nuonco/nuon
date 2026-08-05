@@ -5,8 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-
-	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/forgotten"
 )
 
 type AdminForgetOrgInstallsRequest struct{}
@@ -41,14 +39,7 @@ func (s *service) ForgetOrgInstalls(ctx *gin.Context) {
 			return
 		}
 
-		queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &forgotten.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
+		if err := s.enqueueOrgForgetInstallSignal(ctx, orgID, install.ID); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}

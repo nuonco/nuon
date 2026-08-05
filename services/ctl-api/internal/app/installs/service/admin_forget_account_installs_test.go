@@ -20,7 +20,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/forgotten"
+	forgetinstall "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/forget_install"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -167,7 +167,7 @@ func (s *AdminForgetAccountInstallsTestSuite) TestForgetAccountInstalls() {
 				assert.GreaterOrEqual(s.T(), len(sigs), 1, "expected at least one signal")
 
 				for _, qs := range sigs {
-					assert.Equal(s.T(), forgotten.SignalType, qs.Type)
+					assert.Equal(s.T(), forgetinstall.SignalType, qs.Type)
 				}
 			},
 		},

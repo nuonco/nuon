@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/forgotten"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -68,14 +67,7 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 			return
 		}
 
-		queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &forgotten.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
+		if err := s.enqueueOrgForgetInstallSignal(ctx, install.OrgID, install.ID); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
