@@ -149,11 +149,9 @@ nuon apps branches list --app-id <your-app-id>
 You should see one branch, `main`. In the dashboard, the app now has a **Branches** view showing the branch and its
 **Deployment plan**: `stage`, then `production`.
 
-{/* SCREENSHOT NEEDED — see ~/app-branches-launch/SCREENSHOTS-NEEDED.md
-<Frame caption="The eks-simple app's Branches view, with the main branch and its two deployment groups.">
-  <img src="/images/get-started/app-branches/branches-view.png" alt="The Branches view of the eks-simple app in the Nuon dashboard, showing the main branch with stage and production deployment groups" />
+<Frame caption="The main branch's deployment plan after the sync: stage first, then production, each selecting installs by label.">
+  <img src="/images/concepts/app-branches/deployment-plan-graph.png" alt="The eks-simple branch's deployment plan in the Nuon dashboard: a stage group selecting env=stage installs flowing into a production group selecting env=prod" />
 </Frame>
-*/}
 
 ## Preview a Change
 
