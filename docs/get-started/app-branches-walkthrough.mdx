@@ -1,6 +1,6 @@
 ---
 title: "Roll Out a Change with an App Branch"
-description: "Add an app branch to the eks-simple example app, then plan and deploy a change across its installs."
+description: "Sync the eks-simple example app's built-in branch config, then plan and deploy a change across its installs."
 keywords: ["app branches walkthrough", "eks-simple", "branch.toml example", "first branch run", "deployment groups tutorial", "label installs", "staged rollout example", "plan and approve", "trigger branch run", "git push deploy tutorial"]
 ---
 
@@ -11,8 +11,8 @@ keywords: ["app branches walkthrough", "eks-simple", "branch.toml example", "fir
 </Note>
 
 [App branches](/concepts/app-branches) turn a change to your app config into a single, reviewable rollout across your
-installs. This walkthrough adds one to `eks-simple` and takes a change through it end to end: preview the diff, plan
-each deployment group, approve, deploy.
+installs. `eks-simple` already ships its branch config — nothing needs writing. This walkthrough syncs it into your
+org and takes a change through it end to end: preview the diff, plan each deployment group, approve, deploy.
 
 ## Prerequisites
 
@@ -23,18 +23,21 @@ each deployment group, approve, deploy.
 
 ## What You Will Create
 
-- An [app branch](/concepts/app-branches) named `main`, tracking the `eks-simple` directory of the example repository.
+- An [app branch](/concepts/app-branches) named `main` **in your org**, created by syncing the branch config that
+  ships in the `eks-simple` directory of the example repository.
 - Two [deployment groups](/concepts/app-branches#deployment-groups) named `stage` and `production`, which select
   their installs by label.
 - A labeled install, so it lands in the `stage` group.
 - A plan-only preview run, and then a real run you approve group by group.
 
-## Configure the Branch
+## Review the Branch Config
 
 ### `branch.toml`
 
-The branch config is a single file at the root of the app config directory, alongside `metadata.toml`. In
-`example-app-configs/eks-simple`, it looks like this:
+The branch config is a single file at the root of the app config directory, alongside `metadata.toml`. `eks-simple`
+already includes it — open
+[`eks-simple/branch.toml`](https://github.com/nuonco/example-app-configs/blob/main/eks-simple/branch.toml) in your
+clone and read it against what follows:
 
 ```toml branch.toml
 name = "main"
