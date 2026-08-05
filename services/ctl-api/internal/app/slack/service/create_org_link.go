@@ -32,7 +32,7 @@ func (r *CreateOrgLinkRequest) Validate(v *validator.Validate) error {
 
 // @ID						CreateSlackOrgLink
 // @Summary				Bind a Slack workspace to the current org
-// @Description			Creates a verified SlackOrgLink between the supplied TeamID and the calling org. Used by the Phase 4 confirmation flow when a user finishes the Slack OAuth round-trip and selects the Nuon org to attach the workspace to.
+// @Description			Creates a verified SlackOrgLink between the supplied TeamID and the calling org. Used by the Phase 4 confirmation flow when a user finishes the Slack OAuth round-trip and selects the Nuon org to attach the workspace to. Only the account that installed the Nuon app to the workspace may create the link; other callers receive 404.
 // @Tags					slack
 // @Accept					json
 // @Produce				json
@@ -78,6 +78,14 @@ func (s *service) CreateOrgLink(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, link)
 }
 
+// canLinkWorkspace reports whether the calling account may bind the given
+// Slack installation to an org. Only the account that installed the Nuon app
+// to the workspace qualifies; any looser rule lets a user attach a workspace
+// they don't control using a (non-secret) team_id.
+func canLinkWorkspace(install app.SlackInstallation, acctID string) bool {
+	return acctID != "" && install.InstalledByAccountID == acctID
+}
+
 func (s *service) createOrgLink(ctx context.Context, acct *app.Account, orgID, teamID string) (*app.SlackOrgLink, error) {
 	// Ensure the workspace is actually installed and active. We don't have a
 	// PG FK for this (soft-delete + FK incompatibility) so it's enforced
@@ -94,6 +102,17 @@ func (s *service) createOrgLink(ctx context.Context, acct *app.Account, orgID, t
 	}
 	if res.Error != nil {
 		return nil, res.Error
+	}
+
+	// Authorization: only the account that installed the Nuon app to this
+	// workspace may bind it to an org. Slack team IDs are not secret (every
+	// workspace member can see them), so without this check any authenticated
+	// user could attach an arbitrary workspace to their own org via a guessed
+	// team_id and then enumerate its channels / inject notifications. Return
+	// the same not-found error as a missing installation so callers can't
+	// probe which team_ids have an active installation.
+	if !canLinkWorkspace(install, acct.ID) {
+		return nil, stderr.ErrNotFound{Err: fmt.Errorf("no active slack installation for team %q", teamID)}
 	}
 
 	// Pre-check for an existing live link on (team_id, org_id). The unique
