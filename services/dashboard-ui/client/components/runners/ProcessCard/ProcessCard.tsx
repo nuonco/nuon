@@ -9,81 +9,62 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { Tooltip } from '@/components/common/Tooltip'
+import { HealthBars } from '@/components/common/HealthBars'
 import type {
   TRunnerProcess,
   TRunnerHealthCheck,
   TRunnerSettings,
 } from '@/types'
-import { cn } from '@/utils/classnames'
 import { toSentenceCase } from '@/utils/string-utils'
+
+function healthCheckColorClass(hc: TRunnerHealthCheck): string {
+  if (hc?.status_code === 0) return 'bg-green-500'
+  if (hc?.status_code === 900) return 'bg-cool-grey-500'
+  return 'bg-red-500'
+}
+
+function HealthCheckTooltip({ hc }: { hc: TRunnerHealthCheck }) {
+  return (
+    <div className="flex flex-col w-36">
+      {hc?.status_code === 0 ? (
+        <>
+          <Text variant="label" weight="strong">
+            Healthy
+          </Text>
+          <Time variant="subtext" time={hc?.minute_bucket} />
+        </>
+      ) : hc?.status_code === 900 ? (
+        <>
+          <Text variant="label">Unknown</Text>
+          <Text variant="subtext">No healthcheck record</Text>
+        </>
+      ) : (
+        <>
+          <Text variant="label">Unhealthy</Text>
+          <Time variant="subtext" time={hc?.minute_bucket} />
+        </>
+      )}
+    </div>
+  )
+}
 
 function HealthCheckGraph({
   healthchecks,
 }: {
   healthchecks: TRunnerHealthCheck[]
 }) {
-  if (!healthchecks?.length) {
-    return (
-      <div className="flex items-center justify-center h-10 rounded-md border border-white/5 bg-white/[0.02] dark:border-white/5 dark:bg-white/[0.02]">
-        <Text variant="subtext" theme="neutral">
-          No health data
-        </Text>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex flex-col gap-2 w-full">
-      <div className="flex items-center gap-0.5">
-        {healthchecks.map((hc) => (
-          <Tooltip
-            key={hc?.id}
-            position="top"
-            className={cn(
-              'flex-auto transition-all duration-fastest ease-cubic group heartbeat-item-parent',
-              '[&:has(+.heartbeat-item-parent:hover)]:scale-y-[1.15]',
-              '[&:hover+.heartbeat-item-parent_.heartbeat-item]:scale-y-[1.15]'
-            )}
-            tipContent={
-              <div className="flex flex-col w-36">
-                {hc?.status_code === 0 ? (
-                  <>
-                    <Text variant="label" weight="strong">
-                      Healthy
-                    </Text>
-                    <Time variant="subtext" time={hc?.minute_bucket} />
-                  </>
-                ) : hc?.status_code === 900 ? (
-                  <>
-                    <Text variant="label">Unknown</Text>
-                    <Text variant="subtext">No healthcheck record</Text>
-                  </>
-                ) : (
-                  <>
-                    <Text variant="label">Unhealthy</Text>
-                    <Time variant="subtext" time={hc?.minute_bucket} />
-                  </>
-                )}
-              </div>
-            }
-          >
-            <div
-              className={cn(
-                'flex-auto w-full h-8 rounded-xs transition-all duration-fastest ease-cubic heartbeat-item',
-                'group-hover:scale-y-[1.3]',
-                {
-                  'bg-green-500': hc?.status_code === 0,
-                  'bg-red-500':
-                    hc?.status_code !== 0 && hc?.status_code !== 900,
-                  'bg-cool-grey-500': hc?.status_code === 900,
-                }
-              )}
-            />
-          </Tooltip>
-        ))}
-      </div>
-    </div>
+    <HealthBars
+      animated
+      grow
+      barClassName="h-8 rounded-xs"
+      emptyMessage="No health data"
+      bars={(healthchecks ?? []).map((hc) => ({
+        key: hc?.id ?? '',
+        colorClass: healthCheckColorClass(hc),
+        tooltip: <HealthCheckTooltip hc={hc} />,
+      }))}
+    />
   )
 }
 
