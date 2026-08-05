@@ -28,5 +28,10 @@ func (s *service) GetCurrentUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, acct)
+	// Roles are loaded to derive org_ids and permissions, but serializing them
+	// dominates the response for accounts in many orgs.
+	trimmed := *acct
+	trimmed.Roles = nil
+
+	ctx.JSON(http.StatusOK, &trimmed)
 }
