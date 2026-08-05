@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/extensions"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
@@ -29,10 +30,15 @@ var (
 // newRootCmd constructs a new root cobra command, which all other commands will be nested under. If there are any flags
 // or other settings that we want to be "global", they should be configured on this command.
 func (c *cli) rootCmd() *cobra.Command {
+	// Commands read cfg while being constructed (cfg.Preview gates required flags).
+	if c.cfg == nil {
+		_ = c.initConfig()
+	}
+
+	// Long is set by populateRootLongDescription: building it calls the API.
 	rootCmd := &cobra.Command{
 		Use:   "nuon",
 		Short: "Work with Nuon from the command line.",
-		Long:  c.getLongDescription(),
 		Example: `nuon auth login
 nuon sync
 `,
@@ -90,6 +96,10 @@ nuon sync
 		c.mcpCmd(),
 	}
 
+	if config.Debug() {
+		cmds = append(cmds, c.debugCmd())
+	}
+
 	for _, cmd := range cmds {
 		rootCmd.AddCommand(cmd)
 	}
@@ -132,7 +142,7 @@ func (c *cli) getLongDescription() string {
 	}
 
 	// Try to validate the token by getting current user
-	_, err := c.apiClient.GetCurrentUser(context.Background())
+	_, err := c.getCurrentUser(context.Background())
 	if err != nil {
 		status += styles.TextError.Render("Your session has expired. Run `nuon auth login` to sign in again.")
 		return status
