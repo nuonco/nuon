@@ -1,5 +1,5 @@
 export default {
-  title: 'InstallResources/InstallResourcesTable',
+  title: 'Install Resources/InstallResourcesTable',
 }
 
 import { useState } from 'react'
