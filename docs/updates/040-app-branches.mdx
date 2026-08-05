@@ -92,12 +92,13 @@ any two, and any earlier version can be applied again.
 
 ### Read-only role
 
-A new `org_read_only` role grants visibility into an org — apps, installs, workflows — without the ability to change
-anything. Assign it to members and service accounts when someone needs to observe a fleet, not operate it. Org member
-roles can now be set and updated from the dashboard and the CLI (`nuon roles list`, `nuon orgs update-user-role`).
+- A new `org_read_only` role grants visibility into an org — apps, installs, workflows — without the ability to
+  change anything.
+- Assign it to members and service accounts when someone needs to observe a fleet, not operate it.
+- Set and update org member roles from the dashboard or the CLI: `nuon roles list`, `nuon orgs update-user-role`.
 
 ### A more consistent installs CLI
 
-The `nuon installs` command group was reorganized into a consistent sub-command hierarchy — related commands now nest
-under `nuon installs components`, `nuon installs actions`, and friends instead of compound top-level names — with more
-predictable output across commands.
+- `nuon installs` is reorganized into a consistent sub-command hierarchy: related commands nest under
+  `nuon installs components`, `nuon installs actions`, and friends instead of compound top-level names.
+- Command output is more predictable across the group.
