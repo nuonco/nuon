@@ -288,8 +288,6 @@ type ClientService interface {
 
 	CreateSlackChannelSubscription(params *CreateSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSlackChannelSubscriptionCreated, error)
 
-	CreateSlackOrgLink(params *CreateSlackOrgLinkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSlackOrgLinkCreated, error)
-
 	CreateStaticToken(params *CreateStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateStaticTokenCreated, error)
 
 	CreateTerraformModuleComponentConfig(params *CreateTerraformModuleComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTerraformModuleComponentConfigCreated, error)
@@ -5017,52 +5015,6 @@ func (a *Client) CreateSlackChannelSubscription(params *CreateSlackChannelSubscr
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateSlackChannelSubscription: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-CreateSlackOrgLink binds a slack workspace to the current org
-
-Creates a verified SlackOrgLink between the supplied TeamID and the calling org. Used by the Phase 4 confirmation flow when a user finishes the Slack OAuth round-trip and selects the Nuon org to attach the workspace to.
-*/
-func (a *Client) CreateSlackOrgLink(params *CreateSlackOrgLinkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSlackOrgLinkCreated, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewCreateSlackOrgLinkParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "CreateSlackOrgLink",
-		Method:             "POST",
-		PathPattern:        "/v1/orgs/{org_id}/slack/org-links",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &CreateSlackOrgLinkReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*CreateSlackOrgLinkCreated)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for CreateSlackOrgLink: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
