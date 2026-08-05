@@ -6,6 +6,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	forgetinstall "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/forget_install"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -43,4 +45,22 @@ func (s *service) enqueueInstallSignal(ctx context.Context, queueID string, sig 
 		OwnerType: ownerType,
 	})
 	return err
+}
+
+func (s *service) enqueueOrgForgetInstallSignal(ctx context.Context, orgID, installID string) error {
+	sig := &forgetinstall.Signal{
+		OrgID:     orgID,
+		InstallID: installID,
+	}
+
+	err := s.runnersHelpers.EnqueueOrgSignal(ctx, orgID, sig)
+	if err == nil || !dbgenerics.IsGormErrRecordNotFound(err) {
+		return err
+	}
+
+	// org-signals queue may not exist for legacy orgs
+	if err := s.orgsHelpers.EnsureOrgQueue(ctx, orgID); err != nil {
+		return err
+	}
+	return s.runnersHelpers.EnqueueOrgSignal(ctx, orgID, sig)
 }
