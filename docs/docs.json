@@ -41,6 +41,7 @@
           "get-started/quickstart",
           "get-started/create-your-first-app",
           "get-started/introduction",
+          "get-started/app-branches-walkthrough",
           {
             "group": "Deployment Options",
             "root": "guides/deployment-options",
@@ -122,6 +123,7 @@
             "pages": [
               "get-started/day-2-operations",
               "concepts/workflows",
+              "concepts/app-branches",
               "concepts/actions",
               "concepts/policies",
               "concepts/operation-roles",
@@ -182,6 +184,8 @@
             "group": "Day 2 Operations",
             "boost": 3,
             "pages": [
+              "guides/app-branches",
+              "guides/rollback-install-config",
               "guides/actions",
               "guides/adhoc-actions",
               "guides/runbooks",
@@ -270,6 +274,7 @@
                 "group": "Configuration Types",
                 "pages": [
                   "config-ref/action",
+                  "config-ref/branch",
                   "config-ref/break-glass",
                   "config-ref/inputs",
                   "config-ref/install",
@@ -302,6 +307,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/040-app-branches",
           "updates/039-oidc-federation",
           "updates/038-spacelift-and-cli-automation",
           "updates/037-split-install-stack-tfvars",
