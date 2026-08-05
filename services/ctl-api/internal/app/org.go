@@ -209,7 +209,6 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureInstallRename:           false,
 		OrgFeatureSupportRole:             false,
 		OrgFeatureTerraformProviderMirror: false,
-		OrgFeatureAppBranchesUI:           false,
 		OrgFeatureTraceView:               false,
 		OrgFeatureStateGenV2:              true,
 		OrgFeatureSlack:                   false,
@@ -228,7 +227,8 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureNewAppIA:                false,
 
 		// Enabled by default
-		OrgFeatureAppBranches: true,
+		OrgFeatureAppBranches:   true,
+		OrgFeatureAppBranchesUI: true,
 	}
 
 	cfg := configFromContext(tx.Statement.Context)
