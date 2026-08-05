@@ -152,6 +152,17 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		qs.Status.Status == app.StatusSuccess &&
 		!h.finished {
 		h.startAutoRewarm(ctx)
+	} else if !h.finished &&
+		(qs.Status.Status == app.StatusSuccess ||
+			qs.Status.Status == app.StatusError ||
+			qs.Status.Status == app.StatusCancelled) {
+		// Booted on a signal a prior generation already finished (e.g. a CAN
+		// raced completion). A non-AutoExecuteOnTerminalStart signal won't
+		// re-execute, so it would park below forever without delivering its
+		// callbacks. Deliver them and exit; re-delivery is harmless.
+		h.setFinished(qs.Status.Status, qs.Status.StatusHumanDescription)
+		h.sendCompletionCallbacks(ctx)
+		return true, nil
 	}
 
 	// execute the handler and handle a restart or stop
@@ -169,7 +180,9 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		return true, nil
 	}
 
-	if mgr.Restarted {
+	// A finished signal falls through to deliver callbacks even if a CAN was
+	// requested in the same tick; restarting here would drop the callbacks.
+	if mgr.Restarted && !h.finished {
 		return false, nil
 	}
 	if mgr.Stopped {
