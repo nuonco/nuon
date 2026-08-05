@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/extensions"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
@@ -93,6 +94,10 @@ nuon sync
 		c.runbooksCmd(),
 		c.triggersCmd(),
 		c.mcpCmd(),
+	}
+
+	if config.Debug() {
+		cmds = append(cmds, c.debugCmd())
 	}
 
 	for _, cmd := range cmds {
