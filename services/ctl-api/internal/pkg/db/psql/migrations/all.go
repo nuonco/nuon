@@ -160,5 +160,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "121-backfill-org-builder-role",
 			Fn:   m.Migration121BackfillOrgBuilderRole,
 		},
+		{
+			Name: "122-reconcile-org-builder-roles",
+			Fn:   m.Migration122ReconcileOrgBuilderRoles,
+		},
 	}
 }
