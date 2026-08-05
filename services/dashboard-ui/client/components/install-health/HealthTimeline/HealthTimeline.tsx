@@ -10,7 +10,7 @@ import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
-import { Tooltip } from '@/components/common/Tooltip'
+import { HealthBars } from '@/components/common/HealthBars'
 import type {
   THealthTimelineDay,
   TInstallComponentHealthTransition,
@@ -136,33 +136,16 @@ function DayTooltipContent({ day }: { day: THealthTimelineDay }) {
   )
 }
 
-function HealthBar({ day }: { day: THealthTimelineDay }) {
+function dayAriaLabel(day: THealthTimelineDay): string {
   const hasData = (day?.observed_seconds ?? 0) > 0
   const downtime = dayDowntimePercent(day)
-  const label = `${day?.date ? formatToRelativeDay(day.date) : 'Unknown day'}: ${
+  return `${day?.date ? formatToRelativeDay(day.date) : 'Unknown day'}: ${
     hasData
       ? downtime > 0
         ? `${downtime}% downtime`
         : formatHealth(day?.health)
       : 'No data'
   }`
-
-  return (
-    <Tooltip
-      position="top"
-      tipContentClassName="!whitespace-normal !w-auto !p-2"
-      tipContent={<DayTooltipContent day={day} />}
-    >
-      <div
-        aria-label={label}
-        tabIndex={0}
-        className={cn(
-          'h-6 w-1.5 shrink-0 grow rounded-[2px] focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-primary-400/80',
-          dayBarClass(day)
-        )}
-      />
-    </Tooltip>
-  )
 }
 
 export interface IHealthTimeline {
@@ -236,13 +219,17 @@ export const HealthTimeline = ({
       ) : null}
 
       {hasDaily ? (
-        <div className="overflow-x-auto">
-          <div className="flex gap-0.5 min-w-[36rem]">
-            {daily!.map((day, idx) => (
-              <HealthBar key={day?.date || idx} day={day} />
-            ))}
-          </div>
-        </div>
+        <HealthBars
+          animated
+          grow
+          barClassName="h-8 rounded-xs"
+          bars={daily!.map((day, idx) => ({
+            key: day?.date || idx,
+            colorClass: dayBarClass(day),
+            ariaLabel: dayAriaLabel(day),
+            tooltip: <DayTooltipContent day={day} />,
+          }))}
+        />
       ) : (
         <EmptyState
           variant="history"
@@ -303,33 +290,41 @@ export const HealthTimeline = ({
               }))}
               pagination={{ hasNext: false, offset: 0, limit: transitions.length }}
               getEventKey={(transition, idx) => `${transition.observed_at}-${idx}`}
-              renderEvent={(transition) => (
-                <TimelineEvent
-                  status={transition.to_health || 'unknown'}
-                  createdAt={transition.observed_at}
-                  title={`${formatHealth(transition.from_health)} → ${formatHealth(transition.to_health)}`}
-                  caption={transition.message}
-                  additionalCaption={
-                    [
-                      transition.root_resource_kind,
-                      transition.root_resource_namespace,
-                      transition.root_resource_name,
-                    ]
-                      .filter(Boolean)
-                      .join(' / ') || undefined
-                  }
-                  underline={transition.diagnosis}
-                  actions={
-                    transition.correlated_deploy_id && deployBasePath ? (
-                      <Link
-                        href={`${deployBasePath}/${transition.correlated_deploy_id}`}
-                      >
-                        View deploy
-                      </Link>
-                    ) : undefined
-                  }
-                />
-              )}
+              renderEvent={(transition) => {
+                const deployHref =
+                  transition.correlated_deploy_id && deployBasePath
+                    ? `${deployBasePath}/${transition.correlated_deploy_id}`
+                    : undefined
+                return (
+                  <TimelineEvent
+                    status={transition.to_health || 'unknown'}
+                    createdAt={transition.observed_at}
+                    title={`${formatHealth(transition.from_health)} → ${formatHealth(transition.to_health)}`}
+                    caption={transition.message}
+                    additionalCaption={
+                      [
+                        transition.root_resource_kind,
+                        transition.root_resource_namespace,
+                        transition.root_resource_name,
+                      ]
+                        .filter(Boolean)
+                        .join(' / ') || undefined
+                    }
+                    underline={
+                      transition.diagnosis || deployHref ? (
+                        <span className="flex flex-col items-start gap-1">
+                          {transition.diagnosis ? (
+                            <span>{transition.diagnosis}</span>
+                          ) : null}
+                          {deployHref ? (
+                            <Link href={deployHref}>View deploy</Link>
+                          ) : null}
+                        </span>
+                      ) : undefined
+                    }
+                  />
+                )
+              }}
             />
           ) : (
             <EmptyState
