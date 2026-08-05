@@ -8,7 +8,30 @@ import (
 
 	"github.com/charmbracelet/fang"
 	"github.com/getsentry/sentry-go"
+	"github.com/spf13/cobra"
 )
+
+// Building the description calls the API, so only do it when root help will
+// actually render it. Flags are parsed first so --config is respected.
+func populateRootLongDescription(c *cli, rootCmd *cobra.Command, args []string) {
+	rootCmd.InitDefaultHelpFlag()
+	if err := rootCmd.ParseFlags(args); err != nil {
+		return
+	}
+
+	positional := rootCmd.Flags().Args()
+	switch {
+	case len(positional) == 0:
+	case len(positional) == 1 && positional[0] == "help":
+	default:
+		return
+	}
+
+	// rootCmd already loaded config from the default path.
+	_ = c.initConfig()
+
+	rootCmd.Long = c.getLongDescription()
+}
 
 // Execute is essentially the init method of the CLI. It initializes all the components and composes them together.
 func Execute() {
@@ -27,6 +50,8 @@ func Execute() {
 	}()
 
 	rootCmd := c.rootCmd()
+	populateRootLongDescription(c, rootCmd, os.Args[1:])
+
 	err = fang.Execute(
 		context.Background(),
 		rootCmd,
