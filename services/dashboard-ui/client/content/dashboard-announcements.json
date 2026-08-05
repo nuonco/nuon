@@ -1,13 +1,22 @@
 {
   "announcements": [
     {
+      "id": "app-branches-040",
+      "title": "Introducing App Branches",
+      "date": "August 5, 2026",
+      "description": "Connect a git branch to your app and roll changes out across your customer fleet through ordered deployment groups, with a plan and an approval at every step.",
+      "ctaText": "Learn more",
+      "cteUrl": "https://docs.nuon.co/updates/040-app-branches",
+      "dismissible": false
+    },
+    {
       "id": "spacelift-cli-038",
       "title": "Spacelift install stacks and CLI automation",
       "date": "July 10, 2026",
       "description": "Provision install stacks through Spacelift and drive the nuon CLI reliably from CI/CD.",
       "ctaText": "Learn more",
       "ctaUrl": "https://docs.nuon.co/updates/038-spacelift-and-cli-automation",
-      "dismissible": false
+      "dismissible": true
     }
   ]
 }
