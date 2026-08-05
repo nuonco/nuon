@@ -15,6 +15,9 @@ const readOnlyEnvVar = "NUON_READ_ONLY"
 // does not mutate remote state (local config selection and scaffolding are
 // allowed). Default-deny: new read commands must be added here explicitly.
 var readOnlyCommands = map[string]struct{}{
+	"noop":                 {},
+	"noop-init":            {},
+	"noop-auth":            {},
 	"list":                 {},
 	"get":                  {},
 	"health":               {},
