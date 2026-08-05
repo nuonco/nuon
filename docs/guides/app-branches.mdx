@@ -283,61 +283,11 @@ To reproduce a preview locally before opening the pull request:
 nuon sync --branch main --preview
 ```
 
-## Re-apply a previous config version
+## Roll back when a change goes badly
 
-Every config change to an install is recorded as an app config version, and any earlier version can be applied again.
-That is the recovery path when a rollout, or a mistyped input, turns out badly.
-
-<Steps>
-  <Step title="List the install's versions">
-    ```sh
-    curl -H "Authorization: Bearer $NUON_API_TOKEN" \
-      -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
-      "https://api.nuon.co/v1/installs/$INSTALL_ID/app-config-versions"
-    ```
-
-    Each entry carries the app config it pinned. The install's **Versions** view in the dashboard shows the same
-    history.
-  </Step>
-  <Step title="Confirm what changed">
-    ```sh
-    curl -H "Authorization: Bearer $NUON_API_TOKEN" \
-      -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
-      "https://api.nuon.co/v1/installs/$INSTALL_ID/app-config-versions/$VERSION_ID/diff"
-    ```
-  </Step>
-  <Step title="Apply the older version">
-    ```sh
-    curl -X POST \
-      -H "Authorization: Bearer $NUON_API_TOKEN" \
-      -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
-      -H "Content-Type: application/json" \
-      -d '{"app_config_id": "'"$OLD_APP_CONFIG_ID"'"}' \
-      "https://api.nuon.co/v1/installs/$INSTALL_ID/app-config-updates"
-    ```
-
-    Send `{"plan_only": true}` alongside it first if you want to see the plan without applying.
-  </Step>
-</Steps>
-
-To move a whole deployment group back rather than one install, trigger a branch run against the older app config and
-skip the build step, since the artifacts for that config already exist:
-
-```sh
-curl -X POST \
-  -H "Authorization: Bearer $NUON_API_TOKEN" \
-  -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
-  -H "Content-Type: application/json" \
-  -d '{"app_config_id": "'"$OLD_APP_CONFIG_ID"'", "skip_builds": true}' \
-  "https://api.nuon.co/v1/apps/$APP_ID/branches/$APP_BRANCH_ID/runs"
-```
-
-The run still plans each group and still waits for approval, so you see the reverse diff before it is applied.
-
-<Note>
-  This is a pattern built from the version history and the branch run API, not a one-click button. Nothing about it is
-  automatic: you choose the version and you approve the plan.
-</Note>
+Every config change to an install is recorded as an app config version, and any earlier version can be applied again
+— to one install or to a whole deployment group, with a plan in front of it. The
+[rollback guide](/guides/rollback-install-config) walks through the exact calls.
 
 ## Command reference
 
@@ -382,7 +332,10 @@ into. Switch the group to a `label_selector`, or create the install first.
     Run types, plan and approval flow, and install version history.
   </Card>
   <Card title="Walkthrough" icon="rocket" href="/get-started/app-branches-walkthrough">
-    Add a branch to the `eks-simple` example app end to end.
+    Roll a change through the `eks-simple` example app end to end.
+  </Card>
+  <Card title="Roll back an install" icon="clock-rotate-left" href="/guides/rollback-install-config">
+    Re-apply a previous config version to an install or a whole group.
   </Card>
   <Card title="Branch config reference" icon="file" href="/config-ref/branch">
     Every field on `branch.toml`.

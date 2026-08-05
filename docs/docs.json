@@ -185,6 +185,7 @@
             "boost": 3,
             "pages": [
               "guides/app-branches",
+              "guides/rollback-install-config",
               "guides/actions",
               "guides/adhoc-actions",
               "guides/runbooks",
