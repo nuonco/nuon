@@ -938,11 +938,37 @@ func (s *Signal) isWorkflowComplete(ctx workflow.Context) bool {
 			app.WorkflowStepNoDrift, app.WorkflowStepDrifted:
 			continue
 		default:
+			// An error row the flow already moved past isn't blocking.
+			if stepHandledDespiteError(step) {
+				continue
+			}
 			return false
 		}
 	}
 
 	return true
+}
+
+// stepHandledDespiteError reports whether an `error` step was superseded by an
+// auto-retry clone or skipped after exhausting retries — historical, not blocking.
+func stepHandledDespiteError(step app.WorkflowStep) bool {
+	if step.Status.Status != app.StatusError {
+		return false
+	}
+	return metadataTrue(step.Status.Metadata, "auto_retried") ||
+		metadataTrue(step.Status.Metadata, "skipped_on_failure")
+}
+
+// metadataTrue reads a truthy flag as either bool or its JSON-round-tripped string.
+func metadataTrue(meta map[string]any, key string) bool {
+	switch v := meta[key].(type) {
+	case bool:
+		return v
+	case string:
+		return v == "true"
+	default:
+		return false
+	}
 }
 
 // checkRetryable checks if the workflow is still eligible for retry.
