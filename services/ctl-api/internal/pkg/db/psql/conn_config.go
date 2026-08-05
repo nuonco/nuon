@@ -17,7 +17,7 @@ import (
 // exercise a credential path the service may never take, so a passing check
 // would say nothing about whether the service can connect.
 func ConnConfig(ctx context.Context, cfg *internal.Config, host string) (*pgx.ConnConfig, error) {
-	d, err := newDatabase(cfg, zapgorm2.Logger{}, nil, nil, host)
+	d, err := newDatabase(cfg, zapgorm2.Logger{}, nil, nil, nil, host)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build database config: %w", err)
 	}

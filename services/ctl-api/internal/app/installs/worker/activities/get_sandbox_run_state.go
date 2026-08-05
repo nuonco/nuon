@@ -26,7 +26,7 @@ func (a *Activities) GetInstallSandboxRunState(ctx context.Context, req GetInsta
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig.VCSConnection").
 		Preload("RunnerJobs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("runner_jobs_view_v2.created_at DESC")
+			return db.Order("runner_jobs_view_v3.created_at DESC")
 		}).
 		Preload("LogStream").
 		Where(app.InstallSandboxRun{

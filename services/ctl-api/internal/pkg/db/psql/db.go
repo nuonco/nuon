@@ -16,6 +16,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/routing"
 )
@@ -44,6 +45,7 @@ type database struct {
 
 	MetricsWriter  metrics.Writer `validate:"required"`
 	QueryCollector *querycollector.Collector
+	BlobSvc        blobstore.Service
 
 	pool          *pgxpool.Pool
 	poolCtx       context.Context
@@ -91,8 +93,9 @@ func New(v *validator.Validate,
 	lc fx.Lifecycle,
 	cfg *internal.Config,
 	qc *querycollector.Collector,
+	blobSvc blobstore.Service,
 ) (*gorm.DB, error) {
-	primary, err := newDatabase(cfg, l, metricsWriter, qc, cfg.DBHost)
+	primary, err := newDatabase(cfg, l, metricsWriter, qc, blobSvc, cfg.DBHost)
 	if err != nil {
 		return nil, fmt.Errorf("unable to build primary database config: %w", err)
 	}
@@ -112,7 +115,7 @@ func New(v *validator.Validate,
 	connPool := routing.NewConnPool(primarySQL, nil)
 
 	if cfg.DBReplicaEnabled && cfg.DBGormReplicaHost != "" {
-		replica, err = newDatabase(cfg, l, metricsWriter, qc, cfg.DBGormReplicaHost)
+		replica, err = newDatabase(cfg, l, metricsWriter, qc, blobSvc, cfg.DBGormReplicaHost)
 		if err != nil {
 			return nil, fmt.Errorf("unable to build replica database config: %w", err)
 		}
@@ -188,18 +191,20 @@ func NewReplica(v *validator.Validate,
 	lc fx.Lifecycle,
 	cfg *internal.Config,
 	qc *querycollector.Collector,
+	blobSvc blobstore.Service,
 ) (*gorm.DB, error) {
 	if cfg.DBReplicaHost == "" {
 		return nil, fmt.Errorf("db_replica_host must be set to use the read replica")
 	}
-	return open(v, l, metricsWriter, lc, cfg, qc, cfg.DBReplicaHost)
+	return open(v, l, metricsWriter, lc, cfg, qc, blobSvc, cfg.DBReplicaHost)
 }
 
-func newDatabase(cfg *internal.Config, l zapgorm2.Logger, metricsWriter metrics.Writer, qc *querycollector.Collector, host string) (*database, error) {
+func newDatabase(cfg *internal.Config, l zapgorm2.Logger, metricsWriter metrics.Writer, qc *querycollector.Collector, blobSvc blobstore.Service, host string) (*database, error) {
 	ctx, cancelFn := context.WithCancel(context.Background())
 
 	d := &database{
 		Logger:         l,
+		BlobSvc:        blobSvc,
 		Host:           host,
 		User:           cfg.DBUser,
 		Name:           cfg.DBName,
@@ -231,9 +236,10 @@ func open(v *validator.Validate,
 	lc fx.Lifecycle,
 	cfg *internal.Config,
 	qc *querycollector.Collector,
+	blobSvc blobstore.Service,
 	host string,
 ) (*gorm.DB, error) {
-	d, err := newDatabase(cfg, l, metricsWriter, qc, host)
+	d, err := newDatabase(cfg, l, metricsWriter, qc, blobSvc, host)
 	if err != nil {
 		return nil, err
 	}

@@ -43,6 +43,19 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 		return nil, errors.Wrap(err, "state data")
 	}
 
+	install, err := activities.AwaitGetByInstallID(ctx, installDeploy.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
+	// A sandbox install never applies its sandbox, so the registry outputs the
+	// repository and login server render from do not exist. Callers no-op the push in
+	// sandbox mode, so a placeholder destination is enough to build a valid plan.
+	if install.SandboxMode.Bool || install.Org.SandboxMode {
+		l.Info("sandbox-mode enabled, creating fake install registry repository")
+		return sandboxInstallRegistryRepositoryConfig(stack), nil
+	}
+
 	sessionName := fmt.Sprintf("oci-sync-%s-%s", installDeploy.InstallID, installDeploy.ID)
 	cloudAuth, err := p.getAuthForDeploy(ctx, roleSelection, stack, sessionName)
 	if err != nil {
@@ -143,6 +156,34 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 	}
 
 	return cfg, nil
+}
+
+// sandboxRegistryHost is an obviously non-routable placeholder, so a sandbox plan
+// that somehow reached a real push would fail rather than hit a live registry.
+const sandboxRegistryHost = "registry.example.com"
+
+// sandboxInstallRegistryRepositoryConfig mirrors the real config's registry type and
+// region so tag construction stays representative, without the sandbox outputs.
+func sandboxInstallRegistryRepositoryConfig(stack *app.InstallStack) *configs.OCIRegistryRepository {
+	cfg := &configs.OCIRegistryRepository{
+		Plugin:       "oci",
+		RegistryType: configs.OCIRegistryTypePrivateOCI,
+		Repository:   sandboxRegistryHost + "/nuon/sandbox",
+		LoginServer:  sandboxRegistryHost,
+	}
+
+	switch {
+	case stack.InstallStackOutputs.AWSStackOutputs != nil:
+		cfg.RegistryType = configs.OCIRegistryTypeECR
+		cfg.Region = stack.InstallStackOutputs.AWSStackOutputs.Region
+	case stack.InstallStackOutputs.AzureStackOutputs != nil:
+		cfg.RegistryType = configs.OCIRegistryTypeACR
+	case stack.InstallStackOutputs.GCPStackOutputs != nil:
+		cfg.RegistryType = configs.OCIRegistryTypeGAR
+		cfg.Region = stack.InstallStackOutputs.GCPStackOutputs.Region
+	}
+
+	return cfg
 }
 
 // imageNameSegment reduces a component name to a docker image path segment /

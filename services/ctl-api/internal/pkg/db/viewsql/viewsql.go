@@ -97,11 +97,8 @@ var RunnerHealthCheckViewV1 string
 //go:embed runner_health_checks_view_v2.sql
 var RunnerHealthCheckViewV2 string
 
-//go:embed runner_jobs_view_v1.sql
-var RunnerJobViewV1 string
-
-//go:embed runner_jobs_view_v2.sql
-var RunnerJobViewV2 string
+//go:embed runner_jobs_view_v3.sql
+var RunnerJobViewV3 string
 
 //go:embed runner_settings_v1.sql
 var RunnerSettingsV1 string

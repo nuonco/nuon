@@ -33,10 +33,11 @@ SELECT
         LIMIT
             1
     ) AS final_runner_job_execution_id,
-    -- Outputs subquery
+    -- Outputs blob metadata subquery. Carries the S3 pointer rather than the
+    -- payload, which lives in the blob and cannot be read from SQL.
     (
         SELECT
-            rjeo.outputs
+            rjeo.outputs_blob
         FROM
             runner_job_execution_outputs rjeo
             JOIN (
@@ -53,6 +54,6 @@ SELECT
             ) first_exec ON first_exec.id = rjeo.runner_job_execution_id
         LIMIT
             1
-    ) AS outputs
+    ) AS outputs_blob
 FROM
     runner_jobs rj;

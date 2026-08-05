@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -290,12 +291,16 @@ type RunnerJob struct {
 
 	ExecutionCount            int    `json:"execution_count,omitzero" gorm:"->;-:migration" temporaljson:"execution_count,omitzero,omitempty"`
 	FinalRunnerJobExecutionID string `json:"final_runner_job_execution_id,omitzero" gorm:"->;-:migration" temporaljson:"final_runner_job_execution_id,omitzero,omitempty"`
-	Outputs                   []byte `json:"outputs_json,omitzero" gorm:"->;-:migration;type:jsonb" swaggertype:"primitive,string" temporaljson:"outputs,omitzero,omitempty"`
+
+	// OutputsBlob carries the S3 pointer for the latest execution's outputs. The
+	// view cannot carry the payload itself, so AfterQuery reads it.
+	OutputsBlob *blobstore.Blob `json:"-" gorm:"->;-:migration" temporaljson:"-"`
 
 	// read only fields from gorm AfterQuery
 
 	ExecutionTime time.Duration          `json:"execution_time,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
 	Execution     *RunnerJobExecution    `json:"-" gorm:"-" temporaljson:"execution,omitzero,omitempty"`
+	Outputs       []byte                 `json:"outputs_json,omitzero" gorm:"-" swaggertype:"primitive,string" temporaljson:"outputs,omitzero,omitempty"`
 	ParsedOutputs map[string]interface{} `json:"outputs,omitzero" gorm:"-" temporaljson:"parsed_outputs,omitzero,omitempty"`
 
 	// foreign keys
@@ -309,19 +314,16 @@ func (*RunnerJob) UseView() bool {
 }
 
 func (*RunnerJob) ViewVersion() string {
-	return "v2"
+	return "v3"
 }
 
 func (i *RunnerJob) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
+		// v1 and v2 are not created: both select runner_job_execution_outputs.outputs,
+		// which no longer exists now that outputs live in the blob.
 		{
-			Name:          views.DefaultViewName(db, &RunnerJob{}, 1),
-			SQL:           viewsql.RunnerJobViewV1,
-			AlwaysReapply: true,
-		},
-		{
-			Name:          views.DefaultViewName(db, &RunnerJob{}, 2),
-			SQL:           viewsql.RunnerJobViewV2,
+			Name:          views.DefaultViewName(db, &RunnerJob{}, 3),
+			SQL:           viewsql.RunnerJobViewV3,
 			AlwaysReapply: true,
 		},
 	}
@@ -411,7 +413,16 @@ func (r *RunnerJob) FlowInstallID() string {
 func (r *RunnerJob) AfterQuery(tx *gorm.DB) error {
 	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
 
-	if len(r.Outputs) > 0 {
+	// An unset blob means the job produced no outputs. A set blob that cannot be
+	// read is an error rather than empty outputs: callers derive install state from
+	// these, so silently dropping them corrupts every downstream template.
+	raw, err := r.OutputsBlob.Get(tx.Statement.Context)
+	if err != nil {
+		return errors.Wrap(err, "unable to read runner job outputs blob")
+	}
+	if raw != "" {
+		r.Outputs = []byte(raw)
+
 		var outputs map[string]interface{}
 		if err := json.Unmarshal(r.Outputs, &outputs); err != nil {
 			return errors.Wrap(err, "unable to parse outputs json")

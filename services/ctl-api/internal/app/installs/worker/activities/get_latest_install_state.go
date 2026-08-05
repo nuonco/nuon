@@ -30,5 +30,9 @@ func (a *Activities) GetLatestInstallState(ctx context.Context, req *GetLatestIn
 		}
 		return nil, res.Error
 	}
-	return is.State, nil
+
+	// Must go through the getter: the state lives in the blob, and callers use this
+	// as the base they merge regenerated partials into, so an empty return here
+	// silently drops every partial they did not regenerate.
+	return is.GetState(ctx)
 }

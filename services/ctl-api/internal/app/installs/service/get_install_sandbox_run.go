@@ -76,7 +76,7 @@ func (s *service) getInstallSandboxRun(ctx *gin.Context, runID string) (*app.Ins
 		Preload("ActionWorkflowRuns").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig.VCSConnection").
 		Preload("RunnerJobs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("runner_jobs_view_v2.created_at DESC")
+			return db.Order("runner_jobs_view_v3.created_at DESC")
 		}).
 		Preload("RunnerJobs.Plan").
 		Preload("RunnerJobs.InstallRoleUsage").
