@@ -6,12 +6,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// Migration123DedupeQueueEmitters deduplicates live emitters sharing a
-// (queue_id, name) pair ahead of the idx_queue_emitters_live_uq partial unique
-// index (declared in QueueEmitter.Indexes), keeping the newest — it carries the
-// most recent config — and soft-deleting the older ones. The rn offset keeps
-// the newly deleted rows' timestamps distinct. Also drops the abandoned
-// full-tuple index an earlier iteration created via model tags.
+// Migration123DedupeQueueEmitters dedupes live emitters per (queue_id, name),
+// keeping the newest, then creates the partial unique index. Creation lives
+// here instead of QueueEmitter.Indexes because the indexes phase runs before
+// custom migrations and would fail while duplicates exist.
 func (m *Migrations) Migration123DedupeQueueEmitters(ctx context.Context, db *gorm.DB) error {
 	if err := db.WithContext(ctx).Exec(`
 		UPDATE queue_emitters qe
@@ -26,7 +24,14 @@ func (m *Migrations) Migration123DedupeQueueEmitters(ctx context.Context, db *go
 		return err
 	}
 
-	return db.WithContext(ctx).Exec(`
+	if err := db.WithContext(ctx).Exec(`
 		DROP INDEX IF EXISTS idx_queue_emitters_queue_name
+	`).Error; err != nil {
+		return err
+	}
+
+	return db.WithContext(ctx).Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_queue_emitters_live_uq
+		ON queue_emitters (queue_id, name) WHERE deleted_at = 0
 	`).Error
 }
