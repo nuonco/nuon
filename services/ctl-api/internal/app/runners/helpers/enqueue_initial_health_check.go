@@ -23,6 +23,14 @@ func (h *Helpers) MaybeEnqueueInitialHealthCheck(ctx context.Context, runnerID, 
 		return nil
 	}
 
+	sweeps, err := h.featuresClient.OrgHealthcheckSweepsEnabled(ctx, process.OrgID)
+	if err != nil {
+		return fmt.Errorf("unable to evaluate org healthcheck sweeps flag: %w", err)
+	}
+	if sweeps {
+		return nil
+	}
+
 	queueName := fmt.Sprintf("runner-process-%s", processID)
 
 	var q app.Queue

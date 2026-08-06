@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -30,7 +30,7 @@ func (a *Activities) getRunnerJob(ctx context.Context, jobID string) (*app.Runne
 		Preload("Org").
 		First(&runnerJob, "id = ?", jobID)
 	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get runner job: %w")
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get runner job")
 	}
 
 	return &runnerJob, nil

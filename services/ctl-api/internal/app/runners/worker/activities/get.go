@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -35,7 +37,7 @@ func (a *Activities) getRunner(ctx context.Context, runnerID string) (*app.Runne
 		Preload("Queues").
 		First(&runner, "id = ?", runnerID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get runner: %w", res.Error)
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get runner")
 	}
 
 	return &runner, nil
