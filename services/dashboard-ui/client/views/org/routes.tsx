@@ -21,6 +21,8 @@ import { TriggerRules } from './trigger-tabs/TriggerRules'
 import { TriggerEvents } from './trigger-tabs/TriggerEvents'
 import { TriggerRule } from './TriggerRule'
 import { TriggerEvent } from './TriggerEvent'
+import { SettingsLayout } from '@/views/settings/SettingsLayout'
+import { VCSConnections } from '@/views/settings/VCSConnections'
 import { NotFound } from '@/views/NotFound'
 import { appRoutes } from '@/views/app/routes'
 import { installRoutes } from '@/views/install/routes'
@@ -58,49 +60,97 @@ export const orgRoutes: RouteObject[] = [
         element: <ProcessSystemLogs />,
       },
       { path: ':orgId/team', element: <Team /> },
-      { path: ':orgId/api-tokens', element: <ApiTokens /> },
-      { path: ':orgId/service-accounts', element: <ServiceAccounts /> },
-      { path: ':orgId/webhooks', element: <Webhooks /> },
       {
-        element: <OIDCFederationGate />,
+        element: <SettingsLayout />,
         children: [
-          { path: ':orgId/oidc-trust-policies', element: <OIDCTrustPolicies /> },
-        ],
-      },
-      {
-        element: <TriggersGate />,
-        children: [
-          { path: ':orgId/triggers', element: <Triggers /> },
           {
-            path: ':orgId/triggers/:triggerId',
-            element: <TriggerLayout />,
+            path: ':orgId/settings',
+            loader: ({ params }) => redirect(`/${params.orgId}/settings/vcs`),
+          },
+          { path: ':orgId/settings/vcs', element: <VCSConnections /> },
+          {
+            path: ':orgId/settings/vcs/:connectionId',
+            element: <VCSConnectionDetail />,
+          },
+          { path: ':orgId/settings/webhooks', element: <Webhooks /> },
+          { path: ':orgId/settings/api-tokens', element: <ApiTokens /> },
+          {
+            path: ':orgId/settings/service-accounts',
+            element: <ServiceAccounts />,
+          },
+          {
+            element: <OIDCFederationGate />,
             children: [
-              { index: true, element: <TriggerOverview /> },
-              { path: 'rules', element: <TriggerRules /> },
-              { path: 'rules/:ruleId', element: <TriggerRule /> },
-              { path: 'events', element: <TriggerEvents /> },
-              { path: 'events/:eventId', element: <TriggerEvent /> },
+              { path: ':orgId/settings/oidc', element: <OIDCTrustPolicies /> },
             ],
           },
+          {
+            element: <TriggersGate />,
+            children: [
+              { path: ':orgId/settings/triggers', element: <Triggers /> },
+              {
+                path: ':orgId/settings/triggers/:triggerId',
+                element: <TriggerLayout />,
+                children: [
+                  { index: true, element: <TriggerOverview /> },
+                  { path: 'rules', element: <TriggerRules /> },
+                  { path: 'rules/:ruleId', element: <TriggerRule /> },
+                  { path: 'events', element: <TriggerEvents /> },
+                  { path: 'events/:eventId', element: <TriggerEvent /> },
+                ],
+              },
+            ],
+          },
+          { path: ':orgId/settings/slack', element: <Slack /> },
         ],
       },
-      { path: ':orgId/slack', element: <Slack /> },
+      {
+        path: ':orgId/webhooks',
+        loader: ({ params }) => redirect(`/${params.orgId}/settings/webhooks`),
+      },
+      {
+        path: ':orgId/api-tokens',
+        loader: ({ params }) => redirect(`/${params.orgId}/settings/api-tokens`),
+      },
+      {
+        path: ':orgId/service-accounts',
+        loader: ({ params }) =>
+          redirect(`/${params.orgId}/settings/service-accounts`),
+      },
+      {
+        path: ':orgId/oidc-trust-policies',
+        loader: ({ params }) => redirect(`/${params.orgId}/settings/oidc`),
+      },
+      {
+        path: ':orgId/triggers',
+        loader: ({ params }) => redirect(`/${params.orgId}/settings/triggers`),
+      },
+      {
+        path: ':orgId/triggers/:triggerId/*',
+        loader: ({ params }) =>
+          redirect(`/${params.orgId}/settings/triggers/${params.triggerId}`),
+      },
+      {
+        path: ':orgId/slack',
+        loader: ({ params }) => redirect(`/${params.orgId}/settings/slack`),
+      },
       {
         path: ':orgId/connections',
-        loader: ({ params }) => redirect(`/${params.orgId}`),
+        loader: ({ params }) => redirect(`/${params.orgId}/settings/vcs`),
       },
       {
         path: ':orgId/connections/vcs',
-        loader: ({ params }) => redirect(`/${params.orgId}`),
+        loader: ({ params }) => redirect(`/${params.orgId}/settings/vcs`),
       },
       {
         path: ':orgId/connections/vcs/:connectionId',
-        element: <VCSConnectionDetail />,
+        loader: ({ params }) =>
+          redirect(`/${params.orgId}/settings/vcs/${params.connectionId}`),
       },
       {
         path: ':orgId/connections/:connectionId',
         loader: ({ params }) =>
-          redirect(`/${params.orgId}/connections/vcs/${params.connectionId}`),
+          redirect(`/${params.orgId}/settings/vcs/${params.connectionId}`),
       },
       ...appRoutes,
       ...installRoutes,

@@ -502,7 +502,7 @@ export const EventDetails = ({
               evaluation={evaluation}
               href={
                 evaluation?.rule_id && event?.trigger_id
-                  ? `/${orgId}/triggers/${event.trigger_id}/rules/${evaluation.rule_id}`
+                  ? `/${orgId}/settings/triggers/${event.trigger_id}/rules/${evaluation.rule_id}`
                   : undefined
               }
             />
