@@ -96,6 +96,10 @@ const (
 	OrgFeatureCronNamespaceIsolation OrgFeature = "cron-namespace-isolation"
 	OrgFeatureTriggers               OrgFeature = "triggers"
 	OrgFeatureNewAppIA               OrgFeature = "new-app-ia"
+	// OrgFeatureOrgHealthcheckSweeps replaces per-runner and per-process
+	// healthcheck cron emitters with two per-org sweep emitters whose signals
+	// check all of the org's runners/processes in paginated batches.
+	OrgFeatureOrgHealthcheckSweeps OrgFeature = "org-healthcheck-sweeps"
 )
 
 type Org struct {
@@ -225,6 +229,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureCronNamespaceIsolation:  false,
 		OrgFeatureTriggers:                false,
 		OrgFeatureNewAppIA:                false,
+		OrgFeatureOrgHealthcheckSweeps:    false,
 
 		// Enabled by default
 		OrgFeatureAppBranches:   true,
@@ -284,6 +289,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureCronNamespaceIsolation,
 		OrgFeatureTriggers,
 		OrgFeatureNewAppIA,
+		OrgFeatureOrgHealthcheckSweeps,
 	}
 }
 
@@ -321,6 +327,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureCronNamespaceIsolation:   "Route the org's runner-healthcheck and install cron queues into dedicated Temporal namespaces + task queues polled by their own workers, isolating cron load from the api task queue.",
 		OrgFeatureTriggers:                 "Enable triggers and payload-driven rules that start app branch runs or install runbooks.",
 		OrgFeatureNewAppIA:                 "Enable the branch-centric app information architecture in the dashboard: branches as the app landing page, grouped navigation, and the app source header. Requires app-branches-ui.",
+		OrgFeatureOrgHealthcheckSweeps:     "Replace per-runner and per-process healthcheck cron emitters with two per-org sweep emitters that check all runners/processes in paginated batches. Toggle via POST /v1/orgs/{org_id}/migrate-healthcheck-sweeps, which also migrates the emitters.",
 	}
 }
 

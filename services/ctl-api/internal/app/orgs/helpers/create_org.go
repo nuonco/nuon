@@ -112,6 +112,10 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		return nil, fmt.Errorf("unable to create org-signals queue: %w", err)
 	}
 
+	if err := h.runnersHelpers.EnsureOrgHealthcheckSweeps(ctx, org.ID); err != nil {
+		return nil, fmt.Errorf("unable to create org healthcheck sweep emitters: %w", err)
+	}
+
 	// Best-effort: failures are picked up by the periodic reconciler.
 	if h.slackAutoLinkHelper != nil {
 		if _, err := h.slackAutoLinkHelper.EnsureForOrg(ctx, org.ID); err != nil && h.logger != nil {

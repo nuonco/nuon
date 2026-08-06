@@ -31,7 +31,7 @@ type AdminMigrateCronEmittersResponse struct {
 
 // @ID						AdminMigrateCronEmitters
 // @Summary				Re-jitter all cron emitters
-// @Description			System emitters (process/runner/vcs health checks) are re-jittered in place from their
+// @Description			System emitters (org healthcheck sweeps, vcs health checks) are re-jittered in place from their
 // @Description			canonical schedules . Install emitters (action crons, drift)
 // @Description			are migrated by enqueueing an appconfig-updated reconcile per install.
 // @Param					req	body	AdminMigrateCronEmittersRequest	true	"Input"
@@ -50,9 +50,11 @@ func (s *service) AdminMigrateCronEmitters(ctx *gin.Context) {
 	}
 
 	canonicalBySignalType := map[queuesignal.SignalType]string{
-		"process_healthcheck":        helpers.ProcessHealthcheckSchedule,
-		"runner_healthcheck":         helpers.RunnerHealthcheckSchedule(s.cfg.Env),
-		"vcs_connection_healthcheck": vcshelpers.VCSHealthCheckSchedule,
+		"process_healthcheck":           helpers.ProcessHealthcheckSchedule,
+		"runner_healthcheck":            helpers.RunnerHealthcheckSchedule(s.cfg.Env),
+		"org_process_healthcheck_sweep": helpers.ProcessHealthcheckSchedule,
+		"org_runner_healthcheck_sweep":  helpers.RunnerHealthcheckSchedule(s.cfg.Env),
+		"vcs_connection_healthcheck":    vcshelpers.VCSHealthCheckSchedule,
 	}
 	installSignalTypes := map[queuesignal.SignalType]struct{}{
 		"execute-action-workflow": {},

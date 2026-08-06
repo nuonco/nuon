@@ -14,27 +14,21 @@ import (
 const (
 	runnerSignalsQueueName = "runner-signals"
 
-	// RunnerHealthcheckCronsQueueName isolates the runner healthcheck cron emitter
-	// onto its own queue + task queue so it doesn't compete with runner-signals.
+	// RunnerHealthcheckCronsQueueName hosts the per-runner healthcheck cron
+	// emitter for orgs without the org-healthcheck-sweeps feature. Sweep-enabled
+	// orgs neither create it nor keep it (the migration terminates it).
 	RunnerHealthcheckCronsQueueName = "runner-healthcheck-crons"
+
+	RunnerHealthcheckEmitterName = "runner-healthcheck"
 )
 
-// EnsureRunnerSignalsQueue creates the runner-signals queue and the dedicated
-// runner-healthcheck-crons queue (with its healthcheck emitter) if they don't
-// exist. Safe to call multiple times — queueClient.Create is idempotent.
+// EnsureRunnerSignalsQueue creates the runner-signals queue if it doesn't
+// exist. For orgs without org-healthcheck-sweeps it also ensures the legacy
+// per-runner healthcheck cron queue + emitter. Safe to call multiple times.
 func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string) error {
 	var runner app.Runner
 	if res := h.db.WithContext(ctx).Where(app.Runner{ID: runnerID}).First(&runner); res.Error != nil {
 		return fmt.Errorf("unable to get runner: %w", res.Error)
-	}
-
-	healthcheckNamespace := "runners"
-	isolated, err := h.featuresClient.OrgCronNamespaceIsolationEnabled(ctx, runner.OrgID)
-	if err != nil {
-		return fmt.Errorf("unable to evaluate cron namespace isolation: %w", err)
-	}
-	if isolated {
-		healthcheckNamespace = pkgworkflows.RunnerHealthcheckCronsNamespace
 	}
 
 	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
@@ -48,8 +42,31 @@ func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string)
 		return fmt.Errorf("unable to ensure runner-signals queue: %w", err)
 	}
 
+	sweeps, err := h.featuresClient.OrgHealthcheckSweepsEnabled(ctx, runner.OrgID)
+	if err != nil {
+		return fmt.Errorf("unable to evaluate org healthcheck sweeps flag: %w", err)
+	}
+	if sweeps {
+		return nil
+	}
+
+	return h.EnsureRunnerHealthcheckEmitter(ctx, &runner)
+}
+
+// EnsureRunnerHealthcheckEmitter creates the legacy per-runner healthcheck cron
+// queue + emitter (pre-org-healthcheck-sweeps behavior). Idempotent.
+func (h *Helpers) EnsureRunnerHealthcheckEmitter(ctx context.Context, runner *app.Runner) error {
+	healthcheckNamespace := "runners"
+	isolated, err := h.featuresClient.OrgCronNamespaceIsolationEnabled(ctx, runner.OrgID)
+	if err != nil {
+		return fmt.Errorf("unable to evaluate cron namespace isolation: %w", err)
+	}
+	if isolated {
+		healthcheckNamespace = pkgworkflows.RunnerHealthcheckCronsNamespace
+	}
+
 	healthcheckQueue, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     runnerID,
+		OwnerID:     runner.ID,
 		OwnerType:   "runners",
 		Namespace:   healthcheckNamespace,
 		Name:        RunnerHealthcheckCronsQueueName,
@@ -64,42 +81,26 @@ func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string)
 		return fmt.Errorf("unable to migrate runner healthcheck emitters: %w", err)
 	}
 
-	emitters, err := h.emitterClient.GetEmittersByQueueID(ctx, healthcheckQueue.ID)
-	if err != nil {
-		return fmt.Errorf("unable to list emitters for runner-healthcheck-crons queue: %w", err)
-	}
-
-	hasHealthcheckEmitter := false
-	for _, em := range emitters {
-		if em.Name == "runner-healthcheck" {
-			hasHealthcheckEmitter = true
-			break
-		}
-	}
-
-	if !hasHealthcheckEmitter {
-		if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-			QueueID:         healthcheckQueue.ID,
-			Name:            "runner-healthcheck",
-			Description:     "Periodic runner-level health check",
-			Mode:            app.QueueEmitterModeCron,
-			CronSchedule:    RunnerHealthcheckSchedule(h.cfg.Env),
-			JitterWindow:    runnerHealthcheckJitterWindow,
-			SignalType:      "runner_healthcheck",
-			SignalExpiresIn: runnerHealthcheckSignalExpiry,
-			SignalTemplate: queuesignal.NewRaw("runner_healthcheck", map[string]any{
-				"runner_id": runnerID,
-			}),
-		}); err != nil {
-			return fmt.Errorf("unable to create runner healthcheck emitter: %w", err)
-		}
+	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
+		QueueID:         healthcheckQueue.ID,
+		Name:            RunnerHealthcheckEmitterName,
+		Description:     "Periodic runner-level health check",
+		Mode:            app.QueueEmitterModeCron,
+		CronSchedule:    RunnerHealthcheckSchedule(h.cfg.Env),
+		JitterWindow:    runnerHealthcheckJitterWindow,
+		SignalType:      "runner_healthcheck",
+		SignalExpiresIn: runnerHealthcheckSignalExpiry,
+		SignalTemplate: queuesignal.NewRaw("runner_healthcheck", map[string]any{
+			"runner_id": runner.ID,
+		}),
+	}); err != nil {
+		return fmt.Errorf("unable to create runner healthcheck emitter: %w", err)
 	}
 
 	return nil
 }
 
 // EnsureRunnerJobGroupQueues creates one queue per job group for the runner.
-// Health monitoring is handled by process_healthcheck emitters on per-process queues.
 // Safe to call multiple times — queueClient.Create is idempotent.
 func (h *Helpers) EnsureRunnerJobGroupQueues(ctx context.Context, runner *app.Runner, settings *app.RunnerGroupSettings) error {
 	for _, group := range allRunnerJobGroups {
