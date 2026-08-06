@@ -60,40 +60,34 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 	}
 
 	if len(existingSignals) > 0 {
-		if maxAge := signal.DeriveMaxInFlightAge(emitter.SignalTemplate.Signal); maxAge > 0 {
-			staleIDs := make([]string, 0, len(existingSignals))
-			live := existingSignals[:0]
-			now := time.Now()
-			for _, s := range existingSignals {
-				if now.Sub(s.CreatedAt) > maxAge {
-					staleIDs = append(staleIDs, s.ID)
-				} else {
-					live = append(live, s)
-				}
+		staleByReason, live := partitionStaleSignals(
+			existingSignals,
+			signal.DeriveMaxInFlightAge(emitter.SignalTemplate.Signal),
+			time.Now(),
+		)
+
+		for reason, ids := range staleByReason {
+			// Do NOT soft-delete: a handler may already be running this signal,
+			// and removing the row would cause its status-update activities to
+			// loop on ErrRecordNotFound. Marking status=error is enough to
+			// release EmitSignal's in-flight check; the handler will finish
+			// (or its own writes will overwrite this status) naturally.
+			if res := a.db.WithContext(ctx).Exec(`
+				UPDATE queue_signals
+				SET status = jsonb_set(status, '{status}', '"error"'::jsonb)
+				           || jsonb_build_object('metadata', jsonb_build_object('stale_drop', ?::text)),
+				    updated_at = now()
+				WHERE id IN (?)`, reason, ids); res.Error != nil {
+				return nil, errors.Wrap(res.Error, "unable to mark stale in-flight signals as failed")
 			}
-			if len(staleIDs) > 0 {
-				// Do NOT soft-delete: a handler may already be running this signal,
-				// and removing the row would cause its status-update activities to
-				// loop on ErrRecordNotFound. Marking status=error is enough to
-				// release EmitSignal's in-flight check; the handler will finish
-				// (or its own writes will overwrite this status) naturally.
-				if res := a.db.WithContext(ctx).Exec(`
-					UPDATE queue_signals
-					SET status = jsonb_set(status, '{status}', '"error"'::jsonb)
-					           || jsonb_build_object('metadata', jsonb_build_object('stale_drop', 'exceeded max_in_flight_age')),
-					    updated_at = now()
-					WHERE id IN (?)`, staleIDs); res.Error != nil {
-					return nil, errors.Wrap(res.Error, "unable to mark stale in-flight signals as failed")
-				}
-				a.l.Warn("dropped stale in-flight signals exceeding max-in-flight age",
-					zap.String("emitter-id", req.EmitterID),
-					zap.String("queue-id", req.QueueID),
-					zap.Int("stale-count", len(staleIDs)),
-					zap.Duration("max-in-flight-age", maxAge),
-				)
-			}
-			existingSignals = live
+			a.l.Warn("dropped stale in-flight signals",
+				zap.String("emitter-id", req.EmitterID),
+				zap.String("queue-id", req.QueueID),
+				zap.String("reason", reason),
+				zap.Int("stale-count", len(ids)),
+			)
 		}
+		existingSignals = live
 
 		if len(existingSignals) > 0 {
 			a.l.Info("skipping signal emission - emitter already has in-flight signal",
@@ -140,4 +134,32 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		QueueSignalID: enqueueResp.ID,
 		WorkflowID:    enqueueResp.WorkflowID,
 	}, nil
+}
+
+const (
+	staleReasonMaxInFlightAge = "exceeded max_in_flight_age"
+	staleReasonExpired        = "expired"
+)
+
+// partitionStaleSignals splits an emitter's in-flight signals into ones that should
+// no longer hold the emitter back, keyed by why, and ones still considered live.
+//
+// Expiry is otherwise only enforced by the handler itself, so a handler that died
+// leaves its row in-flight forever and the emitter never fires again.
+func partitionStaleSignals(signals []*app.QueueSignal, maxAge time.Duration, now time.Time) (map[string][]string, []*app.QueueSignal) {
+	staleByReason := map[string][]string{}
+	live := make([]*app.QueueSignal, 0, len(signals))
+
+	for _, s := range signals {
+		switch {
+		case maxAge > 0 && now.Sub(s.CreatedAt) > maxAge:
+			staleByReason[staleReasonMaxInFlightAge] = append(staleByReason[staleReasonMaxInFlightAge], s.ID)
+		case s.ExpiresAt != nil && now.After(*s.ExpiresAt):
+			staleByReason[staleReasonExpired] = append(staleByReason[staleReasonExpired], s.ID)
+		default:
+			live = append(live, s)
+		}
+	}
+
+	return staleByReason, live
 }
