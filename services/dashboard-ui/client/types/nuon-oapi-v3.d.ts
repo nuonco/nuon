@@ -2495,11 +2495,6 @@ export interface paths {
      * @description Returns the verified SlackOrgLink rows belonging to the calling org. Each row carries the link_id used by the channel-subscription create endpoint.
      */
     get: operations["ListSlackOrgLinks"];
-    /**
-     * Bind a Slack workspace to the current org
-     * @description Creates a verified SlackOrgLink between the supplied TeamID and the calling org. Used by the Phase 4 confirmation flow when a user finishes the Slack OAuth round-trip and selects the Nuon org to attach the workspace to.
-     */
-    post: operations["CreateSlackOrgLink"];
   };
   "/v1/orgs/{org_id}/slack/org-links/{link_id}": {
     /**
@@ -8034,9 +8029,6 @@ export interface components {
     "service.CreateOrgInviteRequest": {
       email: string;
       role_type?: components["schemas"]["app.RoleType"];
-    };
-    "service.CreateOrgLinkRequest": {
-      team_id: string;
     };
     "service.CreateOrgRequest": {
       name: string;
@@ -27216,62 +27208,6 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * Bind a Slack workspace to the current org
-   * @description Creates a verified SlackOrgLink between the supplied TeamID and the calling org. Used by the Phase 4 confirmation flow when a user finishes the Slack OAuth round-trip and selects the Nuon org to attach the workspace to.
-   */
-  CreateSlackOrgLink: {
-    parameters: {
-      path: {
-        /** @description Org ID */
-        org_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.CreateOrgLinkRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": components["schemas"]["app.SlackOrgLink"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Conflict */
-      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
