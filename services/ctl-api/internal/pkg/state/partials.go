@@ -72,7 +72,7 @@ var HintToPartials = map[HintType][]PartialName{
 	HintInputsUpdated:        {PartialInputs},
 	HintSecretsUpdated:       {PartialSecrets},
 	HintRunnerUpdated:        {PartialRunner},
-	HintAppConfigUpdated:     {PartialApp, PartialInputs},
+	HintAppConfigUpdated:     {PartialApp, PartialInputs, PartialActions},
 	HintInstallCreated:       {PartialOrg, PartialApp, PartialRunner, PartialCloud, PartialInputs},
 }
 
