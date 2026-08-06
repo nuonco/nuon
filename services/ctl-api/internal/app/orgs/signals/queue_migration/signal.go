@@ -52,6 +52,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to ensure org queue: %w", err)
 	}
 
+	l.Info("ensuring org healthcheck sweep emitters", zap.String("org_id", s.OrgID))
+	if err := activities.AwaitEnsureOrgHealthcheckSweepsByOrgID(ctx, s.OrgID); err != nil {
+		return fmt.Errorf("unable to ensure org healthcheck sweeps: %w", err)
+	}
+
 	// 2. Ensure app queues (branches + components)
 	apps, err := activities.AwaitGetOrgAppsByOrgID(ctx, s.OrgID)
 	if err != nil {

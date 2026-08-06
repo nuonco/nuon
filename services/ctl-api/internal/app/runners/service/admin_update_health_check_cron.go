@@ -11,15 +11,19 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
+	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 type AdminUpdateHealthCheckCronRequest struct {
 	CronSchedule string `json:"cron_schedule" validate:"required"`
+	// SignalType selects which healthcheck sweep emitters to update. Defaults
+	// to org_process_healthcheck_sweep.
+	SignalType string `json:"signal_type" validate:"omitempty,oneof=org_process_healthcheck_sweep org_runner_healthcheck_sweep"`
 }
 
 // @ID						AdminUpdateHealthCheckCron
-// @Summary				Update the cron schedule on all process health check emitters
-// @Description			Globally change the health check frequency without restarting processes
+// @Summary				Update the cron schedule on the org healthcheck sweep emitters
+// @Description			Globally change the health check sweep frequency. Takes effect when each emitter workflow restarts.
 // @Param					req	body	AdminUpdateHealthCheckCronRequest	true	"Input"
 // @Tags					runners/admin
 // @Security				AdminEmail
@@ -45,13 +49,18 @@ func (s *service) AdminUpdateHealthCheckCron(ctx *gin.Context) {
 	}
 	jitterWindow := cronutil.MaxJitterWindow
 
+	signalType := req.SignalType
+	if signalType == "" {
+		signalType = "org_process_healthcheck_sweep"
+	}
+
 	var emitters []app.QueueEmitter
 	if res := s.db.WithContext(ctx).
 		Where(app.QueueEmitter{
-			SignalType: "process_healthcheck",
+			SignalType: queuesignal.SignalType(signalType),
 			Mode:       app.QueueEmitterModeCron,
 		}).Find(&emitters); res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to find health check emitters: %w", res.Error))
+		ctx.Error(fmt.Errorf("unable to find health check sweep emitters: %w", res.Error))
 		return
 	}
 
