@@ -53,13 +53,12 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		"RunnerInitScriptUrl": inp.RunnerInitScriptURL, // NOTE(fd): this is user- (provided/configurable)
 	}
 
-	// conditionally include RunnerApiToken if the nested template defines it as a parameter
+	// conditionally include RunnerApiToken if the nested template defines it as a parameter.
+	// Never as a stack tag: tags propagate to every taggable resource in the stack and are
+	// readable by anyone with describe access in the customer account. Runners bootstrap
+	// through /v1/runner-auth/*, so nothing reads this token from tags.
 	if _, ok := tmpl.Parameters["RunnerApiToken"]; ok {
 		params["RunnerApiToken"] = inp.APIToken
-		stackTags = append(stackTags, tags.Tag{
-			Key:   "nuon_runner_api_token",
-			Value: inp.APIToken,
-		})
 	}
 
 	// conditionally include RunnerEnvVars if the nested template defines it as a parameter

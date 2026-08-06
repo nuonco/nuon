@@ -328,15 +328,10 @@ func TestGetRunnerASGNestedStack_WithRunnerApiToken(t *testing.T) {
 		"RunnerApiToken should be in parameters when template defines it")
 	assert.Equal(t, "test-token-value", stack.Parameters["RunnerApiToken"])
 
-	// verify the token tag is present
-	foundTag := false
 	for _, tag := range stack.Tags {
-		if tag.Key == "nuon_runner_api_token" {
-			foundTag = true
-			assert.Equal(t, "test-token-value", tag.Value)
-		}
+		assert.NotEqual(t, "nuon_runner_api_token", tag.Key,
+			"the runner token must never be exposed as a stack tag")
 	}
-	assert.True(t, foundTag, "nuon_runner_api_token tag should be present when template defines RunnerApiToken")
 }
 
 const mockBYOVPCTemplateYAML = `
