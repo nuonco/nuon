@@ -100,6 +100,8 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		return ui.PrintError(err)
 	}
 
+	s.warnIfCLIOutdated(ctx)
+
 	cfg, err := parse.ParseDir(ctx, parse.ParseConfig{
 		Dirname:       dir,
 		V:             validator.New(),
