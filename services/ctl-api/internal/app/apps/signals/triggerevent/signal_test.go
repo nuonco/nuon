@@ -3,11 +3,13 @@ package triggerevent
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
@@ -38,6 +40,8 @@ func executeSignal(t *testing.T, env *testsuite.TestWorkflowEnvironment) error {
 func TestExecuteFansOutEveryDispatchAndWaiter(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 
 	env.OnActivity((*activities.Activities).RouteTriggerEvent, mock.Anything, mock.Anything, mock.Anything).
 		Return(routedResponse(), nil).Once()
@@ -53,6 +57,8 @@ func TestExecuteFansOutEveryDispatchAndWaiter(t *testing.T) {
 func TestExecuteFailedDispatchEnqueueDoesNotBlockSiblingsOrWaiters(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 
 	env.OnActivity((*activities.Activities).RouteTriggerEvent, mock.Anything, mock.Anything, mock.Anything).
 		Return(routedResponse(), nil).Once()
@@ -70,6 +76,8 @@ func TestExecuteFailedDispatchEnqueueDoesNotBlockSiblingsOrWaiters(t *testing.T)
 func TestExecuteFailedWaiterDoesNotBlockSiblingWaitersOrDispatches(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 
 	// Register with a string name so the test env decodes the request payload
 	// into (ctx, request) args; method-expression mocks treat the receiver as
