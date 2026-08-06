@@ -348,7 +348,7 @@ export const CreateOIDCTrustPolicyModal = ({
             onChange={(e) => setTokenDurationSeconds(e.target.value)}
           />
           <Text variant="subtext" theme="neutral">
-            Defaults to 3600. Maximum is 86400.
+            Maximum is 86400.
           </Text>
         </div>
 
