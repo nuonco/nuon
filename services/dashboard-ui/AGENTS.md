@@ -565,6 +565,8 @@ import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 
 **Always use the `Icon` suffix** for variant names (e.g., `HouseIcon` not `House`). This matches the current Phosphor Icons naming convention.
 
+**NEVER use the Phosphor GitHub icon (`GithubLogoIcon`) — it is ugly.** For anything GitHub/VCS-related, ALWAYS use the custom `GitHub` icon variant (`<Icon variant="GitHub" />`), which is the one used everywhere else in the app.
+
 Browse Phosphor icons at https://phosphoricons.com. Custom icons for cloud providers and tools are also available — see the `customIcons` map in `Icon.tsx`.
 
 **Adding a new icon:** The `Icon` component uses a static map of explicitly imported Phosphor icons for tree-shaking (only used icons are bundled). If you need an icon that isn't already in the map, update `client/components/common/Icon.tsx`:
