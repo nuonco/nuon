@@ -16,6 +16,7 @@ import (
 	segment "github.com/segmentio/analytics-go/v3"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/httpdebug"
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 	"github.com/nuonco/nuon/pkg/analytics"
 	"github.com/nuonco/nuon/pkg/errs"
@@ -23,16 +24,22 @@ import (
 
 // Construct an API client for the services to use.
 func (c *cli) initAPIClient() error {
+	var transport stdhttp.RoundTripper
+	if Debug {
+		transport = httpdebug.NewTransport(nil)
+	}
+
 	api, err := nuon.New(
 		nuon.WithValidator(c.v),
 		nuon.WithAuthToken(c.cfg.APIToken),
 		nuon.WithOrgID(c.cfg.OrgID),
 		nuon.WithURL(c.cfg.APIURL),
+		nuon.WithHTTPTransport(transport),
 	)
-	api.SetClientVersion(version.Version)
 	if err != nil {
 		return fmt.Errorf("unable to init API client: %w", err)
 	}
+	api.SetClientVersion(version.Version)
 
 	c.apiClient = api
 	return nil
