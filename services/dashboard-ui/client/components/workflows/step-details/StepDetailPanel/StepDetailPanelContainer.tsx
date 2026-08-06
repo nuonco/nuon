@@ -111,7 +111,7 @@ export const StepDetailPanelContainer = ({
       planOnly={planOnly}
       triggerHref={
         org?.id && step?.links?.event_wait?.trigger_id
-          ? `/${org.id}/triggers/${step.links.event_wait.trigger_id}`
+          ? `/${org.id}/settings/triggers/${step.links.event_wait.trigger_id}`
           : undefined
       }
       {...props}

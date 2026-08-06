@@ -20,7 +20,7 @@ const VCSConnectionWithStatus = ({
     enabled: !!org?.id && !!vcs_connection?.id,
   })
 
-  const connectionHref = `/${org?.id}/connections/vcs/${vcs_connection.id}`
+  const connectionHref = `/${org?.id}/settings/vcs/${vcs_connection.id}`
 
   return (
     <Text
