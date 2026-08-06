@@ -185,6 +185,8 @@ func init() {
 	// Blob storage configuration
 	config.RegisterDefault("blob_storage_bucket", "nuon-dev")
 	config.RegisterDefault("blob_storage_region", "us-west-2")
+	config.RegisterDefault("airgap_bundle_storage_prefix", "airgap-bundles")
+	config.RegisterDefault("airgap_bundle_grant_ttl", "15m")
 
 	// Flow check thresholds
 	config.RegisterDefault("stale_plan_threshold", "72h") // override with STALE_PLAN_THRESHOLD env var
@@ -201,10 +203,11 @@ type Config struct {
 	worker.Config `config:",squash"`
 
 	// configs for starting and introspecting service
-	GitRef         string   `config:"git_ref" validate:"required"`
-	Version        string   `config:"version" validate:"required"`
-	MetricsTags    []string `config:"metrics_tags"`
-	DisableMetrics bool     `config:"disable_metrics"`
+	GitRef                   string   `config:"git_ref" validate:"required"`
+	Version                  string   `config:"version" validate:"required"`
+	MetricsTags              []string `config:"metrics_tags"`
+	DisableMetrics           bool     `config:"disable_metrics"`
+	TerraformMirrorPlatforms []string `config:"terraform_mirror_platforms"`
 
 	ServiceName       string `config:"service_name" validate:"required"`
 	ServiceType       string `config:"service_type" validate:"required"`
@@ -550,9 +553,17 @@ type Config struct {
 	// Blob storage configuration. Provider selects the backend: "s3" (default,
 	// AWS-hosted installs) or "gcs" (self-hosted control-plane installs on GCP,
 	// where BlobStorageBucket is a native GCS bucket rather than S3).
-	BlobStorageBucket   string `config:"blob_storage_bucket" validate:"required"`
-	BlobStorageRegion   string `config:"blob_storage_region" validate:"required"`
-	BlobStorageProvider string `config:"blob_storage_provider" validate:"required,oneof=s3 gcs"`
+	BlobStorageBucket                 string        `config:"blob_storage_bucket" validate:"required"`
+	BlobStorageRegion                 string        `config:"blob_storage_region" validate:"required"`
+	AirgapBundleStorageBucket         string        `config:"airgap_bundle_storage_bucket"`
+	AirgapBundleStorageRegion         string        `config:"airgap_bundle_storage_region"`
+	AirgapBundleStorageEndpoint       string        `config:"airgap_bundle_storage_endpoint"`
+	AirgapBundleStorageForcePathStyle bool          `config:"airgap_bundle_storage_force_path_style"`
+	AirgapBundleStoragePrefix         string        `config:"airgap_bundle_storage_prefix"`
+	AirgapBundleGrantTTL              time.Duration `config:"airgap_bundle_grant_ttl"`
+	// AirgapRunnerBinaryURL accepts HTTPS or file URLs; an empty value omits the runner binary from bundles.
+	AirgapRunnerBinaryURL string `config:"airgap_runner_binary_url"`
+	BlobStorageProvider   string `config:"blob_storage_provider" validate:"required,oneof=s3 gcs"`
 
 	// Enqueuer worker pool size — how many signals can be enqueued in parallel.
 	EnqueuerMaxWorkers int `config:"enqueuer_max_workers"`

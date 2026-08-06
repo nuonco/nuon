@@ -11,6 +11,7 @@ import (
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 	"github.com/nuonco/nuon/pkg/runner/errs"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
+	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 )
 
 // handler is the handler implementation
@@ -22,6 +23,7 @@ type handler struct {
 	mw              metrics.Writer
 	l               *zap.Logger
 	clusterProvider *componenthealth.ClusterProvider
+	archiveSource   ociarchive.Source
 
 	// created on initialization of the plugin struct
 	state *handlerState
@@ -39,6 +41,9 @@ type HandlerParams struct {
 	MW              metrics.Writer
 	L               *zap.Logger
 	ClusterProvider *componenthealth.ClusterProvider
+	// ArchiveSource is only provided by air-gapped runs, where OCI sources
+	// must be served from the bundle instead of a registry.
+	ArchiveSource ociarchive.Source `optional:"true"`
 }
 
 func New(params HandlerParams) (*handler, error) {
@@ -50,5 +55,6 @@ func New(params HandlerParams) (*handler, error) {
 		mw:              params.MW,
 		l:               params.L,
 		clusterProvider: params.ClusterProvider,
+		archiveSource:   params.ArchiveSource,
 	}, nil
 }

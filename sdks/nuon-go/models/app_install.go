@@ -20,6 +20,13 @@ import (
 // swagger:model app.Install
 type AppInstall struct {
 
+	// AirgapBundleID, when set, marks this as a virtual install: a vendor-side
+	// record of an air-gapped delivery of that bundle. Virtual installs have no
+	// runner group, queues, or provisioning workflows on the control plane —
+	// the customer's runner never phones home, so this row exists purely so the
+	// vendor can track who a bundle was delivered to.
+	AirgapBundleID string `json:"airgap_bundle_id,omitempty"`
+
 	// app branch
 	AppBranch *AppAppBranch `json:"app_branch,omitempty"`
 

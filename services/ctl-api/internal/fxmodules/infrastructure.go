@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/filecache"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/airgap/transport"
 	notebookclient "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
@@ -117,6 +118,7 @@ var InfrastructureModule = fx.Module("infrastructure",
 
 	// Blob storage service
 	fx.Provide(blobstore.NewService),
+	fx.Provide(transport.AsStore(transport.NewStore)),
 
 	// File cache for blob codec
 	fx.Provide(func(cfg *internal.Config, l *zap.Logger) *filecache.FileCache {

@@ -24,7 +24,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 	h.state.descriptor = res
 
-	resultReq := registry.ToAPIResult(res)
+	resultReq := registry.ToAPIResult(dstCfg.Repository, res)
 	if _, err := h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, resultReq); err != nil {
 		h.errRecorder.Record("write job execution result", err)
 	}

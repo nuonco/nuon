@@ -64,6 +64,7 @@ const AppTemplate = () => {
   const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
   const hasNewAppIA = useNewAppIA()
+  const hasAirgapBundles = !!org?.features?.['airgap-bundles']
 
   if (!app) return null
 
@@ -97,6 +98,11 @@ const AppTemplate = () => {
     },
     { path: `/roles`, iconVariant: 'FileLockIcon' as const, text: 'Roles' },
     { path: `/policies`, iconVariant: 'ShieldCheckIcon' as const, text: 'Policies' },
+    hasAirgapBundles && {
+      path: `/bundles`,
+      iconVariant: 'PackageIcon' as const,
+      text: 'Bundles',
+    },
     { path: `/installs`, iconVariant: 'CubeIcon' as const, text: 'Installs' },
     hasInstallSyncing && {
       path: `/install-syncs`,

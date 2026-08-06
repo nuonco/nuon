@@ -59,6 +59,11 @@ type CreateRunnerJobExecutionResultRequest struct {
 	// NoOp is true when the resolved SourceDigest matched the previous build's
 	// SourceDigest and the runner skipped the artifact push.
 	NoOp bool `json:"no_op,omitempty"`
+
+	OutputRepository string `json:"output_repository,omitempty"`
+	OutputDigest     string `json:"output_digest,omitempty"`
+	OutputMediaType  string `json:"output_media_type,omitempty"`
+	OutputSize       int64  `json:"output_size,omitempty"`
 }
 
 // @ID						CreateRunnerJobExecutionResult
@@ -333,6 +338,10 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 		OrgID:                runnerJob.OrgID,
 		RunnerJobExecutionID: runnerJobExecutionID,
 		Success:              req.Success,
+		OutputRepository:     req.OutputRepository,
+		OutputDigest:         req.OutputDigest,
+		OutputMediaType:      req.OutputMediaType,
+		OutputSize:           req.OutputSize,
 		ContentsGzip:         contentsGzip,
 		ContentsDisplayGzip:  contentsDisplayGzip,
 		ErrorCode:            req.ErrorCode,
@@ -371,6 +380,10 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 		OrgID:                runnerJob.OrgID,
 		RunnerJobExecutionID: runnerJobExecutionID,
 		Success:              req.Success,
+		OutputRepository:     req.OutputRepository,
+		OutputDigest:         req.OutputDigest,
+		OutputMediaType:      req.OutputMediaType,
+		OutputSize:           req.OutputSize,
 		Contents:             req.Contents,
 		ContentsDisplay:      contentsDisplay,
 		ErrorCode:            req.ErrorCode,

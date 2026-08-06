@@ -271,6 +271,26 @@ export interface paths {
      */
     get: operations["GetActionLatestConfig"];
   };
+  "/v1/apps/{app_id}/airgap-bundles": {
+    /** list published air-gap bundles for an app */
+    get: operations["ListAirgapBundles"];
+    /** create and publish an immutable air-gap bundle */
+    post: operations["CreateAirgapBundle"];
+  };
+  "/v1/apps/{app_id}/airgap-bundles/{bundle_id}": {
+    /** get a published air-gap bundle */
+    get: operations["GetAirgapBundle"];
+  };
+  "/v1/apps/{app_id}/airgap-bundles/{bundle_id}/download-grants": {
+    /** create a download grant for a published air-gap bundle */
+    post: operations["CreateAirgapBundleDownloadGrant"];
+  };
+  "/v1/apps/{app_id}/airgap-bundles/{bundle_id}/installs": {
+    /** list virtual installs tracking air-gapped deliveries of a bundle */
+    get: operations["ListAirgapInstalls"];
+    /** create a virtual install that tracks an air-gapped delivery of a bundle */
+    post: operations["CreateAirgapInstall"];
+  };
   "/v1/apps/{app_id}/branches": {
     /**
      * get app branches
@@ -3274,6 +3294,31 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    "airgap.Finding": {
+      code?: string;
+      member?: string;
+      message?: string;
+    };
+    "airgap.QualificationReport": {
+      platform?: string;
+      qualified?: boolean;
+      violations?: components["schemas"]["airgap.Finding"][];
+      warnings?: components["schemas"]["airgap.Finding"][];
+    };
+    "airgap.RunbookStep": {
+      /**
+       * @description Component scopes a health-gate to one component by name; empty gates
+       * on every component's health.
+       */
+      component?: string;
+      kind?: string;
+      ref_id?: string;
+    };
+    "airgap.RunbookTemplate": {
+      id?: string;
+      name?: string;
+      steps?: components["schemas"]["airgap.RunbookStep"][];
+    };
     "app.AWSAccount": {
       connection_id?: string;
       created_at?: string;
@@ -3438,6 +3483,25 @@ export interface components {
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       references?: string[];
       updated_at?: string;
+    };
+    "app.AirgapBundleArtifact": {
+      app_sandbox_config_id?: string;
+      bundle_id?: string;
+      component_config_connection_id?: string;
+      config_digest?: string;
+      digest?: string;
+      id?: string;
+      kind?: string;
+      logical_name?: string;
+      media_type?: string;
+      platform_architecture?: string;
+      platform_os?: string;
+      repository?: string;
+      size?: number;
+      source_identity?: {
+        [key: string]: unknown;
+      };
+      source_type?: string;
     };
     "app.App": {
       app_configs?: components["schemas"]["app.AppConfig"][];
@@ -4470,6 +4534,14 @@ export interface components {
       version?: string;
     };
     "app.Install": {
+      /**
+       * @description AirgapBundleID, when set, marks this as a virtual install: a vendor-side
+       * record of an air-gapped delivery of that bundle. Virtual installs have no
+       * runner group, queues, or provisioning workflows on the control plane —
+       * the customer's runner never phones home, so this row exists purely so the
+       * vendor can track who a bundle was delivered to.
+       */
+      airgap_bundle_id?: string;
       app_branch?: components["schemas"]["app.AppBranch"];
       app_branch_connections?: components["schemas"]["app.InstallAppBranchConnection"][];
       app_branch_id?: string;
@@ -6032,6 +6104,10 @@ export interface components {
       };
       id?: string;
       org_id?: string;
+      output_digest?: string;
+      output_media_type?: string;
+      output_repository?: string;
+      output_size?: number;
       runner_job_execution_id?: string;
       success?: boolean;
       updated_at?: string;
@@ -9025,6 +9101,14 @@ export interface components {
       /** @description SignalsAhead are the workflows ahead in the queue, ordered from front to back. */
       signals_ahead?: components["schemas"]["service.WorkflowQueueItem"][];
     };
+    "service.airgapInstallResponse": {
+      airgap_bundle_id?: string;
+      app_config_id?: string;
+      app_id?: string;
+      created_at?: string;
+      id?: string;
+      name?: string;
+    };
     "service.awsECRImageConfigRequest": {
       aws_region?: string;
       iam_role_arn?: string;
@@ -9034,6 +9118,29 @@ export interface components {
       registry_url?: string;
       tenant_id?: string;
     };
+    "service.bundleResponse": {
+      app_config_id?: string;
+      app_id?: string;
+      artifacts?: components["schemas"]["app.AirgapBundleArtifact"][];
+      created_at?: string;
+      id?: string;
+      manifest_digest?: string;
+      oci_root_digest?: string;
+      schema_version?: number;
+      size?: number;
+      status?: string;
+      status_description?: string;
+      target_platform?: string;
+      transport_checksum?: string;
+    };
+    "service.createAirgapInstallRequest": {
+      name: string;
+    };
+    "service.createBundleRequest": {
+      app_config_id: string;
+      runbooks?: components["schemas"]["airgap.RunbookTemplate"][];
+      target_platform?: string;
+    };
     "service.dailyHealthBucket": {
       date?: string;
       degraded_seconds?: number;
@@ -9041,6 +9148,15 @@ export interface components {
       observed_seconds?: number;
       unhealthy_seconds?: number;
       unknown_seconds?: number;
+    };
+    "service.downloadGrantResponse": {
+      expires_at?: string;
+      filename?: string;
+      manifest_digest?: string;
+      size?: number;
+      supports_range?: boolean;
+      transport_checksum?: string;
+      url?: string;
     };
     "service.gcpGARImageConfigRequest": {
       gcp_project_id?: string;
@@ -11120,6 +11236,220 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** list published air-gap bundles for an app */
+  ListAirgapBundles: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.bundleResponse"][];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create and publish an immutable air-gap bundle */
+  CreateAirgapBundle: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description bundle request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.createBundleRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.bundleResponse"];
+        };
+      };
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": components["schemas"]["service.bundleResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["airgap.QualificationReport"];
+        };
+      };
+      /** @description Precondition Failed */
+      412: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+    };
+  };
+  /** get a published air-gap bundle */
+  GetAirgapBundle: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description bundle ID */
+        bundle_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.bundleResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a download grant for a published air-gap bundle */
+  CreateAirgapBundleDownloadGrant: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description bundle ID */
+        bundle_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.downloadGrantResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** list virtual installs tracking air-gapped deliveries of a bundle */
+  ListAirgapInstalls: {
+    parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description bundle ID */
+        bundle_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.airgapInstallResponse"][];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** create a virtual install that tracks an air-gapped delivery of a bundle */
+  CreateAirgapInstall: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description bundle ID */
+        bundle_id: string;
+      };
+    };
+    /** @description install request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.createAirgapInstallRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.airgapInstallResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Not Found */
+      404: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

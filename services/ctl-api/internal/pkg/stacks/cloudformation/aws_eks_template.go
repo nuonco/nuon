@@ -89,6 +89,8 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	tmpl.Resources["PhoneHomeProps"] = t.getRunnerPhoneHomeProps(inp, customResult)
 	tmpl.Resources["RunnerPhoneHome"] = t.getRunnerPhoneHomeLambda(inp, tb)
 	tmpl.Resources["RunnerPhoneHomeRole"] = t.getRunnerPhoneHomeLambdaRole(inp, tb)
+	maps.Copy(tmpl.Parameters, t.getPhoneHomeS3Parameters())
+	maps.Copy(tmpl.Conditions, t.getPhoneHomeS3Conditions())
 
 	// NOTE(fd): if there are no secrets in the config, the section is not rendered.
 	// build secrets

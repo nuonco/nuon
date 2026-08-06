@@ -46,6 +46,19 @@ export type TAppSandboxBuild = {
   runner_job?: { id: string }
   vcs_connection_commit?: { sha?: string; message?: string }
 }
+// airgap bundles
+export type TAirgapBundle = components['schemas']['service.bundleResponse']
+export type TAirgapBundleArtifact =
+  components['schemas']['app.AirgapBundleArtifact']
+export type TAirgapBundleDownloadGrant =
+  components['schemas']['service.downloadGrantResponse']
+export type TCreateAirgapBundleRequest =
+  components['schemas']['service.createBundleRequest']
+export type TAirgapInstall =
+  components['schemas']['service.airgapInstallResponse']
+export type TCreateAirgapInstallRequest =
+  components['schemas']['service.createAirgapInstallRequest']
+
 // Policy types - manually defined as API schema may not be deployed yet
 export type TAppPolicyType =
   | 'kubernetes_cluster'

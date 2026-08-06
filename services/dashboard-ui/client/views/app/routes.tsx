@@ -28,6 +28,7 @@ import { Labels } from './Labels'
 import { Readme } from './Readme'
 import { Sandbox } from './Sandbox'
 import { SandboxBuildDetail } from './SandboxBuildDetail'
+import { Bundles } from './Bundles'
 import { Branches } from './branches/Branches'
 import { BranchLayout } from './branches/BranchLayout'
 import { BranchOverviewTab } from './branches/tabs/BranchOverviewTab'
@@ -177,6 +178,7 @@ export const appRoutes: RouteObject[] = [
           (p) => `sandbox/builds/${p.buildId}`
         ),
       },
+      { path: ':orgId/apps/:appId/bundles', element: <Bundles /> },
       {
         path: ':orgId/apps/:appId/installs',
         element: legacy(<Installs />, () => 'installs'),

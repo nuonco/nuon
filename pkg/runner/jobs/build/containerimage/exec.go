@@ -79,18 +79,19 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	} else {
 		l.Info(fmt.Sprintf("copying image from %s:%s to %s", h.state.cfg.Image, srcTag, h.state.plan.DstTag))
 	}
-	if _, err := h.ociCopy.Copy(ctx,
+	outputDesc, err := h.ociCopy.Copy(ctx,
 		srcCfg,
 		srcTag,
 		dstCfg,
 		h.state.resultTag,
-	); err != nil {
+	)
+	if err != nil {
 		h.writeErrorResult(ctx, "copy image", err)
 		return err
 	}
 
 	resolvedAt := time.Now().UTC()
-	resultReq := registry.ToAPIResult(desc)
+	resultReq := registry.ToAPIResult(dstCfg.Repository, outputDesc)
 	src := spec.Identity(selected)
 	resultReq.SourceRef = src.SourceRef
 	resultReq.SourceImage = src.SourceImage

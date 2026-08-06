@@ -16,8 +16,13 @@ func Execute() {
 	c.registerRun()
 	c.registerVersion()
 	c.registerRunLocal()
+	c.registerAirgap()
 
-	if err := rootCmd.Execute(); err != nil {
+	cmd, err := rootCmd.ExecuteC()
+	if err != nil && cmd != nil && cmd.Name() == "airgap" {
+		os.Exit(1)
+	}
+	if err != nil {
 		os.Exit(2)
 	}
 }

@@ -99,6 +99,12 @@ type Client interface {
 	// app installs config methods
 	CreateAppInstallsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppInstallsConfigRequest) (*models.AppAppInstallsConfig, error)
 
+	CreateAirgapBundle(ctx context.Context, appID, appConfigID, targetPlatform string) (*models.ServiceBundleResponse, error)
+	ListAirgapBundles(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.ServiceBundleResponse, bool, error)
+	GetAirgapBundle(ctx context.Context, appID, bundleID string) (*models.ServiceBundleResponse, error)
+	CreateAirgapBundleDownloadGrant(ctx context.Context, appID, bundleID string) (*models.ServiceDownloadGrantResponse, error)
+	CreateAirgapInstall(ctx context.Context, appID, bundleID, name string) (*models.ServiceAirgapInstallResponse, error)
+	ListAirgapInstalls(ctx context.Context, appID, bundleID string, query *models.GetPaginatedQuery) ([]*models.ServiceAirgapInstallResponse, bool, error)
 	ListTriggerEvents(ctx context.Context, limit int, trigger string) ([]*models.TriggerEventSummary, error)
 	ListTriggerEventsPage(ctx context.Context, limit int, trigger, cursor string) (*models.TriggerEventPage, error)
 	SearchTriggerEvents(ctx context.Context, filters models.TriggerEventListQuery) (*models.TriggerEventPage, error)

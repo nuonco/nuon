@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/management"
 	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/airgapmng"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/health"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
@@ -38,6 +39,18 @@ func (c *cli) registerMng() error {
 	fetchTokenCmd.Flags().String("platform", "", "Cloud platform to use for authentication (aws, azure, gcp). Defaults to auto-detect.")
 
 	mngCmd.AddCommand(fetchTokenCmd)
+	airgapCmd := &cobra.Command{
+		Use:   "airgap",
+		Short: "Supervise an air-gapped runner service without a control plane",
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			envFile, _ := cmd.Flags().GetString("env-file")
+			imageFile, _ := cmd.Flags().GetString("image-file")
+			return airgapmng.Run(cmd.Context(), airgapmng.Options{EnvFile: envFile, ImageFile: imageFile})
+		},
+	}
+	airgapCmd.Flags().String("env-file", "/opt/nuon/runner/env", "runner environment file")
+	airgapCmd.Flags().String("image-file", "/opt/nuon/runner/image", "runner image environment file")
+	mngCmd.AddCommand(airgapCmd)
 	rootCmd.AddCommand(mngCmd)
 	return nil
 }

@@ -14,10 +14,13 @@ import (
 // NOTE(jm): once we build out the "results" API, this will become a more first
 // class function, where we build an actual request to represent the image
 // here. For now, it's mainly a translation layer, until we add that.
-func ToAPIResult(res *ocispec.Descriptor) *models.ServiceCreateRunnerJobExecutionResultRequest {
-	_ = res
+func ToAPIResult(repository string, res *ocispec.Descriptor) *models.ServiceCreateRunnerJobExecutionResultRequest {
 	req := &models.ServiceCreateRunnerJobExecutionResultRequest{
-		Success: true,
+		Success:          true,
+		OutputRepository: repository,
+		OutputDigest:     res.Digest.String(),
+		OutputMediaType:  res.MediaType,
+		OutputSize:       res.Size,
 	}
 
 	return req

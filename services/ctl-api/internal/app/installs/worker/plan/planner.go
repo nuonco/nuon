@@ -14,3 +14,7 @@ type Params struct {
 
 	V *validator.Validate
 }
+
+func NewPlanner(v *validator.Validate) *Planner {
+	return &Planner{v: v}
+}

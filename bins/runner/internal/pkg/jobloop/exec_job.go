@@ -51,7 +51,7 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		}
 	}()
 
-	l, err := log.NewOTELJobLogger(j.cfg, jl)
+	l, err := log.NewOTELJobLogger(j.cfg, jl, job.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get job logger")
 	}

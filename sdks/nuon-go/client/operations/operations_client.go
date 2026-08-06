@@ -168,6 +168,12 @@ type ClientService interface {
 
 	CreateAdHocAction(params *CreateAdHocActionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAdHocActionCreated, error)
 
+	CreateAirgapBundle(params *CreateAirgapBundleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAirgapBundleOK, *CreateAirgapBundleAccepted, error)
+
+	CreateAirgapBundleDownloadGrant(params *CreateAirgapBundleDownloadGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAirgapBundleDownloadGrantOK, error)
+
+	CreateAirgapInstall(params *CreateAirgapInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAirgapInstallCreated, error)
+
 	CreateApp(params *CreateAppParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppCreated, error)
 
 	CreateAppAction(params *CreateAppActionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppActionCreated, error)
@@ -387,6 +393,8 @@ type ClientService interface {
 	GetActionWorkflowLatestConfig(params *GetActionWorkflowLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionWorkflowLatestConfigOK, error)
 
 	GetActionWorkflows(params *GetActionWorkflowsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetActionWorkflowsOK, error)
+
+	GetAirgapBundle(params *GetAirgapBundleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAirgapBundleOK, error)
 
 	GetApp(params *GetAppParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppOK, error)
 
@@ -839,6 +847,10 @@ type ClientService interface {
 	GetWorkspaceStateJSONRawByID(params *GetWorkspaceStateJSONRawByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkspaceStateJSONRawByIDOK, error)
 
 	GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerOK, error)
+
+	ListAirgapBundles(params *ListAirgapBundlesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAirgapBundlesOK, error)
+
+	ListAirgapInstalls(params *ListAirgapInstallsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAirgapInstallsOK, error)
 
 	ListOIDCTrustPolicies(params *ListOIDCTrustPoliciesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOIDCTrustPoliciesOK, error)
 
@@ -2286,6 +2298,138 @@ func (a *Client) CreateAdHocAction(params *CreateAdHocActionParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateAdHocAction: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateAirgapBundle creates and publish an immutable air gap bundle
+*/
+func (a *Client) CreateAirgapBundle(params *CreateAirgapBundleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAirgapBundleOK, *CreateAirgapBundleAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAirgapBundleParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAirgapBundle",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/airgap-bundles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAirgapBundleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// several success responses have to be checked
+	switch value := result.(type) {
+	case *CreateAirgapBundleOK:
+		return value, nil, nil
+	case *CreateAirgapBundleAccepted:
+		return nil, value, nil
+	}
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for operations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateAirgapBundleDownloadGrant creates a download grant for a published air gap bundle
+*/
+func (a *Client) CreateAirgapBundleDownloadGrant(params *CreateAirgapBundleDownloadGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAirgapBundleDownloadGrantOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAirgapBundleDownloadGrantParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAirgapBundleDownloadGrant",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/airgap-bundles/{bundle_id}/download-grants",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAirgapBundleDownloadGrantReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateAirgapBundleDownloadGrantOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateAirgapBundleDownloadGrant: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateAirgapInstall creates a virtual install that tracks an air gapped delivery of a bundle
+*/
+func (a *Client) CreateAirgapInstall(params *CreateAirgapInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAirgapInstallCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAirgapInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAirgapInstall",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/airgap-bundles/{bundle_id}/installs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAirgapInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateAirgapInstallCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateAirgapInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -7377,6 +7521,50 @@ func (a *Client) GetActionWorkflows(params *GetActionWorkflowsParams, authInfo r
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetActionWorkflows: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAirgapBundle gets a published air gap bundle
+*/
+func (a *Client) GetAirgapBundle(params *GetAirgapBundleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAirgapBundleOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAirgapBundleParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAirgapBundle",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/airgap-bundles/{bundle_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAirgapBundleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAirgapBundleOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAirgapBundle: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -17822,6 +18010,94 @@ func (a *Client) GracefulShutDownRunner(params *GracefulShutDownRunnerParams, au
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GracefulShutDownRunner: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListAirgapBundles lists published air gap bundles for an app
+*/
+func (a *Client) ListAirgapBundles(params *ListAirgapBundlesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAirgapBundlesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListAirgapBundlesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListAirgapBundles",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/airgap-bundles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAirgapBundlesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListAirgapBundlesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListAirgapBundles: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListAirgapInstalls lists virtual installs tracking air gapped deliveries of a bundle
+*/
+func (a *Client) ListAirgapInstalls(params *ListAirgapInstallsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListAirgapInstallsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListAirgapInstallsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListAirgapInstalls",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/airgap-bundles/{bundle_id}/installs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAirgapInstallsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListAirgapInstallsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListAirgapInstalls: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

@@ -51,6 +51,13 @@ type Install struct {
 	AppConfigID string    `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 	AppConfig   AppConfig `json:"-" temporaljson:"app_config,omitzero,omitempty"`
 
+	// AirgapBundleID, when set, marks this as a virtual install: a vendor-side
+	// record of an air-gapped delivery of that bundle. Virtual installs have no
+	// runner group, queues, or provisioning workflows on the control plane —
+	// the customer's runner never phones home, so this row exists purely so the
+	// vendor can track who a bundle was delivered to.
+	AirgapBundleID generics.NullString `json:"airgap_bundle_id,omitzero" gorm:"index" swaggertype:"string" temporaljson:"airgap_bundle_id,omitzero,omitempty"`
+
 	AppBranchID generics.NullString `json:"app_branch_id,omitzero" gorm:"index" swaggertype:"string" temporaljson:"app_branch_id,omitzero,omitempty"`
 	AppBranch   *AppBranch          `json:"app_branch,omitempty" temporaljson:"app_branch,omitzero,omitempty"`
 

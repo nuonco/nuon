@@ -159,7 +159,10 @@ func (a *Activities) runJob(ctx context.Context, jobID, executionID string) erro
 	capture := errcapture.New()
 	ctx = errcapture.NewContext(ctx, capture)
 
-	executor, err := runnercontrolplane.NewExecutor(a, a.l, runnercontrolplane.Config{GitRef: a.cfg.GitRef})
+	executor, err := runnercontrolplane.NewExecutor(a, a.l, runnercontrolplane.Config{
+		GitRef:                   a.cfg.GitRef,
+		TerraformMirrorPlatforms: a.cfg.TerraformMirrorPlatforms,
+	})
 	if err != nil {
 		return fmt.Errorf("unable to create control-plane executor: %w", err)
 	}
@@ -397,6 +400,10 @@ func (a *Activities) CreateJobExecutionResult(ctx context.Context, jobID, execut
 		OrgID:                job.OrgID,
 		RunnerJobExecutionID: executionID,
 		Success:              req.Success,
+		OutputRepository:     req.OutputRepository,
+		OutputDigest:         req.OutputDigest,
+		OutputMediaType:      req.OutputMediaType,
+		OutputSize:           req.OutputSize,
 		Contents:             req.Contents,
 		ErrorCode:            int(req.ErrorCode),
 		ErrorMetadata:        redactedStringMapToHstore(req.ErrorMetadata),

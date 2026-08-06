@@ -3,11 +3,12 @@ package ociarchive
 import (
 	"context"
 	"fmt"
-	"os"
+	"path/filepath"
 
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.uber.org/zap"
 	"oras.land/oras-go/v2"
+	orasfile "oras.land/oras-go/v2/content/file"
 
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/runner/op"
@@ -16,6 +17,9 @@ import (
 const (
 	defaultArtifactType string = "artifact/nuon"
 	defaultLocalTag     string = "latest"
+	tarLayerMediaType   string = "application/vnd.nuon.archive.layer.v1.tar+gzip"
+	tarLayerTitle       string = "."
+	maxManifestLayers          = 800
 )
 
 type FileRef struct {
@@ -32,33 +36,20 @@ func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef
 		log = l
 	}
 
-	fileDescriptors := make([]v1.Descriptor, 0, len(filePaths))
-
-	for _, f := range filePaths {
-		stat, err := os.Stat(f.AbsPath)
-		if err != nil {
-			return fmt.Errorf("unable to stat file: %w", err)
-		}
-
-		if stat.Size() < 1 {
-			log.Info("skipping empty file", zap.String("path", f.RelPath))
-			continue
-		}
-
-		fileDescriptor, err := r.store.Add(ctx, f.RelPath, f.FileType, f.AbsPath)
-		if err != nil {
-			return fmt.Errorf("unable to pack %s: %w", f.AbsPath, err)
-		}
-
-		fileDescriptors = append(fileDescriptors, fileDescriptor)
-		log.Debug("packed file", zap.String("path", f.RelPath), zap.String("abspath", f.AbsPath))
+	tarPath := filepath.Join(r.tmpDir, "archive-v1.tar.gz")
+	if err := writeTarLayer(tarPath, filePaths); err != nil {
+		return fmt.Errorf("unable to create tar layer: %w", err)
 	}
 
-	descriptor, err := oras.Pack(ctx, r.store, defaultArtifactType, fileDescriptors, oras.PackOptions{
-		PackImageManifest: true,
-	})
+	layer, err := r.store.Add(ctx, tarLayerTitle, tarLayerMediaType, tarPath)
 	if err != nil {
-		return fmt.Errorf("unable to pack: %w", err)
+		return fmt.Errorf("unable to add tar layer: %w", err)
+	}
+	layer.Annotations[orasfile.AnnotationUnpack] = "true"
+
+	descriptor, err := packManifest(ctx, r.store, filePaths, []v1.Descriptor{layer})
+	if err != nil {
+		return err
 	}
 
 	if err := r.store.Tag(ctx, descriptor, defaultLocalTag); err != nil {
@@ -72,4 +63,21 @@ func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef
 	log.Info("found tag", zap.String("tag", defaultLocalTag))
 
 	return nil
+}
+
+func packManifest(ctx context.Context, store oras.Target, files []FileRef, layers []v1.Descriptor) (v1.Descriptor, error) {
+	if len(layers) > maxManifestLayers {
+		return v1.Descriptor{}, fmt.Errorf("refusing to pack %d files into %d OCI layers: layer count exceeds limit of %d", len(files), len(layers), maxManifestLayers)
+	}
+
+	descriptor, err := oras.Pack(ctx, store, defaultArtifactType, layers, oras.PackOptions{
+		PackImageManifest: true,
+		ManifestAnnotations: map[string]string{
+			v1.AnnotationCreated: "1970-01-01T00:00:00Z",
+		},
+	})
+	if err != nil {
+		return v1.Descriptor{}, fmt.Errorf("unable to pack manifest: %w", err)
+	}
+	return descriptor, nil
 }

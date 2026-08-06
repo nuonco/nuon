@@ -41,6 +41,126 @@ func (c *cli) appsCmd() *cobra.Command {
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
 	appsCmd.AddCommand(listCmd)
 
+	var (
+		bundleAppID     string
+		bundleOffset    int
+		bundleLimit     int
+		bundleFile      string
+		bundleNoResume  bool
+		bundleOverwrite bool
+		bundleConfigID  string
+		bundlePlatform  string
+		bundleNoWait    bool
+	)
+	bundlesCmd := &cobra.Command{
+		Use:   "bundles",
+		Short: "View and download published air-gap bundles",
+	}
+	bundlesCreateCmd := &cobra.Command{
+		Use:         "create",
+		Short:       "Create and publish an air-gap bundle",
+		Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.CreateBundle(cmd.Context(), bundleAppID, bundleConfigID, bundlePlatform, apps.CreateBundleOptions{
+				NoWait:    bundleNoWait,
+				PrintJSON: PrintJSON,
+			})
+		}),
+	}
+	bundlesCreateCmd.Flags().StringVarP(&bundleAppID, "app-id", "a", "", "The ID or name of an app (defaults to the selected app)")
+	bundlesCreateCmd.Flags().StringVar(&bundleConfigID, "config-id", "", "Exact app config ID")
+	bundlesCreateCmd.Flags().StringVar(&bundlePlatform, "platform", "linux/amd64", "Target platform")
+	bundlesCreateCmd.Flags().BoolVar(&bundleNoWait, "no-wait", false, "Return immediately without waiting for the bundle to become active")
+	bundlesCreateCmd.MarkFlagRequired("config-id")
+	bundlesCmd.AddCommand(bundlesCreateCmd)
+	bundlesListCmd := &cobra.Command{
+		Use:         "list",
+		Aliases:     []string{"ls"},
+		Short:       "List published air-gap bundles",
+		Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.ListBundles(cmd.Context(), bundleAppID, bundleOffset, bundleLimit, PrintJSON)
+		}),
+	}
+	bundlesListCmd.Flags().StringVarP(&bundleAppID, "app-id", "a", "", "The ID or name of an app (defaults to the selected app)")
+	bundlesListCmd.Flags().IntVar(&bundleOffset, "offset", 0, "Offset for pagination")
+	bundlesListCmd.Flags().IntVar(&bundleLimit, "limit", 20, "Limit for pagination")
+	bundlesCmd.AddCommand(bundlesListCmd)
+
+	bundlesGetCmd := &cobra.Command{
+		Use:         "get <bundle-id>",
+		Short:       "Get a published air-gap bundle",
+		Args:        cobra.ExactArgs(1),
+		Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent),
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.GetBundle(cmd.Context(), bundleAppID, args[0], PrintJSON)
+		}),
+	}
+	bundlesGetCmd.Flags().StringVarP(&bundleAppID, "app-id", "a", "", "The ID or name of an app (defaults to the selected app)")
+	bundlesCmd.AddCommand(bundlesGetCmd)
+
+	bundlesDownloadCmd := &cobra.Command{
+		Use:         "download <bundle-id>",
+		Short:       "Download a published air-gap bundle",
+		Long:        "Download a published air-gap bundle to the path specified by --file. The global --output flag remains reserved for output formatting.",
+		Args:        cobra.ExactArgs(1),
+		Annotations: outputsAnnotation(OutputTable),
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.DownloadBundle(cmd.Context(), bundleAppID, args[0], apps.DownloadBundleOptions{
+				File:      bundleFile,
+				NoResume:  bundleNoResume,
+				Overwrite: bundleOverwrite,
+			})
+		}),
+	}
+	bundlesDownloadCmd.Flags().StringVarP(&bundleAppID, "app-id", "a", "", "The ID or name of an app (defaults to the selected app)")
+	bundlesDownloadCmd.Flags().StringVar(&bundleFile, "file", "", "Destination file path (required; --output controls CLI formatting)")
+	bundlesDownloadCmd.Flags().BoolVar(&bundleNoResume, "no-resume", false, "Restart instead of resuming an existing partial download")
+	bundlesDownloadCmd.Flags().BoolVar(&bundleOverwrite, "overwrite", false, "Replace an existing destination file")
+	bundlesDownloadCmd.MarkFlagRequired("file")
+	bundlesCmd.AddCommand(bundlesDownloadCmd)
+
+	var bundleInstallName string
+	bundleInstallsCmd := &cobra.Command{
+		Use:   "installs",
+		Short: "Track air-gapped deliveries of a bundle",
+	}
+	bundleInstallsCreateCmd := &cobra.Command{
+		Use:         "create <bundle-id>",
+		Short:       "Create a virtual install that tracks an air-gapped delivery",
+		Long:        "Create a virtual install record for a customer receiving this bundle. Pass the returned install ID to the customer for their `nuon-bundle init` config.",
+		Args:        cobra.ExactArgs(1),
+		Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent),
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.CreateBundleInstall(cmd.Context(), bundleAppID, args[0], bundleInstallName, PrintJSON)
+		}),
+	}
+	bundleInstallsCreateCmd.Flags().StringVarP(&bundleAppID, "app-id", "a", "", "The ID or name of an app (defaults to the selected app)")
+	bundleInstallsCreateCmd.Flags().StringVar(&bundleInstallName, "name", "", "Name for the delivery, e.g. acme-prod")
+	bundleInstallsCreateCmd.MarkFlagRequired("name")
+	bundleInstallsCmd.AddCommand(bundleInstallsCreateCmd)
+	bundleInstallsListCmd := &cobra.Command{
+		Use:         "list <bundle-id>",
+		Short:       "List virtual installs tracking deliveries of a bundle",
+		Args:        cobra.ExactArgs(1),
+		Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent),
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.ListBundleInstalls(cmd.Context(), bundleAppID, args[0], bundleOffset, bundleLimit, PrintJSON)
+		}),
+	}
+	bundleInstallsListCmd.Flags().StringVarP(&bundleAppID, "app-id", "a", "", "The ID or name of an app (defaults to the selected app)")
+	bundleInstallsListCmd.Flags().IntVar(&bundleOffset, "offset", 0, "Offset for pagination")
+	bundleInstallsListCmd.Flags().IntVar(&bundleLimit, "limit", 20, "Limit for pagination")
+	bundleInstallsCmd.AddCommand(bundleInstallsListCmd)
+	bundlesCmd.AddCommand(bundleInstallsCmd)
+	appsCmd.AddCommand(bundlesCmd)
+
 	appID := ""
 	getCmd := &cobra.Command{
 		Use:   "get",

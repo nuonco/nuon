@@ -57,6 +57,18 @@ type AppRunnerJobExecutionResult struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// output digest
+	OutputDigest string `json:"output_digest,omitempty"`
+
+	// output media type
+	OutputMediaType string `json:"output_media_type,omitempty"`
+
+	// output repository
+	OutputRepository string `json:"output_repository,omitempty"`
+
+	// output size
+	OutputSize int64 `json:"output_size,omitempty"`
+
 	// runner job execution id
 	RunnerJobExecutionID string `json:"runner_job_execution_id,omitempty"`
 

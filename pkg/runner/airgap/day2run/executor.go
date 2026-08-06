@@ -1,0 +1,221 @@
+package day2run
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"sync"
+	"time"
+
+	tfjson "github.com/hashicorp/terraform-json"
+	"github.com/nuonco/nuon/pkg/runner/airgap"
+	"github.com/nuonco/nuon/pkg/runner/airgap/day2"
+	"github.com/nuonco/nuon/pkg/runner/airgap/statestore"
+)
+
+type Executor struct {
+	client   *airgap.Client
+	envelope *airgap.Envelope
+	store    statestore.Store
+	mu       sync.Mutex
+	busy     bool
+}
+
+func NewExecutor(client *airgap.Client, envelope *airgap.Envelope, store statestore.Store) *Executor {
+	return &Executor{client: client, envelope: envelope, store: store}
+}
+
+func (e *Executor) Busy() bool { e.mu.Lock(); defer e.mu.Unlock(); return e.busy }
+
+func (e *Executor) Execute(ctx context.Context, request day2.Request, runID string) (*day2.RunStatus, error) {
+	e.mu.Lock()
+	if e.busy {
+		e.mu.Unlock()
+		return nil, fmt.Errorf("day-2 executor is busy")
+	}
+	e.busy = true
+	e.mu.Unlock()
+	defer func() { e.mu.Lock(); e.busy = false; e.mu.Unlock() }()
+
+	run := &day2.RunStatus{RunID: runID, DispatchID: request.DispatchID, RefID: request.RefID, Source: request.Source, Status: day2.RunStatusInProgress, StartedAt: time.Now().UTC()}
+	if action := e.envelope.FindAction(request.RefID); action != nil {
+		run.RefKind, run.RefName = day2.RefKindAction, action.Name
+		run.Steps = []day2.RunStep{{ID: action.ID, Name: action.Name, Kind: day2.RefKindAction, Status: day2.RunStatusInProgress}}
+	} else if drift := e.envelope.FindDrift(request.RefID); drift != nil {
+		run.RefKind, run.RefName = day2.RefKindDrift, drift.ComponentName
+		run.Steps = []day2.RunStep{{ID: drift.ID, Name: drift.ComponentName, Kind: day2.RefKindDrift, Status: day2.RunStatusInProgress}}
+	} else if book := e.envelope.FindRunbook(request.RefID); book != nil {
+		run.RefKind, run.RefName = day2.RefKindRunbook, book.Name
+		for i, step := range book.Steps {
+			run.Steps = append(run.Steps, day2.RunStep{ID: fmt.Sprintf("%s-%d", book.ID, i+1), Name: e.stepName(step), Kind: step.Kind, Status: "available"})
+		}
+	} else {
+		return nil, fmt.Errorf("unknown day-2 ref %q", request.RefID)
+	}
+	if err := e.persist(run); err != nil {
+		return nil, err
+	}
+
+	failed := false
+	for i := range run.Steps {
+		if failed {
+			run.Steps[i].Status = "noop"
+			continue
+		}
+		step := &run.Steps[i]
+		now := time.Now().UTC()
+		step.StartedAt, step.Status = &now, day2.RunStatusInProgress
+		err := e.executeStep(ctx, run.RunID, step, request.RefID)
+		finished := time.Now().UTC()
+		step.FinishedAt = &finished
+		if err != nil {
+			step.Status, step.Error, failed = day2.RunStatusFailed, err.Error(), true
+		} else {
+			step.Status = day2.RunStatusFinished
+		}
+		if err := e.persist(run); err != nil {
+			return nil, err
+		}
+	}
+	finished := time.Now().UTC()
+	run.FinishedAt = &finished
+	if failed {
+		run.Status = day2.RunStatusFailed
+		for _, step := range run.Steps {
+			if step.Error != "" {
+				run.Error = step.Error
+				break
+			}
+		}
+	} else {
+		run.Status = day2.RunStatusFinished
+	}
+	return run, e.persist(run)
+}
+
+func (e *Executor) executeStep(ctx context.Context, runID string, step *day2.RunStep, topRef string) error {
+	refID := step.ID
+	if e.envelope.FindRunbook(topRef) != nil {
+		book := e.envelope.FindRunbook(topRef)
+		for i := range book.Steps {
+			if step.ID == fmt.Sprintf("%s-%d", book.ID, i+1) {
+				refID = book.Steps[i].RefID
+				if step.Kind == airgap.RunbookStepKindHealthGate {
+					return e.healthGate(book.Steps[i].Component)
+				}
+				break
+			}
+		}
+	}
+	if action := e.envelope.FindAction(refID); action != nil {
+		step.JobID = runID + "--" + action.ID
+		h, err := e.client.EnqueueDay2Job(step.JobID, action.JobType, action.JobGroup, action.JobOperation, action.CompositePlan)
+		if err != nil {
+			return err
+		}
+		return h.Await(ctx)
+	}
+	if drift := e.envelope.FindDrift(refID); drift != nil {
+		step.JobID = runID + "--" + drift.ID
+		h, err := e.client.EnqueueDay2Job(step.JobID, drift.JobType, drift.JobGroup, drift.JobOperation, drift.CompositePlan)
+		if err != nil {
+			return err
+		}
+		if err := h.Await(ctx); err != nil {
+			return err
+		}
+		plan, err := h.PlanJSON()
+		if err != nil {
+			return err
+		}
+		result, err := ClassifyDrift(plan)
+		step.Drift = result
+		return err
+	}
+	return fmt.Errorf("unknown step ref %q", refID)
+}
+
+func (e *Executor) healthGate(component string) error {
+	snapshot := e.client.LatestHealth()
+	if snapshot == nil {
+		return fmt.Errorf("health is unknown")
+	}
+	found := false
+	for _, health := range snapshot.Components {
+		if component == "" || health.ComponentName == component {
+			found = true
+			if health.Health != "healthy" {
+				return fmt.Errorf("component %s is %s", health.ComponentName, health.Health)
+			}
+		}
+	}
+	if !found {
+		return fmt.Errorf("component %q health is unknown", component)
+	}
+	return nil
+}
+
+func (e *Executor) stepName(step airgap.RunbookStep) string {
+	if action := e.envelope.FindAction(step.RefID); action != nil {
+		return action.Name
+	}
+	if drift := e.envelope.FindDrift(step.RefID); drift != nil {
+		return drift.ComponentName
+	}
+	if step.Component != "" {
+		return "health: " + step.Component
+	}
+	return "health gate"
+}
+
+func (e *Executor) persist(run *day2.RunStatus) error {
+	b, err := json.MarshalIndent(run, "", "  ")
+	if err != nil {
+		return err
+	}
+	return e.store.WriteFile(day2.RunStatusKey(run.RunID), append(b, '\n'))
+}
+
+func ClassifyDrift(planJSON []byte) (*day2.DriftResult, error) {
+	var plan tfjson.Plan
+	if err := json.Unmarshal(planJSON, &plan); err != nil {
+		return nil, err
+	}
+	result := &day2.DriftResult{}
+	actionableResources := make(map[string]bool, len(plan.ResourceChanges))
+	for _, change := range plan.ResourceChanges {
+		if change != nil && isTerraformChange(change.Change) {
+			result.ResourceChanges++
+			actionableResources[change.Address] = true
+		}
+	}
+	for _, change := range plan.OutputChanges {
+		if isTerraformChange(change) {
+			result.OutputChanges++
+		}
+	}
+	for _, drift := range plan.ResourceDrift {
+		if drift != nil && isTerraformChange(drift.Change) && actionableResources[drift.Address] {
+			result.ResourceDrift++
+		}
+	}
+	result.Drifted = result.ResourceChanges > 0 || result.OutputChanges > 0 || result.ResourceDrift > 0 || len(plan.DeferredChanges) > 0
+	if result.Drifted {
+		result.Summary = fmt.Sprintf("%d resource changes, %d output changes, %d drifted resources", result.ResourceChanges, result.OutputChanges, result.ResourceDrift)
+	} else {
+		result.Summary = "no drift"
+	}
+	return result, nil
+}
+
+func isTerraformChange(change *tfjson.Change) bool {
+	if change == nil {
+		return false
+	}
+	for _, action := range change.Actions {
+		if action != tfjson.ActionNoop {
+			return true
+		}
+	}
+	return false
+}

@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/product"
@@ -32,6 +33,9 @@ const (
 	// same install. Stored without a leading "v" to match the
 	// un-prefixed format of TerraformModuleComponentConfig.Version.
 	defaultMirrorTerraformVersion = "1.7.5"
+	terraformInstallTimeout       = 5 * time.Minute
+	terraformInstallAttempts      = 3
+	terraformProviderAttempts     = 3
 )
 
 type MirrorConfig struct {
@@ -355,12 +359,25 @@ func lockProviders(ctx context.Context, l *zap.Logger, tf *tfexec.Terraform, src
 
 	l.Info("running terraform providers lock")
 
-	if err := runTF(l, "providers lock", func(stdout, stderr io.Writer) error {
-		tf.SetStdout(stdout)
-		tf.SetStderr(stderr)
-		return tf.ProvidersLock(ctx, opts...)
-	}); err != nil {
-		return fmt.Errorf("terraform providers lock failed: %w", err)
+	var err error
+	for attempt := 1; attempt <= terraformProviderAttempts; attempt++ {
+		err = runTF(l, "providers lock", func(stdout, stderr io.Writer) error {
+			tf.SetStdout(stdout)
+			tf.SetStderr(stderr)
+			return tf.ProvidersLock(ctx, opts...)
+		})
+		if err == nil {
+			break
+		}
+		if attempt < terraformProviderAttempts {
+			l.Warn("retrying terraform providers lock after transient failure",
+				zap.Int("attempt", attempt),
+				zap.Int("max_attempts", terraformProviderAttempts),
+			)
+		}
+	}
+	if err != nil {
+		return fmt.Errorf("terraform providers lock failed after %d attempts: %w", terraformProviderAttempts, err)
 	}
 
 	post, err := os.ReadFile(lockPath)
@@ -545,13 +562,36 @@ func installTerraform(ctx context.Context, l *zap.Logger, ver string) (string, f
 		Product:    product.Terraform,
 		Version:    tfVersion,
 		InstallDir: installDir,
+		Timeout:    terraformInstallTimeout,
 	}
 
 	_, endInstall := op.Start(ctx, "terraform", "binary_install",
 		attribute.String("terraform.version", ver),
 		attribute.String("install.dir", installDir),
 	)
-	execPath, err := installer.Install(ctx)
+	var execPath string
+	for attempt := 1; attempt <= terraformInstallAttempts; attempt++ {
+		execPath, err = installer.Install(ctx)
+		if err == nil {
+			break
+		}
+		if ctx.Err() != nil || attempt == terraformInstallAttempts {
+			break
+		}
+		l.Warn("terraform CLI install failed; retrying",
+			zap.String("version", ver),
+			zap.Int("attempt", attempt),
+			zap.Error(err),
+		)
+		if rerr := os.RemoveAll(installDir); rerr != nil {
+			err = errors.Join(err, fmt.Errorf("reset terraform install dir: %w", rerr))
+			break
+		}
+		if rerr := os.MkdirAll(installDir, 0o755); rerr != nil {
+			err = errors.Join(err, fmt.Errorf("recreate terraform install dir: %w", rerr))
+			break
+		}
+	}
 	endInstall(err)
 	if err != nil {
 		cleanup()

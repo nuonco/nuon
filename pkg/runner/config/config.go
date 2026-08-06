@@ -40,6 +40,11 @@ type Config struct {
 	RegistryDir  string `config:"registry_dir" validate:"required"`
 	RegistryPort int    `config:"registry_port" validate:"required"`
 
+	// JobLogDir, when set, writes each job's logs to <dir>/<job_id>.ndjson.
+	// Air-gapped runs have no OTEL log sink, so this is the only place
+	// terraform/helm diagnostics survive for post-mortem inspection.
+	JobLogDir string `config:"job_log_dir"`
+
 	// HealthPort is the port the mng process serves its /healthz endpoint on.
 	// Azure's VMSS Application Health extension probes this to drive automatic
 	// instance repair (the self-heal analog to the AWS ASG EC2 health check).

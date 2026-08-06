@@ -17,6 +17,7 @@ import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { PageSection } from '@/components/layout/PageSection'
+import { AirgapBadge } from '@/components/installs/AirgapBadge'
 import { DeprovisionBanner } from '@/components/installs/DeprovisionBanner'
 import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
@@ -32,6 +33,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { isAirgapInstall } from '@/utils/install-utils'
 import type { TNavItem } from '@/types'
 
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
@@ -193,6 +195,7 @@ const InstallTemplate = () => {
 
   const isManagedByConfig =
     install?.metadata?.managed_by === 'nuon/cli/install-config'
+  const isAirgap = isAirgapInstall(install)
 
   return (
     <>
@@ -221,9 +224,17 @@ const InstallTemplate = () => {
                       {install.name}
                     </Text>
 
+                    {isAirgap && <AirgapBadge />}
+
                     {install.labels &&
                       Object.entries(install.labels).map(([key, value]) => (
-                        <LabelBadge key={key} size="sm" labelKey={key} labelValue={value} customColor={labelColors?.[key]} />
+                        <LabelBadge
+                          key={key}
+                          size="sm"
+                          labelKey={key}
+                          labelValue={value}
+                          customColor={labelColors?.[key]}
+                        />
                       ))}
                   </div>
                   <ID>{install.id}</ID>
@@ -256,7 +267,9 @@ const InstallTemplate = () => {
                   {install?.app_branch && (
                     <LabeledValue label="Branch">
                       <Text variant="subtext">
-                        <Link href={`/${org?.id}/apps/${install?.app_id}/branches/${install?.app_branch?.id}`}>
+                        <Link
+                          href={`/${org?.id}/apps/${install?.app_id}/branches/${install?.app_branch?.id}`}
+                        >
                           <span className="flex items-center gap-1">
                             <Icon variant="GitBranchIcon" size={14} />
                             {install.app_branch.name}
@@ -272,7 +285,13 @@ const InstallTemplate = () => {
                       </Link>
                     </Text>
                   </LabeledValue>
-                  <InstallStatusesContainer collapsible />
+                  {isAirgap ? (
+                    <LabeledValue label="Bundle">
+                      <ID>{install.airgap_bundle_id}</ID>
+                    </LabeledValue>
+                  ) : (
+                    <InstallStatusesContainer collapsible />
+                  )}
                 </div>
               </div>
               {install?.drifted_objects?.length ? (
@@ -290,7 +309,10 @@ const InstallTemplate = () => {
                 links={navLinks}
               />
               <div className="flex flex-col flex-1 min-w-0">
-                <ErrorBoundary key={pathname} fallback={<InstallContentError />}>
+                <ErrorBoundary
+                  key={pathname}
+                  fallback={<InstallContentError />}
+                >
                   <Outlet />
                 </ErrorBoundary>
               </div>

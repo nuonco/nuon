@@ -223,6 +223,12 @@ function getStatusTitle(
   return map[status] ?? fallback
 }
 
+export function isAirgapInstall(
+  install: { airgap_bundle_id?: string } | undefined | null
+): boolean {
+  return !!install?.airgap_bundle_id
+}
+
 export function getInstallRunnerStatusTitle(status: string): string {
   return getStatusTitle(
     RUNNER_STATUS_TITLES,
@@ -252,18 +258,33 @@ export function getInstallStatusTitle(
   status: string,
   lifecycleStatus?: string
 ): string {
-  if (lifecycleStatus === 'deprovisioning' || lifecycleStatus === 'deprovisioned') {
+  if (
+    lifecycleStatus === 'deprovisioning' ||
+    lifecycleStatus === 'deprovisioned'
+  ) {
     const isFinished = lifecycleStatus === 'deprovisioned'
     let override: string | undefined
     switch (statusKey) {
       case 'runner_status':
-        override = (isFinished ? DEPROVISIONED_RUNNER_OVERRIDES : DEPROVISIONING_RUNNER_OVERRIDES)[status]
+        override = (
+          isFinished
+            ? DEPROVISIONED_RUNNER_OVERRIDES
+            : DEPROVISIONING_RUNNER_OVERRIDES
+        )[status]
         break
       case 'sandbox_status':
-        override = (isFinished ? DEPROVISIONED_SANDBOX_OVERRIDES : DEPROVISIONING_SANDBOX_OVERRIDES)[status]
+        override = (
+          isFinished
+            ? DEPROVISIONED_SANDBOX_OVERRIDES
+            : DEPROVISIONING_SANDBOX_OVERRIDES
+        )[status]
         break
       case 'composite_component_status':
-        override = (isFinished ? DEPROVISIONED_COMPONENTS_OVERRIDES : DEPROVISIONING_COMPONENTS_OVERRIDES)[status]
+        override = (
+          isFinished
+            ? DEPROVISIONED_COMPONENTS_OVERRIDES
+            : DEPROVISIONING_COMPONENTS_OVERRIDES
+        )[status]
         break
     }
     if (override) return override

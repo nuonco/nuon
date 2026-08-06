@@ -52,7 +52,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	l.Info("writing job result")
-	resultReq := registry.ToAPIResult(res)
+	resultReq := registry.ToAPIResult(h.state.regCfg.Repository, res)
 	if _, err := h.apiClient.CreateJobExecutionResult(ctx, job.ID, jobExecution.ID, resultReq); err != nil {
 		h.errRecorder.Record("write job execution result", err)
 	}
@@ -71,6 +71,9 @@ func (h *handler) getSourceFiles(ctx context.Context, root string) ([]ociarchive
 			return err
 		}
 
+		if info.IsDir() && info.Name() == ".git" {
+			return filepath.SkipDir
+		}
 		if info.IsDir() {
 			return nil
 		}

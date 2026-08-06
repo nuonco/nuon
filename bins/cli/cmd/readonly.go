@@ -70,6 +70,7 @@ var readOnlyCommands = map[string]struct{}{
 	"unset-current":        {},
 	"init":                 {},
 	"mcp":                  {},
+	"download":             {},
 }
 
 func readOnlyFromEnv() bool {

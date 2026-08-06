@@ -93,6 +93,18 @@ func NewArtifactID() string {
 	return shortid.NewNanoID("art")
 }
 
+func NewAirgapBundleID() string {
+	return shortid.NewNanoID("agb")
+}
+
+func NewAirgapBundleArtifactID() string {
+	return shortid.NewNanoID("aga")
+}
+
+func NewAirgapBundleReplicaID() string {
+	return shortid.NewNanoID("agr")
+}
+
 func NewAWSAccountID() string {
 	return shortid.NewNanoID("aws")
 }
