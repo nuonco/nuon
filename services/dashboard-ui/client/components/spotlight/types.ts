@@ -22,7 +22,8 @@ export const STATIC_PAGES: SpotlightResult[] = [
   { label: 'Installs', path: '/installs', icon: 'CubeIcon' },
   { label: 'Team', path: '/team', icon: 'UsersThreeIcon' },
   { label: 'Build runner', path: '/runner', icon: 'HammerIcon' },
-  { label: 'Webhooks', path: '/webhooks', icon: 'WebhooksLogoIcon' },
+  { label: 'Settings', path: '/settings', icon: 'GearIcon' },
+  { label: 'Webhooks', path: '/settings/webhooks', icon: 'WebhooksLogoIcon' },
 ]
 
 export const INSTALL_SUB_PAGES = [

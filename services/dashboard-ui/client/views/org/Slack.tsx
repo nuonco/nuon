@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
@@ -42,12 +41,13 @@ export const Slack = () => {
   }, [search, setSearch, addToast])
 
   return (
-    <PageLayout className="pb-6">
+    <>
       <PageTitle title={`Slack | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org.id}`, text: org?.name },
-          { path: `/${org.id}/slack`, text: 'Slack' },
+          { path: `/${org.id}/settings`, text: 'Settings' },
+          { path: `/${org.id}/settings/slack`, text: 'Slack' },
         ]}
       />
       <PageHeader className="flex items-center justify-between">
@@ -109,6 +109,6 @@ export const Slack = () => {
           </div>
         </PageSection>
       </PageContent>
-    </PageLayout>
+    </>
   )
 }

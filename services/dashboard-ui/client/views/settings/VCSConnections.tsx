@@ -1,4 +1,3 @@
-import { CreateTriggerButton, TriggersTable } from '@/components/triggers'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageContent } from '@/components/layout/PageContent'
@@ -6,33 +5,38 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { ConnectGithubButton } from '@/components/vcs-connections/ConnectGithub'
+import { VCSConnectionsTable } from '@/components/vcs-connections/VCSConnectionsTable'
 import { useOrg } from '@/hooks/use-org'
-export const Triggers = () => {
+
+export const VCSConnections = () => {
   const { org } = useOrg()
+
   return (
     <>
-      <PageTitle title={`Triggers | ${org?.name}`} />
+      <PageTitle title={`VCS connections | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/settings`, text: 'Settings' },
-          { path: `/${org?.id}/settings/triggers`, text: 'Triggers' },
+          { path: `/${org?.id}/settings/vcs`, text: 'VCS connections' },
         ]}
       />
-      <PageHeader className="flex items-center justify-between gap-4">
+      <PageHeader className="flex items-center justify-between">
         <HeadingGroup>
           <Text variant="h3" weight="stronger" level={1}>
-            Triggers
+            VCS connections
           </Text>
           <Text theme="neutral">
-            Configure inbound providers and inspect their trigger activity.
+            Connect GitHub accounts so Nuon can build components from your
+            repositories.
           </Text>
         </HeadingGroup>
-        <CreateTriggerButton />
+        <ConnectGithubButton>Add connection</ConnectGithubButton>
       </PageHeader>
       <PageContent>
         <PageSection>
-          <TriggersTable />
+          <VCSConnectionsTable />
         </PageSection>
       </PageContent>
     </>

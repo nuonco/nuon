@@ -31,7 +31,7 @@ export const TriggersTable = ({
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex flex-col gap-1">
-            <Link href={`/${orgId}/triggers/${row.original?.id}`}>
+            <Link href={`/${orgId}/settings/triggers/${row.original?.id}`}>
               {row.original?.name || row.original?.id || 'Unnamed trigger'}
             </Link>
             <Text variant="subtext" theme="neutral" family="mono">
