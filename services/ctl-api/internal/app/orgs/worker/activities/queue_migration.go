@@ -71,6 +71,16 @@ func (a *Activities) EnsureComponentQueue(ctx context.Context, req EnsureCompone
 	return err
 }
 
+type EnsureOrgHealthcheckSweepsRequest struct {
+	OrgID string `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+// @by-field OrgID
+func (a *Activities) EnsureOrgHealthcheckSweeps(ctx context.Context, req EnsureOrgHealthcheckSweepsRequest) error {
+	return a.runnersHelpers.EnsureOrgHealthcheckSweeps(ctx, req.OrgID)
+}
+
 type EnsureRunnerQueuesRequest struct {
 	RunnerID string `validate:"required"`
 }

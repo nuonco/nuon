@@ -79,6 +79,7 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		&app.AccountRole{},
 		&app.Role{},
 		&app.QueueSignal{},
+		&app.QueueEmitter{},
 		&app.Queue{},
 	}
 	for _, obj := range childObjs {

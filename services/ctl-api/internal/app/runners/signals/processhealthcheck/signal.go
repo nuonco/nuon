@@ -150,8 +150,6 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return errors.Wrap(err, "unable to get heartbeat")
 	}
 	if heartbeat == nil {
-		// No heartbeat received yet — cron health checks are a no-op until
-		// MaybeEnqueueInitialHealthCheck fires on the first heartbeat.
 		return nil
 	}
 	tags["runner_version"] = heartbeat.Version
@@ -173,8 +171,8 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 
 // handleShutdownRequested checks for the shutdown_requested metadata flag
 // (set by a promotion) and creates a graceful shutdown record if present.
-// The runner's shutdown poller will pick it up. Health check emitters run
-// per-process on a 1-minute cron, so shutdowns are staggered naturally.
+// The runner's shutdown poller will pick it up. Health checks are enqueued
+// per-process by the org sweep cron, so shutdowns are staggered naturally.
 //
 // Returns handled=true when a shutdown was triggered; the caller should
 // stop processing. Failure to clear the flag is logged but not propagated
