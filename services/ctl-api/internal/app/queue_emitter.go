@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -101,6 +102,15 @@ func (r *QueueEmitter) Indexes(db *gorm.DB) []migrations.Index {
 			Columns: []string{
 				"queue_id",
 			},
+		},
+		{
+			Name: indexes.Name(db, &QueueEmitter{}, "live_uq"),
+			Columns: []string{
+				"queue_id",
+				"name",
+			},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+			Option:      "WHERE deleted_at = 0",
 		},
 	}
 }

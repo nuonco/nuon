@@ -165,8 +165,8 @@ func (m *Migrations) All() []migrations.Migration {
 			Fn:   m.Migration122ReconcileOrgBuilderRoles,
 		},
 		{
-			Name: "123-queue-emitters-unique-queue-name",
-			Fn:   m.Migration123QueueEmittersUniqueQueueName,
+			Name: "123-dedupe-queue-emitters",
+			Fn:   m.Migration123DedupeQueueEmitters,
 		},
 	}
 }
