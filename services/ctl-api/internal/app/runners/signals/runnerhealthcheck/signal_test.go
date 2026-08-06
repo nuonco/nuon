@@ -11,6 +11,7 @@ import (
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
 
 	basemetrics "github.com/nuonco/nuon/pkg/metrics"
@@ -25,6 +26,8 @@ import (
 func TestFirstFailedHealthCheckMarksRunnerOfflineWithoutAlerting(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
 
@@ -57,6 +60,8 @@ func TestFirstFailedHealthCheckMarksRunnerOfflineWithoutAlerting(t *testing.T) {
 func TestOfflineRunnerDoesNotAlertBeforeDelay(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
 
@@ -75,6 +80,8 @@ func TestOfflineRunnerDoesNotAlertBeforeDelay(t *testing.T) {
 func TestOfflineRunnerEnqueuesIdempotentAlertAfterDelay(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 	env.SetDataConverter(signalDataConverter())
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
@@ -108,6 +115,8 @@ func TestOfflineRunnerEnqueuesIdempotentAlertAfterDelay(t *testing.T) {
 func TestOfflineRunnerReusesAlertIdempotencyKey(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 	env.SetDataConverter(signalDataConverter())
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
@@ -135,6 +144,8 @@ func TestOfflineRunnerReusesAlertIdempotencyKey(t *testing.T) {
 func TestOfflineRunnerWithoutTimestampArmsAlert(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
 
@@ -157,6 +168,8 @@ func TestOfflineRunnerWithoutTimestampArmsAlert(t *testing.T) {
 func TestActiveRunnerWithOfflineTimestampDoesNotResetDelay(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
 
@@ -182,6 +195,8 @@ func TestActiveRunnerWithOfflineTimestampDoesNotResetDelay(t *testing.T) {
 func TestOfflineCheckRepairsStaleStatusV2(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 	now := time.Date(2026, time.July, 30, 12, 0, 0, 0, time.UTC)
 	env.SetStartTime(now)
 
@@ -205,6 +220,8 @@ func TestOfflineCheckRepairsStaleStatusV2(t *testing.T) {
 func TestHealthyCheckClearsOfflineMetadataAndRestoresActive(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 
 	runner := runnerWithOfflineMetadata(app.RunnerStatusOffline, time.Now().Add(-time.Minute))
 	sig := &Signal{RunnerID: runner.ID}
@@ -235,6 +252,8 @@ func TestHealthyCheckClearsOfflineMetadataAndRestoresActive(t *testing.T) {
 func TestUpdateRunnerStatusStopsWhenLegacyUpdateFails(t *testing.T) {
 	var workflowSuite testsuite.WorkflowTestSuite
 	env := workflowSuite.NewTestWorkflowEnvironment()
+	// loaded CI runners starve the workflow goroutine past the 1s default
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 
 	runner := testRunner(app.RunnerStatusActive)
 	sig := &Signal{RunnerID: runner.ID}
