@@ -7,11 +7,96 @@ _August 3, 2026_
 
 ## OIDC federation
 
-Instead of saving a long-lived secret, any workload that supports OIDC can be trusted by Nuon to fetch short-lived access tokens.
-You no longer need to store and rotate long-lived access tokens to access the Nuon API.
+Instead of saving a long-lived secret, any workload with an OIDC provider can be trusted by Nuon to fetch short-lived access tokens.
 This works for CI/CD pipelines, Kubernetes workloads, cloud compute, and any other trusted OIDC issuer.
 
-You control what to trust with a **trust policy**: which issuer to accept, which token claims to require (such as a repository, branch, service account, or cloud identity), and which role and token lifetime to grant.
-Manage trust policies from the **OIDC federation** page in the dashboard, with the CLI, or — for GitHub repositories — directly from your GitHub connection, where each repository has a **Manage OIDC** button that creates a trust policy prefilled with the right issuer, audience, and `sub`.
+You control which providers to trust with a **trust policy**: which issuer to accept, which token claims to require (such as a repository, branch, service account, or cloud identity), and which role and token lifetime to grant.
+Manage trust policies from the **OIDC federation** page in the dashboard or with the CLI.
+When creating a trust policy, you can select either **Github Actions** or a **Custom** provider.
+
+<div style={{
+  backgroundImage: 'url(/images/screenshot-backdrop.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '48px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/039-create-trust-policy.png"
+    alt="The Create OIDC trust policy modal with the GitHub Actions provider preset selected and a repository picker"
+    style={{
+      width: '100%',
+      maxWidth: '820px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+Creating the same policy using the CLI:
+
+```sh
+nuon orgs oidc-trust-policies create \
+  --name github-app \
+  --issuer https://token.actions.githubusercontent.com \
+  --audience https://api.nuon.co \
+  --claim "sub=repo:acme/app:ref:refs/heads/main" \
+  --role org_builder
+```
 
 See [OIDC federation](/concepts/oidc-federation) for the full model and supported providers.
+
+## Using with GitHub Actions
+
+Trust policies can also be managed for each repo in your GitHub VCS connection settings, by clicking on the **Manage OIDC** button.
+
+<div style={{
+  backgroundImage: 'url(/images/screenshot-backdrop.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '48px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/039-manage-repo-oidc.png"
+    alt="The Manage OIDC modal on a GitHub connection, listing a repository's trust policies with enable and delete controls"
+    style={{
+      width: '100%',
+      maxWidth: '820px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+Set the `id-token: write` permission to enable Github Action's OIDC provider.
+The CLI detects if it's running in GitHub Actions, and will automatically use the OIDC provider if not provided a static token.
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: curl -sSL install.nuon.co | bash
+      - run: nuon apps sync
+        env:
+          NUON_ORG_ID: ${{ vars.nuon_org_id }}
+```
+
+See the [GitHub Actions guide](/guides/github-actions) for more details, and how to use OIDC with the CLI on other platforms.
