@@ -37,8 +37,8 @@ export const OIDCTrustPolicies = () => {
             OIDC federation
           </Text>
           <Text theme="neutral">
-            Let CI/CD providers exchange OIDC tokens for short-lived org access
-            without storing a static API token.
+            Grant OIDC providers access to the Nuon control plane without
+            storing long-lived static tokens.
           </Text>
         </HeadingGroup>
         <CreateOIDCTrustPolicyButton

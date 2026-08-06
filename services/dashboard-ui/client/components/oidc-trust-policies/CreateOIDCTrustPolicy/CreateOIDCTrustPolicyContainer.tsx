@@ -4,9 +4,11 @@ import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
+import { useConfig } from '@/hooks/use-config'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { useVCSRepos } from '@/hooks/use-vcs-repos'
 import { createCurrentOrgOIDCTrustPolicy } from '@/lib'
 import type { TAPIError } from '@/types'
 import {
@@ -16,6 +18,8 @@ import {
 
 const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
   const { org } = useOrg()
+  const config = useConfig()
+  const { repos, isLoading: isLoadingRepos, hasConnections } = useVCSRepos()
   const queryClient = useQueryClient()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
@@ -69,29 +73,37 @@ const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
       isPending={isPending}
       error={error}
       onSubmit={(input) => mutate(input)}
+      repos={repos}
+      isLoadingRepos={isLoadingRepos}
+      hasVCSConnections={hasConnections}
+      vcsConnectionsHref={`/${org.id}/connections/vcs`}
+      githubAudience={config.apiUrl ?? ''}
       {...props}
     />
   )
 }
 
 export const CreateOIDCTrustPolicyButton = ({
-  initialValues,
-  lockIssuer,
+  initialRepoFullName,
+  initialRepoDefaultBranch,
+  lockPreset,
   reservedNames,
   children,
   variant = 'primary',
   ...props
 }: Omit<IButtonAsButton, 'children'> & {
-  initialValues?: Partial<OIDCTrustPolicyFormInput>
-  lockIssuer?: boolean
+  initialRepoFullName?: string
+  initialRepoDefaultBranch?: string
+  lockPreset?: boolean
   reservedNames?: string[]
   children?: ReactNode
 }) => {
   const { addModal } = useSurfaces()
   const modal = (
     <CreateOIDCTrustPolicyModalContainer
-      initialValues={initialValues}
-      lockIssuer={lockIssuer}
+      initialRepoFullName={initialRepoFullName}
+      initialRepoDefaultBranch={initialRepoDefaultBranch}
+      lockPreset={lockPreset}
       reservedNames={reservedNames}
     />
   )
