@@ -3,10 +3,12 @@ package builds
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -26,6 +28,8 @@ func TestBuildComponentsForceSelection(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var suite testsuite.WorkflowTestSuite
 			env := suite.NewTestWorkflowEnvironment()
+			// loaded CI runners starve the workflow goroutine past the 1s default
+			env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 			sig := &Signal{RunID: "run-1"}
 
 			env.OnActivity((*branchactivities.Activities).GetComponentByID, mock.Anything, mock.Anything, mock.Anything).
