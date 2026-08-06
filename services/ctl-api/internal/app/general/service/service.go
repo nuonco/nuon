@@ -81,8 +81,6 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		general.GET("/waitlist", s.AdminGetWaitlist)
 		general.POST("/backfill-blobs", s.AdminBackfillBlobs)
 		general.GET("/backfill-blobs", s.GetBackfillBlobsStatus)
-		general.POST("/backfill-runner-healthcheck-emitters", s.AdminBackfillRunnerHealthcheckEmitters)
-		general.GET("/backfill-runner-healthcheck-emitters", s.GetBackfillRunnerHealthcheckEmittersStatus)
 		general.POST("/verify-blobs", s.AdminVerifyBlobs)
 		general.GET("/verify-blobs", s.GetVerifyBlobsStatus)
 

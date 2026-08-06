@@ -67,18 +67,8 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		)
 
 		for reason, ids := range staleByReason {
-			// Do NOT soft-delete: a handler may already be running this signal,
-			// and removing the row would cause its status-update activities to
-			// loop on ErrRecordNotFound. Marking status=error is enough to
-			// release EmitSignal's in-flight check; the handler will finish
-			// (or its own writes will overwrite this status) naturally.
-			if res := a.db.WithContext(ctx).Exec(`
-				UPDATE queue_signals
-				SET status = jsonb_set(status, '{status}', '"error"'::jsonb)
-				           || jsonb_build_object('metadata', jsonb_build_object('stale_drop', ?::text)),
-				    updated_at = now()
-				WHERE id IN (?)`, reason, ids); res.Error != nil {
-				return nil, errors.Wrap(res.Error, "unable to mark stale in-flight signals as failed")
+			if err := a.queueClient.StaleDropInFlightSignals(ctx, reason, ids); err != nil {
+				return nil, err
 			}
 			a.l.Warn("dropped stale in-flight signals",
 				zap.String("emitter-id", req.EmitterID),

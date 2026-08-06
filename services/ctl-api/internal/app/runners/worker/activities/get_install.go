@@ -2,7 +2,8 @@ package activities
 
 import (
 	"context"
-	"fmt"
+
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 
 	"gorm.io/gorm"
 
@@ -43,7 +44,7 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 		First(&install, "id = ?", installID)
 
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get install")
 	}
 
 	return &install, nil
