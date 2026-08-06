@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -96,11 +97,6 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 // inputs PATCH endpoint and any flow that drives install inputs (e.g. the
 // component enable/disable toggle, which writes the synthetic enabled input).
 func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Install, patch map[string]*string, role string, deployDependents bool, planOnly bool, workflowType app.WorkflowType) (*app.InstallInputs, error) {
-	latestLatestInstallInputs, err := s.getLatestInstallInputs(ctx, install.ID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get latest install inputs: %w", err)
-	}
-
 	pinnedAppInputConfig, err := s.helpers.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get latest app input config: %w", err)
@@ -119,29 +115,42 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 		return nil, err
 	}
 
-	// Merge the provided subset over the install's current inputs, then validate the
-	// full resulting set so required inputs remain satisfied after a partial update.
-	merged := mergeInstallInputs(latestLatestInstallInputs.Values, patch, pinnedAppInputConfig)
-	if err := s.helpers.ValidateInstallInputs(ctx, pinnedAppInputConfig, merged); err != nil {
-		return nil, err
-	}
+	var inputs *app.InstallInputs
+	var changedInputs *[]string
+	var changedInputValues string
 
-	// Reject an inputs update that would leave the install in an inconsistent
-	// component-enablement state (e.g. an enabled component depending on a
-	// disabled one). Validated against the full resulting desired state.
-	if err := s.validateInstallToggles(ctx, install, patch, merged); err != nil {
-		return nil, err
-	}
+	// read-modify-append, so serialized against the other inputs writers
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := helpers.LockInstallInputs(ctx, tx, install.ID); err != nil {
+			return err
+		}
 
-	inputs, changedInputs, changedInputValues, err := s.newInstallInputs(
-		ctx,
-		latestLatestInstallInputs,
-		pinnedAppInputConfig,
-		merged,
-		patch,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create install inputs: %w", err)
+		latest, err := s.getLatestInstallInputsTx(ctx, tx, install.ID)
+		if err != nil {
+			return fmt.Errorf("unable to get latest install inputs: %w", err)
+		}
+
+		// Merge the provided subset over the install's current inputs, then validate the
+		// full resulting set so required inputs remain satisfied after a partial update.
+		merged := mergeInstallInputs(latest.Values, patch, pinnedAppInputConfig)
+		if err := s.helpers.ValidateInstallInputs(ctx, pinnedAppInputConfig, merged); err != nil {
+			return err
+		}
+
+		// Reject an inputs update that would leave the install in an inconsistent
+		// component-enablement state (e.g. an enabled component depending on a
+		// disabled one). Validated against the full resulting desired state.
+		if err := s.validateInstallToggles(ctx, install, patch, merged); err != nil {
+			return err
+		}
+
+		inputs, changedInputs, changedInputValues, err = s.newInstallInputs(ctx, tx, latest, pinnedAppInputConfig, merged, patch)
+		if err != nil {
+			return fmt.Errorf("unable to create install inputs: %w", err)
+		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(
@@ -181,8 +190,12 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 }
 
 func (s *service) getLatestInstallInputs(ctx context.Context, installID string) (*app.InstallInputs, error) {
+	return s.getLatestInstallInputsTx(ctx, s.db, installID)
+}
+
+func (s *service) getLatestInstallInputsTx(ctx context.Context, db *gorm.DB, installID string) (*app.InstallInputs, error) {
 	installInputs := app.InstallInputs{}
-	res := s.db.WithContext(ctx).
+	res := db.WithContext(ctx).
 		Where("install_id = ?", installID).
 		Order("created_at DESC").
 		First(&installInputs)
@@ -209,6 +222,7 @@ func (s *service) getLatestAppInputConfig(ctx context.Context, appID string) (*a
 
 func (s *service) newInstallInputs(
 	ctx context.Context,
+	db *gorm.DB,
 	installInputs *app.InstallInputs,
 	appInputConfig *app.AppInputConfig,
 	merged map[string]*string,
@@ -229,12 +243,12 @@ func (s *service) newInstallInputs(
 		InstallID:        installInputs.InstallID,
 		Values:           pgtype.Hstore(merged),
 	}
-	res := s.db.WithContext(ctx).Create(&obj)
+	res := db.WithContext(ctx).Create(&obj)
 	if res.Error != nil {
 		return nil, nil, "", fmt.Errorf("unable to create install inputs: %w", res.Error)
 	}
 
-	latestInstallInputs, err := s.getLatestInstallInputs(ctx, installInputs.InstallID)
+	latestInstallInputs, err := s.getLatestInstallInputsTx(ctx, db, installInputs.InstallID)
 	if err != nil {
 		return nil, nil, "", fmt.Errorf("unable to get latest install inputs: %w", err)
 	}
