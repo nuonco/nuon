@@ -40,7 +40,9 @@ export const TriggerEvents = ({
     onLoadMore={onLoadMore}
     onRetry={onRetry}
     orgId={orgId}
-    eventHref={(event) => `/${orgId}/triggers/${triggerId}/events/${event?.id}`}
+    eventHref={(event) =>
+      `/${orgId}/settings/triggers/${triggerId}/events/${event?.id}`
+    }
     filters={
       <div className="grid gap-3 md:grid-cols-3">
         <Input

@@ -57,7 +57,7 @@ export const RunbookStepCardContainer = ({
       step={step}
       workflowUrl={workflowUrl}
       eventHref={(eventId, triggerId) =>
-        `/${orgId}/triggers/${triggerId}/events/${eventId}`
+        `/${orgId}/settings/triggers/${triggerId}/events/${eventId}`
       }
       targetData={data}
       deployOutputs={deployOutputs}

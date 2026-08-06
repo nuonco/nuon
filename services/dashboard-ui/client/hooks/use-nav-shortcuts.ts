@@ -9,7 +9,8 @@ const ORG_DESTINATIONS: Record<string, string> = {
   i: '/installs',
   t: '/team',
   r: '/runner',
-  w: '/webhooks',
+  s: '/settings',
+  w: '/settings/webhooks',
 }
 
 export function useNavShortcuts() {
