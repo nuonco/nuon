@@ -1,6 +1,5 @@
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
-import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
@@ -15,7 +14,7 @@ export const ApiTokens = () => {
   const { org } = useOrg()
 
   return (
-    <PageLayout className="pb-6">
+    <>
       <PageTitle title={`API tokens | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -24,7 +23,11 @@ export const ApiTokens = () => {
             text: org?.name,
           },
           {
-            path: `/${org.id}/api-tokens`,
+            path: `/${org.id}/settings`,
+            text: 'Settings',
+          },
+          {
+            path: `/${org.id}/settings/api-tokens`,
             text: 'API tokens',
           },
         ]}
@@ -45,6 +48,6 @@ export const ApiTokens = () => {
           <ApiTokensTable shouldPoll />
         </PageSection>
       </PageContent>
-    </PageLayout>
+    </>
   )
 }

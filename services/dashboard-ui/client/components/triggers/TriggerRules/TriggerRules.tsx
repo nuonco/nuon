@@ -28,7 +28,7 @@ export const TriggerRules = ({
       accessorKey: 'name',
       cell: ({ row }) => (
         <Link
-          href={`/${orgId}/triggers/${triggerId}/rules/${row.original?.id}`}
+          href={`/${orgId}/settings/triggers/${triggerId}/rules/${row.original?.id}`}
         >
           {row.original?.name || row.original?.id || 'Unnamed rule'}
         </Link>
