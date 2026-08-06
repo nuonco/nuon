@@ -7,11 +7,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cronutil"
 )
 
-const runnerHealthcheckSignalExpiry = 5 * time.Minute
-
-// ProcessHealthcheckSchedule is the canonical (pre-jitter) schedule for
-// process health check emitters.
+// ProcessHealthcheckSchedule is the canonical (pre-jitter) schedule for the org
+// process healthcheck sweep and the legacy per-process emitters.
 const ProcessHealthcheckSchedule = "*/5 * * * *"
+
+const runnerHealthcheckSignalExpiry = 5 * time.Minute
 
 const runnerHealthcheckJitterWindow = cronutil.MaxJitterWindow
 

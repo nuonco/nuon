@@ -1,6 +1,9 @@
 package emitter
 
 import (
+	"hash/fnv"
+	"time"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -11,9 +14,22 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 )
 
+// cronTickSecondJitterWindow spreads tick execution across the firing minute.
+// Cron jitter is minute-granular, so without this every ticker fires at second
+// :00 of its scheduled minute and the fleet detonates as one synchronized wall.
+const cronTickSecondJitterWindow = 45
+
 type CronTickerWorkflowRequest struct {
 	QueueID   string `validate:"required"`
 	EmitterID string `validate:"required"`
+}
+
+// cronTickSecondJitter derives a deterministic (replay-safe) per-emitter delay
+// from the ticker's workflow ID.
+func cronTickSecondJitter(workflowID string) time.Duration {
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(workflowID))
+	return time.Duration(h.Sum32()%cronTickSecondJitterWindow) * time.Second
 }
 
 // @temporal-gen-v2 workflow
@@ -29,6 +45,12 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		zap.String("emitter-id", req.EmitterID),
 		zap.String("queue-id", req.QueueID),
 	)
+
+	if offset := cronTickSecondJitter(workflow.GetInfo(ctx).WorkflowExecution.ID); offset > 0 {
+		if err := workflow.Sleep(ctx, offset); err != nil {
+			return err
+		}
+	}
 
 	// Fetch emitter to check status and get signal template
 	emitter, err := activities.AwaitGetEmitter(ctx, &activities.GetEmitterRequest{

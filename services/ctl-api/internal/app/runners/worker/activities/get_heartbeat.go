@@ -2,7 +2,8 @@ package activities
 
 import (
 	"context"
-	"fmt"
+
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -18,7 +19,7 @@ func (a *Activities) GetHeartBeat(ctx context.Context, req GetHeartBeatRequest) 
 	res := a.chDB.WithContext(ctx).
 		First(&runner, "id = ?", req.ID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get runner: %w", res.Error)
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get runner")
 	}
 
 	return &runner, nil

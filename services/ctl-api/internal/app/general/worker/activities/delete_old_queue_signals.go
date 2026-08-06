@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processhealthcheck"
 )
 
 const oldQueueSignalRetention = 7 * 24 * time.Hour
@@ -39,7 +38,7 @@ func (a *Activities) DeleteOldQueueSignals(ctx context.Context, req DeleteOldQue
 	sub := a.db.Model(&app.QueueSignal{}).
 		Unscoped().
 		Select("id").
-		Where("type IN ?", []string{string(processhealthcheck.SignalType), "healthcheck"}).
+		Where("type IN ?", []string{"process_healthcheck", "healthcheck"}).
 		Where("created_at < ?", cutoff).
 		Limit(req.BatchSize)
 
