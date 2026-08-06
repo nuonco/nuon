@@ -21,6 +21,8 @@ import (
 // so a long stack trace doesn't bloat the stored status history.
 const jobExecutionStatusDescriptionMaxLen = 2048
 
+const jobExecutionResultWriteTimeout = 30 * time.Second
+
 // writeJobExecutionStatus is the synchronous, retry-wrapped API call.
 // It's the writer the coalescer's background goroutine drives and also
 // the call terminal updates fall through to directly. Intermediate
@@ -102,6 +104,29 @@ func (j *jobLoop) errToStatus(err error) models.AppRunnerJobExecutionStatus {
 	return models.AppRunnerJobExecutionStatusFailed
 }
 
+func (j *jobLoop) writeFallbackJobExecutionResult(ctx context.Context, job *models.AppRunnerJob, execution *models.AppRunnerJobExecution, handler, step string, jobErr error) error {
+	resultCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), jobExecutionResultWriteTimeout)
+	defer cancel()
+
+	req := &models.ServiceCreateRunnerJobExecutionResultRequest{
+		Success:   false,
+		ErrorCode: 0,
+		ErrorMetadata: map[string]string{
+			"step":     step,
+			"handler":  handler,
+			"job_type": string(job.Type),
+			"message":  jobErr.Error(),
+		},
+	}
+	writeResult := func(ctx context.Context) error {
+		if _, err := j.apiClient.CreateJobExecutionResult(ctx, job.ID, execution.ID, req); err != nil {
+			return fmt.Errorf("unable to create fallback job execution result: %w", err)
+		}
+		return nil
+	}
+	return retry.Retry(resultCtx, writeResult, retry.WithMaxAttempts(3), retry.WithSleep(time.Second))
+}
+
 func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, logProvider *log.LoggerProvider, step *executeJobStep, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	// Attach pkgctx.ContextField(ctx) to BOTH the local `l` and the
 	// ctx-stored logger so the otelzap bridge can extract the per-step span
@@ -142,6 +167,14 @@ func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, logProvider *l
 	if recovered != nil {
 		status := models.AppRunnerJobExecutionStatusFailed
 		description := fmt.Sprintf("panic in %s: %s", step.name, recovered.String())
+		panicErr := fmt.Errorf("panic in %s: %v", step.name, recovered.Value)
+
+		l.Error("panic in "+step.name, zap.Error(panicErr))
+		l.Error(string(debug.Stack()))
+
+		if resultErr := j.writeFallbackJobExecutionResult(ctx, job, jobExecution, step.handler.Name(), step.name, panicErr); resultErr != nil {
+			j.errRecorder.Record("write fallback job execution result", resultErr)
+		}
 		if updateErr := j.updateJobExecutionStatusWithDescription(ctx, job.ID, jobExecution.ID, status, description); updateErr != nil {
 			j.errRecorder.Record("update_job_execution", updateErr)
 		}
@@ -154,10 +187,6 @@ func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, logProvider *l
 			"status":   "error",
 			"err_type": "panic",
 		}))
-
-		l.Error("panic in " + step.name)
-		l.Error(recovered.String())
-		l.Error(string(debug.Stack()))
 
 		if flushErr := logProvider.ForceFlush(ctx); flushErr != nil {
 			if !errors.Is(flushErr, context.Canceled) {
@@ -180,6 +209,9 @@ func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, logProvider *l
 	}
 
 	l.Error("job step errored "+err.Error(), zap.String("step", step.name), zap.Error(err))
+	if resultErr := j.writeFallbackJobExecutionResult(ctx, job, jobExecution, step.handler.Name(), step.name, err); resultErr != nil {
+		j.errRecorder.Record("write fallback job execution result", resultErr)
+	}
 
 	// handle the error by cleaning up the execution using the handler.
 	status := j.errToStatus(err)
