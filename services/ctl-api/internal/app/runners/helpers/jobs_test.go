@@ -8,8 +8,23 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
+
+type auditMetricsWriter struct {
+	metrics.Writer
+	incrs []auditMetric
+}
+
+type auditMetric struct {
+	name string
+	tags []string
+}
+
+func (w *auditMetricsWriter) Incr(name string, tags []string) {
+	w.incrs = append(w.incrs, auditMetric{name: name, tags: tags})
+}
 
 func TestCreateJobExecutionResultIfAbsent(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
@@ -105,4 +120,47 @@ func TestCreateJobExecutionResultIfAbsent(t *testing.T) {
 	var count int64
 	require.NoError(t, db.Model(&app.RunnerJobExecutionResult{}).Count(&count).Error)
 	require.EqualValues(t, len(tests), count)
+}
+
+func TestAuditJobExecutionResult(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, db.Exec(`
+		CREATE TABLE runner_job_execution_results (
+			id TEXT PRIMARY KEY,
+			deleted_at INTEGER NOT NULL DEFAULT 0,
+			runner_job_execution_id TEXT NOT NULL
+		)
+	`).Error)
+	require.NoError(t, db.Exec(`
+		INSERT INTO runner_job_execution_results (id, runner_job_execution_id)
+		VALUES ('result-id', 'execution-with-result')
+	`).Error)
+
+	mw := &auditMetricsWriter{}
+	ctx := context.Background()
+	AuditJobExecutionResult(ctx, db, mw, "execution-with-result", app.RunnerJobExecutionStatusFailed, "runner_workflow")
+	AuditJobExecutionResult(ctx, db, mw, "execution-without-result", app.RunnerJobExecutionStatusTimedOut, "runner_workflow")
+	AuditJobExecutionResult(ctx, db, mw, "successful-execution", app.RunnerJobExecutionStatusFinished, "runner_workflow")
+	AuditJobExecutionResult(ctx, db, mw, "running-execution", app.RunnerJobExecutionStatusInProgress, "runner_workflow")
+	require.NoError(t, db.Migrator().DropTable(&app.RunnerJobExecutionResult{}))
+	AuditJobExecutionResult(ctx, db, mw, "query-error", app.RunnerJobExecutionStatusCancelled, "cancel_workflow")
+
+	require.Len(t, mw.incrs, 3)
+	require.Equal(t, metricJobExecutionResultAudit, mw.incrs[0].name)
+	require.ElementsMatch(t, []string{
+		"status:failed",
+		"source:runner_workflow",
+		"outcome:result_present",
+	}, mw.incrs[0].tags)
+	require.ElementsMatch(t, []string{
+		"status:timed-out",
+		"source:runner_workflow",
+		"outcome:result_missing",
+	}, mw.incrs[1].tags)
+	require.ElementsMatch(t, []string{
+		"status:cancelled",
+		"source:cancel_workflow",
+		"outcome:query_error",
+	}, mw.incrs[2].tags)
 }

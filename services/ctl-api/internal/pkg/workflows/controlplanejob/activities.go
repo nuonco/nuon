@@ -334,6 +334,7 @@ func (a *Activities) UpdateJobExecution(ctx context.Context, jobID, executionID 
 	}); err != nil {
 		return nil, err
 	}
+	runnerhelpers.AuditJobExecutionResult(ctx, a.db, a.mw, execution.ID, execution.Status, "control_plane")
 
 	description := req.StatusDescription
 	if execution.Status != requestedStatus {

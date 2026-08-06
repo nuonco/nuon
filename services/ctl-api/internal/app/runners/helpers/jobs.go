@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -88,4 +89,38 @@ func CreateJobExecutionResultIfAbsent(ctx context.Context, db *gorm.DB, result *
 		return nil, false, fmt.Errorf("unable to get existing runner job execution result: %w", err)
 	}
 	return &existing, false, nil
+}
+
+const (
+	metricJobExecutionResultAudit  = "runner.execution_result_audit"
+	jobExecutionResultAuditTimeout = time.Second
+)
+
+// AuditJobExecutionResult records result presence without affecting the status transition being audited.
+func AuditJobExecutionResult(ctx context.Context, db *gorm.DB, mw metrics.Writer, executionID string, status app.RunnerJobExecutionStatus, source string) {
+	if status.IsRunning() || status == app.RunnerJobExecutionStatusFinished {
+		return
+	}
+
+	auditCtx, cancel := context.WithTimeout(ctx, jobExecutionResultAuditTimeout)
+	defer cancel()
+
+	var result app.RunnerJobExecutionResult
+	query := db.WithContext(auditCtx).
+		Select("id").
+		Where(&app.RunnerJobExecutionResult{RunnerJobExecutionID: executionID}).
+		Limit(1).
+		Find(&result)
+	outcome := "result_present"
+	if query.Error != nil {
+		outcome = "query_error"
+	} else if query.RowsAffected == 0 {
+		outcome = "result_missing"
+	}
+
+	mw.Incr(metricJobExecutionResultAudit, []string{
+		"status:" + string(status),
+		"source:" + source,
+		"outcome:" + outcome,
+	})
 }
