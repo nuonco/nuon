@@ -80,7 +80,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		orgs.GET("/installations/:installation_id/channels", s.ListChannels)
 
 		orgs.GET("/org-links", s.ListOrgLinks)
-		orgs.POST("/org-links", s.CreateOrgLink)
 		orgs.DELETE("/org-links/:link_id", s.DeleteOrgLink)
 
 		orgs.GET("/channel-subscriptions", s.ListChannelSubscriptions)
