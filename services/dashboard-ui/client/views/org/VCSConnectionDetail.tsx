@@ -7,7 +7,6 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { PageLayout } from '@/components/layout/PageLayout'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -43,13 +42,15 @@ export const VCSConnectionDetail = () => {
     'GitHub'
 
   return (
-    <PageLayout className="pb-6">
+    <>
       <PageTitle title={`${accountName} connection | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
+          { path: `/${org?.id}/settings`, text: 'Settings' },
+          { path: `/${org?.id}/settings/vcs`, text: 'VCS connections' },
           {
-            path: `/${org?.id}/connections/vcs/${connectionId}`,
+            path: `/${org?.id}/settings/vcs/${connectionId}`,
             text: `${accountName} connection`,
           },
         ]}
@@ -90,7 +91,7 @@ export const VCSConnectionDetail = () => {
           {vcs_connection && (
             <RemoveConnectionButton
               vcs_connection={vcs_connection}
-              onRemoveSuccess={() => navigate(`/${org?.id}`)}
+              onRemoveSuccess={() => navigate(`/${org?.id}/settings/vcs`)}
             />
           )}
         </div>
@@ -102,6 +103,6 @@ export const VCSConnectionDetail = () => {
           )}
         </PageSection>
       </PageContent>
-    </PageLayout>
+    </>
   )
 }

@@ -53,7 +53,7 @@ export const EventsTable = ({
             <Link
               href={
                 eventHref?.(row.original) ??
-                `/${orgId}/triggers/${row.original?.trigger_id}/events/${row.original?.id}`
+                `/${orgId}/settings/triggers/${row.original?.trigger_id}/events/${row.original?.id}`
               }
             >
               {getValue<string>()}

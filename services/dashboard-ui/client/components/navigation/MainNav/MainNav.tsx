@@ -1,21 +1,12 @@
 import { Text } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
 import { MainNavLink } from '../MainNavLink'
-import {
-  MAIN_LINKS,
-  SETTINGS_LINKS,
-  SLACK_LINK,
-  SUPPORT_LINKS,
-} from '../main-nav-links'
+import { MAIN_LINKS, SETTINGS_LINKS, SUPPORT_LINKS } from '../main-nav-links'
 import type { TOrg } from '@/types'
 
 interface IMainNav {
   org: TOrg
   isSidebarOpen: boolean
-  hasServiceAccountsAndTokens: boolean
-  hasSlack: boolean
-  hasTriggers: boolean
-  hasOIDCFederation: boolean
   hasCustomerPortal: boolean
   customerPortalUrl: string
 }
@@ -53,10 +44,6 @@ const Divider = ({ isSidebarOpen }: { isSidebarOpen: boolean }) => (
 export const MainNav = ({
   org,
   isSidebarOpen,
-  hasServiceAccountsAndTokens,
-  hasSlack,
-  hasTriggers,
-  hasOIDCFederation,
   hasCustomerPortal,
   customerPortalUrl,
 }: IMainNav) => {
@@ -72,13 +59,6 @@ export const MainNav = ({
         },
       ]
     : MAIN_LINKS
-  const settingsLinks = SETTINGS_LINKS.filter(
-    (link) =>
-      (hasTriggers || link.path !== '/triggers') &&
-      (hasOIDCFederation || link.path !== '/oidc-trust-policies') &&
-      (hasServiceAccountsAndTokens ||
-        (link.path !== '/api-tokens' && link.path !== '/service-accounts'))
-  )
 
   return (
     <nav className="flex flex-col gap-4">
@@ -91,15 +71,11 @@ export const MainNav = ({
       <Divider isSidebarOpen={isSidebarOpen} />
 
       <div className="flex flex-col gap-1">
-        <NavLabel isSidebarOpen={isSidebarOpen}>Settings</NavLabel>
+        <NavLabel isSidebarOpen={isSidebarOpen}>Manage</NavLabel>
 
-        {settingsLinks.map((link) => (
+        {SETTINGS_LINKS.map((link) => (
           <MainNavLink key={link.text} basePath={basePath} {...link} />
         ))}
-
-        {hasSlack ? (
-          <MainNavLink basePath={basePath} {...SLACK_LINK} />
-        ) : null}
       </div>
 
       <Divider isSidebarOpen={isSidebarOpen} />
