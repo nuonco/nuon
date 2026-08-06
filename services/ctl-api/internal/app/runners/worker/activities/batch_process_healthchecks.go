@@ -41,10 +41,10 @@ type BatchProcessHealthchecksResponse struct {
 }
 
 type pageHeartbeat struct {
-	RunnerID  string
-	ProcessID string
-	Version   string
-	CreatedAt time.Time
+	RunnerID  string    `gorm:"column:runner_id"`
+	ProcessID string    `gorm:"column:process_id"`
+	Version   string    `gorm:"column:latest_version"`
+	CreatedAt time.Time `gorm:"column:latest_created_at"`
 }
 
 // BatchProcessHealthchecks checks one keyset page of an org's runner processes
@@ -243,8 +243,8 @@ func (a *Activities) loadProcessPageContext(ctx context.Context, processes []app
 	var heartbeats []pageHeartbeat
 	if res := a.chDB.WithContext(ctx).Raw(`
 		SELECT runner_id, process_id,
-		       argMax(version, created_at) AS version,
-		       max(created_at)             AS created_at
+		       argMax(version, created_at) AS latest_version,
+		       max(created_at)             AS latest_created_at
 		FROM runner_heart_beats
 		WHERE runner_id IN ? AND process_id IN ? AND deleted_at = 0
 		GROUP BY runner_id, process_id`, runnerIDs, processIDs).
