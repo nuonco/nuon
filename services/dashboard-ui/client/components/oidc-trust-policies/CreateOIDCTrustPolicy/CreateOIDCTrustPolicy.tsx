@@ -233,11 +233,6 @@ export const CreateOIDCTrustPolicyModal = ({
           </Banner>
         ) : null}
 
-        <Text variant="body" theme="neutral">
-          Trust policies let a CI/CD provider exchange an OIDC token for
-          short-lived org access, without storing a static API token.
-        </Text>
-
         {lockPreset ? null : (
           <Select
             labelProps={{ labelText: 'Provider' }}
