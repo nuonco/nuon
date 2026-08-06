@@ -21,8 +21,10 @@ const (
 	defaultBuildUptimeThreshold   = 8 * time.Hour
 )
 
-// CreateProcessQueues creates a queue for the given runner process with a cron health check
-// emitter and a scheduled uptime TTL emitter, then enqueues the process_init signal.
+// CreateProcessQueues creates a queue for the given runner process with a
+// scheduled uptime TTL emitter, then enqueues the process_init signal. For
+// sweep-enabled orgs health checks arrive from the per-org sweep emitter;
+// otherwise a legacy per-process cron emitter is created.
 func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, process *app.RunnerProcess) (*app.Queue, error) {
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerID,
@@ -36,24 +38,14 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		return nil, fmt.Errorf("unable to create process queue: %w", err)
 	}
 
-	healthCheckSchedule := ProcessHealthcheckSchedule
-	healthCheckExpiry := 5 * time.Minute
-
-	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-		QueueID:         q.ID,
-		Name:            fmt.Sprintf("process-%s-health-check", process.ID),
-		Description:     "Periodic process health check",
-		Mode:            app.QueueEmitterModeCron,
-		CronSchedule:    healthCheckSchedule,
-		JitterWindow:    cronutil.MaxJitterWindow,
-		SignalType:      "process_healthcheck",
-		SignalExpiresIn: healthCheckExpiry,
-		SignalTemplate: queuesignal.NewRaw("process_healthcheck", map[string]any{
-			"runner_id":  runnerID,
-			"process_id": process.ID,
-		}),
-	}); err != nil {
-		return nil, fmt.Errorf("unable to create process health check emitter: %w", err)
+	sweeps, err := h.featuresClient.OrgHealthcheckSweepsEnabled(ctx, process.OrgID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to evaluate org healthcheck sweeps flag: %w", err)
+	}
+	if !sweeps {
+		if err := h.createProcessHealthcheckEmitter(ctx, q.ID, runnerID, process.ID); err != nil {
+			return nil, err
+		}
 	}
 
 	// Scheduled emitter: uptime TTL (from config, with fallback defaults)
@@ -105,4 +97,24 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 	}
 
 	return q, nil
+}
+
+func (h *Helpers) createProcessHealthcheckEmitter(ctx context.Context, queueID, runnerID, processID string) error {
+	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
+		QueueID:         queueID,
+		Name:            fmt.Sprintf("process-%s-health-check", processID),
+		Description:     "Periodic process health check",
+		Mode:            app.QueueEmitterModeCron,
+		CronSchedule:    ProcessHealthcheckSchedule,
+		JitterWindow:    cronutil.MaxJitterWindow,
+		SignalType:      "process_healthcheck",
+		SignalExpiresIn: runnerHealthcheckSignalExpiry,
+		SignalTemplate: queuesignal.NewRaw("process_healthcheck", map[string]any{
+			"runner_id":  runnerID,
+			"process_id": processID,
+		}),
+	}); err != nil {
+		return fmt.Errorf("unable to create process health check emitter: %w", err)
+	}
+	return nil
 }

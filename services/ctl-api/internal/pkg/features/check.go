@@ -30,6 +30,12 @@ func (f *Features) OrgCronNamespaceIsolationEnabled(ctx context.Context, orgID s
 	return f.OrgHasFeature(ctx, orgID, app.OrgFeatureCronNamespaceIsolation)
 }
 
+// OrgHealthcheckSweepsEnabled reports whether the org uses per-org batch
+// healthcheck sweeps instead of per-runner/per-process cron emitters.
+func (f *Features) OrgHealthcheckSweepsEnabled(ctx context.Context, orgID string) (bool, error) {
+	return f.OrgHasFeature(ctx, orgID, app.OrgFeatureOrgHealthcheckSweeps)
+}
+
 func (f *Features) FeatureEnabled(ctx context.Context, feature app.OrgFeature) (bool, error) {
 	orgID, err := cctx.OrgIDFromContext(ctx)
 	if err != nil {

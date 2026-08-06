@@ -99,8 +99,25 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 		},
 	}
 
-	if res := c.db.WithContext(ctx).Clauses(clause.Returning{}).Create(&em); res.Error != nil {
+	res := c.db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "queue_id"}, {Name: "name"}, {Name: "deleted_at"}},
+			DoNothing: true,
+		}, clause.Returning{}).
+		Create(&em)
+	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create emitter")
+	}
+	if res.RowsAffected == 0 {
+		var existing app.QueueEmitter
+		if r := c.db.WithContext(ctx).
+			Where(app.QueueEmitter{QueueID: q.ID, Name: req.Name}).
+			First(&existing); r.Error != nil {
+			return nil, errors.Wrap(r.Error, "unable to get existing emitter after create conflict")
+		}
+		c.l.Debug("emitter already exists, returning existing",
+			zap.String("queue-id", q.ID), zap.String("name", req.Name), zap.String("id", existing.ID))
+		return &existing, nil
 	}
 
 	if em.Mode == app.QueueEmitterModeCron {

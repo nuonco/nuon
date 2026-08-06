@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -25,7 +27,7 @@ func (a *Activities) StopProcessQueue(ctx context.Context, req StopProcessQueueR
 			OwnerType: "runners",
 			Name:      queueName,
 		}).First(&q); res.Error != nil {
-		return fmt.Errorf("unable to find process queue %s: %w", queueName, res.Error)
+		return dbgenerics.TemporalGormError(res.Error, fmt.Sprintf("unable to find process queue %s", queueName))
 	}
 
 	if err := a.helpers.StopProcessQueue(ctx, q.ID); err != nil {
