@@ -2,14 +2,17 @@ import { useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
 import { Label } from '@/components/common/form/Label'
 import { Select } from '@/components/common/form/Select'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-import type { TAPIError } from '@/types'
+import type { TAPIError, TVCSConnectionRepo } from '@/types'
 
 export type ClaimCondition = { key: string; value: string }
+
+export type OIDCPreset = 'github_actions' | 'custom'
 
 export type OIDCTrustPolicyFormInput = {
   name: string
@@ -19,6 +22,14 @@ export type OIDCTrustPolicyFormInput = {
   tokenDurationSeconds: string
   claimConditions: ClaimCondition[]
 }
+
+export const GITHUB_ACTIONS_ISSUER =
+  'https://token.actions.githubusercontent.com'
+
+const PRESET_OPTIONS = [
+  { value: 'github_actions', label: 'GitHub Actions' },
+  { value: 'custom', label: 'Custom' },
+]
 
 const ROLE_OPTIONS = [
   { value: 'org_read_only', label: 'org_read_only' },
@@ -32,32 +43,78 @@ export const hasSubCondition = (claimConditions: ClaimCondition[]) =>
     (condition) => condition.key.trim() === 'sub' && condition.value.trim()
   )
 
+export const githubSubClaim = (repoFullName: string, branch: string) =>
+  `repo:${repoFullName}:ref:refs/heads/${branch}`
+
+export const defaultRepoPolicyName = (
+  repoFullName: string,
+  reservedNames: string[] = []
+) => {
+  const taken = new Set(
+    reservedNames.map((reserved) => reserved.trim().toLowerCase())
+  )
+  const baseName = `github-${repoFullName.split('/').pop() ?? repoFullName}`
+  let name = baseName
+  for (let n = 2; taken.has(name.toLowerCase()); n++) {
+    name = `${baseName}-${n}`
+  }
+  return name
+}
+
 export const CreateOIDCTrustPolicyModal = ({
   isPending,
   error,
   onSubmit,
-  initialValues,
-  lockIssuer,
+  repos,
+  isLoadingRepos,
+  hasVCSConnections,
+  vcsConnectionsHref,
+  githubAudience,
+  initialRepoFullName,
+  initialRepoDefaultBranch,
+  lockPreset,
   reservedNames,
   ...props
 }: {
   isPending: boolean
   error: TAPIError | null
   onSubmit: (input: OIDCTrustPolicyFormInput) => void
-  initialValues?: Partial<OIDCTrustPolicyFormInput>
-  lockIssuer?: boolean
+  repos: TVCSConnectionRepo[]
+  isLoadingRepos?: boolean
+  hasVCSConnections?: boolean
+  vcsConnectionsHref: string
+  githubAudience: string
+  initialRepoFullName?: string
+  initialRepoDefaultBranch?: string
+  lockPreset?: boolean
   reservedNames?: string[]
 } & Omit<IModal, 'onSubmit'>) => {
-  const [name, setName] = useState(initialValues?.name ?? '')
-  const [issuerUrl, setIssuerUrl] = useState(initialValues?.issuerUrl ?? '')
-  const [audience, setAudience] = useState(initialValues?.audience ?? '')
-  const [role, setRole] = useState(initialValues?.role ?? 'org_read_only')
-  const [tokenDurationSeconds, setTokenDurationSeconds] = useState(
-    initialValues?.tokenDurationSeconds ?? ''
+  const [preset, setPreset] = useState<OIDCPreset>('github_actions')
+  const [repoFullName, setRepoFullName] = useState(initialRepoFullName ?? '')
+
+  const [name, setName] = useState(
+    initialRepoFullName
+      ? defaultRepoPolicyName(initialRepoFullName, reservedNames)
+      : ''
   )
-  const [claimConditions, setClaimConditions] = useState<ClaimCondition[]>(
-    initialValues?.claimConditions ?? [{ key: 'sub', value: '' }]
-  )
+  const [issuerUrl, setIssuerUrl] = useState(GITHUB_ACTIONS_ISSUER)
+  const [audience, setAudience] = useState(githubAudience)
+  const [role, setRole] = useState('org_builder')
+  const [tokenDurationSeconds, setTokenDurationSeconds] = useState('900')
+  const [claimConditions, setClaimConditions] = useState<ClaimCondition[]>([
+    {
+      key: 'sub',
+      value:
+        initialRepoFullName && initialRepoDefaultBranch
+          ? githubSubClaim(initialRepoFullName, initialRepoDefaultBranch)
+          : '',
+    },
+  ])
+
+  const [isNameDirty, setIsNameDirty] = useState(false)
+  const [isSubDirty, setIsSubDirty] = useState(false)
+
+  const isGithub = preset === 'github_actions'
 
   const trimmedName = name.trim()
   const trimmedIssuerUrl = issuerUrl.trim()
@@ -74,11 +131,55 @@ export const CreateOIDCTrustPolicyModal = ({
     !!trimmedAudience &&
     hasSubCondition(claimConditions)
 
+  const setSubCondition = (value: string) =>
+    setClaimConditions((prev) => {
+      const hasSub = prev.some((condition) => condition.key.trim() === 'sub')
+      return hasSub
+        ? prev.map((condition) =>
+            condition.key.trim() === 'sub' ? { ...condition, value } : condition
+          )
+        : [{ key: 'sub', value }, ...prev]
+    })
+
+  const selectPreset = (nextPreset: OIDCPreset) => {
+    setPreset(nextPreset)
+    if (nextPreset === 'custom') {
+      setRepoFullName('')
+      setIssuerUrl('')
+      setAudience('')
+      setRole('org_read_only')
+      setTokenDurationSeconds('')
+      setClaimConditions([{ key: 'sub', value: '' }])
+      if (!isNameDirty) setName('')
+      return
+    }
+    setIssuerUrl(GITHUB_ACTIONS_ISSUER)
+    setAudience(githubAudience)
+    setRole('org_builder')
+    setTokenDurationSeconds('900')
+  }
+
+  const selectRepo = (nextRepoFullName: string) => {
+    setRepoFullName(nextRepoFullName)
+    const branch = repos.find(
+      (repo) => repo.full_name === nextRepoFullName
+    )?.default_branch
+    if (!isNameDirty) {
+      setName(defaultRepoPolicyName(nextRepoFullName, reservedNames))
+    }
+    if (!isSubDirty && branch) {
+      setSubCondition(githubSubClaim(nextRepoFullName, branch))
+    }
+  }
+
   const updateClaimCondition = (
     index: number,
     field: 'key' | 'value',
     value: string
   ) => {
+    if (field === 'value' && claimConditions[index]?.key.trim() === 'sub') {
+      setIsSubDirty(true)
+    }
     setClaimConditions((prev) =>
       prev.map((condition, i) =>
         i === index ? { ...condition, [field]: value } : condition
@@ -137,13 +238,55 @@ export const CreateOIDCTrustPolicyModal = ({
           short-lived org access, without storing a static API token.
         </Text>
 
+        {lockPreset ? null : (
+          <Select
+            labelProps={{ labelText: 'Provider' }}
+            options={PRESET_OPTIONS}
+            value={preset}
+            onChange={(e) => selectPreset(e.target.value as OIDCPreset)}
+            helperText="GitHub Actions fills in the issuer, audience and subject claim for a connected repository. You can still edit them."
+          />
+        )}
+
+        {isGithub ? (
+          hasVCSConnections === false && !isLoadingRepos ? (
+            <Banner theme="warn">
+              Connect a GitHub organization to fill this in from one of your
+              repositories.{' '}
+              <Link href={vcsConnectionsHref}>Manage VCS connections</Link>
+            </Banner>
+          ) : (
+            <Select
+              labelProps={{ labelText: 'Repository' }}
+              options={repos.map((repo) => ({
+                value: repo.full_name,
+                label: repo.full_name,
+                badge: { label: repo.default_branch },
+              }))}
+              value={repoFullName}
+              onChange={(e) => selectRepo(e.target.value)}
+              disabled={!!initialRepoFullName || isLoadingRepos}
+              searchable
+              placeholder={
+                isLoadingRepos
+                  ? 'Loading repositories...'
+                  : 'Select a repository'
+              }
+              helperText="Fills in the name and subject claim for this repository's default branch."
+            />
+          )
+        ) : null}
+
         <div className="flex flex-col gap-2">
           <Label htmlFor="policy-name">Name</Label>
           <Input
             id="policy-name"
             placeholder="GitHub Actions CI"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setIsNameDirty(true)
+              setName(e.target.value)
+            }}
             required
           />
           {isNameTaken ? (
@@ -163,8 +306,6 @@ export const CreateOIDCTrustPolicyModal = ({
             value={issuerUrl}
             onChange={(e) => setIssuerUrl(e.target.value)}
             required
-            readOnly={lockIssuer}
-            disabled={lockIssuer}
           />
           <Text variant="subtext" theme="neutral">
             Must be an absolute http or https URL.
