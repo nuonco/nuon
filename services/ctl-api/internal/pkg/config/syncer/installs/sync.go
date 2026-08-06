@@ -6,11 +6,13 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 const ManagedByGitInstallConfig = "nuon/git/install-config"
@@ -143,16 +145,7 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 
 	definedInputs := installCfg.FlattenedInputs()
 	if len(definedInputs) > 0 {
-		inputs := make(map[string]*string)
-		for k, v := range definedInputs {
-			val := v
-			inputs[k] = &val
-		}
-		installInputs := app.InstallInputs{
-			InstallID: existing.ID,
-			Values:    inputs,
-		}
-		if err := db.WithContext(ctx).Create(&installInputs).Error; err != nil {
+		if err := syncInstallInputs(ctx, db, installHelpers, existing, definedInputs); err != nil {
 			return nil, fmt.Errorf("unable to update inputs for install %s: %w", installCfg.Name, err)
 		}
 	}
@@ -292,3 +285,56 @@ func firstNonEmpty(vals ...string) string {
 }
 
 var _ func(ctx context.Context, db *gorm.DB, h *installhelpers.Helpers, appID string, i *config.Install) (*sync.InstallSyncResult, error) = SyncInstall
+
+// syncInstallInputs merges rather than replaces so values set out of band survive a sync.
+func syncInstallInputs(
+	ctx context.Context,
+	db *gorm.DB,
+	installHelpers *installhelpers.Helpers,
+	existing *app.Install,
+	definedInputs map[string]string,
+) error {
+	pinned, err := installHelpers.GetPinnedAppInputConfig(ctx, existing.AppID, existing.AppConfigID)
+	if err != nil {
+		return fmt.Errorf("unable to get pinned app input config: %w", err)
+	}
+	if pinned == nil {
+		return fmt.Errorf("no app input config on app config %s", existing.AppConfigID)
+	}
+
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := installhelpers.LockInstallInputs(ctx, tx, existing.ID); err != nil {
+			return err
+		}
+
+		var latest app.InstallInputs
+		if err := tx.WithContext(ctx).
+			Where(app.InstallInputs{InstallID: existing.ID}).
+			Order("created_at DESC").
+			Limit(1).
+			Find(&latest).Error; err != nil {
+			return fmt.Errorf("unable to get install inputs: %w", err)
+		}
+
+		merged := make(pgtype.Hstore, len(latest.Values)+len(definedInputs))
+		for k, v := range latest.Values {
+			merged[k] = v
+		}
+		for k, v := range definedInputs {
+			val := v
+			merged[k] = &val
+		}
+
+		installInputs := app.InstallInputs{
+			InstallID:        existing.ID,
+			AppInputConfigID: pinned.ID,
+			Values:           merged,
+		}
+		if err := tx.WithContext(ctx).Create(&installInputs).Error; err != nil {
+			return err
+		}
+
+		// nothing else on this path invalidates state
+		return installHelpers.MarkInstallStatePartialsStale(ctx, tx, existing.ID, pkgstate.PartialInputs)
+	})
+}
