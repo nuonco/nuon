@@ -43,6 +43,6 @@ const sampleBranch = "main"
 
 // Default CloudFormation nested template URLs for AWS stacks.
 const (
-	defaultAWSVPCTemplateURL    = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.2.1/vpc/eks/default/stack.yaml"
-	defaultAWSRunnerTemplateURL = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.2.1/runner/asg/stack.yaml"
+	defaultAWSVPCTemplateURL    = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.2/vpc/eks/default/stack.yaml"
+	defaultAWSRunnerTemplateURL = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.2/runner/asg/stack.yaml"
 )
