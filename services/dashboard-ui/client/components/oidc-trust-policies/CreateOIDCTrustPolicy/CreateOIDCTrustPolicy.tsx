@@ -266,7 +266,6 @@ export const CreateOIDCTrustPolicyModal = ({
                   ? 'Loading repositories...'
                   : 'Select a repository'
               }
-              helperText="Fills in the name and subject claim for this repository's default branch."
             />
           )
         ) : null}
