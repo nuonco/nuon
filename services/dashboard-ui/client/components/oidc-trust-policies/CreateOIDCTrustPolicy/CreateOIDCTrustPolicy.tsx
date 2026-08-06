@@ -239,7 +239,6 @@ export const CreateOIDCTrustPolicyModal = ({
             options={PRESET_OPTIONS}
             value={preset}
             onChange={(e) => selectPreset(e.target.value as OIDCPreset)}
-            helperText="GitHub Actions fills in the issuer, audience and subject claim for a connected repository. You can still edit them."
           />
         )}
 
