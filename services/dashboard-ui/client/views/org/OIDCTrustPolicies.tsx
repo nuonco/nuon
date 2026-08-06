@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
-import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
@@ -23,12 +22,13 @@ export const OIDCTrustPolicies = () => {
   })
 
   return (
-    <PageLayout className="pb-6">
+    <>
       <PageTitle title={`OIDC federation | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org.id}`, text: org?.name },
-          { path: `/${org.id}/oidc-trust-policies`, text: 'OIDC federation' },
+          { path: `/${org.id}/settings`, text: 'Settings' },
+          { path: `/${org.id}/settings/oidc`, text: 'OIDC federation' },
         ]}
       />
       <PageHeader className="flex items-center justify-between">
@@ -55,6 +55,6 @@ export const OIDCTrustPolicies = () => {
           </div>
         </PageSection>
       </PageContent>
-    </PageLayout>
+    </>
   )
 }

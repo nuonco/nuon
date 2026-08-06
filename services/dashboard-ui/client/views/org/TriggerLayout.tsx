@@ -7,7 +7,6 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { PageLayout } from '@/components/layout/PageLayout'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -23,14 +22,15 @@ export const TriggerLayout = () => {
     enabled: !!org?.id && !!triggerId,
   })
   const trigger = query.data
-  const base = `/${org?.id}/triggers/${triggerId}`
+  const base = `/${org?.id}/settings/triggers/${triggerId}`
   return (
-    <PageLayout>
+    <>
       <PageTitle title={`${trigger?.name || 'Trigger'} | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
-          { path: `/${org?.id}/triggers`, text: 'Triggers' },
+          { path: `/${org?.id}/settings`, text: 'Settings' },
+          { path: `/${org?.id}/settings/triggers`, text: 'Triggers' },
           { path: base, text: trigger?.name || triggerId },
         ]}
       />
@@ -78,6 +78,6 @@ export const TriggerLayout = () => {
           )}
         </PageSection>
       </PageContent>
-    </PageLayout>
+    </>
   )
 }

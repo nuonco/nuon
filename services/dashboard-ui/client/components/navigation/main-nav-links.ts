@@ -35,43 +35,12 @@ export const SETTINGS_LINKS: TNavLink[] = [
     shortcut: 'g r',
   },
   {
-    iconVariant: 'LightningIcon',
-    path: `/triggers`,
-    text: 'Triggers',
-    shortcut: 'g e',
-  },
-  {
-    iconVariant: 'WebhooksLogoIcon',
-    path: `/webhooks`,
-    text: 'Webhooks',
-    shortcut: 'g w',
-  },
-  {
-    iconVariant: 'KeyIcon',
-    path: `/api-tokens`,
-    text: 'API tokens',
-    shortcut: 'g k',
-  },
-  {
-    iconVariant: 'RobotIcon',
-    path: `/service-accounts`,
-    text: 'Service accounts',
-    shortcut: 'g v',
-  },
-  {
-    iconVariant: 'ShieldCheckIcon',
-    path: `/oidc-trust-policies`,
-    text: 'OIDC federation',
-    shortcut: 'g f',
+    iconVariant: 'GearIcon',
+    path: `/settings`,
+    text: 'Settings',
+    shortcut: 'g s',
   },
 ]
-
-export const SLACK_LINK: TNavLink = {
-  iconVariant: 'SlackLogoIcon',
-  path: `/slack`,
-  text: 'Slack',
-  shortcut: 'g s',
-}
 
 export const SUPPORT_LINKS: TNavLink[] = [
   {
@@ -80,9 +49,4 @@ export const SUPPORT_LINKS: TNavLink[] = [
     text: 'Developer docs',
     isExternal: true,
   },
-  // {
-  //   iconVariant: 'ListBulletsIcon',
-  //   path: `/releases`,
-  //   text: 'Releases',
-  // },
 ]

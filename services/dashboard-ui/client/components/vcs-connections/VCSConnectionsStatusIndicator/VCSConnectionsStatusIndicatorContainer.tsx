@@ -29,7 +29,7 @@ export const VCSConnectionsStatusIndicatorContainer = () => {
 
     return {
       id: conn.id,
-      href: `/${org.id}/connections/vcs/${conn.id}`,
+      href: `/${org.id}/settings/vcs/${conn.id}`,
       title: accountName,
       subtitle: status?.status ?? undefined,
       leftContent: (

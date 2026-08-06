@@ -15,10 +15,6 @@ export const Default = () => (
     <MainNav
       org={mockOrg}
       isSidebarOpen
-      hasServiceAccountsAndTokens
-      hasSlack
-      hasTriggers
-      hasOIDCFederation
       hasCustomerPortal={false}
       customerPortalUrl="https://customers.nuon.co"
     />
@@ -30,10 +26,6 @@ export const Collapsed = () => (
     <MainNav
       org={mockOrg}
       isSidebarOpen={false}
-      hasServiceAccountsAndTokens={false}
-      hasSlack={false}
-      hasTriggers={false}
-      hasOIDCFederation={false}
       hasCustomerPortal={false}
       customerPortalUrl="https://customers.nuon.co"
     />
