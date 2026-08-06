@@ -5,7 +5,6 @@ import { Text } from '@/components/common/Text'
 import { CreateOIDCTrustPolicyButton } from '@/components/oidc-trust-policies/CreateOIDCTrustPolicy'
 import { DeleteOIDCTrustPolicyButton } from '@/components/oidc-trust-policies/DeleteOIDCTrustPolicy'
 import { Toast } from '@/components/surfaces/Toast'
-import { useConfig } from '@/hooks/use-config'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
@@ -16,15 +15,12 @@ import {
 import type { TAPIError, TOIDCTrustPolicy } from '@/types'
 import { ManageRepoOIDCModal } from './ManageRepoOIDC'
 
-const GITHUB_ACTIONS_ISSUER = 'https://token.actions.githubusercontent.com'
-
 const ManageRepoOIDCModalContainer = ({
   defaultBranch,
   repoFullName,
   ...props
 }: { defaultBranch: string; repoFullName: string } & Record<string, any>) => {
   const { org } = useOrg()
-  const config = useConfig()
   const queryClient = useQueryClient()
   const { addToast } = useToast()
 
@@ -83,14 +79,7 @@ const ManageRepoOIDCModalContainer = ({
     },
   })
 
-  const repoName = repoFullName.split('/').pop() ?? repoFullName
   const reservedNames = (policies ?? []).map((policy) => policy.name ?? '')
-  const takenNames = new Set(reservedNames.map((name) => name.toLowerCase()))
-  const baseName = `github-${repoName}`
-  let defaultName = baseName
-  for (let n = 2; takenNames.has(defaultName.toLowerCase()); n++) {
-    defaultName = `${baseName}-${n}`
-  }
 
   return (
     <ManageRepoOIDCModal
@@ -107,21 +96,10 @@ const ManageRepoOIDCModalContainer = ({
           variant="secondary"
           size="sm"
           className="w-fit"
-          initialValues={{
-            name: defaultName,
-            issuerUrl: GITHUB_ACTIONS_ISSUER,
-            audience: config.apiUrl ?? '',
-            role: 'org_builder',
-            tokenDurationSeconds: '900',
-            claimConditions: [
-              {
-                key: 'sub',
-                value: `repo:${repoFullName}:ref:refs/heads/${defaultBranch}`,
-              },
-            ],
-          }}
+          initialRepoFullName={repoFullName}
+          initialRepoDefaultBranch={defaultBranch}
           reservedNames={reservedNames}
-          lockIssuer
+          lockPreset
         >
           <Icon variant="PlusIcon" size={14} />
           Create trust policy
