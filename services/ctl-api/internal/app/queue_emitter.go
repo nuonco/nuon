@@ -37,17 +37,17 @@ type QueueEmitter struct {
 
 	CreatedAt time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"uniqueIndex:idx_queue_emitters_queue_name" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
 	// Many-to-one: each emitter belongs to exactly one queue
-	QueueID string `json:"queue_id,omitzero" gorm:"type:text;not null;index:idx_queue_emitter_queue_id;uniqueIndex:idx_queue_emitters_queue_name" temporaljson:"queue_id,omitzero,omitempty"`
+	QueueID string `json:"queue_id,omitzero" gorm:"type:text;not null;index:idx_queue_emitter_queue_id" temporaljson:"queue_id,omitzero,omitempty"`
 	Queue   Queue  `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"queue,omitzero,omitempty"`
 
 	// Emitter identity
-	Name        string `json:"name,omitzero" gorm:"type:text;not null;uniqueIndex:idx_queue_emitters_queue_name" temporaljson:"name,omitzero,omitempty"`
+	Name        string `json:"name,omitzero" gorm:"type:text;not null" temporaljson:"name,omitzero,omitempty"`
 	Description string `json:"description,omitzero" gorm:"type:text" temporaljson:"description,omitzero,omitempty"`
 
 	// Emitter mode: "cron" for recurring, "scheduled" for one-shot

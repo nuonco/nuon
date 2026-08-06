@@ -101,7 +101,10 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 
 	res := c.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "queue_id"}, {Name: "name"}, {Name: "deleted_at"}},
+			Columns: []clause.Column{{Name: "queue_id"}, {Name: "name"}},
+			TargetWhere: clause.Where{Exprs: []clause.Expression{
+				clause.Expr{SQL: "deleted_at = 0"},
+			}},
 			DoNothing: true,
 		}, clause.Returning{}).
 		Create(&em)

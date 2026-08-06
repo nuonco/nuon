@@ -164,5 +164,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "122-reconcile-org-builder-roles",
 			Fn:   m.Migration122ReconcileOrgBuilderRoles,
 		},
+		{
+			Name: "123-queue-emitters-unique-queue-name",
+			Fn:   m.Migration123QueueEmittersUniqueQueueName,
+		},
 	}
 }
