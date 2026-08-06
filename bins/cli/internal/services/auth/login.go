@@ -63,6 +63,8 @@ func (a *Service) Login(ctx context.Context) error {
 
 	ui.PrintLn(fmt.Sprintf("Logged in as %s", result.DisplayName))
 
+	a.printVersionNotice(ctx)
+
 	// Update apiClient with newly-fetched token so we can list orgs
 	api, err := nuon.New(
 		nuon.WithValidator(validator.New()),

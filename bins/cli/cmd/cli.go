@@ -144,10 +144,6 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "unable to initialize analytics")
 	}
 
-	//if err := c.checkCLIVersion(); err != nil {
-	//return err
-	//}
-
 	c.cfg.BindCobraFlags(cmd)
 	return nil
 }
