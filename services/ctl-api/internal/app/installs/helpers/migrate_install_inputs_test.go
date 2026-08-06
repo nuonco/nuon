@@ -4,8 +4,10 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/suite"
 	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/fx"
@@ -222,4 +224,128 @@ func (s *MigrateInstallInputsTestSuite) TestCreateInstallPinsInputsToItsOwnAppCo
 	s.Require().NotNil(got.Values["region"])
 	s.Equal("us-west-2", *got.Values["region"])
 	s.Equal(activeCfg.ID, install.AppConfigID)
+}
+
+// Aug 4 incident: a read keyed on the outgoing config cannot see an update already
+// pinned to the incoming one, so it copied a stale snapshot forward.
+func (s *MigrateInstallInputsTestSuite) TestMigrationDoesNotRevertUpdateOnNewConfig() {
+	ctx := context.Background()
+	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
+	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
+
+	testApp := s.deps.Seed.CreateApp(ctx, s.T())
+	oldCfg := s.deps.Seed.CreateAppConfig(ctx, s.T(), testApp.ID)
+	install := s.deps.Seed.CreateInstall(ctx, s.T(), testApp)
+
+	var oldInputCfg app.AppInputConfig
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Where(app.AppInputConfig{AppConfigID: oldCfg.ID}).First(&oldInputCfg).Error)
+	s.deps.Seed.CreateInstallInputs(ctx, s.T(), install.ID, oldInputCfg.ID,
+		map[string]*string{"region": ptrTo("us-west-2")})
+
+	newCfg := s.seedAppConfigWithInputs(ctx, testApp.ID)
+	var newInputCfg app.AppInputConfig
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Where(app.AppInputConfig{AppConfigID: newCfg.ID}).First(&newInputCfg).Error)
+
+	s.deps.Seed.CreateInstallInputs(ctx, s.T(), install.ID, newInputCfg.ID, map[string]*string{
+		"region": ptrTo("us-west-2"),
+		"gate":   ptrTo("true"),
+	})
+
+	s.Require().NoError(s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx, s.deps.DB,
+		map[string]string{install.ID: oldCfg.ID}, newCfg.ID))
+
+	got := s.latestInstallInputs(ctx, install.ID)
+	s.Require().NotNil(got.Values["gate"], "migration must not revert an update already on the new config")
+	s.Equal("true", *got.Values["gate"])
+	s.Equal("us-west-2", *got.Values["region"])
+}
+
+func (s *MigrateInstallInputsTestSuite) TestMigrationBeforeUpdateStillCarriesValues() {
+	ctx := context.Background()
+	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
+	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
+
+	testApp := s.deps.Seed.CreateApp(ctx, s.T())
+	oldCfg := s.deps.Seed.CreateAppConfig(ctx, s.T(), testApp.ID)
+	install := s.deps.Seed.CreateInstall(ctx, s.T(), testApp)
+
+	var oldInputCfg app.AppInputConfig
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Where(app.AppInputConfig{AppConfigID: oldCfg.ID}).First(&oldInputCfg).Error)
+	s.deps.Seed.CreateInstallInputs(ctx, s.T(), install.ID, oldInputCfg.ID,
+		map[string]*string{"region": ptrTo("eu-west-1")})
+
+	newCfg := s.seedAppConfigWithInputs(ctx, testApp.ID)
+	s.Require().NoError(s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx, s.deps.DB,
+		map[string]string{install.ID: oldCfg.ID}, newCfg.ID))
+
+	got := s.latestInstallInputs(ctx, install.ID)
+	s.Require().NotNil(got.Values["region"])
+	s.Equal("eu-west-1", *got.Values["region"])
+}
+
+// Without the lock the migration's append discards an update that landed after its read.
+func (s *MigrateInstallInputsTestSuite) TestConcurrentUpdateIsNotLost() {
+	ctx := context.Background()
+	ctx, _ = s.deps.Seed.EnsureAccount(ctx, s.T())
+	ctx, _ = s.deps.Seed.EnsureOrg(ctx, s.T())
+
+	testApp := s.deps.Seed.CreateApp(ctx, s.T())
+	oldCfg := s.deps.Seed.CreateAppConfig(ctx, s.T(), testApp.ID)
+	install := s.deps.Seed.CreateInstall(ctx, s.T(), testApp)
+
+	var oldInputCfg app.AppInputConfig
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Where(app.AppInputConfig{AppConfigID: oldCfg.ID}).First(&oldInputCfg).Error)
+	s.deps.Seed.CreateInstallInputs(ctx, s.T(), install.ID, oldInputCfg.ID,
+		map[string]*string{"region": ptrTo("us-west-2"), "legacy": ptrTo("drop-me")})
+
+	newCfg := s.seedAppConfigWithInputs(ctx, testApp.ID)
+
+	held := make(chan struct{})
+	release := make(chan struct{})
+	updateDone := make(chan error, 1)
+	migrateDone := make(chan error, 1)
+
+	go func() {
+		updateDone <- s.deps.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+			if err := installhelpers.LockInstallInputs(ctx, tx, install.ID); err != nil {
+				return err
+			}
+			close(held)
+			<-release
+
+			return tx.WithContext(ctx).Create(&app.InstallInputs{
+				InstallID:        install.ID,
+				AppInputConfigID: oldInputCfg.ID,
+				Values: pgtype.Hstore{
+					"region": ptrTo("eu-central-1"),
+					"legacy": ptrTo("drop-me"),
+				},
+			}).Error
+		})
+	}()
+
+	<-held
+	go func() {
+		migrateDone <- s.deps.Helpers.MigrateInstallInputsToNewConfig(ctx, s.deps.DB,
+			map[string]string{install.ID: oldCfg.ID}, newCfg.ID)
+	}()
+
+	select {
+	case err := <-migrateDone:
+		s.Require().Failf("migration ran unserialized", "finished while an inputs writer held the lock: %v", err)
+	case <-time.After(time.Second):
+	}
+
+	close(release)
+	s.Require().NoError(<-updateDone)
+	s.Require().NoError(<-migrateDone)
+
+	got := s.latestInstallInputs(ctx, install.ID)
+	s.Require().NotNil(got.Values["region"])
+	s.Equal("eu-central-1", *got.Values["region"])
+	s.NotContains(got.Values, "legacy")
 }
