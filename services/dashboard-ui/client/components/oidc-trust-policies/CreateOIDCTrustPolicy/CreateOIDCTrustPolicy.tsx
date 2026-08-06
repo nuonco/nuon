@@ -274,7 +274,7 @@ export const CreateOIDCTrustPolicyModal = ({
           <Label htmlFor="policy-name">Name</Label>
           <Input
             id="policy-name"
-            placeholder="GitHub Actions CI"
+            placeholder="ci-deploy"
             value={name}
             onChange={(e) => {
               setIsNameDirty(true)
@@ -294,7 +294,7 @@ export const CreateOIDCTrustPolicyModal = ({
           <Label htmlFor="policy-issuer-url">Issuer URL</Label>
           <Input
             id="policy-issuer-url"
-            placeholder="https://token.actions.githubusercontent.com"
+            placeholder="https://gitlab.com"
             type="url"
             value={issuerUrl}
             onChange={(e) => setIssuerUrl(e.target.value)}
@@ -362,7 +362,7 @@ export const CreateOIDCTrustPolicyModal = ({
                   }
                 />
                 <Input
-                  placeholder="repo:acme/app:ref:refs/heads/main"
+                  placeholder="project_path:acme/app:ref_type:branch:ref:main"
                   value={condition.value}
                   onChange={(e) =>
                     updateClaimCondition(index, 'value', e.target.value)
