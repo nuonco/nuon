@@ -38,7 +38,7 @@ export const OIDCTrustPolicies = () => {
           </Text>
           <Text theme="neutral">
             Grant OIDC providers access to the Nuon control plane without
-            storing long-live static tokens.
+            storing long-lived static tokens.
           </Text>
         </HeadingGroup>
         <CreateOIDCTrustPolicyButton
