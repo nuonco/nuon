@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -58,4 +61,31 @@ func (s *Helpers) getJob(ctx context.Context, jobID string) (*app.RunnerJob, err
 	}
 
 	return &runnerJob, nil
+}
+
+// CreateJobExecutionResultIfAbsent atomically preserves the first result written for an execution.
+func CreateJobExecutionResultIfAbsent(ctx context.Context, db *gorm.DB, result *app.RunnerJobExecutionResult) (*app.RunnerJobExecutionResult, bool, error) {
+	res := db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{
+				{Name: "deleted_at"},
+				{Name: "runner_job_execution_id"},
+			},
+			DoNothing: true,
+		}).
+		Create(result)
+	if res.Error != nil {
+		return nil, false, fmt.Errorf("unable to create runner job execution result: %w", res.Error)
+	}
+	if res.RowsAffected == 1 {
+		return result, true, nil
+	}
+
+	var existing app.RunnerJobExecutionResult
+	if err := db.WithContext(ctx).
+		Where(&app.RunnerJobExecutionResult{RunnerJobExecutionID: result.RunnerJobExecutionID}).
+		First(&existing).Error; err != nil {
+		return nil, false, fmt.Errorf("unable to get existing runner job execution result: %w", err)
+	}
+	return &existing, false, nil
 }

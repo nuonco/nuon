@@ -27,6 +27,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/generic"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/helm"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/terraform"
+	runnerhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
@@ -399,21 +400,6 @@ func (a *Activities) CreateJobExecutionResult(ctx context.Context, jobID, execut
 		ErrorMetadata:        stringMapToHstore(req.ErrorMetadata),
 		CompositeError:       compositeError,
 	}
-	if !req.Success {
-		matched := "miss"
-		if result.CompositeError != nil && result.CompositeError.Type != "" {
-			matched = string(result.CompositeError.Type)
-		}
-		tool := string(errparse.ToolForRunnerJob(job))
-		if tool == "" {
-			tool = "unknown"
-		}
-		group := string(job.Group)
-		if group == "" {
-			group = "unknown"
-		}
-		a.mw.Incr("runner.composite_error_parse", []string{"tool:" + tool, "group:" + group, "matched_type:" + matched})
-	}
 	if req.ContentsCompressed != "" {
 		contents, err := base64.URLEncoding.DecodeString(req.ContentsCompressed)
 		if err != nil {
@@ -436,40 +422,34 @@ func (a *Activities) CreateJobExecutionResult(ctx context.Context, jobID, execut
 		result.ContentsDisplay = byts
 	}
 
-	var existing app.RunnerJobExecutionResult
-	res := a.db.WithContext(ctx).Where(&app.RunnerJobExecutionResult{RunnerJobExecutionID: executionID}).First(&existing)
-	if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
-		return nil, fmt.Errorf("unable to get existing runner job execution result: %w", res.Error)
+	persisted, created, err := runnerhelpers.CreateJobExecutionResultIfAbsent(ctx, a.db, &result)
+	if err != nil {
+		return nil, err
 	}
-	var response *models.AppRunnerJobExecutionResult
-	if res.Error == gorm.ErrRecordNotFound {
-		if err := a.db.WithContext(ctx).Create(&result).Error; err != nil {
-			return nil, fmt.Errorf("unable to create runner job execution result: %w", err)
+	if created && !req.Success {
+		matched := "miss"
+		if result.CompositeError != nil && result.CompositeError.Type != "" {
+			matched = string(result.CompositeError.Type)
 		}
-		response = &models.AppRunnerJobExecutionResult{ID: result.ID, Success: result.Success}
-	} else {
-		if err := a.db.WithContext(ctx).Model(&existing).Updates(map[string]any{
-			"org_id":                result.OrgID,
-			"success":               result.Success,
-			"error_code":            result.ErrorCode,
-			"error_metadata":        result.ErrorMetadata,
-			"contents":              result.Contents,
-			"contents_gzip":         result.ContentsGzip,
-			"contents_display":      result.ContentsDisplay,
-			"contents_display_gzip": result.ContentsDisplayGzip,
-			"composite_error":       result.CompositeError,
-		}).Error; err != nil {
-			return nil, fmt.Errorf("unable to update runner job execution result: %w", err)
+		tool := string(errparse.ToolForRunnerJob(job))
+		if tool == "" {
+			tool = "unknown"
 		}
-		response = &models.AppRunnerJobExecutionResult{ID: existing.ID, Success: result.Success}
+		group := string(job.Group)
+		if group == "" {
+			group = "unknown"
+		}
+		a.mw.Incr("runner.composite_error_parse", []string{"tool:" + tool, "group:" + group, "matched_type:" + matched})
 	}
 
-	if err := a.applyComponentBuildSourceIdentity(ctx, job, req); err != nil {
-		a.l.Warn("unable to apply component build source identity", zap.Error(err))
+	if created {
+		if err := a.applyComponentBuildSourceIdentity(ctx, job, req); err != nil {
+			a.l.Warn("unable to apply component build source identity", zap.Error(err))
+		}
+		a.refreshOwnerCompositeError(ctx, job, result.CompositeError)
 	}
-	a.refreshOwnerCompositeError(ctx, job, result.CompositeError)
 
-	return response, nil
+	return &models.AppRunnerJobExecutionResult{ID: persisted.ID, Success: persisted.Success}, nil
 }
 
 func (a *Activities) refreshOwnerCompositeError(ctx context.Context, job *app.RunnerJob, compositeError any) {
