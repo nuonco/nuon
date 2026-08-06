@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -40,61 +41,56 @@ func (h *Helpers) MigrateInstallInputsToNewConfig(
 		validInputs[inp.Name] = true
 	}
 
-	for installID, oldAppConfigID := range installConfigMap {
-		if err := h.migrateInstallInputs(
-			ctx,
-			txn,
-			installID,
-			oldAppConfigID,
-			newAppConfig.InputConfig.ID,
-			validInputs); err != nil {
-			return fmt.Errorf("unable to migrate inputs for install %s: %w", installID, err)
-		}
+	// sorted so concurrent batches take the locks in the same order
+	installIDs := make([]string, 0, len(installConfigMap))
+	for installID := range installConfigMap {
+		installIDs = append(installIDs, installID)
 	}
+	sort.Strings(installIDs)
 
-	return nil
+	// own transaction so the locks are real when handed a plain handle
+	return txn.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for _, installID := range installIDs {
+			if err := LockInstallInputs(ctx, tx, installID); err != nil {
+				return err
+			}
+			if err := h.migrateInstallInputs(ctx, tx, installID, newAppConfig.InputConfig.ID, validInputs); err != nil {
+				return fmt.Errorf("unable to migrate inputs for install %s: %w", installID, err)
+			}
+
+			// config-derived partials go stale even when no value moved
+			if err := h.MarkInstallStatePartialsStale(ctx, tx, installID,
+				state.HintToPartials[state.HintAppConfigUpdated]...); err != nil {
+				return fmt.Errorf("unable to mark state partials stale for install %s: %w", installID, err)
+			}
+		}
+		return nil
+	})
 }
 
 func (h *Helpers) migrateInstallInputs(
 	ctx context.Context,
 	txn *gorm.DB,
 	installID string,
-	oldAppConfigID string,
 	newAppInputConfigID string,
 	validInputs map[string]bool,
 ) error {
-	var oldAppConfig app.AppConfig
-	res := txn.WithContext(ctx).
-		Where("id = ?", oldAppConfigID).
-		Preload("InputConfig").
-		First(&oldAppConfig)
-
-	if res.Error != nil {
-		return fmt.Errorf("unable to fetch old app config: %w", res.Error)
-	}
-
-	var existingInputs app.InstallInputs
-	res = txn.WithContext(ctx).
+	// a writer already targeted the incoming config; migrating on top would revert it
+	var onNewConfig int64
+	if err := txn.WithContext(ctx).
+		Model(&app.InstallInputs{}).
 		Where(app.InstallInputs{
 			InstallID:        installID,
-			AppInputConfigID: oldAppConfig.InputConfig.ID,
+			AppInputConfigID: newAppInputConfigID,
 		}).
-		Order("created_at DESC").
-		Limit(1).
-		Find(&existingInputs)
-	if res.Error != nil {
-		return fmt.Errorf("unable to fetch existing inputs: %w", res.Error)
+		Count(&onNewConfig).Error; err != nil {
+		return fmt.Errorf("unable to check inputs on new config: %w", err)
 	}
 
-	// Find reports "no rows" through RowsAffected, never gorm.ErrRecordNotFound.
-	// Testing the error instead leaves existingInputs zero-valued on a miss, which
-	// writes empty values over the install's inputs and, because the next
-	// migration then reads that empty row, keeps them empty for good.
-	if res.RowsAffected == 0 {
-		// An install whose inputs were never tied to the outgoing config — created
-		// before this migration existed, or tied to a different config version —
-		// still has values worth carrying forward.
-		res = txn.WithContext(ctx).
+	if onNewConfig == 0 {
+		// newest row, not the outgoing config's: that read cannot see a write pinned to the new one
+		var existingInputs app.InstallInputs
+		res := txn.WithContext(ctx).
 			Where(app.InstallInputs{
 				InstallID: installID,
 			}).
@@ -104,30 +100,26 @@ func (h *Helpers) migrateInstallInputs(
 		if res.Error != nil {
 			return errors.Wrap(res.Error, fmt.Sprintf("unable to fetch install inputs for installID %s", installID))
 		}
-	}
 
-	migratedValues := make(pgtype.Hstore)
-	for key, value := range existingInputs.Values {
-		if validInputs[key] {
-			migratedValues[key] = value
+		migratedValues := make(pgtype.Hstore)
+		for key, value := range existingInputs.Values {
+			if validInputs[key] {
+				migratedValues[key] = value
+			}
 		}
-	}
 
-	newInputs := app.InstallInputs{
-		InstallID:        installID,
-		AppInputConfigID: newAppInputConfigID,
-		Values:           migratedValues,
-		OrgID:            existingInputs.OrgID,
-	}
-
-	if err := txn.WithContext(ctx).Create(&newInputs).Error; err != nil {
-		return fmt.Errorf("unable to create migrated inputs: %w", err)
-	}
-
-	// inputs changed -> mark the inputs partial of this install's state stale so it is
-	// regenerated lazily on next read.
-	if err := h.MarkInstallStatePartialsStale(ctx, txn, installID, state.PartialInputs); err != nil {
-		return fmt.Errorf("unable to mark inputs partial stale: %w", err)
+		// nothing dropped means nothing to migrate: readers ignore the pin
+		if len(migratedValues) != len(existingInputs.Values) {
+			// OrgID is set by the model's BeforeCreate hook from context.
+			newInputs := app.InstallInputs{
+				InstallID:        installID,
+				AppInputConfigID: newAppInputConfigID,
+				Values:           migratedValues,
+			}
+			if err := txn.WithContext(ctx).Create(&newInputs).Error; err != nil {
+				return fmt.Errorf("unable to create migrated inputs: %w", err)
+			}
+		}
 	}
 
 	return nil
