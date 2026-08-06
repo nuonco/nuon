@@ -241,8 +241,7 @@ For each group:
 - **Approve install group plan** — read the per-install diff, then approve to let the group's deploy step run.
 - **Skip install group** — move the rollout past this group's deploy without applying it.
 
-The run stops at the next group's plan step, so a multi-group rollout is a sequence of deliberate decisions rather
-than one irreversible action.
+The run stops at the next group's plan step, so each group is approved or skipped on its own.
 
 <Frame caption="A branch run holding at the stage gate: review the proposed changes, then approve to deploy to that group.">
   <img src="/images/guides/app-branches/approve-install-group-plan.png" alt="A branch run in the Nuon dashboard awaiting approval for the stage install group's plan, with Review changes and Approve actions and the run's component builds listed" />
@@ -272,7 +271,7 @@ previews just like a `[connected_repo]` one, provided your org has connected `ac
 
 <Note>
   Previews start posting as soon as your org has the GitHub App connection for the repository's owner. If they have
-  not appeared yet, that connection is the thing to check — not your `branch.toml`.
+  not appeared yet, check that connection rather than your `branch.toml`.
 </Note>
 
 To reproduce a preview locally before opening the pull request:

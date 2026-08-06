@@ -85,7 +85,7 @@ merge is what starts the `git-run`.
 A `git-preview-run` stops after `building components and sandbox`. The per-group plan and deploy steps are not
 created at all, so a pull request cannot reach an install even in principle.
 
-A manual plan-only run works differently, and the difference matters in practice. `--preview` suppresses the *apply*
+A manual plan-only run works differently. `--preview` suppresses the *apply*
 and the waiting, not the workflow: the run creates every group's `plan install group` and `deploy install group`
 step, each approval gate auto-approves with "Auto-approved in plan-only mode", and the run finishes on its own with
 nothing applied. You get the same per-install diffs you would in a real rollout, readable from the completed run.
@@ -134,9 +134,9 @@ an unset `order` falls back to the position in the file.
 
 ### Rolling out gradually
 
-There is no separate canary feature to configure. A canary is just a first group with a narrow selector: label one or
-two installs `wave = "early"`, give that group the lowest `order`, and it plans and waits for approval ahead of
-everyone else. Approve it, watch it, and then approve the next group when you are satisfied.
+A canary is an ordinary first group with a narrow selector: label one or two installs `wave = "early"`, give that
+group the lowest `order`, and it plans and waits for approval ahead of everyone else. Approve it, watch it, and then
+approve the next group when you are satisfied. There is no separate canary feature to configure.
 
 Because the gate is an approval rather than a timer, the pace is yours: approve the next group in the dashboard, or
 have an external system approve it through the API once your own checks have passed.
@@ -153,7 +153,7 @@ and reports it on the pull request itself:
 - a commit status with the context `nuon/preview`, which moves from pending to success or failure.
 
 If the pull request does not change the app config at all, the run stops early and says so
-(``No changes to `nuon.toml` detected in this PR. Preview skipped.``) rather than doing pointless work.
+(``No changes to `nuon.toml` detected in this PR. Preview skipped.``).
 
 Posting to the pull request needs an **org-level GitHub connection**, not a particular kind of branch config: your org
 must have the Nuon GitHub App connected for the repository's owner. That is satisfied by a `[connected_repo]` branch,
@@ -162,12 +162,12 @@ previews as long as the org has connected `acmeco`. See [connecting a repository
 
 <Note>
   Previews start posting as soon as the GitHub App connection for the repository's owner is in place. If they have
-  not appeared yet, that connection is the thing to check — not the branch config.
+  not appeared yet, check that connection rather than the branch config.
 </Note>
 
 ## Plans, diffs, and who approves
 
-The value of a branch run is that nothing reaches an install unseen. Each `plan install group` step computes a diff
+Nothing in a branch run reaches an install unseen. Each `plan install group` step computes a diff
 per install in that group, showing exactly what would change, and holds the rollout there.
 
 That gate belongs to whoever operates the install. A customer running your software in their own cloud account sees
@@ -202,7 +202,7 @@ Branch runs emit the same signals as the rest of the platform, so you can watch 
 
 ## Rules and limits
 
-A few constraints are worth knowing before you design your branch layout:
+Know these constraints before you design your branch layout:
 
 - All branches of one app must point at the **same repository**. The branch and directory within it may differ.
 - An install can belong to **one app branch** at a time.
