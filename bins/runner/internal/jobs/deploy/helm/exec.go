@@ -38,6 +38,9 @@ type HelmPlanContents struct {
 	Op             string              `json:"op"`
 	ContentDiff    []diff.ResourceDiff `json:"helm_content_diff"`
 	TemplateOutput string              `json:"template_output,omitempty"`
+
+	// an empty diff only means "nothing to do" when the release is actually deployed
+	ReleaseStatus string `json:"helm_release_status,omitempty"`
 }
 
 // Modify Exec function to use the common diff package
@@ -142,11 +145,21 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			diffStr = "no changes"
 		}
 
-		helmPlan.Diff = diffStr
 		helmPlan.ContentDiff = *contentDiff
 		helmPlan.TemplateOutput = templateOutput
+		if prevRel != nil && prevRel.Info != nil {
+			helmPlan.ReleaseStatus = string(prevRel.Info.Status)
+			if len(*contentDiff) == 0 && prevRel.Info.Status != release.StatusDeployed {
+				diffStr = fmt.Sprintf(
+					"no manifest changes, but the release is %s and was never rolled out — re-applying",
+					prevRel.Info.Status,
+				)
+			}
+		}
+		helmPlan.Diff = diffStr
 
-		l.Debug("calculated helm diff", zap.String("diff", diffStr))
+		l.Debug("calculated helm diff", zap.String("diff", diffStr),
+			zap.String("helm.release_status", helmPlan.ReleaseStatus))
 	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
 		// TODO(fd): figure out the best way to get a plan for this
 		helmPlan.Op = "uninstall"
