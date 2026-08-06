@@ -294,7 +294,7 @@ export const CreateOIDCTrustPolicyModal = ({
           <Label htmlFor="policy-issuer-url">Issuer URL</Label>
           <Input
             id="policy-issuer-url"
-            placeholder="https://gitlab.com"
+            placeholder="https://oidc.example.com"
             type="url"
             value={issuerUrl}
             onChange={(e) => setIssuerUrl(e.target.value)}
@@ -362,7 +362,7 @@ export const CreateOIDCTrustPolicyModal = ({
                   }
                 />
                 <Input
-                  placeholder="project_path:acme/app:ref_type:branch:ref:main"
+                  placeholder="acme/app:main"
                   value={condition.value}
                   onChange={(e) =>
                     updateClaimCondition(index, 'value', e.target.value)
