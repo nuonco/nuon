@@ -21,9 +21,7 @@ type TriggerRunbookRunRequest struct {
 	Inputs                                           map[string]string
 	StepSelections                                   []app.RunbookStepSelection
 	TriggerEventDispatchID                           *string
-<<<<<<< HEAD
 	Role                                             string
-=======
 
 	// IdempotencyKey makes the call safe to repeat: a second call with the same
 	// key returns the existing run instead of starting the runbook again. Callers
@@ -40,7 +38,6 @@ type TriggerRunbookRunRequest struct {
 	// has already finished and no callback can fire. Callers that set Callback
 	// must handle TerminalStatus, or they will block until FallbackAwaitTimeout.
 	Callback callback.Ref
->>>>>>> a1114295f (feat: add app branch post-deploy runbooks)
 }
 
 type TriggerRunbookRunResponse struct {

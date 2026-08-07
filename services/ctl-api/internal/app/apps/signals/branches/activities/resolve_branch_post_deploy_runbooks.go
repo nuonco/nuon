@@ -63,19 +63,19 @@ func (a *Activities) ResolveBranchPostDeployRunbooks(ctx context.Context, input 
 		return out, nil
 	}
 
-	var branch app.AppBranch
-	if err := a.db.WithContext(ctx).First(&branch, "id = ?", input.AppBranchID).Error; err != nil {
-		return nil, fmt.Errorf("unable to get app branch: %w", err)
-	}
-
 	// Activities carry no request auth context, so set the created-by/org the
 	// InstallRunbook and InstallRunbookRun BeforeCreate hooks read; without this
 	// the not-null created_by_id insert fails.
 	ctx = cctx.SetAccountIDContext(ctx, input.CreatedByID)
 	ctx = cctx.SetOrgIDContext(ctx, config.OrgID)
 
-	if err := a.runbooksHelpers.EnsureInstallRunbooks(ctx, branch.AppID, input.InstallIDs); err != nil {
-		return nil, fmt.Errorf("unable to ensure install runbooks: %w", err)
+	// The install group's app-config update already reconciles runbooks, so this is
+	// normally a no-op. It stays because a run whose group update partially failed
+	// would otherwise have no InstallRunbook row to hang a run off.
+	for _, installID := range input.InstallIDs {
+		if err := a.installHelpers.ReconcileInstallRunbooks(ctx, installID); err != nil {
+			return nil, fmt.Errorf("unable to reconcile install runbooks for %s: %w", installID, err)
+		}
 	}
 
 	for _, runbookID := range config.PostDeployRunbookIDs {
