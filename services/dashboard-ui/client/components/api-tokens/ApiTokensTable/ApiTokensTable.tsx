@@ -14,7 +14,6 @@ export const API_TOKENS_TABLE_LIMIT = 20
 
 const ROLE_LABELS: Record<string, string> = {
   org_admin: 'Admin',
-  org_builder: 'Builder',
   org_support: 'Support',
   org_read_only: 'Read-only',
 }
