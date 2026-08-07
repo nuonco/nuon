@@ -108,6 +108,9 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, in
 		// No LIMIT: it would cap the whole preload rather than each row, and the unique
 		// index on (action_workflow_id, app_config_id) already yields at most one.
 		Preload("ActionWorkflow.Configs", func(db *gorm.DB) *gorm.DB {
+			if install.AppConfigID == "" {
+				return db.Scopes(scopes.WithOverrideTable("action_workflow_configs_latest_view_v1"))
+			}
 			return db.Where(app.ActionWorkflowConfig{AppConfigID: install.AppConfigID})
 		}).
 		Preload("ActionWorkflow.Configs.Triggers").

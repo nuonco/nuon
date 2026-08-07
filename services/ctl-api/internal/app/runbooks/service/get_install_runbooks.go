@@ -73,8 +73,12 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 		Preload("Runbook").
 		// Pinned config, not the app's newest: runs execute the pinned one, so any
 		// other version hands callers step IDs it will reject. Unique on
-		// (runbook_id, app_config_id), so this yields at most one per runbook.
+		// (runbook_id, app_config_id), so this yields at most one per runbook without a
+		// LIMIT, which would cap the whole preload rather than each row.
 		Preload("Runbook.Configs", func(tx *gorm.DB) *gorm.DB {
+			if install.AppConfigID == "" {
+				return tx.Scopes(scopes.WithOverrideTable("runbook_configs_latest_view_v1"))
+			}
 			return tx.Where(app.RunbookConfig{AppConfigID: install.AppConfigID})
 		}).
 		Preload("Runbook.Configs.Steps", func(tx *gorm.DB) *gorm.DB {

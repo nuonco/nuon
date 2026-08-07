@@ -48,8 +48,12 @@ func (s *service) GetInstallRunbook(ctx *gin.Context) {
 	res := s.db.WithContext(ctx).
 		Preload("Runbook").
 		// Pinned config, not the app's newest: runs execute the pinned one, so any
-		// other version hands callers step IDs it will reject.
+		// other version hands callers step IDs it will reject. Legacy installs have no
+		// pinned config and still resolve to the newest at run time.
 		Preload("Runbook.Configs", func(tx *gorm.DB) *gorm.DB {
+			if install.AppConfigID == "" {
+				return tx.Order("created_at DESC").Limit(1)
+			}
 			return tx.Where(app.RunbookConfig{AppConfigID: install.AppConfigID})
 		}).
 		Preload("Runbook.Configs.Steps", func(tx *gorm.DB) *gorm.DB {
