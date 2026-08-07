@@ -132,10 +132,11 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 	t.Run("specific match tags the matched type", func(t *testing.T) {
 		mw := &fakeMetricsWriter{}
 		s := &service{mw: mw, l: zap.NewNop()}
-		s.parseResultCompositeError(&CreateRunnerJobExecutionResultRequest{
+		req := &CreateRunnerJobExecutionResultRequest{
 			Success:       false,
 			ErrorMetadata: map[string]*string{"message": ptr(awsMsg)},
-		}, tfDeploy)
+		}
+		s.recordCompositeErrorParse(req, tfDeploy, s.parseCompositeError(req, tfDeploy))
 
 		if len(mw.incrs) != 1 {
 			t.Fatalf("expected 1 metric, got %d", len(mw.incrs))
@@ -154,10 +155,11 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 	t.Run("parse miss is tagged generic", func(t *testing.T) {
 		mw := &fakeMetricsWriter{}
 		s := &service{mw: mw, l: zap.NewNop()}
-		s.parseResultCompositeError(&CreateRunnerJobExecutionResultRequest{
+		req := &CreateRunnerJobExecutionResultRequest{
 			Success:       false,
 			ErrorMetadata: map[string]*string{"message": ptr("some unrelated failure")},
-		}, tfDeploy)
+		}
+		s.recordCompositeErrorParse(req, tfDeploy, s.parseCompositeError(req, tfDeploy))
 
 		if len(mw.incrs) != 1 {
 			t.Fatalf("expected 1 metric, got %d", len(mw.incrs))
@@ -170,7 +172,8 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 	t.Run("empty output is tagged miss", func(t *testing.T) {
 		mw := &fakeMetricsWriter{}
 		s := &service{mw: mw, l: zap.NewNop()}
-		s.parseResultCompositeError(&CreateRunnerJobExecutionResultRequest{Success: false}, tfDeploy)
+		req := &CreateRunnerJobExecutionResultRequest{Success: false}
+		s.recordCompositeErrorParse(req, tfDeploy, s.parseCompositeError(req, tfDeploy))
 
 		if len(mw.incrs) != 1 {
 			t.Fatalf("expected 1 metric, got %d", len(mw.incrs))
@@ -183,10 +186,12 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 	t.Run("unknown tool falls back to unknown tag", func(t *testing.T) {
 		mw := &fakeMetricsWriter{}
 		s := &service{mw: mw, l: zap.NewNop()}
-		s.parseResultCompositeError(&CreateRunnerJobExecutionResultRequest{
+		req := &CreateRunnerJobExecutionResultRequest{
 			Success:       false,
 			ErrorMetadata: map[string]*string{"message": ptr("boom")},
-		}, &app.RunnerJob{OwnerType: "install_deploys", OwnerID: "x"})
+		}
+		job := &app.RunnerJob{OwnerType: "install_deploys", OwnerID: "x"}
+		s.recordCompositeErrorParse(req, job, s.parseCompositeError(req, job))
 
 		if !hasTag(mw.incrs[0].tags, "tool:unknown") || !hasTag(mw.incrs[0].tags, "group:unknown") {
 			t.Errorf("expected unknown fallback tags, got %v", mw.incrs[0].tags)
@@ -196,7 +201,8 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 	t.Run("success emits no metric", func(t *testing.T) {
 		mw := &fakeMetricsWriter{}
 		s := &service{mw: mw, l: zap.NewNop()}
-		s.parseResultCompositeError(&CreateRunnerJobExecutionResultRequest{Success: true}, tfDeploy)
+		req := &CreateRunnerJobExecutionResultRequest{Success: true}
+		s.recordCompositeErrorParse(req, tfDeploy, s.parseCompositeError(req, tfDeploy))
 
 		if len(mw.incrs) != 0 {
 			t.Fatalf("expected no metric on success, got %d", len(mw.incrs))
