@@ -36,13 +36,6 @@ const CreateApiTokenModalContainer = (props: Record<string, any>) => {
         </Toast>
       )
     },
-    onError: (_err, { name }) => {
-      addToast(
-        <Toast heading="Create failed" theme="error">
-          <Text>There was an error creating API token {name}.</Text>
-        </Toast>
-      )
-    },
   })
 
   return (
