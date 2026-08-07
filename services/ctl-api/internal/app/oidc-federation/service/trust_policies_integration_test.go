@@ -108,7 +108,28 @@ func (s *OIDCFederationTestSuite) TestCreatePolicyValidation() {
 	}
 }
 
-func (s *OIDCFederationTestSuite) TestCreatePolicyAllowsBuilderRole() {
+func (s *OIDCFederationTestSuite) TestCreatePolicyAllowsAdminRole() {
+	idp := newFakeIDP(s.T())
+	s.deps.Service.cfg.OIDCFederationAllowInsecureIssuers = true
+
+	rr := s.makeRequest(http.MethodPost, "/v1/oidc/trust-policies", CreateOIDCTrustPolicyRequest{
+		Name: "admin", IssuerURL: idp.issuer(), Audience: "nuon-test",
+		ClaimConditions: map[string]string{"sub": "repo:acme/app:*:*"},
+		Role:            string(app.RoleTypeOrgAdmin),
+	})
+	require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
+
+	var policy app.OIDCTrustPolicy
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &policy))
+	require.Equal(s.T(), string(app.RoleTypeOrgAdmin), policy.Role)
+
+	var acct app.Account
+	require.NoError(s.T(), s.deps.DB.Preload("Roles").Where(app.Account{ID: policy.ServiceAccountID}).First(&acct).Error)
+	require.Len(s.T(), acct.Roles, 1)
+	require.Equal(s.T(), app.RoleTypeOrgAdmin, acct.Roles[0].RoleType)
+}
+
+func (s *OIDCFederationTestSuite) TestCreatePolicyRejectsDeprecatedBuilderRole() {
 	idp := newFakeIDP(s.T())
 	s.deps.Service.cfg.OIDCFederationAllowInsecureIssuers = true
 
@@ -117,16 +138,7 @@ func (s *OIDCFederationTestSuite) TestCreatePolicyAllowsBuilderRole() {
 		ClaimConditions: map[string]string{"sub": "repo:acme/app:*:*"},
 		Role:            string(app.RoleTypeOrgBuilder),
 	})
-	require.Equal(s.T(), http.StatusCreated, rr.Code, rr.Body.String())
-
-	var policy app.OIDCTrustPolicy
-	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &policy))
-	require.Equal(s.T(), string(app.RoleTypeOrgBuilder), policy.Role)
-
-	var acct app.Account
-	require.NoError(s.T(), s.deps.DB.Preload("Roles").Where(app.Account{ID: policy.ServiceAccountID}).First(&acct).Error)
-	require.Len(s.T(), acct.Roles, 1)
-	require.Equal(s.T(), app.RoleTypeOrgBuilder, acct.Roles[0].RoleType)
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code, rr.Body.String())
 }
 
 func (s *OIDCFederationTestSuite) TestCRUDRequiresOrgAdmin() {

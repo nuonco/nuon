@@ -172,5 +172,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "124-drop-stale-app-branch-columns",
 			Fn:   m.Migration124DropStaleAppBranchColumns,
 		},
+		{
+			Name: "125-remove-org-builder-roles",
+			Fn:   m.Migration125RemoveOrgBuilderRoles,
+		},
 	}
 }

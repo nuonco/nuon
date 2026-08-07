@@ -33,7 +33,6 @@ const PRESET_OPTIONS = [
 
 const ROLE_OPTIONS = [
   { value: 'org_read_only', label: 'org_read_only' },
-  { value: 'org_builder', label: 'org_builder' },
   { value: 'org_support', label: 'org_support' },
   { value: 'org_admin', label: 'org_admin' },
 ]
@@ -99,7 +98,7 @@ export const CreateOIDCTrustPolicyModal = ({
   )
   const [issuerUrl, setIssuerUrl] = useState(GITHUB_ACTIONS_ISSUER)
   const [audience, setAudience] = useState(githubAudience)
-  const [role, setRole] = useState('org_builder')
+  const [role, setRole] = useState('org_read_only')
   const [tokenDurationSeconds, setTokenDurationSeconds] = useState('900')
   const [claimConditions, setClaimConditions] = useState<ClaimCondition[]>([
     {
@@ -155,7 +154,7 @@ export const CreateOIDCTrustPolicyModal = ({
     }
     setIssuerUrl(GITHUB_ACTIONS_ISSUER)
     setAudience(githubAudience)
-    setRole('org_builder')
+    setRole('org_read_only')
     setTokenDurationSeconds('900')
   }
 

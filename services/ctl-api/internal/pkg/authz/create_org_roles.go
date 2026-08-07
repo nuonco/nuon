@@ -40,21 +40,6 @@ func standardOrgRoles(orgID string) []app.Role {
 			},
 		},
 
-		{
-			OrgID:    generics.NewNullString(orgID),
-			RoleType: app.RoleTypeOrgBuilder,
-			Policies: []app.Policy{
-				{
-					OrgID: generics.NewNullString(orgID),
-					Name:  app.PolicyNameOrgBuilder,
-					Permissions: pgtype.Hstore(map[string]*string{
-						orgID:                                    permissions.PermissionRead.ToStrPtr(),
-						permissions.ComponentBuildsObject(orgID): permissions.PermissionCreate.ToStrPtr(),
-					}),
-				},
-			},
-		},
-
 		// support role
 		{
 			OrgID:    generics.NewNullString(orgID),

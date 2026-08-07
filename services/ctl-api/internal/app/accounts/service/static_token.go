@@ -25,7 +25,7 @@ type CreateStaticTokenRequest struct {
 	// human-friendly name to identify the token later
 	Name string `json:"name" validate:"required"`
 
-	// org role granted to the token. one of org_admin, org_support, org_read_only, org_builder.
+	// org role granted to the token. one of org_admin, org_support, org_read_only.
 	// defaults to org_read_only.
 	Role string `json:"role"`
 }
@@ -36,7 +36,6 @@ var allowedTokenRoles = map[app.RoleType]struct{}{
 	app.RoleTypeOrgAdmin:    {},
 	app.RoleTypeOrgSupport:  {},
 	app.RoleTypeOrgReadOnly: {},
-	app.RoleTypeOrgBuilder:  {},
 }
 
 func parseTokenRole(raw string) (app.RoleType, error) {
@@ -45,7 +44,7 @@ func parseTokenRole(raw string) (app.RoleType, error) {
 	}
 	role := app.RoleType(raw)
 	if _, ok := allowedTokenRoles[role]; !ok {
-		return "", fmt.Errorf("invalid role %q: must be one of %q, %q, %q, %q", raw, app.RoleTypeOrgAdmin, app.RoleTypeOrgSupport, app.RoleTypeOrgReadOnly, app.RoleTypeOrgBuilder)
+		return "", fmt.Errorf("invalid role %q: must be one of %q, %q, %q", raw, app.RoleTypeOrgAdmin, app.RoleTypeOrgSupport, app.RoleTypeOrgReadOnly)
 	}
 	return role, nil
 }
@@ -73,7 +72,7 @@ func parseTokenDuration(raw string) (time.Duration, error) {
 
 // @ID						CreateStaticToken
 // @Summary				create a static API token for your org
-// @Description			Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, org_read_only, or org_builder) and defaults to org_read_only.
+// @Description			Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, or org_read_only) and defaults to org_read_only.
 // @Param					req	body	CreateStaticTokenRequest	true	"Input"
 // @Tags					accounts
 // @Security				APIKey
