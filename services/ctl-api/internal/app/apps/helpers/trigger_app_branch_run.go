@@ -63,7 +63,7 @@ func (h *Helpers) ResumeAppBranchRun(ctx context.Context, run *app.AppBranchRun,
 			return err
 		}
 		if locked.WorkflowID == nil {
-			created, err := h.createWorkflowWithDB(ctx, tx, locked.AppBranchID, plugins.TableName(h.db, app.AppBranch{}), app.WorkflowTypeAppBranchesRun, req.Metadata, locked.PlanOnly, app.InstallApprovalOptionPrompt)
+			created, err := h.createWorkflowWithDB(ctx, tx, locked.AppBranchID, plugins.TableName(h.db, app.AppBranch{}), app.WorkflowTypeAppBranchesRun, req.Metadata, locked.PlanOnly, app.InstallApprovalOptionPrompt, "")
 			if err != nil {
 				return fmt.Errorf("unable to create workflow: %w", err)
 			}
