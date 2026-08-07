@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -39,7 +40,7 @@ func (a *Activities) PkgWorkflowsJobCancelJob(ctx context.Context, req *CancelJo
 		}).
 		First(&job, "id = ?", req.ID)
 	if jres.Error != nil {
-		return errors.Wrap(res.Error, "unable to get runner job")
+		return errors.Wrap(jres.Error, "unable to get runner job")
 	}
 
 	for _, execution := range job.Executions {
@@ -59,6 +60,7 @@ func (a *Activities) PkgWorkflowsJobCancelJob(ctx context.Context, req *CancelJo
 		if res.Error != nil {
 			return errors.Wrap(res.Error, "unable to cancel job execution")
 		}
+		helpers.AuditJobExecutionResult(ctx, a.db, a.mw, execution.ID, app.RunnerJobExecutionStatusCancelled, "cancel_workflow")
 
 	}
 
