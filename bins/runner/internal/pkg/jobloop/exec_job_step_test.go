@@ -3,6 +3,7 @@ package jobloop
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -156,4 +157,36 @@ func TestWriteFallbackJobExecutionResultDetachesCanceledContextAndRetries(t *tes
 	)
 	require.NoError(t, err)
 	require.Equal(t, 2, attempts)
+}
+
+func TestTerminalJobExecutionStatusDetachesCanceledContext(t *testing.T) {
+	for _, withCoalescer := range []bool{false, true} {
+		t.Run(fmt.Sprintf("coalescer=%t", withCoalescer), func(t *testing.T) {
+			client := &jobLoopTestClient{
+				updateExecution: func(ctx context.Context, jobID, executionID string, req *models.ServiceUpdateRunnerJobExecutionRequest) (*models.AppRunnerJobExecution, error) {
+					require.NoError(t, ctx.Err())
+					require.Equal(t, models.AppRunnerJobExecutionStatusTimedDashOut, req.Status)
+					return &models.AppRunnerJobExecution{ID: executionID}, nil
+				},
+			}
+			j := &jobLoop{apiClient: client}
+			if withCoalescer {
+				coalescer := newStatusCoalescer("job-id", "execution-id", zap.NewNop(), j.writeJobExecutionStatus)
+				j.attachCoalescer("execution-id", coalescer)
+				defer j.detachCoalescer("execution-id")
+				defer coalescer.Close()
+			}
+
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+			err := j.updateJobExecutionStatusWithDescription(
+				ctx,
+				"job-id",
+				"execution-id",
+				models.AppRunnerJobExecutionStatusTimedDashOut,
+				"execution timed out",
+			)
+			require.NoError(t, err)
+		})
+	}
 }

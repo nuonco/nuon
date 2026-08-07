@@ -21,7 +21,10 @@ import (
 // so a long stack trace doesn't bloat the stored status history.
 const jobExecutionStatusDescriptionMaxLen = 2048
 
-const jobExecutionResultWriteTimeout = 30 * time.Second
+const (
+	jobExecutionResultWriteTimeout         = 30 * time.Second
+	jobExecutionTerminalStatusWriteTimeout = 30 * time.Second
+)
 
 // writeJobExecutionStatus is the synchronous, retry-wrapped API call.
 // It's the writer the coalescer's background goroutine drives and also
@@ -61,10 +64,17 @@ func (j *jobLoop) updateJobExecutionStatus(ctx context.Context, jobID, jobExecut
 }
 
 func (j *jobLoop) updateJobExecutionStatusWithDescription(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus, description string) error {
-	if c := j.coalescerFor(jobExecutionID); c != nil {
-		if isTerminalExecutionStatus(status) {
-			return c.WriteTerminal(ctx, status, description)
+	if isTerminalExecutionStatus(status) {
+		statusCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), jobExecutionTerminalStatusWriteTimeout)
+		defer cancel()
+
+		if c := j.coalescerFor(jobExecutionID); c != nil {
+			return c.WriteTerminal(statusCtx, status, description)
 		}
+		return j.writeJobExecutionStatus(statusCtx, jobID, jobExecutionID, status, description)
+	}
+
+	if c := j.coalescerFor(jobExecutionID); c != nil {
 		c.EnqueueNonTerminal(status, description)
 		return nil
 	}

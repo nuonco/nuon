@@ -40,7 +40,7 @@ func (a *Activities) PkgWorkflowsJobCancelJob(ctx context.Context, req *CancelJo
 		}).
 		First(&job, "id = ?", req.ID)
 	if jres.Error != nil {
-		return errors.Wrap(res.Error, "unable to get runner job")
+		return errors.Wrap(jres.Error, "unable to get runner job")
 	}
 
 	for _, execution := range job.Executions {
