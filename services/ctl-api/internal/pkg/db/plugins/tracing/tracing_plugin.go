@@ -118,14 +118,19 @@ func (p *tracingPlugin) after(tx *gorm.DB, op operationType) {
 		tableName = tx.Statement.Schema.Table
 	}
 
-	span.SetName(fmt.Sprintf("gorm.%s %s", op, tableName))
-
 	dbSystem := "postgresql"
 	if p.dbType == "ch" {
 		dbSystem = "clickhouse"
 	}
 
+	// The ddotel bridge turns the span name into the Datadog operation name, and Datadog
+	// creates one APM stats metric family per operation name (trace.<operation>.*). Keep the
+	// operation low-cardinality (postgresql.query / clickhouse.query, matching Datadog's own
+	// database integrations) and put the op + table in resource.name, which becomes the
+	// resource_name tag on those metrics.
 	attrs := []attribute.KeyValue{
+		attribute.String("operation.name", dbSystem+".query"),
+		attribute.String("resource.name", fmt.Sprintf("%s %s", op, tableName)),
 		attribute.String("db.system", dbSystem),
 		attribute.String("db.operation", string(op)),
 		attribute.String("db.sql.table", tableName),
