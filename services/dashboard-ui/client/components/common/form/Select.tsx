@@ -26,7 +26,8 @@ export interface SelectOption {
 }
 
 export interface ISelect
-  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
+  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size' | 'onChange'> {
+  onChange?: (value: string) => void
   options: SelectOption[]
   labelProps?: Omit<ILabel, 'children'> & {
     labelText: string
@@ -225,14 +226,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
         hiddenInputRef.current.dispatchEvent(event)
       }
 
-      if (onChange) {
-        const syntheticEvent = {
-          target: { value: option.value, name },
-          currentTarget: { value: option.value, name },
-        } as React.ChangeEvent<HTMLSelectElement>
-
-        onChange(syntheticEvent)
-      }
+      onChange?.(option.value)
 
       setShowValidationMessage(false)
       setIsOpen(false)

@@ -113,7 +113,7 @@ export const InviteUserModal = ({
         {matchedInvite ? null : (
           <Select
             value={roleType}
-            onChange={(e) => setRoleType(e.target.value)}
+            onChange={(value) => setRoleType(value)}
             options={roleOptions}
             labelProps={{ labelText: 'Role' }}
           />

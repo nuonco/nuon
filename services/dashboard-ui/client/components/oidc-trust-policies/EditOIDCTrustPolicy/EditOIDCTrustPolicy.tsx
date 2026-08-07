@@ -179,7 +179,7 @@ export const EditOIDCTrustPolicyModal = ({
           labelProps={{ labelText: 'Role' }}
           options={ROLE_OPTIONS}
           value={role}
-          onChange={(e) => setRole(e.target.value)}
+          onChange={(value) => setRole(value)}
           helperText="Org role granted to tokens exchanged with this policy."
         />
 

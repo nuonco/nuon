@@ -93,10 +93,8 @@ function EntityPicker({
         }))}
         value={selectedId}
         placeholder={`Select a ${type}`}
-        onChange={(event) => {
-          const selected = options.find(
-            (option) => option.id === event.target.value
-          )
+        onChange={(value) => {
+          const selected = options.find((option) => option.id === value)
           onChange({
             ...block,
             id: selected?.id ?? '',
@@ -136,8 +134,8 @@ function VariableInsert({
       }))}
       value=""
       placeholder="Insert variable"
-      onChange={(event) => {
-        if (event.target.value) onInsert(event.target.value)
+      onChange={(value) => {
+        if (value) onInsert(value)
       }}
     />
   )
@@ -223,10 +221,10 @@ export function BlockEditor({
               labelProps={{ labelText: 'Theme' }}
               options={themeOptions}
               value={block.theme}
-              onChange={(event) =>
+              onChange={(value) =>
                 onChange({
                   ...block,
-                  theme: event.target.value as typeof block.theme,
+                  theme: value as typeof block.theme,
                 })
               }
             />
@@ -235,8 +233,8 @@ export function BlockEditor({
               labelProps={{ labelText: 'Visibility' }}
               options={conditionOptions}
               value={block.condition?.op ?? ''}
-              onChange={(event) => {
-                const op = event.target.value as TConditionOp | ''
+              onChange={(value) => {
+                const op = value as TConditionOp | ''
                 onChange({
                   ...block,
                   condition: op
@@ -259,10 +257,10 @@ export function BlockEditor({
                 options={pathOptions(variables)}
                 value={block.condition.path}
                 placeholder="Select a .nuon value"
-                onChange={(event) =>
+                onChange={(value) =>
                   onChange({
                     ...block,
-                    condition: { ...block.condition!, path: event.target.value },
+                    condition: { ...block.condition!, path: value },
                   })
                 }
               />
@@ -323,12 +321,12 @@ export function BlockEditor({
                 labelProps={index === 0 ? { labelText: 'Render as' } : undefined}
                 options={kindOptions}
                 value={item.kind}
-                onChange={(event) =>
+                onChange={(value) =>
                   onChange({
                     ...block,
                     items: block.items.map((current) =>
                       current.key === item.key
-                        ? { ...current, kind: event.target.value as TValueKind }
+                        ? { ...current, kind: value as TValueKind }
                         : current
                     ),
                   })
@@ -341,12 +339,12 @@ export function BlockEditor({
                 options={pathOptions(variables)}
                 value={item.path}
                 placeholder="Select a .nuon value"
-                onChange={(event) =>
+                onChange={(value) =>
                   onChange({
                     ...block,
                     items: block.items.map((current) =>
                       current.key === item.key
-                        ? { ...current, path: event.target.value }
+                        ? { ...current, path: value }
                         : current
                     ),
                   })
@@ -413,8 +411,8 @@ export function BlockEditor({
                   ? 'Select a list from install state'
                   : 'Pick an install to browse lists'
               }
-              onChange={(event) =>
-                onChange({ ...block, sourcePath: event.target.value })
+              onChange={(value) =>
+                onChange({ ...block, sourcePath: value })
               }
             />
             <Input
@@ -484,14 +482,14 @@ export function BlockEditor({
                   }
                   options={kindOptions}
                   value={column.kind}
-                  onChange={(event) =>
+                  onChange={(value) =>
                     onChange({
                       ...block,
                       columns: block.columns.map((current) =>
                         current.key === column.key
                           ? {
                               ...current,
-                              kind: event.target.value as TValueKind,
+                              kind: value as TValueKind,
                             }
                           : current
                       ),
@@ -507,12 +505,12 @@ export function BlockEditor({
                     options={rowKeys.map((key) => ({ value: key, label: key }))}
                     value={column.path}
                     placeholder="Select field"
-                    onChange={(event) =>
+                    onChange={(value) =>
                       onChange({
                         ...block,
                         columns: block.columns.map((current) =>
                           current.key === column.key
-                            ? { ...current, path: event.target.value }
+                            ? { ...current, path: value }
                             : current
                         ),
                       })
