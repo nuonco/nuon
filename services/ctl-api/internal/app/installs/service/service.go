@@ -325,6 +325,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			install.GET("/admin-get-runner-group", s.AdminGetInstallRunnerGroup)
 			install.GET("/admin-get-runner", s.AdminGetInstallRunner)
 			install.PATCH("/admin-update-runner", s.AdminUpdateInstallRunner)
+			install.POST("/admin-reconcile-entities", s.AdminReconcileInstallEntities)
 			install.POST("/admin-generate-state", s.AdminInstallGenerateInstallState)
 			install.POST("/admin-generate-state-v2", s.AdminInstallGenerateInstallStateV2)
 
