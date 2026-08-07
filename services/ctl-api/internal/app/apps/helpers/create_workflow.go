@@ -48,7 +48,7 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	metadata map[string]string,
 	planOnly bool,
 ) (*app.Workflow, error) {
-	return s.createWorkflowWithDB(ctx, s.db, ownerID, ownerType, workflowType, metadata, planOnly, app.InstallApprovalOptionPrompt)
+	return s.createWorkflowWithDB(ctx, s.db, ownerID, ownerType, workflowType, metadata, planOnly, app.InstallApprovalOptionPrompt, "")
 }
 
 func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
@@ -57,6 +57,7 @@ func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
 	metadata map[string]string,
 	planOnly bool,
 	approvalOption app.InstallApprovalOption,
+	role string,
 ) (*app.Workflow, error) {
 	status := app.NewCompositeStatus(ctx, app.StatusPending)
 	if approvalOption == app.InstallApprovalOptionApproveAll {
@@ -72,6 +73,7 @@ func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
 		StepErrorBehavior: app.StepErrorBehaviorAbort,
 		ApprovalOption:    approvalOption,
 		PlanOnly:          planOnly,
+		Role:              role,
 		GenerateStepsSignal: &signaldb.SignalData{
 			Signal: &generateStepsSignal{},
 		},
@@ -85,6 +87,6 @@ func (s *Helpers) createWorkflowWithDB(ctx context.Context, db *gorm.DB,
 	return &wf, nil
 }
 
-func (s *Helpers) CreateWorkflowWithDB(ctx context.Context, db *gorm.DB, ownerID, ownerType string, workflowType app.WorkflowType, metadata map[string]string, planOnly bool, approvalOption app.InstallApprovalOption) (*app.Workflow, error) {
-	return s.createWorkflowWithDB(ctx, db, ownerID, ownerType, workflowType, metadata, planOnly, approvalOption)
+func (s *Helpers) CreateWorkflowWithDB(ctx context.Context, db *gorm.DB, ownerID, ownerType string, workflowType app.WorkflowType, metadata map[string]string, planOnly bool, approvalOption app.InstallApprovalOption, role string) (*app.Workflow, error) {
+	return s.createWorkflowWithDB(ctx, db, ownerID, ownerType, workflowType, metadata, planOnly, approvalOption, role)
 }

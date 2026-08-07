@@ -10,6 +10,7 @@ import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { CodeInput } from '@/components/common/form/CodeInput'
 import { Input } from '@/components/common/form/Input'
 import { WizardNavComponent } from '@/components/onboarding/WizardNav'
+import { RoleSelector } from '@/components/roles/RoleSelector'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
 import { useInstall } from '@/hooks/use-install'
@@ -98,6 +99,7 @@ export const RunRunbookModal = ({
   const formRef = useRef<HTMLFormElement>(null)
   const [page, setPage] = useState<0 | 1 | 2>(0)
   const [reviewValues, setReviewValues] = useState<Record<string, string>>({})
+  const [selectedRole, setSelectedRole] = useState('')
 
   const runbookName = installRunbook.runbook?.name ?? 'runbook'
   const runbookId = installRunbook.runbook_id ?? installRunbook.id
@@ -196,6 +198,7 @@ export const RunRunbookModal = ({
   const handleRun = () => {
     mutate({
       ...(hasInputs ? { inputs: collectInputs() } : {}),
+      ...(selectedRole && { role: selectedRole }),
       steps: steps.map((s) => ({
         step_id: s.id ?? '',
         enabled: isStepEnabled(s.id),
@@ -277,6 +280,16 @@ export const RunRunbookModal = ({
               <RunbookInputField key={input.id ?? input.name} input={input} />
             ))}
           </form>
+        ) : null}
+
+        {isSubmitView ? (
+          <RoleSelector
+            installId={install?.id ?? ''}
+            operationType="trigger"
+            value={selectedRole}
+            onChange={setSelectedRole}
+            name="role"
+          />
         ) : null}
 
         {showStepsSummary ? (
