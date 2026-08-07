@@ -16,6 +16,7 @@ import (
 type CreateRunbookRunRequest struct {
 	Inputs map[string]*string              `json:"inputs,omitempty"`
 	Steps  []CreateRunbookRunStepSelection `json:"steps,omitempty"`
+	Role   string                          `json:"role,omitempty"`
 }
 
 type CreateRunbookRunStepSelection struct {
@@ -136,7 +137,7 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 			inputs[name] = *value
 		}
 	}
-	triggered, err := s.helpers.TriggerRunbookRun(ctx, runbookshelpers.TriggerRunbookRunRequest{InstallRunbookID: installRunbook.ID, RunbookConfigID: runbookConfig.ID, TriggeredByID: account.ID, Inputs: inputs, StepSelections: stepSelections})
+	triggered, err := s.helpers.TriggerRunbookRun(ctx, runbookshelpers.TriggerRunbookRunRequest{InstallRunbookID: installRunbook.ID, RunbookConfigID: runbookConfig.ID, TriggeredByID: account.ID, Inputs: inputs, StepSelections: stepSelections, Role: req.Role})
 	if err != nil {
 		ctx.Error(err)
 		return
