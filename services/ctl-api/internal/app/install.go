@@ -38,6 +38,14 @@ type Install struct {
 	LifecyclePhase lifecyclephase.LifecyclePhase `json:"lifecycle_phase,omitzero" gorm:"type:jsonb" swaggertype:"object" temporaljson:"lifecycle_phase,omitzero,omitempty"`
 	labels.Labeled
 
+	// LabelTemplates holds label values written with the app-config interpolation
+	// syntax ({{ .nuon.* }}), keyed by label key. Rendered values are materialized
+	// into Labels whenever install state changes, so every downstream consumer
+	// (SQL label matching, subscription dispatch, label-key pickers) keeps reading
+	// literal values. Keys present here are template-managed and rejected by the
+	// direct label mutation endpoints.
+	LabelTemplates labels.Labels `json:"label_templates,omitzero" gorm:"default null" swaggertype:"object,string" temporaljson:"label_templates,omitzero,omitempty"`
+
 	// used for RLS
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`

@@ -2,6 +2,7 @@ package state
 
 import (
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
@@ -237,6 +238,14 @@ func (w *Workflows) GenerateState(ctx workflow.Context, req *GenerateStateReques
 		InstallID: req.InstallID,
 	}); err != nil {
 		return nil, errors.Wrap(err, "unable to purge stale state")
+	}
+
+	// Dynamic labels are materialized from the state that was just saved.
+	// Best-effort: an unresolvable template must not fail state generation.
+	if err := activities.AwaitRenderInstallLabels(ctx, &activities.RenderInstallLabelsRequest{
+		InstallID: req.InstallID,
+	}); err != nil {
+		l.Warn("unable to render install label templates", zap.Error(err))
 	}
 
 	tags := metrics.ToTags(map[string]string{

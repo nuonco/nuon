@@ -103,6 +103,15 @@ func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*s
 		}); err != nil {
 			return nil, errors.Wrap(err, "error while archiving state")
 		}
+
+		// Dynamic labels are materialized from the state that was just saved.
+		// Best-effort: an unresolvable template must not fail state generation.
+		if err := installactivities.AwaitRenderInstallLabels(ctx, &installactivities.RenderInstallLabelsRequest{
+			InstallID: req.InstallID,
+		}); err != nil {
+			workflow.GetLogger(ctx).Warn("unable to render install label templates",
+				"install_id", req.InstallID, "error", err)
+		}
 	}
 
 	return &state.ExecuteRegenerationResponse{

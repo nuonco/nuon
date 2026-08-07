@@ -10,6 +10,7 @@ import (
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -136,7 +137,20 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	}
 
 	if len(req.Labels) > 0 {
-		install.Labels = labels.Labels(req.Labels)
+		static, templated := labels.Labels(req.Labels).SplitTemplated()
+		for key, tmpl := range templated {
+			if err := render.ValidateTextTemplate(tmpl); err != nil {
+				return nil, stderr.ErrUser{
+					Err:         fmt.Errorf("label %q template is invalid: %w", key, err),
+					Description: fmt.Sprintf("label %q uses the interpolation syntax but is not a valid template", key),
+				}
+			}
+		}
+		install.Labels = static
+		if len(templated) > 0 {
+			// Rendered once install state exists; the keys stay absent until then.
+			install.LabelTemplates = templated
+		}
 	}
 
 	// When enabled, every install must declare which cloud account it targets, so a

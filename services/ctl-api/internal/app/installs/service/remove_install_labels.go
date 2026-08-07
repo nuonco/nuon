@@ -59,6 +59,16 @@ func (s *service) RemoveInstallLabels(ctx *gin.Context) {
 		return
 	}
 
+	for _, key := range req.Keys {
+		if _, ok := install.LabelTemplates[key]; ok {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("label %q is template-managed", key),
+				Description: fmt.Sprintf("label %q is a dynamic label managed by an app config template; remove the template from the app config instead", key),
+			})
+			return
+		}
+	}
+
 	install.Labels.RemoveKeys(req.Keys)
 
 	if err := s.db.WithContext(ctx).Model(&install).Select("labels").Updates(&install).Error; err != nil {

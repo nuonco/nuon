@@ -60,6 +60,23 @@ func (s *service) AddInstallLabels(ctx *gin.Context) {
 		return
 	}
 
+	for key, val := range req.Labels {
+		if _, ok := install.LabelTemplates[key]; ok {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("label %q is template-managed", key),
+				Description: fmt.Sprintf("label %q is a dynamic label managed by an app config template; update the template in the app config instead", key),
+			})
+			return
+		}
+		if labels.IsTemplatedValue(val) {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("label %q value uses the interpolation syntax", key),
+				Description: fmt.Sprintf("label %q uses the interpolation syntax; dynamic labels are defined on the install in the app config", key),
+			})
+			return
+		}
+	}
+
 	merged := make(labels.Labels)
 	for k, v := range install.Labels {
 		merged[k] = v

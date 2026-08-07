@@ -49,6 +49,14 @@ func Validate(ctx context.Context, v *validator.Validate, a *config.AppConfig) e
 			}
 			return nil
 		},
+		func() error {
+			for _, install := range a.Installs {
+				if err := install.Validate(); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
 		// TBH, this does not really work
 		func() error {
 			// return ValidateVars(ctx, a)

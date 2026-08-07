@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/invopop/jsonschema"
 	"github.com/nuonco/nuon/pkg/config/diff"
+	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/pelletier/go-toml/v2"
 )
@@ -240,6 +243,28 @@ func (i *Install) Parse() error {
 func (i *Install) Validate() error {
 	if i == nil {
 		return nil
+	}
+
+	// Label keys are lookup identifiers on every matching surface (SQL
+	// containment, selectors, pickers), so they can never be templated; values
+	// using the interpolation syntax become dynamic labels and must parse now
+	// rather than fail at render time.
+	for key, val := range i.Labels {
+		if strings.Contains(key, "{{") {
+			return ErrConfig{
+				Description: fmt.Sprintf("install %q label key %q must not use the interpolation syntax", i.Name, key),
+				Err:         fmt.Errorf("install %q label key %q is templated; only label values may be templated", i.Name, key),
+			}
+		}
+		if !labels.IsTemplatedValue(val) {
+			continue
+		}
+		if err := render.ValidateTextTemplate(val); err != nil {
+			return ErrConfig{
+				Description: fmt.Sprintf("install %q label %q is not a valid template", i.Name, key),
+				Err:         fmt.Errorf("install %q label %q template: %w", i.Name, key, err),
+			}
+		}
 	}
 
 	// Catch malformed override documents at config-parse time, before any API
