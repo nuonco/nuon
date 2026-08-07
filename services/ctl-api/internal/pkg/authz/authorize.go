@@ -7,7 +7,9 @@ import (
 // Link is one tier in a resource's ownership chain: its object id and the grant
 // resource type of that tier (e.g. {"install", "inl_..."}). The type lets
 // wildcard grants (all resources of a type) authorize without leaking to
-// other tiers.
+// other tiers. A link with an empty ID is type-only — it names a tier without a
+// specific resource (a create or collection request) and is satisfiable only by
+// that tier's wildcard.
 type Link struct {
 	Type string
 	ID   string
@@ -22,13 +24,12 @@ type Link struct {
 func Authorize(perms permissions.Set, wildcards map[string]permissions.Permission, chain []Link, perm permissions.Permission) error {
 	var lastErr error
 	for _, link := range chain {
-		if link.ID == "" {
-			continue
-		}
-		if err := perms.CanPerform(link.ID, perm); err == nil {
-			return nil
-		} else {
-			lastErr = err
+		if link.ID != "" {
+			if err := perms.CanPerform(link.ID, perm); err == nil {
+				return nil
+			} else {
+				lastErr = err
+			}
 		}
 		if w, ok := wildcards[link.Type]; ok && (w == permissions.PermissionAll || w == perm) {
 			return nil

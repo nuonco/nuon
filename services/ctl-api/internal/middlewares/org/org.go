@@ -155,7 +155,7 @@ func (m middleware) authorizeResource(ctx *gin.Context, acct *app.Account, orgID
 			Description: fmt.Sprintf("Please make sure you have the correct permissions for %s", orgID),
 		}
 	}
-	if err := authz.Authorize(acct.AllPermissions, acct.TypeGrants, chain, perm); err != nil {
+	if err := authz.Authorize(acct.AllPermissions, acct.OrgTypeGrants(orgID), chain, perm); err != nil {
 		return stderr.ErrAuthorization{
 			Err:         fmt.Errorf("unable to perform %s on the requested resource", perm),
 			Description: "you do not have access to the requested resource",
@@ -165,9 +165,10 @@ func (m middleware) authorizeResource(ctx *gin.Context, acct *app.Account, orgID
 }
 
 // resourceChain builds the ownership chain of the most specific resource named
-// in the path (install first, then app), each link tagged with its grant
-// resource type so wildcard grants can authorize by tier. resolved is false
-// when the route names no grantable resource.
+// in the path (install first, then app, then org-owned resources like webhooks
+// and VCS connections), each link tagged with its grant resource type so
+// wildcard grants can authorize by tier. resolved is false when the route names
+// no grantable resource.
 func (m middleware) resourceChain(ctx *gin.Context, orgID string) (chain []authz.Link, resolved bool, err error) {
 	if raw := ctx.Param("install_id"); raw != "" {
 		var inst app.Install
@@ -197,6 +198,30 @@ func (m middleware) resourceChain(ctx *gin.Context, orgID string) (chain []authz
 		return []authz.Link{
 			{Type: string(app.GrantResourceTypeApp), ID: a.ID},
 			{Type: string(app.GrantResourceTypeOrg), ID: orgID},
+		}, true, nil
+	}
+
+	if route, ok := matchOrgResourceRoute(ctx.FullPath()); ok {
+		orgLink := authz.Link{Type: string(app.GrantResourceTypeOrg), ID: orgID}
+
+		raw := ctx.Param(route.idParam)
+		if raw == "" {
+			return []authz.Link{
+				{Type: string(route.resourceType)},
+				orgLink,
+			}, true, nil
+		}
+
+		res := m.db.WithContext(ctx).
+			Where("org_id = ?", orgID).
+			Where("id = ?", raw).
+			First(route.model())
+		if res.Error != nil {
+			return nil, false, res.Error
+		}
+		return []authz.Link{
+			{Type: string(route.resourceType), ID: raw},
+			orgLink,
 		}, true, nil
 	}
 

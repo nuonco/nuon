@@ -12,14 +12,20 @@ import (
 )
 
 // GrantResourceType identifies the tier of resource a ResourceGrant scopes to.
-// The initial scope is the org -> app -> install spine; deeper leaf targets
-// (component, install-component) and org-owned siblings (runner, etc.) are added later.
+// The initial scope is the org -> app -> install spine plus delegable org-owned
+// siblings (webhooks, VCS connections, Slack subscriptions); deeper leaf targets
+// (component, install-component) and further siblings (runner, etc.) are added later.
 type GrantResourceType string
 
 const (
 	GrantResourceTypeOrg     GrantResourceType = "org"
 	GrantResourceTypeApp     GrantResourceType = "app"
 	GrantResourceTypeInstall GrantResourceType = "install"
+
+	// org-owned siblings: chains are [entity, org], with no intermediate tier.
+	GrantResourceTypeWebhook           GrantResourceType = "webhook"
+	GrantResourceTypeVCSConnection     GrantResourceType = "vcs_connection"
+	GrantResourceTypeSlackSubscription GrantResourceType = "slack_subscription"
 )
 
 // GrantResourceWildcard is a ResourceID that scopes a grant to every resource

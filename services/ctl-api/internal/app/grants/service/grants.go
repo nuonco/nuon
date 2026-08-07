@@ -14,11 +14,12 @@ import (
 )
 
 // CreateGrantRequest grants an account a permission on a single resource in the
-// caller's org. The resource is any tier of the org -> app -> install spine; an
-// org grant confers the permission on every resource in the org via walk-up.
+// caller's org. The resource is any tier of the org -> app -> install spine, or
+// a delegable org-owned resource (webhook, vcs_connection, slack_subscription);
+// an org grant confers the permission on every resource in the org via walk-up.
 // Exactly one of AccountID or Email identifies the grantee.
 type CreateGrantRequest struct {
-	ResourceType string `json:"resource_type" validate:"required,oneof=org app install"`
+	ResourceType string `json:"resource_type" validate:"required,oneof=org app install webhook vcs_connection slack_subscription"`
 	ResourceID   string `json:"resource_id" validate:"required"`
 	AccountID    string `json:"account_id"`
 	Email        string `json:"email"`
@@ -29,7 +30,7 @@ type CreateGrantRequest struct {
 //
 //	@ID				CreateGrant
 //	@Summary		grant an account access to a resource
-//	@Description	Grant an account read or full access to a single resource (org, app, or install). An org grant covers every resource in the org, and an app grant covers its installs, via walk-up authorization. Org-admin only.
+//	@Description	Grant an account read or full access to a single resource (org, app, install, webhook, vcs_connection, or slack_subscription). An org grant covers every resource in the org, and an app grant covers its installs, via walk-up authorization. A resource_id of "*" covers every resource of that type in the org. Org-admin only.
 //	@Tags			grants
 //	@Accept			json
 //	@Produce		json
@@ -185,10 +186,11 @@ func (s *service) requireOrgAdmin(ctx *gin.Context, orgID string) error {
 }
 
 // resolveResource validates that the named resource exists in the org and
-// returns its canonical ID. Apps and installs are accepted by name or ID, or
-// the "*" wildcard to scope the grant to every resource of that type in the
-// org. The org target must be the caller's own org (no wildcard — the org is
-// already a single resource).
+// returns its canonical ID. Apps and installs are accepted by name or ID,
+// org-owned resources (webhooks, VCS connections, Slack subscriptions) by ID
+// only, and every non-org type accepts the "*" wildcard to scope the grant to
+// every resource of that type in the org. The org target must be the caller's
+// own org (no wildcard — the org is already a single resource).
 func (s *service) resolveResource(ctx *gin.Context, orgID string, resourceType app.GrantResourceType, nameOrID string) (string, error) {
 	switch resourceType {
 	case app.GrantResourceTypeOrg:
@@ -214,9 +216,29 @@ func (s *service) resolveResource(ctx *gin.Context, orgID string, resourceType a
 			return "", fmt.Errorf("unable to find install: %w", err)
 		}
 		return inst.ID, nil
+	case app.GrantResourceTypeWebhook:
+		return s.resolveOrgResourceID(ctx, orgID, nameOrID, &app.Webhook{}, "webhook")
+	case app.GrantResourceTypeVCSConnection:
+		return s.resolveOrgResourceID(ctx, orgID, nameOrID, &app.VCSConnection{}, "vcs connection")
+	case app.GrantResourceTypeSlackSubscription:
+		return s.resolveOrgResourceID(ctx, orgID, nameOrID, &app.SlackChannelSubscription{}, "slack subscription")
 	default:
-		return "", stderr.NewInvalidRequest(fmt.Errorf("unsupported resource type %q; must be one of org, app, install", resourceType))
+		return "", stderr.NewInvalidRequest(fmt.Errorf("unsupported resource type %q; must be one of org, app, install, webhook, vcs_connection, slack_subscription", resourceType))
 	}
+}
+
+func (s *service) resolveOrgResourceID(ctx *gin.Context, orgID, id string, dst interface{}, kind string) (string, error) {
+	if id == app.GrantResourceWildcard {
+		return app.GrantResourceWildcard, nil
+	}
+	err := s.db.WithContext(ctx).
+		Where("org_id = ?", orgID).
+		Where("id = ?", id).
+		First(dst).Error
+	if err != nil {
+		return "", fmt.Errorf("unable to find %s: %w", kind, err)
+	}
+	return id, nil
 }
 
 func (s *service) resolveGranteeID(ctx *gin.Context, req CreateGrantRequest) (string, error) {

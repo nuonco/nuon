@@ -22,6 +22,7 @@ func TestAuthorize(t *testing.T) {
 		name      string
 		perms     permissions.Set
 		wildcards map[string]permissions.Permission
+		chain     []Link
 		perm      permissions.Permission
 		allowed   bool
 	}{
@@ -64,6 +65,7 @@ func TestAuthorize(t *testing.T) {
 		{
 			name:      "install wildcard does not authorize an app-only request",
 			wildcards: map[string]permissions.Permission{"install": permissions.PermissionAll},
+			chain:     []Link{{Type: "app", ID: appID}, {Type: "org", ID: orgID}},
 			perm:      permissions.PermissionUpdate,
 			allowed:   false,
 		},
@@ -73,13 +75,41 @@ func TestAuthorize(t *testing.T) {
 			perm:      permissions.PermissionUpdate,
 			allowed:   false,
 		},
+		{
+			name:      "type-only link satisfied by tier wildcard",
+			wildcards: map[string]permissions.Permission{"webhook": permissions.PermissionAll},
+			chain:     []Link{{Type: "webhook"}, {Type: "org", ID: orgID}},
+			perm:      permissions.PermissionCreate,
+			allowed:   true,
+		},
+		{
+			name:    "type-only link satisfied by org-wide grant",
+			perms:   permissions.Set{orgID: permissions.PermissionAll},
+			chain:   []Link{{Type: "webhook"}, {Type: "org", ID: orgID}},
+			perm:    permissions.PermissionCreate,
+			allowed: true,
+		},
+		{
+			name:      "type-only link not satisfied by another tier's wildcard",
+			wildcards: map[string]permissions.Permission{"install": permissions.PermissionAll},
+			chain:     []Link{{Type: "webhook"}, {Type: "org", ID: orgID}},
+			perm:      permissions.PermissionCreate,
+			allowed:   false,
+		},
+		{
+			name:      "type-only link wildcard read does not satisfy a write",
+			wildcards: map[string]permissions.Permission{"webhook": permissions.PermissionRead},
+			chain:     []Link{{Type: "webhook"}, {Type: "org", ID: orgID}},
+			perm:      permissions.PermissionCreate,
+			allowed:   false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := chain
-			if tt.name == "install wildcard does not authorize an app-only request" {
-				c = []Link{{Type: "app", ID: appID}, {Type: "org", ID: orgID}}
+			c := tt.chain
+			if c == nil {
+				c = chain
 			}
 			err := Authorize(tt.perms, tt.wildcards, c, tt.perm)
 			if got := err == nil; got != tt.allowed {

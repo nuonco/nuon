@@ -48,11 +48,13 @@ type Account struct {
 	Orgs           []*Org          `json:"-" gorm:"-" temporaljson:"orgs,omitzero,omitempty"`
 	AllPermissions permissions.Set `json:"permissions,omitzero" gorm:"-" temporaljson:"all_permissions,omitzero,omitempty"`
 
-	// TypeGrants holds wildcard resource grants keyed by resource type (e.g.
-	// "install" -> all). Unlike AllPermissions, which maps opaque object ids and
-	// is tier-blind, these carry the tier so authorization can grant every
-	// resource of a type without leaking to other tiers.
-	TypeGrants map[string]permissions.Permission `json:"-" gorm:"-" temporaljson:"-"`
+	// TypeGrants holds wildcard resource grants keyed by org id, then resource
+	// type (e.g. org -> "install" -> all). Unlike AllPermissions, which maps
+	// opaque object ids and is tier-blind, these carry the tier so authorization
+	// can grant every resource of a type without leaking to other tiers. The org
+	// key keeps a wildcard issued in one org from satisfying checks in another
+	// org the account is also a member of.
+	TypeGrants map[string]map[string]permissions.Permission `json:"-" gorm:"-" temporaljson:"-"`
 
 	IsEmployee bool `json:"-"`
 }
@@ -89,7 +91,7 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 
 	a.OrgIDs = make([]string, 0)
 	a.AllPermissions = permissions.NewSet()
-	a.TypeGrants = make(map[string]permissions.Permission)
+	a.TypeGrants = make(map[string]map[string]permissions.Permission)
 
 	visited := make(map[string]struct{}, 0)
 	for _, role := range a.Roles {
@@ -117,9 +119,16 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 
 		if perm, err := permissions.NewPermission(grant.Permission); err == nil {
 			if grant.IsWildcard() {
-				key := string(grant.ResourceType)
-				if existing, ok := a.TypeGrants[key]; !ok || (existing != permissions.PermissionAll && perm == permissions.PermissionAll) {
-					a.TypeGrants[key] = perm
+				if grant.OrgID != "" {
+					orgWildcards, ok := a.TypeGrants[grant.OrgID]
+					if !ok {
+						orgWildcards = make(map[string]permissions.Permission)
+						a.TypeGrants[grant.OrgID] = orgWildcards
+					}
+					key := string(grant.ResourceType)
+					if existing, ok := orgWildcards[key]; !ok || (existing != permissions.PermissionAll && perm == permissions.PermissionAll) {
+						orgWildcards[key] = perm
+					}
 				}
 			} else {
 				a.AllPermissions.Grant(grant.ResourceID, perm)
@@ -149,6 +158,12 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 // proceed to a downstream (grant-level) check rather than reject outright.
 func (a *Account) HasOrg(orgID string) bool {
 	return slices.Contains(a.OrgIDs, orgID)
+}
+
+// OrgTypeGrants returns the account's wildcard grants within the given org,
+// keyed by resource type. Safe to call before AfterQuery has run.
+func (a *Account) OrgTypeGrants(orgID string) map[string]permissions.Permission {
+	return a.TypeGrants[orgID]
 }
 
 func (*Account) JoinTables() []migrations.JoinTable {
