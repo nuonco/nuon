@@ -152,8 +152,8 @@ and reports it on the pull request itself:
   in place on every later push, so the pull request never accumulates a pile of stale bot comments.
 - a commit status with the context `nuon/preview`, which moves from pending to success or failure.
 
-If the pull request does not change the app config at all, the run stops early and says so
-(``No changes to `nuon.toml` detected in this PR. Preview skipped.``).
+If the pull request does not change the app config, the run stops early and the comment reads
+``No changes to `nuon.toml` detected in this PR. Preview skipped.``
 
 Posting to the pull request needs an **org-level GitHub connection**, not a particular kind of branch config: your org
 must have the Nuon GitHub App connected for the repository's owner. That is satisfied by a `[connected_repo]` branch,
@@ -170,10 +170,10 @@ previews as long as the org has connected `acmeco`. See [connecting a repository
 Nothing in a branch run reaches an install unseen. Each `plan install group` step computes a diff
 per install in that group, showing exactly what would change, and holds the rollout there.
 
-That gate belongs to whoever operates the install. A customer running your software in their own cloud account sees
-the pending update, reads the diff, and approves or refuses it, the same review they already get for
-[workflows](/concepts/workflows) and [approvals](/concepts/workflows#workflow-approvals) on a single install, now
-driven from your git history.
+The gate is acted on in your org: someone reads the per-install diff in the dashboard and approves or skips the
+group, or your own automation advances it through the API. It is the same plan-and-approve review that
+[workflows](/concepts/workflows) and [approvals](/concepts/workflows#workflow-approvals) give a single install,
+applied to a whole group and driven from your git history.
 
 <Note>
   Branch rollouts always require an approval on each group's plan step. There is no configuration that

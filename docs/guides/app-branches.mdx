@@ -262,7 +262,8 @@ another commit to an open one, starts a plan-only run, and Nuon reports back on 
   changes by section, edited in place on each later push rather than added to.
 - a commit status with the context `nuon/preview`, moving from pending to success or failure.
 
-If the pull request does not change the app config, the run stops early and the comment says so.
+If the pull request does not change the app config, the run stops early and the comment reports that the preview
+was skipped.
 
 What previews *do* need is a **GitHub App connection in your org for the repository's owner**. Connect it once, from
 [connecting a repository](/guides/vcs). After that, every branch tracking a repo under that owner gets previews. This
