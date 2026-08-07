@@ -70,7 +70,7 @@ export const CreateServiceAccountModal = ({
 
         <Select
           value={role}
-          onChange={(e) => setRole(e.target.value)}
+          onChange={(value) => setRole(value)}
           options={roleOptions}
           labelProps={{ labelText: 'Role' }}
         />
