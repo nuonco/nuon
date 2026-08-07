@@ -293,7 +293,7 @@ export const CreateTriggerModal = ({
             id="event-trigger-auth-type"
             labelProps={{ labelText: 'Auth type' }}
             value={authType}
-            onChange={(e) => setAuthType(e.target.value as TTriggerAuthType)}
+            onChange={(value) => setAuthType(value as TTriggerAuthType)}
             options={[
               ['none', 'None'],
               ['hmac', 'HMAC'],
@@ -307,7 +307,7 @@ export const CreateTriggerModal = ({
             id="event-trigger-envelope"
             labelProps={{ labelText: 'Envelope' }}
             value={envelope}
-            onChange={(e) => setEnvelope(e.target.value as TTriggerEnvelope)}
+            onChange={(value) => setEnvelope(value as TTriggerEnvelope)}
             options={[
               ['none', 'None'],
               ['cloudevents', 'CloudEvents'],

@@ -67,7 +67,7 @@ export const ChangeRoleModal = ({
 
         <Select
           value={roleType}
-          onChange={(e) => setRoleType(e.target.value)}
+          onChange={(value) => setRoleType(value)}
           options={roleOptions}
           labelProps={{ labelText: 'Role' }}
         />

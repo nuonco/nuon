@@ -72,7 +72,7 @@ export const BranchVcsConfigFields = ({
         <Select
           id="vcs-connection"
           value={selectedVcsConnectionId}
-          onChange={(e) => onVcsConnectionChange(e.target.value)}
+          onChange={(value) => onVcsConnectionChange(value)}
           disabled={isSubmitting || loadingRepos}
           options={vcsConnections.map((conn) => ({
             value: conn.id,
@@ -97,8 +97,8 @@ export const BranchVcsConfigFields = ({
         <Select
           id="repo"
           value={selectedRepo?.full_name || ''}
-          onChange={(e) => {
-            const repo = repos.find((r) => r.full_name === e.target.value)
+          onChange={(value) => {
+            const repo = repos.find((r) => r.full_name === value)
             onRepoChange(repo || null)
           }}
           required
@@ -147,7 +147,7 @@ export const BranchVcsConfigFields = ({
           <Select
             id="git-branch"
             value={selectedBranch}
-            onChange={(e) => onBranchChange(e.target.value)}
+            onChange={(value) => onBranchChange(value)}
             required
             disabled={isSubmitting || loadingBranches}
             options={branches.map((b) => ({

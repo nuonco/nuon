@@ -105,7 +105,7 @@ const AWSFields = ({
               })),
             ]}
             defaultValue={draftValues?.aws_connection_id || ''}
-            onChange={(e) => setConnectionId(e.target.value)}
+            onChange={(value) => setConnectionId(value)}
           />
         </FieldWrapper>
       ) : null}
