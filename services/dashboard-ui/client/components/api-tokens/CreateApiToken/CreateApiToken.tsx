@@ -115,14 +115,14 @@ export const CreateApiTokenModal = ({
 
         <Select
           value={role}
-          onChange={(e) => setRole(e.target.value)}
+          onChange={(value) => setRole(value)}
           options={ROLE_OPTIONS}
           labelProps={{ labelText: 'Role' }}
         />
 
         <Select
           value={duration}
-          onChange={(e) => setDuration(e.target.value)}
+          onChange={(value) => setDuration(value)}
           options={DURATION_OPTIONS}
           labelProps={{ labelText: 'Expires after' }}
         />

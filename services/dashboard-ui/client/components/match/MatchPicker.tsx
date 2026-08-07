@@ -248,7 +248,7 @@ export const MatchPicker = ({
                 }
                 options={appOptions}
                 value={appId ?? ''}
-                onChange={(e) => handleAppChange(e.target.value)}
+                onChange={(value) => handleAppChange(value)}
                 searchable
                 disabled={disabled || appsQuery.isLoading}
               />
