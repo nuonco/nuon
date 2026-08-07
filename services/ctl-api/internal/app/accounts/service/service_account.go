@@ -10,85 +10,66 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
-const (
-	roleAppliesToUser           = "user"
-	roleAppliesToServiceAccount = "service_account"
-)
-
-type RoleInfo struct {
-	RoleType    app.RoleType `json:"role_type"`
-	Title       string       `json:"title"`
-	Description string       `json:"description"`
-	AppliesTo   []string     `json:"applies_to"`
-}
-
-var roleCatalog = []RoleInfo{
-	{
-		RoleType:    app.RoleTypeOrgAdmin,
-		Title:       "Admin",
-		Description: "Full access to the organization and all of its resources.",
-		AppliesTo:   []string{roleAppliesToUser, roleAppliesToServiceAccount},
-	},
-	{
-		RoleType:    app.RoleTypeOrgReadOnly,
-		Title:       "Read-only",
-		Description: "Read-only access to the organization and its resources.",
-		AppliesTo:   []string{roleAppliesToUser, roleAppliesToServiceAccount},
-	},
-	{
-		RoleType:    app.RoleTypeRunner,
-		Title:       "Runner",
-		Description: "Permissions for runners executing deployments.",
-		AppliesTo:   []string{roleAppliesToServiceAccount},
-	},
-}
-
-func roleAppliesTo(roleType app.RoleType, appliesTo string) bool {
-	for _, info := range roleCatalog {
-		if info.RoleType != roleType {
-			continue
-		}
-		for _, a := range info.AppliesTo {
-			if a == appliesTo {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func validateServiceAccountRole(role string) (app.RoleType, error) {
-	roleType := app.RoleType(role)
-	if !roleAppliesTo(roleType, roleAppliesToServiceAccount) {
+func (s *service) resolveServiceAccountRole(ctx *gin.Context, orgID, role string) (app.RoleType, error) {
+	resolved, err := s.authzClient.ResolveAssignableRole(ctx, orgID, app.RoleType(role), app.RoleContextServiceAccount)
+	if err != nil {
 		return "", stderr.ErrUser{
-			Err:         fmt.Errorf("invalid role %q for service account", role),
-			Description: "role must be a valid service account role; see GET /v1/roles",
+			Err:         err,
+			Description: err.Error(),
 		}
 	}
-
-	return roleType, nil
+	return resolved.RoleType, nil
 }
 
 // @ID						ListRoles
-// @Summary				List assignable roles
+// @Summary				List your org's roles
 // @Description.markdown	list_roles.md
+// @Param					context	query	string	false	"filter to roles assignable on a surface (team, service_account, api_token, oidc_trust_policy)"
 // @Tags					accounts
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{object}	[]RoleInfo
+// @Success				200	{object}	[]app.Role
 // @Router					/v1/roles [GET]
 func (s *service) ListRoles(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, roleCatalog)
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	var roles []app.Role
+	res := s.db.WithContext(ctx).
+		Where(app.Role{OrgID: generics.NewNullString(org.ID)}).
+		Order("role_type").
+		Find(&roles)
+	if res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to list roles for org %s: %w", org.ID, res.Error))
+		return
+	}
+
+	if roleContext := ctx.Query("context"); roleContext != "" {
+		filtered := make([]app.Role, 0, len(roles))
+		for _, role := range roles {
+			if role.AllowsContext(roleContext) {
+				filtered = append(filtered, role)
+			}
+		}
+		roles = filtered
+	}
+
+	ctx.JSON(http.StatusOK, roles)
 }
 
 // getOrgServiceAccount looks up an account by ID and ensures it is a service
@@ -228,7 +209,7 @@ func (s *service) CreateServiceAccount(ctx *gin.Context) {
 		return
 	}
 
-	roleType, err := validateServiceAccountRole(req.Role)
+	roleType, err := s.resolveServiceAccountRole(ctx, org.ID, req.Role)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -356,7 +337,7 @@ func (s *service) UpdateServiceAccountRole(ctx *gin.Context) {
 		return
 	}
 
-	roleType, err := validateServiceAccountRole(req.Role)
+	roleType, err := s.resolveServiceAccountRole(ctx, org.ID, req.Role)
 	if err != nil {
 		ctx.Error(err)
 		return

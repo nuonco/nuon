@@ -31,12 +31,6 @@ const PRESET_OPTIONS = [
   { value: 'custom', label: 'Custom' },
 ]
 
-const ROLE_OPTIONS = [
-  { value: 'org_read_only', label: 'org_read_only' },
-  { value: 'org_support', label: 'org_support' },
-  { value: 'org_admin', label: 'org_admin' },
-]
-
 export const hasSubCondition = (claimConditions: ClaimCondition[]) =>
   claimConditions.some(
     (condition) => condition.key.trim() === 'sub' && condition.value.trim()
@@ -73,6 +67,7 @@ export const CreateOIDCTrustPolicyModal = ({
   initialRepoDefaultBranch,
   lockPreset,
   reservedNames,
+  roleOptions,
   ...props
 }: {
   isPending: boolean
@@ -87,6 +82,7 @@ export const CreateOIDCTrustPolicyModal = ({
   initialRepoDefaultBranch?: string
   lockPreset?: boolean
   reservedNames?: string[]
+  roleOptions: { value: string; label: string }[]
 } & Omit<IModal, 'onSubmit'>) => {
   const [preset, setPreset] = useState<OIDCPreset>('github_actions')
   const [repoFullName, setRepoFullName] = useState(initialRepoFullName ?? '')
@@ -320,7 +316,7 @@ export const CreateOIDCTrustPolicyModal = ({
 
         <Select
           labelProps={{ labelText: 'Role' }}
-          options={ROLE_OPTIONS}
+          options={roleOptions}
           value={role}
           onChange={(value) => setRole(value)}
           helperText="Org role granted to tokens exchanged with this policy."

@@ -172,5 +172,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "124-remove-org-builder-roles",
 			Fn:   m.Migration124RemoveOrgBuilderRoles,
 		},
+		{
+			Name: "125-backfill-role-metadata",
+			Fn:   m.Migration125BackfillRoleMetadata,
+		},
 	}
 }

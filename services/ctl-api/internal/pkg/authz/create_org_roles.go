@@ -23,12 +23,18 @@ func (c *Client) CreateOrgRoles(ctx context.Context, orgID string) error {
 	return nil
 }
 
+// standardOrgRoles defines the managed roles every org gets. It is the single
+// source of truth for their permissions and metadata: new orgs get these rows
+// at creation, and ReconcileOrgRoles keeps existing orgs' metadata in sync.
 func standardOrgRoles(orgID string) []app.Role {
 	return []app.Role{
-		// create admin role
 		{
-			OrgID:    generics.NewNullString(orgID),
-			RoleType: app.RoleTypeOrgAdmin,
+			OrgID:       generics.NewNullString(orgID),
+			RoleType:    app.RoleTypeOrgAdmin,
+			Title:       "Admin",
+			Description: "Full access to the organization and all of its resources.",
+			Contexts:    []string{app.RoleContextTeam, app.RoleContextServiceAccount, app.RoleContextAPIToken, app.RoleContextTrustPolicy},
+			Managed:     true,
 			Policies: []app.Policy{
 				{
 					OrgID: generics.NewNullString(orgID),
@@ -40,10 +46,12 @@ func standardOrgRoles(orgID string) []app.Role {
 			},
 		},
 
-		// support role
 		{
-			OrgID:    generics.NewNullString(orgID),
-			RoleType: app.RoleTypeOrgSupport,
+			OrgID:       generics.NewNullString(orgID),
+			RoleType:    app.RoleTypeOrgSupport,
+			Title:       "Support",
+			Description: "Deprecated full-access role; no longer offered for new assignments.",
+			Managed:     true,
 			Policies: []app.Policy{
 				{
 					OrgID: generics.NewNullString(orgID),
@@ -55,10 +63,13 @@ func standardOrgRoles(orgID string) []app.Role {
 			},
 		},
 
-		// read-only role
 		{
-			OrgID:    generics.NewNullString(orgID),
-			RoleType: app.RoleTypeOrgReadOnly,
+			OrgID:       generics.NewNullString(orgID),
+			RoleType:    app.RoleTypeOrgReadOnly,
+			Title:       "Read-only",
+			Description: "Read-only access to the organization and its resources.",
+			Contexts:    []string{app.RoleContextTeam, app.RoleContextServiceAccount, app.RoleContextAPIToken, app.RoleContextTrustPolicy},
+			Managed:     true,
 			Policies: []app.Policy{
 				{
 					OrgID: generics.NewNullString(orgID),
@@ -70,10 +81,12 @@ func standardOrgRoles(orgID string) []app.Role {
 			},
 		},
 
-		// installer role
 		{
-			OrgID:    generics.NewNullString(orgID),
-			RoleType: app.RoleTypeInstaller,
+			OrgID:       generics.NewNullString(orgID),
+			RoleType:    app.RoleTypeInstaller,
+			Title:       "Installer",
+			Description: "Deprecated full-access role; no longer offered for new assignments.",
+			Managed:     true,
 			Policies: []app.Policy{
 				{
 					OrgID: generics.NewNullString(orgID),
@@ -85,10 +98,13 @@ func standardOrgRoles(orgID string) []app.Role {
 			},
 		},
 
-		// runner role
 		{
-			OrgID:    generics.NewNullString(orgID),
-			RoleType: app.RoleTypeRunner,
+			OrgID:       generics.NewNullString(orgID),
+			RoleType:    app.RoleTypeRunner,
+			Title:       "Runner",
+			Description: "Permissions for runners executing deployments.",
+			Contexts:    []string{app.RoleContextServiceAccount},
+			Managed:     true,
 			Policies: []app.Policy{
 				{
 					OrgID: generics.NewNullString(orgID),

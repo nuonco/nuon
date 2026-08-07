@@ -796,11 +796,20 @@ export interface TCreateStaticTokenResponse {
 }
 
 export interface TRoleInfo {
+  id?: string
+  org_id?: string
   role_type: string
-  title: string
-  description: string
-  applies_to: string[]
+  title?: string
+  description?: string
+  applies_to?: string[]
+  managed?: boolean
 }
+
+export type TRoleContext =
+  | 'team'
+  | 'service_account'
+  | 'api_token'
+  | 'oidc_trust_policy'
 
 export interface TCreateServiceAccountBody {
   name: string

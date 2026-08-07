@@ -18,11 +18,6 @@ type UpdateOrgAccountRoleRequest struct {
 	RoleType app.RoleType `json:"role_type" validate:"required"`
 }
 
-var allowedAccountRoles = map[app.RoleType]struct{}{
-	app.RoleTypeOrgAdmin:    {},
-	app.RoleTypeOrgReadOnly: {},
-}
-
 // @ID						UpdateOrgAccountRole
 // @Summary				Change an org member's role
 // @Description			Changes the role of an existing member of the current org. Requires org admin. You cannot change your own role, and you cannot demote the last remaining admin.
@@ -70,10 +65,10 @@ func (s *service) UpdateOrgAccountRole(ctx *gin.Context) {
 		return
 	}
 
-	if _, ok := allowedAccountRoles[req.RoleType]; !ok {
+	if _, err := s.authzClient.ResolveAssignableRole(ctx, org.ID, req.RoleType, app.RoleContextTeam); err != nil {
 		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("invalid role type: %s", req.RoleType),
-			Description: fmt.Sprintf("role_type must be %q or %q", app.RoleTypeOrgAdmin, app.RoleTypeOrgReadOnly),
+			Err:         fmt.Errorf("invalid role type %s: %w", req.RoleType, err),
+			Description: err.Error(),
 		})
 		return
 	}

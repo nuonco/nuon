@@ -22,12 +22,19 @@ const basePolicy: TOIDCTrustPolicy = {
   updated_at: '2026-04-01T00:00:00Z',
 }
 
+const roleOptions = [
+  { value: 'org_read_only', label: 'org_read_only' },
+  { value: 'org_support', label: 'org_support' },
+  { value: 'org_admin', label: 'org_admin' },
+]
+
 export const Default = () => (
   <ModalStory>
     <EditOIDCTrustPolicyModal
       policy={basePolicy}
       isPending={false}
       error={null}
+      roleOptions={roleOptions}
       onSubmit={noop}
     />
   </ModalStory>
@@ -39,6 +46,7 @@ export const Disabled = () => (
       policy={{ ...basePolicy, enabled: false }}
       isPending={false}
       error={null}
+      roleOptions={roleOptions}
       onSubmit={noop}
     />
   </ModalStory>
@@ -50,6 +58,7 @@ export const Pending = () => (
       policy={basePolicy}
       isPending={true}
       error={null}
+      roleOptions={roleOptions}
       onSubmit={noop}
     />
   </ModalStory>
@@ -66,6 +75,7 @@ export const WithError = () => (
         user_error: true,
         status: 400,
       }}
+      roleOptions={roleOptions}
       onSubmit={noop}
     />
   </ModalStory>

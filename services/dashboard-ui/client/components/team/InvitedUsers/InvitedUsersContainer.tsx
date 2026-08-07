@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { useRoleTitles } from '@/hooks/use-roles'
 import { getOrgInvites } from '@/lib'
 import { InvitedUsers } from './InvitedUsers'
 
@@ -11,6 +12,7 @@ export const InvitedUsersContainer = ({
   pollInterval?: number
 }) => {
   const { org } = useOrg()
+  const roleTitles = useRoleTitles()
 
   const { data: invites, isLoading, isError } = useQuery({
     queryKey: ['org-invites', org?.id],
@@ -22,6 +24,7 @@ export const InvitedUsersContainer = ({
   return (
     <InvitedUsers
       invites={invites ?? []}
+      roleTitles={roleTitles}
       isLoading={isLoading}
       isError={isError}
     />

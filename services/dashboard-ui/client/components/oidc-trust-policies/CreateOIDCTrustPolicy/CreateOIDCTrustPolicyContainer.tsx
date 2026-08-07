@@ -6,6 +6,7 @@ import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { useConfig } from '@/hooks/use-config'
 import { useOrg } from '@/hooks/use-org'
+import { useRoleOptions } from '@/hooks/use-roles'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useVCSRepos } from '@/hooks/use-vcs-repos'
@@ -20,6 +21,7 @@ const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
   const { org } = useOrg()
   const config = useConfig()
   const { repos, isLoading: isLoadingRepos, hasConnections } = useVCSRepos()
+  const { roleOptions } = useRoleOptions('oidc_trust_policy')
   const queryClient = useQueryClient()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
@@ -78,6 +80,7 @@ const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
       hasVCSConnections={hasConnections}
       vcsConnectionsHref={`/${org.id}/settings/vcs`}
       githubAudience={config.apiUrl ?? ''}
+      roleOptions={roleOptions}
       {...props}
     />
   )
