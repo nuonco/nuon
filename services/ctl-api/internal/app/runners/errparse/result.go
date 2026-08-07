@@ -79,6 +79,8 @@ func RunnerJobErrorText(errorMetadata map[string]string) string {
 
 func ToolForRunnerJob(runnerJob *app.RunnerJob) Tool {
 	switch runnerJob.Type {
+	case app.RunnerJobTypeActionsWorkflowRun:
+		return ToolAction
 	case app.RunnerJobTypeTerraformDeploy,
 		app.RunnerJobTypeTerraformModuleBuild,
 		app.RunnerJobTypeSandboxTerraform,

@@ -63,8 +63,6 @@ func (a *Activities) stepTargetCompositeError(ctx context.Context, step *app.Wor
 		ownerType = "install_deploys"
 	case app.WorkflowStepTargetTypeInstallSandboxRun, app.WorkflowStepTargetTypeInstallSandboxRuns:
 		ownerType = "install_sandbox_runs"
-	case app.WorkflowStepTargetTypeInstallActionWorkflowRun, app.WorkflowStepTargetTypeInstallActionWorkflowRuns:
-		ownerType = "install_action_workflow_runs"
 	default:
 		return nil, nil
 	}

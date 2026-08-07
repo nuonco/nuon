@@ -238,9 +238,7 @@ func targetSupportsCompositeErrorHints(targetType string) bool {
 	case app.WorkflowStepTargetTypeInstallDeploy,
 		app.WorkflowStepTargetTypeInstallDeploys,
 		app.WorkflowStepTargetTypeInstallSandboxRun,
-		app.WorkflowStepTargetTypeInstallSandboxRuns,
-		app.WorkflowStepTargetTypeInstallActionWorkflowRun,
-		app.WorkflowStepTargetTypeInstallActionWorkflowRuns:
+		app.WorkflowStepTargetTypeInstallSandboxRuns:
 		return true
 	default:
 		return false

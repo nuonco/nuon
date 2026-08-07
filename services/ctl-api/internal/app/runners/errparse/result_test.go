@@ -67,6 +67,32 @@ func TestParseRunnerJobResultResolvesProviderLazily(t *testing.T) {
 	}
 }
 
+func TestParseRunnerJobResultActionToolGate(t *testing.T) {
+	runnerJob := &app.RunnerJob{Type: app.RunnerJobTypeActionsWorkflowRun}
+
+	got, err := errparse.ParseRunnerJobResult(false, map[string]string{
+		errparse.ErrorMetadataOutput: "Error: ordinary action script failure",
+	}, runnerJob, nil)
+	if err != nil {
+		t.Fatalf("parse action result: %v", err)
+	}
+	if got == nil || got.Type != "generic" {
+		t.Fatalf("action error type = %v, want generic", got)
+	}
+
+	got, err = errparse.ParseRunnerJobResult(false, map[string]string{
+		errparse.ErrorMetadataOutput: "AccessDenied: User: arn:aws:iam::123:role/runner is not authorized to perform: s3:CreateBucket on resource: arn:aws:s3:::bucket",
+	}, runnerJob, func() errparse.Provider {
+		return errparse.ProviderAWS
+	})
+	if err != nil {
+		t.Fatalf("parse action provider result: %v", err)
+	}
+	if got == nil || got.Type != "terraform.aws_permission" {
+		t.Fatalf("action provider error type = %v, want terraform.aws_permission", got)
+	}
+}
+
 func TestResolveRunnerJobProvider(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 	if err != nil {

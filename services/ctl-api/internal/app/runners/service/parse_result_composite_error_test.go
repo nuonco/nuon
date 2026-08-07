@@ -218,6 +218,7 @@ func TestRunnerJobTool(t *testing.T) {
 		typ  app.RunnerJobType
 		want errparse.Tool
 	}{
+		{app.RunnerJobTypeActionsWorkflowRun, errparse.ToolAction},
 		{app.RunnerJobTypeTerraformDeploy, errparse.ToolTerraform},
 		{app.RunnerJobTypeTerraformModuleBuild, errparse.ToolTerraform},
 		{app.RunnerJobTypeSandboxTerraform, errparse.ToolTerraform},
