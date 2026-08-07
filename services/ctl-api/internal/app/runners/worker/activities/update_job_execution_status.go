@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 )
 
 type UpdateJobExecutionStatusRequest struct {
@@ -28,6 +29,7 @@ func (a *Activities) UpdateJobExecutionStatus(ctx context.Context, req UpdateJob
 	if res.RowsAffected < 1 {
 		return fmt.Errorf("no job execution found: %s %w", req.JobExecutionID, gorm.ErrRecordNotFound)
 	}
+	helpers.AuditJobExecutionResult(ctx, a.db, a.mw, req.JobExecutionID, req.Status, "runner_workflow")
 
 	return nil
 }

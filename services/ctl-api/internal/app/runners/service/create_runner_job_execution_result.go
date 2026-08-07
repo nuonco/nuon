@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/all" // register all errparse parsers
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
@@ -90,29 +91,32 @@ func (s *service) CreateRunnerJobExecutionResult(ctx *gin.Context) {
 	}
 
 	// branch on wether or not the content received is compressed.
-	var jobExecution *app.RunnerJobExecutionResult
+	var result *app.RunnerJobExecutionResult
+	var created bool
 	var err error
 	if req.ContentsCompressed != "" || req.ContentsDisplayCompressed != "" {
-		jobExecution, err = s.createRunnerJobExecutionResultFromCompressed(ctx, runnerJobID, runnerJobExecutionID, &req)
+		result, created, err = s.createRunnerJobExecutionResultFromCompressed(ctx, runnerJobID, runnerJobExecutionID, &req)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
 			return
 		}
 	} else {
-		jobExecution, err = s.createRunnerJobExecutionResult(ctx, runnerJobID, runnerJobExecutionID, &req)
+		result, created, err = s.createRunnerJobExecutionResult(ctx, runnerJobID, runnerJobExecutionID, &req)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
 			return
 		}
 	}
 
-	if err := s.applyComponentBuildSourceIdentity(ctx, runnerJobID, &req); err != nil {
-		// Non-fatal: source-identity persistence shouldn't fail the result
-		// write. The build's status workflow runs independently.
-		s.l.Warn("unable to apply component build source identity", zap.Error(err))
+	if created {
+		if err := s.applyComponentBuildSourceIdentity(ctx, runnerJobID, &req); err != nil {
+			// Non-fatal: source-identity persistence shouldn't fail the result
+			// write. The build's status workflow runs independently.
+			s.l.Warn("unable to apply component build source identity", zap.Error(err))
+		}
 	}
 
-	ctx.JSON(http.StatusCreated, jobExecution)
+	ctx.JSON(http.StatusCreated, result)
 }
 
 // applyComponentBuildSourceIdentity persists source-identity fields
@@ -158,18 +162,13 @@ func (s *service) applyComponentBuildSourceIdentity(ctx context.Context, runnerJ
 	return nil
 }
 
-// metricCompositeErrorParse counts every failed-result parse attempt, tagged
+// metricCompositeErrorParse counts every persisted failed-result parse, tagged
 // with the execution tool, job group, and matched composite-error type (or
 // "miss"/"generic"). A high rate of matched_type:generic for a given tool is
 // the data-driven backlog signal for which specific parser to write next.
 const metricCompositeErrorParse = "runner.composite_error_parse"
 
-// parseResultCompositeError parses a failed result into a typed CompositeError
-// and records the parse-outcome metric. It delegates the pure parsing to
-// parseCompositeError and emits exactly one metric per failed result so parse
-// coverage is observable without any per-parser wiring.
-func (s *service) parseResultCompositeError(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
-	ce := s.parseCompositeError(req, runnerJob)
+func (s *service) recordCompositeErrorParse(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob, ce *compositeerrors.CompositeErrorData) {
 	if !req.Success {
 		// Default empty facets to "unknown" so Datadog never sees a bare
 		// "tool:" tag; matched_type stays "miss" for a nil/typeless parse.
@@ -191,7 +190,6 @@ func (s *service) parseResultCompositeError(req *CreateRunnerJobExecutionResultR
 			"matched_type:" + matched,
 		})
 	}
-	return ce
 }
 
 // parseCompositeError parses a failed execution's untruncated error message
@@ -293,22 +291,23 @@ func (s *service) refreshOwnerCompositeError(ctx context.Context, runnerJob *app
 	}
 }
 
-func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Context, runnerJobID, runnerJobExecutionID string, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, error) {
+func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Context, runnerJobID, runnerJobExecutionID string, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, bool, error) {
 	runnerJob, err := s.getRunnerJob(ctx, runnerJobID)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	// Runner sends gzip-compressed payloads encoded as base64 strings.
 	// We decode once here and persist the raw gzip bytes for later decompression.
 	contentsGzip, err := base64.URLEncoding.DecodeString(req.ContentsCompressed)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to decode contents")
+		return nil, false, errors.Wrap(err, "unable to decode contents")
 	}
 	contentsDisplayGzip, err := base64.URLEncoding.DecodeString(req.ContentsDisplayCompressed)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to decode contents display")
+		return nil, false, errors.Wrap(err, "unable to decode contents display")
 	}
+	compositeError := s.parseCompositeError(req, runnerJob)
 	result := app.RunnerJobExecutionResult{
 		OrgID:                runnerJob.OrgID,
 		RunnerJobExecutionID: runnerJobExecutionID,
@@ -317,59 +316,56 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 		ContentsDisplayGzip:  contentsDisplayGzip,
 		ErrorCode:            req.ErrorCode,
 		ErrorMetadata:        pgtype.Hstore(req.ErrorMetadata),
-		CompositeError:       s.parseResultCompositeError(req, runnerJob),
+		CompositeError:       compositeError,
 	}
 
-	res := s.db.WithContext(ctx).Create(&result)
-	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to write runner job execution result: %w")
+	persisted, created, err := helpers.CreateJobExecutionResultIfAbsent(ctx, s.db, &result)
+	if err != nil {
+		return nil, false, err
+	}
+	if created {
+		s.recordCompositeErrorParse(req, runnerJob, compositeError)
+		s.refreshOwnerCompositeError(ctx, runnerJob, compositeError)
 	}
 
-	s.refreshOwnerCompositeError(ctx, runnerJob, result.CompositeError)
-
-	return &result, nil
+	return persisted, created, nil
 }
 
-func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobID, runnerJobExecutionID string, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, error) {
+func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobID, runnerJobExecutionID string, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, bool, error) {
 	runnerJob, err := s.getRunnerJob(ctx, runnerJobID)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
+	var contentsDisplay []byte
+	if req.ContentsDisplay != nil {
+		contentsDisplay, err = json.Marshal(req.ContentsDisplay)
+		if err != nil {
+			return nil, false, errors.Wrap(err, "unable to marshal contents display")
+		}
+	}
+
+	compositeError := s.parseCompositeError(req, runnerJob)
 	result := app.RunnerJobExecutionResult{
 		OrgID:                runnerJob.OrgID,
 		RunnerJobExecutionID: runnerJobExecutionID,
 		Success:              req.Success,
 		Contents:             req.Contents,
+		ContentsDisplay:      contentsDisplay,
 		ErrorCode:            req.ErrorCode,
 		ErrorMetadata:        pgtype.Hstore(req.ErrorMetadata),
-		CompositeError:       s.parseResultCompositeError(req, runnerJob),
+		CompositeError:       compositeError,
 	}
 
-	res := s.db.WithContext(ctx).Create(&result)
-	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to write runner job execution result: %w")
+	persisted, created, err := helpers.CreateJobExecutionResultIfAbsent(ctx, s.db, &result)
+	if err != nil {
+		return nil, false, err
 	}
 
-	if req.ContentsDisplay != nil {
-		// NOTE(fd): we split up the write because this column can be rather large.
-		// TODO(fd): return a 206 partial content, ensure the client knows how to handle it.
-		byts, err := json.Marshal(req.ContentsDisplay)
-		if err != nil {
-			return nil, errors.Wrap(res.Error, "unable to marshal contents display")
-		}
-		rjer := app.RunnerJobExecutionResult{
-			ID: result.ID,
-		}
-		updateRes := s.db.WithContext(ctx).Model(&rjer).Updates(app.RunnerJobExecutionResult{
-			ContentsDisplay: byts,
-		})
-		if updateRes.Error != nil {
-			return &result, errors.Wrap(res.Error, "failed to set display content on runner job execution")
-		}
+	if created {
+		s.recordCompositeErrorParse(req, runnerJob, compositeError)
+		s.refreshOwnerCompositeError(ctx, runnerJob, compositeError)
 	}
 
-	s.refreshOwnerCompositeError(ctx, runnerJob, result.CompositeError)
-
-	return &result, nil
+	return persisted, created, nil
 }
