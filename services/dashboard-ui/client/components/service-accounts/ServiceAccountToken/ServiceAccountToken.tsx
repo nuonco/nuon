@@ -101,7 +101,7 @@ export const CreateServiceAccountTokenModal = ({
 
         <Select
           value={duration}
-          onChange={(e) => setDuration(e.target.value)}
+          onChange={(value) => setDuration(value)}
           options={DURATION_OPTIONS}
           labelProps={{ labelText: 'Expires after' }}
         />
