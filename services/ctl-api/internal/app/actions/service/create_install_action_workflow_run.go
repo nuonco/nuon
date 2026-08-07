@@ -58,12 +58,18 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		return
 	}
 
+	// Callers pass whichever config they last read, usually the app's newest rather
+	// than the install's pinned one, so re-resolve instead of rejecting.
 	if awc.AppConfigID != install.AppConfigID {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("action workflow config does not belong to the install's app config"),
-			Description: "action workflow config does not belong to the install's app config",
-		})
-		return
+		pinned, err := s.actionsHelpers.GetActionWorkflowConfig(ctx, awc.ActionWorkflowID, install.AppConfigID)
+		if err != nil {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("action is not in the install's app config version: %w", err),
+				Description: "this action is not in the install's app config version",
+			})
+			return
+		}
+		awc = pinned
 	}
 
 	if !awc.WorkflowConfigCanTriggerManually() {

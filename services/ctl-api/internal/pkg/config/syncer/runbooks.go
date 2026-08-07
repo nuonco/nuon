@@ -34,9 +34,8 @@ func (s *syncer) ensureRunbook(ctx context.Context, runbook *config.RunbookConfi
 			}
 		}
 
-		if err := s.runbooksHelpers.EnsureInstallRunbooks(ctx, s.appID, nil); err != nil {
-			return sync.SyncInternalErr{Description: fmt.Sprintf("unable to ensure install runbooks for %s", runbook.Name), Err: err}
-		}
+		// ReconcileInstallRunbooks owns install runbooks; backfilling the app-wide cross
+		// product here created rows for installs whose config never declared the runbook.
 		return nil
 	}
 
