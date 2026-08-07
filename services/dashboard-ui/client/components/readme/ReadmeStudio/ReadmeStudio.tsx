@@ -519,9 +519,7 @@ export function ReadmeStudio({
                   }))}
                   value={previewInstallId}
                   placeholder="Preview with install data"
-                  onChange={(event) =>
-                    onPreviewInstallChange?.(event.target.value)
-                  }
+                  onChange={(value) => onPreviewInstallChange?.(value)}
                 />
               </div>
             </div>
