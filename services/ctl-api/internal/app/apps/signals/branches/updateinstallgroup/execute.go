@@ -2,7 +2,6 @@ package updateinstallgroup
 
 import (
 	"fmt"
-	"time"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -12,6 +11,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
+)
+
+const (
+	statusInProgress = "in-progress"
+	statusSuccess    = "success"
+	statusError      = "error"
 )
 
 type enqueuedInstall struct {
@@ -58,7 +63,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		installEntries = append(installEntries, app.InstallGroupRunInstall{
 			InstallID:  e.installID,
 			WorkflowID: e.workflowID,
-			Status:     "in-progress",
+			Status:     statusInProgress,
+			Phase:      app.InstallGroupRunPhaseDeploy,
 		})
 	}
 
@@ -75,7 +81,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	completed, failed, awaitErr := s.awaitInstallUpdates(ctx, enqueued, groupRunResult.InstallGroupRunID, installEntries)
 
-	now := time.Now()
+	// workflow.Now, not time.Now: wall-clock reads are non-deterministic across
+	// replay, so the recorded completion time has to come from workflow time.
+	now := workflow.Now(ctx)
 	finalStatus := app.StatusSuccess
 	desc := fmt.Sprintf("%d/%d installs deployed", completed, len(enqueued))
 	if failed > 0 {
@@ -195,13 +203,13 @@ func (s *Signal) awaitInstallUpdates(
 	for i, e := range enqueued {
 		if _, err := callback.AwaitWithTimeout(ctx, e.cb, callback.FallbackAwaitTimeout); err != nil {
 			errs = append(errs, fmt.Errorf("install %s workflow %s: %w", e.installID, e.workflowID, err))
-			results[e.installID] = "error"
+			results[e.installID] = statusError
 			failed++
-			installEntries[i].Status = "error"
+			installEntries[i].Status = statusError
 		} else {
-			results[e.installID] = "success"
+			results[e.installID] = statusSuccess
 			completed++
-			installEntries[i].Status = "success"
+			installEntries[i].Status = statusSuccess
 
 			logger.Info("install config update completed",
 				"install_id", e.installID,
@@ -297,7 +305,7 @@ func (s *Signal) updateInstallMetadata(ctx workflow.Context, enqueued []enqueued
 
 	installs := make([]any, 0, len(enqueued))
 	for _, e := range enqueued {
-		status := "in-progress"
+		status := statusInProgress
 		if results != nil {
 			if s, ok := results[e.installID]; ok {
 				status = s
@@ -316,9 +324,9 @@ func (s *Signal) updateInstallMetadata(ctx workflow.Context, enqueued []enqueued
 	if results != nil {
 		for _, s := range results {
 			switch s {
-			case "success":
+			case statusSuccess:
 				completed++
-			case "error":
+			case statusError:
 				failed++
 			}
 		}

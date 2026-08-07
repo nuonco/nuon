@@ -35,6 +35,10 @@ type AppInstallRunbookRun struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// IdempotencyKey lets a retryable caller (e.g. a Temporal activity) repeat a
+	// trigger without starting the runbook twice. Unique where set.
+	IdempotencyKey string `json:"idempotency_key,omitempty"`
+
 	// install id
 	InstallID string `json:"install_id,omitempty"`
 

@@ -11,10 +11,16 @@ import { GraphCanvas } from '../graph/GraphCanvas'
 import { GroupNodeCard, NODE_WIDTH } from '../graph/GroupNodeCard'
 import { layoutSequential, sequentialEdges } from '../graph/layout'
 
+interface GroupRunNodeInstall {
+  id: string
+  status: string
+  runbooks: { name: string; status: string }[]
+}
+
 interface GroupRunNodeData {
   groupName: string
   accent: GraphAccent
-  installs: { id: string; status: string }[]
+  installs: GroupRunNodeInstall[]
   orgId: string
   completedInstalls: number
   totalInstalls: number
@@ -38,16 +44,28 @@ const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
         <span className="text-[11px] text-cool-grey-500 dark:text-cool-grey-500">No installs</span>
       ) : (
         installs.map((inst) => (
-          <div key={inst.id} className="flex items-center gap-1.5">
-            <span
-              className={cn('h-1.5 w-1.5 shrink-0 rounded-full', statusAccent(inst.status).dot)}
-            />
-            <Link
-              href={`/${orgId}/installs/${inst.id}`}
-              className="truncate text-xs text-cool-grey-700 dark:text-cool-grey-200"
-            >
-              {inst.id}
-            </Link>
+          <div key={inst.id} className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5">
+              <span
+                className={cn('h-1.5 w-1.5 shrink-0 rounded-full', statusAccent(inst.status).dot)}
+              />
+              <Link
+                href={`/${orgId}/installs/${inst.id}`}
+                className="truncate text-xs text-cool-grey-700 dark:text-cool-grey-200"
+              >
+                {inst.id}
+              </Link>
+            </div>
+            {inst.runbooks.map((rb) => (
+              <div key={rb.name} className="flex items-center gap-1.5 pl-3">
+                <span
+                  className={cn('h-1 w-1 shrink-0 rounded-full', statusAccent(rb.status).dot)}
+                />
+                <span className="truncate text-[11px] text-cool-grey-500 dark:text-cool-grey-500">
+                  {rb.name}
+                </span>
+              </div>
+            ))}
           </div>
         ))
       )}
@@ -72,6 +90,10 @@ export const RunDeploymentGraph = ({ installGroupRuns, orgId }: IRunDeploymentGr
       const installs = (groupRun.installs ?? []).map((inst) => ({
         id: inst.install_id ?? '',
         status: inst.status ?? 'unknown',
+        runbooks: (inst.runbooks ?? []).map((rb) => ({
+          name: rb.runbook_name ?? rb.runbook_id ?? '',
+          status: rb.status ?? 'unknown',
+        })),
       }))
 
       return {
