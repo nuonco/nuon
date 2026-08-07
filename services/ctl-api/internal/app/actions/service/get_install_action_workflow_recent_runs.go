@@ -48,6 +48,10 @@ func (s *service) GetInstallActionRecentRuns(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	actionWorkflowID := ctx.Param("action_id")
 	iaw, err := s.getRecentRuns(ctx, org.ID, installID, actionWorkflowID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	ctx.JSON(http.StatusOK, iaw)
 }
@@ -83,6 +87,10 @@ func (s *service) GetInstallActionWorkflowRecentRuns(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	actionWorkflowID := ctx.Param("action_workflow_id")
 	iaw, err := s.getRecentRuns(ctx, org.ID, installID, actionWorkflowID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
 
 	ctx.JSON(http.StatusOK, iaw)
 }
@@ -108,6 +116,11 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 		return nil, fmt.Errorf("unable to convert limit to int: %w", err)
 	}
 
+	install, err := s.findInstall(ctx, orgID, installID)
+	if err != nil {
+		return nil, err
+	}
+
 	res := s.db.WithContext(ctx).
 		Where(app.InstallActionWorkflow{
 			InstallID:        installID,
@@ -115,8 +128,11 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 			OrgID:            orgID,
 		}).
 		Preload("ActionWorkflow").
+		// Pinned config, not the app's newest: runs execute the pinned one, so any
+		// other version hands callers a config ID that does not match.
 		Preload("ActionWorkflow.Configs", func(db *gorm.DB) *gorm.DB {
 			return db.
+				Where(app.ActionWorkflowConfig{AppConfigID: install.AppConfigID}).
 				Order("action_workflow_configs.created_at DESC").
 				Limit(1)
 		}).

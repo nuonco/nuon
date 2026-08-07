@@ -97,9 +97,20 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, in
 	// Always join action_workflows for label filtering; the q filter also needs this join.
 	needsAWJoin := len(lbls) > 0 || q != ""
 
+	install, err := s.findInstall(ctx, orgID, installID)
+	if err != nil {
+		return nil, err
+	}
+
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("ActionWorkflow").
+		// No LIMIT: it would cap the whole preload rather than each row, and the unique
+		// index on (action_workflow_id, app_config_id) already yields at most one.
+		Preload("ActionWorkflow.Configs", func(db *gorm.DB) *gorm.DB {
+			return db.Where(app.ActionWorkflowConfig{AppConfigID: install.AppConfigID})
+		}).
+		Preload("ActionWorkflow.Configs.Triggers").
 		Preload("Runs", func(db *gorm.DB) *gorm.DB {
 			db = db.Scopes(
 				scopes.WithOverrideTable("install_action_workflow_runs_latest_view_v1"),
@@ -132,7 +143,7 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, in
 		return nil, fmt.Errorf("unable to get install action workflows: %w", res.Error)
 	}
 
-	iaws, err := db.HandlePaginatedResponse(ctx, iaws)
+	iaws, err = db.HandlePaginatedResponse(ctx, iaws)
 	if err != nil {
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
