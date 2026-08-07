@@ -27,7 +27,7 @@ func (r *AddInstallLabelsRequest) Validate(v *validator.Validate) error {
 
 // @ID						AddInstallLabels
 // @Summary				add labels to an install
-// @Description			Merge the provided labels into the install's existing labels. Existing keys are overwritten. A value using the interpolation syntax ({{ .nuon.* }}) becomes a dynamic label: the template is stored and its rendered value is re-materialized whenever install state changes.
+// @Description			Merge the provided labels into the install's existing labels. Existing keys are overwritten. A value using the interpolation syntax ({{ .nuon.* }}) becomes a dynamic label: the template is stored and its rendered value is re-materialized whenever install state changes. Keys managed by the app config's default_labels cannot be changed here.
 // @Param					install_id	path	string					true	"install ID"
 // @Param					req			body	AddInstallLabelsRequest	true	"Input"
 // @Tags					installs
@@ -58,6 +58,25 @@ func (s *service) AddInstallLabels(ctx *gin.Context) {
 	var install app.Install
 	if err := s.db.WithContext(ctx).First(&install, "id = ?", installID).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
+		return
+	}
+
+	// Default labels are set in the app config; a write that echoes the current
+	// rendered value or the default itself is a harmless round-trip, anything
+	// else is rejected.
+	for key, val := range req.Labels {
+		def, isDefault := install.AppDefaultLabels[key]
+		if !isDefault {
+			continue
+		}
+		if val == install.Labels[key] || val == def {
+			delete(req.Labels, key)
+			continue
+		}
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("label %q is a default label; edit default_labels in the app config and sync", key),
+			Description: fmt.Sprintf("label %q is a default label; edit default_labels in the app config and sync", key),
+		})
 		return
 	}
 

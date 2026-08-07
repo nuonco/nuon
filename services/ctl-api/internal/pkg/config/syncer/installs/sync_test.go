@@ -139,6 +139,39 @@ func TestExistingToConfigEchoesLabelTemplates(t *testing.T) {
 		assert.Equal(t, map[string]string{"env": "staging"}, cfg.Labels)
 	})
 
+	// App-default keys never appear in install configs, so echoing them shows
+	// permanent "removed" drift on every sync.
+	t.Run("app-default keys are stripped from the upstream echo", func(t *testing.T) {
+		install := &app.Install{
+			Name: "inst",
+			Labeled: labels.Labeled{
+				Labels: labels.Labels{
+					"env":    "production",
+					"tier":   "gold",
+					"region": "us-west-2",
+				},
+			},
+			LabelTemplates: labels.Labels{
+				"region": "{{ .nuon.cloud_account.aws.region }}",
+			},
+			AppDefaultLabels: labels.Labels{
+				"tier":   "gold",
+				"region": "{{ .nuon.cloud_account.aws.region }}",
+			},
+		}
+
+		cfg := existingToConfig(install)
+		assert.Equal(t, map[string]string{"env": "production"}, cfg.Labels)
+
+		desired := &config.Install{
+			Name:   "inst",
+			Labels: map[string]string{"env": "production"},
+		}
+		d, err := desired.Diff(cfg)
+		require.NoError(t, err)
+		assert.False(t, d.Summary().HasChanged)
+	})
+
 	t.Run("a dynamic label config diffs clean against its rendered value", func(t *testing.T) {
 		desired := &config.Install{
 			Name: "inst",

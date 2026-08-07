@@ -445,6 +445,8 @@ export type TInstall = Omit<components['schemas']['app.Install'], 'sandbox'> & {
   // label values written with the {{ .nuon.* }} interpolation syntax, keyed by
   // label key; `labels` holds their rendered values
   label_templates?: Record<string, string>
+  // labels inherited from the app config's default_labels; read-only per install
+  app_default_labels?: Record<string, string>
   lifecycle_phase?: {
     phase?: string
     description?: string

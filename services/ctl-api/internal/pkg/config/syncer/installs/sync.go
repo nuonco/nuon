@@ -213,6 +213,24 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 // stale rendered value would otherwise keep matching selectors forever.
 // Template text is never written to the labels column.
 func syncLabels(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, existing *app.Install, desired labels.Labels) error {
+	// Default-label keys are owned by the app config; an install config echoing
+	// the rendered value or the default itself round-trips, anything else fails.
+	if len(existing.AppDefaultLabels) > 0 && len(desired) > 0 {
+		pruned := make(labels.Labels, len(desired))
+		for key, val := range desired {
+			def, isDefault := existing.AppDefaultLabels[key]
+			if !isDefault {
+				pruned[key] = val
+				continue
+			}
+			if val == existing.Labels[key] || val == def {
+				continue
+			}
+			return fmt.Errorf("label %q is a default label; edit default_labels in the app config", key)
+		}
+		desired = pruned
+	}
+
 	static, templated := desired.SplitTemplated()
 	for key, tmpl := range templated {
 		if err := render.ValidateTextTemplate(tmpl); err != nil {
@@ -220,11 +238,20 @@ func syncLabels(ctx context.Context, db *gorm.DB, installHelpers *installhelpers
 		}
 	}
 
+	newTemplates := make(labels.Labels, len(templated)+len(existing.AppDefaultLabels))
+	for k, v := range templated {
+		newTemplates[k] = v
+	}
+
 	merged := make(labels.Labels, len(existing.Labels)+len(static))
 	for k, v := range existing.Labels {
 		merged[k] = v
 	}
-	for key := range existing.LabelTemplates {
+	for key, tmpl := range existing.LabelTemplates {
+		if _, isDefault := existing.AppDefaultLabels[key]; isDefault {
+			newTemplates[key] = tmpl
+			continue
+		}
 		if _, ok := templated[key]; !ok {
 			delete(merged, key)
 		}
@@ -232,8 +259,8 @@ func syncLabels(ctx context.Context, db *gorm.DB, installHelpers *installhelpers
 	merged.Merge(static)
 
 	updates := map[string]any{}
-	if !maps.Equal(map[string]string(existing.LabelTemplates), map[string]string(templated)) {
-		updates["label_templates"] = templated
+	if !maps.Equal(map[string]string(existing.LabelTemplates), map[string]string(newTemplates)) {
+		updates["label_templates"] = newTemplates
 	}
 	if !maps.Equal(map[string]string(existing.Labels), map[string]string(merged)) {
 		updates["labels"] = merged
@@ -314,9 +341,10 @@ func existingToConfig(install *app.Install) *config.Install {
 }
 
 // upstreamLabels echoes template text for template-managed keys so a dynamic
-// label diffs clean instead of showing drift against its rendered value.
+// label diffs clean instead of showing drift against its rendered value, and
+// strips app-default keys, which install configs never declare.
 func upstreamLabels(install *app.Install) labels.Labels {
-	if len(install.LabelTemplates) == 0 {
+	if len(install.LabelTemplates) == 0 && len(install.AppDefaultLabels) == 0 {
 		return install.Labels
 	}
 
@@ -325,6 +353,9 @@ func upstreamLabels(install *app.Install) labels.Labels {
 		merged[k] = v
 	}
 	merged.Merge(install.LabelTemplates)
+	for key := range install.AppDefaultLabels {
+		delete(merged, key)
+	}
 	return merged
 }
 

@@ -136,6 +136,24 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}),
 	}
 
+	if len(parentApp.DefaultLabels) > 0 {
+		combined := make(map[string]string, len(req.Labels)+len(parentApp.DefaultLabels))
+		for k, v := range req.Labels {
+			combined[k] = v
+		}
+		for key, val := range parentApp.DefaultLabels {
+			if cur, ok := combined[key]; ok && cur != val {
+				return nil, stderr.ErrUser{
+					Err:         fmt.Errorf("label %q is a default label defined in the app config and cannot be overridden", key),
+					Description: fmt.Sprintf("label %q is a default label defined in the app config and cannot be overridden", key),
+				}
+			}
+			combined[key] = val
+		}
+		req.Labels = combined
+		install.AppDefaultLabels = parentApp.DefaultLabels
+	}
+
 	if len(req.Labels) > 0 {
 		static, templated := labels.Labels(req.Labels).SplitTemplated()
 		for key, tmpl := range templated {

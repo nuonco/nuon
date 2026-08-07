@@ -78,6 +78,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
+	// Best-effort: default-label reconciliation must not fail config updates.
+	if err := activities.AwaitApplyAppDefaultLabels(ctx, &activities.ApplyAppDefaultLabelsRequest{
+		InstallID: s.InstallID,
+	}); err != nil {
+		l.Warn("unable to apply app default labels",
+			zap.String("install_id", s.InstallID),
+			zap.Error(err))
+	}
+
 	signalsQueue, err := activities.AwaitGetInstallSignalsQueueByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return fmt.Errorf("unable to get install signals queue: %w", err)

@@ -2,14 +2,17 @@ import { useForm, useStore } from '@tanstack/react-form'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { Tooltip } from '@/components/common/Tooltip'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormInput } from '@/components/common/form/FormInput'
+import { Input } from '@/components/common/form/Input'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 import { editLabelsSchema, type EditLabelsValues } from './schema'
 
 interface IEditLabelsModal extends Omit<IModal, 'onSubmit'> {
   labels: Record<string, string>
+  defaultLabels?: Record<string, string>
   isPending: boolean
   error: TAPIError | null
   onSubmit: (labels: Record<string, string>) => void
@@ -17,6 +20,7 @@ interface IEditLabelsModal extends Omit<IModal, 'onSubmit'> {
 
 export const EditLabelsModal = ({
   labels: initialLabels,
+  defaultLabels = {},
   isPending,
   error,
   onSubmit,
@@ -96,10 +100,39 @@ export const EditLabelsModal = ({
             values update as install state changes.
           </Text>
 
+          {Object.entries(defaultLabels)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([key, value]) => (
+              <fieldset
+                key={`default:${key}`}
+                className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end border-t pt-2 opacity-60"
+              >
+                <label className="flex flex-col gap-1">
+                  <Text variant="label">Key</Text>
+                  <Input name="" type="text" disabled defaultValue={key} />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <Text variant="label">Value</Text>
+                  <Input name="" type="text" disabled defaultValue={value} />
+                </label>
+                <Tooltip
+                  tipContent="Defined in the app config's default_labels"
+                  position="left"
+                  tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs"
+                >
+                  <span className="mb-3 flex">
+                    <Icon variant="LockIcon" size="16" />
+                  </span>
+                </Tooltip>
+              </fieldset>
+            ))}
+
           <form.Field name="labels" mode="array">
             {(labelsField) =>
               labelsField.state.value.length === 0 ? (
-                <Text variant="subtext">No labels added</Text>
+                Object.keys(defaultLabels).length === 0 ? (
+                  <Text variant="subtext">No labels added</Text>
+                ) : null
               ) : (
                 <>
                   {labelsField.state.value.map((_, idx) => (

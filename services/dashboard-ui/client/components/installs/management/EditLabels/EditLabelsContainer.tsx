@@ -23,10 +23,14 @@ export const EditLabelsModalContainer = ({ ...props }: IModal) => {
 
   // Template-managed keys edit as template text so saving unchanged rows
   // round-trips the template instead of converting the label to static.
-  const currentLabels: Record<string, string> = {
-    ...(install?.labels || {}),
-    ...(install?.label_templates || {}),
-  }
+  // App-default keys are excluded — they are read-only per install.
+  const defaultLabels = install?.app_default_labels || {}
+  const currentLabels: Record<string, string> = Object.fromEntries(
+    Object.entries({
+      ...(install?.labels || {}),
+      ...(install?.label_templates || {}),
+    }).filter(([key]) => !(key in defaultLabels)),
+  )
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: async (newLabels: Record<string, string>) => {
@@ -66,6 +70,7 @@ export const EditLabelsModalContainer = ({ ...props }: IModal) => {
     <EditLabelsModal
       {...props}
       labels={currentLabels}
+      defaultLabels={defaultLabels}
       isPending={isPending}
       error={error}
       onSubmit={(labels) => mutate(labels)}
