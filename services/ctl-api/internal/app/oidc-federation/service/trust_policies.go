@@ -23,7 +23,6 @@ var allowedTrustPolicyRoles = map[app.RoleType]struct{}{
 	app.RoleTypeOrgAdmin:    {},
 	app.RoleTypeOrgSupport:  {},
 	app.RoleTypeOrgReadOnly: {},
-	app.RoleTypeOrgBuilder:  {},
 }
 
 type CreateOIDCTrustPolicyRequest struct {
@@ -42,7 +41,7 @@ type CreateOIDCTrustPolicyRequest struct {
 	ClaimConditions map[string]string `json:"claim_conditions" validate:"required"`
 
 	// org role granted to exchanged tokens. one of org_admin, org_support,
-	// org_read_only, org_builder. defaults to org_read_only.
+	// org_read_only. defaults to org_read_only.
 	Role string `json:"role"`
 
 	// lifetime of exchanged tokens in seconds. defaults to 3600, max 86400.
@@ -66,7 +65,7 @@ func parseTrustPolicyRole(raw string) (app.RoleType, error) {
 
 	role := app.RoleType(raw)
 	if _, ok := allowedTrustPolicyRoles[role]; !ok {
-		return "", fmt.Errorf("invalid role %q: must be one of %q, %q, %q, %q", raw, app.RoleTypeOrgAdmin, app.RoleTypeOrgSupport, app.RoleTypeOrgReadOnly, app.RoleTypeOrgBuilder)
+		return "", fmt.Errorf("invalid role %q: must be one of %q, %q, %q", raw, app.RoleTypeOrgAdmin, app.RoleTypeOrgSupport, app.RoleTypeOrgReadOnly)
 	}
 
 	return role, nil

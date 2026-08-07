@@ -16,7 +16,8 @@ func TestParseTrustPolicyRole(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "empty defaults to read-only", want: app.RoleTypeOrgReadOnly},
-		{name: "builder", raw: "org_builder", want: app.RoleTypeOrgBuilder},
+		{name: "admin", raw: "org_admin", want: app.RoleTypeOrgAdmin},
+		{name: "deprecated builder is rejected", raw: "org_builder", wantErr: true},
 		{name: "runner rejected", raw: "runner", wantErr: true},
 	}
 

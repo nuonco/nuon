@@ -262,7 +262,7 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "A human-friendly name to identify the token")
 	createCmd.MarkFlagRequired("name")
 	createCmd.Flags().StringVar(&duration, "duration", "8760h", "How long the token is valid (Go duration, e.g. 720h)")
-	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to the token (org_admin, org_builder, or org_read_only)")
+	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to the token (org_admin or org_read_only)")
 	apiTokensCmd.AddCommand(createCmd)
 
 	listCmd := &cobra.Command{
@@ -342,7 +342,7 @@ Example (GitHub Actions, main branch of acme/app only):
 	createCmd.MarkFlagRequired("audience")
 	createCmd.Flags().StringArrayVar(&claims, "claim", nil, "A claim condition as claim=pattern (repeatable; a sub condition is required)")
 	createCmd.MarkFlagRequired("claim")
-	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to exchanged tokens (org_admin, org_builder, org_support, or org_read_only)")
+	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to exchanged tokens (org_admin, org_support, or org_read_only)")
 	createCmd.Flags().Int64Var(&ttl, "ttl", 0, "Lifetime of exchanged tokens in seconds (default 3600, max 86400)")
 	trustPoliciesCmd.AddCommand(createCmd)
 

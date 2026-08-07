@@ -19,7 +19,9 @@ const (
 	// Deprecated: org_support is no longer assignable to new members; use org_admin or org_read_only.
 	RoleTypeOrgSupport  RoleType = "org_support"
 	RoleTypeOrgReadOnly RoleType = "org_read_only"
-	RoleTypeOrgBuilder  RoleType = "org_builder"
+	// Deprecated: org_builder is no longer assignable; grant automation an
+	// org_read_only role plus resource grants for anything it must write.
+	RoleTypeOrgBuilder RoleType = "org_builder"
 
 	// service account roles
 	// Deprecated: installer is no longer assignable; it grants full org access, use org_admin instead.
