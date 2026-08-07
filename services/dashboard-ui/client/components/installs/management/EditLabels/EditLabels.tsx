@@ -90,6 +90,12 @@ export const EditLabelsModal = ({
             </form.Field>
           </div>
 
+          <Text variant="subtext">
+            Values can use the interpolation syntax, e.g.{' '}
+            <code>{'{{ .nuon.cloud_account.aws.region }}'}</code>. Dynamic
+            values update as install state changes.
+          </Text>
+
           <form.Field name="labels" mode="array">
             {(labelsField) =>
               labelsField.state.value.length === 0 ? (

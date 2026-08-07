@@ -245,10 +245,8 @@ func (i *Install) Validate() error {
 		return nil
 	}
 
-	// Label keys are lookup identifiers on every matching surface (SQL
-	// containment, selectors, pickers), so they can never be templated; values
-	// using the interpolation syntax become dynamic labels and must parse now
-	// rather than fail at render time.
+	// Keys are lookup identifiers on every matching surface, so they can never
+	// be templated; templated values must parse now, not fail at render time.
 	for key, val := range i.Labels {
 		if strings.Contains(key, "{{") {
 			return ErrConfig{

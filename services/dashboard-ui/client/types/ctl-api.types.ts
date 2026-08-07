@@ -442,6 +442,9 @@ export type TInstall = Omit<components['schemas']['app.Install'], 'sandbox'> & {
   app?: components['schemas']['app.App']
   created_by?: components['schemas']['app.Account']
   gcp_account?: { project_id?: string; region?: string }
+  // label values written with the {{ .nuon.* }} interpolation syntax, keyed by
+  // label key; `labels` holds their rendered values
+  label_templates?: Record<string, string>
   lifecycle_phase?: {
     phase?: string
     description?: string

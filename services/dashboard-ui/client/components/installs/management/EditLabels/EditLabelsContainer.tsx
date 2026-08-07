@@ -21,7 +21,12 @@ export const EditLabelsModalContainer = ({ ...props }: IModal) => {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const currentLabels: Record<string, string> = install?.labels || {}
+  // Template-managed keys edit as template text so saving unchanged rows
+  // round-trips the template instead of converting the label to static.
+  const currentLabels: Record<string, string> = {
+    ...(install?.labels || {}),
+    ...(install?.label_templates || {}),
+  }
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: async (newLabels: Record<string, string>) => {

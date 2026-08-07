@@ -12,16 +12,47 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// RenderInstallLabels renders the install's label templates against current
-// install state and materializes the results into the labels column, so label
-// matching (SQL containment, subscription dispatch, branch selectors) only
-// ever sees literal values. Called after state (re)generation and after a
-// config sync writes new templates.
-//
-// A template that cannot be resolved yet — e.g. it references a component
-// output that has not populated — keeps the key's previous rendered value, or
-// leaves the key absent if it never rendered. Render failures never propagate:
-// labels must not fail state generation or config sync.
+// RenderLabelTemplates renders label templates against current install state,
+// returning only keys that rendered non-empty. Unresolvable templates (e.g. a
+// component output not yet populated) are skipped with a warning, never an
+// error. State is redacted so sensitive inputs can't leak into org-visible
+// labels, and labels are stripped from the context to prevent self-reference.
+func (h *Helpers) RenderLabelTemplates(ctx context.Context, installID string, templates labels.Labels) (labels.Labels, error) {
+	rendered := make(labels.Labels, len(templates))
+	if len(templates) == 0 {
+		return rendered, nil
+	}
+
+	is, err := h.GetInstallState(ctx, installID, true, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install state")
+	}
+
+	is.Labels = nil
+	data, err := is.AsMap()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to convert state to map")
+	}
+
+	for key, tmpl := range templates {
+		out, err := render.RenderTextV2(tmpl, data)
+		if err != nil || out == "" {
+			cctx.GetLogger(ctx, h.l).Warn("unable to render install label template",
+				zap.String("install_id", installID),
+				zap.String("label_key", key),
+				zap.Error(err))
+			continue
+		}
+		rendered[key] = out
+	}
+
+	return rendered, nil
+}
+
+// RenderInstallLabels materializes the install's label templates into the
+// labels column so label matching only ever sees literal values. Unresolvable
+// keys keep their previous rendered value, or stay absent if they never
+// rendered.
 func (h *Helpers) RenderInstallLabels(ctx context.Context, installID string) error {
 	var install app.Install
 	if err := h.db.WithContext(ctx).
@@ -34,37 +65,20 @@ func (h *Helpers) RenderInstallLabels(ctx context.Context, installID string) err
 		return nil
 	}
 
-	// Redacted state so a template referencing a sensitive input can never
-	// leak its value into a label, which is visible org-wide and in events.
-	is, err := h.GetInstallState(ctx, installID, true, true)
+	rendered, err := h.RenderLabelTemplates(ctx, installID, install.LabelTemplates)
 	if err != nil {
-		return errors.Wrap(err, "unable to get install state")
+		return err
 	}
 
-	// Label templates must not reference labels themselves.
-	is.Labels = nil
-	data, err := is.AsMap()
-	if err != nil {
-		return errors.Wrap(err, "unable to convert state to map")
-	}
-
-	merged := make(labels.Labels, len(install.Labels)+len(install.LabelTemplates))
+	merged := make(labels.Labels, len(install.Labels)+len(rendered))
 	for k, v := range install.Labels {
 		merged[k] = v
 	}
 
 	changed := false
-	for key, tmpl := range install.LabelTemplates {
-		rendered, err := render.RenderTextV2(tmpl, data)
-		if err != nil || rendered == "" {
-			cctx.GetLogger(ctx, h.l).Warn("unable to render install label template",
-				zap.String("install_id", installID),
-				zap.String("label_key", key),
-				zap.Error(err))
-			continue
-		}
-		if merged[key] != rendered {
-			merged[key] = rendered
+	for key, val := range rendered {
+		if merged[key] != val {
+			merged[key] = val
 			changed = true
 		}
 	}

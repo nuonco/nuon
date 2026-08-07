@@ -240,8 +240,7 @@ func (w *Workflows) GenerateState(ctx workflow.Context, req *GenerateStateReques
 		return nil, errors.Wrap(err, "unable to purge stale state")
 	}
 
-	// Dynamic labels are materialized from the state that was just saved.
-	// Best-effort: an unresolvable template must not fail state generation.
+	// Best-effort: label rendering must not fail state generation.
 	if err := activities.AwaitRenderInstallLabels(ctx, &activities.RenderInstallLabelsRequest{
 		InstallID: req.InstallID,
 	}); err != nil {

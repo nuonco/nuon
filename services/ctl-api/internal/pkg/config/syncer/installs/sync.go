@@ -208,12 +208,10 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 	}, nil
 }
 
-// syncLabels merges config labels over the install's current labels so values
-// set out of band survive a sync; keys removed from the config are only
-// cleaned up when they were template-managed, since a stale rendered value
-// would otherwise keep matching selectors forever. Templated values are stored
-// on label_templates and rendered against install state, never written to the
-// labels column as raw template text.
+// syncLabels merges config labels over current labels so out-of-band values
+// survive a sync. Removed keys are only cleaned up when template-managed — a
+// stale rendered value would otherwise keep matching selectors forever.
+// Template text is never written to the labels column.
 func syncLabels(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpers, existing *app.Install, desired labels.Labels) error {
 	static, templated := desired.SplitTemplated()
 	for key, tmpl := range templated {
@@ -248,8 +246,7 @@ func syncLabels(ctx context.Context, db *gorm.DB, installHelpers *installhelpers
 		return fmt.Errorf("unable to update install labels: %w", err)
 	}
 
-	// Render immediately so a new template does not wait for the next state
-	// change; unresolvable templates stay absent until state populates.
+	// Render now so a new template doesn't wait for the next state change.
 	if len(templated) > 0 {
 		if err := installHelpers.RenderInstallLabels(ctx, existing.ID); err != nil {
 			return fmt.Errorf("unable to render install label templates: %w", err)
@@ -316,9 +313,8 @@ func existingToConfig(install *app.Install) *config.Install {
 	return cfg
 }
 
-// upstreamLabels echoes template text back for template-managed keys, so a
-// config that declares a dynamic label diffs clean against its rendered value
-// instead of showing drift on every sync.
+// upstreamLabels echoes template text for template-managed keys so a dynamic
+// label diffs clean instead of showing drift against its rendered value.
 func upstreamLabels(install *app.Install) labels.Labels {
 	if len(install.LabelTemplates) == 0 {
 		return install.Labels
