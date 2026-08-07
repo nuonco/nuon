@@ -76,6 +76,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get install group run: %w", err)
 	}
 
+	// No group run means the deploy never ran — an empty install group auto-skipped
+	// by the emptygroup check, or a deploy step a user skipped. There is nothing to
+	// run runbooks against, and failing here would abort a run that is otherwise fine.
+	if !groupRun.Found {
+		logger.Info("install group never deployed, skipping post-deploy runbooks",
+			"install_group_id", s.InstallGroupID,
+		)
+		return nil
+	}
+
 	installEntries := groupRun.Installs
 	deployedIDs := make([]string, 0, len(installEntries))
 	for i := range installEntries {
@@ -288,8 +298,25 @@ func (s *Signal) awaitRunbookWave(
 	for _, p := range pending {
 		entry := &installEntries[p.entryIdx]
 
-		if _, err := callback.AwaitWithTimeout(ctx, p.cb, callback.FallbackAwaitTimeout); err != nil {
+		res, err := callback.AwaitWithTimeout(ctx, p.cb, callback.FallbackAwaitTimeout)
+		if err != nil {
 			*errs = append(*errs, fmt.Errorf("install %s runbook %s workflow %s: %w", p.installID, rb.RunbookName, p.workflowID, err))
+			entry.Runbooks[p.runbookIdx].Status = statusError
+			cancelRemainingRunbooks(entry, p.runbookIdx+1)
+			continue
+		}
+
+		// Only an "error" result comes back as a Go error, so a cancelled or expired
+		// run arrives here as a clean return. Recording it as success would advance
+		// the rollout past a runbook that never actually passed. It is marked as an
+		// error rather than cancelled because statusCancelled means "never reached",
+		// which neither stops later runbooks nor fails the step.
+		if res == nil || res.Status != statusSuccess {
+			status := "unknown"
+			if res != nil && res.Status != "" {
+				status = res.Status
+			}
+			*errs = append(*errs, fmt.Errorf("install %s runbook %s workflow %s: finished as %s", p.installID, rb.RunbookName, p.workflowID, status))
 			entry.Runbooks[p.runbookIdx].Status = statusError
 			cancelRemainingRunbooks(entry, p.runbookIdx+1)
 			continue

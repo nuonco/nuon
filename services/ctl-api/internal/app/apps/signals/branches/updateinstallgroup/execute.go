@@ -201,12 +201,28 @@ func (s *Signal) awaitInstallUpdates(
 	var errs []error
 
 	for i, e := range enqueued {
-		if _, err := callback.AwaitWithTimeout(ctx, e.cb, callback.FallbackAwaitTimeout); err != nil {
+		res, err := callback.AwaitWithTimeout(ctx, e.cb, callback.FallbackAwaitTimeout)
+		switch {
+		case err != nil:
 			errs = append(errs, fmt.Errorf("install %s workflow %s: %w", e.installID, e.workflowID, err))
 			results[e.installID] = statusError
 			failed++
 			installEntries[i].Status = statusError
-		} else {
+
+		// Only an "error" result comes back as a Go error, so a cancelled or expired
+		// deploy arrives here as a clean return and would otherwise be counted as a
+		// successful install.
+		case res == nil || res.Status != statusSuccess:
+			status := "unknown"
+			if res != nil && res.Status != "" {
+				status = res.Status
+			}
+			errs = append(errs, fmt.Errorf("install %s workflow %s: finished as %s", e.installID, e.workflowID, status))
+			results[e.installID] = statusError
+			failed++
+			installEntries[i].Status = statusError
+
+		default:
 			results[e.installID] = statusSuccess
 			completed++
 			installEntries[i].Status = statusSuccess
