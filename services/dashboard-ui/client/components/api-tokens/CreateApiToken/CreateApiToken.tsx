@@ -18,15 +18,11 @@ export const DURATION_OPTIONS = [
   { value: '8760h', label: '1 year' },
 ]
 
-export const ROLE_OPTIONS = [
-  { value: 'org_read_only', label: 'Read-only' },
-  { value: 'org_admin', label: 'Admin' },
-]
-
 export const CreateApiTokenModal = ({
   isPending,
   error,
   createdToken,
+  roleOptions,
   onSubmit,
   onDone,
   ...props
@@ -34,6 +30,7 @@ export const CreateApiTokenModal = ({
   isPending: boolean
   error: TAPIError | null
   createdToken: string | null
+  roleOptions: { value: string; label: string }[]
   onSubmit: (params: CreateApiTokenValues) => void
   onDone: () => void
 } & Omit<IModal, 'onSubmit'>) => {
@@ -130,7 +127,7 @@ export const CreateApiTokenModal = ({
           {(field) => (
             <FormSelect
               field={field}
-              options={ROLE_OPTIONS}
+              options={roleOptions}
               disabled={isPending}
               labelProps={{ labelText: 'Role' }}
             />

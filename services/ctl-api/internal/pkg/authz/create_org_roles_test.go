@@ -36,7 +36,22 @@ func TestStandardOrgRoles(t *testing.T) {
 		require.Len(t, role.Policies, 1, "role %s", role.RoleType)
 		require.Len(t, role.Policies[0].Permissions, 1, "role %s policies must only carry the bare org key", role.RoleType)
 		require.NotNil(t, role.Policies[0].Permissions[orgID], "role %s must key its permission on the org ID", role.RoleType)
+		require.NotEmpty(t, role.Title, "role %s must carry display metadata", role.RoleType)
+		require.NotEmpty(t, role.Description, "role %s must carry display metadata", role.RoleType)
+		require.True(t, role.Managed, "standard roles are managed")
 	}
+
+	fullContexts := []string{
+		app.RoleContextTeam,
+		app.RoleContextServiceAccount,
+		app.RoleContextAPIToken,
+		app.RoleContextTrustPolicy,
+	}
+	require.ElementsMatch(t, fullContexts, seen[app.RoleTypeOrgAdmin].Contexts)
+	require.ElementsMatch(t, fullContexts, seen[app.RoleTypeOrgReadOnly].Contexts)
+	require.ElementsMatch(t, []string{app.RoleContextServiceAccount}, seen[app.RoleTypeRunner].Contexts)
+	require.Empty(t, seen[app.RoleTypeOrgSupport].Contexts, "org_support is held-only")
+	require.Empty(t, seen[app.RoleTypeInstaller].Contexts, "installer is held-only")
 
 	readOnly := seen[app.RoleTypeOrgReadOnly]
 	set := permissions.Set(permissions.NewSet())

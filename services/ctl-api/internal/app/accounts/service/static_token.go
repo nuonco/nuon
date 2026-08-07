@@ -25,28 +25,22 @@ type CreateStaticTokenRequest struct {
 	// human-friendly name to identify the token later
 	Name string `json:"name" validate:"required"`
 
-	// org role granted to the token. one of org_admin, org_support, org_read_only.
-	// defaults to org_read_only.
+	// org role granted to the token. must be assignable to API tokens; see
+	// GET /v1/roles?context=api_token. defaults to org_read_only.
 	Role string `json:"role"`
 }
 
 const defaultTokenRole = app.RoleTypeOrgReadOnly
 
-var allowedTokenRoles = map[app.RoleType]struct{}{
-	app.RoleTypeOrgAdmin:    {},
-	app.RoleTypeOrgSupport:  {},
-	app.RoleTypeOrgReadOnly: {},
-}
-
-func parseTokenRole(raw string) (app.RoleType, error) {
+func (s *service) resolveTokenRole(ctx *gin.Context, orgID, raw string) (app.RoleType, error) {
 	if raw == "" {
-		return defaultTokenRole, nil
+		raw = string(defaultTokenRole)
 	}
-	role := app.RoleType(raw)
-	if _, ok := allowedTokenRoles[role]; !ok {
-		return "", fmt.Errorf("invalid role %q: must be one of %q, %q, %q", raw, app.RoleTypeOrgAdmin, app.RoleTypeOrgSupport, app.RoleTypeOrgReadOnly)
+	resolved, err := s.authzClient.ResolveAssignableRole(ctx, orgID, app.RoleType(raw), app.RoleContextAPIToken)
+	if err != nil {
+		return "", err
 	}
-	return role, nil
+	return resolved.RoleType, nil
 }
 
 type StaticTokenResponse struct {
@@ -72,7 +66,7 @@ func parseTokenDuration(raw string) (time.Duration, error) {
 
 // @ID						CreateStaticToken
 // @Summary				create a static API token for your org
-// @Description			Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, or org_read_only) and defaults to org_read_only.
+// @Description			Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
 // @Param					req	body	CreateStaticTokenRequest	true	"Input"
 // @Tags					accounts
 // @Security				APIKey
@@ -99,15 +93,15 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	role, err := parseTokenRole(req.Role)
-	if err != nil {
-		ctx.Error(stderr.NewInvalidRequest(err))
-		return
-	}
-
 	org, err := s.requireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
+		return
+	}
+
+	role, err := s.resolveTokenRole(ctx, org.ID, req.Role)
+	if err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 

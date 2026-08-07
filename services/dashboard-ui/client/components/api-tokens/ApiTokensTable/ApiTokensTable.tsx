@@ -12,12 +12,6 @@ import { DeleteApiTokenButton } from '@/components/api-tokens/DeleteApiToken'
 
 export const API_TOKENS_TABLE_LIMIT = 20
 
-const ROLE_LABELS: Record<string, string> = {
-  org_admin: 'Admin',
-  org_support: 'Support',
-  org_read_only: 'Read-only',
-}
-
 const ActionCell = ({ token }: { token: TStaticToken }) => (
   <Dropdown
     id={`action-${token.id}`}
@@ -37,10 +31,12 @@ const ActionCell = ({ token }: { token: TStaticToken }) => (
 
 export const ApiTokensTable = ({
   data,
+  roleTitles,
   isLoading,
   pagination,
 }: {
   data: TStaticToken[]
+  roleTitles: (roleType: string | undefined) => string
   isLoading: boolean
   pagination: { hasNext: boolean; offset: number; limit: number }
 }) => {
@@ -58,10 +54,9 @@ export const ApiTokensTable = ({
       {
         header: 'Role',
         accessorKey: 'role',
-        cell: (props) => {
-          const role = props.getValue<string>()
-          return <Text variant="body">{ROLE_LABELS[role] ?? role ?? '—'}</Text>
-        },
+        cell: (props) => (
+          <Text variant="body">{roleTitles(props.getValue<string>())}</Text>
+        ),
       },
       {
         header: 'Created',
@@ -83,7 +78,7 @@ export const ApiTokensTable = ({
         cell: (props) => <ActionCell token={props.row.original} />,
       },
     ],
-    []
+    [roleTitles]
   )
 
   if (isLoading) {
