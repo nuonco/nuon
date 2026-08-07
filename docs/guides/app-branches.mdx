@@ -169,7 +169,7 @@ included.
 
 ## Trigger a run
 
-Once the branch exists, a push to the tracked branch is all it takes:
+Once the branch exists, any push to the tracked branch starts a run:
 
 ```sh
 git commit -am "bump chart version"
@@ -241,8 +241,7 @@ For each group:
 - **Approve install group plan** — read the per-install diff, then approve to let the group's deploy step run.
 - **Skip install group** — move the rollout past this group's deploy without applying it.
 
-The run stops at the next group's plan step, so a multi-group rollout is a sequence of deliberate decisions rather
-than one irreversible action.
+The run stops at the next group's plan step, so each group is approved or skipped on its own.
 
 <Frame caption="A branch run holding at the stage gate: review the proposed changes, then approve to deploy to that group.">
   <img src="/images/guides/app-branches/approve-install-group-plan.png" alt="A branch run in the Nuon dashboard awaiting approval for the stage install group's plan, with Review changes and Approve actions and the run's component builds listed" />
@@ -256,23 +255,25 @@ than one irreversible action.
 
 ## Set up pull request previews
 
-There is nothing to configure on the branch itself. Opening a pull request against a tracked branch, or pushing
-another commit to an open one, starts a plan-only run, and Nuon reports back on the pull request:
+The one piece of setup is a **GitHub App connection in your org for the repository's owner**; the branch config
+itself needs nothing. Opening a pull request against a tracked branch, or pushing another commit to an open one,
+starts a plan-only run, and Nuon reports back on the pull request:
 
 - a comment headed `## Nuon Preview — <BranchName>` (the branch's `name`, so usually `main`) with a table of config
   changes by section, edited in place on each later push rather than added to.
 - a commit status with the context `nuon/preview`, moving from pending to success or failure.
 
-If the pull request does not change the app config, the run stops early and the comment says so.
+If the pull request does not change the app config, the run stops early and the comment reports that the preview
+was skipped.
 
-What previews *do* need is a **GitHub App connection in your org for the repository's owner**. Connect it once, from
-[connecting a repository](/guides/vcs). After that, every branch tracking a repo under that owner gets previews. This
-is an org-level setting, not a property of the branch config: a `[public_repo]` branch pointing at `acmeco/my-app` gets
-previews just like a `[connected_repo]` one, provided your org has connected `acmeco`.
+Connect the GitHub App once, from [connecting a repository](/guides/vcs). After that, every branch tracking a repo
+under that owner gets previews. The connection is an org-level setting, not a property of the branch config: a
+`[public_repo]` branch pointing at `acmeco/my-app` gets previews just like a `[connected_repo]` one, provided your
+org has connected `acmeco`.
 
 <Note>
   Previews start posting as soon as your org has the GitHub App connection for the repository's owner. If they have
-  not appeared yet, that connection is the thing to check — not your `branch.toml`.
+  not appeared yet, check that connection rather than your `branch.toml`.
 </Note>
 
 To reproduce a preview locally before opening the pull request:
@@ -281,7 +282,7 @@ To reproduce a preview locally before opening the pull request:
 nuon sync --branch main --preview
 ```
 
-## Roll back when a change goes badly
+## Roll back a change
 
 Every config change to an install is recorded as an app config version, and any earlier version can be applied again,
 to one install or to a whole deployment group, with a plan in front of it. The
