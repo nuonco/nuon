@@ -60,14 +60,14 @@ func attrMap(span sdktrace.ReadOnlySpan) map[attribute.Key]attribute.Value {
 	return m
 }
 
-func findSpan(t *testing.T, spans []sdktrace.ReadOnlySpan, name string) sdktrace.ReadOnlySpan {
+func findSpan(t *testing.T, spans []sdktrace.ReadOnlySpan, name, table string) sdktrace.ReadOnlySpan {
 	t.Helper()
 	for _, s := range spans {
-		if s.Name() == name {
+		if s.Name() == name && attrMap(s)["db.sql.table"].AsString() == table {
 			return s
 		}
 	}
-	t.Fatalf("span %q not found in %d spans", name, len(spans))
+	t.Fatalf("span %q for table %q not found in %d spans", name, table, len(spans))
 	return nil
 }
 
@@ -79,9 +79,11 @@ func TestQuerySpanAttributes(t *testing.T) {
 	var authors []testAuthor
 	require.NoError(t, db.Where(testAuthor{Name: "amy"}).Find(&authors).Error)
 
-	span := findSpan(t, recorder.Ended(), "gorm.query test_authors")
+	span := findSpan(t, recorder.Ended(), "gorm.query", "test_authors")
 	attrs := attrMap(span)
 
+	require.Equal(t, "postgresql.query", attrs["operation.name"].AsString())
+	require.Equal(t, "query test_authors", attrs["resource.name"].AsString())
 	require.Equal(t, "postgresql", attrs["db.system"].AsString())
 	require.Equal(t, "query", attrs["db.operation"].AsString())
 	require.Equal(t, "test_authors", attrs["db.sql.table"].AsString())
@@ -111,7 +113,7 @@ func TestRequestContextAttributesAndParenting(t *testing.T) {
 	require.NoError(t, db.WithContext(ctx).Find(&authors).Error)
 	parent.End()
 
-	span := findSpan(t, recorder.Ended(), "gorm.query test_authors")
+	span := findSpan(t, recorder.Ended(), "gorm.query", "test_authors")
 	attrs := attrMap(span)
 
 	require.Equal(t, "/v1/apps/:app_id", attrs["http.route"].AsString())
@@ -137,10 +139,15 @@ func TestPreloadQueriesBecomeChildSpans(t *testing.T) {
 
 	var root, preload sdktrace.ReadOnlySpan
 	for _, s := range recorder.Ended() {
-		if s.Name() == "gorm.query test_authors" && !s.Parent().IsValid() {
-			root = s
+		if s.Name() != "gorm.query" {
+			continue
 		}
-		if s.Name() == "gorm.query test_books" {
+		switch attrMap(s)["db.sql.table"].AsString() {
+		case "test_authors":
+			if !s.Parent().IsValid() {
+				root = s
+			}
+		case "test_books":
 			preload = s
 		}
 	}
@@ -174,7 +181,7 @@ func TestRecordNotFoundIsNotAnError(t *testing.T) {
 	err := db.Where(testAuthor{Name: "ghost"}).First(&author).Error
 	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 
-	span := findSpan(t, recorder.Ended(), "gorm.query test_authors")
+	span := findSpan(t, recorder.Ended(), "gorm.query", "test_authors")
 	require.Equal(t, codes.Unset, span.Status().Code)
 }
 
@@ -213,7 +220,7 @@ func TestGinContextQueryParentsToRootSpan(t *testing.T) {
 	require.NoError(t, db.WithContext(ginCtx).Where(testAuthor{Name: "gin"}).Find(&authors).Error)
 	rootSpan.End()
 
-	span := findSpan(t, recorder.Ended(), "gorm.query test_authors")
+	span := findSpan(t, recorder.Ended(), "gorm.query", "test_authors")
 	require.Equal(t, rootSpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 	require.Equal(t, rootSpan.SpanContext().SpanID(), span.Parent().SpanID())
 
@@ -241,7 +248,7 @@ func TestWrappedGinContextStillParentsToRootSpan(t *testing.T) {
 	require.NoError(t, db.WithContext(wrapped).Where(testAuthor{Name: "wrapped"}).Find(&authors).Error)
 	rootSpan.End()
 
-	span := findSpan(t, recorder.Ended(), "gorm.query test_authors")
+	span := findSpan(t, recorder.Ended(), "gorm.query", "test_authors")
 	require.Equal(t, rootSpan.SpanContext().TraceID(), span.SpanContext().TraceID())
 	require.Equal(t, rootSpan.SpanContext().SpanID(), span.Parent().SpanID())
 }
