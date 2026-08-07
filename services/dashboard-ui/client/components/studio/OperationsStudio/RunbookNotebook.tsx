@@ -728,7 +728,7 @@ export function RunbookNotebook({
               placeholder={
                 loading ? 'Loading runbooks' : 'Start from an existing runbook'
               }
-              onChange={(event) => setImportId(event.target.value)}
+              onChange={(value) => setImportId(value)}
               disabled={loading || !runbooks.length}
             />
             <Button
@@ -797,9 +797,7 @@ export function RunbookNotebook({
                         ? 'Loading state'
                         : 'Preview install'
                     }
-                    onChange={(event) =>
-                      onPreviewInstallChange(event.target.value)
-                    }
+                    onChange={(value) => onPreviewInstallChange(value)}
                     disabled={!installs.length}
                   />
                 ) : null}

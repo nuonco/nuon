@@ -238,7 +238,7 @@ export const CreateOIDCTrustPolicyModal = ({
             labelProps={{ labelText: 'Provider' }}
             options={PRESET_OPTIONS}
             value={preset}
-            onChange={(e) => selectPreset(e.target.value as OIDCPreset)}
+            onChange={(value) => selectPreset(value as OIDCPreset)}
           />
         )}
 
@@ -258,7 +258,7 @@ export const CreateOIDCTrustPolicyModal = ({
                 badge: { label: repo.default_branch },
               }))}
               value={repoFullName}
-              onChange={(e) => selectRepo(e.target.value)}
+              onChange={(value) => selectRepo(value)}
               disabled={!!initialRepoFullName || isLoadingRepos}
               searchable
               placeholder={
@@ -323,7 +323,7 @@ export const CreateOIDCTrustPolicyModal = ({
           labelProps={{ labelText: 'Role' }}
           options={ROLE_OPTIONS}
           value={role}
-          onChange={(e) => setRole(e.target.value)}
+          onChange={(value) => setRole(value)}
           helperText="Org role granted to tokens exchanged with this policy."
         />
 

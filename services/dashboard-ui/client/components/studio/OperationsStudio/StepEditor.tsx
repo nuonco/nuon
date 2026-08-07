@@ -37,7 +37,7 @@ export function StepEditor({ step, components, actions, onChange }: IStepEditor)
           value={step.componentName ?? ''}
           placeholder="Select a component"
           searchable
-          onChange={(event) => onChange({ componentName: event.target.value })}
+          onChange={(value) => onChange({ componentName: value })}
         />
       ) : null}
       {['deploy-component', 'check-component-drift'].includes(
@@ -79,7 +79,7 @@ export function StepEditor({ step, components, actions, onChange }: IStepEditor)
           value={step.actionName ?? ''}
           placeholder="Select an action"
           searchable
-          onChange={(event) => onChange({ actionName: event.target.value })}
+          onChange={(value) => onChange({ actionName: value })}
         />
       ) : null}
       {step.operation === 'command' ? (
