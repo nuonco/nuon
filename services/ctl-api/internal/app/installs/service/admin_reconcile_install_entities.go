@@ -17,7 +17,8 @@ type AdminReconcileInstallEntitiesResponse struct {
 // @ID						AdminReconcileInstallEntities
 // @Summary				reconcile an install's components, actions and runbooks
 // @Description			Re-derives the install's components, actions and runbooks from its pinned app config. Used to repair installs whose entities were never created.
-// @Tags					installs
+// @Tags					installs/admin
+// @Security				AdminEmail
 // @Accept					json
 // @Produce				json
 // @Param					install_id	path		string	true	"install ID"
