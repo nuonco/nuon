@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"testing"
 
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -38,6 +39,7 @@ func hasTag(tags []string, want string) bool {
 }
 
 func TestParseResultCompositeError(t *testing.T) {
+	ctx := context.Background()
 	s := &service{l: zap.NewNop()}
 	job := &app.RunnerJob{OwnerType: "install_deploys", OwnerID: "idpl_123"}
 
@@ -50,14 +52,14 @@ func TestParseResultCompositeError(t *testing.T) {
 			Success:       true,
 			ErrorMetadata: map[string]*string{"message": ptr(awsMsg)},
 		}
-		if got := s.parseCompositeError(req, job); got != nil {
+		if got := s.parseCompositeError(ctx, req, job); got != nil {
 			t.Fatalf("expected nil on success, got %+v", got)
 		}
 	})
 
 	t.Run("no message yields nil", func(t *testing.T) {
 		req := &CreateRunnerJobExecutionResultRequest{Success: false}
-		if got := s.parseCompositeError(req, job); got != nil {
+		if got := s.parseCompositeError(ctx, req, job); got != nil {
 			t.Fatalf("expected nil when no message, got %+v", got)
 		}
 	})
@@ -67,7 +69,7 @@ func TestParseResultCompositeError(t *testing.T) {
 			Success:       false,
 			ErrorMetadata: map[string]*string{"message": ptr("some unrelated failure")},
 		}
-		got := s.parseCompositeError(req, job)
+		got := s.parseCompositeError(ctx, req, job)
 		if got == nil {
 			t.Fatal("expected the generic fallback to produce a composite error")
 		}
@@ -84,7 +86,7 @@ func TestParseResultCompositeError(t *testing.T) {
 			Success:       false,
 			ErrorMetadata: map[string]*string{"message": ptr(awsMsg)},
 		}
-		got := s.parseCompositeError(req, job)
+		got := s.parseCompositeError(ctx, req, job)
 		if got == nil {
 			t.Fatal("expected a composite error, got nil")
 		}
@@ -110,7 +112,7 @@ func TestParseResultCompositeError(t *testing.T) {
 				"error_output": ptr(awsMsg),
 			},
 		}
-		got := s.parseCompositeError(req, job)
+		got := s.parseCompositeError(ctx, req, job)
 		if got == nil || got.Type != "terraform.aws_permission" {
 			t.Fatalf("expected AWS permission parsed from error_output, got %+v", got)
 		}
@@ -118,6 +120,7 @@ func TestParseResultCompositeError(t *testing.T) {
 }
 
 func TestParseResultCompositeError_Metric(t *testing.T) {
+	ctx := context.Background()
 	awsMsg := "Error: creating S3 Bucket: AccessDenied: User: " +
 		"arn:aws:iam::123:role/nuon-runner is not authorized to perform: " +
 		"s3:CreateBucket on resource: arn:aws:s3:::acme-prod-assets"
@@ -136,7 +139,7 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 			Success:       false,
 			ErrorMetadata: map[string]*string{"message": ptr(awsMsg)},
 		}
-		s.recordCompositeErrorParse(req, tfDeploy, s.parseCompositeError(req, tfDeploy))
+		s.recordCompositeErrorParse(req, tfDeploy, s.parseCompositeError(ctx, req, tfDeploy))
 
 		if len(mw.incrs) != 1 {
 			t.Fatalf("expected 1 metric, got %d", len(mw.incrs))
@@ -159,7 +162,7 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 			Success:       false,
 			ErrorMetadata: map[string]*string{"message": ptr("some unrelated failure")},
 		}
-		s.recordCompositeErrorParse(req, tfDeploy, s.parseCompositeError(req, tfDeploy))
+		s.recordCompositeErrorParse(req, tfDeploy, s.parseCompositeError(ctx, req, tfDeploy))
 
 		if len(mw.incrs) != 1 {
 			t.Fatalf("expected 1 metric, got %d", len(mw.incrs))
@@ -173,7 +176,7 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 		mw := &fakeMetricsWriter{}
 		s := &service{mw: mw, l: zap.NewNop()}
 		req := &CreateRunnerJobExecutionResultRequest{Success: false}
-		s.recordCompositeErrorParse(req, tfDeploy, s.parseCompositeError(req, tfDeploy))
+		s.recordCompositeErrorParse(req, tfDeploy, s.parseCompositeError(ctx, req, tfDeploy))
 
 		if len(mw.incrs) != 1 {
 			t.Fatalf("expected 1 metric, got %d", len(mw.incrs))
@@ -191,7 +194,7 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 			ErrorMetadata: map[string]*string{"message": ptr("boom")},
 		}
 		job := &app.RunnerJob{OwnerType: "install_deploys", OwnerID: "x"}
-		s.recordCompositeErrorParse(req, job, s.parseCompositeError(req, job))
+		s.recordCompositeErrorParse(req, job, s.parseCompositeError(ctx, req, job))
 
 		if !hasTag(mw.incrs[0].tags, "tool:unknown") || !hasTag(mw.incrs[0].tags, "group:unknown") {
 			t.Errorf("expected unknown fallback tags, got %v", mw.incrs[0].tags)
@@ -202,7 +205,7 @@ func TestParseResultCompositeError_Metric(t *testing.T) {
 		mw := &fakeMetricsWriter{}
 		s := &service{mw: mw, l: zap.NewNop()}
 		req := &CreateRunnerJobExecutionResultRequest{Success: true}
-		s.recordCompositeErrorParse(req, tfDeploy, s.parseCompositeError(req, tfDeploy))
+		s.recordCompositeErrorParse(req, tfDeploy, s.parseCompositeError(ctx, req, tfDeploy))
 
 		if len(mw.incrs) != 0 {
 			t.Fatalf("expected no metric on success, got %d", len(mw.incrs))

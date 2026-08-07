@@ -47,6 +47,19 @@ func (a AppRunnerType) JobType() RunnerJobType {
 	return RunnerJobTypeUnknown
 }
 
+func (a AppRunnerType) CloudPlatform() CloudPlatform {
+	switch a {
+	case AppRunnerTypeAWSECS, AppRunnerTypeAWSEKS, AppRunnerTypeAWS:
+		return CloudPlatformAWS
+	case AppRunnerTypeAzureAKS, AppRunnerTypeAzureACS, AppRunnerTypeAzure:
+		return CloudPlatformAzure
+	case AppRunnerTypeGCP, AppRunnerTypeGCPGKE:
+		return CloudPlatformGCP
+	default:
+		return CloudPlatformUnknown
+	}
+}
+
 type AppRunnerConfigHelmDriverType string
 
 const (
@@ -141,16 +154,7 @@ func (a *AppRunnerConfig) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (a *AppRunnerConfig) AfterQuery(tx *gorm.DB) error {
-	switch a.Type {
-	case AppRunnerTypeAWSECS, AppRunnerTypeAWSEKS, AppRunnerTypeAWS:
-		a.CloudPlatform = CloudPlatformAWS
-	case AppRunnerTypeAzureAKS, AppRunnerTypeAzureACS, AppRunnerTypeAzure:
-		a.CloudPlatform = CloudPlatformAzure
-	case AppRunnerTypeGCP, AppRunnerTypeGCPGKE:
-		a.CloudPlatform = CloudPlatformGCP
-	default:
-		a.CloudPlatform = CloudPlatformUnknown
-	}
+	a.CloudPlatform = a.Type.CloudPlatform()
 
 	// configured in the stack generation
 	// // NOTE(fd): we set default init scripts here
