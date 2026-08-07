@@ -9,6 +9,7 @@ export type TRunRunbookStepSelection = {
 export type TRunRunbookBody = {
   inputs?: Record<string, string>
   steps?: TRunRunbookStepSelection[]
+  role?: string
 }
 
 export async function runRunbook({
