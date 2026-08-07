@@ -62,19 +62,15 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 		return
 	}
 
-	// Find the install to get its app config version
-	var install app.Install
-	res := s.db.WithContext(ctx).
-		Where("id = ? AND org_id = ?", installID, org.ID).
-		First(&install)
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to get install: %w", res.Error))
+	install, err := s.findInstall(ctx, org.ID, installID)
+	if err != nil {
+		ctx.Error(err)
 		return
 	}
 
 	// Find the install runbook
 	var installRunbook app.InstallRunbook
-	res = s.db.WithContext(ctx).
+	res := s.db.WithContext(ctx).
 		Preload("Runbook").
 		Joins("JOIN runbooks ON runbooks.id = install_runbooks.runbook_id AND runbooks.deleted_at = 0").
 		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).

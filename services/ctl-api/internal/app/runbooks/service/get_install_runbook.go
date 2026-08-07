@@ -38,11 +38,19 @@ func (s *service) GetInstallRunbook(ctx *gin.Context) {
 		return
 	}
 
+	install, err := s.findInstall(ctx, org.ID, installID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	var installRunbook app.InstallRunbook
 	res := s.db.WithContext(ctx).
 		Preload("Runbook").
+		// Pinned config, not the app's newest: runs execute the pinned one, so any
+		// other version hands callers step IDs it will reject.
 		Preload("Runbook.Configs", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("created_at DESC").Limit(1)
+			return tx.Where(app.RunbookConfig{AppConfigID: install.AppConfigID})
 		}).
 		Preload("Runbook.Configs.Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")

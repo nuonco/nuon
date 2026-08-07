@@ -61,12 +61,21 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 	q := ctx.Query("q")
 	synced := ctx.Query("synced") != "false"
 
+	install, err := s.findInstall(ctx, org.ID, installID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Joins("JOIN runbooks ON runbooks.id = install_runbooks.runbook_id AND runbooks.deleted_at = 0").
 		Preload("Runbook").
+		// Pinned config, not the app's newest: runs execute the pinned one, so any
+		// other version hands callers step IDs it will reject. Unique on
+		// (runbook_id, app_config_id), so this yields at most one per runbook.
 		Preload("Runbook.Configs", func(tx *gorm.DB) *gorm.DB {
-			return tx.Scopes(scopes.WithOverrideTable("runbook_configs_latest_view_v1"))
+			return tx.Where(app.RunbookConfig{AppConfigID: install.AppConfigID})
 		}).
 		Preload("Runbook.Configs.Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
