@@ -169,7 +169,7 @@ included.
 
 ## Trigger a run
 
-Once the branch exists, a push to the tracked branch is all it takes:
+Once the branch exists, any push to the tracked branch starts a run:
 
 ```sh
 git commit -am "bump chart version"
@@ -255,8 +255,9 @@ The run stops at the next group's plan step, so each group is approved or skippe
 
 ## Set up pull request previews
 
-There is nothing to configure on the branch itself. Opening a pull request against a tracked branch, or pushing
-another commit to an open one, starts a plan-only run, and Nuon reports back on the pull request:
+The one piece of setup is a **GitHub App connection in your org for the repository's owner**; the branch config
+itself needs nothing. Opening a pull request against a tracked branch, or pushing another commit to an open one,
+starts a plan-only run, and Nuon reports back on the pull request:
 
 - a comment headed `## Nuon Preview — <BranchName>` (the branch's `name`, so usually `main`) with a table of config
   changes by section, edited in place on each later push rather than added to.
@@ -265,10 +266,10 @@ another commit to an open one, starts a plan-only run, and Nuon reports back on 
 If the pull request does not change the app config, the run stops early and the comment reports that the preview
 was skipped.
 
-What previews *do* need is a **GitHub App connection in your org for the repository's owner**. Connect it once, from
-[connecting a repository](/guides/vcs). After that, every branch tracking a repo under that owner gets previews. This
-is an org-level setting, not a property of the branch config: a `[public_repo]` branch pointing at `acmeco/my-app` gets
-previews just like a `[connected_repo]` one, provided your org has connected `acmeco`.
+Connect the GitHub App once, from [connecting a repository](/guides/vcs). After that, every branch tracking a repo
+under that owner gets previews. The connection is an org-level setting, not a property of the branch config: a
+`[public_repo]` branch pointing at `acmeco/my-app` gets previews just like a `[connected_repo]` one, provided your
+org has connected `acmeco`.
 
 <Note>
   Previews start posting as soon as your org has the GitHub App connection for the repository's owner. If they have

@@ -22,7 +22,7 @@ a single reviewable workflow instead of a sequence of manual steps.
 <Note>
   If you are new to Nuon, read [apps](/concepts/apps) and the [app and install life
   cycle](/guides/app-install-life-cycle) first. An app branch orchestrates the same install workflows those pages
-  describe. It does not replace them.
+  describe, rather than replacing them.
 </Note>
 
 ## The end-to-end flow
@@ -79,11 +79,11 @@ flowchart LR
     mr --> wf
 ```
 
-A merge is not a special case: closing a pull request is ignored, and the push to the tracked branch that follows the
-merge is what starts the `git-run`.
+Merging a pull request starts a `git-run` through the push it makes to the tracked branch; the close event itself is
+ignored.
 
 A `git-preview-run` stops after `building components and sandbox`. The per-group plan and deploy steps are not
-created at all, so a pull request cannot reach an install even in principle.
+created at all, so a pull request cannot touch an install.
 
 A manual plan-only run works differently. `--preview` suppresses the *apply*
 and the waiting, not the workflow: the run creates every group's `plan install group` and `deploy install group`
@@ -103,7 +103,7 @@ ordering and the unit of approval.
 You declare groups on the branch config, and each group picks its installs one of two ways:
 
 - **By labels** — a `label_selector` of key/value pairs. Any install carrying all of those labels is in the group, and
-  membership updates itself as you label and unlabel installs. This is the option to reach for.
+  membership updates itself as you label and unlabel installs. Prefer this for most groups.
 - **Explicitly** — a static list of `install_ids`, or of `install_names` that Nuon resolves to IDs when you sync.
 
 A group uses one or the other; a label selector cannot be combined with an explicit list in the same group.
@@ -138,7 +138,7 @@ A canary is an ordinary first group with a narrow selector: label one or two ins
 group the lowest `order`, and it plans and waits for approval ahead of everyone else. Approve it, watch it, and then
 approve the next group when you are satisfied. There is no separate canary feature to configure.
 
-Because the gate is an approval rather than a timer, the pace is yours: approve the next group in the dashboard, or
+Because the gate is an approval rather than a timer, you set the pace: approve the next group in the dashboard, or
 have an external system approve it through the API once your own checks have passed.
 
 ## Pull request previews
@@ -149,7 +149,7 @@ and reports it on the pull request itself:
 - a comment titled `## Nuon Preview — <BranchName>` (the branch's `name`, so usually `main`), containing a table of
   config changes broken down by section
   (Section / Added / Changed / Removed) with the individual entries expandable underneath. The same comment is edited
-  in place on every later push, so the pull request never accumulates a pile of stale bot comments.
+  in place on every later push rather than added to.
 - a commit status with the context `nuon/preview`, which moves from pending to success or failure.
 
 If the pull request does not change the app config, the run stops early and the comment reads
@@ -167,8 +167,8 @@ previews as long as the org has connected `acmeco`. See [connecting a repository
 
 ## Plans, diffs, and who approves
 
-Nothing in a branch run reaches an install unseen. Each `plan install group` step computes a diff
-per install in that group, showing exactly what would change, and holds the rollout there.
+Every change a branch run applies to an install is planned and reviewed first. Each `plan install group` step
+computes a diff per install in that group, showing exactly what would change, and holds the rollout there.
 
 The gate is acted on in your org: someone reads the per-install diff in the dashboard and approves or skips the
 group, or your own automation advances it through the API. It is the same plan-and-approve review that
