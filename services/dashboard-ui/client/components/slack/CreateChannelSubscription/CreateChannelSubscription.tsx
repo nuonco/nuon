@@ -146,7 +146,7 @@ export const CreateChannelSubscriptionModal = ({
             options={installationOptions}
             value={selectedInstallationId ?? ''}
             placeholder="Select a workspace"
-            onChange={(e) => onSelectInstallation(e.target.value)}
+            onChange={(value) => onSelectInstallation(value)}
             disabled={installations.length === 0}
           />
         </div>
