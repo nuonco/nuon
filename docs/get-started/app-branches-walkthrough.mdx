@@ -196,7 +196,7 @@ install. The command prints the run's ID and returns; watch the run in the dashb
 	way to iterate on a change before you commit it. Note the flag lives on `nuon sync`, not `nuon apps sync`.
 </Tip>
 
-## Run It for Real
+## Deploy the Change
 
 Drop the `--preview` and the same command becomes a real rollout:
 
@@ -322,7 +322,7 @@ curl -H "Authorization: Bearer $NUON_API_TOKEN" \
 Any earlier version can be applied again, which is the path back if a change turns out badly. The guide walks through
 [rolling back to a previous version](/guides/rollback-install-config).
 
-## Wrapping Up and Next Steps
+## Next Steps
 
 You now have a git branch wired to a fleet: a change to the config produces a build, a diff per install, and an
 approval gate in front of each group.
