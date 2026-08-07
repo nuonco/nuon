@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -86,6 +87,7 @@ func (s *service) cancelRunnerJob(ctx context.Context, runnerJobID string) (*app
 		if res.Error != nil {
 			return nil, fmt.Errorf("unable to cancel job execution: %w", res.Error)
 		}
+		helpers.AuditJobExecutionResult(ctx, s.db, s.mw, execution.ID, app.RunnerJobExecutionStatusCancelled, "cancel_api")
 
 	}
 
