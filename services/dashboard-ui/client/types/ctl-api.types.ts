@@ -347,6 +347,7 @@ export type TComponentType = components['schemas']['app.ComponentType']
 
 export type TComponentBuild = components['schemas']['app.ComponentBuild'] & {
   app_branch_id?: string
+  composite_error?: TCompositeError
 }
 export type TBuild = TComponentBuild & {
   org_id: string
@@ -759,7 +760,9 @@ export type TInstallActionWorkflow =
 // new action types
 export type TAction = components['schemas']['app.ActionWorkflow']
 export type TInstallActionRun =
-  components['schemas']['app.InstallActionWorkflowRun']
+  components['schemas']['app.InstallActionWorkflowRun'] & {
+    composite_error?: TCompositeError
+  }
 export type TInstallActionRunStep =
   components['schemas']['app.InstallActionWorkflowRunStep']
 export type TInstallAction = components['schemas']['app.InstallActionWorkflow']

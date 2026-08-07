@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
@@ -49,52 +49,33 @@ func (a *Activities) GetStepErrorHints(ctx context.Context, req GetStepErrorHint
 	return &GetStepErrorHintsResponse{Hints: ce.Hints}, nil
 }
 
-// stepTargetCompositeError reads the composite error off the step target's
-// latest runner job execution result. This is the canonical, per-attempt copy:
-// the runner posts the result before the job is marked terminal, so the row is
-// visible by the time the step wakes and this activity runs. Reading it here
-// rather than the mirrored install_deploys / install_sandbox_runs aggregate
-// column avoids racing the chokepoint's best-effort aggregate write.
-//
-// Only deploy/sandbox-run targets own runner jobs with parsed composite errors;
-// any other target (or an unset target) yields nil. A missing runner
-// job/execution/result means no hint was recorded, so we yield nil rather than
-// failing.
+// stepTargetCompositeError reads the canonical composite error from the step
+// target's latest runner job execution result. A missing job, execution, or
+// result means no hint was recorded and yields nil.
 func (a *Activities) stepTargetCompositeError(ctx context.Context, step *app.WorkflowStep) (*compositeerrors.CompositeErrorData, error) {
 	if step.StepTargetID == "" {
 		return nil, nil
 	}
 
+	var ownerType string
 	switch app.WorkflowStepTargetType(step.StepTargetType) {
-	case app.WorkflowStepTargetTypeInstallDeploy, app.WorkflowStepTargetTypeInstallDeploys,
-		app.WorkflowStepTargetTypeInstallSandboxRun, app.WorkflowStepTargetTypeInstallSandboxRuns:
+	case app.WorkflowStepTargetTypeInstallDeploy, app.WorkflowStepTargetTypeInstallDeploys:
+		ownerType = "install_deploys"
+	case app.WorkflowStepTargetTypeInstallSandboxRun, app.WorkflowStepTargetTypeInstallSandboxRuns:
+		ownerType = "install_sandbox_runs"
+	case app.WorkflowStepTargetTypeInstallActionWorkflowRun, app.WorkflowStepTargetTypeInstallActionWorkflowRuns:
+		ownerType = "install_action_workflow_runs"
 	default:
 		return nil, nil
 	}
 
-	runnerJob, err := a.getRunnerJob(ctx, &GetRunnerJobRequest{RunnerJobOwnerID: step.StepTargetID})
+	compositeError, err := runnershelpers.GetLatestJobCompositeError(ctx, a.db, runnershelpers.GetLatestJobCompositeErrorRequest{
+		OwnerID:   step.StepTargetID,
+		OwnerType: ownerType,
+	})
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "unable to get runner job for step target")
+		return nil, errors.Wrap(err, "unable to get composite error for step target")
 	}
 
-	execution, err := a.getRunnerJobExecution(ctx, GetRunnerJobExecutionRequest{RunnerJobID: runnerJob.ID})
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "unable to get runner job execution for step target")
-	}
-
-	result, err := a.getRunnerJobExecutionResult(ctx, GetRunnerJobExecutionResultRequest{RunnerJobExecutionID: execution.ID})
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "unable to get runner job execution result for step target")
-	}
-
-	return result.CompositeError, nil
+	return compositeError, nil
 }
