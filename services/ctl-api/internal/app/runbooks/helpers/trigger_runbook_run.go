@@ -19,6 +19,7 @@ type TriggerRunbookRunRequest struct {
 	Inputs                                           map[string]string
 	StepSelections                                   []app.RunbookStepSelection
 	TriggerEventDispatchID                           *string
+	Role                                             string
 }
 
 type TriggerRunbookRunResponse struct {
@@ -98,7 +99,7 @@ func (h *Helpers) TriggerRunbookRun(ctx context.Context, req TriggerRunbookRunRe
 			if installRunbook.Install.Name != "" {
 				metadata[app.WorkflowMetadataKeyOwnerName] = installRunbook.Install.Name
 			}
-			created, err := h.appsHelpers.CreateWorkflowWithDB(ctx, tx, installRunbook.InstallID, "installs", app.WorkflowTypeRunbookRun, metadata, false, approvalOption)
+			created, err := h.appsHelpers.CreateWorkflowWithDB(ctx, tx, installRunbook.InstallID, "installs", app.WorkflowTypeRunbookRun, metadata, false, approvalOption, req.Role)
 			if err != nil {
 				return err
 			}
