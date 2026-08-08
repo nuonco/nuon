@@ -27,7 +27,7 @@ func (r *AddInstallLabelsRequest) Validate(v *validator.Validate) error {
 
 // @ID						AddInstallLabels
 // @Summary				add labels to an install
-// @Description			Merge the provided labels into the install's existing labels. Existing keys are overwritten. A value using the interpolation syntax ({{ .nuon.* }}) becomes a dynamic label: the template is stored and its rendered value is re-materialized whenever install state changes. Keys managed by the app config's default_labels cannot be changed here.
+// @Description			Merge the provided labels into the install's existing labels. Existing keys are overwritten. A value using the .nuon interpolation syntax becomes a dynamic label: the template is stored and its rendered value is re-materialized whenever install state changes. Keys managed by the app config's default_labels cannot be changed here.
 // @Param					install_id	path	string					true	"install ID"
 // @Param					req			body	AddInstallLabelsRequest	true	"Input"
 // @Tags					installs

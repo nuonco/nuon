@@ -38,10 +38,12 @@ type Install struct {
 	LifecyclePhase lifecyclephase.LifecyclePhase `json:"lifecycle_phase,omitzero" gorm:"type:jsonb" swaggertype:"object" temporaljson:"lifecycle_phase,omitzero,omitempty"`
 	labels.Labeled
 
-	// LabelTemplates holds label values written with the interpolation syntax
-	// ({{ .nuon.* }}). Rendered values are materialized into Labels whenever
-	// install state changes, so downstream consumers (SQL label matching,
-	// subscription dispatch, pickers) only ever read literal values.
+	// LabelTemplates holds label values written with the .nuon interpolation
+	// syntax. Rendered values are materialized into Labels whenever install
+	// state changes, so downstream consumers (SQL label matching, subscription
+	// dispatch, pickers) only ever read literal values. NOTE: this comment ends
+	// up in the swagger spec, which swag executes as a Go text/template —
+	// literal moustaches here break spec generation.
 	LabelTemplates labels.Labels `json:"label_templates,omitzero" gorm:"default null" swaggertype:"object,string" temporaljson:"label_templates,omitzero,omitempty"`
 
 	// AppDefaultLabels is the snapshot of the app's default labels applied to
