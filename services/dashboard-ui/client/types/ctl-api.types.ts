@@ -14,7 +14,10 @@ export type TCreateAppBranchRequest =
   components['schemas']['service.CreateAppBranchRequest']
 export type TVCSBranch = { name: string }
 
-export type TApp = components['schemas']['app.App']
+export type TApp = components['schemas']['app.App'] & {
+  // labels from the app config's default_labels, applied to every install
+  default_labels?: Record<string, string>
+}
 export type TAppConfig = components['schemas']['app.AppConfig']
 export type TAppInputConfig = components['schemas']['app.AppInputConfig']
 export type TAppInput = components['schemas']['app.AppInput']
