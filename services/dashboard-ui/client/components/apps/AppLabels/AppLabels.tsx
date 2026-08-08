@@ -40,10 +40,12 @@ export const AppLabels = ({
         <Text variant="h3" weight="stronger" level={1}>Labels</Text>
         {resetAction}
       </div>
-      <Text variant="subtext" theme="neutral">
-        Every label key used across components, actions, runbooks, and installs. Each key gets a
-        color automatically — override any you want to customize.
-      </Text>
+      {defaultEntries.length === 0 && (
+        <Text variant="subtext" theme="neutral">
+          One-off labels applied to components, actions, runbooks, and installs of this app. Each
+          key gets a color automatically — override any you want to customize.
+        </Text>
+      )}
     </HeadingGroup>
 
     {defaultEntries.length > 0 && (
@@ -81,6 +83,13 @@ export const AppLabels = ({
             ))}
           </div>
         </Card>
+        <HeadingGroup className="gap-1.5">
+          <Text variant="base" weight="stronger" level={2}>Other labels</Text>
+          <Text variant="subtext" theme="neutral">
+            One-off labels applied to components, actions, runbooks, and installs of this app.
+            Each key gets a color automatically — override any you want to customize.
+          </Text>
+        </HeadingGroup>
       </>
     )}
 
