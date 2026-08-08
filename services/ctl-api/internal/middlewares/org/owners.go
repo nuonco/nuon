@@ -69,6 +69,41 @@ var ownedResourceRoutes = []ownedResourceRoute{
 		idParam: "stack_id",
 		resolve: installOwned(func() any { return &app.InstallStack{} }, "install_stacks"),
 	},
+	{
+		prefix:  "/v1/runners/terraform-workspace",
+		idParam: "workspace_id",
+		resolve: ownedVia(func() any { return &app.TerraformWorkspace{} }),
+	},
+	{
+		prefix:  "/v1/runners",
+		idParam: "runner_id",
+		resolve: resolveRunnerOwner,
+	},
+	{
+		prefix:  "/v1/runner-jobs",
+		idParam: "runner_job_id",
+		resolve: ownedVia(func() any { return &app.RunnerJob{} }),
+	},
+	{
+		prefix:  "/v1/log-streams",
+		idParam: "log_stream_id",
+		resolve: ownedVia(func() any { return &app.LogStream{} }),
+	},
+	{
+		prefix:  "/v1/terraform-workspaces",
+		idParam: "workspace_id",
+		resolve: ownedVia(func() any { return &app.TerraformWorkspace{} }),
+	},
+	{
+		prefix:  "/v1/queues",
+		idParam: "queue_id",
+		resolve: ownedVia(func() any { return &app.Queue{} }),
+	},
+	{
+		prefix:  "/v1/policy-reports",
+		idParam: "report_id",
+		resolve: resolvePolicyReportOwner,
+	},
 }
 
 func matchOwnedResourceRoute(fullPath string) (ownedResourceRoute, bool) {
@@ -142,42 +177,202 @@ func installOwned(model func() any, table string) func(*gin.Context, *gorm.DB, s
 	}
 }
 
-// resolveWorkflowOwner maps a workflow to its polymorphic owner. Workflows
-// owned by anything other than an install or app (e.g. app branches) fail
-// closed for grant-scoped accounts until their tier is resolvable.
-func resolveWorkflowOwner(ctx *gin.Context, db *gorm.DB, orgID, id string) (string, string, error) {
-	var wf struct {
-		OwnerID   string
-		OwnerType string
+// ownerRefDepthLimit bounds the polymorphic owner walk; ownership graphs are
+// shallow (log stream -> runner job -> deploy -> install is the deepest).
+const ownerRefDepthLimit = 5
+
+// ownedVia resolves a model with polymorphic OwnerID/OwnerType columns by
+// walking owner references until an install, app, or org tier is reached.
+func ownedVia(model func() any) func(*gin.Context, *gorm.DB, string, string) (string, string, error) {
+	return func(ctx *gin.Context, db *gorm.DB, orgID, id string) (string, string, error) {
+		var row struct {
+			OwnerID   string
+			OwnerType string
+		}
+		err := db.WithContext(ctx).
+			Model(model()).
+			Select("owner_id, owner_type").
+			Where("org_id = ?", orgID).
+			Where("id = ?", id).
+			Take(&row).Error
+		if err != nil {
+			return "", "", err
+		}
+		return resolveOwnerRef(ctx, db, orgID, row.OwnerType, row.OwnerID, 0)
 	}
-	err := db.WithContext(ctx).
-		Model(&app.Workflow{}).
-		Select("owner_id, owner_type").
-		Where("org_id = ?", orgID).
-		Where("id = ?", id).
-		Take(&wf).Error
-	if err != nil {
-		return "", "", err
+}
+
+func resolveWorkflowOwner(ctx *gin.Context, db *gorm.DB, orgID, id string) (string, string, error) {
+	return ownedVia(func() any { return &app.Workflow{} })(ctx, db, orgID, id)
+}
+
+// resolveOwnerRef maps a polymorphic (owner_type, owner_id) reference to the
+// owning install and/or app, walking intermediate owners (runner groups,
+// workflows, deploys, ...) until a grantable tier is reached. Unknown owner
+// types fail closed for grant-scoped accounts.
+func resolveOwnerRef(ctx *gin.Context, db *gorm.DB, orgID, ownerType, ownerID string, depth int) (string, string, error) {
+	if depth > ownerRefDepthLimit {
+		return "", "", fmt.Errorf("owner reference chain exceeds depth limit at %s/%s", ownerType, ownerID)
 	}
 
-	switch wf.OwnerType {
-	case "installs":
+	selectOwner := func(model any) (string, string, error) {
+		var row struct {
+			OwnerID   string
+			OwnerType string
+		}
+		err := db.WithContext(ctx).
+			Model(model).
+			Select("owner_id, owner_type").
+			Where("org_id = ?", orgID).
+			Where("id = ?", ownerID).
+			Take(&row).Error
+		if err != nil {
+			return "", "", err
+		}
+		return resolveOwnerRef(ctx, db, orgID, row.OwnerType, row.OwnerID, depth+1)
+	}
+
+	switch ownerType {
+	case "orgs", "org":
+		if ownerID != orgID {
+			return "", "", fmt.Errorf("owner org %s does not match request org", ownerID)
+		}
+		return "", "", nil
+	case "installs", "install":
 		var row struct{ AppID string }
 		err := db.WithContext(ctx).
 			Model(&app.Install{}).
 			Select("app_id").
 			Where("org_id = ?", orgID).
-			Where("id = ?", wf.OwnerID).
+			Where("id = ?", ownerID).
 			Take(&row).Error
 		if err != nil {
 			return "", "", err
 		}
-		return wf.OwnerID, row.AppID, nil
-	case "apps":
-		return "", wf.OwnerID, nil
+		return ownerID, row.AppID, nil
+	case "apps", "app":
+		return "", ownerID, nil
+	case "app_branches":
+		var row struct{ AppID string }
+		err := db.WithContext(ctx).
+			Model(&app.AppBranch{}).
+			Select("app_id").
+			Where("org_id = ?", orgID).
+			Where("id = ?", ownerID).
+			Take(&row).Error
+		if err != nil {
+			return "", "", err
+		}
+		return "", row.AppID, nil
+	case "components":
+		return appOwned(func() any { return &app.Component{} })(ctx, db, orgID, ownerID)
+	case "component_builds":
+		return resolveComponentBuildOwner(ctx, db, orgID, ownerID)
+	case "install_deploys":
+		var row struct{ InstallID string }
+		err := db.WithContext(ctx).
+			Model(&app.InstallDeploy{}).
+			Select("install_components.install_id").
+			Joins("JOIN install_components ON install_components.id = install_deploys.install_component_id AND install_components.deleted_at = 0").
+			Where("install_deploys.org_id = ?", orgID).
+			Where("install_deploys.id = ?", ownerID).
+			Take(&row).Error
+		if err != nil {
+			return "", "", err
+		}
+		return resolveOwnerRef(ctx, db, orgID, "installs", row.InstallID, depth+1)
+	case "install_sandbox_runs":
+		return installOwned(func() any { return &app.InstallSandboxRun{} }, "install_sandbox_runs")(ctx, db, orgID, ownerID)
+	case "install_workflows":
+		return selectOwner(&app.Workflow{})
+	case "install_workflow_steps":
+		var row struct{ InstallWorkflowID string }
+		err := db.WithContext(ctx).
+			Model(&app.WorkflowStep{}).
+			Select("install_workflow_id").
+			Where("org_id = ?", orgID).
+			Where("id = ?", ownerID).
+			Take(&row).Error
+		if err != nil {
+			return "", "", err
+		}
+		return selectOwnerByID(ctx, db, orgID, &app.Workflow{}, row.InstallWorkflowID, depth+1)
+	case "runners":
+		var row struct{ RunnerGroupID string }
+		err := db.WithContext(ctx).
+			Model(&app.Runner{}).
+			Select("runner_group_id").
+			Where("org_id = ?", orgID).
+			Where("id = ?", ownerID).
+			Take(&row).Error
+		if err != nil {
+			return "", "", err
+		}
+		return selectOwnerByID(ctx, db, orgID, &app.RunnerGroup{}, row.RunnerGroupID, depth+1)
+	case "runner_groups":
+		return selectOwner(&app.RunnerGroup{})
+	case "runner_jobs":
+		return selectOwner(&app.RunnerJob{})
 	default:
-		return "", "", fmt.Errorf("workflow %s has unresolvable owner type %q", id, wf.OwnerType)
+		return "", "", fmt.Errorf("unresolvable owner type %q", ownerType)
 	}
+}
+
+// selectOwnerByID fetches a model's polymorphic owner columns by an explicit
+// ID (rather than the in-scope ownerID) and continues the walk.
+func selectOwnerByID(ctx *gin.Context, db *gorm.DB, orgID string, model any, id string, depth int) (string, string, error) {
+	var row struct {
+		OwnerID   string
+		OwnerType string
+	}
+	err := db.WithContext(ctx).
+		Model(model).
+		Select("owner_id, owner_type").
+		Where("org_id = ?", orgID).
+		Where("id = ?", id).
+		Take(&row).Error
+	if err != nil {
+		return "", "", err
+	}
+	return resolveOwnerRef(ctx, db, orgID, row.OwnerType, row.OwnerID, depth)
+}
+
+// resolveRunnerOwner authorizes a runner via its group's owner: install
+// runners inherit their install's chain, org runners resolve to the bare org
+// tier (org-wide permission required).
+func resolveRunnerOwner(ctx *gin.Context, db *gorm.DB, orgID, id string) (string, string, error) {
+	var row struct{ RunnerGroupID string }
+	err := db.WithContext(ctx).
+		Model(&app.Runner{}).
+		Select("runner_group_id").
+		Where("org_id = ?", orgID).
+		Where("id = ?", id).
+		Take(&row).Error
+	if err != nil {
+		return "", "", err
+	}
+	return selectOwnerByID(ctx, db, orgID, &app.RunnerGroup{}, row.RunnerGroupID, 0)
+}
+
+func resolvePolicyReportOwner(ctx *gin.Context, db *gorm.DB, orgID, id string) (string, string, error) {
+	var row struct {
+		AppID     string
+		InstallID *string
+	}
+	err := db.WithContext(ctx).
+		Model(&app.PolicyReport{}).
+		Select("app_id, install_id").
+		Where("org_id = ?", orgID).
+		Where("id = ?", id).
+		Take(&row).Error
+	if err != nil {
+		return "", "", err
+	}
+	installID := ""
+	if row.InstallID != nil {
+		installID = *row.InstallID
+	}
+	return installID, row.AppID, nil
 }
 
 func resolveComponentBuildOwner(ctx *gin.Context, db *gorm.DB, orgID, id string) (string, string, error) {

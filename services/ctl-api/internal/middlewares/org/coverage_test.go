@@ -535,6 +535,13 @@ func TestOwnedResourceRouteMatching(t *testing.T) {
 		{path: "/v1/installs/sandbox-runs/:run_id", wantParam: "run_id", wantMatch: true},
 		{path: "/v1/installs/stacks/:stack_id", wantParam: "stack_id", wantMatch: true},
 		{path: "/v1/triggers/:trigger_id", wantMatch: false},
+		{path: "/v1/runners/terraform-workspace/:workspace_id/states", wantParam: "workspace_id", wantMatch: true},
+		{path: "/v1/runners/:runner_id/mng/restart", wantParam: "runner_id", wantMatch: true},
+		{path: "/v1/runner-jobs/:runner_job_id/cancel", wantParam: "runner_job_id", wantMatch: true},
+		{path: "/v1/log-streams/:log_stream_id/logs", wantParam: "log_stream_id", wantMatch: true},
+		{path: "/v1/terraform-workspaces/:workspace_id/lock", wantParam: "workspace_id", wantMatch: true},
+		{path: "/v1/queues/:queue_id/signals/:signal_id", wantParam: "queue_id", wantMatch: true},
+		{path: "/v1/policy-reports/:report_id/export", wantParam: "report_id", wantMatch: true},
 	}
 
 	for _, tc := range tests {

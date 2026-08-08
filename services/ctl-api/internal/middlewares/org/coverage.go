@@ -88,76 +88,15 @@ var uncoveredRoutes = map[string]struct{}{
 	// resource IDs carried in the request body, not the path
 	"POST /v1/workflows/cancel": {},
 
-	// runner / execution infrastructure: owner resolution (runner -> install/org)
-	// not yet defined for grants
-	"GET /v1/runners/:runner_id":                                          {},
-	"GET /v1/runners/:runner_id/card-details":                             {},
-	"GET /v1/runners/:runner_id/connected":                                {},
-	"POST /v1/runners/:runner_id/force-shutdown":                          {},
-	"POST /v1/runners/:runner_id/graceful-shutdown":                       {},
-	"GET /v1/runners/:runner_id/heart-beats/latest":                       {},
-	"GET /v1/runners/:runner_id/jobs":                                     {},
-	"GET /v1/runners/:runner_id/latest-heart-beat":                        {},
-	"POST /v1/runners/:runner_id/mng/restart":                             {},
-	"POST /v1/runners/:runner_id/mng/shutdown":                            {},
-	"POST /v1/runners/:runner_id/mng/shutdown-vm":                         {},
-	"POST /v1/runners/:runner_id/mng/update":                              {},
-	"GET /v1/runners/:runner_id/processes":                                {},
-	"GET /v1/runners/:runner_id/processes/current":                        {},
-	"GET /v1/runners/:runner_id/processes/:process_id":                    {},
-	"GET /v1/runners/:runner_id/processes/:process_id/heart-beats/latest": {},
-	"POST /v1/runners/:runner_id/processes/:process_id/shutdown":          {},
-	"POST /v1/runners/:runner_id/prune-tokens":                            {},
-	"GET /v1/runners/:runner_id/recent-health-checks":                     {},
-	"GET /v1/runners/:runner_id/settings":                                 {},
-	"PATCH /v1/runners/:runner_id/settings":                               {},
-	"GET /v1/runner-jobs/:runner_job_id":                                  {},
-	"POST /v1/runner-jobs/:runner_job_id/cancel":                          {},
-	"GET /v1/runner-jobs/:runner_job_id/composite-plan":                   {},
-	"GET /v1/runner-jobs/:runner_job_id/plan":                             {},
-	"GET /v1/log-streams/:log_stream_id":                                  {},
-	"GET /v1/log-streams/:log_stream_id/logs":                             {},
-	"GET /v1/log-streams/:log_stream_id/logs/tail":                        {},
-	"GET /v1/log-streams/:log_stream_id/spans":                            {},
+	// no resource named in the path; the owner is established by the handler
+	// from the request body / backend semantics
+	"GET /v1/terraform-backend":     {},
+	"POST /v1/terraform-backend":    {},
+	"POST /v1/terraform-workspace":  {},
+	"POST /v1/terraform-workspaces": {},
 
-	// terraform state surface (runner-adjacent)
-	"GET /v1/runners/terraform-workspace/:workspace_id/state-json":                     {},
-	"GET /v1/runners/terraform-workspace/:workspace_id/state-json/:state_id":           {},
-	"GET /v1/runners/terraform-workspace/:workspace_id/state-json/:state_id/raw":       {},
-	"GET /v1/runners/terraform-workspace/:workspace_id/state-json/:state_id/resources": {},
-	"GET /v1/runners/terraform-workspace/:workspace_id/states":                         {},
-	"GET /v1/runners/terraform-workspace/:workspace_id/states/:state_id":               {},
-	"GET /v1/runners/terraform-workspace/:workspace_id/states/:state_id/resources":     {},
-	"GET /v1/terraform-backend":                                                 {},
-	"POST /v1/terraform-backend":                                                {},
-	"POST /v1/terraform-workspace":                                              {},
-	"POST /v1/terraform-workspaces":                                             {},
-	"GET /v1/terraform-workspaces/:workspace_id":                                {},
-	"DELETE /v1/terraform-workspaces/:workspace_id":                             {},
-	"GET /v1/terraform-workspaces/:workspace_id/lock":                           {},
-	"POST /v1/terraform-workspaces/:workspace_id/lock":                          {},
-	"POST /v1/terraform-workspaces/:workspace_id/unlock":                        {},
-	"GET /v1/terraform-workspaces/:workspace_id/state-json":                     {},
-	"GET /v1/terraform-workspaces/:workspace_id/state-json/:state_id":           {},
-	"GET /v1/terraform-workspaces/:workspace_id/state-json/:state_id/raw":       {},
-	"GET /v1/terraform-workspaces/:workspace_id/state-json/:state_id/resources": {},
-	"GET /v1/terraform-workspaces/:workspace_id/states":                         {},
-	"GET /v1/terraform-workspaces/:workspace_id/states/:state_id":               {},
-	"GET /v1/terraform-workspaces/:workspace_id/states/:state_id/resources":     {},
-
-	// queue introspection: owner resolution not yet defined for grants
-	"GET /v1/queues/:queue_id":                          {},
-	"GET /v1/queues/:queue_id/signals":                  {},
-	"GET /v1/queues/:queue_id/signals/:signal_id":       {},
-	"GET /v1/queues/:queue_id/signals/:signal_id/await": {},
-	"GET /v1/queues/:queue_id/signals/:signal_id/graph": {},
-	"GET /v1/queues/:queue_id/status":                   {},
-
-	// policy reports: owner resolution not yet defined for grants
-	"GET /v1/policy-reports/:report_id":        {},
-	"GET /v1/policy-reports/:report_id/export": {},
-
-	// triggers: owner resolution not yet defined for grants
+	// triggers are org-owned entities with no install/app tier; a candidate
+	// for a grantable org-owned type (like webhooks) rather than a resolver
 	"POST /v1/triggers":                                        {},
 	"GET /v1/triggers/dispatches/:dispatch_id":                 {},
 	"POST /v1/triggers/dispatches/:dispatch_id/retry":          {},
