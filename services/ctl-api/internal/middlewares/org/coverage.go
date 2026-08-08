@@ -64,14 +64,11 @@ var orgLevelRoutes = map[string]struct{}{
 	"POST /v1/onboarding/current/steps/get-started": {},
 	"POST /v1/onboarding/current/steps/install":     {},
 	"POST /v1/onboarding/current/steps/your-stack":  {},
-}
 
-// uncoveredRoutes lists accepted coverage gaps: routes a grant semantically
-// covers but that cannot yet resolve their resource. Grant-scoped accounts
-// fail closed (403) here until an entry graduates into a resolver or a
-// filtered collection. Grouped by why they are uncovered.
-var uncoveredRoutes = map[string]struct{}{
-	// org-wide collections/aggregates pending handler-level scope filtering
+	// org-wide collections/aggregates belong to the org: they enumerate
+	// resources across the whole org, so an org-level permission is required
+	// by design (no per-grant result filtering). The exceptions are the
+	// handful of routes already in filteredCollections.
 	"GET /v1/builds":                      {},
 	"GET /v1/component-builds":            {},
 	"GET /v1/installs/health":             {},
@@ -85,9 +82,15 @@ var uncoveredRoutes = map[string]struct{}{
 	"GET /v1/triggers":                    {},
 	"GET /v1/triggers/dispatches":         {},
 
-	// resource IDs carried in the request body, not the path
+	// bulk operation over org-wide resources (IDs in the request body)
 	"POST /v1/workflows/cancel": {},
+}
 
+// uncoveredRoutes lists accepted coverage gaps: routes a grant semantically
+// covers but that cannot yet resolve their resource. Grant-scoped accounts
+// fail closed (403) here until an entry graduates into a resolver or a
+// filtered collection. Grouped by why they are uncovered.
+var uncoveredRoutes = map[string]struct{}{
 	// no resource named in the path; the owner is established by the handler
 	// from the request body / backend semantics
 	"GET /v1/terraform-backend":     {},
