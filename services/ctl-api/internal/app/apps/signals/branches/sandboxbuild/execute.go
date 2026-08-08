@@ -57,7 +57,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		} else if sandboxConfig.PublicGitVCSConfig != nil {
 			sandboxVCSConfigID = sandboxConfig.PublicGitVCSConfig.ID
 		}
-		if sandboxVCSConfigID != "" && sandboxVCSConfigID == run.VCSConnectionCommit.OwnerID {
+		if sandboxVCSConfigID != "" && sandboxVCSConfigID == run.VCSConnectionCommit.OwnerID.ValueString() {
 			gitSource.Ref = run.VCSConnectionCommit.SHA
 		}
 	}

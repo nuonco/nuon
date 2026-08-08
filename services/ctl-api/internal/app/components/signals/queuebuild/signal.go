@@ -62,7 +62,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		if s.AppConfigID != "" {
 			run, err := activities.AwaitGetAppBranchRunByAppConfigIDByAppConfigID(ctx, s.AppConfigID)
 			if err == nil && run.VCSConnectionCommit != nil {
-				commitOwnerID := run.VCSConnectionCommit.OwnerID
+				commitOwnerID := run.VCSConnectionCommit.OwnerID.ValueString()
 				componentVCSConfigID := resolveComponentVCSConfigID(cmp)
 				if componentVCSConfigID != "" && componentVCSConfigID == commitOwnerID {
 					sha := run.VCSConnectionCommit.SHA

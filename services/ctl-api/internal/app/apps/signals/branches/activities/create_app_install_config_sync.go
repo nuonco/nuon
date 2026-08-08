@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"go.uber.org/zap"
 )
 
 type CreateAppInstallConfigSyncInput struct {
@@ -30,7 +31,11 @@ func (a *Activities) CreateAppInstallConfigSync(ctx context.Context, input *Crea
 		commit := app.VCSConnectionCommit{
 			SHA: input.CommitSHA,
 		}
-		if err := a.db.WithContext(ctx).Create(&commit).Error; err == nil {
+		if err := a.db.WithContext(ctx).Create(&commit).Error; err != nil {
+			a.l.Warn("unable to create vcs commit record for config sync",
+				zap.String("commit_sha", input.CommitSHA),
+				zap.Error(err))
+		} else {
 			record.VCSConnectionCommitID = &commit.ID
 		}
 	}

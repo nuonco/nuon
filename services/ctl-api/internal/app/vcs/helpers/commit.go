@@ -79,8 +79,8 @@ func (h *Helpers) GithubCommitToVCSConnectionCommit(ghCommit *github.RepositoryC
 
 	vcsCommit := &app.VCSConnectionCommit{
 		SHA:       *ghCommit.SHA,
-		OwnerID:   ownerID,
-		OwnerType: ownerType,
+		OwnerID:   generics.NewNullString(ownerID),
+		OwnerType: generics.NewNullString(ownerType),
 	}
 	if vcsConnectionID != "" {
 		vcsCommit.VCSConnectionID = generics.ToPtr(vcsConnectionID)

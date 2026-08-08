@@ -526,7 +526,7 @@ func NewInstallRunbookRunID() string {
 }
 
 func NewAppInstallConfigSyncID() string {
-	return shortid.NewNanoID("aics")
+	return shortid.NewNanoID("aic")
 }
 
 func NewInstallConfigSyncID() string {

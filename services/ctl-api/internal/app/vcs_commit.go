@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -23,9 +24,11 @@ type VCSConnectionCommit struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
 
-	// Polymorphic ownership - references VCS config that owns this commit
-	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text" temporaljson:"owner_id,omitzero,omitempty"`
-	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
+	// Polymorphic ownership - references VCS config that owns this commit.
+	// NULL when the commit was recorded without a resolved VCS config; the DB
+	// check constraint requires owner_id to be NULL or a 26-char ID.
+	OwnerID   generics.NullString `json:"owner_id,omitzero" gorm:"type:text" swaggertype:"string" temporaljson:"owner_id,omitzero,omitempty"`
+	OwnerType generics.NullString `json:"owner_type,omitzero" gorm:"type:text;" swaggertype:"string" temporaljson:"owner_type,omitzero,omitempty"`
 
 	// Optional VCS connection reference (nullable for public repos)
 	VCSConnection   *VCSConnection `json:"-" temporaljson:"vcs_connection,omitzero,omitempty"`
