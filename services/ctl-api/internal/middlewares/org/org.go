@@ -225,6 +225,23 @@ func (m middleware) resourceChain(ctx *gin.Context, orgID string) (chain []authz
 		}, true, nil
 	}
 
+	if route, ok := matchOwnedResourceRoute(ctx.FullPath()); ok {
+		if raw := ctx.Param(route.idParam); raw != "" {
+			installID, appID, err := route.resolve(ctx, m.db, orgID, raw)
+			if err != nil {
+				return nil, false, err
+			}
+			return ownerChain(orgID, installID, appID), true, nil
+		}
+	}
+
+	if resourceType, ok := matchTypeOnlyCreateRoute(ctx.Request.Method, ctx.FullPath()); ok {
+		return []authz.Link{
+			{Type: string(resourceType)},
+			{Type: string(app.GrantResourceTypeOrg), ID: orgID},
+		}, true, nil
+	}
+
 	return nil, false, nil
 }
 

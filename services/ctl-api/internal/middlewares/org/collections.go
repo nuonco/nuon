@@ -20,10 +20,14 @@ var filteredCollections = map[string]map[string]struct{}{
 }
 
 func isFilteredCollection(ctx *gin.Context) bool {
-	routes, ok := filteredCollections[ctx.Request.Method]
+	return isFilteredCollectionRoute(ctx.Request.Method, ctx.FullPath())
+}
+
+func isFilteredCollectionRoute(method, fullPath string) bool {
+	routes, ok := filteredCollections[method]
 	if !ok {
 		return false
 	}
-	_, ok = routes[ctx.FullPath()]
+	_, ok = routes[fullPath]
 	return ok
 }

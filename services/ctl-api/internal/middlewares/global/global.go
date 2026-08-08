@@ -66,6 +66,13 @@ func (m middleware) Handler() gin.HandlerFunc {
 	}
 }
 
+// IsGlobalEndpoint reports whether a (method, registered path) pair is exempt
+// from org scoping. Used by the org middleware's route-coverage validation.
+func IsGlobalEndpoint(method, path string) bool {
+	_, found := globalEndpointList[[2]string{method, path}]
+	return found
+}
+
 func New(l *zap.Logger) *middleware {
 	return &middleware{
 		l: l,
