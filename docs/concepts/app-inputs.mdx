@@ -129,23 +129,6 @@ DATABASE_PASSWORD = "{{.nuon.install.inputs.database_password}}"
 DATABASE_HOST     = "{{.nuon.install.inputs.database_host}}"
 ```
 
-To use inputs in a Docker image.
-
-```toml components/docker-build.toml
-# docker-build
-type   = "docker_build"
-name   = "docker-build"
-
-[public_repo]
-directory = "."
-repo      = "your-org/your-repo"
-branch    = "main"
-
-# use an input to pass in a docker registry password, when building an image
-[vars]
-docker_build_registry_password = "{{.nuon.install.inputs.docker_build_registry_password}}"
-```
-
 ## App Input Groups
 
 You can organize inputs into groups, which are useful for structuring how they
