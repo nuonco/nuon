@@ -7,24 +7,7 @@ keywords: ["components", "container image", "container image guide", "prebuilt i
 
 Container images allow you to import prebuilt container images from public sources, private AWS ECR repositories, and private GCP Artifact Registry (GAR) repositories.
 
-## Container Images vs Docker Build images
-
 Container images are used to import _prebuilt_ images, that have already been pushed to either a public registry, a private AWS ECR repository, or a private GCP Artifact Registry repository.
-
-### When to use a docker build component
-
-Use a docker build component if:
-
-* your container build process does not do any additional scanning/processing on your built container images
-* you do not need to access any internal resources during the build process
-* you want to get started faster
-
-### When to use a container image component
-
-* you want to leverage public images
-* you post process or scan built container images
-* your build process accesses internal resources (such as a private dependency registry)
-* you value building once, and using everywhere for consistency purposes
 
 <Note>
 If you have private prebuilt images in a registry other than AWS ECR or GCP Artifact Registry, [please get in touch](https://nuon.co/contact-us)!
