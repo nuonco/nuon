@@ -79,8 +79,8 @@ the page.
 ```markdown README.md
 | Component | Type | Port | Health check |
 |-----------|------|------|--------------|
-| api-server | docker_build | 8080 | /healthz |
-| worker | docker_build | — | — |
+| api-server | container_image | 8080 | /healthz |
+| worker | container_image | — | — |
 | ingress-nginx | helm_chart | 443 | /ready |
 | networking | terraform_module | — | — |
 ```
