@@ -62,6 +62,7 @@ func (s *service) getOrgComponents(ctx *gin.Context, orgID string) ([]app.Compon
 
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
+		Scopes(s.componentGrantScope(ctx)).
 		Joins("JOIN apps on apps.id=components.app_id").
 		Where("apps.org_id = ?", orgID)
 

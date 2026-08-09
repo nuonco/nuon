@@ -38,6 +38,7 @@ type Account struct {
 	AccountType AccountType `json:"account_type,omitzero" temporaljson:"account_type,omitzero,omitempty"`
 
 	Roles        []Role            `gorm:"many2many:account_roles;constraint:OnDelete:CASCADE;" json:"roles,omitzero" temporaljson:"roles,omitzero,omitempty"`
+	Grants       []ResourceGrant   `gorm:"constraint:OnDelete:CASCADE;" json:"grants,omitzero" temporaljson:"grants,omitzero,omitempty"`
 	Tokens       []Token           `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"tokens,omitzero,omitempty"`
 	Identities   []AccountIdentity `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"identities,omitzero,omitempty"`
 	UserJourneys UserJourneys      `json:"user_journeys,omitzero" gorm:"type:jsonb;default null" temporaljson:"user_journeys,omitzero,omitempty"`
@@ -46,6 +47,14 @@ type Account struct {
 	OrgIDs         []string        `json:"org_ids,omitzero" gorm:"-" temporaljson:"org_i_ds,omitzero,omitempty"`
 	Orgs           []*Org          `json:"-" gorm:"-" temporaljson:"orgs,omitzero,omitempty"`
 	AllPermissions permissions.Set `json:"permissions,omitzero" gorm:"-" temporaljson:"all_permissions,omitzero,omitempty"`
+
+	// TypeGrants holds wildcard resource grants keyed by org id, then resource
+	// type (e.g. org -> "install" -> all). Unlike AllPermissions, which maps
+	// opaque object ids and is tier-blind, these carry the tier so authorization
+	// can grant every resource of a type without leaking to other tiers. The org
+	// key keeps a wildcard issued in one org from satisfying checks in another
+	// org the account is also a member of.
+	TypeGrants map[string]map[string]permissions.Permission `json:"-" gorm:"-" temporaljson:"-"`
 
 	IsEmployee bool `json:"-"`
 }
@@ -82,6 +91,7 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 
 	a.OrgIDs = make([]string, 0)
 	a.AllPermissions = permissions.NewSet()
+	a.TypeGrants = make(map[string]map[string]permissions.Permission)
 
 	visited := make(map[string]struct{}, 0)
 	for _, role := range a.Roles {
@@ -104,7 +114,56 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 		visited[role.Org.ID] = struct{}{}
 	}
 
+	for i := range a.Grants {
+		grant := a.Grants[i]
+
+		if perm, err := permissions.NewPermission(grant.Permission); err == nil {
+			if grant.IsWildcard() {
+				if grant.OrgID != "" {
+					orgWildcards, ok := a.TypeGrants[grant.OrgID]
+					if !ok {
+						orgWildcards = make(map[string]permissions.Permission)
+						a.TypeGrants[grant.OrgID] = orgWildcards
+					}
+					key := string(grant.ResourceType)
+					if existing, ok := orgWildcards[key]; !ok || (existing != permissions.PermissionAll && perm == permissions.PermissionAll) {
+						orgWildcards[key] = perm
+					}
+				}
+			} else {
+				a.AllPermissions.Grant(grant.ResourceID, perm)
+			}
+		}
+
+		if grant.OrgID == "" {
+			continue
+		}
+		if _, ok := visited[grant.OrgID]; ok {
+			continue
+		}
+
+		a.OrgIDs = append(a.OrgIDs, grant.OrgID)
+		if grant.Org.ID != "" {
+			a.Orgs = append(a.Orgs, &a.Grants[i].Org)
+		}
+		visited[grant.OrgID] = struct{}{}
+	}
+
 	return nil
+}
+
+// HasOrg reports whether the account has any access to the given org — via an
+// org role or a resource grant. This is membership, not authorization: it does
+// not imply any particular permission, only that org-scoped enforcement should
+// proceed to a downstream (grant-level) check rather than reject outright.
+func (a *Account) HasOrg(orgID string) bool {
+	return slices.Contains(a.OrgIDs, orgID)
+}
+
+// OrgTypeGrants returns the account's wildcard grants within the given org,
+// keyed by resource type. Safe to call before AfterQuery has run.
+func (a *Account) OrgTypeGrants(orgID string) map[string]permissions.Permission {
+	return a.TypeGrants[orgID]
 }
 
 func (*Account) JoinTables() []migrations.JoinTable {

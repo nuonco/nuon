@@ -18,6 +18,8 @@ func (c *Client) FindAccount(ctx context.Context, emailOrSubjectOrID string) (*a
 		Preload("Roles").
 		Preload("Roles.Org").
 		Preload("Roles.Policies").
+		Preload("Grants").
+		Preload("Grants.Org").
 		Where("email = ?", emailOrSubjectOrID).
 		Or(app.Account{
 			Subject: emailOrSubjectOrID,

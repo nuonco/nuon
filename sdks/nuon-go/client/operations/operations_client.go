@@ -238,6 +238,8 @@ type ClientService interface {
 
 	CreateExternalImageComponentConfig(params *CreateExternalImageComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateExternalImageComponentConfigCreated, error)
 
+	CreateGrant(params *CreateGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateGrantCreated, error)
+
 	CreateHelmComponentConfig(params *CreateHelmComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateHelmComponentConfigCreated, error)
 
 	CreateInstall(params *CreateInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallCreated, error)
@@ -329,6 +331,8 @@ type ClientService interface {
 	DeleteComponent(params *DeleteComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteComponentOK, error)
 
 	DeleteCurrentOrgWebhook(params *DeleteCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteCurrentOrgWebhookNoContent, error)
+
+	DeleteGrant(params *DeleteGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteGrantNoContent, error)
 
 	DeleteInstall(params *DeleteInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallOK, error)
 
@@ -839,6 +843,8 @@ type ClientService interface {
 	GetWorkspaceStateJSONRawByID(params *GetWorkspaceStateJSONRawByIDParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkspaceStateJSONRawByIDOK, error)
 
 	GracefulShutDownRunner(params *GracefulShutDownRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GracefulShutDownRunnerOK, error)
+
+	ListGrants(params *ListGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGrantsOK, error)
 
 	ListOIDCTrustPolicies(params *ListOIDCTrustPoliciesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListOIDCTrustPoliciesOK, error)
 
@@ -3888,6 +3894,52 @@ func (a *Client) CreateExternalImageComponentConfig(params *CreateExternalImageC
 }
 
 /*
+CreateGrant grants an account access to a resource
+
+Grant an account read or full access to a single resource (org, app, install, webhook, vcs_connection, or slack_subscription). An org grant covers every resource in the org, and an app grant covers its installs, via walk-up authorization. A resource_id of "*" covers every resource of that type in the org. Org-admin only.
+*/
+func (a *Client) CreateGrant(params *CreateGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateGrantCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateGrantParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateGrant",
+		Method:             "POST",
+		PathPattern:        "/v1/grants",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateGrantReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateGrantCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateGrant: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateHelmComponentConfig creates a helm component config
 
 Create a helm component config.
@@ -5992,6 +6044,50 @@ func (a *Client) DeleteCurrentOrgWebhook(params *DeleteCurrentOrgWebhookParams, 
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteCurrentOrgWebhook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeleteGrant revokes a grant
+*/
+func (a *Client) DeleteGrant(params *DeleteGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteGrantNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteGrantParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteGrant",
+		Method:             "DELETE",
+		PathPattern:        "/v1/grants/{grant_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteGrantReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteGrantNoContent)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteGrant: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -17822,6 +17918,52 @@ func (a *Client) GracefulShutDownRunner(params *GracefulShutDownRunnerParams, au
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GracefulShutDownRunner: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListGrants lists grants in an org
+
+List grants in the caller's org, optionally filtered to a single resource by resource_type and resource_id.
+*/
+func (a *Client) ListGrants(params *ListGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListGrantsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListGrantsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListGrants",
+		Method:             "GET",
+		PathPattern:        "/v1/grants",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGrantsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListGrantsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListGrants: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

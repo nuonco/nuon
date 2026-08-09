@@ -1270,6 +1270,22 @@ export interface paths {
      */
     post: operations["CreateWaitlist"];
   };
+  "/v1/grants": {
+    /**
+     * list grants in an org
+     * @description List grants in the caller's org, optionally filtered to a single resource by resource_type and resource_id.
+     */
+    get: operations["ListGrants"];
+    /**
+     * grant an account access to a resource
+     * @description Grant an account read or full access to a single resource (org, app, install, webhook, vcs_connection, or slack_subscription). An org grant covers every resource in the org, and an app grant covers its installs, via walk-up authorization. A resource_id of "*" covers every resource of that type in the org. Org-admin only.
+     */
+    post: operations["CreateGrant"];
+  };
+  "/v1/grants/{grant_id}": {
+    /** revoke a grant */
+    delete: operations["DeleteGrant"];
+  };
   "/v1/install-workflows/{install_workflow_id}": {
     /**
      * get an install workflow
@@ -3322,6 +3338,7 @@ export interface components {
       account_type?: components["schemas"]["app.AccountType"];
       created_at?: string;
       email?: string;
+      grants?: components["schemas"]["app.ResourceGrant"][];
       id?: string;
       name?: string;
       /** @description ReadOnly Fields */
@@ -4391,6 +4408,8 @@ export interface components {
       status?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
     };
+    /** @enum {string} */
+    "app.GrantResourceType": "org" | "app" | "install" | "webhook" | "vcs_connection" | "slack_subscription";
     "app.HelmChart": {
       created_at?: string;
       created_by_id?: string;
@@ -5208,12 +5227,18 @@ export interface components {
       version?: string;
     };
     "app.LogStream": {
+      app_id?: string;
       attrs?: {
         [key: string]: string;
       };
       created_at?: string;
       created_by_id?: string;
       id?: string;
+      /**
+       * @description denormalized grantable ancestry, resolved from the polymorphic owner at
+       * creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+       */
+      install_id?: string;
       open?: boolean;
       org_id?: string;
       owner_id?: string;
@@ -5589,11 +5614,17 @@ export interface components {
       version?: string;
     };
     "app.Queue": {
+      app_id?: string;
       created_at?: string;
       created_by_id?: string;
       emitters?: components["schemas"]["app.QueueEmitter"][];
       id?: string;
       idle_timeout?: number;
+      /**
+       * @description denormalized grantable ancestry, resolved from the polymorphic owner at
+       * creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+       */
+      install_id?: string;
       max_depth?: number;
       max_in_flight?: number;
       metadata?: {
@@ -5678,6 +5709,19 @@ export interface components {
       type?: string;
       updated_at?: string;
       workflow?: components["schemas"]["signaldb.WorkflowRef"];
+    };
+    "app.ResourceGrant": {
+      /** @description account the grant is issued to */
+      account_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      /** @description org the grant lives in; drives membership resolution (account OrgIDs) */
+      org_id?: string;
+      permission?: string;
+      resource_id?: string;
+      resource_type?: components["schemas"]["app.GrantResourceType"];
+      updated_at?: string;
     };
     "app.Role": {
       applies_to?: string[];
@@ -5908,6 +5952,7 @@ export interface components {
       version?: string;
     };
     "app.RunnerJob": {
+      app_id?: string;
       /** @description available timeout is how long a job can be marked as "available" before being requeued */
       available_timeout?: number;
       created_at?: string;
@@ -5922,6 +5967,11 @@ export interface components {
       finished_at?: string;
       group?: components["schemas"]["app.RunnerJobGroup"];
       id?: string;
+      /**
+       * @description denormalized grantable ancestry, resolved from the polymorphic owner at
+       * creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+       */
+      install_id?: string;
       install_role_usage?: components["schemas"]["app.InstallRoleUsage"];
       json?: components["schemas"]["app.RunnerJobPlan"];
       log_stream_id?: string;
@@ -6205,9 +6255,15 @@ export interface components {
       type?: string;
     };
     "app.TerraformWorkspace": {
+      app_id?: string;
       created_at?: string;
       created_by_id?: string;
       id?: string;
+      /**
+       * @description denormalized grantable ancestry, resolved from the polymorphic owner at
+       * creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+       */
+      install_id?: string;
       org_id?: string;
       owner_id?: string;
       owner_type?: string;
@@ -6369,6 +6425,7 @@ export interface components {
     };
     "app.Workflow": {
       app_branch_runs?: components["schemas"]["app.AppBranchRun"][];
+      app_id?: string;
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
@@ -6385,6 +6442,11 @@ export interface components {
       id?: string;
       install_action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
+      /**
+       * @description denormalized grantable ancestry, resolved from the polymorphic owner at
+       * creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+       */
+      install_id?: string;
       install_sandbox_runs?: components["schemas"]["app.InstallSandboxRun"][];
       links?: {
         [key: string]: unknown;
@@ -7553,6 +7615,7 @@ export interface components {
       account_type?: components["schemas"]["app.AccountType"];
       created_at?: string;
       email?: string;
+      grants?: components["schemas"]["app.ResourceGrant"][];
       id?: string;
       identities?: components["schemas"]["service.AuthMeIdentity"][];
       name?: string;
@@ -7959,6 +8022,15 @@ export interface components {
        * uses the highest matching tag. Tag becomes optional in this case.
        */
       update_policy?: string;
+    };
+    "service.CreateGrantRequest": {
+      account_id?: string;
+      email?: string;
+      /** @enum {string} */
+      permission: "read" | "all";
+      resource_id: string;
+      /** @enum {string} */
+      resource_type: "org" | "app" | "install" | "webhook" | "vcs_connection" | "slack_subscription";
     };
     "service.CreateHelmComponentConfigRequest": {
       app_config_id?: string;
@@ -19099,6 +19171,75 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["app.Waitlist"];
         };
+      };
+    };
+  };
+  /**
+   * list grants in an org
+   * @description List grants in the caller's org, optionally filtered to a single resource by resource_type and resource_id.
+   */
+  ListGrants: {
+    parameters: {
+      query?: {
+        /** @description filter by resource type (org, app, install) */
+        resource_type?: string;
+        /** @description filter by resource ID */
+        resource_id?: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ResourceGrant"][];
+        };
+      };
+    };
+  };
+  /**
+   * grant an account access to a resource
+   * @description Grant an account read or full access to a single resource (org, app, install, webhook, vcs_connection, or slack_subscription). An org grant covers every resource in the org, and an app grant covers its installs, via walk-up authorization. A resource_id of "*" covers every resource of that type in the org. Org-admin only.
+   */
+  CreateGrant: {
+    /** @description grant */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateGrantRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.ResourceGrant"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** revoke a grant */
+  DeleteGrant: {
+    parameters: {
+      path: {
+        /** @description grant ID */
+        grant_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
       };
     };
   };

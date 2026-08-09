@@ -81,6 +81,10 @@ func NewRoleID() string {
 	return shortid.NewNanoID("rol")
 }
 
+func NewResourceGrantID() string {
+	return shortid.NewNanoID("rsg")
+}
+
 func NewInstallerID() string {
 	return shortid.NewNanoID("int")
 }

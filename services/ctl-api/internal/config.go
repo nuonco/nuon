@@ -532,6 +532,13 @@ type Config struct {
 	// plan reads.
 	BlobReadEnabled bool `config:"blob_read_enabled"`
 
+	// ResourceGrantsEnabled gates object-level resource grants. When false
+	// (default) the org gate behaves exactly as before: an account without an
+	// org-wide permission is rejected. When true, org membership and org
+	// authorization are split so a grant-scoped account defers to a downstream
+	// resource check instead of being rejected at the org gate.
+	ResourceGrantsEnabled bool `config:"resource_grants_enabled"`
+
 	// Slack auto-link reconciler. TeamID + OrgLabelKey must both be set;
 	// ChannelID is optional and seeds a default org-wide subscription per link.
 	SlackAutoLinkTeamID        string `config:"slack_auto_link_team_id"`

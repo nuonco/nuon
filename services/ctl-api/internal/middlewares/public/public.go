@@ -101,6 +101,18 @@ func (m middleware) Handler() gin.HandlerFunc {
 	}
 }
 
+// IsPublicEndpoint reports whether a (method, registered path) pair is marked
+// public, mirroring the Handler's exact-then-wildcard matching. Used by the
+// org middleware's route-coverage validation.
+func IsPublicEndpoint(method, path string) bool {
+	for _, key := range [][2]string{{method, path}, {method, "*"}, {"*", path}} {
+		if _, ok := publicEndpointList[key]; ok {
+			return true
+		}
+	}
+	return false
+}
+
 func New(l *zap.Logger) *middleware {
 	return &middleware{
 		l: l,

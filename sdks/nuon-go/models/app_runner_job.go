@@ -20,6 +20,9 @@ import (
 // swagger:model app.RunnerJob
 type AppRunnerJob struct {
 
+	// app id
+	AppID string `json:"app_id,omitempty"`
+
 	// available timeout is how long a job can be marked as "available" before being requeued
 	AvailableTimeout int64 `json:"available_timeout,omitempty"`
 
@@ -58,6 +61,10 @@ type AppRunnerJob struct {
 
 	// id
 	ID string `json:"id,omitempty"`
+
+	// denormalized grantable ancestry, resolved from the polymorphic owner at
+	// creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+	InstallID string `json:"install_id,omitempty"`
 
 	// install role usage
 	InstallRoleUsage *AppInstallRoleUsage `json:"install_role_usage,omitempty"`

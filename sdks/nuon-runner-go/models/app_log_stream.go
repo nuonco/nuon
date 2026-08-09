@@ -17,6 +17,9 @@ import (
 // swagger:model app.LogStream
 type AppLogStream struct {
 
+	// app id
+	AppID string `json:"app_id,omitempty"`
+
 	// attrs
 	Attrs map[string]string `json:"attrs,omitempty"`
 
@@ -28,6 +31,10 @@ type AppLogStream struct {
 
 	// id
 	ID string `json:"id,omitempty"`
+
+	// denormalized grantable ancestry, resolved from the polymorphic owner at
+	// creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+	InstallID string `json:"install_id,omitempty"`
 
 	// open
 	Open bool `json:"open,omitempty"`
