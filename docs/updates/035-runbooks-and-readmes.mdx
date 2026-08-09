@@ -106,7 +106,7 @@ See [Using READMEs](/guides/using-readmes).
 - `skip_noops`: when a plan comes back with no changes, skip the deploy step entirely instead of running (or waiting on approval for) a no-op.
 - `auto_approve_on_policies_passing`: automatically approve a deploy when its policy checks pass, so only deploys that fail policy require manual sign-off.
 
-Both default to off and can be set on a [Helm](/config-ref/helm), [Terraform](/config-ref/terraform), [Docker build](/config-ref/docker-build), or [Kubernetes manifest](/config-ref/kubernetes-manifest) component, or on the [sandbox](/config-ref/sandbox).
+Both default to off and can be set on a [Helm](/config-ref/helm), [Terraform](/config-ref/terraform), Docker build, or [Kubernetes manifest](/config-ref/kubernetes-manifest) component, or on the [sandbox](/config-ref/sandbox).
 
 ```toml
 skip_noops                       = true
