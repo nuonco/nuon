@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design: Denormalized Ancestors for Resource-Grant Authorization</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --ink: #e6e9ef; --muted: #9aa4b2;
+    --accent: #6ea8fe; --good: #3fb950; --warn: #d29922; --bad: #f85149;
+    --border: #2a2f3a; --code: #1e232c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 120px; }
+  h1 { font-size: 30px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  h2 { font-size: 22px; margin: 48px 0 12px; padding-top: 16px; border-top: 1px solid var(--border); letter-spacing: -0.01em; }
+  h3 { font-size: 17px; margin: 28px 0 8px; color: var(--accent); }
+  .sub { color: var(--muted); margin: 0 0 8px; }
+  code { background: var(--code); padding: 1px 6px; border-radius: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; }
+  pre { background: var(--code); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-size: 13px; }
+  pre code { background: none; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; font-weight: 600; }
+  .tag.good { background: rgba(63,185,80,.15); color: var(--good); }
+  .tag.warn { background: rgba(210,153,34,.15); color: var(--warn); }
+  .tag.bad  { background: rgba(248,81,73,.15);  color: var(--bad); }
+  .tag.info { background: rgba(110,168,254,.15); color: var(--accent); }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin: 14px 0; }
+  .callout { border-left: 3px solid var(--accent); padding-left: 14px; margin: 14px 0; color: var(--muted); }
+  .callout.warn { border-color: var(--warn); }
+  .callout.bad { border-color: var(--bad); }
+  ul { margin: 8px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .tree { font-family: ui-monospace, monospace; font-size: 13px; white-space: pre; color: var(--ink); }
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Denormalized Ancestors for Resource-Grant Authorization</h1>
+<p class="sub">Give every grant-relevant child resource direct <code>install_id</code> / <code>app_id</code> columns, so authorization is always a single point query &mdash; replacing the polymorphic owner walk.</p>
+<p class="meta">Status: <strong>In progress</strong> on <code>ja/resource-grants-v2</code> &middot; Fallback: <code>ja/resource-grants</code> (walk-based, frozen) &middot; 2026-08-09</p>
+
+<h2>1. Context</h2>
+<p>The hierarchical resource-grants design (<a href="resource-grants.html">resource-grants.html</a>) authorizes a grant-scoped account by resolving the resource named by a request into an ownership chain &mdash; <code>[install, app, org]</code> &mdash; and matching grants against any tier of it. Accounts holding org roles never take this path; they short-circuit on the org-wide permission check.</p>
+<p>The first implementation (branch <code>ja/resource-grants</code>) resolved that chain at request time. An audit of the full public-API surface (480 routes) showed how that lands:</p>
+
+<table>
+<tr><th>Group</th><th>Routes</th><th>Authorization</th></tr>
+<tr><td><strong>A &mdash; route-classified</strong></td><td>107</td><td>Decided from the registered route pattern alone: org-level surfaces (57), type-only creates and org-owned resource collections (13), handler-filtered collections (4), global/public/infra exemptions (33)</td></tr>
+<tr><td><strong>B &mdash; one point lookup</strong></td><td>275</td><td>URL names the resource; one org-scoped <code>SELECT</code> resolves the chain. <code>:install_id</code> (109), <code>:app_id</code> (125), org-owned resources with ID (11), children with direct owner columns (30)</td></tr>
+<tr><td><strong>C &mdash; polymorphic owner walk</strong></td><td>75</td><td>URL names a child whose table stores only <code>owner_type</code>/<code>owner_id</code>, where the owner may itself be a child. Requires a recursive walk (1&ndash;4 queries): workflows (21), runners (21), terraform workspaces (19), queues/runner-jobs/log-streams (14)</td></tr>
+<tr><td><strong>D &mdash; uncovered, fail closed</strong></td><td>23</td><td>Triggers (19, org-owned, pending grantable-type treatment) and terraform-backend routes (4, owner in request body)</td></tr>
+</table>
+
+<h3>1.1 The two-group model</h3>
+<p>The audit reduces to a simple invariant the API <em>should</em> have:</p>
+<div class="panel">
+<p><strong>Nested route</strong> (names an install/app in the path) &rarr; authorized by a grant on the resource or any ancestor.<br>
+<strong>Top-level route</strong> &rarr; org-level permission required.</p>
+</div>
+<p>Group C is the violation: five child types &mdash; workflows, runner jobs, queues, log streams, terraform workspaces &mdash; whose <em>only</em> detail routes are top-level (<code>GET /v1/workflows/:workflow_id</code>). Applying &ldquo;top-level &rArr; org-level&rdquo; to them would lock a grant-scoped account (e.g. an Install Manager with admin on one install) out of its own install&rsquo;s workflows, jobs, and logs, because no nested alternatives exist. The walk was a shim that makes those routes behave as if they were nested, by re-deriving the parent per request.</p>
+
+<h3>1.2 Why a walk, not a lookup</h3>
+<p>Two deficits stack. The URL lacks the owner (forcing <em>a</em> lookup), and the schema also lacks it: these tables store only a pointer to their <em>immediate</em> owner, which is often another child:</p>
+<pre class="tree">log stream &rarr; owner: runner_job
+runner_job &rarr; owner: install_deploy
+install_deploy &rarr; install_component &rarr; install   &larr; finally a grantable tier</pre>
+<p>The proof that the schema is the culprit: <code>policy_reports</code> and <code>components</code> have the same bare-route shape but carry direct <code>app_id</code>/<code>install_id</code> columns &mdash; they resolve in one query and sit in Group B.</p>
+
+<h2>2. Options considered</h2>
+<p>Both options materialize the same fact &mdash; <em>every child must know its grantable ancestor</em> &mdash; at different layers.</p>
+
+<table>
+<tr><th></th><th>Option 2: nested routes</th><th>Option 3: denormalized columns</th></tr>
+<tr><td>What changes</td><td>~75 new detail routes, swagger/SDK regen, CLI + dashboard migration; bare routes downgraded to org-level</td><td>Migrations on 5 tables, write-path population, one backfill</td></tr>
+<tr><td>Blast radius</td><td>Every consumer surface, incl. customer SDKs</td><td>ctl-api only; zero API-contract change</td></tr>
+<tr><td>Org-wide lists</td><td>Not helped; grantees iterate per-install nested lists</td><td>Enables grant filtering of <code>GET /v1/workflows</code> etc. via <code>WHERE install_id IN (...)</code></td></tr>
+<tr><td>Deep links by bare ID</td><td>Break until clients resolve parents</td><td>Keep working</td></tr>
+<tr><td>Hidden dependency</td><td>Deep children (log streams) still need a materialized ancestor for the handler&rsquo;s parent-membership check &mdash; option 2 needs option 3&rsquo;s columns anyway</td><td>None</td></tr>
+<tr><td>Long-term API shape</td><td>Self-describing: the URL is the authorization story</td><td>Bare-route pattern persists; model legible only in middleware</td></tr>
+</table>
+
+<div class="callout"><strong>Decision:</strong> implement option 3 now &mdash; it is the authorization fix: small, contained in ctl-api, unlocks list filtering, and is prerequisite-grade for the deep child types under any future design. Option 2 remains available later as an API-surface evolution on top; the write-time ancestor resolution built here is exactly the scoping primitive its nested handlers would use.</div>
+
+<h2>3. Design</h2>
+
+<h3>3.1 Schema</h3>
+<p>Add nullable <code>install_id</code> and <code>app_id</code> columns (indexed, no FK constraints, matching sibling denormalized columns elsewhere) to:</p>
+<ul>
+<li><code>install_workflows</code></li>
+<li><code>runner_jobs</code></li>
+<li><code>queues</code></li>
+<li><code>log_streams</code></li>
+<li><code>terraform_workspaces</code></li>
+</ul>
+<p><strong>NULL is meaningful, not unknown:</strong> both columns NULL &rArr; the row is an org-tier resource (e.g. a management-runner job). Its chain is <code>[org]</code>, satisfiable only by org-wide permission. <code>app_id</code> set, <code>install_id</code> NULL &rArr; app-tier. Both set &rArr; install-tier.</p>
+
+<h3>3.2 Write-time population</h3>
+<p>Centralized, not per-call-site: creation resolves the ancestor from the row&rsquo;s <code>owner_type</code>/<code>owner_id</code> when the new columns are not already set, short-circuiting through the owner&rsquo;s own denormalized columns (a log stream created for a runner job copies the job&rsquo;s <code>install_id</code>/<code>app_id</code> &mdash; one point read, no recursion in steady state). Centralizing prevents the drift failure mode where a future creation site forgets the columns.</p>
+
+<h3>3.3 Backfill</h3>
+<p>Batched, idempotent migration; one targeted <code>UPDATE &hellip; FROM</code> per (table, owner-type) pair, derived from a complete inventory of creation sites. Tables fill in topological order &mdash; parents before children that reference them (<code>runner_jobs</code> before <code>log_streams</code>/<code>queues</code> owned by jobs) &mdash; so child backfills can read parents&rsquo; fresh columns. Rows whose owners are org-tier legitimately stay NULL.</p>
+
+<h3>3.4 Authorization</h3>
+<p>Resource resolution for these five types becomes a single org-scoped point read of <code>(install_id, app_id)</code> &rarr; chain <code>[install?, app?, org]</code> &mdash; identical in shape and cost to the <code>:install_id</code> routes in Group B. <strong>No recursive walk exists on this branch.</strong> Runners keep their single bounded hop (runner &rarr; runner group, whose owner is directly an org or install). Group C collapses into Group B; the remaining taxonomy: route-classified, one lookup, or explicitly uncovered.</p>
+
+<h3>3.5 Relationship to <code>ja/resource-grants</code> (fallback)</h3>
+<p>This branch (<code>ja/resource-grants-v2</code>) shares no git ancestry with <code>ja/resource-grants</code>; the enforcement layer (grants API, chain authorization, org-middleware deferred path, startup route-coverage validation, filtered collections) is re-implemented here column-first. The branches are mutually exclusive alternatives:</p>
+<ul>
+<li><code>ja/resource-grants</code> &mdash; frozen; request-time polymorphic walk; no schema changes. Merge this if the denormalization approach fails.</li>
+<li><code>ja/resource-grants-v2</code> &mdash; this design; schema carries the ancestors; resolvers are point reads.</li>
+</ul>
+<p>Whichever merges, the other is discarded; fixes do not flow between them automatically.</p>
+
+<h3>3.6 Enabling option 2 later</h3>
+<ul>
+<li>Nested detail routes (<code>/v1/installs/:install_id/workflows/:workflow_id</code>) scope children to the claimed parent with <code>WHERE install_id = ?</code> &mdash; the column, not a join chain.</li>
+<li>The write-time resolution helper is the single source of &ldquo;who is your grantable ancestor&rdquo;, reusable by any handler.</li>
+<li>Bare routes can then be <em>downgraded</em> to org-level (no deletion, no client break for org-role accounts) once clients migrate.</li>
+</ul>
+
+<h2>4. Risks</h2>
+<table>
+<tr><th>Risk</th><th>Mitigation</th></tr>
+<tr><td>Backfill misses an owner type &rarr; rows silently NULL &rarr; over-restriction (org-level required)</td><td>Backfill derived from an exhaustive creation-site inventory; fails <em>closed</em> (never grants too much); post-backfill count checks per owner type</td></tr>
+<tr><td>Future creation site skips population</td><td>Population is centralized at the model layer, not per call site</td></tr>
+<tr><td>Ownership changes post-create would stale the columns</td><td>Ownership is set at creation and treated as immutable; verified against update sites during implementation</td></tr>
+<tr><td>Large-table backfill (<code>runner_jobs</code>)</td><td>Batched SQL updates; idempotent; safe to re-run</td></tr>
+</table>
+
+<h2>5. Related</h2>
+<ul>
+<li><a href="resource-grants.html">resource-grants.html</a> &mdash; the hierarchical grants design (tiers, wildcard semantics, elevate-only)</li>
+<li><code>ja/resource-grants</code> branch &mdash; walk-based implementation: <code>middlewares/org/owners.go</code> (the walk), <code>coverage.go</code> (route classification), <code>docs/design/resource-grant-collection-filtering.md</code> (list-filtering tiers; Tier&nbsp;3 is subsumed by this design)</li>
+</ul>
+
+</div>
+</body>
+</html>
