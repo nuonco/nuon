@@ -240,6 +240,11 @@ type Workflow struct {
 	// explicitly fills it.
 	OwnerName string `json:"owner_name,omitzero" gorm:"-" temporaljson:"owner_name,omitzero,omitempty"`
 
+	// denormalized grantable ancestry, resolved from the polymorphic owner at
+	// creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+	InstallID *string `json:"install_id,omitzero" gorm:"index" temporaljson:"install_id,omitzero,omitempty"`
+	AppID     *string `json:"app_id,omitzero" gorm:"index" temporaljson:"app_id,omitzero,omitempty"`
+
 	// used for RLS
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
@@ -306,6 +311,14 @@ func (i *Workflow) BeforeCreate(tx *gorm.DB) error {
 
 	i.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	i.OrgID = orgIDFromContext(tx.Statement.Context)
+
+	if i.InstallID == nil && i.AppID == nil {
+		installID, appID, err := ResolveOwnerAncestry(tx, i.OrgID, i.OwnerType, i.OwnerID)
+		if err != nil {
+			return err
+		}
+		i.InstallID, i.AppID = installID, appID
+	}
 
 	return nil
 }

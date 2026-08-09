@@ -256,6 +256,11 @@ type RunnerJob struct {
 	OwnerType       string  `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 	LogStreamID     *string `json:"log_stream_id,omitzero" temporaljson:"log_stream_id,omitzero,omitempty"`
 
+	// denormalized grantable ancestry, resolved from the polymorphic owner at
+	// creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+	InstallID *string `json:"install_id,omitzero" gorm:"index" temporaljson:"install_id,omitzero,omitempty"`
+	AppID     *string `json:"app_id,omitzero" gorm:"index" temporaljson:"app_id,omitzero,omitempty"`
+
 	// queue timeout is how long a job can be queued, before being made available
 	QueueTimeout time.Duration `json:"queue_timeout,omitzero" gorm:"default null;not null" swaggertype:"primitive,integer" temporaljson:"queue_timeout,omitzero,omitempty"`
 	// available timeout is how long a job can be marked as "available" before being requeued
@@ -397,6 +402,14 @@ func (r *RunnerJob) BeforeCreate(tx *gorm.DB) error {
 	// the overall timeout can be derived by combining the various lower level timeouts.
 	if r.OverallTimeout == 0 {
 		r.OverallTimeout = r.QueueTimeout + time.Duration(r.MaxExecutions)*(r.AvailableTimeout+r.ExecutionTimeout)
+	}
+
+	if r.InstallID == nil && r.AppID == nil {
+		installID, appID, err := ResolveOwnerAncestry(tx, r.OrgID, r.OwnerType, r.OwnerID)
+		if err != nil {
+			return err
+		}
+		r.InstallID, r.AppID = installID, appID
 	}
 
 	return nil
