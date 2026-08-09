@@ -182,10 +182,9 @@ func (a *Component) Validate() error {
 func (c Component) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("type").Short("component type").Required().
-		Long("Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job)").
+		Long("Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, container_image, kubernetes_manifest, or job)").
 		Example("terraform_module").
 		Example("helm_chart").
-		Example("docker_build").
 		Example("container_image").
 		Example("kubernetes_manifest").
 		Example("pulumi").
@@ -215,7 +214,8 @@ func (c Component) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("terraform_module").Short("terraform module component configuration").OneOfRequired("terraform_module").
 		Long("Configuration for Terraform module deployments. Required when type is 'terraform_module'").
 		Field("docker_build").Short("docker build component configuration").OneOfRequired("docker_build").
-		Long("Configuration for building and pushing Docker images. Required when type is 'docker_build'").
+		Deprecated("docker_build components are deprecated and no longer supported; use a container_image component instead").
+		Long("Deprecated: docker_build components are no longer supported. Use a container_image component to reference a pre-built image instead").
 		Field("external_image").Short("container image component configuration").OneOfRequired("external_image").
 		Long("Configuration for external container images (e.g., from Docker Hub or ECR). Required when type is 'container_image' or 'external_image'").
 		Field("kubernetes_manifest").Short("kubernetes manifest component configuration").OneOfRequired("kubernetes_manifest").
