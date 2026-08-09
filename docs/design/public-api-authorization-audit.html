@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Public API Authorization Audit</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --ink: #e6e9ef; --muted: #9aa4b2;
+    --accent: #6ea8fe; --good: #3fb950; --warn: #d29922; --bad: #f85149;
+    --border: #2a2f3a; --code: #1e232c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 48px 24px 120px; }
+  h1 { font-size: 30px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  h2 { font-size: 22px; margin: 48px 0 8px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .sub { color: var(--muted); margin: 0 0 8px; }
+  code, .mono { background: var(--code); padding: 1px 6px; border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+  th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--bg); }
+  td.m { font-family: ui-monospace, Menlo, monospace; font-size: 12px; white-space: nowrap; }
+  td.p { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; font-weight: 600; }
+  .tag.nested { background: rgba(63,185,80,.15); color: var(--good); }
+  .tag.lookup { background: rgba(110,168,254,.15); color: var(--accent); }
+  .tag.type { background: rgba(110,168,254,.15); color: var(--accent); }
+  .tag.filtered { background: rgba(210,153,34,.15); color: var(--warn); }
+  .tag.org { background: rgba(248,81,73,.15); color: var(--bad); }
+  .tag.exempt { background: rgba(154,164,178,.15); color: var(--muted); }
+  .desc { color: var(--muted); margin: 4px 0 10px; max-width: 900px; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin: 14px 0; }
+  ul { margin: 8px 0; padding-left: 22px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Public API Authorization Audit</h1>
+<p class="sub">Every public-API route (port 8081) and what authorization allows access to it. Generated from the route inventory and the live middleware classifiers on <code>ja/resource-grants-v2</code>.</p>
+<p class="meta">480 routes &middot; 2026-08-09 &middot; companion to <a href="resource-grant-denormalized-owners.html">resource-grant-denormalized-owners.html</a> and <a href="resource-grants.html">resource-grants.html</a></p>
+
+<div class="panel">
+<b>How to read this.</b>
+<ul>
+<li>Accounts holding an org role short-circuit on the org-wide permission check and can reach every route (subject to the method permission). The per-route rules below describe <b>grant-scoped accounts</b> — accounts whose access comes from resource grants.</li>
+<li>The permission required is derived from the HTTP method: <code>GET/HEAD &rarr; read</code>, <code>POST &rarr; create</code>, <code>PUT/PATCH &rarr; update</code>, <code>DELETE &rarr; delete</code>. A grant must carry at least that permission on some link of the resource&rsquo;s chain.</li>
+<li>A resource&rsquo;s <b>chain</b> is <code>[install &rarr; app &rarr; org]</code> (or the applicable suffix). A grant on any link authorizes the request &mdash; grants elevate, they never restrict.</li>
+<li>Special case: <code>POST .../components/:component_id/builds</code> authorizes against the org&rsquo;s <code>component_builds</code> object for org-wide accounts (runner role), in addition to the chain rules below.</li>
+</ul>
+</div>
+
+<h2>Install-scoped routes <span class="tag nested">109 routes</span></h2>
+<p class="desc">The path names an install (<code>:install_id</code>, id or name). Access: a grant with the required permission on <b>that install</b>, <b>its app</b>, or <b>the org</b> — or any org role. One org-scoped point query resolves the chain.</p>
+<table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/installs/:install_id</td><td>update</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/installs/:install_id</td><td>delete</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/action-workflows</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/action-workflows/:action_workflow_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/action-workflows/:action_workflow_id/recent-runs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/action-workflows/latest-runs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/action-workflows/runs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/action-workflows/runs</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/action-workflows/runs/:run_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/action-workflows/runs/:run_id/steps/:step_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/actions</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/actions/:action_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/actions/:action_id/outputs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/actions/:action_id/recent-runs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/actions/adhoc-run</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/actions/latest-runs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/actions/runs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/actions/runs</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/actions/runs/:run_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/actions/runs/:run_id/steps/:step_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/app-config-updates</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/app-config-versions</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/app-config-versions/:version_id/diff</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/app-permissions-config</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/audit_logs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/available-roles</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/components</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/components/:component_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/components/:component_id/deploys</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/components/:component_id/deploys</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/components/:component_id/deploys/:deploy_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/components/:component_id/deploys/latest</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/components/:component_id/forget</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/components/:component_id/health/checks</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">PUT</td><td class="p">/v1/installs/:install_id/components/:component_id/health/checks/:check_name</td><td>update</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/components/:component_id/health/incident</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/components/:component_id/health/timeline</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/components/:component_id/outputs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/components/:component_id/teardown</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/components/:component_id/toggle</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/components/deploy-all</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/components/deploys</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/components/teardown-all</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/config-syncs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/config-versions</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/config-versions/:version_id/diff</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/configs</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/installs/:install_id/configs/:config_id</td><td>update</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/deploys</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/deploys</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/deploys/:deploy_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/deploys/latest</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/deprovision</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/deprovision-sandbox</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/dns/check</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/drifted-objects</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/events</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/events/:event_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/forget</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/generate-cli-install-config</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/generate-terraform-installer-config</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/health/baseline</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/health/cluster-access</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/health/timeline</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/inputs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/inputs</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/installs/:install_id/inputs</td><td>update</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/inputs/current</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/labels</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/installs/:install_id/labels</td><td>delete</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/notebooks</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/notebooks</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/notebooks/:notebook_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/installs/:install_id/notebooks/:notebook_id</td><td>update</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/installs/:install_id/notebooks/:notebook_id</td><td>delete</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/notebooks/:notebook_id/cells</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/installs/:install_id/notebooks/:notebook_id/cells/:cell_id</td><td>update</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/installs/:install_id/notebooks/:notebook_id/cells/:cell_id</td><td>delete</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/notebooks/:notebook_id/cells/:cell_id/runs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/notebooks/:notebook_id/cells/:cell_id/runs</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">PUT</td><td class="p">/v1/installs/:install_id/notebooks/:notebook_id/cells/reorder</td><td>update</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/notebooks/:notebook_id/runs/:run_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/readme</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/reprovision</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/reprovision-sandbox</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/reprovision-stack</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/resources</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/retry-workflow</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/roles</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/installs/:install_id/roles/:role_id</td><td>update</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/roles/latest</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/roles/usages</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/runbook-runs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/runbook-runs/:run_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/runbooks</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/runbooks/:runbook_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/runbooks/:runbook_id/runs</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/runner-bootstrap-token</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/runner-group</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/sandbox-runs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/sandbox-runs/:run_id</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/stack</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/stack-runs</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/state</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/state-history</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/sync-config</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/sync-secrets</td><td>create</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/:install_id/workflows</td><td>read</td><td>grant on the <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+</table>
+<h2>App-scoped routes <span class="tag nested">125 routes</span></h2>
+<p class="desc">The path names an app (<code>:app_id</code>, id or name). Access: a grant on <b>that app</b> or <b>the org</b>, or any org role.</p>
+<table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/apps/:app_id</td><td>update</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/apps/:app_id</td><td>delete</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/action-workflows</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/action-workflows</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/action-workflows/:action_workflow_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/actions</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/actions</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/actions/:action_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/apps/:app_id/actions/:action_id</td><td>update</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/apps/:app_id/actions/:action_id</td><td>delete</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/actions/:action_id/configs</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/actions/:action_id/configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/actions/:action_id/labels</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/apps/:app_id/actions/:action_id/labels</td><td>delete</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/actions/:action_id/latest-config</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/actions/configs/:action_config_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/actions/label-keys</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/branches</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/branches</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/branches/:app_branch_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/apps/:app_id/branches/:app_branch_id</td><td>update</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/apps/:app_id/branches/:app_branch_id</td><td>delete</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/branches/:app_branch_id/configs</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/branches/:app_branch_id/configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/branches/:app_branch_id/latest-config</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/branches/:app_branch_id/runs</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/branches/:app_branch_id/runs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/branches/:app_branch_id/runs/:run_id/builds</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/branches/:app_branch_id/runs/:run_id/install-group-runs</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/branches/:app_branch_id/runs/:run_id/install-group-runs/:install_group_run_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/branches/:app_branch_id/runs/:run_id/install-groups</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/branches/:app_branch_id/sync-install-configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/break-glass-configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/break-glass-configs/:config_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/component/:component_name_or_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/components</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/components</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/apps/:app_id/components/:component_id</td><td>update</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/apps/:app_id/components/:component_id</td><td>delete</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/components/:component_id/builds</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/components/:component_id/builds</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/components/:component_id/builds/:build_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/components/:component_id/builds/:build_id/cancel</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/components/:component_id/builds/latest</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/components/:component_id/configs</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/components/:component_id/configs/:config_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/components/:component_id/configs/docker-build</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/components/:component_id/configs/external-image</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/components/:component_id/configs/helm</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/components/:component_id/configs/job</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/components/:component_id/configs/kubernetes-manifest</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/components/:component_id/configs/latest</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/components/:component_id/configs/pulumi</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/components/:component_id/configs/terraform-module</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/components/:component_id/dependencies</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/components/:component_id/dependents</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/components/:component_id/labels</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/apps/:app_id/components/:component_id/labels</td><td>delete</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/components/build-all</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/components/label-keys</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/config</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/config/:app_config_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/apps/:app_id/config/:app_config_id</td><td>update</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/config/:app_config_id/graph</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/config/:app_config_id/update-installs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/configs</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/configs/:config_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/apps/:app_id/configs/:config_id</td><td>update</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/configs/:config_id/build</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/configs/:config_id/diff</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/configs/:config_id/graph</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/configs/:config_id/sync</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/configs/:config_id/update-installs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/input-config</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/input-configs</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/input-configs/:input_config_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/input-latest-config</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/installs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/kubernetes-contexts-configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/labels</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/latest-break-glass-config</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/latest-config</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/latest-permissions-config</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/latest-policies-config</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/latest-secrets-config</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/operation-role-configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/operation-role-configs/:operation_role_config_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/permissions-configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/permissions-configs/:config_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/policies-configs</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/policies-configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/policies-configs/:config_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/policy-analytics/breakdown</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/policy-analytics/summary</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/policy-analytics/timeseries</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/policy-config/:policy_config_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/runbooks</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/runbooks</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/runbooks/:runbook_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/apps/:app_id/runbooks/:runbook_id</td><td>update</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/apps/:app_id/runbooks/:runbook_id</td><td>delete</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/runbooks/:runbook_id/configs</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/runbooks/:runbook_id/configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/runner-configs</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/runner-configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/runner-latest-config</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/sandbox-config</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/sandbox-configs</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/sandbox-configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/sandbox-latest-config</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/sandbox/builds</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/sandbox/builds</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/sandbox/builds/:build_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/secret</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/apps/:app_id/secret/:secret_id</td><td>delete</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/secrets</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/secrets</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/secrets-configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/secrets-configs/:config_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/apps/:app_id/secrets/:secret_id</td><td>delete</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps/:app_id/stack-configs</td><td>create</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/stack-configs/:config_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/template-config</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
+</table>
+<h2>Owned-child routes (bare detail routes) <span class="tag lookup">105 routes</span></h2>
+<p class="desc">The path names a child resource whose grantable ancestry is resolved with a single point read of its denormalized <code>install_id</code>/<code>app_id</code> columns (or direct owner column). The request authorizes exactly like a request against the owner. Rows with no install/app tier (management runners, org queues, unresolved legacy rows) require org-wide permission.</p>
+<table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
+<tr><td class="m">GET</td><td class="p">/v1/action-workflows/:action_workflow_id</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/action-workflows/:action_workflow_id</td><td>update</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/action-workflows/:action_workflow_id</td><td>delete</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/action-workflows/:action_workflow_id/configs</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/action-workflows/:action_workflow_id/configs</td><td>create</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/action-workflows/:action_workflow_id/latest-config</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/action-workflows/configs/:action_workflow_config_id</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/components/:component_id</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/components/:component_id</td><td>update</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/components/:component_id</td><td>delete</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/components/:component_id/builds</td><td>create</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/components/:component_id/builds/:build_id</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/components/:component_id/builds/latest</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/components/:component_id/configs</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/components/:component_id/configs/:config_id</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/components/:component_id/configs/docker-build</td><td>create</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/components/:component_id/configs/external-image</td><td>create</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/components/:component_id/configs/helm</td><td>create</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/components/:component_id/configs/job</td><td>create</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/components/:component_id/configs/kubernetes-manifest</td><td>create</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/components/:component_id/configs/latest</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/components/:component_id/configs/pulumi</td><td>create</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/components/:component_id/configs/terraform-module</td><td>create</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/components/:component_id/dependencies</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/components/:component_id/dependents</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/components/builds/:build_id</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/install-workflows/:install_workflow_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/install-workflows/:install_workflow_id</td><td>update</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/install-workflows/:install_workflow_id/cancel</td><td>create</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/install-workflows/:install_workflow_id/steps</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id/approvals/:approval_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/sandbox-runs/:run_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/stacks/:stack_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/log-streams/:log_stream_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/log-streams/:log_stream_id/logs</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/log-streams/:log_stream_id/logs/tail</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/log-streams/:log_stream_id/spans</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/policy-reports/:report_id</td><td>read</td><td>grant on the report&rsquo;s <b>install</b> (when install-scoped), its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/policy-reports/:report_id/export</td><td>read</td><td>grant on the report&rsquo;s <b>install</b> (when install-scoped), its <b>app</b>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/queues/:queue_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/queues/:queue_id/signals</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/queues/:queue_id/signals/:signal_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/queues/:queue_id/signals/:signal_id/await</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/queues/:queue_id/signals/:signal_id/graph</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/queues/:queue_id/status</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runner-jobs/:runner_job_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/runner-jobs/:runner_job_id/cancel</td><td>create</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runner-jobs/:runner_job_id/composite-plan</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runner-jobs/:runner_job_id/plan</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/:runner_id</td><td>read</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/:runner_id/card-details</td><td>read</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/:runner_id/connected</td><td>read</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/runners/:runner_id/force-shutdown</td><td>create</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/runners/:runner_id/graceful-shutdown</td><td>create</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/:runner_id/heart-beats/latest</td><td>read</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/:runner_id/jobs</td><td>read</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/:runner_id/latest-heart-beat</td><td>read</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/runners/:runner_id/mng/restart</td><td>create</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/runners/:runner_id/mng/shutdown</td><td>create</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/runners/:runner_id/mng/shutdown-vm</td><td>create</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/runners/:runner_id/mng/update</td><td>create</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/:runner_id/processes</td><td>read</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/:runner_id/processes/:process_id</td><td>read</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/:runner_id/processes/:process_id/heart-beats/latest</td><td>read</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/runners/:runner_id/processes/:process_id/shutdown</td><td>create</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/:runner_id/processes/current</td><td>read</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/runners/:runner_id/prune-tokens</td><td>create</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/:runner_id/recent-health-checks</td><td>read</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/:runner_id/settings</td><td>read</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/runners/:runner_id/settings</td><td>update</td><td>install runners: grant on the <b>install</b>, its <b>app</b>, or the <b>org</b>; org (management) runners: <b>org</b> only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/terraform-workspace/:workspace_id/state-json</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id/raw</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/terraform-workspace/:workspace_id/state-json/:state_id/resources</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/terraform-workspace/:workspace_id/states</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/terraform-workspace/:workspace_id/states/:state_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runners/terraform-workspace/:workspace_id/states/:state_id/resources</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/terraform-workspaces/:workspace_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/terraform-workspaces/:workspace_id</td><td>delete</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/terraform-workspaces/:workspace_id/lock</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/terraform-workspaces/:workspace_id/lock</td><td>create</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/terraform-workspaces/:workspace_id/state-json</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/terraform-workspaces/:workspace_id/state-json/:state_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/terraform-workspaces/:workspace_id/state-json/:state_id/raw</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/terraform-workspaces/:workspace_id/state-json/:state_id/resources</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/terraform-workspaces/:workspace_id/states</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/terraform-workspaces/:workspace_id/states/:state_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/terraform-workspaces/:workspace_id/states/:state_id/resources</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/terraform-workspaces/:workspace_id/unlock</td><td>create</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/workflows/:workflow_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/workflows/:workflow_id</td><td>update</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/workflows/:workflow_id/cancel</td><td>create</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/workflows/:workflow_id/queue-position</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/workflows/:workflow_id/step-groups</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/workflows/:workflow_id/step-groups/:step_group_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/workflows/:workflow_id/steps</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/workflows/:workflow_id/steps/:step_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/workflows/:workflow_id/steps/:step_id/approvals/:approval_id</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/workflows/:workflow_id/steps/:step_id/approvals/:approval_id/contents</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/workflows/:workflow_id/steps/:step_id/approvals/:approval_id/response</td><td>create</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/workflows/:workflow_id/steps/:step_id/await</td><td>read</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/workflows/:workflow_id/steps/:step_id/cancel</td><td>create</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/workflows/:workflow_id/steps/:step_id/retry</td><td>create</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/workflows/:workflow_id/steps/:step_id/skip</td><td>create</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+</table>
+<h2>Org-owned resources (specific) <span class="tag nested">11 routes</span></h2>
+<p class="desc">The path names a delegable org-owned resource. Access: a grant on <b>that resource</b>, a <b>wildcard grant on its type</b>, or <b>the org</b>.</p>
+<table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/orgs/:org_id/slack/channel-subscriptions/:sub_id</td><td>update</td><td>grant on this <code>slack_subscription</code>, wildcard <code>slack_subscription:*</code>, or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/orgs/:org_id/slack/channel-subscriptions/:sub_id</td><td>delete</td><td>grant on this <code>slack_subscription</code>, wildcard <code>slack_subscription:*</code>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/vcs/connections/:connection_id</td><td>read</td><td>grant on this <code>vcs_connection</code>, wildcard <code>vcs_connection:*</code>, or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/vcs/connections/:connection_id</td><td>delete</td><td>grant on this <code>vcs_connection</code>, wildcard <code>vcs_connection:*</code>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/vcs/connections/:connection_id/branches</td><td>read</td><td>grant on this <code>vcs_connection</code>, wildcard <code>vcs_connection:*</code>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/vcs/connections/:connection_id/check-status</td><td>read</td><td>grant on this <code>vcs_connection</code>, wildcard <code>vcs_connection:*</code>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/vcs/connections/:connection_id/repos</td><td>read</td><td>grant on this <code>vcs_connection</code>, wildcard <code>vcs_connection:*</code>, or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/vcs/connections/:connection_id/webhook-subscription</td><td>read</td><td>grant on this <code>vcs_connection</code>, wildcard <code>vcs_connection:*</code>, or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/vcs/connections/:connection_id/webhook-subscription</td><td>create</td><td>grant on this <code>vcs_connection</code>, wildcard <code>vcs_connection:*</code>, or the <b>org</b></td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/orgs/current/webhooks/:webhook_id</td><td>update</td><td>grant on this <code>webhook</code>, wildcard <code>webhook:*</code>, or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/orgs/current/webhooks/:webhook_id</td><td>delete</td><td>grant on this <code>webhook</code>, wildcard <code>webhook:*</code>, or the <b>org</b></td></tr>
+</table>
+<h2>Org-owned resources (collections / creates / type surface) <span class="tag type">11 routes</span></h2>
+<p class="desc">No specific resource in the path. Access: a <b>wildcard grant on the type</b> or <b>the org</b>.</p>
+<table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs/:org_id/slack/channel-subscriptions</td><td>read</td><td>wildcard <code>slack_subscription:*</code> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/orgs/:org_id/slack/channel-subscriptions</td><td>create</td><td>wildcard <code>slack_subscription:*</code> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs/:org_id/slack/install-url</td><td>read</td><td>wildcard <code>slack_subscription:*</code> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs/:org_id/slack/installations</td><td>read</td><td>wildcard <code>slack_subscription:*</code> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs/:org_id/slack/installations/:installation_id/channels</td><td>read</td><td>wildcard <code>slack_subscription:*</code> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs/:org_id/slack/org-links</td><td>read</td><td>wildcard <code>slack_subscription:*</code> or the <b>org</b></td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/orgs/:org_id/slack/org-links/:link_id</td><td>delete</td><td>wildcard <code>slack_subscription:*</code> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/vcs/connections</td><td>read</td><td>wildcard <code>vcs_connection:*</code> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/vcs/connections</td><td>create</td><td>wildcard <code>vcs_connection:*</code> or the <b>org</b></td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs/current/webhooks</td><td>read</td><td>wildcard <code>webhook:*</code> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/orgs/current/webhooks</td><td>create</td><td>wildcard <code>webhook:*</code> or the <b>org</b></td></tr>
+</table>
+<h2>Top-level creates <span class="tag type">2 routes</span></h2>
+<p class="desc">Creates a new install/app with no parent in the path. Access: a <b>wildcard grant on the created tier</b> (<code>install:*</code> / <code>app:*</code>) or <b>the org</b>.</p>
+<table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
+<tr><td class="m">POST</td><td class="p">/v1/apps</td><td>create</td><td>wildcard <code>app:*</code> or the <b>org</b></td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs</td><td>create</td><td>wildcard <code>install:*</code> or the <b>org</b></td></tr>
+</table>
+<h2>Filtered collections <span class="tag filtered">4 routes</span></h2>
+<p class="desc">Always passes the middleware for any org member; the handler filters results to rows the account is entitled to see (org-wide accounts see everything; grant-scoped accounts see granted installs/apps and their upward context).</p>
+<table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps</td><td>read</td><td>any org member; results filtered to entitlements</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/installs</td><td>read</td><td>any org member; results filtered to entitlements</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/components</td><td>read</td><td>any org member; results filtered to entitlements</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs</td><td>read</td><td>any org member; results filtered to entitlements</td></tr>
+</table>
+<h2>Org-level routes <span class="tag org">57 routes</span></h2>
+<p class="desc">Org settings, team/credential management, the grant surface itself, and org-wide collections/aggregates. Access: an <b>org-wide permission</b> (org role, or an org-tier grant). Grant-scoped accounts are denied by design.</p>
+<table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
+<tr><td class="m">POST</td><td class="p">/v1/account/static-token</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/account/static-tokens</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/account/static-tokens/:token_id</td><td>delete</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/aws-account-connections</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/aws-account-connections</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/aws-account-connections/:connection_id</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/aws-account-connections/:connection_id</td><td>update</td><td>org-wide permission only</td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/aws-account-connections/:connection_id</td><td>delete</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/aws-account-connections/:connection_id/verify</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/builds</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/component-builds</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/grants</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/grants</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/grants/:grant_id</td><td>delete</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/health</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/installs/label-keys</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/oidc/trust-policies</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/oidc/trust-policies</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/oidc/trust-policies/:policy_id</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/oidc/trust-policies/:policy_id</td><td>update</td><td>org-wide permission only</td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/oidc/trust-policies/:policy_id</td><td>delete</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/onboarding/current/steps/deploy</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/onboarding/current/steps/get-started</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/onboarding/current/steps/install</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/onboarding/current/steps/your-stack</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs/current</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/orgs/current</td><td>update</td><td>org-wide permission only</td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/orgs/current</td><td>delete</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs/current/accounts</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/orgs/current/accounts/:account_id/role</td><td>update</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs/current/features</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/orgs/current/features</td><td>update</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs/current/invites</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/orgs/current/invites</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/orgs/current/invites/:invite_id/resend</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/orgs/current/invites/:invite_id/revoke</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/orgs/current/remove-user</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs/current/runner-group</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs/current/stats</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/orgs/current/user</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs/features</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/policy-reports</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/queues</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/roles</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/runner-jobs</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/service-accounts</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/service-accounts</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/service-accounts/:account_id</td><td>update</td><td>org-wide permission only</td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/service-accounts/:account_id</td><td>delete</td><td>org-wide permission only</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/service-accounts/:account_id/role</td><td>update</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/service-accounts/:account_id/tokens</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/terraform-workspaces</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/dispatches</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/workflows</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/workflows/cancel</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/workflows/pending-approvals</td><td>read</td><td>org-wide permission only</td></tr>
+</table>
+<h2>Uncovered routes (fail closed) <span class="tag org">23 routes</span></h2>
+<p class="desc">Accepted gaps: the resource cannot yet be resolved from the request (owner in body, or triggers pending grantable-type treatment). Effectively org-wide only; grant-scoped accounts always denied.</p>
+<table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
+<tr><td class="m">GET</td><td class="p">/v1/terraform-backend</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/terraform-backend</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/terraform-workspace</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/terraform-workspaces</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/triggers/:trigger_id</td><td>delete</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/disable</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/enable</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id/event-types</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id/events</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/triggers/:trigger_id/ingress-url</td><td>update</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/rotate-ingress-url</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/rotate-secret</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id/rules</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id/rules/:rule_id</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/triggers/:trigger_id/secrets/:secret_id/reveal</td><td>update</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/secrets/:secret_id/revoke</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/dispatches/:dispatch_id</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/dispatches/:dispatch_id/retry</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/events/:event_id</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/events/:event_id/raw</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/events/:event_id/replay</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
+</table>
+<h2>Global routes <span class="tag exempt">17 routes</span></h2>
+<p class="desc">Account-level: any authenticated account, no org context or org permission involved.</p>
+<table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
+<tr><td class="m">GET</td><td class="p">/v1/account</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/account/user-journeys</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/account/user-journeys</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/account/user-journeys/:journey_name/complete</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/account/user-journeys/:journey_name/reset</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/account/user-journeys/:journey_name/steps/:step_name</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/auth/me</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/auth/validate</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/general/current-user</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/general/waitlist</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/installs/:install_id/phone-home/:phone_home_id</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/onboarding</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/onboarding/current</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/onboarding/current</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/onboarding/current/steps/organization</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/orgs</td><td>&mdash;</td><td>any authenticated account</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/orgs</td><td>&mdash;</td><td>any authenticated account</td></tr>
+</table>
+<h2>Public routes <span class="tag exempt">9 routes</span></h2>
+<p class="desc">Unauthenticated (webhooks callbacks, config schemas, OIDC token exchange, event ingress).</p>
+<table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
+<tr><td class="m">POST</td><td class="p">/v1/event-ingress/:ingress_key</td><td>&mdash;</td><td>unauthenticated</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/general/cli-config</td><td>&mdash;</td><td>unauthenticated</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/general/cloud-platform/:cloud_platform/regions</td><td>&mdash;</td><td>unauthenticated</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/general/config-schema</td><td>&mdash;</td><td>unauthenticated</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/general/config-schema/:type</td><td>&mdash;</td><td>unauthenticated</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/oidc/token</td><td>&mdash;</td><td>unauthenticated</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/vcs/:vcs_connection_id/events</td><td>&mdash;</td><td>unauthenticated</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/vcs/connection-callback</td><td>&mdash;</td><td>unauthenticated</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/vcs/webhooks/:subscription_id/events</td><td>&mdash;</td><td>unauthenticated</td></tr>
+</table>
+<h2>Infrastructure <span class="tag exempt">7 routes</span></h2>
+<p class="desc">Health checks, docs, version — outside the <code>/v1</code> authorization surface.</p>
+<table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
+<tr><td class="m">GET</td><td class="p">/docs/*any</td><td>&mdash;</td><td>n/a</td></tr>
+<tr><td class="m">GET</td><td class="p">/httpbin/*any</td><td>&mdash;</td><td>n/a</td></tr>
+<tr><td class="m">GET</td><td class="p">/livez</td><td>&mdash;</td><td>n/a</td></tr>
+<tr><td class="m">GET</td><td class="p">/readyz</td><td>&mdash;</td><td>n/a</td></tr>
+<tr><td class="m">GET</td><td class="p">/version</td><td>&mdash;</td><td>n/a</td></tr>
+<tr><td class="m">GET</td><td class="p">/oapi/v2</td><td>&mdash;</td><td>n/a</td></tr>
+<tr><td class="m">GET</td><td class="p">/oapi/v3</td><td>&mdash;</td><td>n/a</td></tr>
+</table>
+</div></body></html>
