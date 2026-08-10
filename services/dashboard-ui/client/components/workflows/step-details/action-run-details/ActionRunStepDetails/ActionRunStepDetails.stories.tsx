@@ -38,6 +38,29 @@ export const Default = () => (
   />
 )
 
+export const WithCompositeError = () => (
+  <ActionRunStepDetails
+    step={mockStep}
+    actionRun={{
+      ...mockActionRun,
+      composite_error: {
+        type: 'action.execution_failed',
+        severity: 'error',
+        message: 'Action execution failed',
+        sections: [
+          {
+            heading: 'Details',
+            body: 'The action command exited with a non-zero status.',
+          },
+        ],
+      },
+    }}
+    createdBy={mockStep.created_by}
+    error={null}
+    isLoading={false}
+  />
+)
+
 export const Loading = () => (
   <ActionRunStepDetails step={mockStep} error={null} isLoading={true} />
 )

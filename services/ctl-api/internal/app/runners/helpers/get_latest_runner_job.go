@@ -4,8 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type GetLatestJobRequest struct {
@@ -31,4 +35,43 @@ func (a *Helpers) GetLatestJob(ctx context.Context, req *GetLatestJobRequest) (*
 	}
 
 	return &job, nil
+}
+
+type GetLatestJobCompositeErrorRequest struct {
+	OwnerID   string
+	OwnerType string
+}
+
+func GetLatestJobCompositeError(ctx context.Context, db *gorm.DB, req GetLatestJobCompositeErrorRequest) (*compositeerrors.CompositeErrorData, error) {
+	var job app.RunnerJob
+	res := db.WithContext(ctx).
+		Scopes(scopes.WithDisableViews).
+		Where(app.RunnerJob{
+			OwnerID:   req.OwnerID,
+			OwnerType: req.OwnerType,
+		}).
+		Preload("Executions", func(db *gorm.DB) *gorm.DB {
+			return db.
+				Select("id", "runner_job_id", "created_at").
+				Order(clause.OrderByColumn{Column: clause.Column{Name: "created_at"}, Desc: true}).
+				Order(clause.OrderByColumn{Column: clause.Column{Name: "id"}, Desc: true}).
+				Limit(1)
+		}).
+		Preload("Executions.Result", func(db *gorm.DB) *gorm.DB {
+			return db.Select("runner_job_execution_id", "composite_error")
+		}).
+		Order(clause.OrderByColumn{Column: clause.Column{Name: "created_at"}, Desc: true}).
+		Order(clause.OrderByColumn{Column: clause.Column{Name: "id"}, Desc: true}).
+		First(&job)
+	if res.Error != nil {
+		if res.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("unable to get latest runner job composite error: %w", res.Error)
+	}
+	if len(job.Executions) == 0 || job.Executions[0].Result == nil {
+		return nil, nil
+	}
+
+	return job.Executions[0].Result.CompositeError, nil
 }

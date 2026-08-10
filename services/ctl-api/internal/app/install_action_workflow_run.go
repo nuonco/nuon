@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -62,9 +63,10 @@ type InstallActionWorkflowRun struct {
 	// the correct cluster. Empty means fall back to the sandbox default.
 	KubernetesContextName string `json:"kubernetes_context_name,omitzero" gorm:"default null" temporaljson:"kubernetes_context_name,omitzero,omitempty"`
 
-	Status            InstallActionWorkflowRunStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string                         `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
-	StatusV2          CompositeStatus                `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+	Status            InstallActionWorkflowRunStatus      `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string                              `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus                     `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+	CompositeError    *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"-" swaggertype:"object" temporaljson:"-"`
 
 	TriggerType ActionWorkflowTriggerType `json:"trigger_type,omitzero" gorm:"notnull;default:''" temporaljson:"trigger_type,omitzero,omitempty"`
 
