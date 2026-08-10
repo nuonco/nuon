@@ -77,7 +77,7 @@ TriggerAppInstallSyncAccepted describes a response with status code 202, with de
 Accepted
 */
 type TriggerAppInstallSyncAccepted struct {
-	Payload map[string]string
+	Payload *models.AppAppInstallConfigSync
 }
 
 // IsSuccess returns true when this trigger app install sync accepted response has a 2xx status code
@@ -120,14 +120,16 @@ func (o *TriggerAppInstallSyncAccepted) String() string {
 	return fmt.Sprintf("[POST /v1/apps/{app_id}/install-syncs][%d] triggerAppInstallSyncAccepted %s", 202, payload)
 }
 
-func (o *TriggerAppInstallSyncAccepted) GetPayload() map[string]string {
+func (o *TriggerAppInstallSyncAccepted) GetPayload() *models.AppAppInstallConfigSync {
 	return o.Payload
 }
 
 func (o *TriggerAppInstallSyncAccepted) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
+	o.Payload = new(models.AppAppInstallConfigSync)
+
 	// response payload
-	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
 		return err
 	}
 

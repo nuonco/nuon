@@ -126,8 +126,6 @@ type ClientService interface {
 
 	AddUser(params *AddUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddUserCreated, error)
 
-	ApproveInstallCreation(params *ApproveInstallCreationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ApproveInstallCreationAccepted, error)
-
 	AwaitQueueSignal(params *AwaitQueueSignalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitQueueSignalOK, error)
 
 	AwaitWorkflowStep(params *AwaitWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitWorkflowStepOK, error)
@@ -906,6 +904,8 @@ type ClientService interface {
 
 	ResetUserJourney(params *ResetUserJourneyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetUserJourneyOK, error)
 
+	RespondInstallCreationApproval(params *RespondInstallCreationApprovalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RespondInstallCreationApprovalAccepted, error)
+
 	RestartRunnerInstall(params *RestartRunnerInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartRunnerInstallOK, error)
 
 	RetryWorkflow(params *RetryWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowCreated, error)
@@ -1248,52 +1248,6 @@ func (a *Client) AddUser(params *AddUserParams, authInfo runtime.ClientAuthInfoW
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for AddUser: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-ApproveInstallCreation approves creation of missing installs
-
-Approves an install creation approval, creates the missing installs, and re-triggers the sync.
-*/
-func (a *Client) ApproveInstallCreation(params *ApproveInstallCreationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ApproveInstallCreationAccepted, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewApproveInstallCreationParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "ApproveInstallCreation",
-		Method:             "POST",
-		PathPattern:        "/v1/apps/{app_id}/install-syncs/{sync_id}/approvals/{approval_id}/approve",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &ApproveInstallCreationReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*ApproveInstallCreationAccepted)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for ApproveInstallCreation: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -19353,6 +19307,52 @@ func (a *Client) ResetUserJourney(params *ResetUserJourneyParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ResetUserJourney: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+RespondInstallCreationApproval responds to an install creation approval
+
+Approves or denies an install creation approval. On approve, creates the missing installs and re-triggers the sync. On deny, marks the approval as denied.
+*/
+func (a *Client) RespondInstallCreationApproval(params *RespondInstallCreationApprovalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RespondInstallCreationApprovalAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRespondInstallCreationApprovalParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RespondInstallCreationApproval",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/install-syncs/{sync_id}/approvals/{approval_id}/response",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RespondInstallCreationApprovalReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RespondInstallCreationApprovalAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RespondInstallCreationApproval: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
