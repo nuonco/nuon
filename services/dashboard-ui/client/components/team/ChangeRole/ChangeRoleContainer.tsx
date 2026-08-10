@@ -4,6 +4,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
+import { useRoleOptions, useRoleTitles } from '@/hooks/use-roles'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { updateAccountRole } from '@/lib'
@@ -18,6 +19,8 @@ const ChangeRoleModalContainer = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
+  const { roleOptions } = useRoleOptions('team')
+  const roleTitles = useRoleTitles()
 
   const currentRole = account.roles?.[0]?.role_type || ''
 
@@ -50,6 +53,8 @@ const ChangeRoleModalContainer = ({
     <ChangeRoleModal
       accountEmail={account.email || ''}
       currentRole={currentRole}
+      currentRoleLabel={roleTitles(currentRole)}
+      roleOptions={roleOptions}
       isPending={isPending}
       error={error}
       onSubmit={({ roleType }) => mutate({ roleType })}

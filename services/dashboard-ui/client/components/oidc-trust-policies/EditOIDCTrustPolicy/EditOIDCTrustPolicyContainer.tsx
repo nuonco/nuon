@@ -4,6 +4,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
+import { useRoleOptions } from '@/hooks/use-roles'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { updateCurrentOrgOIDCTrustPolicy } from '@/lib'
@@ -18,6 +19,7 @@ const EditOIDCTrustPolicyModalContainer = ({
   ...props
 }: { policy: TOIDCTrustPolicy } & Record<string, any>) => {
   const { org } = useOrg()
+  const { roleOptions } = useRoleOptions('oidc_trust_policy')
   const queryClient = useQueryClient()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
@@ -71,6 +73,7 @@ const EditOIDCTrustPolicyModalContainer = ({
       policy={policy}
       isPending={isPending}
       error={error}
+      roleOptions={roleOptions}
       onSubmit={(input) => mutate(input)}
       {...props}
     />

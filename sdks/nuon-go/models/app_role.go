@@ -20,6 +20,9 @@ import (
 // swagger:model app.Role
 type AppRole struct {
 
+	// applies to
+	AppliesTo []string `json:"applies_to"`
+
 	// created by
 	CreatedBy *AppAccount `json:"createdBy,omitempty"`
 
@@ -29,14 +32,25 @@ type AppRole struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// description
+	Description string `json:"description,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
+
+	// managed
+	Managed bool `json:"managed,omitempty"`
 
 	// policies
 	Policies []*AppPolicy `json:"policies"`
 
 	// role type
 	RoleType AppRoleType `json:"role_type,omitempty"`
+
+	// display + assignability metadata; the single source of truth read by
+	// GET /v1/roles and every role picker. Managed roles are kept in sync
+	// with standardOrgRoles by the authz reconciler.
+	Title string `json:"title,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`

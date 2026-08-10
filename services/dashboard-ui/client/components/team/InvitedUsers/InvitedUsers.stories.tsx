@@ -20,12 +20,17 @@ const mockInvites: TOrgInvite[] = [
   } as TOrgInvite,
 ]
 
+const roleTitles = (roleType: string | undefined) =>
+  ({ org_admin: 'Admin', org_support: 'Support' } as Record<string, string>)[roleType ?? ''] ??
+  roleType ??
+  '—'
+
 export const Default = () => (
-  <InvitedUsers invites={mockInvites} isLoading={false} isError={false} />
+  <InvitedUsers invites={mockInvites} roleTitles={roleTitles} isLoading={false} isError={false} />
 )
 
 export const Empty = () => (
-  <InvitedUsers invites={[]} isLoading={false} isError={false} />
+  <InvitedUsers invites={[]} roleTitles={roleTitles} isLoading={false} isError={false} />
 )
 
 export const WithAcceptedFiltered = () => (
@@ -34,13 +39,14 @@ export const WithAcceptedFiltered = () => (
       ...mockInvites,
       { id: 'inv-3', email: 'done@example.com', status: 'accepted', role_type: 'org_admin' } as TOrgInvite,
     ]}
+    roleTitles={roleTitles}
     isLoading={false}
     isError={false}
   />
 )
 
 export const Error = () => (
-  <InvitedUsers invites={[]} isLoading={false} isError={true} />
+  <InvitedUsers invites={[]} roleTitles={roleTitles} isLoading={false} isError={true} />
 )
 
 export const Loading = () => <InvitedUsersSkeleton />

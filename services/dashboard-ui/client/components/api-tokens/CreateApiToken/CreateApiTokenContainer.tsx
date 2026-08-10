@@ -5,6 +5,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
+import { useRoleOptions } from '@/hooks/use-roles'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { createStaticToken } from '@/lib'
@@ -15,6 +16,7 @@ const CreateApiTokenModalContainer = (props: Record<string, any>) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
+  const { roleOptions } = useRoleOptions('api_token')
   const [createdToken, setCreatedToken] = useState<string | null>(null)
 
   const { mutate, isPending, error } = useMutation({
@@ -43,6 +45,7 @@ const CreateApiTokenModalContainer = (props: Record<string, any>) => {
       isPending={isPending}
       error={error}
       createdToken={createdToken}
+      roleOptions={roleOptions}
       onSubmit={({ name, duration, role }) => mutate({ name, duration, role })}
       onDone={() => removeModal(props.modalId)}
       {...props}

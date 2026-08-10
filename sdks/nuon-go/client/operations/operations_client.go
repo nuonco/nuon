@@ -5081,7 +5081,7 @@ func (a *Client) CreateSlackChannelSubscription(params *CreateSlackChannelSubscr
 /*
 CreateStaticToken creates a static API token for your org
 
-Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, org_read_only, or org_builder) and defaults to org_read_only.
+Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
 */
 func (a *Client) CreateStaticToken(params *CreateStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateStaticTokenCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -17962,12 +17962,15 @@ func (a *Client) ListQueues(params *ListQueuesParams, authInfo runtime.ClientAut
 }
 
 /*
-	ListRoles lists assignable roles
+	ListRoles lists your org s roles
 
-	List the roles that can be assigned to members and service accounts in an
+	List your org's roles. Each role carries its display metadata (`title`,
 
-organization. Each role indicates which principal types it applies to via the
-`applies_to` field (`user`, `service_account`, or both).
+`description`) and the assignment surfaces it may be offered on via the
+`applies_to` field (`team`, `service_account`, `api_token`,
+`oidc_trust_policy`). A role with no `applies_to` entries exists and may be
+displayed, but cannot be newly assigned. Pass `?context=<surface>` to filter
+to the roles assignable on a single surface.
 */
 func (a *Client) ListRoles(params *ListRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRolesOK, error) {
 	// NOTE: parameters are not validated before sending

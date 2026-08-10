@@ -6,6 +6,7 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
 import { Label } from '@/components/common/form/Label'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { Select } from '@/components/common/form/Select'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError, TVCSConnectionRepo } from '@/types'
@@ -29,13 +30,6 @@ export const GITHUB_ACTIONS_ISSUER =
 const PRESET_OPTIONS = [
   { value: 'github_actions', label: 'GitHub Actions' },
   { value: 'custom', label: 'Custom' },
-]
-
-const ROLE_OPTIONS = [
-  { value: 'org_read_only', label: 'org_read_only' },
-  { value: 'org_builder', label: 'org_builder' },
-  { value: 'org_support', label: 'org_support' },
-  { value: 'org_admin', label: 'org_admin' },
 ]
 
 export const hasSubCondition = (claimConditions: ClaimCondition[]) =>
@@ -74,6 +68,7 @@ export const CreateOIDCTrustPolicyModal = ({
   initialRepoDefaultBranch,
   lockPreset,
   reservedNames,
+  roleOptions,
   ...props
 }: {
   isPending: boolean
@@ -88,6 +83,7 @@ export const CreateOIDCTrustPolicyModal = ({
   initialRepoDefaultBranch?: string
   lockPreset?: boolean
   reservedNames?: string[]
+  roleOptions: { value: string; label: string; description?: string }[]
 } & Omit<IModal, 'onSubmit'>) => {
   const [preset, setPreset] = useState<OIDCPreset>('github_actions')
   const [repoFullName, setRepoFullName] = useState(initialRepoFullName ?? '')
@@ -99,7 +95,7 @@ export const CreateOIDCTrustPolicyModal = ({
   )
   const [issuerUrl, setIssuerUrl] = useState(GITHUB_ACTIONS_ISSUER)
   const [audience, setAudience] = useState(githubAudience)
-  const [role, setRole] = useState('org_builder')
+  const [role, setRole] = useState('org_read_only')
   const [tokenDurationSeconds, setTokenDurationSeconds] = useState('900')
   const [claimConditions, setClaimConditions] = useState<ClaimCondition[]>([
     {
@@ -155,7 +151,7 @@ export const CreateOIDCTrustPolicyModal = ({
     }
     setIssuerUrl(GITHUB_ACTIONS_ISSUER)
     setAudience(githubAudience)
-    setRole('org_builder')
+    setRole('org_read_only')
     setTokenDurationSeconds('900')
   }
 
@@ -227,11 +223,10 @@ export const CreateOIDCTrustPolicyModal = ({
       {...props}
     >
       <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to create trust policy'}
-          </Banner>
-        ) : null}
+        <FormErrorBanner
+          error={error}
+          fallback="Unable to create trust policy"
+        />
 
         {lockPreset ? null : (
           <Select
@@ -321,7 +316,7 @@ export const CreateOIDCTrustPolicyModal = ({
 
         <Select
           labelProps={{ labelText: 'Role' }}
-          options={ROLE_OPTIONS}
+          options={roleOptions}
           value={role}
           onChange={(value) => setRole(value)}
           helperText="Org role granted to tokens exchanged with this policy."
