@@ -1,22 +1,26 @@
-import { useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import {
+  buildCreateInstallBody,
+  normalizeInstallPlatform,
+  type InstallFormValues,
+} from '@/components/installs/forms/InstallForm'
+import {
   getApp,
   getInstall,
   createAppInstall,
   completeUserJourney,
-  type TCreateAppInstallBody,
 } from '@/lib'
 import { useOnboardingJourney } from '@/hooks/use-onboarding-journey'
 import { useToast } from '@/hooks/use-toast'
-import { toSentenceCase } from '@/utils/string-utils'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import { CompletedInstallCard, CreateInstallStepContent } from './CreateInstallStep'
 
-export const CreateInstallStepContainer = ({ onAdvance }: IWizardStepComponentProps) => {
+export const CreateInstallStepContainer = ({
+  onAdvance: _onAdvance,
+}: IWizardStepComponentProps) => {
   const { isStepComplete, getStepMetadata, orgId } = useOnboardingJourney()
 
   const installCreated = isStepComplete('install_created')
@@ -73,7 +77,6 @@ function CreateInstallStepContentContainer({
   appId: string
   orgId: string
 }) {
-  const formRef = useRef<HTMLFormElement>(null)
   const navigate = useNavigate()
   const { addToast } = useToast()
 
@@ -86,51 +89,16 @@ function CreateInstallStepContentContainer({
     queryFn: () => getApp({ appId, orgId }),
   })
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: (formData: FormData) => {
-      const formDataObj = Object.fromEntries(formData)
-      const inputs = Object.keys(formDataObj).reduce(
-        (acc, key) => {
-          if (key.includes('inputs:')) {
-            let value = formDataObj[key] as string
-            if (value === 'on' || value === 'off') {
-              value = (value === 'on').toString()
-            }
-            acc[key.replace('inputs:', '')] = value
-          }
-          return acc
-        },
-        {} as Record<string, string>
-      )
-
-      const body: TCreateAppInstallBody = {
-        name: formDataObj.name as string,
-        inputs: Object.keys(inputs).length > 0 ? inputs : undefined,
-        install_config: {
-          approval_option:
-            formDataObj['auto-approve'] === 'on' ? 'approve-all' : 'prompt',
-        },
-        metadata: { managed_by: 'nuon/dashboard' },
-      }
-
-      const platform = app?.runner_config?.app_runner_type
-      if (platform === 'aws' && formDataObj.region) {
-        body.aws_account = {
-          iam_role_arn: '',
-          region: formDataObj.region as string,
-        }
-      } else if (platform === 'azure' && formDataObj.location) {
-        body.azure_account = {
-          location: formDataObj.location as string,
-          service_principal_app_id: '',
-          service_principal_password: '',
-          subscription_id: '',
-          subscription_tenant_id: '',
-        }
-      }
-
-      return createAppInstall({ appId: app!.id, body, orgId })
-    },
+  const { mutateAsync, isPending, error: submitError } = useMutation({
+    mutationFn: (values: InstallFormValues) =>
+      createAppInstall({
+        appId: app!.id,
+        body: buildCreateInstallBody(
+          values,
+          normalizeInstallPlatform(app?.runner_config?.app_runner_type)
+        ),
+        orgId,
+      }),
     onSuccess: async (result) => {
       await completeUserJourney({ journeyName: 'evaluation' })
       addToast(
@@ -141,23 +109,10 @@ function CreateInstallStepContentContainer({
       const workflowId = result.data.workflow_id
       const suffix =
         result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
-      if (workflowId) {
-        navigate(
-          `/${orgId}/installs/${result.data.id}/workflows/${workflowId}${suffix}`
-        )
-      } else {
-        navigate(`/${orgId}/installs/${result.data.id}/workflows${suffix}`)
-      }
-    },
-    onError: (error) => {
-      addToast(
-        <Toast heading="Install creation failed" theme="error">
-          <Text>
-            {toSentenceCase(
-              error.error || error.description || 'Unable to create install.'
-            )}
-          </Text>
-        </Toast>
+      navigate(
+        workflowId
+          ? `/${orgId}/installs/${result.data.id}/workflows/${workflowId}${suffix}`
+          : `/${orgId}/installs/${result.data.id}/workflows${suffix}`
       )
     },
   })
@@ -168,9 +123,8 @@ function CreateInstallStepContentContainer({
       isLoading={isLoading}
       appError={appError}
       isPending={isPending}
-      onSubmit={(formData) => mutateAsync(formData)}
-      onFormSubmitClick={() => formRef.current?.requestSubmit()}
-      formRef={formRef}
+      submitError={submitError as any}
+      onSubmit={(values) => mutateAsync(values)}
     />
   )
 }

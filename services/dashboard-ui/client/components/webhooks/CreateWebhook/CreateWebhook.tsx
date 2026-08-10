@@ -76,7 +76,12 @@ export const CreateWebhookModal = ({
       }}
       {...props}
     >
-      <div className="flex flex-col gap-6">
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-6"
+      >
         <FormErrorBanner error={error} fallback="Unable to create webhook" />
 
         <Text variant="body" theme="neutral">
@@ -132,7 +137,7 @@ export const CreateWebhookModal = ({
             {(field) => <FormInterestsPicker field={field} />}
           </form.Field>
         </div>
-      </div>
+      </form>
     </Modal>
   )
 }
