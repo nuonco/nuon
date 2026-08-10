@@ -1023,3 +1023,53 @@ export type TMe = {
 // components['schemas']['service.AuthMeResponse']
 
 export type TCLIConfig = components['schemas']['service.CLIConfig']
+
+export type TAppInstallConfigSync = {
+  id: string
+  created_at: string
+  app_id: string
+  triggered_by: string
+  queue_signal_id?: string
+  queue_id?: string
+  workflow_id?: string
+  workflow?: TWorkflow
+  status?: {
+    status: string
+    status_human_description?: string
+    metadata?: Record<string, unknown>
+  }
+  vcs_connection_commit?: {
+    sha?: string
+    message?: string
+    author_name?: string
+  }
+  install_config_syncs?: TInstallConfigSync[]
+  install_creation_approval?: TInstallCreationApproval
+}
+
+export type TAppInstallsConfig = {
+  id: string
+  created_at: string
+  app_id: string
+  vcs_type: 'connected' | 'public'
+  vcs_connection_id?: string
+  repo: string
+  branch: string
+  directory: string
+  source: 'config' | 'ui'
+}
+
+export type TInstallCreationApproval = {
+  id: string
+  created_at: string
+  app_id: string
+  app_install_config_sync_id: string
+  proposed_installs: Array<{
+    name: string
+    file_path: string
+    config: unknown
+  }>
+  status: 'pending' | 'approved' | 'denied'
+  approved_at?: string
+  approved_by_id?: string
+}

@@ -12,7 +12,8 @@ import (
 const SignalType signal.SignalType = "install-config-sync"
 
 type Signal struct {
-	InstallID string `json:"install_id" validate:"required"`
+	InstallID   string `json:"install_id" validate:"required"`
+	InstallName string `json:"install_name,omitempty"`
 
 	AppInstallConfigSyncID string `json:"app_install_config_sync_id,omitempty"`
 
@@ -22,6 +23,7 @@ type Signal struct {
 
 	CommitSHA   string `json:"commit_sha,omitempty"`
 	TriggeredBy string `json:"triggered_by"`
+	SourceDir   string `json:"source_dir,omitempty"`
 
 	FlowID string `json:"flow_id,omitempty"`
 	StepID string `json:"step_id,omitempty"`
@@ -29,6 +31,7 @@ type Signal struct {
 
 var _ signal.Signal = (*Signal)(nil)
 var _ signal.SignalWithStepContext = (*Signal)(nil)
+var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.StepID = stepID
@@ -39,14 +42,33 @@ func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
 
+func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	return signal.SignalLifecycleContext{
+		InstallID: &s.InstallID,
+		Operation: "install-config-sync",
+		OwnerID:   s.InstallID,
+		OwnerType: "installs",
+		OwnerName: s.InstallName,
+		Metadata: map[string]any{
+			"install_name": s.InstallName,
+			"triggered_by": s.TriggeredBy,
+			"commit_sha":   s.CommitSHA,
+		},
+	}
+}
+
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.InstallID == "" {
 		return fmt.Errorf("install_id is required")
 	}
 
-	_, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
+	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return fmt.Errorf("install not found: %w", err)
+	}
+
+	if s.InstallName == "" {
+		s.InstallName = install.Name
 	}
 
 	return nil

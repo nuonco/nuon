@@ -26,6 +26,7 @@ const (
 	HelmApprovalApprovalType       WorkflowStepApprovalType = "helm_approval"
 	PulumiApprovalType             WorkflowStepApprovalType = "pulumi_plan"
 	AppBranchPlanApprovalType      WorkflowStepApprovalType = "app_branch_plan"
+	InstallCreationApprovalType    WorkflowStepApprovalType = "install_creation"
 )
 
 type WorkflowStepApproval struct {

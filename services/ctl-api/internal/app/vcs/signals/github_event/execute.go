@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/syncinstalls"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/vcspush"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/worker/activities"
@@ -123,6 +124,7 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 		_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 			OwnerID:   match.AppID,
 			OwnerType: "apps",
+			QueueName: appshelpers.AppInstallSyncsQueueName,
 			Signal: &syncinstalls.Signal{
 				AppID:               match.AppID,
 				CommitSHA:           headSHA,

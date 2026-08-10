@@ -100,6 +100,13 @@ const (
 	// healthcheck cron emitters with two per-org sweep emitters whose signals
 	// check all of the org's runners/processes in paginated batches.
 	OrgFeatureOrgHealthcheckSweeps OrgFeature = "org-healthcheck-sweeps"
+	// OrgFeatureAppInstallSyncing enables app-level install config syncing: an
+	// app points at a git repo of per-install configs, and pushes to that repo
+	// (or a manual trigger) sync every install's config, creating any missing
+	// installs behind an approval step. Gates the /v1/apps/:app_id/install-syncs
+	// and /installs-configs endpoints, the VCS push fan-out, the installs config
+	// record written during app config sync, and the dashboard install syncs tab.
+	OrgFeatureAppInstallSyncing OrgFeature = "app-install-syncing"
 )
 
 type Org struct {
@@ -230,6 +237,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureTriggers:                false,
 		OrgFeatureNewAppIA:                false,
 		OrgFeatureOrgHealthcheckSweeps:    false,
+		OrgFeatureAppInstallSyncing:       false,
 
 		// Enabled by default
 		OrgFeatureAppBranches:   true,
@@ -290,6 +298,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureTriggers,
 		OrgFeatureNewAppIA,
 		OrgFeatureOrgHealthcheckSweeps,
+		OrgFeatureAppInstallSyncing,
 	}
 }
 
@@ -328,6 +337,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureTriggers:                 "Enable triggers and payload-driven rules that start app branch runs or install runbooks.",
 		OrgFeatureNewAppIA:                 "Enable the branch-centric app information architecture in the dashboard: branches as the app landing page, grouped navigation, and the app source header. Requires app-branches-ui.",
 		OrgFeatureOrgHealthcheckSweeps:     "Replace per-runner and per-process healthcheck cron emitters with two per-org sweep emitters that check all runners/processes in paginated batches. Toggle via POST /v1/orgs/{org_id}/migrate-healthcheck-sweeps, which also migrates the emitters.",
+		OrgFeatureAppInstallSyncing:        "Enable app install config syncing: point an app at a git repo of per-install configs so pushes to that repo sync every install's config and create missing installs behind an approval step. Gates the install syncs API, the VCS push fan-out, and the dashboard install syncs tab.",
 	}
 }
 

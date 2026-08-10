@@ -10,6 +10,7 @@ const APPROVAL_TYPE: Record<TWorkflowStepApprovalType, string> = {
   helm_approval: 'helm',
   pulumi_plan: 'pulumi',
   app_branch_plan: 'install group plan',
+  install_creation: 'install creation',
   noop: 'no-op',
 }
 
@@ -67,6 +68,12 @@ export const APPROVAL_MODAL_COPY: Record<
     message:
       'The install group plan will be applied.',
   },
+  install_creation: {
+    title: 'Approve install creation',
+    heading: 'This will create the proposed installs.',
+    message:
+      'The installs found in the config repo will be created and synced.',
+  },
 }
 
 export const DENY_MODAL_COPY: Record<
@@ -103,6 +110,12 @@ export const DENY_MODAL_COPY: Record<
     message:
       'Skipping prevents the plan from being deployed to the install group.',
   },
+  install_creation: {
+    title: 'Deny install creation',
+    heading: 'The proposed installs will not be created.',
+    message:
+      'Denying ends the sync. Existing installs are left untouched, and the next sync proposes them again.',
+  },
 }
 
 export const RETRY_MODAL_COPY: Record<
@@ -138,5 +151,11 @@ export const RETRY_MODAL_COPY: Record<
     heading: 'A new plan will be generated for the install group.',
     message:
       'The existing plan will be discarded.',
+  },
+  install_creation: {
+    title: 'Retry install creation',
+    heading: 'The config repo will be re-read and the proposed installs recalculated.',
+    message:
+      'The existing list of proposed installs will be discarded.',
   },
 }
