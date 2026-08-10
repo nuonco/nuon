@@ -20,7 +20,7 @@ import (
 
 // Default runner machine/instance types per cloud platform.
 const (
-	DefaultAWSInstanceType   = "t3a.medium"
+	DefaultAWSInstanceType   = "t3.medium"
 	DefaultGCPInstanceType   = "e2-medium"
 	DefaultAzureInstanceType = "Standard_B2s"
 )
