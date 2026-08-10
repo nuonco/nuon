@@ -110,7 +110,12 @@ export const BranchVcsConfigFields = ({
           <Banner theme="warn">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <Text>No GitHub connections yet. Public repositories work without one.</Text>
-              <ConnectGithubButton variant="secondary" size="sm" disabled={isSubmitting}>
+              <ConnectGithubButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={isSubmitting}
+              >
                 Connect GitHub
               </ConnectGithubButton>
             </div>
@@ -176,6 +181,7 @@ export const BranchVcsConfigFields = ({
 
         {hasConnections && (
           <Button
+            type="button"
             variant="ghost"
             size="sm"
             className={TEXT_BUTTON_CLASS}
@@ -319,6 +325,7 @@ export const BranchVcsConfigFields = ({
       )}
 
       <Button
+        type="button"
         variant="ghost"
         size="sm"
         className={TEXT_BUTTON_CLASS}
