@@ -51,7 +51,7 @@
 <p class="meta">Status: <strong>In progress</strong> on <code>ja/resource-grants-v2</code> &middot; Fallback: <code>ja/resource-grants</code> (walk-based, frozen) &middot; 2026-08-09</p>
 
 <h2>1. Context</h2>
-<p>The hierarchical resource-grants design (<code>docs/design/resource-grants.html</code> on the <code>ja/resource-grants</code> branch) authorizes a grant-scoped account by resolving the resource named by a request into an ownership chain &mdash; <code>[install, app, org]</code> &mdash; and matching grants against any tier of it. Accounts holding org roles never take this path; they short-circuit on the org-wide permission check.</p>
+<p>The hierarchical resource-grants design (<a href="resource-grants.html">resource-grants.html</a>) authorizes a grant-scoped account by resolving the resource named by a request into an ownership chain &mdash; <code>[install, app, org]</code> &mdash; and matching grants against any tier of it. Accounts holding org roles never take this path; they short-circuit on the org-wide permission check.</p>
 <p>The first implementation (branch <code>ja/resource-grants</code>) resolved that chain at request time. An audit of the full public-API surface (480 routes) showed how that lands:</p>
 
 <table>
@@ -140,7 +140,7 @@ install_deploy &rarr; install_component &rarr; install   &larr; finally a granta
 
 <h2>5. Related</h2>
 <ul>
-<li><code>docs/design/resource-grants.html</code> (on the <code>ja/resource-grants</code> branch) &mdash; the hierarchical grants design (tiers, wildcard semantics, elevate-only)</li>
+<li><a href="resource-grants.html">resource-grants.html</a> &mdash; the hierarchical grants design (tiers, wildcard semantics, elevate-only)</li>
 <li><code>ja/resource-grants</code> branch &mdash; walk-based implementation: <code>middlewares/org/owners.go</code> (the walk), <code>coverage.go</code> (route classification), <code>docs/design/resource-grant-collection-filtering.md</code> (list-filtering tiers; Tier&nbsp;3 is subsumed by this design)</li>
 </ul>
 
