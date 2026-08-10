@@ -23,6 +23,7 @@ export function useRoleOptions(context: TRoleContext) {
       (roles ?? []).map((role) => ({
         value: role.role_type,
         label: role.title || role.role_type,
+        description: role.description,
       })),
     [roles]
   )

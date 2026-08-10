@@ -9,6 +9,7 @@ import {
 import { Label, type ILabel } from '@/components/common/form/Label'
 import { Text, type IText } from '@/components/common/Text'
 import { Badge, type IBadge } from '@/components/common/Badge'
+import { Tooltip } from '@/components/common/Tooltip'
 import { Icon } from '@/components/common/Icon'
 import { SearchInput } from '@/components/common/SearchInput'
 import { TransitionDiv } from '@/components/common/TransitionDiv'
@@ -18,6 +19,7 @@ import './Select.css'
 export interface SelectOption {
   value: string
   label: string
+  description?: string
   disabled?: boolean
   badge?: {
     label: string
@@ -487,49 +489,65 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
                       No options available
                     </div>
                   )}
-                  {filteredOptions.map((option, idx) => (
-                    <button
-                      key={option.value}
-                      ref={(el) => {
-                        optionRefs.current[idx] = el
-                      }}
-                      type="button"
-                      role="option"
-                      aria-selected={currentValue?.value === option.value}
-                      onClick={() => {
-                        handleOptionSelect(option)
-                        buttonRef.current?.focus()
-                      }}
-                      onMouseEnter={() => setHighlightedIndex(idx)}
-                      disabled={option.disabled}
-                      className={cn(
-                        'transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none rounded text-sm font-sans text-left flex items-center justify-between gap-2',
-                        {
-                          'text-white bg-primary-600':
-                            currentValue?.value === option.value &&
-                            highlightedIndex !== idx,
-                          'bg-primary-100 dark:bg-primary-900/40':
-                            highlightedIndex === idx &&
-                            currentValue?.value !== option.value,
-                          'text-white bg-primary-700':
-                            highlightedIndex === idx &&
-                            currentValue?.value === option.value,
-                          'hover:bg-black/5 dark:hover:bg-white/5':
-                            highlightedIndex !== idx &&
-                            currentValue?.value !== option.value &&
-                            !option.disabled,
-                          'opacity-50 cursor-not-allowed': option.disabled,
-                        }
-                      )}
-                    >
-                      <span className="truncate flex-1">{option.label}</span>
-                      {option.badge && (
-                        <Badge size="sm" theme={option.badge.theme}>
-                          {option.badge.label}
-                        </Badge>
-                      )}
-                    </button>
-                  ))}
+                  {filteredOptions.map((option, idx) => {
+                    const optionButton = (
+                      <button
+                        key={option.value}
+                        ref={(el) => {
+                          optionRefs.current[idx] = el
+                        }}
+                        type="button"
+                        role="option"
+                        aria-selected={currentValue?.value === option.value}
+                        onClick={() => {
+                          handleOptionSelect(option)
+                          buttonRef.current?.focus()
+                        }}
+                        onMouseEnter={() => setHighlightedIndex(idx)}
+                        disabled={option.disabled}
+                        className={cn(
+                          'w-full transition duration-200 px-2 py-1 -mx-1.5 cursor-pointer select-none rounded text-sm font-sans text-left flex items-center justify-between gap-2',
+                          {
+                            'text-white bg-primary-600':
+                              currentValue?.value === option.value &&
+                              highlightedIndex !== idx,
+                            'bg-primary-100 dark:bg-primary-900/40':
+                              highlightedIndex === idx &&
+                              currentValue?.value !== option.value,
+                            'text-white bg-primary-700':
+                              highlightedIndex === idx &&
+                              currentValue?.value === option.value,
+                            'hover:bg-black/5 dark:hover:bg-white/5':
+                              highlightedIndex !== idx &&
+                              currentValue?.value !== option.value &&
+                              !option.disabled,
+                            'opacity-50 cursor-not-allowed': option.disabled,
+                          }
+                        )}
+                      >
+                        <span className="truncate flex-1">{option.label}</span>
+                        {option.badge && (
+                          <Badge size="sm" theme={option.badge.theme}>
+                            {option.badge.label}
+                          </Badge>
+                        )}
+                      </button>
+                    )
+
+                    if (!option.description) return optionButton
+
+                    return (
+                      <Tooltip
+                        key={option.value}
+                        position="right"
+                        tipContent={option.description}
+                        tipContentClassName="select-option-tip"
+                        className="block !w-full"
+                      >
+                        {optionButton}
+                      </Tooltip>
+                    )
+                  })}
                 </div>
               </TransitionDiv>
             </div>,

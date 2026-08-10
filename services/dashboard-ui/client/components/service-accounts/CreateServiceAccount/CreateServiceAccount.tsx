@@ -21,7 +21,7 @@ export const CreateServiceAccountModal = ({
   onSubmit: (params: { name: string; role: string }) => void
 } & Omit<IModal, 'onSubmit'>) => {
   const [name, setName] = useState('')
-  const [role, setRole] = useState(roleOptions[0]?.value ?? '')
+  const [role, setRole] = useState('org_read_only')
 
   return (
     <Modal

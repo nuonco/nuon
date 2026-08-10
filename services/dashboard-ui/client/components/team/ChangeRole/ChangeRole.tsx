@@ -21,7 +21,7 @@ export const ChangeRoleModal = ({
   currentRoleLabel?: string
   isPending: boolean
   error: TAPIError | null
-  roleOptions: { value: string; label: string }[]
+  roleOptions: { value: string; label: string; description?: string }[]
   onSubmit: (params: { roleType: string }) => void
 } & Omit<IModal, 'onSubmit'>) => {
   const [roleType, setRoleType] = useState(currentRole || 'org_read_only')

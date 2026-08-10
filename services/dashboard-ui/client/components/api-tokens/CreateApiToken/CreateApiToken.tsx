@@ -30,7 +30,7 @@ export const CreateApiTokenModal = ({
   isPending: boolean
   error: TAPIError | null
   createdToken: string | null
-  roleOptions: { value: string; label: string }[]
+  roleOptions: { value: string; label: string; description?: string }[]
   onSubmit: (params: CreateApiTokenValues) => void
   onDone: () => void
 } & Omit<IModal, 'onSubmit'>) => {

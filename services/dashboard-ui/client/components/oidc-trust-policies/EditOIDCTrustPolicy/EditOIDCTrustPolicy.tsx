@@ -44,7 +44,7 @@ export const EditOIDCTrustPolicyModal = ({
   policy: TOIDCTrustPolicy
   isPending: boolean
   error: TAPIError | null
-  roleOptions: { value: string; label: string }[]
+  roleOptions: { value: string; label: string; description?: string }[]
   onSubmit: (input: EditOIDCTrustPolicyFormInput) => void
 } & Omit<IModal, 'onSubmit'>) => {
   const [name, setName] = useState(policy.name ?? '')

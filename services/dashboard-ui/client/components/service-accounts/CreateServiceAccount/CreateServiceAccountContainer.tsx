@@ -1,12 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
+import { useRoleOptions } from '@/hooks/use-roles'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { createServiceAccount, listRoles } from '@/lib'
+import { createServiceAccount } from '@/lib'
 import { CreateServiceAccountModal } from './CreateServiceAccount'
 
 const CreateServiceAccountModalContainer = (props: Record<string, any>) => {
@@ -14,15 +15,7 @@ const CreateServiceAccountModalContainer = (props: Record<string, any>) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
-
-  const { data: roles } = useQuery({
-    queryKey: ['roles', org.id],
-    queryFn: () => listRoles({ orgId: org.id }),
-  })
-
-  const roleOptions = (roles ?? [])
-    .filter((role) => role.applies_to?.includes('service_account'))
-    .map((role) => ({ value: role.role_type, label: role.title }))
+  const { roleOptions } = useRoleOptions('service_account')
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: ({ name, role }: { name: string; role: string }) =>

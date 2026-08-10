@@ -22,7 +22,7 @@ export const InviteUserModal = ({
   isResendPending?: boolean
   error: TAPIError | null
   invites?: TOrgInvite[]
-  roleOptions: { value: string; label: string }[]
+  roleOptions: { value: string; label: string; description?: string }[]
   onSubmit: (params: { email: string; roleType: string }) => void
   onResend?: (inviteId: string) => void
 } & Omit<IModal, 'onSubmit'>) => {

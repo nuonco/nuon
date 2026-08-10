@@ -82,7 +82,7 @@ export const CreateOIDCTrustPolicyModal = ({
   initialRepoDefaultBranch?: string
   lockPreset?: boolean
   reservedNames?: string[]
-  roleOptions: { value: string; label: string }[]
+  roleOptions: { value: string; label: string; description?: string }[]
 } & Omit<IModal, 'onSubmit'>) => {
   const [preset, setPreset] = useState<OIDCPreset>('github_actions')
   const [repoFullName, setRepoFullName] = useState(initialRepoFullName ?? '')
