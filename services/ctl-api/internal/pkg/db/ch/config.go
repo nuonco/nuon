@@ -2,6 +2,7 @@ package ch
 
 import (
 	"crypto/tls"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -9,7 +10,10 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/gorm/clickhouse"
+	"github.com/nuonco/nuon/pkg/metrics"
 )
+
+const poolMetricsPeriod = 10 * time.Second
 
 func (c *database) gormConfig() *gorm.Config {
 	return &gorm.Config{
@@ -70,4 +74,18 @@ func (c *database) chGormConfig(opts *clickhousecore.Options) clickhouse.Config 
 	return clickhouse.Config{
 		Conn: pool,
 	}
+}
+
+func recordPoolMetrics(w metrics.Writer, stats sql.DBStats) {
+	w.Gauge("clickhouse_pool.conns", float64(stats.MaxOpenConnections), []string{"conn_type:max"})
+	w.Gauge("clickhouse_pool.conns", float64(stats.OpenConnections), []string{"conn_type:open"})
+	w.Gauge("clickhouse_pool.conns", float64(stats.InUse), []string{"conn_type:in_use"})
+	w.Gauge("clickhouse_pool.conns", float64(stats.Idle), []string{"conn_type:idle"})
+
+	w.Gauge("clickhouse_pool.wait_count", float64(stats.WaitCount), nil)
+	w.Gauge("clickhouse_pool.wait_duration_ms", float64(stats.WaitDuration.Milliseconds()), nil)
+
+	w.Gauge("clickhouse_pool.conns_closed", float64(stats.MaxIdleClosed), []string{"reason:max_idle"})
+	w.Gauge("clickhouse_pool.conns_closed", float64(stats.MaxIdleTimeClosed), []string{"reason:max_idle_time"})
+	w.Gauge("clickhouse_pool.conns_closed", float64(stats.MaxLifetimeClosed), []string{"reason:max_lifetime"})
 }
