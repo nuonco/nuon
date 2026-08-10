@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -24,27 +25,30 @@ type GithubClient interface {
 type Params struct {
 	fx.In
 
-	Cfg         *internal.Config
-	DB          *gorm.DB `name:"psql"`
-	GhClient    GithubClient
-	QueueClient *queueclient.Client
-	BlobService blobstore.Service
+	Cfg            *internal.Config
+	DB             *gorm.DB `name:"psql"`
+	GhClient       GithubClient
+	QueueClient    *queueclient.Client
+	BlobService    blobstore.Service
+	FeaturesClient *features.Features
 }
 
 type Activities struct {
-	cfg         *internal.Config
-	db          *gorm.DB
-	ghClient    GithubClient
-	queueClient *queueclient.Client
-	blobSvc     blobstore.Service
+	cfg            *internal.Config
+	db             *gorm.DB
+	ghClient       GithubClient
+	queueClient    *queueclient.Client
+	blobSvc        blobstore.Service
+	featuresClient *features.Features
 }
 
 func New(params Params) *Activities {
 	return &Activities{
-		cfg:         params.Cfg,
-		db:          params.DB,
-		ghClient:    params.GhClient,
-		queueClient: params.QueueClient,
-		blobSvc:     params.BlobService,
+		cfg:            params.Cfg,
+		db:             params.DB,
+		ghClient:       params.GhClient,
+		queueClient:    params.QueueClient,
+		blobSvc:        params.BlobService,
+		featuresClient: params.FeaturesClient,
 	}
 }
