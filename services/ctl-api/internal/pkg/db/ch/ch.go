@@ -82,17 +82,37 @@ func New(params Params, lc fx.Lifecycle) (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
 	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("unable to access database connection pool: %w", err)
+	}
 
 	// register plugins
 	if err := database.registerPlugins(db); err != nil {
 		return nil, fmt.Errorf("unable to register plugins: %w", err)
 	}
 
+	poolMetricsCtx, stopPoolMetrics := context.WithCancel(context.Background())
+
 	lc.Append(fx.Hook{
 		OnStart: func(_ context.Context) error {
+			recordPoolMetrics(database.MetricsWriter, sqlDB.Stats())
+			go func() {
+				ticker := time.NewTicker(poolMetricsPeriod)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-poolMetricsCtx.Done():
+						return
+					case <-ticker.C:
+						recordPoolMetrics(database.MetricsWriter, sqlDB.Stats())
+					}
+				}
+			}()
 			return nil
 		},
 		OnStop: func(_ context.Context) error {
+			stopPoolMetrics()
 			return nil
 		},
 	})
