@@ -176,16 +176,21 @@ func walkFields(obj any, data map[string]any) error {
 	return nil
 }
 
+// Config fields walked by RenderStruct/RenderMap end up in infrastructure APIs --
+// helm values files, kubernetes manifests, terraform variables, env vars, nested
+// stack parameters -- never in a browser. They therefore render through
+// RenderTextV2: html/template escaping silently corrupts values, e.g. a PEM
+// public key inlined into a helm values file loses every "+" to "&#43;".
 func renderStrField(inputVal string, data map[string]any) (string, error) {
 	data = EnsurePrefix(data)
 
-	return RenderV2(inputVal, data)
+	return RenderTextV2(inputVal, data)
 }
 
 func renderByteField(inputVal []byte, data map[string]any) ([]byte, error) {
 	data = EnsurePrefix(data)
 
-	final, err := RenderV2(string(inputVal), data)
+	final, err := RenderTextV2(string(inputVal), data)
 	if err != nil {
 		return nil, err
 	}
