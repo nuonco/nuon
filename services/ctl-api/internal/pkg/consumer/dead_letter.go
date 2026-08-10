@@ -57,7 +57,7 @@ func (s *Sink) recordDeadLetters(ctx context.Context, dead []app.DLQRecord) {
 		if len(failed) == 0 {
 			return
 		}
-		s.mw.Count(s.metric("dead_letter_produce_failed"), int64(len(failed)), nil)
+		s.mw.Count("kafka.consumer.dead_letter", int64(len(failed)), s.baseTags("reason:produce_failed"))
 
 		fallback := make([]app.DLQRecord, 0, len(failed))
 		for _, i := range failed {
@@ -74,6 +74,6 @@ func (s *Sink) recordDeadLetters(ctx context.Context, dead []app.DLQRecord) {
 			zap.Int("count", len(dead)),
 			zap.Error(err),
 		)
-		s.mw.Count(s.metric("dead_letter_lost"), int64(len(dead)), nil)
+		s.mw.Count("kafka.consumer.dead_letter", int64(len(dead)), s.baseTags("reason:lost"))
 	}
 }
