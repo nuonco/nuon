@@ -3534,6 +3534,8 @@ export interface components {
       id?: string;
       install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
       org_id?: string;
+      /** @description PostDeployRunbookIDs are runbooks run on each install, in order, after its deploy succeeds. Distinct from RunbookIDs, which tracks the runbooks the branch's synced app config produced. */
+      post_deploy_runbook_ids?: string[];
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       runbook_ids?: string[];
       updated_at?: string;
@@ -4895,6 +4897,17 @@ export interface components {
     };
     "app.InstallGroupRunInstall": {
       install_id?: string;
+      /** @description Phase is which stage of the group the install is in: "deploy" or "runbook". */
+      phase?: string;
+      runbooks?: components["schemas"]["app.InstallGroupRunRunbook"][];
+      status?: string;
+      workflow_id?: string;
+    };
+    /** @description InstallGroupRunRunbook records one post-deploy runbook run for an install. */
+    "app.InstallGroupRunRunbook": {
+      run_id?: string;
+      runbook_id?: string;
+      runbook_name?: string;
       status?: string;
       workflow_id?: string;
     };
