@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -298,5 +299,32 @@ func TestFlattenErrorMetadata(t *testing.T) {
 	}
 	if flattenErrorMetadata(nil) != nil {
 		t.Error("nil input should yield nil map")
+	}
+}
+
+func TestRedactedErrorMetadata(t *testing.T) {
+	const secret = "tok_execution_result_secret"
+	raw := "https://api.example.com/state?token=" + secret + "&operation=plan"
+	meta := map[string]*string{
+		"error_output": &raw,
+		"handler":      ptr("terraform"),
+		"missing":      nil,
+	}
+
+	got := redactedErrorMetadata(meta)
+	if *meta["error_output"] != raw {
+		t.Fatalf("source metadata was mutated: %q", *meta["error_output"])
+	}
+	if value := got["error_output"]; value == nil || strings.Contains(*value, secret) || !strings.Contains(*value, "token=[REDACTED]") {
+		t.Fatalf("persisted metadata was not redacted: %v", value)
+	}
+	if value := got["handler"]; value == nil || *value != "terraform" {
+		t.Fatalf("benign metadata changed: %v", value)
+	}
+	if got["missing"] != nil {
+		t.Fatalf("nil metadata value changed: %v", got["missing"])
+	}
+	if redactedErrorMetadata(nil) != nil {
+		t.Fatal("nil metadata should remain nil")
 	}
 }
