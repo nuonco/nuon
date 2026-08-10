@@ -7,6 +7,7 @@ import (
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
@@ -14,7 +15,6 @@ import (
 )
 
 type ResolveBranchPostDeployRunbooksInput struct {
-	AppBranchID string `json:"app_branch_id"`
 	// AppBranchConfigID is the config the run was planned from. Resolving the
 	// branch's latest config instead would let a sync that lands mid-run change
 	// which runbooks execute.
@@ -69,12 +69,28 @@ func (a *Activities) ResolveBranchPostDeployRunbooks(ctx context.Context, input 
 	ctx = cctx.SetAccountIDContext(ctx, input.CreatedByID)
 	ctx = cctx.SetOrgIDContext(ctx, config.OrgID)
 
-	// The install group's app-config update already reconciles runbooks, so this is
-	// normally a no-op. It stays because a run whose group update partially failed
-	// would otherwise have no InstallRunbook row to hang a run off.
+	// Guarantee an InstallRunbook row for every (install, runbook) pair we are
+	// about to run — CreateInstallRunbookRunWorkflow needs one to hang a run off.
+	//
+	// Deliberately not ReconcileInstallRunbooks: that derives its desired set from
+	// install.AppConfigID, which is exactly stale in the partial-failure case this
+	// guard exists for, so a newly-declared runbook would be left out. Inserting
+	// the pairs directly is version-independent, non-destructive, and one round
+	// trip rather than one reconcile per install.
+	installRunbooks := make([]app.InstallRunbook, 0, len(input.InstallIDs)*len(config.PostDeployRunbookIDs))
 	for _, installID := range input.InstallIDs {
-		if err := a.installHelpers.ReconcileInstallRunbooks(ctx, installID); err != nil {
-			return nil, fmt.Errorf("unable to reconcile install runbooks for %s: %w", installID, err)
+		for _, runbookID := range config.PostDeployRunbookIDs {
+			installRunbooks = append(installRunbooks, app.InstallRunbook{
+				InstallID: installID,
+				RunbookID: runbookID,
+			})
+		}
+	}
+	if len(installRunbooks) > 0 {
+		if err := a.db.WithContext(ctx).
+			Clauses(clause.OnConflict{DoNothing: true}).
+			Create(&installRunbooks).Error; err != nil {
+			return nil, fmt.Errorf("unable to ensure install runbooks: %w", err)
 		}
 	}
 

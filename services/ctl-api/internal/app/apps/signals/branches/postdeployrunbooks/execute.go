@@ -99,7 +99,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	resolved, err := activities.AwaitResolveBranchPostDeployRunbooks(ctx, &activities.ResolveBranchPostDeployRunbooksInput{
-		AppBranchID:       s.AppBranchID,
 		AppBranchConfigID: s.AppBranchConfigID,
 		InstallIDs:        deployedIDs,
 		NewAppConfigID:    run.AppConfigID,
