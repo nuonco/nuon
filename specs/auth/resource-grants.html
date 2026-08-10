@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design: Hierarchical Resource Grants (ctl-api RBAC)</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --ink: #e6e9ef; --muted: #9aa4b2;
+    --accent: #6ea8fe; --good: #3fb950; --warn: #d29922; --bad: #f85149;
+    --border: #2a2f3a; --code: #1e232c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 120px; }
+  h1 { font-size: 30px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  h2 { font-size: 22px; margin: 48px 0 12px; padding-top: 16px; border-top: 1px solid var(--border); letter-spacing: -0.01em; }
+  h3 { font-size: 17px; margin: 28px 0 8px; color: var(--accent); }
+  .sub { color: var(--muted); margin: 0 0 8px; }
+  code { background: var(--code); padding: 1px 6px; border-radius: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; }
+  pre { background: var(--code); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-size: 13px; }
+  pre code { background: none; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px; font-weight: 600; }
+  .tag.good { background: rgba(63,185,80,.15); color: var(--good); }
+  .tag.warn { background: rgba(210,153,34,.15); color: var(--warn); }
+  .tag.bad  { background: rgba(248,81,73,.15);  color: var(--bad); }
+  .tag.info { background: rgba(110,168,254,.15); color: var(--accent); }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin: 14px 0; }
+  .callout { border-left: 3px solid var(--accent); padding-left: 14px; margin: 14px 0; color: var(--muted); }
+  .callout.warn { border-color: var(--warn); }
+  .callout.bad { border-color: var(--bad); }
+  ul { margin: 8px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .tree { font-family: ui-monospace, monospace; font-size: 13px; white-space: pre; color: var(--ink); }
+  .scenario { margin: 10px 0; }
+  .scenario .req { font-family: ui-monospace, monospace; font-size: 13px; color: var(--accent); }
+  hr { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Hierarchical Resource Grants</h1>
+<p class="sub">Object-level RBAC for ctl-api &mdash; grants that scope an account down to a single app, install, or delegable org-owned resource, alongside the existing org roles.</p>
+<p class="meta">Status: <strong>Implemented, split across two branches.</strong> <code>ja/resource-grants-v2</code> carries only what the near-term roles-only plan requires: the denormalized ancestry schema (columns, write-path hooks, <code>ResolveOwnerAncestry</code>, migration 126) &mdash; a passive schema change with no behavioral impact. Everything else in this document &mdash; the <code>ResourceGrant</code> model and <code>/v1/grants</code> API, the org-gate split behind <code>ResourceGrantsEnabled</code>, the chain-walk authorization and route resolution, coverage validation, and collection filtering &mdash; lives on <code>ja/account-resource-grants</code>, which stacks on v2 and merges when per-account grants are needed. Fallback implementation (request-time owner walk): <code>ja/resource-grants</code>, frozen &middot; Last revised 2026-08-09.</p>
+
+<h2>1. Motivation</h2>
+<p>Before grants, the org roles (<code>org_admin</code>, <code>org_support</code>, <code>installer</code>, <code>runner</code>) all resolved to the same policy: <code>{&lt;orgID&gt;: "all"}</code>. Authorization happened once, in the org middleware, as <code>acct.AllPermissions.CanPerform(org.ID, methodPerm)</code>. The role type was effectively metadata &mdash; there was no way to say &ldquo;read-only&rdquo; or &ldquo;only this app&rdquo;.</p>
+<p>The original ask was <code>apps_read_only</code> and <code>installs_read_only</code> role types. Investigation showed that scoping to a <em>specific</em> resource fits the existing model almost for free &mdash; the permission <code>Set</code> is already <code>map[objectID]Permission</code>. This design adds specific-resource grants, plus per-type wildcards (&sect;9b) for the &ldquo;all resources of one tier&rdquo; case.</p>
+
+<h2>2. Existing building blocks</h2>
+<table>
+  <tr><th>Piece</th><th>Location</th><th>Relevance</th></tr>
+  <tr><td><code>permissions.Set</code> &mdash; <code>map[string]Permission</code>, <code>CanPerform(obj, perm)</code> with <code>"*"</code> fallback</td><td><code>internal/pkg/authz/permissions/set.go</code></td><td>Already supports keying on any object ID, not just org ID.</td></tr>
+  <tr><td><code>FromRequest</code> &mdash; HTTP verb &rarr; permission</td><td><code>.../permissions/request.go</code></td><td>GET&rarr;read, POST&rarr;create, PUT/PATCH&rarr;update, DELETE&rarr;delete. Gives read-only for free.</td></tr>
+  <tr><td>Org middleware</td><td><code>internal/middlewares/org/org.go</code></td><td>Single enforcement point; previously checked only <code>CanPerform(org.ID, perm)</code>.</td></tr>
+  <tr><td>Account <code>AfterQuery</code> hook</td><td><code>internal/app/account.go</code></td><td>Flattens role policies into <code>AllPermissions</code>; builds <code>OrgIDs</code>. Grants fold in here too.</td></tr>
+  <tr><td>Denormalized ancestry columns</td><td><code>install_id</code>/<code>app_id</code> on the polymorphic-owner tables</td><td>Added by this work stream (migration 126); make every child resolvable in one point read. See <a href="resource-grant-denormalized-owners.html">the decision record</a>.</td></tr>
+</table>
+
+<h2>3. The ownership tree</h2>
+<p>Every resource has a parent chain terminating at the org. Authorization <strong>walks up</strong> this chain: a request is allowed if the requested resource <em>or any ancestor</em> carries a grant satisfying the verb. Chains are built from a single org-scoped point read per request &mdash; children either carry a direct owner column (components, policy reports) or denormalized <code>install_id</code>/<code>app_id</code> ancestry columns (workflows, runner jobs, queues, log streams, terraform workspaces). There is no request-time recursive owner walk.</p>
+<div class="tree">org  ← grant target (root)
+├─ app  ← grant target                                    chain: app → org
+│  ├─ install  ← grant target                             chain: install → app → org
+│  │  ├─ install components  (future target)
+│  │  │  ├─ install deploys → runner jobs ◆, log streams ◆
+│  │  │  └─ terraform workspaces ◆  (component infra state)
+│  │  ├─ install sandbox → terraform workspace ◆  (sandbox infra state)
+│  │  ├─ install sandbox runs → runner jobs ◆, log streams ◆
+│  │  ├─ workflows ◆ → steps → approvals
+│  │  │     (steps also own runner jobs ◆ — secret syncs — and log streams ◆)
+│  │  ├─ action workflow runs → runner jobs ◆, log streams ◆
+│  │  ├─ install stacks, stack runs, runbook runs
+│  │  ├─ notebooks → queues ◆
+│  │  ├─ queues ◆  (install signal queues)
+│  │  ├─ events, audit logs, config versions, inputs, state, roles, drift
+│  │  │     (route-level children under /v1/installs/:install_id)
+│  │  └─ install runner group → runners → runner jobs ◆, log streams ◆,
+│  │        queues ◆, processes
+│  ├─ components  (future target)
+│  │  └─ config connections → component builds → runner jobs ◆, log streams ◆
+│  ├─ app branches → branch runs (→ log streams ◆), branch queues ◆, workflows ◆
+│  ├─ app sandbox builds → runner jobs ◆, log streams ◆
+│  ├─ workflows ◆  (app-owned: config builds)
+│  ├─ app configs  (+ sandbox / runner / secrets / policies / permissions /
+│  │     break-glass / stack / input / template configs)
+│  ├─ actions, action workflows → action workflow configs
+│  ├─ runbooks, secrets
+│  ├─ policy reports  (install-scoped reports also carry their install)
+│  └─ queues ◆  (app signal queues)
+├─ webhook  ← grant target                                chain: webhook → org
+├─ vcs_connection  ← grant target                         chain: vcs_connection → org
+│  └─ vcs webhook subscriptions  (their queues ◆ resolve org tier)
+├─ slack_subscription  ← grant target                     chain: slack_subscription → org
+└─ org tier  (no install/app ancestor — org-wide permission only)
+   ├─ management runner group → runners → runner jobs ◆, log streams ◆, queues ◆
+   ├─ admin-created runner jobs ◆  (health-check / noop; no owner recorded)
+   ├─ org queues ◆  (org signals, health-check sweeps, trigger ingress,
+   │     onboarding, the 'general' queue)
+   ├─ triggers → dispatches, events, rules, secrets  (candidate delegable type)
+   ├─ AWS account connections  (deliberately not grantable)
+   └─ org settings, team, invites, service accounts, trust policies,
+         static tokens, grants</div>
+<p class="meta"><strong>← grant target</strong>: can carry a grant directly (<code>org</code>, <code>app</code>, <code>install</code>, <code>webhook</code>, <code>vcs_connection</code>, <code>slack_subscription</code>). <strong>(future target)</strong>: promotion planned to be additive. <strong>◆</strong>: row in one of the five polymorphic-owner tables (<code>install_workflows</code>, <code>runner_jobs</code>, <code>queues</code>, <code>log_streams</code>, <code>terraform_workspaces</code>) &mdash; its grantable ancestry is stored in denormalized <code>install_id</code>/<code>app_id</code> columns, populated at creation (<code>app.ResolveOwnerAncestry</code>) and backfilled by migration 126. Both columns NULL means <strong>org tier</strong> &mdash; a defined state, never &ldquo;unknown&rdquo;; such rows require org-wide permission. Everything without a marker inherits its parent's chain and is never a grant target itself.</p>
+<ul>
+  <li><strong>Runners are dual-owned</strong>, so they appear twice: a runner belongs to a runner group, and the group is owned by an install <em>or</em> the org. Install runners inherit their install's chain (an install grantee can see and operate their runner); the management (org) runner group and everything under it is org tier.</li>
+  <li><strong>Workflows and queues are multi-homed</strong> the same way: a workflow is owned by an install, an app, or an app branch; a queue by an install, app, branch, component, notebook, runner, or the org. Each row's tier is whatever its owner resolves to &mdash; the ◆ columns capture it per row.</li>
+</ul>
+
+<h2>4. Grant-target set</h2>
+<table>
+  <tr><th>Target</th><th>Model</th><th>Chain</th><th>Wildcard (<code>"*"</code>)</th></tr>
+  <tr><td><code>org</code></td><td><code>Org</code></td><td><code>[org]</code></td><td>no (already a single resource)</td></tr>
+  <tr><td><code>app</code></td><td><code>App</code></td><td><code>[app, org]</code></td><td>yes</td></tr>
+  <tr><td><code>install</code></td><td><code>Install</code></td><td><code>[install, app, org]</code></td><td>yes</td></tr>
+  <tr><td><code>webhook</code></td><td><code>Webhook</code></td><td><code>[webhook, org]</code></td><td>yes</td></tr>
+  <tr><td><code>vcs_connection</code></td><td><code>VCSConnection</code></td><td><code>[vcs_connection, org]</code></td><td>yes</td></tr>
+  <tr><td><code>slack_subscription</code></td><td><code>SlackChannelSubscription</code></td><td><code>[slack_subscription, org]</code></td><td>yes</td></tr>
+</table>
+<p><strong>Future targets</strong> (additive: a new <code>GrantResourceType</code> constant plus a chain-builder entry):</p>
+<ul>
+  <li><code>component</code> &mdash; leaf under app; chain <code>[component, app, org]</code>. Its personas are covered acceptably by <code>app</code> grants for now.</li>
+  <li><code>install-component</code> &mdash; leaf under install; same rationale.</li>
+  <li><code>trigger</code> &mdash; org-owned entity with no install/app tier; the natural next delegable org-owned type (like webhooks). Until then the trigger routes are org-level (&sect;8c).</li>
+  <li>Runbooks/actions &mdash; pending an <code>execute</code> verb (&sect;9, deferred).</li>
+</ul>
+
+<h2>5. Persona &rarr; grant mapping</h2>
+<table>
+  <tr><th>Persona</th><th>Grant</th><th>Effect</th></tr>
+  <tr><td>Org admin</td><td><code>org &middot; all</code></td><td>Everything (existing behavior).</td></tr>
+  <tr><td>Org read-only / auditor</td><td><code>org &middot; read</code></td><td>Read all descendants; no writes. (Original <code>org_read_only</code>.)</td></tr>
+  <tr><td>App owner</td><td><code>app &middot; all</code></td><td>Full control of one app + its installs/components.</td></tr>
+  <tr><td>App read-only</td><td><code>app &middot; read</code></td><td>Read one app subtree. (Original <code>apps_read_only</code>, scoped.)</td></tr>
+  <tr><td>Install operator</td><td><code>install &middot; all</code></td><td>Drive one install; no app-config writes.</td></tr>
+  <tr><td>Install read-only / support</td><td><code>install &middot; read</code></td><td>View one install. (Original <code>installs_read_only</code>, scoped.)</td></tr>
+  <tr><td>Install manager (all installs)</td><td><code>install &middot; * &middot; all</code></td><td>Admin on every install in the org, nothing else. Basis for a planned standard role (grant folded into the role's policy) &mdash; not yet built.</td></tr>
+  <tr><td>Integration manager</td><td><code>webhook/vcs_connection/slack_subscription &middot; * or id</code></td><td>Manage the org's notification/VCS surface without org admin.</td></tr>
+  <tr><td class="meta">Component maintainer <span class="tag info">future</span></td><td class="meta"><code>component &middot; all/read</code></td><td class="meta">One app component's config + builds. Covered by an <code>app</code> grant until <code>component</code> is promoted.</td></tr>
+</table>
+<div class="callout"><strong>Key simplification:</strong> &ldquo;read-only&rdquo; is a <em>permission verb</em>, not a role type. Every <code>*_read_only</code> persona is just <code>&lt;target&gt; &middot; read</code>. We do not add per-resource read-only role types.</div>
+
+<h2>6. Data model</h2>
+<p>One unified table (<code>internal/app/resource_grant.go</code>), folded into the account's permissions alongside role policies.</p>
+<pre><code>ResourceGrant {
+  ID, CreatedByID, CreatedAt, UpdatedAt, DeletedAt
+  OrgID         // org the grant lives in (drives membership/OrgIDs)
+  AccountID
+  ResourceType  // org | app | install | webhook | vcs_connection | slack_subscription
+  ResourceID    // canonical ID of the granted resource, or "*" (type wildcard)
+  Permission    // "read" | "all"
+}
+// unique on (org_id, account_id, resource_type, resource_id, deleted_at);
+// create is an upsert on that key (re-granting updates the permission)</code></pre>
+<p>In <code>account.go</code> <code>AfterQuery</code>, after merging role policies:</p>
+<ul>
+  <li>each specific grant merges as <code>{ResourceID: Permission}</code> into <code>AllPermissions</code>;</li>
+  <li>each wildcard grant lands in <code>TypeGrants map[orgID]map[resourceType]Permission</code> (exposed per-org via <code>OrgTypeGrants(orgID)</code>) &mdash; kept out of the flat Set so a tier wildcard cannot leak to other tiers;</li>
+  <li>the grant's <code>OrgID</code> joins <code>OrgIDs</code>, so an otherwise org-less account passes org membership.</li>
+</ul>
+
+<h2>7. Authorization primitive: walk-up-the-chain</h2>
+<pre><code>// internal/pkg/authz/authorize.go
+type Link struct{ Type, ID string }   // one tier: grant resource type + object id
+
+// most-specific -&gt; least-specific; allow if any link satisfies perm,
+// via a specific-object grant (perms) or a tier wildcard (wildcards).
+// A Link with empty ID is type-only (creates/collections) and is
+// satisfiable only by that tier's wildcard.
+func Authorize(perms permissions.Set, wildcards map[string]permissions.Permission,
+    chain []Link, perm permissions.Permission) error</code></pre>
+<p>Chains per resource, each built from at most one org-scoped point read:</p>
+<ul>
+  <li><code>org</code>: <code>[org]</code> &mdash; the org-admin case is just the last link, unifying the old org gate with grants</li>
+  <li><code>app</code>: <code>[app, org]</code>; <code>install</code>: <code>[install, app, org]</code> (install row carries <code>app_id</code>)</li>
+  <li>org-owned siblings: <code>[webhook|vcs_connection|slack_subscription, org]</code>, or type-only <code>[{type}, org]</code> for their collection/create routes</li>
+  <li>owned children: the owner's chain, read from the child's direct owner column or its denormalized <code>install_id</code>/<code>app_id</code>; both NULL &rArr; bare <code>[org]</code></li>
+  <li>runners: one fixed hop through the runner group (install- or org-owned; never recursive)</li>
+</ul>
+
+<h2>8. Enforcement wiring</h2>
+<h3>8a. Org-gate rework <span class="tag warn">only non-additive change</span></h3>
+<p>Resource authorization is folded into the existing <code>org</code> middleware. The whole feature is gated behind one flag, <code>ResourceGrantsEnabled</code> (<code>internal.Config</code> &rarr; env <code>RESOURCE_GRANTS_ENABLED</code>, default off). When it is off, the gate behaves exactly as before. When on, <code>org.go</code> splits membership from authorization:</p>
+<pre><code>orgErr := acct.AllPermissions.CanPerform(object, perm)
+if orgErr == nil {
+    cctx.SetOrgAuthorized(ctx, true)                  // org-wide grant/role: fast path
+} else {
+    if !acct.HasOrg(org.ID) { 403 }                   // not a member at all
+    cctx.SetOrgAuthorized(ctx, false)                 // member via a narrow grant; defer
+    if !isFilteredCollection(ctx) {
+        authorizeResource(ctx, acct, org.ID, perm)    // resolve resource in path + walk up
+    }
+}</code></pre>
+<p><strong>Fail-closed:</strong> a deferred request whose route cannot be resolved to a chain (and is not a filtered collection) is denied. Folding enforcement into the org gate (rather than per-group middlewares) means one flag enables the whole feature and there is no flag-on-but-middleware-not-wired gap.</p>
+<p class="meta">One special case predates grants and is preserved: <code>POST &hellip;/components/:component_id/builds</code> checks the org's <code>&lt;orgID&gt;:component_builds</code> object on the fast path (<code>permissions.RequestObject</code>), which the runner role carries.</p>
+
+<h3>8b. Route &rarr; chain resolution</h3>
+<p><code>resourceChain</code> (<code>middlewares/org/org.go</code>, <code>resources.go</code>, <code>owners.go</code>) resolves the most specific resource named by the route, in order:</p>
+<ol>
+  <li><code>:install_id</code> param (id-or-name, org-scoped) &rarr; <code>[install, app, org]</code></li>
+  <li><code>:app_id</code> param (id-or-name) &rarr; <code>[app, org]</code></li>
+  <li>org-owned resource prefixes (<code>orgResourceRoutes</code>: webhooks, VCS connections, the Slack surface) &rarr; <code>[{type}&nbsp;(+id), org]</code>; routes under the prefix without the id param resolve type-only</li>
+  <li>owned-child prefixes (<code>ownedResourceRoutes</code>: workflows, runner jobs, queues, log streams, terraform workspaces, runners, top-level components/builds/action-workflows, sandbox runs, stacks, policy reports) &rarr; single point read of the owner columns &rarr; the owner's chain</li>
+  <li>parentless creates (<code>POST /v1/installs</code>, <code>POST /v1/apps</code>) &rarr; type-only link for the created tier</li>
+  <li>terraform backend routes (<code>GET/POST /v1/terraform-backend</code>) &rarr; the workspace named by the <code>?workspace_id=</code> query param &rarr; its ancestry chain</li>
+  <li>body-owned creates (<code>POST /v1/terraform-workspace(s)</code>) &rarr; the owner named by <code>owner_type</code>/<code>owner_id</code> in the JSON body (read once and restored for the handler) &rarr; its ancestry chain; unknown owners resolve to the org tier</li>
+  <li>anything else: fail closed (unless explicitly classified, 8c)</li>
+</ol>
+
+<h3>8c. Route-coverage validation <span class="tag good">boot-time guarantee</span></h3>
+<p>Every <code>/v1</code> route on the public server must be consciously classified: resolvable by 8b, exempt (global/public), a filtered collection (8d), or explicitly <strong>org-level</strong> (<code>orgLevelRoutes</code>: org settings, team/credential surfaces, the grant surface itself, all org-wide collections/aggregates, and the trigger family &mdash; org-owned entities with no tier below the org). A route a grant semantically covers must resolve &mdash; this validator makes that constraint structural. <code>ValidateRouteCoverage</code> runs at startup &mdash; an unclassified route fails the boot (and CI) of the PR that adds it instead of silently 403ing grant-scoped accounts in production. A snapshot test pins the full route inventory. The complete per-endpoint mapping lives in <a href="public-api-authorization-audit.html">the authorization audit</a>.</p>
+
+<h3>8d. Collection-endpoint grant-scope filtering</h3>
+<p>Walk-up authorizes a single addressed resource; list endpoints return collections. Four core navigation lists let deferred (<code>OrgAuthorized=false</code>) members through and filter results to entitled rows instead of gating the endpoint: <code>GET /v1/installs</code>, <code>GET /v1/apps/:app_id/installs</code>, <code>GET /v1/apps</code>, <code>GET /v1/components</code>.</p>
+<ul>
+  <li><strong>Shared helper</strong> <code>scope.ForList(acct, perm)</code> (<code>internal/pkg/authz/scope</code>) turns the caller's grants into per-tier ID sets &mdash; <code>OrgIDs</code>/<code>AppIDs</code>/<code>InstallIDs</code> plus <code>AppWildcardOrgs</code>/<code>InstallWildcardOrgs</code> for type wildcards.</li>
+  <li><strong>Per-table GORM scopes</strong> (<code>IDSets.Installs/Apps/Components</code>, column names parameterized for the view-backed tables) drop into <code>.Scopes(...)</code>. A row is visible if any tier it belongs to is granted; the <code>Apps</code> scope adds <strong>upward visibility</strong> &mdash; the parent app of a granted install is listed (metadata only; sibling installs stay filtered) so navigation stays coherent.</li>
+  <li><strong>Per-service guards</strong> (<code>grant_scope.go</code> in the installs/apps/components services): no-op when <code>cctx.OrgAuthorized</code> (org-wide callers keep their unfiltered plan), the real filter for deferred members, and <code>WHERE 1=0</code> if no account is resolvable (fail closed).</li>
+</ul>
+<div class="callout"><strong>All other org-wide collections are org-level by design</strong> (user decision): <code>GET /v1/builds</code>, <code>/v1/workflows</code>, <code>/v1/runner-jobs</code>, <code>/v1/queues</code>, <code>/v1/terraform-workspaces</code>, <code>/v1/policy-reports</code>, health/label aggregates, etc. enumerate resources across the whole org and require an org-level permission rather than per-grant result filtering. The denormalized ancestry columns make extending filtering to them a mechanical follow-up (each is one <code>WHERE install_id IN (&hellip;)</code> away) if a product need appears; detail routes for those resources already resolve per-row, so the lists are navigation, not capability.</div>
+
+<h3>8e. Query performance</h3>
+<p>Every list query AND's an unconditional <code>WHERE org_id = ?</code> before the grant scope, so the OR-of-INs only ever evaluates within one org's rows &mdash; never a whole-table scan. For a narrow grantee <code>OrgIDs</code> is empty (an org grant would have taken the fast path), so the effective filter is <code>id IN (&hellip;) OR app_id IN (&hellip;) [OR org_id IN (wildcard orgs)]</code> over an already-narrow set. Org-wide callers skip the filter entirely &mdash; no regression on the large-org path. Two things need active attention as filtering extends: each filtered column stays independently indexed, and pagination <code>COUNT</code> queries apply the same scope (a correctness bug if missed, not just a slow query). If per-account grant cardinality ever reaches thousands, the materialized IN lists can be swapped for a JOIN against <code>resource_grants</code>; not needed at expected scale.</p>
+
+<h3>8f. Denormalized ancestry (how children resolve)</h3>
+<p>The five polymorphic-owner tables carry <code>install_id</code>/<code>app_id</code> directly (see <a href="resource-grant-denormalized-owners.html">the decision record</a> for the full option analysis vs. nested routes and the request-time walk):</p>
+<ul>
+  <li><strong>Write path:</strong> <code>BeforeCreate</code> hooks call <code>app.ResolveOwnerAncestry(tx, orgID, ownerType, ownerID)</code>, which maps every owner type observed at the tables' creation sites to its grantable ancestors. Unknown owner types and dangling references resolve to the org tier (never an error &mdash; creation must not break). Owners that are themselves denormalized are read from their own columns, so resolution is at most two point queries and never recursive.</li>
+  <li><strong>Backfill:</strong> migration 126, batched and idempotent, one targeted update per (table, owner-type) pair; <code>install_workflows</code> first so rows owned by workflow steps read the workflow's fresh columns. Rows whose owners are org-tier (management-runner jobs, org queues, admin-created jobs with no owner, runner-supplied unknown workspace owners) legitimately stay NULL. Rows written by not-yet-updated pods during the deploy rollout stay NULL too &mdash; an accepted, fail-closed window.</li>
+  <li><strong>Read path (authorization):</strong> <code>denormOwned(table)</code> in <code>middlewares/org/owners.go</code> &mdash; one org-scoped <code>SELECT install_id, app_id</code>, then <code>ownerChain</code>. Ownership is create-time-only on all five tables (verified: no code updates owner columns post-insert), so the columns cannot go stale.</li>
+</ul>
+
+<h2>9. Decisions</h2>
+
+<h3>Resolved</h3>
+<table>
+  <tr><th>Question</th><th>Decision</th><th>Status</th></tr>
+  <tr>
+    <td>Who can grant?</td>
+    <td><span class="tag good">Org-admins only</span></td>
+    <td>Implemented: grant CRUD requires an org-wide <code>all</code> caller (<code>requireOrgAdmin</code>). No delegation, no re-grant/escalation checks; delegation can be added later without breaking the model.</td>
+  </tr>
+  <tr>
+    <td>Grantee scope?</td>
+    <td><span class="tag warn">External invitees &mdash; decided, not implemented</span></td>
+    <td>Today a grant requires an <em>existing</em> account (by <code>account_id</code> or <code>email</code> lookup; unknown email is an error). The scoped-invite path &mdash; <code>create_invite.go</code> accepting a resource-scoped invite whose acceptance creates the <code>ResourceGrant</code> &mdash; remains to build.</td>
+  </tr>
+  <tr>
+    <td>Upward visibility in lists?</td>
+    <td><span class="tag good">Navigable (show parent app)</span></td>
+    <td>Implemented in the <code>Apps</code> scope: a narrow grantee sees the parent app of a granted install (metadata only; siblings stay filtered). The strict-isolation variant is not used.</td>
+  </tr>
+  <tr>
+    <td>Collections beyond the four navigation lists?</td>
+    <td><span class="tag good">Org-level by design</span></td>
+    <td>Org-wide collection/aggregate endpoints belong to the org (&sect;8d callout). No per-grant result filtering there for now.</td>
+  </tr>
+  <tr>
+    <td>How do bare child routes resolve their owner?</td>
+    <td><span class="tag good">Denormalized ancestry columns</span></td>
+    <td>Chosen over (a) a request-time recursive owner walk &mdash; built on the frozen <code>ja/resource-grants</code> branch, kept as fallback &mdash; and (b) adding owner-nested routes and downgrading bare routes to org-level, which remains available later as an API-surface evolution the columns already enable (nested handlers would scope children with <code>WHERE install_id = ?</code>).</td>
+  </tr>
+</table>
+
+<h3>9a. Grant management API <span class="tag good">implemented: unified surface</span></h3>
+<p>Grants are managed through a single resource-agnostic surface &mdash; the resource is named in the request body (create) or query (list), not the path. This keeps the API flat as more tiers become grantable and makes the org tier a first-class target with no extra endpoints.</p>
+<table>
+  <tr><th>Method</th><th>Route</th><th>Notes</th></tr>
+  <tr><td><code>POST</code></td><td><code>/v1/grants</code></td><td>Create/upsert (re-granting the same resource updates the permission). Body: <code>{ resource_type, resource_id, account_id|email, permission }</code>. <code>resource_type</code> is <code>oneof=org app install webhook vcs_connection slack_subscription</code>; <code>permission</code> is <code>oneof=read all</code>. Apps/installs accept name-or-id (resolved &amp; validated against the caller org); every non-org type accepts the <code>"*"</code> wildcard; <code>org</code> must be the caller's own org. Org-admin only.</td></tr>
+  <tr><td><code>GET</code></td><td><code>/v1/grants</code></td><td>List grants in the org; optional <code>?resource_type=&amp;resource_id=</code> filter.</td></tr>
+  <tr><td><code>DELETE</code></td><td><code>/v1/grants/:grant_id</code></td><td>Revoke (soft delete). Org-admin only.</td></tr>
+</table>
+<p><strong>Org-wide read</strong> is a single <code>org &middot; read</code> grant &mdash; it cascades to every descendant via walk-up and is bucketed at the org tier by the collection filter. An <code>app &middot; read</code> grant similarly covers all installs under that app. For &ldquo;all resources of one tier&rdquo;, use a type wildcard.</p>
+
+<h3>9b. Type-wildcard grants <span class="tag good">implemented</span></h3>
+<p>A grant whose <code>resource_id</code> is <code>"*"</code> scopes to <strong>every resource of its <code>resource_type</code> within the org</strong> &mdash; e.g. <code>{ resource_type: "install", resource_id: "*", permission: "all" }</code> grants write on all installs in the org, and crucially <em>not</em> apps or other tiers (which <code>org &middot; all</code> cannot express). Supported for every type except <code>org</code> (already a single resource).</p>
+<p>The wildcard deliberately does <strong>not</strong> reuse the <code>permissions.Set</code> <code>"*"</code> key, which <code>CanPerform</code> falls back to for <em>any</em> object regardless of tier &mdash; using it would leak an <code>install &middot; *</code> grant to apps and the org. Instead the tier is carried explicitly:</p>
+<ul>
+  <li><strong>Aggregation</strong> (<code>account.go</code> <code>AfterQuery</code>): wildcard grants collect into <code>Account.TypeGrants</code>, keyed by org id then resource type, separate from the flat <code>AllPermissions</code> Set.</li>
+  <li><strong>Walk-up</strong> (<code>authz.Authorize</code>): the chain is <code>[]Link{Type, ID}</code>; a link is authorized by a specific-object grant <em>or</em> a <code>TypeGrants</code> entry matching that link's tier. An <code>install &middot; *</code> grant matches the install link but never the app or org link. Type-only links (creates, org-resource collections) are satisfiable <em>only</em> by the tier wildcard.</li>
+  <li><strong>Collection filter</strong> (<code>scope</code>): <code>IDSets.AppWildcardOrgs</code>/<code>InstallWildcardOrgs</code> widen the list queries to <code>org_id IN (&hellip;)</code> for the wildcard tier, with the same upward-visibility semantics as specific grants.</li>
+</ul>
+
+<h3>Deferred</h3>
+<ul>
+  <li><strong>Execute verb:</strong> runbooks/actions want an <code>execute</code> permission, not CRUD. The <code>Permission</code> enum and <code>FromRequest</code> mapping are extensible, so adding it later is additive.</li>
+  <li><strong>Scoped invites:</strong> the external-grantee path (&sect;9 resolved table).</li>
+  <li><strong>Leaf-target promotion:</strong> <code>component</code> / <code>install-component</code> as grant types; <code>trigger</code> as a delegable org-owned type.</li>
+  <li><strong>Standard roles built on grants:</strong> e.g. an Install Manager role whose policy folds in an <code>install &middot; *</code> type grant. Requires the role catalog work (<code>ja/roles</code>, PR #2123) plus a policy-key fold; sequenced after this branch lands.</li>
+</ul>
+
+<h2>10. Pressure test <span class="tag info">historical record, outcomes updated</span></h2>
+<p class="meta">Each scenario traces a concrete request through org-gate &rarr; handler. These drove the design; the Result column reflects where each landed in the final implementation.</p>
+<div id="pressure-test">
+
+<table>
+  <tr><th>#</th><th>Request &amp; grant</th><th>Trace</th><th>Result</th></tr>
+
+  <tr>
+    <td>S1</td>
+    <td class="req">GET /v1/installs/:id<br>grant: install&middot;read</td>
+    <td>Org gate: member (grant put org in <code>OrgIDs</code>), no org-wide &rarr; defer. Chain <code>[install,app,org]</code>, <code>CanPerform(install,read)</code> hits.</td>
+    <td><span class="tag good">PASS</span></td>
+  </tr>
+
+  <tr>
+    <td>S2</td>
+    <td class="req">PATCH /v1/installs/:id<br>grant: install&middot;read</td>
+    <td><code>FromRequest</code>&rarr;update; no chain link satisfies update.</td>
+    <td><span class="tag good">DENY (correct)</span> &mdash; read-only enforced for free.</td>
+  </tr>
+
+  <tr>
+    <td>S5</td>
+    <td class="req">GET /v1/installs/:id<br>grant: app&middot;read (parent app)</td>
+    <td>Chain <code>[install,app,org]</code>; <code>CanPerform(app,read)</code> hits via walk-up.</td>
+    <td><span class="tag good">PASS</span> &mdash; cascade works.</td>
+  </tr>
+
+  <tr>
+    <td>S8</td>
+    <td class="req">GET /v1/apps/my-app-name<br>grant: app&middot;read (by canonical id)</td>
+    <td>The gate resolves name&rarr;canonical id <em>before</em> keying, then <code>CanPerform(canonicalID,read)</code>.</td>
+    <td><span class="tag good">PASS</span> &mdash; name-or-id resolution is part of chain building.</td>
+  </tr>
+
+  <tr>
+    <td>S9</td>
+    <td class="req">any, X-Nuon-Org-ID=orgB<br>grant: install&middot;read in orgA</td>
+    <td>Org gate: <code>HasOrg(orgB)</code> false (grant added only orgA).</td>
+    <td><span class="tag good">DENY (correct)</span> &mdash; cross-org isolation holds.</td>
+  </tr>
+
+  <tr>
+    <td>S12</td>
+    <td class="req">PATCH /v1/installs/:id<br>grants: app&middot;read + install&middot;all</td>
+    <td>Chain <code>[install,app,org]</code>: install&middot;<code>all</code> satisfies update.</td>
+    <td><span class="tag good">PASS</span> &mdash; any-link-wins + <code>all</code>; grants accumulate independently.</td>
+  </tr>
+
+  <tr>
+    <td>S3/S4</td>
+    <td class="req">GET /v1/installs<br>GET /v1/apps/:id/installs<br>grant: install&middot;read (one install)</td>
+    <td>Found as the biggest gap (F1): list handlers did no per-item filtering, so narrow grantees were either denied their own resource or shown everything.</td>
+    <td><span class="tag good">RESOLVED</span> &mdash; filtered collections (&sect;8d).</td>
+  </tr>
+
+  <tr>
+    <td>S6</td>
+    <td class="req">GET /v1/installs/:iid/components/:cid<br>grant: install-component&middot;read</td>
+    <td class="meta"><em>Future target.</em> An <code>install</code> grant covers this route today (chain <code>[install,app,org]</code>). Promotion of <code>install-component</code> adds a deeper chain, keyed on <code>InstallComponent.ID</code>.</td>
+    <td><span class="tag info">FUTURE</span></td>
+  </tr>
+
+  <tr>
+    <td>S10</td>
+    <td class="req">GET /v1/workflows/:wid<br>grant: install&middot;read (owning install)</td>
+    <td>Found as F3: the route names no install/app, and the workflow row's polymorphic owner wasn't resolved &rarr; fail-closed even for the rightful grantee.</td>
+    <td><span class="tag good">RESOLVED</span> &mdash; denormalized ancestry (&sect;8f): one point read of <code>install_workflows.install_id/app_id</code> rebuilds the chain.</td>
+  </tr>
+
+  <tr>
+    <td>S11</td>
+    <td class="req">GET /v1/components/:cid<br>grant: component&middot;read</td>
+    <td class="meta"><em>Future target.</em> The route resolves today via the component's <code>app_id</code> (app chain); an <code>app</code> grant covers it. Direct component grants await promotion.</td>
+    <td><span class="tag info">FUTURE</span></td>
+  </tr>
+</table>
+
+<div class="callout">
+  <strong>Where the findings landed.</strong>
+  <strong>F1</strong> (collections) &rarr; the four filtered navigation lists (&sect;8d); all other collections org-level by design.
+  <strong>F3</strong> (routes that don't name their resource) &rarr; solved structurally by denormalized ancestry + the owned-child resolver registry (&sect;8b/8f), not by per-handler checks; the boot-time coverage validator (&sect;8c) prevents the gap from ever silently reappearing on new routes.
+  <strong>F2/F4</strong> (leaf-target promotion mechanics) &rarr; still future, unchanged in shape.
+  Confirmed sound and still true: read-only-as-verb (S2), ancestor cascade (S5), name-or-id ordering (S8), cross-org isolation (S9), independent grant accumulation (S12).
+</div>
+
+</div>
+
+<h2>11. Implementation status</h2>
+<table>
+  <tr><th>Piece</th><th>Status</th></tr>
+  <tr><td>Denormalized ancestry columns + write-path hooks + backfill (migration 126)</td><td><span class="tag good">done (ja/resource-grants-v2)</span></td></tr>
+  <tr><td><code>ResourceGrant</code> model, <code>AfterQuery</code> aggregation (incl. <code>TypeGrants</code>)</td><td><span class="tag good">done (ja/account-resource-grants)</span></td></tr>
+  <tr><td><code>Authorize</code> + chain building for all current targets and owned children</td><td><span class="tag good">done (ja/account-resource-grants)</span></td></tr>
+  <tr><td>Org-gate rework behind <code>ResourceGrantsEnabled</code> (default off)</td><td><span class="tag good">done (ja/account-resource-grants)</span></td></tr>
+  <tr><td>Route-coverage validation at boot + inventory snapshot test</td><td><span class="tag good">done (ja/account-resource-grants)</span></td></tr>
+  <tr><td>Collection filtering (4 navigation lists) + <code>scope</code> package</td><td><span class="tag good">done (ja/account-resource-grants)</span></td></tr>
+  <tr><td>Grant CRUD API (<code>/v1/grants</code>), SDKs + dashboard types regenerated</td><td><span class="tag good">done (ja/account-resource-grants)</span></td></tr>
+  <tr><td>DB-backed integration test for migration 126 backfill</td><td><span class="tag warn">recommended pre-merge</span></td></tr>
+  <tr><td>Scoped invites (grants to external emails)</td><td><span class="tag warn">not built</span></td></tr>
+  <tr><td>Dashboard + CLI grant management UX</td><td><span class="tag warn">not built</span></td></tr>
+  <tr><td>Feature flag on when per-account grants are needed</td><td><span class="tag warn">sequenced after ja/account-resource-grants merges</span></td></tr>
+</table>
+<div class="callout warn"><strong>Branch relationship.</strong> This design is implemented twice. <code>ja/resource-grants</code> (frozen) resolves owned children with a request-time recursive owner walk; the v2 line replaces the walk with denormalized ancestry columns and is the intended path. The v2 line is split in two: <code>ja/resource-grants-v2</code> carries the schema (merges first &mdash; passive, unblocks roles work), and <code>ja/account-resource-grants</code> stacks the enforcement and grant layer on top (merges later, when per-account grants are needed; roles authorize at the org gate and use none of it). The v1 and v2 lines share no git ancestry and are mutually exclusive &mdash; whichever merges, the other is discarded, and fixes do not flow between them.</div>
+
+<h2>12. Related</h2>
+<ul>
+  <li><a href="resource-grant-denormalized-owners.html">resource-grant-denormalized-owners.html</a> &mdash; the denormalization decision record: route-audit groups, the two-group model, nested-routes vs. columns</li>
+  <li><a href="public-api-authorization-audit.html">public-api-authorization-audit.html</a> &mdash; every public-API endpoint and the grant that allows access</li>
+  <li><code>docs/design/resource-grant-collection-filtering.md</code> (on <code>ja/resource-grants</code>) &mdash; the earlier list-filtering tier analysis; its Tier&nbsp;3 is subsumed by the denormalized columns</li>
+</ul>
+
+</div>
+</body>
+</html>

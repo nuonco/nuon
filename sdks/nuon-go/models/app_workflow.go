@@ -23,6 +23,9 @@ type AppWorkflow struct {
 	// app branch runs
 	AppBranchRuns []*AppAppBranchRun `json:"app_branch_runs"`
 
+	// app id
+	AppID string `json:"app_id,omitempty"`
+
 	// approval option
 	ApprovalOption AppInstallApprovalOption `json:"approval_option,omitempty"`
 
@@ -59,6 +62,10 @@ type AppWorkflow struct {
 
 	// install deploys
 	InstallDeploys []*AppInstallDeploy `json:"install_deploys"`
+
+	// denormalized grantable ancestry, resolved from the polymorphic owner at
+	// creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+	InstallID string `json:"install_id,omitempty"`
 
 	// install sandbox runs
 	InstallSandboxRuns []*AppInstallSandboxRun `json:"install_sandbox_runs"`

@@ -17,6 +17,9 @@ import (
 // swagger:model app.TerraformWorkspace
 type AppTerraformWorkspace struct {
 
+	// app id
+	AppID string `json:"app_id,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -25,6 +28,10 @@ type AppTerraformWorkspace struct {
 
 	// id
 	ID string `json:"id,omitempty"`
+
+	// denormalized grantable ancestry, resolved from the polymorphic owner at
+	// creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+	InstallID string `json:"install_id,omitempty"`
 
 	// org id
 	OrgID string `json:"org_id,omitempty"`

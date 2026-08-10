@@ -20,6 +20,9 @@ import (
 // swagger:model app.Queue
 type AppQueue struct {
 
+	// app id
+	AppID string `json:"app_id,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -34,6 +37,10 @@ type AppQueue struct {
 
 	// idle timeout
 	IdleTimeout int64 `json:"idle_timeout,omitempty"`
+
+	// denormalized grantable ancestry, resolved from the polymorphic owner at
+	// creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+	InstallID string `json:"install_id,omitempty"`
 
 	// max depth
 	MaxDepth int64 `json:"max_depth,omitempty"`

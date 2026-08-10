@@ -5102,12 +5102,18 @@ export interface components {
       version?: string;
     };
     "app.LogStream": {
+      app_id?: string;
       attrs?: {
         [key: string]: string;
       };
       created_at?: string;
       created_by_id?: string;
       id?: string;
+      /**
+       * @description denormalized grantable ancestry, resolved from the polymorphic owner at
+       * creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+       */
+      install_id?: string;
       open?: boolean;
       org_id?: string;
       owner_id?: string;
@@ -5478,11 +5484,17 @@ export interface components {
       version?: string;
     };
     "app.Queue": {
+      app_id?: string;
       created_at?: string;
       created_by_id?: string;
       emitters?: components["schemas"]["app.QueueEmitter"][];
       id?: string;
       idle_timeout?: number;
+      /**
+       * @description denormalized grantable ancestry, resolved from the polymorphic owner at
+       * creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+       */
+      install_id?: string;
       max_depth?: number;
       max_in_flight?: number;
       metadata?: {
@@ -5797,6 +5809,7 @@ export interface components {
       version?: string;
     };
     "app.RunnerJob": {
+      app_id?: string;
       /** @description available timeout is how long a job can be marked as "available" before being requeued */
       available_timeout?: number;
       created_at?: string;
@@ -5811,6 +5824,11 @@ export interface components {
       finished_at?: string;
       group?: components["schemas"]["app.RunnerJobGroup"];
       id?: string;
+      /**
+       * @description denormalized grantable ancestry, resolved from the polymorphic owner at
+       * creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+       */
+      install_id?: string;
       install_role_usage?: components["schemas"]["app.InstallRoleUsage"];
       json?: components["schemas"]["app.RunnerJobPlan"];
       log_stream_id?: string;
@@ -6094,9 +6112,15 @@ export interface components {
       type?: string;
     };
     "app.TerraformWorkspace": {
+      app_id?: string;
       created_at?: string;
       created_by_id?: string;
       id?: string;
+      /**
+       * @description denormalized grantable ancestry, resolved from the polymorphic owner at
+       * creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+       */
+      install_id?: string;
       org_id?: string;
       owner_id?: string;
       owner_type?: string;
@@ -6258,6 +6282,7 @@ export interface components {
     };
     "app.Workflow": {
       app_branch_runs?: components["schemas"]["app.AppBranchRun"][];
+      app_id?: string;
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
@@ -6274,6 +6299,11 @@ export interface components {
       id?: string;
       install_action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
+      /**
+       * @description denormalized grantable ancestry, resolved from the polymorphic owner at
+       * creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+       */
+      install_id?: string;
       install_sandbox_runs?: components["schemas"]["app.InstallSandboxRun"][];
       links?: {
         [key: string]: unknown;

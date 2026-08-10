@@ -176,5 +176,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "125-backfill-role-metadata",
 			Fn:   m.Migration125BackfillRoleMetadata,
 		},
+		{
+			Name: "126-denormalize-owner-ancestry",
+			Fn:   m.Migration126DenormalizeOwnerAncestry,
+		},
 	}
 }

@@ -30,6 +30,11 @@ type Queue struct {
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
+	// denormalized grantable ancestry, resolved from the polymorphic owner at
+	// creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+	InstallID *string `json:"install_id,omitzero" gorm:"index" temporaljson:"install_id,omitzero,omitempty"`
+	AppID     *string `json:"app_id,omitzero" gorm:"index" temporaljson:"app_id,omitzero,omitempty"`
+
 	Name        string          `json:"name,omitzero" gorm:"default:''" temporaljson:"name,omitzero,omitempty"`
 	MaxDepth    int             `json:"max_depth,omitzero"`
 	MaxInFlight int             `json:"max_in_flight,omitzero"`
@@ -88,6 +93,14 @@ func (r *Queue) BeforeCreate(tx *gorm.DB) error {
 		if orgID := orgIDFromContext(tx.Statement.Context); orgID != "" {
 			r.OrgID = &orgID
 		}
+	}
+
+	if r.InstallID == nil && r.AppID == nil && r.OrgID != nil {
+		installID, appID, err := ResolveOwnerAncestry(tx, *r.OrgID, r.OwnerType, r.OwnerID)
+		if err != nil {
+			return err
+		}
+		r.InstallID, r.AppID = installID, appID
 	}
 
 	return nil

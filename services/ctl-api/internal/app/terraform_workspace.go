@@ -26,6 +26,11 @@ type TerraformWorkspace struct {
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;uniqueIndex:idx_owner" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;uniqueIndex:idx_owner" temporaljson:"owner_type,omitzero,omitempty"`
 
+	// denormalized grantable ancestry, resolved from the polymorphic owner at
+	// creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+	InstallID *string `json:"install_id,omitzero" gorm:"index" temporaljson:"install_id,omitzero,omitempty"`
+	AppID     *string `json:"app_id,omitzero" gorm:"index" temporaljson:"app_id,omitzero,omitempty"`
+
 	States      []TerraformWorkspaceState `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"states,omitzero,omitempty"`
 	LockHistory []TerraformWorkspaceLock  `faker:"-" json:"lock_history" swaggerignore:"true" gorm:"foreignKey:WorkspaceID;references:ID;constraint:OnDelete:CASCADE;" temporaljson:"lock_history,omitzero,omitempty"`
 
@@ -55,5 +60,14 @@ func (r *TerraformWorkspace) BeforeCreate(tx *gorm.DB) (err error) {
 	if r.OrgID == "" {
 		r.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
+
+	if r.InstallID == nil && r.AppID == nil {
+		installID, appID, err := ResolveOwnerAncestry(tx, r.OrgID, r.OwnerType, r.OwnerID)
+		if err != nil {
+			return err
+		}
+		r.InstallID, r.AppID = installID, appID
+	}
+
 	return nil
 }

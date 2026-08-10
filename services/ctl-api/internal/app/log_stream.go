@@ -29,6 +29,11 @@ type LogStream struct {
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
+	// denormalized grantable ancestry, resolved from the polymorphic owner at
+	// creation (ResolveOwnerAncestry); both nil ⇒ org-tier resource
+	InstallID *string `json:"install_id,omitzero" gorm:"index" temporaljson:"install_id,omitzero,omitempty"`
+	AppID     *string `json:"app_id,omitzero" gorm:"index" temporaljson:"app_id,omitzero,omitempty"`
+
 	Open bool `json:"open,omitzero" temporaljson:"open,omitzero,omitempty"`
 
 	Attrs pgtype.Hstore `json:"attrs,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"attrs,omitzero,omitempty"`
@@ -55,6 +60,14 @@ func (r *LogStream) BeforeCreate(tx *gorm.DB) error {
 
 	if r.OrgID == "" {
 		r.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+
+	if r.InstallID == nil && r.AppID == nil {
+		installID, appID, err := ResolveOwnerAncestry(tx, r.OrgID, r.OwnerType, r.OwnerID)
+		if err != nil {
+			return err
+		}
+		r.InstallID, r.AppID = installID, appID
 	}
 
 	return nil
