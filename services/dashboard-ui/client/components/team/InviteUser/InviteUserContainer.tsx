@@ -4,6 +4,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
+import { useRoleOptions } from '@/hooks/use-roles'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getOrgInvites, inviteUser, resendOrgInvite } from '@/lib'
@@ -14,6 +15,7 @@ const InviteUserModalContainer = (props: Record<string, any>) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
+  const { roleOptions } = useRoleOptions('team')
 
   const { data: invites } = useQuery({
     queryKey: ['org-invites', org?.id],
@@ -72,6 +74,7 @@ const InviteUserModalContainer = (props: Record<string, any>) => {
       isResendPending={isResendPending}
       error={error}
       invites={invites}
+      roleOptions={roleOptions}
       onSubmit={({ email, roleType }) => mutate({ email, roleType })}
       onResend={(inviteId) => resend({ inviteId })}
       {...props}

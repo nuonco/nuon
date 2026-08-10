@@ -43,7 +43,7 @@ export interface paths {
   "/v1/account/static-token": {
     /**
      * create a static API token for your org
-     * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, org_read_only, or org_builder) and defaults to org_read_only.
+     * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
      */
     post: operations["CreateStaticToken"];
   };
@@ -2621,10 +2621,13 @@ export interface paths {
   };
   "/v1/roles": {
     /**
-     * List assignable roles
-     * @description List the roles that can be assigned to members and service accounts in an
-     * organization. Each role indicates which principal types it applies to via the
-     * `applies_to` field (`user`, `service_account`, or both).
+     * List your org's roles
+     * @description List your org's roles. Each role carries its display metadata (`title`,
+     * `description`) and the assignment surfaces it may be offered on via the
+     * `applies_to` field (`team`, `service_account`, `api_token`,
+     * `oidc_trust_policy`). A role with no `applies_to` entries exists and may be
+     * displayed, but cannot be newly assigned. Pass `?context=<surface>` to filter
+     * to the roles assignable on a single surface.
      */
     get: operations["ListRoles"];
   };
@@ -5664,12 +5667,21 @@ export interface components {
       workflow?: components["schemas"]["signaldb.WorkflowRef"];
     };
     "app.Role": {
+      applies_to?: string[];
       createdBy?: components["schemas"]["app.Account"];
       created_at?: string;
       created_by_id?: string;
+      description?: string;
       id?: string;
+      managed?: boolean;
       policies?: components["schemas"]["app.Policy"][];
       role_type?: components["schemas"]["app.RoleType"];
+      /**
+       * @description display + assignability metadata; the single source of truth read by
+       * GET /v1/roles and every role picker. Managed roles are kept in sync
+       * with standardOrgRoles by the authz reconciler.
+       */
+      title?: string;
       updated_at?: string;
     };
     /** @enum {string} */
@@ -8126,8 +8138,9 @@ export interface components {
       /** @description human-friendly name to identify the policy */
       name: string;
       /**
-       * @description org role granted to exchanged tokens. one of org_admin, org_support,
-       * org_read_only, org_builder. defaults to org_read_only.
+       * @description org role granted to exchanged tokens. must be assignable to trust
+       * policies; see GET /v1/roles?context=oidc_trust_policy. defaults to
+       * org_read_only.
        */
       role?: string;
       /** @description lifetime of exchanged tokens in seconds. defaults to 3600, max 86400. */
@@ -8257,8 +8270,8 @@ export interface components {
       /** @description human-friendly name to identify the token later */
       name: string;
       /**
-       * @description org role granted to the token. one of org_admin, org_support, org_read_only, org_builder.
-       * defaults to org_read_only.
+       * @description org role granted to the token. must be assignable to API tokens; see
+       * GET /v1/roles?context=api_token. defaults to org_read_only.
        */
       role?: string;
     };
@@ -8676,12 +8689,6 @@ export interface components {
     "service.RetryWorkflowStepResponse": {
       retryable?: boolean;
       workflow_id?: string;
-    };
-    "service.RoleInfo": {
-      applies_to?: string[];
-      description?: string;
-      role_type?: components["schemas"]["app.RoleType"];
-      title?: string;
     };
     "service.RunCellRequest": {
       /**
@@ -9266,7 +9273,7 @@ export interface operations {
   };
   /**
    * create a static API token for your org
-   * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, org_read_only, or org_builder) and defaults to org_read_only.
+   * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
    */
   CreateStaticToken: {
     /** @description Input */
@@ -28150,17 +28157,26 @@ export interface operations {
     };
   };
   /**
-   * List assignable roles
-   * @description List the roles that can be assigned to members and service accounts in an
-   * organization. Each role indicates which principal types it applies to via the
-   * `applies_to` field (`user`, `service_account`, or both).
+   * List your org's roles
+   * @description List your org's roles. Each role carries its display metadata (`title`,
+   * `description`) and the assignment surfaces it may be offered on via the
+   * `applies_to` field (`team`, `service_account`, `api_token`,
+   * `oidc_trust_policy`). A role with no `applies_to` entries exists and may be
+   * displayed, but cannot be newly assigned. Pass `?context=<surface>` to filter
+   * to the roles assignable on a single surface.
    */
   ListRoles: {
+    parameters: {
+      query?: {
+        /** @description filter to roles assignable on a surface (team, service_account, api_token, oidc_trust_policy) */
+        context?: string;
+      };
+    };
     responses: {
       /** @description OK */
       200: {
         content: {
-          "application/json": components["schemas"]["service.RoleInfo"][];
+          "application/json": components["schemas"]["app.Role"][];
         };
       };
       /** @description Unauthorized */

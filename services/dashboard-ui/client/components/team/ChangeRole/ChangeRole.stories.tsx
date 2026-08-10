@@ -7,11 +7,17 @@ import { ChangeRoleModal } from './ChangeRole'
 
 const noop = () => {}
 
+const roleOptions = [
+  { value: 'org_admin', label: 'Admin' },
+  { value: 'org_read_only', label: 'Read-only' },
+]
+
 export const Default = () => (
   <ModalStory>
     <ChangeRoleModal
       accountEmail="user@example.com"
       currentRole="org_admin"
+      roleOptions={roleOptions}
       isPending={false}
       error={null}
       onSubmit={noop}
@@ -24,6 +30,8 @@ export const ExistingSupportMember = () => (
     <ChangeRoleModal
       accountEmail="user@example.com"
       currentRole="org_support"
+      currentRoleLabel="Support"
+      roleOptions={roleOptions}
       isPending={false}
       error={null}
       onSubmit={noop}
@@ -36,6 +44,7 @@ export const Pending = () => (
     <ChangeRoleModal
       accountEmail="user@example.com"
       currentRole="org_read_only"
+      roleOptions={roleOptions}
       isPending={true}
       error={null}
       onSubmit={noop}
@@ -48,6 +57,7 @@ export const WithError = () => (
     <ChangeRoleModal
       accountEmail="user@example.com"
       currentRole="org_admin"
+      roleOptions={roleOptions}
       isPending={false}
       error={{ error: 'Cannot demote the last org admin', description: '', user_error: true }}
       onSubmit={noop}

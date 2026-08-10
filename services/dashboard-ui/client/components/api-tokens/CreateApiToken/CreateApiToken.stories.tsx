@@ -7,12 +7,18 @@ import { CreateApiTokenModal } from './CreateApiToken'
 
 const noop = () => {}
 
+const roleOptions = [
+  { value: 'org_read_only', label: 'Read-only' },
+  { value: 'org_admin', label: 'Admin' },
+]
+
 export const Default = () => (
   <ModalStory>
     <CreateApiTokenModal
       isPending={false}
       error={null}
       createdToken={null}
+      roleOptions={roleOptions}
       onSubmit={noop}
       onDone={noop}
     />
@@ -25,6 +31,7 @@ export const Pending = () => (
       isPending={true}
       error={null}
       createdToken={null}
+      roleOptions={roleOptions}
       onSubmit={noop}
       onDone={noop}
     />
@@ -37,6 +44,7 @@ export const Created = () => (
       isPending={false}
       error={null}
       createdToken="nuon_tok_abc123def456ghi789"
+      roleOptions={roleOptions}
       onSubmit={noop}
       onDone={noop}
     />
@@ -49,6 +57,7 @@ export const WithError = () => (
       isPending={false}
       error={{ error: 'name is required', description: '', user_error: true }}
       createdToken={null}
+      roleOptions={roleOptions}
       onSubmit={noop}
       onDone={noop}
     />
