@@ -44,15 +44,17 @@ Before selecting or upgrading the SDK:
    curl -fsS "${NUON_API_URL%/}/version"
    ```
 
-   A response includes the deployed `version`, source `git_ref`, and `recommended_cli_version`:
+   A response includes the deployed `version`, source `git_ref`, and `recommended_cli_version`. For example, Nuon Cloud at `https://api.nuon.co` returned the following on August 10, 2026:
 
    ```json
    {
-     "version": "<control-plane-version>",
-     "git_ref": "<source-revision>",
-     "recommended_cli_version": "<cli-version>"
+     "git_ref": "0.19.1113",
+     "recommended_cli_version": "0.19.1102",
+     "version": "0.19.1113"
    }
    ```
+
+   This example is a point-in-time response, not a version recommendation. Query the target control plane before selecting or upgrading its SDK.
 
 2. Pin the SDK version or source revision verified for that control-plane release. Do not infer compatibility from version-number similarity: control-plane and SDK module versions are separate release streams.
 3. Test the exact SDK and control-plane pairing in a non-production environment. Exercise every endpoint and model shape the integration uses, including pagination and writes.
