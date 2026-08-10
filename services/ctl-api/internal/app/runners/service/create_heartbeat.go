@@ -72,22 +72,14 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 	}
 
 	var installID, installName string
-	var ownerLabels map[string]string
-	switch runner.RunnerGroup.OwnerType {
-	case plugins.TableName(s.db, app.Install{}):
+	if runner.RunnerGroup.OwnerType == plugins.TableName(s.db, app.Install{}) {
 		installID = runner.RunnerGroup.OwnerID
 		if install := s.heartbeatGetInstall(ctx, installID); install != nil {
 			installName = install.Name
-			ownerLabels = install.Labels
 		}
-	case plugins.TableName(s.db, app.Org{}):
-		ownerLabels = runner.Org.Labels
 	}
 
-	tagMap := make(map[string]string, len(ownerLabels)+8)
-	for k, v := range ownerLabels {
-		tagMap[k] = v
-	}
+	tagMap := make(map[string]string, 8)
 	tagMap["org_id"] = runner.OrgID
 	tagMap["org_name"] = runner.Org.Name
 	tagMap["runner_id"] = runnerID
