@@ -46,7 +46,7 @@ type Client interface {
 	DeleteStaticToken(ctx context.Context, tokenID string) error
 
 	// roles and service accounts
-	ListRoles(ctx context.Context) ([]*models.ServiceRoleInfo, error)
+	ListRoles(ctx context.Context) ([]*models.AppRole, error)
 	ListServiceAccounts(ctx context.Context, includeRunners bool, query *models.GetPaginatedQuery) ([]*models.AppAccount, bool, error)
 	CreateServiceAccount(ctx context.Context, req *models.ServiceCreateServiceAccountRequest) (*models.AppAccount, error)
 	UpdateServiceAccount(ctx context.Context, accountID string, req *models.ServiceUpdateServiceAccountRequest) (*models.AppAccount, error)
@@ -363,8 +363,9 @@ type client struct {
 	APIToken string
 	OrgID    string
 
-	genClient    *genclient.Nuon
-	appTransport *appTransport
+	httpTransport http.RoundTripper
+	genClient     *genclient.Nuon
+	appTransport  *appTransport
 }
 
 type clientOption func(*client) error
@@ -392,11 +393,16 @@ func New(opts ...clientOption) (*client, error) {
 		return nil, fmt.Errorf("unable to parse api url: %w", err)
 	}
 
+	baseTransport := c.httpTransport
+	if baseTransport == nil {
+		baseTransport = http.DefaultTransport
+	}
+
 	transport := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
 	appTransport := &appTransport{
 		authToken: c.APIToken,
 		orgID:     c.OrgID,
-		transport: http.DefaultTransport,
+		transport: baseTransport,
 	}
 	c.appTransport = appTransport
 	transport.Transport = appTransport
@@ -426,6 +432,14 @@ func WithURL(url string) clientOption {
 func WithOrgID(orgID string) clientOption {
 	return func(c *client) error {
 		c.OrgID = orgID
+		return nil
+	}
+}
+
+// WithHTTPTransport specifies a base http transport to use for api requests
+func WithHTTPTransport(transport http.RoundTripper) clientOption {
+	return func(c *client) error {
+		c.httpTransport = transport
 		return nil
 	}
 }

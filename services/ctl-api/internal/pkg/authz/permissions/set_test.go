@@ -40,7 +40,7 @@ func TestSetAddKeepsStrongerGrant(t *testing.T) {
 
 func TestCanPerformScopedObjects(t *testing.T) {
 	const org = "org_abc"
-	scoped := ComponentBuildsObject(org)
+	const scoped = org + ":component_builds"
 
 	t.Run("org-wide all grant covers scoped objects", func(t *testing.T) {
 		set := Set(NewSet())
@@ -57,7 +57,7 @@ func TestCanPerformScopedObjects(t *testing.T) {
 		assert.Error(t, set.CanPerform(scoped, PermissionCreate))
 	})
 
-	t.Run("builder grant allows scoped create but not org-wide mutation", func(t *testing.T) {
+	t.Run("scoped create grant does not allow org-wide mutation", func(t *testing.T) {
 		set := Set(NewSet())
 		require.NoError(t, set.Add(map[string]*string{
 			org:    strPtr(string(PermissionRead)),

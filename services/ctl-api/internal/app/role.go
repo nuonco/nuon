@@ -19,13 +19,25 @@ const (
 	// Deprecated: org_support is no longer assignable to new members; use org_admin or org_read_only.
 	RoleTypeOrgSupport  RoleType = "org_support"
 	RoleTypeOrgReadOnly RoleType = "org_read_only"
-	RoleTypeOrgBuilder  RoleType = "org_builder"
+	// Deprecated: org_builder is no longer assignable; grant automation an
+	// org_read_only role plus resource grants for anything it must write.
+	RoleTypeOrgBuilder RoleType = "org_builder"
 
 	// service account roles
 	// Deprecated: installer is no longer assignable; it grants full org access, use org_admin instead.
 	RoleTypeInstaller       RoleType = "installer"
 	RoleTypeRunner          RoleType = "runner"
 	RoleTypeHostedInstaller RoleType = "hosted-installer"
+)
+
+// Role contexts name the assignment surfaces a role may be offered on. A role
+// with no contexts still exists (and is displayed where held) but no picker or
+// create endpoint offers it.
+const (
+	RoleContextTeam           = "team"
+	RoleContextServiceAccount = "service_account"
+	RoleContextAPIToken       = "api_token"
+	RoleContextTrustPolicy    = "oidc_trust_policy"
 )
 
 type Role struct {
@@ -44,7 +56,26 @@ type Role struct {
 
 	RoleType RoleType `json:"role_type,omitzero" gorm:"defaultnull;notnull" temporaljson:"role_type,omitzero,omitempty"`
 
+	// display + assignability metadata; the single source of truth read by
+	// GET /v1/roles and every role picker. Managed roles are kept in sync
+	// with standardOrgRoles by the authz reconciler.
+	Title       string   `json:"title,omitzero" temporaljson:"title,omitzero,omitempty"`
+	Description string   `json:"description,omitzero" temporaljson:"description,omitzero,omitempty"`
+	Contexts    []string `json:"applies_to,omitzero" gorm:"type:jsonb;serializer:json" temporaljson:"contexts,omitzero,omitempty"`
+	Managed     bool     `json:"managed" temporaljson:"managed,omitzero,omitempty"`
+
 	Policies []Policy `json:"policies,omitzero" temporaljson:"policies,omitzero,omitempty"`
+}
+
+// AllowsContext reports whether the role may be offered on the given
+// assignment surface.
+func (a *Role) AllowsContext(roleContext string) bool {
+	for _, c := range a.Contexts {
+		if c == roleContext {
+			return true
+		}
+	}
+	return false
 }
 
 func (a *Role) Indexes(db *gorm.DB) []migrations.Index {

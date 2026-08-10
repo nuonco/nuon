@@ -8,6 +8,11 @@ import { InviteUserModal } from './InviteUser'
 
 const noop = () => {}
 
+const roleOptions = [
+  { value: 'org_admin', label: 'Admin' },
+  { value: 'org_read_only', label: 'Read-only' },
+]
+
 const pendingInvites = [
   {
     id: 'invxxxxxxxxxxxxxxxxxxxxxxxx',
@@ -19,13 +24,13 @@ const pendingInvites = [
 
 export const Default = () => (
   <ModalStory>
-    <InviteUserModal isPending={false} error={null} onSubmit={noop} />
+    <InviteUserModal isPending={false} error={null} roleOptions={roleOptions} onSubmit={noop} />
   </ModalStory>
 )
 
 export const Pending = () => (
   <ModalStory>
-    <InviteUserModal isPending={true} error={null} onSubmit={noop} />
+    <InviteUserModal isPending={true} error={null} roleOptions={roleOptions} onSubmit={noop} />
   </ModalStory>
 )
 
@@ -34,6 +39,7 @@ export const WithError = () => (
     <InviteUserModal
       isPending={false}
       error={{ error: 'User already invited', description: '', user_error: true }}
+      roleOptions={roleOptions}
       onSubmit={noop}
     />
   </ModalStory>
@@ -46,6 +52,7 @@ export const ExistingInvite = () => (
       isResendPending={false}
       error={null}
       invites={pendingInvites}
+      roleOptions={roleOptions}
       onSubmit={noop}
       onResend={noop}
     />

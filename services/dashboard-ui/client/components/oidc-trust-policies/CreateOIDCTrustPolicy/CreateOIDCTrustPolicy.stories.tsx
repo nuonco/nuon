@@ -39,6 +39,11 @@ const baseProps = {
   hasVCSConnections: true,
   vcsConnectionsHref: '/org-123/connections/vcs',
   githubAudience: 'https://api.nuon.co',
+  roleOptions: [
+    { value: 'org_read_only', label: 'org_read_only' },
+    { value: 'org_support', label: 'org_support' },
+    { value: 'org_admin', label: 'org_admin' },
+  ],
 }
 
 export const Default = () => (

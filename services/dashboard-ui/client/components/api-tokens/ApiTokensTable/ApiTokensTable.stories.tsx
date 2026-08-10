@@ -22,14 +22,19 @@ const mockTokens: TStaticToken[] = [
 
 const pagination = { hasNext: false, offset: 0, limit: 20 }
 
+const roleTitles = (roleType: string | undefined) =>
+  ({ org_admin: 'Admin', org_support: 'Support', org_read_only: 'Read-only' } as Record<string, string>)[roleType ?? ''] ??
+  roleType ??
+  '—'
+
 export const Default = () => (
-  <ApiTokensTable data={mockTokens} isLoading={false} pagination={pagination} />
+  <ApiTokensTable data={mockTokens} roleTitles={roleTitles} isLoading={false} pagination={pagination} />
 )
 
 export const Empty = () => (
-  <ApiTokensTable data={[]} isLoading={false} pagination={pagination} />
+  <ApiTokensTable data={[]} roleTitles={roleTitles} isLoading={false} pagination={pagination} />
 )
 
 export const Loading = () => (
-  <ApiTokensTable data={[]} isLoading={true} pagination={pagination} />
+  <ApiTokensTable data={[]} roleTitles={roleTitles} isLoading={true} pagination={pagination} />
 )
