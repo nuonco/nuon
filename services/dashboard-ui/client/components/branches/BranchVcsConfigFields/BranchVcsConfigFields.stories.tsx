@@ -131,3 +131,34 @@ export const ManualBranchEntry = () => {
     </Wrap>
   )
 }
+
+export const PublicRepoNoConnections = () => {
+  const [repo, setRepo] = useState<any>(null)
+  const [branch, setBranch] = useState('main')
+  const [directory, setDirectory] = useState('.')
+  const [pathFilter, setPathFilter] = useState('')
+  return (
+    <Wrap>
+      <BranchVcsConfigFields
+        vcsConnections={[]}
+        repos={[]}
+        branches={[]}
+        loadingRepos={false}
+        loadingBranches={false}
+        reposError={null}
+        branchesError={null}
+        selectedVcsConnectionId=""
+        onVcsConnectionChange={noop}
+        selectedRepo={repo}
+        onRepoChange={setRepo}
+        selectedBranch={branch}
+        onBranchChange={setBranch}
+        directory={directory}
+        onDirectoryChange={setDirectory}
+        pathFilter={pathFilter}
+        onPathFilterChange={setPathFilter}
+        isSubmitting={false}
+      />
+    </Wrap>
+  )
+}
