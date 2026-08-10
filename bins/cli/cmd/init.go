@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	stdhttp "net/http"
 
 	"github.com/cockroachdb/errors"
 	"github.com/getsentry/sentry-go"
