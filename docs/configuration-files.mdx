@@ -265,26 +265,6 @@ stringData:
 """
 ```
 
-### Docker Build Component
-
-To define a [docker build component](/guides/docker-build-components) use the
-`docker_build` type.
-
-To configure a docker build component from a private repo:
-
-```toml components/docker_build.toml
-# docker-build
-name = "docker_build"
-type = "docker_build"
-
-dockerfile = "Dockerfile"
-
-[connected_repo]
-directory = "deployment"
-repo = "nuonco/mono"
-branch = "main"
-```
-
 ### Container Image Component
 
 To define a [container image component](/guides/container-image-components) use
