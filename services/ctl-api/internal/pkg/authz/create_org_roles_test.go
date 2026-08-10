@@ -49,7 +49,7 @@ func TestStandardOrgRoles(t *testing.T) {
 	}
 	require.ElementsMatch(t, fullContexts, seen[app.RoleTypeOrgAdmin].Contexts)
 	require.ElementsMatch(t, fullContexts, seen[app.RoleTypeOrgReadOnly].Contexts)
-	require.ElementsMatch(t, []string{app.RoleContextServiceAccount}, seen[app.RoleTypeRunner].Contexts)
+	require.Empty(t, seen[app.RoleTypeRunner].Contexts, "runner is held-only: assigned directly to runner accounts, never user-selectable")
 	require.Empty(t, seen[app.RoleTypeOrgSupport].Contexts, "org_support is held-only")
 	require.Empty(t, seen[app.RoleTypeInstaller].Contexts, "installer is held-only")
 

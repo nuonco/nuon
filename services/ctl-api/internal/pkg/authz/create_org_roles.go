@@ -103,7 +103,6 @@ func standardOrgRoles(orgID string) []app.Role {
 			RoleType:    app.RoleTypeRunner,
 			Title:       "Runner",
 			Description: "Permissions for runners executing deployments.",
-			Contexts:    []string{app.RoleContextServiceAccount},
 			Managed:     true,
 			Policies: []app.Policy{
 				{
