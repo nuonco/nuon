@@ -1,3 +1,19 @@
+/* extra offset so option tooltips clear the dropdown's edge and shadow,
+   keeping the arrow visible; applied per side so position flips stay correct.
+   long descriptions wrap instead of forcing a full-viewport single line */
+.select-option-tip {
+  max-width: 18rem;
+  white-space: normal;
+}
+
+.select-option-tip.right {
+  margin-left: 0.5rem;
+}
+
+.select-option-tip.left {
+  margin-right: 0.5rem;
+}
+
 .select .select-options.enter {
   animation: enter-below var(--duration-fastest) var(--ease-cubic);
 }

@@ -26,8 +26,8 @@ type ServiceCreateStaticTokenRequest struct {
 	// Required: true
 	Name *string `json:"name"`
 
-	// org role granted to the token. one of org_admin, org_support, org_read_only, org_builder.
-	// defaults to org_read_only.
+	// org role granted to the token. must be assignable to API tokens; see
+	// GET /v1/roles?context=api_token. defaults to org_read_only.
 	Role string `json:"role,omitempty"`
 }
 

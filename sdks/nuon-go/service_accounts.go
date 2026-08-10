@@ -7,7 +7,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (c *client) ListRoles(ctx context.Context) ([]*models.ServiceRoleInfo, error) {
+func (c *client) ListRoles(ctx context.Context) ([]*models.AppRole, error) {
 	resp, err := c.genClient.Operations.ListRoles(&operations.ListRolesParams{
 		Context: ctx,
 	}, c.getOrgIDAuthInfo())

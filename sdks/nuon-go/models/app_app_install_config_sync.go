@@ -41,6 +41,12 @@ type AppAppInstallConfigSync struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// queue id
+	QueueID string `json:"queue_id,omitempty"`
+
+	// queue signal id
+	QueueSignalID string `json:"queue_signal_id,omitempty"`
+
 	// status
 	Status *AppCompositeStatus `json:"status,omitempty"`
 
@@ -52,6 +58,12 @@ type AppAppInstallConfigSync struct {
 
 	// vcs connection commit
 	VcsConnectionCommit *AppVCSConnectionCommit `json:"vcs_connection_commit,omitempty"`
+
+	// workflow
+	Workflow *AppWorkflow `json:"workflow,omitempty"`
+
+	// workflow id
+	WorkflowID string `json:"workflow_id,omitempty"`
 }
 
 // Validate validates this app app install config sync
@@ -71,6 +83,10 @@ func (m *AppAppInstallConfigSync) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateVcsConnectionCommit(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateWorkflow(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -179,6 +195,29 @@ func (m *AppAppInstallConfigSync) validateVcsConnectionCommit(formats strfmt.Reg
 	return nil
 }
 
+func (m *AppAppInstallConfigSync) validateWorkflow(formats strfmt.Registry) error {
+	if swag.IsZero(m.Workflow) { // not required
+		return nil
+	}
+
+	if m.Workflow != nil {
+		if err := m.Workflow.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("workflow")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("workflow")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app app install config sync based on the context it is used
 func (m *AppAppInstallConfigSync) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -196,6 +235,10 @@ func (m *AppAppInstallConfigSync) ContextValidate(ctx context.Context, formats s
 	}
 
 	if err := m.contextValidateVcsConnectionCommit(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateWorkflow(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -300,6 +343,31 @@ func (m *AppAppInstallConfigSync) contextValidateVcsConnectionCommit(ctx context
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("vcs_connection_commit")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppInstallConfigSync) contextValidateWorkflow(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Workflow != nil {
+
+		if swag.IsZero(m.Workflow) { // not required
+			return nil
+		}
+
+		if err := m.Workflow.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("workflow")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("workflow")
 			}
 
 			return err
