@@ -137,7 +137,7 @@ export const PostDeployRunbooksPicker = ({
             <Select
               id="post-deploy-runbooks"
               value=""
-              onChange={(e) => add(e.target.value)}
+              onChange={(value) => add(value)}
               disabled={disabled}
               options={[
                 { value: '', label: 'Add a runbook…' },
