@@ -26,13 +26,12 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 
 	// Consult the composite-error hint recorded for this step's target. The
 	// runner-result chokepoint parses a failed execution into a typed composite
-	// error and mirrors its hints onto the target row before this step wakes.
+	// error before this step wakes.
 	// A skip_auto_retry hint (e.g. a missing IAM permission that won't resolve
 	// by retrying) forces the await-retry branch so we park for manual retry
-	// instead of burning auto-retries. Only deploy/sandbox targets carry a
-	// composite_error column, so we skip the lookup for every other target.
+	// instead of burning auto-retries.
 	skipAutoRetry := false
-	if targetHasCompositeError(step.StepTargetType) {
+	if targetSupportsCompositeErrorHints(step.StepTargetType) {
 		if hintsResp, herr := activities.AwaitGetStepErrorHints(ctx, activities.GetStepErrorHintsRequest{
 			StepID: step.ID,
 		}); herr != nil {
@@ -234,12 +233,7 @@ func (s *Signal) markStepFailed(ctx workflow.Context, step *app.WorkflowStep, st
 	return stepErr
 }
 
-// targetHasCompositeError reports whether a step's target type carries a
-// composite_error column that the runner-result chokepoint mirrors hints onto.
-// Only these targets are worth a GetStepErrorHints lookup.
-//
-// NOTE: Expand this as more target types gain composite_error columns.
-func targetHasCompositeError(targetType string) bool {
+func targetSupportsCompositeErrorHints(targetType string) bool {
 	switch app.WorkflowStepTargetType(targetType) {
 	case app.WorkflowStepTargetTypeInstallDeploy,
 		app.WorkflowStepTargetTypeInstallDeploys,

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -82,6 +83,13 @@ func (s *service) findInstallActionWorkflowRun(ctx context.Context, runID string
 		First(&run)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install action workflow runs: %w", res.Error)
+	}
+	run.CompositeError, err = runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{
+		OwnerID:   run.ID,
+		OwnerType: "install_action_workflow_runs",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install action workflow run composite error: %w", err)
 	}
 
 	return run, nil
