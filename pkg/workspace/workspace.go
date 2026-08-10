@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
@@ -15,6 +16,18 @@ import (
 
 const defaultTmpRootDir string = "/tmp"
 const defaultDirPermissions fs.FileMode = 0o777
+
+// shallowCloneEnvVar sets the default for shallow clones. EnableShallowClones
+// overrides it.
+const shallowCloneEnvVar string = "WORKSPACE_GIT_SHALLOW_CLONE"
+
+func shallowCloneDefault() bool {
+	enabled, err := strconv.ParseBool(os.Getenv(shallowCloneEnvVar))
+	if err != nil {
+		return false
+	}
+	return enabled
+}
 
 // GitSource defines the git repository to clone.
 type GitSource struct {
@@ -45,7 +58,8 @@ type Workspace struct {
 
 	l *zap.Logger `validate:"required"`
 
-	cleanupBeforeInit bool // Remove existing directory before Init()
+	cleanupBeforeInit   bool // Remove existing directory before Init()
+	shallowCloneEnabled bool
 }
 
 // Option configures a Workspace.
@@ -55,9 +69,10 @@ type Option func(*Workspace)
 func New(v *validator.Validate, opts ...Option) (*Workspace, error) {
 	l, _ := zap.NewProduction()
 	w := &Workspace{
-		l:          l,
-		v:          v,
-		tmpRootDir: defaultTmpRootDir,
+		l:                   l,
+		v:                   v,
+		tmpRootDir:          defaultTmpRootDir,
+		shallowCloneEnabled: shallowCloneDefault(),
 	}
 
 	for _, opt := range opts {
@@ -104,6 +119,14 @@ func WithLogger(l *zap.Logger) Option {
 func WithCleanup(cleanup bool) Option {
 	return func(w *Workspace) {
 		w.cleanupBeforeInit = cleanup
+	}
+}
+
+// EnableShallowClones configures whether a branch or tag ref is cloned shallow.
+// It overrides the WORKSPACE_GIT_SHALLOW_CLONE default.
+func EnableShallowClones(enabled bool) Option {
+	return func(w *Workspace) {
+		w.shallowCloneEnabled = enabled
 	}
 }
 
