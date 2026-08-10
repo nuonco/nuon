@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+
+	"github.com/nuonco/nuon/bins/cli/internal/services/mcpserver"
 )
 
 func (c *cli) mcpCmd() *cobra.Command {
@@ -10,11 +12,11 @@ func (c *cli) mcpCmd() *cobra.Command {
 	mcpCmd := &cobra.Command{
 		Use:   "mcp",
 		Short: "Run an MCP server exposing Nuon tools",
-		Long: `Run a Model Context Protocol server over stdio, exposing Nuon operations as
-tools for LLM clients like Claude Code and Claude Desktop.
+		Long: `Run a Model Context Protocol server over stdio that proxies to the Nuon
+control plane MCP server. Tools are discovered from the upstream server
+and forwarded transparently.
 
-Read-only by default. Pass --allow-writes to also expose mutating tools
-(create_install, deploy_component).
+Read-only by default. Pass --allow-writes to also expose mutating tools.
 
 Example Claude Code config (.mcp.json):
 
@@ -26,10 +28,13 @@ Example Claude Code config (.mcp.json):
 			if ReadOnly || readOnlyFromEnv() {
 				allowWrites = false
 			}
-			return c.mcpserver.Run(cmd.Context(), allowWrites)
+			svc := mcpserver.New(c.cfg, allowWrites)
+			return svc.Run(cmd.Context())
 		}),
 	}
 	mcpCmd.Flags().BoolVar(&allowWrites, "allow-writes", false, "expose mutating tools (create_install, deploy_component)")
+
+	mcpCmd.AddCommand(c.mcpSetupCmd())
 
 	return mcpCmd
 }

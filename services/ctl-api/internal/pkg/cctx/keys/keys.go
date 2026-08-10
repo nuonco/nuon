@@ -32,7 +32,38 @@ const (
 	TraceIDCtxKey         string = "trace_id"
 	FlowWorkflowIDCtxKey  string = "flow_workflow_id"
 	FlowInstallIDCtxKey   string = "flow_install_id"
+	OrgSelectorCtxKey     string = "mcp_org_selector"
+	TokenRoleCtxKey       string = "token_role"
 )
+
+// OrgSelectFunc persists the selected org for the current MCP session. It is
+// injected by the MCP server so leaf tool handlers (in other packages) can
+// change the session's active org without importing the server package.
+type OrgSelectFunc func(orgID string)
+
+// WithOrgSelector attaches an org-selector to the context.
+func WithOrgSelector(ctx context.Context, fn OrgSelectFunc) context.Context {
+	return context.WithValue(ctx, OrgSelectorCtxKey, fn)
+}
+
+// OrgSelectorFromContext returns the org-selector, or nil if none is set (e.g.
+// outside the MCP server).
+func OrgSelectorFromContext(ctx context.Context) OrgSelectFunc {
+	fn, _ := ctx.Value(OrgSelectorCtxKey).(OrgSelectFunc)
+	return fn
+}
+
+// WithTokenRole attaches the authenticating token's org role/scope to the
+// context (e.g. org_read_only, org_support, org_admin).
+func WithTokenRole(ctx context.Context, role string) context.Context {
+	return context.WithValue(ctx, TokenRoleCtxKey, role)
+}
+
+// TokenRoleFromContext returns the authenticating token's role, or "" if unset.
+func TokenRoleFromContext(ctx context.Context) string {
+	role, _ := ctx.Value(TokenRoleCtxKey).(string)
+	return role
+}
 
 // CreatedByIDFromContext returns the account ID from context.
 // Returns empty string if not set. This is safe to call from leaf packages

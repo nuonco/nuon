@@ -73,6 +73,18 @@ func NewDeviceCodeID() string {
 	return shortid.NewNanoID("dco")
 }
 
+func NewOAuthClientID() string {
+	return shortid.NewNanoID("oac")
+}
+
+func NewOAuthAuthorizationCodeID() string {
+	return shortid.NewNanoID("ocd")
+}
+
+func NewOAuthRefreshTokenID() string {
+	return shortid.NewNanoID("ort")
+}
+
 func NewAccountPolicyID() string {
 	return shortid.NewNanoID("acp")
 }
