@@ -118,7 +118,7 @@ func init() {
 	config.RegisterDefault("aws_cloudformation_stack_template_bucket_region", "us-east-1")
 	config.RegisterDefault("blob_storage_provider", "s3")
 	config.RegisterDefault("org_creation_email_allow_list", "nuon.co")
-	config.RegisterDefault("recommended_cli_version", "0.19.1102")
+	config.RegisterDefault("server_side_sync_min_cli_version", "0.19.1102")
 	config.RegisterDefault("temporal_dataconverter_large_payload_size", 1024*128)
 	config.RegisterDefault("large_payload_type", "blob")
 
@@ -516,7 +516,7 @@ type Config struct {
 
 	// below this the CLI syncs app configs client-side, which never sends action or
 	// runbook ids, so those are silently dropped from installs
-	RecommendedCLIVersion string `config:"recommended_cli_version"`
+	ServerSideSyncMinCLIVersion string `config:"server_side_sync_min_cli_version"`
 
 	GeneralPurgeStaleDataCron        string        `config:"general_purge_stale_data_cron"`
 	GeneralPurgeStaleDataDurationAgo time.Duration `config:"general_purge_stale_data_duration_ago" validate:"required"`

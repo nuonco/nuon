@@ -22,8 +22,10 @@ export interface IBranchVcsConfigFields {
   onBranchChange: (branch: string) => void
   directory: string
   onDirectoryChange: (directory: string) => void
-  pathFilter: string
-  onPathFilterChange: (pathFilter: string) => void
+  // Omit both to hide the path filter field, for consumers whose config has no
+  // path filter (e.g. the app installs config).
+  pathFilter?: string
+  onPathFilterChange?: (pathFilter: string) => void
   isSubmitting: boolean
 }
 
@@ -182,16 +184,18 @@ export const BranchVcsConfigFields = ({
         helperText='Path to your application config (use "." for root)'
       />
 
-      <Input
-        id="path-filter"
-        type="text"
-        value={pathFilter}
-        onChange={(e) => onPathFilterChange(e.target.value)}
-        placeholder="^(src/|config/).*"
-        disabled={isSubmitting}
-        labelProps={{ labelText: 'Path filter (optional)' }}
-        helperText="Regex pattern to filter which file changes trigger workflow runs"
-      />
+      {onPathFilterChange && (
+        <Input
+          id="path-filter"
+          type="text"
+          value={pathFilter ?? ''}
+          onChange={(e) => onPathFilterChange(e.target.value)}
+          placeholder="^(src/|config/).*"
+          disabled={isSubmitting}
+          labelProps={{ labelText: 'Path filter (optional)' }}
+          helperText="Regex pattern to filter which file changes trigger workflow runs"
+        />
+      )}
     </>
   )
 }

@@ -25,6 +25,9 @@ func (a *Activities) fetchLatestCommit(ctx context.Context, vcsConfigID string) 
 	if connectedRes.Error == nil {
 		ghCommit, err := vcsHelpers.GetConnectedGithubVCSConfigLatestCommit(ctx, &connectedCfg)
 		if err != nil {
+			if nrErr := nonRetryableGitHubError(err); nrErr != nil {
+				return nil, nrErr
+			}
 			return nil, fmt.Errorf("unable to get latest commit for connected repo: %w", err)
 		}
 
@@ -46,6 +49,9 @@ func (a *Activities) fetchLatestCommit(ctx context.Context, vcsConfigID string) 
 	if publicRes.Error == nil {
 		ghCommit, err := vcsHelpers.GetPublicGitVCSConfigLatestCommit(ctx, &publicCfg)
 		if err != nil {
+			if nrErr := nonRetryableGitHubError(err); nrErr != nil {
+				return nil, nrErr
+			}
 			return nil, fmt.Errorf("unable to get latest commit for public repo: %w", err)
 		}
 

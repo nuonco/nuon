@@ -171,6 +171,7 @@
             "pages": [
               "guides/vendor-customers",
               "guides/install-configs",
+              "guides/install-config-syncing",
               "guides/component-overrides",
               "guides/runner-kill-switch",
               "guides/custom-domains",

@@ -157,4 +157,7 @@ func (s *HealthTestSuite) TestVersionReturnsVersionInfo() {
 	// Should have git_ref field
 	_, ok = response["git_ref"]
 	require.True(s.T(), ok, "response should have git_ref field")
+
+	_, ok = response["server_side_sync_min_cli_version"]
+	require.True(s.T(), ok, "response should have server_side_sync_min_cli_version field")
 }

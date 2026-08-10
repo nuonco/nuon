@@ -172,7 +172,7 @@ func (s *service) dispatchApprovalResponseSignal(
 	switch wf.OwnerType {
 	case "installs":
 		return s.dispatchInstallApprovalSignal(ctx, wf.OwnerID, workflowID, stepID, approvalID, approvalResponseID, responseType)
-	case "app_branches":
+	case "app_branches", "apps":
 		return s.flowsClient.ApprovePlan(ctx, &flowclient.ApprovePlanRequest{
 			InstallWorkflowID:  workflowID,
 			StepID:             stepID,
