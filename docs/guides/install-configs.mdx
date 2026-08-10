@@ -56,3 +56,9 @@ See the [Toggleable Components guide](/guides/toggleable-components) for how tog
 Once an install kicks off a deploy — or any other workflow — you can monitor progress from the dashboard, via outbound webhooks, or via Slack notifications.
 
 Connect your workspace to get real-time deploy notifications — see the [Slack integration guide](/guides/slack). For programmatic integrations, [webhooks](/guides/webhooks) deliver the same workflow lifecycle events as CloudEvents over HTTP.
+
+## Syncing Install Configs from Git
+
+Instead of applying these files one command at a time, you can point your app at a Git repository that holds them. Pushes to that repo then keep every install in sync, and new files propose new installs for approval. Configure it with an `installs.toml` file or an `[installs_config]` section in your app config.
+
+See the [Syncing Install Configs from Git](/guides/install-config-syncing) guide for setup and usage.

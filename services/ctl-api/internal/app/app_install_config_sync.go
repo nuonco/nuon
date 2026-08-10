@@ -30,9 +30,16 @@ type AppInstallConfigSync struct {
 
 	TriggeredBy string `json:"triggered_by,omitzero" gorm:"not null;default:'manual'" temporaljson:"triggered_by,omitzero,omitempty"`
 
+	QueueSignalID string `json:"queue_signal_id,omitempty" gorm:"default:null" temporaljson:"queue_signal_id,omitzero,omitempty"`
+	QueueID       string `json:"queue_id,omitempty" gorm:"default:null" temporaljson:"queue_id,omitzero,omitempty"`
+
+	WorkflowID *string   `json:"workflow_id,omitempty" gorm:"default:null" temporaljson:"workflow_id,omitzero,omitempty"`
+	Workflow   *Workflow `json:"workflow,omitempty" gorm:"foreignKey:WorkflowID" temporaljson:"workflow,omitzero,omitempty"`
+
 	Status CompositeStatus `json:"status,omitzero" gorm:"type:jsonb" temporaljson:"status,omitzero,omitempty"`
 
-	InstallConfigSyncs []InstallConfigSync `json:"install_config_syncs,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_config_syncs,omitzero,omitempty"`
+	InstallConfigSyncs      []InstallConfigSync      `json:"install_config_syncs,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_config_syncs,omitzero,omitempty"`
+	InstallCreationApproval *InstallCreationApproval `json:"install_creation_approval,omitempty" gorm:"foreignKey:AppInstallConfigSyncID" temporaljson:"install_creation_approval,omitzero,omitempty"`
 }
 
 func (a *AppInstallConfigSync) Indexes(db *gorm.DB) []migrations.Index {

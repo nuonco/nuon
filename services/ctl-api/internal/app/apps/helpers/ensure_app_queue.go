@@ -16,6 +16,7 @@ const (
 	AppWorkflowStepGroupsQueueName = "app-workflow-step-groups"
 	AppWorkflowStepsQueueName      = "app-workflow-steps"
 	AppGenerateStepsQueueName      = "app-generate-steps"
+	AppInstallSyncsQueueName       = "app-install-syncs"
 )
 
 func (h *Helpers) EnsureAppTriggerQueue(ctx context.Context, appID string) (*app.Queue, error) {
@@ -100,6 +101,17 @@ func (h *Helpers) EnsureAppQueue(ctx context.Context, appID string) error {
 		MaxDepth:    50,
 	}); err != nil {
 		return fmt.Errorf("unable to ensure app-generate-steps queue for app %s: %w", appID, err)
+	}
+
+	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OwnerID:     appID,
+		OwnerType:   ownerType,
+		Namespace:   "apps",
+		Name:        AppInstallSyncsQueueName,
+		MaxInFlight: 5,
+		MaxDepth:    5,
+	}); err != nil {
+		return fmt.Errorf("unable to ensure app-install-syncs queue for app %s: %w", appID, err)
 	}
 
 	return nil

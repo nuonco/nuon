@@ -1,18 +1,16 @@
-import { useState } from 'react'
-import { Banner } from '@/components/common/Banner'
+import { useForm, useStore } from '@tanstack/react-form'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Input } from '@/components/common/form/Input'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { FormInput } from '@/components/common/form/FormInput'
+import { allEvents, type Interests } from '@/components/interests'
+import { FormInterestsPicker } from '@/components/interests/FormInterestsPicker'
 import { Label } from '@/components/common/form/Label'
-import {
-  InterestsPicker,
-  allEvents,
-  type Interests,
-} from '@/components/interests'
-import { MatchPicker } from '@/components/match/MatchPicker'
+import { FormMatchPicker } from '@/components/match/FormMatchPicker'
 import type { SubscriptionMatch } from '@/components/match/types'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
+import { createWebhookSchema, type CreateWebhookValues } from './schema'
 
 export type CreateWebhookInput = {
   webhookUrl: string
@@ -31,13 +29,27 @@ export const CreateWebhookModal = ({
   error: TAPIError | null
   onSubmit: (input: CreateWebhookInput) => void
 } & Omit<IModal, 'onSubmit'>) => {
-  const [webhookUrl, setWebhookUrl] = useState('')
-  const [webhookSecret, setWebhookSecret] = useState('')
-  const [match, setMatch] = useState<SubscriptionMatch | undefined>(undefined)
-  const [interests, setInterests] = useState<Interests>(() => allEvents())
+  const form = useForm({
+    defaultValues: {
+      webhookUrl: '',
+      webhookSecret: '',
+      match: undefined,
+      interests: allEvents(),
+    } as CreateWebhookValues,
+    validators: {
+      onMount: createWebhookSchema,
+      onChange: createWebhookSchema,
+    },
+    onSubmit: ({ value }) =>
+      onSubmit({
+        webhookUrl: value.webhookUrl.trim(),
+        webhookSecret: value.webhookSecret.trim(),
+        match: value.match,
+        interests: value.interests,
+      }),
+  })
 
-  const trimmedUrl = webhookUrl.trim()
-  const isValidUrl = /^https?:\/\/.+/i.test(trimmedUrl)
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
 
   return (
     <Modal
@@ -58,24 +70,14 @@ export const CreateWebhookModal = ({
             Create webhook
           </span>
         ),
-        disabled: !isValidUrl || isPending,
-        onClick: () =>
-          onSubmit({
-            webhookUrl: trimmedUrl,
-            webhookSecret: webhookSecret.trim(),
-            match,
-            interests,
-          }),
+        disabled: !canSubmit || isPending,
+        onClick: () => form.handleSubmit(),
         variant: 'primary',
       }}
       {...props}
     >
       <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to create webhook'}
-          </Banner>
-        ) : null}
+        <FormErrorBanner error={error} fallback="Unable to create webhook" />
 
         <Text variant="body" theme="neutral">
           Receive workflow and workflow step lifecycle events for this org as
@@ -84,43 +86,41 @@ export const CreateWebhookModal = ({
           <span className="font-mono">X-Nuon-Signature</span> header.
         </Text>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="webhook-url">Webhook URL</Label>
-          <Input
-            id="webhook-url"
-            placeholder="https://example.com/webhooks/nuon"
-            type="url"
-            value={webhookUrl}
-            onChange={(e) => setWebhookUrl(e.target.value)}
-            required
-          />
-          <Text variant="subtext" theme="neutral">
-            Must be an absolute http or https URL.
-          </Text>
-        </div>
+        <form.Field name="webhookUrl">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="webhook-url"
+              placeholder="https://example.com/webhooks/nuon"
+              type="url"
+              labelProps={{ labelText: 'Webhook URL' }}
+              helperText="Must be an absolute http or https URL."
+            />
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="webhook-secret">Signing secret (optional)</Label>
-          <Input
-            id="webhook-secret"
-            placeholder="Used to sign delivered payloads"
-            type="password"
-            value={webhookSecret}
-            onChange={(e) => setWebhookSecret(e.target.value)}
-            autoComplete="off"
-          />
-          <Text variant="subtext" theme="neutral">
-            The secret cannot be retrieved later. Edit the webhook to rotate
-            it.
-          </Text>
-        </div>
+        <form.Field name="webhookSecret">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="webhook-secret"
+              placeholder="Used to sign delivered payloads"
+              type="password"
+              autoComplete="off"
+              labelProps={{ labelText: 'Signing secret (optional)' }}
+              helperText="The secret cannot be retrieved later. Edit the webhook to rotate it."
+            />
+          )}
+        </form.Field>
 
         <div className="flex flex-col gap-2">
           <Label>Scope</Label>
           <Text variant="subtext" theme="neutral">
             Filter which resources fire deliveries to this webhook.
           </Text>
-          <MatchPicker value={match} onChange={setMatch} />
+          <form.Field name="match">
+            {(field) => <FormMatchPicker field={field} />}
+          </form.Field>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -128,7 +128,9 @@ export const CreateWebhookModal = ({
           <Text variant="subtext" theme="neutral">
             Pick which events fire deliveries to this webhook.
           </Text>
-          <InterestsPicker value={interests} onChange={setInterests} />
+          <form.Field name="interests">
+            {(field) => <FormInterestsPicker field={field} />}
+          </form.Field>
         </div>
       </div>
     </Modal>
