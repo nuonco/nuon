@@ -10,10 +10,10 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-// warnIfCLIOutdated warns when this CLI predates the control plane's recommended
-// version. Below that floor the CLI syncs app configs itself and never sends action or
-// runbook ids, so new ones never reach installs and the sync still reports success.
-// Never fatal — an unreachable or older control plane just means no warning.
+// warnIfCLIOutdated warns when this CLI predates the control plane's floor for
+// server-side app config sync. Below that floor the CLI syncs app configs itself and
+// never sends action or runbook ids, so new ones never reach installs and the sync still
+// reports success. Never fatal — an unreachable or older control plane means no warning.
 func (s *Service) warnIfCLIOutdated(ctx context.Context) {
 	if version.IsDev() {
 		return
@@ -25,17 +25,17 @@ func (s *Service) warnIfCLIOutdated(ctx context.Context) {
 	}
 
 	cp := version.FetchControlPlane(ctx, s.cfg.APIURL)
-	if cp == nil || cp.RecommendedCLI == "" {
+	if cp == nil || cp.MinCLIForServerSideSync() == "" {
 		return
 	}
 
-	recommended, err := semver.NewVersion(cp.RecommendedCLI)
-	if err != nil || !current.LessThan(recommended) {
+	minimum, err := semver.NewVersion(cp.MinCLIForServerSideSync())
+	if err != nil || !current.LessThan(minimum) {
 		return
 	}
 
 	ui.PrintWarning(fmt.Sprintf(
-		"your CLI (%s) is older than the recommended %s — actions and runbooks will not be synced to installs. see https://docs.nuon.co/cli to update.",
-		current, recommended,
+		"your CLI (%s) is older than the minimum %s this control plane syncs app configs for — actions and runbooks will not be synced to installs. see https://docs.nuon.co/cli to update.",
+		current, minimum,
 	))
 }
