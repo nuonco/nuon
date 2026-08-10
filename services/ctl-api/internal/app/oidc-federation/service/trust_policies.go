@@ -19,13 +19,6 @@ import (
 
 const defaultTrustPolicyRole = app.RoleTypeOrgReadOnly
 
-var allowedTrustPolicyRoles = map[app.RoleType]struct{}{
-	app.RoleTypeOrgAdmin:    {},
-	app.RoleTypeOrgSupport:  {},
-	app.RoleTypeOrgReadOnly: {},
-	app.RoleTypeOrgBuilder:  {},
-}
-
 type CreateOIDCTrustPolicyRequest struct {
 	// human-friendly name to identify the policy
 	Name string `json:"name" validate:"required"`
@@ -41,8 +34,9 @@ type CreateOIDCTrustPolicyRequest struct {
 	// `:` segments.
 	ClaimConditions map[string]string `json:"claim_conditions" validate:"required"`
 
-	// org role granted to exchanged tokens. one of org_admin, org_support,
-	// org_read_only, org_builder. defaults to org_read_only.
+	// org role granted to exchanged tokens. must be assignable to trust
+	// policies; see GET /v1/roles?context=oidc_trust_policy. defaults to
+	// org_read_only.
 	Role string `json:"role"`
 
 	// lifetime of exchanged tokens in seconds. defaults to 3600, max 86400.
@@ -59,17 +53,16 @@ type UpdateOIDCTrustPolicyRequest struct {
 	TokenDurationSeconds int               `json:"token_duration_seconds"`
 }
 
-func parseTrustPolicyRole(raw string) (app.RoleType, error) {
+func (s *service) resolveTrustPolicyRole(ctx *gin.Context, orgID, raw string) (app.RoleType, error) {
 	if raw == "" {
-		return defaultTrustPolicyRole, nil
+		raw = string(defaultTrustPolicyRole)
 	}
 
-	role := app.RoleType(raw)
-	if _, ok := allowedTrustPolicyRoles[role]; !ok {
-		return "", fmt.Errorf("invalid role %q: must be one of %q, %q, %q, %q", raw, app.RoleTypeOrgAdmin, app.RoleTypeOrgSupport, app.RoleTypeOrgReadOnly, app.RoleTypeOrgBuilder)
+	resolved, err := s.authzClient.ResolveAssignableRole(ctx, orgID, app.RoleType(raw), app.RoleContextTrustPolicy)
+	if err != nil {
+		return "", err
 	}
-
-	return role, nil
+	return resolved.RoleType, nil
 }
 
 func parseTrustPolicyTokenDuration(raw int) (int, error) {
@@ -133,12 +126,6 @@ func (s *service) CreateOIDCTrustPolicy(ctx *gin.Context) {
 		return
 	}
 
-	role, err := parseTrustPolicyRole(req.Role)
-	if err != nil {
-		ctx.Error(stderr.NewInvalidRequest(err))
-		return
-	}
-
 	duration, err := parseTrustPolicyTokenDuration(req.TokenDurationSeconds)
 	if err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
@@ -158,6 +145,12 @@ func (s *service) CreateOIDCTrustPolicy(ctx *gin.Context) {
 	org, err := s.requireOrgAdmin(ctx)
 	if err != nil {
 		ctx.Error(err)
+		return
+	}
+
+	role, err := s.resolveTrustPolicyRole(ctx, org.ID, req.Role)
+	if err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
 
@@ -319,7 +312,7 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 	}
 
 	if req.Role != "" && req.Role != policy.Role {
-		role, err := parseTrustPolicyRole(req.Role)
+		role, err := s.resolveTrustPolicyRole(ctx, org.ID, req.Role)
 		if err != nil {
 			ctx.Error(stderr.NewInvalidRequest(err))
 			return

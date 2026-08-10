@@ -1,8 +1,14 @@
 import { api } from '@/lib/api'
-import type { TRoleInfo } from '@/types'
+import type { TRoleContext, TRoleInfo } from '@/types'
 
-export const listRoles = ({ orgId }: { orgId: string }) =>
+export const listRoles = ({
+  orgId,
+  context,
+}: {
+  orgId: string
+  context?: TRoleContext
+}) =>
   api<TRoleInfo[]>({
-    path: `roles`,
+    path: context ? `roles?context=${context}` : `roles`,
     orgId,
   })

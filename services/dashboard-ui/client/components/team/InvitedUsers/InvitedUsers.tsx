@@ -9,10 +9,12 @@ import type { TOrgInvite } from '@/types'
 
 export const InvitedUsers = ({
   invites,
+  roleTitles,
   isLoading,
   isError,
 }: {
   invites: TOrgInvite[]
+  roleTitles: (roleType: string | undefined) => string
   isLoading: boolean
   isError: boolean
 }) => {
@@ -37,7 +39,7 @@ export const InvitedUsers = ({
           <Status variant="badge" status={i?.status} />
           <Text variant="subtext">{i?.email}</Text>
           <Badge size="sm" variant="code">
-            {i?.role_type === 'org_admin' ? 'Admin' : i?.role_type}
+            {roleTitles(i?.role_type)}
           </Badge>
           <ResendOrgInviteButton invite={i} size="sm" />
           <RevokeOrgInviteButton invite={i} size="sm" />

@@ -46,7 +46,7 @@ type Client interface {
 	DeleteStaticToken(ctx context.Context, tokenID string) error
 
 	// roles and service accounts
-	ListRoles(ctx context.Context) ([]*models.ServiceRoleInfo, error)
+	ListRoles(ctx context.Context) ([]*models.AppRole, error)
 	ListServiceAccounts(ctx context.Context, includeRunners bool, query *models.GetPaginatedQuery) ([]*models.AppAccount, bool, error)
 	CreateServiceAccount(ctx context.Context, req *models.ServiceCreateServiceAccountRequest) (*models.AppAccount, error)
 	UpdateServiceAccount(ctx context.Context, accountID string, req *models.ServiceUpdateServiceAccountRequest) (*models.AppAccount, error)

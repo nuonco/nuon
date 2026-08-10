@@ -26,9 +26,15 @@ const mockAccounts: TAccount[] = [
   } as TAccount,
 ]
 
+const roleTitles = (roleType: string | undefined) =>
+  ({ org_admin: 'Admin', org_support: 'Support', org_read_only: 'Read-only' } as Record<string, string>)[roleType ?? ''] ??
+  roleType ??
+  '—'
+
 export const Default = () => (
   <TeamTable
     data={mockAccounts}
+    roleTitles={roleTitles}
     isLoading={false}
     pagination={{ hasNext: false, offset: 0, limit: 20 }}
   />
@@ -37,6 +43,7 @@ export const Default = () => (
 export const WithPagination = () => (
   <TeamTable
     data={mockAccounts}
+    roleTitles={roleTitles}
     isLoading={false}
     pagination={{ hasNext: true, offset: 0, limit: 20 }}
   />
@@ -45,6 +52,7 @@ export const WithPagination = () => (
 export const Empty = () => (
   <TeamTable
     data={[]}
+    roleTitles={roleTitles}
     isLoading={false}
     pagination={{ hasNext: false, offset: 0, limit: 20 }}
   />

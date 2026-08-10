@@ -11,12 +11,6 @@ import type { TAccount } from '@/types'
 import { RemoveUserButton } from '@/components/team/RemoveUser'
 import { ChangeRoleButton } from '@/components/team/ChangeRole'
 
-const ROLE_LABELS: Record<string, string> = {
-  org_admin: 'Admin',
-  org_support: 'Support',
-  org_read_only: 'Read-only',
-}
-
 export type TTeamMemberRow = {
   id: string
   name: string
@@ -26,14 +20,17 @@ export type TTeamMemberRow = {
   account: TAccount
 }
 
-export function parseAccountToTableData(members: TAccount[]): TTeamMemberRow[] {
+export function parseAccountToTableData(
+  members: TAccount[],
+  roleTitles: (roleType: string | undefined) => string
+): TTeamMemberRow[] {
   return members.map((member) => {
     const roleType = member.roles?.[0]?.role_type || ''
     return {
       id: member.id || '',
       name: member.email?.split('@')[0] || 'Unknown',
       email: member.email || '',
-      role: ROLE_LABELS[roleType] ?? roleType ?? '—',
+      role: roleTitles(roleType),
       status: 'active',
       account: member,
     }
@@ -72,11 +69,13 @@ export const TEAM_TABLE_LIMIT = 20
 
 export const TeamTable = ({
   data,
+  roleTitles,
   isLoading,
   pagination,
   currentAccountId,
 }: {
   data: TAccount[]
+  roleTitles: (roleType: string | undefined) => string
   isLoading: boolean
   pagination: { hasNext: boolean; offset: number; limit: number }
   currentAccountId?: string
@@ -140,7 +139,7 @@ export const TeamTable = ({
   return (
     <Table<TTeamMemberRow>
       columns={columns}
-      data={parseAccountToTableData(data)}
+      data={parseAccountToTableData(data, roleTitles)}
       pagination={pagination}
       enableSearch={false}
       emptyStateProps={{
