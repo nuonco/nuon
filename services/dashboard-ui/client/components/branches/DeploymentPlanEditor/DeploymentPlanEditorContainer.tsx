@@ -9,7 +9,7 @@ import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
-import { createBranchConfig, getAppInstalls } from '@/lib'
+import { createBranchConfig, getAppInstalls, getRunbooks } from '@/lib'
 import type { TCreateBranchConfigRequest } from '@/lib/ctl-api/apps/branches/create-branch-config'
 import type { TAPIError, TAppBranch, TAppBranchConfig } from '@/types'
 import { DeploymentPlanEditor } from './DeploymentPlanEditor'
@@ -63,13 +63,30 @@ export const DeploymentPlanEditorContainer = ({
     [installsResult, branch.id]
   )
 
+  const { data: runbooksResult, isLoading: loadingRunbooks } = useQuery({
+    queryKey: ['runbooks', org?.id, app?.id, 'deployment-plan'],
+    queryFn: () => getRunbooks({ appId: app!.id, orgId: org!.id, limit: 100 }),
+    enabled: !!org?.id && !!app?.id,
+  })
+
   const initialGroups = useMemo(
     () => toEditorGroups(currentConfig),
     [currentConfig]
   )
 
+  const initialPostDeployRunbookIds = useMemo(
+    () => currentConfig?.post_deploy_runbook_ids ?? [],
+    [currentConfig]
+  )
+
   const { mutate: save, isPending: isSaving } = useMutation({
-    mutationFn: async (groups: IInstallGroup[]) => {
+    mutationFn: async ({
+      groups,
+      postDeployRunbookIds,
+    }: {
+      groups: IInstallGroup[]
+      postDeployRunbookIds: string[]
+    }) => {
       const installGroupsForApi = groups.map((group, index) => {
         const matchLabels = group.label_selector?.match_labels
         const useLabels =
@@ -87,6 +104,7 @@ export const DeploymentPlanEditorContainer = ({
 
       const request: TCreateBranchConfigRequest = {
         install_groups: installGroupsForApi,
+        post_deploy_runbook_ids: postDeployRunbookIds,
       }
 
       if (currentConfig?.connected_github_vcs_config) {
@@ -142,7 +160,12 @@ export const DeploymentPlanEditorContainer = ({
       isSaving={isSaving}
       labelColors={labelColors}
       orgId={org.id!}
-      onSave={(groups) => save(groups)}
+      runbooks={runbooksResult?.data ?? []}
+      loadingRunbooks={loadingRunbooks}
+      initialPostDeployRunbookIds={initialPostDeployRunbookIds}
+      onSave={(groups, postDeployRunbookIds) =>
+        save({ groups, postDeployRunbookIds })
+      }
       onCancel={() => removeModal(props.modalId)}
       {...props}
     />

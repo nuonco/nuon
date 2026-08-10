@@ -50,6 +50,11 @@ type AppAppBranchConfig struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// PostDeployRunbookIDs are runbooks run on each install, in order, after its
+	// deploy succeeds. Distinct from RunbookIDs, which tracks the runbooks the
+	// branch's synced app config produced.
+	PostDeployRunbookIds []string `json:"post_deploy_runbook_ids"`
+
 	// public git vcs config
 	PublicGitVcsConfig *AppPublicGitVCSConfig `json:"public_git_vcs_config,omitempty"`
 
