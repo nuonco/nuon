@@ -14,6 +14,7 @@ import { ConfigStep } from './steps/ConfigStep'
 import { BuildStep } from './steps/BuildStep'
 import { PlanGroupStep } from './steps/PlanGroupStep'
 import { DeployGroupStep } from './steps/DeployGroupStep'
+import { PostDeployRunbooksStep } from './steps/PostDeployRunbooksStep'
 
 interface IWorkflowStepDetail {
   step: TInstallWorkflowStep
@@ -29,6 +30,7 @@ export const WorkflowStepDetail = ({ step, appBranchRunId, onClose: _onClose }: 
   const isConfigStep = step.name?.toLowerCase().includes('config') && !step.name?.toLowerCase().includes('diff')
   const isPlanGroupStep = step.name?.toLowerCase().includes('plan install group')
   const isDeployGroupStep = step.name?.toLowerCase().includes('deploy install group')
+  const isPostDeployRunbooksStep = step.name?.toLowerCase().includes('post-deploy runbooks')
 
   const isInProgress = step.status?.status === 'in-progress'
   const duration = formatDuration(step.execution_time)
@@ -97,8 +99,9 @@ export const WorkflowStepDetail = ({ step, appBranchRunId, onClose: _onClose }: 
         {isBuildStep && <BuildStep metadata={metadata} status={step.status?.status} appBranchRunId={appBranchRunId} />}
         {isPlanGroupStep && <PlanGroupStep step={step} metadata={metadata} />}
         {isDeployGroupStep && <DeployGroupStep step={step} metadata={metadata} />}
+        {isPostDeployRunbooksStep && <PostDeployRunbooksStep step={step} metadata={metadata} />}
 
-        {!isCommitStep && !isBuildStep && !isConfigStep && !isPlanGroupStep && !isDeployGroupStep && step.status?.status_human_description && (
+        {!isCommitStep && !isBuildStep && !isConfigStep && !isPlanGroupStep && !isDeployGroupStep && !isPostDeployRunbooksStep && step.status?.status_human_description && (
           <div className="p-3 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
             <Text variant="base">{step.status.status_human_description}</Text>
           </div>
