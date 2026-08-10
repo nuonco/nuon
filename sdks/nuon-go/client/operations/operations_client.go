@@ -126,8 +126,6 @@ type ClientService interface {
 
 	AddUser(params *AddUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddUserCreated, error)
 
-	ApproveInstallCreation(params *ApproveInstallCreationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ApproveInstallCreationAccepted, error)
-
 	AwaitQueueSignal(params *AwaitQueueSignalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitQueueSignalOK, error)
 
 	AwaitWorkflowStep(params *AwaitWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitWorkflowStepOK, error)
@@ -906,6 +904,8 @@ type ClientService interface {
 
 	ResetUserJourney(params *ResetUserJourneyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ResetUserJourneyOK, error)
 
+	RespondInstallCreationApproval(params *RespondInstallCreationApprovalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RespondInstallCreationApprovalAccepted, error)
+
 	RestartRunnerInstall(params *RestartRunnerInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartRunnerInstallOK, error)
 
 	RetryWorkflow(params *RetryWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowCreated, error)
@@ -1248,52 +1248,6 @@ func (a *Client) AddUser(params *AddUserParams, authInfo runtime.ClientAuthInfoW
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for AddUser: API contract not enforced by server. Client expected to get an error, but got: %T", result)
-	panic(msg)
-}
-
-/*
-ApproveInstallCreation approves creation of missing installs
-
-Approves an install creation approval, creates the missing installs, and re-triggers the sync.
-*/
-func (a *Client) ApproveInstallCreation(params *ApproveInstallCreationParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ApproveInstallCreationAccepted, error) {
-	// NOTE: parameters are not validated before sending
-	if params == nil {
-		params = NewApproveInstallCreationParams()
-	}
-	op := &runtime.ClientOperation{
-		ID:                 "ApproveInstallCreation",
-		Method:             "POST",
-		PathPattern:        "/v1/apps/{app_id}/install-syncs/{sync_id}/approvals/{approval_id}/approve",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &ApproveInstallCreationReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	}
-	for _, opt := range opts {
-		opt(op)
-	}
-	result, err := a.transport.Submit(op)
-	if err != nil {
-		return nil, err
-	}
-
-	// only one success response has to be checked
-	success, ok := result.(*ApproveInstallCreationAccepted)
-	if ok {
-		return success, nil
-	}
-
-	// unexpected success response.
-
-	// no default response is defined.
-	//
-	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for ApproveInstallCreation: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -2748,7 +2702,7 @@ func (a *Client) CreateAppConfigV2(params *CreateAppConfigV2Params, authInfo run
 /*
 CreateAppDockerBuildComponentConfig creates a docker build component config
 
-Create a Docker build component config.
+Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
 */
 func (a *Client) CreateAppDockerBuildComponentConfig(params *CreateAppDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppDockerBuildComponentConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -3844,7 +3798,7 @@ func (a *Client) CreateCurrentOrgWebhook(params *CreateCurrentOrgWebhookParams, 
 /*
 CreateDockerBuildComponentConfig creates a docker build component config
 
-Create a Docker build component config.
+Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
 */
 func (a *Client) CreateDockerBuildComponentConfig(params *CreateDockerBuildComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateDockerBuildComponentConfigCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -5127,7 +5081,7 @@ func (a *Client) CreateSlackChannelSubscription(params *CreateSlackChannelSubscr
 /*
 CreateStaticToken creates a static API token for your org
 
-Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, org_read_only, or org_builder) and defaults to org_read_only.
+Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
 */
 func (a *Client) CreateStaticToken(params *CreateStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateStaticTokenCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -18008,12 +17962,15 @@ func (a *Client) ListQueues(params *ListQueuesParams, authInfo runtime.ClientAut
 }
 
 /*
-	ListRoles lists assignable roles
+	ListRoles lists your org s roles
 
-	List the roles that can be assigned to members and service accounts in an
+	List your org's roles. Each role carries its display metadata (`title`,
 
-organization. Each role indicates which principal types it applies to via the
-`applies_to` field (`user`, `service_account`, or both).
+`description`) and the assignment surfaces it may be offered on via the
+`applies_to` field (`team`, `service_account`, `api_token`,
+`oidc_trust_policy`). A role with no `applies_to` entries exists and may be
+displayed, but cannot be newly assigned. Pass `?context=<surface>` to filter
+to the roles assignable on a single surface.
 */
 func (a *Client) ListRoles(params *ListRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRolesOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -19350,6 +19307,52 @@ func (a *Client) ResetUserJourney(params *ResetUserJourneyParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ResetUserJourney: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+RespondInstallCreationApproval responds to an install creation approval
+
+Approves or denies an install creation approval. On approve, creates the missing installs and re-triggers the sync. On deny, marks the approval as denied.
+*/
+func (a *Client) RespondInstallCreationApproval(params *RespondInstallCreationApprovalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RespondInstallCreationApprovalAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRespondInstallCreationApprovalParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RespondInstallCreationApproval",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/install-syncs/{sync_id}/approvals/{approval_id}/response",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RespondInstallCreationApprovalReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RespondInstallCreationApprovalAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RespondInstallCreationApproval: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

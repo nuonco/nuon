@@ -7,7 +7,9 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -23,6 +25,9 @@ type AppAppInstallsConfig struct {
 	// branch
 	Branch string `json:"branch,omitempty"`
 
+	// connected github vcs config
+	ConnectedGithubVcsConfig *AppConnectedGithubVCSConfig `json:"connected_github_vcs_config,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -37,6 +42,9 @@ type AppAppInstallsConfig struct {
 
 	// org id
 	OrgID string `json:"org_id,omitempty"`
+
+	// public git vcs config
+	PublicGitVcsConfig *AppPublicGitVCSConfig `json:"public_git_vcs_config,omitempty"`
 
 	// repo
 	Repo string `json:"repo,omitempty"`
@@ -56,11 +64,133 @@ type AppAppInstallsConfig struct {
 
 // Validate validates this app app installs config
 func (m *AppAppInstallsConfig) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateConnectedGithubVcsConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePublicGitVcsConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this app app installs config based on context it is used
+func (m *AppAppInstallsConfig) validateConnectedGithubVcsConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.ConnectedGithubVcsConfig) { // not required
+		return nil
+	}
+
+	if m.ConnectedGithubVcsConfig != nil {
+		if err := m.ConnectedGithubVcsConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("connected_github_vcs_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("connected_github_vcs_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppInstallsConfig) validatePublicGitVcsConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.PublicGitVcsConfig) { // not required
+		return nil
+	}
+
+	if m.PublicGitVcsConfig != nil {
+		if err := m.PublicGitVcsConfig.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("public_git_vcs_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("public_git_vcs_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this app app installs config based on the context it is used
 func (m *AppAppInstallsConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateConnectedGithubVcsConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePublicGitVcsConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AppAppInstallsConfig) contextValidateConnectedGithubVcsConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.ConnectedGithubVcsConfig != nil {
+
+		if swag.IsZero(m.ConnectedGithubVcsConfig) { // not required
+			return nil
+		}
+
+		if err := m.ConnectedGithubVcsConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("connected_github_vcs_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("connected_github_vcs_config")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppInstallsConfig) contextValidatePublicGitVcsConfig(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.PublicGitVcsConfig != nil {
+
+		if swag.IsZero(m.PublicGitVcsConfig) { // not required
+			return nil
+		}
+
+		if err := m.PublicGitVcsConfig.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("public_git_vcs_config")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("public_git_vcs_config")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
