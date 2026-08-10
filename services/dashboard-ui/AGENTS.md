@@ -551,6 +551,7 @@ There is **no "it's an editor" exception** an agent can invoke. Bespoke direct-m
 
 ### Key rules
 
+- **Wrap the fields in a real `<form>` element** — `<form autoComplete="off" noValidate onSubmit={(e) => e.preventDefault()}>`. It IS a form, so use the element: this turns off browser autocomplete across every field. Submission is still driven by the modal's `primaryActionTrigger` calling `form.handleSubmit()` (the trigger is a footer prop outside the form), NOT native submit — hence `preventDefault`. Never drop the form element just because submit is button-driven.
 - **Flat fields, never nested objects** — `canSubmit` validation breaks on nested-object fields in TanStack Form v1 (`channelId`/`channelName`, not `channel: {id,name}`).
 - **Do not pass native `required`** to fields — Zod is the sole validation source.
 - **Errors → in-form `FormErrorBanner`, never a toast.** Success → close modal + toast.
