@@ -11,10 +11,32 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
+const (
+	InstallGroupRunPhaseDeploy  = "deploy"
+	InstallGroupRunPhaseRunbook = "runbook"
+)
+
 type InstallGroupRunInstall struct {
 	InstallID  string `json:"install_id"`
 	WorkflowID string `json:"workflow_id,omitempty"`
 	Status     string `json:"status"`
+
+	// Phase is which stage of the group the install is in: "deploy" or "runbook".
+	Phase    string                   `json:"phase,omitempty"`
+	Runbooks []InstallGroupRunRunbook `json:"runbooks,omitempty"`
+}
+
+// InstallGroupRunRunbook records one post-deploy runbook run for an install.
+type InstallGroupRunRunbook struct {
+	RunbookID   string `json:"runbook_id"`
+	RunbookName string `json:"runbook_name"`
+	RunID       string `json:"run_id,omitempty"`
+	WorkflowID  string `json:"workflow_id,omitempty"`
+	Status      string `json:"status"`
+
+	// Attempt increments when a retry of the step re-runs a runbook that failed,
+	// so the retry gets a fresh idempotency key instead of adopting the failed run.
+	Attempt int `json:"attempt,omitempty"`
 }
 
 type InstallGroupRun struct {
