@@ -59,7 +59,7 @@ ListRolesOK describes a response with status code 200, with default header value
 OK
 */
 type ListRolesOK struct {
-	Payload []*models.ServiceRoleInfo
+	Payload []*models.AppRole
 }
 
 // IsSuccess returns true when this list roles o k response has a 2xx status code
@@ -102,7 +102,7 @@ func (o *ListRolesOK) String() string {
 	return fmt.Sprintf("[GET /v1/roles][%d] listRolesOK %s", 200, payload)
 }
 
-func (o *ListRolesOK) GetPayload() []*models.ServiceRoleInfo {
+func (o *ListRolesOK) GetPayload() []*models.AppRole {
 	return o.Payload
 }
 
