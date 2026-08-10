@@ -68,28 +68,52 @@
 
 <h2>3. The ownership tree</h2>
 <p>Every resource has a parent chain terminating at the org. Authorization <strong>walks up</strong> this chain: a request is allowed if the requested resource <em>or any ancestor</em> carries a grant satisfying the verb. Chains are built from a single org-scoped point read per request &mdash; children either carry a direct owner column (components, policy reports) or denormalized <code>install_id</code>/<code>app_id</code> ancestry columns (workflows, runner jobs, queues, log streams, terraform workspaces). There is no request-time recursive owner walk.</p>
-<div class="tree">org
-&#9500;&#9472; app                          chain: app &rarr; org             &lt;- grant target
-&#9474;  &#9500;&#9472; install                   chain: install &rarr; app &rarr; org  &lt;- grant target
-&#9474;  &#9474;  &#9500;&#9472; install-component      (inherits install chain; future target)
-&#9474;  &#9474;  &#9500;&#9472; deploys, sandbox runs, stacks, action runs, notebooks, secrets &hellip; (inherit)
-&#9474;  &#9474;  &#9492;&#9472; install runners &rarr; their jobs / log streams / queues / workspaces (inherit)
-&#9474;  &#9500;&#9472; component                 (inherits app chain; future target)
-&#9474;  &#9500;&#9472; builds, branches, branch runs, sandbox builds, action workflows &hellip; (inherit)
-&#9474;  &#9492;&#9472; workflows, runner jobs, queues, log streams, terraform workspaces
-&#9474;        (polymorphic owners &rarr; denormalized install_id/app_id; inherit that tier)
-&#9500;&#9472; webhook                      chain: webhook &rarr; org             &lt;- grant target
-&#9500;&#9472; vcs_connection               chain: vcs_connection &rarr; org      &lt;- grant target
-&#9500;&#9472; slack_subscription           chain: slack_subscription &rarr; org  &lt;- grant target
-&#9492;&#9472; org tier (no install/app ancestor):
-      management runner group + its runners/jobs/streams, org queues,
-      triggers, AWS account connections, org settings/team/credentials
-      &mdash; org-wide permission only</div>
-<p class="meta">Grant targets are <code>org</code>, <code>app</code>, <code>install</code>, and the three delegable org-owned siblings <code>webhook</code> / <code>vcs_connection</code> / <code>slack_subscription</code>. Everything else inherits via walk-up; children are never grant targets themselves.</p>
+<div class="tree">org  ← grant target (root)
+├─ app  ← grant target                                    chain: app → org
+│  ├─ install  ← grant target                             chain: install → app → org
+│  │  ├─ install components  (future target)
+│  │  │  ├─ install deploys → runner jobs ◆, log streams ◆
+│  │  │  └─ terraform workspaces ◆  (component infra state)
+│  │  ├─ install sandbox → terraform workspace ◆  (sandbox infra state)
+│  │  ├─ install sandbox runs → runner jobs ◆, log streams ◆
+│  │  ├─ workflows ◆ → steps → approvals
+│  │  │     (steps also own runner jobs ◆ — secret syncs — and log streams ◆)
+│  │  ├─ action workflow runs → runner jobs ◆, log streams ◆
+│  │  ├─ install stacks, stack runs, runbook runs
+│  │  ├─ notebooks → queues ◆
+│  │  ├─ queues ◆  (install signal queues)
+│  │  ├─ events, audit logs, config versions, inputs, state, roles, drift
+│  │  │     (route-level children under /v1/installs/:install_id)
+│  │  └─ install runner group → runners → runner jobs ◆, log streams ◆,
+│  │        queues ◆, processes
+│  ├─ components  (future target)
+│  │  └─ config connections → component builds → runner jobs ◆, log streams ◆
+│  ├─ app branches → branch runs (→ log streams ◆), branch queues ◆, workflows ◆
+│  ├─ app sandbox builds → runner jobs ◆, log streams ◆
+│  ├─ workflows ◆  (app-owned: config builds)
+│  ├─ app configs  (+ sandbox / runner / secrets / policies / permissions /
+│  │     break-glass / stack / input / template configs)
+│  ├─ actions, action workflows → action workflow configs
+│  ├─ runbooks, secrets
+│  ├─ policy reports  (install-scoped reports also carry their install)
+│  └─ queues ◆  (app signal queues)
+├─ webhook  ← grant target                                chain: webhook → org
+├─ vcs_connection  ← grant target                         chain: vcs_connection → org
+│  └─ vcs webhook subscriptions  (their queues ◆ resolve org tier)
+├─ slack_subscription  ← grant target                     chain: slack_subscription → org
+└─ org tier  (no install/app ancestor — org-wide permission only)
+   ├─ management runner group → runners → runner jobs ◆, log streams ◆, queues ◆
+   ├─ admin-created runner jobs ◆  (health-check / noop; no owner recorded)
+   ├─ org queues ◆  (org signals, health-check sweeps, trigger ingress,
+   │     onboarding, the 'general' queue)
+   ├─ triggers → dispatches, events, rules, secrets  (candidate delegable type)
+   ├─ AWS account connections  (deliberately not grantable)
+   └─ org settings, team, invites, service accounts, trust policies,
+         static tokens, grants</div>
+<p class="meta"><strong>← grant target</strong>: can carry a grant directly (<code>org</code>, <code>app</code>, <code>install</code>, <code>webhook</code>, <code>vcs_connection</code>, <code>slack_subscription</code>). <strong>(future target)</strong>: promotion planned to be additive. <strong>◆</strong>: row in one of the five polymorphic-owner tables (<code>install_workflows</code>, <code>runner_jobs</code>, <code>queues</code>, <code>log_streams</code>, <code>terraform_workspaces</code>) &mdash; its grantable ancestry is stored in denormalized <code>install_id</code>/<code>app_id</code> columns, populated at creation (<code>app.ResolveOwnerAncestry</code>) and backfilled by migration 124. Both columns NULL means <strong>org tier</strong> &mdash; a defined state, never &ldquo;unknown&rdquo;; such rows require org-wide permission. Everything without a marker inherits its parent's chain and is never a grant target itself.</p>
 <ul>
-  <li><strong>Runners are dual-owned.</strong> A runner belongs to a runner group, and the group is owned by an install <em>or</em> the org. Install runners inherit their install's chain (an install grantee can see and operate their runner); the management (org) runner group is org tier.</li>
-  <li><strong>The five polymorphic-owner tables</strong> (<code>install_workflows</code>, <code>runner_jobs</code>, <code>queues</code>, <code>log_streams</code>, <code>terraform_workspaces</code>) store their grantable ancestry directly: <code>install_id</code>/<code>app_id</code> columns populated at creation (<code>app.ResolveOwnerAncestry</code>) and backfilled by migration 124. <strong>Both columns NULL means org tier</strong> &mdash; a defined state (management-runner jobs, org queues, unresolved legacy rows), never &ldquo;unknown&rdquo;; such rows require org-wide permission.</li>
-  <li>Deploys, builds, releases, sandboxes, cloud accounts, audit logs, notebooks are <em>not</em> grant targets &mdash; they inherit from their parent install/app via walk-up.</li>
+  <li><strong>Runners are dual-owned</strong>, so they appear twice: a runner belongs to a runner group, and the group is owned by an install <em>or</em> the org. Install runners inherit their install's chain (an install grantee can see and operate their runner); the management (org) runner group and everything under it is org tier.</li>
+  <li><strong>Workflows and queues are multi-homed</strong> the same way: a workflow is owned by an install, an app, or an app branch; a queue by an install, app, branch, component, notebook, runner, or the org. Each row's tier is whatever its owner resolves to &mdash; the ◆ columns capture it per row.</li>
 </ul>
 
 <h2>4. Grant-target set</h2>
