@@ -101,12 +101,26 @@ func (p *Producer) Close() {
 	}
 }
 
+// writeMetrics records both the timing and the volume for one produce outcome.
+// Timing gives status/reason percentiles; message_count exists as its own Count
+// rather than relying on Timing's derived .count so volume tracking doesn't
+// silently change meaning if the per-message sampling choice below ever changes.
+func (p *Producer) writeMetrics(start time.Time, topic, status, reason string) {
+	tags := []string{"topic:" + topic, "status:" + status}
+	if reason != "" {
+		tags = append(tags, "reason:"+reason)
+	}
+	p.mw.Timing("kafka.producer.latency", time.Since(start), tags)
+	p.mw.Count("kafka.producer.message_count", 1, tags)
+}
+
 // Produce sends a single pre-marshaled message. Fire-and-forget: the async
 // callback records metrics and logs on failure, so callers never block on the
 // broker.
 func (p *Producer) Produce(ctx context.Context, topic, key string, value []byte) {
+	start := time.Now()
 	if !p.enabled {
-		p.mw.Incr("kafka.produce.disabled", nil)
+		p.writeMetrics(start, topic, "disabled", "")
 		return
 	}
 
@@ -114,10 +128,10 @@ func (p *Producer) Produce(ctx context.Context, topic, key string, value []byte)
 	p.client.Produce(ctx, rec, func(_ *kgo.Record, err error) {
 		if err != nil {
 			p.l.Error("kafka produce failed", zap.String("topic", topic), zap.Error(err))
-			p.mw.Incr("kafka.produce.error", []string{"topic:" + topic})
+			p.writeMetrics(start, topic, "err", "broker_error")
 			return
 		}
-		p.mw.Incr("kafka.produce.count", []string{"topic:" + topic})
+		p.writeMetrics(start, topic, "ok", "")
 	})
 }
 
@@ -155,8 +169,11 @@ func (p *Producer) ProduceEnvelopesSync(ctx context.Context, topic, typ string, 
 	if len(msgs) == 0 {
 		return nil
 	}
+	batchStart := time.Now()
 	if !p.enabled {
-		p.mw.Incr("kafka.produce.disabled", nil)
+		for range msgs {
+			p.writeMetrics(batchStart, topic, "disabled", "")
+		}
 		return allIndices(len(msgs))
 	}
 
@@ -177,7 +194,7 @@ func (p *Producer) ProduceEnvelopesSync(ctx context.Context, topic, typ string, 
 				zap.String("type", typ),
 				zap.Error(err),
 			)
-			p.mw.Incr("kafka.produce.wrap_error", []string{"topic:" + topic})
+			p.writeMetrics(batchStart, topic, "err", "wrap_error")
 			failed = append(failed, i)
 			continue
 		}
@@ -205,7 +222,7 @@ func (p *Producer) ProduceEnvelopesSync(ctx context.Context, topic, typ string, 
 				zap.String("topic", topic),
 				zap.Error(res.Err),
 			)
-			p.mw.Incr("kafka.produce.unmatched_result", []string{"topic:" + topic})
+			p.writeMetrics(batchStart, topic, "err", "unmatched_result")
 			continue
 		}
 
@@ -214,12 +231,12 @@ func (p *Producer) ProduceEnvelopesSync(ctx context.Context, topic, typ string, 
 				zap.String("topic", topic),
 				zap.Error(res.Err),
 			)
-			p.mw.Incr("kafka.produce.error", []string{"topic:" + topic})
+			p.writeMetrics(batchStart, topic, "err", "broker_error")
 			failed = append(failed, i)
 			continue
 		}
 		acked[res.Record] = true
-		p.mw.Incr("kafka.produce.count", []string{"topic:" + topic})
+		p.writeMetrics(batchStart, topic, "ok", "")
 	}
 
 	// ProduceSync waits on a promise per record, so every record should be
@@ -234,7 +251,7 @@ func (p *Producer) ProduceEnvelopesSync(ctx context.Context, topic, typ string, 
 			p.l.Error("kafka sync produce returned no result for a record",
 				zap.String("topic", topic),
 			)
-			p.mw.Incr("kafka.produce.missing_result", []string{"topic:" + topic})
+			p.writeMetrics(batchStart, topic, "err", "missing_result")
 			failed = append(failed, i)
 		}
 	}
