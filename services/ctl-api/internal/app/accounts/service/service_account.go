@@ -110,6 +110,30 @@ func (s *service) getOrgServiceAccount(ctx context.Context, orgID, accountID str
 	return acct, nil
 }
 
+// orgServiceAccountIDs resolves the org's service accounts off the
+// account_roles org index. Joining accounts to account_roles in the list query
+// instead lets the planner walk the whole accounts table in email order to
+// satisfy the ORDER BY and LIMIT, which took tens of seconds on a cold cache.
+func (s *service) orgServiceAccountIDs(ctx context.Context, orgID string, includeRunners bool) ([]string, error) {
+	tx := s.db.WithContext(ctx).
+		Model(&app.AccountRole{}).
+		Joins("JOIN accounts ON accounts.id = account_roles.account_id AND accounts.deleted_at = 0 AND accounts.account_type = ?", app.AccountTypeService).
+		Where(app.AccountRole{OrgID: generics.NewNullString(orgID)})
+
+	if !includeRunners {
+		tx = tx.
+			Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0").
+			Where("roles.role_type != ?", app.RoleTypeRunner)
+	}
+
+	accountIDs := []string{}
+	if err := tx.Distinct().Pluck("account_roles.account_id", &accountIDs).Error; err != nil {
+		return nil, fmt.Errorf("unable to list service account ids for org %s: %w", orgID, err)
+	}
+
+	return accountIDs, nil
+}
+
 // @ID						ListServiceAccounts
 // @Summary				List service accounts for the current org
 // @Description.markdown	list_service_accounts.md
@@ -136,30 +160,28 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 
 	includeRunners := ctx.Query("include_runners") == "true"
 
-	accounts := []app.Account{}
-	tx := s.db.WithContext(ctx).
-		Model(&app.Account{}).
-		Joins("JOIN account_roles ON account_roles.account_id = accounts.id AND account_roles.org_id = ? AND account_roles.deleted_at = 0", org.ID).
-		Where("accounts.account_type = ?", app.AccountTypeService)
-
-	if !includeRunners {
-		tx = tx.
-			Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0").
-			Where("roles.role_type != ?", app.RoleTypeRunner)
+	accountIDs, err := s.orgServiceAccountIDs(ctx, org.ID, includeRunners)
+	if err != nil {
+		ctx.Error(err)
+		return
 	}
 
-	tx = tx.
-		Group("accounts.id").
-		Order("accounts.email").
-		Order("accounts.id").
-		Scopes(scopes.WithOffsetPagination).
-		Preload("Roles", "org_id = ?", org.ID).
-		Preload("Roles.Org").
-		Preload("Roles.Policies").
-		Find(&accounts)
-	if tx.Error != nil {
-		ctx.Error(fmt.Errorf("unable to list service accounts for org %s: %w", org.ID, tx.Error))
-		return
+	accounts := []app.Account{}
+	if len(accountIDs) > 0 {
+		res := s.db.WithContext(ctx).
+			Model(&app.Account{}).
+			Where("accounts.id IN ?", accountIDs).
+			Order("accounts.email").
+			Order("accounts.id").
+			Scopes(scopes.WithOffsetPagination).
+			Preload("Roles", "org_id = ?", org.ID).
+			Preload("Roles.Org").
+			Preload("Roles.Policies").
+			Find(&accounts)
+		if res.Error != nil {
+			ctx.Error(fmt.Errorf("unable to list service accounts for org %s: %w", org.ID, res.Error))
+			return
+		}
 	}
 
 	accounts, err = db.HandlePaginatedResponse(ctx, accounts)
