@@ -62,6 +62,7 @@ const AppTemplate = () => {
   const { app } = useApp()
   const isChildRoute = !!useMatch('/:orgId/apps/:appId/:section/:rest/*')
   const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
+  const hasInstallSyncing = !!org?.features?.['app-install-syncing']
   const hasNewAppIA = useNewAppIA()
 
   if (!app) return null
@@ -97,6 +98,11 @@ const AppTemplate = () => {
     { path: `/roles`, iconVariant: 'FileLockIcon' as const, text: 'Roles' },
     { path: `/policies`, iconVariant: 'ShieldCheckIcon' as const, text: 'Policies' },
     { path: `/installs`, iconVariant: 'CubeIcon' as const, text: 'Installs' },
+    hasInstallSyncing && {
+      path: `/install-syncs`,
+      iconVariant: 'ArrowsClockwiseIcon' as const,
+      text: 'Install syncs',
+    },
     { path: `/labels`, iconVariant: 'TagIcon' as const, text: 'Labels' },
     { path: `/readme`, iconVariant: 'BookOpenIcon' as const, text: 'README' },
   ].filter(Boolean) as TNavItem[]
