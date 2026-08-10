@@ -129,6 +129,11 @@ install_deploy &rarr; install_component &rarr; install   &larr; finally a granta
 <li>Bare routes can then be <em>downgraded</em> to org-level (no deletion, no client break for org-role accounts) once clients migrate.</li>
 </ul>
 
+<h3>3.7 Motivating limitation: shared routes in the scoped-roles fold</h3>
+<p>The domain-scoped roles shipped in <code>ja/scoped-roles</code> (App developer, Install manager) authorize writes with a coarse <em>prefix fold</em>: the org middleware maps a request&rsquo;s route prefix to a single domain object (<code>&lt;org&gt;:apps</code> or <code>&lt;org&gt;:installs</code>) and checks the role against it. This works only when a whole route prefix belongs to exactly one domain.</p>
+<p>Some resources don&rsquo;t. <strong>Runner jobs</strong> (<code>/v1/runner-jobs/&hellip;</code>) are the clearest case: a runner job may execute an install workflow <em>or</em> a component build, so the resource spans both domains, but the route is a single top-level prefix. <code>ja/scoped-roles</code> folds <code>/v1/runner-jobs</code> and <code>/v1/terraform-workspaces</code> to the installs domain so an Install manager can cancel jobs and manage workspaces for their installs. The unavoidable consequence: an <strong>App developer cannot cancel a component build&rsquo;s runner job</strong>, because a prefix fold can&rsquo;t route one path to two domains by ownership. (No regression &mdash; those routes were org-wide-write/Admin-only before &mdash; but it caps how far scoped roles can go.)</p>
+<p>This is exactly what the denormalized owner columns fix. With <code>install_id</code>/<code>app_id</code> on the job row, authorization keys off the row&rsquo;s <em>actual</em> owner rather than its URL prefix, so the same <code>/v1/runner-jobs/:id</code> route can be a valid App-developer action for a build job and a valid Install-manager action for an install job. Until then, shared-route resources are folded to their most common domain and the rest requires Admin.</p>
+
 <h2>4. Risks</h2>
 <table>
 <tr><th>Risk</th><th>Mitigation</th></tr>
