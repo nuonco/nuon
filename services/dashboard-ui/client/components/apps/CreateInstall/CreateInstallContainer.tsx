@@ -1,9 +1,21 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Banner } from '@/components/common/Banner'
 import { type IButtonAsButton } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
-import { type IModal } from '@/components/surfaces/Modal'
+import {
+  CreateInstallFormFields,
+  FormSkeleton,
+  type ICreateFormTriggerState,
+} from '@/components/installs/CreateInstall'
+import {
+  buildCreateInstallBody,
+  normalizeInstallPlatform,
+} from '@/components/installs/forms/InstallForm'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
@@ -13,19 +25,19 @@ import {
   getAppConfig,
   createAppInstall,
   getAWSAccountConnections,
-  type TCreateAppInstallBody,
 } from '@/lib'
 import { toSentenceCase } from '@/utils/string-utils'
-import {
-  CreateInstallModal,
-  CreateInstallButton as CreateInstallButtonComponent,
-} from './CreateInstall'
+import { CreateInstallButton as CreateInstallButtonComponent } from './CreateInstall'
 
-interface ICreateInstall {}
+const noop = () => {}
 
-const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
+const CreateInstallModalContainer = ({ ...props }: IModal) => {
   const { org } = useOrg()
   const { app } = useApp()
+  const [trigger, setTrigger] = useState<ICreateFormTriggerState>({
+    canSubmit: false,
+    submit: noop,
+  })
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
@@ -45,169 +57,159 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
     enabled: !!org?.id && !!app?.id,
   })
 
-  const {
-    data: awsAccountConnections,
-    isLoading: awsAccountConnectionsLoading,
-  } = useQuery({
-    queryKey: ['aws-account-connections', org?.id],
-    queryFn: () => getAWSAccountConnections({ orgId: org.id }),
-    enabled: !!org?.id && awsConnectionsEnabled,
-  })
+  const configId = configs?.[0]?.id
 
   const {
     data: config,
     isLoading: configLoading,
     error: configError,
   } = useQuery({
-    queryKey: ['app-config', org?.id, app?.id, configs?.[0]?.id],
+    queryKey: ['app-config', org?.id, app?.id, configId],
     queryFn: () =>
       getAppConfig({
         orgId: org.id,
         appId: app.id,
-        appConfigId: configs[0].id,
+        appConfigId: configId!,
         recurse: true,
       }),
-    enabled: !!configs?.[0]?.id,
+    enabled: !!configId,
   })
 
-  const { mutateAsync, isPending: isSubmitting } = useMutation({
-    mutationFn: (formData: FormData) => {
-      const formDataObj = Object.fromEntries(formData)
-      const inputs = Object.keys(formDataObj).reduce(
-        (acc, key) => {
-          if (key.includes('inputs:')) {
-            let value = formDataObj[key] as string
-            if (value === 'on' || value === 'off') {
-              value = (value === 'on').toString()
-            }
-            acc[key.replace('inputs:', '')] = value
-          }
-          return acc
-        },
-        {} as Record<string, string>
-      )
+  const { data: awsAccountConnections, isLoading: awsAccountConnectionsLoading } =
+    useQuery({
+      queryKey: ['aws-account-connections', org?.id],
+      queryFn: () => getAWSAccountConnections({ orgId: org.id }),
+      enabled: !!org?.id && awsConnectionsEnabled,
+    })
 
-      const installConfig: TCreateAppInstallBody['install_config'] = {
-        approval_option:
-          formDataObj['auto-approve'] === 'on' ? 'approve-all' : 'prompt',
-      }
-      const vpcUrl = (formDataObj.vpc_nested_template_url as string)?.trim()
-      const runnerUrl = (
-        formDataObj.runner_nested_template_url as string
-      )?.trim()
-      if (vpcUrl) {
-        installConfig!.vpc_nested_template_url = vpcUrl
-      }
-      if (runnerUrl) {
-        installConfig!.runner_nested_template_url = runnerUrl
-      }
-
-      const body: TCreateAppInstallBody = {
-        name: formDataObj.name as string,
-        inputs: Object.keys(inputs).length > 0 ? inputs : undefined,
-        install_config: installConfig,
-        metadata: { managed_by: 'nuon/dashboard' },
-      }
-
-      if (platform === 'aws' && formDataObj.region) {
-        body.aws_account = {
-          iam_role_arn: '',
-          region: formDataObj.region as string,
-          connection_id: (formDataObj.aws_connection_id as string) || undefined,
-          account_id: (formDataObj.aws_account_id as string) || undefined,
-        }
-      } else if (platform === 'azure' && formDataObj.location) {
-        body.azure_account = {
-          location: formDataObj.location as string,
-          service_principal_app_id: '',
-          service_principal_password: '',
-          subscription_id:
-            (formDataObj.azure_subscription_id as string) || undefined,
-          subscription_tenant_id: '',
-        }
-      } else if (platform === 'gcp') {
-        body.gcp_account = {
-          project_id: (formDataObj.gcp_project_id as string) || undefined,
-        }
-      }
-
-      return createAppInstall({
-        appId: app?.id || '',
-        body,
-        orgId: org?.id || '',
-      })
-    },
-    onSuccess: (result) => {
-      addToast(
-        <Toast heading="Install created" theme="success">
-          <Text>Install created.</Text>
-        </Toast>
-      )
-      queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
-      queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
-      removeModal(props.modalId)
-      const workflowId = result.data.workflow_id
-      const suffix =
-        result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
-
-      if (workflowId) {
-        navigate(
-          `/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`
+  const { mutateAsync, isPending: isSubmitting, error: submitError } =
+    useMutation({
+      mutationFn: (body: ReturnType<typeof buildCreateInstallBody>) =>
+        createAppInstall({ appId: app?.id || '', body, orgId: org?.id || '' }),
+      onSuccess: (result) => {
+        addToast(
+          <Toast heading="Install created" theme="success">
+            <Text>Install created.</Text>
+          </Toast>
         )
-      } else {
-        navigate(`/${org?.id}/installs/${result.data.id}/workflows${suffix}`)
-      }
-    },
-    onError: (error) => {
-      addToast(
-        <Toast heading="Install creation failed" theme="error">
-          <Text>
-            {toSentenceCase(
-              error.error || error.description || 'Unable to create install.'
-            )}
-          </Text>
-        </Toast>
-      )
-    },
-  })
+        queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
+        queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
+        removeModal(props.modalId)
+        const workflowId = result.data.workflow_id
+        const suffix =
+          result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
+        navigate(
+          workflowId
+            ? `/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`
+            : `/${org?.id}/installs/${result.data.id}/workflows${suffix}`
+        )
+      },
+    })
 
   const isLoading =
     configsLoading ||
     configLoading ||
     (awsConnectionsEnabled && awsAccountConnectionsLoading)
-  const hasError =
-    configsError || configError || !configs || configs.length === 0
+  const loadError =
+    configsError || configError || (!!configs && configs.length === 0)
+  const inputConfig = config?.input
+    ? {
+        ...config.input,
+        input_groups: (config.input.input_groups || []).map((group) => ({
+          ...group,
+          app_inputs:
+            config.input?.inputs?.filter(
+              (input) => input.group_id === group.id
+            ) || [],
+        })),
+      }
+    : undefined
+
+  const ready = !isLoading && !loadError && !!inputConfig
 
   return (
-    <CreateInstallModal
-      isLoading={isLoading}
-      hasError={!!hasError}
-      configsError={configsError}
-      configError={configError}
-      config={config}
-      configs={configs}
-      isSubmitting={isSubmitting}
-      appId={app.id}
-      platform={app?.runner_config?.app_runner_type as 'aws' | 'azure' | 'gcp'}
-      onSubmitAction={(formData) => mutateAsync(formData)}
-      onCancel={() => removeModal(props.modalId)}
-      requireTargetAccount={requireTargetAccount}
-      awsAccountConnections={
-        awsConnectionsEnabled ? awsAccountConnections || [] : undefined
-      }
+    <Modal
       {...props}
-    />
+      size="xl"
+      className="!max-h-[80vh]"
+      childrenClassName="flex-auto overflow-y-auto"
+      showFooter={ready}
+      heading={
+        <Text flex className="gap-4" variant="h3" weight="strong">
+          <Icon variant="CubeIcon" size="24" />
+          Create install
+        </Text>
+      }
+      primaryActionTrigger={
+        ready
+          ? {
+              children: isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <Icon variant="Loading" />
+                  Creating install
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Icon variant="PlusIcon" />
+                  Create install
+                </span>
+              ),
+              disabled: !trigger.canSubmit || isSubmitting,
+              onClick: () => trigger.submit(),
+              variant: 'primary',
+            }
+          : undefined
+      }
+    >
+      {loadError ? (
+        <Banner theme="error">
+          {(configsError as any)?.error ||
+            (configError as any)?.error ||
+            'Unable to load app configuration'}
+        </Banner>
+      ) : !ready || !inputConfig ? (
+        <FormSkeleton />
+      ) : (
+        <CreateInstallFormFields
+          app={app}
+          inputConfig={inputConfig}
+          requireTargetAccount={requireTargetAccount}
+          awsAccountConnections={
+            awsConnectionsEnabled ? awsAccountConnections || [] : undefined
+          }
+          submitError={
+            submitError
+              ? ({
+                  error: toSentenceCase(
+                    (submitError as any).error ||
+                      (submitError as any).description ||
+                      'Unable to create install.'
+                  ),
+                } as any)
+              : null
+          }
+          onSubmit={(values) =>
+            mutateAsync(
+              buildCreateInstallBody(values, normalizeInstallPlatform(platform))
+            )
+          }
+          onStateChange={setTrigger}
+        />
+      )}
+    </Modal>
   )
 }
 
 export const CreateInstallButtonContainer = ({
   onClick: _onClick,
   ...props
-}: ICreateInstall & IButtonAsButton) => {
+}: IButtonAsButton) => {
   const { addModal } = useSurfaces()
-  const modal = <CreateInstallModalContainer />
 
   return (
-    <CreateInstallButtonComponent onClick={() => addModal(modal)} {...props} />
+    <CreateInstallButtonComponent
+      onClick={() => addModal(<CreateInstallModalContainer />)}
+      {...props}
+    />
   )
 }

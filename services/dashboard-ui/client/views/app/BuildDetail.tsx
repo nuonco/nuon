@@ -2,6 +2,7 @@ import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
+import { CompositeError } from '@/components/common/CompositeError'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { BuildHeader } from '@/components/builds/BuildHeader'
@@ -28,6 +29,11 @@ const BuildDetailInner = ({ component }: { component: TComponent | undefined }) 
   return (
     <>
       <BuildHeader component={component as TComponent} />
+      {build?.composite_error ? (
+        <div className="mx-6 mt-4">
+          <CompositeError error={build.composite_error} />
+        </div>
+      ) : null}
       {build?.status_v2?.metadata?.duplicate_build ? (
         <Banner theme="warn" className="mx-6 mt-4">
           <div className="flex flex-col">

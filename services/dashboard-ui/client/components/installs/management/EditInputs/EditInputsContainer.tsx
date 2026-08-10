@@ -1,100 +1,88 @@
-import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
+import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
-import type { IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { updateInstall, updateInstallInputs } from '@/lib'
-import { EditInputsFormModal } from './EditInputs'
+import type { TAppConfig, TAppInputConfig } from '@/types'
+import { EditInstallModal, type IEditInputsUpdatePayload } from './EditInputs'
 
 interface IEditInputs {
   showNameField?: boolean
 }
 
-export const EditInputsFormModalContainer = ({ showNameField, ...props }: IEditInputs & Omit<IModal, 'onSubmit'>) => {
+const nestInputsUnderGroups = (
+  groups: TAppConfig['input']['input_groups'],
+  inputs: TAppConfig['input']['inputs']
+): TAppInputConfig['input_groups'] =>
+  groups
+    ? groups.map((group) => ({
+        ...group,
+        app_inputs: inputs?.filter((input) => input.group_id === group.id) || [],
+      }))
+    : []
+
+export const EditInputsFormModalContainer = ({
+  showNameField,
+  ...props
+}: IEditInputs & Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
   const { org } = useOrg()
   const { install } = useInstall()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
-  const formRef = useRef<HTMLFormElement>(null)
-  const clearDraftRef = useRef<(() => void) | null>(null)
-  const [selectedRole, setSelectedRole] = useState<string>('')
-  const [deployDependents, setDeployDependents] = useState(true)
-  const [installName, setInstallName] = useState(install?.name ?? '')
-  const formDirty = useRef(false)
 
   const { appConfig: config, isLoading, error } = useInstallAppConfig()
 
-  const { mutate: updateNameOnly, isPending: isUpdatingName } = useMutation({
-    mutationFn: async () => {
-      await updateInstall({
-        body: { name: installName },
-        installId: install.id,
-        orgId: org.id,
-      })
-    },
-    onSuccess: () => {
+  const {
+    mutateAsync: updateNameAsync,
+    isPending: isUpdatingName,
+    error: nameError,
+  } = useMutation({
+    mutationFn: (name: string) =>
+      updateInstall({ body: { name }, installId: install.id, orgId: org.id }),
+    onSuccess: (_data, name) => {
       addToast(
         <Toast heading="Install renamed" theme="success">
-          <Text>Install renamed to {installName}.</Text>
+          <Text>Install renamed to {name}.</Text>
         </Toast>
       )
       queryClient.invalidateQueries({ queryKey: ['install'] })
       removeModal(props.modalId)
     },
-    onError: () => {
-      addToast(
-        <Toast heading="Update failed" theme="error">
-          <Text>Unable to update install.</Text>
-        </Toast>
-      )
-    },
   })
 
-  const { mutateAsync, isPending: isUpdatingInputs, error: actionError } = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const nameChanged = showNameField && installName !== (install?.name ?? '')
-
-      if (nameChanged) {
+  const {
+    mutateAsync: updateInputsAsync,
+    isPending: isUpdatingInputs,
+    error: inputsError,
+  } = useMutation({
+    mutationFn: async (payload: IEditInputsUpdatePayload) => {
+      if (payload.name) {
         await updateInstall({
-          body: { name: installName },
+          body: { name: payload.name },
           installId: install.id,
           orgId: org.id,
         })
       }
-
-      const formDataObj = Object.fromEntries(formData)
-      const inputs = Object.keys(formDataObj).reduce(
-        (acc, key) => {
-          if (key.includes('inputs:')) {
-            let value: any = formDataObj[key]
-            if (value === 'on' || value === 'off') {
-              value = Boolean(value === 'on').toString()
-            }
-            acc[key.replace('inputs:', '')] = value
-          }
-          return acc
-        },
-        {} as Record<string, any>
-      )
-
       return updateInstallInputs({
         installId: install.id,
         orgId: org.id,
         body: {
-          inputs,
-          deploy_dependents: deployDependents,
-          ...(selectedRole && { role: selectedRole }),
+          inputs: payload.inputs,
+          deploy_dependents: payload.deployDependents,
+          ...(payload.role && { role: payload.role }),
         },
       })
     },
@@ -109,65 +97,75 @@ export const EditInputsFormModalContainer = ({ showNameField, ...props }: IEditI
       queryClient.invalidateQueries({ queryKey: ['install'] })
       removeModal(props.modalId)
       const workflowId = result?.data?.workflow_id
-      if (workflowId) {
-        navigate(`/${org.id}/installs/${install?.id}/workflows/${workflowId}`)
-      } else {
-        navigate(`/${org.id}/installs/${install?.id}/workflows`)
-      }
-    },
-    onError: () => {
-      addToast(
-        <Toast heading="Update failed" theme="error">
-          <Text>Unable to update install.</Text>
-        </Toast>
+      navigate(
+        workflowId
+          ? `/${org.id}/installs/${install.id}/workflows/${workflowId}`
+          : `/${org.id}/installs/${install.id}/workflows`
       )
     },
   })
 
   const isSubmitting = isUpdatingName || isUpdatingInputs
+  const submitError = (nameError || inputsError) as any
 
-  const handleFormSubmit = () => {
-    const nameChanged = showNameField && installName !== (install?.name ?? '')
-    if (!formDirty.current && !selectedRole && nameChanged) {
-      updateNameOnly()
-      return
-    }
-    if (formRef.current) {
-      formRef.current.requestSubmit()
-    }
-  }
+  const inputConfig: TAppInputConfig | undefined = config?.input
+    ? {
+        ...config.input,
+        input_groups: nestInputsUnderGroups(
+          config.input.input_groups,
+          config.input.inputs
+        ),
+      }
+    : undefined
 
-  const handleClose = () => {
-    removeModal(props.modalId)
+  if (isLoading || error || !inputConfig) {
+    return (
+      <Modal
+        {...props}
+        size="lg"
+        className="!max-h-[80vh]"
+        childrenClassName="overflow-y-auto"
+        heading={
+          <Text flex className="gap-4" variant="h3" weight="strong">
+            <Icon variant="PencilSimpleLineIcon" size="24" />
+            {showNameField ? 'Edit install' : 'Edit install inputs'}
+          </Text>
+        }
+      >
+        {error ? (
+          <Banner theme="error">
+            {(error as any)?.error || 'Unable to load app configuration'}
+          </Banner>
+        ) : (
+          <div className="flex flex-col gap-6 max-w-3xl">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start"
+              >
+                <div className="flex flex-col gap-1">
+                  <Skeleton width="140px" height="16px" />
+                  <Skeleton width="180px" height="14px" />
+                </div>
+                <Skeleton width="100%" height="40px" />
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
+    )
   }
 
   return (
-    <EditInputsFormModal
-      install={install}
-      config={config}
-      isLoading={isLoading}
-      error={error}
-      isSubmitting={isSubmitting}
-      actionError={actionError}
-      onFormSubmit={handleFormSubmit}
-      onClose={handleClose}
-      formRef={formRef}
-      clearDraftRef={clearDraftRef}
-      selectedRole={selectedRole}
-      onRoleChange={setSelectedRole}
-      deployDependents={deployDependents}
-      onDeployDependentsChange={setDeployDependents}
-      onMutate={(formData) => mutateAsync(formData)}
-      onInputsChange={(e) => {
-        const target = e.target as HTMLInputElement
-        if (target.name?.startsWith('inputs:') || target.name?.startsWith('form-control:')) {
-          formDirty.current = true
-        }
-      }}
-      showNameField={showNameField}
-      installName={installName}
-      onInstallNameChange={setInstallName}
+    <EditInstallModal
       {...props}
+      install={install}
+      inputConfig={inputConfig}
+      showNameField={showNameField}
+      isSubmitting={isSubmitting}
+      submitError={submitError}
+      onSubmitName={updateNameAsync}
+      onSubmitInputs={updateInputsAsync}
     />
   )
 }
@@ -181,16 +179,17 @@ export const EditInputsButton = ({
   const { install } = useInstall()
   const { addModal } = useSurfaces()
 
-  const isManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
-
-  const handleClick = () => {
-    const editModal = <EditInputsFormModalContainer showNameField={showNameField} />
-    addModal(editModal)
-  }
+  const isManagedByConfig =
+    install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   if (isManagedByConfig) {
     return (
-      <Tooltip tipContent={MANAGED_BY_CONFIG_TIP} position="left" tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs" className="w-full">
+      <Tooltip
+        tipContent={MANAGED_BY_CONFIG_TIP}
+        position="left"
+        tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs"
+        className="w-full"
+      >
         <Button disabled className="pointer-events-none" {...props}>
           {props?.isMenuButton ? null : <Icon variant="PencilSimpleLineIcon" />}
           {showNameField ? 'Edit install' : 'Edit inputs'}
@@ -201,7 +200,12 @@ export const EditInputsButton = ({
   }
 
   return (
-    <Button onClick={handleClick} {...props}>
+    <Button
+      onClick={() =>
+        addModal(<EditInputsFormModalContainer showNameField={showNameField} />)
+      }
+      {...props}
+    >
       {props?.isMenuButton ? null : <Icon variant="PencilSimpleLineIcon" />}
       {showNameField ? 'Edit install' : 'Edit inputs'}
       {props?.isMenuButton ? <Icon variant="PencilSimpleLineIcon" /> : null}

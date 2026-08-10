@@ -48,6 +48,7 @@ type Tool string
 
 const (
 	ToolUnknown    Tool = ""
+	ToolAction     Tool = "action"
 	ToolTerraform  Tool = "terraform"
 	ToolHelm       Tool = "helm"
 	ToolPulumi     Tool = "pulumi"
