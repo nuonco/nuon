@@ -56,6 +56,43 @@ export const Failed = () => (
   </div>
 )
 
+const postDeployRunbookRuns: any[] = [
+  {
+    id: 'igr-004',
+    install_group_id: 'group-prod',
+    install_group_name: 'Production',
+    status: { status: 'in-progress' },
+    completed_installs: 1,
+    total_installs: 2,
+    installs: [
+      {
+        install_id: 'inst-007',
+        status: 'success',
+        phase: 'runbook',
+        runbooks: [
+          { runbook_id: 'rb1', runbook_name: 'db-migrate', status: 'success' },
+          { runbook_id: 'rb2', runbook_name: 'smoke-test', status: 'success' },
+        ],
+      },
+      {
+        install_id: 'inst-008',
+        status: 'error',
+        phase: 'runbook',
+        runbooks: [
+          { runbook_id: 'rb1', runbook_name: 'db-migrate', status: 'success' },
+          { runbook_id: 'rb2', runbook_name: 'smoke-test', status: 'error' },
+        ],
+      },
+    ],
+  },
+]
+
+export const WithPostDeployRunbooks = () => (
+  <div className="p-4">
+    <RunDeploymentGraph installGroupRuns={postDeployRunbookRuns} orgId="org123" />
+  </div>
+)
+
 export const Empty = () => (
   <div className="p-4">
     <RunDeploymentGraph installGroupRuns={[]} orgId="org123" />

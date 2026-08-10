@@ -71,6 +71,10 @@ type InstallRunbookRun struct {
 	InstallWorkflowID *string   `json:"install_workflow_id" gorm:"default null" temporaljson:"install_workflow_id,omitzero,omitempty"`
 	InstallWorkflow   *Workflow `json:"install_workflow,omitzero" gorm:"foreignKey:InstallWorkflowID" temporaljson:"install_workflow,omitzero,omitempty"`
 
+	// IdempotencyKey lets a retryable caller (e.g. a Temporal activity) repeat a
+	// trigger without starting the runbook twice. Unique where set.
+	IdempotencyKey *string `json:"idempotency_key,omitempty" gorm:"default null" temporaljson:"idempotency_key,omitzero,omitempty"`
+
 	// after query
 	ExecutionTime time.Duration `json:"execution_time,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
 }
@@ -119,6 +123,11 @@ func (r *InstallRunbookRun) Indexes(db *gorm.DB) []migrations.Index {
 			Columns:     []string{"trigger_event_dispatch_id"},
 			UniqueValue: sql.NullBool{Bool: true, Valid: true},
 		},
+		{
+			Name:        indexes.Name(db, &InstallRunbookRun{}, "idempotency_key"),
+			Columns:     []string{"idempotency_key"},
+			UniqueValue: sql.NullBool{Bool: true, Valid: true},
+		},
 	}
 }
 
@@ -126,6 +135,34 @@ func (r *InstallRunbookRun) AfterQuery(tx *gorm.DB) error {
 	if r.StatusV2.Status != "" {
 		r.Status = InstallRunbookRunStatus(r.StatusV2.Status)
 		r.StatusDescription = r.StatusV2.StatusHumanDescription
+		return nil
 	}
+
+	// Nothing writes StatusV2 on a runbook run — unlike action runs, there is no
+	// signal that owns the run's lifecycle, so the stored column is stuck at the
+	// value TriggerRunbookRun wrote at creation. The run's workflow is the real
+	// source of truth for its progress, so derive from it when it's loaded.
+	if r.InstallWorkflow != nil && r.InstallWorkflow.Status.Status != "" {
+		r.Status = runbookRunStatusFromWorkflow(r.InstallWorkflow.Status.Status)
+		r.StatusDescription = r.InstallWorkflow.Status.StatusHumanDescription
+	}
+
 	return nil
+}
+
+func runbookRunStatusFromWorkflow(status Status) InstallRunbookRunStatus {
+	switch status {
+	case StatusSuccess:
+		return InstallRunbookRunStatusFinished
+	case StatusError:
+		return InstallRunbookRunStatusError
+	case StatusCancelled:
+		return InstallRunbookRunStatusCancelled
+	case StatusQueued:
+		return InstallRunbookRunStatusQueued
+	case StatusInProgress:
+		return InstallRunbookRunStatusInProgress
+	default:
+		return InstallRunbookRunStatus(status)
+	}
 }

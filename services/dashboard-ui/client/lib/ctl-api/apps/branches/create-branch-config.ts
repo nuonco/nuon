@@ -23,6 +23,8 @@ export type TCreateBranchConfigRequest = {
     max_parallel?: number
     use_for_previews?: boolean
   }>
+  // Omit to carry the current setting forward; send [] to clear it.
+  post_deploy_runbook_ids?: string[]
 }
 
 export const createBranchConfig = ({
