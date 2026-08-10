@@ -37,6 +37,11 @@ type AppBranchConfig struct {
 	ActionIDs    pq.StringArray `gorm:"type:text[]" json:"action_ids,omitzero" temporaljson:"action_ids,omitzero,omitempty" swaggertype:"array,string"`
 	RunbookIDs   pq.StringArray `gorm:"type:text[]" json:"runbook_ids,omitzero" temporaljson:"runbook_ids,omitzero,omitempty" swaggertype:"array,string"`
 
+	// PostDeployRunbookIDs are runbooks run on each install, in order, after its
+	// deploy succeeds. Distinct from RunbookIDs, which tracks the runbooks the
+	// branch's synced app config produced.
+	PostDeployRunbookIDs pq.StringArray `gorm:"type:text[]" json:"post_deploy_runbook_ids,omitzero" temporaljson:"post_deploy_runbook_ids,omitzero,omitempty" swaggertype:"array,string"`
+
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
 
 	// generated view field

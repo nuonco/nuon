@@ -30,6 +30,10 @@ type CreateAppBranchConfigRequest struct {
 	vcshelpers.VCSConfigRequest
 
 	InstallGroups []InstallGroupRequest `json:"install_groups"`
+
+	// PostDeployRunbookIDs run on each install, in order, after its deploy succeeds.
+	// Omit to carry the current setting forward; send an empty array to clear it.
+	PostDeployRunbookIDs *[]string `json:"post_deploy_runbook_ids,omitempty"`
 }
 
 func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
@@ -232,6 +236,7 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		connectedGithubVCSConfig,
 		publicGitVCSConfig,
 		installGroups,
+		req.PostDeployRunbookIDs,
 	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch config: %w", err))

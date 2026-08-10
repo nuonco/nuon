@@ -31,6 +31,8 @@ type AppBranchConfig struct {
 	PublicRepo    *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty"`
 
 	InstallGroups []AppBranchInstallGroupConfig `mapstructure:"install_groups,omitempty" toml:"install_groups,omitempty"`
+
+	PostDeployRunbooks []string `mapstructure:"post_deploy_runbooks,omitempty" toml:"post_deploy_runbooks,omitempty" json:"post_deploy_runbooks,omitempty"`
 }
 
 func (c AppBranchConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -38,9 +40,18 @@ func (c AppBranchConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "connected_repo", "connected GitHub repo the branch tracks")
 	addDescription(schema, "public_repo", "public git repo the branch tracks")
 	addDescription(schema, "install_groups", "ordered deployment groups for this branch")
+	addDescription(schema, "post_deploy_runbooks", "names of runbooks to run on each install, in order, after its deploy succeeds; resolved to IDs at sync time")
 }
 
 func (c *AppBranchConfig) Validate() error {
+	for _, name := range c.PostDeployRunbooks {
+		if name == "" {
+			return ErrConfig{
+				Description: fmt.Sprintf("branch %q: post_deploy_runbooks entries must be non-empty runbook names", c.Name),
+			}
+		}
+	}
+
 	for _, g := range c.InstallGroups {
 		hasStatic := len(g.InstallIDs) > 0 || len(g.InstallNames) > 0
 		hasLabels := len(g.LabelSelector) > 0

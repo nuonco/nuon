@@ -19,6 +19,7 @@ func (a *Activities) createOnboardingAppBranchConfig(ctx context.Context, appBra
 			Branch:    branch,
 		},
 		nil, // no install groups yet
+		nil, // no post-deploy runbooks
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create app branch config: %w", err)
