@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { TerraformRenderedVariables } from '@/components/deploys/TerraformRenderedVariables'
+import { TerraformRenderedVariablesFiles } from '@/components/deploys/TerraformRenderedVariablesFiles'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Skeleton } from '@/components/common/Skeleton'
+import { Text } from '@/components/common/Text'
 import { useSandboxRun } from '@/hooks/use-sandbox-run'
 import { useOrg } from '@/hooks/use-org'
 import { getRunnerJobPlan } from '@/lib'
@@ -25,9 +27,15 @@ export const SandboxRunVariablesTab = () => {
 
   if (isLoading) return <Skeleton height="200px" width="100%" />
 
-  const vars = compositePlan?.deploy_plan?.terraform?.vars
+  const vars = compositePlan?.sandbox_run_plan?.vars
+  const varsFiles = compositePlan?.sandbox_run_plan?.vars_files as
+    | string[]
+    | undefined
 
-  if (!vars || Object.keys(vars).length === 0) {
+  const hasVars = !!vars && Object.keys(vars).length > 0
+  const hasVarsFiles = !!varsFiles && varsFiles.length > 0
+
+  if (!hasVars && !hasVarsFiles) {
     return (
       <EmptyState
         variant="table"
@@ -37,5 +45,20 @@ export const SandboxRunVariablesTab = () => {
     )
   }
 
-  return <TerraformRenderedVariables values={vars} />
+  return (
+    <div className="flex flex-col gap-6">
+      {hasVars && (
+        <div className="flex flex-col gap-2">
+          <Text weight="strong">Variables</Text>
+          <TerraformRenderedVariables values={vars} />
+        </div>
+      )}
+      {hasVarsFiles && (
+        <div className="flex flex-col gap-2">
+          <Text weight="strong">Variable files</Text>
+          <TerraformRenderedVariablesFiles files={varsFiles} />
+        </div>
+      )}
+    </div>
+  )
 }
