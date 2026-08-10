@@ -15,6 +15,12 @@ const installs = [
   { id: 'i4', name: 'umbrella-dev', labels: { tier: 'dev' } },
 ] as any
 
+const runbooks = [
+  { id: 'rb1', name: 'db-migrate' },
+  { id: 'rb2', name: 'smoke-test' },
+  { id: 'rb3', name: 'warm-cache' },
+] as any
+
 const groups: IInstallGroup[] = [
   {
     id: 'group-1',
@@ -38,6 +44,9 @@ export const WithGroups = () => (
       onSave={noop}
       onCancel={noop}
       orgId="org123"
+      runbooks={runbooks}
+      loadingRunbooks={false}
+      initialPostDeployRunbookIds={[]}
     />
   </ModalStory>
 )
@@ -52,6 +61,9 @@ export const WithUnassigned = () => (
       onSave={noop}
       onCancel={noop}
       orgId="org123"
+      runbooks={runbooks}
+      loadingRunbooks={false}
+      initialPostDeployRunbookIds={[]}
     />
   </ModalStory>
 )
@@ -66,6 +78,9 @@ export const NoGroups = () => (
       onSave={noop}
       onCancel={noop}
       orgId="org123"
+      runbooks={runbooks}
+      loadingRunbooks={false}
+      initialPostDeployRunbookIds={[]}
     />
   </ModalStory>
 )
@@ -80,6 +95,9 @@ export const Loading = () => (
       onSave={noop}
       onCancel={noop}
       orgId="org123"
+      runbooks={runbooks}
+      loadingRunbooks={false}
+      initialPostDeployRunbookIds={[]}
     />
   </ModalStory>
 )
@@ -94,6 +112,26 @@ export const NoInstalls = () => (
       onSave={noop}
       onCancel={noop}
       orgId="org123"
+      runbooks={runbooks}
+      loadingRunbooks={false}
+      initialPostDeployRunbookIds={[]}
+    />
+  </ModalStory>
+)
+
+export const WithPostDeployRunbooks = () => (
+  <ModalStory label="Open deployment plan">
+    <DeploymentPlanEditor
+      initialGroups={groups}
+      availableInstalls={installs}
+      loadingInstalls={false}
+      isSaving={false}
+      onSave={noop}
+      onCancel={noop}
+      orgId="org123"
+      runbooks={runbooks}
+      loadingRunbooks={false}
+      initialPostDeployRunbookIds={['rb1', 'rb2']}
     />
   </ModalStory>
 )
@@ -108,6 +146,9 @@ export const Saving = () => (
       onSave={noop}
       onCancel={noop}
       orgId="org123"
+      runbooks={runbooks}
+      loadingRunbooks={false}
+      initialPostDeployRunbookIds={[]}
     />
   </ModalStory>
 )
