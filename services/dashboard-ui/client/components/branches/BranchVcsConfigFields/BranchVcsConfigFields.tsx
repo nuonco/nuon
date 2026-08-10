@@ -4,6 +4,7 @@ import { Label } from '@/components/common/form/Label'
 import { Select } from '@/components/common/form/Select'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { ConnectGithubButton } from '@/components/vcs-connections/ConnectGithub'
 import type { TVCSConnection, TVCSConnectionRepo, TVCSBranch } from '@/types'
 
 export interface IBranchVcsConfigFields {
@@ -63,7 +64,12 @@ export const BranchVcsConfigFields = ({
   if (vcsConnections.length === 0) {
     return (
       <Banner theme="warn">
-        No VCS connections found. Connect your GitHub account first.
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Text>No GitHub connections yet. Connect one to pick a repository.</Text>
+          <ConnectGithubButton variant="secondary" size="sm" disabled={isSubmitting}>
+            Connect GitHub
+          </ConnectGithubButton>
+        </div>
       </Banner>
     )
   }
