@@ -131,7 +131,12 @@ export const CreateChannelSubscriptionModal = ({
       }}
       {...props}
     >
-      <div className="flex flex-col gap-6">
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-6"
+      >
         <FormErrorBanner error={error} fallback="Unable to subscribe channel" />
 
         {installations.length === 0 ? (
@@ -208,7 +213,7 @@ export const CreateChannelSubscriptionModal = ({
             {(field) => <FormInterestsPicker field={field} />}
           </form.Field>
         </div>
-      </div>
+      </form>
     </Modal>
   )
 }

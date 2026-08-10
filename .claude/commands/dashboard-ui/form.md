@@ -29,8 +29,18 @@ sign-off (allowlist: `DeploymentPlanEditor`). Anything else with inputs → TanS
    (onMount gives an accurate `canSubmit` from the start; errors still only display after touch),
    and `onSubmit: ({ value }) => onSubmit(value)` calling the container's callback.
 
-3. **Bind the modal's `primaryActionTrigger` to the form** — no `forwardRef`, no `requestSubmit`,
-   no `<form>` element. Read reactive state with `useStore` (the trigger is a prop, not a child):
+3. **Wrap the fields in a real `<form>` element** — it IS a form, so use the element. This turns off
+   browser autocomplete across every field and gives correct semantics:
+   ```tsx
+   <form autoComplete="off" noValidate onSubmit={(e) => e.preventDefault()}
+     className="flex flex-col gap-6">
+     {/* FormErrorBanner + fields */}
+   </form>
+   ```
+   **Submission is still driven by the modal's `primaryActionTrigger`, not native submit** — the
+   trigger is a footer prop rendered *outside* the form, so `preventDefault` the form's `onSubmit`
+   and drive it from the button. Read reactive state with `useStore` (the trigger is a prop, not a
+   child), no `forwardRef`, no `requestSubmit`:
    ```tsx
    const form = useForm({ defaultValues, validators: { onMount: schema, onChange: schema },
      onSubmit: ({ value }) => onSubmit(value) })
@@ -82,8 +92,10 @@ sign-off (allowlist: `DeploymentPlanEditor`). Anything else with inputs → TanS
 
 ## Anti-Patterns
 
-- **No** `useState`-per-field, `new FormData(...)`, `forwardRef` + `requestSubmit`, or `<form>`
-  onSubmit — TanStack Form owns state; the modal trigger calls `form.handleSubmit()`.
+- **No** `useState`-per-field, `new FormData(...)`, or `forwardRef` + `requestSubmit` — TanStack Form
+  owns state; the modal trigger calls `form.handleSubmit()`. **DO** wrap fields in a
+  `<form autoComplete="off" noValidate onSubmit={(e) => e.preventDefault()}>` element (it's a form —
+  the element turns off autocomplete); just don't wire the mutation to native submit.
 - **No** nested-object fields — flatten them (`canSubmit` breaks on nested objects in v1).
 - **No** native `required` on fields — Zod is the sole validation source (avoids double-validation).
 - **No** error toasts — errors are an in-form `FormErrorBanner`.
