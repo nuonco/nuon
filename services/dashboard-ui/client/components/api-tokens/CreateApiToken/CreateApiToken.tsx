@@ -106,7 +106,12 @@ export const CreateApiTokenModal = ({
       }}
       {...props}
     >
-      <div className="flex flex-col gap-6">
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-6"
+      >
         <FormErrorBanner error={error} fallback="Unable to create API token" />
 
         <form.Field name="name">
@@ -143,7 +148,7 @@ export const CreateApiTokenModal = ({
             />
           )}
         </form.Field>
-      </div>
+      </form>
     </Modal>
   )
 }
