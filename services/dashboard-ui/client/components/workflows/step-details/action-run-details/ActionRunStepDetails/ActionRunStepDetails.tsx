@@ -1,4 +1,5 @@
 import { Text } from '@/components/common/Text'
+import { CompositeError } from '@/components/common/CompositeError'
 import type { TInstallActionRun, TAccount, TWorkflowStep } from '@/types'
 import { ActionRunHeader, ActionRunHeaderSkeleton } from '../ActionRunHeader'
 import {
@@ -50,6 +51,10 @@ export const ActionRunStepDetails = ({
   return (
     <div className="flex flex-col gap-4">
       <ActionRunHeader actionRun={actionRun} isAdhoc={isAdhoc} step={step} />
+
+      {actionRun?.composite_error ? (
+        <CompositeError error={actionRun.composite_error} />
+      ) : null}
 
       <ActionRunMetadata
         actionRun={actionRun}

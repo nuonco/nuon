@@ -135,7 +135,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			}
 		}
 
-		return errors.Wrap(err, fmt.Sprintf("action workflow failed on step %d", idx))
+		return errors.Wrap(err, fmt.Sprintf("action workflow failed on step %s", stepName))
 	}
 
 	return nil

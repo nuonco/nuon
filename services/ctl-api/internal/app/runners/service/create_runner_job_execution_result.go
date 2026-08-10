@@ -202,8 +202,11 @@ func (s *service) recordCompositeErrorParse(req *CreateRunnerJobExecutionResultR
 // It is best-effort: a success, a missing message, or a parse miss yields nil,
 // leaving the plain-string status description in place. Source is set to the
 // runner job's owner so a future view can join errors back to their subject.
-func (s *service) parseCompositeError(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
-	data, err := errparse.ParseRunnerJobResult(req.Success, flattenErrorMetadata(req.ErrorMetadata), runnerJob)
+func (s *service) parseCompositeError(ctx context.Context, req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
+	resolveProvider := func() errparse.Provider {
+		return errparse.ResolveRunnerJobProvider(ctx, s.db, runnerJob)
+	}
+	data, err := errparse.ParseRunnerJobResult(req.Success, flattenErrorMetadata(req.ErrorMetadata), runnerJob, resolveProvider)
 	if err != nil {
 		s.l.Warn("unable to build composite error; omitting enrichment",
 			zap.String("runner_job_id", runnerJob.ID),
@@ -307,7 +310,7 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 	if err != nil {
 		return nil, false, errors.Wrap(err, "unable to decode contents display")
 	}
-	compositeError := s.parseCompositeError(req, runnerJob)
+	compositeError := s.parseCompositeError(ctx, req, runnerJob)
 	result := app.RunnerJobExecutionResult{
 		OrgID:                runnerJob.OrgID,
 		RunnerJobExecutionID: runnerJobExecutionID,
@@ -345,7 +348,7 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 		}
 	}
 
-	compositeError := s.parseCompositeError(req, runnerJob)
+	compositeError := s.parseCompositeError(ctx, req, runnerJob)
 	result := app.RunnerJobExecutionResult{
 		OrgID:                runnerJob.OrgID,
 		RunnerJobExecutionID: runnerJobExecutionID,
