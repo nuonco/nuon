@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { useRoleTitles } from '@/hooks/use-roles'
 import { listStaticTokens } from '@/lib'
 import { ApiTokensTable, API_TOKENS_TABLE_LIMIT } from './ApiTokensTable'
 
@@ -13,6 +14,7 @@ export const ApiTokensTableContainer = ({
 } = {}) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
+  const roleTitles = useRoleTitles()
   const offset = Number(searchParams.get('offset') ?? 0)
   const query = (searchParams.get('q') ?? '').toLowerCase()
 
@@ -32,6 +34,7 @@ export const ApiTokensTableContainer = ({
   return (
     <ApiTokensTable
       data={tokens}
+      roleTitles={roleTitles}
       isLoading={isLoading}
       pagination={{ hasNext, offset, limit: API_TOKENS_TABLE_LIMIT }}
     />

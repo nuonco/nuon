@@ -24,13 +24,6 @@ export type EditOIDCTrustPolicyFormInput = {
   enabled: boolean
 }
 
-const ROLE_OPTIONS = [
-  { value: 'org_read_only', label: 'org_read_only' },
-  { value: 'org_builder', label: 'org_builder' },
-  { value: 'org_support', label: 'org_support' },
-  { value: 'org_admin', label: 'org_admin' },
-]
-
 const conditionsToRows = (
   claimConditions: TOIDCTrustPolicy['claim_conditions']
 ): ClaimCondition[] => {
@@ -44,12 +37,14 @@ export const EditOIDCTrustPolicyModal = ({
   policy,
   isPending,
   error,
+  roleOptions,
   onSubmit,
   ...props
 }: {
   policy: TOIDCTrustPolicy
   isPending: boolean
   error: TAPIError | null
+  roleOptions: { value: string; label: string; description?: string }[]
   onSubmit: (input: EditOIDCTrustPolicyFormInput) => void
 } & Omit<IModal, 'onSubmit'>) => {
   const [name, setName] = useState(policy.name ?? '')
@@ -177,7 +172,7 @@ export const EditOIDCTrustPolicyModal = ({
 
         <Select
           labelProps={{ labelText: 'Role' }}
-          options={ROLE_OPTIONS}
+          options={roleOptions}
           value={role}
           onChange={(value) => setRole(value)}
           helperText="Org role granted to tokens exchanged with this policy."

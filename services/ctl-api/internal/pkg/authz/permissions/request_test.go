@@ -9,48 +9,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRequestObject(t *testing.T) {
+func TestFromRequest(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	const orgID = "org_one"
 
 	tests := []struct {
-		name   string
 		method string
-		path   string
-		want   string
+		want   Permission
 	}{
-		{name: "app component build", method: http.MethodPost, path: "/v1/apps/app_one/components/cmp_one/builds", want: ComponentBuildsObject(orgID)},
-		{name: "component build", method: http.MethodPost, path: "/v1/components/cmp_one/builds", want: ComponentBuildsObject(orgID)},
-		{name: "build cancel", method: http.MethodPost, path: "/v1/apps/app_one/components/cmp_one/builds/bld_one/cancel", want: orgID},
-		{name: "other post", method: http.MethodPost, path: "/v1/apps", want: orgID},
-		{name: "read build route", method: http.MethodGet, path: "/v1/components/cmp_one/builds", want: orgID},
+		{method: http.MethodGet, want: PermissionRead},
+		{method: http.MethodHead, want: PermissionRead},
+		{method: http.MethodPost, want: PermissionCreate},
+		{method: http.MethodPut, want: PermissionUpdate},
+		{method: http.MethodPatch, want: PermissionUpdate},
+		{method: http.MethodDelete, want: PermissionDelete},
+		{method: http.MethodOptions, want: PermissionUnknown},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			var got string
-			router := gin.New()
-			router.Handle(tc.method, routePattern(tc.path), func(ctx *gin.Context) {
-				got = RequestObject(ctx, orgID)
-			})
-			req := httptest.NewRequest(tc.method, tc.path, nil)
-			router.ServeHTTP(httptest.NewRecorder(), req)
-			assert.Equal(t, tc.want, got)
+		t.Run(tc.method, func(t *testing.T) {
+			ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+			ctx.Request = httptest.NewRequest(tc.method, "/v1/apps", nil)
+			assert.Equal(t, tc.want, FromRequest(ctx))
 		})
-	}
-
-	assert.NotEqual(t, ComponentBuildsObject("org_two"), ComponentBuildsObject(orgID))
-}
-
-func routePattern(path string) string {
-	switch path {
-	case "/v1/apps/app_one/components/cmp_one/builds":
-		return "/v1/apps/:app_id/components/:component_id/builds"
-	case "/v1/components/cmp_one/builds":
-		return "/v1/components/:component_id/builds"
-	case "/v1/apps/app_one/components/cmp_one/builds/bld_one/cancel":
-		return "/v1/apps/:app_id/components/:component_id/builds/:build_id/cancel"
-	default:
-		return path
 	}
 }

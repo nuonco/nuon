@@ -23,6 +23,9 @@ type ServiceCreateRunbookRunRequest struct {
 	// inputs
 	Inputs map[string]string `json:"inputs,omitempty"`
 
+	// role
+	Role string `json:"role,omitempty"`
+
 	// steps
 	Steps []*ServiceCreateRunbookRunStepSelection `json:"steps"`
 }
