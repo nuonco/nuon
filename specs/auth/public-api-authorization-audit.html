@@ -454,7 +454,7 @@
 <tr><td class="m">GET</td><td class="p">/v1/installs</td><td>read</td><td>any org member; results filtered to entitlements</td></tr>
 </table>
 <h2>Org-level routes <span class="tag org">76 routes</span></h2>
-<p class="desc">Org settings, team/credential management, the grant surface itself, org-wide collections/aggregates, and triggers (org-owned entities with no install/app tier &mdash; a candidate delegable org-owned type, like webhooks). Access: an <b>org-wide permission</b> (org role, or an org-tier grant). Grant-scoped accounts are denied by design. There is no &ldquo;uncovered&rdquo; category: every route is either resolvable or deliberately org-level.</p>
+<p class="desc">Org settings, team/credential management, the grant surface itself, org-wide collections/aggregates, and triggers (org-owned entities with no install/app tier &mdash; a candidate delegable org-owned type, like webhooks). Access: an <b>org-wide permission</b> (org role, or an org-tier grant). Grant-scoped accounts are denied by design.</p>
 <table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
 <tr><td class="m">POST</td><td class="p">/v1/account/static-token</td><td>create</td><td>org-wide permission only</td></tr>
 <tr><td class="m">GET</td><td class="p">/v1/account/static-tokens</td><td>read</td><td>org-wide permission only</td></tr>
