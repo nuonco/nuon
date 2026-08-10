@@ -95,6 +95,10 @@ type Client interface {
 	GetAppConfigs(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppConfig, bool, error)
 	UpdateAppConfig(ctx context.Context, appID, appConfigID string, req *models.ServiceUpdateAppConfigRequest) (*models.AppAppConfig, error)
 	BuildAppConfig(ctx context.Context, appID, configID string) (*models.AppWorkflow, error)
+
+	// app installs config methods
+	CreateAppInstallsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppInstallsConfigRequest) (*models.AppAppInstallsConfig, error)
+
 	ListTriggerEvents(ctx context.Context, limit int, trigger string) ([]*models.TriggerEventSummary, error)
 	ListTriggerEventsPage(ctx context.Context, limit int, trigger, cursor string) (*models.TriggerEventPage, error)
 	SearchTriggerEvents(ctx context.Context, filters models.TriggerEventListQuery) (*models.TriggerEventPage, error)

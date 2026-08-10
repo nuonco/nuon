@@ -12,9 +12,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
+// nonRetryableGitHubError returns a non-retryable error when the GitHub API
+// rejected the request with a 4xx — a missing ref, repo, or revoked access will
+// not fix itself, so retrying only burns the activity's timeout. Rate limits
+// surface as *github.RateLimitError / *github.AbuseRateLimitError rather than
+// *github.ErrorResponse, so they stay retryable. Returns nil when the error is
+// not a GitHub client error, leaving the caller to wrap it as usual.
 func nonRetryableGitHubError(err error) error {
 	var ghErr *github.ErrorResponse
-	if errors.As(err, &ghErr) && ghErr.Response.StatusCode >= 400 && ghErr.Response.StatusCode < 500 {
+	if errors.As(err, &ghErr) && ghErr.Response != nil && ghErr.Response.StatusCode >= 400 && ghErr.Response.StatusCode < 500 {
 		return temporal.NewNonRetryableApplicationError(
 			ghErr.Message,
 			fmt.Sprintf("github_%d", ghErr.Response.StatusCode),

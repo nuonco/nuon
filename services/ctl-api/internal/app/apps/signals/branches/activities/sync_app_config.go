@@ -2,12 +2,16 @@ package activities
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"go.temporal.io/sdk/temporal"
 
+	"github.com/nuonco/nuon/pkg/config"
 	configsync "github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer"
 )
 
@@ -32,8 +36,6 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
-	// Builds are left to the run's builds step, so this sync must not schedule
-	// them itself.
 	result, err := syncer.Run(ctx, a.syncRunDeps(), syncer.RunRequest{
 		AppID:       req.AppID,
 		AppConfigID: req.AppConfigID,
@@ -49,6 +51,8 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 		}
 		return nil, fmt.Errorf("unable to sync config: %w", err)
 	}
+
+	a.syncInstallsConfigRecord(ctx, req.AppID, req.AppConfigID)
 
 	return &SyncAppConfigOutput{
 		AppConfigID:  result.AppConfigID,
@@ -69,4 +73,64 @@ func (a *Activities) syncRunDeps() syncer.RunDeps {
 		VCSHelpers:       a.vcsHelpers,
 		TFClient:         a.tfClient,
 	}
+}
+
+func (a *Activities) syncInstallsConfigRecord(ctx context.Context, appID, appConfigID string) {
+	var appConfig app.AppConfig
+	if err := a.db.WithContext(ctx).First(&appConfig, "id = ?", appConfigID).Error; err != nil {
+		return
+	}
+
+	enabled, err := a.features.OrgHasFeature(ctx, appConfig.OrgID, app.OrgFeatureAppInstallSyncing)
+	if err != nil || !enabled {
+		return
+	}
+
+	if appConfig.IntermediateConfig == nil || !appConfig.IntermediateConfig.IsSet() {
+		return
+	}
+
+	intermediateJSON, err := appConfig.IntermediateConfig.Get(ctx)
+	if err != nil || intermediateJSON == "" {
+		return
+	}
+
+	var cfg config.AppConfig
+	decoder := json.NewDecoder(strings.NewReader(intermediateJSON))
+	decoder.UseNumber()
+	if err := decoder.Decode(&cfg); err != nil {
+		return
+	}
+
+	if cfg.InstallsConfig == nil {
+		return
+	}
+
+	ic := cfg.InstallsConfig
+
+	var record app.AppInstallsConfig
+	record.AppID = appID
+	record.Source = "config"
+
+	if ic.ConnectedRepo != nil {
+		record.VCSType = "connected"
+		record.Repo = ic.ConnectedRepo.Repo
+		record.Branch = ic.ConnectedRepo.Branch
+		record.Directory = ic.ConnectedRepo.Directory
+		if record.Directory == "" {
+			record.Directory = "."
+		}
+	} else if ic.PublicRepo != nil {
+		record.VCSType = "public"
+		record.Repo = ic.PublicRepo.Repo
+		record.Branch = ic.PublicRepo.Branch
+		record.Directory = ic.PublicRepo.Directory
+		if record.Directory == "" {
+			record.Directory = "."
+		}
+	} else {
+		return
+	}
+
+	a.db.WithContext(ctx).Create(&record)
 }

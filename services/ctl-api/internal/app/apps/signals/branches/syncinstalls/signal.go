@@ -11,7 +11,10 @@ import (
 const SignalType signal.SignalType = "sync-installs"
 
 type Signal struct {
-	AppID string `json:"app_id" validate:"required"`
+	AppID   string `json:"app_id" validate:"required"`
+	AppName string `json:"app_name,omitempty"`
+
+	AppInstallConfigSyncID string `json:"app_install_config_sync_id,omitempty"`
 
 	AppBranchID       string `json:"app_branch_id,omitempty"`
 	AppBranchConfigID string `json:"app_branch_config_id,omitempty"`
@@ -28,6 +31,7 @@ type Signal struct {
 
 var _ signal.Signal = (*Signal)(nil)
 var _ signal.SignalWithStepContext = (*Signal)(nil)
+var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.StepID = stepID
@@ -36,6 +40,20 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
+}
+
+func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	return signal.SignalLifecycleContext{
+		Operation: "install-sync",
+		OwnerID:   s.AppID,
+		OwnerType: "apps",
+		OwnerName: s.AppName,
+		Metadata: map[string]any{
+			"app_name":     s.AppName,
+			"triggered_by": s.TriggeredBy,
+			"commit_sha":   s.CommitSHA,
+		},
+	}
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
