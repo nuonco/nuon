@@ -43,4 +43,6 @@ config.json
 e2e/.auth/
 e2e/.results/
 e2e/.report/
+e2e/.results-ladle/
+e2e/.report-ladle/
 test-results/
