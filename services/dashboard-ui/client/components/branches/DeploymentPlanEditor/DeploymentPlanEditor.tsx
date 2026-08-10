@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { DeploymentPlanGraph } from '@/components/branches/DeploymentPlanGraph'
+import { PostDeployRunbooksPicker } from '@/components/branches/PostDeployRunbooksPicker'
+import type { TRunbook } from '@/lib/ctl-api/apps/runbooks/get-runbooks'
 import type { TInstall, TAppBranchConfig } from '@/types'
 import { matchesSelector } from '@/components/match/matches'
 import { GroupEditor } from './GroupEditor'
@@ -21,7 +23,10 @@ interface IDeploymentPlanEditor extends Omit<IModal, 'onSubmit'> {
   isSaving: boolean
   labelColors?: Record<string, string>
   orgId: string
-  onSave: (groups: IInstallGroup[]) => void
+  runbooks: TRunbook[]
+  loadingRunbooks: boolean
+  initialPostDeployRunbookIds: string[]
+  onSave: (groups: IInstallGroup[], postDeployRunbookIds: string[]) => void
   onCancel: () => void
 }
 
@@ -32,11 +37,17 @@ export const DeploymentPlanEditor = ({
   isSaving,
   labelColors,
   orgId,
+  runbooks,
+  loadingRunbooks,
+  initialPostDeployRunbookIds,
   onSave,
   onCancel,
   ...props
 }: IDeploymentPlanEditor) => {
   const [groups, setGroups] = useState<IInstallGroup[]>(initialGroups)
+  const [postDeployRunbookIds, setPostDeployRunbookIds] = useState<string[]>(
+    initialPostDeployRunbookIds
+  )
   const [showValidation, setShowValidation] = useState(false)
   const [scrollToId, setScrollToId] = useState<string | null>(null)
   const newGroupRef = useRef<HTMLDivElement>(null)
@@ -162,7 +173,7 @@ export const DeploymentPlanEditor = ({
       setShowValidation(true)
       return
     }
-    onSave(groups)
+    onSave(groups, postDeployRunbookIds)
   }
 
   const canAddGroup = !loadingInstalls && availableInstalls.length > 0
@@ -259,6 +270,18 @@ export const DeploymentPlanEditor = ({
                 )
               })}
             </>
+          )}
+
+          {groups.length > 0 && (
+            <div className="border-t pt-4">
+              <PostDeployRunbooksPicker
+                runbooks={runbooks}
+                loadingRunbooks={loadingRunbooks}
+                selectedRunbookIds={postDeployRunbookIds}
+                onChange={setPostDeployRunbookIds}
+                disabled={isDisabled}
+              />
+            </div>
           )}
 
           {groups.length > 0 && unassignedInstalls.length > 0 && (

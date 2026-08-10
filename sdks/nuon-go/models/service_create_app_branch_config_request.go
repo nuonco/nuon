@@ -26,6 +26,10 @@ type ServiceCreateAppBranchConfigRequest struct {
 	// install groups
 	InstallGroups []*ServiceInstallGroupRequest `json:"install_groups"`
 
+	// PostDeployRunbookIDs run on each install, in order, after its deploy succeeds.
+	// Omit to carry the current setting forward; send an empty array to clear it.
+	PostDeployRunbookIds []string `json:"post_deploy_runbook_ids"`
+
 	// public git vcs config
 	PublicGitVcsConfig *HelpersPublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
 }

@@ -15,6 +15,7 @@ title: 'Branch'
 | **`connected_repo`**<br/>[ConnectedRepoConfig](#connected_repo) | connected GitHub repo the branch tracks | **Optional** | - |
 | **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public git repo the branch tracks | **Optional** | - |
 | **`install_groups`**<br/>[array](#install_groups) | ordered deployment groups for this branch | **Optional** | - |
+| **`post_deploy_runbooks`**<br/>array | names of runbooks to run on each install, in order, after its deploy succeeds; resolved to IDs at sync time | **Optional** | - |
 
 ### `connected_repo`
 
