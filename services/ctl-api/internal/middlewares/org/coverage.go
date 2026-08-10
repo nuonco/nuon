@@ -84,22 +84,11 @@ var orgLevelRoutes = map[string]struct{}{
 
 	// bulk operation over org-wide resources (IDs in the request body)
 	"POST /v1/workflows/cancel": {},
-}
 
-// uncoveredRoutes lists accepted coverage gaps: routes a grant semantically
-// covers but that cannot yet resolve their resource. Grant-scoped accounts
-// fail closed (403) here until an entry graduates into a resolver or a
-// filtered collection. Grouped by why they are uncovered.
-var uncoveredRoutes = map[string]struct{}{
-	// no resource named in the path; the owner is established by the handler
-	// from the request body / backend semantics
-	"GET /v1/terraform-backend":     {},
-	"POST /v1/terraform-backend":    {},
-	"POST /v1/terraform-workspace":  {},
-	"POST /v1/terraform-workspaces": {},
-
-	// triggers are org-owned entities with no install/app tier; a candidate
-	// for a grantable org-owned type (like webhooks) rather than a resolver
+	// triggers are org-owned entities with no install/app tier below the
+	// org, so org-level permission is their correct gate; if trigger ever
+	// becomes a delegable org-owned type (like webhooks), these move to an
+	// orgResourceRoutes entry instead
 	"POST /v1/triggers":                                        {},
 	"GET /v1/triggers/dispatches/:dispatch_id":                 {},
 	"POST /v1/triggers/dispatches/:dispatch_id/retry":          {},
@@ -127,9 +116,10 @@ func routeKey(method, path string) string {
 
 // ValidateRouteCoverage asserts every org-scoped route is consciously
 // classified: resolvable by the chain builders, exempt (global / public /
-// non-v1), explicitly org-level, or explicitly uncovered. It runs at startup
-// so an unclassified route fails the boot (and CI) of the PR that adds it
-// instead of silently 403ing grant-scoped accounts in production.
+// non-v1), or explicitly org-level. There is no "uncovered" category — every
+// route a grant semantically covers must resolve. It runs at startup so an
+// unclassified route fails the boot (and CI) of the PR that adds it instead
+// of silently 403ing grant-scoped accounts in production.
 func ValidateRouteCoverage(routes gin.RoutesInfo) error {
 	var unclassified []string
 	for _, r := range routes {
@@ -144,7 +134,7 @@ func ValidateRouteCoverage(routes gin.RoutesInfo) error {
 
 	sort.Strings(unclassified)
 	return fmt.Errorf(
-		"%d route(s) lack a resource-grant coverage classification; add a resolver (owners.go / resources.go), or list them in orgLevelRoutes or uncoveredRoutes (middlewares/org/coverage.go):\n  %s",
+		"%d route(s) lack a resource-grant coverage classification; add a resolver (owners.go / resources.go) or list them in orgLevelRoutes (middlewares/org/coverage.go):\n  %s",
 		len(unclassified), strings.Join(unclassified, "\n  "))
 }
 
@@ -170,13 +160,16 @@ func isClassifiedRoute(method, path string) bool {
 	if _, ok := matchTypeOnlyCreateRoute(method, path); ok {
 		return true
 	}
+	if _, ok := matchQueryOwnedRoute(method, path); ok {
+		return true
+	}
+	if isBodyOwnedCreateRoute(method, path) {
+		return true
+	}
 	if isFilteredCollectionRoute(method, path) {
 		return true
 	}
 	if _, ok := orgLevelRoutes[routeKey(method, path)]; ok {
-		return true
-	}
-	if _, ok := uncoveredRoutes[routeKey(method, path)]; ok {
 		return true
 	}
 	return false

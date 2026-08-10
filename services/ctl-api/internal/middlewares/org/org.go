@@ -238,6 +238,24 @@ func (m middleware) resourceChain(ctx *gin.Context, orgID string) (chain []authz
 		}, true, nil
 	}
 
+	if route, ok := matchQueryOwnedRoute(ctx.Request.Method, ctx.FullPath()); ok {
+		if raw := ctx.Query(route.queryParam); raw != "" {
+			installID, appID, err := route.resolve(ctx, m.db, orgID, raw)
+			if err != nil {
+				return nil, false, err
+			}
+			return ownerChain(orgID, installID, appID), true, nil
+		}
+	}
+
+	if isBodyOwnedCreateRoute(ctx.Request.Method, ctx.FullPath()) {
+		chain, err := resolveBodyOwnerChain(ctx, m.db, orgID)
+		if err != nil {
+			return nil, false, err
+		}
+		return chain, true, nil
+	}
+
 	return nil, false, nil
 }
 

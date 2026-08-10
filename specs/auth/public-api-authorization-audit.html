@@ -296,8 +296,8 @@
 <tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/stack-configs/:config_id</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
 <tr><td class="m">GET</td><td class="p">/v1/apps/:app_id/template-config</td><td>read</td><td>grant on the <b>app</b> or the <b>org</b></td></tr>
 </table>
-<h2>Owned-child routes (bare detail routes) <span class="tag lookup">105 routes</span></h2>
-<p class="desc">The path names a child resource whose grantable ancestry is resolved with a single point read of its denormalized <code>install_id</code>/<code>app_id</code> columns (or direct owner column). The request authorizes exactly like a request against the owner. Rows with no install/app tier (management runners, org queues, unresolved legacy rows) require org-wide permission.</p>
+<h2>Owned-child routes (bare detail routes) <span class="tag lookup">109 routes</span></h2>
+<p class="desc">The request names a child resource &mdash; via a path param, the terraform backend&rsquo;s <code>?workspace_id=</code> query param, or the owner reference in a create body &mdash; whose grantable ancestry is resolved with a single point read of its denormalized <code>install_id</code>/<code>app_id</code> columns (or direct owner column). The request authorizes exactly like a request against the owner. Rows with no install/app tier (management runners, org queues, unresolved legacy rows) require org-wide permission.</p>
 <table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
 <tr><td class="m">GET</td><td class="p">/v1/action-workflows/:action_workflow_id</td><td>read</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
 <tr><td class="m">PATCH</td><td class="p">/v1/action-workflows/:action_workflow_id</td><td>update</td><td>grant on the owning <b>app</b> or the <b>org</b></td></tr>
@@ -404,6 +404,10 @@
 <tr><td class="m">POST</td><td class="p">/v1/workflows/:workflow_id/steps/:step_id/cancel</td><td>create</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
 <tr><td class="m">POST</td><td class="p">/v1/workflows/:workflow_id/steps/:step_id/retry</td><td>create</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
 <tr><td class="m">POST</td><td class="p">/v1/workflows/:workflow_id/steps/:step_id/skip</td><td>create</td><td>grant on the owning <b>install</b>, its <b>app</b>, or the <b>org</b>; org-tier rows: org only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/terraform-workspace</td><td>create</td><td>grant on the tier of the owner named in the request body (<code>owner_type</code>/<code>owner_id</code> &rarr; install/app), or the <b>org</b> for unknown owners</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/terraform-workspaces</td><td>create</td><td>grant on the tier of the owner named in the request body (<code>owner_type</code>/<code>owner_id</code> &rarr; install/app), or the <b>org</b> for unknown owners</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/terraform-backend</td><td>read</td><td>grant on the workspace&rsquo;s owning <b>install</b>, its <b>app</b>, or the <b>org</b> (workspace addressed via <code>?workspace_id=</code>)</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/terraform-backend</td><td>create</td><td>grant on the workspace&rsquo;s owning <b>install</b>, its <b>app</b>, or the <b>org</b> (workspace addressed via <code>?workspace_id=</code>)</td></tr>
 </table>
 <h2>Org-owned resources (specific) <span class="tag nested">11 routes</span></h2>
 <p class="desc">The path names a delegable org-owned resource. Access: a grant on <b>that resource</b>, a <b>wildcard grant on its type</b>, or <b>the org</b>.</p>
@@ -449,8 +453,8 @@
 <tr><td class="m">GET</td><td class="p">/v1/components</td><td>read</td><td>any org member; results filtered to entitlements</td></tr>
 <tr><td class="m">GET</td><td class="p">/v1/installs</td><td>read</td><td>any org member; results filtered to entitlements</td></tr>
 </table>
-<h2>Org-level routes <span class="tag org">57 routes</span></h2>
-<p class="desc">Org settings, team/credential management, the grant surface itself, and org-wide collections/aggregates. Access: an <b>org-wide permission</b> (org role, or an org-tier grant). Grant-scoped accounts are denied by design.</p>
+<h2>Org-level routes <span class="tag org">76 routes</span></h2>
+<p class="desc">Org settings, team/credential management, the grant surface itself, org-wide collections/aggregates, and triggers (org-owned entities with no install/app tier &mdash; a candidate delegable org-owned type, like webhooks). Access: an <b>org-wide permission</b> (org role, or an org-tier grant). Grant-scoped accounts are denied by design. There is no &ldquo;uncovered&rdquo; category: every route is either resolvable or deliberately org-level.</p>
 <table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
 <tr><td class="m">POST</td><td class="p">/v1/account/static-token</td><td>create</td><td>org-wide permission only</td></tr>
 <tr><td class="m">GET</td><td class="p">/v1/account/static-tokens</td><td>read</td><td>org-wide permission only</td></tr>
@@ -505,37 +509,29 @@
 <tr><td class="m">POST</td><td class="p">/v1/service-accounts/:account_id/tokens</td><td>create</td><td>org-wide permission only</td></tr>
 <tr><td class="m">GET</td><td class="p">/v1/terraform-workspaces</td><td>read</td><td>org-wide permission only</td></tr>
 <tr><td class="m">GET</td><td class="p">/v1/triggers</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">DELETE</td><td class="p">/v1/triggers/:trigger_id</td><td>delete</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/disable</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/enable</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id/event-types</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id/events</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/triggers/:trigger_id/ingress-url</td><td>update</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/rotate-ingress-url</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/rotate-secret</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id/rules</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id/rules/:rule_id</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">PATCH</td><td class="p">/v1/triggers/:trigger_id/secrets/:secret_id/reveal</td><td>update</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/secrets/:secret_id/revoke</td><td>create</td><td>org-wide permission only</td></tr>
 <tr><td class="m">GET</td><td class="p">/v1/triggers/dispatches</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/dispatches/:dispatch_id</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/dispatches/:dispatch_id/retry</td><td>create</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/events/:event_id</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">GET</td><td class="p">/v1/triggers/events/:event_id/raw</td><td>read</td><td>org-wide permission only</td></tr>
+<tr><td class="m">POST</td><td class="p">/v1/triggers/events/:event_id/replay</td><td>create</td><td>org-wide permission only</td></tr>
 <tr><td class="m">GET</td><td class="p">/v1/workflows</td><td>read</td><td>org-wide permission only</td></tr>
 <tr><td class="m">POST</td><td class="p">/v1/workflows/cancel</td><td>create</td><td>org-wide permission only</td></tr>
 <tr><td class="m">GET</td><td class="p">/v1/workflows/pending-approvals</td><td>read</td><td>org-wide permission only</td></tr>
-</table>
-<h2>Uncovered routes (fail closed) <span class="tag org">23 routes</span></h2>
-<p class="desc">Accepted gaps: the resource cannot yet be resolved from the request (owner in body, or triggers pending grantable-type treatment). Effectively org-wide only; grant-scoped accounts always denied.</p>
-<table><tr><th>Method</th><th>Path</th><th>Permission</th><th>Access granted by</th></tr>
-<tr><td class="m">GET</td><td class="p">/v1/terraform-backend</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">POST</td><td class="p">/v1/terraform-backend</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">POST</td><td class="p">/v1/terraform-workspace</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">POST</td><td class="p">/v1/terraform-workspaces</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">POST</td><td class="p">/v1/triggers</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">DELETE</td><td class="p">/v1/triggers/:trigger_id</td><td>delete</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/disable</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/enable</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id/event-types</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id/events</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">PATCH</td><td class="p">/v1/triggers/:trigger_id/ingress-url</td><td>update</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/rotate-ingress-url</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/rotate-secret</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id/rules</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">GET</td><td class="p">/v1/triggers/:trigger_id/rules/:rule_id</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">PATCH</td><td class="p">/v1/triggers/:trigger_id/secrets/:secret_id/reveal</td><td>update</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">POST</td><td class="p">/v1/triggers/:trigger_id/secrets/:secret_id/revoke</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">GET</td><td class="p">/v1/triggers/dispatches/:dispatch_id</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">POST</td><td class="p">/v1/triggers/dispatches/:dispatch_id/retry</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">GET</td><td class="p">/v1/triggers/events/:event_id</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">GET</td><td class="p">/v1/triggers/events/:event_id/raw</td><td>read</td><td>org-wide permission only (fail closed)</td></tr>
-<tr><td class="m">POST</td><td class="p">/v1/triggers/events/:event_id/replay</td><td>create</td><td>org-wide permission only (fail closed)</td></tr>
 </table>
 <h2>Global routes <span class="tag exempt">17 routes</span></h2>
 <p class="desc">Account-level: any authenticated account, no org context or org permission involved.</p>

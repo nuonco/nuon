@@ -1,6 +1,10 @@
 package org
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -131,6 +135,73 @@ var typeOnlyCreateRoutes = map[string]app.GrantResourceType{
 func matchTypeOnlyCreateRoute(method, fullPath string) (app.GrantResourceType, bool) {
 	t, ok := typeOnlyCreateRoutes[routeKey(method, fullPath)]
 	return t, ok
+}
+
+// queryOwnedRoute resolves a child named by a query parameter rather than a
+// path param: the terraform HTTP backend protocol addresses its workspace as
+// ?workspace_id=... on a fixed URL.
+type queryOwnedRoute struct {
+	queryParam string
+	resolve    func(ctx *gin.Context, db *gorm.DB, orgID, id string) (installID, appID string, err error)
+}
+
+var queryOwnedRoutes = map[string]queryOwnedRoute{
+	"GET /v1/terraform-backend":  {queryParam: "workspace_id", resolve: denormOwned("terraform_workspaces")},
+	"POST /v1/terraform-backend": {queryParam: "workspace_id", resolve: denormOwned("terraform_workspaces")},
+}
+
+func matchQueryOwnedRoute(method, fullPath string) (queryOwnedRoute, bool) {
+	r, ok := queryOwnedRoutes[routeKey(method, fullPath)]
+	return r, ok
+}
+
+// bodyOwnedCreateRoutes name the created resource's owner in the JSON request
+// body ({owner_type, owner_id}) — the terraform workspace creates, whose
+// owners are install-tier (install_components, install_sandboxes). The chain
+// is the body owner's ancestry, so an install grantee can create workspaces
+// for their install; unknown owners resolve to the org tier (org-wide
+// permission required).
+var bodyOwnedCreateRoutes = map[string]struct{}{
+	"POST /v1/terraform-workspace":  {},
+	"POST /v1/terraform-workspaces": {},
+}
+
+func isBodyOwnedCreateRoute(method, fullPath string) bool {
+	_, ok := bodyOwnedCreateRoutes[routeKey(method, fullPath)]
+	return ok
+}
+
+// resolveBodyOwnerChain reads the request body (restoring it for the
+// handler's own bind), extracts the polymorphic owner reference, and builds
+// the owner's chain. Only ever invoked on the deferred-grantee path for
+// routes in bodyOwnedCreateRoutes — org-wide callers never touch the body.
+func resolveBodyOwnerChain(ctx *gin.Context, db *gorm.DB, orgID string) ([]authz.Link, error) {
+	raw, err := ctx.GetRawData()
+	if err != nil {
+		return nil, err
+	}
+	ctx.Request.Body = io.NopCloser(bytes.NewReader(raw))
+
+	var ref struct {
+		OwnerID   string `json:"owner_id"`
+		OwnerType string `json:"owner_type"`
+	}
+	if err := json.Unmarshal(raw, &ref); err != nil {
+		return nil, fmt.Errorf("unable to parse owner from request body: %w", err)
+	}
+
+	installID, appID, err := app.ResolveOwnerAncestry(db.WithContext(ctx), orgID, ref.OwnerType, ref.OwnerID)
+	if err != nil {
+		return nil, err
+	}
+	var install, appTier string
+	if installID != nil {
+		install = *installID
+	}
+	if appID != nil {
+		appTier = *appID
+	}
+	return ownerChain(orgID, install, appTier), nil
 }
 
 // ownerChain builds the walk-up chain for a resolved owner: [install, app,
