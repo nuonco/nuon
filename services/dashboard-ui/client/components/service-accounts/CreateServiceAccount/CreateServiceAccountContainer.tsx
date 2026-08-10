@@ -29,13 +29,6 @@ const CreateServiceAccountModalContainer = (props: Record<string, any>) => {
       )
       removeModal(props.modalId)
     },
-    onError: () => {
-      addToast(
-        <Toast heading="Create failed" theme="error">
-          <Text>There was an error creating the service account.</Text>
-        </Toast>
-      )
-    },
   })
 
   return (

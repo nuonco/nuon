@@ -6,6 +6,7 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
 import { Label } from '@/components/common/form/Label'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { Select } from '@/components/common/form/Select'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError, TVCSConnectionRepo } from '@/types'
@@ -222,11 +223,10 @@ export const CreateOIDCTrustPolicyModal = ({
       {...props}
     >
       <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to create trust policy'}
-          </Banner>
-        ) : null}
+        <FormErrorBanner
+          error={error}
+          fallback="Unable to create trust policy"
+        />
 
         {lockPreset ? null : (
           <Select

@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Banner } from '@/components/common/Banner'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
 import { Label } from '@/components/common/form/Label'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { Select, type SelectOption } from '@/components/common/form/Select'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
@@ -46,11 +46,10 @@ export const CreateServiceAccountModal = ({
       {...props}
     >
       <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to create service account'}
-          </Banner>
-        ) : null}
+        <FormErrorBanner
+          error={error}
+          fallback="Unable to create service account"
+        />
 
         <Text>
           Service accounts are non-human identities for automating access to the Nuon API.

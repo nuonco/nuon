@@ -11,7 +11,6 @@ import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useVCSRepos } from '@/hooks/use-vcs-repos'
 import { createCurrentOrgOIDCTrustPolicy } from '@/lib'
-import type { TAPIError } from '@/types'
 import {
   CreateOIDCTrustPolicyModal,
   type OIDCTrustPolicyFormInput,
@@ -60,13 +59,6 @@ const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
         </Toast>
       )
       removeModal(props.modalId)
-    },
-    onError: (err: TAPIError) => {
-      addToast(
-        <Toast heading="Unable to create trust policy" theme="error">
-          <Text>{err?.description || err?.error || 'Try again.'}</Text>
-        </Toast>
-      )
     },
   })
 
