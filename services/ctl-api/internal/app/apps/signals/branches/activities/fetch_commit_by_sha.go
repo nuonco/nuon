@@ -58,6 +58,9 @@ func (a *Activities) FetchCommitBySHA(ctx context.Context, input *FetchCommitByS
 
 		ghCommit, _, err := client.Repositories.GetCommit(ctx, owner, repo, input.SHA, nil)
 		if err != nil {
+			if nrErr := nonRetryableGitHubError(err); nrErr != nil {
+				return nil, nrErr
+			}
 			return nil, fmt.Errorf("unable to get commit %s: %w", input.SHA, err)
 		}
 

@@ -22,6 +22,8 @@ const PolicyAnalytics = lazy(() =>
   import('./PolicyAnalytics').then((m) => ({ default: m.PolicyAnalytics }))
 )
 import { Installs } from './Installs'
+import { InstallSyncs } from './InstallSyncs'
+import { InstallSyncDetail } from './InstallSyncDetail'
 import { Labels } from './Labels'
 import { Readme } from './Readme'
 import { Sandbox } from './Sandbox'
@@ -156,6 +158,8 @@ export const appRoutes: RouteObject[] = [
           },
           { path: 'policies/:policyId', element: <PolicyDetail /> },
           { path: 'installs', element: <BranchInstalls /> },
+          { path: 'install-configs', element: <InstallSyncs /> },
+          { path: 'install-configs/:syncId', element: <InstallSyncDetail /> },
           { path: 'labels', element: <Labels /> },
           { path: 'readme', element: <Readme /> },
           { path: 'sandbox', element: <Sandbox /> },
@@ -184,6 +188,17 @@ export const appRoutes: RouteObject[] = [
       {
         path: ':orgId/apps/:appId/readme',
         element: legacy(<Readme />, () => 'readme'),
+      },
+      {
+        path: ':orgId/apps/:appId/install-syncs',
+        element: legacy(<InstallSyncs />, () => 'install-configs'),
+      },
+      {
+        path: ':orgId/apps/:appId/install-syncs/:syncId',
+        element: legacy(
+          <InstallSyncDetail />,
+          (p) => `install-configs/${p.syncId}`
+        ),
       },
       {
         path: ':orgId/apps/:appId/readme-studio',
