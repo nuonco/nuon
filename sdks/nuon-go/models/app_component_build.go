@@ -47,6 +47,9 @@ type AppComponentBuild struct {
 	// component name
 	ComponentName string `json:"component_name,omitempty"`
 
+	// composite error
+	CompositeError any `json:"composite_error,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
