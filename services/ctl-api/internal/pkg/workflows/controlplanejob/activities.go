@@ -386,7 +386,10 @@ func (a *Activities) CreateJobExecutionResult(ctx context.Context, jobID, execut
 	ctx = cctx.SetOrgIDContext(ctx, job.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, job.CreatedByID)
 
-	compositeError, err := errparse.ParseRunnerJobResult(req.Success, req.ErrorMetadata, job)
+	resolveProvider := func() errparse.Provider {
+		return errparse.ResolveRunnerJobProvider(ctx, a.db, job)
+	}
+	compositeError, err := errparse.ParseRunnerJobResult(req.Success, req.ErrorMetadata, job, resolveProvider)
 	if err != nil {
 		a.l.Warn("unable to build composite error; omitting enrichment",
 			zap.String("runner_job_id", job.ID),

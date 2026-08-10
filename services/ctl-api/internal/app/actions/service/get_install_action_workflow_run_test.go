@@ -29,6 +29,7 @@ import (
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -268,4 +269,37 @@ func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRun() {
 			}
 		})
 	}
+}
+
+func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunIncludesLatestCompositeError() {
+	install := s.createInstall(s.testApp.ID)
+	action := s.createActionWorkflow(s.testApp.ID, "test-action-with-composite-error")
+	installAction := s.createInstallActionWorkflow(install.ID, action.ID)
+	run := s.createInstallActionWorkflowRun(install.ID, installAction.ID, app.InstallActionRunStatusError)
+	job := s.service.Seeder.CreateRunnerJob(s.ctx, s.T(), run.ID, "install_action_workflow_runs")
+	execution := &app.RunnerJobExecution{
+		RunnerJobID: job.ID,
+		Status:      app.RunnerJobExecutionStatusFailed,
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(execution).Error)
+
+	expected := &compositeerrors.CompositeErrorData{
+		Version:  compositeerrors.SchemaVersion,
+		Type:     "terraform.aws_permission",
+		Severity: compositeerrors.SeverityError,
+		Message:  "missing permission",
+	}
+	result := &app.RunnerJobExecutionResult{
+		RunnerJobExecutionID: execution.ID,
+		CompositeError:       expected,
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(result).Error)
+
+	path := fmt.Sprintf("/v1/installs/%s/actions/runs/%s", install.ID, run.ID)
+	rr := s.makeRequest(http.MethodGet, path, nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var response app.InstallActionWorkflowRun
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
+	assert.Equal(s.T(), expected, response.CompositeError)
 }
