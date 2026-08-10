@@ -1,30 +1,418 @@
 ---
-title: 'SDKs'
-description: "Integrate with different SDKs to embed Nuon in your product."
+title: 'Go SDK'
+description: 'Use the Nuon Go SDK to integrate with organizations, apps, installs, components, workflows, and other Nuon resources.'
 boost: 2
-keywords: ["Go SDK", "TypeScript SDK", "API client", "nuon-go", "programmatic access", "SDK integration", "embed Nuon", "white-label install UX", "client library", "SDK"]
+keywords: ["Go SDK", "API client", "nuon-go", "programmatic access", "SDK integration", "client library", "BYOC"]
 ---
 
-Nuon maintains an SDK for Golang. We may investigate others in the future based on user demand.
+# Use the Nuon API from Go
 
-## Supported SDKs
+The Nuon Go SDK provides typed access to the Nuon control-plane API. Use it to work with organizations, apps, installs, components, workflows, action workflows, runbooks, and other Nuon resources from a Go program.
 
-<CardGroup cols={2}>
-  <Card title="Go" icon="golang" href="https://github.com/nuonco/nuon/tree/main/sdks/nuon-go">
-  `nuon-go` sdk for Go applications.
-  </Card>
-</CardGroup>
+> **Package to use:** `github.com/nuonco/nuon/sdks/nuon-go`
+>
+> The former standalone package at `github.com/nuonco/nuon-go` is deprecated. New integrations should use the SDK in the main Nuon repository.
 
-## OpenAPI Support
+## Requirements
 
-Both an OpenAPI v2 and OpenAPI v3 spec are published via our API, and can be used to generate additional clients.
+- Go 1.24.4 or later
+- A Nuon API token
+- The ID of the Nuon organization the request should access
 
-* [OpenAPI v2 spec](https://api.nuon.co/oapi/v2)
-* [OpenAPI v3 spec](https://api.nuon.co/oapi/v3)
+The examples use these environment variables:
 
-<Note>
-We plan on supporting SDKs for most popular languages, as our users need them.
+| Variable | Required | Description |
+| --- | --- | --- |
+| `NUON_API_TOKEN` | Yes | Bearer token used to authenticate API requests. |
+| `NUON_ORG_ID` | Yes for organization-scoped operations | Nuon organization ID sent with each request. |
+| `NUON_API_URL` | No for Nuon Cloud; **required in practice for BYOC** | API base URL. The examples default to `https://api.nuon.co`, but BYOC clients must target their deployed control plane. |
+| `NUON_INSTALL_ID` | Yes for the example lookup | ID of the install to retrieve. |
 
-If you would like to use a currently unsupported language, please [get in touch](https://nuon.co/contact-us) so we can consider
-  adding it to our list of first class SDKs.
-</Note>
+The SDK does not read environment variables itself. Your program must read them and pass their values to the client constructor.
+
+## Match the SDK to the deployed control plane
+
+Version selection is part of correctness for BYOC integrations. The SDK's methods, request types, response types, enum values, and validation are generated from a particular snapshot of the Nuon control-plane OpenAPI document. A BYOC control plane may run a different Nuon release from Nuon Cloud, especially during a rollout.
+
+Do **not** assume that the latest SDK is compatible with every deployed control plane. Nuon does not currently publish a broad SDK/API compatibility matrix, and the SDK does not perform a runtime compatibility handshake.
+
+Before selecting or upgrading the SDK:
+
+1. Query the control plane the integration will actually call:
+
+   ```sh
+   curl -fsS "${NUON_API_URL%/}/version"
+   ```
+
+   A response includes the deployed `version`, source `git_ref`, and `recommended_cli_version`:
+
+   ```json
+   {
+     "version": "<control-plane-version>",
+     "git_ref": "<source-revision>",
+     "recommended_cli_version": "<cli-version>"
+   }
+   ```
+
+2. Pin the SDK version or source revision verified for that control-plane release. Do not infer compatibility from version-number similarity: control-plane and SDK module versions are separate release streams.
+3. Test the exact SDK and control-plane pairing in a non-production environment. Exercise every endpoint and model shape the integration uses, including pagination and writes.
+4. Record the verified pairing in the integration's release metadata or dependency-update notes.
+
+For example, pin a published SDK module release rather than asking Go for `latest`:
+
+```sh
+go get github.com/nuonco/nuon/sdks/nuon-go@<verified-sdk-version>
+```
+
+If Nuon identifies a source revision rather than a published SDK module version, Go can pin the module from that revision and record a pseudo-version in `go.mod`:
+
+```sh
+go get github.com/nuonco/nuon/sdks/nuon-go@<verified-git-ref>
+```
+
+Commit both `go.mod` and `go.sum`. Avoid an unreviewed `go get ...@latest` in automated dependency updates.
+
+### Plan control-plane and client upgrades together
+
+Treat a control-plane upgrade and an SDK upgrade as one compatibility change, even when they are deployed separately:
+
+1. Inventory the SDK methods and generated model fields the integration uses.
+2. Validate the existing client against the candidate control plane.
+3. Validate the candidate SDK against the candidate control plane.
+4. If the candidate control plane remains compatible with the existing client, upgrade the control plane first, then the client. This avoids deploying a client that calls endpoints an older control plane does not have.
+5. If either side contains a breaking API change, coordinate the rollout and get an explicit supported upgrade path from Nuon rather than relying on deployment order alone.
+6. Keep rollback artifacts for both the client and control plane until production verification is complete.
+
+`recommended_cli_version` applies to the Nuon CLI; it is useful release context but is **not** an SDK compatibility declaration. Likewise, API responses include `X-Nuon-API-Version`, but the Go SDK does not currently read or enforce that header. These values are useful for diagnostics and deployment checks, not proof of compatibility.
+
+## Install the SDK
+
+```sh
+go get github.com/nuonco/nuon/sdks/nuon-go@<verified-sdk-version>
+```
+
+Import the client and, when needed, its generated model types:
+
+```go
+import (
+	nuon "github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
+)
+```
+
+## Create a client
+
+Create one client and reuse it. `WithURL` is required. In most integrations, validate the token and organization ID before constructing the client so configuration errors fail early.
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+
+	nuon "github.com/nuonco/nuon/sdks/nuon-go"
+)
+
+func main() {
+	apiURL := strings.TrimSpace(os.Getenv("NUON_API_URL"))
+	if apiURL == "" {
+		apiURL = "https://api.nuon.co"
+	}
+
+	token := strings.TrimSpace(os.Getenv("NUON_API_TOKEN"))
+	if token == "" {
+		panic("NUON_API_TOKEN is required")
+	}
+
+	orgID := strings.TrimSpace(os.Getenv("NUON_ORG_ID"))
+	if orgID == "" {
+		panic("NUON_ORG_ID is required")
+	}
+
+	installID := strings.TrimSpace(os.Getenv("NUON_INSTALL_ID"))
+	if installID == "" {
+		panic("NUON_INSTALL_ID is required")
+	}
+
+	client, err := nuon.New(
+		nuon.WithURL(apiURL),
+		nuon.WithAuthToken(token),
+		nuon.WithOrgID(orgID),
+	)
+	if err != nil {
+		panic(fmt.Errorf("create Nuon API client: %w", err))
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	install, err := client.GetInstall(ctx, installID)
+	if err != nil {
+		panic(fmt.Errorf("get install: %w", err))
+	}
+
+	fmt.Printf("%s: %s\n", install.ID, install.Name)
+}
+```
+
+The Cloud default is an application choice in this example, not an SDK default. `nuon.New` requires `WithURL`; it does not automatically select Nuon Cloud or discover a BYOC control plane. For software that must never fall back from BYOC to Nuon Cloud, require `NUON_API_URL` instead of applying the default:
+
+```go
+apiURL := strings.TrimSpace(os.Getenv("NUON_API_URL"))
+if apiURL == "" {
+	panic("NUON_API_URL is required")
+}
+```
+
+The client sends the following headers automatically:
+
+```http
+Authorization: Bearer <NUON_API_TOKEN>
+X-Nuon-Org-ID: <NUON_ORG_ID>
+```
+
+Do not log tokens, include them in error messages, or commit them to source control.
+
+### Switch organizations
+
+Organization-scoped methods use the client's current organization ID. If an application intentionally operates across organizations, update it before the next request:
+
+```go
+client.SetOrgID(orgID)
+```
+
+Avoid changing the organization concurrently on a client shared by multiple goroutines. Prefer one client per organization in concurrent multi-organization applications.
+
+## Call the API
+
+The SDK exposes a `nuon.Client` interface with resource-oriented methods. Most methods accept a `context.Context`, identifiers, and an optional generated request or query model.
+
+### Get one resource
+
+```go
+install, err := client.GetInstall(ctx, installID)
+if err != nil {
+	return fmt.Errorf("get install %q: %w", installID, err)
+}
+```
+
+Other common lookups follow the same pattern:
+
+```go
+app, err := client.GetApp(ctx, appID)
+component, err := client.GetInstallComponent(ctx, installID, componentID)
+workflow, err := client.GetWorkflow(ctx, workflowID)
+stack, err := client.GetInstallStack(ctx, installID)
+```
+
+### Create or update a resource
+
+Request and response types live in the `models` package:
+
+```go
+req := &models.ServiceUpdateInstallRequest{
+	Name: "production-us-east-1",
+}
+
+install, err := client.UpdateInstall(ctx, installID, req)
+if err != nil {
+	return fmt.Errorf("update install %q: %w", installID, err)
+}
+```
+
+The model types are generated from Nuon's OpenAPI definition. Consult the [SDK models](https://github.com/nuonco/nuon/tree/main/sdks/nuon-go/models) for the fields accepted by a particular request.
+
+### Work with nested data
+
+Some resources support recursive responses. For example, requesting an app configuration with `recurse` enabled includes its related configuration data:
+
+```go
+recurse := true
+config, err := client.GetAppConfig(ctx, appID, appConfigID, &recurse)
+if err != nil {
+	return fmt.Errorf("get app config %q: %w", appConfigID, err)
+}
+```
+
+## Paginate every list operation
+
+Paginated methods return three values:
+
+```go
+(items, hasMore, error)
+```
+
+Passing `nil` as the query uses the server default, which is currently 10 results. If the integration needs the complete collection, continue until `hasMore` is false.
+
+```go
+func allInstallComponents(
+	ctx context.Context,
+	client nuon.Client,
+	installID string,
+) ([]*models.AppInstallComponent, error) {
+	const pageSize = 100
+
+	var all []*models.AppInstallComponent
+	for offset := 0; ; offset += pageSize {
+		page, hasMore, err := client.GetInstallComponents(
+			ctx,
+			installID,
+			&models.GetPaginatedQuery{
+				Offset: offset,
+				Limit:  pageSize,
+			},
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"list install components at offset %d: %w",
+				offset,
+				err,
+			)
+		}
+
+		all = append(all, page...)
+		if !hasMore {
+			return all, nil
+		}
+	}
+}
+```
+
+The same pattern applies to methods such as `GetApps`, `GetAllInstalls`, `GetAppInstalls`, `GetAppComponents`, `GetWorkflows`, and `GetInstallDeploys`.
+
+The maximum page size is 100. Do not increment the offset by the number of returned records; increment it by the requested page size, as shown above.
+
+## Handle errors
+
+Always preserve the SDK error with `%w` when adding operation-specific context:
+
+```go
+install, err := client.GetInstall(ctx, installID)
+if err != nil {
+	return fmt.Errorf("get install %q: %w", installID, err)
+}
+```
+
+The SDK includes helpers for common HTTP error classes:
+
+- `nuon.IsBadRequest(err)` — HTTP 400
+- `nuon.IsUnauthorized(err)` — HTTP 401
+- `nuon.IsForbidden(err)` — HTTP 403
+- `nuon.IsNotFound(err)` — HTTP 404
+- `nuon.IsServerError(err)` — HTTP 5xx
+- `nuon.ToAPIError(err)` — extracts a readable API error message
+- `nuon.ToUserError(err)` — extracts an API response explicitly marked as a user error
+
+Classify an error before wrapping it. The status helpers currently inspect the direct SDK error, while `ToAPIError` and `ToUserError` walk wrapped error chains.
+
+```go
+install, err := client.GetInstall(ctx, installID)
+if err != nil {
+	switch {
+	case nuon.IsUnauthorized(err):
+		return fmt.Errorf("Nuon API token was rejected: %w", err)
+	case nuon.IsForbidden(err):
+		return fmt.Errorf("token cannot access organization %q: %w", orgID, err)
+	case nuon.IsNotFound(err):
+		return fmt.Errorf("install %q does not exist: %w", installID, err)
+	case nuon.IsServerError(err):
+		return fmt.Errorf("Nuon API server error: %w", err)
+	default:
+		return fmt.Errorf("get install %q: %w", installID, err)
+	}
+}
+```
+
+Respect context cancellation and timeouts separately when callers need to distinguish them:
+
+```go
+if err != nil {
+	if errors.Is(err, context.DeadlineExceeded) {
+		return fmt.Errorf("Nuon API request timed out: %w", err)
+	}
+	return fmt.Errorf("get install %q: %w", installID, err)
+}
+```
+
+## Common API areas
+
+The public client covers these major resource groups:
+
+| Area | Representative methods |
+| --- | --- |
+| Authentication and organizations | `ValidateToken`, `GetAuthMe`, `GetOrg`, `GetOrgs`, `SetOrgID` |
+| Apps and app configuration | `GetApps`, `GetApp`, `CreateApp`, `GetAppConfig`, `GetAppLatestConfig`, `BuildAppConfig` |
+| Components and builds | `GetAppComponents`, `GetComponent`, `GetComponentBuilds`, `GetComponentLatestBuild` |
+| Installs | `GetAllInstalls`, `GetInstall`, `CreateInstall`, `UpdateInstall`, `ReprovisionInstall`, `DeprovisionInstall` |
+| Install components and deploys | `GetInstallComponents`, `GetInstallDeploys`, `DeployInstallComponents`, `GetInstallComponentOutputs` |
+| Inputs and secrets | `GetInstallInputs`, `UpdateInstallInputs`, `GetAppSecrets`, `CreateAppSecret` |
+| Workflows | `GetWorkflows`, `GetWorkflow`, `GetWorkflowSteps`, `CancelWorkflow`, `RetryWorkflowStep` |
+| Actions and runbooks | `GetActionWorkflows`, `CreateInstallActionWorkflowRun`, `GetInstallRunbooks`, `CreateInstallRunbookRun` |
+| Runners and logs | `GetInstallRunnerGroup`, `GetRunnerJobs`, `GetLogStream`, `LogStreamTailLogs` |
+| VCS and service accounts | `GetVCSConnections`, `CreateVCSConnection`, `ListServiceAccounts`, `CreateServiceAccountToken` |
+
+See the current [`Client` interface](https://github.com/nuonco/nuon/blob/main/sdks/nuon-go/client.go) for the complete method list and signatures.
+
+## Structure integrations for testing
+
+`nuon.Client` intentionally exposes the whole SDK, which is often more than one package needs. Define a small local interface containing only the methods your code calls. Production code can receive the real SDK client, and tests can provide a focused fake.
+
+```go
+type installReader interface {
+	GetInstall(context.Context, string) (*models.AppInstall, error)
+	GetInstallComponents(
+		context.Context,
+		string,
+		*models.GetPaginatedQuery,
+		...nuon.GetInstallComponentsOpts,
+	) ([]*models.AppInstallComponent, bool, error)
+}
+
+type Service struct {
+	api installReader
+}
+
+func NewService(api installReader) *Service {
+	return &Service{api: api}
+}
+```
+
+This keeps test doubles small and prevents application code from depending on generated transport internals.
+
+## Recommended integration practices
+
+1. Use the in-tree SDK path, not the deprecated standalone module.
+2. Identify the deployed control-plane `version` and `git_ref`, then pin a verified SDK version for that environment.
+3. Require the correct `NUON_API_URL` for BYOC integrations; do not silently send their traffic to Nuon Cloud.
+4. Validate `NUON_API_TOKEN` and `NUON_ORG_ID` in your configuration layer.
+5. Reuse a client rather than constructing one for every request.
+6. Give network operations a caller-controlled context and timeout.
+7. Paginate list calls explicitly when completeness matters.
+8. Wrap errors with `%w`, but run the SDK's HTTP status helpers before wrapping.
+9. Program against the handwritten `nuon.Client` facade, not generated `client/operations` transport types.
+10. Treat generated `models` as versioned API contracts and test them when either the SDK or control plane changes.
+11. Commit the pinned dependency in `go.mod` and `go.sum`; avoid unattended `@latest` upgrades.
+12. Never expose API tokens in logs, command output, or error messages.
+
+## Working examples
+
+Two Nuon extensions demonstrate current SDK usage:
+
+- [`nuon-ext-terraform`](https://github.com/nuonco/nuon-ext-terraform) shows client construction, install and app-config lookups, generated model inspection, and complete pagination.
+- [`nuon-ext-cf-stack`](https://github.com/nuonco/nuon-ext-cf-stack) shows client construction and retrieving an install and its stack before operating on AWS resources.
+
+## Reference
+
+- [Nuon Go SDK source](https://github.com/nuonco/nuon/tree/main/sdks/nuon-go)
+- [Complete client interface](https://github.com/nuonco/nuon/blob/main/sdks/nuon-go/client.go)
+- [Generated models](https://github.com/nuonco/nuon/tree/main/sdks/nuon-go/models)
+- [SDK generation from the control-plane OpenAPI document](https://github.com/nuonco/nuon/blob/main/sdks/nuon-go/generate.sh)
+- [Control-plane version response](https://github.com/nuonco/nuon/blob/main/services/ctl-api/internal/health/version.go)
+- [Nuon API OpenAPI document](https://api.nuon.co/docs/doc.json)
+- [OpenAPI v2 specification](https://api.nuon.co/oapi/v2)
+- [OpenAPI v3 specification](https://api.nuon.co/oapi/v3)
+- [Nuon documentation](https://docs.nuon.co)
