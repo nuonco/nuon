@@ -168,5 +168,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "123-dedupe-queue-emitters",
 			Fn:   m.Migration123DedupeQueueEmitters,
 		},
+		{
+			Name: "124-drop-stale-app-branch-columns",
+			Fn:   m.Migration124DropStaleAppBranchColumns,
+		},
 	}
 }
