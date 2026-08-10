@@ -33,7 +33,7 @@ func (s *service) resolveServiceAccountRole(ctx *gin.Context, orgID, role string
 // @ID						ListRoles
 // @Summary				List your org's roles
 // @Description.markdown	list_roles.md
-// @Param					context	query	string	false	"filter to roles assignable on a surface (team, service_account, api_token, oidc_trust_policy)"
+// @Param					context	query	string	false	"filter to roles assignable on a surface (team, service_account, api_token, oidc_trust_policy)"	extensions(x-go-name=RoleContext)
 // @Tags					accounts
 // @Produce				json
 // @Security				APIKey
