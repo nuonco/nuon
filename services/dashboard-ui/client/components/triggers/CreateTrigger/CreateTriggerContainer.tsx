@@ -22,7 +22,7 @@ const CreateTriggerModalContainer = (props: Omit<IModal, 'onSubmit'>) => {
       })
       removeModal(props.modalId)
       if (response?.trigger?.id)
-        navigate(`/${org?.id}/triggers/${response.trigger.id}`)
+        navigate(`/${org?.id}/settings/triggers/${response.trigger.id}`)
     },
   })
   return (

@@ -2,12 +2,8 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	stdhttp "net/http"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/cockroachdb/errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/nuonco/nuon/sdks/nuon-go"
@@ -42,60 +38,6 @@ func (c *cli) initAPIClient() error {
 	api.SetClientVersion(version.Version)
 
 	c.apiClient = api
-	return nil
-}
-
-func (c *cli) checkCLIVersion() error {
-	if version.Version == "development" {
-		// ignore this check if the cli is a dev build
-		return nil
-	}
-
-	resp, err := stdhttp.Get(fmt.Sprintf("%s/version", c.cfg.APIURL))
-	if err != nil {
-		return errors.Wrap(err, "unable to get Nuon API version for cli version check")
-	}
-	defer resp.Body.Close()
-	byt, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return errors.Wrap(err, "unable to Nuon API version response response body")
-	}
-	body := make(map[string]string)
-	if err := json.Unmarshal(byt, &body); err != nil {
-		return errors.Wrap(err, "unable to unmarshal Nuon API version response body")
-	}
-	vstr, has := body["version"]
-	if !has {
-		return errors.New("Nuon API version response body does not contain expected version field")
-	}
-
-	if vstr == "development" || body["git_ref"] == "local" {
-		// ignore this check if the api is a dev build
-		return nil
-	}
-
-	apiv, err := semver.NewVersion(vstr)
-	if err != nil {
-		return errors.Wrap(err, "unable to parse Nuon API version to semver")
-	}
-	cliv, err := semver.NewVersion(version.Version)
-	if err != nil {
-		return errors.Wrap(err, "unable to parse cli version to semver")
-	}
-
-	switch apiv.Compare(cliv) {
-	case -1:
-		return errors.Newf("should be unreachable - cli version (%s) is newer than API version (%s)", cliv, apiv)
-	case 1:
-		bumped := cliv.IncPatch()
-		if apiv.Compare(&bumped) == 0 {
-			// TODO(sdboyer) make this more visible
-			fmt.Print("\nA new version of the Nuon CLI is available.\n\nSee https://docs.nuon.co/cli for information on updating.\n\n")
-			return nil
-		}
-		return errors.Newf("Your Nuon CLI (%s) is too out of date (latest is %s). See https://docs.nuon.co/cli for information on updating.\n", cliv, apiv)
-	}
-
 	return nil
 }
 

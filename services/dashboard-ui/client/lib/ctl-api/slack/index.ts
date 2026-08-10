@@ -1,5 +1,4 @@
 export * from './create-slack-channel-subscription'
-export * from './create-slack-org-link'
 export * from './delete-slack-channel-subscription'
 export * from './delete-slack-org-link'
 export * from './get-slack-channel-subscriptions'

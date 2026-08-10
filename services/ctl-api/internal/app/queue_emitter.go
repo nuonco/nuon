@@ -102,6 +102,17 @@ func (r *QueueEmitter) Indexes(db *gorm.DB) []migrations.Index {
 				"queue_id",
 			},
 		},
+		// idx_queue_emitters_live_uq is created by migration 123 (dedupe must
+		// run first). Uncomment once the fleet has run it.
+		// {
+		// 	Name: indexes.Name(db, &QueueEmitter{}, "live_uq"),
+		// 	Columns: []string{
+		// 		"queue_id",
+		// 		"name",
+		// 	},
+		// 	UniqueValue: sql.NullBool{Bool: true, Valid: true},
+		// 	Option:      "WHERE deleted_at = 0",
+		// },
 	}
 }
 

@@ -322,7 +322,7 @@ export const BuildSelect = ({
           <div className="w-44 shrink-0">
             <Select
               value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as TSortOrder)}
+              onChange={(value) => setSortOrder(value as TSortOrder)}
               options={SORT_OPTIONS}
             />
           </div>

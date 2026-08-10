@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -58,4 +62,65 @@ func (s *Helpers) getJob(ctx context.Context, jobID string) (*app.RunnerJob, err
 	}
 
 	return &runnerJob, nil
+}
+
+// CreateJobExecutionResultIfAbsent atomically preserves the first result written for an execution.
+func CreateJobExecutionResultIfAbsent(ctx context.Context, db *gorm.DB, result *app.RunnerJobExecutionResult) (*app.RunnerJobExecutionResult, bool, error) {
+	res := db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{
+				{Name: "deleted_at"},
+				{Name: "runner_job_execution_id"},
+			},
+			DoNothing: true,
+		}).
+		Create(result)
+	if res.Error != nil {
+		return nil, false, fmt.Errorf("unable to create runner job execution result: %w", res.Error)
+	}
+	if res.RowsAffected == 1 {
+		return result, true, nil
+	}
+
+	var existing app.RunnerJobExecutionResult
+	if err := db.WithContext(ctx).
+		Where(&app.RunnerJobExecutionResult{RunnerJobExecutionID: result.RunnerJobExecutionID}).
+		First(&existing).Error; err != nil {
+		return nil, false, fmt.Errorf("unable to get existing runner job execution result: %w", err)
+	}
+	return &existing, false, nil
+}
+
+const (
+	metricJobExecutionResultAudit  = "runner.execution_result_audit"
+	jobExecutionResultAuditTimeout = time.Second
+)
+
+// AuditJobExecutionResult records result presence without affecting the status transition being audited.
+func AuditJobExecutionResult(ctx context.Context, db *gorm.DB, mw metrics.Writer, executionID string, status app.RunnerJobExecutionStatus, source string) {
+	if status.IsRunning() || status == app.RunnerJobExecutionStatusFinished {
+		return
+	}
+
+	auditCtx, cancel := context.WithTimeout(ctx, jobExecutionResultAuditTimeout)
+	defer cancel()
+
+	var result app.RunnerJobExecutionResult
+	query := db.WithContext(auditCtx).
+		Select("id").
+		Where(&app.RunnerJobExecutionResult{RunnerJobExecutionID: executionID}).
+		Limit(1).
+		Find(&result)
+	outcome := "result_present"
+	if query.Error != nil {
+		outcome = "query_error"
+	} else if query.RowsAffected == 0 {
+		outcome = "result_missing"
+	}
+
+	mw.Incr(metricJobExecutionResultAudit, []string{
+		"status:" + string(status),
+		"source:" + source,
+		"outcome:" + outcome,
+	})
 }

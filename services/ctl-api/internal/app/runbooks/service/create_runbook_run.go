@@ -16,6 +16,7 @@ import (
 type CreateRunbookRunRequest struct {
 	Inputs map[string]*string              `json:"inputs,omitempty"`
 	Steps  []CreateRunbookRunStepSelection `json:"steps,omitempty"`
+	Role   string                          `json:"role,omitempty"`
 }
 
 type CreateRunbookRunStepSelection struct {
@@ -61,19 +62,15 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 		return
 	}
 
-	// Find the install to get its app config version
-	var install app.Install
-	res := s.db.WithContext(ctx).
-		Where("id = ? AND org_id = ?", installID, org.ID).
-		First(&install)
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to get install: %w", res.Error))
+	install, err := s.findInstall(ctx, org.ID, installID)
+	if err != nil {
+		ctx.Error(err)
 		return
 	}
 
 	// Find the install runbook
 	var installRunbook app.InstallRunbook
-	res = s.db.WithContext(ctx).
+	res := s.db.WithContext(ctx).
 		Preload("Runbook").
 		Joins("JOIN runbooks ON runbooks.id = install_runbooks.runbook_id AND runbooks.deleted_at = 0").
 		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).
@@ -84,8 +81,6 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 		return
 	}
 
-	// Find the runbook config matching the install's app config version.
-	// Fall back to the latest config if no version-specific config exists.
 	var runbookConfig app.RunbookConfig
 	configQuery := s.db.WithContext(ctx).
 		Preload("Steps", func(tx *gorm.DB) *gorm.DB {
@@ -97,19 +92,14 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 		Where(app.RunbookConfig{RunbookID: installRunbook.RunbookID, OrgID: org.ID})
 
 	if install.AppConfigID != "" {
-		// Try the install's pinned app config first
+		// No fallback to the newest config: it would run steps the caller never saw,
+		// and without the Inputs preload it silently skipped required inputs.
 		if err := configQuery.Where(app.RunbookConfig{AppConfigID: install.AppConfigID}).First(&runbookConfig).Error; err != nil {
-			// Fall back to latest config
-			if err := s.db.WithContext(ctx).
-				Preload("Steps", func(tx *gorm.DB) *gorm.DB {
-					return tx.Order("idx ASC")
-				}).
-				Where(app.RunbookConfig{RunbookID: installRunbook.RunbookID, OrgID: org.ID}).
-				Order("created_at DESC").
-				First(&runbookConfig).Error; err != nil {
-				ctx.Error(fmt.Errorf("runbook has no configurations"))
-				return
-			}
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("runbook is not in the install's app config version: %w", err),
+				Description: "this runbook is not in the install's app config version",
+			})
+			return
 		}
 	} else {
 		if err := configQuery.Order("created_at DESC").First(&runbookConfig).Error; err != nil {
@@ -136,7 +126,7 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 			inputs[name] = *value
 		}
 	}
-	triggered, err := s.helpers.TriggerRunbookRun(ctx, runbookshelpers.TriggerRunbookRunRequest{InstallRunbookID: installRunbook.ID, RunbookConfigID: runbookConfig.ID, TriggeredByID: account.ID, Inputs: inputs, StepSelections: stepSelections})
+	triggered, err := s.helpers.TriggerRunbookRun(ctx, runbookshelpers.TriggerRunbookRunRequest{InstallRunbookID: installRunbook.ID, RunbookConfigID: runbookConfig.ID, TriggeredByID: account.ID, Inputs: inputs, StepSelections: stepSelections, Role: req.Role})
 	if err != nil {
 		ctx.Error(err)
 		return

@@ -76,7 +76,7 @@ const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
       repos={repos}
       isLoadingRepos={isLoadingRepos}
       hasVCSConnections={hasConnections}
-      vcsConnectionsHref={`/${org.id}/connections/vcs`}
+      vcsConnectionsHref={`/${org.id}/settings/vcs`}
       githubAudience={config.apiUrl ?? ''}
       {...props}
     />

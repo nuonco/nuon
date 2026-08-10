@@ -410,8 +410,6 @@ export type TSlackInstallURLResponse =
 export type TSlackChannel = components['schemas']['client.Conversation']
 export type TSlackChannelsResponse =
   components['schemas']['service.ListChannelsResponse']
-export type TCreateSlackOrgLinkBody =
-  components['schemas']['service.CreateOrgLinkRequest']
 // `interests` and `match` are both stamped `swaggertype:"object"` on the
 // Go side, so the generated SDK shape is a generic object. Re-cast both at
 // the API boundary so callers get type-checked payloads. SubscriptionMatch

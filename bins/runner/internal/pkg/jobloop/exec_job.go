@@ -150,6 +150,9 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 			zap.Error(err),
 		)
 		description := fmt.Sprintf("no valid job handler for job type %s: %s", job.Type, err.Error())
+		if resultErr := j.writeFallbackJobExecutionResult(ctx, job, execution, "jobloop", "get-handler", err); resultErr != nil {
+			j.errRecorder.Record("write fallback job execution result", resultErr)
+		}
 		if updateErr := j.updateJobExecutionStatusWithDescription(ctx, job.ID, execution.ID, models.AppRunnerJobExecutionStatusFailed, description); updateErr != nil {
 			j.errRecorder.Record("no handler found", updateErr)
 		}

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -20,7 +22,7 @@ func (a *Activities) UpdateContainerImageTag(ctx context.Context, req UpdateCont
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Settings").
 		First(&runner, "id = ?", req.RunnerID); res.Error != nil {
-		return fmt.Errorf("unable to get runner: %w", res.Error)
+		return dbgenerics.TemporalGormError(res.Error, "unable to get runner")
 	}
 
 	if runner.RunnerGroup.Settings.ID == "" {

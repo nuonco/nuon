@@ -217,20 +217,26 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 		return nil, fmt.Errorf("unable to create runner queue: %w", err)
 	}
 
-	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-		QueueID:         q.ID,
-		Name:            "runner-healthcheck",
-		Description:     "Periodic runner-level health check",
-		Mode:            app.QueueEmitterModeCron,
-		CronSchedule:    RunnerHealthcheckSchedule(h.cfg.Env),
-		JitterWindow:    runnerHealthcheckJitterWindow,
-		SignalType:      "runner_healthcheck",
-		SignalExpiresIn: runnerHealthcheckSignalExpiry,
-		SignalTemplate: queuesignal.NewRaw("runner_healthcheck", map[string]any{
-			"runner_id": runnerGroup.Runners[0].ID,
-		}),
-	}); err != nil {
-		return nil, fmt.Errorf("unable to create runner healthcheck emitter: %w", err)
+	sweeps, err := h.featuresClient.OrgHealthcheckSweepsEnabled(ctx, org.ID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to evaluate org healthcheck sweeps flag: %w", err)
+	}
+	if !sweeps {
+		if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
+			QueueID:         q.ID,
+			Name:            RunnerHealthcheckEmitterName,
+			Description:     "Periodic runner-level health check",
+			Mode:            app.QueueEmitterModeCron,
+			CronSchedule:    RunnerHealthcheckSchedule(h.cfg.Env),
+			JitterWindow:    runnerHealthcheckJitterWindow,
+			SignalType:      "runner_healthcheck",
+			SignalExpiresIn: runnerHealthcheckSignalExpiry,
+			SignalTemplate: queuesignal.NewRaw("runner_healthcheck", map[string]any{
+				"runner_id": runnerGroup.Runners[0].ID,
+			}),
+		}); err != nil {
+			return nil, fmt.Errorf("unable to create runner healthcheck emitter: %w", err)
+		}
 	}
 
 	if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {

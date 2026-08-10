@@ -40,7 +40,9 @@ export const TriggerEvents = ({
     onLoadMore={onLoadMore}
     onRetry={onRetry}
     orgId={orgId}
-    eventHref={(event) => `/${orgId}/triggers/${triggerId}/events/${event?.id}`}
+    eventHref={(event) =>
+      `/${orgId}/settings/triggers/${triggerId}/events/${event?.id}`
+    }
     filters={
       <div className="grid gap-3 md:grid-cols-3">
         <Input
@@ -55,7 +57,7 @@ export const TriggerEvents = ({
           id="event-trigger-event-type"
           labelProps={{ labelText: 'Event type' }}
           value={filters.eventType}
-          onChange={(e) => onFilterChange('event_type', e.target.value)}
+          onChange={(value) => onFilterChange('event_type', value)}
           options={[
             { value: '', label: 'All event types' },
             ...eventTypes.flatMap((facet) =>
@@ -74,7 +76,7 @@ export const TriggerEvents = ({
           id="event-trigger-event-outcome"
           labelProps={{ labelText: 'Outcome' }}
           value={filters.outcome}
-          onChange={(e) => onFilterChange('outcome', e.target.value)}
+          onChange={(value) => onFilterChange('outcome', value)}
           options={[
             { value: '', label: 'All outcomes' },
             { value: 'ok', label: 'Ok' },
