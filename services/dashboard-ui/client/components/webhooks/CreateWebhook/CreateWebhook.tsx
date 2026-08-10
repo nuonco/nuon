@@ -1,7 +1,7 @@
 import { useForm, useStore } from '@tanstack/react-form'
-import { Banner } from '@/components/common/Banner'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormInput } from '@/components/common/form/FormInput'
 import { allEvents, type Interests } from '@/components/interests'
 import { FormInterestsPicker } from '@/components/interests/FormInterestsPicker'
@@ -77,11 +77,7 @@ export const CreateWebhookModal = ({
       {...props}
     >
       <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to create webhook'}
-          </Banner>
-        ) : null}
+        <FormErrorBanner error={error} fallback="Unable to create webhook" />
 
         <Text variant="body" theme="neutral">
           Receive workflow and workflow step lifecycle events for this org as

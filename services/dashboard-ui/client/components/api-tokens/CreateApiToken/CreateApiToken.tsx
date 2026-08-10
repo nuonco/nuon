@@ -3,6 +3,7 @@ import { Banner } from '@/components/common/Banner'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormInput } from '@/components/common/form/FormInput'
 import { FormSelect } from '@/components/common/form/FormSelect'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -106,11 +107,7 @@ export const CreateApiTokenModal = ({
       {...props}
     >
       <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to create API token'}
-          </Banner>
-        ) : null}
+        <FormErrorBanner error={error} fallback="Unable to create API token" />
 
         <form.Field name="name">
           {(field) => (

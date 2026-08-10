@@ -3,6 +3,7 @@ import { useForm, useStore } from '@tanstack/react-form'
 import { Banner } from '@/components/common/Banner'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { Label } from '@/components/common/form/Label'
 import { Select } from '@/components/common/form/Select'
 import { allEvents, type Interests } from '@/components/interests'
@@ -131,11 +132,7 @@ export const CreateChannelSubscriptionModal = ({
       {...props}
     >
       <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to subscribe channel'}
-          </Banner>
-        ) : null}
+        <FormErrorBanner error={error} fallback="Unable to subscribe channel" />
 
         {installations.length === 0 ? (
           <Banner theme="warn">
