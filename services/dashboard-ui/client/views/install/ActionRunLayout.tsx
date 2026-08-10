@@ -1,6 +1,7 @@
 import { Outlet, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { InstallActionRunHeader } from '@/components/actions/InstallActionRunHeader'
+import { CompositeError } from '@/components/common/CompositeError'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { TabNav } from '@/components/navigation/TabNav'
@@ -69,6 +70,9 @@ const ActionRunLayoutInner = () => {
         actionName={actionName ?? ''}
         workflow={workflow}
       />
+      {installActionRun?.composite_error ? (
+        <CompositeError error={installActionRun.composite_error} />
+      ) : null}
       <TabNav
         basePath={basePath}
         tabs={[
