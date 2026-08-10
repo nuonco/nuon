@@ -83,7 +83,7 @@ var SubOps = map[ResourceKind][]string{
 	ResourceStacks:                {"version_active", "stack_run", "role_change", "inputs_updated"},
 	ResourceComponents:            {"deploy", "teardown"},
 	ResourceSandboxes:             {"provision", "reprovision", "deprovision"},
-	ResourceInstallConfigurations: {"inputs", "secrets"},
+	ResourceInstallConfigurations: {"inputs", "secrets", "sync"},
 	ResourceRunners:               {"provision", "reprovision", "inactive", "unhealthy"},
 	ResourceActions:               {"run"},
 	ResourceAppBranches:           {"run"},

@@ -24,6 +24,42 @@ type MatchingInstallSyncApp struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 2m
 func (a *Activities) FindMatchingInstallSyncApps(ctx context.Context, req FindMatchingInstallSyncAppsRequest) ([]MatchingInstallSyncApp, error) {
+	enabled, err := a.featuresClient.OrgHasFeature(ctx, req.OrgID, app.OrgFeatureAppInstallSyncing)
+	if err != nil {
+		return nil, fmt.Errorf("unable to check install syncing feature: %w", err)
+	}
+	if !enabled {
+		return nil, nil
+	}
+
+	matches, err := a.findMatchesFromInstallsConfig(ctx, req)
+	if err == nil && len(matches) > 0 {
+		return matches, nil
+	}
+
+	return a.findMatchesFromAppConfigBlobs(ctx, req)
+}
+
+func (a *Activities) findMatchesFromInstallsConfig(ctx context.Context, req FindMatchingInstallSyncAppsRequest) ([]MatchingInstallSyncApp, error) {
+	var configs []app.AppInstallsConfig
+	err := a.db.WithContext(ctx).
+		Raw(`SELECT DISTINCT ON (app_id) * FROM app_installs_configs
+			WHERE org_id = ? AND repo = ? AND branch = ? AND deleted_at = 0
+			ORDER BY app_id, created_at DESC`, req.OrgID, req.Repo, req.Branch).
+		Scan(&configs).Error
+	if err != nil {
+		return nil, fmt.Errorf("unable to query app installs configs: %w", err)
+	}
+
+	var matches []MatchingInstallSyncApp
+	for _, cfg := range configs {
+		matches = append(matches, MatchingInstallSyncApp{AppID: cfg.AppID})
+	}
+
+	return matches, nil
+}
+
+func (a *Activities) findMatchesFromAppConfigBlobs(ctx context.Context, req FindMatchingInstallSyncAppsRequest) ([]MatchingInstallSyncApp, error) {
 	var apps []app.App
 	if err := a.db.WithContext(ctx).
 		Where(app.App{OrgID: req.OrgID}).

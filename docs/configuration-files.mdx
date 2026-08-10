@@ -369,3 +369,25 @@ approval_option = "prompt" # set this to "approve-all" to enable auto approval
 	All input values should be defined as strings. They will be parsed into the
 	correct type by Nuon.
 </Note>
+
+### Install Config Syncing
+
+You can connect install config files to a Git repository using an `installs.toml` file or the `[installs_config]` section in your app config. When connected, a push to that repo updates every install to match, and a config file naming an install that does not exist yet proposes creating it for approval.
+
+```toml installs.toml
+[connected_repo]
+repo = "org/repo"
+branch = "main"
+directory = "installs"
+```
+
+Or in your app config:
+
+```toml nuon.toml
+[installs_config.connected_repo]
+repo = "org/repo"
+branch = "main"
+directory = "installs"
+```
+
+For the full property list, see the [Installs Config reference](/config-ref/installs-config). See [Syncing Install Configs from Git](/guides/install-config-syncing) for the full guide.

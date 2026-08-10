@@ -18,6 +18,7 @@ function getApprovalPlanSkeleton(planType: TApprovalType): ReactNode {
     terraform_plan: <TerraformPlanSkeleton />,
     pulumi_plan: <Skeleton height="350px" width="100%" />,
     app_branch_plan: <Skeleton height="200px" width="100%" />,
+    install_creation: <Skeleton height="200px" width="100%" />,
   }
   return diffSkeletons[planType]
 }
@@ -29,6 +30,7 @@ function getApprovalPlanDiff(step: TWorkflowStep, plan: any): ReactNode {
     terraform_plan: <TerraformDiff plan={plan} />,
     pulumi_plan: <PulumiDiff plan={plan} />,
     app_branch_plan: null,
+    install_creation: null,
   }
   return diffs[step?.approval?.type]
 }

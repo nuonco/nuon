@@ -526,7 +526,7 @@ func NewInstallRunbookRunID() string {
 }
 
 func NewAppInstallConfigSyncID() string {
-	return shortid.NewNanoID("aics")
+	return shortid.NewNanoID("ais")
 }
 
 func NewInstallConfigSyncID() string {
@@ -535,6 +535,14 @@ func NewInstallConfigSyncID() string {
 
 func NewInstallConfigVersionID() string {
 	return shortid.NewNanoID("icv")
+}
+
+func NewAppInstallsConfigID() string {
+	return shortid.NewNanoID("aic")
+}
+
+func NewInstallCreationApprovalID() string {
+	return shortid.NewNanoID("ica")
 }
 
 func NewDLQRecordID() string {
