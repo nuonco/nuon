@@ -50,8 +50,10 @@ const (
 	// Component health emits one CloudEvent type per level; `transition`
 	// distinguishes going bad from recovering, the way the approval event uses
 	// requested / approved / rejected.
-	cloudEventTypeComponentHealth = "com.nuon.component.health.v1"
-	cloudEventTypeInstallHealth   = "com.nuon.install.health.v1"
+	cloudEventTypeComponentHealth   = "com.nuon.component.health.v1"
+	cloudEventTypeInstallHealth     = "com.nuon.install.health.v1"
+	cloudEventTypeInstallSync       = "com.nuon.app.install_sync.v1"
+	cloudEventTypeInstallConfigSync = "com.nuon.install.config_sync.v1"
 
 	kindWorkflow             = "workflow"
 	kindWorkflowStep         = "workflow_step"
@@ -64,6 +66,8 @@ const (
 	kindRunnerUnhealthy      = "runner_unhealthy"
 	kindComponentHealth      = "component_health"
 	kindInstallHealth        = "install_health"
+	kindInstallSync          = "install_sync"
+	kindInstallConfigSync    = "install_config_sync"
 )
 
 // Status values surfaced to webhook consumers in the *.lifecycle events.
@@ -144,6 +148,9 @@ const (
 	signalTypeComponentUnhealthy signal.SignalType = "component-unhealthy"
 	signalTypeComponentRecovered signal.SignalType = "component-recovered"
 	signalTypeInstallDegraded    signal.SignalType = "install-degraded"
+
+	signalTypeSyncInstalls      signal.SignalType = "sync-installs"
+	signalTypeInstallConfigSync signal.SignalType = "install-config-sync"
 )
 
 // approvalPlanExcerptMaxBytes caps the size of the plan excerpt embedded in
@@ -292,7 +299,9 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 		signalTypeComponentUnhealthy,
 		signalTypeComponentRecovered,
 		signalTypeInstallDegraded,
-		signalTypeRunnerUnhealthy:
+		signalTypeRunnerUnhealthy,
+		signalTypeSyncInstalls,
+		signalTypeInstallConfigSync:
 		return true
 	default:
 		return false
@@ -331,7 +340,8 @@ func isNotificationOnlySignalType(t signal.SignalType) bool {
 	switch t {
 	case signalTypeDriftDetected, signalTypeStackRun, signalTypeRoleChange, signalTypeInputsUpdated, signalTypeAppConfigSynced, signalTypeUpdateAppConfig,
 		signalTypeRunnerUnhealthy,
-		signalTypeComponentUnhealthy, signalTypeComponentRecovered, signalTypeInstallDegraded:
+		signalTypeComponentUnhealthy, signalTypeComponentRecovered, signalTypeInstallDegraded,
+		signalTypeSyncInstalls, signalTypeInstallConfigSync:
 		return true
 	}
 	return false
@@ -645,6 +655,10 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		ceType = cloudEventTypeComponentHealth
 	case kindInstallHealth:
 		ceType = cloudEventTypeInstallHealth
+	case kindInstallSync:
+		ceType = cloudEventTypeInstallSync
+	case kindInstallConfigSync:
+		ceType = cloudEventTypeInstallConfigSync
 	}
 	// Awaiting-retry shares kind=workflow_step with the normal step
 	// lifecycle but gets its own CloudEvent type so consumers can route the
@@ -774,6 +788,8 @@ func (h *WebhookSignalLifecycleHook) buildEventDataForSignal(ctx context.Context
 		return h.buildRunnerUnhealthyEventData(event, outcome)
 	case signalTypeComponentUnhealthy, signalTypeComponentRecovered, signalTypeInstallDegraded:
 		return h.buildComponentHealthEventData(event, outcome)
+	case signalTypeSyncInstalls, signalTypeInstallConfigSync:
+		return h.buildInstallSyncEventData(event, outcome)
 	}
 
 	if event.WorkflowID == "" {
@@ -915,6 +931,30 @@ func (h *WebhookSignalLifecycleHook) buildAppConfigSyncedEventData(_ context.Con
 	transition := mapTransition(event, outcome)
 	data := lifecycleEventData{
 		Kind:       kindAppConfigSynced,
+		Transition: transition,
+		OrgID:      event.OrgID,
+		OrgName:    event.OrgName,
+		Workflow: workflowRef{
+			OwnerID:   event.OwnerID,
+			OwnerType: event.OwnerType,
+			OwnerName: event.OwnerName,
+		},
+		Metadata: event.Metadata,
+	}
+	if outcome != nil {
+		data.Outcome = h.buildOutcome(event, outcome)
+	}
+	return data, true
+}
+
+func (h *WebhookSignalLifecycleHook) buildInstallSyncEventData(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
+	kind := kindInstallSync
+	if event.SignalType == signalTypeInstallConfigSync {
+		kind = kindInstallConfigSync
+	}
+	transition := mapTransition(event, outcome)
+	data := lifecycleEventData{
+		Kind:       kind,
 		Transition: transition,
 		OrgID:      event.OrgID,
 		OrgName:    event.OrgName,

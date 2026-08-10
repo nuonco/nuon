@@ -105,6 +105,11 @@ func (s *stepGroup) appBranchSignalStep(ctx workflow.Context, appBranchID, name 
 	return s.signalStep(ctx, appBranchID, "app_branches", name, metadata, sig, opts...)
 }
 
+// appSignalStep creates a WorkflowStep owned by an app
+func (s *stepGroup) appSignalStep(ctx workflow.Context, appID, name string, metadata pgtype.Hstore, sig signal.Signal, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
+	return s.signalStep(ctx, appID, "apps", name, metadata, sig, opts...)
+}
+
 // newSignalStep creates a workflow step from a signal with configurable owner type
 func newSignalStep(ctx workflow.Context, ownerID, ownerType, name string, metadata pgtype.Hstore, sig signal.Signal, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
 	if sig == nil {
