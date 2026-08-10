@@ -26,6 +26,7 @@ func appGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
 		app.WorkflowTypeAppConfigBuild:              appworkflows.AppConfigBuild,
 		app.WorkflowTypeAppBranchesRun:              appworkflows.AppBranchRun,
 		app.WorkflowTypeAppBranchesConfigRepoUpdate: appworkflows.AppBranchUpdate,
+		app.WorkflowTypeAppInstallSync:              appworkflows.AppInstallSync,
 	}
 }
 
