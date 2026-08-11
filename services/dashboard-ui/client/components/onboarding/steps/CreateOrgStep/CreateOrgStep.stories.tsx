@@ -2,7 +2,6 @@ export default {
   title: 'Onboarding/V1 Steps/CreateOrgStep',
 }
 
-import { useState } from 'react'
 import { CreateOrgStep, CompletedOrgCard } from './CreateOrgStep'
 import type { TOrg } from '@/types'
 
@@ -12,24 +11,19 @@ const mockOrg = {
   status: 'active',
 } as TOrg
 
-const InteractiveCreateOrgStep = () => {
-  const [orgName, setOrgName] = useState('')
-  return (
-    <CreateOrgStep
-      onAdvance={() => alert('Advancing to next step')}
-      nextStepTitle="Set up your app"
-      createdOrg={null}
-      isPending={false}
-      error={null}
-      onCreateOrg={(name) => alert(`Creating org: ${name}`)}
-      onGenerateName={() => setOrgName('random-generated-name')}
-      orgName={orgName}
-      onOrgNameChange={setOrgName}
-    />
-  )
-}
+const generateName = () => Promise.resolve('random-generated-name')
 
-export const Default = () => <InteractiveCreateOrgStep />
+export const Default = () => (
+  <CreateOrgStep
+    onAdvance={() => alert('Advancing to next step')}
+    nextStepTitle="Set up your app"
+    createdOrg={null}
+    isPending={false}
+    error={null}
+    onCreateOrg={(name) => alert(`Creating org: ${name}`)}
+    onGenerateName={generateName}
+  />
+)
 
 export const Pending = () => (
   <CreateOrgStep
@@ -39,9 +33,7 @@ export const Pending = () => (
     isPending={true}
     error={null}
     onCreateOrg={() => {}}
-    onGenerateName={() => {}}
-    orgName=""
-    onOrgNameChange={() => {}}
+    onGenerateName={generateName}
   />
 )
 
@@ -51,11 +43,13 @@ export const WithError = () => (
     nextStepTitle="Set up your app"
     createdOrg={null}
     isPending={false}
-    error={{ error: 'Organization name already taken.' }}
+    error={{
+      error: 'Organization name already taken.',
+      description: '',
+      user_error: true,
+    }}
     onCreateOrg={() => {}}
-    onGenerateName={() => {}}
-    orgName="taken-name"
-    onOrgNameChange={() => {}}
+    onGenerateName={generateName}
   />
 )
 
@@ -67,9 +61,7 @@ export const Created = () => (
     isPending={false}
     error={null}
     onCreateOrg={() => {}}
-    onGenerateName={() => {}}
-    orgName=""
-    onOrgNameChange={() => {}}
+    onGenerateName={generateName}
   />
 )
 

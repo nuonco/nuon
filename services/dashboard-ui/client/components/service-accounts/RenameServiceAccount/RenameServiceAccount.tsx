@@ -1,11 +1,14 @@
-import { useState } from 'react'
-import { Banner } from '@/components/common/Banner'
+import { useForm, useStore } from '@tanstack/react-form'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Input } from '@/components/common/form/Input'
-import { Label } from '@/components/common/form/Label'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { FormInput } from '@/components/common/form/FormInput'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
+import {
+  renameServiceAccountSchema,
+  type RenameServiceAccountValues,
+} from './schema'
 
 export const RenameServiceAccountModal = ({
   accountIdentity,
@@ -21,7 +24,17 @@ export const RenameServiceAccountModal = ({
   error: TAPIError | null
   onSubmit: (params: { name: string }) => void
 } & Omit<IModal, 'onSubmit'>) => {
-  const [name, setName] = useState(currentName)
+  const form = useForm({
+    defaultValues: { name: currentName } as RenameServiceAccountValues,
+    validators: {
+      onMount: renameServiceAccountSchema,
+      onChange: renameServiceAccountSchema,
+    },
+    onSubmit: ({ value }) => onSubmit({ name: value.name.trim() }),
+  })
+
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
+  const name = useStore(form.store, (s) => s.values.name)
 
   return (
     <Modal
@@ -34,40 +47,45 @@ export const RenameServiceAccountModal = ({
       primaryActionTrigger={{
         children: isPending ? (
           <span className="flex items-center gap-2">
-            <Icon variant="Loading" /> Saving...
+            <Icon variant="Loading" /> Saving
           </span>
         ) : (
           'Save'
         ),
-        disabled: !name || isPending || name === currentName,
-        onClick: () => onSubmit({ name }),
+        disabled: !canSubmit || isPending || name === currentName,
+        onClick: () => form.handleSubmit(),
         variant: 'primary',
       }}
       {...props}
     >
-      <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to rename service account'}
-          </Banner>
-        ) : null}
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-6"
+      >
+        <FormErrorBanner
+          error={error}
+          fallback="Unable to rename service account"
+        />
 
         <Text>
           Rename <strong>{accountIdentity}</strong>.
         </Text>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="service-account-rename">Name</Label>
-          <Input
-            id="service-account-rename"
-            placeholder="e.g. ci-deploy"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
-      </div>
+        <form.Field name="name">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="service-account-rename"
+              type="text"
+              placeholder="e.g. ci-deploy"
+              disabled={isPending}
+              labelProps={{ labelText: 'Name' }}
+            />
+          )}
+        </form.Field>
+      </form>
     </Modal>
   )
 }

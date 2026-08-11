@@ -83,7 +83,7 @@ export const WithError = () => (
   <ModalStory label="Edit stack overrides (error)">
     <EditStackOverridesModal
       isPending={false}
-      error={{ error: 'vpc_nested_template_url must be an S3 URL' }}
+      error={{ error: 'vpc_nested_template_url must be an S3 URL', description: '', user_error: true }}
       currentVpcUrl="https://example.com/not-s3.yaml"
       currentRunnerUrl=""
       currentCustomStacks={[]}

@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { runAction } from '@/lib'
 import { trackEvent } from '@/lib/segment-analytics'
-import type { TAction } from '@/types'
+import type { TAction, TAPIError } from '@/types'
 import { InstallActionManualRunModal } from './InstallActionManualRun'
 
 interface IInstallActionManualRunModalContainer extends Omit<IModal, 'heading'> {
@@ -39,7 +39,7 @@ export const InstallActionManualRunModalContainer = ({
   const { addToast } = useToast()
   const [selectedRole, setSelectedRole] = useState<string>('')
 
-  const { isPending: isLoading, mutate } = useMutation({
+  const { isPending: isLoading, error, mutate } = useMutation({
     mutationFn: (body: Parameters<typeof runAction>[0]['body'] & { role?: string }) =>
       runAction({ body, installId: install.id, orgId: org.id }),
     onSuccess: (result) => {
@@ -66,7 +66,7 @@ export const InstallActionManualRunModalContainer = ({
         navigate(`/${org.id}/installs/${install.id}/workflows`)
       }
     },
-    onError: (err: any) => {
+    onError: (err: TAPIError) => {
       trackEvent({
         event: 'action_run',
         user,
@@ -78,29 +78,24 @@ export const InstallActionManualRunModalContainer = ({
           err: err?.error,
         },
       })
-      addToast(
-        <Toast heading="Action run failed" theme="error">
-          <Text>{err?.error || `Unable to run ${action?.name}.`}</Text>
-        </Toast>
-      )
     },
   })
 
-  const handleSubmit = (vars: Record<string, string>, role: string) => {
+  const handleSubmit = (vars: Record<string, string>) => {
     mutate({
       action_workflow_config_id: actionConfigId,
       ...(vars && Object.keys(vars)?.length > 0 && { run_env_vars: vars }),
-      ...(role && { role }),
+      ...(selectedRole && { role: selectedRole }),
     })
   }
 
   return (
     <InstallActionManualRunModal
       action={action}
-      actionConfigId={actionConfigId}
       isRerun={isRerun}
       runEnvVars={runEnvVars}
       isLoading={isLoading}
+      error={error}
       onSubmit={handleSubmit}
       roleSelector={
         <RoleSelector

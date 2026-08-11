@@ -40,7 +40,7 @@ export const WithError = () => (
     <EditLabelsModal
       labels={{ env: 'staging' }}
       isPending={false}
-      error={{ error: 'Something went wrong' }}
+      error={{ error: 'Something went wrong', description: '', user_error: true }}
       onSubmit={noop}
     />
   </ModalStory>
