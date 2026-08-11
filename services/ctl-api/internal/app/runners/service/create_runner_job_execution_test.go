@@ -22,6 +22,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -183,12 +184,23 @@ func (s *CreateRunnerJobExecutionTestSuite) TestCreateRunnerJobExecution() {
 					AvailableTimeout:  60,
 					ExecutionTimeout:  300,
 					MaxExecutions:     3,
-					ExecutionCount:    3,
 				}
 				err := s.service.DB.WithContext(ctx).Create(job).Error
 				require.NoError(s.T(), err)
 
+				executions := make([]app.RunnerJobExecution, job.MaxExecutions)
+				for i := range executions {
+					executions[i] = app.RunnerJobExecution{
+						ID:          domains.NewRunnerID(),
+						OrgID:       s.testOrg.ID,
+						RunnerJobID: job.ID,
+						Status:      app.RunnerJobExecutionStatusFailed,
+					}
+					require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(&executions[i]).Error)
+				}
+
 				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Where(app.RunnerJobExecution{RunnerJobID: job.ID}).Delete(&app.RunnerJobExecution{})
 					s.service.DB.Unscoped().Delete(job)
 				})
 
@@ -196,6 +208,17 @@ func (s *CreateRunnerJobExecutionTestSuite) TestCreateRunnerJobExecution() {
 			},
 			expectedCode:     http.StatusInternalServerError,
 			expectedNotFound: true,
+			validateFunc: func(jobID string) {
+				var job app.RunnerJob
+				require.NoError(s.T(), s.service.DB.First(&job, "id = ?", jobID).Error)
+				assert.Equal(s.T(), app.RunnerJobStatusCancelled, job.Status)
+				require.NotNil(s.T(), job.CompositeError)
+				assert.Equal(s.T(), joberrors.CancellationErrorType, job.CompositeError.Type)
+
+				var cancellationError joberrors.CancellationError
+				require.NoError(s.T(), json.Unmarshal(job.CompositeError.Data, &cancellationError))
+				assert.Equal(s.T(), joberrors.CancellationReasonAttemptsExhausted, cancellationError.Reason)
+			},
 		},
 	}
 
@@ -211,7 +234,8 @@ func (s *CreateRunnerJobExecutionTestSuite) TestCreateRunnerJobExecution() {
 
 			if tc.expectedNotFound {
 				assert.Contains(s.T(), rr.Body.String(), "error")
-			} else if tc.validateFunc != nil {
+			}
+			if tc.validateFunc != nil {
 				tc.validateFunc(jobID)
 			}
 		})
