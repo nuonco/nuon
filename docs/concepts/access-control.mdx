@@ -1,0 +1,40 @@
+---
+title: "Access Control"
+icon: "shield-halved"
+description: "How to control what team members and service accounts can do in your Nuon org."
+keywords: ["roles", "RBAC", "access control", "permissions", "org admin", "read-only", "team", "service account", "API token", "OIDC"]
+---
+
+Every identity in your Nuon org — whether a team member or a [service account](/concepts/service-accounts) — must be assigned a **role**. The role determines what that identity can read and change in the org.
+
+Roles are org-scoped: a role assigned in one org grants no access in any other org.
+
+## Available roles
+
+| Role | Value | Grants |
+| --- | --- | --- |
+| **Admin** | `org_admin` | Full access to the org and everything in it, including team and credential management. |
+| **Read-only** | `org_read_only` | Read-only access to everything in the org; cannot make changes. |
+
+## Assigning roles
+
+The same role set applies everywhere an identity is created. You choose a role when you:
+
+- [Invite a team member](/guides/team-management) — or change an existing member's role
+- Create a [service account](/concepts/service-accounts)
+- Create an [API token](/concepts/api-tokens)
+- Create an [OIDC trust policy](/concepts/oidc-federation)
+
+[API tokens](/concepts/api-tokens) and [OIDC trust policies](/concepts/oidc-federation) are each backed by a dedicated [service account](/concepts/service-accounts) that carries the role — so a token or an exchanged token acts as that service account, with exactly the access its role grants.
+
+<Note>
+An identity holds one role at a time; assigning a new role replaces the old one.
+</Note>
+
+## Permission errors
+
+When an identity attempts something its role does not allow, Nuon returns a message describing the access the action requires and the role you currently hold — for example, "this action requires write access to installs in this organization." Ask an org admin to assign a role that grants the needed access.
+
+## Reserved roles
+
+The **Runner** role is reserved for the machine accounts Nuon provisions for your runners. It is assigned automatically and is never user-selectable.
