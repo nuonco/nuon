@@ -52,7 +52,7 @@ type AppSandboxBuild struct {
 	Status            AppSandboxBuildStatus               `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                              `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 	StatusV2          CompositeStatus                     `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
-	CompositeError    *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"-" swaggertype:"object" temporaljson:"-"`
+	CompositeError    *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"-" temporaljson:"-"`
 }
 
 func (a *AppSandboxBuild) Indexes(db *gorm.DB) []migrations.Index {
