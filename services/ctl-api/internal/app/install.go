@@ -150,6 +150,10 @@ type Install struct {
 	DriftedObjects                   []DriftedObject              `json:"drifted_objects,omitzero" gorm:"-" temporaljson:"drifted_objects,omitzero,omitempty"`
 	Links                            map[string]any               `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
+	// PhoneHomeAuthStatus can take the phone_home_auth JSON name precisely because the
+	// column itself never serializes.
+	PhoneHomeAuthStatus *PhoneHomeAuthStatus `json:"phone_home_auth,omitzero,omitempty" gorm:"-" temporaljson:"-"`
+
 	// Expected* coalesce the target identifier with the observed one, so callers get
 	// the strongest identifier available without caring which is set.
 	ExpectedAccountID      string `json:"expected_account_id,omitzero" gorm:"-" temporaljson:"expected_account_id,omitzero,omitempty"`
@@ -252,6 +256,7 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	}
 
 	i.setExpectedCloudIdentifiers()
+	i.PhoneHomeAuthStatus = i.PhoneHomeAuth.Status()
 
 	return nil
 }
@@ -511,6 +516,30 @@ type PhoneHomeAuth struct {
 
 	LastVerifiedAt *time.Time `json:"last_verified_at,omitempty"`
 	LastRejectedAt *time.Time `json:"last_rejected_at,omitempty"`
+}
+
+// PhoneHomeAuthStatus is everything about an install's phone-home credentials that is
+// safe to serialize — the timestamps, never the secret's location. LastVerifiedAt and
+// LastRejectedAt are how a consumer tells whether stack outputs may be stale.
+type PhoneHomeAuthStatus struct {
+	// ProvisionedAt is omitzero because recordPhoneHomeAuthResult can create the column
+	// from an empty struct, so a row can carry verification timestamps but no
+	// provisioning one. Serializing that as year 1 would render as a bogus timestamp.
+	ProvisionedAt  time.Time  `json:"provisioned_at,omitzero"`
+	LastVerifiedAt *time.Time `json:"last_verified_at,omitempty"`
+	LastRejectedAt *time.Time `json:"last_rejected_at,omitempty"`
+}
+
+func (p *PhoneHomeAuth) Status() *PhoneHomeAuthStatus {
+	if p == nil {
+		return nil
+	}
+
+	return &PhoneHomeAuthStatus{
+		ProvisionedAt:  p.CreatedAt,
+		LastVerifiedAt: p.LastVerifiedAt,
+		LastRejectedAt: p.LastRejectedAt,
+	}
 }
 
 // Scan implements the database/sql.Scanner interface.

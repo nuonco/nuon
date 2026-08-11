@@ -27,6 +27,7 @@ import { useInstall } from '@/hooks/use-install'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallCurrentInputs } from '@/lib'
+import type { TPhoneHomeAuthStatus } from '@/types'
 import { normalizeAppInputGroups } from '@/utils/app-utils'
 import {
   COMPONENT_OVERRIDE_INPUT_GROUP,
@@ -58,6 +59,15 @@ const CLOUD_METADATA_LABELS: Array<{
   { key: 'target_source', label: 'Target source' },
 ]
 
+const PHONE_HOME_AUTH_LABELS: Array<{
+  key: keyof TPhoneHomeAuthStatus
+  label: string
+}> = [
+  { key: 'provisioned_at', label: 'Provisioned' },
+  { key: 'last_verified_at', label: 'Last verified' },
+  { key: 'last_rejected_at', label: 'Last rejected' },
+]
+
 export const CurrentInputs = () => {
   const { org } = useOrg()
   const { install } = useInstall()
@@ -71,7 +81,7 @@ export const CurrentInputs = () => {
   const hasCloudIdentifier = cloudMetadataRows.some(
     ({ key }) => key !== 'target_source'
   )
-  const phoneHomeAuth = install?.['phone_home_auth']
+  const phoneHomeAuth = install?.phone_home_auth
 
   const { data: inputs, isLoading: inputsLoading } = useQuery({
     queryKey: ['install-inputs', org?.id, install?.id],
@@ -185,39 +195,21 @@ export const CurrentInputs = () => {
             <Text weight="strong">Phone Home Auth</Text>
             {phoneHomeAuth ? (
               <div className="flex flex-wrap gap-6 items-start">
-                <LabeledValue label="Provisioned">
-                  <Time
-                    format="relative"
-                    variant="subtext"
-                    time={phoneHomeAuth.provisioned_at}
-                  />
-                </LabeledValue>
-                <LabeledValue label="Last verified">
-                  {phoneHomeAuth.last_verified_at ? (
-                    <Time
-                      format="relative"
-                      variant="subtext"
-                      time={phoneHomeAuth.last_verified_at}
-                    />
-                  ) : (
-                    <Text variant="subtext" theme="neutral">
-                      —
-                    </Text>
-                  )}
-                </LabeledValue>
-                <LabeledValue label="Last rejected">
-                  {phoneHomeAuth.last_rejected_at ? (
-                    <Time
-                      format="relative"
-                      variant="subtext"
-                      time={phoneHomeAuth.last_rejected_at}
-                    />
-                  ) : (
-                    <Text variant="subtext" theme="neutral">
-                      —
-                    </Text>
-                  )}
-                </LabeledValue>
+                {PHONE_HOME_AUTH_LABELS.map(({ key, label }) => (
+                  <LabeledValue key={key} label={label}>
+                    {phoneHomeAuth[key] ? (
+                      <Time
+                        format="relative"
+                        variant="subtext"
+                        time={phoneHomeAuth[key]}
+                      />
+                    ) : (
+                      <Text variant="subtext" theme="neutral">
+                        —
+                      </Text>
+                    )}
+                  </LabeledValue>
+                ))}
               </div>
             ) : (
               <Text variant="subtext" theme="neutral">
