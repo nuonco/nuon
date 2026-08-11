@@ -439,6 +439,7 @@ func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger) error {
 		Signal: &sandboxbuild.Signal{
 			AppBranchID: s.AppBranchID,
 			RunID:       s.RunID,
+			StepID:      s.StepID,
 		},
 		Callback: cb,
 	})

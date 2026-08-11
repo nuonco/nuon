@@ -1,6 +1,7 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
+import { CompositeError } from '@/components/common/CompositeError'
 import { Duration } from '@/components/common/Duration'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
@@ -15,116 +16,193 @@ import { ComponentType } from '@/components/components/ComponentType'
 import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { getComponentBuilds, getComponents, getSandboxBuilds } from '@/lib'
-import type { TComponentType } from '@/types'
+import {
+  getBranchRunBuilds,
+  getComponentBuild,
+  getComponents,
+  getSandboxBuild,
+} from '@/lib'
+import type {
+  TAppSandboxBuild,
+  TBuild,
+  TComponentBuild,
+  TComponentType,
+} from '@/types'
 import { cacheBadgeTheme } from '../../shared/format'
 
 interface IBuildStep {
   metadata: Record<string, any>
   status?: string
+  appBranchId?: string
   appBranchRunId?: string
 }
 
 const isSandboxBuild = (build: any) =>
   build.component_type === 'sandbox' || build.component_id === 'sandbox'
 
-interface IBuildRowDetail {
-  build: any
-  orgId?: string
-  appId?: string
-  appBranchRunId?: string
+const shouldPollBuildDetail = (detail?: TBuild | TAppSandboxBuild) => {
+  const status = detail?.status_v2?.status || detail?.status
+  return !detail?.composite_error && status !== 'active' && status !== 'success'
 }
 
-const BuildRowDetail = ({ build, orgId, appId, appBranchRunId }: IBuildRowDetail) => {
+interface IBuildRowDetail {
+  detail?: TBuild | TAppSandboxBuild
+  buildHref?: string
+  isLoading?: boolean
+}
+
+export const BuildRowDetail = ({
+  detail,
+  buildHref,
+  isLoading = false,
+}: IBuildRowDetail) => {
+  return (
+    <div className="px-4 py-4 pl-[44px] border-t bg-cool-grey-50/60 dark:bg-dark-grey-800/40">
+      {isLoading ? (
+        <div className="flex items-center gap-2">
+          <Loading size={14} className="text-cool-grey-400" />
+          <Text variant="subtext" theme="neutral">
+            Loading build details…
+          </Text>
+        </div>
+      ) : detail ? (
+        <div className="flex flex-col gap-4">
+          {detail.composite_error ? (
+            <CompositeError error={detail.composite_error} />
+          ) : null}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-wrap items-start gap-x-8 gap-y-3">
+              {detail.created_at && (
+                <LabeledValue label="Started">
+                  <Time
+                    variant="subtext"
+                    time={detail.created_at}
+                    format="relative"
+                  />
+                </LabeledValue>
+              )}
+              {detail.created_at && (
+                <LabeledValue label="Duration">
+                  <Duration
+                    variant="subtext"
+                    beginTime={detail.created_at}
+                    endTime={detail.updated_at}
+                  />
+                </LabeledValue>
+              )}
+              <LabeledValue label="Status">
+                <Text variant="subtext">
+                  {detail.status_v2?.status_human_description ||
+                    detail.status_v2?.status ||
+                    detail.status}
+                </Text>
+              </LabeledValue>
+              {'resolved_tag' in detail && detail.resolved_tag && (
+                <LabeledValue label="Tag">
+                  <Text variant="subtext" family="mono">
+                    {detail.resolved_tag}
+                  </Text>
+                </LabeledValue>
+              )}
+              {'source_digest' in detail && detail.source_digest && (
+                <LabeledValue label="Digest">
+                  <ID className="text-[12px] font-mono">
+                    {detail.source_digest}
+                  </ID>
+                </LabeledValue>
+              )}
+            </div>
+            {buildHref && (
+              <Link href={buildHref} className="text-sm shrink-0">
+                View build
+                <Icon variant="ArrowRightIcon" size={14} />
+              </Link>
+            )}
+          </div>
+        </div>
+      ) : (
+        <Text variant="subtext" theme="neutral">
+          Build details unavailable.
+        </Text>
+      )}
+    </div>
+  )
+}
+
+interface IBuildRowDetailContainer {
+  build: any
+  componentBuild?: TComponentBuild
+  sandboxBuildId?: string
+  orgId?: string
+  appId?: string
+  isExpanded: boolean
+  isLoadingBuilds?: boolean
+}
+
+const BuildRowDetailContainer = ({
+  build,
+  componentBuild,
+  sandboxBuildId,
+  orgId,
+  appId,
+  isExpanded,
+  isLoadingBuilds = false,
+}: IBuildRowDetailContainer) => {
   const isSandbox = isSandboxBuild(build)
   const componentId = build.component_id as string | undefined
 
-  const { data: componentBuildsResult, isLoading: loadingComponent } = useQuery({
-    queryKey: ['component-builds', orgId, componentId, appBranchRunId],
-    queryFn: () => getComponentBuilds({ orgId: orgId!, componentId: componentId!, limit: 20 }),
-    enabled: !isSandbox && !!orgId && !!componentId,
+  const componentBuildQuery = useQuery({
+    queryKey: ['build', orgId, componentId, componentBuild?.id],
+    queryFn: () =>
+      getComponentBuild({
+        orgId: orgId!,
+        componentId: componentId!,
+        buildId: componentBuild!.id!,
+      }),
+    enabled:
+      isExpanded &&
+      !isSandbox &&
+      !!orgId &&
+      !!componentId &&
+      !!componentBuild?.id,
+    refetchInterval: (query) =>
+      isExpanded && shouldPollBuildDetail(query.state.data) ? 5000 : false,
   })
 
-  const { data: sandboxBuildsResult, isLoading: loadingSandbox } = useQuery({
-    queryKey: ['sandbox-builds', orgId, appId],
-    queryFn: () => getSandboxBuilds({ orgId: orgId!, appId: appId!, limit: 20 }),
-    enabled: isSandbox && !!orgId && !!appId,
+  const sandboxBuildQuery = useQuery({
+    queryKey: ['sandbox-build', orgId, appId, sandboxBuildId],
+    queryFn: () =>
+      getSandboxBuild({
+        orgId: orgId!,
+        appId: appId!,
+        buildId: sandboxBuildId!,
+      }),
+    enabled: isExpanded && isSandbox && !!orgId && !!appId && !!sandboxBuildId,
+    refetchInterval: (query) =>
+      isExpanded && shouldPollBuildDetail(query.state.data) ? 5000 : false,
   })
 
-  const componentBuild = useMemo(() => {
-    const list = componentBuildsResult?.data
-    if (!list?.length) return undefined
-    if (appBranchRunId) {
-      const match = list.find((b) => b.app_branch_run_id === appBranchRunId)
-      if (match) return match
-    }
-    return list[0]
-  }, [componentBuildsResult, appBranchRunId])
-
-  const sandboxBuild = sandboxBuildsResult?.data?.at(0)
-
-  const isLoading = isSandbox ? loadingSandbox : loadingComponent
-  const detail = isSandbox ? sandboxBuild : componentBuild
-
+  const detail = isSandbox ? sandboxBuildQuery.data : componentBuildQuery.data
+  const isLoading =
+    isExpanded &&
+    (isSandbox
+      ? !!sandboxBuildId && sandboxBuildQuery.isLoading
+      : isLoadingBuilds ||
+        (!!componentBuild?.id && componentBuildQuery.isLoading))
   const buildHref = isSandbox
-    ? sandboxBuild?.id && orgId && appId
-      ? `/${orgId}/apps/${appId}/sandbox/builds/${sandboxBuild.id}`
+    ? sandboxBuildId && orgId && appId
+      ? `/${orgId}/apps/${appId}/sandbox/builds/${sandboxBuildId}`
       : undefined
     : componentBuild?.id && orgId && appId && componentId
       ? `/${orgId}/apps/${appId}/components/${componentId}/builds/${componentBuild.id}`
       : undefined
 
   return (
-    <div className="px-4 py-4 pl-[44px] border-t bg-cool-grey-50/60 dark:bg-dark-grey-800/40">
-      {isLoading ? (
-        <div className="flex items-center gap-2">
-          <Loading size={14} className="text-cool-grey-400" />
-          <Text variant="subtext" theme="neutral">Loading build details…</Text>
-        </div>
-      ) : detail ? (
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-wrap items-start gap-x-8 gap-y-3">
-            {detail.created_at && (
-              <LabeledValue label="Started">
-                <Time variant="subtext" time={detail.created_at} format="relative" />
-              </LabeledValue>
-            )}
-            {detail.created_at && (
-              <LabeledValue label="Duration">
-                <Duration
-                  variant="subtext"
-                  beginTime={detail.created_at}
-                  endTime={detail.updated_at}
-                />
-              </LabeledValue>
-            )}
-            <LabeledValue label="Status">
-              <Text variant="subtext">
-                {detail.status_v2?.status_human_description || detail.status_v2?.status || detail.status}
-              </Text>
-            </LabeledValue>
-            {componentBuild?.resolved_tag && (
-              <LabeledValue label="Tag">
-                <Text variant="subtext" family="mono">{componentBuild.resolved_tag}</Text>
-              </LabeledValue>
-            )}
-            {componentBuild?.source_digest && (
-              <LabeledValue label="Digest">
-                <ID className="text-[12px] font-mono">{componentBuild.source_digest}</ID>
-              </LabeledValue>
-            )}
-          </div>
-          {buildHref && (
-            <Link href={buildHref} className="text-sm shrink-0">
-              View build
-              <Icon variant="ArrowRightIcon" size={14} />
-            </Link>
-          )}
-        </div>
-      ) : (
-        <Text variant="subtext" theme="neutral">Build details unavailable.</Text>
-      )}
-    </div>
+    <BuildRowDetail
+      detail={detail}
+      buildHref={buildHref}
+      isLoading={isLoading}
+    />
   )
 }
 
@@ -134,22 +212,44 @@ export interface IBuildRow {
   rowId: string
   orgId?: string
   appId?: string
-  appBranchRunId?: string
+  componentBuild?: TComponentBuild
+  sandboxBuildId?: string
+  isLoadingBuilds?: boolean
 }
 
-export const BuildRow = ({ build, type, rowId, orgId, appId, appBranchRunId }: IBuildRow) => {
+export const BuildRow = ({
+  build,
+  type,
+  rowId,
+  orgId,
+  appId,
+  componentBuild,
+  sandboxBuildId,
+  isLoadingBuilds,
+}: IBuildRow) => {
   const isSandbox = isSandboxBuild(build)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   return (
     <Expand
       id={`build-${rowId}`}
       headerClassName="px-4 py-3"
+      onExpandedChange={setIsExpanded}
       heading={
         <div className="flex items-center gap-3 flex-1 min-w-0">
           {isSandbox ? (
-            <Icon variant="TerminalWindowIcon" size={16} className="text-cool-grey-500 dark:text-cool-grey-400 shrink-0" />
+            <Icon
+              variant="TerminalWindowIcon"
+              size={16}
+              className="text-cool-grey-500 dark:text-cool-grey-400 shrink-0"
+            />
           ) : type ? (
-            <ComponentType type={type} displayVariant="icon-only" colorVariant="color" iconSize="16" />
+            <ComponentType
+              type={type}
+              displayVariant="icon-only"
+              colorVariant="color"
+              iconSize="16"
+            />
           ) : null}
 
           <Text variant="body" weight="strong" nowrap className="truncate">
@@ -164,23 +264,61 @@ export const BuildRow = ({ build, type, rowId, orgId, appId, appBranchRunId }: I
 
           <div className="flex-1" />
 
-          <Status status={build.status || 'pending'} variant="badge" className="shrink-0" />
+          <Status
+            status={build.status || 'pending'}
+            variant="badge"
+            className="shrink-0"
+          />
         </div>
       }
     >
-      <BuildRowDetail build={build} orgId={orgId} appId={appId} appBranchRunId={appBranchRunId} />
+      <BuildRowDetailContainer
+        build={build}
+        componentBuild={componentBuild}
+        sandboxBuildId={sandboxBuildId}
+        orgId={orgId}
+        appId={appId}
+        isExpanded={isExpanded}
+        isLoadingBuilds={isLoadingBuilds}
+      />
     </Expand>
   )
 }
 
-export const BuildStep = ({ metadata, status, appBranchRunId }: IBuildStep) => {
+export const BuildStep = ({
+  metadata,
+  status,
+  appBranchId,
+  appBranchRunId,
+}: IBuildStep) => {
   const { org } = useOrg()
   const { app } = useApp()
   const builds = (metadata.builds as any[]) || []
+  const sandboxBuildId = metadata.sandbox_build_id as string | undefined
+
+  const { data: branchBuilds, isLoading: isLoadingBuilds } = useQuery({
+    queryKey: [
+      'branch-run-builds',
+      org?.id,
+      app?.id,
+      appBranchId,
+      appBranchRunId,
+    ],
+    queryFn: () =>
+      getBranchRunBuilds({
+        orgId: org!.id,
+        appId: app!.id,
+        branchId: appBranchId!,
+        runId: appBranchRunId!,
+      }),
+    enabled: !!org?.id && !!app?.id && !!appBranchId && !!appBranchRunId,
+    refetchInterval: status === 'in-progress' ? 5000 : false,
+  })
 
   const { data: componentsResult } = useQuery({
     queryKey: ['components', org?.id, app?.id],
-    queryFn: () => getComponents({ orgId: org!.id, appId: app!.id, limit: 100 }),
+    queryFn: () =>
+      getComponents({ orgId: org!.id, appId: app!.id, limit: 100 }),
     enabled: !!org?.id && !!app?.id,
   })
 
@@ -192,9 +330,19 @@ export const BuildStep = ({ metadata, status, appBranchRunId }: IBuildStep) => {
     return map
   }, [componentsResult])
 
+  const componentBuildMap = useMemo(() => {
+    const map = new Map<string, TComponentBuild>()
+    for (const build of branchBuilds || []) {
+      if (build.component_id) map.set(build.component_id, build)
+    }
+    return map
+  }, [branchBuilds])
+
   if (builds.length === 0) {
     return status === 'in-progress' ? (
-      <StepStatePlaceholder variant="loading">Starting component builds</StepStatePlaceholder>
+      <StepStatePlaceholder variant="loading">
+        Starting component builds
+      </StepStatePlaceholder>
     ) : (
       <StepStatePlaceholder variant="pending">
         Waiting to start component builds
@@ -202,15 +350,21 @@ export const BuildStep = ({ metadata, status, appBranchRunId }: IBuildStep) => {
     )
   }
 
-  const succeededCount = builds.filter((b: any) => b.status === 'success' || b.status === 'skipped').length
-  const totalDuration = builds.reduce((acc: number, b: any) => acc + (b.duration || 0), 0)
+  const succeededCount = builds.filter(
+    (b: any) => b.status === 'success' || b.status === 'skipped'
+  ).length
+  const totalDuration = builds.reduce(
+    (acc: number, b: any) => acc + (b.duration || 0),
+    0
+  )
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Text variant="body" theme="neutral">
-            <span className="font-semibold">{builds.length}</span> components built
+            <span className="font-semibold">{builds.length}</span> components
+            built
           </Text>
           <span className="text-[12px] text-cool-grey-400">·</span>
           <Text variant="body" weight="strong" theme="success">
@@ -235,7 +389,9 @@ export const BuildStep = ({ metadata, status, appBranchRunId }: IBuildStep) => {
               rowId={rowId}
               orgId={org?.id}
               appId={app?.id}
-              appBranchRunId={appBranchRunId}
+              componentBuild={componentBuildMap.get(build.component_id)}
+              sandboxBuildId={sandboxBuildId}
+              isLoadingBuilds={isLoadingBuilds}
             />
           )
         })}

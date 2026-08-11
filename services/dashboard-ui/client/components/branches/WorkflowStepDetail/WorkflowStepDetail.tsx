@@ -18,19 +18,33 @@ import { PostDeployRunbooksStep } from './steps/PostDeployRunbooksStep'
 
 interface IWorkflowStepDetail {
   step: TInstallWorkflowStep
+  appBranchId?: string
   appBranchRunId?: string
   onClose: () => void
 }
 
-export const WorkflowStepDetail = ({ step, appBranchRunId, onClose: _onClose }: IWorkflowStepDetail) => {
+export const WorkflowStepDetail = ({
+  step,
+  appBranchId,
+  appBranchRunId,
+  onClose: _onClose,
+}: IWorkflowStepDetail) => {
   const metadata = step.status?.metadata || {}
 
   const isCommitStep = step.name?.toLowerCase().includes('commit')
   const isBuildStep = step.name?.toLowerCase().includes('build')
-  const isConfigStep = step.name?.toLowerCase().includes('config') && !step.name?.toLowerCase().includes('diff')
-  const isPlanGroupStep = step.name?.toLowerCase().includes('plan install group')
-  const isDeployGroupStep = step.name?.toLowerCase().includes('deploy install group')
-  const isPostDeployRunbooksStep = step.name?.toLowerCase().includes('post-deploy runbooks')
+  const isConfigStep =
+    step.name?.toLowerCase().includes('config') &&
+    !step.name?.toLowerCase().includes('diff')
+  const isPlanGroupStep = step.name
+    ?.toLowerCase()
+    .includes('plan install group')
+  const isDeployGroupStep = step.name
+    ?.toLowerCase()
+    .includes('deploy install group')
+  const isPostDeployRunbooksStep = step.name
+    ?.toLowerCase()
+    .includes('post-deploy runbooks')
 
   const isInProgress = step.status?.status === 'in-progress'
   const duration = formatDuration(step.execution_time)
@@ -51,10 +65,20 @@ export const WorkflowStepDetail = ({ step, appBranchRunId, onClose: _onClose }: 
     >
       <div className="flex items-center gap-3 px-5 py-4 border-b">
         <DetailStatusIcon status={step.status?.status} />
-        <Text variant="subtext" family="mono" theme="neutral" className="shrink-0">
+        <Text
+          variant="subtext"
+          family="mono"
+          theme="neutral"
+          className="shrink-0"
+        >
           {stepIndexStr}
         </Text>
-        <Text as="h2" variant="h3" weight="strong" className="leading-tight flex-none">
+        <Text
+          as="h2"
+          variant="h3"
+          weight="strong"
+          className="leading-tight flex-none"
+        >
           {step.name || 'Step details'}
         </Text>
         {step.group_idx !== undefined && (
@@ -62,12 +86,18 @@ export const WorkflowStepDetail = ({ step, appBranchRunId, onClose: _onClose }: 
             GROUP {step.group_idx}
           </Badge>
         )}
-        <Status status={step.status?.status || 'pending'} variant="badge" className="shrink-0" />
+        <Status
+          status={step.status?.status || 'pending'}
+          variant="badge"
+          className="shrink-0"
+        />
         <div className="flex-1" />
         {duration && (
           <div className="flex items-center gap-1.5 text-cool-grey-400 dark:text-cool-grey-500 shrink-0">
             <Icon variant="ClockIcon" size={13} />
-            <Text variant="subtext" family="mono" theme="neutral">{duration}</Text>
+            <Text variant="subtext" family="mono" theme="neutral">
+              {duration}
+            </Text>
           </div>
         )}
       </div>
@@ -95,21 +125,47 @@ export const WorkflowStepDetail = ({ step, appBranchRunId, onClose: _onClose }: 
 
       <div className="p-5 flex flex-col gap-4">
         {isCommitStep && <CommitStep metadata={metadata} />}
-        {isConfigStep && <ConfigStep metadata={metadata} status={step.status?.status} statusDescription={step.status?.status_human_description} />}
-        {isBuildStep && <BuildStep metadata={metadata} status={step.status?.status} appBranchRunId={appBranchRunId} />}
-        {isPlanGroupStep && <PlanGroupStep step={step} metadata={metadata} />}
-        {isDeployGroupStep && <DeployGroupStep step={step} metadata={metadata} />}
-        {isPostDeployRunbooksStep && <PostDeployRunbooksStep step={step} metadata={metadata} />}
-
-        {!isCommitStep && !isBuildStep && !isConfigStep && !isPlanGroupStep && !isDeployGroupStep && !isPostDeployRunbooksStep && step.status?.status_human_description && (
-          <div className="p-3 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
-            <Text variant="base">{step.status.status_human_description}</Text>
-          </div>
+        {isConfigStep && (
+          <ConfigStep
+            metadata={metadata}
+            status={step.status?.status}
+            statusDescription={step.status?.status_human_description}
+          />
         )}
+        {isBuildStep && (
+          <BuildStep
+            metadata={metadata}
+            status={step.status?.status}
+            appBranchId={appBranchId}
+            appBranchRunId={appBranchRunId}
+          />
+        )}
+        {isPlanGroupStep && <PlanGroupStep step={step} metadata={metadata} />}
+        {isDeployGroupStep && (
+          <DeployGroupStep step={step} metadata={metadata} />
+        )}
+        {isPostDeployRunbooksStep && (
+          <PostDeployRunbooksStep step={step} metadata={metadata} />
+        )}
+
+        {!isCommitStep &&
+          !isBuildStep &&
+          !isConfigStep &&
+          !isPlanGroupStep &&
+          !isDeployGroupStep &&
+          !isPostDeployRunbooksStep &&
+          step.status?.status_human_description && (
+            <div className="p-3 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
+              <Text variant="base">{step.status.status_human_description}</Text>
+            </div>
+          )}
 
         {step.install_workflow_id && (
           <div className="flex items-center gap-4 pt-3 border-t">
-            <AdminDashboardLink path={`/workflows/${step.install_workflow_id}`} label="admin panel" />
+            <AdminDashboardLink
+              path={`/workflows/${step.install_workflow_id}`}
+              label="admin panel"
+            />
           </div>
         )}
       </div>
