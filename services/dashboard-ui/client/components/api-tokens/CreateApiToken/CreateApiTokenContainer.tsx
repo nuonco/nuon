@@ -16,7 +16,7 @@ const CreateApiTokenModalContainer = (props: Record<string, any>) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
-  const { roleOptions } = useRoleOptions('api_token')
+  const { roleOptions, isLoading } = useRoleOptions('api_token')
   const [createdToken, setCreatedToken] = useState<string | null>(null)
 
   const { mutate, isPending, error } = useMutation({
@@ -46,6 +46,7 @@ const CreateApiTokenModalContainer = (props: Record<string, any>) => {
       error={error}
       createdToken={createdToken}
       roleOptions={roleOptions}
+      rolesLoading={isLoading}
       onSubmit={({ name, duration, role }) => mutate({ name, duration, role })}
       onDone={() => removeModal(props.modalId)}
       {...props}

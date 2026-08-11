@@ -2,7 +2,9 @@ import { useForm, useStore } from '@tanstack/react-form'
 import { Banner } from '@/components/common/Banner'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Icon } from '@/components/common/Icon'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { Label } from '@/components/common/form/Label'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormInput } from '@/components/common/form/FormInput'
 import { FormSelect } from '@/components/common/form/FormSelect'
@@ -23,6 +25,7 @@ export const CreateApiTokenModal = ({
   error,
   createdToken,
   roleOptions,
+  rolesLoading,
   onSubmit,
   onDone,
   ...props
@@ -31,13 +34,18 @@ export const CreateApiTokenModal = ({
   error: TAPIError | null
   createdToken: string | null
   roleOptions: { value: string; label: string; description?: string }[]
+  rolesLoading?: boolean
   onSubmit: (params: CreateApiTokenValues) => void
   onDone: () => void
 } & Omit<IModal, 'onSubmit'>) => {
+  const defaultRole = roleOptions.some((o) => o.value === 'org_read_only')
+    ? 'org_read_only'
+    : (roleOptions[0]?.value ?? 'org_read_only')
+
   const form = useForm({
     defaultValues: {
       name: '',
-      role: 'org_read_only',
+      role: defaultRole,
       duration: '720h',
     } as CreateApiTokenValues,
     validators: {
@@ -123,16 +131,27 @@ export const CreateApiTokenModal = ({
           )}
         </form.Field>
 
-        <form.Field name="role">
-          {(field) => (
-            <FormSelect
-              field={field}
-              options={roleOptions}
-              disabled={isPending}
-              labelProps={{ labelText: 'Role' }}
-            />
-          )}
-        </form.Field>
+        {rolesLoading ? (
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="token-role">
+              <Text variant="body" className="font-medium">
+                Role
+              </Text>
+            </Label>
+            <Skeleton height="36px" />
+          </div>
+        ) : (
+          <form.Field name="role">
+            {(field) => (
+              <FormSelect
+                field={field}
+                options={roleOptions}
+                disabled={isPending}
+                labelProps={{ labelText: 'Role' }}
+              />
+            )}
+          </form.Field>
+        )}
 
         <form.Field name="duration">
           {(field) => (
