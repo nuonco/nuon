@@ -69,13 +69,6 @@ export const EditStackOverridesModalContainer = ({
       refresh()
       removeModal(props.modalId)
     },
-    onError: () => {
-      addToast(
-        <Toast heading="Save failed" theme="error">
-          <Text>Unable to save stack overrides.</Text>
-        </Toast>
-      )
-    },
   })
 
   return (

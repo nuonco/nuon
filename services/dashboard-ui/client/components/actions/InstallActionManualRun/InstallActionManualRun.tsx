@@ -1,10 +1,15 @@
-import React, { useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
+import { useForm, useStore } from '@tanstack/react-form'
+import type { FormValidateOrFn } from '@tanstack/form-core'
 import { Button } from '@/components/common/Button'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { FormInput } from '@/components/common/form/FormInput'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-import type { TAction, TActionConfig } from '@/types'
+import type { TAction, TActionConfig, TAPIError } from '@/types'
+import { buildManualRunSchema, type ManualRunValues } from './schema'
 
 const NUON_MANAGED_ENV_VARS = new Set([
   'role',
@@ -28,95 +33,94 @@ const NUON_MANAGED_ENV_VARS = new Set([
 ])
 
 function normalizeEnvVars(steps: TActionConfig['steps']) {
-  const envVars = steps.reduce((acc, step) => {
-    const keys = Object.keys(step?.env_vars || {})
-    if (keys?.length) {
+  return steps.reduce(
+    (acc, step) => {
+      const keys = Object.keys(step?.env_vars || {})
       keys.forEach((key) => {
-        if (!acc[key]) {
-          acc[key] = step?.env_vars[key]
-        }
+        if (!acc[key]) acc[key] = step?.env_vars[key]
       })
-    }
-    return acc
-  }, {} as Record<string, string>)
-
-  return envVars
+      return acc
+    },
+    {} as Record<string, string>
+  )
 }
 
 interface IInstallActionManualRunModal extends Omit<IModal, 'onSubmit'> {
   action: TAction
-  actionConfigId: string
   isLoading: boolean
   isRerun?: boolean
-  onSubmit: (vars: Record<string, string>, role: string) => void
+  error?: TAPIError | null
+  onSubmit: (vars: Record<string, string>) => void
   roleSelector: ReactNode
   runEnvVars?: Record<string, string>
 }
 
 export const InstallActionManualRunModal = ({
   action,
-  actionConfigId,
   isLoading,
   isRerun = false,
+  error,
   onSubmit,
   roleSelector,
   runEnvVars,
   ...props
 }: IInstallActionManualRunModal) => {
   const config = action?.configs?.[0]
-  const envVars = normalizeEnvVars(config?.steps || [])
-
-  const runEnvVarEntries = Object.entries(runEnvVars ?? {}).filter(
-    ([key]) => !NUON_MANAGED_ENV_VARS.has(key)
+  const envVars = useMemo(
+    () => normalizeEnvVars(config?.steps || []),
+    [config]
   )
-  const configOverrides = Object.fromEntries(
-    runEnvVarEntries.filter(([key]) => key in envVars)
+
+  const { initialValues, customFromRun } = useMemo(() => {
+    const runEnvVarEntries = Object.entries(runEnvVars ?? {}).filter(
+      ([key]) => !NUON_MANAGED_ENV_VARS.has(key)
+    )
+    const configOverrides = Object.fromEntries(
+      runEnvVarEntries.filter(([key]) => key in envVars)
+    )
+    const customFromRun = runEnvVarEntries.filter(([key]) => !(key in envVars))
+    return {
+      initialValues: { ...envVars, ...configOverrides },
+      customFromRun,
+    }
+  }, [runEnvVars, envVars])
+
+  const configVarNames = useMemo(
+    () => Object.keys(initialValues),
+    [initialValues]
   )
-  const customFromRun = runEnvVarEntries.filter(([key]) => !(key in envVars))
+  const schema = useMemo(
+    () => buildManualRunSchema(configVarNames),
+    [configVarNames]
+  )
+  const validator = schema as unknown as FormValidateOrFn<ManualRunValues>
 
-  const initialValues = { ...envVars, ...configOverrides }
-  const hasEnvVars = Object.keys(initialValues).length > 0 || customFromRun.length > 0
+  const defaultValues = useMemo<ManualRunValues>(
+    () => ({
+      configVars: initialValues,
+      customVars: customFromRun.map(([name, value]) => ({ name, value })),
+    }),
+    [initialValues, customFromRun]
+  )
 
-  const [customVars, setCustomVars] = useState<
-    Array<{ id: number; name: string; value: string }>
-  >(() => customFromRun.map(([name, value], index) => ({ id: index, name, value })))
-  const nextCustomId = useRef(customFromRun.length)
-  const formRef = useRef<HTMLFormElement>(null)
+  const form = useForm({
+    defaultValues,
+    validators: { onMount: validator, onChange: validator },
+    onSubmit: ({ value }) => {
+      const vars: Record<string, string> = {}
+      Object.entries(value.configVars).forEach(([key, v]) => {
+        if (v !== envVars[key]) vars[key] = v
+      })
+      value.customVars.forEach(({ name, value: v }) => {
+        if (name) vars[name] = v
+      })
+      onSubmit(vars)
+    },
+  })
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
 
-    const overwrite = Object.fromEntries(new FormData(e.currentTarget))
-
-    const vars = Object.keys(overwrite).reduce((acc, key) => {
-      if (overwrite[key] == envVars[key]) return acc
-
-      const customKey = key.split(':')
-      if (customKey?.at(0) === 'custom' && customKey?.at(2) === 'name') {
-        const varName = overwrite[key]
-        const varValue = overwrite[`${customKey?.at(0)}:${customKey?.at(1)}:value`]
-        if (typeof varName === 'string' && typeof varValue === 'string') {
-          acc[varName] = varValue
-        }
-      } else if (customKey?.at(0) === 'custom' && customKey?.at(2) === 'value') {
-        return acc
-      } else {
-        const value = overwrite[key]
-        if (typeof value === 'string') {
-          acc[key] = value
-        }
-      }
-
-      return acc
-    }, {} as Record<string, string>)
-
-    const roleInput = e.currentTarget.querySelector<HTMLInputElement>('[name="role"]')
-    onSubmit(vars, roleInput?.value || '')
-  }
-
-  const handlePrimaryAction = () => {
-    formRef.current?.requestSubmit()
-  }
+  const hasEnvVars = configVarNames.length > 0 || customFromRun.length > 0
 
   return (
     <Modal
@@ -134,15 +138,22 @@ export const InstallActionManualRunModal = ({
             {isRerun ? 'Re-run action' : 'Run action'}
           </>
         ),
-        disabled: isLoading,
-        onClick: handlePrimaryAction,
+        disabled: !canSubmit || isLoading,
+        onClick: () => form.handleSubmit(),
         variant: 'primary',
       }}
       {...props}
     >
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-4"
+      >
+        <FormErrorBanner error={error} fallback={`Unable to run ${action?.name}`} />
 
-      <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4">
         {roleSelector}
+
         <Expand
           id="action-env-vars"
           heading={<Text weight="strong">Edit environment variables</Text>}
@@ -155,94 +166,91 @@ export const InstallActionManualRunModal = ({
               workflow run.
             </Text>
 
-            {Object.keys(initialValues).length > 0 && (
+            {configVarNames.length > 0 && (
               <div className="flex flex-col gap-4">
-                {Object.keys(initialValues).map((envVar) => (
-                  <label key={envVar} className="flex flex-col gap-1">
-                    <Text variant="label" weight="strong">
-                      {envVar}
-                    </Text>
-                    <input
-                      className="px-3 py-2 text-base rounded-md border bg-black/5 dark:bg-white/5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600"
-                      required
-                      defaultValue={initialValues[envVar]}
-                      name={envVar}
-                      type="text"
-                    />
-                  </label>
+                {configVarNames.map((name) => (
+                  <form.Field key={name} name={`configVars.${name}`}>
+                    {(field) => (
+                      <FormInput
+                        field={field}
+                        id={`cfg-${name}`}
+                        type="text"
+                        disabled={isLoading}
+                        labelProps={{ labelText: name }}
+                      />
+                    )}
+                  </form.Field>
                 ))}
               </div>
             )}
 
-            {customVars.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {customVars.map((cv, index) => (
-                  <fieldset
-                    key={cv.id}
-                    className="flex flex-col gap-2 py-2 border-t relative"
-                  >
-                    <legend className="text-base font-medium pr-2 mb-2 flex items-center justify-between">
-                      <span>Custom env var {index + 1}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                          setCustomVars((vars) => vars.filter((v) => v.id !== cv.id))
-                        }}
-                        className="ml-2 !p-2"
-                        size="sm"
-                        aria-label={`Remove custom env var ${index + 1}`}
-                      >
-                        <Icon variant="XIcon" size="12" />
-                      </Button>
-                    </legend>
-                    <label className="flex flex-col gap-1">
-                      <Text variant="label" weight="strong">
-                        Name
-                      </Text>
-                      <input
-                        className="px-3 py-2 text-base rounded-md border bg-black/5 dark:bg-white/5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600"
-                        required
-                        defaultValue={cv.name}
-                        name={`custom:${cv.id}:name`}
-                        type="text"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1">
-                      <Text variant="label" weight="strong">
-                        Value
-                      </Text>
-                      <input
-                        className="px-3 py-2 text-base rounded-md border bg-black/5 dark:bg-white/5 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 [&:user-invalid]:border-red-300 [&:user-invalid]:dark:border-red-600"
-                        required
-                        defaultValue={cv.value}
-                        name={`custom:${cv.id}:value`}
-                        type="text"
-                      />
-                    </label>
-                  </fieldset>
-                ))}
-              </div>
-            )}
+            <form.Field name="customVars" mode="array">
+              {(customVarsField) => (
+                <>
+                  {customVarsField.state.value.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      {customVarsField.state.value.map((_, index) => (
+                        <fieldset
+                          key={index}
+                          className="flex flex-col gap-2 py-2 border-t relative"
+                        >
+                          <legend className="text-base font-medium pr-2 mb-2 flex items-center justify-between">
+                            <span>Custom env var {index + 1}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => customVarsField.removeValue(index)}
+                              className="ml-2 !p-2"
+                              size="sm"
+                              disabled={isLoading}
+                              aria-label={`Remove custom env var ${index + 1}`}
+                            >
+                              <Icon variant="XIcon" size="12" />
+                            </Button>
+                          </legend>
+                          <form.Field name={`customVars[${index}].name`}>
+                            {(field) => (
+                              <FormInput
+                                field={field}
+                                type="text"
+                                disabled={isLoading}
+                                labelProps={{ labelText: 'Name' }}
+                              />
+                            )}
+                          </form.Field>
+                          <form.Field name={`customVars[${index}].value`}>
+                            {(field) => (
+                              <FormInput
+                                field={field}
+                                type="text"
+                                disabled={isLoading}
+                                labelProps={{ labelText: 'Value' }}
+                              />
+                            )}
+                          </form.Field>
+                        </fieldset>
+                      ))}
+                    </div>
+                  )}
 
-            <div>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setCustomVars((vars) => [
-                    ...vars,
-                    { id: nextCustomId.current++, name: '', value: '' },
-                  ])
-                }}
-              >
-                <Icon variant="PlusIcon" />
-                Add environment variable
-              </Button>
-            </div>
+                  <div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={isLoading}
+                      onClick={() =>
+                        customVarsField.pushValue({ name: '', value: '' })
+                      }
+                    >
+                      <Icon variant="PlusIcon" />
+                      Add environment variable
+                    </Button>
+                  </div>
+                </>
+              )}
+            </form.Field>
           </div>
         </Expand>
-
       </form>
     </Modal>
   )
