@@ -101,6 +101,13 @@ type AppBranchRun struct {
 	labels.Labeled
 }
 
+// IsPreview reports whether the run is read-only. PR previews and plan-only
+// manual runs are both previews: they report what would change without
+// mutating any install.
+func (a *AppBranchRun) IsPreview() bool {
+	return a.RunType == AppBranchRunTypeGitPreview || a.PlanOnly
+}
+
 func (a *AppBranchRun) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{Name: indexes.Name(db, &AppBranchRun{}, "trigger_event_dispatch_id"), Columns: []string{"trigger_event_dispatch_id"}, UniqueValue: sql.NullBool{Bool: true, Valid: true}, Option: "WHERE deleted_at = 0 AND trigger_event_dispatch_id IS NOT NULL"},

@@ -95,7 +95,18 @@ func (s *Service) CreateBranch(ctx context.Context, appID, name string, asJSON b
 	return nil
 }
 
-func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, planOnly, force, noWait, asJSON bool) error {
+// TriggerBranchRunOptions carries the optional inputs for a branch run. PR
+// fields are set by CI so a preview can report back onto the pull request.
+type TriggerBranchRunOptions struct {
+	PlanOnly   bool
+	Force      bool
+	NoWait     bool
+	PRNumber   *int
+	HeadSHA    string
+	BaseBranch string
+}
+
+func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, opts TriggerBranchRunOptions, asJSON bool) error {
 	appID, err := s.resolveAppID(ctx, appID)
 	if err != nil {
 		return err
@@ -106,15 +117,22 @@ func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, 
 		return err
 	}
 
-	run, err := s.api.TriggerAppBranchRun(ctx, appID, branchID, &models.ServiceTriggerAppBranchRunRequest{
-		Force:    force,
-		PlanOnly: planOnly,
-	})
+	req := &models.ServiceTriggerAppBranchRunRequest{
+		Force:      opts.Force,
+		PlanOnly:   opts.PlanOnly,
+		HeadSha:    opts.HeadSHA,
+		BaseBranch: opts.BaseBranch,
+	}
+	if opts.PRNumber != nil {
+		req.PrNumber = int64(*opts.PRNumber)
+	}
+
+	run, err := s.api.TriggerAppBranchRun(ctx, appID, branchID, req)
 	if err != nil {
 		return err
 	}
 
-	if asJSON || noWait {
+	if asJSON || opts.NoWait {
 		ui.PrintJSON(run)
 		return nil
 	}
