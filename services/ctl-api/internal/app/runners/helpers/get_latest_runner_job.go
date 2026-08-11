@@ -69,9 +69,14 @@ func GetLatestJobCompositeError(ctx context.Context, db *gorm.DB, req GetLatestJ
 		}
 		return nil, fmt.Errorf("unable to get latest runner job composite error: %w", res.Error)
 	}
-	if len(job.Executions) == 0 || job.Executions[0].Result == nil {
-		return nil, nil
+	if len(job.Executions) > 0 && job.Executions[0].Result != nil && job.Executions[0].Result.CompositeError != nil {
+		return job.Executions[0].Result.CompositeError, nil
 	}
 
-	return job.Executions[0].Result.CompositeError, nil
+	switch job.Status {
+	case app.RunnerJobStatusFailed, app.RunnerJobStatusTimedOut, app.RunnerJobStatusNotAttempted:
+		return job.CompositeError, nil
+	default:
+		return nil, nil
+	}
 }
