@@ -95,6 +95,11 @@ func (s *service) findInstallActionWorkflowRuns(ctx *gin.Context, orgID, install
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install action workflow runs: %w", res.Error)
 	}
+	for _, run := range runs {
+		if run.Status != app.InstallActionRunStatusError {
+			run.CompositeError = nil
+		}
+	}
 
 	runs, err := db.HandlePaginatedResponse(ctx, runs)
 	if err != nil {
