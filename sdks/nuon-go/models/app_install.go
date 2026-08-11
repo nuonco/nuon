@@ -155,6 +155,12 @@ type AppInstall struct {
 	// name
 	Name string `json:"name,omitempty"`
 
+	// PhoneHomeAuthStatus can take the phone_home_auth JSON name precisely because the
+	// column itself never serializes.
+	PhoneHomeAuth struct {
+		AppPhoneHomeAuthStatus
+	} `json:"phone_home_auth,omitempty"`
+
 	// queues
 	Queues []*AppQueue `json:"queues"`
 
@@ -275,6 +281,10 @@ func (m *AppInstall) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLabels(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePhoneHomeAuth(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -777,6 +787,14 @@ func (m *AppInstall) validateLabels(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppInstall) validatePhoneHomeAuth(formats strfmt.Registry) error {
+	if swag.IsZero(m.PhoneHomeAuth) { // not required
+		return nil
+	}
+
+	return nil
+}
+
 func (m *AppInstall) validateQueues(formats strfmt.Registry) error {
 	if swag.IsZero(m.Queues) { // not required
 		return nil
@@ -956,6 +974,10 @@ func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registr
 	}
 
 	if err := m.contextValidateLabels(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePhoneHomeAuth(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -1460,6 +1482,11 @@ func (m *AppInstall) contextValidateLabels(ctx context.Context, formats strfmt.R
 
 		return err
 	}
+
+	return nil
+}
+
+func (m *AppInstall) contextValidatePhoneHomeAuth(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }
