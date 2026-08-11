@@ -7,6 +7,17 @@ keywords: ["nuon cli commands", "nuon auth login", "nuon orgs select", "nuon org
 
 The commands you'll use most. Run `nuon --help` (or `nuon <command> --help`) for the full set.
 
+## Global flags
+
+These work on every command.
+
+| Flag | What it does |
+|------|--------------|
+| `--config <path>`, `-C <path>` | Use a custom config file instead of `~/.nuon`. Can also be set with the `NUON_CONFIG_FILE` env var. |
+| `--output <format>` | Output format: `table` (default), `json`, or `agent`. Can also be set with `NUON_OUTPUT`. |
+| `--read-only` | Block any command that modifies state. Can also be set with `NUON_READ_ONLY=1`. |
+| `--debug` | Print per-request API timing to stderr. |
+
 ## Authenticate
 
 | Command | What it does |
