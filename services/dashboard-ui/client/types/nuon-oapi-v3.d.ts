@@ -4099,7 +4099,7 @@ export interface components {
       /** @description Read-only fields set on the object to de-nest data */
       component_id?: string;
       component_name?: string;
-      composite_error?: Record<string, never>;
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
@@ -4587,7 +4587,7 @@ export interface components {
     };
     "app.InstallActionWorkflowRun": {
       action_workflow_config_id?: string;
-      composite_error?: Record<string, never>;
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       config?: components["schemas"]["app.ActionWorkflowConfig"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
@@ -5940,7 +5940,7 @@ export interface components {
     "app.RunnerJob": {
       /** @description available timeout is how long a job can be marked as "available" before being requeued */
       available_timeout?: number;
-      composite_error?: Record<string, never>;
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at?: string;
       created_by_id?: string;
       execution_count?: number;
@@ -6017,7 +6017,7 @@ export interface components {
        * never reused, so it cannot go stale across retries. Aggregate rows derive
        * their displayed error from the latest relevant result; they do not own it.
        */
-      composite_error?: Record<string, never>;
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       contents?: string;
       contents_display?: string;
       contents_display_gzip?: string;

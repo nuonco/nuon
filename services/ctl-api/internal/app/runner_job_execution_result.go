@@ -50,7 +50,7 @@ type RunnerJobExecutionResult struct {
 	// for runner-driven composite errors: strictly 1:1 with the attempt and
 	// never reused, so it cannot go stale across retries. Aggregate rows derive
 	// their displayed error from the latest relevant result; they do not own it.
-	CompositeError *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb" swaggertype:"object" temporaljson:"composite_error,omitzero,omitempty"`
+	CompositeError *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb" temporaljson:"composite_error,omitzero,omitempty"`
 }
 
 func (r *RunnerJobExecutionResult) Indexes(db *gorm.DB) []migrations.Index {
