@@ -88,3 +88,19 @@ func TestApplyComponentBuildSourceIdentity(t *testing.T) {
 	require.WithinDuration(t, resolvedAt, *build.ResolvedAt, time.Nanosecond)
 	require.True(t, build.NoOp)
 }
+
+func TestRedactedStringMapToHstore(t *testing.T) {
+	const secret = "control-plane-secret"
+	raw := "https://api.example.com/state?token=" + secret + "&operation=plan"
+	meta := map[string]string{
+		"error_output": raw,
+		"handler":      "control-plane",
+	}
+
+	got := redactedStringMapToHstore(meta)
+	require.Equal(t, raw, meta["error_output"])
+	require.NotNil(t, got["error_output"])
+	require.NotContains(t, *got["error_output"], secret)
+	require.Contains(t, *got["error_output"], "token=[REDACTED]")
+	require.Equal(t, "control-plane", *got["handler"])
+}
