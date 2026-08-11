@@ -25,7 +25,6 @@ export const Default = () => (
   <ModalStory>
     <InstallActionManualRunModal
       action={mockAction}
-      actionConfigId="config-1"
       isLoading={false}
       onSubmit={noop}
       roleSelector={<Text variant="subtext">Role selector placeholder</Text>}
@@ -37,8 +36,19 @@ export const Loading = () => (
   <ModalStory>
     <InstallActionManualRunModal
       action={mockAction}
-      actionConfigId="config-1"
       isLoading={true}
+      onSubmit={noop}
+      roleSelector={<Text variant="subtext">Role selector placeholder</Text>}
+    />
+  </ModalStory>
+)
+
+export const WithError = () => (
+  <ModalStory>
+    <InstallActionManualRunModal
+      action={mockAction}
+      isLoading={false}
+      error={{ error: 'Unable to run deploy-step', description: '', user_error: true }}
       onSubmit={noop}
       roleSelector={<Text variant="subtext">Role selector placeholder</Text>}
     />
@@ -55,7 +65,6 @@ export const NoEnvVars = () => (
   <ModalStory>
     <InstallActionManualRunModal
       action={mockActionNoEnvVars}
-      actionConfigId="config-2"
       isLoading={false}
       onSubmit={noop}
       roleSelector={<Text variant="subtext">Role selector placeholder</Text>}

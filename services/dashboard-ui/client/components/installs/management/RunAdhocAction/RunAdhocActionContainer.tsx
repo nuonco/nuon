@@ -61,13 +61,6 @@ export const RunAdhocActionModalContainer = ({
         navigate(`/${org.id}/installs/${install.id}/workflows`)
       }
     },
-    onError: (error) => {
-      addToast(
-        <Toast heading="Adhoc action failed" theme="error">
-          <Text>Unable to run adhoc action.</Text>
-        </Toast>
-      )
-    },
   })
 
   const handleDraftResume = (

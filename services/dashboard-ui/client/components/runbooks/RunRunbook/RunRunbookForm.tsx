@@ -1,55 +1,62 @@
-import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState, type ReactNode } from 'react'
+import { useForm, useStore } from '@tanstack/react-form'
+import type { FormValidateOrFn } from '@tanstack/form-core'
 import { Badge } from '@/components/common/Badge'
-import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { type IButtonAsButton } from '@/components/common/Button'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
-import { CodeInput } from '@/components/common/form/CodeInput'
-import { Input } from '@/components/common/form/Input'
+import { FormCheckbox } from '@/components/common/form/FormCheckbox'
+import { FormCodeInput } from '@/components/common/form/FormCodeInput'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { FormInput } from '@/components/common/form/FormInput'
 import { WizardNavComponent } from '@/components/onboarding/WizardNav'
-import { RoleSelector } from '@/components/roles/RoleSelector'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-import { Toast } from '@/components/surfaces/Toast'
-import { useInstall } from '@/hooks/use-install'
-import { useOrg } from '@/hooks/use-org'
-import { useSurfaces } from '@/hooks/use-surfaces'
-import { useToast } from '@/hooks/use-toast'
-import { runRunbook } from '@/lib'
 import type { TAPIError } from '@/types'
 import type { TRunbookInput } from '@/lib/ctl-api/apps/runbooks'
 import type {
   TInstallRunbook,
   TRunRunbookBody,
 } from '@/lib/ctl-api/installs/runbooks'
+import {
+  buildRunbookSchema,
+  isBooleanInput,
+  type RunbookFormValues,
+} from './schema'
 
-interface IRunRunbookModal extends IModal {
+interface IRunRunbookForm extends Omit<IModal, 'onSubmit'> {
   installRunbook: TInstallRunbook
+  isPending: boolean
+  error: TAPIError | null
+  onSubmit: (body: TRunRunbookBody) => void
+  roleSelector: ReactNode
 }
 
-const RunbookInputField = ({ input }: { input: TRunbookInput }) => {
-  const name = `inputs:${input.name}`
-  const label = input.display_name || input.name
-  const isBoolean =
-    input.type === 'bool' ||
-    input.default === 'true' ||
-    input.default === 'false'
+type RunbookFormApi = ReturnType<typeof useForm<RunbookFormValues>>
 
-  if (isBoolean) {
+const RunbookInputField = ({
+  form,
+  input,
+}: {
+  form: RunbookFormApi
+  input: TRunbookInput
+}) => {
+  const name = `inputs.${input.name}`
+  const label = input.display_name || input.name
+
+  if (isBooleanInput(input)) {
     return (
-      <div className="flex flex-col gap-1">
-        <input type="hidden" name={name} value="off" />
-        <CheckboxInput
-          name={name}
-          defaultChecked={input.default === 'true'}
-          labelProps={{ labelText: label }}
-        />
-        {input.description ? (
-          <Text variant="subtext">{input.description}</Text>
-        ) : null}
-      </div>
+      <form.Field name={name}>
+        {(field) => (
+          <div className="flex flex-col gap-1">
+            <FormCheckbox field={field} labelProps={{ labelText: label }} />
+            {input.description ? (
+              <Text variant="subtext">{input.description}</Text>
+            ) : null}
+          </div>
+        )}
+      </form.Field>
     )
   }
 
@@ -57,156 +64,110 @@ const RunbookInputField = ({ input }: { input: TRunbookInput }) => {
 
   if (input.type === 'json') {
     return (
-      <CodeInput
-        name={name}
-        language="json"
-        defaultValue={input.default ?? ''}
-        required={input.required}
-        labelProps={{ labelText }}
-        helperText={input.description}
-      />
+      <form.Field name={name}>
+        {(field) => (
+          <FormCodeInput
+            field={field}
+            language="json"
+            labelProps={{ labelText }}
+            helperText={input.description}
+          />
+        )}
+      </form.Field>
     )
   }
 
   return (
-    <Input
-      name={name}
-      type={
-        input.sensitive
-          ? 'password'
-          : input.type === 'number'
-            ? 'number'
-            : 'text'
-      }
-      defaultValue={input.default ?? ''}
-      required={input.required}
-      labelProps={{ labelText }}
-      helperText={input.description}
-    />
+    <form.Field name={name}>
+      {(field) => (
+        <FormInput
+          field={field}
+          id={`runbook-input-${input.name}`}
+          type={
+            input.sensitive
+              ? 'password'
+              : input.type === 'number'
+                ? 'number'
+                : 'text'
+          }
+          labelProps={{ labelText }}
+          helperText={input.description}
+        />
+      )}
+    </form.Field>
   )
 }
 
-export const RunRunbookModal = ({
+export const RunRunbookForm = ({
   installRunbook,
+  isPending,
+  error,
+  onSubmit,
+  roleSelector,
   ...props
-}: IRunRunbookModal) => {
-  const navigate = useNavigate()
-  const { org } = useOrg()
-  const { install } = useInstall()
-  const { removeModal } = useSurfaces()
-  const { addToast } = useToast()
-  const queryClient = useQueryClient()
-  const formRef = useRef<HTMLFormElement>(null)
-  const [page, setPage] = useState<0 | 1 | 2>(0)
-  const [reviewValues, setReviewValues] = useState<Record<string, string>>({})
-  const [selectedRole, setSelectedRole] = useState('')
-
+}: IRunRunbookForm) => {
   const runbookName = installRunbook.runbook?.name ?? 'runbook'
-  const runbookId = installRunbook.runbook_id ?? installRunbook.id
   const config = installRunbook.runbook?.configs?.[0]
-  const steps = (config?.steps ?? [])
-    .slice()
-    .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0))
-  const inputs = (config?.inputs ?? [])
-    .slice()
-    .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0))
 
+  const steps = useMemo(
+    () => (config?.steps ?? []).slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)),
+    [config]
+  )
+  const inputs = useMemo(
+    () => (config?.inputs ?? []).slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)),
+    [config]
+  )
+  const hasInputs = inputs.length > 0
+
+  const schema = useMemo(() => buildRunbookSchema(inputs), [inputs])
+  const validator = schema as unknown as FormValidateOrFn<RunbookFormValues>
+  const defaultValues = useMemo<RunbookFormValues>(
+    () => ({
+      inputs: Object.fromEntries(
+        inputs.map((input) => [
+          input.name,
+          isBooleanInput(input) ? input.default === 'true' : (input.default ?? ''),
+        ])
+      ),
+    }),
+    [inputs]
+  )
+
+  const [page, setPage] = useState<0 | 1 | 2>(0)
   const [stepEnabled, setStepEnabled] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(steps.map((s) => [s.id ?? '', true]))
   )
   const isStepEnabled = (id?: string) => stepEnabled[id ?? ''] ?? true
   const enabledCount = steps.filter((s) => isStepEnabled(s.id)).length
+  const noStepsEnabled = enabledCount === 0
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: (body?: TRunRunbookBody) =>
-      runRunbook({
-        installId: install!.id,
-        runbookId,
-        orgId: org!.id,
-        body,
-      }),
-    onSuccess: (result) => {
-      addToast(
-        <Toast heading="Running runbook" theme="info">
-          <Text>Running {runbookName} on {install?.name}.</Text>
-        </Toast>
+  const form = useForm({
+    defaultValues,
+    validators: { onMount: validator, onChange: validator },
+    onSubmit: ({ value }) => {
+      const inputsMap = Object.fromEntries(
+        Object.entries(value.inputs).map(([key, v]) => [
+          key,
+          typeof v === 'boolean' ? String(v) : v,
+        ])
       )
-      removeModal(props.modalId)
-      queryClient.invalidateQueries({ queryKey: ['install-runbook'] })
-      const workflowId = result?.install_workflow_id
-      if (workflowId) {
-        navigate(`/${org!.id}/installs/${install!.id}/workflows/${workflowId}`)
-      } else {
-        navigate(`/${org!.id}/installs/${install!.id}/runbooks/${runbookId}`)
-      }
-    },
-    onError: (err: TAPIError) => {
-      addToast(
-        <Toast heading="Runbook run failed" theme="error">
-          <Text>{err?.error || `Unable to run ${runbookName}.`}</Text>
-        </Toast>
-      )
+      onSubmit({
+        ...(hasInputs ? { inputs: inputsMap } : {}),
+        steps: steps.map((s) => ({
+          step_id: s.id ?? '',
+          enabled: isStepEnabled(s.id),
+        })),
+      })
     },
   })
 
-  const hasInputs = inputs.length > 0
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
+  const values = useStore(form.store, (s) => s.values)
 
-  // View per wizard page. With inputs: 0=inputs form, 1=steps summary, 2=inputs summary (+submit).
-  // Without inputs: a single steps summary (+submit).
   const showInputsForm = hasInputs && page === 0
   const showStepsSummary = !hasInputs || page === 1
   const showInputsSummary = hasInputs && page === 2
   const isSubmitView = !hasInputs || page === 2
-
-  const collectInputs = (): Record<string, string> => {
-    const form = formRef.current
-    if (!form) return {}
-    const formData = Object.fromEntries(new FormData(form))
-    return Object.keys(formData).reduce(
-      (acc, key) => {
-        if (key.startsWith('inputs:')) {
-          let value = formData[key] as string
-          if (value === 'on' || value === 'off') {
-            value = String(value === 'on')
-          }
-          acc[key.replace('inputs:', '')] = value
-        }
-        return acc
-      },
-      {} as Record<string, string>
-    )
-  }
-
-  const handleNext = () => {
-    const form = formRef.current
-    if (!form) return
-
-    const firstInvalid = form.querySelector<HTMLElement>(
-      ':invalid:not(fieldset):not(form)'
-    )
-    if (firstInvalid) {
-      firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      firstInvalid.focus()
-      form.reportValidity()
-      return
-    }
-
-    setReviewValues(collectInputs())
-    setPage(1)
-  }
-
-  const handleRun = () => {
-    mutate({
-      ...(hasInputs ? { inputs: collectInputs() } : {}),
-      ...(selectedRole && { role: selectedRole }),
-      steps: steps.map((s) => ({
-        step_id: s.id ?? '',
-        enabled: isStepEnabled(s.id),
-      })),
-    })
-  }
-
-  const noStepsEnabled = enabledCount === 0
 
   const primaryActionTrigger: IButtonAsButton = isSubmitView
     ? {
@@ -221,14 +182,14 @@ export const RunRunbookModal = ({
             <Icon variant="PlayIcon" />
           </>
         ),
-        disabled: isPending || noStepsEnabled,
-        onClick: handleRun,
+        disabled: isPending || noStepsEnabled || !canSubmit,
+        onClick: () => form.handleSubmit(),
         variant: 'primary',
       }
     : {
         children: 'Next',
-        onClick: showInputsForm ? handleNext : () => setPage(2),
-        disabled: showInputsForm ? false : noStepsEnabled,
+        onClick: showInputsForm ? () => setPage(1) : () => setPage(2),
+        disabled: showInputsForm ? !canSubmit : noStepsEnabled,
         variant: 'primary',
       }
 
@@ -251,6 +212,8 @@ export const RunRunbookModal = ({
       {...props}
     >
       <div className="flex flex-col gap-4">
+        <FormErrorBanner error={error} fallback={`Unable to run ${runbookName}`} />
+
         {hasInputs ? (
           <WizardNavComponent
             steps={[
@@ -259,9 +222,7 @@ export const RunRunbookModal = ({
               { id: 'confirm', title: 'Confirm' },
             ]}
             currentStepIndex={page}
-            completedSteps={
-              new Set(['inputs', 'steps'].slice(0, page) as string[])
-            }
+            completedSteps={new Set(['inputs', 'steps'].slice(0, page) as string[])}
             skipHref={null}
             onGoToStep={(index) => {
               if (index <= page) setPage(index as 0 | 1 | 2)
@@ -269,28 +230,25 @@ export const RunRunbookModal = ({
           />
         ) : null}
 
-        {/* Inputs form — kept mounted (hidden off the inputs page) so values persist. */}
         {hasInputs ? (
           <form
-            ref={formRef}
+            autoComplete="off"
+            noValidate
+            onSubmit={(e) => e.preventDefault()}
             className={showInputsForm ? 'flex flex-col gap-4' : 'hidden'}
           >
             <Text>Provide inputs for {runbookName}:</Text>
             {inputs.map((input) => (
-              <RunbookInputField key={input.id ?? input.name} input={input} />
+              <RunbookInputField
+                key={input.id ?? input.name}
+                form={form}
+                input={input}
+              />
             ))}
           </form>
         ) : null}
 
-        {isSubmitView ? (
-          <RoleSelector
-            installId={install?.id ?? ''}
-            operationType="trigger"
-            value={selectedRole}
-            onChange={setSelectedRole}
-            name="role"
-          />
-        ) : null}
+        {isSubmitView ? roleSelector : null}
 
         {showStepsSummary ? (
           <Expand
@@ -341,7 +299,8 @@ export const RunRunbookModal = ({
             >
               <dl className="flex flex-col gap-2 p-2">
                 {inputs.map((input) => {
-                  const value = reviewValues[input.name] ?? ''
+                  const raw = values.inputs?.[input.name]
+                  const value = typeof raw === 'boolean' ? String(raw) : (raw ?? '')
                   return (
                     <div
                       key={input.id ?? input.name}
@@ -401,22 +360,5 @@ export const RunRunbookModal = ({
         ) : null}
       </div>
     </Modal>
-  )
-}
-
-export const RunRunbookButton = ({
-  installRunbook,
-  children = 'Run runbook',
-  ...props
-}: {
-  installRunbook: TInstallRunbook
-} & IButtonAsButton) => {
-  const { addModal } = useSurfaces()
-  const modal = <RunRunbookModal installRunbook={installRunbook} />
-
-  return (
-    <Button onClick={() => addModal(modal)} {...props}>
-      {children} <Icon variant="PlayIcon" />
-    </Button>
   )
 }

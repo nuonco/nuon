@@ -12,7 +12,7 @@ import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Tooltip } from '@/components/common/Tooltip'
-import { RunRunbookButton } from '@/components/runbooks/RunRunbook/RunRunbook'
+import { RunRunbookButton } from '@/components/runbooks/RunRunbook'
 import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig'
 import type { TInstallRunbook } from '@/lib/ctl-api/installs/runbooks'
 
