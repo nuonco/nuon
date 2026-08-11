@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 4 — Dashboard updates</title>
+<style>
+  :root { --bg:#0f1115; --panel:#171a21; --ink:#e6e9ef; --muted:#9aa4b2; --accent:#6ea8fe; --good:#3fb950; --warn:#d29922; --bad:#f85149; --border:#2a2f3a; --code:#1e232c; }
+  @media (prefers-color-scheme: light) { :root { --bg:#ffffff; --panel:#f4f6f9; --ink:#1a1d23; --muted:#5a6472; --accent:#1a66d6; --good:#1a7f37; --warn:#9a6700; --bad:#cf222e; --border:#d7dbe2; --code:#eef0f3; } }
+  *{box-sizing:border-box;} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  .wrap{max-width:960px;margin:0 auto;padding:48px 24px 120px;}
+  h1{font-size:30px;margin:0 0 4px;letter-spacing:-.02em;} h2{font-size:22px;margin:44px 0 12px;padding-top:16px;border-top:1px solid var(--border);}
+  h3{font-size:17px;margin:26px 0 8px;color:var(--accent);} .sub{color:var(--muted);margin:0 0 8px;}
+  code{background:var(--code);padding:1px 6px;border-radius:4px;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:13px;}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:13px;} pre code{background:none;padding:0;}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px;} th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;} th{color:var(--muted);font-weight:600;}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;font-weight:600;} .tag.good{background:rgba(63,185,80,.15);color:var(--good);} .tag.warn{background:rgba(210,153,34,.15);color:var(--warn);} .tag.info{background:rgba(110,168,254,.15);color:var(--accent);}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin:14px 0;}
+  .callout{border-left:3px solid var(--accent);padding-left:14px;margin:14px 0;color:var(--muted);} .callout.warn{border-color:var(--warn);} .callout.good{border-color:var(--good);}
+  ul{margin:8px 0;padding-left:22px;} li{margin:3px 0;} .meta{color:var(--muted);font-size:13px;} a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="meta"><a href="index.html">&larr; Authz redesign</a> &middot; Phase 4 of 6</p>
+<h1>Phase 4 — Dashboard updates</h1>
+<p class="sub">Move the dashboard onto the nested routes so a resource-scoped user can use the app end to end, and surface custom-role management in the UI.</p>
+
+<h2>1. Use nested routes for reads/writes</h2>
+<p>The SPA (<code>services/dashboard-ui/client/</code>) calls bare routes for some child resources (the flat <code>/v1/components/…</code>, <code>/v1/workflows/…</code> families). Under Phase 3 those authorize at the org tier, so a resource-scoped user would be denied. Switch the affected <code>lib/ctl-api</code> calls to the nested equivalents from Phase 1 so access follows the user's role.</p>
+<p><strong>Method:</strong> grep <code>client/</code> for calls to the bare child routes; repoint each at the nested route, threading the <code>app_id</code> / <code>install_id</code> the page already has in context. The generated OpenAPI types (<code>client/types/nuon-oapi-v3.d.ts</code>) regenerate from Phase 1 and drive the call sites.</p>
+
+<h2>2. Custom-role management UI</h2>
+<p>Extend the existing role surface for the Phase 2 roles API, org-admin only:</p>
+<ul>
+<li>The roles list distinguishes managed (read-only) from custom roles; custom roles show their scoped permission entries.</li>
+<li>A create/edit-role modal: title, description, assignment contexts, and a repeatable <strong>permission-entry</strong> row (resource type, resource picker with app/install/branch or &ldquo;all of type&rdquo;, optional parent scope for wildcards, and a verb-set selector). Follows the <code>dashboard-ui:form</code> skill for the modal form.</li>
+<li>Delete a custom role from the table; managed roles are not editable or deletable.</li>
+<li>Assignment reuses the existing team / API-token / trust-policy role pickers &mdash; custom roles simply appear as assignable options.</li>
+</ul>
+<p>Placement: the existing team/role management area under org settings &mdash; no new top-level surface.</p>
+
+<h2>3. Graceful degradation while the flag is off</h2>
+<div class="callout good">With <code>ScopedPermissionsEnabled</code> off, managed-role holders (everyone today) still hit the nested routes fine (org tier authorizes), so repointing calls is safe to ship <em>before</em> enforcement is on. The custom-role UI can be gated to the same flag to avoid offering roles that don't yet take effect pre-rollout.</div>
+
+<h2>4. Files (anticipated)</h2>
+<ul>
+<li><code>services/dashboard-ui/client/lib/ctl-api/*</code> &mdash; repointed calls + extended roles calls.</li>
+<li><code>services/dashboard-ui/client/components/roles/*</code> (or the existing team/roles components) &mdash; custom-role table rows + create/edit modal with permission-entry rows.</li>
+<li><code>services/dashboard-ui/client/types/nuon-oapi-v3.d.ts</code> &mdash; regenerated.</li>
+<li>Org-settings wiring where roles already live (no new page).</li>
+</ul>
+
+<h2>5. Acceptance</h2>
+<ul>
+<li>Every child-resource page fetches via a nested route; no dashboard call relies on a bare child route for data a scoped user should see.</li>
+<li>Org admin can create, view, edit, and delete custom roles from the UI, and assign them via the existing role pickers; managed roles are read-only.</li>
+<li>With the flag off, no behavior change for existing users.</li>
+</ul>
+
+<h2>6. Review checkpoint</h2>
+<p>Confirm the custom-role UI scope (full CRUD vs list+create only for v1) and that it extends the existing roles area rather than adding a new surface.</p>
+
+</div>
+</body>
+</html>

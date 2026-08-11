@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Design: Authz redesign (ja/authz)</title>
+    <style>
+      :root {
+        --bg: #0f1115;
+        --panel: #171a21;
+        --ink: #e6e9ef;
+        --muted: #9aa4b2;
+        --accent: #6ea8fe;
+        --good: #3fb950;
+        --warn: #d29922;
+        --bad: #f85149;
+        --border: #2a2f3a;
+        --code: #1e232c;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #ffffff;
+          --panel: #f4f6f9;
+          --ink: #1a1d23;
+          --muted: #5a6472;
+          --accent: #1a66d6;
+          --good: #1a7f37;
+          --warn: #9a6700;
+          --bad: #cf222e;
+          --border: #d7dbe2;
+          --code: #eef0f3;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+      }
+      .wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 48px 24px 120px;
+      }
+      h1 {
+        font-size: 30px;
+        margin: 0 0 4px;
+        letter-spacing: -0.02em;
+      }
+      h2 {
+        font-size: 22px;
+        margin: 44px 0 12px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+        letter-spacing: -0.01em;
+      }
+      h3 {
+        font-size: 17px;
+        margin: 26px 0 8px;
+        color: var(--accent);
+      }
+      .sub {
+        color: var(--muted);
+        margin: 0 0 8px;
+      }
+      code {
+        background: var(--code);
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 13px;
+      }
+      pre {
+        background: var(--code);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px 16px;
+        overflow-x: auto;
+        font-size: 13px;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 14px 0;
+        font-size: 14px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        font-weight: 600;
+      }
+      .tag.good {
+        background: rgba(63, 185, 80, 0.15);
+        color: var(--good);
+      }
+      .tag.warn {
+        background: rgba(210, 153, 34, 0.15);
+        color: var(--warn);
+      }
+      .tag.bad {
+        background: rgba(248, 81, 73, 0.15);
+        color: var(--bad);
+      }
+      .tag.info {
+        background: rgba(110, 168, 254, 0.15);
+        color: var(--accent);
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px 18px;
+        margin: 14px 0;
+      }
+      .callout {
+        border-left: 3px solid var(--accent);
+        padding-left: 14px;
+        margin: 14px 0;
+        color: var(--muted);
+      }
+      .callout.warn {
+        border-color: var(--warn);
+      }
+      .callout.bad {
+        border-color: var(--bad);
+      }
+      .callout.good {
+        border-color: var(--good);
+      }
+      ul {
+        margin: 8px 0;
+        padding-left: 22px;
+      }
+      li {
+        margin: 3px 0;
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .tree {
+        font-family: ui-monospace, monospace;
+        font-size: 13px;
+        white-space: pre;
+        color: var(--ink);
+      }
+      hr {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 40px 0;
+      }
+      a {
+        color: var(--accent);
+      }
+      .phase {
+        display: block;
+        padding: 14px 16px;
+        margin: 10px 0;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        text-decoration: none;
+        color: var(--ink);
+      }
+      .phase:hover {
+        border-color: var(--accent);
+      }
+      .phase .n {
+        color: var(--accent);
+        font-weight: 700;
+        margin-right: 8px;
+      }
+      .phase .d {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Authz redesign</h1>
+      <p class="sub">
+        URL-derivable authorization for ctl-api. If every resource is reachable
+        by a route whose path encodes its full ownership chain, a request can be
+        authorized from the URL alone &mdash; no database lookup to reconstruct
+        ancestry, no denormalized ancestry columns.
+      </p>
+      <p class="meta">
+        Branch <code>ja/authz</code> (fresh, off <code>main</code>) &middot;
+        reviewed phase-by-phase before implementation.
+      </p>
+
+      <h2>The thesis</h2>
+      <p>
+        Authorization needs one thing: the
+        <strong>ownership chain of scope tiers</strong> for the target resource
+        (<code>org &rarr; app &rarr; install &rarr; &hellip;</code>), so it can
+        ask &ldquo;does this account hold a permission on any link in that chain
+        with sufficient access?&rdquo; Today that chain is <em>not</em> in the
+        URL for &ldquo;bare&rdquo; routes like
+        <code>/v1/components/builds/:build_id</code>, so the middleware
+        reconstructs it from the database.
+      </p>
+      <p>
+        If instead every resource is reachable by a nested route &mdash;
+        <code>/v1/apps/:app_id/components/:component_id/builds/:build_id</code>
+        &mdash; the chain is <strong>fully encoded in the path params</strong>,
+        and authorization becomes a pure function of
+        <code>(route&nbsp;pattern, path&nbsp;params, account&nbsp;permissions)</code
+        >.
+      </p>
+
+      <h2 id="use-cases">Why custom roles — example use cases</h2>
+      <p>
+        Today the only access is org-wide: the managed roles (admin / read-only
+        / runner) each cover everything in the org at read or all.
+        <strong>Custom roles</strong> add the missing &ldquo;just this
+        resource&rdquo; axis &mdash; a role whose policy carries permissions
+        scoped to specific resources or resource types. The model stays
+        role-based end to end: you compose a role, then assign it through the
+        same team / API-token / trust-policy flows as any managed role. Each row
+        below is a real need the managed roles alone can't express; the middle
+        column is the role's scoped permission entries.
+      </p>
+      <table>
+        <tr>
+          <th>Who / why</th>
+          <th>Custom role's entries</th>
+          <th>What it unlocks</th>
+        </tr>
+        <tr>
+          <td>
+            <strong>Per-app CI/CD token.</strong> A pipeline triggers an app
+            branch run on push; a leak shouldn't expose the rest of the org
+            &mdash; or even let it edit the app itself.
+          </td>
+          <td class="tree">all · app_branch · * scope=app_web</td>
+          <td>
+            Trigger branch runs for <code>app_web</code>'s branches only. Cannot
+            edit the app, its installs, or any other app. Replaces needing
+            <code>org_admin</code> for
+            <code>nuon apps branches trigger</code> today.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <strong>App maintainer, hands off branches.</strong> Read the whole
+            app but delegate full control of its release branches to CI.
+          </td>
+          <td class="tree">
+            read · app · app_web<br />all · app_branch · * scope=app_web
+          </td>
+          <td>
+            Read everything under <code>app_web</code> (walk-up), plus full
+            access to its branches only. Writing the app itself is still denied.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <strong>Contractor building one app.</strong> Should configure and
+            deploy the app they're hired for, nothing else.
+          </td>
+          <td class="tree">all · app · app_web</td>
+          <td>
+            Same as above, issued to a person instead of a token. Revoked by
+            removing the role assignment when the engagement ends.
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <strong>Read-only fleet monitor.</strong> A dashboard/on-call viewer
+            that watches every install's health but never mutates.
+          </td>
+          <td class="tree">read · install · * (type wildcard)</td>
+          <td>
+            Read every install in the org via install-nested routes. No
+            creates/updates/deletes anywhere.
+          </td>
+        </tr>
+      </table>
+      <div class="callout">
+        Read each entry as
+        <code>permission · resource_type · resource_id</code> &mdash; the shape
+        of a <code>PermissionEntry</code> on the role's policy (Phase&nbsp;2).
+        <code>*</code> means &ldquo;all resources of this type,&rdquo; org-wide
+        by default or confined to a parent with <code>scope=</code>. A parent
+        entry covers its children by walk-up (an <code>app</code> entry reaches
+        its installs and branches; an <code>org</code> entry &mdash; what
+        today's managed roles are &mdash; covers everything). Walk-up flows
+        <em>downward only</em>: a child entry never escalates to its parent. A
+        role may carry several entries; the rows above with two lines are single
+        roles with two entries.
+      </div>
+      <h2 id="data-model">Data model — before &amp; after</h2>
+      <p>
+        The assignment spine is <strong>unchanged</strong>: an account still
+        holds roles through <code>account_roles</code>, and a role still has
+        exactly one policy. The only structural change is on
+        <code>Policy</code>: today it carries an <code>hstore</code> of org-wide
+        permissions; after, it keeps that hstore untouched and gains an additive
+        <code>scoped_permissions</code> JSONB column holding an array of scoped
+        entries. &ldquo;Custom roles&rdquo; are just roles
+        (<code>Managed=false</code>) whose policy uses that new column.
+      </p>
+      <svg
+        viewBox="0 0 930 640"
+        role="img"
+        aria-label="Before and after data model"
+        style="width: 100%; height: auto; margin: 14px 0"
+      >
+        <style>
+          .ent {
+            fill: var(--panel);
+            stroke: var(--border);
+            stroke-width: 1.5;
+          }
+          .ent.new {
+            stroke: var(--good);
+            stroke-width: 2;
+          }
+          .jx {
+            fill: var(--code);
+            stroke: var(--border);
+            stroke-width: 1.2;
+            stroke-dasharray: 4 3;
+          }
+          .rel {
+            stroke: var(--muted);
+            stroke-width: 1.4;
+            fill: none;
+          }
+          .div {
+            stroke: var(--border);
+            stroke-width: 1;
+            stroke-dasharray: 3 4;
+          }
+          .hdr {
+            fill: var(--accent);
+            font: 700 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+              sans-serif;
+          }
+          .t {
+            fill: var(--ink);
+            font: 600 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+              sans-serif;
+          }
+          .s {
+            fill: var(--muted);
+            font: 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+              sans-serif;
+          }
+          .m {
+            fill: var(--ink);
+            font: 12px ui-monospace, "SF Mono", Menlo, monospace;
+          }
+          .mm {
+            fill: var(--muted);
+            font: 11px ui-monospace, "SF Mono", Menlo, monospace;
+          }
+          .card {
+            fill: var(--muted);
+            font: 10px ui-monospace, Menlo, monospace;
+          }
+          .newt {
+            fill: var(--good);
+            font: 700 10px -apple-system, sans-serif;
+          }
+        </style>
+        <defs>
+          <marker
+            id="ar"
+            markerWidth="9"
+            markerHeight="9"
+            refX="6.5"
+            refY="3"
+            orient="auto"
+          >
+            <path d="M0,0 L6.5,3 L0,6 Z" fill="var(--muted)" />
+          </marker>
+        </defs>
+
+        <line class="div" x1="465" y1="12" x2="465" y2="628" />
+        <text class="hdr" x="235" y="26" text-anchor="middle">
+          BEFORE — today
+        </text>
+        <text class="hdr" x="695" y="26" text-anchor="middle">
+          AFTER — planned
+        </text>
+
+        <!-- BEFORE -->
+        <rect class="ent" x="125" y="44" width="220" height="46" rx="8" />
+        <text class="t" x="235" y="66" text-anchor="middle">Account</text>
+        <text class="s" x="235" y="82" text-anchor="middle">
+          user · service · api token · trust policy
+        </text>
+
+        <line
+          class="rel"
+          x1="235"
+          y1="90"
+          x2="235"
+          y2="116"
+          marker-end="url(#ar)"
+        />
+        <rect class="jx" x="150" y="116" width="170" height="30" rx="6" />
+        <text class="mm" x="235" y="135" text-anchor="middle">
+          account_roles (M:N)
+        </text>
+
+        <line
+          class="rel"
+          x1="235"
+          y1="146"
+          x2="235"
+          y2="174"
+          marker-end="url(#ar)"
+        />
+        <rect class="ent" x="125" y="174" width="220" height="52" rx="8" />
+        <text class="t" x="235" y="196" text-anchor="middle">Role</text>
+        <text class="s" x="235" y="214" text-anchor="middle">
+          managed only: org_admin · read_only · runner
+        </text>
+
+        <line
+          class="rel"
+          x1="235"
+          y1="226"
+          x2="235"
+          y2="258"
+          marker-end="url(#ar)"
+        />
+        <text class="s" x="248" y="246">1 : 1</text>
+        <rect class="ent" x="105" y="258" width="260" height="104" rx="8" />
+        <text class="t" x="121" y="282">Policy</text>
+        <line class="div" x1="121" y1="292" x2="349" y2="292" />
+        <text class="m" x="121" y="314">
+          permissions :
+          <tspan class="mm">hstore</tspan>
+        </text>
+        <text class="mm" x="121" y="334">{ orgID &#8594; "all" | "read" }</text>
+        <text class="s" x="121" y="353">
+          org-wide only · one policy per role
+        </text>
+
+        <!-- AFTER -->
+        <rect class="ent" x="585" y="44" width="220" height="46" rx="8" />
+        <text class="t" x="695" y="66" text-anchor="middle">Account</text>
+        <text class="s" x="695" y="82" text-anchor="middle">
+          user · service · api token · trust policy
+        </text>
+
+        <line
+          class="rel"
+          x1="695"
+          y1="90"
+          x2="695"
+          y2="116"
+          marker-end="url(#ar)"
+        />
+        <rect class="jx" x="610" y="116" width="170" height="30" rx="6" />
+        <text class="mm" x="695" y="135" text-anchor="middle">
+          account_roles (M:N)
+        </text>
+
+        <line
+          class="rel"
+          x1="695"
+          y1="146"
+          x2="695"
+          y2="174"
+          marker-end="url(#ar)"
+        />
+        <rect class="ent" x="585" y="174" width="220" height="52" rx="8" />
+        <text class="t" x="695" y="196" text-anchor="middle">Role</text>
+        <text class="s" x="695" y="214" text-anchor="middle">
+          managed + custom (Managed = false)
+        </text>
+
+        <line
+          class="rel"
+          x1="695"
+          y1="226"
+          x2="695"
+          y2="258"
+          marker-end="url(#ar)"
+        />
+        <text class="s" x="708" y="246">1 : 1</text>
+        <rect class="ent new" x="545" y="258" width="300" height="120" rx="8" />
+        <text class="t" x="561" y="282">Policy</text>
+        <line class="div" x1="561" y1="292" x2="829" y2="292" />
+        <text class="m" x="561" y="313">
+          permissions :
+          <tspan class="mm">hstore</tspan>
+        </text>
+        <text class="s" x="561" y="330">
+          unchanged &#8212; org-wide, byte-for-byte
+        </text>
+        <line class="div" x1="561" y1="340" x2="829" y2="340" />
+        <text class="m" x="561" y="361">
+          scoped_permissions :
+          <tspan class="mm">jsonb</tspan>
+        </text>
+        <rect
+          x="758"
+          y="350"
+          width="34"
+          height="14"
+          rx="7"
+          fill="none"
+          stroke="var(--good)"
+          stroke-width="1.2"
+        />
+        <text class="newt" x="775" y="360" text-anchor="middle">NEW</text>
+        <text class="mm" x="561" y="373">[]PermissionEntry</text>
+
+        <line
+          class="rel"
+          x1="695"
+          y1="378"
+          x2="695"
+          y2="410"
+          marker-end="url(#ar)"
+        />
+        <rect class="ent new" x="545" y="410" width="300" height="196" rx="8" />
+        <text class="t" x="561" y="434">
+          PermissionEntry
+          <tspan class="s">(array &#8594; many per role)</tspan>
+        </text>
+        <line class="div" x1="561" y1="444" x2="829" y2="444" />
+        <text class="m" x="561" y="468">resource_type</text>
+        <text class="card" x="829" y="468" text-anchor="end">
+          org·app·install·app_branch·…
+        </text>
+        <text class="m" x="561" y="492">resource_id</text>
+        <text class="card" x="829" y="492" text-anchor="end">
+          id · "*" = type wildcard
+        </text>
+        <text class="m" x="561" y="516">scope_type</text>
+        <text class="card" x="829" y="516" text-anchor="end">
+          optional parent tier
+        </text>
+        <text class="m" x="561" y="540">scope_id</text>
+        <text class="card" x="829" y="540" text-anchor="end">
+          confines "*" to one parent
+        </text>
+        <text class="m" x="561" y="564">permissions []</text>
+        <text class="card" x="829" y="564" text-anchor="end">
+          {create,read,update,delete}
+        </text>
+        <text class="s" x="561" y="590">
+          verb subset &#8212; "all" = all four · "read" = {read}
+        </text>
+      </svg>
+
+      <h2 id="safety-rule">The one rule that keeps URL-only authz safe: scope every query by its ancestors</h2>
+      <div class="callout bad">
+        <p>
+          The URL is a <strong>claim</strong>, not a fact.
+          <code>/v1/apps/A/components/C</code> authorizing on <code>A</code> is
+          only sound if <code>C</code> genuinely belongs to <code>A</code>. The
+          <strong>ancestor-scoping rule</strong> makes that claim true: every
+          handler behind a nested route
+          <strong>must scope its query by every ancestor id that appears in the
+          path</strong> (<code>WHERE id = C AND app_id = A</code>), not just the
+          leaf id.
+        </p>
+        <p>
+          Scope by every id the URL <em>asserts</em>, because authz may rely on
+          any of them &mdash; if the path named both an app and an install
+          (<code>/apps/A/installs/I/&hellip;</code>), the handler would have to
+          confirm <code>I&nbsp;&isin;&nbsp;A</code> as well, or a grant on
+          <code>A</code> could reach an install from another app. Under
+          <strong>one-level nesting</strong> (the recommended route shape) the
+          path names only the resource's <strong>immediate owner</strong>, so in
+          practice that's the single ancestor to scope on; the chain's higher
+          tiers carry no id in the URL and match only via wildcards.
+        </p>
+        <p>
+          This is not extra work &mdash; it folds into the read the handler
+          already does &mdash; but it is a discipline. Phase&nbsp;1 makes it
+          enforceable by giving each resource the owner columns to scope on;
+          Phase&nbsp;3 audits that handlers do it.
+        </p>
+      </div>
+
+      <h2>Backwards compatibility</h2>
+      <ul>
+        <li>
+          <strong>Existing routes are untouched.</strong> Bare routes keep
+          working; they authorize at the org tier. Nested routes are additive.
+        </li>
+        <li>
+          <strong>Existing roles keep working.</strong> An org role grants
+          org-wide permission; the org is the last <code>Link</code> in every
+          chain, so the walk-up authorizes org-role holders exactly as today.
+          Scoped access via custom roles is strictly additive.
+        </li>
+        <li>
+          <strong>Rollout is gated</strong> by
+          <code>ScopedPermissionsEnabled</code>. Off = today's org-scoped behavior,
+          byte-for-byte.
+        </li>
+      </ul>
+
+      <h2>Phases</h2>
+      <a class="phase" href="phase-1-api-routes.html"
+        ><span class="n">1</span>API routes &amp; schema
+        <div class="d">
+          Nested routes for child resources that lack them; schema so every
+          chain is explicit. Existing routes untouched; bare routes authorize
+          org-scoped.
+        </div></a
+      >
+      <a class="phase" href="phase-2-scoped-permissions.html"
+        ><span class="n">2</span>Scoped permissions &amp; custom roles
+        <div class="d">
+          A <code>scoped_permissions</code> JSONB column on
+          <code>policies</code>, folding, scope-aware walk-up, and the roles API
+          for composing custom roles. The model stays role-based.
+        </div></a
+      >
+      <a class="phase" href="phase-3-enforcement.html"
+        ><span class="n">3</span>Enforcement
+        <div class="d">
+          Middleware authorizing from the URL; one code path that keeps org
+          roles working; actionable debug logging. Gated by
+          <code>ScopedPermissionsEnabled</code>.
+        </div></a
+      >
+      <a class="phase" href="phase-4-dashboard.html"
+        ><span class="n">4</span>Dashboard updates
+        <div class="d">
+          Repoint child-resource calls to nested routes; custom-role management UI.
+        </div></a
+      >
+      <a class="phase" href="phase-5-cli.html"
+        ><span class="n">5</span>CLI updates
+        <div class="d">
+          Repoint child-resource calls to nested routes;
+          <code>nuon roles</code> custom-role commands.
+        </div></a
+      >
+      <a class="phase" href="phase-6-docs.html"
+        ><span class="n">6</span>Documentation
+        <div class="d">
+          Product docs for custom roles &amp; scoped permissions: concept,
+          permission-entry reference, per-use-case recipes; regenerated API &amp;
+          CLI references.
+        </div></a
+      >
+    </div>
+  </body>
+</html>

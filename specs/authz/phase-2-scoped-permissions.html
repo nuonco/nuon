@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 2 — Scoped permissions &amp; custom roles</title>
+<style>
+  :root { --bg:#0f1115; --panel:#171a21; --ink:#e6e9ef; --muted:#9aa4b2; --accent:#6ea8fe; --good:#3fb950; --warn:#d29922; --bad:#f85149; --border:#2a2f3a; --code:#1e232c; }
+  @media (prefers-color-scheme: light) { :root { --bg:#ffffff; --panel:#f4f6f9; --ink:#1a1d23; --muted:#5a6472; --accent:#1a66d6; --good:#1a7f37; --warn:#9a6700; --bad:#cf222e; --border:#d7dbe2; --code:#eef0f3; } }
+  *{box-sizing:border-box;} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  .wrap{max-width:960px;margin:0 auto;padding:48px 24px 120px;}
+  h1{font-size:30px;margin:0 0 4px;letter-spacing:-.02em;} h2{font-size:22px;margin:44px 0 12px;padding-top:16px;border-top:1px solid var(--border);}
+  h3{font-size:17px;margin:26px 0 8px;color:var(--accent);} .sub{color:var(--muted);margin:0 0 8px;}
+  code{background:var(--code);padding:1px 6px;border-radius:4px;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:13px;}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:13px;} pre code{background:none;padding:0;}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px;} th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;} th{color:var(--muted);font-weight:600;}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;font-weight:600;} .tag.good{background:rgba(63,185,80,.15);color:var(--good);} .tag.warn{background:rgba(210,153,34,.15);color:var(--warn);} .tag.bad{background:rgba(248,81,73,.15);color:var(--bad);} .tag.info{background:rgba(110,168,254,.15);color:var(--accent);}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin:14px 0;}
+  .callout{border-left:3px solid var(--accent);padding-left:14px;margin:14px 0;color:var(--muted);} .callout.warn{border-color:var(--warn);} .callout.bad{border-color:var(--bad);} .callout.good{border-color:var(--good);}
+  ul{margin:8px 0;padding-left:22px;} li{margin:3px 0;} .meta{color:var(--muted);font-size:13px;} a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="meta"><a href="index.html">&larr; Authz redesign</a> &middot; Phase 2 of 6</p>
+<h1>Phase 2 — Scoped permissions &amp; custom roles</h1>
+<p class="sub">Extend the existing role/policy model so a policy can carry permissions scoped to a single resource (or all resources of a type under a parent), and let org admins compose those into <strong>custom roles</strong> &mdash; the entire model stays role-based. This is the data model and the roles API; enforcement is Phase&nbsp;3.</p>
+
+<div class="callout good"><strong>Design decision (settled).</strong> Access below the org tier is delivered by <strong>roles</strong>, exactly like today &mdash; permissions are always mediated by a role assigned through <code>account_roles</code>, never attached directly to an account. A &ldquo;scoped permission&rdquo; is a new kind of entry on a <code>Policy</code>; a &ldquo;custom role&rdquo; is a role whose policy carries such entries. Everything rides the existing assignment surface (team members, API tokens, OIDC trust policies, invites) for free.</div>
+
+<h2>1. Model — a JSONB column on <code>policies</code></h2>
+<p>A <code>Policy</code> already carries permissions as <code>(objectID &rarr; permission)</code> pairs in its <code>Permissions</code> hstore, and a role has exactly one policy (<code>Policy.RoleID</code>, unique index on <code>role_id</code>). Leave that hstore <strong>untouched</strong> (org-tier permissions keep working byte-for-byte) and add an additive JSONB column for the richer, scoped entries:</p>
+<pre><code>// Level enumerates the resource kinds authz recognizes — the link types an
+// ownership chain can contain, and the kinds a permission can target or scope to.
+type Level string
+const (
+    LevelOrg       Level = "org"
+    LevelApp       Level = "app"
+    LevelInstall   Level = "install"
+    LevelAppBranch Level = "app_branch"
+    // + delegable org-owned siblings: webhook, vcs_connection, slack_subscription, …
+)
+
+type PermissionEntry struct {
+    ResourceType Level                    // the kind of resource this permission is on
+    ResourceID   string                   // canonical id, or "*" = all of ResourceType within (ScopeType, ScopeID)
+    ScopeType    Level                    // OPTIONAL parent level a "*" wildcard is confined to; "" = org-wide
+    ScopeID      string                   // OPTIONAL parent id, of ScopeType; "" = org-wide
+    Permissions  []permissions.Permission // subset of {create, read, update, delete}; ["all"] = all four
+}
+
+type Policy struct {
+    ...
+    Permissions       pgtype.Hstore     `gorm:"type:hstore"`                 // UNCHANGED — org-tier, byte-for-byte
+    ScopedPermissions []PermissionEntry  `gorm:"type:jsonb;serializer:json"` // NEW — scoped entries
+}</code></pre>
+<p>The <code>Level</code> enum is the single list of resource kinds authz distinguishes. Phase 1 ensures each level the routes express is a distinct link in the ownership chain (notably <code>app_branch</code>, so branch access is separable from whole-app access); leaf kinds like <code>component</code> join the enum only if we decide to scope permissions directly to them (Phase 3 review item 3).</p>
+<ul>
+<li><strong>Additive JSONB column, no hstore conversion.</strong> There is no precedent in this codebase for converting an hstore column to JSONB, and it is risky (every reader/writer flips at once, plus an <code>ALTER ... USING</code> transform). Instead we follow the <code>102_webhooks_match</code> playbook: add a new nullable JSONB column via AutoMigrate; existing rows get <code>NULL</code>/empty and behave exactly as before.</li>
+<li><code>"*"</code> in <code>ResourceID</code> means &ldquo;every resource of this type,&rdquo; tier-scoped by <code>(ScopeType, ScopeID)</code>, never leaking across tiers &mdash; distinct from the permission-set <code>"*"</code> fallback.</li>
+<li><strong>Matching is on <code>ScopeID</code> alone</strong> (ids are globally unique and self-typing by prefix); <code>ScopeType</code> exists to resolve a name&rarr;id, validate the scope is a legal parent of <code>ResourceType</code>, and render the entry legibly.</li>
+</ul>
+
+<h2>2. Permission resolution — <code>Account.AfterQuery</code></h2>
+<p>Both columns fold into the account's effective permissions, unchanged in spirit from today &mdash; roles are still the only source:</p>
+<ul>
+<li><strong>hstore keys</strong> &rarr; folded into <code>AllPermissions</code> exactly as today (org-tier grants).</li>
+<li><strong>Object entries</strong> (<code>ResourceID</code> concrete) &rarr; <code>AllPermissions.Grant(resourceID, perms)</code>.</li>
+<li><strong>Wildcard entries</strong> (<code>ResourceID == "*"</code>) &rarr; <code>TypeGrants[orgID][resourceType]</code> holds <code>{scopeID, perms}</code> (org-wide when <code>scopeID == ""</code>).</li>
+</ul>
+<p>Membership (<code>HasOrg</code> / <code>Account.OrgIDs</code>) is still driven by role assignment via <code>account_roles</code> &mdash; nothing changes there, because a custom role is assigned the same way as a managed one.</p>
+<div class="callout warn"><strong>Shared-core change:</strong> <code>permissions.Set</code> holds <em>one</em> <code>Permission</code> per object today (<code>map[obj]Permission</code>), so it can't carry a verb subset like <code>{read, create}</code>. Supporting verb-set entries (&sect;5) generalizes it to a verb set per object (<code>all</code> = <code>{create,read,update,delete}</code>). Managed-role hstore policies fold into the same <code>Set</code> via <code>Add</code>, so this rides through <code>Add</code>/<code>CanPerform</code> and is backwards compatible &mdash; but it is not scoped-only; it touches the shared permission core.</div>
+
+<h2>3. Walk-up primitive — <code>authz.Authorize(perms, wildcards, chain, perm)</code></h2>
+<p>Given a resource's ownership chain (most-specific first) it allows the request if any link carries a sufficient permission &mdash; an object entry on that link's id, or a wildcard entry on that link's type <em>whose scope matches</em> (see §4). The org id is the last link in every chain, which is exactly how managed org-role holders keep working.</p>
+<div class="callout">Phase 3 supplies the <code>chain</code> from the URL instead of from a DB lookup &mdash; that substitution is the entire redesign.</div>
+
+<h2 id="scoped">4. App-scoped wildcards</h2>
+<p>&ldquo;All of <em>this app's</em> branches&rdquo; (read on an app, all on its branches) is a case an org-wide wildcard can't express. The three naive options all fail:</p>
+<table>
+<tr><th>Attempt (entry)</th><th>Why it fails</th></tr>
+<tr><td><code>all · app · app_web</code></td><td>too broad &mdash; walk-up gives all on the app itself and every install/component under it, not just branches</td></tr>
+<tr><td><code>all · app_branch · *</code> (org-wide)</td><td>too broad &mdash; covers branches in <em>every</em> app, not just <code>app_web</code></td></tr>
+<tr><td><code>all · app_branch · brn_1</code>, <code>brn_2</code>, &hellip;</td><td>doesn't cover branches created later; unmanageable</td></tr>
+</table>
+<p><strong>Model:</strong> a wildcard entry carries an optional <code>ScopeID</code> naming the parent it is confined to. A custom role &ldquo;app_web release manager&rdquo; is then exactly two entries on its policy:</p>
+<pre><code>read · app        · app_web              // scopeID ""      → reads flow down to all children
+all  · app_branch · *   scope=app_web    // all, but only on branches under app_web</code></pre>
+<p><strong>Walk-up change:</strong> when <code>Authorize</code> reaches a link of type <code>T</code>, a type-wildcard for <code>T</code> authorizes only if its <code>ScopeID</code> is empty (org-wide) <em>or</em> equals the id of some ancestor link already in the chain. For a request to <code>/v1/apps/app_web/branches/brn_y/runs</code> the chain is <code>[app_branch:brn_y, app:app_web, org]</code>; the scoped wildcard's <code>scope=app_web</code> matches the <code>app</code> link, so it authorizes &mdash; and only for branches under that app.</p>
+<div class="callout">
+<code>authz.Authorize</code> already receives the full chain, so ancestor ids are in hand; the wildcards argument gains a scope id per entry (<code>map[type][]{scopeID, perm}</code>). This is the one structural change to the reused core &mdash; small, and it generalizes to any &ldquo;all of parent P's children of type T&rdquo; entry, not just branches.
+</div>
+
+<h2>5. Permission granularity — verbs, not capabilities</h2>
+<p>Entries carry a <strong>subset of the four verbs</strong> <code>{create, read, update, delete}</code>, not just <code>read</code>/<code>all</code>. This is nearly free: <code>Permission</code> already enumerates all four verbs, <code>FromRequest</code> already derives the verb per request, and <code>CanPerform</code> already matches a request's verb against the granted permission (<code>val == all || val == perm</code>). The only real work is the &sect;2 <code>Set</code> generalization (one value &rarr; verb set per object) so a resource can carry, say, <code>{read, create}</code>. <code>read</code> and <code>all</code> remain as aliases (<code>{read}</code> and all four).</p>
+<div class="callout bad">
+<strong>Caveat that bounds this: the HTTP verb is a lossy proxy for risk.</strong> Destructive operations are not all <code>DELETE</code> &mdash; many are <code>POST</code>, so they map to <code>create</code>:
+<pre><code>POST /v1/installs/:id/deprovision      → create
+POST /v1/installs/:id/teardown         → create
+POST /v1/installs/:id/forget           → create
+POST /v1/installs/:id/components/:id/teardown → create</code></pre>
+So a <code>create</code> permission authorizes deploys <em>and</em> deprovision/teardown/forget. Verb-set entries give <code>read</code>-vs-<code>write</code> granularity, <strong>not</strong> <code>deploy</code>-vs-<code>destroy</code>. Achieving the latter (&ldquo;deploy but not destroy&rdquo;) requires a <strong>capability taxonomy</strong> &mdash; labelling each route <code>deploy</code>/<code>destroy</code>/<code>configure</code>/<code>read</code> independent of its HTTP verb &mdash; which is a larger, separate design.
+</div>
+<div class="callout good"><strong>Recommendation:</strong> ship verb-set entries now (cheap, strictly more expressive than read/all, backwards compatible). Defer capability-level permissions; do not pretend verb-level delivers &ldquo;safe subsets&rdquo; of destructive actions.</div>
+
+<h2>6. Custom roles &mdash; the delivery vehicle</h2>
+<p>A custom role is an ordinary <code>Role</code> (<code>Managed=false</code>) whose single policy carries <code>ScopedPermissions</code> entries. It is created, assigned, and revoked through the <strong>existing roles machinery</strong> &mdash; there is no separate concept to learn or build.</p>
+<table>
+<tr><th></th><th>permission</th><th>scope</th></tr>
+<tr><td><strong>Managed role (today)</strong></td><td>read / all</td><td>org-wide only (hstore)</td></tr>
+<tr><td><strong>Custom role (this phase)</strong></td><td>verb set (&sect;5)</td><td>org / app / install / app_branch / type-wildcard (optionally parent-scoped) / specific resource</td></tr>
+</table>
+<h3>Roles API</h3>
+<table>
+<tr><th>Route</th><th>Who</th><th>Notes</th></tr>
+<tr><td><code>POST /v1/roles</code></td><td>org-admin</td><td>body <code>{title, description, contexts, permissions: [PermissionEntry…]}</code>. Each entry resolves app/install by name-or-id and org-owned by id, accepts <code>"*"</code> (with optional <code>scope_type</code>+<code>scope_id</code> pinning it to a parent, validated as a legal parent tier), and a verb subset or the alias <code>["all"]</code>/<code>["read"]</code>. Creates the role + its one policy. <code>Managed=false</code>.</td></tr>
+<tr><td><code>GET /v1/roles</code> / <code>GET /v1/roles/:id</code></td><td>member</td><td>existing list/detail, now surfacing <code>ScopedPermissions</code>.</td></tr>
+<tr><td><code>PATCH /v1/roles/:id</code></td><td>org-admin</td><td>edit a custom role's entries/metadata. Managed roles stay read-only (reconciler owns them).</td></tr>
+<tr><td><code>DELETE /v1/roles/:id</code></td><td>org-admin</td><td>delete a custom role; cascades its <code>account_roles</code>. Managed roles cannot be deleted.</td></tr>
+</table>
+<p>Assignment is <strong>unchanged</strong>: <code>account_roles</code> via the existing team / API-token / trust-policy / invite flows, which already accept any role the org owns. The role management routes are bare <code>/v1/roles</code> and authorize at the org tier (org-admin) &mdash; managing who-can-access is an org-admin action.</p>
+<h3>Managed roles are immutable</h3>
+<p>The managed roles (<code>org_admin</code>, <code>org_read_only</code>, <code>runner</code>, and the deprecated set) are owned and kept in sync by the authz reconciler. They are the platform's guarantee of a consistent baseline, so the write endpoints above <strong>must refuse to touch them</strong>:</p>
+<ul>
+<li><code>PATCH /v1/roles/:id</code> and <code>DELETE /v1/roles/:id</code> reject any role with <code>Managed=true</code> (return a 4xx explaining managed roles cannot be edited or deleted). Only <code>Managed=false</code> custom roles are mutable.</li>
+<li><code>POST /v1/roles</code> always creates <code>Managed=false</code>; a request cannot set <code>Managed=true</code> to forge a managed role.</li>
+<li>The reconciler remains the <em>sole</em> writer of managed roles &mdash; this API never competes with it.</li>
+</ul>
+<p>This keeps the managed catalog fixed and reconciler-authoritative while custom roles are freely additive.</p>
+<div class="callout warn"><strong>Other guardrails to settle at review.</strong> (1) A custom role's entries are bounded by the org (no cross-org ids). (2) Do we cap scope depth or entry count per role? Recommend a generous soft cap, enforced in validation.</div>
+
+<h2>7. Files (anticipated)</h2>
+<ul>
+<li><code>services/ctl-api/internal/app/policy.go</code> &mdash; add <code>ScopedPermissions []PermissionEntry</code> (jsonb) + the <code>PermissionEntry</code> / <code>Level</code> types.</li>
+<li><code>services/ctl-api/internal/app/account.go</code> &mdash; fold <code>ScopedPermissions</code> in <code>AfterQuery</code> (object grants + <code>TypeGrants</code>).</li>
+<li><code>services/ctl-api/internal/pkg/authz/permissions/*</code> &mdash; generalize <code>Set</code> to a verb set per object (&sect;2).</li>
+<li><code>services/ctl-api/internal/pkg/authz/authorize.go</code> (+ test) &mdash; scope-aware walk-up (&sect;4).</li>
+<li><code>services/ctl-api/internal/app/roles/service/</code> &mdash; extend create/patch/delete to accept scoped permission entries; enforce managed-role immutability.</li>
+<li>One migration adding the <code>scoped_permissions</code> JSONB column (via AutoMigrate; no data transform). SDK regen.</li>
+</ul>
+
+<h2>8. Acceptance</h2>
+<ul>
+<li>An org admin can create a custom role with scoped permission entries, assign it via the existing role-assignment flows, and delete it.</li>
+<li><strong>Managed-role immutability:</strong> <code>PATCH</code>/<code>DELETE</code> on a managed role (<code>org_admin</code> / <code>org_read_only</code> / <code>runner</code>) is refused with a clear 4xx; <code>POST /v1/roles</code> cannot create a <code>Managed=true</code> role; the reconciler stays the sole writer of managed roles.</li>
+<li>A member holding a custom role sees the role's <code>ScopedPermissions</code> reflected in <code>AllPermissions</code> / <code>TypeGrants</code> after query; a member with only managed roles is byte-for-byte unchanged.</li>
+<li><code>authz.Authorize</code> unit tests cover: object entry hit, org-wide wildcard hit, org-tier hit, miss, and <strong>scoped wildcard</strong> (matches only when its <code>scopeID</code> is an ancestor in the chain — e.g. <code>all·app_branch·* scope=app_web</code> authorizes a branch under <code>app_web</code> but not under <code>app_billing</code>).</li>
+<li><strong>Verb-set permissions:</strong> an entry of <code>{read, create}</code> authorizes GET and POST on its resource but denies PATCH/DELETE; <code>read</code> and <code>all</code> aliases behave as <code>{read}</code> and all four verbs; managed-role hstore policies still authorize exactly as before through the generalized <code>Set</code>.</li>
+<li>No enforcement wired yet (Phase 3) &mdash; custom roles exist and resolve into permissions but don't change request outcomes until the middleware consumes the chain.</li>
+</ul>
+
+<h2>9. Review checkpoint</h2>
+<ol>
+<li>Confirm the additive-JSONB-column approach (no hstore conversion) <span class="tag info">rec: yes</span></li>
+<li>Confirm custom roles are the sole sub-org access vehicle &mdash; all access mediated by a role <span class="tag info">rec: yes</span></li>
+<li>Managed-role immutability + org-bounded entries + any per-role caps (&sect;6 guardrails).</li>
+<li>Ship verb-set permissions now; defer capability taxonomy <span class="tag info">rec: yes</span></li>
+</ol>
+
+</div>
+</body>
+</html>

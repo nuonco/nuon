@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Phase 3 — Enforcement</title>
+    <style>
+      :root {
+        --bg: #0f1115;
+        --panel: #171a21;
+        --ink: #e6e9ef;
+        --muted: #9aa4b2;
+        --accent: #6ea8fe;
+        --good: #3fb950;
+        --warn: #d29922;
+        --bad: #f85149;
+        --border: #2a2f3a;
+        --code: #1e232c;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #ffffff;
+          --panel: #f4f6f9;
+          --ink: #1a1d23;
+          --muted: #5a6472;
+          --accent: #1a66d6;
+          --good: #1a7f37;
+          --warn: #9a6700;
+          --bad: #cf222e;
+          --border: #d7dbe2;
+          --code: #eef0f3;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+      }
+      .wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 48px 24px 120px;
+      }
+      h1 {
+        font-size: 30px;
+        margin: 0 0 4px;
+        letter-spacing: -0.02em;
+      }
+      h2 {
+        font-size: 22px;
+        margin: 44px 0 12px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+      }
+      h3 {
+        font-size: 17px;
+        margin: 26px 0 8px;
+        color: var(--accent);
+      }
+      .sub {
+        color: var(--muted);
+        margin: 0 0 8px;
+      }
+      code {
+        background: var(--code);
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 13px;
+      }
+      pre {
+        background: var(--code);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px 16px;
+        overflow-x: auto;
+        font-size: 13px;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 14px 0;
+        font-size: 14px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 11px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        font-weight: 600;
+      }
+      .tag.good {
+        background: rgba(63, 185, 80, 0.15);
+        color: var(--good);
+      }
+      .tag.warn {
+        background: rgba(210, 153, 34, 0.15);
+        color: var(--warn);
+      }
+      .tag.bad {
+        background: rgba(248, 81, 73, 0.15);
+        color: var(--bad);
+      }
+      .tag.info {
+        background: rgba(110, 168, 254, 0.15);
+        color: var(--accent);
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px 18px;
+        margin: 14px 0;
+      }
+      .callout {
+        border-left: 3px solid var(--accent);
+        padding-left: 14px;
+        margin: 14px 0;
+        color: var(--muted);
+      }
+      .callout.warn {
+        border-color: var(--warn);
+      }
+      .callout.bad {
+        border-color: var(--bad);
+      }
+      .callout.good {
+        border-color: var(--good);
+      }
+      ul {
+        margin: 8px 0;
+        padding-left: 22px;
+      }
+      li {
+        margin: 3px 0;
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      a {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <p class="meta">
+        <a href="index.html">&larr; Authz redesign</a> &middot; Phase 3 of 6
+      </p>
+      <h1>Phase 3 — Enforcement</h1>
+      <p class="sub">
+        Authorize each request from its URL: build the ownership chain from the
+        matched route pattern + path params, then walk it with
+        <code>authz.Authorize</code>. No DB lookup to resolve ancestry.
+        Backwards compatible with today's org-scoped auth, gated by
+        <code>ScopedPermissionsEnabled</code>, with debug logging that says exactly
+        why a request was allowed or denied.
+      </p>
+
+      <h2>1. Chain from the route pattern</h2>
+      <p>
+        A single ordered table maps route-pattern prefixes to the tiers their
+        path params name &mdash; no database read, no denormalized columns.
+      </p>
+      <pre><code>chainFromPath(fullPath, params, orgID) -&gt; []authz.Link</code></pre>
+      <p>Rules (first match wins, most-specific prefix first):</p>
+      <table>
+        <tr>
+          <th>Pattern contains</th>
+          <th>Chain</th>
+        </tr>
+        <tr>
+          <td><code>:install_id</code></td>
+          <td class="tree">
+            [{install,&nbsp;id}, {app,&nbsp;""}, {org,&nbsp;orgID}]
+          </td>
+        </tr>
+        <tr>
+          <td><code>:app_id</code></td>
+          <td class="tree">[{app,&nbsp;id}, {org,&nbsp;orgID}]</td>
+        </tr>
+        <tr>
+          <td>org-owned prefix (webhook / vcs / slack)</td>
+          <td class="tree">[{type,&nbsp;id-or-""}, {org,&nbsp;orgID}]</td>
+        </tr>
+        <tr>
+          <td>otherwise (bare / unrecognized)</td>
+          <td class="tree">[{org,&nbsp;orgID}]</td>
+        </tr>
+      </table>
+      <ul>
+        <li>
+          <code>id</code> is the raw path param &mdash;
+          <strong>no DB read</strong>. Name-or-id params still work: a name is
+          just an id we don't recognize as a grant target, so it falls through
+          to the org/app tier grants the same way (the handler's own query
+          resolves name&rarr;row).
+        </li>
+        <li>
+          An app link inside an install chain carries an empty id (<code
+            >{app, ""}</code
+          >): the walk-up treats an empty-id link as &ldquo;no object grant at
+          this tier, but a type-wildcard here still authorizes.&rdquo;
+        </li>
+        <li>The org id comes from the org middleware context, as today.</li>
+      </ul>
+
+      <h2>2. The middleware, end to end</h2>
+      <pre><code>if global/public: next()
+resolve org      (as today)
+resolve account  (as today)
+perm  := permissions.FromRequest(ctx)          // GET→read, POST→create, …
+chain := chainFromPath(ctx.FullPath(), params, org.ID)
+
+if !ScopedPermissionsEnabled:
+    // legacy: org tier only
+    if acct.AllPermissions.CanPerform(org.ID, perm) != nil: deny (permissionDeniedError)
+    else: allow
+else:
+    err := authz.Authorize(acct.AllPermissions, acct.OrgTypeGrants(org.ID), chain, perm)
+    if err == nil:              allow
+    else if !acct.HasOrg(org.ID): deny "no access to org"   // not even a member
+    else:                        deny (permissionDeniedError with resolved chain)</code></pre>
+      <div class="callout good">
+        The org-role fast path is <strong>not</strong> special-cased. An
+        org-role holder has <code>CanPerform(org.ID, perm)</code>, and
+        <code>org</code> is the last link in every chain, so
+        <code>authz.Authorize</code> returns nil for them on every route. That
+        is the backwards-compat guarantee, expressed as one code path rather
+        than a branch.
+      </div>
+
+      <h2>3. Ancestor-scoped handler queries (the safety rule)</h2>
+      <p>
+        Enforcement authorizes the <em>claim</em> the URL makes. The handler
+        must make the claim true by scoping its primary read to the ancestors in
+        the path (see <a href="index.html#safety-rule">the ancestor-scoping rule</a>). Phase 3
+        includes an audit of the newly-nested handlers to confirm each does
+        this; a leaf fetched by id alone behind a nested route is a finding, not
+        an acceptable pattern.
+      </p>
+
+      <h2>4. Debug logging</h2>
+      <p>
+        At debug level on every authorized request, and at info level on
+        <strong>every denial</strong>, log structured fields:
+      </p>
+      <table>
+        <tr>
+          <th>Field</th>
+          <th>Value</th>
+        </tr>
+        <tr>
+          <td>
+            <code>route</code>, <code>method</code>, <code>permission</code>
+          </td>
+          <td>the matched pattern, verb, resolved permission</td>
+        </tr>
+        <tr>
+          <td><code>chain</code></td>
+          <td><code>install:inl_… &gt; app:* &gt; org:org_…</code></td>
+        </tr>
+        <tr>
+          <td><code>decision</code></td>
+          <td><code>allow</code> / <code>deny</code></td>
+        </tr>
+        <tr>
+          <td><code>authorized_by</code></td>
+          <td>
+            <code>grant:install:inl_…</code> / <code>wildcard:app</code> /
+            <code>role:org</code> / <code>none</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>account_id</code>, <code>org_id</code></td>
+          <td>identity</td>
+        </tr>
+        <tr>
+          <td><code>missing</code> (deny only)</td>
+          <td>
+            human phrasing: &ldquo;needs <code>read</code> on install
+            <code>inl_…</code>, its app, or the org&rdquo;
+          </td>
+        </tr>
+      </table>
+      <p>
+        The denial returned to the client stays the human-readable
+        <code>permissionDeniedError</code> from current main; the log carries
+        the full chain detail for operators.
+      </p>
+
+      <h2>5. Files (anticipated)</h2>
+      <ul>
+        <li>
+          <code>services/ctl-api/internal/middlewares/org/org.go</code> &mdash;
+          the flow above.
+        </li>
+        <li>
+          <code>services/ctl-api/internal/middlewares/org/chain.go</code> (+
+          <code>chain_test.go</code>) &mdash; <code>chainFromPath</code> + the
+          route-pattern table (new).
+        </li>
+        <li>
+          <code>internal/pkg/cctx/…</code> &mdash; reuse
+          <code>SetOrgAuthorized</code> only if collection filtering needs it;
+          otherwise omit.
+        </li>
+        <li>No new migrations.</li>
+      </ul>
+
+      <h2>6. Acceptance</h2>
+      <ul>
+        <li>
+          <strong><code>ScopedPermissionsEnabled=false</code>:</strong> behavior
+          byte-identical to current main; existing authz integration tests pass
+          unchanged.
+        </li>
+        <li>
+          <strong><code>=true</code>:</strong> managed org-role holders reach
+          every route; an account holding only a custom role with
+          <code>read·install·X</code> can GET install-X nested routes and is
+          denied on install-Y and on bare routes; a custom role with
+          <code>all·app·A</code> reaches every install under A via
+          install-nested routes; a non-member is denied &ldquo;no access to
+          org.&rdquo;
+        </li>
+        <li>
+          <code>chainFromPath</code> table tests cover install / app / org-owned
+          / bare / name-as-id.
+        </li>
+        <li>
+          Denials log the chain and the actionable <code>missing</code> line.
+        </li>
+      </ul>
+
+      <h2>7. Review checkpoint</h2>
+      <ol>
+        <li>
+          Confirm the empty-id app-link semantics on install routes: app-scoped
+          <em>object</em> grants do not apply when the app id isn't in the URL
+          &mdash; only app <em>wildcard</em> grants do. Correct, but the one
+          subtle point worth an explicit sign-off.
+        </li>
+        <li>
+          Confirm log levels (deny at info, allow at debug) and the field set.
+        </li>
+      </ol>
+    </div>
+  </body>
+</html>

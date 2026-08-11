@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 5 — CLI updates</title>
+<style>
+  :root { --bg:#0f1115; --panel:#171a21; --ink:#e6e9ef; --muted:#9aa4b2; --accent:#6ea8fe; --good:#3fb950; --warn:#d29922; --bad:#f85149; --border:#2a2f3a; --code:#1e232c; }
+  @media (prefers-color-scheme: light) { :root { --bg:#ffffff; --panel:#f4f6f9; --ink:#1a1d23; --muted:#5a6472; --accent:#1a66d6; --good:#1a7f37; --warn:#9a6700; --bad:#cf222e; --border:#d7dbe2; --code:#eef0f3; } }
+  *{box-sizing:border-box;} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  .wrap{max-width:960px;margin:0 auto;padding:48px 24px 120px;}
+  h1{font-size:30px;margin:0 0 4px;letter-spacing:-.02em;} h2{font-size:22px;margin:44px 0 12px;padding-top:16px;border-top:1px solid var(--border);}
+  h3{font-size:17px;margin:26px 0 8px;color:var(--accent);} .sub{color:var(--muted);margin:0 0 8px;}
+  code{background:var(--code);padding:1px 6px;border-radius:4px;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:13px;}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:13px;} pre code{background:none;padding:0;}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px;} th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;} th{color:var(--muted);font-weight:600;}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;font-weight:600;} .tag.info{background:rgba(110,168,254,.15);color:var(--accent);}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin:14px 0;}
+  .callout{border-left:3px solid var(--accent);padding-left:14px;margin:14px 0;color:var(--muted);} .callout.good{border-color:var(--good);}
+  ul{margin:8px 0;padding-left:22px;} li{margin:3px 0;} .meta{color:var(--muted);font-size:13px;} a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="meta"><a href="index.html">&larr; Authz redesign</a> &middot; Phase 5 of 6</p>
+<h1>Phase 5 — CLI updates</h1>
+<p class="sub">Move the CLI onto the nested routes so a resource-scoped API token / OIDC identity works, and add commands to manage custom roles.</p>
+
+<h2>1. Use nested routes</h2>
+<p>The CLI (<code>bins/cli/</code>) drives the Go SDK (<code>sdks/nuon-go</code>). After Phase 1 regenerates the SDK with nested operations, repoint the CLI service layer at the nested calls for child resources, threading the app/install id the command already resolves. Bare-route calls that only org admins run (org-level operations) can stay as-is.</p>
+<p><strong>Method:</strong> find CLI service calls to bare child operations; switch to the nested SDK operation, using the <code>-a/--app</code> / <code>-i/--install</code> context the command group already has.</p>
+
+<h2>2. Custom-role commands</h2>
+<p>Extend the existing <code>nuon</code> role surface to create and manage custom roles, mirroring the Phase 2 roles API. Each <code>--permission</code> is a scoped permission entry (repeatable):</p>
+<pre><code>nuon roles create --title "app_web release manager" \
+      --permission "read:app:app_web" \
+      --permission "all:app_branch:*:scope=app_web"
+nuon roles list
+nuon roles delete &lt;role_id&gt;
+
+# assignment is unchanged — custom roles are just assignable roles:
+nuon orgs api-tokens create --role &lt;role_id&gt;</code></pre>
+<ul>
+<li>The <code>--permission</code> value parses as <code>verb:resource_type:resource-or-*[:scope=&lt;parent&gt;]</code>; <code>read</code>/<code>all</code> and comma-joined verb sets both accepted.</li>
+<li>Follows the CLI's agent-facing conventions (<code>--output agent|json</code>, <code>--read-only</code> blocks create/delete).</li>
+<li>Managed roles are read-only; <code>delete</code>/edit reject them with the standard CLI error surface.</li>
+<li>Assignment rides the existing <code>--role</code> flag on api-tokens / trust policies / invites &mdash; no new assignment command.</li>
+</ul>
+
+<h2>3. Files (anticipated)</h2>
+<ul>
+<li><code>sdks/nuon-go/*</code> &mdash; regenerated (from Phase 1).</li>
+<li><code>bins/cli/internal/services/*</code> &mdash; repointed child-resource calls.</li>
+<li><code>bins/cli/internal/services/roles/*</code> + <code>bins/cli/cmd/roles*</code> &mdash; extended/new role commands + <code>--permission</code> entry parser.</li>
+<li><code>docs/cli-commands.mdx</code> &mdash; regenerated.</li>
+</ul>
+
+<h2>4. Acceptance</h2>
+<ul>
+<li>Child-resource CLI commands work for a resource-scoped identity (not just org admins) once enforcement is on.</li>
+<li><code>nuon roles create/list/delete</code> round-trips against the API; created custom roles are assignable via <code>--role</code>.</li>
+<li><code>--read-only</code> blocks role mutations; <code>--output agent</code> emits a single envelope; managed roles reject mutation.</li>
+<li>Bare-route org-admin commands unchanged.</li>
+</ul>
+
+<h2>5. Review checkpoint</h2>
+<p>Confirm the <code>--permission</code> entry syntax (<code>verb:type:id[:scope=parent]</code>) and command placement: extend <code>nuon roles</code> <span class="tag info">rec</span> vs a new group.</p>
+
+</div>
+</body>
+</html>

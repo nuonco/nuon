@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 6 — Documentation</title>
+<style>
+  :root { --bg:#0f1115; --panel:#171a21; --ink:#e6e9ef; --muted:#9aa4b2; --accent:#6ea8fe; --good:#3fb950; --warn:#d29922; --bad:#f85149; --border:#2a2f3a; --code:#1e232c; }
+  @media (prefers-color-scheme: light) { :root { --bg:#ffffff; --panel:#f4f6f9; --ink:#1a1d23; --muted:#5a6472; --accent:#1a66d6; --good:#1a7f37; --warn:#9a6700; --bad:#cf222e; --border:#d7dbe2; --code:#eef0f3; } }
+  *{box-sizing:border-box;} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+  .wrap{max-width:960px;margin:0 auto;padding:48px 24px 120px;}
+  h1{font-size:30px;margin:0 0 4px;letter-spacing:-.02em;} h2{font-size:22px;margin:44px 0 12px;padding-top:16px;border-top:1px solid var(--border);}
+  h3{font-size:17px;margin:26px 0 8px;color:var(--accent);} .sub{color:var(--muted);margin:0 0 8px;}
+  code{background:var(--code);padding:1px 6px;border-radius:4px;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:13px;}
+  pre{background:var(--code);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:13px;} pre code{background:none;padding:0;}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px;} th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;} th{color:var(--muted);font-weight:600;}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;font-weight:600;} .tag.info{background:rgba(110,168,254,.15);color:var(--accent);}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin:14px 0;}
+  .callout{border-left:3px solid var(--accent);padding-left:14px;margin:14px 0;color:var(--muted);} .callout.good{border-color:var(--good);}
+  ul{margin:8px 0;padding-left:22px;} li{margin:3px 0;} .meta{color:var(--muted);font-size:13px;} a{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<p class="meta"><a href="index.html">&larr; Authz redesign</a> &middot; Phase 6 of 6</p>
+<h1>Phase 6 — Documentation</h1>
+<p class="sub">Document custom roles and scoped permissions in the product docs so users can discover, compose, and assign a scoped role without reading the design. Ships last, once the surfaces it describes (Phases 2, 4, 5) are live.</p>
+
+<h2>1. What needs documenting</h2>
+<p>The redesign adds one user-facing concept &mdash; a role whose permissions are scoped to specific resources or resource types &mdash; reachable from three surfaces (API, dashboard, CLI). The docs must explain the concept once and then show each surface.</p>
+<table>
+<tr><th>Topic</th><th>Reader question it answers</th></tr>
+<tr><td>Roles &amp; permissions model</td><td>What is a role, a policy, a scoped permission entry? How do managed and custom roles differ? What can and can't a custom role do (walk-up is downward-only; managed roles are immutable)?</td></tr>
+<tr><td>Permission entry reference</td><td>What are the fields (<code>resource_type</code>, <code>resource_id</code>, <code>scope</code>, verb set)? What does <code>*</code> mean, and how does <code>scope=</code> confine it?</td></tr>
+<tr><td>Recipes</td><td>The index use-cases as copy-paste examples: per-app CI/CD token, app maintainer, contractor on one app, read-only fleet monitor.</td></tr>
+<tr><td>Assignment</td><td>How to attach a custom role to a team member, API token, or trust policy (the existing <code>--role</code> flows).</td></tr>
+</table>
+
+<h2>2. Where it lives</h2>
+<p>Product docs live in <code>/docs</code> (the docs website, MDX). Extend the existing access-control / RBAC area rather than starting a new tree.</p>
+<ul>
+<li><strong>Concept page</strong> &mdash; roles, policies, managed vs. custom, the scoped-permission model. Pull the before/after framing from the design's data-model section, minus the schema detail.</li>
+<li><strong>Reference page</strong> &mdash; the permission-entry fields and the CLI <code>--permission</code> grammar (<code>verb:type:id[:scope=parent]</code>), kept in lockstep with Phase&nbsp;5.</li>
+<li><strong>Recipes / how-to</strong> &mdash; one short task per index use-case, each showing both the dashboard path and the <code>nuon roles create</code> invocation.</li>
+</ul>
+
+<h2>3. Generated docs to regenerate</h2>
+<div class="callout good">The API reference and CLI command reference are generated, not hand-written &mdash; regenerate them so the new roles endpoints and <code>nuon roles</code> commands appear, rather than documenting them twice.</div>
+<ul>
+<li>API reference &mdash; regenerates from the Phase&nbsp;1/2 swagger annotations; confirm the roles endpoints render with request/response bodies.</li>
+<li><code>docs/cli-commands.mdx</code> &mdash; regenerates from the Phase&nbsp;5 CLI; confirm <code>nuon roles create/list/delete</code> and the <code>--permission</code> flag appear.</li>
+</ul>
+
+<h2>4. Files (anticipated)</h2>
+<ul>
+<li><code>docs/&lt;access-control-area&gt;/*.mdx</code> &mdash; concept, reference, and recipe pages (extend the existing RBAC section).</li>
+<li>Generated API reference &mdash; regenerated from swagger.</li>
+<li><code>docs/cli-commands.mdx</code> &mdash; regenerated from the CLI.</li>
+<li>Navigation/sidebar entry for the new pages.</li>
+</ul>
+
+<h2>5. Acceptance</h2>
+<ul>
+<li>A reader can go from &ldquo;I want a token that only triggers one app's branch runs&rdquo; to a working role using the docs alone, on both dashboard and CLI.</li>
+<li>The permission-entry reference matches the CLI grammar and the API body exactly &mdash; no drift.</li>
+<li>Generated API + CLI references include the roles endpoints/commands.</li>
+<li>Managed-role immutability and downward-only walk-up are stated explicitly so users don't expect a child entry to escalate.</li>
+</ul>
+
+<h2>6. Review checkpoint</h2>
+<p>Confirm the docs sit inside the existing access-control section <span class="tag info">rec</span> vs a new top-level section, and that recipes track the final index use-case list.</p>
+
+</div>
+</body>
+</html>
