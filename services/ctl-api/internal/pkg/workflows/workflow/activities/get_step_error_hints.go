@@ -50,8 +50,8 @@ func (a *Activities) GetStepErrorHints(ctx context.Context, req GetStepErrorHint
 }
 
 // stepTargetCompositeError reads the canonical composite error from the step
-// target's latest runner job execution result. A missing job, execution, or
-// result means no hint was recorded and yields nil.
+// target's latest runner job, preferring its execution result. A missing job
+// or composite error means no hint was recorded and yields nil.
 func (a *Activities) stepTargetCompositeError(ctx context.Context, step *app.WorkflowStep) (*compositeerrors.CompositeErrorData, error) {
 	if step.StepTargetID == "" {
 		return nil, nil
