@@ -29,6 +29,7 @@ import (
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -301,4 +302,29 @@ func (s *GetInstallActionWorkflowRunsTestSuite) TestGetInstallActionRuns() {
 			}
 		})
 	}
+}
+
+func (s *GetInstallActionWorkflowRunsTestSuite) TestGetInstallActionRunsSuppressesStalePreparationCompositeError() {
+	install := s.createInstall(s.testApp.ID)
+	action := s.createActionWorkflow(s.testApp.ID, "test-action-list-with-stale-error")
+	installAction := s.createInstallActionWorkflow(install.ID, action.ID)
+	run := s.createInstallActionWorkflowRun(install.ID, installAction.ID, app.InstallActionRunStatusFinished)
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).
+		Model(&app.InstallActionWorkflowRun{ID: run.ID}).
+		Select("composite_error").
+		Updates(app.InstallActionWorkflowRun{CompositeError: &compositeerrors.CompositeErrorData{
+			Version:  compositeerrors.SchemaVersion,
+			Type:     "action.preparation_failed",
+			Severity: compositeerrors.SeverityError,
+			Message:  "Unable to prepare action run",
+		}}).Error)
+
+	path := fmt.Sprintf("/v1/installs/%s/actions/runs", install.ID)
+	rr := s.makeRequest(http.MethodGet, path, nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var response []*app.InstallActionWorkflowRun
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
+	require.Len(s.T(), response, 1)
+	assert.Nil(s.T(), response[0].CompositeError)
 }
