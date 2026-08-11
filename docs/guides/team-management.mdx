@@ -12,11 +12,25 @@ You can add users to your Nuon Org using our CLI.
 You can invite a user by email to your Nuon Org using our cli:
 
 ```sh
-nuon orgs invite --email=user@yourdomain.com
+nuon orgs invite --email=user@yourdomain.com --role=org_read_only
 ```
+
+Pass `--role` to set what the new member can do. See [Access control](/concepts/access-control) for the available
+roles and what each grants; run `nuon roles list` to see the current set. If you omit `--role`, the member is
+invited as an admin.
 
 The invited user will get a welcome email, and when they sign into the dashboard next will automatically be added to
 your Org.
+
+## Change a member's role
+
+To change the role of an existing member, use their user ID. This requires org admin access.
+
+```sh
+nuon orgs update-user-role --user-id=<user-id> --role=org_read_only
+```
+
+A member holds one role at a time, so this replaces their current role.
 
 ## View invites
 

@@ -9,6 +9,8 @@ keywords: ["OIDC", "workload identity federation", "token exchange", "GitHub Act
 
 This works with **any OIDC-compatible identity**, and from any client, since the exchange is a plain API call. Unlike an [API token](/concepts/api-tokens) or a token minted for a [service account](/concepts/service-accounts), there is no credential to store, distribute, or rotate.
 
+Managing OIDC federation requires **org admin** access.
+
 ## How it works
 
 1. A workload obtains its ambient OIDC token from its platform (for example, the ID token GitHub Actions issues to a job).
@@ -26,7 +28,7 @@ The exchange endpoint requires no Nuon credentials — trust is established enti
 | **Issuer URL** | The exact `iss` of the OIDC provider to trust, e.g. `https://token.actions.githubusercontent.com`. Nuon fetches this issuer's JWKS to verify signatures. Required. |
 | **Audience** | The expected `aud` claim on the presented token. Required. |
 | **Claim conditions** | Claims the token must satisfy. A `sub` condition is required. |
-| **Role** | The permissions granted to exchanged tokens — `org_admin` or `org_read_only`. Defaults to `org_read_only`. |
+| **Role** | The permissions granted to exchanged tokens. Defaults to `org_read_only`. See [Access control](/concepts/access-control) for the available roles. |
 | **Token duration** | Lifetime of the exchanged token, in seconds. Defaults to `3600`; maximum `86400`. |
 | **Enabled** | Whether the policy accepts exchanges. |
 

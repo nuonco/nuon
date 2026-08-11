@@ -2,8 +2,8 @@ package authz
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"slices"
 
 	"gorm.io/gorm"
 
@@ -17,38 +17,72 @@ import (
 // updated to match the definition. Existing rows' policies are deliberately
 // never modified.
 func ReconcileOrgRoles(ctx context.Context, db *gorm.DB, org app.Org) error {
+	var existingRoles []app.Role
+	if err := db.WithContext(ctx).
+		Where(app.Role{OrgID: generics.NewNullString(org.ID)}).
+		Find(&existingRoles).Error; err != nil {
+		return fmt.Errorf("unable to load roles for org %s: %w", org.ID, err)
+	}
+
+	byType := make(map[app.RoleType]app.Role, len(existingRoles))
+	for _, role := range existingRoles {
+		byType[role.RoleType] = role
+	}
+
+	var toCreate []app.Role
+	var toUpdate []app.Role
 	for _, want := range standardOrgRoles(org.ID) {
-		var existing app.Role
-		err := db.WithContext(ctx).
-			Where(app.Role{OrgID: generics.NewNullString(org.ID), RoleType: want.RoleType}).
-			First(&existing).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		existing, ok := byType[want.RoleType]
+		if !ok {
 			want.CreatedByID = org.CreatedByID
 			for i := range want.Policies {
 				want.Policies[i].CreatedByID = org.CreatedByID
 			}
-			if err := db.WithContext(ctx).Create(&want).Error; err != nil {
-				return fmt.Errorf("unable to create %s role for org %s: %w", want.RoleType, org.ID, err)
-			}
+			toCreate = append(toCreate, want)
 			continue
 		}
-		if err != nil {
-			return fmt.Errorf("unable to check %s role for org %s: %w", want.RoleType, org.ID, err)
+		if roleMetadataMatches(existing, want) {
+			continue
 		}
-
-		res := db.WithContext(ctx).
-			Model(&existing).
-			Select("title", "description", "contexts", "managed").
-			Updates(app.Role{
-				Title:       want.Title,
-				Description: want.Description,
-				Contexts:    want.Contexts,
-				Managed:     want.Managed,
-			})
-		if res.Error != nil {
-			return fmt.Errorf("unable to update %s role metadata for org %s: %w", want.RoleType, org.ID, res.Error)
-		}
+		existing.Title = want.Title
+		existing.Description = want.Description
+		existing.Contexts = want.Contexts
+		existing.Managed = want.Managed
+		toUpdate = append(toUpdate, existing)
 	}
 
-	return nil
+	if len(toCreate) == 0 && len(toUpdate) == 0 {
+		return nil
+	}
+
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if len(toCreate) > 0 {
+			if err := tx.Create(&toCreate).Error; err != nil {
+				return fmt.Errorf("unable to create roles for org %s: %w", org.ID, err)
+			}
+		}
+		for i := range toUpdate {
+			role := &toUpdate[i]
+			if err := tx.Model(role).
+				Select("title", "description", "contexts", "managed").
+				Updates(app.Role{
+					Title:       role.Title,
+					Description: role.Description,
+					Contexts:    role.Contexts,
+					Managed:     role.Managed,
+				}).Error; err != nil {
+				return fmt.Errorf("unable to update %s role metadata for org %s: %w", role.RoleType, org.ID, err)
+			}
+		}
+		return nil
+	})
+}
+
+// roleMetadataMatches reports whether an existing role already carries the
+// metadata a definition specifies, so reconcile can skip a no-op update.
+func roleMetadataMatches(existing, want app.Role) bool {
+	return existing.Title == want.Title &&
+		existing.Description == want.Description &&
+		existing.Managed == want.Managed &&
+		slices.Equal(existing.Contexts, want.Contexts)
 }
