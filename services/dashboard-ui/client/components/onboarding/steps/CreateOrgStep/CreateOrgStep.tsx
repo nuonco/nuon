@@ -1,26 +1,25 @@
-import { useState, type FormEvent } from 'react'
+import { useForm, useStore } from '@tanstack/react-form'
 import { Status } from '@/components/common/Status'
-import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
-import { Input } from '@/components/common/form/Input'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { FormInput } from '@/components/common/form/FormInput'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
-import type { TOrg } from '@/types'
+import type { TAPIError, TOrg } from '@/types'
+import { createOrgSchema, type CreateOrgValues } from './schema'
 
 interface ICreateOrgStep {
   onAdvance: IWizardStepComponentProps['onAdvance']
   nextStepTitle: IWizardStepComponentProps['nextStepTitle']
   createdOrg: TOrg | null
   isPending: boolean
-  error: { error?: string } | null
+  error: TAPIError | null
   onCreateOrg: (name: string) => void
-  onGenerateName: () => void
-  orgName: string
-  onOrgNameChange: (name: string) => void
+  onGenerateName: () => Promise<string>
 }
 
 export const CreateOrgStep = ({
@@ -31,13 +30,14 @@ export const CreateOrgStep = ({
   error,
   onCreateOrg,
   onGenerateName,
-  orgName,
-  onOrgNameChange,
 }: ICreateOrgStep) => {
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    onCreateOrg(orgName)
-  }
+  const form = useForm({
+    defaultValues: { orgName: '' } as CreateOrgValues,
+    validators: { onMount: createOrgSchema, onChange: createOrgSchema },
+    onSubmit: ({ value }) => onCreateOrg(value.orgName),
+  })
+
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
 
   return (
     <div className="flex flex-col gap-6">
@@ -55,35 +55,47 @@ export const CreateOrgStep = ({
       )}
 
       {!createdOrg && !isPending && (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {error && (
-            <Banner theme="error">
-              {error?.error ||
-                'Unable to create organization. Try again.'}
-            </Banner>
-          )}
+        <form
+          autoComplete="off"
+          noValidate
+          onSubmit={(e) => e.preventDefault()}
+          className="flex flex-col gap-4"
+        >
+          <FormErrorBanner
+            error={error}
+            fallback="Unable to create organization. Try again."
+          />
           <div className="flex flex-col gap-1">
-            <Input
-              id="org-name"
-              name="orgName"
-              placeholder="swift-harbor-ridge"
-              required
-              value={orgName}
-              onChange={(e) => onOrgNameChange(e.target.value)}
-              labelProps={{ labelText: 'Organization name' }}
-            />
+            <form.Field name="orgName">
+              {(field) => (
+                <FormInput
+                  field={field}
+                  id="org-name"
+                  placeholder="swift-harbor-ridge"
+                  labelProps={{ labelText: 'Organization name' }}
+                />
+              )}
+            </form.Field>
             <Button
               className="!px-1"
               type="button"
               variant="ghost"
-              onClick={() => onGenerateName()}
+              onClick={async () => {
+                const name = await onGenerateName()
+                form.setFieldValue('orgName', name)
+              }}
             >
               <Icon variant="SparkleIcon" />
               Generate random name
             </Button>
           </div>
           <div className="flex justify-end">
-            <Button type="submit" variant="primary" disabled={!orgName.trim()}>
+            <Button
+              type="button"
+              variant="primary"
+              disabled={!canSubmit}
+              onClick={() => form.handleSubmit()}
+            >
               Create organization
             </Button>
           </div>

@@ -1,7 +1,8 @@
 import { useState } from 'react'
+import { useForm, useStore } from '@tanstack/react-form'
 import { Banner } from '@/components/common/Banner'
-import { Input } from '@/components/common/form/Input'
-import { CheckboxInput } from '@/components/common/form/CheckboxInput'
+import { FormCheckbox } from '@/components/common/form/FormCheckbox'
+import { FormInput } from '@/components/common/form/FormInput'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { BranchVcsConfigFields } from '@/components/branches/BranchVcsConfigFields'
 import type {
@@ -11,6 +12,7 @@ import type {
   TVCSBranch,
   TVCSConnection,
 } from '@/types'
+import { editBranchSchema, type EditBranchValues } from './schema'
 
 export interface IEditBranchNameModalSubmitData {
   branchName: string
@@ -66,56 +68,58 @@ export const EditBranchNameModal = ({
   onCancel,
   ...props
 }: IEditBranchNameModal) => {
-  const [branchName, setBranchName] = useState(branch.name || '')
-  const [useVcs, setUseVcs] = useState(
-    !!(currentConfig?.connected_github_vcs_config || currentConfig?.public_git_vcs_config)
-  )
-  const [directory, setDirectory] = useState(
-    currentConfig?.connected_github_vcs_config?.directory ||
-      currentConfig?.public_git_vcs_config?.directory ||
-      '.'
-  )
-  const [pathFilter, setPathFilter] = useState(
-    currentConfig?.connected_github_vcs_config?.path_filter ||
-      currentConfig?.public_git_vcs_config?.path_filter ||
-      ''
-  )
   const [validationError, setValidationError] = useState<string | null>(null)
 
+  const form = useForm({
+    defaultValues: {
+      branchName: branch.name || '',
+      useVcs: !!(
+        currentConfig?.connected_github_vcs_config ||
+        currentConfig?.public_git_vcs_config
+      ),
+      directory:
+        currentConfig?.connected_github_vcs_config?.directory ||
+        currentConfig?.public_git_vcs_config?.directory ||
+        '.',
+      pathFilter:
+        currentConfig?.connected_github_vcs_config?.path_filter ||
+        currentConfig?.public_git_vcs_config?.path_filter ||
+        '',
+    } as EditBranchValues,
+    validators: { onMount: editBranchSchema, onChange: editBranchSchema },
+    onSubmit: ({ value }) => {
+      setValidationError(null)
+
+      if (value.useVcs && !selectedRepo) {
+        setValidationError('Select a repository')
+        return
+      }
+
+      onSubmit({
+        branchName: value.branchName.trim(),
+        useVcs: value.useVcs,
+        selectedVcsConnectionId,
+        selectedRepo,
+        selectedBranch,
+        directory: value.directory.trim(),
+        pathFilter: value.pathFilter.trim(),
+      })
+    },
+  })
+
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
+  const values = useStore(form.store, (s) => s.values)
+
   const displayError = externalValidationError || validationError
-
-  const handleSubmit = () => {
-    setValidationError(null)
-
-    if (!branchName.trim()) {
-      setValidationError('Branch name cannot be empty')
-      return
-    }
-
-    if (useVcs && !selectedRepo) {
-      setValidationError('Select a repository')
-      return
-    }
-
-    onSubmit({
-      branchName: branchName.trim(),
-      useVcs,
-      selectedVcsConnectionId,
-      selectedRepo,
-      selectedBranch,
-      directory: directory.trim(),
-      pathFilter: pathFilter.trim(),
-    })
-  }
 
   return (
     <Modal
       heading="Edit branch"
       size="lg"
       primaryActionTrigger={{
-        children: isSubmitting ? 'Saving...' : 'Save changes',
-        onClick: handleSubmit,
-        disabled: isSubmitting || !branchName.trim(),
+        children: isSubmitting ? 'Saving changes' : 'Save changes',
+        onClick: () => form.handleSubmit(),
+        disabled: isSubmitting || !canSubmit,
         variant: 'primary',
       }}
       secondaryActionTrigger={{
@@ -125,36 +129,44 @@ export const EditBranchNameModal = ({
       }}
       {...props}
     >
-      <div className="flex flex-col gap-4">
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-4"
+      >
         {displayError && (
           <Banner theme="error" className="mb-4">
             {displayError}
           </Banner>
         )}
 
-        <Input
-          id="branch-name"
-          type="text"
-          value={branchName}
-          onChange={(e) => setBranchName(e.target.value)}
-          placeholder="Enter branch name"
-          disabled={isSubmitting}
-          autoFocus
-          labelProps={{ labelText: 'Branch name' }}
-        />
+        <form.Field name="branchName">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="branch-name"
+              type="text"
+              placeholder="Enter branch name"
+              disabled={isSubmitting}
+              autoFocus
+              labelProps={{ labelText: 'Branch name' }}
+            />
+          )}
+        </form.Field>
 
-        <CheckboxInput
-          id="use-vcs"
-          checked={useVcs}
-          onChange={(e) => {
-            setUseVcs(e.target.checked)
-            if (!e.target.checked) setValidationError(null)
-          }}
-          disabled={isSubmitting}
-          labelProps={{ labelText: 'Connect to git repository' }}
-        />
+        <form.Field name="useVcs">
+          {(field) => (
+            <FormCheckbox
+              field={field}
+              id="use-vcs"
+              disabled={isSubmitting}
+              labelProps={{ labelText: 'Connect to git repository' }}
+            />
+          )}
+        </form.Field>
 
-        {useVcs && (
+        {values.useVcs && (
           <BranchVcsConfigFields
             vcsConnections={vcsConnections}
             repos={repos}
@@ -169,14 +181,14 @@ export const EditBranchNameModal = ({
             onRepoChange={onRepoChange}
             selectedBranch={selectedBranch}
             onBranchChange={onBranchChange}
-            directory={directory}
-            onDirectoryChange={setDirectory}
-            pathFilter={pathFilter}
-            onPathFilterChange={setPathFilter}
+            directory={values.directory}
+            onDirectoryChange={(v) => form.setFieldValue('directory', v)}
+            pathFilter={values.pathFilter}
+            onPathFilterChange={(v) => form.setFieldValue('pathFilter', v)}
             isSubmitting={isSubmitting}
           />
         )}
-      </div>
+      </form>
     </Modal>
   )
 }

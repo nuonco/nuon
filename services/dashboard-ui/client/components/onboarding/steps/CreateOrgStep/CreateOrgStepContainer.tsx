@@ -12,7 +12,6 @@ export const CreateOrgStepContainer = ({
   setSharedData,
 }: IWizardStepComponentProps) => {
   const [createdOrg, setCreatedOrg] = useState<TOrg | null>(null)
-  const [orgName, setOrgName] = useState('')
   const { isStepComplete, getStepMetadata } = useOnboardingJourney()
 
   const orgCreated = isStepComplete('org_created')
@@ -29,13 +28,12 @@ export const CreateOrgStepContainer = ({
     },
   })
 
-  const { mutate: generateName } = useMutation({
+  const { mutateAsync: generateName } = useMutation({
     mutationFn: async () => {
       const res = await fetch('/api/random-name')
       const data = await res.json()
       return data.name as string
     },
-    onSuccess: (name) => setOrgName(name),
   })
 
   if (orgCreated && journeyOrgId && !createdOrg) {
@@ -57,8 +55,6 @@ export const CreateOrgStepContainer = ({
       error={error}
       onCreateOrg={(name) => mutate(name)}
       onGenerateName={() => generateName()}
-      orgName={orgName}
-      onOrgNameChange={setOrgName}
     />
   )
 }

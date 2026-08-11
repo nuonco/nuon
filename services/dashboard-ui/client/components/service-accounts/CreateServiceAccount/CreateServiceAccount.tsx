@@ -1,27 +1,50 @@
-import { useState } from 'react'
+import { useForm, useStore } from '@tanstack/react-form'
 import { Icon } from '@/components/common/Icon'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
-import { Input } from '@/components/common/form/Input'
 import { Label } from '@/components/common/form/Label'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
-import { Select, type SelectOption } from '@/components/common/form/Select'
+import { FormInput } from '@/components/common/form/FormInput'
+import { FormSelect } from '@/components/common/form/FormSelect'
+import { type SelectOption } from '@/components/common/form/Select'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
+import {
+  createServiceAccountSchema,
+  type CreateServiceAccountValues,
+} from './schema'
 
 export const CreateServiceAccountModal = ({
   roleOptions,
+  rolesLoading,
   isPending,
   error,
   onSubmit,
   ...props
 }: {
   roleOptions: SelectOption[]
+  rolesLoading?: boolean
   isPending: boolean
   error: TAPIError | null
-  onSubmit: (params: { name: string; role: string }) => void
+  onSubmit: (params: CreateServiceAccountValues) => void
 } & Omit<IModal, 'onSubmit'>) => {
-  const [name, setName] = useState('')
-  const [role, setRole] = useState('org_read_only')
+  const defaultRole = roleOptions.some((o) => o.value === 'org_read_only')
+    ? 'org_read_only'
+    : (roleOptions[0]?.value ?? 'org_read_only')
+
+  const form = useForm({
+    defaultValues: {
+      name: '',
+      role: defaultRole,
+    } as CreateServiceAccountValues,
+    validators: {
+      onMount: createServiceAccountSchema,
+      onChange: createServiceAccountSchema,
+    },
+    onSubmit: ({ value }) => onSubmit(value),
+  })
+
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
 
   return (
     <Modal
@@ -39,13 +62,18 @@ export const CreateServiceAccountModal = ({
         ) : (
           'Create service account'
         ),
-        disabled: !name || !role || isPending,
-        onClick: () => onSubmit({ name, role }),
+        disabled: !canSubmit || isPending,
+        onClick: () => form.handleSubmit(),
         variant: 'primary',
       }}
       {...props}
     >
-      <div className="flex flex-col gap-6">
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-6"
+      >
         <FormErrorBanner
           error={error}
           fallback="Unable to create service account"
@@ -55,25 +83,41 @@ export const CreateServiceAccountModal = ({
           Service accounts are non-human identities for automating access to the Nuon API.
         </Text>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="service-account-name">Name</Label>
-          <Input
-            id="service-account-name"
-            placeholder="e.g. ci-deploy"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
+        <form.Field name="name">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="service-account-name"
+              placeholder="e.g. ci-deploy"
+              type="text"
+              disabled={isPending}
+              labelProps={{ labelText: 'Name' }}
+            />
+          )}
+        </form.Field>
 
-        <Select
-          value={role}
-          onChange={(value) => setRole(value)}
-          options={roleOptions}
-          labelProps={{ labelText: 'Role' }}
-        />
-      </div>
+        {rolesLoading ? (
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="service-account-role">
+              <Text variant="body" className="font-medium">
+                Role
+              </Text>
+            </Label>
+            <Skeleton height="36px" />
+          </div>
+        ) : (
+          <form.Field name="role">
+            {(field) => (
+              <FormSelect
+                field={field}
+                options={roleOptions}
+                disabled={isPending}
+                labelProps={{ labelText: 'Role' }}
+              />
+            )}
+          </form.Field>
+        )}
+      </form>
     </Modal>
   )
 }

@@ -1,29 +1,31 @@
-import { useState } from 'react'
+import { useForm, useStore } from '@tanstack/react-form'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { Input } from '@/components/common/form/Input'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { FormInput } from '@/components/common/form/FormInput'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-
-interface ICustomNestedStackEntry {
-  name: string
-  template_url: string
-  index: number
-  parameters?: Record<string, string>
-}
+import type { TAPIError } from '@/types'
+import {
+  editStackOverridesSchema,
+  type CustomNestedStackEntry,
+  type EditStackOverridesValues,
+} from './schema'
 
 interface IEditStackOverridesModal extends Omit<IModal, 'onSubmit'> {
   isPending: boolean
-  error: any
+  error: TAPIError | null
   currentVpcUrl: string
   currentRunnerUrl: string
-  currentCustomStacks: ICustomNestedStackEntry[]
+  currentCustomStacks: CustomNestedStackEntry[]
   appDefaultVpcUrl: string
   appDefaultRunnerUrl: string
   onSubmit: (data: {
     vpc_nested_template_url?: string
     runner_nested_template_url?: string
-    custom_nested_stacks?: ICustomNestedStackEntry[]
+    custom_nested_stacks?: CustomNestedStackEntry[]
   }) => void
 }
 
@@ -38,55 +40,38 @@ export const EditStackOverridesModal = ({
   onSubmit,
   ...props
 }: IEditStackOverridesModal) => {
-  const [vpcUrl, setVpcUrl] = useState(currentVpcUrl)
-  const [runnerUrl, setRunnerUrl] = useState(currentRunnerUrl)
-  const [customStacks, setCustomStacks] = useState<ICustomNestedStackEntry[]>(
-    currentCustomStacks.length > 0
-      ? currentCustomStacks
-      : []
-  )
+  const form = useForm({
+    defaultValues: {
+      vpcUrl: currentVpcUrl,
+      runnerUrl: currentRunnerUrl,
+      customStacks: currentCustomStacks,
+    } as EditStackOverridesValues,
+    validators: {
+      onMount: editStackOverridesSchema,
+      onChange: editStackOverridesSchema,
+    },
+    onSubmit: ({ value }) => {
+      const data: Parameters<typeof onSubmit>[0] = {}
+      if (value.vpcUrl !== currentVpcUrl) {
+        data.vpc_nested_template_url = value.vpcUrl
+      }
+      if (value.runnerUrl !== currentRunnerUrl) {
+        data.runner_nested_template_url = value.runnerUrl
+      }
+      const validStacks = value.customStacks.filter(
+        (s) => s.name && s.template_url
+      )
+      if (
+        validStacks.length > 0 ||
+        (currentCustomStacks.length > 0 && value.customStacks.length === 0)
+      ) {
+        data.custom_nested_stacks = validStacks
+      }
+      onSubmit(data)
+    },
+  })
 
-  const handleAddStack = () => {
-    setCustomStacks([
-      ...customStacks,
-      { name: '', template_url: '', index: customStacks.length },
-    ])
-  }
-
-  const handleRemoveStack = (idx: number) => {
-    setCustomStacks(customStacks.filter((_, i) => i !== idx))
-  }
-
-  const handleStackChange = (
-    idx: number,
-    field: keyof ICustomNestedStackEntry,
-    value: string | number
-  ) => {
-    setCustomStacks(
-      customStacks.map((s, i) => (i === idx ? { ...s, [field]: value } : s))
-    )
-  }
-
-  const handleSubmit = () => {
-    const data: Parameters<typeof onSubmit>[0] = {}
-    if (vpcUrl !== currentVpcUrl) {
-      data.vpc_nested_template_url = vpcUrl
-    }
-    if (runnerUrl !== currentRunnerUrl) {
-      data.runner_nested_template_url = runnerUrl
-    }
-    const validStacks = customStacks.filter((s) => s.name && s.template_url)
-    if (
-      validStacks.length > 0 ||
-      (currentCustomStacks.length > 0 && customStacks.length === 0)
-    ) {
-      data.custom_nested_stacks = validStacks
-    }
-    onSubmit(data)
-  }
-
-  const inputClassName =
-    'w-full rounded-md border border-cool-grey-300 bg-white px-3 py-2 text-sm dark:border-dark-grey-500 dark:bg-dark-grey-800 dark:text-cool-grey-100 focus:outline-none focus:ring-1 focus:ring-primary-500'
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
 
   return (
     <Modal
@@ -102,137 +87,180 @@ export const EditStackOverridesModal = ({
       primaryActionTrigger={{
         children: isPending ? (
           <span className="flex items-center gap-2">
-            <Icon variant="Loading" /> Saving...
+            <Icon variant="Loading" /> Saving overrides
           </span>
         ) : (
           'Save overrides'
         ),
-        onClick: handleSubmit,
-        disabled: isPending,
+        onClick: () => form.handleSubmit(),
+        disabled: !canSubmit || isPending,
         variant: 'primary',
       }}
       {...props}
     >
-      <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to save stack overrides'}
-          </Banner>
-        ) : null}
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-6"
+      >
+        <FormErrorBanner error={error} fallback="Unable to save stack overrides" />
 
         <Banner theme="info">
           <Text variant="body">
-            Override the default stack template URLs for this install. Leave empty to use the app-level default.
+            Override the default stack template URLs for this install. Leave empty
+            to use the app-level default.
           </Text>
         </Banner>
 
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <Text variant="subtext" weight="strong">VPC nested template URL</Text>
-            <input
-              type="text"
-              className={inputClassName}
-              value={vpcUrl}
-              onChange={(e) => setVpcUrl(e.target.value)}
-              placeholder={appDefaultVpcUrl || 'https://s3.amazonaws.com/bucket/vpc-template.yaml'}
-            />
-            {appDefaultVpcUrl && (
-              <Text variant="subtext" theme="neutral">
-                App default: {appDefaultVpcUrl}
-              </Text>
+          <form.Field name="vpcUrl">
+            {(field) => (
+              <FormInput
+                field={field}
+                id="vpc-template-url"
+                type="text"
+                disabled={isPending}
+                labelProps={{ labelText: 'VPC nested template URL' }}
+                placeholder={
+                  appDefaultVpcUrl ||
+                  'https://s3.amazonaws.com/bucket/vpc-template.yaml'
+                }
+                helperText={
+                  appDefaultVpcUrl
+                    ? `App default: ${appDefaultVpcUrl}`
+                    : undefined
+                }
+              />
             )}
-          </div>
+          </form.Field>
 
-          <div className="flex flex-col gap-1">
-            <Text variant="subtext" weight="strong">Runner nested template URL</Text>
-            <input
-              type="text"
-              className={inputClassName}
-              value={runnerUrl}
-              onChange={(e) => setRunnerUrl(e.target.value)}
-              placeholder={appDefaultRunnerUrl || 'https://s3.amazonaws.com/bucket/runner-template.yaml'}
-            />
-            {appDefaultRunnerUrl && (
-              <Text variant="subtext" theme="neutral">
-                App default: {appDefaultRunnerUrl}
-              </Text>
+          <form.Field name="runnerUrl">
+            {(field) => (
+              <FormInput
+                field={field}
+                id="runner-template-url"
+                type="text"
+                disabled={isPending}
+                labelProps={{ labelText: 'Runner nested template URL' }}
+                placeholder={
+                  appDefaultRunnerUrl ||
+                  'https://s3.amazonaws.com/bucket/runner-template.yaml'
+                }
+                helperText={
+                  appDefaultRunnerUrl
+                    ? `App default: ${appDefaultRunnerUrl}`
+                    : undefined
+                }
+              />
             )}
-          </div>
+          </form.Field>
         </div>
 
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <Text variant="subtext" weight="strong">Custom nested stacks</Text>
-            <Button variant="ghost" size="sm" onClick={handleAddStack}>
-              <Icon variant="PlusIcon" />
-              Add stack
-            </Button>
+            <Text variant="subtext" weight="strong">
+              Custom nested stacks
+            </Text>
+            <form.Field name="customStacks" mode="array">
+              {(stacksField) => (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  disabled={isPending}
+                  onClick={() =>
+                    stacksField.pushValue({
+                      name: '',
+                      template_url: '',
+                      index: stacksField.state.value.length,
+                    })
+                  }
+                >
+                  <Icon variant="PlusIcon" />
+                  Add stack
+                </Button>
+              )}
+            </form.Field>
           </div>
 
-          {customStacks.length === 0 ? (
-            <Text variant="subtext" theme="neutral">
-              No custom nested stack overrides configured.
-            </Text>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {customStacks.map((stack, idx) => (
-                <div
-                  key={idx}
-                  className="flex flex-col gap-2 rounded-md border border-cool-grey-200 p-3 dark:border-dark-grey-600"
-                >
-                  <div className="flex items-center justify-between">
-                    <Text variant="subtext" weight="strong">Stack {idx + 1}</Text>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveStack(idx)}
+          <form.Field name="customStacks" mode="array">
+            {(stacksField) =>
+              stacksField.state.value.length === 0 ? (
+                <Text variant="subtext" theme="neutral">
+                  No custom nested stack overrides configured.
+                </Text>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {stacksField.state.value.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="flex flex-col gap-2 rounded-md border p-3"
                     >
-                      <Icon variant="TrashIcon" />
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-[1fr_2fr_auto] gap-2">
-                    <div className="flex flex-col gap-1">
-                      <Text variant="subtext" theme="neutral">Name</Text>
-                      <input
-                        type="text"
-                        className={inputClassName}
-                        value={stack.name}
-                        onChange={(e) =>
-                          handleStackChange(idx, 'name', e.target.value)
-                        }
-                        placeholder="e.g. k8s_namespaces"
-                      />
+                      <div className="flex items-center justify-between">
+                        <Text variant="subtext" weight="strong">
+                          Stack {idx + 1}
+                        </Text>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          type="button"
+                          aria-label={`Remove stack ${idx + 1}`}
+                          disabled={isPending}
+                          onClick={() => stacksField.removeValue(idx)}
+                        >
+                          <Icon variant="TrashIcon" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-[1fr_2fr_auto] gap-2 items-end">
+                        <form.Field name={`customStacks[${idx}].name`}>
+                          {(field) => (
+                            <FormInput
+                              field={field}
+                              type="text"
+                              disabled={isPending}
+                              labelProps={{ labelText: 'Name' }}
+                              placeholder="e.g. k8s_namespaces"
+                            />
+                          )}
+                        </form.Field>
+                        <form.Field name={`customStacks[${idx}].template_url`}>
+                          {(field) => (
+                            <FormInput
+                              field={field}
+                              type="text"
+                              disabled={isPending}
+                              labelProps={{ labelText: 'Template URL' }}
+                              placeholder="https://s3.amazonaws.com/..."
+                            />
+                          )}
+                        </form.Field>
+                        <form.Field name={`customStacks[${idx}].index`}>
+                          {(field) => (
+                            <Input
+                              type="number"
+                              className="w-20"
+                              value={String(field.state.value ?? 0)}
+                              onChange={(e) =>
+                                field.handleChange(
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                              onBlur={field.handleBlur}
+                              disabled={isPending}
+                              labelProps={{ labelText: 'Index' }}
+                            />
+                          )}
+                        </form.Field>
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <Text variant="subtext" theme="neutral">Template URL</Text>
-                      <input
-                        type="text"
-                        className={inputClassName}
-                        value={stack.template_url}
-                        onChange={(e) =>
-                          handleStackChange(idx, 'template_url', e.target.value)
-                        }
-                        placeholder="https://s3.amazonaws.com/..."
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <Text variant="subtext" theme="neutral">Index</Text>
-                      <input
-                        type="number"
-                        className={inputClassName + ' w-20'}
-                        value={stack.index}
-                        onChange={(e) =>
-                          handleStackChange(idx, 'index', parseInt(e.target.value) || 0)
-                        }
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )
+            }
+          </form.Field>
         </div>
-      </div>
+      </form>
     </Modal>
   )
 }

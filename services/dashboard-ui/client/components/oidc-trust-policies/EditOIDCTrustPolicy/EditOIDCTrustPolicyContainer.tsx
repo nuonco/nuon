@@ -8,7 +8,7 @@ import { useRoleOptions } from '@/hooks/use-roles'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { updateCurrentOrgOIDCTrustPolicy } from '@/lib'
-import type { TAPIError, TOIDCTrustPolicy } from '@/types'
+import type { TOIDCTrustPolicy } from '@/types'
 import {
   EditOIDCTrustPolicyModal,
   type EditOIDCTrustPolicyFormInput,
@@ -58,13 +58,6 @@ const EditOIDCTrustPolicyModalContainer = ({
         </Toast>
       )
       removeModal(props.modalId)
-    },
-    onError: (err: TAPIError) => {
-      addToast(
-        <Toast heading="Unable to update trust policy" theme="error">
-          <Text>{err?.description || err?.error || 'Try again.'}</Text>
-        </Toast>
-      )
     },
   })
 
