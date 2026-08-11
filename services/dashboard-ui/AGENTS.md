@@ -555,7 +555,8 @@ There is **no "it's an editor" exception** an agent can invoke. Bespoke direct-m
 - **Flat fields, never nested objects** — `canSubmit` validation breaks on nested-object fields in TanStack Form v1 (`channelId`/`channelName`, not `channel: {id,name}`).
 - **Do not pass native `required`** to fields — Zod is the sole validation source.
 - **Errors → in-form `FormErrorBanner`, never a toast.** Success → close modal + toast.
-- **Edit reuses create** via a `mode: 'create' | 'edit'` prop — never a forked `EditXModal`.
+- **Edit reuses create** via a `mode: 'create' | 'edit'` prop **when create and edit hit the same endpoint** (webhooks, channel subs) — never a forked `EditXModal`. When they hit **different endpoints** (branches, OIDC policies, install editors), keep them as **separate in-place forms**. Edit-only forms also gate submit on a "no change" check (`name === currentName`) alongside `canSubmit`.
+- **No array-level Zod rules** — TanStack v1 won't clear a form-level schema error mapped to an array field, so the button stays disabled forever; gate "at least one valid row" on a live computed value on the submit button instead. Per-row field rules (`z.string().min(1)` on `items[i].key`) are fine.
 - Every form/wrapper gets a `.stories.tsx` and a Ladle behavior test (`e2e/specs-ladle/`).
 
 ## Component Patterns

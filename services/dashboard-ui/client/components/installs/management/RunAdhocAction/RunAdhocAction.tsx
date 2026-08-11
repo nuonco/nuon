@@ -1,23 +1,54 @@
-import { FormEvent, useEffect, useRef, useState, type ReactNode } from 'react'
-import { Banner } from '@/components/common/Banner'
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
+import { useForm, useStore } from '@tanstack/react-form'
 import { Button } from '@/components/common/Button'
-import { Editor } from '@/components/common/Editor'
-import { Input } from '@/components/common/form/Input'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { FormCodeInput } from '@/components/common/form/FormCodeInput'
+import { FormInput } from '@/components/common/form/FormInput'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-import { useFormPersistence } from '@/hooks/use-form-persistence'
+import { useDraftPersistence } from '@/hooks/use-draft-persistence'
 import type { TRunAdhocActionBody } from '@/lib'
+import type { TAPIError } from '@/types'
+import { runAdhocActionSchema, type RunAdhocActionValues } from './schema'
 
 interface IRunAdhocActionModal extends Omit<IModal, 'onSubmit'> {
   installId: string
   initialValues?: TRunAdhocActionBody
   isPending: boolean
-  error: any
+  error: TAPIError | null
   onSubmit: (body: TRunAdhocActionBody) => void
-  onDraftResume: (onResume: () => void, onStartFresh: () => void, onClose: () => void, draftTimestamp: string) => void
-  onDraftClear?: () => void
+  onDraftResume: (
+    onResume: () => void,
+    onStartFresh: () => void,
+    onClose: () => void,
+    draftTimestamp: string
+  ) => void
   roleSelector: ReactNode
+}
+
+const toBody = (value: RunAdhocActionValues): TRunAdhocActionBody => {
+  const env_vars = value.envVars.reduce(
+    (acc, { name, value: v }) => {
+      if (name) acc[name] = v
+      return acc
+    },
+    {} as Record<string, string>
+  )
+
+  const body: TRunAdhocActionBody = {
+    name: value.name || undefined,
+    timeout: value.timeout ? Number(value.timeout) : undefined,
+    env_vars: Object.keys(env_vars).length > 0 ? env_vars : undefined,
+  }
+
+  if (value.inputMode === 'command') {
+    body.command = value.command
+  } else {
+    body.inline_contents = value.inlineContents
+  }
+
+  return body
 }
 
 export const RunAdhocActionModal = ({
@@ -27,42 +58,50 @@ export const RunAdhocActionModal = ({
   error,
   onSubmit,
   onDraftResume,
-  onDraftClear,
   roleSelector,
   ...props
 }: IRunAdhocActionModal) => {
-  const initialEnvVarEntries = Object.entries(initialValues?.env_vars || {})
-
-  const formRef = useRef<HTMLFormElement>(null)
   const draftShownRef = useRef(false)
-  const [customEnvVars, setCustomEnvVars] = useState<number[]>(
-    initialEnvVarEntries.map((_, i) => i)
-  )
-  const [inputMode, setInputMode] = useState<'command' | 'script'>(
-    initialValues?.inline_contents ? 'script' : 'command'
-  )
-  const [scriptContent, setScriptContent] = useState(
-    initialValues?.inline_contents || ''
+  const clearDraftRef = useRef<() => void>(() => {})
+
+  const defaultValues = useMemo<RunAdhocActionValues>(
+    () => ({
+      name: initialValues?.name ?? '',
+      inputMode: initialValues?.inline_contents ? 'script' : 'command',
+      command: initialValues?.command ?? '',
+      inlineContents: initialValues?.inline_contents ?? '',
+      timeout: initialValues?.timeout?.toString() ?? '300',
+      envVars: Object.entries(initialValues?.env_vars ?? {}).map(
+        ([name, value]) => ({ name, value })
+      ),
+    }),
+    [initialValues]
   )
 
-  const initialEnvVarValues: Record<string, string> = {}
-  initialEnvVarEntries.forEach(([key, value], i) => {
-    initialEnvVarValues[`custom:${i}:name`] = key
-    initialEnvVarValues[`custom:${i}:value`] = value
+  const form = useForm({
+    defaultValues,
+    validators: { onMount: runAdhocActionSchema, onChange: runAdhocActionSchema },
+    onSubmit: ({ value }) => {
+      clearDraftRef.current()
+      onSubmit(toBody(value))
+    },
   })
 
-  const {
-    hasDraft,
-    draftTimestamp,
-    draftValues,
-    clearDraft,
-    restoreDraft,
-    formKey,
-  } = useFormPersistence({
-    storageKey: `adhoc-action-draft:${installId}`,
-    formRef,
-    enabled: true,
-  })
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
+  const values = useStore(form.store, (s) => s.values)
+  const inputMode = values.inputMode
+
+  const { hasDraft, draftTimestamp, draftValues, clearDraft } =
+    useDraftPersistence<RunAdhocActionValues>({
+      storageKey: `adhoc-action-draft:${installId}`,
+      values,
+      enabled: true,
+    })
+  clearDraftRef.current = clearDraft
+
+  const restoreDraft = useCallback(() => {
+    if (draftValues) form.reset({ ...defaultValues, ...draftValues })
+  }, [form, defaultValues, draftValues])
 
   useEffect(() => {
     if (hasDraft && !draftShownRef.current && draftTimestamp) {
@@ -77,76 +116,14 @@ export const RunAdhocActionModal = ({
         draftTimestamp
       )
     }
-  }, [
-    hasDraft,
-    draftTimestamp,
-    restoreDraft,
-    clearDraft,
-    onDraftResume,
-  ])
-
-  useEffect(() => {
-    if (draftValues) {
-      if (draftValues['inputMode']) {
-        setInputMode(draftValues['inputMode'] as 'command' | 'script')
-      }
-      if (draftValues['scriptContent']) {
-        setScriptContent(draftValues['scriptContent'])
-      }
-      const customVarIndices = Object.keys(draftValues)
-        .filter((key) => key.startsWith('custom:'))
-        .map((key) => parseInt(key.split(':')[1]))
-        .filter((val, idx, arr) => arr.indexOf(val) === idx)
-      if (customVarIndices.length > 0) {
-        setCustomEnvVars(customVarIndices)
-      }
-    }
-  }, [draftValues])
-
-  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    const formDataObj = Object.fromEntries(formData)
-
-    const env_vars = customEnvVars.reduce(
-      (acc, cv) => {
-        const name = formDataObj[`custom:${cv}:name`]
-        const value = formDataObj[`custom:${cv}:value`]
-        if (typeof name === 'string' && typeof value === 'string') {
-          acc[name] = value
-        }
-        return acc
-      },
-      {} as Record<string, string>
-    )
-
-    const body: TRunAdhocActionBody = {
-      name: (formDataObj.name as string) || undefined,
-      timeout: formDataObj.timeout ? Number(formDataObj.timeout) : undefined,
-      env_vars: Object.keys(env_vars).length > 0 ? env_vars : undefined,
-    }
-
-    if (inputMode === 'command') {
-      body.command = formDataObj.command as string
-    } else {
-      body.inline_contents = scriptContent
-    }
-
-    clearDraft()
-    onSubmit(body)
-  }
+  }, [hasDraft, draftTimestamp, restoreDraft, clearDraft, onDraftResume])
 
   return (
     <Modal
       className="!max-h-[80vh]"
       childrenClassName="flex-auto overflow-y-auto"
       heading={
-        <Text
-          flex
-          className="gap-4"
-          variant="h3"
-          weight="strong"
-        >
+        <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="TerminalWindowIcon" size="24" />
           Run adhoc action
         </Text>
@@ -162,43 +139,42 @@ export const RunAdhocActionModal = ({
         ) : (
           'Run action'
         ),
-        onClick: () => formRef.current?.requestSubmit(),
-        disabled: isPending,
+        onClick: () => form.handleSubmit(),
+        disabled: !canSubmit || isPending,
         variant: 'primary',
       }}
       size="lg"
       {...props}
     >
       <form
-        key={formKey}
-        ref={formRef}
-        onSubmit={handleFormSubmit}
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
         className="flex flex-col gap-4"
       >
-        {error && <Banner theme="error">{error?.error}</Banner>}
+        <FormErrorBanner error={error} fallback="Unable to run adhoc action" />
 
-        <input type="hidden" name="inputMode" value={inputMode} />
-        <input type="hidden" name="scriptContent" value={scriptContent} />
-
-        <label className="flex flex-col gap-1">
-          <Text variant="label" weight="strong">
-            Name (optional)
-          </Text>
-          <Input
-            name="name"
-            type="text"
-            placeholder="Display name for this action"
-            maxLength={255}
-            defaultValue={draftValues?.['name'] || initialValues?.name || ''}
-          />
-        </label>
+        <form.Field name="name">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="adhoc-name"
+              type="text"
+              placeholder="Display name for this action"
+              maxLength={255}
+              disabled={isPending}
+              labelProps={{ labelText: 'Name (optional)' }}
+            />
+          )}
+        </form.Field>
 
         <div className="flex gap-2">
           <Button
             type="button"
             variant={inputMode === 'command' ? 'primary' : 'secondary'}
             size="sm"
-            onClick={() => setInputMode('command')}
+            disabled={isPending}
+            onClick={() => form.setFieldValue('inputMode', 'command')}
           >
             Single command
           </Button>
@@ -206,134 +182,130 @@ export const RunAdhocActionModal = ({
             type="button"
             variant={inputMode === 'script' ? 'primary' : 'secondary'}
             size="sm"
-            onClick={() => setInputMode('script')}
+            disabled={isPending}
+            onClick={() => form.setFieldValue('inputMode', 'script')}
           >
             Bash script
           </Button>
         </div>
 
         {inputMode === 'command' ? (
-          <label className="flex flex-col gap-1">
-            <Text variant="label" weight="strong">
-              Command *
-            </Text>
-            <Input
-              name="command"
-              type="text"
-              placeholder="echo 'Hello, world!'"
-              required
-              className="!font-mono"
-              defaultValue={
-                draftValues?.['command'] || initialValues?.command || ''
-              }
-            />
-            <Text variant="subtext">Single-line shell command to execute</Text>
-          </label>
+          <form.Field name="command">
+            {(field) => (
+              <FormInput
+                field={field}
+                id="adhoc-command"
+                type="text"
+                placeholder="echo 'Hello, world!'"
+                className="!font-mono"
+                disabled={isPending}
+                labelProps={{ labelText: 'Command *' }}
+                helperText="Single-line shell command to execute"
+              />
+            )}
+          </form.Field>
         ) : (
-          <label className="flex flex-col gap-1">
-            <Text variant="label" weight="strong">
-              Bash script *
-            </Text>
-            <Editor
-              value={scriptContent}
-              onChange={setScriptContent}
-              language="bash"
-              placeholder="#!/bin/bash&#10;echo 'Hello, world!'"
-              minHeight={200}
-              maxHeight={600}
-            />
-            <Text variant="subtext">Multi-line bash script to execute</Text>
-          </label>
+          <form.Field name="inlineContents">
+            {(field) => (
+              <FormCodeInput
+                field={field}
+                language="bash"
+                minHeight={200}
+                disabled={isPending}
+                labelProps={{ labelText: 'Bash script *' }}
+                helperText="Multi-line bash script to execute"
+              />
+            )}
+          </form.Field>
         )}
 
-        <label className="flex flex-col gap-1">
-          <Text variant="label" weight="strong">
-            Timeout (seconds)
-          </Text>
-          <Input
-            name="timeout"
-            type="number"
-            defaultValue={
-              draftValues?.['timeout'] ||
-              initialValues?.timeout?.toString() ||
-              '300'
-            }
-            min={1}
-            max={3600}
-          />
-          <Text variant="subtext">
-            Execution timeout (1-3600 seconds, default: 300)
-          </Text>
-        </label>
+        <form.Field name="timeout">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="adhoc-timeout"
+              type="number"
+              min={1}
+              max={3600}
+              disabled={isPending}
+              labelProps={{ labelText: 'Timeout (seconds)' }}
+              helperText="Execution timeout (1-3600 seconds, default: 300)"
+            />
+          )}
+        </form.Field>
 
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <Text variant="label" weight="strong">
               Environment variables
             </Text>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setCustomEnvVars((vars) => [...vars, vars.length])
-              }}
-            >
-              <Icon variant="PlusIcon" size="16" />
-              Add variable
-            </Button>
+            <form.Field name="envVars" mode="array">
+              {(envVarsField) => (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={isPending}
+                  onClick={() =>
+                    envVarsField.pushValue({ name: '', value: '' })
+                  }
+                >
+                  <Icon variant="PlusIcon" size="16" />
+                  Add variable
+                </Button>
+              )}
+            </form.Field>
           </div>
 
-          {customEnvVars.length === 0 && (
-            <Text variant="subtext">No environment variables added</Text>
-          )}
-
-          {customEnvVars.map((cv) => (
-            <fieldset
-              key={cv}
-              className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end border-t pt-2"
-            >
-              <label className="flex flex-col gap-1">
-                <Text variant="label">Name</Text>
-                <Input
-                  name={`custom:${cv}:name`}
-                  type="text"
-                  placeholder="VAR_NAME"
-                  required
-                  defaultValue={
-                    draftValues?.[`custom:${cv}:name`] ||
-                    initialEnvVarValues[`custom:${cv}:name`] ||
-                    ''
-                  }
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <Text variant="label">Value</Text>
-                <Input
-                  name={`custom:${cv}:value`}
-                  type="text"
-                  placeholder="value"
-                  required
-                  defaultValue={
-                    draftValues?.[`custom:${cv}:value`] ||
-                    initialEnvVarValues[`custom:${cv}:value`] ||
-                    ''
-                  }
-                />
-              </label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setCustomEnvVars((vars) => vars.filter((v) => v !== cv))
-                }}
-                className="mb-1"
-              >
-                <Icon variant="XIcon" size="16" />
-              </Button>
-            </fieldset>
-          ))}
+          <form.Field name="envVars" mode="array">
+            {(envVarsField) =>
+              envVarsField.state.value.length === 0 ? (
+                <Text variant="subtext">No environment variables added</Text>
+              ) : (
+                <>
+                  {envVarsField.state.value.map((_, idx) => (
+                    <fieldset
+                      key={idx}
+                      className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end border-t pt-2"
+                    >
+                      <form.Field name={`envVars[${idx}].name`}>
+                        {(field) => (
+                          <FormInput
+                            field={field}
+                            type="text"
+                            placeholder="VAR_NAME"
+                            disabled={isPending}
+                            labelProps={{ labelText: 'Name' }}
+                          />
+                        )}
+                      </form.Field>
+                      <form.Field name={`envVars[${idx}].value`}>
+                        {(field) => (
+                          <FormInput
+                            field={field}
+                            type="text"
+                            placeholder="value"
+                            disabled={isPending}
+                            labelProps={{ labelText: 'Value' }}
+                          />
+                        )}
+                      </form.Field>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={isPending}
+                        onClick={() => envVarsField.removeValue(idx)}
+                        className="mb-1"
+                      >
+                        <Icon variant="XIcon" size="16" />
+                      </Button>
+                    </fieldset>
+                  ))}
+                </>
+              )
+            }
+          </form.Field>
         </div>
 
         {roleSelector}

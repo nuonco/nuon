@@ -41,13 +41,6 @@ const ChangeServiceAccountRoleModalContainer = ({
       )
       removeModal(props.modalId)
     },
-    onError: () => {
-      addToast(
-        <Toast heading="Update failed" theme="error">
-          <Text>There was an error changing the role for {identity}.</Text>
-        </Toast>
-      )
-    },
   })
 
   return (

@@ -3,7 +3,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getInstallRunbooks } from '@/lib'
-import { RunRunbookModal } from '../RunRunbook/RunRunbook'
+import { RunRunbookModal } from '@/components/runbooks/RunRunbook'
 import { RunRunbookCard } from './RunRunbookCard'
 
 interface IRunRunbookCardContainer {
