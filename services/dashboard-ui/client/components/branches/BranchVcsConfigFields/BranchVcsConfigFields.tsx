@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { Banner } from '@/components/common/Banner'
+import { Button } from '@/components/common/Button'
 import { Input } from '@/components/common/form/Input'
 import { Label } from '@/components/common/form/Label'
 import { Select } from '@/components/common/form/Select'
@@ -28,6 +30,23 @@ export interface IBranchVcsConfigFields {
   pathFilter?: string
   onPathFilterChange?: (pathFilter: string) => void
   isSubmitting: boolean
+}
+
+const TEXT_BUTTON_CLASS =
+  'w-fit !p-0 !h-auto !bg-transparent !border-none font-medium text-primary-600 dark:text-primary-500 hover:text-primary-800 hover:dark:text-primary-400'
+
+const publicRepoEntry = (value: string): TVCSConnectionRepo | null => {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const fullName = trimmed
+    .replace(/^https?:\/\/github\.com\//, '')
+    .replace(/\.git$/, '')
+    .replace(/\/$/, '')
+  return {
+    full_name: fullName,
+    name: fullName.split('/')[1] || fullName,
+    private: false,
+  } as TVCSConnectionRepo
 }
 
 const FieldSkeleton = ({ htmlFor, label }: { htmlFor: string; label: string }) => (
@@ -61,16 +80,118 @@ export const BranchVcsConfigFields = ({
   onPathFilterChange,
   isSubmitting,
 }: IBranchVcsConfigFields) => {
-  if (vcsConnections.length === 0) {
+  const hasConnections = vcsConnections.length > 0
+  const [usePublicRepo, setUsePublicRepo] = useState(!hasConnections)
+  const [publicRepoText, setPublicRepoText] = useState(selectedRepo?.full_name ?? '')
+
+  useEffect(() => {
+    if (!usePublicRepo || publicRepoText) return
+    if (selectedRepo && !selectedRepo.private) {
+      setPublicRepoText(selectedRepo.full_name)
+    }
+  }, [usePublicRepo, selectedRepo?.full_name])
+
+  const switchMode = (toPublic: boolean) => {
+    setUsePublicRepo(toPublic)
+    if (toPublic) {
+      const keep = selectedRepo && !selectedRepo.private ? selectedRepo : null
+      setPublicRepoText(keep?.full_name ?? '')
+      onRepoChange(keep)
+      return
+    }
+    setPublicRepoText('')
+    onRepoChange(repos[0] || null)
+  }
+
+  if (usePublicRepo) {
     return (
-      <Banner theme="warn">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Text>No GitHub connections yet. Connect one to pick a repository.</Text>
-          <ConnectGithubButton variant="secondary" size="sm" disabled={isSubmitting}>
-            Connect GitHub
-          </ConnectGithubButton>
-        </div>
-      </Banner>
+      <>
+        {!hasConnections && (
+          <Banner theme="warn">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Text>No GitHub connections yet. Public repositories work without one.</Text>
+              <ConnectGithubButton
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={isSubmitting}
+              >
+                Connect GitHub
+              </ConnectGithubButton>
+            </div>
+          </Banner>
+        )}
+
+        <Input
+          id="public-repo"
+          type="text"
+          value={publicRepoText}
+          onChange={(e) => {
+            setPublicRepoText(e.target.value)
+            onRepoChange(publicRepoEntry(e.target.value))
+          }}
+          placeholder="owner/repo"
+          required
+          disabled={isSubmitting}
+          labelProps={{ labelText: 'Public repository' }}
+          helperText="Nuon clones this anonymously, so the repository must be public."
+        />
+
+        <Input
+          id="git-branch"
+          type="text"
+          value={selectedBranch}
+          onChange={(e) => onBranchChange(e.target.value)}
+          placeholder="main"
+          required
+          disabled={isSubmitting}
+          labelProps={{ labelText: 'Git branch' }}
+        />
+
+        <Input
+          id="directory"
+          type="text"
+          value={directory}
+          onChange={(e) => onDirectoryChange(e.target.value)}
+          placeholder="."
+          required
+          disabled={isSubmitting}
+          labelProps={{ labelText: 'Directory' }}
+          helperText='Path to your application config (use "." for root)'
+        />
+
+        {onPathFilterChange && (
+          <Input
+            id="path-filter"
+            type="text"
+            value={pathFilter ?? ''}
+            onChange={(e) => onPathFilterChange(e.target.value)}
+            placeholder="^(src/|config/).*"
+            disabled={isSubmitting}
+            labelProps={{ labelText: 'Path filter (optional)' }}
+            helperText="Regex pattern to filter which file changes trigger workflow runs"
+          />
+        )}
+
+        <Banner theme="info">
+          Pushes and pull requests only trigger runs if this repository&apos;s GitHub
+          organization has a Nuon connection. Without one, trigger runs manually and
+          Nuon cannot post commit statuses or PR comments.
+        </Banner>
+
+        {hasConnections && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={TEXT_BUTTON_CLASS}
+            disabled={isSubmitting}
+            onClick={() => switchMode(false)}
+          >
+            Use a connected repository instead
+          </Button>
+        )}
+      </>
     )
   }
 
@@ -202,6 +323,17 @@ export const BranchVcsConfigFields = ({
           helperText="Regex pattern to filter which file changes trigger workflow runs"
         />
       )}
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className={TEXT_BUTTON_CLASS}
+        disabled={isSubmitting}
+        onClick={() => switchMode(true)}
+      >
+        Use a public repository instead
+      </Button>
     </>
   )
 }
