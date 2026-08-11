@@ -94,19 +94,27 @@ func TestPhoneHomeAuthRoundTrips(t *testing.T) {
 	}
 }
 
-// The whole reason PhoneHomeAuth is its own column: it must persist to jsonb but
-// never reach the wire. A nested json:"-" field would have failed both.
+// The whole reason PhoneHomeAuth is its own column: it must persist to jsonb but never
+// reach the wire. A nested json:"-" field would have failed both. Only the Status()
+// projection is serialized, under the phone_home_auth name.
 func TestPhoneHomeAuthPersistsButIsNotSerialized(t *testing.T) {
+	provisioned := time.Now().UTC().Truncate(time.Second)
+	rejected := provisioned.Add(time.Hour)
+	auth := &PhoneHomeAuth{
+		SecretARN:      "arn:aws:secretsmanager:us-west-2:123456789012:secret:nuon/phone-home/inst0-aB3xYz",
+		SecretRegion:   "us-west-2",
+		KMSKeyARN:      "arn:aws:kms:us-west-2:123456789012:key/abc",
+		CreatedAt:      provisioned,
+		LastRejectedAt: &rejected,
+	}
 	install := Install{
 		ID: "inst00000000000000000000000",
 		CloudPlatformMetadata: CloudPlatformMetadata{
 			TargetAccountID: "123456789012",
 			TargetSource:    CloudPlatformTargetSourceConnection,
 		},
-		PhoneHomeAuth: &PhoneHomeAuth{
-			SecretARN:    "arn:aws:secretsmanager:us-west-2:123456789012:secret:nuon/phone-home/inst0-aB3xYz",
-			SecretRegion: "us-west-2",
-		},
+		PhoneHomeAuth:       auth,
+		PhoneHomeAuthStatus: auth.Status(),
 	}
 
 	body, err := json.Marshal(install)
@@ -119,13 +127,28 @@ func TestPhoneHomeAuthPersistsButIsNotSerialized(t *testing.T) {
 	if err := json.Unmarshal(body, &payload); err != nil {
 		t.Fatalf("unmarshal install: %v", err)
 	}
-	if _, ok := payload["phone_home_auth"]; ok {
-		t.Error("phone_home_auth must not be serialized on the install")
-	}
-	for _, leaked := range []string{"aB3xYz", "secret_arn", "secretsmanager"} {
+	for _, leaked := range []string{"aB3xYz", "secret_arn", "secret_region", "kms_key_arn", "secretsmanager", "arn:aws:kms"} {
 		if strings.Contains(rendered, leaked) {
 			t.Errorf("install response leaked %q", leaked)
 		}
+	}
+
+	rawStatus, ok := payload["phone_home_auth"]
+	if !ok {
+		t.Fatal("phone_home_auth must serialize the wire-safe status projection")
+	}
+	var status PhoneHomeAuthStatus
+	if err := json.Unmarshal(rawStatus, &status); err != nil {
+		t.Fatalf("unmarshal phone_home_auth: %v", err)
+	}
+	if !status.ProvisionedAt.Equal(provisioned) {
+		t.Errorf("provisioned_at did not serialize: got %v want %v", status.ProvisionedAt, provisioned)
+	}
+	if status.LastRejectedAt == nil || !status.LastRejectedAt.Equal(rejected) {
+		t.Errorf("last_rejected_at did not serialize: %v", status.LastRejectedAt)
+	}
+	if status.LastVerifiedAt != nil {
+		t.Errorf("last_verified_at should stay absent, got %v", status.LastVerifiedAt)
 	}
 
 	cpm, ok := payload["cloud_platform_metadata"]
@@ -151,6 +174,35 @@ func TestPhoneHomeAuthPersistsButIsNotSerialized(t *testing.T) {
 	}
 	if !strings.Contains(string(persisted), "aB3xYz") {
 		t.Errorf("PhoneHomeAuth must persist its secret ARN to jsonb, got %s", persisted)
+	}
+}
+
+func TestPhoneHomeAuthStatusOmittedWhenUnprovisioned(t *testing.T) {
+	if status := (*PhoneHomeAuth)(nil).Status(); status != nil {
+		t.Errorf("Status on a nil column should stay nil, got %#v", status)
+	}
+
+	body, err := json.Marshal(Install{ID: "inst00000000000000000000000"})
+	if err != nil {
+		t.Fatalf("marshal install: %v", err)
+	}
+
+	var payload map[string]json.RawMessage
+	if err := json.Unmarshal(body, &payload); err != nil {
+		t.Fatalf("unmarshal install: %v", err)
+	}
+	if _, ok := payload["phone_home_auth"]; ok {
+		t.Error("phone_home_auth must be absent until credentials are provisioned")
+	}
+
+	// A rejection recorded before provisioning leaves CreatedAt zero.
+	rejected := time.Now().UTC()
+	body, err = json.Marshal((&PhoneHomeAuth{LastRejectedAt: &rejected}).Status())
+	if err != nil {
+		t.Fatalf("marshal status: %v", err)
+	}
+	if strings.Contains(string(body), "provisioned_at") {
+		t.Errorf("a zero provisioned_at must be omitted, got %s", body)
 	}
 }
 
