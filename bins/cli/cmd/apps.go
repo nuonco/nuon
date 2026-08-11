@@ -395,9 +395,12 @@ func (c *cli) branchesCmd() *cobra.Command {
 	branchesCmd.AddCommand(createCmd)
 
 	var (
-		planOnly bool
-		force    bool
-		noWait   bool
+		planOnly   bool
+		force      bool
+		noWait     bool
+		prNumber   int
+		headSHA    string
+		baseBranch string
 	)
 	triggerCmd := &cobra.Command{
 		Use:         "trigger",
@@ -405,7 +408,17 @@ func (c *cli) branchesCmd() *cobra.Command {
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.TriggerBranchRun(cmd.Context(), appID, branchID, planOnly, force, noWait, PrintJSON)
+			opts := apps.TriggerBranchRunOptions{
+				PlanOnly:   planOnly,
+				Force:      force,
+				NoWait:     noWait,
+				HeadSHA:    headSHA,
+				BaseBranch: baseBranch,
+			}
+			if cmd.Flags().Changed("pr-number") {
+				opts.PRNumber = &prNumber
+			}
+			return svc.TriggerBranchRun(cmd.Context(), appID, branchID, opts, PrintJSON)
 		}),
 	}
 	triggerCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
@@ -413,6 +426,9 @@ func (c *cli) branchesCmd() *cobra.Command {
 	triggerCmd.Flags().BoolVar(&planOnly, "preview", false, "Plan-only preview mode (no apply)")
 	triggerCmd.Flags().BoolVar(&force, "force", false, "Force rebuild all components")
 	triggerCmd.Flags().BoolVar(&noWait, "no-wait", false, "Return immediately after triggering without launching the workflow viewer")
+	triggerCmd.Flags().IntVar(&prNumber, "pr-number", 0, "Pull request number this run belongs to. Required for the run to comment on the PR.")
+	triggerCmd.Flags().StringVar(&headSHA, "head-sha", "", "Commit SHA at the head of the pull request, used to set the commit status")
+	triggerCmd.Flags().StringVar(&baseBranch, "base-branch", "", "Base branch the pull request targets")
 	branchesCmd.AddCommand(triggerCmd)
 
 	var confirmDelete bool

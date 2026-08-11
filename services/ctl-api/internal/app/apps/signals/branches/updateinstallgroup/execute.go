@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/installgroups"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateappconfig"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -107,44 +108,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, string, error) {
-	logger := workflow.GetLogger(ctx)
-
-	group, err := activities.AwaitGetInstallGroupByID(ctx, s.InstallGroupID)
+	resolved, err := installgroups.Resolve(ctx, s.InstallGroupID, s.AppBranchID)
 	if err != nil {
-		return nil, "", fmt.Errorf("unable to get install group: %w", err)
+		return nil, "", err
 	}
-
-	if group.LabelSelector == nil {
-		logger.Info("updating install group",
-			"install_group_id", group.ID,
-			"install_group_name", group.Name,
-			"install_count", len(group.InstallIDs),
-		)
-		return group.InstallIDs, group.Name, nil
-	}
-
-	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
-	if err != nil {
-		return nil, "", fmt.Errorf("unable to get app branch for label resolution: %w", err)
-	}
-
-	resolved, err := activities.AwaitResolveInstallGroupInstalls(ctx, &activities.ResolveInstallGroupInstallsInput{
-		AppID:    branch.AppID,
-		GroupID:  group.ID,
-		Selector: group.LabelSelector,
-	})
-	if err != nil {
-		return nil, "", fmt.Errorf("unable to resolve install group labels: %w", err)
-	}
-
-	logger.Info("updating install group",
-		"install_group_id", group.ID,
-		"install_group_name", group.Name,
-		"install_count", len(resolved.InstallIDs),
-		"resolved_via", "label_selector",
-	)
-
-	return resolved.InstallIDs, group.Name, nil
+	return resolved.InstallIDs, resolved.GroupName, nil
 }
 
 func (s *Signal) enqueueInstallUpdates(

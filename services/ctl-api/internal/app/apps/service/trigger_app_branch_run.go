@@ -20,6 +20,12 @@ type TriggerAppBranchRunRequest struct {
 	PlanOnly    bool   `json:"plan_only"`     // plan-only preview mode (no apply)
 	AppConfigID string `json:"app_config_id"` // optional - use pre-existing app config (skips VCS fetch + config parse)
 	SkipBuilds  bool   `json:"skip_builds"`   // skip builds step (e.g. rollback to existing config with existing builds)
+
+	// PR context, for previews triggered from CI rather than a GitHub webhook.
+	// Supplying PRNumber is what lets the run report back onto the pull request.
+	PRNumber   *int   `json:"pr_number,omitempty"`
+	HeadSHA    string `json:"head_sha,omitempty"`
+	BaseBranch string `json:"base_branch,omitempty"`
 }
 
 func (c *TriggerAppBranchRunRequest) Validate(v *validator.Validate) error {
@@ -141,6 +147,15 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	if req.SkipBuilds {
 		workflowMeta["skip_builds"] = "true"
 	}
+	if req.PRNumber != nil {
+		workflowMeta["pr_number"] = strconv.Itoa(*req.PRNumber)
+	}
+	if req.HeadSHA != "" {
+		workflowMeta["head_sha"] = req.HeadSHA
+	}
+	if req.BaseBranch != "" {
+		workflowMeta["base_branch"] = req.BaseBranch
+	}
 
 	triggerResp, err := s.helpers.TriggerAppBranchRun(ctx, &helpers.TriggerAppBranchRunRequest{
 		Run: helpers.CreateAppBranchRunRequest{
@@ -150,6 +165,9 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 			Force:             req.Force,
 			PlanOnly:          req.PlanOnly,
 			EventType:         "manual",
+			PRNumber:          req.PRNumber,
+			HeadSHA:           req.HeadSHA,
+			BaseBranch:        req.BaseBranch,
 		},
 		QueueID:  branch.Queue.ID,
 		Metadata: workflowMeta,
