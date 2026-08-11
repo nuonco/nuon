@@ -4,13 +4,14 @@ import { LogViewerProvider } from '@/providers/log-viewer-provider'
 
 interface IRunnerJobLogs {
   logStreamId?: string
+  runnerJobId?: string
 }
 
-export const RunnerJobLogs = ({ logStreamId }: IRunnerJobLogs) => {
+export const RunnerJobLogs = ({ logStreamId, runnerJobId }: IRunnerJobLogs) => {
   if (!logStreamId) return <LogsSkeleton />
 
   return (
-    <LogStreamProvider logStreamId={logStreamId}>
+    <LogStreamProvider logStreamId={logStreamId} runnerJobId={runnerJobId}>
       <LogViewerProvider>
         <SSELogs />
       </LogViewerProvider>
