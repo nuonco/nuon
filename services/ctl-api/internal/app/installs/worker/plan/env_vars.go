@@ -1,6 +1,7 @@
 package plan
 
 import (
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -45,9 +46,14 @@ func (p *Planner) getOverrideEnvVars(ctx workflow.Context, run *app.InstallActio
 		return nil, errors.Wrap(err, "unable to get state")
 	}
 
+	return p.RenderOverrideEnvVars(l, run.RunEnvVars, stateData)
+}
+
+// RenderOverrideEnvVars renders action workflow environment variable overrides with no Temporal dependency.
+func (p *Planner) RenderOverrideEnvVars(l *zap.Logger, runEnvVars pgtype.Hstore, stateData map[string]any) (map[string]string, error) {
 	// Convert hstore (map[string]*string) to map[string]string before rendering,
 	// because RenderMap doesn't handle *string pointer values in hstore maps.
-	envVars := generics.ToStringMap(run.RunEnvVars)
+	envVars := generics.ToStringMap(runEnvVars)
 
 	l.Info("rendering environment variables")
 	if err := render.RenderMap(&envVars, stateData); err != nil {
