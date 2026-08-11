@@ -27,7 +27,7 @@
 <h1>Phase 1 — API routes &amp; schema</h1>
 <p class="sub">Make every non-deprecated resource reachable by a route whose path encodes its full ownership chain, so Phase 3 can authorize from the URL alone. Add nested routes where missing; add owner columns where a chain can't be enforced. Leave all existing routes in place.</p>
 
-<div class="callout"><strong>Non-goal.</strong> No authorization logic changes here. No route removals. This phase only adds routes and columns and wires handlers to scope by ancestors.</div>
+<div class="callout"><strong>Non-goal.</strong> No authorization logic changes here. No route removals. This phase only adds nested routes and gates them with ancestor-scoping guards.</div>
 
 <h2>1. The chain lives in the route pattern</h2>
 <p>Phase 3 maps a matched <code>gin</code> route pattern to an ordered chain of scope tiers. That is only possible if the pattern names each tier:</p>
@@ -50,7 +50,7 @@
 <table>
 <tr><th>Resource</th><th>Nested route (one level)</th><th>Ancestor-scoping predicate</th></tr>
 <tr><td>install <code>workflow</code> + steps / approvals</td><td><code>/v1/installs/:install_id/workflows/:workflow_id/&hellip;</code></td><td class="tree">owner_id = :install_id AND owner_type = 'installs'</td></tr>
-<tr><td>app-branch <code>workflow</code></td><td><code>/v1/apps/:app_id/branches/:app_branch_id/workflows/&hellip;</code></td><td class="tree">owner_id = :app_branch_id AND owner_type = 'app_branch'</td></tr>
+<tr><td>app-branch <code>workflow</code></td><td><code>/v1/apps/:app_id/branches/:app_branch_id/workflows/&hellip;</code></td><td class="tree">owner_id = :app_branch_id AND owner_type = 'app_branches'</td></tr>
 <tr><td><code>runner-job</code> (install)</td><td><code>/v1/installs/:install_id/runner-jobs/:id</code></td><td>polymorphic join &rarr; see &sect;4</td></tr>
 <tr><td><code>log-stream</code> logs (install)</td><td><code>/v1/installs/:install_id/runner-jobs/:id/logs</code> (+ <code>/tail</code>, <code>/spans</code>)</td><td>via runner-job&rarr;install, then its <code>log_stream_id</code></td></tr>
 <tr><td><code>component-build</code> + build logs</td><td><code>/v1/apps/:app_id/components/:component_id/builds/:build_id</code> (+ <code>/logs</code>)</td><td>join through <code>component_config_connections</code></td></tr>
@@ -82,22 +82,22 @@ WHERE org_id = :org
 <h2>5. The chain must distinguish <code>app_branch</code> from <code>app</code></h2>
 <p>App-branch routes are already nested (<code>/v1/apps/:app_id/branches/:app_branch_id/&hellip;</code>), but the ownership chain they express is only <code>[app, org]</code> today &mdash; the branch id is in the URL but the chain doesn't treat the branch as its own link. That collapses &ldquo;access to this branch&rdquo; and &ldquo;access to the whole app&rdquo; into one level, which Phase 2 needs to keep separate.</p>
 <p>So Phase 1 records <code>app_branch</code> as a <strong>distinct link</strong> in the chain: Phase 3's chain builder emits <code>{app_branch, :app_branch_id}</code> as the leaf, giving <code>[app_branch, app, org]</code>. This is the routing/chain-shape decision; the corresponding <code>Level</code> enum value lives with the data model in Phase&nbsp;2. It's the pattern for any child that must be addressable independently of its parent &mdash; and it's why the <code>workflow</code> split above routes app-branch workflows under the branch (app chain) and install workflows under the install.</p>
+<div class="callout warn"><strong>Follow-up &mdash; branch-workflow nesting depth.</strong> App-branch workflows are nested under their direct owner, the branch (<code>/apps/:app_id/branches/:app_branch_id/workflows/:workflow_id</code>), mirroring how install workflows nest under the install. The alternative &mdash; hanging them off the app (<code>/apps/:app_id/workflows/:workflow_id</code>) &mdash; was rejected because it collapses the branch out of the URL, so authz couldn't distinguish a branch-scoped role from an app-scoped one, and the guard would need an extra branch&rarr;app join while losing the branch as an addressable link. Revisit only if we decide branch-level scoping is not worth addressing independently of the app; that would let the shorter app-level path replace the branch nesting.</div>
 
-<h2>6. Files (anticipated)</h2>
+<h2>6. Files (as built)</h2>
 <ul>
-<li><code>services/ctl-api/internal/app/**/service/*.go</code> &mdash; new nested handlers (thin wrappers reusing existing service methods, adding ancestor-scoped <code>WHERE</code> clauses).</li>
-<li>Route registration in each domain's <code>Register*Routes</code>.</li>
-<li><code>services/ctl-api/internal/app/&lt;resource&gt;.go</code> &mdash; owner FK column where missing.</li>
-<li>One migration adding any missing owner FK columns (not ancestry).</li>
-<li>Swagger annotations on new routes; regenerated SDKs.</li>
+<li>Nested route groups + an ancestor-ownership <strong>guard middleware</strong> per subtree, registered in each domain's <code>Register*Routes</code> (<code>installs</code>, <code>runners</code>, <code>policy_reports</code> service.go). The groups <strong>reuse the existing bare handlers directly</strong> &mdash; the guard enforces the ancestor claim once for the whole subtree, so no per-handler rewrite is needed.</li>
+<li><code>installs/helpers/install_owned_scope.go</code> &mdash; the shared <code>InstallOwnedScope</code> predicate resolving any polymorphic <code>owner_id</code>/<code>owner_type</code> to an install; injected into the runner-job and terraform-workspace guards.</li>
+<li><code>components/service/get_component_build.go</code> &mdash; ancestor-scoping fix (the build query was scoped by <code>id</code>+<code>org</code> only, ignoring its component).</li>
+<li><strong>No migration</strong> &mdash; the polymorphic-predicate approach adds no owner FK columns.</li>
 </ul>
+<div class="callout"><strong>No swagger / SDK changes this phase.</strong> The nested routes reuse existing handlers, which keep their original (bare-path) swagger operations, so the nested paths are functional and ancestor-scoped but intentionally absent from the generated spec/SDKs. A typed client method for a given nested path is added later &mdash; a thin wrapper handler (or a second <code>@Router</code>) &mdash; only when a dashboard/CLI consumer in Phase&nbsp;4/5 actually calls it. Phase&nbsp;1 doesn't build SDK surface ahead of a consumer.</div>
 
 <h2>7. Acceptance</h2>
 <ul>
 <li>Every non-deprecated app/install-owned resource has a nested route whose pattern names its chain.</li>
-<li>Each new nested handler scopes its primary query by the path's ancestor id(s); a mismatched leaf/owner pair returns 404, not another owner's resource.</li>
-<li>All pre-existing routes respond identically to before.</li>
-<li>SDKs regenerate cleanly.</li>
+<li>Each nested subtree is gated by a guard that confirms the leaf belongs to the path ancestor; a mismatched leaf/owner pair returns 404, not another owner's resource.</li>
+<li>All pre-existing routes respond identically to before; bare/deprecated routes still authorize org-tier.</li>
 </ul>
 
 <h2>8. Decisions settled</h2>

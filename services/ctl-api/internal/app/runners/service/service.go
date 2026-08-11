@@ -1,12 +1,14 @@
 package service
 
 import (
+	"net/http"
 	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/hashicorp/golang-lru/v2/expirable"
+	"github.com/pkg/errors"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -20,6 +22,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
@@ -162,6 +165,50 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/log-streams/:log_stream_id/logs/tail", s.LogStreamTailLogs)
 	api.GET("/v1/log-streams/:log_stream_id/spans", s.LogStreamReadSpans)
 	api.GET("/v1/log-streams/:log_stream_id", s.GetLogStream)
+
+	// install-nested, ancestor-scoped access to a runner job's logs and to
+	// terraform workspaces owned by the install (bare routes above stay org-tier).
+	jobs := api.Group("/v1/installs/:install_id/runner-jobs/:runner_job_id")
+	jobs.Use(s.requireRunnerJobInInstall)
+
+	// Bare handlers reused directly — the group guard makes them ancestor-scoped.
+	// These nested routes are intentionally not in swagger/the SDK; a typed
+	// client method is added (as a wrapper or second @Router) only when a
+	// dashboard/CLI consumer in a later phase actually needs one.
+	jobs.GET("", s.GetRunnerJobPublic)
+	jobs.GET("/plan", s.GetRunnerJobPlanPublic)
+	jobs.GET("/composite-plan", s.GetRunnerJobCompositePlan)
+	jobs.POST("/cancel", s.CancelRunnerJob)
+
+	jobs.GET("/logs", s.LogStreamReadLogs)
+	jobs.GET("/logs/tail", s.LogStreamTailLogs)
+	jobs.GET("/spans", s.LogStreamReadSpans)
+
+	ws := api.Group("/v1/installs/:install_id/terraform-workspaces/:workspace_id")
+	ws.Use(s.requireTerraformWorkspaceInInstall)
+
+	ws.GET("", s.GetTerraformWorkpace)
+	ws.GET("/lock", s.GetTerraformWorkspaceLock)
+	ws.POST("/lock", s.LockTerraformWorkspace)
+	ws.POST("/unlock", s.UnlockTerraformWorkspace)
+
+	ws.GET("/states", s.GetTerraformWorkspaceStatesV2)
+	ws.GET("/states/:state_id", s.GetTerraformWorkspaceStateByIDV2)
+	ws.GET("/states/:state_id/resources", s.GetTerraformWorkspaceStateResourcesV2)
+
+	ws.GET("/state-json", s.GetTerraformWorkspaceStatesJSONV2)
+	ws.GET("/state-json/:state_id", s.GetTerraformWorkspaceStatesJSONByIDV2)
+	ws.GET("/state-json/:state_id/raw", s.GetWorkspaceStateJSONRawByID)
+	ws.GET("/state-json/:state_id/resources", s.GetTerraformWorkspaceStateResourcesV2)
+
+	// app-scoped build logs (a build serves many installs, so its logs are
+	// not install-scoped).
+	logs := api.Group("/v1/apps/:app_id/components/:component_id/builds/:build_id")
+	logs.Use(s.requireBuildLogStream)
+
+	logs.GET("/logs", s.LogStreamReadLogs)
+	logs.GET("/logs/tail", s.LogStreamTailLogs)
+	logs.GET("/spans", s.LogStreamReadSpans)
 
 	return nil
 }
@@ -412,4 +459,125 @@ func New(params Params) *service {
 
 func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
 	return nil
+}
+
+// requireRunnerJobInInstall gates the install-nested runner-job subtree: the
+// job named by :runner_job_id must resolve to :install_id through its
+// polymorphic owner (see installshelpers.InstallOwnedScope). It also injects the job's
+// log_stream_id as a route param so the shared log handlers — which key off
+// :log_stream_id — can be reused unchanged under the runner-job path.
+func (s *service) requireRunnerJobInInstall(ctx *gin.Context) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get org from context"))
+		ctx.Abort()
+		return
+	}
+
+	var job app.RunnerJob
+	res := s.db.WithContext(ctx).
+		Select("id", "log_stream_id").
+		Where("id = ? AND org_id = ?", ctx.Param("runner_job_id"), orgID).
+		Scopes(s.installsHelpers.InstallOwnedScope(ctx.Param("install_id"))).
+		First(&job)
+	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "runner job not found"})
+		return
+	}
+	if res.Error != nil {
+		ctx.Error(errors.Wrap(res.Error, "unable to resolve runner job"))
+		ctx.Abort()
+		return
+	}
+
+	if job.LogStreamID != nil {
+		ctx.Params = append(ctx.Params, gin.Param{Key: "log_stream_id", Value: *job.LogStreamID})
+	}
+
+	ctx.Next()
+}
+
+// requireTerraformWorkspaceInInstall gates the install-nested terraform
+// workspace subtree: the workspace named by :workspace_id must resolve to
+// :install_id through its polymorphic owner (install_components /
+// install_sandboxes), via the shared installshelpers.InstallOwnedScope predicate.
+func (s *service) requireTerraformWorkspaceInInstall(ctx *gin.Context) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get org from context"))
+		ctx.Abort()
+		return
+	}
+
+	var count int64
+	res := s.db.WithContext(ctx).Model(&app.TerraformWorkspace{}).
+		Where("id = ? AND org_id = ?", ctx.Param("workspace_id"), orgID).
+		Scopes(s.installsHelpers.InstallOwnedScope(ctx.Param("install_id"))).
+		Count(&count)
+	if res.Error != nil {
+		ctx.Error(errors.Wrap(res.Error, "unable to resolve terraform workspace"))
+		ctx.Abort()
+		return
+	}
+	if count == 0 {
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "terraform workspace not found"})
+		return
+	}
+
+	ctx.Next()
+}
+
+// requireBuildLogStream gates the app-scoped build-log routes: the build named
+// by :build_id must belong to :component_id, which must belong to :app_id (all
+// in the caller's org). Build logs are app-scoped rather than install-scoped
+// because a build serves many installs. On success it injects the build's
+// log_stream_id so the shared log handlers can be reused.
+func (s *service) requireBuildLogStream(ctx *gin.Context) {
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		ctx.Error(errors.Wrap(err, "unable to get org from context"))
+		ctx.Abort()
+		return
+	}
+
+	buildID := ctx.Param("build_id")
+	componentNameOrID := ctx.Param("component_id")
+
+	var build app.ComponentBuild
+	res := s.db.WithContext(ctx).
+		Model(&app.ComponentBuild{}).
+		Select("component_builds.id").
+		Joins("JOIN component_config_connections ON component_config_connections.id = component_builds.component_config_connection_id").
+		Joins("JOIN components ON components.id = component_config_connections.component_id").
+		Where("component_builds.id = ? AND component_builds.org_id = ?", buildID, orgID).
+		Where("components.app_id = ?", ctx.Param("app_id")).
+		Where(s.db.Where("components.id = ?", componentNameOrID).Or("components.name = ?", componentNameOrID)).
+		First(&build)
+	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "component build not found"})
+		return
+	}
+	if res.Error != nil {
+		ctx.Error(errors.Wrap(res.Error, "unable to resolve component build"))
+		ctx.Abort()
+		return
+	}
+
+	var logStream app.LogStream
+	res = s.db.WithContext(ctx).
+		Select("id").
+		Where("owner_type = ? AND owner_id = ? AND org_id = ?", "component_builds", buildID, orgID).
+		First(&logStream)
+	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "no logs for build"})
+		return
+	}
+	if res.Error != nil {
+		ctx.Error(errors.Wrap(res.Error, "unable to resolve build log stream"))
+		ctx.Abort()
+		return
+	}
+
+	ctx.Params = append(ctx.Params, gin.Param{Key: "log_stream_id", Value: logStream.ID})
+	ctx.Next()
 }

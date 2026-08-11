@@ -1,19 +1,24 @@
 package service
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/audit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -264,37 +269,19 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	ge.GET("/v1/workflows", s.GetOrgWorkflows)
 	ge.POST("/v1/workflows/cancel", s.CancelWorkflows)
 
-	// workflows (standalone)
-	workflows := ge.Group("/v1/workflows/:workflow_id")
-	{
-		workflows.GET("", s.GetWorkflow)
-		workflows.PATCH("", s.UpdateWorkflow)
-		workflows.POST("/cancel", s.CancelWorkflow)
-		workflows.GET("/queue-position", s.GetWorkflowQueuePosition)
+	// workflows (standalone, org-scoped)
+	s.registerWorkflowSubtree(ge.Group("/v1/workflows/:workflow_id"))
 
-		stepGroups := workflows.Group("/step-groups")
-		{
-			stepGroups.GET("", s.GetWorkflowStepGroups)
-			stepGroups.GET("/:step_group_id", s.GetWorkflowStepGroup)
-		}
+	// workflows nested under install — ancestor-scoped: the workflow must be
+	// owned by :install_id before any handler in the subtree runs.
+	installWorkflows := ge.Group("/v1/installs/:install_id/workflows/:workflow_id")
+	installWorkflows.Use(s.requireWorkflowOwner("installs", "install_id"))
+	s.registerInstallWorkflowSubtree(installWorkflows)
 
-		steps := workflows.Group("/steps")
-		{
-			steps.GET("", s.GetWorkflowSteps)
-			steps.GET("/:step_id", s.GetWorkflowStep)
-			steps.GET("/:step_id/await", s.AwaitWorkflowStep)
-			steps.POST("/:step_id/retry", s.RetryWorkflowStep)
-			steps.POST("/:step_id/skip", s.SkipWorkflowStep)
-			steps.POST("/:step_id/cancel", s.CancelWorkflowStep)
-
-			approvals := steps.Group("/:step_id/approvals/:approval_id")
-			{
-				approvals.GET("", s.GetWorkflowStepApproval)
-				approvals.POST("/response", s.CreateWorkflowStepApprovalResponse)
-				approvals.GET("/contents", s.GetWorkflowStepApprovalContents)
-			}
-		}
-	}
+	// workflows nested under app branch — same subtree, scoped to the branch owner.
+	branchWorkflows := ge.Group("/v1/apps/:app_id/branches/:app_branch_id/workflows/:workflow_id")
+	branchWorkflows.Use(s.requireWorkflowOwner("app_branches", "app_branch_id"))
+	s.registerBranchWorkflowSubtree(branchWorkflows)
 
 	// deprecated install-workflows
 
@@ -407,4 +394,129 @@ func New(params Params) *service {
 
 func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
 	return nil
+}
+
+func (s *service) registerWorkflowSubtree(workflows *gin.RouterGroup) {
+	workflows.GET("", s.GetWorkflow)
+	workflows.PATCH("", s.UpdateWorkflow)
+	workflows.POST("/cancel", s.CancelWorkflow)
+	workflows.GET("/queue-position", s.GetWorkflowQueuePosition)
+
+	stepGroups := workflows.Group("/step-groups")
+	{
+		stepGroups.GET("", s.GetWorkflowStepGroups)
+		stepGroups.GET("/:step_group_id", s.GetWorkflowStepGroup)
+	}
+
+	steps := workflows.Group("/steps")
+	{
+		steps.GET("", s.GetWorkflowSteps)
+		steps.GET("/:step_id", s.GetWorkflowStep)
+		steps.GET("/:step_id/await", s.AwaitWorkflowStep)
+		steps.POST("/:step_id/retry", s.RetryWorkflowStep)
+		steps.POST("/:step_id/skip", s.SkipWorkflowStep)
+		steps.POST("/:step_id/cancel", s.CancelWorkflowStep)
+
+		approvals := steps.Group("/:step_id/approvals/:approval_id")
+		{
+			approvals.GET("", s.GetWorkflowStepApproval)
+			approvals.POST("/response", s.CreateWorkflowStepApprovalResponse)
+			approvals.GET("/contents", s.GetWorkflowStepApprovalContents)
+		}
+	}
+}
+
+func (s *service) requireWorkflowOwner(ownerType, ownerParam string) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		orgID, err := cctx.OrgIDFromContext(ctx)
+		if err != nil {
+			ctx.Error(errors.Wrap(err, "unable to get org from context"))
+			ctx.Abort()
+			return
+		}
+
+		var count int64
+		res := s.db.WithContext(ctx).Model(&app.Workflow{}).
+			Where(app.Workflow{
+				ID:        ctx.Param("workflow_id"),
+				OrgID:     orgID,
+				OwnerID:   ctx.Param(ownerParam),
+				OwnerType: ownerType,
+			}).
+			Count(&count)
+		if res.Error != nil {
+			ctx.Error(errors.Wrap(res.Error, "unable to resolve workflow owner"))
+			ctx.Abort()
+			return
+		}
+		if count == 0 {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "workflow not found"})
+			return
+		}
+
+		ctx.Next()
+	}
+}
+
+// The workflow GET is an annotated wrapper (distinct SDK op); the sub-actions
+// reuse their bare handlers directly — still ancestor-scoped by the group
+// guard, but documented under their existing (org-tier) swagger paths.
+func (s *service) registerInstallWorkflowSubtree(workflows *gin.RouterGroup) {
+	workflows.GET("", s.GetWorkflow)
+	workflows.PATCH("", s.UpdateWorkflow)
+	workflows.POST("/cancel", s.CancelWorkflow)
+	workflows.GET("/queue-position", s.GetWorkflowQueuePosition)
+
+	stepGroups := workflows.Group("/step-groups")
+	{
+		stepGroups.GET("", s.GetWorkflowStepGroups)
+		stepGroups.GET("/:step_group_id", s.GetWorkflowStepGroup)
+	}
+
+	steps := workflows.Group("/steps")
+	{
+		steps.GET("", s.GetWorkflowSteps)
+		steps.GET("/:step_id", s.GetWorkflowStep)
+		steps.GET("/:step_id/await", s.AwaitWorkflowStep)
+		steps.POST("/:step_id/retry", s.RetryWorkflowStep)
+		steps.POST("/:step_id/skip", s.SkipWorkflowStep)
+		steps.POST("/:step_id/cancel", s.CancelWorkflowStep)
+
+		approvals := steps.Group("/:step_id/approvals/:approval_id")
+		{
+			approvals.GET("", s.GetWorkflowStepApproval)
+			approvals.POST("/response", s.CreateWorkflowStepApprovalResponse)
+			approvals.GET("/contents", s.GetWorkflowStepApprovalContents)
+		}
+	}
+}
+
+func (s *service) registerBranchWorkflowSubtree(workflows *gin.RouterGroup) {
+	workflows.GET("", s.GetWorkflow)
+	workflows.PATCH("", s.UpdateWorkflow)
+	workflows.POST("/cancel", s.CancelWorkflow)
+	workflows.GET("/queue-position", s.GetWorkflowQueuePosition)
+
+	stepGroups := workflows.Group("/step-groups")
+	{
+		stepGroups.GET("", s.GetWorkflowStepGroups)
+		stepGroups.GET("/:step_group_id", s.GetWorkflowStepGroup)
+	}
+
+	steps := workflows.Group("/steps")
+	{
+		steps.GET("", s.GetWorkflowSteps)
+		steps.GET("/:step_id", s.GetWorkflowStep)
+		steps.GET("/:step_id/await", s.AwaitWorkflowStep)
+		steps.POST("/:step_id/retry", s.RetryWorkflowStep)
+		steps.POST("/:step_id/skip", s.SkipWorkflowStep)
+		steps.POST("/:step_id/cancel", s.CancelWorkflowStep)
+
+		approvals := steps.Group("/:step_id/approvals/:approval_id")
+		{
+			approvals.GET("", s.GetWorkflowStepApproval)
+			approvals.POST("/response", s.CreateWorkflowStepApprovalResponse)
+			approvals.GET("/contents", s.GetWorkflowStepApprovalContents)
+		}
+	}
 }

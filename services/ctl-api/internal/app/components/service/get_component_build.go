@@ -101,6 +101,8 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 		Preload("LogStream").
 		Preload("QueueSignal").
 		Preload("AppBranchRun").
+		Where("component_config_connection_id IN (?)",
+			s.db.Model(&app.ComponentConfigConnection{}).Select("id").Where("component_id = ?", cmpID)).
 		First(&bld, "id = ? AND org_id = ?", bldID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component build: %w", res.Error)
