@@ -26,6 +26,7 @@ import (
 
 const SignalType signal.SignalType = "install-action-workflow-run"
 const runbookEventOutputsVersion = "runbook-event-outputs-v1"
+const preparationCompositeErrorVersion = "action-preparation-composite-error-v1"
 
 type Signal struct {
 	signal.LifecycleBase
@@ -251,6 +252,14 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 	if err != nil {
 		return errors.Wrap(err, "unable to get action workflow run")
 	}
+	preparationCompositeErrorsEnabled := workflow.GetVersion(ctx, preparationCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if preparationCompositeErrorsEnabled {
+		if err := activities.AwaitSetActionWorkflowRunPreparationCompositeError(ctx, activities.SetActionWorkflowRunPreparationCompositeErrorRequest{
+			RunID: run.ID,
+		}); err != nil {
+			l.Warn("unable to clear action workflow run preparation composite error", zap.Error(err))
+		}
+	}
 
 	parentLS, _ := cctx.GetLogStreamWorkflow(ctx)
 
@@ -292,6 +301,9 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		WorkflowID: fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
+		if preparationCompositeErrorsEnabled {
+			s.recordPreparationCompositeError(ctx, run.ID, err)
+		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")
 		return errors.Wrap(err, "unable to create plan")
 	}
@@ -310,6 +322,9 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		},
 	})
 	if err != nil {
+		if preparationCompositeErrorsEnabled {
+			s.recordPreparationCompositeError(ctx, run.ID, err)
+		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
 		return errors.Wrap(err, "unable to create runner job")
 	}
@@ -318,6 +333,9 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 	// save runner job plan
 	planJSON, err := json.Marshal(planResponse.Plan)
 	if err != nil {
+		if preparationCompositeErrorsEnabled {
+			s.recordPreparationCompositeError(ctx, run.ID, err)
+		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
 		return errors.Wrap(err, "unable to convert plan to json")
 	}
@@ -327,6 +345,9 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		PlanJSON:      string(planJSON),
 		CompositePlan: plantypes.CompositePlan{ActionWorkflowRunPlan: planResponse.Plan},
 	}); err != nil {
+		if preparationCompositeErrorsEnabled {
+			s.recordPreparationCompositeError(ctx, run.ID, err)
+		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to save job plan")
 		return errors.Wrap(err, "unable to save runner job plan")
 	}
@@ -336,6 +357,9 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		RunnerJobID:   runnerJob.ID,
 		RoleSelection: planResponse.RoleSelection,
 	}); err != nil {
+		if preparationCompositeErrorsEnabled {
+			s.recordPreparationCompositeError(ctx, run.ID, err)
+		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to record install role usage")
 		return errors.Wrap(err, "unable to record install role usage")
 	}
@@ -376,6 +400,15 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 	}
 
 	return nil
+}
+
+func (s *Signal) recordPreparationCompositeError(ctx workflow.Context, runID string, runErr error) {
+	if err := activities.AwaitSetActionWorkflowRunPreparationCompositeError(ctx, activities.SetActionWorkflowRunPreparationCompositeErrorRequest{
+		RunID:  runID,
+		Detail: signal.HumanError(runErr),
+	}); err != nil {
+		workflow.GetLogger(ctx).Warn("unable to record action workflow run preparation composite error", zap.Error(err))
+	}
 }
 
 func (s *Signal) updateActionRunStatus(ctx workflow.Context, runID string, status app.InstallActionWorkflowRunStatus, msg string) {
