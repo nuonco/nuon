@@ -23,7 +23,9 @@ type AppPhoneHomeAuthStatus struct {
 	// last verified at
 	LastVerifiedAt string `json:"last_verified_at,omitempty"`
 
-	// provisioned at
+	// ProvisionedAt is omitzero because recordPhoneHomeAuthResult can create the column
+	// from an empty struct, so a row can carry verification timestamps but no
+	// provisioning one. Serializing that as year 1 would render as a bogus timestamp.
 	ProvisionedAt string `json:"provisioned_at,omitempty"`
 }
 
