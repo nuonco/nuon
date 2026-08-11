@@ -6,9 +6,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -106,6 +108,25 @@ func (s *service) getInstallDeploy(ctx context.Context, installID, deployID stri
 		First(&installDeploy, "install_deploys.id = ?", deployID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install deploy: %w", res.Error)
+	}
+	if len(installDeploy.RunnerJobs) > 0 {
+		compositeError, err := runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{
+			OwnerID:   installDeploy.ID,
+			OwnerType: "install_deploys",
+		})
+		if err != nil {
+			s.l.Warn("unable to hydrate install deploy composite error",
+				zap.String("deploy_id", installDeploy.ID),
+				zap.Error(err))
+		} else {
+			// Keep orchestration-owned errors, but derive runner-owned mirrors from
+			// the latest job so retries can replace or clear stale values.
+			runnerErrorMirrored := installDeploy.CompositeError != nil &&
+				(installDeploy.CompositeError.SourceType == "install_deploys" || installDeploy.CompositeError.SourceType == "runner_jobs")
+			if compositeError != nil || runnerErrorMirrored {
+				installDeploy.CompositeError = compositeError
+			}
+		}
 	}
 
 	return &installDeploy, nil
