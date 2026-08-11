@@ -18,6 +18,8 @@ func preload(db *gorm.DB) *gorm.DB {
 		Preload("ComponentConfigConnections").
 		Preload("ComponentConfigConnections.Component").
 		Preload("SandboxConfig").
+		Preload("SandboxConfig.PublicGitVCSConfig").
+		Preload("SandboxConfig.ConnectedGithubVCSConfig").
 		Preload("StackConfig")
 }
 
@@ -128,21 +130,86 @@ func ComputeInstallConfigDiff(ctx context.Context, db *gorm.DB, oldAppConfigID, 
 	return diff, nil
 }
 
-func sandboxConfigEqual(a, b app.AppSandboxConfig) bool {
-	type content struct {
-		Variables      any    `json:"variables"`
-		EnvVars        any    `json:"env_vars"`
-		VariablesFiles any    `json:"variables_files"`
-		Type           string `json:"type"`
-		TerraformVer   string `json:"terraform_version"`
-		DriftSchedule  string `json:"drift_schedule"`
-		Runtime        string `json:"runtime"`
-		PulumiVersion  string `json:"pulumi_version"`
-		PulumiConfig   any    `json:"pulumi_config"`
+// sandboxContent is everything about a sandbox config that decides what gets
+// deployed. Orchestration knobs (max_auto_retries, skip_noops,
+// auto_approve_on_policies_passing) are deliberately excluded: changing a retry
+// count should not force a reprovision. Anything that selects or renders the
+// sandbox belongs here — omitting a field means a real change is read as a
+// no-op and never reaches installs.
+type sandboxContent struct {
+	Source         sandboxSource `json:"source"`
+	Variables      any           `json:"variables"`
+	EnvVars        any           `json:"env_vars"`
+	VariablesFiles any           `json:"variables_files"`
+	References     any           `json:"references"`
+	Type           string        `json:"type"`
+	TerraformVer   string        `json:"terraform_version"`
+	DriftSchedule  string        `json:"drift_schedule"`
+	Runtime        string        `json:"runtime"`
+	PulumiVersion  string        `json:"pulumi_version"`
+	PulumiConfig   any           `json:"pulumi_config"`
+	OperationRoles any           `json:"operation_roles"`
+	AWSRegionType  string        `json:"aws_region_type"`
+}
+
+// sandboxSource identifies which code the sandbox runs. A ref, directory or
+// repo bump changes the deployed infrastructure while leaving every other
+// field identical.
+type sandboxSource struct {
+	Kind       string `json:"kind"`
+	Repo       string `json:"repo"`
+	Directory  string `json:"directory"`
+	Branch     string `json:"branch"`
+	PathFilter string `json:"path_filter"`
+	Connection string `json:"connection,omitempty"`
+}
+
+func sandboxSourceOf(c app.AppSandboxConfig) sandboxSource {
+	switch {
+	case c.ConnectedGithubVCSConfig != nil:
+		v := c.ConnectedGithubVCSConfig
+		return sandboxSource{
+			Kind:       "connected-github",
+			Repo:       v.Repo,
+			Directory:  v.Directory,
+			Branch:     v.Branch,
+			PathFilter: v.PathFilter,
+			Connection: v.VCSConnectionID,
+		}
+	case c.PublicGitVCSConfig != nil:
+		v := c.PublicGitVCSConfig
+		return sandboxSource{
+			Kind:       "public-git",
+			Repo:       v.Repo,
+			Directory:  v.Directory,
+			Branch:     v.Branch,
+			PathFilter: v.PathFilter,
+		}
+	default:
+		return sandboxSource{Kind: "builtin"}
 	}
-	ac := content{a.Variables, a.EnvVars, a.VariablesFiles, a.Type, a.TerraformVersion, a.DriftSchedule, a.Runtime, a.PulumiVersion, a.PulumiConfig}
-	bc := content{b.Variables, b.EnvVars, b.VariablesFiles, b.Type, b.TerraformVersion, b.DriftSchedule, b.Runtime, b.PulumiVersion, b.PulumiConfig}
-	return contentHashEqual(ac, bc)
+}
+
+func sandboxContentOf(c app.AppSandboxConfig) sandboxContent {
+	return sandboxContent{
+		Source:         sandboxSourceOf(c),
+		Variables:      c.Variables,
+		EnvVars:        c.EnvVars,
+		VariablesFiles: c.VariablesFiles,
+		References:     c.References,
+		Type:           c.Type,
+		TerraformVer:   c.TerraformVersion,
+		DriftSchedule:  c.DriftSchedule,
+		Runtime:        c.Runtime,
+		PulumiVersion:  c.PulumiVersion,
+		PulumiConfig:   c.PulumiConfig,
+		OperationRoles: c.OperationRoles,
+		AWSRegionType:  c.AWSRegionType.String,
+	}
+}
+
+func sandboxConfigEqual(a, b app.AppSandboxConfig) bool {
+	return contentHashEqual(sandboxContentOf(a), sandboxContentOf(b))
 }
 
 func stackConfigEqual(a, b app.AppStackConfig) bool {
