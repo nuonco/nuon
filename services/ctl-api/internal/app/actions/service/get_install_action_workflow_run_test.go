@@ -27,6 +27,7 @@ import (
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	comphelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
@@ -294,6 +295,126 @@ func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunIncludesLa
 		CompositeError:       expected,
 	}
 	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(result).Error)
+
+	path := fmt.Sprintf("/v1/installs/%s/actions/runs/%s", install.ID, run.ID)
+	rr := s.makeRequest(http.MethodGet, path, nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var response app.InstallActionWorkflowRun
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
+	assert.Equal(s.T(), expected, response.CompositeError)
+}
+
+func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunIncludesPreparationCompositeErrorWithoutRunnerJob() {
+	install := s.createInstall(s.testApp.ID)
+	action := s.createActionWorkflow(s.testApp.ID, "test-action-with-preparation-error")
+	installAction := s.createInstallActionWorkflow(install.ID, action.ID)
+	run := s.createInstallActionWorkflowRun(install.ID, installAction.ID, app.InstallActionRunStatusError)
+	expected := &compositeerrors.CompositeErrorData{
+		Version:  compositeerrors.SchemaVersion,
+		Type:     "action.preparation_failed",
+		Severity: compositeerrors.SeverityError,
+		Message:  "Unable to prepare action run",
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).
+		Model(&app.InstallActionWorkflowRun{ID: run.ID}).
+		Select("composite_error").
+		Updates(app.InstallActionWorkflowRun{CompositeError: expected}).Error)
+
+	path := fmt.Sprintf("/v1/installs/%s/actions/runs/%s", install.ID, run.ID)
+	rr := s.makeRequest(http.MethodGet, path, nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var response app.InstallActionWorkflowRun
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
+	assert.Equal(s.T(), expected, response.CompositeError)
+}
+
+func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunPrefersPreparationCompositeError() {
+	install := s.createInstall(s.testApp.ID)
+	action := s.createActionWorkflow(s.testApp.ID, "test-action-with-retried-preparation-error")
+	installAction := s.createInstallActionWorkflow(install.ID, action.ID)
+	run := s.createInstallActionWorkflowRun(install.ID, installAction.ID, app.InstallActionRunStatusError)
+	job := s.service.Seeder.CreateRunnerJob(s.ctx, s.T(), run.ID, "install_action_workflow_runs")
+	runnerError := &compositeerrors.CompositeErrorData{
+		Version:  compositeerrors.SchemaVersion,
+		Type:     joberrors.CancellationErrorType,
+		Severity: compositeerrors.SeverityError,
+		Message:  "Runner job cancelled",
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).
+		Model(&app.RunnerJob{ID: job.ID}).
+		Select("status", "composite_error").
+		Updates(app.RunnerJob{Status: app.RunnerJobStatusCancelled, CompositeError: runnerError}).Error)
+
+	expected := &compositeerrors.CompositeErrorData{
+		Version:  compositeerrors.SchemaVersion,
+		Type:     "action.preparation_failed",
+		Severity: compositeerrors.SeverityError,
+		Message:  "Unable to prepare action run",
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).
+		Model(&app.InstallActionWorkflowRun{ID: run.ID}).
+		Select("composite_error").
+		Updates(app.InstallActionWorkflowRun{CompositeError: expected}).Error)
+
+	path := fmt.Sprintf("/v1/installs/%s/actions/runs/%s", install.ID, run.ID)
+	rr := s.makeRequest(http.MethodGet, path, nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+	var response app.InstallActionWorkflowRun
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
+	assert.Equal(s.T(), expected, response.CompositeError)
+}
+
+func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunSuppressesStalePreparationCompositeError() {
+	for _, status := range []app.InstallActionWorkflowRunStatus{
+		app.InstallActionRunStatusInProgress,
+		app.InstallActionRunStatusFinished,
+		app.InstallActionRunStatusRetried,
+	} {
+		s.Run(string(status), func() {
+			install := s.createInstall(s.testApp.ID)
+			action := s.createActionWorkflow(s.testApp.ID, "test-action-with-stale-preparation-error-"+string(status))
+			installAction := s.createInstallActionWorkflow(install.ID, action.ID)
+			run := s.createInstallActionWorkflowRun(install.ID, installAction.ID, status)
+			require.NoError(s.T(), s.service.DB.WithContext(s.ctx).
+				Model(&app.InstallActionWorkflowRun{ID: run.ID}).
+				Select("composite_error").
+				Updates(app.InstallActionWorkflowRun{CompositeError: &compositeerrors.CompositeErrorData{
+					Version:  compositeerrors.SchemaVersion,
+					Type:     "action.preparation_failed",
+					Severity: compositeerrors.SeverityError,
+					Message:  "Unable to prepare action run",
+				}}).Error)
+
+			path := fmt.Sprintf("/v1/installs/%s/actions/runs/%s", install.ID, run.ID)
+			rr := s.makeRequest(http.MethodGet, path, nil)
+			require.Equal(s.T(), http.StatusOK, rr.Code, rr.Body.String())
+
+			var response app.InstallActionWorkflowRun
+			require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &response))
+			assert.Nil(s.T(), response.CompositeError)
+		})
+	}
+}
+
+func (s *GetInstallActionWorkflowRunTestSuite) TestGetInstallActionRunPreservesCancellationCompositeError() {
+	install := s.createInstall(s.testApp.ID)
+	action := s.createActionWorkflow(s.testApp.ID, "test-cancelled-action")
+	installAction := s.createInstallActionWorkflow(install.ID, action.ID)
+	run := s.createInstallActionWorkflowRun(install.ID, installAction.ID, app.InstallActionRunStatusCancelled)
+	job := s.service.Seeder.CreateRunnerJob(s.ctx, s.T(), run.ID, "install_action_workflow_runs")
+	expected := &compositeerrors.CompositeErrorData{
+		Version:  compositeerrors.SchemaVersion,
+		Type:     joberrors.CancellationErrorType,
+		Severity: compositeerrors.SeverityError,
+		Message:  "Runner job cancelled",
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).
+		Model(&app.RunnerJob{ID: job.ID}).
+		Select("status", "composite_error").
+		Updates(app.RunnerJob{Status: app.RunnerJobStatusCancelled, CompositeError: expected}).Error)
 
 	path := fmt.Sprintf("/v1/installs/%s/actions/runs/%s", install.ID, run.ID)
 	rr := s.makeRequest(http.MethodGet, path, nil)
