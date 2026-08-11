@@ -49,19 +49,21 @@ func (s *Service) ListBranches(ctx context.Context, appID string, asJSON bool) e
 }
 
 func (s *Service) GetBranch(ctx context.Context, appID, branchID string, asJSON bool) error {
+	view := ui.NewGetView()
+
 	appID, err := s.resolveAppID(ctx, appID)
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	branchID, err = s.resolveAppBranchID(ctx, appID, branchID)
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	branch, err := s.api.GetAppBranch(ctx, appID, branchID)
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	if asJSON {
@@ -74,16 +76,18 @@ func (s *Service) GetBranch(ctx context.Context, appID, branchID string, asJSON 
 }
 
 func (s *Service) CreateBranch(ctx context.Context, appID, name string, asJSON bool) error {
+	view := ui.NewGetView()
+
 	appID, err := s.resolveAppID(ctx, appID)
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	branch, err := s.api.CreateAppBranch(ctx, appID, &models.ServiceCreateAppBranchRequest{
 		Name: &name,
 	})
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	if asJSON {
@@ -107,14 +111,16 @@ type TriggerBranchRunOptions struct {
 }
 
 func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, opts TriggerBranchRunOptions, asJSON bool) error {
+	view := ui.NewGetView()
+
 	appID, err := s.resolveAppID(ctx, appID)
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	branchID, err = s.selectBranchID(ctx, appID, branchID)
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	req := &models.ServiceTriggerAppBranchRunRequest{
@@ -129,7 +135,7 @@ func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, 
 
 	run, err := s.api.TriggerAppBranchRun(ctx, appID, branchID, req)
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	if asJSON || opts.NoWait {
@@ -147,19 +153,21 @@ func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, 
 }
 
 func (s *Service) ListBranchRuns(ctx context.Context, appID, branchID string, asJSON bool) error {
+	view := ui.NewListView()
+
 	appID, err := s.resolveAppID(ctx, appID)
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	branchID, err = s.selectBranchID(ctx, appID, branchID)
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	workflows, err := s.api.GetAppBranchRuns(ctx, appID, branchID)
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	if asJSON {
@@ -188,7 +196,7 @@ func (s *Service) ListBranchRuns(ctx context.Context, appID, branchID string, as
 
 	selectedID, err := bubbles.SelectWorkflow(options, s.cfg.Interactive)
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	workflow.WorkflowApp(ctx, s.cfg, s.api, "", selectedID, false)
@@ -196,18 +204,20 @@ func (s *Service) ListBranchRuns(ctx context.Context, appID, branchID string, as
 }
 
 func (s *Service) DeleteBranch(ctx context.Context, appID, branchID string, asJSON bool) error {
+	view := ui.NewGetView()
+
 	appID, err := s.resolveAppID(ctx, appID)
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	branchID, err = s.resolveAppBranchID(ctx, appID, branchID)
 	if err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	if err := s.api.DeleteAppBranch(ctx, appID, branchID); err != nil {
-		return err
+		return view.Error(err)
 	}
 
 	if asJSON {
