@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -267,9 +268,10 @@ type RunnerJob struct {
 
 	MaxExecutions int `json:"max_executions,omitzero" gorm:"not null;default null" temporaljson:"max_executions,omitzero,omitempty"`
 
-	Status            RunnerJobStatus `json:"status,omitzero" gorm:"not null;default null;index:idx_runner_jobs_query,priority:3" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string          `json:"status_description,omitzero" gorm:"not null;default null" temporaljson:"status_description,omitzero,omitempty"`
-	StatusV2          CompositeStatus `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+	Status            RunnerJobStatus                     `json:"status,omitzero" gorm:"not null;default null;index:idx_runner_jobs_query,priority:3" temporaljson:"status,omitzero,omitempty"`
+	StatusDescription string                              `json:"status_description,omitzero" gorm:"not null;default null" temporaljson:"status_description,omitzero,omitempty"`
+	StatusV2          CompositeStatus                     `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+	CompositeError    *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb" swaggertype:"object" temporaljson:"composite_error,omitzero,omitempty"`
 
 	Type      RunnerJobType          `json:"type,omitzero" gorm:"default null;not null" temporaljson:"type,omitzero,omitempty"`
 	Group     RunnerJobGroup         `json:"group,omitzero" gorm:"default:null;not null;index:idx_runner_jobs_query,priority:2" temporaljson:"group,omitzero,omitempty"`

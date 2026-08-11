@@ -14,6 +14,7 @@ import (
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -23,10 +24,19 @@ import (
 
 const SignalType signal.SignalType = "process_job"
 
+const lifecycleCompositeErrorVersion = "process-job-lifecycle-composite-error-v1"
+
 const (
 	minPollPeriod = time.Second
 	maxPollPeriod = 10 * time.Second
 )
+
+// Existing process_job histories did not schedule lifecycle-error activities
+// or stop retrying on cancellation. The version guard keeps their replay
+// deterministic during rollout.
+func lifecycleCompositeErrorsEnabled(ctx workflow.Context) bool {
+	return workflow.GetVersion(ctx, lifecycleCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+}
 
 // pollPeriod backs off 1s→10s (1,2,4,8,10,...) so fast jobs are detected quickly
 // while long jobs stay cheap on workflow history.
@@ -138,8 +148,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Check if runner has any active process
 	if !execData.HasActiveProcess {
+		if runnerJob.Status == app.RunnerJobStatusCancelled && lifecycleCompositeErrorsEnabled(ctx) {
+			l.Info("job was already cancelled, not attempting")
+			return nil
+		}
 		l.Warn("runner has no active process, not attempting")
 		s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusNotAttempted, "no active runner process available")
+		s.recordJobLifecycleCompositeError(ctx, s.JobID, joberrors.LifecycleFailureReasonNoActiveRunner)
 		return errors.New("runner has no active process")
 	}
 
@@ -179,27 +194,35 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	now := workflow.Now(ctx)
 	if runnerJob.CreatedAt.Add(runnerJob.QueueTimeout).Before(now) {
 		s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusNotAttempted, "queue timeout reached")
+		s.recordJobLifecycleCompositeError(ctx, s.JobID, joberrors.LifecycleFailureReasonQueueTimeout)
 		return nil
 	}
 
+	// Persist only the final retryable lifecycle failure so a later attempt
+	// cannot leave an obsolete reason on the job.
+	var lastLifecycleFailureReason joberrors.LifecycleFailureReason
 	for i := 0; i < runnerJob.MaxExecutions; i++ {
 		l.Info(fmt.Sprintf("attempting job execution %d of %d", i+1, runnerJob.MaxExecutions))
-		retry, started, err := s.startJobExecution(ctx, runnerJob)
+		retry, started, lifecycleFailureReason, err := s.startJobExecution(ctx, runnerJob)
 		if err != nil {
 			return err
 		}
+		lastLifecycleFailureReason = lifecycleFailureReason
 		if !started {
 			if !retry {
+				s.recordJobLifecycleCompositeError(ctx, s.JobID, lifecycleFailureReason)
 				return nil
 			}
 			continue
 		}
 
-		retry, err = s.monitorJobExecution(ctx, runnerJob)
+		retry, lifecycleFailureReason, err = s.monitorJobExecution(ctx, runnerJob)
 		if err != nil {
 			return err
 		}
+		lastLifecycleFailureReason = lifecycleFailureReason
 		if !retry {
+			s.recordJobLifecycleCompositeError(ctx, s.JobID, lifecycleFailureReason)
 			return nil
 		}
 	}
@@ -215,12 +238,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 	if !finalStatus.IsTerminal() {
 		s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusFailed, "job execution attempts exhausted without completing")
+		finalStatus = app.RunnerJobStatusFailed
+		lastLifecycleFailureReason = joberrors.LifecycleFailureReasonAttemptsExhausted
+	}
+	switch finalStatus {
+	case app.RunnerJobStatusFailed, app.RunnerJobStatusTimedOut, app.RunnerJobStatusNotAttempted:
+		if lastLifecycleFailureReason == "" {
+			lastLifecycleFailureReason = joberrors.LifecycleFailureReasonResultMissing
+		}
+		s.recordJobLifecycleCompositeError(ctx, s.JobID, lastLifecycleFailureReason)
 	}
 
 	return nil
 }
 
-func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, bool, error) {
+func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, bool, joberrors.LifecycleFailureReason, error) {
 	startTS := workflow.Now(ctx)
 	tags := map[string]string{
 		"status":        "ok",
@@ -246,7 +278,7 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return false, false, err
+		return false, false, "", err
 	}
 
 	availableStart := workflow.Now(ctx)
@@ -269,7 +301,7 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 			runnerStatus, err = activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
 			if err != nil {
 				l.Warn("unable to determine runner status", zap.Error(err))
-				return false, false, err
+				return false, false, "", err
 			}
 			if runnerStatus == app.RunnerStatusActive {
 				break
@@ -278,12 +310,12 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 
 			jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
 			if err != nil {
-				return false, false, nil
+				return false, false, "", nil
 			}
 			if jobStatus == app.RunnerJobStatusCancelled {
 				l.Error("job was cancelled")
 				tags["status"] = "job_cancelled"
-				return false, false, nil
+				return false, false, "", nil
 			}
 
 			now := workflow.Now(ctx)
@@ -301,7 +333,7 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 					AlertType:      statsd.Error,
 					AggregationKey: "runner-job-timeout-waiting-for-healthy-runner",
 				})
-				return false, false, nil
+				return false, false, joberrors.LifecycleFailureReasonRunnerUnhealthy, nil
 			}
 
 			if now.After(availableTimeout) {
@@ -318,7 +350,7 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 					AlertType:      statsd.Warning,
 					AggregationKey: "runner-job-timeout-waiting-for-healthy-runner",
 				})
-				return true, false, nil
+				return true, false, joberrors.LifecycleFailureReasonRunnerUnhealthy, nil
 			}
 
 			// Runner not yet healthy — wait out a poll tick before re-checking.
@@ -350,7 +382,7 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 				AlertType:      statsd.Error,
 				AggregationKey: "runner-job-timeout-awaiting-job-pickup",
 			})
-			return false, false, nil
+			return false, false, joberrors.LifecycleFailureReasonOverallTimeout, nil
 		}
 
 		if now.After(availableTimeout) {
@@ -368,17 +400,17 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 				AlertType:      statsd.Error,
 				AggregationKey: "runner-job-timeout-awaiting-job-pickup",
 			})
-			return true, false, nil
+			return true, false, joberrors.LifecycleFailureReasonPickupTimeout, nil
 		}
 
 		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
 		if err != nil {
-			return false, false, nil
+			return false, false, "", nil
 		}
 		if jobStatus == app.RunnerJobStatusCancelled {
 			l.Error("job was cancelled")
 			tags["status"] = "job_cancelled"
-			return false, false, nil
+			return false, false, "", nil
 		}
 
 		jobExecutionResp, err := activities.AwaitGetLatestJobExecution(ctx, activities.GetLatestJobExecutionRequest{
@@ -386,13 +418,13 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 			AvailableAt: availableStart,
 		})
 		if err != nil {
-			return false, false, fmt.Errorf("error fetching latest job execution: %w", err)
+			return false, false, "", fmt.Errorf("error fetching latest job execution: %w", err)
 		}
 		jobExecutionFound = jobExecutionResp.Found
 	}
 
 	l.Info("job picked up by runner and is in progress")
-	return true, true, nil
+	return true, true, "", nil
 }
 
 // executionFailureDescription returns the runner-reported error from the
@@ -411,7 +443,7 @@ func executionFailureDescription(ctx workflow.Context, jobExecutionID, fallback 
 	return fallback
 }
 
-func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, error) {
+func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (bool, joberrors.LifecycleFailureReason, error) {
 	startTS := workflow.Now(ctx)
 	tags := map[string]string{
 		"status":    "ok",
@@ -435,12 +467,12 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
 	jobExecution, err := activities.AwaitGetCurrentJobExecutionByJobID(ctx, job.ID)
 	if err != nil {
-		return false, fmt.Errorf("error fetching latest job execution: %w", err)
+		return false, "", fmt.Errorf("error fetching latest job execution: %w", err)
 	}
 
 	// poll the job execution, until it's completed. The UpdateRunnerJobExecution
@@ -473,7 +505,7 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 				AlertType:      statsd.Error,
 				AggregationKey: "runner-job-timeout-while-executing",
 			})
-			return false, nil
+			return false, joberrors.LifecycleFailureReasonOverallTimeout, nil
 		}
 
 		// when the execution timeout is hit, we mark both the runner job and execution as timed out
@@ -495,17 +527,17 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 				AlertType:      statsd.Error,
 				AggregationKey: "runner-job-timeout-while-executing",
 			})
-			return true, nil
+			return true, joberrors.LifecycleFailureReasonExecutionTimeout, nil
 		}
 
 		// if the runner was started after this execution was created, we mark the execution as in error
 		// this is retryable
 		hb, err := activities.AwaitGetMostRecentHeartBeatRequestByRunnerID(ctx, job.RunnerID)
 		if err != nil {
-			return false, err
+			return false, "", err
 		}
 		if hb == nil {
-			return false, errors.New("no heart beats found")
+			return false, "", errors.New("no heart beats found")
 		}
 
 		// if the runner is restarted, we want to add a buffer before canceling any jobs in flight
@@ -532,13 +564,16 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 
 		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
 		if err != nil {
-			return false, err
+			return false, "", err
 		}
 		if jobStatus == app.RunnerJobStatusCancelled {
 			l.Error("job was cancelled")
 			s.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusCancelled)
 			tags["status"] = "cancelled"
-			return true, nil
+			if lifecycleCompositeErrorsEnabled(ctx) {
+				return false, "", nil
+			}
+			return true, "", nil
 		}
 
 		// if the runner has no active process, the job execution is marked as failed.
@@ -561,14 +596,14 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 				AlertType:      statsd.Error,
 				AggregationKey: "runner-job-dropped",
 			})
-			return true, nil
+			return true, joberrors.LifecycleFailureReasonRunnerUnhealthy, nil
 		}
 
 		executionStatus, err := activities.AwaitGetJobExecutionStatus(ctx, activities.GetJobExecutionStatusRequest{
 			JobExecutionID: jobExecution.ID,
 		})
 		if err != nil {
-			return false, err
+			return false, "", err
 		}
 
 		switch executionStatus {
@@ -576,30 +611,49 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 			l.Info("job execution successfully finished")
 			s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFinished, "finished")
 			tags["status"] = "ok"
-			return false, nil
+			return false, "", nil
 		case app.RunnerJobExecutionStatusCancelled:
 			l.Info("job cancelled")
 			tags["status"] = "execution_cancelled"
-			return true, nil
+			return true, "", nil
 		case app.RunnerJobExecutionStatusFailed:
 			l.Info("job execution failed")
 			s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, executionFailureDescription(ctx, jobExecution.ID, "failed"))
 			tags["status"] = "execution_failed"
-			return true, nil
+			return true, "", nil
 		case app.RunnerJobExecutionStatusTimedOut:
 			l.Info("job execution timed out")
 			s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, executionFailureDescription(ctx, jobExecution.ID, "execution timed out"))
 			tags["status"] = "execution_timed_out"
-			return true, nil
+			return true, "", nil
 		case app.RunnerJobExecutionStatusNotAttempted:
 			l.Info("job execution not attempted")
 			s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, executionFailureDescription(ctx, jobExecution.ID, "execution not attempted"))
 			tags["status"] = "execution_not_attempted"
-			return true, nil
+			return true, "", nil
 		default:
 			continue
 		}
 	}
+}
+
+func (s *Signal) recordJobLifecycleCompositeError(ctx workflow.Context, jobID string, reason joberrors.LifecycleFailureReason) {
+	if reason == "" || !lifecycleCompositeErrorsEnabled(ctx) {
+		return
+	}
+
+	err := activities.AwaitRecordJobLifecycleCompositeError(ctx, activities.RecordJobLifecycleCompositeErrorRequest{
+		JobID:  jobID,
+		Reason: reason,
+	})
+	if err == nil {
+		return
+	}
+
+	workflow.GetLogger(ctx).Warn("unable to record runner job lifecycle composite error",
+		zap.String("runner-job-id", jobID),
+		zap.String("reason", string(reason)),
+		zap.Error(err))
 }
 
 func (s *Signal) updateJobStatus(ctx workflow.Context, jobID string, status app.RunnerJobStatus, statusDescription string) {
