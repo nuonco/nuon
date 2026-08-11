@@ -345,13 +345,7 @@ export type TComponentConfig =
   components['schemas']['app.ComponentConfigConnection']
 export type TComponentType = components['schemas']['app.ComponentType']
 
-export type TComponentBuild = Omit<
-  components['schemas']['app.ComponentBuild'],
-  'composite_error'
-> & {
-  app_branch_id?: string
-  composite_error?: TCompositeError
-}
+export type TComponentBuild = components['schemas']['app.ComponentBuild']
 export type TBuild = TComponentBuild & {
   org_id: string
   build_runner_job_id?: string | null
@@ -543,7 +537,6 @@ export type TCompositeError =
 
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
   org_id: string
-  composite_error?: TCompositeError
 }
 export type TDeploy = TInstallDeploy
 export type TInstallDeployPlanIntermediateData = {
@@ -719,12 +712,7 @@ export type TRunnerGroupSettings =
   components['schemas']['app.RunnerGroupSettings']
 export type TRunnerGroupType = components['schemas']['app.RunnerGroupType']
 export type TRunner = components['schemas']['app.Runner']
-export type TRunnerJob = Omit<
-  components['schemas']['app.RunnerJob'],
-  'composite_error'
-> & {
-  composite_error?: TCompositeError
-}
+export type TRunnerJob = components['schemas']['app.RunnerJob']
 export type TRunnerHealthCheck = components['schemas']['app.RunnerHealthCheck']
 export type TRunnerHeartbeat = components['schemas']['app.RunnerHeartBeat']
 export type TRunnerMngHeartbeat = {
@@ -776,12 +764,8 @@ export type TInstallActionWorkflow =
 
 // new action types
 export type TAction = components['schemas']['app.ActionWorkflow']
-export type TInstallActionRun = Omit<
-  components['schemas']['app.InstallActionWorkflowRun'],
-  'composite_error'
-> & {
-  composite_error?: TCompositeError
-}
+export type TInstallActionRun =
+  components['schemas']['app.InstallActionWorkflowRun']
 export type TInstallActionRunStep =
   components['schemas']['app.InstallActionWorkflowRunStep']
 export type TInstallAction = components['schemas']['app.InstallActionWorkflow']
