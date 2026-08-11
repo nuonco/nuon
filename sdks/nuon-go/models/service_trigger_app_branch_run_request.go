@@ -20,14 +20,24 @@ type ServiceTriggerAppBranchRunRequest struct {
 	// optional - use pre-existing app config (skips VCS fetch + config parse)
 	AppConfigID string `json:"app_config_id,omitempty"`
 
+	// base branch
+	BaseBranch string `json:"base_branch,omitempty"`
+
 	// optional - use latest if not provided
 	ConfigID string `json:"config_id,omitempty"`
 
 	// force run even if no changes detected
 	Force bool `json:"force,omitempty"`
 
+	// head sha
+	HeadSha string `json:"head_sha,omitempty"`
+
 	// plan-only preview mode (no apply)
 	PlanOnly bool `json:"plan_only,omitempty"`
+
+	// PR context, for previews triggered from CI rather than a GitHub webhook.
+	// Supplying PRNumber is what lets the run report back onto the pull request.
+	PrNumber int64 `json:"pr_number,omitempty"`
 
 	// skip builds step (e.g. rollback to existing config with existing builds)
 	SkipBuilds bool `json:"skip_builds,omitempty"`
