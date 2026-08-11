@@ -254,6 +254,24 @@ func flattenErrorMetadata(meta map[string]*string) map[string]string {
 	return out
 }
 
+// redactedErrorMetadata clones the runner request so parsers can inspect the
+// original diagnostic while only the sanitized values reach persistence.
+func redactedErrorMetadata(meta map[string]*string) pgtype.Hstore {
+	if len(meta) == 0 {
+		return nil
+	}
+	out := make(pgtype.Hstore, len(meta))
+	for key, value := range meta {
+		if value == nil {
+			out[key] = nil
+			continue
+		}
+		redacted := compositeerrors.RedactDiagnosticSecrets(*value)
+		out[key] = &redacted
+	}
+	return out
+}
+
 // refreshOwnerCompositeError mirrors a runner job execution's parsed composite
 // error onto its owner aggregate row so the dashboard can render it without a
 // read-time join. Each execution result refreshes the column: a failure sets
@@ -318,7 +336,7 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 		ContentsGzip:         contentsGzip,
 		ContentsDisplayGzip:  contentsDisplayGzip,
 		ErrorCode:            req.ErrorCode,
-		ErrorMetadata:        pgtype.Hstore(req.ErrorMetadata),
+		ErrorMetadata:        redactedErrorMetadata(req.ErrorMetadata),
 		CompositeError:       compositeError,
 	}
 
@@ -356,7 +374,7 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 		Contents:             req.Contents,
 		ContentsDisplay:      contentsDisplay,
 		ErrorCode:            req.ErrorCode,
-		ErrorMetadata:        pgtype.Hstore(req.ErrorMetadata),
+		ErrorMetadata:        redactedErrorMetadata(req.ErrorMetadata),
 		CompositeError:       compositeError,
 	}
 
