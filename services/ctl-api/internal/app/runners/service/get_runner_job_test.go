@@ -24,6 +24,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -200,6 +201,64 @@ func (s *GetRunnerJobPublicTestSuite) TestGetRunnerJobPublic() {
 				assert.Equal(s.T(), app.RunnerJobTypeDockerBuild, job.Type)
 				// Should preload latest execution
 				assert.Len(s.T(), job.Executions, 1)
+			},
+		},
+		{
+			name: "returns composite error from latest execution result",
+			setupFunc: func() string {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+
+				job := &app.RunnerJob{
+					ID:                domains.NewRunnerJobID(),
+					OrgID:             s.testOrg.ID,
+					RunnerID:          s.testRunner.ID,
+					LogStreamID:       generics.ToPtr(s.testLogStream.ID),
+					Status:            app.RunnerJobStatusFailed,
+					StatusDescription: "test job",
+					CompositeError: &compositeerrors.CompositeErrorData{
+						Type: "runner.job_lifecycle_failure",
+					},
+					Group:            app.RunnerJobGroupBuild,
+					Type:             app.RunnerJobTypeDockerBuild,
+					Operation:        app.RunnerJobOperationTypeBuild,
+					QueueTimeout:     5 * time.Minute,
+					AvailableTimeout: 10 * time.Minute,
+					ExecutionTimeout: 30 * time.Minute,
+					MaxExecutions:    3,
+				}
+				require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(job).Error)
+
+				execution := &app.RunnerJobExecution{
+					ID:          domains.NewRunnerID(),
+					OrgID:       s.testOrg.ID,
+					RunnerJobID: job.ID,
+					Status:      app.RunnerJobExecutionStatusFailed,
+				}
+				require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(execution).Error)
+
+				result := &app.RunnerJobExecutionResult{
+					RunnerJobExecutionID: execution.ID,
+					CompositeError: &compositeerrors.CompositeErrorData{
+						Type: "terraform.error",
+					},
+				}
+				require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(result).Error)
+
+				s.T().Cleanup(func() {
+					s.service.DB.Unscoped().Delete(result)
+					s.service.DB.Unscoped().Delete(execution)
+					s.service.DB.Unscoped().Delete(job)
+				})
+
+				return job.ID
+			},
+			expectedCode: http.StatusOK,
+			validateFunc: func(job *app.RunnerJob) {
+				require.NotNil(s.T(), job.CompositeError)
+				assert.Equal(s.T(), compositeerrors.Type("terraform.error"), job.CompositeError.Type)
+				require.Len(s.T(), job.Executions, 1)
+				require.NotNil(s.T(), job.Executions[0].Result)
 			},
 		},
 		{

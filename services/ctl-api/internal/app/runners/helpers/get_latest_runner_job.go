@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
@@ -69,14 +70,25 @@ func GetLatestJobCompositeError(ctx context.Context, db *gorm.DB, req GetLatestJ
 		}
 		return nil, fmt.Errorf("unable to get latest runner job composite error: %w", res.Error)
 	}
-	if len(job.Executions) > 0 && job.Executions[0].Result != nil && job.Executions[0].Result.CompositeError != nil {
-		return job.Executions[0].Result.CompositeError, nil
+
+	return ResolveJobCompositeError(&job), nil
+}
+
+func ResolveJobCompositeError(job *app.RunnerJob) *compositeerrors.CompositeErrorData {
+	if job.Status == app.RunnerJobStatusCancelled {
+		if job.CompositeError != nil && job.CompositeError.Type == joberrors.CancellationErrorType {
+			return job.CompositeError
+		}
+		return nil
 	}
 
 	switch job.Status {
 	case app.RunnerJobStatusFailed, app.RunnerJobStatusTimedOut, app.RunnerJobStatusNotAttempted:
-		return job.CompositeError, nil
+		if len(job.Executions) > 0 && job.Executions[0].Result != nil && job.Executions[0].Result.CompositeError != nil {
+			return job.Executions[0].Result.CompositeError
+		}
+		return job.CompositeError
 	default:
-		return nil, nil
+		return nil
 	}
 }

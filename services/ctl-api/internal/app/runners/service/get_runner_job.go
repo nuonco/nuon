@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -62,12 +63,19 @@ func (s *service) getRunnerJob(ctx context.Context, runnerJobID string) (*app.Ru
 	runnerJob := app.RunnerJob{}
 	res := s.db.WithContext(ctx).
 		Preload("Executions", func(db *gorm.DB) *gorm.DB {
-			return db.Order("runner_job_executions.created_at DESC").Limit(1)
+			return db.
+				Order("runner_job_executions.created_at DESC").
+				Order("runner_job_executions.id DESC").
+				Limit(1)
+		}).
+		Preload("Executions.Result", func(db *gorm.DB) *gorm.DB {
+			return db.Select("runner_job_execution_id", "composite_error")
 		}).
 		First(&runnerJob, "id = ?", runnerJobID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get runner job: %w", res.Error)
 	}
+	runnerJob.CompositeError = runnershelpers.ResolveJobCompositeError(&runnerJob)
 
 	return &runnerJob, nil
 }
@@ -76,12 +84,19 @@ func (s *service) getOrgRunnerJob(ctx context.Context, runnerJobID string, orgID
 	runnerJob := app.RunnerJob{}
 	res := s.db.WithContext(ctx).
 		Preload("Executions", func(db *gorm.DB) *gorm.DB {
-			return db.Order("runner_job_executions.created_at DESC").Limit(1)
+			return db.
+				Order("runner_job_executions.created_at DESC").
+				Order("runner_job_executions.id DESC").
+				Limit(1)
+		}).
+		Preload("Executions.Result", func(db *gorm.DB) *gorm.DB {
+			return db.Select("runner_job_execution_id", "composite_error")
 		}).
 		First(&runnerJob, "id = ? AND org_id = ?", runnerJobID, orgID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get runner job: %w", res.Error)
 	}
+	runnerJob.CompositeError = runnershelpers.ResolveJobCompositeError(&runnerJob)
 
 	return &runnerJob, nil
 }
