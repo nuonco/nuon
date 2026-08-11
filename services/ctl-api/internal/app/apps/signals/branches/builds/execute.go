@@ -48,7 +48,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
 	}
 
-	isPreview := run.RunType == app.AppBranchRunTypeGitPreview
+	isPreview := run.IsPreview()
 
 	// Get app config with component IDs
 	appConfig, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, run.AppConfigID)
