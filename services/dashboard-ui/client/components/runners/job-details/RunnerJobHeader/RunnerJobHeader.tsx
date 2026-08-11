@@ -1,4 +1,5 @@
 import { BackLink } from '@/components/common/BackLink'
+import { CompositeError } from '@/components/common/CompositeError'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -14,29 +15,36 @@ interface IRunnerJobHeader {
 
 export const RunnerJobHeader = ({ job }: IRunnerJobHeader) => {
   return (
-    <header className="p-6 border-b flex justify-between">
-      <HeadingGroup>
-        <BackLink className="mb-6" />
-        <div className="flex flex-col gap-2">
-          <Text variant="base" weight="strong">
-            {getJobName(job)}
-          </Text>
-          <ID>{job.id}</ID>
-          <Time variant="subtext" time={job.created_at} />
-        </div>
-      </HeadingGroup>
+    <>
+      <header className="p-6 border-b flex justify-between">
+        <HeadingGroup>
+          <BackLink className="mb-6" />
+          <div className="flex flex-col gap-2">
+            <Text variant="base" weight="strong">
+              {getJobName(job)}
+            </Text>
+            <ID>{job.id}</ID>
+            <Time variant="subtext" time={job.created_at} />
+          </div>
+        </HeadingGroup>
 
-      <div className="flex gap-6 items-start">
-        <LabeledValue label="Status">
-          <Status status={job.status} />
-        </LabeledValue>
-        <LabeledValue label="Type">
-          <Text variant="subtext">{job.type}</Text>
-        </LabeledValue>
-        <LabeledValue label="Group">
-          <Text variant="subtext">{job.group}</Text>
-        </LabeledValue>
-      </div>
-    </header>
+        <div className="flex gap-6 items-start">
+          <LabeledValue label="Status">
+            <Status status={job.status} />
+          </LabeledValue>
+          <LabeledValue label="Type">
+            <Text variant="subtext">{job.type}</Text>
+          </LabeledValue>
+          <LabeledValue label="Group">
+            <Text variant="subtext">{job.group}</Text>
+          </LabeledValue>
+        </div>
+      </header>
+      {job?.composite_error ? (
+        <div className="mx-6 mt-4">
+          <CompositeError error={job.composite_error} />
+        </div>
+      ) : null}
+    </>
   )
 }
