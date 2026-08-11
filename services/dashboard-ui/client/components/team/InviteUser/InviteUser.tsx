@@ -13,6 +13,7 @@ export const InviteUserModal = ({
   isResendPending,
   error,
   invites,
+  roleOptions,
   onSubmit,
   onResend,
   ...props
@@ -21,16 +22,12 @@ export const InviteUserModal = ({
   isResendPending?: boolean
   error: TAPIError | null
   invites?: TOrgInvite[]
+  roleOptions: { value: string; label: string; description?: string }[]
   onSubmit: (params: { email: string; roleType: string }) => void
   onResend?: (inviteId: string) => void
 } & Omit<IModal, 'onSubmit'>) => {
   const [email, setEmail] = useState('')
   const [roleType, setRoleType] = useState('org_admin')
-
-  const roleOptions = [
-    { value: 'org_admin', label: 'Admin' },
-    { value: 'org_read_only', label: 'Read-only' },
-  ]
 
   const normalizedEmail = email.trim().toLowerCase()
   const matchedInvite = normalizedEmail
@@ -113,7 +110,7 @@ export const InviteUserModal = ({
         {matchedInvite ? null : (
           <Select
             value={roleType}
-            onChange={(e) => setRoleType(e.target.value)}
+            onChange={(value) => setRoleType(value)}
             options={roleOptions}
             labelProps={{ labelText: 'Role' }}
           />

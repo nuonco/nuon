@@ -12,6 +12,7 @@ import (
 	builds "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
 	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/planinstallgroup"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/postdeployrunbooks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/setuppreview"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 )
@@ -125,6 +126,14 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		return nil, errors.Wrap(err, "unable to fetch install groups")
 	}
 
+	branchConfig, err := activities.AwaitGetAppBranchConfigByID(ctx, &activities.GetAppBranchConfigByIDInput{
+		AppBranchConfigID: configID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to fetch app branch config")
+	}
+	hasPostDeployRunbooks := len(branchConfig.PostDeployRunbookIDs) > 0
+
 	for _, group := range allInstallGroups {
 		sg.nextGroup()
 		planStep, err := sg.appBranchSignalStep(ctx, appBranchID, "plan install group: "+group.Name, pgtype.Hstore{}, &planinstallgroup.Signal{
@@ -147,6 +156,22 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 			return nil, errors.Wrapf(err, "unable to create deploy step for group %s", group.Name)
 		}
 		steps = append(steps, deployStep)
+
+		// Only branches that configure post-deploy runbooks get the extra step, so
+		// runs that don't use the feature keep the step list they had before.
+		if hasPostDeployRunbooks {
+			sg.nextGroup()
+			runbooksStep, err := sg.appBranchSignalStep(ctx, appBranchID, "run post-deploy runbooks: "+group.Name, pgtype.Hstore{}, &postdeployrunbooks.Signal{
+				InstallGroupID:    group.ID,
+				AppBranchID:       appBranchID,
+				RunID:             runID,
+				AppBranchConfigID: configID,
+			}, WithSkippable(true))
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to create post-deploy runbooks step for group %s", group.Name)
+			}
+			steps = append(steps, runbooksStep)
+		}
 	}
 
 	return sg.Result(steps), nil

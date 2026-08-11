@@ -44,6 +44,11 @@ const APPROVAL_BANNER_COPY: Record<
     message:
       'This install group plan is ready for review. Inspect the changes before deploying to the install group.',
   },
+  install_creation: {
+    title: 'New installs require review',
+    message:
+      'The config repo describes installs that do not exist yet. Review the proposed installs before they are created.',
+  },
 }
 
 interface IApprovalBanner {

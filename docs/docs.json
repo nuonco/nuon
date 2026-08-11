@@ -155,7 +155,6 @@
               {
                 "group": "Components",
                 "pages": [
-                  "guides/docker-build-components",
                   "guides/container-image-components",
                   "guides/image-update-policies",
                   "guides/helm-chart-components",
@@ -172,6 +171,7 @@
             "pages": [
               "guides/vendor-customers",
               "guides/install-configs",
+              "guides/install-config-syncing",
               "guides/component-overrides",
               "guides/runner-kill-switch",
               "guides/custom-domains",
@@ -263,7 +263,6 @@
                 "boost": 2.5,
                 "pages": [
                   "config-ref/container-image",
-                  "config-ref/docker-build",
                   "config-ref/helm",
                   "config-ref/kubernetes-manifest",
                   "config-ref/pulumi",

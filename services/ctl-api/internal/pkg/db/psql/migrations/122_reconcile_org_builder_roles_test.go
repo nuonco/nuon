@@ -128,7 +128,7 @@ func (s *migration122TestSuite) requireBuilderRole(ctx context.Context, roleID, 
 	require.Len(s.T(), role.Policies, 1)
 	require.Equal(s.T(), app.PolicyNameOrgBuilder, role.Policies[0].Name)
 	require.Equal(s.T(), permissions.PermissionRead.ToStrPtr(), role.Policies[0].Permissions[orgID])
-	require.Equal(s.T(), permissions.PermissionCreate.ToStrPtr(), role.Policies[0].Permissions[permissions.ComponentBuildsObject(orgID)])
+	require.Equal(s.T(), permissions.PermissionCreate.ToStrPtr(), role.Policies[0].Permissions[orgID+":component_builds"])
 	require.Len(s.T(), role.Policies[0].Permissions, 2)
 
 	return role

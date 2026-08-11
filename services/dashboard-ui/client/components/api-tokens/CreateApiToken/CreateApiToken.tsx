@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useForm, useStore } from '@tanstack/react-form'
 import { Banner } from '@/components/common/Banner'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Input } from '@/components/common/form/Input'
-import { Label } from '@/components/common/form/Label'
-import { Select } from '@/components/common/form/Select'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { FormInput } from '@/components/common/form/FormInput'
+import { FormSelect } from '@/components/common/form/FormSelect'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
+import { createApiTokenSchema, type CreateApiTokenValues } from './schema'
 
 export const DURATION_OPTIONS = [
   { value: '24h', label: '1 day' },
@@ -17,16 +18,11 @@ export const DURATION_OPTIONS = [
   { value: '8760h', label: '1 year' },
 ]
 
-export const ROLE_OPTIONS = [
-  { value: 'org_read_only', label: 'Read-only' },
-  { value: 'org_builder', label: 'Builder' },
-  { value: 'org_admin', label: 'Admin' },
-]
-
 export const CreateApiTokenModal = ({
   isPending,
   error,
   createdToken,
+  roleOptions,
   onSubmit,
   onDone,
   ...props
@@ -34,12 +30,24 @@ export const CreateApiTokenModal = ({
   isPending: boolean
   error: TAPIError | null
   createdToken: string | null
-  onSubmit: (params: { name: string; duration: string; role: string }) => void
+  roleOptions: { value: string; label: string; description?: string }[]
+  onSubmit: (params: CreateApiTokenValues) => void
   onDone: () => void
 } & Omit<IModal, 'onSubmit'>) => {
-  const [name, setName] = useState('')
-  const [duration, setDuration] = useState('720h')
-  const [role, setRole] = useState('org_read_only')
+  const form = useForm({
+    defaultValues: {
+      name: '',
+      role: 'org_read_only',
+      duration: '720h',
+    } as CreateApiTokenValues,
+    validators: {
+      onMount: createApiTokenSchema,
+      onChange: createApiTokenSchema,
+    },
+    onSubmit: ({ value }) => onSubmit(value),
+  })
+
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
 
   if (createdToken) {
     return (
@@ -88,45 +96,55 @@ export const CreateApiTokenModal = ({
         ) : (
           'Create token'
         ),
-        disabled: !name || isPending,
-        onClick: () => onSubmit({ name, duration, role }),
+        disabled: !canSubmit || isPending,
+        onClick: () => form.handleSubmit(),
         variant: 'primary',
       }}
       {...props}
     >
-      <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to create API token'}
-          </Banner>
-        ) : null}
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-6"
+      >
+        <FormErrorBanner error={error} fallback="Unable to create API token" />
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="token-name">Name</Label>
-          <Input
-            id="token-name"
-            placeholder="e.g. ci-deploy"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
+        <form.Field name="name">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="token-name"
+              placeholder="e.g. ci-deploy"
+              type="text"
+              disabled={isPending}
+              labelProps={{ labelText: 'Name' }}
+            />
+          )}
+        </form.Field>
 
-        <Select
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          options={ROLE_OPTIONS}
-          labelProps={{ labelText: 'Role' }}
-        />
+        <form.Field name="role">
+          {(field) => (
+            <FormSelect
+              field={field}
+              options={roleOptions}
+              disabled={isPending}
+              labelProps={{ labelText: 'Role' }}
+            />
+          )}
+        </form.Field>
 
-        <Select
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-          options={DURATION_OPTIONS}
-          labelProps={{ labelText: 'Expires after' }}
-        />
-      </div>
+        <form.Field name="duration">
+          {(field) => (
+            <FormSelect
+              field={field}
+              options={DURATION_OPTIONS}
+              disabled={isPending}
+              labelProps={{ labelText: 'Expires after' }}
+            />
+          )}
+        </form.Field>
+      </form>
     </Modal>
   )
 }

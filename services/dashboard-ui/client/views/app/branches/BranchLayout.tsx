@@ -64,6 +64,8 @@ const BranchTemplate = () => {
   const showTriggerNudge =
     hasDeploymentPlan && !isLoadingLatestRun && !latestRun
 
+  const hasInstallSyncing = !!org?.features?.['app-install-syncing']
+
   const navLinks: TNavItem[] = [
     { path: `/`, iconVariant: 'HouseSimpleIcon', text: 'Overview' },
     { path: `/runs`, iconVariant: 'PlayIcon', text: 'Runs' },
@@ -75,6 +77,15 @@ const BranchTemplate = () => {
     { path: `/sandbox`, iconVariant: 'ShippingContainerIcon', text: 'Sandbox builds' },
     { type: 'section', label: 'Distribution' },
     { path: `/installs`, iconVariant: 'CubeIcon', text: 'Installs' },
+    ...(hasInstallSyncing
+      ? [
+          {
+            path: `/install-configs`,
+            iconVariant: 'ArrowsClockwiseIcon' as const,
+            text: 'Install configs',
+          },
+        ]
+      : []),
     { type: 'section', label: 'Access' },
     { path: `/roles`, iconVariant: 'FileLockIcon', text: 'Roles' },
     { path: `/policies`, iconVariant: 'ShieldCheckIcon', text: 'Policies' },

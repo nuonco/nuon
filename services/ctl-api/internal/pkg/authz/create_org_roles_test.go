@@ -9,31 +9,53 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
 
-func TestStandardOrgRolesBuilderPermissions(t *testing.T) {
+func TestStandardOrgRoles(t *testing.T) {
 	const orgID = "org_one"
 
-	var builder *app.Role
 	roles := standardOrgRoles(orgID)
-	for i := range roles {
-		role := roles[i]
-		if role.RoleType == app.RoleTypeOrgBuilder {
-			builder = &role
-			break
-		}
+
+	seen := map[app.RoleType]app.Role{}
+	for _, role := range roles {
+		seen[role.RoleType] = role
 	}
 
-	require.NotNil(t, builder)
-	require.Len(t, builder.Policies, 1)
-	require.Equal(t, app.PolicyNameOrgBuilder, builder.Policies[0].Name)
-	require.Equal(t, permissions.PermissionRead.ToStrPtr(), builder.Policies[0].Permissions[orgID])
-	require.Equal(t, permissions.PermissionCreate.ToStrPtr(), builder.Policies[0].Permissions[permissions.ComponentBuildsObject(orgID)])
-	require.Len(t, builder.Policies[0].Permissions, 2)
+	require.Len(t, seen, len(roles), "duplicate role types in standardOrgRoles")
+	require.NotContains(t, seen, app.RoleTypeOrgBuilder, "org_builder is deprecated and must not be created for new orgs")
 
+	for _, roleType := range []app.RoleType{
+		app.RoleTypeOrgAdmin,
+		app.RoleTypeOrgSupport,
+		app.RoleTypeOrgReadOnly,
+		app.RoleTypeInstaller,
+		app.RoleTypeRunner,
+	} {
+		require.Contains(t, seen, roleType)
+	}
+
+	for _, role := range roles {
+		require.Len(t, role.Policies, 1, "role %s", role.RoleType)
+		require.Len(t, role.Policies[0].Permissions, 1, "role %s policies must only carry the bare org key", role.RoleType)
+		require.NotNil(t, role.Policies[0].Permissions[orgID], "role %s must key its permission on the org ID", role.RoleType)
+		require.NotEmpty(t, role.Title, "role %s must carry display metadata", role.RoleType)
+		require.NotEmpty(t, role.Description, "role %s must carry display metadata", role.RoleType)
+		require.True(t, role.Managed, "standard roles are managed")
+	}
+
+	fullContexts := []string{
+		app.RoleContextTeam,
+		app.RoleContextServiceAccount,
+		app.RoleContextAPIToken,
+		app.RoleContextTrustPolicy,
+	}
+	require.ElementsMatch(t, fullContexts, seen[app.RoleTypeOrgAdmin].Contexts)
+	require.ElementsMatch(t, fullContexts, seen[app.RoleTypeOrgReadOnly].Contexts)
+	require.Empty(t, seen[app.RoleTypeRunner].Contexts, "runner is held-only: assigned directly to runner accounts, never user-selectable")
+	require.Empty(t, seen[app.RoleTypeOrgSupport].Contexts, "org_support is held-only")
+	require.Empty(t, seen[app.RoleTypeInstaller].Contexts, "installer is held-only")
+
+	readOnly := seen[app.RoleTypeOrgReadOnly]
 	set := permissions.Set(permissions.NewSet())
-	require.NoError(t, set.Add(builder.Policies[0].Permissions))
+	require.NoError(t, set.Add(readOnly.Policies[0].Permissions))
 	require.NoError(t, set.CanPerform(orgID, permissions.PermissionRead))
-	require.NoError(t, set.CanPerform(permissions.ComponentBuildsObject(orgID), permissions.PermissionCreate))
 	require.Error(t, set.CanPerform(orgID, permissions.PermissionCreate))
-	require.Error(t, set.CanPerform(permissions.ComponentBuildsObject(orgID), permissions.PermissionUpdate))
-	require.Error(t, set.CanPerform(permissions.ComponentBuildsObject("org_two"), permissions.PermissionCreate))
 }

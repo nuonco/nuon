@@ -1,15 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
+import { useForm, useStore } from '@tanstack/react-form'
 import { Banner } from '@/components/common/Banner'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { Label } from '@/components/common/form/Label'
 import { Select } from '@/components/common/form/Select'
-import {
-  InterestsPicker,
-  allEvents,
-  type Interests,
-} from '@/components/interests'
-import { MatchPicker } from '@/components/match/MatchPicker'
+import { allEvents, type Interests } from '@/components/interests'
+import { FormInterestsPicker } from '@/components/interests/FormInterestsPicker'
+import { FormMatchPicker } from '@/components/match/FormMatchPicker'
 import type { SubscriptionMatch } from '@/components/match/types'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type {
@@ -18,7 +17,8 @@ import type {
   TSlackInstallation,
   TSlackOrgLink,
 } from '@/types'
-import { ChannelSelect } from './ChannelSelect'
+import { FormChannelSelect } from './FormChannelSelect'
+import { channelSubscriptionSchema, type ChannelSubscriptionValues } from './schema'
 
 export type CreateChannelSubscriptionInput = {
   orgLinkId: string
@@ -62,16 +62,6 @@ export const CreateChannelSubscriptionModal = ({
   onSelectInstallation: (installationId: string) => void
   onSubmit: (input: CreateChannelSubscriptionInput) => void
 } & Omit<IModal, 'onSubmit'>) => {
-  const [channelId, setChannelId] = useState('')
-  const [channelName, setChannelName] = useState('')
-  const [match, setMatch] = useState<SubscriptionMatch | undefined>(undefined)
-  const [interests, setInterests] = useState<Interests>(() => allEvents())
-
-  useEffect(() => {
-    setChannelId('')
-    setChannelName('')
-  }, [selectedInstallationId])
-
   const installationOptions = useMemo(
     () =>
       installations.map((i) => ({
@@ -86,10 +76,35 @@ export const CreateChannelSubscriptionModal = ({
   )
   const matchingLink = orgLinks.find((l) => l.team_id === installation?.team_id)
 
-  const canSubmit =
-    !!matchingLink?.id &&
-    !!channelId &&
-    !isPending
+  const form = useForm({
+    defaultValues: {
+      channelId: '',
+      channelName: '',
+      match: undefined,
+      interests: allEvents(),
+    } as ChannelSubscriptionValues,
+    validators: {
+      onMount: channelSubscriptionSchema,
+      onChange: channelSubscriptionSchema,
+    },
+    onSubmit: ({ value }) => {
+      if (!matchingLink?.id) return
+      onSubmit({
+        orgLinkId: matchingLink.id,
+        channelId: value.channelId,
+        channelName: value.channelName,
+        match: value.match,
+        interests: value.interests,
+      })
+    },
+  })
+
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
+
+  useEffect(() => {
+    form.setFieldValue('channelId', '')
+    form.setFieldValue('channelName', '')
+  }, [selectedInstallationId, form])
 
   return (
     <Modal
@@ -110,27 +125,19 @@ export const CreateChannelSubscriptionModal = ({
             Subscribe channel
           </span>
         ),
-        disabled: !canSubmit,
-        onClick: () => {
-          if (!matchingLink?.id || !channelId) return
-          onSubmit({
-            orgLinkId: matchingLink.id,
-            channelId,
-            channelName,
-            match,
-            interests,
-          })
-        },
+        disabled: !canSubmit || !matchingLink?.id || isPending,
+        onClick: () => form.handleSubmit(),
         variant: 'primary',
       }}
       {...props}
     >
-      <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to subscribe channel'}
-          </Banner>
-        ) : null}
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-6"
+      >
+        <FormErrorBanner error={error} fallback="Unable to subscribe channel" />
 
         {installations.length === 0 ? (
           <Banner theme="warn">
@@ -146,7 +153,7 @@ export const CreateChannelSubscriptionModal = ({
             options={installationOptions}
             value={selectedInstallationId ?? ''}
             placeholder="Select a workspace"
-            onChange={(e) => onSelectInstallation(e.target.value)}
+            onChange={(value) => onSelectInstallation(value)}
             disabled={installations.length === 0}
           />
         </div>
@@ -159,27 +166,28 @@ export const CreateChannelSubscriptionModal = ({
                 'Unable to load channels for this workspace.'}
             </Banner>
           ) : null}
-          <ChannelSelect
-            id="slack-channel"
-            channels={channels}
-            value={channelId}
-            onChange={(id, name) => {
-              setChannelId(id)
-              setChannelName(name)
-            }}
-            searchQuery={channelSearch}
-            onSearchChange={onChannelSearchChange}
-            onLoadMore={onLoadMoreChannels}
-            hasMore={hasMoreChannels}
-            isLoadingFirstPage={isLoadingFirstChannelsPage}
-            isFetchingNextPage={isFetchingNextChannelsPage}
-            disabled={!selectedInstallationId}
-            placeholder={
-              selectedInstallationId
-                ? 'Select a channel'
-                : 'Pick a workspace first'
-            }
-          />
+          <form.Field name="channelId">
+            {(field) => (
+              <FormChannelSelect
+                field={field}
+                onName={(name) => form.setFieldValue('channelName', name)}
+                id="slack-channel"
+                channels={channels}
+                searchQuery={channelSearch}
+                onSearchChange={onChannelSearchChange}
+                onLoadMore={onLoadMoreChannels}
+                hasMore={hasMoreChannels}
+                isLoadingFirstPage={isLoadingFirstChannelsPage}
+                isFetchingNextPage={isFetchingNextChannelsPage}
+                disabled={!selectedInstallationId}
+                placeholder={
+                  selectedInstallationId
+                    ? 'Select a channel'
+                    : 'Pick a workspace first'
+                }
+              />
+            )}
+          </form.Field>
           <Text variant="subtext" theme="neutral">
             The Nuon bot must be invited to private channels before they appear
             here.
@@ -191,7 +199,9 @@ export const CreateChannelSubscriptionModal = ({
           <Text variant="subtext" theme="neutral">
             Filter which resources fire notifications in this channel.
           </Text>
-          <MatchPicker value={match} onChange={setMatch} />
+          <form.Field name="match">
+            {(field) => <FormMatchPicker field={field} />}
+          </form.Field>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -199,9 +209,11 @@ export const CreateChannelSubscriptionModal = ({
           <Text variant="subtext" theme="neutral">
             Pick which events post notifications in this channel.
           </Text>
-          <InterestsPicker value={interests} onChange={setInterests} />
+          <form.Field name="interests">
+            {(field) => <FormInterestsPicker field={field} />}
+          </form.Field>
         </div>
-      </div>
+      </form>
     </Modal>
   )
 }

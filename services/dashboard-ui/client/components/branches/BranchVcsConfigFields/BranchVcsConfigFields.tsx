@@ -4,6 +4,7 @@ import { Label } from '@/components/common/form/Label'
 import { Select } from '@/components/common/form/Select'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { ConnectGithubButton } from '@/components/vcs-connections/ConnectGithub'
 import type { TVCSConnection, TVCSConnectionRepo, TVCSBranch } from '@/types'
 
 export interface IBranchVcsConfigFields {
@@ -22,8 +23,10 @@ export interface IBranchVcsConfigFields {
   onBranchChange: (branch: string) => void
   directory: string
   onDirectoryChange: (directory: string) => void
-  pathFilter: string
-  onPathFilterChange: (pathFilter: string) => void
+  // Omit both to hide the path filter field, for consumers whose config has no
+  // path filter (e.g. the app installs config).
+  pathFilter?: string
+  onPathFilterChange?: (pathFilter: string) => void
   isSubmitting: boolean
 }
 
@@ -61,7 +64,12 @@ export const BranchVcsConfigFields = ({
   if (vcsConnections.length === 0) {
     return (
       <Banner theme="warn">
-        No VCS connections found. Connect your GitHub account first.
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Text>No GitHub connections yet. Connect one to pick a repository.</Text>
+          <ConnectGithubButton variant="secondary" size="sm" disabled={isSubmitting}>
+            Connect GitHub
+          </ConnectGithubButton>
+        </div>
       </Banner>
     )
   }
@@ -72,7 +80,7 @@ export const BranchVcsConfigFields = ({
         <Select
           id="vcs-connection"
           value={selectedVcsConnectionId}
-          onChange={(e) => onVcsConnectionChange(e.target.value)}
+          onChange={(value) => onVcsConnectionChange(value)}
           disabled={isSubmitting || loadingRepos}
           options={vcsConnections.map((conn) => ({
             value: conn.id,
@@ -97,8 +105,8 @@ export const BranchVcsConfigFields = ({
         <Select
           id="repo"
           value={selectedRepo?.full_name || ''}
-          onChange={(e) => {
-            const repo = repos.find((r) => r.full_name === e.target.value)
+          onChange={(value) => {
+            const repo = repos.find((r) => r.full_name === value)
             onRepoChange(repo || null)
           }}
           required
@@ -147,7 +155,7 @@ export const BranchVcsConfigFields = ({
           <Select
             id="git-branch"
             value={selectedBranch}
-            onChange={(e) => onBranchChange(e.target.value)}
+            onChange={(value) => onBranchChange(value)}
             required
             disabled={isSubmitting || loadingBranches}
             options={branches.map((b) => ({
@@ -182,16 +190,18 @@ export const BranchVcsConfigFields = ({
         helperText='Path to your application config (use "." for root)'
       />
 
-      <Input
-        id="path-filter"
-        type="text"
-        value={pathFilter}
-        onChange={(e) => onPathFilterChange(e.target.value)}
-        placeholder="^(src/|config/).*"
-        disabled={isSubmitting}
-        labelProps={{ labelText: 'Path filter (optional)' }}
-        helperText="Regex pattern to filter which file changes trigger workflow runs"
-      />
+      {onPathFilterChange && (
+        <Input
+          id="path-filter"
+          type="text"
+          value={pathFilter ?? ''}
+          onChange={(e) => onPathFilterChange(e.target.value)}
+          placeholder="^(src/|config/).*"
+          disabled={isSubmitting}
+          labelProps={{ labelText: 'Path filter (optional)' }}
+          helperText="Regex pattern to filter which file changes trigger workflow runs"
+        />
+      )}
     </>
   )
 }

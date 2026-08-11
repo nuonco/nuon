@@ -9,28 +9,31 @@ import type { TAPIError } from '@/types'
 export const ChangeRoleModal = ({
   accountEmail,
   currentRole,
+  currentRoleLabel,
   isPending,
   error,
+  roleOptions: fetchedRoleOptions,
   onSubmit,
   ...props
 }: {
   accountEmail: string
   currentRole: string
+  currentRoleLabel?: string
   isPending: boolean
   error: TAPIError | null
+  roleOptions: { value: string; label: string; description?: string }[]
   onSubmit: (params: { roleType: string }) => void
 } & Omit<IModal, 'onSubmit'>) => {
   const [roleType, setRoleType] = useState(currentRole || 'org_read_only')
 
-  const roleOptions = [
-    { value: 'org_admin', label: 'Admin' },
-    { value: 'org_read_only', label: 'Read-only' },
-    // Support is not offered as a new choice, but keep it visible when the
-    // member already holds it so their current role displays correctly.
-    ...(currentRole === 'org_support'
-      ? [{ value: 'org_support', label: 'Support' }]
-      : []),
-  ]
+  const roleOptions =
+    !currentRole ||
+    fetchedRoleOptions.some((option) => option.value === currentRole)
+      ? fetchedRoleOptions
+      : [
+          ...fetchedRoleOptions,
+          { value: currentRole, label: currentRoleLabel || currentRole },
+        ]
 
   return (
     <Modal
@@ -67,7 +70,7 @@ export const ChangeRoleModal = ({
 
         <Select
           value={roleType}
-          onChange={(e) => setRoleType(e.target.value)}
+          onChange={(value) => setRoleType(value)}
           options={roleOptions}
           labelProps={{ labelText: 'Role' }}
         />

@@ -10,91 +10,66 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
-const (
-	roleAppliesToUser           = "user"
-	roleAppliesToServiceAccount = "service_account"
-)
-
-type RoleInfo struct {
-	RoleType    app.RoleType `json:"role_type"`
-	Title       string       `json:"title"`
-	Description string       `json:"description"`
-	AppliesTo   []string     `json:"applies_to"`
-}
-
-var roleCatalog = []RoleInfo{
-	{
-		RoleType:    app.RoleTypeOrgAdmin,
-		Title:       "Admin",
-		Description: "Full access to the organization and all of its resources.",
-		AppliesTo:   []string{roleAppliesToUser, roleAppliesToServiceAccount},
-	},
-	{
-		RoleType:    app.RoleTypeOrgReadOnly,
-		Title:       "Read-only",
-		Description: "Read-only access to the organization and its resources.",
-		AppliesTo:   []string{roleAppliesToUser, roleAppliesToServiceAccount},
-	},
-	{
-		RoleType:    app.RoleTypeOrgBuilder,
-		Title:       "Builder",
-		Description: "Read access to the organization and its resources, with permission to create component builds.",
-		AppliesTo:   []string{roleAppliesToServiceAccount},
-	},
-	{
-		RoleType:    app.RoleTypeRunner,
-		Title:       "Runner",
-		Description: "Permissions for runners executing deployments.",
-		AppliesTo:   []string{roleAppliesToServiceAccount},
-	},
-}
-
-func roleAppliesTo(roleType app.RoleType, appliesTo string) bool {
-	for _, info := range roleCatalog {
-		if info.RoleType != roleType {
-			continue
-		}
-		for _, a := range info.AppliesTo {
-			if a == appliesTo {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func validateServiceAccountRole(role string) (app.RoleType, error) {
-	roleType := app.RoleType(role)
-	if !roleAppliesTo(roleType, roleAppliesToServiceAccount) {
+func (s *service) resolveServiceAccountRole(ctx *gin.Context, orgID, role string) (app.RoleType, error) {
+	resolved, err := s.authzClient.ResolveAssignableRole(ctx, orgID, app.RoleType(role), app.RoleContextServiceAccount)
+	if err != nil {
 		return "", stderr.ErrUser{
-			Err:         fmt.Errorf("invalid role %q for service account", role),
-			Description: "role must be a valid service account role; see GET /v1/roles",
+			Err:         err,
+			Description: err.Error(),
 		}
 	}
-
-	return roleType, nil
+	return resolved.RoleType, nil
 }
 
 // @ID						ListRoles
-// @Summary				List assignable roles
+// @Summary				List your org's roles
 // @Description.markdown	list_roles.md
+// @Param					context	query	string	false	"filter to roles assignable on a surface (team, service_account, api_token, oidc_trust_policy)"	extensions(x-go-name=RoleContext)
 // @Tags					accounts
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{object}	[]RoleInfo
+// @Success				200	{object}	[]app.Role
 // @Router					/v1/roles [GET]
 func (s *service) ListRoles(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, roleCatalog)
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	var roles []app.Role
+	res := s.db.WithContext(ctx).
+		Where(app.Role{OrgID: generics.NewNullString(org.ID)}).
+		Order("role_type").
+		Find(&roles)
+	if res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to list roles for org %s: %w", org.ID, res.Error))
+		return
+	}
+
+	if roleContext := ctx.Query("context"); roleContext != "" {
+		filtered := make([]app.Role, 0, len(roles))
+		for _, role := range roles {
+			if role.AllowsContext(roleContext) {
+				filtered = append(filtered, role)
+			}
+		}
+		roles = filtered
+	}
+
+	ctx.JSON(http.StatusOK, roles)
 }
 
 // getOrgServiceAccount looks up an account by ID and ensures it is a service
@@ -135,6 +110,30 @@ func (s *service) getOrgServiceAccount(ctx context.Context, orgID, accountID str
 	return acct, nil
 }
 
+// orgServiceAccountIDs resolves the org's service accounts off the
+// account_roles org index. Joining accounts to account_roles in the list query
+// instead lets the planner walk the whole accounts table in email order to
+// satisfy the ORDER BY and LIMIT, which took tens of seconds on a cold cache.
+func (s *service) orgServiceAccountIDs(ctx context.Context, orgID string, includeRunners bool) ([]string, error) {
+	tx := s.db.WithContext(ctx).
+		Model(&app.AccountRole{}).
+		Joins("JOIN accounts ON accounts.id = account_roles.account_id AND accounts.deleted_at = 0 AND accounts.account_type = ?", app.AccountTypeService).
+		Where(app.AccountRole{OrgID: generics.NewNullString(orgID)})
+
+	if !includeRunners {
+		tx = tx.
+			Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0").
+			Where("roles.role_type != ?", app.RoleTypeRunner)
+	}
+
+	accountIDs := []string{}
+	if err := tx.Distinct().Pluck("account_roles.account_id", &accountIDs).Error; err != nil {
+		return nil, fmt.Errorf("unable to list service account ids for org %s: %w", orgID, err)
+	}
+
+	return accountIDs, nil
+}
+
 // @ID						ListServiceAccounts
 // @Summary				List service accounts for the current org
 // @Description.markdown	list_service_accounts.md
@@ -161,30 +160,28 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 
 	includeRunners := ctx.Query("include_runners") == "true"
 
-	accounts := []app.Account{}
-	tx := s.db.WithContext(ctx).
-		Model(&app.Account{}).
-		Joins("JOIN account_roles ON account_roles.account_id = accounts.id AND account_roles.org_id = ? AND account_roles.deleted_at = 0", org.ID).
-		Where("accounts.account_type = ?", app.AccountTypeService)
-
-	if !includeRunners {
-		tx = tx.
-			Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0").
-			Where("roles.role_type != ?", app.RoleTypeRunner)
+	accountIDs, err := s.orgServiceAccountIDs(ctx, org.ID, includeRunners)
+	if err != nil {
+		ctx.Error(err)
+		return
 	}
 
-	tx = tx.
-		Group("accounts.id").
-		Order("accounts.email").
-		Order("accounts.id").
-		Scopes(scopes.WithOffsetPagination).
-		Preload("Roles", "org_id = ?", org.ID).
-		Preload("Roles.Org").
-		Preload("Roles.Policies").
-		Find(&accounts)
-	if tx.Error != nil {
-		ctx.Error(fmt.Errorf("unable to list service accounts for org %s: %w", org.ID, tx.Error))
-		return
+	accounts := []app.Account{}
+	if len(accountIDs) > 0 {
+		res := s.db.WithContext(ctx).
+			Model(&app.Account{}).
+			Where("accounts.id IN ?", accountIDs).
+			Order("accounts.email").
+			Order("accounts.id").
+			Scopes(scopes.WithOffsetPagination).
+			Preload("Roles", "org_id = ?", org.ID).
+			Preload("Roles.Org").
+			Preload("Roles.Policies").
+			Find(&accounts)
+		if res.Error != nil {
+			ctx.Error(fmt.Errorf("unable to list service accounts for org %s: %w", org.ID, res.Error))
+			return
+		}
 	}
 
 	accounts, err = db.HandlePaginatedResponse(ctx, accounts)
@@ -234,7 +231,7 @@ func (s *service) CreateServiceAccount(ctx *gin.Context) {
 		return
 	}
 
-	roleType, err := validateServiceAccountRole(req.Role)
+	roleType, err := s.resolveServiceAccountRole(ctx, org.ID, req.Role)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -362,7 +359,7 @@ func (s *service) UpdateServiceAccountRole(ctx *gin.Context) {
 		return
 	}
 
-	roleType, err := validateServiceAccountRole(req.Role)
+	roleType, err := s.resolveServiceAccountRole(ctx, org.ID, req.Role)
 	if err != nil {
 		ctx.Error(err)
 		return

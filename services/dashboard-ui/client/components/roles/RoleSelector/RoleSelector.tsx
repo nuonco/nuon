@@ -61,7 +61,7 @@ export const RoleSelector = ({
     <Select
       name={name}
       value={value ?? ''}
-      onChange={(e) => onChange?.(e.target.value)}
+      onChange={(value) => onChange?.(value)}
       disabled={disabled || isLoading || isError || roles.length === 0}
       options={options}
       placeholder={defaultRole ? defaultRole.name : 'Use default role'}

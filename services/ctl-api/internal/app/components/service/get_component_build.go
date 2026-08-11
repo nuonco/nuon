@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
@@ -106,6 +107,13 @@ func (s *service) getComponentBuild(ctx context.Context, cmpID, bldID string) (*
 	}
 	if err := s.hydrateBuildRunnerJobs(ctx, &bld); err != nil {
 		return nil, err
+	}
+	bld.CompositeError, err = runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{
+		OwnerID:   bld.ID,
+		OwnerType: "component_builds",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to get component build composite error: %w", err)
 	}
 
 	return &bld, nil

@@ -43,6 +43,69 @@ func Sync(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, cfg
 	return nil
 }
 
+// Validate runs the branch checks that would otherwise only surface once the
+// branches step writes, which is now last. Without it a typo in a branch block
+// only fails after every component, action and runbook has synced and their
+// builds have been dispatched.
+//
+// Runbook names are checked against runbooks that already exist plus those
+// declared in this same config, because the runbook steps that create them run
+// before the branches write step but after this one.
+func Validate(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID string) error {
+	branches := getAllBranches(cfg)
+	if len(branches) == 0 {
+		return nil
+	}
+
+	declaredRunbooks := make(map[string]struct{}, len(cfg.Runbooks))
+	for _, rbk := range cfg.Runbooks {
+		declaredRunbooks[rbk.Name] = struct{}{}
+	}
+
+	var existingRunbooks []app.Runbook
+	if err := db.WithContext(ctx).Where(app.Runbook{AppID: appID}).Find(&existingRunbooks).Error; err != nil {
+		return sync.SyncInternalErr{Description: "unable to list runbooks for branch validation", Err: err}
+	}
+	for _, rbk := range existingRunbooks {
+		declaredRunbooks[rbk.Name] = struct{}{}
+	}
+
+	var nameToID map[string]string
+	for _, branchCfg := range branches {
+		for _, name := range branchCfg.PostDeployRunbooks {
+			if _, ok := declaredRunbooks[name]; !ok {
+				return sync.SyncErr{
+					Resource:    "app-branches",
+					Description: fmt.Sprintf("branch %q: unknown post_deploy_runbooks runbook name: %s", branchCfg.Name, name),
+				}
+			}
+		}
+
+		for _, group := range branchCfg.InstallGroups {
+			if len(group.InstallNames) == 0 {
+				continue
+			}
+			if nameToID == nil {
+				var err error
+				nameToID, err = resolveInstallNames(ctx, db, appID)
+				if err != nil {
+					return sync.SyncInternalErr{Description: "unable to resolve install names", Err: err}
+				}
+			}
+			for _, name := range group.InstallNames {
+				if _, ok := nameToID[name]; !ok {
+					return sync.SyncErr{
+						Resource:    "app-branches",
+						Description: fmt.Sprintf("install group %q: unknown install name: %s", group.Name, name),
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, branchCfg *config.AppBranchConfig, existingByName map[string]*app.AppBranch, appID string) error {
 	existing, found := existingByName[branchCfg.Name]
 
@@ -77,6 +140,15 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 	}
 
 	if branchCfg.ConnectedRepo == nil && branchCfg.PublicRepo == nil {
+		// No repo means no AppBranchConfig row is written at all, so anything
+		// configured below would be silently discarded. Fail loudly rather than
+		// reporting a successful sync of settings that were dropped.
+		if len(branchCfg.PostDeployRunbooks) > 0 {
+			return sync.SyncErr{
+				Resource:    "app-branches",
+				Description: fmt.Sprintf("branch %q sets post_deploy_runbooks but has no connected_repo or public_repo; post-deploy runbooks require a tracked repo", branchCfg.Name),
+			}
+		}
 		return nil
 	}
 
@@ -145,7 +217,14 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		return err
 	}
 
-	if _, err := appsHelper.CreateAppBranchConfig(ctx, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups); err != nil {
+	postDeployRunbookIDs, err := resolvePostDeployRunbooks(ctx, db, appID, branchCfg)
+	if err != nil {
+		return err
+	}
+
+	// Config-as-code is declarative: no post_deploy_runbooks in the TOML means
+	// none, so always pass a non-nil pointer rather than inheriting.
+	if _, err := appsHelper.CreateAppBranchConfig(ctx, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, &postDeployRunbookIDs); err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create config for branch %q", branchCfg.Name),
 			Err:         err,
@@ -200,6 +279,42 @@ func buildInstallGroups(branchCfg *config.AppBranchConfig, nameToID map[string]s
 		installGroups = append(installGroups, ig)
 	}
 	return installGroups, nil
+}
+
+// resolvePostDeployRunbooks maps the branch's runbook names to IDs. This runs
+// after the runbook sync steps, so runbooks declared in this same config already
+// exist alongside any pre-existing ones.
+func resolvePostDeployRunbooks(ctx context.Context, db *gorm.DB, appID string, branchCfg *config.AppBranchConfig) ([]string, error) {
+	if len(branchCfg.PostDeployRunbooks) == 0 {
+		return nil, nil
+	}
+
+	var runbooks []app.Runbook
+	if err := db.WithContext(ctx).Where(app.Runbook{AppID: appID}).Find(&runbooks).Error; err != nil {
+		return nil, sync.SyncInternalErr{
+			Description: "unable to list runbooks for post-deploy runbook resolution",
+			Err:         err,
+		}
+	}
+
+	nameToID := make(map[string]string, len(runbooks))
+	for _, rbk := range runbooks {
+		nameToID[rbk.Name] = rbk.ID
+	}
+
+	runbookIDs := make([]string, 0, len(branchCfg.PostDeployRunbooks))
+	for _, name := range branchCfg.PostDeployRunbooks {
+		id, ok := nameToID[name]
+		if !ok {
+			return nil, sync.SyncErr{
+				Resource:    "app-branches",
+				Description: fmt.Sprintf("branch %q: unknown post_deploy_runbooks runbook name: %s", branchCfg.Name, name),
+			}
+		}
+		runbookIDs = append(runbookIDs, id)
+	}
+
+	return runbookIDs, nil
 }
 
 func resolveInstallNames(ctx context.Context, db *gorm.DB, appID string) (map[string]string, error) {

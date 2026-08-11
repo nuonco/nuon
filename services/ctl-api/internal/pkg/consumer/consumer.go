@@ -178,12 +178,31 @@ func NewSink(params Params, name Name, topic string) *Sink {
 	}
 }
 
+// instrument wraps a domain handler with kafka.consumer.latency, timing the
+// same span Stuck() already watches for liveness: decode, insert, and the
+// dead-letter path if one gets triggered. Decode itself never fails the
+// handler — only Insert can — so reason:insert_error is the only error reason
+// this can currently produce.
+func (s *Sink) instrument(handler pkgkafka.Handler) pkgkafka.Handler {
+	return func(ctx context.Context, partition int32, recs []*kgo.Record) error {
+		start := time.Now()
+		err := handler(ctx, partition, recs)
+
+		tags := s.baseTags("status:ok")
+		if err != nil {
+			tags = s.baseTags("status:err", "reason:insert_error")
+		}
+		s.mw.Timing("kafka.consumer.latency", time.Since(start), tags)
+		return err
+	}
+}
+
 // Start builds the consumer client and binds its poll loop to the fx lifecycle.
 func (s *Sink) Start(params Params, handler pkgkafka.Handler) error {
 	cons, err := pkgkafka.NewConsumer(
 		kafka.ClientConfig(params.Cfg),
 		kafka.ConsumerConfig(params.Cfg, string(s.name), s.topic),
-		handler,
+		s.instrument(handler),
 		params.L,
 	)
 	if err != nil {
@@ -205,8 +224,11 @@ func (s *Sink) Start(params Params, handler pkgkafka.Handler) error {
 	return nil
 }
 
-func (s *Sink) metric(suffix string) string {
-	return "kafka.consumer." + string(s.name) + "." + suffix
+// baseTags carries this sink's identity — topic and consumer name moved to
+// tags instead of being baked into the metric name, so every consumer's
+// metrics land on the same fixed set of names.
+func (s *Sink) baseTags(extra ...string) []string {
+	return append([]string{"topic:" + s.topic, "consumer:" + string(s.name)}, extra...)
 }
 
 // ConsumerName identifies which consumer this sink is, so a healthcheck
@@ -244,6 +266,9 @@ func Decode[T any](ctx context.Context, s *Sink, recs []*kgo.Record, typ string)
 	out := make([]T, 0, len(recs))
 	var dead []app.DLQRecord
 
+	var ok, unwrapErr, unmarshalErr int
+	skipped := map[string]int{}
+
 	for _, rec := range recs {
 		env, err := pkgkafka.Unwrap(rec.Value)
 		if err != nil {
@@ -251,12 +276,12 @@ func Decode[T any](ctx context.Context, s *Sink, recs []*kgo.Record, typ string)
 				zap.Int64("offset", rec.Offset),
 				zap.Error(err),
 			)
-			s.mw.Incr(s.metric("decode_error"), nil)
+			unwrapErr++
 			dead = append(dead, s.buildDeadLetter(rec, "unwrap_error", err, pkgkafka.Envelope{}))
 			continue
 		}
 		if env.Type != typ {
-			s.mw.Incr(s.metric("type_skipped"), []string{"type:" + env.Type})
+			skipped[env.Type]++
 			continue
 		}
 
@@ -266,11 +291,27 @@ func Decode[T any](ctx context.Context, s *Sink, recs []*kgo.Record, typ string)
 				zap.Int64("offset", rec.Offset),
 				zap.Error(err),
 			)
-			s.mw.Incr(s.metric("decode_error"), nil)
+			unmarshalErr++
 			dead = append(dead, s.buildDeadLetter(rec, "unmarshal_error", err, env))
 			continue
 		}
 		out = append(out, row)
+		ok++
+	}
+
+	// Tallied through the loop and emitted once per non-zero bucket here,
+	// rather than one dogstatsd packet per record.
+	if ok > 0 {
+		s.mw.Count("kafka.consumer.decode", int64(ok), s.baseTags("status:ok"))
+	}
+	if unwrapErr > 0 {
+		s.mw.Count("kafka.consumer.decode", int64(unwrapErr), s.baseTags("status:err", "reason:unwrap_error"))
+	}
+	if unmarshalErr > 0 {
+		s.mw.Count("kafka.consumer.decode", int64(unmarshalErr), s.baseTags("status:err", "reason:unmarshal_error"))
+	}
+	for t, n := range skipped {
+		s.mw.Count("kafka.consumer.decode", int64(n), s.baseTags("status:skipped", "type:"+t))
 	}
 
 	if len(dead) > 0 {
@@ -299,10 +340,13 @@ func Insert[T any](ctx context.Context, s *Sink, partition int32, recs []*kgo.Re
 	}))
 
 	if res := s.chDB.WithContext(insertCtx).CreateInBatches(&rows, len(rows)); res.Error != nil {
-		s.mw.Incr(s.metric("insert_error"), nil)
 		return res.Error
 	}
 
-	s.mw.Gauge(s.metric("batch"), float64(len(rows)), nil)
+	// batch_size is a Gauge — most-recent-batch only, not safe to sum across
+	// time (dogstatsd Gauge is last-value-wins per flush interval). message_count
+	// is the Count for that: safe to sum for total rows processed.
+	s.mw.Gauge("kafka.consumer.batch_size", float64(len(rows)), s.baseTags())
+	s.mw.Count("kafka.consumer.message_count", int64(len(rows)), s.baseTags())
 	return nil
 }

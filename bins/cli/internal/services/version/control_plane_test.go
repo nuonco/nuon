@@ -14,14 +14,25 @@ func TestFetchControlPlane(t *testing.T) {
 	t.Run("reads both fields the control plane publishes", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, "/version", r.URL.Path)
-			_, _ = w.Write([]byte(`{"version":"0.19.1109","git_ref":"0.19.1109","recommended_cli_version":"0.19.1102"}`))
+			_, _ = w.Write([]byte(`{"version":"0.19.1109","git_ref":"0.19.1109","server_side_sync_min_cli_version":"0.19.1102"}`))
 		}))
 		defer srv.Close()
 
 		cp := FetchControlPlane(context.Background(), srv.URL)
 		require.NotNil(t, cp)
 		assert.Equal(t, "0.19.1109", cp.Version)
-		assert.Equal(t, "0.19.1102", cp.RecommendedCLI)
+		assert.Equal(t, "0.19.1102", cp.MinCLIForServerSideSync())
+	})
+
+	t.Run("control plane predating the rename", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			_, _ = w.Write([]byte(`{"version":"0.19.1105","git_ref":"0.19.1105","recommended_cli_version":"0.19.1102"}`))
+		}))
+		defer srv.Close()
+
+		cp := FetchControlPlane(context.Background(), srv.URL)
+		require.NotNil(t, cp)
+		assert.Equal(t, "0.19.1102", cp.MinCLIForServerSideSync())
 	})
 
 	// Callers only ever inform off this, so an old or unreachable control plane has to
@@ -35,7 +46,7 @@ func TestFetchControlPlane(t *testing.T) {
 		cp := FetchControlPlane(context.Background(), srv.URL)
 		require.NotNil(t, cp)
 		assert.Equal(t, "0.19.1000", cp.Version)
-		assert.Empty(t, cp.RecommendedCLI)
+		assert.Empty(t, cp.MinCLIForServerSideSync())
 	})
 
 	t.Run("unreachable control plane", func(t *testing.T) {

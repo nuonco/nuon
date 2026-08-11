@@ -1,6 +1,10 @@
 package errparse
 
 import (
+	"context"
+
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
@@ -10,7 +14,7 @@ const (
 	ErrorMetadataMessage = "message"
 )
 
-func ParseRunnerJobResult(success bool, errorMetadata map[string]string, runnerJob *app.RunnerJob) (*compositeerrors.CompositeErrorData, error) {
+func ParseRunnerJobResult(success bool, errorMetadata map[string]string, runnerJob *app.RunnerJob, resolveProvider func() Provider) (*compositeerrors.CompositeErrorData, error) {
 	if success {
 		return nil, nil
 	}
@@ -21,18 +25,47 @@ func ParseRunnerJobResult(success bool, errorMetadata map[string]string, runnerJ
 	}
 
 	ce := Parse(&ParseContext{
-		Raw:       raw,
-		Tool:      ToolForRunnerJob(runnerJob),
-		Operation: string(runnerJob.Operation),
-		Group:     string(runnerJob.Group),
-		Owner:     Owner{Type: runnerJob.OwnerType, ID: runnerJob.OwnerID},
-		Meta:      errorMetadata,
+		Raw:             raw,
+		Tool:            ToolForRunnerJob(runnerJob),
+		Operation:       string(runnerJob.Operation),
+		Group:           string(runnerJob.Group),
+		Owner:           Owner{Type: runnerJob.OwnerType, ID: runnerJob.OwnerID},
+		Meta:            errorMetadata,
+		ResolveProvider: resolveProvider,
 	})
 	if ce == nil {
 		return nil, nil
 	}
 
 	return compositeerrors.New(ce, compositeerrors.WithSource(runnerJob.OwnerType, runnerJob.OwnerID))
+}
+
+func ResolveRunnerJobProvider(ctx context.Context, db *gorm.DB, runnerJob *app.RunnerJob) Provider {
+	if db == nil || runnerJob == nil || runnerJob.RunnerID == "" {
+		return ProviderUnknown
+	}
+
+	var runner app.Runner
+	if err := db.WithContext(ctx).
+		Select("id", "runner_group_id").
+		Preload("RunnerGroup", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "platform")
+		}).
+		Where(&app.Runner{ID: runnerJob.RunnerID}).
+		Take(&runner).Error; err != nil {
+		return ProviderUnknown
+	}
+
+	switch runner.RunnerGroup.Platform.CloudPlatform() {
+	case app.CloudPlatformAWS:
+		return ProviderAWS
+	case app.CloudPlatformAzure:
+		return ProviderAzure
+	case app.CloudPlatformGCP:
+		return ProviderGCP
+	default:
+		return ProviderUnknown
+	}
 }
 
 func RunnerJobErrorText(errorMetadata map[string]string) string {
@@ -46,6 +79,8 @@ func RunnerJobErrorText(errorMetadata map[string]string) string {
 
 func ToolForRunnerJob(runnerJob *app.RunnerJob) Tool {
 	switch runnerJob.Type {
+	case app.RunnerJobTypeActionsWorkflowRun:
+		return ToolAction
 	case app.RunnerJobTypeTerraformDeploy,
 		app.RunnerJobTypeTerraformModuleBuild,
 		app.RunnerJobTypeSandboxTerraform,
