@@ -72,7 +72,7 @@ export const CreateBranchModal = ({
   ...props
 }: ICreateBranchModal) => {
   const [name, setName] = useState('')
-  const [useVcs, setUseVcs] = useState(vcsConnections.length > 0)
+  const [useVcs, setUseVcs] = useState(true)
   const [directory, setDirectory] = useState(initialDirectory || '.')
   const [pathFilter, setPathFilter] = useState('')
   const [repoError, setRepoError] = useState<string | null>(null)
