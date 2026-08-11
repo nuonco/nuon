@@ -5,9 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -85,6 +87,25 @@ func (s *service) getInstallSandboxRun(ctx *gin.Context, runID string) (*app.Ins
 		First(&installSandboxRun)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install sandbox run: %w", res.Error)
+	}
+	if len(installSandboxRun.RunnerJobs) > 0 {
+		compositeError, err := runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{
+			OwnerID:   installSandboxRun.ID,
+			OwnerType: "install_sandbox_runs",
+		})
+		if err != nil {
+			s.l.Warn("unable to hydrate install sandbox run composite error",
+				zap.String("sandbox_run_id", installSandboxRun.ID),
+				zap.Error(err))
+		} else {
+			// Keep orchestration-owned errors, but derive runner-owned mirrors from
+			// the latest job so retries can replace or clear stale values.
+			runnerErrorMirrored := installSandboxRun.CompositeError != nil &&
+				(installSandboxRun.CompositeError.SourceType == "install_sandbox_runs" || installSandboxRun.CompositeError.SourceType == "runner_jobs")
+			if compositeError != nil || runnerErrorMirrored {
+				installSandboxRun.CompositeError = compositeError
+			}
+		}
 	}
 
 	return &installSandboxRun, nil
