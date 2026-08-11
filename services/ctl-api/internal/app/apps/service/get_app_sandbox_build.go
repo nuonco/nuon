@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 )
 
 // @ID        GetAppSandboxBuild
@@ -44,6 +45,14 @@ func (s *service) GetAppSandboxBuild(ctx *gin.Context) {
 		First(&build, "id = ?", buildID)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get sandbox build: %w", res.Error))
+		return
+	}
+	build.CompositeError, err = runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{
+		OwnerID:   build.ID,
+		OwnerType: "app_sandbox_builds",
+	})
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get sandbox build composite error: %w", err))
 		return
 	}
 

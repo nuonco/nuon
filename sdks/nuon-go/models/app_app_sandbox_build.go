@@ -28,6 +28,9 @@ type AppAppSandboxBuild struct {
 	// app sandbox config id
 	AppSandboxConfigID string `json:"app_sandbox_config_id,omitempty"`
 
+	// composite error
+	CompositeError any `json:"composite_error,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
