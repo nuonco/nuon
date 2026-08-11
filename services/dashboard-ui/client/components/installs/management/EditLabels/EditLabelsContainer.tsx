@@ -55,13 +55,6 @@ export const EditLabelsModalContainer = ({ ...props }: IModal) => {
       )
       removeModal(props.modalId)
     },
-    onError: () => {
-      addToast(
-        <Toast heading="Label update failed" theme="error">
-          <Text>Unable to update labels for {install.name}.</Text>
-        </Toast>,
-      )
-    },
   })
 
   return (
