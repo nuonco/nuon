@@ -25,6 +25,20 @@ export const Default = () => (
   </ModalStory>
 )
 
+export const RolesLoading = () => (
+  <ModalStory>
+    <CreateApiTokenModal
+      isPending={false}
+      error={null}
+      createdToken={null}
+      roleOptions={[]}
+      rolesLoading={true}
+      onSubmit={noop}
+      onDone={noop}
+    />
+  </ModalStory>
+)
+
 export const Pending = () => (
   <ModalStory>
     <CreateApiTokenModal
