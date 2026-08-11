@@ -23,6 +23,9 @@ type AppInstallActionWorkflowRun struct {
 	// action workflow config id
 	ActionWorkflowConfigID string `json:"action_workflow_config_id,omitempty"`
 
+	// composite error
+	CompositeError any `json:"composite_error,omitempty"`
+
 	// config
 	Config *AppActionWorkflowConfig `json:"config,omitempty"`
 
