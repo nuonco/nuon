@@ -24,6 +24,18 @@ export const Default = () => (
   </ModalStory>
 )
 
+export const RolesLoading = () => (
+  <ModalStory>
+    <CreateServiceAccountModal
+      roleOptions={[]}
+      rolesLoading={true}
+      isPending={false}
+      error={null}
+      onSubmit={noop}
+    />
+  </ModalStory>
+)
+
 export const Pending = () => (
   <ModalStory>
     <CreateServiceAccountModal

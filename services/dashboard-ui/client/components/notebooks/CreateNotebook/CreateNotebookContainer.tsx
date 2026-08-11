@@ -10,7 +10,6 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { createNotebook, type ICreateNotebookBody } from '@/lib'
-import type { TAPIError } from '@/types'
 import { CreateNotebookModal } from './CreateNotebook'
 
 const CreateNotebookModalContainer = ({ onSubmit: _, ...props }: IModal) => {
@@ -39,13 +38,6 @@ const CreateNotebookModalContainer = ({ onSubmit: _, ...props }: IModal) => {
       )
       removeModal(props.modalId)
       navigate(`/${org?.id}/installs/${install?.id}/notebooks/${nb.id}`)
-    },
-    onError: (err: TAPIError) => {
-      addToast(
-        <Toast heading="Notebook creation failed" theme="error">
-          <Text>{err?.error || 'Unable to create the notebook.'}</Text>
-        </Toast>
-      )
     },
   })
 

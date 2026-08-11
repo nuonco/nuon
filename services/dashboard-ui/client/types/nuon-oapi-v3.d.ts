@@ -3534,7 +3534,11 @@ export interface components {
       id?: string;
       install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
       org_id?: string;
-      /** @description PostDeployRunbookIDs are runbooks run on each install, in order, after its deploy succeeds. Distinct from RunbookIDs, which tracks the runbooks the branch's synced app config produced. */
+      /**
+       * @description PostDeployRunbookIDs are runbooks run on each install, in order, after its
+       * deploy succeeds. Distinct from RunbookIDs, which tracks the runbooks the
+       * branch's synced app config produced.
+       */
       post_deploy_runbook_ids?: string[];
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       runbook_ids?: string[];
@@ -4095,6 +4099,7 @@ export interface components {
       /** @description Read-only fields set on the object to de-nest data */
       component_id?: string;
       component_name?: string;
+      composite_error?: Record<string, never>;
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
@@ -4539,6 +4544,11 @@ export interface components {
         [key: string]: string;
       };
       name?: string;
+      /**
+       * @description PhoneHomeAuthStatus can take the phone_home_auth JSON name precisely because the
+       * column itself never serializes.
+       */
+      phone_home_auth?: components["schemas"]["app.PhoneHomeAuthStatus"];
       queues?: components["schemas"]["app.Queue"][];
       runner_id?: string;
       runner_status?: string;
@@ -4577,6 +4587,7 @@ export interface components {
     };
     "app.InstallActionWorkflowRun": {
       action_workflow_config_id?: string;
+      composite_error?: Record<string, never>;
       config?: components["schemas"]["app.ActionWorkflowConfig"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
@@ -4903,8 +4914,12 @@ export interface components {
       status?: string;
       workflow_id?: string;
     };
-    /** @description InstallGroupRunRunbook records one post-deploy runbook run for an install. */
     "app.InstallGroupRunRunbook": {
+      /**
+       * @description Attempt increments when a retry of the step re-runs a runbook that failed,
+       * so the retry gets a fresh idempotency key instead of adopting the failed run.
+       */
+      attempt?: number;
       run_id?: string;
       runbook_id?: string;
       runbook_name?: string;
@@ -4985,6 +5000,11 @@ export interface components {
       /** @description after query */
       execution_time?: number;
       id?: string;
+      /**
+       * @description IdempotencyKey lets a retryable caller (e.g. a Temporal activity) repeat a
+       * trigger without starting the runbook twice. Unique where set.
+       */
+      idempotency_key?: string;
       install_id?: string;
       install_runbook?: components["schemas"]["app.InstallRunbook"];
       install_runbook_id?: string;
@@ -5476,6 +5496,16 @@ export interface components {
       trace_id?: string;
       updated_at?: string;
     };
+    "app.PhoneHomeAuthStatus": {
+      last_rejected_at?: string;
+      last_verified_at?: string;
+      /**
+       * @description ProvisionedAt is omitzero because recordPhoneHomeAuthResult can create the column
+       * from an empty struct, so a row can carry verification timestamps but no
+       * provisioning one. Serializing that as year 1 would render as a bogus timestamp.
+       */
+      provisioned_at?: string;
+    };
     "app.Policy": {
       created_at?: string;
       created_by_id?: string;
@@ -5910,6 +5940,7 @@ export interface components {
     "app.RunnerJob": {
       /** @description available timeout is how long a job can be marked as "available" before being requeued */
       available_timeout?: number;
+      composite_error?: Record<string, never>;
       created_at?: string;
       created_by_id?: string;
       execution_count?: number;
@@ -7729,6 +7760,11 @@ export interface components {
     "service.CreateAppBranchConfigRequest": {
       connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
       install_groups?: components["schemas"]["service.InstallGroupRequest"][];
+      /**
+       * @description PostDeployRunbookIDs run on each install, in order, after its deploy succeeds.
+       * Omit to carry the current setting forward; send an empty array to clear it.
+       */
+      post_deploy_runbook_ids?: string[];
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
     };
     "service.CreateAppBranchRequest": {
@@ -8760,12 +8796,19 @@ export interface components {
     "service.TriggerAppBranchRunRequest": {
       /** @description optional - use pre-existing app config (skips VCS fetch + config parse) */
       app_config_id?: string;
+      base_branch?: string;
       /** @description optional - use latest if not provided */
       config_id?: string;
       /** @description force run even if no changes detected */
       force?: boolean;
+      head_sha?: string;
       /** @description plan-only preview mode (no apply) */
       plan_only?: boolean;
+      /**
+       * @description PR context, for previews triggered from CI rather than a GitHub webhook.
+       * Supplying PRNumber is what lets the run report back onto the pull request.
+       */
+      pr_number?: number;
       /** @description skip builds step (e.g. rollback to existing config with existing builds) */
       skip_builds?: boolean;
     };
@@ -16235,6 +16278,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

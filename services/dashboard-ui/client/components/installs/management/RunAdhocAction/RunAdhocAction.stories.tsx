@@ -38,7 +38,7 @@ export const WithError = () => (
     <RunAdhocActionModal
       installId="inst-123"
       isPending={false}
-      error={{ error: 'Something went wrong' }}
+      error={{ error: 'Something went wrong', description: '', user_error: true }}
       onSubmit={noop}
       onDraftResume={noop as any}
       roleSelector={null}

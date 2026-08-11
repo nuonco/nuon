@@ -113,13 +113,6 @@ export const UpdateRunnerModal = ({
       )
       removeModal(props.modalId)
     },
-    onError: () => {
-      addToast(
-        <Toast heading="Runner update failed" theme="error">
-          <Text>Unable to update runner.</Text>
-        </Toast>
-      )
-    },
   })
 
   useEffect(() => {
