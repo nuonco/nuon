@@ -1,32 +1,22 @@
-import { useState } from 'react'
-import { Banner } from '@/components/common/Banner'
+import { useForm, useStore } from '@tanstack/react-form'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Input } from '@/components/common/form/Input'
 import { Label } from '@/components/common/form/Label'
-import { Select } from '@/components/common/form/Select'
-import { Toggle } from '@/components/common/form/Toggle'
-import {
-  hasSubCondition,
-  type ClaimCondition,
-} from '@/components/oidc-trust-policies/CreateOIDCTrustPolicy'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { FormInput } from '@/components/common/form/FormInput'
+import { FormSelect } from '@/components/common/form/FormSelect'
+import { FormToggle } from '@/components/common/form/FormToggle'
+import { hasSubCondition } from '@/components/oidc-trust-policies/CreateOIDCTrustPolicy'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError, TOIDCTrustPolicy } from '@/types'
+import { editOIDCSchema, type EditOIDCFormValues } from './schema'
 
-export type EditOIDCTrustPolicyFormInput = {
-  name: string
-  issuerUrl: string
-  audience: string
-  role: string
-  tokenDurationSeconds: string
-  claimConditions: ClaimCondition[]
-  enabled: boolean
-}
+export type EditOIDCTrustPolicyFormInput = EditOIDCFormValues
 
 const conditionsToRows = (
   claimConditions: TOIDCTrustPolicy['claim_conditions']
-): ClaimCondition[] => {
+): EditOIDCFormValues['claimConditions'] => {
   const entries = Object.entries(claimConditions ?? {})
   return entries.length
     ? entries.map(([key, value]) => ({ key, value }))
@@ -47,46 +37,34 @@ export const EditOIDCTrustPolicyModal = ({
   roleOptions: { value: string; label: string; description?: string }[]
   onSubmit: (input: EditOIDCTrustPolicyFormInput) => void
 } & Omit<IModal, 'onSubmit'>) => {
-  const [name, setName] = useState(policy.name ?? '')
-  const [issuerUrl, setIssuerUrl] = useState(policy.issuer_url ?? '')
-  const [audience, setAudience] = useState(policy.audience ?? '')
-  const [role, setRole] = useState(policy.role ?? 'org_read_only')
-  const [tokenDurationSeconds, setTokenDurationSeconds] = useState(
-    policy.token_duration_seconds ? String(policy.token_duration_seconds) : ''
-  )
-  const [enabled, setEnabled] = useState(policy.enabled ?? true)
-  const [claimConditions, setClaimConditions] = useState<ClaimCondition[]>(() =>
-    conditionsToRows(policy.claim_conditions)
-  )
+  const form = useForm({
+    defaultValues: {
+      name: policy.name ?? '',
+      issuerUrl: policy.issuer_url ?? '',
+      audience: policy.audience ?? '',
+      role: policy.role ?? 'org_read_only',
+      tokenDurationSeconds: policy.token_duration_seconds
+        ? String(policy.token_duration_seconds)
+        : '',
+      enabled: policy.enabled ?? true,
+      claimConditions: conditionsToRows(policy.claim_conditions),
+    } as EditOIDCFormValues,
+    validators: { onMount: editOIDCSchema, onChange: editOIDCSchema },
+    onSubmit: ({ value }) =>
+      onSubmit({
+        name: value.name.trim(),
+        issuerUrl: value.issuerUrl.trim(),
+        audience: value.audience.trim(),
+        role: value.role,
+        tokenDurationSeconds: value.tokenDurationSeconds,
+        enabled: value.enabled,
+        claimConditions: value.claimConditions,
+      }),
+  })
 
-  const trimmedName = name.trim()
-  const trimmedIssuerUrl = issuerUrl.trim()
-  const trimmedAudience = audience.trim()
-  const isValidIssuerUrl = /^https?:\/\/.+/i.test(trimmedIssuerUrl)
-  const canSubmit =
-    !isPending &&
-    !!trimmedName &&
-    isValidIssuerUrl &&
-    !!trimmedAudience &&
-    hasSubCondition(claimConditions)
-
-  const updateClaimCondition = (
-    index: number,
-    field: 'key' | 'value',
-    value: string
-  ) => {
-    setClaimConditions((prev) =>
-      prev.map((condition, i) =>
-        i === index ? { ...condition, [field]: value } : condition
-      )
-    )
-  }
-
-  const addClaimCondition = () =>
-    setClaimConditions((prev) => [...prev, { key: '', value: '' }])
-
-  const removeClaimCondition = (index: number) =>
-    setClaimConditions((prev) => prev.filter((_, i) => i !== index))
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
+  const claimConditions = useStore(form.store, (s) => s.values.claimConditions)
+  const hasSub = hasSubCondition(claimConditions)
 
   return (
     <Modal
@@ -99,102 +77,98 @@ export const EditOIDCTrustPolicyModal = ({
       primaryActionTrigger={{
         children: isPending ? (
           <span className="flex items-center gap-2">
-            <Icon variant="Loading" /> Saving...
+            <Icon variant="Loading" /> Saving changes
           </span>
         ) : (
           'Save changes'
         ),
-        disabled: !canSubmit,
-        onClick: () =>
-          onSubmit({
-            name: trimmedName,
-            issuerUrl: trimmedIssuerUrl,
-            audience: trimmedAudience,
-            role,
-            tokenDurationSeconds,
-            claimConditions,
-            enabled,
-          }),
+        disabled: !canSubmit || !hasSub || isPending,
+        onClick: () => form.handleSubmit(),
         variant: 'primary',
       }}
       {...props}
     >
-      <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to update trust policy'}
-          </Banner>
-        ) : null}
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-6"
+      >
+        <FormErrorBanner error={error} fallback="Unable to update trust policy" />
 
-        <Toggle
-          checked={enabled}
-          onChange={setEnabled}
-          label="Enabled"
-          description="Disabled policies reject token exchange requests."
-        />
+        <form.Field name="enabled">
+          {(field) => (
+            <FormToggle
+              field={field}
+              label="Enabled"
+              description="Disabled policies reject token exchange requests."
+            />
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="policy-name">Name</Label>
-          <Input
-            id="policy-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
+        <form.Field name="name">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="policy-name"
+              disabled={isPending}
+              labelProps={{ labelText: 'Name' }}
+            />
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="policy-issuer-url">Issuer URL</Label>
-          <Input
-            id="policy-issuer-url"
-            type="url"
-            value={issuerUrl}
-            onChange={(e) => setIssuerUrl(e.target.value)}
-            required
-          />
-          <Text variant="subtext" theme="neutral">
-            Must be an absolute http or https URL.
-          </Text>
-        </div>
+        <form.Field name="issuerUrl">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="policy-issuer-url"
+              type="url"
+              disabled={isPending}
+              labelProps={{ labelText: 'Issuer URL' }}
+              helperText="Must be an absolute http or https URL."
+            />
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="policy-audience">Audience</Label>
-          <Input
-            id="policy-audience"
-            value={audience}
-            onChange={(e) => setAudience(e.target.value)}
-            required
-          />
-          <Text variant="subtext" theme="neutral">
-            The expected `aud` claim value on the presented token.
-          </Text>
-        </div>
+        <form.Field name="audience">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="policy-audience"
+              disabled={isPending}
+              labelProps={{ labelText: 'Audience' }}
+              helperText="The expected `aud` claim value on the presented token."
+            />
+          )}
+        </form.Field>
 
-        <Select
-          labelProps={{ labelText: 'Role' }}
-          options={roleOptions}
-          value={role}
-          onChange={(value) => setRole(value)}
-          helperText="Org role granted to tokens exchanged with this policy."
-        />
+        <form.Field name="role">
+          {(field) => (
+            <FormSelect
+              field={field}
+              options={roleOptions}
+              disabled={isPending}
+              labelProps={{ labelText: 'Role' }}
+              helperText="Org role granted to tokens exchanged with this policy."
+            />
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="policy-token-duration">
-            Token duration in seconds (optional)
-          </Label>
-          <Input
-            id="policy-token-duration"
-            placeholder="3600"
-            type="number"
-            min={1}
-            max={86400}
-            value={tokenDurationSeconds}
-            onChange={(e) => setTokenDurationSeconds(e.target.value)}
-          />
-          <Text variant="subtext" theme="neutral">
-            Maximum is 86400.
-          </Text>
-        </div>
+        <form.Field name="tokenDurationSeconds">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="policy-token-duration"
+              placeholder="3600"
+              type="number"
+              min={1}
+              max={86400}
+              disabled={isPending}
+              labelProps={{ labelText: 'Token duration in seconds (optional)' }}
+              helperText="Maximum is 86400."
+            />
+          )}
+        </form.Field>
 
         <div className="flex flex-col gap-2">
           <Label>Claim conditions</Label>
@@ -202,45 +176,56 @@ export const EditOIDCTrustPolicyModal = ({
             All conditions must match the presented token. A `sub` condition is
             required.
           </Text>
-          <div className="flex flex-col gap-2">
-            {claimConditions.map((condition, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <Input
-                  placeholder="sub"
-                  value={condition.key}
-                  onChange={(e) =>
-                    updateClaimCondition(index, 'key', e.target.value)
-                  }
-                />
-                <Input
-                  placeholder="repo:acme/app:ref:refs/heads/main"
-                  value={condition.value}
-                  onChange={(e) =>
-                    updateClaimCondition(index, 'value', e.target.value)
-                  }
-                />
+          <form.Field name="claimConditions" mode="array">
+            {(ccField) => (
+              <>
+                <div className="flex flex-col gap-2">
+                  {ccField.state.value.map((_, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <form.Field name={`claimConditions[${index}].key`}>
+                        {(f) => (
+                          <FormInput
+                            field={f}
+                            placeholder="sub"
+                            disabled={isPending}
+                          />
+                        )}
+                      </form.Field>
+                      <form.Field name={`claimConditions[${index}].value`}>
+                        {(f) => (
+                          <FormInput
+                            field={f}
+                            placeholder="repo:acme/app:ref:refs/heads/main"
+                            disabled={isPending}
+                          />
+                        )}
+                      </form.Field>
+                      <Button
+                        variant="icon"
+                        aria-label="Remove claim condition"
+                        disabled={ccField.state.value.length === 1 || isPending}
+                        onClick={() => ccField.removeValue(index)}
+                      >
+                        <Icon variant="TrashIcon" size={14} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
                 <Button
-                  variant="icon"
-                  aria-label="Remove claim condition"
-                  disabled={claimConditions.length === 1}
-                  onClick={() => removeClaimCondition(index)}
+                  variant="secondary"
+                  size="sm"
+                  className="w-fit"
+                  disabled={isPending}
+                  onClick={() => ccField.pushValue({ key: '', value: '' })}
                 >
-                  <Icon variant="TrashIcon" size={14} />
+                  <Icon variant="PlusIcon" size={14} />
+                  Add condition
                 </Button>
-              </div>
-            ))}
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="w-fit"
-            onClick={addClaimCondition}
-          >
-            <Icon variant="PlusIcon" size={14} />
-            Add condition
-          </Button>
+              </>
+            )}
+          </form.Field>
         </div>
-      </div>
+      </form>
     </Modal>
   )
 }
