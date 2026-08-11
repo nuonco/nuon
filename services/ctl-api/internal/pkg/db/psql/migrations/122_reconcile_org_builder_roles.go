@@ -93,7 +93,7 @@ func newOrgBuilderPolicy(org app.Org, roleID string) app.Policy {
 
 func orgBuilderPermissions(orgID string) pgtype.Hstore {
 	return pgtype.Hstore(map[string]*string{
-		orgID:                                    permissions.PermissionRead.ToStrPtr(),
-		permissions.ComponentBuildsObject(orgID): permissions.PermissionCreate.ToStrPtr(),
+		orgID:                                  permissions.PermissionRead.ToStrPtr(),
+		orgBuilderComponentBuildsObject(orgID): permissions.PermissionCreate.ToStrPtr(),
 	})
 }

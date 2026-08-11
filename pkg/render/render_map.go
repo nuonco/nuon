@@ -34,7 +34,7 @@ func RenderMap(obj any, data map[string]any) error {
 		switch mapValue.Kind() {
 		case reflect.String:
 			strValue := mapValue.String()
-			rendered, err := RenderV2(strValue, data)
+			rendered, err := renderStrField(strValue, data)
 			if err != nil {
 				return errors.Wrap(err, "unable to render string map value")
 			}
@@ -61,7 +61,7 @@ func RenderMap(obj any, data map[string]any) error {
 			}
 			elem := mapValue.Elem()
 			if elem.Kind() == reflect.String {
-				rendered, err := RenderV2(elem.String(), data)
+				rendered, err := renderStrField(elem.String(), data)
 				if err != nil {
 					return errors.Wrap(err, "unable to render *string map value")
 				}

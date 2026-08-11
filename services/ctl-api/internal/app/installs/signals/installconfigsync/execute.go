@@ -57,8 +57,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to create install config sync record: %w", err)
 	}
 
-	// TODO(jm): remove hardcoded local path once network clone is working
-	sourceDir := "/Users/jonmorehouse/nuon/kitchen-sink"
+	sourceDir := s.SourceDir
 
 	installConfigs, err := activities.AwaitParseInstallConfigs(ctx, activities.ParseInstallConfigsRequest{
 		SourceDir: sourceDir,

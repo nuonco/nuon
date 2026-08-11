@@ -41,6 +41,9 @@ const (
 	WorkflowTypeAppBranchesComponentRepoUpdate WorkflowType = "app_branches_component_repo_update"
 	WorkflowTypeAppBranchConfigUpdate          WorkflowType = "app_branch_config_update"
 
+	// app install sync workflows
+	WorkflowTypeAppInstallSync WorkflowType = "app_install_sync"
+
 	// reprovision everything
 	WorkflowTypeReprovision WorkflowType = "reprovision"
 

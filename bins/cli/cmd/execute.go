@@ -9,6 +9,7 @@ import (
 
 	"github.com/charmbracelet/fang"
 	"github.com/getsentry/sentry-go"
+	"github.com/nuonco/nuon/bins/cli/internal/httpdebug"
 	"github.com/nuonco/nuon/pkg/analytics"
 	"github.com/spf13/cobra"
 )
@@ -52,6 +53,8 @@ func flushAnalytics(w analytics.Writer, timeout time.Duration) {
 
 // Execute is essentially the init method of the CLI. It initializes all the components and composes them together.
 func Execute() {
+	start := time.Now()
+
 	c, err := NewCLI()
 	if err != nil {
 		os.Exit(2)
@@ -82,6 +85,10 @@ func Execute() {
 		if c.analyticsClient != nil {
 			flushAnalytics(c.analyticsClient, c.cfg.CleanupTimeout)
 		}
+	}
+
+	if Debug {
+		httpdebug.PrintSummary(os.Stderr, time.Since(start))
 	}
 
 	if err != nil {

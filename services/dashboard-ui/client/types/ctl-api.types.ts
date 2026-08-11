@@ -347,6 +347,7 @@ export type TComponentType = components['schemas']['app.ComponentType']
 
 export type TComponentBuild = components['schemas']['app.ComponentBuild'] & {
   app_branch_id?: string
+  composite_error?: TCompositeError
 }
 export type TBuild = TComponentBuild & {
   org_id: string
@@ -759,7 +760,9 @@ export type TInstallActionWorkflow =
 // new action types
 export type TAction = components['schemas']['app.ActionWorkflow']
 export type TInstallActionRun =
-  components['schemas']['app.InstallActionWorkflowRun']
+  components['schemas']['app.InstallActionWorkflowRun'] & {
+    composite_error?: TCompositeError
+  }
 export type TInstallActionRunStep =
   components['schemas']['app.InstallActionWorkflowRunStep']
 export type TInstallAction = components['schemas']['app.InstallActionWorkflow']
@@ -796,11 +799,20 @@ export interface TCreateStaticTokenResponse {
 }
 
 export interface TRoleInfo {
+  id?: string
+  org_id?: string
   role_type: string
-  title: string
-  description: string
-  applies_to: string[]
+  title?: string
+  description?: string
+  applies_to?: string[]
+  managed?: boolean
 }
+
+export type TRoleContext =
+  | 'team'
+  | 'service_account'
+  | 'api_token'
+  | 'oidc_trust_policy'
 
 export interface TCreateServiceAccountBody {
   name: string
@@ -1020,3 +1032,53 @@ export type TMe = {
 // components['schemas']['service.AuthMeResponse']
 
 export type TCLIConfig = components['schemas']['service.CLIConfig']
+
+export type TAppInstallConfigSync = {
+  id: string
+  created_at: string
+  app_id: string
+  triggered_by: string
+  queue_signal_id?: string
+  queue_id?: string
+  workflow_id?: string
+  workflow?: TWorkflow
+  status?: {
+    status: string
+    status_human_description?: string
+    metadata?: Record<string, unknown>
+  }
+  vcs_connection_commit?: {
+    sha?: string
+    message?: string
+    author_name?: string
+  }
+  install_config_syncs?: TInstallConfigSync[]
+  install_creation_approval?: TInstallCreationApproval
+}
+
+export type TAppInstallsConfig = {
+  id: string
+  created_at: string
+  app_id: string
+  vcs_type: 'connected' | 'public'
+  vcs_connection_id?: string
+  repo: string
+  branch: string
+  directory: string
+  source: 'config' | 'ui'
+}
+
+export type TInstallCreationApproval = {
+  id: string
+  created_at: string
+  app_id: string
+  app_install_config_sync_id: string
+  proposed_installs: Array<{
+    name: string
+    file_path: string
+    config: unknown
+  }>
+  status: 'pending' | 'approved' | 'denied'
+  approved_at?: string
+  approved_by_id?: string
+}

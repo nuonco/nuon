@@ -60,6 +60,13 @@ ListRolesParams contains all the parameters to send to the API endpoint
 	Typically these are written to a http.Request.
 */
 type ListRolesParams struct {
+
+	/* Context.
+
+	   filter to roles assignable on a surface (team, service_account, api_token, oidc_trust_policy)
+	*/
+	RoleContext *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -113,6 +120,17 @@ func (o *ListRolesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithRoleContext adds the context to the list roles params
+func (o *ListRolesParams) WithRoleContext(context *string) *ListRolesParams {
+	o.SetRoleContext(context)
+	return o
+}
+
+// SetRoleContext adds the context to the list roles params
+func (o *ListRolesParams) SetRoleContext(context *string) {
+	o.RoleContext = context
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListRolesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -120,6 +138,23 @@ func (o *ListRolesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Reg
 		return err
 	}
 	var res []error
+
+	if o.RoleContext != nil {
+
+		// query param context
+		var qrContext string
+
+		if o.RoleContext != nil {
+			qrContext = *o.RoleContext
+		}
+		qContext := qrContext
+		if qContext != "" {
+
+			if err := r.SetQueryParam("context", qContext); err != nil {
+				return err
+			}
+		}
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

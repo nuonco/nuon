@@ -399,3 +399,42 @@ export function AzureRegions() {
     </div>
   )
 }
+
+const roleOptionsWithDescriptions = [
+  {
+    value: 'org_admin',
+    label: 'Admin',
+    description: 'Full access to the organization and all of its resources.',
+  },
+  {
+    value: 'org_read_only',
+    label: 'Read-only',
+    description: 'Read-only access to the entire organization.',
+  },
+  {
+    value: 'app_developer',
+    label: 'App developer',
+    description:
+      'Full access to apps, components, and builds; read-only access to the rest of the organization.',
+  },
+]
+
+export function WithDescriptions() {
+  return (
+    <div className="space-y-6 max-w-md">
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Option Descriptions</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Options with a description show it in a tooltip when hovered in the
+          dropdown.
+        </p>
+      </div>
+
+      <Select
+        options={roleOptionsWithDescriptions}
+        labelProps={{ labelText: 'Role' }}
+        placeholder="Choose a role"
+      />
+    </div>
+  )
+}

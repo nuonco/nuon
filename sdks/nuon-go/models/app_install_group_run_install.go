@@ -7,7 +7,10 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
+	"strconv"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -20,6 +23,12 @@ type AppInstallGroupRunInstall struct {
 	// install id
 	InstallID string `json:"install_id,omitempty"`
 
+	// Phase is which stage of the group the install is in: "deploy" or "runbook".
+	Phase string `json:"phase,omitempty"`
+
+	// runbooks
+	Runbooks []*AppInstallGroupRunRunbook `json:"runbooks"`
+
 	// status
 	Status string `json:"status,omitempty"`
 
@@ -29,11 +38,88 @@ type AppInstallGroupRunInstall struct {
 
 // Validate validates this app install group run install
 func (m *AppInstallGroupRunInstall) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateRunbooks(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this app install group run install based on context it is used
+func (m *AppInstallGroupRunInstall) validateRunbooks(formats strfmt.Registry) error {
+	if swag.IsZero(m.Runbooks) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Runbooks); i++ {
+		if swag.IsZero(m.Runbooks[i]) { // not required
+			continue
+		}
+
+		if m.Runbooks[i] != nil {
+			if err := m.Runbooks[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("runbooks" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("runbooks" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this app install group run install based on the context it is used
 func (m *AppInstallGroupRunInstall) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateRunbooks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AppInstallGroupRunInstall) contextValidateRunbooks(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Runbooks); i++ {
+
+		if m.Runbooks[i] != nil {
+
+			if swag.IsZero(m.Runbooks[i]) { // not required
+				return nil
+			}
+
+			if err := m.Runbooks[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("runbooks" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("runbooks" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

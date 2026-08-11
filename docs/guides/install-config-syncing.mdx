@@ -1,0 +1,177 @@
+---
+title: "Syncing Install Configs from Git"
+description: "Connect a Git repo of install config files to your app so pushes keep every install's config in sync"
+icon: "arrows-rotate"
+keywords: ["install config syncing", "installs.toml", "installs_config", "connected_repo", "git sync installs", "automated installs", "install config sync", "VCS installs", "declarative installs"]
+---
+
+Point your app at a Git repository that holds one config file per install, and Nuon keeps those installs in sync with the repo. When you push a change, every install's config is updated to match; when you add a file for an install that doesn't exist yet, Nuon proposes creating it and waits for your approval.
+
+This is the app-wide counterpart to [creating installs from config files](/guides/install-configs) by hand — the same file format, applied continuously from a repo instead of one command at a time.
+
+<Note>
+Install config syncing is behind the `app-install-syncing` org feature flag and is off by default. Contact Nuon support to enable it for your org.
+</Note>
+
+## Prerequisites
+
+- A [GitHub connection](/guides/vcs) (if using `connected_repo`)
+- Familiarity with [install config files](/guides/install-configs)
+
+## Configuration
+
+There are two ways to configure install config syncing: in your app config or as a standalone file. Both accept the same properties — see the [Installs Config Reference](/config-ref/installs-config) for the full schema.
+
+### In app config (`[installs_config]`)
+
+Add an `[installs_config]` section to your app config:
+
+```toml nuon.toml
+[installs_config.connected_repo]
+repo      = "org/repo"
+branch    = "main"
+directory = "installs"
+```
+
+Or with a public repo:
+
+```toml nuon.toml
+[installs_config.public_repo]
+repo      = "https://github.com/org/repo.git"
+branch    = "main"
+directory = "installs"
+```
+
+### Standalone `installs.toml`
+
+Create an `installs.toml` file in your app config directory:
+
+```toml installs.toml
+[connected_repo]
+repo      = "org/repo"
+branch    = "main"
+directory = "installs"
+```
+
+<Note>
+`connected_repo` and `public_repo` are mutually exclusive — use one or the other. Use `connected_repo` when your install repo is private, or when you don't want the repo location to be public.
+</Note>
+
+You can also configure the repo from the dashboard, on the app's **Install configs** tab, without changing your app config.
+
+## Install Config Files
+
+Each file in the configured `directory` defines one install. The `name` field is what ties a file to an install — Nuon matches on it to decide whether to update an existing install or propose a new one, so renaming a file is harmless but renaming the `name` is not.
+
+```toml installs/staging.toml
+name            = "staging"
+approval_option = "approve-all"
+
+[labels]
+env    = "staging"
+region = "us-east-1"
+
+[aws_account]
+region = "us-east-1"
+
+[[inputs]]
+instance_type = "t3a.small"
+debug_mode    = "false"
+
+[[inputs]]
+domain = "staging.example.com"
+```
+
+```toml installs/production.toml
+name            = "production"
+approval_option = "prompt"
+
+[labels]
+env    = "production"
+region = "us-east-1"
+
+[aws_account]
+region = "us-east-1"
+
+[[inputs]]
+instance_type = "t3a.large"
+debug_mode    = "false"
+
+[[inputs]]
+domain = "prod.example.com"
+```
+
+See the [Install Config Reference](/config-ref/install) for the full schema.
+
+To move an install you created by hand under config management, export it:
+
+```sh
+nuon installs generate-config -i <install-name> > installs/<install-name>.toml
+```
+
+## What Happens During a Sync
+
+Each sync runs as a workflow with three steps, visible on the app's **Install configs** tab:
+
+1. **Fetch commit** — resolves the commit to sync and clones the repo at that revision.
+2. **Parse install configs** — reads every config file in the directory and compares it against the app's existing installs. If any file names an install that doesn't exist, the step pauses for approval and lists the installs it proposes creating.
+3. **Sync installs** — dispatches a config sync to each matching install, which applies the new config and starts any resulting workflow.
+
+Approving the second step creates the missing installs. Denying it skips creation and ends the sync — existing installs are left untouched, and the next sync will propose them again.
+
+<Note>
+A sync never deletes installs. Removing a config file from the repo stops that install from being updated; it does not tear it down.
+</Note>
+
+## Sync Triggers
+
+There are two ways a sync starts:
+
+- **Git push** — a push to the configured branch of the connected repo triggers a sync automatically.
+- **Manual** — the **Sync now** button on the app's **Install configs** tab, or a `POST` to `/v1/apps/{app_id}/install-syncs`.
+
+<Note>
+`nuon apps sync` does not trigger an install config sync. It registers the `installs_config` block from your app config so pushes and manual syncs can use it — the first sync still comes from a push or from **Sync now**.
+</Note>
+
+## Syncing Config Files Directly
+
+`nuon installs sync` is a separate mechanism: it pushes install config files from your working copy straight to the API, without going through a connected repo. It's useful for iterating on a config before committing it, or for managing installs from CI without connecting a repo at all.
+
+Sync a single file:
+
+```sh
+nuon installs sync --file installs/staging.toml --app-id <app-id>
+```
+
+Sync a whole directory:
+
+```sh
+nuon installs sync --app-id <app-id> --file installs/
+```
+
+Preview the changes without applying them:
+
+```sh
+nuon installs sync --app-id <app-id> --file installs/ --dry-run
+```
+
+Add `--yes` to approve the resulting diffs and workflows automatically, and `--wait` to block until those workflows finish — both are useful in CI.
+
+To stop an individual install from being updated by either mechanism:
+
+```sh
+nuon installs toggle-sync -i <install-name> --disable
+```
+
+## Viewing Sync History
+
+The app's **Install configs** tab lists recent syncs with their status, the commit each one ran against, and the per-install config syncs it dispatched. Opening a sync shows its step timeline, the proposed installs awaiting approval, and the approve and deny actions.
+
+## See Also
+
+- [Creating Installs](/guides/install-configs) — manual install config management
+- [Install Config Reference](/config-ref/install) — JSON Schema reference
+- [Installs Config Reference](/config-ref/installs-config) — repo connection schema
+- [Configuration Files](/configuration-files) — full TOML reference
+- [App Branches](/concepts/app-branches) — coordinated multi-install deployments

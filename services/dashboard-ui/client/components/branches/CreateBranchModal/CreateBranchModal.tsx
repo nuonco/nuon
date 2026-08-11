@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Input } from '@/components/common/form/Input'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
+import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { BranchVcsConfigFields } from '@/components/branches/BranchVcsConfigFields'
 import type {
@@ -74,16 +75,19 @@ export const CreateBranchModal = ({
   const [useVcs, setUseVcs] = useState(true)
   const [directory, setDirectory] = useState(initialDirectory || '.')
   const [pathFilter, setPathFilter] = useState('')
+  const [repoError, setRepoError] = useState<string | null>(null)
 
   const formRef = useRef<HTMLFormElement>(null)
   const bannerRef = useRef<HTMLDivElement>(null)
 
-  const submitErrorMessage = submitError
-    ? ('error' in submitError && submitError.error) ||
-      ('description' in submitError && submitError.description) ||
-      ('message' in submitError && submitError.message) ||
-      'Unable to create branch.'
-    : undefined
+  const submitErrorMessage =
+    repoError ||
+    (submitError
+      ? ('error' in submitError && submitError.error) ||
+        ('description' in submitError && submitError.description) ||
+        ('message' in submitError && submitError.message) ||
+        'Unable to create branch.'
+      : undefined)
 
   useEffect(() => {
     if (submitErrorMessage && bannerRef.current) {
@@ -104,6 +108,12 @@ export const CreateBranchModal = ({
       form.reportValidity()
       return
     }
+
+    if (useVcs && !selectedRepo) {
+      setRepoError('Select a repository, or uncheck "Connect to git repository".')
+      return
+    }
+    setRepoError(null)
 
     const body: TCreateAppBranchRequest & {
       vcs_connection_id?: string
@@ -153,7 +163,7 @@ export const CreateBranchModal = ({
       size="lg"
       primaryActionTrigger={{
         children: isSubmitting ? 'Creating...' : 'Create branch',
-        disabled: isSubmitting || (useVcs && vcsConnections.length === 0),
+        disabled: isSubmitting,
         onClick: () => formRef.current?.requestSubmit(),
         variant: 'primary',
       }}
@@ -188,13 +198,21 @@ export const CreateBranchModal = ({
           labelProps={{ labelText: 'Branch name' }}
         />
 
-        <CheckboxInput
-          id="use-vcs"
-          checked={useVcs}
-          onChange={(e) => setUseVcs(e.target.checked)}
-          disabled={isSubmitting}
-          labelProps={{ labelText: 'Connect to git repository' }}
-        />
+        <div className="flex flex-col gap-1">
+          <CheckboxInput
+            id="use-vcs"
+            checked={useVcs}
+            onChange={(e) => setUseVcs(e.target.checked)}
+            disabled={isSubmitting}
+            labelProps={{ labelText: 'Connect to git repository' }}
+          />
+          {!useVcs && (
+            <Text variant="subtext" theme="neutral" className="px-2">
+              Without a repository this branch cannot run. You can add one later
+              from branch settings.
+            </Text>
+          )}
+        </div>
 
         {useVcs && (
           <BranchVcsConfigFields

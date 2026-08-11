@@ -193,9 +193,11 @@ func (s *syncer) syncSteps() []syncStep {
 			},
 		},
 		{
+			// Validate branches early even though they are written last, so a bad
+			// branch block fails before components sync and builds are dispatched.
 			Resource: "app-branches",
 			Method: func(ctx context.Context) error {
-				return branches.Sync(ctx, s.db, s.appsHelpers, s.cfg, s.appID)
+				return branches.Validate(ctx, s.db, s.cfg, s.appID)
 			},
 		},
 		{
@@ -351,6 +353,15 @@ func (s *syncer) syncSteps() []syncStep {
 			},
 		})
 	}
+
+	// Branches run last: post_deploy_runbooks references runbooks by name, so the
+	// runbook steps above must have created them before name resolution.
+	steps = append(steps, syncStep{
+		Resource: "app-branches",
+		Method: func(ctx context.Context) error {
+			return branches.Sync(ctx, s.db, s.appsHelpers, s.cfg, s.appID)
+		},
+	})
 
 	return steps
 }

@@ -536,6 +536,28 @@ setIsOpen(false)
 
 The only acceptable comments explain **why**, not **what** — a non-obvious constraint, workaround, or gotcha that the code itself cannot express. If a comment would just narrate what the next line does, delete it.
 
+## Forms (TanStack Form + Zod)
+
+Forms use **TanStack Form + Zod** behind the field-aware `Form*` wrappers in `client/components/common/form/` (`FormInput`, `FormSelect`, `FormTextarea`, `FormCheckbox`, `FormToggle`, `FormRadioGroup`, `FormCodeInput`, plus composite wrappers like `FormMatchPicker`). The form owns field state + validation; the container owns the async mutation. See the **`dashboard-ui:form` skill** for the full recipe and `client/components/api-tokens/CreateApiToken/` as the canonical example.
+
+### When is it a form? (falsifiable rule)
+
+**Always use TanStack Form + Zod for any surface that collects user input.** You may skip it ONLY if one of these mechanical tests passes:
+
+- **E1 — no inputs:** the surface has zero form controls (buttons + static text only). → plain confirm modal.
+- **E2 — confirmation gate:** the surface's only input is compared to a known literal and is **not** sent in the API request body (type-to-confirm delete, e.g. `disabled={confirm !== install.name}`). → plain confirm modal.
+
+There is **no "it's an editor" exception** an agent can invoke. Bespoke direct-manipulation editors exist only by explicit UXDR sign-off. Current allowlist: `DeploymentPlanEditor`. If you think you need another, **stop and ask** — do not hand-roll a form and call it an editor. Any non-TanStack form-like surface must cite E1, E2, or the allowlist.
+
+### Key rules
+
+- **Wrap the fields in a real `<form>` element** — `<form autoComplete="off" noValidate onSubmit={(e) => e.preventDefault()}>`. It IS a form, so use the element: this turns off browser autocomplete across every field. Submission is still driven by the modal's `primaryActionTrigger` calling `form.handleSubmit()` (the trigger is a footer prop outside the form), NOT native submit — hence `preventDefault`. Never drop the form element just because submit is button-driven.
+- **Flat fields, never nested objects** — `canSubmit` validation breaks on nested-object fields in TanStack Form v1 (`channelId`/`channelName`, not `channel: {id,name}`).
+- **Do not pass native `required`** to fields — Zod is the sole validation source.
+- **Errors → in-form `FormErrorBanner`, never a toast.** Success → close modal + toast.
+- **Edit reuses create** via a `mode: 'create' | 'edit'` prop — never a forked `EditXModal`.
+- Every form/wrapper gets a `.stories.tsx` and a Ladle behavior test (`e2e/specs-ladle/`).
+
 ## Component Patterns
 
 ### Always Check Existing Components First

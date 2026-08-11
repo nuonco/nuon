@@ -43,7 +43,7 @@ export interface paths {
   "/v1/account/static-token": {
     /**
      * create a static API token for your org
-     * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, org_read_only, or org_builder) and defaults to org_read_only.
+     * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
      */
     post: operations["CreateStaticToken"];
   };
@@ -462,7 +462,8 @@ export interface paths {
   "/v1/apps/{app_id}/components/{component_id}/configs/docker-build": {
     /**
      * create a docker build component config
-     * @description Create a Docker build component config.
+     * @deprecated
+     * @description Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
      */
     post: operations["CreateAppDockerBuildComponentConfig"];
   };
@@ -681,6 +682,32 @@ export interface paths {
      */
     get: operations["GetAppInputLatestConfig"];
   };
+  "/v1/apps/{app_id}/install-syncs": {
+    /**
+     * list app install config syncs
+     * @description Returns a list of app install config sync records for the given app.
+     */
+    get: operations["GetAppInstallSyncs"];
+    /**
+     * trigger app-level install config sync
+     * @description Triggers a sync of all install configs for the app from the configured git source.
+     */
+    post: operations["TriggerAppInstallSync"];
+  };
+  "/v1/apps/{app_id}/install-syncs/{sync_id}": {
+    /**
+     * get a single app install config sync
+     * @description Returns a single app install config sync record with child install config syncs.
+     */
+    get: operations["GetAppInstallSync"];
+  };
+  "/v1/apps/{app_id}/install-syncs/{sync_id}/approvals/{approval_id}/response": {
+    /**
+     * respond to an install creation approval
+     * @description Approves or denies an install creation approval. On approve, creates the missing installs and re-triggers the sync. On deny, marks the approval as denied.
+     */
+    post: operations["RespondInstallCreationApproval"];
+  };
   "/v1/apps/{app_id}/installs": {
     /**
      * get all installs for an app
@@ -693,6 +720,25 @@ export interface paths {
      * @description Create a new install for an app.
      */
     post: operations["CreateInstall"];
+  };
+  "/v1/apps/{app_id}/installs-configs": {
+    /**
+     * get latest installs config for an app
+     * @description Returns the latest installs config (git source for install config files).
+     */
+    get: operations["GetAppInstallsConfig"];
+    /**
+     * create a new installs config for an app
+     * @description Creates a new installs config record (source=ui). The latest record is always used.
+     */
+    post: operations["CreateAppInstallsConfig"];
+  };
+  "/v1/apps/{app_id}/installs-configs/{config_id}": {
+    /**
+     * soft-delete an installs config
+     * @description Soft-deletes an installs config record. The next latest record becomes active.
+     */
+    delete: operations["DeleteAppInstallsConfig"];
   };
   "/v1/apps/{app_id}/kubernetes-contexts-configs": {
     /**
@@ -1058,7 +1104,7 @@ export interface paths {
     /**
      * create a docker build component config
      * @deprecated
-     * @description Create a Docker build component config.
+     * @description Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
      */
     post: operations["CreateDockerBuildComponentConfig"];
   };
@@ -2575,10 +2621,13 @@ export interface paths {
   };
   "/v1/roles": {
     /**
-     * List assignable roles
-     * @description List the roles that can be assigned to members and service accounts in an
-     * organization. Each role indicates which principal types it applies to via the
-     * `applies_to` field (`user`, `service_account`, or both).
+     * List your org's roles
+     * @description List your org's roles. Each role carries its display metadata (`title`,
+     * `description`) and the assignment surfaces it may be offered on via the
+     * `applies_to` field (`team`, `service_account`, `api_token`,
+     * `oidc_trust_policy`). A role with no `applies_to` entries exists and may be
+     * displayed, but cannot be newly assigned. Pass `?context=<surface>` to filter
+     * to the roles assignable on a single surface.
      */
     get: operations["ListRoles"];
   };
@@ -3485,6 +3534,8 @@ export interface components {
       id?: string;
       install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
       org_id?: string;
+      /** @description PostDeployRunbookIDs are runbooks run on each install, in order, after its deploy succeeds. Distinct from RunbookIDs, which tracks the runbooks the branch's synced app config produced. */
+      post_deploy_runbook_ids?: string[];
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       runbook_ids?: string[];
       updated_at?: string;
@@ -3665,6 +3716,39 @@ export interface components {
     };
     /** @enum {string} */
     "app.AppInputSource": "vendor" | "customer";
+    "app.AppInstallConfigSync": {
+      app_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_config_syncs?: components["schemas"]["app.InstallConfigSync"][];
+      install_creation_approval?: components["schemas"]["app.InstallCreationApproval"];
+      org_id?: string;
+      queue_id?: string;
+      queue_signal_id?: string;
+      status?: components["schemas"]["app.CompositeStatus"];
+      triggered_by?: string;
+      updated_at?: string;
+      vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"];
+      workflow?: components["schemas"]["app.Workflow"];
+      workflow_id?: string;
+    };
+    "app.AppInstallsConfig": {
+      app_id?: string;
+      branch?: string;
+      connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
+      created_at?: string;
+      created_by_id?: string;
+      directory?: string;
+      id?: string;
+      org_id?: string;
+      public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      repo?: string;
+      source?: string;
+      updated_at?: string;
+      vcs_connection_id?: string;
+      vcs_type?: string;
+    };
     "app.AppKubernetesContextConfig": {
       app_config_id?: string;
       app_id?: string;
@@ -4715,6 +4799,21 @@ export interface components {
       status?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
     };
+    "app.InstallCreationApproval": {
+      app_id?: string;
+      app_install_config_sync_id?: string;
+      approved_at?: string;
+      approved_by_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      proposed_installs?: components["schemas"]["app.ProposedInstall"][];
+      status?: components["schemas"]["app.InstallCreationApprovalStatus"];
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.InstallCreationApprovalStatus": "pending" | "approved" | "denied";
     "app.InstallDeploy": {
       action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
       /** @description AppliedAt is set when the apply runner job completes successfully. */
@@ -4798,6 +4897,17 @@ export interface components {
     };
     "app.InstallGroupRunInstall": {
       install_id?: string;
+      /** @description Phase is which stage of the group the install is in: "deploy" or "runbook". */
+      phase?: string;
+      runbooks?: components["schemas"]["app.InstallGroupRunRunbook"][];
+      status?: string;
+      workflow_id?: string;
+    };
+    /** @description InstallGroupRunRunbook records one post-deploy runbook run for an install. */
+    "app.InstallGroupRunRunbook": {
+      run_id?: string;
+      runbook_id?: string;
+      runbook_name?: string;
       status?: string;
       workflow_id?: string;
     };
@@ -5439,6 +5549,11 @@ export interface components {
       /** @description "deny" or "warn" */
       severity?: string;
     };
+    "app.ProposedInstall": {
+      config?: number[];
+      file_path?: string;
+      name?: string;
+    };
     /** @enum {string} */
     "app.ProviderType": "oidc" | "google" | "github";
     "app.PublicGitVCSConfig": {
@@ -5565,12 +5680,21 @@ export interface components {
       workflow?: components["schemas"]["signaldb.WorkflowRef"];
     };
     "app.Role": {
+      applies_to?: string[];
       createdBy?: components["schemas"]["app.Account"];
       created_at?: string;
       created_by_id?: string;
+      description?: string;
       id?: string;
+      managed?: boolean;
       policies?: components["schemas"]["app.Policy"][];
       role_type?: components["schemas"]["app.RoleType"];
+      /**
+       * @description display + assignability metadata; the single source of truth read by
+       * GET /v1/roles and every role picker. Managed roles are kept in sync
+       * with standardOrgRoles by the authz reconciler.
+       */
+      title?: string;
       updated_at?: string;
     };
     /** @enum {string} */
@@ -6427,7 +6551,7 @@ export interface components {
       workflow_step_id?: string;
     };
     /** @enum {string} */
-    "app.WorkflowStepApprovalType": "noop" | "approve-all" | "terraform_plan" | "kubernetes_manifest_approval" | "helm_approval" | "pulumi_plan" | "app_branch_plan";
+    "app.WorkflowStepApprovalType": "noop" | "approve-all" | "terraform_plan" | "kubernetes_manifest_approval" | "helm_approval" | "pulumi_plan" | "app_branch_plan" | "install_creation";
     /** @enum {string} */
     "app.WorkflowStepExecutionType": "system" | "user" | "approval" | "skipped" | "hidden";
     "app.WorkflowStepGroup": {
@@ -6474,7 +6598,7 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
     /** @enum {string} */
-    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "reprovision" | "reprovision_stack" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled";
+    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "app_install_sync" | "reprovision" | "reprovision_stack" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled";
     "blobstore.Blob": Record<string, never>;
     "callback.Ref": {
       namespace?: string;
@@ -7645,6 +7769,14 @@ export interface components {
         [key: string]: components["schemas"]["service.AppInputRequest"];
       };
     };
+    "service.CreateAppInstallsConfigRequest": {
+      branch: string;
+      directory?: string;
+      repo: string;
+      vcs_connection_id?: string;
+      /** @enum {string} */
+      vcs_type: "connected" | "public";
+    };
     "service.CreateAppKubernetesContextsConfigRequest": {
       app_config_id: string;
       contexts?: components["schemas"]["service.AppKubernetesContext"][];
@@ -8019,8 +8151,9 @@ export interface components {
       /** @description human-friendly name to identify the policy */
       name: string;
       /**
-       * @description org role granted to exchanged tokens. one of org_admin, org_support,
-       * org_read_only, org_builder. defaults to org_read_only.
+       * @description org role granted to exchanged tokens. must be assignable to trust
+       * policies; see GET /v1/roles?context=oidc_trust_policy. defaults to
+       * org_read_only.
        */
       role?: string;
       /** @description lifetime of exchanged tokens in seconds. defaults to 3600, max 86400. */
@@ -8092,6 +8225,7 @@ export interface components {
       inputs?: {
         [key: string]: string;
       };
+      role?: string;
       steps?: components["schemas"]["service.CreateRunbookRunStepSelection"][];
     };
     "service.CreateRunbookRunStepSelection": {
@@ -8149,8 +8283,8 @@ export interface components {
       /** @description human-friendly name to identify the token later */
       name: string;
       /**
-       * @description org role granted to the token. one of org_admin, org_support, org_read_only, org_builder.
-       * defaults to org_read_only.
+       * @description org role granted to the token. must be assignable to API tokens; see
+       * GET /v1/roles?context=api_token. defaults to org_read_only.
        */
       role?: string;
     };
@@ -8551,6 +8685,10 @@ export interface components {
     "service.ResetInstallHealthBaselineResponse": {
       baseline_at?: string;
     };
+    "service.RespondInstallCreationApprovalRequest": {
+      /** @enum {string} */
+      response_type: "approve" | "deny";
+    };
     "service.RetryWorkflowRequest": {
       /** @description Retry indicates whether to retry the current step or not */
       operation?: string;
@@ -8564,12 +8702,6 @@ export interface components {
     "service.RetryWorkflowStepResponse": {
       retryable?: boolean;
       workflow_id?: string;
-    };
-    "service.RoleInfo": {
-      applies_to?: string[];
-      description?: string;
-      role_type?: components["schemas"]["app.RoleType"];
-      title?: string;
     };
     "service.RunCellRequest": {
       /**
@@ -9154,7 +9286,7 @@ export interface operations {
   };
   /**
    * create a static API token for your org
-   * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (org_admin, org_support, org_read_only, or org_builder) and defaults to org_read_only.
+   * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
    */
   CreateStaticToken: {
     /** @description Input */
@@ -12630,7 +12762,8 @@ export interface operations {
   };
   /**
    * create a docker build component config
-   * @description Create a Docker build component config.
+   * @deprecated
+   * @description Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
    */
   CreateAppDockerBuildComponentConfig: {
     parameters: {
@@ -14434,6 +14567,220 @@ export interface operations {
     };
   };
   /**
+   * list app install config syncs
+   * @description Returns a list of app install config sync records for the given app.
+   */
+  GetAppInstallSyncs: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppInstallConfigSync"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * trigger app-level install config sync
+   * @description Triggers a sync of all install configs for the app from the configured git source.
+   */
+  TriggerAppInstallSync: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": components["schemas"]["app.AppInstallConfigSync"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a single app install config sync
+   * @description Returns a single app install config sync record with child install config syncs.
+   */
+  GetAppInstallSync: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description sync ID */
+        sync_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppInstallConfigSync"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * respond to an install creation approval
+   * @description Approves or denies an install creation approval. On approve, creates the missing installs and re-triggers the sync. On deny, marks the approval as denied.
+   */
+  RespondInstallCreationApproval: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description sync ID */
+        sync_id: string;
+        /** @description approval ID */
+        approval_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.RespondInstallCreationApprovalRequest"];
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get all installs for an app
    * @description Returns all installs for the provided app.
    */
@@ -14548,6 +14895,166 @@ export interface operations {
       };
       /** @description Conflict */
       409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get latest installs config for an app
+   * @description Returns the latest installs config (git source for install config files).
+   */
+  GetAppInstallsConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppInstallsConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a new installs config for an app
+   * @description Creates a new installs config record (source=ui). The latest record is always used.
+   */
+  CreateAppInstallsConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppInstallsConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppInstallsConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * soft-delete an installs config
+   * @description Soft-deletes an installs config record. The next latest record becomes active.
+   */
+  DeleteAppInstallsConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -17651,7 +18158,7 @@ export interface operations {
   /**
    * create a docker build component config
    * @deprecated
-   * @description Create a Docker build component config.
+   * @description Deprecated: docker_build components are no longer supported. This endpoint always returns an error. Use a container_image component to reference a pre-built image instead.
    */
   CreateDockerBuildComponentConfig: {
     parameters: {
@@ -27663,17 +28170,26 @@ export interface operations {
     };
   };
   /**
-   * List assignable roles
-   * @description List the roles that can be assigned to members and service accounts in an
-   * organization. Each role indicates which principal types it applies to via the
-   * `applies_to` field (`user`, `service_account`, or both).
+   * List your org's roles
+   * @description List your org's roles. Each role carries its display metadata (`title`,
+   * `description`) and the assignment surfaces it may be offered on via the
+   * `applies_to` field (`team`, `service_account`, `api_token`,
+   * `oidc_trust_policy`). A role with no `applies_to` entries exists and may be
+   * displayed, but cannot be newly assigned. Pass `?context=<surface>` to filter
+   * to the roles assignable on a single surface.
    */
   ListRoles: {
+    parameters: {
+      query?: {
+        /** @description filter to roles assignable on a surface (team, service_account, api_token, oidc_trust_policy) */
+        context?: string;
+      };
+    };
     responses: {
       /** @description OK */
       200: {
         content: {
-          "application/json": components["schemas"]["service.RoleInfo"][];
+          "application/json": components["schemas"]["app.Role"][];
         };
       };
       /** @description Unauthorized */
