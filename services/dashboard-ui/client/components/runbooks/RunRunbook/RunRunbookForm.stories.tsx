@@ -59,7 +59,7 @@ export const WithInputs = () => (
       installRunbook={withInputs}
       isPending={false}
       error={null}
-      onSubmit={noop}
+      onRun={noop}
       roleSelector={roleSelector}
     />
   </ModalStory>
@@ -71,7 +71,7 @@ export const NoInputs = () => (
       installRunbook={noInputs}
       isPending={false}
       error={null}
-      onSubmit={noop}
+      onRun={noop}
       roleSelector={roleSelector}
     />
   </ModalStory>
@@ -83,7 +83,7 @@ export const WithError = () => (
       installRunbook={withInputs}
       isPending={false}
       error={{ error: 'Unable to run rotate-secrets', description: '', user_error: true }}
-      onSubmit={noop}
+      onRun={noop}
       roleSelector={roleSelector}
     />
   </ModalStory>

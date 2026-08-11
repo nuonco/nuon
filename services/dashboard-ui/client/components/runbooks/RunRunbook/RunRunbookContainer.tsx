@@ -67,7 +67,7 @@ export const RunRunbookModal = ({
       installRunbook={installRunbook}
       isPending={isPending}
       error={error}
-      onSubmit={(body) =>
+      onRun={(body) =>
         mutate({ ...body, ...(selectedRole && { role: selectedRole }) })
       }
       roleSelector={

@@ -29,11 +29,23 @@ interface IRunRunbookForm extends Omit<IModal, 'onSubmit'> {
   installRunbook: TInstallRunbook
   isPending: boolean
   error: TAPIError | null
-  onSubmit: (body: TRunRunbookBody) => void
+  onRun: (body: TRunRunbookBody) => void
   roleSelector: ReactNode
 }
 
-type RunbookFormApi = ReturnType<typeof useForm<RunbookFormValues>>
+function useRunbookForm(
+  defaultValues: RunbookFormValues,
+  validator: FormValidateOrFn<RunbookFormValues>,
+  onSubmit: (value: RunbookFormValues) => void
+) {
+  return useForm({
+    defaultValues,
+    validators: { onMount: validator, onChange: validator },
+    onSubmit: ({ value }) => onSubmit(value),
+  })
+}
+
+type RunbookFormApi = ReturnType<typeof useRunbookForm>
 
 const RunbookInputField = ({
   form,
@@ -42,7 +54,7 @@ const RunbookInputField = ({
   form: RunbookFormApi
   input: TRunbookInput
 }) => {
-  const name = `inputs.${input.name}`
+  const name: `inputs.${string}` = `inputs.${input.name}`
   const label = input.display_name || input.name
 
   if (isBooleanInput(input)) {
@@ -102,7 +114,7 @@ export const RunRunbookForm = ({
   installRunbook,
   isPending,
   error,
-  onSubmit,
+  onRun,
   roleSelector,
   ...props
 }: IRunRunbookForm) => {
@@ -141,24 +153,20 @@ export const RunRunbookForm = ({
   const enabledCount = steps.filter((s) => isStepEnabled(s.id)).length
   const noStepsEnabled = enabledCount === 0
 
-  const form = useForm({
-    defaultValues,
-    validators: { onMount: validator, onChange: validator },
-    onSubmit: ({ value }) => {
-      const inputsMap = Object.fromEntries(
-        Object.entries(value.inputs).map(([key, v]) => [
-          key,
-          typeof v === 'boolean' ? String(v) : v,
-        ])
-      )
-      onSubmit({
-        ...(hasInputs ? { inputs: inputsMap } : {}),
-        steps: steps.map((s) => ({
-          step_id: s.id ?? '',
-          enabled: isStepEnabled(s.id),
-        })),
-      })
-    },
+  const form = useRunbookForm(defaultValues, validator, (value) => {
+    const inputsMap = Object.fromEntries(
+      Object.entries(value.inputs).map(([key, v]) => [
+        key,
+        typeof v === 'boolean' ? String(v) : v,
+      ])
+    )
+    onRun({
+      ...(hasInputs ? { inputs: inputsMap } : {}),
+      steps: steps.map((s) => ({
+        step_id: s.id ?? '',
+        enabled: isStepEnabled(s.id),
+      })),
+    })
   })
 
   const canSubmit = useStore(form.store, (s) => s.canSubmit)
