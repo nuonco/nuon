@@ -23,6 +23,9 @@ type AppRunnerJob struct {
 	// available timeout is how long a job can be marked as "available" before being requeued
 	AvailableTimeout int64 `json:"available_timeout,omitempty"`
 
+	// composite error
+	CompositeError any `json:"composite_error,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
