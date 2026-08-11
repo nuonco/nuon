@@ -55,6 +55,12 @@ func (o *DeleteRunbookReader) ReadResponse(response runtime.ClientResponse, cons
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewDeleteRunbookConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewDeleteRunbookInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -403,6 +409,76 @@ func (o *DeleteRunbookNotFound) GetPayload() *models.StderrErrResponse {
 }
 
 func (o *DeleteRunbookNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewDeleteRunbookConflict creates a DeleteRunbookConflict with default headers values
+func NewDeleteRunbookConflict() *DeleteRunbookConflict {
+	return &DeleteRunbookConflict{}
+}
+
+/*
+DeleteRunbookConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type DeleteRunbookConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this delete runbook conflict response has a 2xx status code
+func (o *DeleteRunbookConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete runbook conflict response has a 3xx status code
+func (o *DeleteRunbookConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete runbook conflict response has a 4xx status code
+func (o *DeleteRunbookConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete runbook conflict response has a 5xx status code
+func (o *DeleteRunbookConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete runbook conflict response a status code equal to that given
+func (o *DeleteRunbookConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the delete runbook conflict response
+func (o *DeleteRunbookConflict) Code() int {
+	return 409
+}
+
+func (o *DeleteRunbookConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/runbooks/{runbook_id}][%d] deleteRunbookConflict %s", 409, payload)
+}
+
+func (o *DeleteRunbookConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/runbooks/{runbook_id}][%d] deleteRunbookConflict %s", 409, payload)
+}
+
+func (o *DeleteRunbookConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *DeleteRunbookConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 
