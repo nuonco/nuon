@@ -13,6 +13,7 @@ import (
 	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/planinstallgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/postdeployrunbooks"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/previewimpact"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/setuppreview"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 )
@@ -42,7 +43,15 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 
 	appConfigID := generics.FromPtrStr(flw.Metadata["app_config_id"])
 	skipBuilds := generics.FromPtrStr(flw.Metadata["skip_builds"]) == "true"
-	isPreview := generics.FromPtrStr(flw.Metadata["run_type"]) == string(app.AppBranchRunTypeGitPreview)
+
+	// Read the run rather than the workflow metadata: only the VCS push path
+	// writes run_type into metadata, so a plan-only run triggered through the
+	// API looked like a full deploy here.
+	run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, runID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to fetch app branch run")
+	}
+	isPreview := run.IsPreview()
 
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
@@ -116,8 +125,19 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		steps = append(steps, step)
 	}
 
-	// Preview runs don't touch installs — skip install group steps entirely.
+	// Preview runs never mutate an install. They report what would change and stop.
 	if isPreview {
+		sg.nextGroup()
+		step, err := sg.appBranchSignalStep(ctx, appBranchID, "preview install impact", pgtype.Hstore{}, &previewimpact.Signal{
+			RunID:             runID,
+			AppBranchID:       appBranchID,
+			AppBranchConfigID: configID,
+		}, WithSkippable(true))
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create preview impact step")
+		}
+		steps = append(steps, step)
+
 		return sg.Result(steps), nil
 	}
 
