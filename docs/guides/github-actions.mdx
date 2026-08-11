@@ -1,49 +1,64 @@
 ---
 title: "GitHub Actions"
-description: "Automatically update your Apps from GitHub Actions."
+description: "Integrate with Nuon from your GitHub Actions workflows."
 icon: "github"
 keywords:
   [
+    "CLI",
+    "GitHub Actions",
+    "actions-nuon",
     "CI/CD",
-    "automated sync",
-    "GitHub workflow",
-    "continuous deployment",
-    "nuon apps sync CI",
-    "CI/CD integration",
-    "automate Nuon deploys",
+    "trigger app branch run",
+    "nuon apps branches trigger",
+    "automate rollout",
     "continuous deployment Nuon",
     "OIDC",
     "workload identity federation",
     "secretless authentication",
+    "GitHub workflow",
   ]
 ---
 
-Use GitHub Actions to build Nuon Components alongside the rest of your CI workflow. The [Build action](https://github.com/nuonco/actions-build) installs the Nuon CLI and creates a Component build.
+If you need to integrate with Nuon from your GitHub Actions workflows, we recommend using our [official CLI action](https://github.com/nuonco/actions-nuon).
+This will handle installing the CLI and authenticating with Nuon for you, making it easy to run any CLI command as a GitHub Actions step.
+This guide walks through a common use case: triggering an [app branch](/concepts/app-branches) run from a repo where you do not have webhook permissions.
 
-## Authenticate without secrets
+## Prerequisites
 
-GitHub Actions can authenticate to Nuon with OIDC, so no API token needs to be stored in the repository. First, create a trust policy for the repository and its protected branch. The quickest path is from your GitHub connection page in the Dashboard (**Connections → your GitHub connection**), where each repository has a **Manage OIDC** button that prefills the policy.
+- An app with a branch configured and synced. See the [app branches guide](/guides/app-branches) for details.
+- Org admin access, to create the trust policy or API token the workflow authenticates with.
 
-You can also create the policy with the CLI:
+## Using OIDC
+
+We strongly recommend configuring GitHub Actions to authenticate with Nuon using OIDC, so no long-lived API tokens need to be stored in GitHub.
+Create a trust policy for the repository and its protected branch on the **Manage OIDC** page in the Dashboard. Select the repo you want to trust and the form will be filled out for you.
+
+You can also use the CLI.
 
 ```sh
 nuon orgs oidc-trust-policies create \
   --name github-actions \
   --issuer https://token.actions.githubusercontent.com \
   --audience https://api.nuon.co \
-  --role org_builder \
+  --role org_admin \
   --ttl 900 \
   --claim sub=repo:acme/app:ref:refs/heads/main
 ```
 
-The policy grants short-lived builder access, which can read org resources and create component builds but cannot perform other writes. Keep the `sub` condition limited to a protected branch. See [claim matching](/concepts/oidc-federation#claim-matching) for other supported patterns.
+Keep the `sub` condition limited to a protected branch and the `--ttl` short. The exchanged token only needs to
+outlive the one command it runs. See [claim matching](/concepts/oidc-federation#claim-matching) for other supported
+patterns.
 
-## Build a component
+<Note>
+  Triggering an App Branch run currently requires `org_admin` permissions.
+  We are in the process of adding more roles so such broad permissions are not required.
+</Note>
 
-Grant the job permission to request an OIDC token, then pass the org, app, and component to the action. The Nuon CLI detects and exchanges the GitHub Actions token automatically.
+## Trigger a branch run from your workflow
 
-```yaml
----
+Grant the job permission to request an OIDC token by setting the `id-token: write` permission on the workflow. Then configure a job step to use the Nuon CLI action. The CLI will detect that it's running in GitHub Actions and perform the token exchange automatically.
+
+```yaml .github/workflows/rollout.yaml
 on:
   push:
     branches:
@@ -54,46 +69,109 @@ permissions:
   id-token: write
 
 jobs:
-  build:
+  rollout:
     runs-on: ubuntu-latest
-    name: Build
+    name: Roll out
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build component
-        uses: nuonco/actions-build@v1.5.3
+      - name: Run your tests
+        run: make test
+
+      - name: Trigger branch run
+        uses: nuonco/actions-nuon@v0.4.1
         with:
           org_id: ${{ vars.nuon_org_id }}
           app_id: ${{ vars.nuon_app_id }}
-          component_id: ${{ vars.nuon_component_id }}
+          command: "apps branches trigger --branch-id main --no-wait"
 ```
 
 <Note>
-  For a self-hosted control plane, pass its API URL as the `api_url` action
-  input and use the same URL as the trust policy audience.
+`--no-wait` will tell the CLI to return as soon as the App Branch run has been successfully created, allowing the GitHub Actions workflow to complete. Depending on how your App Branch is configured, there may still be manual approvals required in the workflows that are triggered.
 </Note>
 
-## API tokens (fallback)
+### Variations
 
-If you can't use OIDC — for example, your organization's policy disallows the `id-token: write` permission, or the run happens outside a context that can mint an OIDC token — you can authenticate with a durable, org-scoped [API token](/concepts/api-tokens) stored as a [GitHub Actions secret](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions).
-
-Create the token and copy it straight into your repository secret (it's shown only once):
-
-```sh
-nuon orgs api-tokens create --name github-actions --role org_builder --output json | jq -r .api_token
-```
-
-Then pass it to the action:
+`--preview` makes the run plan-only: every group is planned, nothing is applied, and you read the per-install diffs
+from the completed run:
 
 ```yaml
-- name: Build component
-  uses: nuonco/actions-build@v1.5.3
-  with:
-    api_token: ${{ secrets.nuon_api_token }}
-    org_id: ${{ vars.nuon_org_id }}
-    app_id: ${{ vars.nuon_app_id }}
-    component_id: ${{ vars.nuon_component_id }}
+command: "apps branches trigger --branch-id main --no-wait --preview"
 ```
 
-Rotate it any time by creating a new token and revoking the old one with `nuon orgs api-tokens delete --id <token-id>`. Creating tokens requires org admin access.
+`--force` rebuilds every component instead of only what changed since the previous run:
+
+```yaml
+command: "apps branches trigger --branch-id main --no-wait --force"
+```
+
+### Further usage
+
+The `command` input takes any CLI command, so the same action covers whatever else your pipeline needs — for example, syncing install config files from your repo:
+
+```yaml
+command: "installs sync -a ${{ vars.nuon_app_id }} -d ./installs --yes"
+```
+
+### Action inputs
+
+| Input           | Required | Description                                                                                        |
+| --------------- | -------- | -------------------------------------------------------------------------------------------------- |
+| `org_id`        | yes      | Your Nuon org ID.                                                                                   |
+| `command`       | no       | The `nuon` command to run, without the leading `nuon`. Omit it to only install and configure the CLI. |
+| `app_id`        | no       | Default app for commands that take one.                                                             |
+| `api_token`     | no       | A static API token. Omit it to authenticate with OIDC.                                              |
+| `api_url`       | no       | The control plane API URL. Defaults to `https://api.nuon.co`.                                       |
+| `oidc_audience` | no       | Audience for the OIDC token, if your trust policy's audience differs from `api_url`.                |
+| `nuon_version`  | no       | CLI version to install. Defaults to the version your control plane reports.                         |
+
+<Note>
+  For a self-hosted control plane, pass its API URL as the `api_url` input and use the same URL as the trust policy
+  audience. If the two must differ, set `oidc_audience` to match the policy.
+</Note>
+
+## Using static API tokens
+
+If you can't use OIDC — for example, your organization disallows the `id-token: write` permission — you can
+authenticate using a long-lived [API token](/concepts/api-tokens).
+
+Create the token and save it in a GitHub Actions secret named `NUON_API_TOKEN`.
+
+```sh
+nuon orgs api-tokens create --name github-actions --role org_admin
+```
+
+Then configure it on the workflow job step.
+The `id-token: write` permission is not required if you are using a token.
+
+```yaml
+- name: Trigger branch run
+  uses: nuonco/actions-nuon@v0.4.1
+  with:
+    api_token: ${{ secrets.NUON_API_TOKEN }}
+    org_id: ${{ vars.nuon_org_id }}
+    app_id: ${{ vars.nuon_app_id }}
+    command: "apps branches trigger --branch-id main --no-wait"
+```
+
+<Note>
+When using static tokens, we strongly recommend rotating them as frequently as is practical.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Configure app branches" icon="code-branch" href="/guides/app-branches">
+    Write the branch config, group your installs, and approve rollouts.
+  </Card>
+  <Card title="How app branches work" icon="lightbulb" href="/concepts/app-branches">
+    Run types, plan and approval flow, and install version history.
+  </Card>
+  <Card title="OIDC federation" icon="key" href="/concepts/oidc-federation">
+    Trust policies, claim matching, and other CI providers.
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/guides/webhooks">
+    React to branch run events from your own systems.
+  </Card>
+</CardGroup>
