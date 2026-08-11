@@ -24,6 +24,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -196,6 +197,8 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 				err := s.service.DB.First(&job, "id = ?", jobID).Error
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), app.RunnerJobStatusCancelled, job.Status)
+				require.NotNil(s.T(), job.CompositeError)
+				assert.Equal(s.T(), joberrors.CancellationErrorType, job.CompositeError.Type)
 			},
 		},
 		{
@@ -246,6 +249,8 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 				err := s.service.DB.First(&job, "id = ?", jobID).Error
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), app.RunnerJobStatusCancelled, job.Status)
+				require.NotNil(s.T(), job.CompositeError)
+				assert.Equal(s.T(), joberrors.CancellationErrorType, job.CompositeError.Type)
 
 				// Verify execution is also cancelled
 				var exec app.RunnerJobExecution
@@ -357,6 +362,8 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 				err := s.service.DB.First(&job, "id = ?", jobID).Error
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), app.RunnerJobStatusCancelled, job.Status)
+				require.NotNil(s.T(), job.CompositeError)
+				assert.Equal(s.T(), joberrors.CancellationErrorType, job.CompositeError.Type)
 			},
 		},
 		{
@@ -471,6 +478,8 @@ func (s *CancelRunnerJobTestSuite) TestCancelRunnerJob() {
 				err := json.Unmarshal(rr.Body.Bytes(), &job)
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), app.RunnerJobStatusCancelled, job.Status)
+				require.NotNil(s.T(), job.CompositeError)
+				assert.Equal(s.T(), joberrors.CancellationErrorType, job.CompositeError.Type)
 				tc.validateFunc(jobID)
 			}
 		})
