@@ -432,6 +432,14 @@ export type TSubscriptionMatch =
 
 export type TInstallSandbox = components['schemas']['app.InstallSandbox']
 
+// Mirrors app.PhoneHomeAuthStatus in ctl-api. Every field is optional: the API omits
+// a timestamp that has not happened yet.
+export type TPhoneHomeAuthStatus = {
+  provisioned_at?: string
+  last_verified_at?: string
+  last_rejected_at?: string
+}
+
 export type TInstall = Omit<components['schemas']['app.Install'], 'sandbox'> & {
   app?: components['schemas']['app.App']
   created_by?: components['schemas']['app.Account']
@@ -441,6 +449,7 @@ export type TInstall = Omit<components['schemas']['app.Install'], 'sandbox'> & {
     description?: string
   }
   org_id?: string
+  phone_home_auth?: TPhoneHomeAuthStatus
   sandbox?: TInstallSandbox
 }
 export type TInstallAzureAccount = components['schemas']['app.AzureAccount']
