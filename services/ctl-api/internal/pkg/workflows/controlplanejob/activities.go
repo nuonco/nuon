@@ -30,6 +30,7 @@ import (
 	runnerhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -401,7 +402,7 @@ func (a *Activities) CreateJobExecutionResult(ctx context.Context, jobID, execut
 		Success:              req.Success,
 		Contents:             req.Contents,
 		ErrorCode:            int(req.ErrorCode),
-		ErrorMetadata:        stringMapToHstore(req.ErrorMetadata),
+		ErrorMetadata:        redactedStringMapToHstore(req.ErrorMetadata),
 		CompositeError:       compositeError,
 	}
 	if req.ContentsCompressed != "" {
@@ -666,10 +667,12 @@ func hstoreToMap(h pgtype.Hstore) map[string]string {
 	return out
 }
 
-func stringMapToHstore(in map[string]string) pgtype.Hstore {
+// redactedStringMapToHstore preserves the raw activity request for parsing and
+// returns a sanitized copy for the execution result row.
+func redactedStringMapToHstore(in map[string]string) pgtype.Hstore {
 	out := pgtype.Hstore{}
 	for key, val := range in {
-		v := val
+		v := compositeerrors.RedactDiagnosticSecrets(val)
 		out[key] = &v
 	}
 	return out
