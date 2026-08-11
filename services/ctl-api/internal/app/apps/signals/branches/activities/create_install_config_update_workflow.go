@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/configdiff"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -106,138 +107,7 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 }
 
 func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigID, newAppConfigID string) (*app.InstallConfigDiff, error) {
-	var newAppCfg app.AppConfig
-	if err := a.db.WithContext(ctx).
-		Preload("ComponentConfigConnections").
-		Preload("ComponentConfigConnections.Component").
-		Preload("ComponentConfigConnections.HelmComponentConfig").
-		Preload("ComponentConfigConnections.TerraformModuleComponentConfig").
-		Preload("ComponentConfigConnections.DockerBuildComponentConfig").
-		Preload("ComponentConfigConnections.ExternalImageComponentConfig").
-		Preload("ComponentConfigConnections.JobComponentConfig").
-		Preload("ComponentConfigConnections.KubernetesManifestComponentConfig").
-		Preload("ComponentConfigConnections.PulumiComponentConfig").
-		Preload("SandboxConfig").
-		Preload("StackConfig").
-		First(&newAppCfg, "id = ?", newAppConfigID).Error; err != nil {
-		return nil, fmt.Errorf("unable to get new app config: %w", err)
-	}
-
-	diff := &app.InstallConfigDiff{
-		Added:     []app.ComponentDiffEntry{},
-		Removed:   []app.ComponentDiffEntry{},
-		Changed:   []app.ComponentDiffEntry{},
-		Unchanged: []app.ComponentDiffEntry{},
-	}
-
-	newConnByComponent := make(map[string]*app.ComponentConfigConnection, len(newAppCfg.ComponentConfigConnections))
-	for i := range newAppCfg.ComponentConfigConnections {
-		ccc := &newAppCfg.ComponentConfigConnections[i]
-		newConnByComponent[ccc.ComponentID] = ccc
-	}
-
-	if oldAppConfigID != "" {
-		var oldAppCfg app.AppConfig
-		if err := a.db.WithContext(ctx).
-			Preload("ComponentConfigConnections").
-			Preload("ComponentConfigConnections.Component").
-			Preload("ComponentConfigConnections.HelmComponentConfig").
-			Preload("ComponentConfigConnections.TerraformModuleComponentConfig").
-			Preload("ComponentConfigConnections.DockerBuildComponentConfig").
-			Preload("ComponentConfigConnections.ExternalImageComponentConfig").
-			Preload("ComponentConfigConnections.JobComponentConfig").
-			Preload("ComponentConfigConnections.KubernetesManifestComponentConfig").
-			Preload("ComponentConfigConnections.PulumiComponentConfig").
-			Preload("SandboxConfig").
-			Preload("StackConfig").
-			First(&oldAppCfg, "id = ?", oldAppConfigID).Error; err == nil {
-
-			oldConnByComponent := make(map[string]*app.ComponentConfigConnection, len(oldAppCfg.ComponentConfigConnections))
-			for i := range oldAppCfg.ComponentConfigConnections {
-				ccc := &oldAppCfg.ComponentConfigConnections[i]
-				oldConnByComponent[ccc.ComponentID] = ccc
-			}
-
-			for componentID, oldConn := range oldConnByComponent {
-				newConn, exists := newConnByComponent[componentID]
-				if !exists {
-					diff.Removed = append(diff.Removed, app.ComponentDiffEntry{
-						ComponentID:   componentID,
-						ComponentName: oldConn.ComponentName,
-						ComponentType: string(oldConn.Type),
-						OldChecksum:   oldConn.Checksum,
-					})
-					continue
-				}
-
-				if oldConn.Checksum != "" && newConn.Checksum != "" && oldConn.Checksum == newConn.Checksum {
-					diff.Unchanged = append(diff.Unchanged, app.ComponentDiffEntry{
-						ComponentID:   componentID,
-						ComponentName: newConn.ComponentName,
-						ComponentType: string(newConn.Type),
-						OldChecksum:   oldConn.Checksum,
-						NewChecksum:   newConn.Checksum,
-					})
-				} else {
-					diff.Changed = append(diff.Changed, app.ComponentDiffEntry{
-						ComponentID:   componentID,
-						ComponentName: newConn.ComponentName,
-						ComponentType: string(newConn.Type),
-						OldChecksum:   oldConn.Checksum,
-						NewChecksum:   newConn.Checksum,
-					})
-				}
-
-				delete(newConnByComponent, componentID)
-			}
-
-			for componentID, newConn := range newConnByComponent {
-				diff.Added = append(diff.Added, app.ComponentDiffEntry{
-					ComponentID:   componentID,
-					ComponentName: newConn.ComponentName,
-					ComponentType: string(newConn.Type),
-					NewChecksum:   newConn.Checksum,
-				})
-			}
-
-			if oldAppCfg.SandboxConfig.ID != newAppCfg.SandboxConfig.ID {
-				diff.SandboxChanged = true
-				diff.SandboxOldID = oldAppCfg.SandboxConfig.ID
-				diff.SandboxNewID = newAppCfg.SandboxConfig.ID
-			}
-
-			if oldAppCfg.StackConfig.ID != newAppCfg.StackConfig.ID {
-				diff.StackChanged = true
-				diff.StackOldID = oldAppCfg.StackConfig.ID
-				diff.StackNewID = newAppCfg.StackConfig.ID
-			}
-
-			// TODO: sandbox/stack should compare content, not just IDs (same as compute_install_config_diff.go)
-		}
-	}
-
-	if oldAppConfigID == "" {
-		for componentID, newConn := range newConnByComponent {
-			diff.Added = append(diff.Added, app.ComponentDiffEntry{
-				ComponentID:   componentID,
-				ComponentName: newConn.ComponentName,
-				ComponentType: string(newConn.Type),
-				NewChecksum:   newConn.Checksum,
-			})
-		}
-
-		if newAppCfg.SandboxConfig.ID != "" {
-			diff.SandboxChanged = true
-			diff.SandboxNewID = newAppCfg.SandboxConfig.ID
-		}
-
-		if newAppCfg.StackConfig.ID != "" {
-			diff.StackChanged = true
-			diff.StackNewID = newAppCfg.StackConfig.ID
-		}
-	}
-
-	return diff, nil
+	return configdiff.ComputeInstallConfigDiff(ctx, a.db, oldAppConfigID, newAppConfigID)
 }
 
 func (a *Activities) saveDiffBlob(ctx context.Context, installConfigUpdateID string, diff *app.InstallConfigDiff) error {

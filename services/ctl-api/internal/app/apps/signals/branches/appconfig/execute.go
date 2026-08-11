@@ -195,8 +195,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
+	// The baseline lookup for PR comments excludes configs labelled as previews,
+	// so the label has to track preview-ness rather than how the run was
+	// triggered — otherwise a plan-only run's config becomes the baseline that
+	// the next preview diffs against.
+	source := string(run.RunType)
+	if run.IsPreview() {
+		source = string(app.AppBranchRunTypeGitPreview)
+	}
 	configLabels := labels.Labels{
-		"source": string(run.RunType),
+		"source": source,
 	}
 	if run.HeadSHA != "" {
 		configLabels["commit"] = run.HeadSHA

@@ -15,13 +15,32 @@ const (
 	PRCommentStatusSkipped PRCommentStatus = "skipped"
 )
 
+// InstallImpact is what a preview run would change on a single install if the
+// config were applied. Nothing is applied to produce it.
+type InstallImpact struct {
+	InstallID      string
+	InstallName    string
+	Added          int
+	Changed        int
+	Removed        int
+	Unchanged      int
+	SandboxChanged bool
+	StackChanged   bool
+}
+
+type InstallGroupImpact struct {
+	GroupName string
+	Installs  []InstallImpact
+}
+
 type PRCommentParams struct {
-	AppName      string
-	RunID        string
-	RunURL       string
-	Status       PRCommentStatus
-	Diff         *ComputeAppConfigDiffOutput
-	ErrorMessage string
+	AppName       string
+	RunID         string
+	RunURL        string
+	Status        PRCommentStatus
+	Diff          *ComputeAppConfigDiffOutput
+	InstallImpact []InstallGroupImpact
+	ErrorMessage  string
 }
 
 func BuildPRCommentBody(p *PRCommentParams) string {
@@ -62,6 +81,10 @@ func BuildPRCommentBody(p *PRCommentParams) string {
 		}
 	} else if p.Diff != nil {
 		writeDiffSection(&b, p.Diff)
+	}
+
+	if p.Status != PRCommentStatusSkipped && len(p.InstallImpact) > 0 {
+		writeInstallImpactSection(&b, p.InstallImpact)
 	}
 
 	b.WriteString("\n---\n")
@@ -118,6 +141,44 @@ func writeDiffSection(b *strings.Builder, diff *ComputeAppConfigDiffOutput) {
 		}
 		b.WriteString("\n</details>\n\n")
 	}
+}
+
+func writeInstallImpactSection(b *strings.Builder, groups []InstallGroupImpact) {
+	total := 0
+	for _, g := range groups {
+		total += len(g.Installs)
+	}
+
+	b.WriteString(fmt.Sprintf("### Install Impact — %d install(s)\n\n", total))
+	b.WriteString("Preview only — nothing was applied to these installs.\n\n")
+
+	for _, g := range groups {
+		if len(g.Installs) == 0 {
+			continue
+		}
+
+		b.WriteString(fmt.Sprintf("<details><summary><b>%s</b> (%d)</summary>\n\n", g.GroupName, len(g.Installs)))
+		b.WriteString("| Install | Added | Changed | Removed | Sandbox | Stack |\n")
+		b.WriteString("|---------|-------|---------|---------|---------|-------|\n")
+		for _, i := range g.Installs {
+			b.WriteString(fmt.Sprintf("| %s | %s | %s | %s | %s | %s |\n",
+				i.InstallName,
+				formatCount(i.Added, "+"),
+				formatCount(i.Changed, ""),
+				formatCount(i.Removed, ""),
+				formatChanged(i.SandboxChanged),
+				formatChanged(i.StackChanged),
+			))
+		}
+		b.WriteString("\n</details>\n\n")
+	}
+}
+
+func formatChanged(changed bool) string {
+	if changed {
+		return "⚠️ changed"
+	}
+	return "—"
 }
 
 func formatCount(n int, prefix string) string {

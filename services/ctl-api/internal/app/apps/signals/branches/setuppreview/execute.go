@@ -5,7 +5,6 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 )
 
@@ -17,7 +16,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app branch run: %w", err)
 	}
 
-	if run.RunType != app.AppBranchRunTypeGitPreview {
+	if !run.IsPreview() {
 		logger.Info("not a preview run, skipping setup")
 		return nil
 	}
