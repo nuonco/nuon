@@ -84,6 +84,19 @@ func (s *service) findInstallActionWorkflowRun(ctx context.Context, runID string
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install action workflow runs: %w", res.Error)
 	}
+
+	switch run.Status {
+	case app.InstallActionRunStatusError:
+		if run.CompositeError != nil {
+			return run, nil
+		}
+	case app.InstallActionRunStatusCancelled, app.InstallActionRunStatusTimedOut:
+		run.CompositeError = nil
+	default:
+		run.CompositeError = nil
+		return run, nil
+	}
+
 	run.CompositeError, err = runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{
 		OwnerID:   run.ID,
 		OwnerType: "install_action_workflow_runs",
