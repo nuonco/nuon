@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/joberrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -47,7 +48,7 @@ func (s *service) CreateRunnerJobExecution(ctx *gin.Context) {
 	cctx.SetOrgIDGinContext(ctx, runnerJob.OrgID)
 
 	if runnerJob.ExecutionCount >= runnerJob.MaxExecutions {
-		if _, err := s.cancelRunnerJob(ctx, runnerJobID); err != nil {
+		if _, err := s.cancelRunnerJob(ctx, runnerJobID, joberrors.CancellationReasonAttemptsExhausted); err != nil {
 			ctx.Error(errors.Wrap(err, "unable to cancel runner job"))
 			return
 		}
