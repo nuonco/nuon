@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
@@ -79,7 +80,12 @@ func (a *Role) AllowsContext(roleContext string) bool {
 }
 
 func (a *Role) Indexes(db *gorm.DB) []migrations.Index {
-	return []migrations.Index{}
+	return []migrations.Index{
+		{
+			Name:    indexes.Name(db, &Role{}, "org_id"),
+			Columns: []string{"org_id", "role_type"},
+		},
+	}
 }
 
 func (a *Role) BeforeCreate(tx *gorm.DB) error {

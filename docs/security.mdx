@@ -20,6 +20,10 @@ All infrastructure in a customer's account is created by the customer themselves
 
 Runners use separate IAM roles for different operations (provisioning, maintenance, deprovisioning), each scoped to the minimum permissions required. Components and actions define their own roles and policies, so the Runner never holds more access than a single job needs. See [Permissions](/config-ref/permissions) for configuration details.
 
+## Control-Plane Access Control
+
+Access within your Nuon org is governed by roles. Every identity — a team member, service account, API token, or OIDC trust policy — is assigned a single role that determines what it can read and change, and roles are scoped to a single org. See [Access control](/concepts/access-control) for the full model.
+
 ## Customer Kill Switch
 
 The customer controls the Runner through the Stack. They can disable the Runner at any time to stop it from executing jobs, and re-enable it when ready. No action from the vendor or Nuon is required.
