@@ -53,6 +53,7 @@ type streamSession struct {
 	client      nuon.Client
 	l           *zap.Logger
 	logStreamID string
+	runnerJobID string
 	order       string
 	isOpen      bool
 
@@ -111,6 +112,7 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 		client:          client,
 		l:               h.l,
 		logStreamID:     logStreamID,
+		runnerJobID:     c.Query("runner_job_id"),
 		order:           order,
 		isOpen:          logStream.Open,
 		lastStatusCheck: time.Now(),
@@ -170,9 +172,10 @@ func (s *streamSession) runTail(ctx context.Context) {
 		// idle steady-state is bounded by the server's 30s wait cap.
 		wait = ""
 
-		if len(resp.Logs) > 0 {
+		logs := filterLogsByRunnerJobID(resp.Logs, s.runnerJobID)
+		if len(logs) > 0 {
 			if !s.hasSeenFirstBatch {
-				s.isCatchingUp = len(resp.Logs) >= streamingThreshold || resp.HasMore
+				s.isCatchingUp = len(logs) >= streamingThreshold || resp.HasMore
 				s.hasSeenFirstBatch = true
 				if s.isCatchingUp {
 					s.sendStatus("catching-up")
@@ -180,18 +183,14 @@ func (s *streamSession) runTail(ctx context.Context) {
 			}
 
 			if s.isCatchingUp {
-				s.sendEvent(resp.Logs)
-				if !resp.HasMore {
-					s.isCatchingUp = false
-					s.sendStatus("live")
-				}
+				s.sendEvent(logs)
 			} else if !s.isOpen {
 				// Closed stream: no typewriter pacing, just dump.
-				s.sendEvent(resp.Logs)
+				s.sendEvent(logs)
 			} else {
 				// Live stream: pace one log at a time so output streams
 				// in rather than landing in 100-line jumps.
-				for _, log := range resp.Logs {
+				for _, log := range logs {
 					select {
 					case <-ctx.Done():
 						return
@@ -200,10 +199,13 @@ func (s *streamSession) runTail(ctx context.Context) {
 					s.sendEvent([]*models.AppOtelLogRecord{log})
 				}
 			}
-
-			if resp.Next != "" {
-				since = resp.Next
-			}
+		}
+		if s.isCatchingUp && !resp.HasMore {
+			s.isCatchingUp = false
+			s.sendStatus("live")
+		}
+		if resp.Next != "" {
+			since = resp.Next
 		}
 
 		if !s.isOpen && len(resp.Logs) == 0 {
@@ -251,6 +253,8 @@ func (s *streamSession) runLegacy(ctx context.Context, currentOffset string) {
 			currentOffset = nextOffset
 		}
 
+		logs = filterLogsByRunnerJobID(logs, s.runnerJobID)
+		paginationComplete := nextOffset == ""
 		if len(logs) > 0 {
 			if !s.hasSeenFirstBatch {
 				s.isCatchingUp = len(logs) >= streamingThreshold
@@ -260,14 +264,9 @@ func (s *streamSession) runLegacy(ctx context.Context, currentOffset string) {
 				}
 			}
 
-			paginationComplete := nextOffset == ""
-
 			if s.isCatchingUp {
 				s.sendEvent(logs)
-				if paginationComplete {
-					s.isCatchingUp = false
-					s.sendStatus("live")
-				} else {
+				if !paginationComplete {
 					continue
 				}
 			} else if !s.isOpen {
@@ -282,6 +281,10 @@ func (s *streamSession) runLegacy(ctx context.Context, currentOffset string) {
 					s.sendEvent([]*models.AppOtelLogRecord{log})
 				}
 			}
+		}
+		if s.isCatchingUp && paginationComplete {
+			s.isCatchingUp = false
+			s.sendStatus("live")
 		}
 
 		if !s.isOpen && nextOffset == "" {
@@ -341,6 +344,7 @@ func (h *LogStreamsHandler) DownloadLogs(c *gin.Context) {
 	c.Writer.WriteHeader(http.StatusOK)
 
 	jobOutputOnly := c.Query("job_output") == "true"
+	runnerJobID := c.Query("runner_job_id")
 
 	for {
 		logs, nextOffset, err := client.LogStreamReadLogsWithNextOffset(ctx, logStreamID, offset, order)
@@ -349,6 +353,8 @@ func (h *LogStreamsHandler) DownloadLogs(c *gin.Context) {
 			break
 		}
 
+		batchSize := len(logs)
+		logs = filterLogsByRunnerJobID(logs, runnerJobID)
 		for _, log := range logs {
 			if jobOutputOnly && log.ScopeName != "oteljob" {
 				continue
@@ -357,10 +363,24 @@ func (h *LogStreamsHandler) DownloadLogs(c *gin.Context) {
 		}
 		c.Writer.Flush()
 
-		totalLogs += len(logs)
+		totalLogs += batchSize
 		if nextOffset == "" || totalLogs >= maxDownloadLogs {
 			break
 		}
 		offset = nextOffset
 	}
+}
+
+func filterLogsByRunnerJobID(logs []*models.AppOtelLogRecord, runnerJobID string) []*models.AppOtelLogRecord {
+	if runnerJobID == "" {
+		return logs
+	}
+
+	filtered := make([]*models.AppOtelLogRecord, 0, len(logs))
+	for _, log := range logs {
+		if log.RunnerJobID == runnerJobID {
+			filtered = append(filtered, log)
+		}
+	}
+	return filtered
 }

@@ -18,6 +18,7 @@ type ConnectionState =
 export type LogStreamContextValue = {
   logs: TOTELLog[]
   logStreamId: string
+  runnerJobId?: string
   isLoading: boolean
   isCatchingUp: boolean
   error: TAPIError | null
@@ -31,10 +32,12 @@ export const LogStreamContext = createContext<
 export function LogStreamProvider({
   children,
   logStreamId,
+  runnerJobId,
   renderWhilePending = false,
 }: {
   children: ReactNode
   logStreamId?: string
+  runnerJobId?: string
   renderWhilePending?: boolean
 }) {
   const { org } = useOrg()
@@ -86,7 +89,10 @@ export function LogStreamProvider({
       setConnState('connecting')
       setError(null)
 
-      const url = `/api/orgs/${org.id}/log-streams/${logStreamId}/logs/sse`
+      const params = new URLSearchParams()
+      if (runnerJobId) params.set('runner_job_id', runnerJobId)
+      const query = params.toString()
+      const url = `/api/orgs/${org.id}/log-streams/${logStreamId}/logs/sse${query ? `?${query}` : ''}`
       const eventSource = new EventSource(url)
       eventSourceRef.current = eventSource
 
@@ -177,7 +183,7 @@ export function LogStreamProvider({
     return () => {
       disconnect()
     }
-  }, [logStreamId, org?.id])
+  }, [logStreamId, org?.id, runnerJobId])
 
   if (!logStreamId) {
     if (!renderWhilePending) return <LogsPageSkeleton />
@@ -186,6 +192,7 @@ export function LogStreamProvider({
         value={{
           logs: [],
           logStreamId: '',
+          runnerJobId,
           isLoading: false,
           isCatchingUp: false,
           error: null,
@@ -206,6 +213,7 @@ export function LogStreamProvider({
       value={{
         logs,
         logStreamId,
+        runnerJobId,
         isLoading,
         isCatchingUp,
         error,
