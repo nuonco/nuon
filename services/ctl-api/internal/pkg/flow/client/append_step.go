@@ -49,9 +49,10 @@ type AppendStepRequest struct {
 	// StepTargetID identifies the work the step drives (e.g. the action run id)
 	// and doubles as the append idempotency key — a retry with the same id
 	// returns the existing step instead of appending a duplicate.
-	StepTargetID string
-	Retryable    bool
-	Skippable    bool
+	StepTargetID  string
+	Retryable     bool
+	Skippable     bool
+	SkipOnFailure bool
 }
 
 // AppendStepResponse reports the freshly-created group and step IDs.
@@ -128,6 +129,7 @@ func (c *Client) appendStepOnce(ctx context.Context, qs *app.QueueSignal, req *A
 				StepTargetID:   req.StepTargetID,
 				Retryable:      req.Retryable,
 				Skippable:      req.Skippable,
+				SkipOnFailure:  req.SkipOnFailure,
 			},
 		},
 	})
