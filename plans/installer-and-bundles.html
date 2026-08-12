@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Installer and Bundles — Flow</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --green: #4ade80;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --red: #f87171;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem;
+    line-height: 1.6;
+  }
+  h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .subtitle { color: var(--muted); margin-bottom: 2rem; font-size: 0.95rem; }
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .tab {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+  .tab:hover { border-color: var(--accent); color: var(--text); }
+  .tab.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .mermaid {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+  }
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+  }
+  .info-card h3 {
+    font-size: 0.9rem;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .info-card p, .info-card li {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .info-card ul, .info-card ol { padding-left: 1.2rem; }
+  .info-card li { margin-bottom: 0.3rem; }
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-green { background: rgba(74, 222, 128, 0.15); color: var(--green); }
+  .badge-orange { background: rgba(251, 146, 60, 0.15); color: var(--orange); }
+  .badge-purple { background: rgba(167, 139, 250, 0.15); color: var(--purple); }
+  .badge-red { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+  .badge-blue { background: rgba(56, 189, 248, 0.15); color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+  th, td {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  th { color: var(--accent); font-weight: 600; }
+  td { color: var(--muted); }
+  code {
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--accent);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+  }
+</style>
+</head>
+<body>
+
+<h1>Installer and Bundles</h1>
+<p class="subtitle">
+  How an app-branch-run becomes a signed bundle, how the customer-run installer pulls and verifies it,
+  and how bundle installs execute workflows with customer approvals. RFC: <code>installer-and-bundles.md</code>.
+</p>
+
+<div class="tabs">
+  <div class="tab active" data-panel="overview">Overview</div>
+  <div class="tab" data-panel="publish">Bundle Publish</div>
+  <div class="tab" data-panel="connect">Installer Connect &amp; Verify</div>
+  <div class="tab" data-panel="execute">Execution &amp; Approvals</div>
+  <div class="tab" data-panel="datamodel">Data Model</div>
+</div>
+
+<!-- Overview Panel -->
+<div id="overview" class="panel active">
+  <div class="mermaid">
+    <pre class="mermaid-src">
+flowchart LR
+    subgraph Vendor["Vendor (Nuon control plane)"]
+        ABR["App branch run<br/>(builds every component)"]
+        PUB["publish-bundle step<br/>pack + digest + sign"]
+        BND["Bundle<br/>OCI artifact in org ECR"]
+        API["ctl-api<br/>bundles + installer-auth services"]
+        DASH["Dashboard<br/>bundles + bundle-install views"]
+    end
+
+    subgraph Customer["Customer environment"]
+        INST["nuon-installer CLI<br/>(embedded web UI)"]
+        IAPI["installer-api<br/>local (S3) or remote mode"]
+        EXEC["controlplane.Executor<br/>runs runner jobs"]
+        RES["Cloud resources<br/>(terraform / helm / manifests)"]
+    end
+
+    ABR --> PUB --> BND
+    BND -->|"download grant<br/>(tar.gz or OCI pull)"| INST
+    API <-->|"HMAC connect → scoped token"| INST
+    INST --> IAPI
+    IAPI -->|"verify signature,<br/>approve / deny"| EXEC
+    EXEC --> RES
+    EXEC -->|"job results, bundle status,<br/>workflow status, health"| API
+    API --> DASH
+
+    style ABR fill:#1e40af,stroke:#3b82f6,color:#fff
+    style PUB fill:#059669,stroke:#34d399,color:#fff
+    style BND fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style INST fill:#d97706,stroke:#fbbf24,color:#fff
+    style IAPI fill:#0891b2,stroke:#22d3ee,color:#fff
+    style EXEC fill:#be185d,stroke:#f472b6,color:#fff
+    </pre>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>Bundles</h3>
+      <p>
+        A bundle is cut <b>1:1 from an app-branch-run</b> when the app has
+        <code>bundle_enabled: true</code>. It packages every component build artifact, the sandbox
+        build, and an encoded workflows manifest into a single OCI artifact with a manifest digest,
+        transport checksum, and per-install <span class="badge badge-purple">ed25519</span> signatures.
+      </p>
+    </div>
+    <div class="info-card">
+      <h3>Bundle installs</h3>
+      <p>
+        An install with <code>management_mode: bundle</code> has no Nuon-managed runner. The customer
+        runs the installer, which pulls bundles, verifies them against the install's public key,
+        shows an approval view, and executes the workflow steps locally — pushing back a
+        <b>limited set of status</b>: bundle state, workflow statuses, component health.
+      </p>
+    </div>
+    <div class="info-card">
+      <h3>Installer modes</h3>
+      <ul>
+        <li><span class="badge badge-blue">remote</span> installer-api proxies the control plane with a short-lived scoped token</li>
+        <li><span class="badge badge-orange">local</span> installer-api reads/writes everything from the customer's S3 bucket</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>Reused machinery</h3>
+      <ul>
+        <li><code>pkg/runner/controlplane/executor.go</code> — embeddable job executor</li>
+        <li><code>RunnerJob.Executor</code> gains third value <code>installer</code></li>
+        <li>Existing <code>WorkflowStepApproval</code> / <code>Response</code> flow</li>
+        <li><code>pkg/runner/oci/archive</code> oras packing, org ECR repos</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Bundle Publish Panel -->
+<div id="publish" class="panel">
+  <div class="mermaid">
+    <pre class="mermaid-src">
+flowchart TB
+    RUN["App branch run workflow<br/><code>apps/workflows/app_branch_run.go</code>"]
+    RUN --> FETCH["fetch commit"] --> CFG["sync app config"] --> BUILDS["builds step group<br/>(per-component queuebuild + sandbox)"]
+
+    BUILDS --> GATE{"app.bundle_enabled<br/>&amp;&amp; not preview?"}
+    GATE -->|"No"| GROUPS["install group plan / deploy steps"]
+    GATE -->|"Yes"| SIG["publish-bundle step group<br/>new signal <b>publishbundle</b>"]
+    SIG --> GROUPS
+
+    subgraph Publish["publishbundle signal activities"]
+        A1["get_bundle_inputs<br/>run + ComponentBuilds by AppBranchRunID<br/>+ sandbox build"]
+        A2["create_bundle_record<br/>Bundle(status=publishing) + BundleArtifact rows"]
+        A3["publish_bundle<br/>copy build artifacts into org ECR<br/>bundles repo, assemble OCI index"]
+        A4["encode_workflows<br/>snapshot workflows / runbooks / actions<br/>→ WorkflowsManifest"]
+        A5["sign_bundle<br/>ed25519 over manifest digest<br/>per bundle-mode install"]
+        A6["update_bundle_status<br/>→ active | error"]
+        A1 --> A2 --> A3 --> A4 --> A5 --> A6
+    end
+
+    SIG -.-> A1
+    A6 --> DONE["Bundle active<br/>visible in dashboard + installer"]
+
+    style RUN fill:#1e40af,stroke:#3b82f6,color:#fff
+    style SIG fill:#059669,stroke:#34d399,color:#fff
+    style A3 fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style A5 fill:#d97706,stroke:#fbbf24,color:#fff
+    style DONE fill:#0891b2,stroke:#22d3ee,color:#fff
+    </pre>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>Insertion point</h3>
+      <p>
+        The publish step group slots in <b>after builds, before the preview early-return and install
+        groups</b> in the branch-run step generator. It is skippable, so a publish failure never
+        blocks managed installs from deploying.
+      </p>
+    </div>
+    <div class="info-card">
+      <h3>Storage</h3>
+      <p>
+        Primary artifact is an OCI index in the org's ECR registry (repo
+        <code>&lt;org&gt;/&lt;app&gt;/bundles</code>, provisioned like component repos). A
+        <b>tar.gz export</b> is produced on demand by the download-grant endpoint and served via a
+        presigned URL — that one file is the manual handoff.
+      </p>
+    </div>
+    <div class="info-card">
+      <h3>Cherry-picked from <code>amp/airgap-bundle-mvp</code></h3>
+      <ul>
+        <li><code>publish_bundle.go</code>, <code>root_template.go</code>, <code>update_bundle_status.go</code></li>
+        <li><code>transport/s3.go</code> + <code>download_grants.go</code></li>
+        <li>Dashboard <code>BundlesTable</code> / <code>DownloadBundle</code></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Installer Connect & Verify Panel -->
+<div id="connect" class="panel">
+  <div class="mermaid">
+    <pre class="mermaid-src">
+sequenceDiagram
+    participant V as Vendor (dashboard)
+    participant API as ctl-api
+    participant C as Customer operator
+    participant I as nuon-installer
+
+    V->>API: POST /v1/installs/{id}/installer-agents
+    API-->>V: InstallerAgent + join secret (shown once)
+    V->>C: hand off installer binary + join secret
+
+    C->>I: nuon-installer connect
+    I->>API: POST /v1/installer-auth/connect (HMAC-signed handshake)
+    API->>API: verify HMAC, mark agent connected
+    API-->>I: short-lived scoped token + org/app/install metadata + bucket config
+
+    C->>I: nuon-installer run (starts installer-api + web UI)
+    I->>API: GET /v1/installer/bundles
+    API-->>I: bundles + this install's BundleSignature
+    I->>API: POST /v1/installer/bundles/{id}/download-grant
+    API-->>I: OCI pull creds or presigned tar.gz
+    I->>I: pull bundle, verify checksum
+    I->>I: ed25519 verify signature vs install public key
+    I->>API: PUT /v1/installer/bundles/{id}/status (verified)
+    </pre>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>Auth model</h3>
+      <p>
+        <span class="badge badge-orange">bootstrap</span> HMAC join secret proves agent identity at a
+        public endpoint (precedent: stack phone-home).
+        <span class="badge badge-blue">steady state</span> ctl-api mints a short-lived token carrying
+        the existing <code>installer</code> role scoped to the install (precedent:
+        <code>runner-auth</code> token minting). Revoking the agent stops honoring its HMAC.
+      </p>
+    </div>
+    <div class="info-card">
+      <h3>Signing &amp; verification</h3>
+      <p>
+        Each install can create one active keypair (<code>InstallSigningKey</code>): private key
+        server-held in Secrets Manager, public key exposed via API so the customer can pin it
+        out-of-band. Publish signs the manifest digest per bundle-mode install; the installer's
+        <code>verify</code> uses only the public key + new shared <code>pkg/signing</code>.
+      </p>
+    </div>
+    <div class="info-card">
+      <h3>Local mode</h3>
+      <p>
+        With no control-plane connectivity, the installer-api reads bundles and records state
+        (statuses, approvals) in the customer's S3 bucket, then replays pushes on reconnect. Same
+        UI, same verify path.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Execution & Approvals Panel -->
+<div id="execute" class="panel">
+  <div class="mermaid">
+    <pre class="mermaid-src">
+sequenceDiagram
+    participant API as ctl-api (flow conductor)
+    participant Q as RunnerJobs (executor=installer)
+    participant I as nuon-installer
+    participant U as Customer (installer web UI)
+    participant R as Cloud resources
+
+    API->>API: workflow generated with ExecutionMode=installer<br/>(from Install.ManagementMode)
+    API->>Q: plan step creates RunnerJob (executor=installer)
+    I->>Q: GET /v1/runners/.../jobs?executor=installer
+    Q-->>I: claim plan job
+    I->>R: controlplane.Executor runs plan
+    I->>API: job execution result (plan contents)
+    API->>API: create WorkflowStepApproval, step awaits approval
+
+    U->>I: review plan in installer UI
+    I->>API: GET /v1/installer/approvals (+ contents blob)
+    U->>I: approve / deny
+    I->>API: POST /v1/installer/approvals/{id}/response
+    API->>API: conductor resumes (approve) or stops (deny)
+
+    API->>Q: apply step creates RunnerJob (executor=installer)
+    I->>Q: claim apply job
+    I->>R: execute apply
+    I->>API: results + outputs + component health
+    API->>API: workflow step statuses update<br/>dashboard bundle-install view reflects state
+    </pre>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>No new dispatch system</h3>
+      <p>
+        The installer is, from the control plane's perspective, a runner: jobs carry
+        <code>Executor = installer</code>, only the installer's token can claim them, and results
+        flow through the existing execution-result endpoints — so workflow status appears in the
+        dashboard with zero new ingestion code.
+      </p>
+    </div>
+    <div class="info-card">
+      <h3>Structural prerequisite</h3>
+      <p>
+        Promote <code>bins/runner/internal/jobs/{deploy,actions,sandbox,healthcheck}</code> →
+        <code>pkg/runner/jobs/</code> so the embeddable executor can register deploy handlers.
+        Mechanical move, shipped as its own PR.
+      </p>
+    </div>
+    <div class="info-card">
+      <h3>Approvals</h3>
+      <p>
+        Reuses <code>WorkflowStepApproval</code> / <code>WorkflowStepApprovalResponse</code> and the
+        conductor's 30-day await unchanged. Bundle installs default plan steps to execution type
+        <span class="badge badge-purple">approval</span> — the customer must approve in the
+        installer UI before apply runs.
+      </p>
+    </div>
+    <div class="info-card">
+      <h3>Managed install controls</h3>
+      <p>
+        For managed installs the same installer surface exposes read-only resources, health, and
+        approvals — powered by the control-plane API with the scoped token (remote mode only).
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Data Model Panel -->
+<div id="datamodel" class="panel">
+  <div class="mermaid">
+    <pre class="mermaid-src">
+erDiagram
+    APP ||--o{ APP_BRANCH : has
+    APP_BRANCH ||--o{ APP_BRANCH_RUN : has
+    APP_BRANCH_RUN ||--o| BUNDLE : "1:1 (unique index)"
+    BUNDLE ||--o{ BUNDLE_ARTIFACT : contains
+    BUNDLE ||--o{ BUNDLE_SIGNATURE : "signed per install"
+    BUNDLE ||--o| OCI_ARTIFACT : "polymorphic owner"
+    INSTALL ||--o| INSTALL_SIGNING_KEY : "one active keypair"
+    INSTALL ||--o{ BUNDLE_SIGNATURE : verifies
+    INSTALL ||--o{ INSTALLER_AGENT : "connected CLIs"
+    INSTALL ||--o{ INSTALL_BUNDLE : "pushed status"
+    BUNDLE ||--o{ INSTALL_BUNDLE : "per-install state"
+    INSTALL ||--o{ WORKFLOW : owns
+    WORKFLOW ||--o{ WORKFLOW_STEP : has
+    WORKFLOW_STEP ||--o| STEP_APPROVAL : awaits
+    WORKFLOW_STEP ||--o| RUNNER_JOB : "executor=installer"
+
+    APP {
+        bool bundle_enabled "new"
+    }
+    INSTALL {
+        enum management_mode "managed | bundle (new, view v10)"
+    }
+    BUNDLE {
+        string app_branch_run_id UK
+        string status "pending publishing active error"
+        string manifest_digest
+        string transport_checksum
+        jsonb workflows_manifest
+    }
+    BUNDLE_ARTIFACT {
+        string kind "component sandbox workflows-manifest"
+        string logical_name
+        string digest
+    }
+    BUNDLE_SIGNATURE {
+        string install_id
+        string signed_digest
+        string signature "base64 ed25519"
+    }
+    INSTALL_SIGNING_KEY {
+        string public_key "PEM, exposed"
+        jsonb private_key_ref "secrets manager, never returned"
+    }
+    INSTALLER_AGENT {
+        string status "created connected disconnected revoked"
+        jsonb bucket_config
+        jsonb auth_config "HMAC join secret ref"
+    }
+    INSTALL_BUNDLE {
+        string status "available downloaded verified applying applied failed"
+        timestamp verified_at
+        timestamp applied_at
+    }
+    WORKFLOW {
+        string execution_mode "control-plane | installer (new)"
+    }
+    RUNNER_JOB {
+        string executor "org-runner | control-plane | installer (new)"
+    }
+    </pre>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>New models</h3>
+      <table>
+        <tr><th>Model</th><th>File</th></tr>
+        <tr><td><code>Bundle</code></td><td><code>internal/app/bundle.go</code></td></tr>
+        <tr><td><code>BundleArtifact</code></td><td><code>internal/app/bundle_artifact.go</code></td></tr>
+        <tr><td><code>BundleSignature</code></td><td><code>internal/app/bundle_signature.go</code></td></tr>
+        <tr><td><code>InstallSigningKey</code></td><td><code>internal/app/install_signing_key.go</code></td></tr>
+        <tr><td><code>InstallerAgent</code></td><td><code>internal/app/installer_agent.go</code></td></tr>
+        <tr><td><code>InstallBundle</code></td><td><code>internal/app/install_bundle.go</code></td></tr>
+      </table>
+    </div>
+    <div class="info-card">
+      <h3>Modified models</h3>
+      <table>
+        <tr><th>Model</th><th>Change</th></tr>
+        <tr><td><code>App</code></td><td><code>BundleEnabled bool</code></td></tr>
+        <tr><td><code>Org</code></td><td>feature flag <code>bundles</code></td></tr>
+        <tr><td><code>Install</code></td><td><code>ManagementMode</code> enum + <code>installs_view_v10</code></td></tr>
+        <tr><td><code>RunnerJob</code></td><td><code>Executor</code> += <code>installer</code></td></tr>
+        <tr><td><code>Workflow</code></td><td><code>ExecutionMode</code></td></tr>
+      </table>
+    </div>
+    <div class="info-card">
+      <h3>What stays as-is</h3>
+      <ul>
+        <li>Workflow statuses — real <code>Workflow</code>/<code>WorkflowStep</code> rows updated via job results</li>
+        <li>Component health — existing runner health-report ingestion</li>
+        <li><code>OCIArtifact</code> — existing polymorphic model gains a <code>bundles</code> owner</li>
+        <li>Dormant branding <code>app.Installer</code> — untouched; the CLI-connection model is <code>InstallerAgent</code></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    themeVariables: {
+      darkMode: true,
+      background: '#1e293b',
+      primaryColor: '#38bdf8',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#475569',
+      lineColor: '#64748b',
+      secondaryColor: '#334155',
+      tertiaryColor: '#1e293b',
+    },
+    flowchart: { curve: 'basis', padding: 20 },
+    sequence: { actorMargin: 60, messageFontSize: 13 },
+  });
+
+  const rendered = new Set();
+
+  async function renderDiagrams() {
+    const sources = document.querySelectorAll('.panel.active .mermaid-src');
+    for (const el of sources) {
+      if (rendered.has(el)) continue;
+      const container = el.parentElement;
+      const id = 'mermaid-' + Math.random().toString(36).slice(2, 8);
+      try {
+        const { svg } = await mermaid.render(id, el.textContent.trim());
+        container.innerHTML = svg;
+        rendered.add(el);
+      } catch (e) {
+        console.error('Mermaid render error:', e);
+      }
+    }
+  }
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.panel).classList.add('active');
+      renderDiagrams();
+    });
+  });
+
+  renderDiagrams();
+</script>
+
+</body>
+</html>
