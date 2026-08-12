@@ -64,6 +64,23 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 	allParamNames := map[string]string{}
 	prevDeploymentName := ""
 
+	// param name -> producing deployment; seeded with vnet outputs so they win over custom ones
+	wiredOutputs := map[string]string{}
+	for _, name := range []string{
+		"vnetId", "vnetName",
+		"publicSubnet1Id", "publicSubnet1Name",
+		"publicSubnet2Id", "publicSubnet2Name",
+		"publicSubnet3Id", "publicSubnet3Name",
+		"privateSubnet1Id", "privateSubnet1Name",
+		"privateSubnet2Id", "privateSubnet2Name",
+		"privateSubnet3Id", "privateSubnet3Name",
+		"runnerSubnetId", "runnerSubnetName",
+		"publicSubnetIds", "publicSubnetNames",
+		"privateSubnetIds", "privateSubnetNames",
+	} {
+		wiredOutputs[name] = "vnetDeployment"
+	}
+
 	for i, stack := range sorted {
 		if stack.Name == "" {
 			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d]: name is required", i)
@@ -120,14 +137,6 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			})
 		}
 
-		// Check for parameter name conflicts
-		for paramName := range defaultParams {
-			if owner, exists := allParamNames[paramName]; exists {
-				return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q conflicts with stack %q", i, stack.Name, paramName, owner)
-			}
-			allParamNames[paramName] = stack.Name
-		}
-
 		// Build deployment parameters
 		deploymentParams := map[string]any{}
 
@@ -164,26 +173,28 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			delete(defaultParams, cfnParamName)
 		}
 
-		// Wire VNet outputs to matching parameter names
-		vnetOutputs := []string{
-			"vnetId", "vnetName",
-			"publicSubnet1Id", "publicSubnet1Name",
-			"publicSubnet2Id", "publicSubnet2Name",
-			"publicSubnet3Id", "publicSubnet3Name",
-			"privateSubnet1Id", "privateSubnet1Name",
-			"privateSubnet2Id", "privateSubnet2Name",
-			"privateSubnet3Id", "privateSubnet3Name",
-			"runnerSubnetId", "runnerSubnetName",
-			"publicSubnetIds", "publicSubnetNames",
-			"privateSubnetIds", "privateSubnetNames",
-		}
+		// Wire VNet and earlier custom stack outputs to matching parameter names
 		for paramName := range params {
-			if slices.Contains(vnetOutputs, paramName) {
-				deploymentParams[paramName] = map[string]any{
-					"value": fmt.Sprintf("[reference('vnetDeployment').outputs.%s.value]", paramName),
-				}
-				delete(defaultParams, paramName)
+			if _, alreadySet := deploymentParams[paramName]; alreadySet {
+				continue
 			}
+			sourceDeployment, ok := wiredOutputs[paramName]
+			if !ok {
+				continue
+			}
+
+			deploymentParams[paramName] = map[string]any{
+				"value": fmt.Sprintf("[reference('%s').outputs.%s.value]", sourceDeployment, paramName),
+			}
+			delete(defaultParams, paramName)
+		}
+
+		// Runs after pruning: only names that actually reach the parent can conflict
+		for paramName := range defaultParams {
+			if owner, exists := allParamNames[paramName]; exists {
+				return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q conflicts with stack %q", i, stack.Name, paramName, owner)
+			}
+			allParamNames[paramName] = stack.Name
 		}
 
 		// Remaining params are hoisted into parent
@@ -198,7 +209,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			hoistedParams[k] = v
 		}
 
-		// Build dependsOn chain
+		// Sequential: output wiring needs every earlier stack to be a transitive dependency
 		var dependsOn []string
 		if prevDeploymentName != "" {
 			dependsOn = append(dependsOn, prevDeploymentName)
@@ -224,6 +235,18 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		}
 
 		resources = append(resources, deployment)
+
+		// Registered after the deployment so a stack cannot wire to its own outputs
+		for _, key := range outputKeys {
+			// a custom output must not shadow a Nuon-injected param for later stacks
+			if slices.Contains(ReservedParamNames, key) {
+				continue
+			}
+			if _, exists := wiredOutputs[key]; !exists {
+				wiredOutputs[key] = deploymentName
+			}
+		}
+
 		prevDeploymentName = deploymentName
 	}
 
