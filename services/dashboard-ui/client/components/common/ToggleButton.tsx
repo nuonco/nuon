@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Button, type TButtonSize } from '@/components/common/Button'
+import { Tooltip } from '@/components/common/Tooltip'
 import { cn } from '@/utils/classnames'
 
 export interface IToggleButtonOption<T extends string> {
@@ -7,6 +8,7 @@ export interface IToggleButtonOption<T extends string> {
   label: ReactNode
   ariaLabel?: string
   title?: string
+  description?: ReactNode
 }
 
 export interface IToggleButton<T extends string> {
@@ -30,7 +32,7 @@ export const ToggleButton = <T extends string>({
         const isFirst = i === 0
         const isLast = i === options.length - 1
 
-        return (
+        const button = (
           <Button
             key={option.value}
             size={size}
@@ -50,6 +52,20 @@ export const ToggleButton = <T extends string>({
           >
             {option.label}
           </Button>
+        )
+
+        if (!option.description) return button
+
+        return (
+          <Tooltip
+            key={option.value}
+            position="bottom"
+            tipContent={option.description}
+            tipContentClassName="max-w-72 whitespace-normal"
+            className="flex"
+          >
+            {button}
+          </Tooltip>
         )
       })}
     </span>
