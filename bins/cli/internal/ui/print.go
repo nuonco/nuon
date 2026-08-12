@@ -31,6 +31,18 @@ func (u *CLIUserError) Error() string {
 	return u.Msg
 }
 
+// ErrOrgNotSet / ErrAppNotSet are the canonical user-facing errors for commands
+// that require a selected org/app. They classify as user_error under --output
+// agent and render cleanly in json/table, replacing per-package helpers that
+// printed to stdout and swallowed the error.
+func ErrOrgNotSet() error {
+	return &CLIUserError{Msg: "current org is not set, use `orgs select` to set one"}
+}
+
+func ErrAppNotSet() error {
+	return &CLIUserError{Msg: "current app is not set, use `apps select` to set one"}
+}
+
 // PrintError renders an error in the active output mode: agent -> envelope,
 // json -> JSON error object, table -> human-styled text.
 func PrintError(err error) error {

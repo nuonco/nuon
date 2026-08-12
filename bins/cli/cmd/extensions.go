@@ -131,19 +131,23 @@ func (c *cli) extInstallCmd() *cobra.Command {
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			mgr := extensions.New(extensionsDir())
 			if err := mgr.EnsureDir(); err != nil {
-				return err
+				return ui.PrintError(err)
 			}
 
-			spinner := ui.NewSpinnerView(PrintJSON, c.cfg.Interactive)
-			spinner.Start(fmt.Sprintf("Installing extension %s...", args[0]))
+			var spinner *ui.SpinnerView
+			if !PrintJSON {
+				spinner = ui.NewSpinnerView(PrintJSON, c.cfg.Interactive)
+				spinner.Start(fmt.Sprintf("Installing extension %s...", args[0]))
+			}
 
 			ext, err := mgr.Install(args[0])
 			if err != nil {
+				if PrintJSON {
+					return ui.PrintError(err)
+				}
 				spinner.Fail(err)
 				return err
 			}
-
-			spinner.Success(fmt.Sprintf("Installed %s %s", ext.Name, ext.Version))
 
 			if reservedCommandNames[ext.Name] {
 				ui.PrintWarning(fmt.Sprintf("Warning: extension %q conflicts with a built-in command. Use `nuon ext exec %s` to run it.", ext.Name, ext.Name))
@@ -151,7 +155,10 @@ func (c *cli) extInstallCmd() *cobra.Command {
 
 			if PrintJSON {
 				ui.PrintJSON(ext)
+				return nil
 			}
+
+			spinner.Success(fmt.Sprintf("Installed %s %s", ext.Name, ext.Version))
 			return nil
 		}),
 	}
@@ -170,11 +177,17 @@ func (c *cli) extUpgradeCmd() *cobra.Command {
 			mgr := extensions.New(extensionsDir())
 
 			if len(args) == 0 {
-				spinner := ui.NewSpinnerView(PrintJSON, c.cfg.Interactive)
-				spinner.Start("Upgrading all extensions...")
+				var spinner *ui.SpinnerView
+				if !PrintJSON {
+					spinner = ui.NewSpinnerView(PrintJSON, c.cfg.Interactive)
+					spinner.Start("Upgrading all extensions...")
+				}
 
 				results, err := mgr.UpgradeAll()
 				if err != nil {
+					if PrintJSON {
+						return ui.PrintError(err)
+					}
 					spinner.Fail(err)
 					return err
 				}
@@ -193,13 +206,22 @@ func (c *cli) extUpgradeCmd() *cobra.Command {
 
 				for _, r := range results {
 					if r.Error != nil {
-						fmt.Printf("  %s: %s\n", r.Name, r.Error)
+						ui.Printf("  %s: %s\n", r.Name, r.Error)
 					} else if r.OldVersion != r.NewVersion {
-						fmt.Printf("  %s: %s -> %s\n", r.Name, r.OldVersion, r.NewVersion)
+						ui.Printf("  %s: %s -> %s\n", r.Name, r.OldVersion, r.NewVersion)
 					} else {
-						fmt.Printf("  %s: already up to date (%s)\n", r.Name, r.OldVersion)
+						ui.Printf("  %s: already up to date (%s)\n", r.Name, r.OldVersion)
 					}
 				}
+				return nil
+			}
+
+			if PrintJSON {
+				if err := mgr.Upgrade(args[0], force); err != nil {
+					return ui.PrintError(err)
+				}
+				ext, _ := mgr.Get(args[0])
+				ui.PrintJSON(ext)
 				return nil
 			}
 
@@ -235,10 +257,13 @@ func (c *cli) extRemoveCmd() *cobra.Command {
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			mgr := extensions.New(extensionsDir())
 			if err := mgr.Remove(args[0]); err != nil {
-				return err
+				return ui.PrintError(err)
 			}
-			view := ui.NewListView()
-			view.Print(fmt.Sprintf("Removed extension %s", args[0]))
+			if PrintJSON {
+				ui.PrintJSON(map[string]string{"name": args[0], "status": "removed"})
+				return nil
+			}
+			ui.NewListView().Print(fmt.Sprintf("Removed extension %s", args[0]))
 			return nil
 		}),
 	}
@@ -255,21 +280,27 @@ func (c *cli) extBrowseCmd() *cobra.Command {
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			mgr := extensions.New(extensionsDir())
 
-			spinner := ui.NewSpinnerView(PrintJSON, c.cfg.Interactive)
-			spinner.Start("Searching for extensions...")
+			var spinner *ui.SpinnerView
+			if !PrintJSON {
+				spinner = ui.NewSpinnerView(PrintJSON, c.cfg.Interactive)
+				spinner.Start("Searching for extensions...")
+			}
 
 			exts, err := mgr.Browse(org)
 			if err != nil {
+				if PrintJSON {
+					return ui.PrintError(err)
+				}
 				spinner.Fail(err)
 				return err
 			}
-
-			spinner.Success(fmt.Sprintf("Found %d extension(s)", len(exts)))
 
 			if PrintJSON {
 				ui.PrintJSON(exts)
 				return nil
 			}
+
+			spinner.Success(fmt.Sprintf("Found %d extension(s)", len(exts)))
 
 			if len(exts) == 0 {
 				view := ui.NewListView()
@@ -310,7 +341,7 @@ func (c *cli) extExecCmd() *cobra.Command {
 		Short:              "Run an extension explicitly",
 		Long:               "Run an installed extension by name. Useful if the extension name collides with a built-in command.",
 		Args:               cobra.MinimumNArgs(1),
-		Annotations:        skipAuthAnnotation(),
+		Annotations:        annotations(skipAuthAnnotation(), outputsAnnotation(OutputTable)),
 		DisableFlagParsing: true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			mgr := extensions.New(extensionsDir())
@@ -364,7 +395,7 @@ func (c *cli) extensionProxyCmd(ext extensions.InstalledExtension) *cobra.Comman
 		GroupID:            ExtensionGroup.ID,
 		Args:               cobra.ArbitraryArgs,
 		DisableFlagParsing: true,
-		Annotations:        skipAuthAnnotation(),
+		Annotations:        annotations(skipAuthAnnotation(), outputsAnnotation(OutputTable)),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// With DisableFlagParsing, Cobra skips all flag parsing
 			// including the root's persistent flags (e.g. -C ~/.stage).

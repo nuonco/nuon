@@ -10,8 +10,7 @@ import (
 
 func (s *Service) CreateServiceAccountToken(ctx context.Context, accountID, duration string, invalidate, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
 	view := ui.NewGetView()
@@ -35,6 +34,6 @@ func (s *Service) CreateServiceAccountToken(ctx context.Context, accountID, dura
 	view.Render([][]string{
 		{"token", resp.Token},
 	})
-	fmt.Println("\nCopy this token now. For security, it won't be shown again.")
+	ui.Println("\nCopy this token now. For security, it won't be shown again.")
 	return nil
 }

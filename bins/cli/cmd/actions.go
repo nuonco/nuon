@@ -62,7 +62,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 		Long:  "Delete an action workflow by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := actions.New(c.v, c.apiClient, c.cfg)
-			return svc.DeleteWorkflow(cmd.Context(), actionWorkflowID)
+			return svc.DeleteWorkflow(cmd.Context(), actionWorkflowID, PrintJSON)
 		}),
 	}
 	deleteWorkflowCmd.Flags().StringVarP(&actionWorkflowID, "action-workflow-id", "w", "", "The ID of the action workflow you want to delete")

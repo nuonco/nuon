@@ -6,13 +6,19 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
-func (s *Service) DeleteWorkflow(ctx context.Context, action_workflow_id string) error {
-	view := ui.NewDeleteView("action", action_workflow_id, s.cfg.Interactive)
-	view.Start()
-	view.Update("deleting action")
+func (s *Service) DeleteWorkflow(ctx context.Context, actionWorkflowID string, asJSON bool) error {
+	if asJSON {
+		if _, err := s.api.DeleteActionWorkflow(ctx, actionWorkflowID); err != nil {
+			return ui.PrintError(err)
+		}
+		ui.PrintJSON(map[string]string{"id": actionWorkflowID, "status": "queued_for_deletion"})
+		return nil
+	}
 
-	_, err := s.api.DeleteActionWorkflow(ctx, action_workflow_id)
-	if err != nil {
+	view := ui.NewDeleteView("action", actionWorkflowID, s.cfg.Interactive)
+	view.Start()
+
+	if _, err := s.api.DeleteActionWorkflow(ctx, actionWorkflowID); err != nil {
 		return view.Fail(err)
 	}
 

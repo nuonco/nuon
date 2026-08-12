@@ -11,7 +11,7 @@ import (
 
 func (s *Service) Logs(ctx context.Context, appID, compID, buildID string, asJSON bool) error {
 	if appID == "" {
-		return ui.PrintError(&ui.CLIUserError{Msg: "current app is not set, use `apps select` to set one"})
+		return ui.PrintError(ui.ErrAppNotSet())
 	}
 
 	compID, err := lookup.ComponentID(ctx, s.api, appID, compID)

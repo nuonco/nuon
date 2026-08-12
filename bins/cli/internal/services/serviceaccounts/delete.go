@@ -9,8 +9,7 @@ import (
 
 func (s *Service) DeleteServiceAccount(ctx context.Context, accountID string, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
 	view := ui.NewGetView()
