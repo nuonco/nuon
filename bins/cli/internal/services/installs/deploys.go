@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/pkg/oci/imageref"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -121,7 +122,7 @@ func (s *Service) DeployCancel(ctx context.Context, installID, deployID string, 
 		return ui.PrintError(fmt.Errorf("deploy %s has no associated workflow to cancel", deployID))
 	}
 
-	if _, err := s.api.CancelWorkflow(ctx, workflowID); err != nil {
+	if _, err := s.api.CancelWorkflow(ctx, nuon.WorkflowOwner{InstallID: installID}, workflowID); err != nil {
 		return ui.PrintJSONError(err)
 	}
 

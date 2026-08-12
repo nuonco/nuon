@@ -40,7 +40,7 @@ func (h *WorkflowsHandler) StreamWorkflow(c *gin.Context) {
 		FinishedGracePeriod: sseFinishedGracePeriod,
 		Log:                 h.l,
 		Fetch: func(ctx context.Context) (sseFetchResult, error) {
-			workflow, err := client.GetWorkflow(ctx, workflowID)
+			workflow, err := client.GetWorkflow(ctx, nuon.WorkflowOwner{}, workflowID)
 			if err != nil {
 				return sseFetchResult{}, err
 			}
@@ -87,7 +87,7 @@ func (h *WorkflowsHandler) GetApprovalContents(c *gin.Context) {
 		return
 	}
 
-	contents, err := client.GetWorkflowStepApprovalContents(c.Request.Context(), workflowID, stepID, approvalID)
+	contents, err := client.GetWorkflowStepApprovalContents(c.Request.Context(), nuon.WorkflowOwner{}, workflowID, stepID, approvalID)
 	if err != nil {
 		h.l.Error("failed to get approval contents", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

@@ -171,44 +171,43 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	jobs := api.Group("/v1/installs/:install_id/runner-jobs/:runner_job_id")
 	jobs.Use(s.requireRunnerJobInInstall)
 
-	// Bare handlers reused directly — the group guard makes them ancestor-scoped.
-	// These nested routes are intentionally not in swagger/the SDK; a typed
-	// client method is added (as a wrapper or second @Router) only when a
-	// dashboard/CLI consumer in a later phase actually needs one.
-	jobs.GET("", s.GetRunnerJobPublic)
-	jobs.GET("/plan", s.GetRunnerJobPlanPublic)
-	jobs.GET("/composite-plan", s.GetRunnerJobCompositePlan)
-	jobs.POST("/cancel", s.CancelRunnerJob)
+	// Annotated wrappers (see nested.go) so each path is a distinct swagger
+	// operation and gets a generated client method; the group guard is what
+	// makes them ancestor-scoped.
+	jobs.GET("", s.GetInstallRunnerJob)
+	jobs.GET("/plan", s.GetInstallRunnerJobPlan)
+	jobs.GET("/composite-plan", s.GetInstallRunnerJobCompositePlan)
+	jobs.POST("/cancel", s.CancelInstallRunnerJob)
 
-	jobs.GET("/logs", s.LogStreamReadLogs)
-	jobs.GET("/logs/tail", s.LogStreamTailLogs)
-	jobs.GET("/spans", s.LogStreamReadSpans)
+	jobs.GET("/logs", s.ReadInstallRunnerJobLogs)
+	jobs.GET("/logs/tail", s.TailInstallRunnerJobLogs)
+	jobs.GET("/spans", s.ReadInstallRunnerJobSpans)
 
 	ws := api.Group("/v1/installs/:install_id/terraform-workspaces/:workspace_id")
 	ws.Use(s.requireTerraformWorkspaceInInstall)
 
-	ws.GET("", s.GetTerraformWorkpace)
-	ws.GET("/lock", s.GetTerraformWorkspaceLock)
-	ws.POST("/lock", s.LockTerraformWorkspace)
-	ws.POST("/unlock", s.UnlockTerraformWorkspace)
+	ws.GET("", s.GetInstallTerraformWorkspace)
+	ws.GET("/lock", s.GetInstallTerraformWorkspaceLock)
+	ws.POST("/lock", s.LockInstallTerraformWorkspace)
+	ws.POST("/unlock", s.UnlockInstallTerraformWorkspace)
 
-	ws.GET("/states", s.GetTerraformWorkspaceStatesV2)
-	ws.GET("/states/:state_id", s.GetTerraformWorkspaceStateByIDV2)
-	ws.GET("/states/:state_id/resources", s.GetTerraformWorkspaceStateResourcesV2)
+	ws.GET("/states", s.GetInstallTerraformWorkspaceStates)
+	ws.GET("/states/:state_id", s.GetInstallTerraformWorkspaceState)
+	ws.GET("/states/:state_id/resources", s.GetInstallTerraformWorkspaceStateResources)
 
-	ws.GET("/state-json", s.GetTerraformWorkspaceStatesJSONV2)
-	ws.GET("/state-json/:state_id", s.GetTerraformWorkspaceStatesJSONByIDV2)
-	ws.GET("/state-json/:state_id/raw", s.GetWorkspaceStateJSONRawByID)
-	ws.GET("/state-json/:state_id/resources", s.GetTerraformWorkspaceStateResourcesV2)
+	ws.GET("/state-json", s.GetInstallTerraformWorkspaceStatesJSON)
+	ws.GET("/state-json/:state_id", s.GetInstallTerraformWorkspaceStateJSON)
+	ws.GET("/state-json/:state_id/raw", s.GetInstallTerraformWorkspaceStateJSONRaw)
+	ws.GET("/state-json/:state_id/resources", s.GetInstallTerraformWorkspaceStateJSONResources)
 
 	// app-scoped build logs (a build serves many installs, so its logs are
 	// not install-scoped).
 	logs := api.Group("/v1/apps/:app_id/components/:component_id/builds/:build_id")
 	logs.Use(s.requireBuildLogStream)
 
-	logs.GET("/logs", s.LogStreamReadLogs)
-	logs.GET("/logs/tail", s.LogStreamTailLogs)
-	logs.GET("/spans", s.LogStreamReadSpans)
+	logs.GET("/logs", s.ReadComponentBuildLogs)
+	logs.GET("/logs/tail", s.TailComponentBuildLogs)
+	logs.GET("/spans", s.ReadComponentBuildSpans)
 
 	return nil
 }

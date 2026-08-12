@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -55,7 +56,7 @@ func (s *Service) workflowsJSON(ctx context.Context, installID, workflowID strin
 		return ui.PrintError(err)
 	}
 
-	workflow, err := s.api.GetWorkflow(ctx, workflowID)
+	workflow, err := s.api.GetWorkflow(ctx, nuon.WorkflowOwner{}, workflowID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
@@ -89,7 +90,7 @@ func (s *Service) WorkflowsList(ctx context.Context, installID string, offset, l
 func (s *Service) WorkflowsGet(ctx context.Context, workflowID string, asJSON bool) error {
 	view := ui.NewListView()
 
-	workflow, err := s.api.GetWorkflow(ctx, workflowID)
+	workflow, err := s.api.GetWorkflow(ctx, nuon.WorkflowOwner{}, workflowID)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -125,7 +126,7 @@ func (s *Service) WorkflowsGet(ctx context.Context, workflowID string, asJSON bo
 func (s *Service) WorkflowStepsList(ctx context.Context, workflowID string, asJSON bool) error {
 	view := ui.NewListView()
 
-	steps, err := s.api.GetWorkflowSteps(ctx, workflowID)
+	steps, err := s.api.GetWorkflowSteps(ctx, nuon.WorkflowOwner{}, workflowID)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -144,7 +145,7 @@ func (s *Service) WorkflowStepsList(ctx context.Context, workflowID string, asJS
 // Logic: 1) Find first not-attempted step, return step at index-1
 // 2) If no not-attempted step, return highest index step that is finished, in-progress, or error
 func (s *Service) getLastProcessedStepID(ctx context.Context, workflowID string) (string, error) {
-	steps, err := s.api.GetWorkflowSteps(ctx, workflowID)
+	steps, err := s.api.GetWorkflowSteps(ctx, nuon.WorkflowOwner{}, workflowID)
 	if err != nil {
 		return "", err
 	}
@@ -205,7 +206,7 @@ func (s *Service) getLastProcessedStepID(ctx context.Context, workflowID string)
 
 // confirmStepAction displays step details and prompts for confirmation before taking an action.
 func (s *Service) confirmStepAction(ctx context.Context, installID, workflowID, stepID, action string) (bool, error) {
-	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
+	step, err := s.api.GetWorkflowStep(ctx, nuon.WorkflowOwner{}, workflowID, stepID)
 	if err != nil {
 		return false, err
 	}
@@ -256,7 +257,7 @@ func (s *Service) WorkflowStepsGet(ctx context.Context, workflowID, stepID strin
 		}
 	}
 
-	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
+	step, err := s.api.GetWorkflowStep(ctx, nuon.WorkflowOwner{}, workflowID, stepID)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -449,7 +450,7 @@ func (s *Service) WorkflowStepApprove(ctx context.Context, installID, workflowID
 		}
 	}
 
-	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
+	step, err := s.api.GetWorkflowStep(ctx, nuon.WorkflowOwner{}, workflowID, stepID)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -458,7 +459,7 @@ func (s *Service) WorkflowStepApprove(ctx context.Context, installID, workflowID
 		return view.Error(fmt.Errorf("step %s does not have an approval", stepID))
 	}
 
-	resp, err := s.api.CreateWorkflowStepApprovalResponse(ctx, workflowID, stepID, step.Approval.ID, &models.ServiceCreateWorkflowStepApprovalResponseRequest{
+	resp, err := s.api.CreateWorkflowStepApprovalResponse(ctx, nuon.WorkflowOwner{}, workflowID, stepID, step.Approval.ID, &models.ServiceCreateWorkflowStepApprovalResponseRequest{
 		ResponseType: models.AppWorkflowStepResponseTypeApprove,
 		Note:         note,
 	})
@@ -500,7 +501,7 @@ func (s *Service) WorkflowStepReject(ctx context.Context, installID, workflowID,
 		}
 	}
 
-	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
+	step, err := s.api.GetWorkflowStep(ctx, nuon.WorkflowOwner{}, workflowID, stepID)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -509,7 +510,7 @@ func (s *Service) WorkflowStepReject(ctx context.Context, installID, workflowID,
 		return view.Error(fmt.Errorf("step %s does not have an approval", stepID))
 	}
 
-	resp, err := s.api.CreateWorkflowStepApprovalResponse(ctx, workflowID, stepID, step.Approval.ID, &models.ServiceCreateWorkflowStepApprovalResponseRequest{
+	resp, err := s.api.CreateWorkflowStepApprovalResponse(ctx, nuon.WorkflowOwner{}, workflowID, stepID, step.Approval.ID, &models.ServiceCreateWorkflowStepApprovalResponseRequest{
 		ResponseType: models.AppWorkflowStepResponseTypeDeny,
 		Note:         note,
 	})
@@ -551,7 +552,7 @@ func (s *Service) WorkflowStepRetry(ctx context.Context, installID, workflowID, 
 		}
 	}
 
-	err := s.api.RetryWorkflowStep(ctx, workflowID, stepID, nil)
+	err := s.api.RetryWorkflowStep(ctx, nuon.WorkflowOwner{}, workflowID, stepID, nil)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -586,7 +587,7 @@ func (s *Service) WorkflowStepPlan(ctx context.Context, installID, workflowID, s
 		return ui.PrintError(err)
 	}
 
-	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
+	step, err := s.api.GetWorkflowStep(ctx, nuon.WorkflowOwner{}, workflowID, stepID)
 	if err != nil {
 		return view.Error(err)
 	}
@@ -680,7 +681,7 @@ func (s *Service) WorkflowSetApprovalOption(ctx context.Context, workflowID stri
 		return view.Error(fmt.Errorf("must specify either --approve-all or --prompt"))
 	}
 
-	workflow, err := s.api.UpdateWorkflow(ctx, workflowID, &models.ServiceUpdateWorkflowRequest{
+	workflow, err := s.api.UpdateWorkflow(ctx, nuon.WorkflowOwner{}, workflowID, &models.ServiceUpdateWorkflowRequest{
 		ApprovalOption: &approvalOption,
 	})
 	if err != nil {
@@ -788,7 +789,7 @@ func policyDisplayName(v policyViolation, policyNames map[string]string) string 
 func (s *Service) getPolicyNameMap(ctx context.Context, installID, workflowID string) (map[string]string, error) {
 	resolvedInstallID := installID
 	if resolvedInstallID == "" && workflowID != "" {
-		workflow, err := s.api.GetWorkflow(ctx, workflowID)
+		workflow, err := s.api.GetWorkflow(ctx, nuon.WorkflowOwner{}, workflowID)
 		if err != nil {
 			return nil, err
 		}

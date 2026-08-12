@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -97,7 +98,7 @@ func (s *Service) WorkflowsDeselect(ctx context.Context, asJSON bool) error {
 }
 
 func (s *Service) setCurrentWorkflow(ctx context.Context, workflowID string, asJSON bool) error {
-	workflow, err := s.api.GetWorkflow(ctx, workflowID)
+	workflow, err := s.api.GetWorkflow(ctx, nuon.WorkflowOwner{}, workflowID)
 	if err != nil {
 		return err
 	}

@@ -130,11 +130,17 @@ type ClientService interface {
 
 	AwaitWorkflowStep(params *AwaitWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitWorkflowStepOK, error)
 
+	AwaitWorkflowStepByAppBranch(params *AwaitWorkflowStepByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitWorkflowStepByAppBranchOK, error)
+
+	AwaitWorkflowStepByInstall(params *AwaitWorkflowStepByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitWorkflowStepByInstallOK, error)
+
 	BuildAllComponents(params *BuildAllComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BuildAllComponentsCreated, error)
 
 	BuildAppConfig(params *BuildAppConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BuildAppConfigCreated, error)
 
 	CancelAppComponentBuild(params *CancelAppComponentBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelAppComponentBuildAccepted, error)
+
+	CancelInstallRunnerJob(params *CancelInstallRunnerJobParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelInstallRunnerJobAccepted, error)
 
 	CancelInstallWorkflow(params *CancelInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelInstallWorkflowAccepted, error)
 
@@ -142,7 +148,15 @@ type ClientService interface {
 
 	CancelWorkflow(params *CancelWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowAccepted, error)
 
+	CancelWorkflowByAppBranch(params *CancelWorkflowByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowByAppBranchAccepted, error)
+
+	CancelWorkflowByInstall(params *CancelWorkflowByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowByInstallAccepted, error)
+
 	CancelWorkflowStep(params *CancelWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowStepAccepted, error)
+
+	CancelWorkflowStepByAppBranch(params *CancelWorkflowStepByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowStepByAppBranchAccepted, error)
+
+	CancelWorkflowStepByInstall(params *CancelWorkflowStepByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowStepByInstallAccepted, error)
 
 	CancelWorkflows(params *CancelWorkflowsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowsOK, error)
 
@@ -312,6 +326,10 @@ type ClientService interface {
 
 	CreateWorkflowStepApprovalResponse(params *CreateWorkflowStepApprovalResponseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateWorkflowStepApprovalResponseCreated, error)
 
+	CreateWorkflowStepApprovalResponseByAppBranch(params *CreateWorkflowStepApprovalResponseByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateWorkflowStepApprovalResponseByAppBranchCreated, error)
+
+	CreateWorkflowStepApprovalResponseByInstall(params *CreateWorkflowStepApprovalResponseByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateWorkflowStepApprovalResponseByInstallCreated, error)
+
 	DeleteAction(params *DeleteActionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteActionOK, error)
 
 	DeleteActionWorkflow(params *DeleteActionWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteActionWorkflowOK, error)
@@ -365,6 +383,8 @@ type ClientService interface {
 	DeprovisionInstallSandbox(params *DeprovisionInstallSandboxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeprovisionInstallSandboxCreated, error)
 
 	ExchangeOIDCToken(params *ExchangeOIDCTokenParams, opts ...ClientOption) (*ExchangeOIDCTokenOK, error)
+
+	ExportInstallPolicyReport(params *ExportInstallPolicyReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ExportInstallPolicyReportOK, error)
 
 	ExportPolicyReport(params *ExportPolicyReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ExportPolicyReportOK, error)
 
@@ -638,6 +658,8 @@ type ClientService interface {
 
 	GetInstallLatestDeploy(params *GetInstallLatestDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallLatestDeployOK, error)
 
+	GetInstallPolicyReport(params *GetInstallPolicyReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallPolicyReportOK, error)
+
 	GetInstallReadme(params *GetInstallReadmeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallReadmeOK, *GetInstallReadmePartialContent, error)
 
 	GetInstallResources(params *GetInstallResourcesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallResourcesOK, error)
@@ -656,6 +678,12 @@ type ClientService interface {
 
 	GetInstallRunnerGroup(params *GetInstallRunnerGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunnerGroupOK, error)
 
+	GetInstallRunnerJob(params *GetInstallRunnerJobParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunnerJobOK, error)
+
+	GetInstallRunnerJobCompositePlan(params *GetInstallRunnerJobCompositePlanParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunnerJobCompositePlanOK, error)
+
+	GetInstallRunnerJobPlan(params *GetInstallRunnerJobPlanParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunnerJobPlanOK, error)
+
 	GetInstallSandboxRun(params *GetInstallSandboxRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallSandboxRunOK, error)
 
 	GetInstallSandboxRunV2(params *GetInstallSandboxRunV2Params, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallSandboxRunV2OK, error)
@@ -671,6 +699,24 @@ type ClientService interface {
 	GetInstallState(params *GetInstallStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStateOK, error)
 
 	GetInstallStateHistory(params *GetInstallStateHistoryParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallStateHistoryOK, error)
+
+	GetInstallTerraformWorkspace(params *GetInstallTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceOK, error)
+
+	GetInstallTerraformWorkspaceLock(params *GetInstallTerraformWorkspaceLockParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceLockOK, error)
+
+	GetInstallTerraformWorkspaceState(params *GetInstallTerraformWorkspaceStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStateOK, error)
+
+	GetInstallTerraformWorkspaceStateJSON(params *GetInstallTerraformWorkspaceStateJSONParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStateJSONOK, error)
+
+	GetInstallTerraformWorkspaceStateJSONRaw(params *GetInstallTerraformWorkspaceStateJSONRawParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStateJSONRawOK, error)
+
+	GetInstallTerraformWorkspaceStateJSONResources(params *GetInstallTerraformWorkspaceStateJSONResourcesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStateJSONResourcesOK, error)
+
+	GetInstallTerraformWorkspaceStateResources(params *GetInstallTerraformWorkspaceStateResourcesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStateResourcesOK, error)
+
+	GetInstallTerraformWorkspaceStates(params *GetInstallTerraformWorkspaceStatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStatesOK, error)
+
+	GetInstallTerraformWorkspaceStatesJSON(params *GetInstallTerraformWorkspaceStatesJSONParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStatesJSONOK, error)
 
 	GetInstallWorkflow(params *GetInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallWorkflowOK, error)
 
@@ -826,19 +872,51 @@ type ClientService interface {
 
 	GetWorkflow(params *GetWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowOK, error)
 
+	GetWorkflowByAppBranch(params *GetWorkflowByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowByAppBranchOK, error)
+
+	GetWorkflowByInstall(params *GetWorkflowByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowByInstallOK, error)
+
 	GetWorkflowQueuePosition(params *GetWorkflowQueuePositionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowQueuePositionOK, error)
+
+	GetWorkflowQueuePositionByAppBranch(params *GetWorkflowQueuePositionByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowQueuePositionByAppBranchOK, error)
+
+	GetWorkflowQueuePositionByInstall(params *GetWorkflowQueuePositionByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowQueuePositionByInstallOK, error)
 
 	GetWorkflowStep(params *GetWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepOK, error)
 
 	GetWorkflowStepApproval(params *GetWorkflowStepApprovalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalOK, error)
 
+	GetWorkflowStepApprovalByAppBranch(params *GetWorkflowStepApprovalByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalByAppBranchOK, error)
+
+	GetWorkflowStepApprovalByInstall(params *GetWorkflowStepApprovalByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalByInstallOK, error)
+
 	GetWorkflowStepApprovalContents(params *GetWorkflowStepApprovalContentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalContentsOK, error)
+
+	GetWorkflowStepApprovalContentsByAppBranch(params *GetWorkflowStepApprovalContentsByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalContentsByAppBranchOK, error)
+
+	GetWorkflowStepApprovalContentsByInstall(params *GetWorkflowStepApprovalContentsByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalContentsByInstallOK, error)
+
+	GetWorkflowStepByAppBranch(params *GetWorkflowStepByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepByAppBranchOK, error)
+
+	GetWorkflowStepByInstall(params *GetWorkflowStepByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepByInstallOK, error)
 
 	GetWorkflowStepGroup(params *GetWorkflowStepGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupOK, error)
 
+	GetWorkflowStepGroupByAppBranch(params *GetWorkflowStepGroupByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupByAppBranchOK, error)
+
+	GetWorkflowStepGroupByInstall(params *GetWorkflowStepGroupByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupByInstallOK, error)
+
 	GetWorkflowStepGroups(params *GetWorkflowStepGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupsOK, error)
 
+	GetWorkflowStepGroupsByAppBranch(params *GetWorkflowStepGroupsByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupsByAppBranchOK, error)
+
+	GetWorkflowStepGroupsByInstall(params *GetWorkflowStepGroupsByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupsByInstallOK, error)
+
 	GetWorkflowSteps(params *GetWorkflowStepsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepsOK, error)
+
+	GetWorkflowStepsByAppBranch(params *GetWorkflowStepsByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepsByAppBranchOK, error)
+
+	GetWorkflowStepsByInstall(params *GetWorkflowStepsByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepsByInstallOK, error)
 
 	GetWorkflows(params *GetWorkflowsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowsOK, error)
 
@@ -870,6 +948,8 @@ type ClientService interface {
 
 	ListStaticTokens(params *ListStaticTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListStaticTokensOK, error)
 
+	LockInstallTerraformWorkspace(params *LockInstallTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LockInstallTerraformWorkspaceOK, error)
+
 	LockTerraformWorkspace(params *LockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LockTerraformWorkspaceOK, error)
 
 	LogStreamReadLogs(params *LogStreamReadLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamReadLogsOK, error)
@@ -885,6 +965,14 @@ type ClientService interface {
 	PruneTokens(params *PruneTokensParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PruneTokensOK, error)
 
 	PutInstallComponentHealthCheck(params *PutInstallComponentHealthCheckParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutInstallComponentHealthCheckOK, error)
+
+	ReadComponentBuildLogs(params *ReadComponentBuildLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReadComponentBuildLogsOK, error)
+
+	ReadComponentBuildSpans(params *ReadComponentBuildSpansParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReadComponentBuildSpansOK, error)
+
+	ReadInstallRunnerJobLogs(params *ReadInstallRunnerJobLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReadInstallRunnerJobLogsOK, error)
+
+	ReadInstallRunnerJobSpans(params *ReadInstallRunnerJobSpansParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReadInstallRunnerJobSpansOK, error)
 
 	RefreshInstallHealthClusterAccess(params *RefreshInstallHealthClusterAccessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RefreshInstallHealthClusterAccessOK, error)
 
@@ -918,6 +1006,10 @@ type ClientService interface {
 
 	RetryWorkflowStep(params *RetryWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowStepCreated, error)
 
+	RetryWorkflowStepByAppBranch(params *RetryWorkflowStepByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowStepByAppBranchCreated, error)
+
+	RetryWorkflowStepByInstall(params *RetryWorkflowStepByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowStepByInstallCreated, error)
+
 	RevokeOrgInvite(params *RevokeOrgInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeOrgInviteOK, error)
 
 	RunNotebookCell(params *RunNotebookCellParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RunNotebookCellAccepted, error)
@@ -927,6 +1019,10 @@ type ClientService interface {
 	ShutdownRunnerProcess(params *ShutdownRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutdownRunnerProcessCreated, error)
 
 	SkipWorkflowStep(params *SkipWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SkipWorkflowStepCreated, error)
+
+	SkipWorkflowStepByAppBranch(params *SkipWorkflowStepByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SkipWorkflowStepByAppBranchCreated, error)
+
+	SkipWorkflowStepByInstall(params *SkipWorkflowStepByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SkipWorkflowStepByInstallCreated, error)
 
 	SlackEvents(params *SlackEventsParams, opts ...ClientOption) (*SlackEventsOK, error)
 
@@ -942,6 +1038,10 @@ type ClientService interface {
 
 	SyncSecrets(params *SyncSecretsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncSecretsCreated, error)
 
+	TailComponentBuildLogs(params *TailComponentBuildLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TailComponentBuildLogsOK, error)
+
+	TailInstallRunnerJobLogs(params *TailInstallRunnerJobLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TailInstallRunnerJobLogsOK, error)
+
 	TeardownInstallComponent(params *TeardownInstallComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TeardownInstallComponentCreated, error)
 
 	TeardownInstallComponents(params *TeardownInstallComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TeardownInstallComponentsCreated, error)
@@ -953,6 +1053,8 @@ type ClientService interface {
 	TriggerAppInstallSync(params *TriggerAppInstallSyncParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TriggerAppInstallSyncAccepted, error)
 
 	TriggerInstallConfigSync(params *TriggerInstallConfigSyncParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TriggerInstallConfigSyncAccepted, error)
+
+	UnlockInstallTerraformWorkspace(params *UnlockInstallTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlockInstallTerraformWorkspaceOK, error)
 
 	UnlockTerraformWorkspace(params *UnlockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlockTerraformWorkspaceOK, error)
 
@@ -1019,6 +1121,10 @@ type ClientService interface {
 	UpdateUserJourneyStep(params *UpdateUserJourneyStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateUserJourneyStepOK, error)
 
 	UpdateWorkflow(params *UpdateWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateWorkflowOK, error)
+
+	UpdateWorkflowByAppBranch(params *UpdateWorkflowByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateWorkflowByAppBranchOK, error)
+
+	UpdateWorkflowByInstall(params *UpdateWorkflowByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateWorkflowByInstallOK, error)
 
 	ValidateToken(params *ValidateTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ValidateTokenOK, error)
 
@@ -1352,6 +1458,98 @@ func (a *Client) AwaitWorkflowStep(params *AwaitWorkflowStepParams, authInfo run
 }
 
 /*
+AwaitWorkflowStepByAppBranch longs poll for workflow step completion
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) AwaitWorkflowStepByAppBranch(params *AwaitWorkflowStepByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitWorkflowStepByAppBranchOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewAwaitWorkflowStepByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "AwaitWorkflowStepByAppBranch",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}/steps/{{step_id}}/await",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &AwaitWorkflowStepByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*AwaitWorkflowStepByAppBranchOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for AwaitWorkflowStepByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+AwaitWorkflowStepByInstall longs poll for workflow step completion
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) AwaitWorkflowStepByInstall(params *AwaitWorkflowStepByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AwaitWorkflowStepByInstallOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewAwaitWorkflowStepByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "AwaitWorkflowStepByInstall",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}/steps/{{step_id}}/await",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &AwaitWorkflowStepByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*AwaitWorkflowStepByInstallOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for AwaitWorkflowStepByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 BuildAllComponents creates component build
 
 Build all components for an app.
@@ -1486,6 +1684,52 @@ func (a *Client) CancelAppComponentBuild(params *CancelAppComponentBuildParams, 
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CancelAppComponentBuild: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CancelInstallRunnerJob cancels runner job
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) CancelInstallRunnerJob(params *CancelInstallRunnerJobParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelInstallRunnerJobAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCancelInstallRunnerJobParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CancelInstallRunnerJob",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/runner-jobs/{runner_job_id}/cancel",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CancelInstallRunnerJobReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CancelInstallRunnerJobAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CancelInstallRunnerJob: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -1628,6 +1872,98 @@ func (a *Client) CancelWorkflow(params *CancelWorkflowParams, authInfo runtime.C
 }
 
 /*
+CancelWorkflowByAppBranch cancels an ongoing workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) CancelWorkflowByAppBranch(params *CancelWorkflowByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowByAppBranchAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCancelWorkflowByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CancelWorkflowByAppBranch",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}/cancel",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CancelWorkflowByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CancelWorkflowByAppBranchAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CancelWorkflowByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CancelWorkflowByInstall cancels an ongoing workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) CancelWorkflowByInstall(params *CancelWorkflowByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowByInstallAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCancelWorkflowByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CancelWorkflowByInstall",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}/cancel",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CancelWorkflowByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CancelWorkflowByInstallAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CancelWorkflowByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CancelWorkflowStep cancels an in progress workflow step
 */
 func (a *Client) CancelWorkflowStep(params *CancelWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowStepAccepted, error) {
@@ -1668,6 +2004,98 @@ func (a *Client) CancelWorkflowStep(params *CancelWorkflowStepParams, authInfo r
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CancelWorkflowStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CancelWorkflowStepByAppBranch cancels an in progress workflow step
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) CancelWorkflowStepByAppBranch(params *CancelWorkflowStepByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowStepByAppBranchAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCancelWorkflowStepByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CancelWorkflowStepByAppBranch",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}/steps/{{step_id}}/cancel",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CancelWorkflowStepByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CancelWorkflowStepByAppBranchAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CancelWorkflowStepByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CancelWorkflowStepByInstall cancels an in progress workflow step
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) CancelWorkflowStepByInstall(params *CancelWorkflowStepByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowStepByInstallAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCancelWorkflowStepByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CancelWorkflowStepByInstall",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}/steps/{{step_id}}/cancel",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CancelWorkflowStepByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CancelWorkflowStepByInstallAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CancelWorkflowStepByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -5592,6 +6020,98 @@ func (a *Client) CreateWorkflowStepApprovalResponse(params *CreateWorkflowStepAp
 }
 
 /*
+CreateWorkflowStepApprovalResponseByAppBranch creates an approval response for a workflow step
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) CreateWorkflowStepApprovalResponseByAppBranch(params *CreateWorkflowStepApprovalResponseByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateWorkflowStepApprovalResponseByAppBranchCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateWorkflowStepApprovalResponseByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateWorkflowStepApprovalResponseByAppBranch",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}/steps/{{step_id}}/approvals/{{approval_id}}/response",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateWorkflowStepApprovalResponseByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateWorkflowStepApprovalResponseByAppBranchCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateWorkflowStepApprovalResponseByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateWorkflowStepApprovalResponseByInstall creates an approval response for a workflow step
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) CreateWorkflowStepApprovalResponseByInstall(params *CreateWorkflowStepApprovalResponseByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateWorkflowStepApprovalResponseByInstallCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateWorkflowStepApprovalResponseByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateWorkflowStepApprovalResponseByInstall",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}/steps/{{step_id}}/approvals/{{approval_id}}/response",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateWorkflowStepApprovalResponseByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateWorkflowStepApprovalResponseByInstallCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateWorkflowStepApprovalResponseByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 DeleteAction deletes an action
 
 Delete an action workflow.
@@ -6826,6 +7346,52 @@ func (a *Client) ExchangeOIDCToken(params *ExchangeOIDCTokenParams, opts ...Clie
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for ExchangeOIDCToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ExportInstallPolicyReport exports policy report
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the report, so an identity scoped to that install can reach it.
+*/
+func (a *Client) ExportInstallPolicyReport(params *ExportInstallPolicyReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ExportInstallPolicyReportOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewExportInstallPolicyReportParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ExportInstallPolicyReport",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/policy-reports/{report_id}/export",
+		ProducesMediaTypes: []string{"application/json", "application/pdf"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ExportInstallPolicyReportReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ExportInstallPolicyReportOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ExportInstallPolicyReport: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -13210,6 +13776,52 @@ func (a *Client) GetInstallLatestDeploy(params *GetInstallLatestDeployParams, au
 }
 
 /*
+GetInstallPolicyReport gets policy report
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the report, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetInstallPolicyReport(params *GetInstallPolicyReportParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallPolicyReportOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallPolicyReportParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallPolicyReport",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/policy-reports/{report_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallPolicyReportReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallPolicyReportOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallPolicyReport: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 	GetInstallReadme gets install readme rendered with
 
 	Returns the `app.readme` markdown with the values interpolated from the install
@@ -13618,6 +14230,144 @@ func (a *Client) GetInstallRunnerGroup(params *GetInstallRunnerGroupParams, auth
 }
 
 /*
+GetInstallRunnerJob gets runner job
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetInstallRunnerJob(params *GetInstallRunnerJobParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunnerJobOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallRunnerJobParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallRunnerJob",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/runner-jobs/{runner_job_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallRunnerJobReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallRunnerJobOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallRunnerJob: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallRunnerJobCompositePlan gets runner job composite plan
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetInstallRunnerJobCompositePlan(params *GetInstallRunnerJobCompositePlanParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunnerJobCompositePlanOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallRunnerJobCompositePlanParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallRunnerJobCompositePlan",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/runner-jobs/{runner_job_id}/composite-plan",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallRunnerJobCompositePlanReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallRunnerJobCompositePlanOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallRunnerJobCompositePlan: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallRunnerJobPlan gets runner job plan
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetInstallRunnerJobPlan(params *GetInstallRunnerJobPlanParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunnerJobPlanOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallRunnerJobPlanParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallRunnerJobPlan",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/runner-jobs/{runner_job_id}/plan",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallRunnerJobPlanReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallRunnerJobPlanOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallRunnerJobPlan: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallSandboxRun gets an install sandbox run
 
 Return a sandbox run for an install by id.
@@ -13982,6 +14732,420 @@ func (a *Client) GetInstallStateHistory(params *GetInstallStateHistoryParams, au
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallStateHistory: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallTerraformWorkspace gets terraform workspace
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetInstallTerraformWorkspace(params *GetInstallTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallTerraformWorkspaceParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallTerraformWorkspace",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/terraform-workspaces/{workspace_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallTerraformWorkspaceReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallTerraformWorkspaceOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallTerraformWorkspace: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallTerraformWorkspaceLock gets terraform workspace lock
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetInstallTerraformWorkspaceLock(params *GetInstallTerraformWorkspaceLockParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceLockOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallTerraformWorkspaceLockParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallTerraformWorkspaceLock",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/terraform-workspaces/{workspace_id}/lock",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallTerraformWorkspaceLockReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallTerraformWorkspaceLockOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallTerraformWorkspaceLock: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallTerraformWorkspaceState gets terraform state by ID
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetInstallTerraformWorkspaceState(params *GetInstallTerraformWorkspaceStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStateOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallTerraformWorkspaceStateParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallTerraformWorkspaceState",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/terraform-workspaces/{workspace_id}/states/{state_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallTerraformWorkspaceStateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallTerraformWorkspaceStateOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallTerraformWorkspaceState: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallTerraformWorkspaceStateJSON gets terraform state json by id this output is same as terraform show json
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetInstallTerraformWorkspaceStateJSON(params *GetInstallTerraformWorkspaceStateJSONParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStateJSONOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallTerraformWorkspaceStateJSONParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallTerraformWorkspaceStateJSON",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/terraform-workspaces/{workspace_id}/state-json/{state_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallTerraformWorkspaceStateJSONReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallTerraformWorkspaceStateJSONOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallTerraformWorkspaceStateJSON: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallTerraformWorkspaceStateJSONRaw gets raw workspace state json by id
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetInstallTerraformWorkspaceStateJSONRaw(params *GetInstallTerraformWorkspaceStateJSONRawParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStateJSONRawOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallTerraformWorkspaceStateJSONRawParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallTerraformWorkspaceStateJSONRaw",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/terraform-workspaces/{workspace_id}/state-json/{state_id}/raw",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallTerraformWorkspaceStateJSONRawReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallTerraformWorkspaceStateJSONRawOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallTerraformWorkspaceStateJSONRaw: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallTerraformWorkspaceStateJSONResources gets terraform state resources this output is similar to terraform state list
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetInstallTerraformWorkspaceStateJSONResources(params *GetInstallTerraformWorkspaceStateJSONResourcesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStateJSONResourcesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallTerraformWorkspaceStateJSONResourcesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallTerraformWorkspaceStateJSONResources",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/terraform-workspaces/{workspace_id}/state-json/{state_id}/resources",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallTerraformWorkspaceStateJSONResourcesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallTerraformWorkspaceStateJSONResourcesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallTerraformWorkspaceStateJSONResources: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallTerraformWorkspaceStateResources gets terraform state resources this output is similar to terraform state list
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetInstallTerraformWorkspaceStateResources(params *GetInstallTerraformWorkspaceStateResourcesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStateResourcesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallTerraformWorkspaceStateResourcesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallTerraformWorkspaceStateResources",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/terraform-workspaces/{workspace_id}/states/{state_id}/resources",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallTerraformWorkspaceStateResourcesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallTerraformWorkspaceStateResourcesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallTerraformWorkspaceStateResources: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallTerraformWorkspaceStates gets terraform states
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetInstallTerraformWorkspaceStates(params *GetInstallTerraformWorkspaceStatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStatesOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallTerraformWorkspaceStatesParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallTerraformWorkspaceStates",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/terraform-workspaces/{workspace_id}/states",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallTerraformWorkspaceStatesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallTerraformWorkspaceStatesOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallTerraformWorkspaceStates: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallTerraformWorkspaceStatesJSON gets terraform states json
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetInstallTerraformWorkspaceStatesJSON(params *GetInstallTerraformWorkspaceStatesJSONParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallTerraformWorkspaceStatesJSONOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallTerraformWorkspaceStatesJSONParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallTerraformWorkspaceStatesJSON",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/terraform-workspaces/{workspace_id}/state-json",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallTerraformWorkspaceStatesJSONReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallTerraformWorkspaceStatesJSONOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallTerraformWorkspaceStatesJSON: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -17510,6 +18674,98 @@ func (a *Client) GetWorkflow(params *GetWorkflowParams, authInfo runtime.ClientA
 }
 
 /*
+GetWorkflowByAppBranch gets a workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) GetWorkflowByAppBranch(params *GetWorkflowByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowByAppBranchOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowByAppBranch",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowByAppBranchOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowByInstall gets a workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetWorkflowByInstall(params *GetWorkflowByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowByInstallOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowByInstall",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowByInstallOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetWorkflowQueuePosition gets queue position for a workflow
 
 Returns the queue position and workflows ahead when a workflow is pending.
@@ -17552,6 +18808,98 @@ func (a *Client) GetWorkflowQueuePosition(params *GetWorkflowQueuePositionParams
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetWorkflowQueuePosition: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowQueuePositionByAppBranch gets queue position for a workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) GetWorkflowQueuePositionByAppBranch(params *GetWorkflowQueuePositionByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowQueuePositionByAppBranchOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowQueuePositionByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowQueuePositionByAppBranch",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}/queue-position",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowQueuePositionByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowQueuePositionByAppBranchOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowQueuePositionByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowQueuePositionByInstall gets queue position for a workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetWorkflowQueuePositionByInstall(params *GetWorkflowQueuePositionByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowQueuePositionByInstallOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowQueuePositionByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowQueuePositionByInstall",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}/queue-position",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowQueuePositionByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowQueuePositionByInstallOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowQueuePositionByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -17648,6 +18996,98 @@ func (a *Client) GetWorkflowStepApproval(params *GetWorkflowStepApprovalParams, 
 }
 
 /*
+GetWorkflowStepApprovalByAppBranch gets an workflow step approval
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) GetWorkflowStepApprovalByAppBranch(params *GetWorkflowStepApprovalByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalByAppBranchOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepApprovalByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepApprovalByAppBranch",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}/steps/{{step_id}}/approvals/{{approval_id}}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepApprovalByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepApprovalByAppBranchOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepApprovalByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowStepApprovalByInstall gets an workflow step approval
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetWorkflowStepApprovalByInstall(params *GetWorkflowStepApprovalByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalByInstallOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepApprovalByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepApprovalByInstall",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}/steps/{{step_id}}/approvals/{{approval_id}}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepApprovalByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepApprovalByInstallOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepApprovalByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetWorkflowStepApprovalContents gets a workflow step approval contents
 
 Return the contents of a json plan for an approval (compressed).
@@ -17690,6 +19130,190 @@ func (a *Client) GetWorkflowStepApprovalContents(params *GetWorkflowStepApproval
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepApprovalContents: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowStepApprovalContentsByAppBranch gets a workflow step approval contents
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) GetWorkflowStepApprovalContentsByAppBranch(params *GetWorkflowStepApprovalContentsByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalContentsByAppBranchOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepApprovalContentsByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepApprovalContentsByAppBranch",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}/steps/{{step_id}}/approvals/{{approval_id}}/contents",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepApprovalContentsByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepApprovalContentsByAppBranchOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepApprovalContentsByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowStepApprovalContentsByInstall gets a workflow step approval contents
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetWorkflowStepApprovalContentsByInstall(params *GetWorkflowStepApprovalContentsByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalContentsByInstallOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepApprovalContentsByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepApprovalContentsByInstall",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}/steps/{{step_id}}/approvals/{{approval_id}}/contents",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepApprovalContentsByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepApprovalContentsByInstallOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepApprovalContentsByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowStepByAppBranch gets a workflow step
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) GetWorkflowStepByAppBranch(params *GetWorkflowStepByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepByAppBranchOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepByAppBranch",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}/steps/{{step_id}}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepByAppBranchOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowStepByInstall gets a workflow step
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetWorkflowStepByInstall(params *GetWorkflowStepByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepByInstallOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepByInstall",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}/steps/{{step_id}}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepByInstallOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -17740,6 +19364,98 @@ func (a *Client) GetWorkflowStepGroup(params *GetWorkflowStepGroupParams, authIn
 }
 
 /*
+GetWorkflowStepGroupByAppBranch gets a workflow step group
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) GetWorkflowStepGroupByAppBranch(params *GetWorkflowStepGroupByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupByAppBranchOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepGroupByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepGroupByAppBranch",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}/step-groups/{{step_group_id}}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepGroupByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepGroupByAppBranchOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepGroupByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowStepGroupByInstall gets a workflow step group
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetWorkflowStepGroupByInstall(params *GetWorkflowStepGroupByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupByInstallOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepGroupByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepGroupByInstall",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}/step-groups/{{step_group_id}}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepGroupByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepGroupByInstallOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepGroupByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetWorkflowStepGroups gets all step groups for a workflow
 
 Get all step groups for a workflow, ordered by group index. Each group contains its nested steps.
@@ -17786,6 +19502,98 @@ func (a *Client) GetWorkflowStepGroups(params *GetWorkflowStepGroupsParams, auth
 }
 
 /*
+GetWorkflowStepGroupsByAppBranch gets all step groups for a workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) GetWorkflowStepGroupsByAppBranch(params *GetWorkflowStepGroupsByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupsByAppBranchOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepGroupsByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepGroupsByAppBranch",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}/step-groups",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepGroupsByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepGroupsByAppBranchOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepGroupsByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowStepGroupsByInstall gets all step groups for a workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetWorkflowStepGroupsByInstall(params *GetWorkflowStepGroupsByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepGroupsByInstallOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepGroupsByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepGroupsByInstall",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}/step-groups",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepGroupsByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepGroupsByInstallOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepGroupsByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetWorkflowSteps gets all of the steps for a given workflow
 
 Return all steps for a workflow.
@@ -17828,6 +19636,98 @@ func (a *Client) GetWorkflowSteps(params *GetWorkflowStepsParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetWorkflowSteps: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowStepsByAppBranch gets all of the steps for a given workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) GetWorkflowStepsByAppBranch(params *GetWorkflowStepsByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepsByAppBranchOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepsByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepsByAppBranch",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}/steps",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepsByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepsByAppBranchOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepsByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowStepsByInstall gets all of the steps for a given workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) GetWorkflowStepsByInstall(params *GetWorkflowStepsByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepsByInstallOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowStepsByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowStepsByInstall",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}/steps",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowStepsByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowStepsByInstallOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowStepsByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -18528,6 +20428,52 @@ func (a *Client) ListStaticTokens(params *ListStaticTokensParams, authInfo runti
 }
 
 /*
+LockInstallTerraformWorkspace locks terraform state
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) LockInstallTerraformWorkspace(params *LockInstallTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LockInstallTerraformWorkspaceOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewLockInstallTerraformWorkspaceParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "LockInstallTerraformWorkspace",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/terraform-workspaces/{workspace_id}/lock",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &LockInstallTerraformWorkspaceReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*LockInstallTerraformWorkspaceOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for LockInstallTerraformWorkspace: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 LockTerraformWorkspace locks terraform state
 
 Lock a terraform workspace to prevent concurrent modifications.
@@ -18899,6 +20845,190 @@ func (a *Client) PutInstallComponentHealthCheck(params *PutInstallComponentHealt
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for PutInstallComponentHealthCheck: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ReadComponentBuildLogs reads a log stream s logs
+
+Ancestor-scoped alternative to the bare route: authorizes against the app and component that own the build, which may serve many installs.
+*/
+func (a *Client) ReadComponentBuildLogs(params *ReadComponentBuildLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReadComponentBuildLogsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewReadComponentBuildLogsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ReadComponentBuildLogs",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/components/{component_id}/builds/{build_id}/logs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ReadComponentBuildLogsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ReadComponentBuildLogsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ReadComponentBuildLogs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ReadComponentBuildSpans reads a log stream s trace spans
+
+Ancestor-scoped alternative to the bare route: authorizes against the app and component that own the build, which may serve many installs.
+*/
+func (a *Client) ReadComponentBuildSpans(params *ReadComponentBuildSpansParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReadComponentBuildSpansOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewReadComponentBuildSpansParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ReadComponentBuildSpans",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/components/{component_id}/builds/{build_id}/spans",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ReadComponentBuildSpansReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ReadComponentBuildSpansOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ReadComponentBuildSpans: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ReadInstallRunnerJobLogs reads a log stream s logs
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) ReadInstallRunnerJobLogs(params *ReadInstallRunnerJobLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReadInstallRunnerJobLogsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewReadInstallRunnerJobLogsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ReadInstallRunnerJobLogs",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/runner-jobs/{runner_job_id}/logs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ReadInstallRunnerJobLogsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ReadInstallRunnerJobLogsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ReadInstallRunnerJobLogs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ReadInstallRunnerJobSpans reads a log stream s trace spans
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) ReadInstallRunnerJobSpans(params *ReadInstallRunnerJobSpansParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReadInstallRunnerJobSpansOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewReadInstallRunnerJobSpansParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ReadInstallRunnerJobSpans",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/runner-jobs/{runner_job_id}/spans",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ReadInstallRunnerJobSpansReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ReadInstallRunnerJobSpansOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ReadInstallRunnerJobSpans: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -19639,6 +21769,98 @@ func (a *Client) RetryWorkflowStep(params *RetryWorkflowStepParams, authInfo run
 }
 
 /*
+RetryWorkflowStepByAppBranch retries a failed or awaiting approval workflow step
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) RetryWorkflowStepByAppBranch(params *RetryWorkflowStepByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowStepByAppBranchCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRetryWorkflowStepByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RetryWorkflowStepByAppBranch",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}/steps/{{step_id}}/retry",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RetryWorkflowStepByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RetryWorkflowStepByAppBranchCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RetryWorkflowStepByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+RetryWorkflowStepByInstall retries a failed or awaiting approval workflow step
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) RetryWorkflowStepByInstall(params *RetryWorkflowStepByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowStepByInstallCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRetryWorkflowStepByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RetryWorkflowStepByInstall",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}/steps/{{step_id}}/retry",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RetryWorkflowStepByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RetryWorkflowStepByInstallCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RetryWorkflowStepByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 	RevokeOrgInvite revokes an org invite
 
 	Revoke a pending org invite. The invite status is set to "revoked" and the record is soft-deleted, freeing the unique constraint so the same email can be re-invited.
@@ -19861,6 +22083,98 @@ func (a *Client) SkipWorkflowStep(params *SkipWorkflowStepParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for SkipWorkflowStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+SkipWorkflowStepByAppBranch skips a failed workflow step and continue the workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) SkipWorkflowStepByAppBranch(params *SkipWorkflowStepByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SkipWorkflowStepByAppBranchCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewSkipWorkflowStepByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "SkipWorkflowStepByAppBranch",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}/steps/{{step_id}}/skip",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &SkipWorkflowStepByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*SkipWorkflowStepByAppBranchCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for SkipWorkflowStepByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+SkipWorkflowStepByInstall skips a failed workflow step and continue the workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) SkipWorkflowStepByInstall(params *SkipWorkflowStepByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SkipWorkflowStepByInstallCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewSkipWorkflowStepByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "SkipWorkflowStepByInstall",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}/steps/{{step_id}}/skip",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &SkipWorkflowStepByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*SkipWorkflowStepByInstallCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for SkipWorkflowStepByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -20181,6 +22495,98 @@ func (a *Client) SyncSecrets(params *SyncSecretsParams, authInfo runtime.ClientA
 }
 
 /*
+TailComponentBuildLogs longs poll tail a log stream
+
+Ancestor-scoped alternative to the bare route: authorizes against the app and component that own the build, which may serve many installs.
+*/
+func (a *Client) TailComponentBuildLogs(params *TailComponentBuildLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TailComponentBuildLogsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewTailComponentBuildLogsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "TailComponentBuildLogs",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/components/{component_id}/builds/{build_id}/logs/tail",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &TailComponentBuildLogsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*TailComponentBuildLogsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for TailComponentBuildLogs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+TailInstallRunnerJobLogs longs poll tail a log stream
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) TailInstallRunnerJobLogs(params *TailInstallRunnerJobLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TailInstallRunnerJobLogsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewTailInstallRunnerJobLogsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "TailInstallRunnerJobLogs",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/runner-jobs/{runner_job_id}/logs/tail",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &TailInstallRunnerJobLogsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*TailInstallRunnerJobLogsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for TailInstallRunnerJobLogs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 TeardownInstallComponent teardowns an install component
 
 Teardown and remove an install component's resources.
@@ -20453,6 +22859,52 @@ func (a *Client) TriggerInstallConfigSync(params *TriggerInstallConfigSyncParams
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for TriggerInstallConfigSync: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UnlockInstallTerraformWorkspace unlocks terraform workspace
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the resource, so an identity scoped to that install can reach it.
+*/
+func (a *Client) UnlockInstallTerraformWorkspace(params *UnlockInstallTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlockInstallTerraformWorkspaceOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUnlockInstallTerraformWorkspaceParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UnlockInstallTerraformWorkspace",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/terraform-workspaces/{workspace_id}/unlock",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UnlockInstallTerraformWorkspaceReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UnlockInstallTerraformWorkspaceOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UnlockInstallTerraformWorkspace: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -21985,6 +24437,98 @@ func (a *Client) UpdateWorkflow(params *UpdateWorkflowParams, authInfo runtime.C
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateWorkflow: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateWorkflowByAppBranch updates a workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the app branch that owns the workflow, so an identity scoped to that app can reach it.
+*/
+func (a *Client) UpdateWorkflowByAppBranch(params *UpdateWorkflowByAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateWorkflowByAppBranchOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateWorkflowByAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateWorkflowByAppBranch",
+		Method:             "PATCH",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/workflows/{workflow_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateWorkflowByAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateWorkflowByAppBranchOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateWorkflowByAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateWorkflowByInstall updates a workflow
+
+Ancestor-scoped alternative to the bare route: authorizes against the install that owns the workflow, so an identity scoped to that install can reach it.
+*/
+func (a *Client) UpdateWorkflowByInstall(params *UpdateWorkflowByInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateWorkflowByInstallOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateWorkflowByInstallParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateWorkflowByInstall",
+		Method:             "PATCH",
+		PathPattern:        "/v1/installs/{install_id}/workflows/{workflow_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateWorkflowByInstallReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateWorkflowByInstallOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateWorkflowByInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

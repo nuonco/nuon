@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/pkg/browser"
 
@@ -67,7 +68,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region, awsAccountID 
 			return ui.PrintError(errors.Wrap(err, "failed to get initial workflow for this new install"))
 		}
 		wf := workflows[0]
-		workflow.WorkflowApp(ctx, s.cfg, s.api, installID, wf.ID, false)
+		workflow.WorkflowApp(ctx, s.cfg, s.api, nuon.WorkflowOwner{InstallID: installID}, wf.ID, false)
 		return nil
 	}
 

@@ -52,7 +52,7 @@ type model struct {
 	api nuon.Client
 
 	// top level information
-	installID  string
+	owner      nuon.WorkflowOwner
 	workflowID string
 
 	width     int
@@ -134,7 +134,7 @@ func initialModel(
 	ctx context.Context,
 	cfg *config.Config,
 	api nuon.Client,
-	installID string,
+	owner nuon.WorkflowOwner,
 	workflowID string,
 ) model {
 	s := spinner.New()
@@ -148,7 +148,7 @@ func initialModel(
 		ctx:        ctx,
 		cfg:        cfg,
 		api:        api,
-		installID:  installID,
+		owner:      owner,
 		workflowID: workflowID,
 
 		// data
@@ -675,17 +675,17 @@ func WorkflowApp(
 	ctx context.Context,
 	cfg *config.Config,
 	api nuon.Client,
-	install_id string,
+	owner nuon.WorkflowOwner,
 	workflow_id string,
 	autoRetry bool,
 ) {
 	if !cfg.Interactive {
-		workflowPlainText(ctx, api, workflow_id)
+		workflowPlainText(ctx, api, owner, workflow_id)
 		return
 	}
 
 	// initialize the model
-	m := initialModel(ctx, cfg, api, install_id, workflow_id)
+	m := initialModel(ctx, cfg, api, owner, workflow_id)
 	m.autoRetryAll = autoRetry
 	// initialize the program
 	p := tea.NewProgram(m)
@@ -696,14 +696,14 @@ func WorkflowApp(
 }
 
 // workflowPlainText fetches a workflow once and prints a plain-text summary.
-func workflowPlainText(ctx context.Context, api nuon.Client, workflowID string) {
-	wf, err := api.GetWorkflow(ctx, workflowID)
+func workflowPlainText(ctx context.Context, api nuon.Client, owner nuon.WorkflowOwner, workflowID string) {
+	wf, err := api.GetWorkflow(ctx, owner, workflowID)
 	if err != nil {
 		fmt.Printf("Error fetching workflow: %v\n", err)
 		return
 	}
 
-	wf.Steps, err = api.GetWorkflowSteps(ctx, workflowID)
+	wf.Steps, err = api.GetWorkflowSteps(ctx, owner, workflowID)
 	if err != nil {
 		fmt.Printf("Error fetching workflow steps: %v\n", err)
 		return

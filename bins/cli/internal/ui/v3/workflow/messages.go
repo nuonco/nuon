@@ -16,13 +16,13 @@ type workflowFetchedMsg struct {
 
 func (m model) fetchWorkflowCmd() tea.Msg {
 	// This runs in a goroutine automatically
-	workflow, err := m.api.GetWorkflow(m.ctx, m.workflowID)
+	workflow, err := m.api.GetWorkflow(m.ctx, m.owner, m.workflowID)
 	if err != nil {
 		return workflowFetchedMsg{workflow: workflow, err: err}
 	}
 
 	if workflow != nil {
-		steps, stepsErr := m.api.GetWorkflowSteps(m.ctx, m.workflowID)
+		steps, stepsErr := m.api.GetWorkflowSteps(m.ctx, m.owner, m.workflowID)
 		if stepsErr != nil {
 			return workflowFetchedMsg{workflow: workflow, err: stepsErr}
 		}
@@ -46,11 +46,11 @@ type stackFetchedMsg struct {
 }
 
 func (m model) fetchStackCmd() tea.Msg {
-	if m.installID == "" {
+	if m.owner.InstallID == "" {
 		return stackFetchedMsg{}
 	}
 	// This runs in a goroutine automatically
-	stack, err := m.api.GetInstallStack(m.ctx, m.installID)
+	stack, err := m.api.GetInstallStack(m.ctx, m.owner.InstallID)
 	return stackFetchedMsg{stack: stack, err: err}
 }
 
@@ -72,6 +72,7 @@ func (m model) makeApproveStepCmd() tea.Cmd {
 	// Capture values needed for the API call
 	api := m.api
 	ctx := m.ctx
+	owner := m.owner
 	workflowID := m.workflowID
 	stepID := m.selectedStep.ID
 	approvalID := m.selectedStep.Approval.ID
@@ -81,7 +82,7 @@ func (m model) makeApproveStepCmd() tea.Cmd {
 			ResponseType: models.AppWorkflowStepResponseTypeApprove,
 			Note:         "",
 		}
-		resp, err := api.CreateWorkflowStepApprovalResponse(ctx, workflowID, stepID, approvalID, req)
+		resp, err := api.CreateWorkflowStepApprovalResponse(ctx, owner, workflowID, stepID, approvalID, req)
 		return createWorkflowStepApprovalResponseMsg{selectedStepApprovalResponse: resp, err: err}
 	}
 }
@@ -92,7 +93,7 @@ type cancelWorkflowMsg struct {
 
 func (m model) cancelWorkflowCmd() tea.Msg {
 	// This runs in a goroutine automatically
-	_, err := m.api.CancelWorkflow(m.ctx, m.workflowID)
+	_, err := m.api.CancelWorkflow(m.ctx, m.owner, m.workflowID)
 
 	m.setLogMessage(fmt.Sprintf("[%s] workflow cancelled", m.workflowID), "error")
 
@@ -116,7 +117,7 @@ func (m model) approveAllCmd() tea.Msg {
 			ResponseType: models.AppWorkflowStepResponseTypeApprove,
 			Note:         "",
 		}
-		resp, err := m.api.CreateWorkflowStepApprovalResponse(m.ctx, m.workflowID, step.ID, step.Approval.ID, req)
+		resp, err := m.api.CreateWorkflowStepApprovalResponse(m.ctx, m.owner, m.workflowID, step.ID, step.Approval.ID, req)
 		if err != nil {
 			m.error = err
 			return approveAllMsg{err: err}
@@ -149,7 +150,7 @@ func (m model) retryAllCmd() tea.Msg {
 	if target == nil {
 		return retryAllMsg{retried: 0, err: nil}
 	}
-	err := m.api.RetryWorkflowStep(m.ctx, m.workflowID, target.ID, nil)
+	err := m.api.RetryWorkflowStep(m.ctx, m.owner, m.workflowID, target.ID, nil)
 	if err != nil {
 		return retryAllMsg{retried: 0, err: err}
 	}
@@ -165,6 +166,7 @@ type getWorkflowStepApprovalContentsMsg struct {
 func (m model) getWorkflowStepApprovalContentsCmd() tea.Msg {
 	resp, err := m.api.GetWorkflowStepApprovalContents(
 		m.ctx,
+		m.owner,
 		m.workflowID,
 		m.selectedStep.ID,
 		m.selectedStep.Approval.ID,

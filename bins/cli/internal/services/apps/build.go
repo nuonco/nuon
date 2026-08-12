@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -43,6 +44,6 @@ func (s *Service) Build(ctx context.Context, appID, configID string) error {
 	ui.PrintLn(fmt.Sprintf("workflow %s created", wf.ID))
 
 	// Show the workflow TUI (passing empty installID since this is app-level)
-	workflow.WorkflowApp(ctx, s.cfg, s.api, "", wf.ID, false)
+	workflow.WorkflowApp(ctx, s.cfg, s.api, nuon.WorkflowOwner{}, wf.ID, false)
 	return nil
 }

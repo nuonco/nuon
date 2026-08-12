@@ -175,7 +175,7 @@ func (m *model) handleWorkflowStepApprovalResponseCreated(msg createWorkflowStep
 
 func (m *model) handleCancelWorkflow(msg cancelWorkflowMsg) tea.Cmd {
 	m.loading = false
-	_, err := m.api.CancelWorkflow(m.ctx, m.workflowID)
+	_, err := m.api.CancelWorkflow(m.ctx, m.owner, m.workflowID)
 	if msg.err != nil {
 		m.error = err
 	}

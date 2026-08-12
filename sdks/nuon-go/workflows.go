@@ -69,7 +69,31 @@ func (c *client) GetWorkflows(ctx context.Context, installID string, query *mode
 	return resp.Payload, hasNextPage(hr), nil
 }
 
-func (c *client) GetWorkflow(ctx context.Context, workflowID string) (*models.AppWorkflow, error) {
+func (c *client) GetWorkflow(ctx context.Context, owner WorkflowOwner, workflowID string) (*models.AppWorkflow, error) {
+	switch {
+	case owner.ownedByInstall():
+		resp, err := c.genClient.Operations.GetWorkflowByInstall(&operations.GetWorkflowByInstallParams{
+			InstallID:  owner.InstallID,
+			WorkflowID: workflowID,
+			Context:    ctx,
+		}, c.getOrgIDAuthInfo())
+		if err != nil {
+			return nil, err
+		}
+		return resp.Payload, nil
+	case owner.ownedByAppBranch():
+		resp, err := c.genClient.Operations.GetWorkflowByAppBranch(&operations.GetWorkflowByAppBranchParams{
+			AppID:       owner.AppID,
+			AppBranchID: owner.AppBranchID,
+			WorkflowID:  workflowID,
+			Context:     ctx,
+		}, c.getOrgIDAuthInfo())
+		if err != nil {
+			return nil, err
+		}
+		return resp.Payload, nil
+	}
+
 	resp, err := c.genClient.Operations.GetWorkflow(&operations.GetWorkflowParams{
 		WorkflowID: workflowID,
 		Context:    ctx,
@@ -81,7 +105,31 @@ func (c *client) GetWorkflow(ctx context.Context, workflowID string) (*models.Ap
 	return resp.Payload, nil
 }
 
-func (c *client) CancelWorkflow(ctx context.Context, workflowID string) (*operations.CancelWorkflowAccepted, error) {
+// CancelWorkflow returns the bare route's Accepted type for every owner so
+// callers keep one result shape; the nested responses carry no body either.
+func (c *client) CancelWorkflow(ctx context.Context, owner WorkflowOwner, workflowID string) (*operations.CancelWorkflowAccepted, error) {
+	switch {
+	case owner.ownedByInstall():
+		if _, err := c.genClient.Operations.CancelWorkflowByInstall(&operations.CancelWorkflowByInstallParams{
+			InstallID:  owner.InstallID,
+			WorkflowID: workflowID,
+			Context:    ctx,
+		}, c.getOrgIDAuthInfo()); err != nil {
+			return nil, err
+		}
+		return operations.NewCancelWorkflowAccepted(), nil
+	case owner.ownedByAppBranch():
+		if _, err := c.genClient.Operations.CancelWorkflowByAppBranch(&operations.CancelWorkflowByAppBranchParams{
+			AppID:       owner.AppID,
+			AppBranchID: owner.AppBranchID,
+			WorkflowID:  workflowID,
+			Context:     ctx,
+		}, c.getOrgIDAuthInfo()); err != nil {
+			return nil, err
+		}
+		return operations.NewCancelWorkflowAccepted(), nil
+	}
+
 	resp, err := c.genClient.Operations.CancelWorkflow(&operations.CancelWorkflowParams{
 		WorkflowID: workflowID,
 		Context:    ctx,
@@ -93,7 +141,33 @@ func (c *client) CancelWorkflow(ctx context.Context, workflowID string) (*operat
 	return resp, nil
 }
 
-func (c *client) UpdateWorkflow(ctx context.Context, workflowID string, req *models.ServiceUpdateWorkflowRequest) (*models.AppWorkflow, error) {
+func (c *client) UpdateWorkflow(ctx context.Context, owner WorkflowOwner, workflowID string, req *models.ServiceUpdateWorkflowRequest) (*models.AppWorkflow, error) {
+	switch {
+	case owner.ownedByInstall():
+		resp, err := c.genClient.Operations.UpdateWorkflowByInstall(&operations.UpdateWorkflowByInstallParams{
+			InstallID:  owner.InstallID,
+			WorkflowID: workflowID,
+			Req:        req,
+			Context:    ctx,
+		}, c.getOrgIDAuthInfo())
+		if err != nil {
+			return nil, err
+		}
+		return resp.Payload, nil
+	case owner.ownedByAppBranch():
+		resp, err := c.genClient.Operations.UpdateWorkflowByAppBranch(&operations.UpdateWorkflowByAppBranchParams{
+			AppID:       owner.AppID,
+			AppBranchID: owner.AppBranchID,
+			WorkflowID:  workflowID,
+			Req:         req,
+			Context:     ctx,
+		}, c.getOrgIDAuthInfo())
+		if err != nil {
+			return nil, err
+		}
+		return resp.Payload, nil
+	}
+
 	resp, err := c.genClient.Operations.UpdateWorkflow(&operations.UpdateWorkflowParams{
 		WorkflowID: workflowID,
 		Req:        req,
@@ -109,7 +183,7 @@ func (c *client) UpdateWorkflow(ctx context.Context, workflowID string, req *mod
 // GetWorkflowSteps returns every step for a workflow. The endpoint is
 // paginated (max 100 per page), so this pages through the full set following
 // the X-Nuon-Page-Next header rather than loading everything in one query.
-func (c *client) GetWorkflowSteps(ctx context.Context, workflowID string) ([]*models.AppWorkflowStep, error) {
+func (c *client) GetWorkflowSteps(ctx context.Context, owner WorkflowOwner, workflowID string) ([]*models.AppWorkflowStep, error) {
 	const pageLimit = int64(100)
 
 	var (
@@ -119,22 +193,60 @@ func (c *client) GetWorkflowSteps(ctx context.Context, workflowID string) ([]*mo
 	for {
 		limit := pageLimit
 		off := offset
-		params := &operations.GetWorkflowStepsParams{
-			WorkflowID: workflowID,
-			Limit:      &limit,
-			Offset:     &off,
-			Context:    ctx,
-		}
 
-		hr := newResponseHeaderReader(&operations.GetWorkflowStepsReader{})
-		resp, err := c.genClient.Operations.GetWorkflowSteps(params, c.getOrgIDAuthInfo(), hr.ClientOption())
+		var (
+			page []*models.AppWorkflowStep
+			more bool
+			err  error
+		)
+		switch {
+		case owner.ownedByInstall():
+			hr := newResponseHeaderReader(&operations.GetWorkflowStepsByInstallReader{})
+			var resp *operations.GetWorkflowStepsByInstallOK
+			resp, err = c.genClient.Operations.GetWorkflowStepsByInstall(&operations.GetWorkflowStepsByInstallParams{
+				InstallID:  owner.InstallID,
+				WorkflowID: workflowID,
+				Limit:      &limit,
+				Offset:     &off,
+				Context:    ctx,
+			}, c.getOrgIDAuthInfo(), hr.ClientOption())
+			if resp != nil {
+				page, more = resp.Payload, hasNextPage(hr)
+			}
+		case owner.ownedByAppBranch():
+			hr := newResponseHeaderReader(&operations.GetWorkflowStepsByAppBranchReader{})
+			var resp *operations.GetWorkflowStepsByAppBranchOK
+			resp, err = c.genClient.Operations.GetWorkflowStepsByAppBranch(&operations.GetWorkflowStepsByAppBranchParams{
+				AppID:       owner.AppID,
+				AppBranchID: owner.AppBranchID,
+				WorkflowID:  workflowID,
+				Limit:       &limit,
+				Offset:      &off,
+				Context:     ctx,
+			}, c.getOrgIDAuthInfo(), hr.ClientOption())
+			if resp != nil {
+				page, more = resp.Payload, hasNextPage(hr)
+			}
+		default:
+			hr := newResponseHeaderReader(&operations.GetWorkflowStepsReader{})
+			var resp *operations.GetWorkflowStepsOK
+			resp, err = c.genClient.Operations.GetWorkflowSteps(&operations.GetWorkflowStepsParams{
+				WorkflowID: workflowID,
+				Limit:      &limit,
+				Offset:     &off,
+				Context:    ctx,
+			}, c.getOrgIDAuthInfo(), hr.ClientOption())
+			if resp != nil {
+				page, more = resp.Payload, hasNextPage(hr)
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
 
-		steps = append(steps, resp.Payload...)
+		steps = append(steps, page...)
 
-		if len(resp.Payload) == 0 || !hasNextPage(hr) {
+		if len(page) == 0 || !more {
 			break
 		}
 		offset += pageLimit
@@ -143,7 +255,33 @@ func (c *client) GetWorkflowSteps(ctx context.Context, workflowID string) ([]*mo
 	return steps, nil
 }
 
-func (c *client) GetWorkflowStep(ctx context.Context, workflowID, stepID string) (*models.AppWorkflowStep, error) {
+func (c *client) GetWorkflowStep(ctx context.Context, owner WorkflowOwner, workflowID, stepID string) (*models.AppWorkflowStep, error) {
+	switch {
+	case owner.ownedByInstall():
+		resp, err := c.genClient.Operations.GetWorkflowStepByInstall(&operations.GetWorkflowStepByInstallParams{
+			InstallID:  owner.InstallID,
+			WorkflowID: workflowID,
+			StepID:     stepID,
+			Context:    ctx,
+		}, c.getOrgIDAuthInfo())
+		if err != nil {
+			return nil, err
+		}
+		return resp.Payload, nil
+	case owner.ownedByAppBranch():
+		resp, err := c.genClient.Operations.GetWorkflowStepByAppBranch(&operations.GetWorkflowStepByAppBranchParams{
+			AppID:       owner.AppID,
+			AppBranchID: owner.AppBranchID,
+			WorkflowID:  workflowID,
+			StepID:      stepID,
+			Context:     ctx,
+		}, c.getOrgIDAuthInfo())
+		if err != nil {
+			return nil, err
+		}
+		return resp.Payload, nil
+	}
+
 	resp, err := c.genClient.Operations.GetWorkflowStep(&operations.GetWorkflowStepParams{
 		WorkflowID: workflowID,
 		StepID:     stepID,
@@ -156,8 +294,28 @@ func (c *client) GetWorkflowStep(ctx context.Context, workflowID, stepID string)
 	return resp.Payload, nil
 }
 
-func (c *client) RetryWorkflowStep(ctx context.Context, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error {
+func (c *client) RetryWorkflowStep(ctx context.Context, owner WorkflowOwner, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error {
 	// Note: req parameter is ignored in the current API - the endpoint no longer accepts a request body
+	switch {
+	case owner.ownedByInstall():
+		_, err := c.genClient.Operations.RetryWorkflowStepByInstall(&operations.RetryWorkflowStepByInstallParams{
+			InstallID:  owner.InstallID,
+			WorkflowID: workflowID,
+			StepID:     stepID,
+			Context:    ctx,
+		}, c.getOrgIDAuthInfo())
+		return err
+	case owner.ownedByAppBranch():
+		_, err := c.genClient.Operations.RetryWorkflowStepByAppBranch(&operations.RetryWorkflowStepByAppBranchParams{
+			AppID:       owner.AppID,
+			AppBranchID: owner.AppBranchID,
+			WorkflowID:  workflowID,
+			StepID:      stepID,
+			Context:     ctx,
+		}, c.getOrgIDAuthInfo())
+		return err
+	}
+
 	_, err := c.genClient.Operations.RetryWorkflowStep(&operations.RetryWorkflowStepParams{
 		WorkflowID: workflowID,
 		StepID:     stepID,

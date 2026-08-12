@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -148,7 +149,7 @@ func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, 
 		return nil
 	}
 
-	workflow.WorkflowApp(ctx, s.cfg, s.api, "", run.WorkflowID, false)
+	workflow.WorkflowApp(ctx, s.cfg, s.api, nuon.WorkflowOwner{AppID: appID, AppBranchID: branchID}, run.WorkflowID, false)
 	return nil
 }
 
@@ -199,7 +200,7 @@ func (s *Service) ListBranchRuns(ctx context.Context, appID, branchID string, as
 		return view.Error(err)
 	}
 
-	workflow.WorkflowApp(ctx, s.cfg, s.api, "", selectedID, false)
+	workflow.WorkflowApp(ctx, s.cfg, s.api, nuon.WorkflowOwner{AppID: appID, AppBranchID: branchID}, selectedID, false)
 	return nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	nuon "github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
@@ -66,7 +67,7 @@ func (h *DeploysHandler) StreamDeploy(c *gin.Context) {
 				}
 			}
 			if workflowID != "" {
-				if workflow, err := client.GetWorkflow(ctx, workflowID); err == nil {
+				if workflow, err := client.GetWorkflow(ctx, nuon.WorkflowOwner{}, workflowID); err == nil {
 					if ev, err := marshalEvent("workflow", workflow); err == nil {
 						events = append(events, ev)
 					}

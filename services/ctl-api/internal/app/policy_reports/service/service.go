@@ -59,8 +59,8 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// install-nested, ancestor-scoped reports (bare routes above stay org-tier).
 	reports := ge.Group("/v1/installs/:install_id/policy-reports/:report_id")
 	reports.Use(s.requireReportInInstall)
-	reports.GET("", s.GetPolicyReport)
-	reports.GET("/export", s.ExportPolicyReport)
+	reports.GET("", s.GetInstallPolicyReport)
+	reports.GET("/export", s.ExportInstallPolicyReport)
 
 	return nil
 }

@@ -285,12 +285,12 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 	// deprecated install-workflows
 
-	s.GET(ge, "/v1/install-workflows/:install_workflow_id", s.GetInstallWorkflow, api.APIContextTypePublic, true)
-	s.PATCH(ge, "/v1/install-workflows/:install_workflow_id", s.UpdateInstallWorkflow, api.APIContextTypePublic, true)
-	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps", s.GetInstallWorkflowSteps, api.APIContextTypePublic, true)
-	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id", s.GetInstallWorkflowStep, api.APIContextTypePublic, true)
-	s.POST(ge, "/v1/install-workflows/:install_workflow_id/cancel", s.CancelInstallWorkflow, api.APIContextTypePublic, true)
-	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id/approvals/:approval_id", s.GetInstallWorkflowStepApproval, api.APIContextTypePublic, true)
+	s.GET(ge, "/v1/install-workflows/:install_workflow_id", s.GetWorkflowByInstall, api.APIContextTypePublic, true)
+	s.PATCH(ge, "/v1/install-workflows/:install_workflow_id", s.UpdateWorkflowByInstall, api.APIContextTypePublic, true)
+	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps", s.GetWorkflowStepsByInstall, api.APIContextTypePublic, true)
+	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id", s.GetWorkflowStepByInstall, api.APIContextTypePublic, true)
+	s.POST(ge, "/v1/install-workflows/:install_workflow_id/cancel", s.CancelWorkflowByInstall, api.APIContextTypePublic, true)
+	s.GET(ge, "/v1/install-workflows/:install_workflow_id/steps/:install_workflow_step_id/approvals/:approval_id", s.GetWorkflowStepApprovalByInstall, api.APIContextTypePublic, true)
 
 	return nil
 }
@@ -458,65 +458,66 @@ func (s *service) requireWorkflowOwner(ownerType, ownerParam string) gin.Handler
 	}
 }
 
-// The workflow GET is an annotated wrapper (distinct SDK op); the sub-actions
-// reuse their bare handlers directly — still ancestor-scoped by the group
-// guard, but documented under their existing (org-tier) swagger paths.
+// Each nested route points at an annotated wrapper (see
+// nested_install_workflows.go / nested_branch_workflows.go) so the path is a
+// distinct swagger operation with a generated client method. The group guard
+// is what makes the subtree ancestor-scoped.
 func (s *service) registerInstallWorkflowSubtree(workflows *gin.RouterGroup) {
-	workflows.GET("", s.GetWorkflow)
-	workflows.PATCH("", s.UpdateWorkflow)
-	workflows.POST("/cancel", s.CancelWorkflow)
-	workflows.GET("/queue-position", s.GetWorkflowQueuePosition)
+	workflows.GET("", s.GetWorkflowByInstall)
+	workflows.PATCH("", s.UpdateWorkflowByInstall)
+	workflows.POST("/cancel", s.CancelWorkflowByInstall)
+	workflows.GET("/queue-position", s.GetWorkflowQueuePositionByInstall)
 
 	stepGroups := workflows.Group("/step-groups")
 	{
-		stepGroups.GET("", s.GetWorkflowStepGroups)
-		stepGroups.GET("/:step_group_id", s.GetWorkflowStepGroup)
+		stepGroups.GET("", s.GetWorkflowStepGroupsByInstall)
+		stepGroups.GET("/:step_group_id", s.GetWorkflowStepGroupByInstall)
 	}
 
 	steps := workflows.Group("/steps")
 	{
-		steps.GET("", s.GetWorkflowSteps)
-		steps.GET("/:step_id", s.GetWorkflowStep)
-		steps.GET("/:step_id/await", s.AwaitWorkflowStep)
-		steps.POST("/:step_id/retry", s.RetryWorkflowStep)
-		steps.POST("/:step_id/skip", s.SkipWorkflowStep)
-		steps.POST("/:step_id/cancel", s.CancelWorkflowStep)
+		steps.GET("", s.GetWorkflowStepsByInstall)
+		steps.GET("/:step_id", s.GetWorkflowStepByInstall)
+		steps.GET("/:step_id/await", s.AwaitWorkflowStepByInstall)
+		steps.POST("/:step_id/retry", s.RetryWorkflowStepByInstall)
+		steps.POST("/:step_id/skip", s.SkipWorkflowStepByInstall)
+		steps.POST("/:step_id/cancel", s.CancelWorkflowStepByInstall)
 
 		approvals := steps.Group("/:step_id/approvals/:approval_id")
 		{
-			approvals.GET("", s.GetWorkflowStepApproval)
-			approvals.POST("/response", s.CreateWorkflowStepApprovalResponse)
-			approvals.GET("/contents", s.GetWorkflowStepApprovalContents)
+			approvals.GET("", s.GetWorkflowStepApprovalByInstall)
+			approvals.POST("/response", s.CreateWorkflowStepApprovalResponseByInstall)
+			approvals.GET("/contents", s.GetWorkflowStepApprovalContentsByInstall)
 		}
 	}
 }
 
 func (s *service) registerBranchWorkflowSubtree(workflows *gin.RouterGroup) {
-	workflows.GET("", s.GetWorkflow)
-	workflows.PATCH("", s.UpdateWorkflow)
-	workflows.POST("/cancel", s.CancelWorkflow)
-	workflows.GET("/queue-position", s.GetWorkflowQueuePosition)
+	workflows.GET("", s.GetWorkflowByAppBranch)
+	workflows.PATCH("", s.UpdateWorkflowByAppBranch)
+	workflows.POST("/cancel", s.CancelWorkflowByAppBranch)
+	workflows.GET("/queue-position", s.GetWorkflowQueuePositionByAppBranch)
 
 	stepGroups := workflows.Group("/step-groups")
 	{
-		stepGroups.GET("", s.GetWorkflowStepGroups)
-		stepGroups.GET("/:step_group_id", s.GetWorkflowStepGroup)
+		stepGroups.GET("", s.GetWorkflowStepGroupsByAppBranch)
+		stepGroups.GET("/:step_group_id", s.GetWorkflowStepGroupByAppBranch)
 	}
 
 	steps := workflows.Group("/steps")
 	{
-		steps.GET("", s.GetWorkflowSteps)
-		steps.GET("/:step_id", s.GetWorkflowStep)
-		steps.GET("/:step_id/await", s.AwaitWorkflowStep)
-		steps.POST("/:step_id/retry", s.RetryWorkflowStep)
-		steps.POST("/:step_id/skip", s.SkipWorkflowStep)
-		steps.POST("/:step_id/cancel", s.CancelWorkflowStep)
+		steps.GET("", s.GetWorkflowStepsByAppBranch)
+		steps.GET("/:step_id", s.GetWorkflowStepByAppBranch)
+		steps.GET("/:step_id/await", s.AwaitWorkflowStepByAppBranch)
+		steps.POST("/:step_id/retry", s.RetryWorkflowStepByAppBranch)
+		steps.POST("/:step_id/skip", s.SkipWorkflowStepByAppBranch)
+		steps.POST("/:step_id/cancel", s.CancelWorkflowStepByAppBranch)
 
 		approvals := steps.Group("/:step_id/approvals/:approval_id")
 		{
-			approvals.GET("", s.GetWorkflowStepApproval)
-			approvals.POST("/response", s.CreateWorkflowStepApprovalResponse)
-			approvals.GET("/contents", s.GetWorkflowStepApprovalContents)
+			approvals.GET("", s.GetWorkflowStepApprovalByAppBranch)
+			approvals.POST("/response", s.CreateWorkflowStepApprovalResponseByAppBranch)
+			approvals.GET("/contents", s.GetWorkflowStepApprovalContentsByAppBranch)
 		}
 	}
 }

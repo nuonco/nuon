@@ -434,14 +434,14 @@ func (s *appInstallSyncer) syncLabels(ctx context.Context, installID string, des
 }
 
 func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string, installID string, autoApprove, wait bool) error {
-	workflow, err := s.api.GetWorkflow(ctx, workflowID)
+	workflow, err := s.api.GetWorkflow(ctx, nuon.WorkflowOwner{InstallID: installID}, workflowID)
 	if err != nil {
 		return nil
 	}
 
 	if workflow.ApprovalOption == models.AppInstallApprovalOptionPrompt {
 		if autoApprove && workflow.Status.Status == models.AppStatusPending {
-			_, err := s.api.UpdateWorkflow(ctx, workflow.ID, &models.ServiceUpdateWorkflowRequest{
+			_, err := s.api.UpdateWorkflow(ctx, nuon.WorkflowOwner{InstallID: installID}, workflow.ID, &models.ServiceUpdateWorkflowRequest{
 				ApprovalOption: models.AppInstallApprovalOptionApproveDashAll.Pointer(),
 			})
 			if err != nil {
@@ -470,7 +470,7 @@ func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string
 		spinner.Update(fmt.Sprintf("waiting for the workflow to complete (status: %s)", workflow.Status.Status))
 
 		time.Sleep(defaultPollDuration)
-		currentWorkflow, err := s.api.GetWorkflow(ctx, workflowID)
+		currentWorkflow, err := s.api.GetWorkflow(ctx, nuon.WorkflowOwner{InstallID: installID}, workflowID)
 		if err == nil {
 			workflow = currentWorkflow
 		} else {

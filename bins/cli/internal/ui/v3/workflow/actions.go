@@ -24,8 +24,8 @@ func (m model) openInBrowser() {
 	}
 
 	if url == "" {
-		if m.installID != "" {
-			url = fmt.Sprintf("%s/%s/installs/%s/workflows/%s", dashboardURL, m.cfg.OrgID, m.installID, m.workflowID)
+		if m.owner.InstallID != "" {
+			url = fmt.Sprintf("%s/%s/installs/%s/workflows/%s", dashboardURL, m.cfg.OrgID, m.owner.InstallID, m.workflowID)
 		} else {
 			url = fmt.Sprintf("%s/%s/workflows/%s", dashboardURL, m.cfg.OrgID, m.workflowID)
 		}

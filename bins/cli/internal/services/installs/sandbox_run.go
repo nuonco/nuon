@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 )
 
 func (s *Service) SandboxRunGet(ctx context.Context, installID, runID string, asJSON bool) error {
@@ -55,7 +56,7 @@ func (s *Service) SandboxRunCancel(ctx context.Context, installID, runID string,
 		return ui.PrintError(fmt.Errorf("sandbox run %s has no associated workflow to cancel", runID))
 	}
 
-	if _, err := s.api.CancelWorkflow(ctx, workflowID); err != nil {
+	if _, err := s.api.CancelWorkflow(ctx, nuon.WorkflowOwner{InstallID: installID}, workflowID); err != nil {
 		return ui.PrintJSONError(err)
 	}
 

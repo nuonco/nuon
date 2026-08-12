@@ -27,8 +27,11 @@
 <p class="sub">Move the CLI onto the nested routes so a resource-scoped API token / OIDC identity works, and add commands to manage custom roles.</p>
 
 <h2>1. Use nested routes</h2>
-<p>The CLI (<code>bins/cli/</code>) drives the Go SDK (<code>sdks/nuon-go</code>). After Phase 1 regenerates the SDK with nested operations, repoint the CLI service layer at the nested calls for child resources, threading the app/install id the command already resolves. Bare-route calls that only org admins run (org-level operations) can stay as-is.</p>
-<p><strong>Method:</strong> find CLI service calls to bare child operations; switch to the nested SDK operation, using the <code>-a/--app</code> / <code>-i/--install</code> context the command group already has.</p>
+<p>The CLI (<code>bins/cli/</code>) drives the Go SDK (<code>sdks/nuon-go</code>). Phase&nbsp;1 deliberately shipped <em>no</em> swagger or SDK surface for its nested routes &mdash; they reuse the bare handlers, which keep their original org-tier operations &mdash; so this phase adds that surface before it can repoint anything.</p>
+<p><strong>Method:</strong> annotate every nested path with its own <code>@ID</code>/<code>@Router</code> via a thin wrapper handler that delegates to the bare handler (<code>nested*.go</code> in each service package), regenerate the spec and client, then repoint the CLI.</p>
+<p>All 53 nested paths are annotated: workflows under both owner types (<code>installs/</code> and <code>apps/&hellip;/branches/</code>), install runner-jobs and their logs, install terraform-workspaces, app-scoped component build logs, and install policy-reports. Two gotchas worth recording: a wrapper inherits the bare route's <code>@Deprecated</code> and its path params, and go-swagger rejects the <em>whole</em> spec if one path param is undeclared or names a placeholder the path lacks &mdash; a log-stream handler declares <code>log_stream_id</code>, which no nested path carries.</p>
+<p>Workflow calls take an ancestor through <code>nuon.WorkflowOwner</code>: set, they use the nested route; zero, they keep the bare one. The ids were already in scope at the call sites &mdash; <code>apps/branches.go</code> was passing <code>""</code> into the workflow TUI's install slot and discarding the app/branch pair it had just resolved.</p>
+<div class="callout"><strong>Left org-tier on purpose.</strong> <code>nuon installs workflows get|steps</code> and the dashboard server's SSE handlers are addressed by workflow id alone, with no ancestor in scope. Scoping them to the <em>selected</em> install would 404 whenever the id belongs to a different install, so they keep the bare route until they take an ancestor of their own.</div>
 
 <h2>2. Custom-role commands</h2>
 <p>Extend the existing <code>nuon</code> role surface to create and manage custom roles, mirroring the Phase 2 roles API. Each <code>--permission</code> is a scoped permission entry (repeatable):</p>
@@ -49,16 +52,17 @@ nuon orgs api-tokens create --role &lt;role_id&gt;</code></pre>
 
 <h2>3. Files (anticipated)</h2>
 <ul>
-<li><code>sdks/nuon-go/*</code> &mdash; regenerated (from Phase 1).</li>
+<li><code>services/ctl-api/internal/app/*/service/nested*.go</code> &mdash; annotated wrapper handlers for the nested paths.</li>
+<li><code>sdks/nuon-go/*</code> &mdash; regenerated against the new spec, plus <code>workflow_owner.go</code> and owner dispatch in the workflow methods.</li>
 <li><code>bins/cli/internal/services/*</code> &mdash; repointed child-resource calls.</li>
 <li><code>bins/cli/internal/services/roles/*</code> + <code>bins/cli/cmd/roles*</code> &mdash; extended/new role commands + <code>--permission</code> entry parser.</li>
-<li><code>docs/cli-commands.mdx</code> &mdash; regenerated.</li>
+<li><code>docs/cli-commands.mdx</code> &mdash; hand-maintained, not generated; deferred to Phase&nbsp;6 with the rest of the docs.</li>
 </ul>
 
 <h2>4. Acceptance</h2>
 <ul>
-<li>Child-resource CLI commands work for a resource-scoped identity (not just org admins) once enforcement is on.</li>
-<li><code>nuon roles create/list/delete</code> round-trips against the API; created custom roles are assignable via <code>--role</code>.</li>
+<li>Child-resource CLI commands work for a resource-scoped identity (not just org admins) once enforcement is on &mdash; for the calls that have an ancestor in scope; see the callout in &sect;1 for the ones that keep the org-tier route.</li>
+<li><code>nuon roles create/get/edit/delete</code> round-trips against the API; created custom roles are assignable via <code>--role</code>, which the API already resolves as either a role type or a role id.</li>
 <li><code>--read-only</code> blocks role mutations; <code>--output agent</code> emits a single envelope; managed roles reject mutation.</li>
 <li>Bare-route org-admin commands unchanged.</li>
 </ul>

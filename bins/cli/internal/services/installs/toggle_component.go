@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -79,6 +80,6 @@ func (s *Service) ToggleComponent(ctx context.Context, installID, componentID st
 		return nil
 	}
 
-	workflow.WorkflowApp(ctx, s.cfg, s.api, installID, resp.WorkflowID, false)
+	workflow.WorkflowApp(ctx, s.cfg, s.api, nuon.WorkflowOwner{InstallID: installID}, resp.WorkflowID, false)
 	return nil
 }

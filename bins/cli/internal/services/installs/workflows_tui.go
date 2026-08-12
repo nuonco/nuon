@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/watch"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
 	workflowselector "github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow/selector"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -73,13 +74,13 @@ func (s *Service) workflowsTUI(ctx context.Context, installID, workflowID string
 		workflowID = selectedID
 	} else {
 		// Validate workflow ID exists
-		_, err := s.api.GetWorkflow(ctx, workflowID)
+		_, err := s.api.GetWorkflow(ctx, nuon.WorkflowOwner{InstallID: installID}, workflowID)
 		if err != nil {
 			return ui.PrintError(errors.Wrap(err, "failed to get workflow"))
 		}
 	}
 
-	workflow.WorkflowApp(ctx, s.cfg, s.api, installID, workflowID, autoRetry)
+	workflow.WorkflowApp(ctx, s.cfg, s.api, nuon.WorkflowOwner{InstallID: installID}, workflowID, autoRetry)
 	return nil
 }
 
@@ -99,7 +100,7 @@ func (s *Service) workflowsTUILatest(ctx context.Context, installID string) erro
 		return ui.PrintError(errors.New("no workflows found for this install"))
 	}
 
-	workflow.WorkflowApp(ctx, s.cfg, s.api, installID, workflows[0].ID, false)
+	workflow.WorkflowApp(ctx, s.cfg, s.api, nuon.WorkflowOwner{InstallID: installID}, workflows[0].ID, false)
 	return nil
 }
 
@@ -115,7 +116,7 @@ func (s *Service) WorkflowsWatchTUI(ctx context.Context, installID, workflowID s
 
 	// If workflow ID provided, resolve install ID from workflow
 	if workflowID != "" {
-		workflow, err := s.api.GetWorkflow(ctx, workflowID)
+		workflow, err := s.api.GetWorkflow(ctx, nuon.WorkflowOwner{InstallID: installID}, workflowID)
 		if err != nil {
 			return ExitCodeFailed, ui.PrintError(errors.Wrap(err, "failed to get workflow"))
 		}

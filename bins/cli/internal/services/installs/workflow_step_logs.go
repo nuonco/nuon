@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/logs"
+	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -39,7 +40,7 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 	}
 
 	if opts.Browser {
-		workflow, err := s.api.GetWorkflow(ctx, workflowID)
+		workflow, err := s.api.GetWorkflow(ctx, nuon.WorkflowOwner{InstallID: installID}, workflowID)
 		if err != nil {
 			return view.Error(err)
 		}
@@ -60,7 +61,7 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 		return ui.PrintError(err)
 	}
 
-	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
+	step, err := s.api.GetWorkflowStep(ctx, nuon.WorkflowOwner{InstallID: installID}, workflowID, stepID)
 	if err != nil {
 		return view.Error(err)
 	}

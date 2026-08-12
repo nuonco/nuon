@@ -250,14 +250,14 @@ type Client interface {
 	// workflows
 	GetWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppWorkflow, bool, error)
 	GetInstallWorkflows(ctx context.Context, installID string, query *GetInstallWorkflowsQuery) ([]*models.AppWorkflow, bool, error)
-	GetWorkflow(ctx context.Context, workflowID string) (*models.AppWorkflow, error)
-	GetWorkflowSteps(ctx context.Context, workflowID string) ([]*models.AppWorkflowStep, error)
-	GetWorkflowStep(ctx context.Context, workflowID, stepID string) (*models.AppWorkflowStep, error)
-	CancelWorkflow(ctx context.Context, workflowID string) (*operations.CancelWorkflowAccepted, error)
-	UpdateWorkflow(ctx context.Context, workflowID string, req *models.ServiceUpdateWorkflowRequest) (*models.AppWorkflow, error)
-	CreateWorkflowStepApprovalResponse(cxt context.Context, workflowID string, workflowStepID string, approvalID string, req *models.ServiceCreateWorkflowStepApprovalResponseRequest) (*models.ServiceCreateWorkflowStepApprovalResponseResponse, error)
-	GetWorkflowStepApprovalContents(ctx context.Context, workflowID string, workflowStepID string, workflowApprovalID string) (interface{}, error)
-	RetryWorkflowStep(ctx context.Context, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error
+	GetWorkflow(ctx context.Context, owner WorkflowOwner, workflowID string) (*models.AppWorkflow, error)
+	GetWorkflowSteps(ctx context.Context, owner WorkflowOwner, workflowID string) ([]*models.AppWorkflowStep, error)
+	GetWorkflowStep(ctx context.Context, owner WorkflowOwner, workflowID, stepID string) (*models.AppWorkflowStep, error)
+	CancelWorkflow(ctx context.Context, owner WorkflowOwner, workflowID string) (*operations.CancelWorkflowAccepted, error)
+	UpdateWorkflow(ctx context.Context, owner WorkflowOwner, workflowID string, req *models.ServiceUpdateWorkflowRequest) (*models.AppWorkflow, error)
+	CreateWorkflowStepApprovalResponse(cxt context.Context, owner WorkflowOwner, workflowID string, workflowStepID string, approvalID string, req *models.ServiceCreateWorkflowStepApprovalResponseRequest) (*models.ServiceCreateWorkflowStepApprovalResponseResponse, error)
+	GetWorkflowStepApprovalContents(ctx context.Context, owner WorkflowOwner, workflowID string, workflowStepID string, workflowApprovalID string) (interface{}, error)
+	RetryWorkflowStep(ctx context.Context, owner WorkflowOwner, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error
 
 	// org-level workflow queries
 	GetOrgWorkflows(ctx context.Context, query *GetOrgWorkflowsQuery) ([]*models.AppWorkflow, error)
