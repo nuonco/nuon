@@ -419,7 +419,9 @@ out. `--no-wait` skips the build wait entirely. The success envelope's `data.bui
 
 Routing lives in `internal/agentmode` (`HumanWriter()` returns stderr when enabled). Success output must go through
 `ui.PrintJSON` to be enveloped; commands that write their own JSON or use `fmt.Println` bypass the envelope.
-`--output json` is unchanged from the old `--json` — raw output, no envelope.
+`--output json` is unchanged from the old `--json` — raw output, no envelope. Its errors render as
+`{"error":"<message>","code":"<code>"}` (API user errors keep their full object shape); message and code come from
+the same `classifyError` the agent envelope uses, so json and agent report the same message for the same failure.
 
 **Errors: just `return err`.** The `wrapCmd` boundary (`cmd/wrap.go`) renders every command error once in the active
 output mode (table text, json error object, or agent envelope) before resolving the exit code — command and service

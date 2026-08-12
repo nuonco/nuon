@@ -2,7 +2,6 @@ package ui
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/cockroachdb/errors/withstack"
@@ -33,6 +32,7 @@ func PrintIndentedJSON(data interface{}) {
 
 type jsonError struct {
 	Error string `json:"error"`
+	Code  string `json:"code,omitempty"`
 }
 
 // PrintJSONError renders an error in the active output mode. It is equivalent
@@ -47,27 +47,20 @@ func emitJSONError(err error) error {
 		err = withstack.WithStackDepth(err, 1)
 	}
 
-	cliUserErr := &CLIUserError{}
-	if errors.As(err, &cliUserErr) {
-		PrintJSON(jsonError{Error: cliUserErr.Msg})
-		return err
-	}
-
-	userErr, ok := nuon.ToUserError(err)
-	if ok {
+	// API user errors keep their historical shape: the full error object.
+	if userErr, ok := nuon.ToUserError(err); ok {
 		PrintJSON(userErr)
 		return err
 	}
 
-	if nuon.IsServerError(err) {
-		PrintJSON(jsonError{
-			Error: defaultServerErrorMessage,
-		})
-		return err
+	// Everything else classifies exactly like the agent envelope, so json and
+	// agent callers see the same message for the same failure. Messages that
+	// would leak internal details fall back to the generic one, matching the
+	// table renderer's policy.
+	code, msg := classifyError(err)
+	if containsTechnicalError(msg) {
+		msg = defaultUnknownErrorMessage
 	}
-
-	PrintJSON(jsonError{
-		Error: defaultUnknownErrorMessage,
-	})
+	PrintJSON(jsonError{Error: msg, Code: code})
 	return err
 }
