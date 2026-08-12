@@ -272,6 +272,7 @@ func persistGenerateResult(ctx workflow.Context, flw *app.Workflow, result *app.
 			Metadata:            step.Metadata,
 			Retryable:           step.Retryable,
 			Skippable:           step.Skippable,
+			SkipOnFailure:       step.SkipOnFailure,
 			GroupIdx:            step.GroupIdx,
 			WorkflowStepGroupID: step.WorkflowStepGroupID,
 			StepQueueID:         step.StepQueueID,

@@ -200,7 +200,7 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, dg *genCtx, comp *a
 			},
 		}
 		name := fmt.Sprintf("%s Action Run (%s)", installAction.ActionWorkflow.Name, triggerTyp)
-		step, err := dg.sg.installSignalStep(ctx, dg.installID, name, pgtype.Hstore{}, sig, dg.flw.PlanOnly)
+		step, err := dg.sg.installSignalStep(ctx, dg.installID, name, pgtype.Hstore{}, sig, dg.flw.PlanOnly, WithSkipOnFailure(true))
 		if err != nil {
 			return nil, err
 		}
@@ -241,7 +241,7 @@ func getLifecycleActionsSteps(ctx workflow.Context, dg *genCtx, triggerTyp app.A
 			},
 		}
 		name := fmt.Sprintf("%s Action Run (%s)", installAction.ActionWorkflow.Name, triggerTyp)
-		step, err := dg.sg.installSignalStep(ctx, dg.installID, name, pgtype.Hstore{}, sig, dg.flw.PlanOnly)
+		step, err := dg.sg.installSignalStep(ctx, dg.installID, name, pgtype.Hstore{}, sig, dg.flw.PlanOnly, WithSkipOnFailure(true))
 		if err != nil {
 			return nil, err
 		}
