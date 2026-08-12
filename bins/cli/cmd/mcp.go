@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/nuonco/nuon/bins/cli/internal/services/mcpserver"
 )
 
 func (c *cli) mcpCmd() *cobra.Command {
@@ -28,11 +26,7 @@ Example Claude Code config (.mcp.json):
 			if ReadOnly || readOnlyFromEnv() {
 				allowWrites = false
 			}
-			// Constructed here rather than in the fx graph (see populateDeps):
-			// the service depends on allowWrites, which is only known after
-			// flag parsing and the read-only override above.
-			svc := mcpserver.New(c.apiClient, c.cfg, allowWrites)
-			return svc.Run(cmd.Context())
+			return c.mcpserver.Run(cmd.Context(), allowWrites)
 		}),
 	}
 	mcpCmd.Flags().BoolVar(&allowWrites, "allow-writes", false, "expose mutating tools (create_install, deploy_component)")

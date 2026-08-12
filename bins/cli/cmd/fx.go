@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/services/components"
 	"github.com/nuonco/nuon/bins/cli/internal/services/docs"
 	"github.com/nuonco/nuon/bins/cli/internal/services/installs"
+	"github.com/nuonco/nuon/bins/cli/internal/services/mcpserver"
 	"github.com/nuonco/nuon/bins/cli/internal/services/orgs"
 	"github.com/nuonco/nuon/bins/cli/internal/services/roles"
 	"github.com/nuonco/nuon/bins/cli/internal/services/runbooks"
@@ -39,6 +40,7 @@ func (c *cli) populateDeps() error {
 			components.New,
 			docs.New,
 			installs.New,
+			mcpserver.New,
 			orgs.New,
 			roles.New,
 			runbooks.New,
@@ -57,6 +59,7 @@ func (c *cli) populateDeps() error {
 			&c.components,
 			&c.docs,
 			&c.installs,
+			&c.mcpserver,
 			&c.orgs,
 			&c.roles,
 			&c.runbooks,
