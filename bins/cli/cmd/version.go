@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 )
 
 func (c *cli) versionCmd() *cobra.Command {
@@ -13,7 +11,7 @@ func (c *cli) versionCmd() *cobra.Command {
 		PersistentPreRunE: c.persistentPreRunE,
 		Annotations:       skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := version.New()
+			svc := c.version
 			return svc.Version(cmd.Context(), PrintJSON)
 		}),
 		GroupID: HelpGroup.ID,

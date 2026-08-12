@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go"
 
 	"github.com/nuonco/nuon/bins/cli/internal/oidctoken"
-	"github.com/nuonco/nuon/bins/cli/internal/services/auth"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
@@ -26,7 +25,7 @@ func (c *cli) authCmd() *cobra.Command {
 		Short:       "Login to Nuon",
 		Annotations: skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := auth.New(c.apiClient, c.cfg)
+			svc := c.auth
 			return svc.Login(cmd.Context())
 		}),
 	}
@@ -37,7 +36,7 @@ func (c *cli) authCmd() *cobra.Command {
 		Short:       "Logout from Nuon",
 		Annotations: skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := auth.New(c.apiClient, c.cfg)
+			svc := c.auth
 			return svc.Logout(cmd.Context())
 		}),
 	}
@@ -72,7 +71,7 @@ With the default table output, only the token is printed so it can be captured d
 				token = detected
 			}
 
-			svc := auth.New(c.apiClient, c.cfg)
+			svc := c.auth
 			resp, err := svc.ExchangeOIDCToken(cmd.Context(), token, orgID)
 			if err != nil {
 				if _, ok := nuon.ToAPIError(err); ok {

@@ -28,6 +28,9 @@ Example Claude Code config (.mcp.json):
 			if ReadOnly || readOnlyFromEnv() {
 				allowWrites = false
 			}
+			// Constructed here rather than in the fx graph (see populateDeps):
+			// the service depends on allowWrites, which is only known after
+			// flag parsing and the read-only override above.
 			svc := mcpserver.New(c.apiClient, c.cfg, allowWrites)
 			return svc.Run(cmd.Context())
 		}),

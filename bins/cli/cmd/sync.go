@@ -47,7 +47,7 @@ func (c *cli) syncCmd() *cobra.Command {
 				PrintJSON: PrintJSON,
 				NoWait:    noWait,
 			}
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			if create {
 				return svc.SyncDirWithCreate(cmd.Context(), ".", version.Version, opts)
 			}

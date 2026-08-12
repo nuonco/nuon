@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/nuonco/nuon/bins/cli/internal/services/secrets"
 )
 
 func (c *cli) secretsCmd() *cobra.Command {
@@ -29,7 +27,7 @@ func (c *cli) secretsCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List all secrets ",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := secrets.New(c.apiClient, c.cfg)
+			svc := c.secrets
 			return svc.List(cmd.Context(), appID, offset, limit, PrintJSON)
 		}),
 	}
@@ -46,7 +44,7 @@ func (c *cli) secretsCmd() *cobra.Command {
 		Short: "Delete secret",
 		Long:  "Delete an app secret",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := secrets.New(c.apiClient, c.cfg)
+			svc := c.secrets
 			return svc.Delete(cmd.Context(), appID, secretID, PrintJSON)
 		}),
 	}
@@ -69,7 +67,7 @@ func (c *cli) secretsCmd() *cobra.Command {
 		Short:             "Create a new secret.",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := secrets.New(c.apiClient, c.cfg)
+			svc := c.secrets
 			return svc.Create(cmd.Context(), appID, name, value, PrintJSON)
 		}),
 	}
