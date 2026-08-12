@@ -20,6 +20,21 @@ export const DURATION_OPTIONS = [
   { value: '8760h', label: '1 year' },
 ]
 
+export const TOKEN_IDENTITY_OPTIONS = [
+  {
+    value: 'personal',
+    label: 'Personal token',
+    description:
+      'Issued against your own account and uses your existing role. Has the same access as you and stops working if your account loses access.',
+  },
+  {
+    value: 'service_account',
+    label: 'Service account token',
+    description:
+      'Creates a dedicated service account in this org with the role you choose. Not tied to any team member.',
+  },
+]
+
 export const CreateApiTokenModal = ({
   isPending,
   error,
@@ -45,6 +60,7 @@ export const CreateApiTokenModal = ({
   const form = useForm({
     defaultValues: {
       name: '',
+      identity: 'personal',
       role: defaultRole,
       duration: '720h',
     } as CreateApiTokenValues,
@@ -56,6 +72,7 @@ export const CreateApiTokenModal = ({
   })
 
   const canSubmit = useStore(form.store, (s) => s.canSubmit)
+  const identity = useStore(form.store, (s) => s.values.identity)
 
   if (createdToken) {
     return (
@@ -118,6 +135,17 @@ export const CreateApiTokenModal = ({
       >
         <FormErrorBanner error={error} fallback="Unable to create API token" />
 
+        <form.Field name="identity">
+          {(field) => (
+            <FormSelect
+              field={field}
+              options={TOKEN_IDENTITY_OPTIONS}
+              disabled={isPending}
+              labelProps={{ labelText: 'Type' }}
+            />
+          )}
+        </form.Field>
+
         <form.Field name="name">
           {(field) => (
             <FormInput
@@ -131,27 +159,28 @@ export const CreateApiTokenModal = ({
           )}
         </form.Field>
 
-        {rolesLoading ? (
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="token-role">
-              <Text variant="body" className="font-medium">
-                Role
-              </Text>
-            </Label>
-            <Skeleton height="36px" />
-          </div>
-        ) : (
-          <form.Field name="role">
-            {(field) => (
-              <FormSelect
-                field={field}
-                options={roleOptions}
-                disabled={isPending}
-                labelProps={{ labelText: 'Role' }}
-              />
-            )}
-          </form.Field>
-        )}
+        {identity === 'service_account' &&
+          (rolesLoading ? (
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="token-role">
+                <Text variant="body" className="font-medium">
+                  Role
+                </Text>
+              </Label>
+              <Skeleton height="36px" />
+            </div>
+          ) : (
+            <form.Field name="role">
+              {(field) => (
+                <FormSelect
+                  field={field}
+                  options={roleOptions}
+                  disabled={isPending}
+                  labelProps={{ labelText: 'Role' }}
+                />
+              )}
+            </form.Field>
+          ))}
 
         <form.Field name="duration">
           {(field) => (

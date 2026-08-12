@@ -240,6 +240,7 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 		name     string
 		duration string
 		role     string
+		personal bool
 		tokenID  string
 	)
 
@@ -253,16 +254,20 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 	createCmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a static API token for the current org",
-		Long:  "Create a static API token scoped to the current org's service account. The token is only shown once.",
+		Long:  "Create a static API token. By default the token is backed by a dedicated service account with the given role; use --personal to issue the token against your own account and its existing roles instead. The token is only shown once.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			if personal && cmd.Flags().Changed("role") {
+				return fmt.Errorf("--role cannot be used with --personal; personal tokens use your account's existing roles")
+			}
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.CreateStaticToken(cmd.Context(), name, duration, role, PrintJSON)
+			return svc.CreateStaticToken(cmd.Context(), name, duration, role, personal, PrintJSON)
 		}),
 	}
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "A human-friendly name to identify the token")
 	createCmd.MarkFlagRequired("name")
 	createCmd.Flags().StringVar(&duration, "duration", "8760h", "How long the token is valid (Go duration, e.g. 720h)")
 	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to the token (see 'nuon roles list')")
+	createCmd.Flags().BoolVar(&personal, "personal", false, "Issue the token against your own account instead of a dedicated service account")
 	apiTokensCmd.AddCommand(createCmd)
 
 	listCmd := &cobra.Command{

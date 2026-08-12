@@ -5081,7 +5081,7 @@ func (a *Client) CreateSlackChannelSubscription(params *CreateSlackChannelSubscr
 /*
 CreateStaticToken creates a static API token for your org
 
-Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
+Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
 */
 func (a *Client) CreateStaticToken(params *CreateStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateStaticTokenCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -6409,7 +6409,7 @@ func (a *Client) DeleteSlackOrgLink(params *DeleteSlackOrgLinkParams, authInfo r
 /*
 DeleteStaticToken deletes a static API token
 
-Deletes a static API token belonging to your current org, along with its dedicated service account. Once deleted, the token can no longer be used to access the API.
+Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
 */
 func (a *Client) DeleteStaticToken(params *DeleteStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteStaticTokenNoContent, error) {
 	// NOTE: parameters are not validated before sending

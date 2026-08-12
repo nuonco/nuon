@@ -24,11 +24,20 @@ const CreateApiTokenModalContainer = (props: Record<string, any>) => {
       name,
       duration,
       role,
+      identity,
     }: {
       name: string
       duration: string
       role: string
-    }) => createStaticToken({ body: { name, duration, role }, orgId: org.id }),
+      identity: 'personal' | 'service_account'
+    }) =>
+      createStaticToken({
+        body:
+          identity === 'personal'
+            ? { name, duration, token_identity: 'personal' }
+            : { name, duration, role },
+        orgId: org.id,
+      }),
     onSuccess: (data, { name }) => {
       queryClient.invalidateQueries({ queryKey: ['static-tokens', org?.id] })
       setCreatedToken(data?.api_token ?? null)
@@ -47,7 +56,9 @@ const CreateApiTokenModalContainer = (props: Record<string, any>) => {
       createdToken={createdToken}
       roleOptions={roleOptions}
       rolesLoading={isLoading}
-      onSubmit={({ name, duration, role }) => mutate({ name, duration, role })}
+      onSubmit={({ name, duration, role, identity }) =>
+        mutate({ name, duration, role, identity })
+      }
       onDone={() => removeModal(props.modalId)}
       {...props}
     />

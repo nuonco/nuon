@@ -795,6 +795,7 @@ export interface TCreateStaticTokenBody {
   name: string
   duration?: string
   role?: string
+  token_identity?: 'personal' | 'service_account'
 }
 
 export interface TCreateStaticTokenResponse {
