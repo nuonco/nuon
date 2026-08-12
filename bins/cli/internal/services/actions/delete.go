@@ -11,7 +11,11 @@ func (s *Service) DeleteWorkflow(ctx context.Context, actionWorkflowID string, a
 		if _, err := s.api.DeleteActionWorkflow(ctx, actionWorkflowID); err != nil {
 			return ui.PrintError(err)
 		}
-		ui.PrintJSON(map[string]string{"id": actionWorkflowID, "status": "queued_for_deletion"})
+		ui.PrintJSON(map[string]string{
+			"id":      actionWorkflowID,
+			"status":  "queued_for_deletion",
+			"message": "action workflow queued for deletion",
+		})
 		return nil
 	}
 

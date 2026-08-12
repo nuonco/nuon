@@ -2,6 +2,7 @@ package secrets
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
@@ -33,10 +34,11 @@ func (s *Service) Create(ctx context.Context, appID, name, value string, asJSON 
 
 	if asJSON {
 		ui.PrintJSON(map[string]string{
-			"id":     secret.ID,
-			"app_id": appID,
-			"name":   name,
-			"status": "created",
+			"id":      secret.ID,
+			"app_id":  appID,
+			"name":    name,
+			"status":  "created",
+			"message": fmt.Sprintf("successfully created secret (%s)", secret.ID),
 		})
 		return nil
 	}

@@ -260,7 +260,11 @@ func (c *cli) extRemoveCmd() *cobra.Command {
 				return ui.PrintError(err)
 			}
 			if PrintJSON {
-				ui.PrintJSON(map[string]string{"name": args[0], "status": "removed"})
+				ui.PrintJSON(map[string]string{
+					"name":    args[0],
+					"status":  "removed",
+					"message": fmt.Sprintf("Removed extension %s", args[0]),
+				})
 				return nil
 			}
 			ui.NewListView().Print(fmt.Sprintf("Removed extension %s", args[0]))

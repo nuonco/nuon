@@ -27,6 +27,7 @@ func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID str
 		"install_id":         installID,
 		"action_workflow_id": actionWorkflowID,
 		"status":             "triggered",
+		"message":            fmt.Sprintf("action triggered for action %s", actionWorkflowID),
 	})
 	return nil
 }

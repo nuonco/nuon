@@ -11,6 +11,9 @@ func (s *Service) Deselect(ctx context.Context, asJSON bool) error {
 		return ui.PrintError(err)
 	}
 
-	ui.PrintResult(asJSON, "current org is now unset", map[string]string{"status": "org_deselected"})
+	ui.PrintResult(asJSON, "current org is now unset", map[string]string{
+		"status":  "org_deselected",
+		"message": "current org is now unset",
+	})
 	return nil
 }
