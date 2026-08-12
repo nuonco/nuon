@@ -52,6 +52,7 @@ export const RunbookHistoryTab = () => {
       (s) =>
         s.step_target_type === 'install_deploys' ||
         s.step_target_type === 'install_action_workflow_runs' ||
+        s.step_target_type === 'install_sandbox_runs' ||
         !!s.links?.event_wait
     )
     .sort((a, b) => {
