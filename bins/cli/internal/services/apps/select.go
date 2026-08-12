@@ -3,20 +3,18 @@ package apps
 import (
 	"context"
 
-	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 func (s *Service) Select(ctx context.Context, appID string, asJSON bool) error {
-	view := ui.NewGetView()
 
 	if appID != "" {
 		return s.SetCurrent(ctx, appID, asJSON)
 	} else {
 		apps, _, err := s.listApps(ctx, 0, 50)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 
 		if len(apps) == 0 {
@@ -36,11 +34,11 @@ func (s *Service) Select(ctx context.Context, appID string, asJSON bool) error {
 		// Show app selector
 		selectedAppID, err := bubbles.SelectApp(appOptions, s.cfg.Interactive)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 
 		if err := s.setAppID(ctx, selectedAppID); err != nil {
-			return view.Error(err)
+			return err
 		}
 
 		// Find selected app for display

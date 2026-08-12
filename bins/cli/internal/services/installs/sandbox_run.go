@@ -11,13 +11,13 @@ import (
 func (s *Service) SandboxRunGet(ctx context.Context, installID, runID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	view := ui.NewGetView()
 
 	run, err := s.api.GetInstallSandboxRun(ctx, installID, runID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -39,12 +39,12 @@ func (s *Service) SandboxRunGet(ctx context.Context, installID, runID string, as
 func (s *Service) SandboxRunCancel(ctx context.Context, installID, runID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	run, err := s.api.GetInstallSandboxRun(ctx, installID, runID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	workflowID := run.WorkflowID
@@ -56,7 +56,7 @@ func (s *Service) SandboxRunCancel(ctx context.Context, installID, runID string,
 	}
 
 	if _, err := s.api.CancelWorkflow(ctx, workflowID); err != nil {
-		return ui.PrintJSONError(err)
+		return err
 	}
 
 	printActionResult(asJSON, fmt.Sprintf("successfully requested cancellation of sandbox run %s", runID), actionResult{

@@ -19,7 +19,7 @@ func (s *Service) DeleteWebhook(ctx context.Context, webhookID string, asJSON bo
 	if asJSON {
 		err := s.api.DeleteCurrentOrgWebhook(ctx, webhookID)
 		if err != nil {
-			return ui.PrintJSONError(err)
+			return err
 		}
 		type response struct {
 			ID      string `json:"id"`

@@ -22,7 +22,7 @@ func (s *Service) SetCurrent(ctx context.Context, appID string, asJSON bool) err
 	}
 
 	if err := s.setAppID(ctx, appID); err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

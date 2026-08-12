@@ -18,7 +18,7 @@ func (s *Service) DeleteServiceAccount(ctx context.Context, accountID string, as
 	}
 
 	if err := s.api.DeleteServiceAccount(ctx, accountID); err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

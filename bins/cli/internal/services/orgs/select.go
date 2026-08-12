@@ -3,7 +3,6 @@ package orgs
 import (
 	"context"
 
-	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -21,14 +20,13 @@ func toOrgOptions(orgs []*models.AppOrg) []bubbles.OrgOption {
 }
 
 func (s *Service) Select(ctx context.Context, orgID string, offset, limit int, asJSON bool) error {
-	view := ui.NewGetView()
 
 	if orgID != "" {
 		s.SetCurrent(ctx, orgID, asJSON)
 	} else {
 		orgs, _, err := s.list(ctx, offset, limit, "")
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 
 		if len(orgs) == 0 {
@@ -61,11 +59,11 @@ func (s *Service) Select(ctx context.Context, orgID string, offset, limit int, a
 
 		selectedOrgID, err := bubbles.SelectOrg(orgOptions, searchFn, s.cfg.Interactive)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 
 		if err := s.setOrgID(ctx, selectedOrgID); err != nil {
-			return view.Error(err)
+			return err
 		}
 
 		var selectedOrg *models.AppOrg

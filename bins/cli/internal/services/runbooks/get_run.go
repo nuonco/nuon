@@ -12,7 +12,7 @@ func (s *Service) GetRun(ctx context.Context, installID, runID string, asJSON bo
 
 	run, err := s.api.GetInstallRunbookRun(ctx, installID, runID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

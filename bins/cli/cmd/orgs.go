@@ -329,7 +329,7 @@ Example (GitHub Actions, main branch of acme/app only):
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			conditions, err := orgs.ParseClaimConditions(claims)
 			if err != nil {
-				return ui.PrintError(err)
+				return err
 			}
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.CreateOIDCTrustPolicy(cmd.Context(), name, issuer, audience, role, ttl, conditions, PrintJSON)
@@ -391,7 +391,7 @@ Example (GitHub Actions, main branch of acme/app only):
 
 			conditions, err := orgs.ParseClaimConditions(updateClaims)
 			if err != nil {
-				return ui.PrintError(err)
+				return err
 			}
 
 			req := &models.ServiceUpdateOIDCTrustPolicyRequest{

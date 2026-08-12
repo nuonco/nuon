@@ -15,13 +15,13 @@ func (s *Service) List(ctx context.Context, compID, appID string, offset, limit 
 	if compID != "" {
 		compID, err = lookup.ComponentID(ctx, s.api, appID, compID)
 		if err != nil {
-			return ui.PrintError(err)
+			return err
 		}
 	}
 	if appID != "" {
 		appID, err = lookup.AppID(ctx, s.api, appID)
 		if err != nil {
-			return ui.PrintError(err)
+			return err
 		}
 	}
 

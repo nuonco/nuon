@@ -25,12 +25,12 @@ func (s *Service) Sync(ctx context.Context, fileOrDir string, appID string, auto
 
 	installCfgs, err := readInstallConfigs(fileOrDir)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	appID, err = lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	curInstalls, err := s.listAllAppInstalls(ctx, appID)

@@ -23,7 +23,7 @@ func (s *Service) CreateServiceAccountToken(ctx context.Context, accountID, dura
 		Invalidate: invalidate,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

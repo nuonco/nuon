@@ -19,7 +19,7 @@ func (s *Service) DeleteStaticToken(ctx context.Context, tokenID string, asJSON 
 	if asJSON {
 		err := s.api.DeleteStaticToken(ctx, tokenID)
 		if err != nil {
-			return ui.PrintJSONError(err)
+			return err
 		}
 		type response struct {
 			ID      string `json:"id"`

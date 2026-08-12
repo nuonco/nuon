@@ -14,7 +14,7 @@ import (
 func (s *Service) Components(ctx context.Context, installID string, offset, limit int, showAll, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	view := ui.NewListView()
 
@@ -32,7 +32,7 @@ func (s *Service) Components(ctx context.Context, installID string, offset, limi
 		components, hasMore, err = fetch(offset, limit)
 	}
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

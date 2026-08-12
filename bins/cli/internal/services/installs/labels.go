@@ -16,12 +16,12 @@ import (
 func (s *Service) LabelsList(ctx context.Context, installIDOrName string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installIDOrName)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	install, err := s.api.GetInstall(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {
@@ -38,12 +38,12 @@ func (s *Service) LabelsList(ctx context.Context, installIDOrName string, asJSON
 func (s *Service) LabelsSet(ctx context.Context, installIDOrName string, args []string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installIDOrName)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	set, remove, err := labels.ParseArgs(args)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if len(remove) > 0 {
 		return ui.PrintError(fmt.Errorf("use 'nuon installs labels unset' to remove labels"))
@@ -58,7 +58,7 @@ func (s *Service) LabelsSet(ctx context.Context, installIDOrName string, args []
 
 	install, err := s.api.GetInstall(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {
@@ -75,12 +75,12 @@ func (s *Service) LabelsSet(ctx context.Context, installIDOrName string, args []
 func (s *Service) LabelsUnset(ctx context.Context, installIDOrName string, args []string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installIDOrName)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	keys, err := labels.ParseKeys(args)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if len(keys) == 0 {
 		return ui.PrintError(fmt.Errorf("provide at least one label key to unset"))
@@ -92,7 +92,7 @@ func (s *Service) LabelsUnset(ctx context.Context, installIDOrName string, args 
 
 	install, err := s.api.GetInstall(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {

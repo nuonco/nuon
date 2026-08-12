@@ -14,27 +14,27 @@ import (
 func (s *Service) ToggleComponent(ctx context.Context, installID, componentID string, enableFlag, disableFlag, planOnly, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	install, err := s.api.GetInstall(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	componentID, err = lookup.ComponentID(ctx, s.api, install.AppID, componentID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	component, err := s.api.GetAppComponent(ctx, install.AppID, componentID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	installComponent, err := s.api.GetInstallComponent(ctx, installID, componentID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	currentlyEnabled := true
 	if installComponent.Enabled != nil {
@@ -71,7 +71,7 @@ func (s *Service) ToggleComponent(ctx context.Context, installID, componentID st
 		PlanOnly: planOnly,
 	})
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {

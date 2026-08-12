@@ -12,14 +12,14 @@ import (
 func (s *Service) SandboxRuns(ctx context.Context, installID string, offset, limit int, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	view := ui.NewListView()
 
 	runs, hasMore, err := s.listSandboxRuns(ctx, installID, offset, limit)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

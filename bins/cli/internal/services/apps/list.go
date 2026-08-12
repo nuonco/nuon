@@ -12,7 +12,7 @@ func (s *Service) List(ctx context.Context, offset, limit int, asJSON bool) erro
 
 	apps, hasMore, err := s.listApps(ctx, offset, limit)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

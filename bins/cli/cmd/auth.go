@@ -76,7 +76,7 @@ With the default table output, only the token is printed so it can be captured d
 			resp, err := svc.ExchangeOIDCToken(cmd.Context(), token, orgID)
 			if err != nil {
 				if _, ok := nuon.ToAPIError(err); ok {
-					return ui.PrintError(err)
+					return err
 				}
 				return ui.PrintError(&ui.CLIUserError{Msg: err.Error()})
 			}

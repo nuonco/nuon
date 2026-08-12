@@ -25,7 +25,7 @@ func (s *Service) UpdateServiceAccountName(ctx context.Context, accountID, name 
 		Name: &name,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

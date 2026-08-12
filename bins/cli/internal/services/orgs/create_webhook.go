@@ -21,7 +21,7 @@ func (s *Service) CreateWebhook(ctx context.Context, webhookURL, webhookSecret s
 
 	payload, err := resolveSubscription(ctx, s.api, s.cfg.Interactive, subscription)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	webhook, err := s.api.CreateCurrentOrgWebhook(ctx, &models.ServiceCreateCurrentOrgWebhookRequest{
@@ -31,7 +31,7 @@ func (s *Service) CreateWebhook(ctx context.Context, webhookURL, webhookSecret s
 		Match:         payload.Match,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

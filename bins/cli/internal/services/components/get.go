@@ -11,14 +11,14 @@ import (
 func (s *Service) Get(ctx context.Context, appID, compID string, asJSON bool) error {
 	compID, err := lookup.ComponentID(ctx, s.api, appID, compID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	view := ui.NewGetView()
 
 	component, err := s.api.GetComponent(ctx, compID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

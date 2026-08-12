@@ -15,7 +15,7 @@ import (
 func (s *Service) Get(ctx context.Context, appID, compID, buildID string, asJSON bool) error {
 	compID, err := lookup.ComponentID(ctx, s.api, appID, compID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	view := ui.NewGetView()

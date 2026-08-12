@@ -58,7 +58,7 @@ func (s *Service) CreateOIDCTrustPolicy(ctx context.Context, name, issuer, audie
 		TokenDurationSeconds: ttl,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -87,7 +87,7 @@ func (s *Service) ListOIDCTrustPolicies(ctx context.Context, asJSON bool) error 
 
 	policies, err := s.api.ListOIDCTrustPolicies(ctx)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -129,7 +129,7 @@ func (s *Service) GetOIDCTrustPolicy(ctx context.Context, policyID string, asJSO
 
 	policy, err := s.api.GetOIDCTrustPolicy(ctx, policyID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -162,7 +162,7 @@ func (s *Service) UpdateOIDCTrustPolicy(ctx context.Context, policyID string, re
 
 	policy, err := s.api.UpdateOIDCTrustPolicy(ctx, policyID, req)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -184,10 +184,8 @@ func (s *Service) DeleteOIDCTrustPolicy(ctx context.Context, policyID string, as
 		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
-	view := ui.NewGetView()
-
 	if err := s.api.DeleteOIDCTrustPolicy(ctx, policyID); err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

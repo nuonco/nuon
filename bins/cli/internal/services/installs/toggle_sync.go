@@ -14,7 +14,7 @@ func (s *Service) ToggleSync(ctx context.Context, installID string, enable, disa
 
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	appInstall, err := s.api.GetInstall(ctx, installID)

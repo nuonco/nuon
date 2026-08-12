@@ -34,19 +34,19 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 		var err error
 		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 	}
 
 	if opts.Browser {
 		workflow, err := s.api.GetWorkflow(ctx, workflowID)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 
 		cfg, err := s.api.GetCLIConfig(ctx)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 
 		url := fmt.Sprintf("%s/%s/installs/%s/workflows/%s?target=%s", cfg.DashboardURL, s.cfg.OrgID, workflow.OwnerID, workflowID, stepID)
@@ -57,12 +57,12 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if step.StepTargetID == "" {
@@ -76,7 +76,7 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 		deployID = step.StepTargetID
 		deploy, err := s.api.GetInstallDeploy(ctx, installID, deployID)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 		if deploy.LogStream != nil {
 			logStreamID = deploy.LogStream.ID
@@ -84,7 +84,7 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 	case "install_action_workflow_runs":
 		run, err := s.api.GetInstallActionWorkflowRun(ctx, installID, step.StepTargetID)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 		if run.LogStream != nil {
 			logStreamID = run.LogStream.ID
@@ -92,7 +92,7 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 	case "install_sandbox_runs":
 		run, err := s.api.GetInstallSandboxRun(ctx, installID, step.StepTargetID)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 		if run.LogStream != nil {
 			logStreamID = run.LogStream.ID
@@ -108,7 +108,7 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 	if asJSON {
 		logRecords, err := s.api.LogStreamReadLogs(ctx, logStreamID, "", "")
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 		ui.PrintJSON(logRecords)
 		return nil
@@ -144,7 +144,7 @@ func (s *Service) streamStepLogs(ctx context.Context, logStreamID string, opts W
 	for {
 		logRecords, nextOffset, err := s.api.LogStreamReadLogsWithNextOffset(ctx, logStreamID, offset, "")
 		if err != nil {
-			return ui.PrintError(err)
+			return err
 		}
 
 		for _, rec := range logRecords {

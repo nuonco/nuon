@@ -27,20 +27,20 @@ func (s *Service) Create(ctx context.Context, appID, name, region, awsAccountID 
 	if appID == "" {
 		selectedID, err := appselector.App(ctx, s.cfg, s.api)
 		if err != nil {
-			return ui.PrintError(err)
+			return err
 		}
 		appID = selectedID
 	} else {
 		var err error
 		appID, err = lookup.AppID(ctx, s.api, appID)
 		if err != nil {
-			return ui.PrintError(err)
+			return err
 		}
 	}
 
 	labelsMap, removeKeys, err := labels.ParseArgs(labelArgs)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if len(removeKeys) > 0 {
 		return ui.PrintError(fmt.Errorf("label removal (key-) is not allowed at install creation; use `nuon installs label` after the install exists"))
@@ -80,13 +80,13 @@ func (s *Service) Create(ctx context.Context, appID, name, region, awsAccountID 
 
 	req, err := s.buildCreateInstallRequest(ctx, appID, name, region, awsAccountID, inputsMap, labelsMap)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {
 		install, err := s.api.CreateInstall(ctx, appID, req)
 		if err != nil {
-			return ui.PrintJSONError(err)
+			return err
 		}
 		ui.PrintJSON(install)
 		return nil

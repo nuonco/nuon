@@ -9,7 +9,7 @@ import (
 func (s *Service) ReprovisionStack(ctx context.Context, installID string, skipComponents bool, asJSON bool) error {
 	installID, err := s.selectInstallID(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if s.cfg.Debug {
@@ -18,7 +18,7 @@ func (s *Service) ReprovisionStack(ctx context.Context, installID string, skipCo
 
 	resp, err := s.api.ReprovisionInstallStack(ctx, installID, skipComponents)
 	if err != nil {
-		return ui.PrintJSONError(err)
+		return err
 	}
 
 	workflowID := workflowIDFromResp(resp)

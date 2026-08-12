@@ -13,19 +13,18 @@ import (
 var errInstallComponentOutputsPreviewDisabled = errors.New("[NUON_PREVIEW=false] installs components outputs is a preview feature, set NUON_PREVIEW=true to enable")
 
 func (s *Service) ComponentOutputs(ctx context.Context, installID, componentID string, asJSON bool) error {
-	view := ui.NewGetView()
 	if !s.cfg.Preview {
-		return view.Error(errInstallComponentOutputsPreviewDisabled)
+		return errInstallComponentOutputsPreviewDisabled
 	}
 
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	outputs, err := s.api.GetInstallComponentOutputs(ctx, installID, componentID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -35,7 +34,7 @@ func (s *Service) ComponentOutputs(ctx context.Context, installID, componentID s
 
 	b, err := json.MarshalIndent(outputs, "", "  ")
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	ui.Println(string(b))

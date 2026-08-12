@@ -97,7 +97,7 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 
 	appID, err := s.resolveSyncAppID(ctx, dir, opts)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	s.warnIfCLIOutdated(ctx)
@@ -108,7 +108,7 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 	})
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if s.cfg.Debug {
@@ -122,7 +122,7 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 			ui.PrintError(err)
 		} else {
 			s.checkSchemaCompatibility(ctx)
-			return ui.PrintError(err)
+			return err
 		}
 	}
 	ui.PrintLn("all configs valid")
@@ -143,20 +143,20 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		var branchErr error
 		branchID, branchErr = s.resolveAppBranchID(ctx, appID, opts.Branch)
 		if branchErr != nil {
-			return ui.PrintError(branchErr)
+			return branchErr
 		}
 		ui.PrintLn(fmt.Sprintf("targeting app branch %q", opts.Branch))
 	} else if opts.AppBranch {
 		var branchErr error
 		branchID, branchErr = s.selectAppBranch(ctx, appID)
 		if branchErr != nil {
-			return ui.PrintError(branchErr)
+			return branchErr
 		}
 	}
 
 	appConfig, state, err := s.pushConfig(ctx, appID, version, cfg, opts, branchID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	// When targeting a branch, trigger a branch run with the synced app config
@@ -166,7 +166,7 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 			PlanOnly:    opts.Preview,
 		})
 		if triggerErr != nil {
-			return ui.PrintError(triggerErr)
+			return triggerErr
 		}
 		ui.PrintSuccess(fmt.Sprintf("triggered app branch run %s", run.ID))
 		if opts.PrintJSON {

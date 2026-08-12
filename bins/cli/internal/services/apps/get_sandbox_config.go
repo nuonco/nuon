@@ -10,12 +10,12 @@ import (
 func (s *Service) GetSandboxConfig(ctx context.Context, appID string, asJSON bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	sandboxCfg, err := s.api.GetAppSandboxLatestConfig(ctx, appID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {

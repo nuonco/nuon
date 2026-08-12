@@ -5,29 +5,28 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
-	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 )
 
 func (s *Service) ForgetComponent(ctx context.Context, installID, componentID string, skipConfirm, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	install, err := s.api.GetInstall(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	componentID, err = lookup.ComponentID(ctx, s.api, install.AppID, componentID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	component, err := s.api.GetAppComponent(ctx, install.AppID, componentID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if !skipConfirm {
@@ -36,7 +35,7 @@ func (s *Service) ForgetComponent(ctx context.Context, installID, componentID st
 			s.cfg.Interactive,
 		)
 		if err != nil {
-			return ui.PrintError(err)
+			return err
 		}
 		if !ok {
 			return nil
@@ -44,7 +43,7 @@ func (s *Service) ForgetComponent(ctx context.Context, installID, componentID st
 	}
 
 	if err := s.api.ForgetInstallComponent(ctx, installID, componentID); err != nil {
-		return ui.PrintJSONError(err)
+		return err
 	}
 
 	printActionResult(asJSON, "successfully forgot component", actionResult{

@@ -13,7 +13,7 @@ func (s *Service) List(ctx context.Context, offset, limit int, search string, as
 
 	orgs, hasMore, err := s.list(ctx, offset, limit, search)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

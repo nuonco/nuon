@@ -59,12 +59,12 @@ func (s *Service) loadInputDefs(ctx context.Context, installID string) (string, 
 func (s *Service) GetInputs(ctx context.Context, installID string, asJSON bool) error {
 	installID, defs, err := s.loadInputDefs(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	current, err := s.api.GetInstallCurrentInputs(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {
@@ -97,12 +97,12 @@ func (s *Service) GetInputs(ctx context.Context, installID string, asJSON bool) 
 func (s *Service) SetInputs(ctx context.Context, installID string, args []string, deployDependents bool, asJSON bool) error {
 	updates, err := parseInputArgs(args)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	installID, defs, err := s.loadInputDefs(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	known := make(map[string]inputDef, len(defs))
@@ -123,7 +123,7 @@ func (s *Service) SetInputs(ctx context.Context, installID string, args []string
 
 	current, err := s.api.GetInstallCurrentInputs(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	prevValues := currentValues(current)
 	prevRedacted := redactedValues(current)
@@ -155,9 +155,9 @@ func (s *Service) SetInputs(ctx context.Context, installID string, args []string
 	resp, err := s.api.UpdateInstallInputs(ctx, installID, request)
 	if err != nil {
 		if asJSON {
-			return ui.PrintJSONError(err)
+			return err
 		}
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {
@@ -200,10 +200,10 @@ func (s *Service) SetInputs(ctx context.Context, installID string, args []string
 func (s *Service) EditInputs(ctx context.Context, installID string, deployDependents bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if err := editor.EditInputsApp(ctx, s.cfg, s.api, installID, deployDependents); err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	return nil
 }

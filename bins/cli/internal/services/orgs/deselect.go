@@ -8,7 +8,7 @@ import (
 
 func (s *Service) Deselect(ctx context.Context, asJSON bool) error {
 	if err := s.unsetOrgID(ctx); err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	ui.PrintResult(asJSON, "current org is now unset", map[string]string{

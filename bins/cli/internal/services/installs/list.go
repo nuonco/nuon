@@ -29,14 +29,14 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, lab
 	if appID != "" {
 		resolvedAppID, lerr := lookup.AppID(ctx, s.api, appID)
 		if lerr != nil {
-			return ui.PrintError(lerr)
+			return lerr
 		}
 		installs, hasMore, err = s.listAppInstalls(ctx, resolvedAppID, offset, limit)
 	} else {
 		installs, hasMore, err = s.listInstalls(ctx, offset, limit)
 	}
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if len(filter) > 0 {

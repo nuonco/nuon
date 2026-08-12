@@ -26,7 +26,7 @@ func (s *Service) CreateServiceAccount(ctx context.Context, name, role string, a
 		Role: &role,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

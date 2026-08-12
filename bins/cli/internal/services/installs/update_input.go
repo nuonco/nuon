@@ -27,9 +27,9 @@ func (s *Service) UpdateInput(ctx context.Context, installID string, inputs []st
 	installInput, err := s.api.UpdateInstallInputs(ctx, installID, request)
 	if err != nil {
 		if printJSON {
-			return ui.PrintJSONError(err)
+			return err
 		}
-		return ui.PrintError(err)
+		return err
 	}
 
 	if printJSON {

@@ -33,13 +33,13 @@ func (s *Service) ValidateDir(ctx context.Context, dir string, asJSON bool) erro
 	appName, err := parse.AppNameFromDirName(dir)
 	if err != nil {
 		err = errs.WithUserFacing(err, "error parsing app name from file")
-		return ui.PrintError(err)
+		return err
 	}
 
 	_, err = lookup.AppID(ctx, s.api, appName)
 	if err != nil {
 		err = errs.WithUserFacing(err, "error looking up app id")
-		return ui.PrintError(err)
+		return err
 	}
 
 	cfg, err := parse.ParseDir(ctx, parse.ParseConfig{
@@ -48,7 +48,7 @@ func (s *Service) ValidateDir(ctx context.Context, dir string, asJSON bool) erro
 		FileProcessor: func(name string, obj map[string]any) map[string]any { return obj },
 	})
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if s.cfg.Debug {
@@ -62,7 +62,7 @@ func (s *Service) ValidateDir(ctx context.Context, dir string, asJSON bool) erro
 			ui.PrintError(err)
 		} else {
 			s.checkSchemaCompatibility(ctx)
-			return ui.PrintError(err)
+			return err
 		}
 	}
 	ui.PrintResult(asJSON, "all configs valid", map[string]string{

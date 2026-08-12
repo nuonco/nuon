@@ -14,7 +14,7 @@ func (s *Service) Health(ctx context.Context, appID, labels string, asJSON bool)
 
 	resp, err := s.api.GetInstallsHealth(ctx, appID, labels)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

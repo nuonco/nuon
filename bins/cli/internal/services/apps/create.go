@@ -37,7 +37,7 @@ func (s *Service) Create(ctx context.Context, appName string, asJSON, noSelect b
 			err = errs.WithUserFacing(err, "%s", fmt.Sprintf("An application already exists with the name %q", appName))
 		}
 		if asJSON {
-			return ui.PrintError(err)
+			return err
 		}
 		return view.Fail(err)
 	}
@@ -50,13 +50,13 @@ func (s *Service) Create(ctx context.Context, appName string, asJSON, noSelect b
 		switch {
 		case err != nil:
 			if asJSON {
-				return ui.PrintError(err)
+				return err
 			}
 			return view.Fail(err)
 		case currentApp.Status == statusError:
 			err := fmt.Errorf("failed to create app: %s", currentApp.StatusDescription)
 			if asJSON {
-				return ui.PrintError(err)
+				return err
 			}
 			return view.Fail(err)
 		case currentApp.Status == statusActive:

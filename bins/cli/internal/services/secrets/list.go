@@ -13,14 +13,14 @@ import (
 func (s *Service) List(ctx context.Context, appID string, offset, limit int, asJSON bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	view := ui.NewListView()
 
 	secrets, hasMore, err := s.list(ctx, appID, offset, limit)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -40,7 +40,7 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, asJ
 	for _, secret := range secrets {
 		createdAt, err := time.Parse(time.RFC3339Nano, secret.CreatedAt)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 
 		data = append(data, []string{

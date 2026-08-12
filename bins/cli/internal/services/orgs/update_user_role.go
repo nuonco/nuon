@@ -26,7 +26,7 @@ func (s *Service) UpdateUserRole(ctx context.Context, userID, role string, asJSO
 		RoleType: &roleType,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

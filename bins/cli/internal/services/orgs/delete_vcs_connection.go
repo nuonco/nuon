@@ -14,13 +14,13 @@ func (s *Service) DeleteVCSConnection(ctx context.Context, connID string, asJSON
 
 	connID, err := lookup.VCSConnectionID(ctx, s.api, connID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {
 		err = s.api.DeleteVCSConnection(ctx, connID)
 		if err != nil {
-			return ui.PrintJSONError(err)
+			return err
 		}
 		type response struct {
 			ID      string `json:"id"`

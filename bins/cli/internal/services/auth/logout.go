@@ -13,7 +13,7 @@ func (a *Service) Logout(ctx context.Context, asJSON bool) error {
 
 	// Write the updated config to file
 	if err := a.cfg.WriteConfig(); err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {

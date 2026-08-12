@@ -132,12 +132,12 @@ func (s *Service) resolveTriggerID(ctx context.Context, trigger string) (string,
 func (s *Service) List(ctx context.Context, filters models.TriggerEventListQuery, asJSON bool) error {
 	triggerID, err := s.resolveTriggerID(ctx, filters.Trigger)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	filters.Trigger = triggerID
 	page, err := s.api.SearchTriggerEvents(ctx, filters)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(page)
@@ -157,7 +157,7 @@ func (s *Service) List(ctx context.Context, filters models.TriggerEventListQuery
 func (s *Service) Get(ctx context.Context, id string, asJSON bool) error {
 	event, err := s.api.GetTriggerEvent(ctx, id)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(event)
@@ -174,7 +174,7 @@ func (s *Service) Get(ctx context.Context, id string, asJSON bool) error {
 func (s *Service) ListDispatches(ctx context.Context, limit int, eventID, cursor string, asJSON bool) error {
 	page, err := s.api.ListTriggerEventDispatchesPage(ctx, limit, eventID, cursor)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(page)
@@ -194,7 +194,7 @@ func (s *Service) ListDispatches(ctx context.Context, limit int, eventID, cursor
 func (s *Service) Replay(ctx context.Context, id string, asJSON bool) error {
 	response, err := s.api.ReplayTriggerEvent(ctx, id)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(response)
@@ -207,11 +207,11 @@ func (s *Service) Replay(ctx context.Context, id string, asJSON bool) error {
 func (s *Service) Paths(ctx context.Context, id string, last bool, trigger string, asJSON bool) error {
 	event, err := s.selectEvent(ctx, id, last, trigger)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	rows, err := FlattenPaths(event)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(rows)
@@ -229,11 +229,11 @@ func (s *Service) Paths(ctx context.Context, id string, last bool, trigger strin
 func (s *Service) Test(ctx context.Context, id string, last bool, trigger, filename string, asJSON bool) error {
 	event, err := s.selectEvent(ctx, id, last, trigger)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	info, err := os.Stat(filename)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	parseCfg := parse.ParseConfig{Filename: filename, BackendType: config.BackendTypeLocal, Template: true, V: validator.New()}
 	var cfg *config.AppConfig
@@ -246,14 +246,14 @@ func (s *Service) Test(ctx context.Context, id string, last bool, trigger, filen
 		cfg, err = parse.Parse(parseCfg)
 	}
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if err := validate.ValidateTriggers(cfg); err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	result, err := EvaluateRules(event, cfg)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(result)
@@ -347,7 +347,7 @@ func (s *Service) Tail(ctx context.Context, trigger string, interval time.Durati
 	}
 	triggerID, err := s.resolveTriggerID(ctx, trigger)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	trigger = triggerID
 	seen := newTailSeen(tailRecentTerminalLimit)
@@ -355,7 +355,7 @@ func (s *Service) Tail(ctx context.Context, trigger string, interval time.Durati
 	for {
 		events, err := s.eventsSinceSeen(ctx, trigger, seen, initialized)
 		if err != nil {
-			return ui.PrintError(err)
+			return err
 		}
 		headings := []string{"ID", "TRIGGER", "EVENT TYPE", "DISPOSITION", "DISPATCHES", "RECEIVED AT"}
 		if showRaw {
@@ -377,7 +377,7 @@ func (s *Service) Tail(ctx context.Context, trigger string, interval time.Durati
 			if showRaw {
 				raw, err := s.api.GetTriggerEventRaw(ctx, event.ID)
 				if err != nil {
-					return ui.PrintError(err)
+					return err
 				}
 				body, err := base64.StdEncoding.DecodeString(raw.RawBodyBase64)
 				if err != nil {

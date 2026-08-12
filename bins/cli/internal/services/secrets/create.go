@@ -12,7 +12,7 @@ import (
 func (s *Service) Create(ctx context.Context, appID, name, value string, asJSON bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	var view *ui.CreateView
@@ -27,7 +27,7 @@ func (s *Service) Create(ctx context.Context, appID, name, value string, asJSON 
 	})
 	if err != nil {
 		if asJSON {
-			return ui.PrintError(err)
+			return err
 		}
 		return view.Fail(err)
 	}

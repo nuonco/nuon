@@ -16,7 +16,7 @@ func (s *Service) Logs(ctx context.Context, appID, compID, buildID string, asJSO
 
 	compID, err := lookup.ComponentID(ctx, s.api, appID, compID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	cfg, err := s.api.GetCLIConfig(ctx)

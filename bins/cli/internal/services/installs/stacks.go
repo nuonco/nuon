@@ -10,14 +10,14 @@ import (
 func (s *Service) StacksList(ctx context.Context, installID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	view := ui.NewListView()
 
 	stack, err := s.api.GetInstallStack(ctx, installID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -56,7 +56,7 @@ func (s *Service) StacksGet(ctx context.Context, stackID string, asJSON bool) er
 
 	stack, err := s.api.GetInstallStackByID(ctx, stackID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -78,14 +78,14 @@ func (s *Service) StacksGet(ctx context.Context, stackID string, asJSON bool) er
 func (s *Service) StacksLatest(ctx context.Context, installID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	view := ui.NewGetView()
 
 	stack, err := s.api.GetInstallStack(ctx, installID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if len(stack.Versions) == 0 {

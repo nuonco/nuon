@@ -15,7 +15,7 @@ func (s *Service) ListStaticTokens(ctx context.Context, asJSON bool) error {
 
 	tokens, err := s.api.ListStaticTokens(ctx)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

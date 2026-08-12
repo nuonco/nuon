@@ -17,18 +17,18 @@ var errInstallActionsPreviewDisabled = errors.New("[NUON_PREVIEW=false] installs
 
 func (s *Service) Actions(ctx context.Context, installID string, offset, limit int, asJSON bool) error {
 	if !s.cfg.Preview {
-		return ui.PrintError(errInstallActionsPreviewDisabled)
+		return errInstallActionsPreviewDisabled
 	}
 
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	// Show workflow selector
 	selectedActionWorkflowID, err := selector.App(ctx, s.cfg, s.api, installID, limit, offset)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	app.App(ctx, s.cfg, s.api, installID, selectedActionWorkflowID)
 
@@ -43,12 +43,12 @@ func (s *Service) Actions(ctx context.Context, installID string, offset, limit i
 func (s *Service) ActionsList(ctx context.Context, installID string, offset, limit int, asJSON bool) error {
 	view := ui.NewListView()
 	if !s.cfg.Preview {
-		return view.Error(errInstallActionsPreviewDisabled)
+		return errInstallActionsPreviewDisabled
 	}
 
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	actions, hasMore, err := s.api.GetInstallActionWorkflows(ctx, installID, &models.GetPaginatedQuery{
@@ -56,7 +56,7 @@ func (s *Service) ActionsList(ctx context.Context, installID string, offset, lim
 		Limit:  limit,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -69,19 +69,18 @@ func (s *Service) ActionsList(ctx context.Context, installID string, offset, lim
 }
 
 func (s *Service) ActionOutputs(ctx context.Context, installID, actionWorkflowID string, asJSON bool) error {
-	view := ui.NewGetView()
 	if !s.cfg.Preview {
-		return view.Error(errInstallActionsPreviewDisabled)
+		return errInstallActionsPreviewDisabled
 	}
 
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	outputs, err := s.api.GetInstallActionWorkflowOutputs(ctx, installID, actionWorkflowID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -91,7 +90,7 @@ func (s *Service) ActionOutputs(ctx context.Context, installID, actionWorkflowID
 
 	b, err := json.MarshalIndent(outputs, "", "  ")
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	ui.Println(string(b))

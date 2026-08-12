@@ -15,13 +15,13 @@ func (s *Service) DeployLogs(ctx context.Context, installID, deployID, installCo
 
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	// fetch deploy
 	deploy, err := s.api.GetInstallDeploy(ctx, installID, deployID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if !s.cfg.Preview {

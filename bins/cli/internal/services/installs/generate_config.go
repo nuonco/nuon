@@ -10,12 +10,12 @@ import (
 func (s *Service) GenerateConfig(ctx context.Context, installID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	installCfgBytes, err := s.api.GenerateCLIInstallConfig(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {

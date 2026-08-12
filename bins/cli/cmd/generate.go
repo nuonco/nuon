@@ -199,7 +199,7 @@ func (c *cli) initSandboxCmd() *cobra.Command {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			err := svc.InitSandboxConfig(cmd.Context(), genParams, params)
 			if err != nil {
-				return ui.PrintError(err)
+				return err
 			}
 
 			successMesssage(genParams.Path, "sandbox.toml")
@@ -261,7 +261,7 @@ func (c *cli) initStackCmd() *cobra.Command {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			err := svc.InitStackConfig(cmd.Context(), genParams, params)
 			if err != nil {
-				return ui.PrintError(err)
+				return err
 			}
 
 			successMesssage(genParams.Path, "stack.toml")
@@ -311,7 +311,7 @@ func (c *cli) initRunnerCmd() *cobra.Command {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			err := svc.InitRunnerConfig(cmd.Context(), genParams, params)
 			if err != nil {
-				return ui.PrintError(err)
+				return err
 			}
 
 			successMesssage(genParams.Path, "runner.toml")
@@ -381,7 +381,7 @@ func (c *cli) initComponentTerraformModuleCmd() *cobra.Command {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			err := svc.InitTerraformModuleComponentConfig(cmd.Context(), genParams, params)
 			if err != nil {
-				return ui.PrintError(err)
+				return err
 			}
 
 			successMesssage(genParams.Path, fmt.Sprintf("components/%s.toml", params.Name))
@@ -473,7 +473,7 @@ func (c *cli) initComponentHelmChartCmd() *cobra.Command {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			err := svc.InitHelmChartComponentConfig(cmd.Context(), genParams, params)
 			if err != nil {
-				return ui.PrintError(err)
+				return err
 			}
 
 			successMesssage(genParams.Path, fmt.Sprintf("components/%s.toml", params.Name))
@@ -545,7 +545,7 @@ func (c *cli) initComponentKubernetesManifestCmd() *cobra.Command {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			err := svc.InitKubernetesManifestComponentConfig(cmd.Context(), genParams, params)
 			if err != nil {
-				return ui.PrintError(err)
+				return err
 			}
 
 			successMesssage(genParams.Path, fmt.Sprintf("components/%s.toml", params.Name))
@@ -641,7 +641,7 @@ func (c *cli) initActionCmd() *cobra.Command {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			err := svc.InitActionConfig(cmd.Context(), genParams, params)
 			if err != nil {
-				return ui.PrintError(err)
+				return err
 			}
 
 			successMesssage(genParams.Path, fmt.Sprintf("actions/%s.toml", params.Name))

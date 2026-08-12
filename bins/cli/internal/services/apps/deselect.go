@@ -10,7 +10,7 @@ func (s *Service) Deselect(ctx context.Context, asJSON bool) error {
 	hadInstall := s.cfg.GetString("install_id") != ""
 
 	if err := s.unsetAppID(ctx); err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	msg := "current app is now unset"

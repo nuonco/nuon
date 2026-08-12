@@ -13,7 +13,7 @@ import (
 func (s *Service) ComponentDeploysList(ctx context.Context, installID, componentID string, offset, limit int, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	view := ui.NewListView()
@@ -23,7 +23,7 @@ func (s *Service) ComponentDeploysList(ctx context.Context, installID, component
 		Limit:  limit,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -69,13 +69,13 @@ func (s *Service) ComponentDeploysList(ctx context.Context, installID, component
 func (s *Service) ComponentDeployCreate(ctx context.Context, installID, componentID, buildID string, deployDeps, deployDependencies, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if buildID == "" {
 		latest, err := s.api.GetInstallComponentLatestDeploy(ctx, installID, componentID)
 		if err != nil {
-			return ui.PrintError(err)
+			return err
 		}
 		if latest == nil || latest.BuildID == "" {
 			return ui.PrintError(fmt.Errorf("could not resolve a build for component %s; pass --build-id explicitly", componentID))
@@ -91,7 +91,7 @@ func (s *Service) ComponentDeployCreate(ctx context.Context, installID, componen
 
 	aid, err := s.api.CreateInstallDeploy(ctx, installID, req)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	printActionResult(asJSON, fmt.Sprintf("successfully triggered deploy for install %s", aid.ID), actionResult{
@@ -105,12 +105,12 @@ func (s *Service) ComponentDeployCreate(ctx context.Context, installID, componen
 func (s *Service) DeployCancel(ctx context.Context, installID, deployID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	deploy, err := s.api.GetInstallDeploy(ctx, installID, deployID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	workflowID := deploy.WorkflowID
@@ -122,7 +122,7 @@ func (s *Service) DeployCancel(ctx context.Context, installID, deployID string, 
 	}
 
 	if _, err := s.api.CancelWorkflow(ctx, workflowID); err != nil {
-		return ui.PrintJSONError(err)
+		return err
 	}
 
 	printActionResult(asJSON, fmt.Sprintf("successfully requested cancellation of deploy %s", deployID), actionResult{

@@ -16,7 +16,7 @@ func (s *Service) ListInvites(ctx context.Context, offset, limit int, asJSON boo
 
 	invites, hasMore, err := s.listInvites(ctx, offset, limit)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

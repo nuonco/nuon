@@ -10,13 +10,13 @@ import (
 func (s *Service) Delete(ctx context.Context, appID, compID string, asJSON bool) error {
 	compID, err := lookup.ComponentID(ctx, s.api, appID, compID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {
 		res, err := s.api.DeleteComponent(ctx, compID)
 		if err != nil {
-			return ui.PrintJSONError(err)
+			return err
 		}
 
 		type response struct {

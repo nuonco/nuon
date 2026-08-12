@@ -11,12 +11,12 @@ import (
 func (s *Service) ListConfigs(ctx context.Context, appID, compID string, offset, limit int, asJSON bool) error {
 	compID, err := lookup.ComponentID(ctx, s.api, appID, compID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	configs, _, err := s.listConfigs(ctx, compID, offset, limit)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {

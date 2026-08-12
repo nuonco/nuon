@@ -10,12 +10,12 @@ import (
 func (s *Service) GetInputConfig(ctx context.Context, appID string, asJSON bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	inputCfg, err := s.api.GetAppInputLatestConfig(ctx, appID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {

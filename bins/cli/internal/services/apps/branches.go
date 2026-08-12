@@ -16,12 +16,12 @@ func (s *Service) ListBranches(ctx context.Context, appID string, asJSON bool) e
 
 	appID, err := s.resolveAppID(ctx, appID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	branches, err := s.api.GetAppBranches(ctx, appID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

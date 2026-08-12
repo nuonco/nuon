@@ -7,10 +7,9 @@ import (
 )
 
 func (s *Service) Deselect(ctx context.Context, asJSON bool) error {
-	view := ui.NewGetView()
 
 	if err := s.unsetInstallID(ctx); err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

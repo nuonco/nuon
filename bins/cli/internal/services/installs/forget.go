@@ -11,12 +11,12 @@ import (
 func (s *Service) Forget(ctx context.Context, installID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	res, err := s.api.ForgetInstall(ctx, installID)
 	if err != nil {
-		return ui.PrintJSONError(err)
+		return err
 	}
 
 	if asJSON {

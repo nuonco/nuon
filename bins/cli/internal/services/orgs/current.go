@@ -12,7 +12,7 @@ func (s *Service) Current(ctx context.Context, asJSON bool) error {
 
 	org, err := s.api.GetOrg(ctx)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

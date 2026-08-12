@@ -12,7 +12,7 @@ import (
 func (s *Service) SandboxRunLogs(ctx context.Context, installID, runID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	cfg, err := s.api.GetCLIConfig(ctx)
 	if err != nil {

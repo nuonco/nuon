@@ -23,7 +23,7 @@ func (s *Service) CreateInvite(ctx context.Context, email, role string, asJSON b
 
 	invite, err := s.api.CreateOrgInvite(ctx, req)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

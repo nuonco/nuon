@@ -10,13 +10,13 @@ import (
 func (s *Service) Delete(ctx context.Context, installID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {
 		resp, err := s.api.DeleteInstall(ctx, installID)
 		if err != nil {
-			return ui.PrintJSONError(err)
+			return err
 		}
 		type response struct {
 			ID         string `json:"id"`

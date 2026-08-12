@@ -16,7 +16,7 @@ func (s *Service) ListWebhooks(ctx context.Context, asJSON bool) error {
 
 	webhooks, err := s.api.GetCurrentOrgWebhooks(ctx)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

@@ -52,12 +52,12 @@ func (s *Service) workflowsJSON(ctx context.Context, installID, workflowID strin
 
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	workflow, err := s.api.GetWorkflow(ctx, workflowID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	ui.PrintJSON(workflow)
@@ -67,14 +67,14 @@ func (s *Service) workflowsJSON(ctx context.Context, installID, workflowID strin
 func (s *Service) WorkflowsList(ctx context.Context, installID string, offset, limit int, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	view := ui.NewListView()
 
 	workflows, hasMore, err := s.listWorkflows(ctx, installID, offset, limit)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -91,7 +91,7 @@ func (s *Service) WorkflowsGet(ctx context.Context, workflowID string, asJSON bo
 
 	workflow, err := s.api.GetWorkflow(ctx, workflowID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -127,7 +127,7 @@ func (s *Service) WorkflowStepsList(ctx context.Context, workflowID string, asJS
 
 	steps, err := s.api.GetWorkflowSteps(ctx, workflowID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -245,20 +245,19 @@ func (s *Service) confirmStepAction(ctx context.Context, installID, workflowID, 
 }
 
 func (s *Service) WorkflowStepsGet(ctx context.Context, workflowID, stepID string, asJSON bool) error {
-	view := ui.NewListView()
 
 	// If stepID is not provided, use the last processed step
 	if stepID == "" {
 		var err error
 		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 	}
 
 	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -433,7 +432,7 @@ func (s *Service) WorkflowStepApprove(ctx context.Context, installID, workflowID
 		var err error
 		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 	}
 
@@ -441,7 +440,7 @@ func (s *Service) WorkflowStepApprove(ctx context.Context, installID, workflowID
 	if !stepWasProvided && !skipConfirm {
 		confirmed, err := s.confirmStepAction(ctx, installID, workflowID, stepID, "approve")
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 		if !confirmed {
 			ui.Println("Aborted.")
@@ -451,7 +450,7 @@ func (s *Service) WorkflowStepApprove(ctx context.Context, installID, workflowID
 
 	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if step.Approval == nil {
@@ -463,7 +462,7 @@ func (s *Service) WorkflowStepApprove(ctx context.Context, installID, workflowID
 		Note:         note,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -484,7 +483,7 @@ func (s *Service) WorkflowStepReject(ctx context.Context, installID, workflowID,
 		var err error
 		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 	}
 
@@ -492,7 +491,7 @@ func (s *Service) WorkflowStepReject(ctx context.Context, installID, workflowID,
 	if !stepWasProvided && !skipConfirm {
 		confirmed, err := s.confirmStepAction(ctx, installID, workflowID, stepID, "reject")
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 		if !confirmed {
 			ui.Println("Aborted.")
@@ -502,7 +501,7 @@ func (s *Service) WorkflowStepReject(ctx context.Context, installID, workflowID,
 
 	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if step.Approval == nil {
@@ -514,7 +513,7 @@ func (s *Service) WorkflowStepReject(ctx context.Context, installID, workflowID,
 		Note:         note,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -527,7 +526,6 @@ func (s *Service) WorkflowStepReject(ctx context.Context, installID, workflowID,
 }
 
 func (s *Service) WorkflowStepRetry(ctx context.Context, installID, workflowID, stepID string, skipConfirm, asJSON bool) error {
-	view := ui.NewListView()
 
 	// If stepID is not provided, use the last processed step and require confirmation
 	stepWasProvided := stepID != ""
@@ -535,7 +533,7 @@ func (s *Service) WorkflowStepRetry(ctx context.Context, installID, workflowID, 
 		var err error
 		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 	}
 
@@ -543,7 +541,7 @@ func (s *Service) WorkflowStepRetry(ctx context.Context, installID, workflowID, 
 	if !stepWasProvided && !skipConfirm {
 		confirmed, err := s.confirmStepAction(ctx, installID, workflowID, stepID, "retry")
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 		if !confirmed {
 			ui.Println("Aborted.")
@@ -553,7 +551,7 @@ func (s *Service) WorkflowStepRetry(ctx context.Context, installID, workflowID, 
 
 	err := s.api.RetryWorkflowStep(ctx, workflowID, stepID, nil)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -577,18 +575,18 @@ func (s *Service) WorkflowStepPlan(ctx context.Context, installID, workflowID, s
 		var err error
 		stepID, err = s.getLastProcessedStepID(ctx, workflowID)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 	}
 
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	step, err := s.api.GetWorkflowStep(ctx, workflowID, stepID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if step.StepTargetID == "" {
@@ -601,7 +599,7 @@ func (s *Service) WorkflowStepPlan(ctx context.Context, installID, workflowID, s
 
 	deploy, err := s.api.GetInstallDeploy(ctx, installID, step.StepTargetID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if len(deploy.RunnerJobs) == 0 {
@@ -611,7 +609,7 @@ func (s *Service) WorkflowStepPlan(ctx context.Context, installID, workflowID, s
 	runnerJob := deploy.RunnerJobs[0]
 	plan, err := s.getRunnerJobPlanJSON(ctx, runnerJob.ID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if plan == "" {
@@ -684,7 +682,7 @@ func (s *Service) WorkflowSetApprovalOption(ctx context.Context, workflowID stri
 		ApprovalOption: &approvalOption,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

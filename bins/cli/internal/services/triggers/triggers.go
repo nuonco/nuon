@@ -20,7 +20,7 @@ func printTrigger(trigger *models.Trigger, asJSON bool) error {
 func (s *Service) CreateTrigger(ctx context.Context, req *models.TriggerCreateRequest, asJSON bool) error {
 	result, err := s.api.CreateTrigger(ctx, req)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(result)
@@ -32,7 +32,7 @@ func (s *Service) CreateTrigger(ctx context.Context, req *models.TriggerCreateRe
 func (s *Service) ListTriggers(ctx context.Context, asJSON bool) error {
 	triggers, err := s.api.ListTriggers(ctx)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(triggers)
@@ -52,7 +52,7 @@ func (s *Service) ListTriggers(ctx context.Context, asJSON bool) error {
 func (s *Service) GetTrigger(ctx context.Context, id string, asJSON bool) error {
 	trigger, err := s.api.GetTrigger(ctx, id)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	return printTrigger(trigger, asJSON)
 }
@@ -65,21 +65,21 @@ func (s *Service) SetTrigger(ctx context.Context, id string, enable, asJSON bool
 		trigger, err = s.api.DisableTrigger(ctx, id)
 	}
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	return printTrigger(trigger, asJSON)
 }
 func (s *Service) RotateTriggerSecret(ctx context.Context, id string, asJSON bool) error {
 	trigger, err := s.api.GetTrigger(ctx, id)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if trigger.Preset == "slack-events" {
 		return ui.PrintError(&ui.CLIUserError{Msg: "Slack signing secrets cannot be rotated; recreate the trigger to replace it"})
 	}
 	result, err := s.api.RotateTriggerSecret(ctx, id)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(result)
@@ -91,7 +91,7 @@ func (s *Service) RotateTriggerSecret(ctx context.Context, id string, asJSON boo
 func (s *Service) RevokeTriggerSecret(ctx context.Context, triggerID, secretID string, asJSON bool) error {
 	result, err := s.api.RevokeTriggerSecret(ctx, triggerID, secretID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(result)
@@ -102,7 +102,7 @@ func (s *Service) RevokeTriggerSecret(ctx context.Context, triggerID, secretID s
 }
 func (s *Service) DeleteTrigger(ctx context.Context, id string, force, asJSON bool) error {
 	if err := s.api.DeleteTrigger(ctx, id, force); err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	result := map[string]any{"id": id, "deleted": true}
 	if asJSON {
@@ -116,7 +116,7 @@ func (s *Service) DeleteTrigger(ctx context.Context, id string, force, asJSON bo
 func (s *Service) RevealTriggerIngressURL(ctx context.Context, id string, asJSON bool) error {
 	result, err := s.api.GetTriggerIngressURL(ctx, id)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(result)
@@ -129,7 +129,7 @@ func (s *Service) RevealTriggerIngressURL(ctx context.Context, id string, asJSON
 func (s *Service) ReplaceTriggerIngressURL(ctx context.Context, id string, asJSON bool) error {
 	result, err := s.api.RotateTriggerIngressURL(ctx, id)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(result)
@@ -142,7 +142,7 @@ func (s *Service) ReplaceTriggerIngressURL(ctx context.Context, id string, asJSO
 func (s *Service) RevealTriggerSecret(ctx context.Context, triggerID, secretID string, asJSON bool) error {
 	result, err := s.api.RevealTriggerSecret(ctx, triggerID, secretID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(result)
@@ -175,7 +175,7 @@ func triggerSetupGuidance(trigger *models.Trigger) string {
 func (s *Service) GetDispatch(ctx context.Context, id string, asJSON bool) error {
 	result, err := s.api.GetTriggerEventDispatch(ctx, id)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(result)
@@ -187,7 +187,7 @@ func (s *Service) GetDispatch(ctx context.Context, id string, asJSON bool) error
 func (s *Service) RetryDispatch(ctx context.Context, id string, asJSON bool) error {
 	result, err := s.api.RetryTriggerEventDispatch(ctx, id)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	if asJSON {
 		ui.PrintJSON(result)

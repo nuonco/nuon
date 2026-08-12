@@ -75,7 +75,7 @@ func (c *cli) extListCmd() *cobra.Command {
 			mgr := extensions.New(extensionsDir())
 			exts, err := mgr.List()
 			if err != nil {
-				return ui.PrintError(err)
+				return err
 			}
 
 			if PrintJSON {
@@ -131,7 +131,7 @@ func (c *cli) extInstallCmd() *cobra.Command {
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			mgr := extensions.New(extensionsDir())
 			if err := mgr.EnsureDir(); err != nil {
-				return ui.PrintError(err)
+				return err
 			}
 
 			var spinner *ui.SpinnerView
@@ -143,7 +143,7 @@ func (c *cli) extInstallCmd() *cobra.Command {
 			ext, err := mgr.Install(args[0])
 			if err != nil {
 				if PrintJSON {
-					return ui.PrintError(err)
+					return err
 				}
 				spinner.Fail(err)
 				return err
@@ -186,7 +186,7 @@ func (c *cli) extUpgradeCmd() *cobra.Command {
 				results, err := mgr.UpgradeAll()
 				if err != nil {
 					if PrintJSON {
-						return ui.PrintError(err)
+						return err
 					}
 					spinner.Fail(err)
 					return err
@@ -218,7 +218,7 @@ func (c *cli) extUpgradeCmd() *cobra.Command {
 
 			if PrintJSON {
 				if err := mgr.Upgrade(args[0], force); err != nil {
-					return ui.PrintError(err)
+					return err
 				}
 				ext, _ := mgr.Get(args[0])
 				ui.PrintJSON(ext)
@@ -257,7 +257,7 @@ func (c *cli) extRemoveCmd() *cobra.Command {
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			mgr := extensions.New(extensionsDir())
 			if err := mgr.Remove(args[0]); err != nil {
-				return ui.PrintError(err)
+				return err
 			}
 			if PrintJSON {
 				ui.PrintJSON(map[string]string{
@@ -293,7 +293,7 @@ func (c *cli) extBrowseCmd() *cobra.Command {
 			exts, err := mgr.Browse(org)
 			if err != nil {
 				if PrintJSON {
-					return ui.PrintError(err)
+					return err
 				}
 				spinner.Fail(err)
 				return err

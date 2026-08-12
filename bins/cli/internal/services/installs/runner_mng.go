@@ -30,12 +30,12 @@ func (s *Service) getRunnerID(ctx context.Context, installID string) (string, er
 func (s *Service) RunnerGet(ctx context.Context, installID string, asJSON bool) error {
 	installID, err := s.selectInstallID(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	runnerGroup, err := s.api.GetInstallRunnerGroup(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if len(runnerGroup.Runners) == 0 {
@@ -82,7 +82,7 @@ func (s *Service) debugRunnerMng(installID, runnerID, endpoint string) {
 func (s *Service) RunnerRestart(ctx context.Context, installID string, asJSON bool) error {
 	runnerID, err := s.getRunnerID(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	s.debugRunnerMng(installID, runnerID, "restart")
@@ -100,7 +100,7 @@ func (s *Service) RunnerRestart(ctx context.Context, installID string, asJSON bo
 func (s *Service) RunnerShutDown(ctx context.Context, installID string, asJSON bool) error {
 	runnerID, err := s.getRunnerID(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	s.debugRunnerMng(installID, runnerID, "shutdown")
@@ -118,7 +118,7 @@ func (s *Service) RunnerShutDown(ctx context.Context, installID string, asJSON b
 func (s *Service) RunnerVMShutDown(ctx context.Context, installID string, asJSON bool) error {
 	runnerID, err := s.getRunnerID(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	s.debugRunnerMng(installID, runnerID, "shutdown-vm")

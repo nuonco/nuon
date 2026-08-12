@@ -99,7 +99,7 @@ func (c *cli) clearConfig(ctx context.Context, asJSON bool) error {
 
 	// Write the updated config to file
 	if err := c.cfg.WriteConfig(); err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	ui.PrintResult(asJSON, "✅ Configuration cleared.", map[string]string{

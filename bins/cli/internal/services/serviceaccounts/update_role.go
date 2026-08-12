@@ -25,7 +25,7 @@ func (s *Service) UpdateServiceAccountRole(ctx context.Context, accountID, role 
 		Role: &role,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

@@ -11,7 +11,7 @@ func (s *Service) CreateRun(ctx context.Context, installID, runbookID string, as
 
 	run, err := s.api.CreateInstallRunbookRun(ctx, installID, runbookID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

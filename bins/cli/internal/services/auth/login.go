@@ -52,13 +52,13 @@ func (a *Service) Login(ctx context.Context) error {
 	// NOTE: we used to branch on a config here but we only support Nuon Auth now
 	result, err := a.loginWithNuonAuth(ctx, cfg)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	// Save access token to config
 	a.cfg.Set("api_token", result.AccessToken)
 	if err := a.cfg.WriteConfig(); err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	ui.PrintLn(fmt.Sprintf("Logged in as %s", result.DisplayName))
@@ -82,7 +82,7 @@ func (a *Service) Login(ctx context.Context) error {
 		Limit:  10,
 	})
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	switch len(orgs) {
@@ -95,7 +95,7 @@ func (a *Service) Login(ctx context.Context) error {
 		a.cfg.Set("org_id", org.ID)
 		err = a.cfg.WriteConfig()
 		if err != nil {
-			return ui.PrintError(err)
+			return err
 		}
 		ui.PrintLn(fmt.Sprintf("Using org %s", org.Name))
 

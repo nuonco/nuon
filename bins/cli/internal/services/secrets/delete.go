@@ -10,13 +10,13 @@ import (
 func (s *Service) Delete(ctx context.Context, appID, secretID string, asJSON bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {
 		res, err := s.api.DeleteAppSecret(ctx, appID, secretID)
 		if err != nil {
-			return ui.PrintJSONError(err)
+			return err
 		}
 
 		type response struct {

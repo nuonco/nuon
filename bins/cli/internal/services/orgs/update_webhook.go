@@ -40,7 +40,7 @@ func (s *Service) UpdateWebhook(
 
 	payload, err := resolveSubscription(ctx, s.api, s.cfg.Interactive, subscription)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	req := &models.ServiceUpdateCurrentOrgWebhookRequest{
@@ -51,7 +51,7 @@ func (s *Service) UpdateWebhook(
 
 	webhook, err := s.api.UpdateCurrentOrgWebhook(ctx, webhookID, req)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

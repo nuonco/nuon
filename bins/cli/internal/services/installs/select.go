@@ -11,7 +11,6 @@ import (
 )
 
 func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bool) error {
-	view := ui.NewGetView()
 
 	if installID != "" {
 		s.SetCurrent(ctx, installID, asJSON)
@@ -40,7 +39,7 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 		installs, _, err = s.listInstalls(ctx, 0, 50)
 	}
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if len(installs) == 0 {
@@ -67,11 +66,11 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 	// Show install selector
 	selectedInstallID, err := bubbles.SelectInstall(installOptions, s.cfg.Interactive)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if err := s.setInstallID(ctx, selectedInstallID); err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	// Find selected install for display
@@ -93,7 +92,7 @@ func (s *Service) Select(ctx context.Context, appID, installID string, asJSON bo
 	if s.cfg.AppID != selectedAppID {
 		err := s.setAppID(ctx, selectedAppID)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 		s.printAppSetMsg(selectedAppID)
 	}

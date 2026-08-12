@@ -16,7 +16,7 @@ func (s *Service) GetRecentRuns(ctx context.Context, installID, runbookID string
 		Limit:  limit,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

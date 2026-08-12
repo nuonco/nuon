@@ -19,7 +19,7 @@ func (s *Service) ListServiceAccounts(ctx context.Context, includeRunners bool, 
 		Limit:  limit,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

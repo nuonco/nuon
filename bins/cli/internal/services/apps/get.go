@@ -10,14 +10,14 @@ import (
 func (s *Service) Get(ctx context.Context, appID string, asJSON bool) error {
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	view := ui.NewGetView()
 
 	app, err := s.api.GetApp(ctx, appID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

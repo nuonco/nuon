@@ -18,7 +18,7 @@ func (s *Service) List(ctx context.Context, appNameOrID string, offset, limit in
 	if appNameOrID != "" {
 		resolved, err := lookup.AppID(ctx, s.api, appNameOrID)
 		if err != nil {
-			return view.Error(err)
+			return err
 		}
 		appID = resolved
 	}
@@ -41,7 +41,7 @@ func (s *Service) List(ctx context.Context, appNameOrID string, offset, limit in
 		components, hasMore, err = fetch(offset, limit)
 	}
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

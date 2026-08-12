@@ -11,7 +11,6 @@ import (
 )
 
 func (s *Service) WorkflowsSelect(ctx context.Context, installID, workflowID string, offset, limit int, asJSON bool) error {
-	view := ui.NewListView()
 
 	if workflowID != "" {
 		return s.setCurrentWorkflow(ctx, workflowID, asJSON)
@@ -19,12 +18,12 @@ func (s *Service) WorkflowsSelect(ctx context.Context, installID, workflowID str
 
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	workflows, _, err := s.listWorkflows(ctx, installID, offset, limit)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if len(workflows) == 0 {
@@ -50,11 +49,11 @@ func (s *Service) WorkflowsSelect(ctx context.Context, installID, workflowID str
 	// Show workflow selector
 	selectedWorkflowID, err := bubbles.SelectWorkflow(options, s.cfg.Interactive)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if err := s.setWorkflowID(ctx, selectedWorkflowID); err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	// Find selected workflow for display
@@ -84,7 +83,7 @@ func (s *Service) WorkflowsSelect(ctx context.Context, installID, workflowID str
 
 func (s *Service) WorkflowsDeselect(ctx context.Context, asJSON bool) error {
 	if err := s.unsetWorkflowID(ctx); err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {
@@ -99,11 +98,11 @@ func (s *Service) WorkflowsDeselect(ctx context.Context, asJSON bool) error {
 func (s *Service) setCurrentWorkflow(ctx context.Context, workflowID string, asJSON bool) error {
 	workflow, err := s.api.GetWorkflow(ctx, workflowID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if err := s.setWorkflowID(ctx, workflow.ID); err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if asJSON {

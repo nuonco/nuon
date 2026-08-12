@@ -24,7 +24,7 @@ func (s *Service) CreateStaticToken(ctx context.Context, name, duration, role st
 		Role:     role,
 	})
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

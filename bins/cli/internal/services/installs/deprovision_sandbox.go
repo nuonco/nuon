@@ -4,18 +4,17 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
-	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) DeprovisionSandbox(ctx context.Context, installID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	resp, err := s.api.DeprovisionInstallSandbox(ctx, installID)
 	if err != nil {
-		return ui.PrintJSONError(err)
+		return err
 	}
 
 	printActionResult(asJSON, "successfully scheduled deprovision of install sandbox", actionResult{

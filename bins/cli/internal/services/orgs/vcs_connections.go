@@ -16,7 +16,7 @@ func (s *Service) VCSConnections(ctx context.Context, offset, limit int, asJSON 
 
 	vcs, hasMore, err := s.listVCSConnections(ctx, offset, limit)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

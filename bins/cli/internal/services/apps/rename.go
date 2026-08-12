@@ -22,14 +22,14 @@ func (s *Service) Rename(ctx context.Context, appID string, name string, rename,
 
 	fail := func(err error) error {
 		if asJSON {
-			return ui.PrintError(err)
+			return err
 		}
 		return view.Fail(err)
 	}
 
 	appID, err := lookup.AppID(ctx, s.api, appID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	if !asJSON {

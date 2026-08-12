@@ -33,7 +33,7 @@ type installOutputs struct {
 func (s *Service) Outputs(ctx context.Context, installID string, opts OutputsOptions, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	filtered := opts.StackOnly || opts.SandboxOnly || opts.ComponentID != ""

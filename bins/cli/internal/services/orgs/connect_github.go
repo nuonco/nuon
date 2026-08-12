@@ -27,7 +27,7 @@ func (s *Service) ConnectGithub(ctx context.Context, asJSON bool) error {
 
 	ui.PrintLn("opening GitHub connection flow")
 	if err := browser.OpenURL(url); err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	return nil
 }

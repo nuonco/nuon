@@ -17,7 +17,7 @@ func (s *Service) ListRoles(ctx context.Context, asJSON bool) error {
 
 	allRoles, err := s.api.ListRoles(ctx)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	// Only list roles that can be assigned somewhere; held-only roles

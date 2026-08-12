@@ -14,7 +14,7 @@ func (s *Service) ListConfigs(ctx context.Context, appID string, offset, limit i
 
 	cfgs, hasMore, err := s.listConfigs(ctx, appID, offset, limit)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

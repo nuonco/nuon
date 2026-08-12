@@ -16,7 +16,7 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, asJ
 
 	wfs, hasMore, err := s.getActionWorkflows(ctx, appID, offset, limit)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

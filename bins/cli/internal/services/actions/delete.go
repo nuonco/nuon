@@ -9,7 +9,7 @@ import (
 func (s *Service) DeleteWorkflow(ctx context.Context, actionWorkflowID string, asJSON bool) error {
 	if asJSON {
 		if _, err := s.api.DeleteActionWorkflow(ctx, actionWorkflowID); err != nil {
-			return ui.PrintError(err)
+			return err
 		}
 		ui.PrintJSON(map[string]string{
 			"id":      actionWorkflowID,

@@ -58,14 +58,14 @@ func (s *Service) selectInstallID(ctx context.Context, installID string) (string
 func (s *Service) workflowsTUI(ctx context.Context, installID, workflowID string, autoRetry bool) error {
 	installID, err := s.selectInstallID(ctx, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	// If no workflow ID provided, show selector
 	if workflowID == "" {
 		selectedID, err := workflowselector.WorkflowSelectorApp(ctx, s.cfg, s.api, installID)
 		if err != nil {
-			return ui.PrintError(err)
+			return err
 		}
 		if selectedID == "" {
 			return nil
@@ -86,7 +86,7 @@ func (s *Service) workflowsTUI(ctx context.Context, installID, workflowID string
 func (s *Service) workflowsTUILatest(ctx context.Context, installID string) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 
 	// Get the latest workflow for this install

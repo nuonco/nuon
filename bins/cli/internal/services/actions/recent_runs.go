@@ -13,7 +13,7 @@ func (s *Service) GetRecentRuns(ctx context.Context, installID, actionWorkflowID
 
 	response, hasMore, err := s.getRecentRuns(ctx, installID, actionWorkflowID, offset, limit)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {

@@ -14,13 +14,13 @@ import (
 func (s *Service) CurrentInputs(ctx context.Context, installID string, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
-		return ui.PrintError(err)
+		return err
 	}
 	view := ui.NewGetView()
 
 	inputs, err := s.listInstallInputs(ctx, installID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
