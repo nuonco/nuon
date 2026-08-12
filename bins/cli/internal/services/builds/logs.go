@@ -11,8 +11,7 @@ import (
 
 func (s *Service) Logs(ctx context.Context, appID, compID, buildID string, asJSON bool) error {
 	if appID == "" {
-		s.printAppNotSetMsg()
-		return nil
+		return ui.PrintError(&ui.CLIUserError{Msg: "current app is not set, use `apps select` to set one"})
 	}
 
 	compID, err := lookup.ComponentID(ctx, s.api, appID, compID)
@@ -26,6 +25,13 @@ func (s *Service) Logs(ctx context.Context, appID, compID, buildID string, asJSO
 	}
 
 	url := fmt.Sprintf("%s/%s/apps/%s/components/%s/builds/%s", cfg.DashboardURL, s.cfg.OrgID, appID, compID, buildID)
+
+	if asJSON {
+		ui.PrintJSON(map[string]string{"url": url})
+		return nil
+	}
+
+	ui.PrintLn("opening build logs")
 	browser.OpenURL(url)
 	return nil
 }

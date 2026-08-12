@@ -167,6 +167,18 @@ func PrintLn(msg string) {
 	fmt.Fprintln(agentmode.HumanWriter(), bubbles.InfoStyle.Render(msg))
 }
 
+// PrintResult renders a command outcome in the active output mode: a JSON payload
+// (raw JSON or agent envelope, via PrintJSON) when asJSON is set, otherwise a
+// human status line. Used by mutating commands so json/agent callers get a
+// machine-readable confirmation instead of an empty envelope.
+func PrintResult(asJSON bool, humanMsg string, data any) {
+	if asJSON {
+		PrintJSON(data)
+		return
+	}
+	PrintLn(humanMsg)
+}
+
 func PrintWarning(msg string) {
 	fmt.Fprintln(agentmode.HumanWriter(), bubbles.WarningStyle.Render(msg))
 }

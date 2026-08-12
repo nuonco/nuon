@@ -14,14 +14,17 @@ func (s *Service) ListConfigs(ctx context.Context, appID, compID string, offset,
 		return ui.PrintError(err)
 	}
 
-	view := ui.NewGetView()
-
 	configs, _, err := s.listConfigs(ctx, compID, offset, limit)
 	if err != nil {
-		return view.Error(err)
+		return ui.PrintError(err)
 	}
 
-	ui.PrintJSON(configs)
+	if asJSON {
+		ui.PrintJSON(configs)
+		return nil
+	}
+
+	ui.PrintIndentedJSON(configs)
 	return nil
 }
 

@@ -47,6 +47,7 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, asJ
 			secret.ID,
 			secret.Name,
 			strings.Repeat("*", int(secret.Length)),
+			secret.CreatedByID,
 			createdAt.Format(time.Stamp),
 		})
 	}

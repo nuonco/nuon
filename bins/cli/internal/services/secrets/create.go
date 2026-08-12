@@ -15,18 +15,29 @@ func (s *Service) Create(ctx context.Context, appID, name, value string, asJSON 
 		return ui.PrintError(err)
 	}
 
-	view := ui.NewCreateView("secret", asJSON, s.cfg.Interactive)
-	view.Start()
-	view.Update("creating secret")
+	var view *ui.CreateView
+	if !asJSON {
+		view = ui.NewCreateView("secret", asJSON, s.cfg.Interactive)
+		view.Start()
+		view.Update("creating secret")
+	}
 
 	secret, err := s.api.CreateAppSecret(ctx, appID, &models.ServiceCreateAppSecretRequest{
 		Name:  &name,
 		Value: &value,
 	})
 	if err != nil {
+		if asJSON {
+			return ui.PrintError(err)
+		}
 		return view.Fail(err)
 	}
 
-	view.Update(fmt.Sprintf("successfully created secret (%s)\n", secret.ID))
+	ui.PrintResult(asJSON, fmt.Sprintf("successfully created secret (%s)", secret.ID), map[string]string{
+		"id":     secret.ID,
+		"app_id": appID,
+		"name":   name,
+		"status": "created",
+	})
 	return nil
 }
