@@ -129,6 +129,7 @@
               "concepts/operation-roles",
               "concepts/triggers",
               "concepts/access-control",
+              "concepts/custom-roles",
               "concepts/api-tokens",
               "concepts/service-accounts",
               "concepts/oidc-federation"
@@ -193,7 +194,8 @@
               "guides/configuring-policies",
               "guides/operation-roles",
               "guides/runner-management-mode",
-              "guides/team-management"
+              "guides/team-management",
+              "guides/custom-roles"
             ]
           },
           {

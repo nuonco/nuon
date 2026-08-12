@@ -1,0 +1,124 @@
+---
+title: "Creating Custom Roles"
+description: "Build a role that writes to only the apps or installs you choose, then assign it to a token, service account, or team member."
+icon: "key"
+keywords: ["create custom role", "per-app CI token", "scoped API token", "app maintainer role", "contractor access", "least privilege nuon", "nuon roles create"]
+---
+
+A custom role confines an identity's **write** access to specific resources. Use one when neither built-in role
+fits — a CI token that may only deploy one app, a maintainer who owns a single app, a contractor who should not
+touch production.
+
+Creating and editing roles requires org admin. See [Custom roles](/concepts/custom-roles) for the permission model.
+
+<Warning>
+Custom roles scope writes, not reads. Any role that can read at all can read everything in the org — lists are not
+filtered. Do not use a custom role to hide data from someone.
+</Warning>
+
+## In the dashboard
+
+<Steps>
+<Step title="Open the roles page">
+Go to **Settings → Roles** and choose **Create role**.
+</Step>
+<Step title="Name the role">
+Give it a title that says who it is for — `app_web release manager`, `acme contractor`.
+</Step>
+<Step title="Add permissions">
+Each row is one permission entry: pick the verbs under **Allow**, the resource type under **On**, and the specific
+resource (or **All …**) under **Which**. For a wildcard on installs or branches you can also confine it to one app
+under **Scoped to**.
+</Step>
+<Step title="Choose where it can be assigned">
+Select the surfaces the role should appear on — team members, service accounts, API tokens, OIDC trust policies.
+</Step>
+<Step title="Assign it">
+The role now appears in the role picker wherever you invite a member or create a token.
+</Step>
+</Steps>
+
+The **Read everything, write to specific installs** preset fills in the common shape: org-wide read, plus full
+access to the installs you pick. It is the safest starting point, because it includes the org-level read entry that
+listing pages need.
+
+## From the CLI
+
+Every recipe below creates the role and then assigns it. Run `nuon roles list` to see the result, and
+`nuon roles get <role-id>` to read its entries back.
+
+### A CI token that deploys one app
+
+For a pipeline that syncs and deploys `app_web` and nothing else.
+
+```sh
+nuon roles create --title "app_web ci" \
+  --context api_token \
+  --permission "read:org:<org-id>" \
+  --permission "all:app:app_web" \
+  --permission "all:install:*:scope=app_web"
+
+nuon orgs api-tokens create --name app-web-ci --role <role-id>
+```
+
+`all:app:app_web` covers the app and everything beneath it; the wildcard entry is there so installs created later
+are covered without editing the role.
+
+### An app maintainer
+
+A team member who owns one app end to end, and can read the rest of the org for context.
+
+```sh
+nuon roles create --title "app_web maintainer" \
+  --context team \
+  --permission "read:org:<org-id>" \
+  --permission "all:app:app_web" \
+  --permission "all:app_branch:*:scope=app_web" \
+  --permission "all:install:*:scope=app_web"
+
+nuon orgs invite --email maintainer@yourdomain.com --role <role-id>
+```
+
+### A contractor on specific installs
+
+Write access to two named installs, read elsewhere.
+
+```sh
+nuon roles create --title "acme contractor" \
+  --context team \
+  --permission "read:org:<org-id>" \
+  --permission "all:install:inl4plkdhwau58atwfd92vlc8q" \
+  --permission "all:install:inlq7fplr1up5atx5zpxotbabm"
+```
+
+### A branch-run trigger
+
+A token that can trigger branch runs for one app without touching its installs.
+
+```sh
+nuon roles create --title "app_web branch runner" \
+  --context api_token \
+  --permission "read:org:<org-id>" \
+  --permission "read:app:app_web" \
+  --permission "create,read:app_branch:*:scope=app_web"
+```
+
+## Changing a role
+
+`--permission` replaces the whole entry set, so read the current one first:
+
+```sh
+nuon roles get <role-id>
+nuon roles edit <role-id> --permission "..." --permission "..."
+```
+
+Use `--title`, `--description`, or `--context` alone to change metadata without touching permissions.
+
+## Deleting a role
+
+```sh
+nuon roles delete <role-id>
+```
+
+Deleting a role immediately revokes it from every identity holding it. Those identities keep existing but lose their
+access until an admin assigns them another role, so move anyone who still needs access onto a different role first.

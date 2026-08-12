@@ -51,7 +51,7 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 	}
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "A human-friendly name for the service account")
 	createCmd.MarkFlagRequired("name")
-	createCmd.Flags().StringVar(&role, "role", "", "The role to grant the service account (see `nuon service-accounts roles list`)")
+	createCmd.Flags().StringVar(&role, "role", "", "The role to grant the service account: a built-in value or a custom role id; see 'nuon roles list'")
 	createCmd.MarkFlagRequired("role")
 	serviceAccountsCmd.AddCommand(createCmd)
 
@@ -79,7 +79,7 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 	}
 	updateRoleCmd.Flags().StringVar(&id, "id", "", "The ID of the service account")
 	updateRoleCmd.MarkFlagRequired("id")
-	updateRoleCmd.Flags().StringVar(&role, "role", "", "The role to grant the service account (see `nuon service-accounts roles list`)")
+	updateRoleCmd.Flags().StringVar(&role, "role", "", "The role to grant the service account: a built-in value or a custom role id; see 'nuon roles list'")
 	updateRoleCmd.MarkFlagRequired("role")
 	serviceAccountsCmd.AddCommand(updateRoleCmd)
 

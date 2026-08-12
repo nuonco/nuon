@@ -1,0 +1,91 @@
+---
+title: "Custom Roles"
+icon: "user-shield"
+description: "How scoped permission entries work, so you can build a role that writes to only the resources you choose."
+keywords: ["custom role", "scoped permissions", "permission entry", "resource scope", "least privilege role", "per-app token", "nuon roles create", "wildcard permissions", "role id"]
+---
+
+A custom role is a named list of **permission entries**. Each entry says: *these verbs, on this resource*. An
+identity holding the role can act on a resource when any entry covers it.
+
+Only org admins can create, edit, or delete custom roles. See
+[Access control](/concepts/access-control) for how roles are assigned, and
+[Creating custom roles](/guides/custom-roles) for worked examples.
+
+## Permission entries
+
+| Field | Meaning |
+| --- | --- |
+| **Verbs** | Any of `create`, `read`, `update`, `delete`. `all` grants all four. |
+| **Resource type** | `app`, `install`, `app_branch`, or `org`. |
+| **Resource** | The resource's id or name, or `*` for every resource of that type in the org. |
+| **Scope** | Optional. Confines a `*` entry to one app. Only valid on `install` and `app_branch` wildcards. |
+
+A role may carry up to 100 entries. Naming a resource by name works when the name is unambiguous in the org —
+install and branch names are only unique within an app, so use the id when two apps share a branch name.
+
+## Coverage runs downward
+
+An entry on a resource also covers everything beneath it. Granting `update` on an app covers that app's installs
+and branches; granting it on a single install covers only that install.
+
+It never runs the other way. An entry on one install grants nothing on the app above it, and nothing on the app's
+other installs. There is no way for a scoped entry to reach up and widen itself.
+
+## Reads are not scoped
+
+Listing endpoints are authorized at the org level and are **not** filtered to the resources a role names. An entry
+of `read` on `org` lets the role list everything in the org; leaving it out means lists return empty even for
+resources the role can open directly.
+
+So a custom role is a tool for restricting **writes**. If you need an identity that can only *see* part of your
+org, a custom role will not give you that today.
+
+## Assignment surfaces
+
+Each role declares where it may be offered. A role with no surfaces selected still exists but appears in no picker.
+
+| Surface | Value |
+| --- | --- |
+| Team members | `team` |
+| Service accounts | `service_account` |
+| API tokens | `api_token` |
+| OIDC trust policies | `oidc_trust_policy` |
+
+## CLI grammar
+
+`nuon roles create` and `nuon roles edit` take one `--permission` flag per entry:
+
+```
+verbs:resource_type:resource[:scope=app]
+```
+
+```sh
+# read one app
+--permission "read:app:app_web"
+
+# full access to one install, by id
+--permission "all:install:inl4plkdhwau58atwfd92vlc8q"
+
+# read and update every branch of app_web
+--permission "read,update:app_branch:*:scope=app_web"
+
+# read everything in the org — needed for lists to work
+--permission "read:org:<org-id>"
+```
+
+`nuon roles get <role-id>` prints a role's entries in this same grammar, so you can read a role back, change one
+line, and pass the full set to `nuon roles edit`.
+
+<Note>
+`--permission` on `nuon roles edit` **replaces** every existing entry rather than adding to them. Pass the complete
+set you want the role to end up with.
+</Note>
+
+## Rules the API enforces
+
+- A scope may only be set on a `*` entry, and only to an app.
+- `*` is not allowed on `org` — an org entry names your org.
+- A role needs at least one permission entry.
+- Titles must be unique within the org.
+- Built-in roles cannot be edited or deleted.

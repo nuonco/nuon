@@ -199,7 +199,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		}),
 	}
 	createInviteCmd.Flags().StringVarP(&email, "email", "e", "", "Email of user to invite")
-	createInviteCmd.Flags().StringVar(&role, "role", "", "The org role to grant (org_admin or org_read_only; defaults to org_admin)")
+	createInviteCmd.Flags().StringVar(&role, "role", "", "The role to grant: a built-in value (org_admin, org_read_only) or a custom role id; see 'nuon roles list' (defaults to org_admin)")
 	orgsCmd.AddCommand(createInviteCmd)
 
 	updateUserRoleCmd := &cobra.Command{
@@ -213,7 +213,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 	}
 	updateUserRoleCmd.Flags().StringVar(&userID, "user-id", "", "The ID of the user whose role to change")
 	updateUserRoleCmd.MarkFlagRequired("user-id")
-	updateUserRoleCmd.Flags().StringVar(&role, "role", "", "The new org role (org_admin or org_read_only)")
+	updateUserRoleCmd.Flags().StringVar(&role, "role", "", "The new role: a built-in value (org_admin, org_read_only) or a custom role id; see 'nuon roles list'")
 	updateUserRoleCmd.MarkFlagRequired("role")
 	orgsCmd.AddCommand(updateUserRoleCmd)
 
@@ -262,7 +262,7 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "A human-friendly name to identify the token")
 	createCmd.MarkFlagRequired("name")
 	createCmd.Flags().StringVar(&duration, "duration", "8760h", "How long the token is valid (Go duration, e.g. 720h)")
-	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to the token (see 'nuon roles list')")
+	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The role granted to the token: a built-in value or a custom role id; see 'nuon roles list'")
 	apiTokensCmd.AddCommand(createCmd)
 
 	listCmd := &cobra.Command{
@@ -342,7 +342,7 @@ Example (GitHub Actions, main branch of acme/app only):
 	createCmd.MarkFlagRequired("audience")
 	createCmd.Flags().StringArrayVar(&claims, "claim", nil, "A claim condition as claim=pattern (repeatable; a sub condition is required)")
 	createCmd.MarkFlagRequired("claim")
-	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to exchanged tokens (see 'nuon roles list')")
+	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The role granted to exchanged tokens: a built-in value or a custom role id; see 'nuon roles list'")
 	createCmd.Flags().Int64Var(&ttl, "ttl", 0, "Lifetime of exchanged tokens in seconds (default 3600, max 86400)")
 	trustPoliciesCmd.AddCommand(createCmd)
 

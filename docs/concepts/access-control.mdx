@@ -2,19 +2,43 @@
 title: "Access Control"
 icon: "shield-halved"
 description: "How to control what team members and service accounts can do in your Nuon org."
-keywords: ["roles", "RBAC", "access control", "permissions", "org admin", "read-only", "team", "service account", "API token", "OIDC"]
+keywords: ["roles", "RBAC", "access control", "permissions", "org admin", "read-only", "team", "service account", "API token", "OIDC", "custom role", "scoped permissions", "least privilege"]
 ---
 
 Every identity in your Nuon org — whether a team member or a [service account](/concepts/service-accounts) — must be assigned a **role**. The role determines what that identity can read and change in the org.
 
 Roles are org-scoped: a role assigned in one org grants no access in any other org.
 
-## Available roles
+## Built-in roles
+
+Every org comes with two assignable built-in roles. They cover the whole org and cannot be edited or deleted.
 
 | Role | Value | Grants |
 | --- | --- | --- |
 | **Admin** | `org_admin` | Full access to the org and everything in it, including team and credential management. |
 | **Read-only** | `org_read_only` | Read-only access to everything in the org; cannot make changes. |
+
+## Custom roles
+
+When neither built-in role fits, an org admin can create a **custom role** whose write access is confined to
+specific resources — one app, a set of installs, an app's branches. A custom role is a list of permission
+entries, each naming what it applies to and which of create, read, update, and delete it grants.
+
+Custom roles are assigned through exactly the same flows as built-in ones, and an identity still holds one role at
+a time. See [Custom roles](/concepts/custom-roles) for the permission model and
+[Creating custom roles](/guides/custom-roles) for worked examples.
+
+<Warning>
+**Reads are org-wide; writes are what you scope.** Listing endpoints — every "show me my installs" or "show me my
+apps" view — are authorized at the org level, and they are not filtered to the resources a role names. A role that
+can read anything can read everything in the org. Scope a custom role to restrict what it can *change*, not what it
+can see.
+</Warning>
+
+Because of that, a custom role almost always needs org-level `read` alongside its scoped write entries. Without it
+the role can open a resource it owns by direct link but every list comes back empty, which looks like a broken role
+rather than a missing permission. The dashboard's **Read everything, write to specific installs** preset builds this
+combination for you.
 
 ## Assigning roles
 
@@ -31,10 +55,16 @@ The same role set applies everywhere an identity is created. You choose a role w
 An identity holds one role at a time; assigning a new role replaces the old one.
 </Note>
 
+Built-in roles are addressed by their value (`org_admin`, `org_read_only`); custom roles are addressed by their
+role id, since every custom role shares the same underlying type. Anywhere you pass `--role`, either form works.
+Run `nuon roles list` to see what each role expects.
+
 ## Permission errors
 
 When an identity attempts something its role does not allow, Nuon returns a message describing the access the action requires and the role you currently hold — for example, "this action requires write access to installs in this organization." Ask an org admin to assign a role that grants the needed access.
 
 ## Reserved roles
 
-The **Runner** role is reserved for the machine accounts Nuon provisions for your runners. It is assigned automatically and is never user-selectable.
+Some built-in roles exist for Nuon's own machine accounts and internal support flows. They are assigned
+automatically, never offered in any picker, and cannot be selected: **Runner** (the accounts Nuon provisions for
+your runners), **Installer**, and **Support**.

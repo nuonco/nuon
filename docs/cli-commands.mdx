@@ -36,6 +36,19 @@ These work on every command.
 | `nuon orgs api-tokens delete --id <token-id>` | Revoke an API token. |
 | `nuon orgs update-user-role --user-id <id> --role <role>` | Change an org member's role (run `nuon roles list` or see [Access control](/concepts/access-control)). Requires org admin. |
 
+## Roles
+
+Built-in roles are passed to `--role` by value (`org_admin`, `org_read_only`); custom roles by their role id. All
+role management requires org admin. See [Custom roles](/concepts/custom-roles) for the `--permission` grammar.
+
+| Command | What it does |
+|---------|--------------|
+| `nuon roles list` | List the roles you can assign, with the value or id each expects. |
+| `nuon roles get <role-id>` | Show a role's permissions, printed in the same form `--permission` accepts. |
+| `nuon roles create --title <title> --permission <entry>` | Create a custom role. Repeat `--permission` per entry; add `--context` to choose where it can be assigned. |
+| `nuon roles edit <role-id> --permission <entry>` | Edit a custom role. Passing `--permission` replaces the whole set. |
+| `nuon roles delete <role-id>` | Delete a custom role, revoking it from every identity holding it. |
+
 ## Apps & config
 
 | Command | What it does |

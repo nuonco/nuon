@@ -50,8 +50,8 @@ outlive the one command it runs. See [claim matching](/concepts/oidc-federation#
 patterns.
 
 <Note>
-  Triggering an App Branch run currently requires `org_admin` permissions.
-  We are in the process of adding more roles so such broad permissions are not required.
+  `org_admin` is the simplest role to start with, but it grants far more than a CI job needs. To scope the trust
+  policy to just this app, create a [custom role](/guides/custom-roles) and pass its role id to `--role` instead.
 </Note>
 
 ## Trigger a branch run from your workflow
@@ -141,6 +141,9 @@ Create the token and save it in a GitHub Actions secret named `NUON_API_TOKEN`.
 ```sh
 nuon orgs api-tokens create --name github-actions --role org_admin
 ```
+
+As with OIDC, `--role` also accepts a [custom role](/guides/custom-roles) id if you want the token confined to one
+app rather than the whole org.
 
 Then configure it on the workflow job step.
 The `id-token: write` permission is not required if you are using a token.
