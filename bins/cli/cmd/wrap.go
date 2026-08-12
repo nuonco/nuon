@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/pkg/analytics/events"
 	"github.com/nuonco/nuon/pkg/errs"
 )
@@ -20,11 +21,16 @@ type (
 	cobraRunECommandExitCode func(*cobra.Command, []string) (int, error)
 )
 
-// wrapCmd wraps all CLI commands, providing a central point to control error flow and handling.
+// wrapCmd wraps all CLI commands, providing a central point to control error
+// flow and handling. It renders the error in the active output mode before
+// exiting, so command implementations can simply `return err`; paths that
+// already rendered (ui.PrintError, view.Error, view.Fail) are not rendered
+// twice.
 func (c *cli) wrapCmd(f cobraRunECommand) cobraRunCommand {
 	fn := c.sentryWrapCmd(c.analyticsWrapCmd(f))
 	return func(cmd *cobra.Command, args []string) {
 		if err := fn(cmd, args); err != nil {
+			err = ui.PrintError(err)
 			os.Exit(exitCodeForErr(err))
 		}
 	}
@@ -46,6 +52,9 @@ func exitCodeForErr(err error) int {
 func (c *cli) wrapCmdWithExitCode(f cobraRunECommandExitCode) cobraRunCommand {
 	wrapped := func(cmd *cobra.Command, args []string) error {
 		exitCode, err := f(cmd, args)
+		if err != nil {
+			err = ui.PrintError(err)
+		}
 		if exitCode != 0 {
 			os.Exit(exitCode)
 		}

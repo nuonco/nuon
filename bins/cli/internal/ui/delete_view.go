@@ -37,6 +37,5 @@ func (v *DeleteView) Fail(err error) error {
 	if !errs.HasNuonStackTrace(err) {
 		err = withstack.WithStackDepth(err, 1)
 	}
-	v.SpinnerView.Fail(fmt.Errorf("failed to delete %s: %w", v.model, err))
-	return err
+	return v.SpinnerView.Fail(fmt.Errorf("failed to delete %s: %w", v.model, err))
 }

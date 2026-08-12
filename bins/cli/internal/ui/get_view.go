@@ -28,6 +28,5 @@ func (v *GetView) Error(err error) error {
 	if !errs.HasNuonStackTrace(err) {
 		err = withstack.WithStackDepth(err, 1)
 	}
-	PrintError(err)
-	return err
+	return PrintError(err)
 }

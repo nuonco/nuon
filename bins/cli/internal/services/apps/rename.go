@@ -24,8 +24,7 @@ func (s *Service) Rename(ctx context.Context, appID string, name string, rename,
 		if asJSON {
 			return ui.PrintError(err)
 		}
-		view.Fail(err)
-		return err
+		return view.Fail(err)
 	}
 
 	appID, err := lookup.AppID(ctx, s.api, appID)

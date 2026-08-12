@@ -31,6 +31,5 @@ func (v *CreateView) Fail(err error) error {
 	if !errs.HasNuonStackTrace(err) {
 		err = withstack.WithStackDepth(err, 1)
 	}
-	v.SpinnerView.Fail(fmt.Errorf("failed to create %s: %w", v.model, err))
-	return err
+	return v.SpinnerView.Fail(fmt.Errorf("failed to create %s: %w", v.model, err))
 }

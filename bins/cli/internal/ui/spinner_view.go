@@ -22,8 +22,12 @@ func (v *SpinnerView) Update(text string) {
 	v.bubblesSpinner.Update(text)
 }
 
-func (v *SpinnerView) Fail(err error) {
+// Fail renders the error on the spinner line and returns it marked as
+// rendered (except in agent mode, where the spinner writes to stderr and the
+// command boundary still owes the stdout envelope).
+func (v *SpinnerView) Fail(err error) error {
 	v.bubblesSpinner.Fail(err)
+	return spinnerRendered(err)
 }
 
 func (v *SpinnerView) Success(text string) {

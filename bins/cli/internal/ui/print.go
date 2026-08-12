@@ -43,16 +43,52 @@ func ErrAppNotSet() error {
 	return &CLIUserError{Msg: "current app is not set, use `apps select` to set one"}
 }
 
+// printedError marks an error as already rendered so the command boundary
+// (wrapCmd) doesn't render it a second time. Unwrap keeps errors.As/Is
+// (ErrExitCode, CLIUserError, nuon API errors) working through the marker.
+type printedError struct{ err error }
+
+func (e *printedError) Error() string { return e.err.Error() }
+func (e *printedError) Unwrap() error { return e.err }
+
+func markPrinted(err error) error {
+	var p *printedError
+	if errors.As(err, &p) {
+		return err
+	}
+	return &printedError{err: err}
+}
+
 // PrintError renders an error in the active output mode: agent -> envelope,
-// json -> JSON error object, table -> human-styled text.
+// json -> JSON error object, table -> human-styled text. It renders each
+// error at most once — already-rendered errors pass through unchanged — so
+// the command boundary can call it unconditionally and any code path may
+// simply `return err` and rely on the boundary to render it.
 func PrintError(err error) error {
+	if err == nil {
+		return nil
+	}
+	var p *printedError
+	if errors.As(err, &p) {
+		return err
+	}
 	if agentEnabled() {
-		return emitAgentError(err)
+		return &printedError{err: emitAgentError(err)}
 	}
 	if jsonOutputEnabled() {
-		return emitJSONError(err)
+		return &printedError{err: emitJSONError(err)}
 	}
-	return printHumanError(err)
+	return &printedError{err: printHumanError(err)}
+}
+
+// spinnerRendered finalizes an error a spinner Fail already rendered. In agent
+// mode the spinner writes to stderr, so the error is returned unmarked and
+// travels to the command boundary to become the stdout envelope.
+func spinnerRendered(err error) error {
+	if agentEnabled() {
+		return err
+	}
+	return markPrinted(err)
 }
 
 func printHumanError(err error) error {

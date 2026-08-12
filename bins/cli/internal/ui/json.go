@@ -35,17 +35,10 @@ type jsonError struct {
 	Error string `json:"error"`
 }
 
-// PrintJSONError renders an error in the active output mode. It is equivalent to
-// PrintError: agent -> envelope, json -> JSON error object, table -> human text.
-// Both entry points exist for historical call sites; prefer either.
+// PrintJSONError renders an error in the active output mode. It is equivalent
+// to PrintError; both entry points exist for historical call sites.
 func PrintJSONError(err error) error {
-	if agentEnabled() {
-		return emitAgentError(err)
-	}
-	if !jsonOutputEnabled() {
-		return printHumanError(err)
-	}
-	return emitJSONError(err)
+	return PrintError(err)
 }
 
 func emitJSONError(err error) error {
