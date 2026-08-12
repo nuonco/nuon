@@ -54,6 +54,8 @@ nuon sync
 	rootCmd.PersistentFlags().BoolVar(&ReadOnly, "read-only", false, "block commands that modify state; safe default when driving the CLI with an agent. Can also be set with NUON_READ_ONLY=1.")
 	rootCmd.PersistentFlags().BoolVar(&Debug, "debug", false, "print per-request API timing (DNS, connect, TLS, server, transfer) to stderr")
 	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config", "C", DefaultConfigFilePath, "path to custom config file. Can also be set using the NUON_CONFIG_FILE env var.")
+	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config-file", "f", DefaultConfigFilePath, "path to custom config file. Can also be set using the NUON_CONFIG_FILE env var.")
+	_ = rootCmd.PersistentFlags().MarkDeprecated("config-file", "use --config/-C instead; -f and --config-file will be removed in a future release")
 
 	rootCmd.AddGroup(
 		&CoreGroup,
