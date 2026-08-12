@@ -12,18 +12,14 @@ import (
 )
 
 // SetAccountOrgRole replaces an account's role(s) in an org with a single role
-// of the given type. Unlike RemoveAccountOrgRoles it does not touch the
-// account's OrgInvite records, so it is safe for in-place role changes.
+// named by role type — or by role id for custom roles. Unlike
+// RemoveAccountOrgRoles it does not touch the account's OrgInvite records, so
+// it is safe for in-place role changes.
 func (h *Client) SetAccountOrgRole(ctx context.Context, orgID, accountID string, roleType app.RoleType) error {
 	return h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var role app.Role
-		if err := tx.
-			Where(app.Role{
-				OrgID:    generics.NewNullString(orgID),
-				RoleType: roleType,
-			}).
-			First(&role).Error; err != nil {
-			return fmt.Errorf("unable to find role: %w", err)
+		role, err := findOrgRole(tx, orgID, roleType)
+		if err != nil {
+			return err
 		}
 
 		if err := tx.

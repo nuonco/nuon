@@ -55,9 +55,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		}
 	}
 
-	// roles
-	api.GET("/v1/roles", s.ListRoles)
-
 	// service accounts
 	serviceAccounts := api.Group("/v1/service-accounts")
 	{

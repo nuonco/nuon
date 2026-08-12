@@ -38,7 +38,8 @@ const (
     LevelApp       Level = "app"
     LevelInstall   Level = "install"
     LevelAppBranch Level = "app_branch"
-    // + delegable org-owned siblings: webhook, vcs_connection, slack_subscription, …
+    // delegable org-owned siblings (webhook, vcs_connection, slack_subscription)
+    // are NOT in the enum yet — they join it when a route scopes to them.
 )
 
 type PermissionEntry struct {
@@ -69,7 +70,16 @@ type Policy struct {
 <li><strong>Wildcard entries</strong> (<code>ResourceID == "*"</code>) &rarr; <code>TypeGrants[orgID][resourceType]</code> holds <code>{scopeID, perms}</code> (org-wide when <code>scopeID == ""</code>).</li>
 </ul>
 <p>Membership (<code>HasOrg</code> / <code>Account.OrgIDs</code>) is still driven by role assignment via <code>account_roles</code> &mdash; nothing changes there, because a custom role is assigned the same way as a managed one.</p>
-<div class="callout warn"><strong>Shared-core change:</strong> <code>permissions.Set</code> holds <em>one</em> <code>Permission</code> per object today (<code>map[obj]Permission</code>), so it can't carry a verb subset like <code>{read, create}</code>. Supporting verb-set entries (&sect;5) generalizes it to a verb set per object (<code>all</code> = <code>{create,read,update,delete}</code>). Managed-role hstore policies fold into the same <code>Set</code> via <code>Add</code>, so this rides through <code>Add</code>/<code>CanPerform</code> and is backwards compatible &mdash; but it is not scoped-only; it touches the shared permission core.</div>
+<div class="callout warn"><strong>Shared-core change (as built):</strong> <code>permissions.Set</code> held <em>one</em> <code>Permission</code> per object (<code>map[obj]Permission</code>), so it could not carry a verb subset like <code>{read, create}</code>. It is now <code>map[obj]Verbs</code> (<code>all</code> = <code>{create,read,update,delete}</code>). Managed-role hstore policies fold into the same <code>Set</code> via <code>Add</code>, whose merge is now a union &mdash; subsuming the old &ldquo;keep the stronger grant&rdquo; special case. This is not scoped-only; it touches the shared permission core.</div>
+<div class="callout bad">
+<strong>The wire format of this field must not change.</strong> <code>Account.AllPermissions</code> serializes as the account payload's <code>permissions</code> field. Emitting verb arrays there broke <em>every already-released CLI</em>, which has the old type compiled in &mdash; it fails during user initialization, so every command dies, not just this field:
+<pre><code>unable to get current user: json: cannot unmarshal array into Go struct
+field AppAccount.permissions of type models.PermissionsPermission</code></pre>
+So <code>Set.MarshalJSON</code> emits the pre-verb-set shape: one verb string per object. <code>UnmarshalJSON</code> accepts either that or a verb array. A complete set reports <code>all</code>; a subset cannot be represented there, so it reports its <strong>least-privileged</strong> verb rather than overstating the grant. Nothing reads this field to authorize &mdash; the server authorizes from the Go value, and per-resource detail lives on <code>Policy.ScopedPermissions</code> &mdash; so the lossiness costs nothing.
+<br><br>
+The field is tagged <code>swaggertype:"object,string"</code> (matching the sibling <code>Permissions</code> hstore field) so the generated definition stays <code>{type: object, additionalProperties: {type: string}}</code>. This also avoids a <strong>startup failure</strong>: a map of verb arrays generates a <code>$ref</code> nested inside <code>additionalProperties.items</code>, which <code>openapi2conv.ToV3</code> cannot resolve &mdash; codegen aborts and ctl-api never comes up.
+</div>
+<div class="callout"><strong>Lesson for later phases.</strong> Any change to an existing response shape is a compatibility decision about deployed clients, not an SDK-typing detail. Phases&nbsp;4 and&nbsp;5 both touch client-facing surfaces.</div>
 
 <h2>3. Walk-up primitive — <code>authz.Authorize(perms, wildcards, chain, perm)</code></h2>
 <p>Given a resource's ownership chain (most-specific first) it allows the request if any link carries a sufficient permission &mdash; an object entry on that link's id, or a wildcard entry on that link's type <em>whose scope matches</em> (see §4). The org id is the last link in every chain, which is exactly how managed org-role holders keep working.</p>
@@ -104,7 +114,9 @@ So a <code>create</code> permission authorizes deploys <em>and</em> deprovision/
 <div class="callout good"><strong>Recommendation:</strong> ship verb-set entries now (cheap, strictly more expressive than read/all, backwards compatible). Defer capability-level permissions; do not pretend verb-level delivers &ldquo;safe subsets&rdquo; of destructive actions.</div>
 
 <h2>6. Custom roles &mdash; the delivery vehicle</h2>
-<p>A custom role is an ordinary <code>Role</code> (<code>Managed=false</code>) whose single policy carries <code>ScopedPermissions</code> entries. It is created, assigned, and revoked through the <strong>existing roles machinery</strong> &mdash; there is no separate concept to learn or build.</p>
+<p>A custom role is an ordinary <code>Role</code> (<code>Managed=false</code>, <code>RoleType=custom</code>) whose single policy carries <code>ScopedPermissions</code> entries. It is created, assigned, and revoked through the <strong>existing roles machinery</strong> &mdash; there is no separate concept to learn or build.</p>
+<div class="callout warn"><strong>Custom roles are addressed by id, not by role type.</strong> They all share <code>RoleTypeCustom</code>, so the type alone is ambiguous. <code>Role.AssignmentIdentifier()</code> returns the type for managed roles and the <em>id</em> for custom ones, and a shared <code>findOrgRole</code> accepts either &mdash; so <code>AddAccountOrgRole</code> / <code>SetAccountOrgRole</code> / <code>ResolveAssignableRole</code> keep working unchanged across team, service-account, API-token, and trust-policy flows. <code>ResolveAssignableRole</code> deliberately <strong>rejects the bare string <code>"custom"</code></strong> so an ambiguous request fails loudly instead of picking an arbitrary role.</div>
+<div class="callout bad"><strong>Known gap, deferred to Phase 4.</strong> The dashboard role pickers build their options from <code>role.role_type</code> (<code>client/hooks/use-roles.ts</code>), so every custom role collapses onto the value <code>"custom"</code>: duplicates are unselectable, and submitting sends <code>role_type: "custom"</code>, which the resolver rejects. <code>useRoleTitles</code> is keyed the same way, so custom roles collapse to one entry in the team table. Custom roles are therefore <em>visible but unusable</em> in the UI until the pickers switch to role ids. Five components share that hook: team invite, change role, service accounts, change service-account role, and OIDC trust policies.</div>
 <table>
 <tr><th></th><th>permission</th><th>scope</th></tr>
 <tr><td><strong>Managed role (today)</strong></td><td>read / all</td><td>org-wide only (hstore)</td></tr>
@@ -113,11 +125,17 @@ So a <code>create</code> permission authorizes deploys <em>and</em> deprovision/
 <h3>Roles API</h3>
 <table>
 <tr><th>Route</th><th>Who</th><th>Notes</th></tr>
-<tr><td><code>POST /v1/roles</code></td><td>org-admin</td><td>body <code>{title, description, contexts, permissions: [PermissionEntry…]}</code>. Each entry resolves app/install by name-or-id and org-owned by id, accepts <code>"*"</code> (with optional <code>scope_type</code>+<code>scope_id</code> pinning it to a parent, validated as a legal parent tier), and a verb subset or the alias <code>["all"]</code>/<code>["read"]</code>. Creates the role + its one policy. <code>Managed=false</code>.</td></tr>
-<tr><td><code>GET /v1/roles</code> / <code>GET /v1/roles/:id</code></td><td>member</td><td>existing list/detail, now surfacing <code>ScopedPermissions</code>.</td></tr>
-<tr><td><code>PATCH /v1/roles/:id</code></td><td>org-admin</td><td>edit a custom role's entries/metadata. Managed roles stay read-only (reconciler owns them).</td></tr>
-<tr><td><code>DELETE /v1/roles/:id</code></td><td>org-admin</td><td>delete a custom role; cascades its <code>account_roles</code>. Managed roles cannot be deleted.</td></tr>
+<tr><td><code>POST /v1/roles</code></td><td>org-admin</td><td>body <code>{title, description, contexts, permissions: [PermissionEntry…]}</code>. Each entry resolves app/install/branch by name-or-id within the org (a name that is not unique there is rejected as ambiguous), accepts <code>"*"</code> (with optional <code>scope_type</code>+<code>scope_id</code> pinning it to a parent, validated as a legal parent tier), and a verb subset or the alias <code>["all"]</code>/<code>["read"]</code>. Creates the role + its one policy. Always <code>Managed=false</code>, <code>RoleType=custom</code>. Caps at <strong>100 entries</strong>.</td></tr>
+<tr><td><code>GET /v1/roles</code> / <code>GET /v1/roles/:role_id</code></td><td>member</td><td>list/detail, surfacing <code>ScopedPermissions</code>. <code>ListRoles</code> <strong>moved here</strong> from the accounts service &mdash; route and <code>@ID</code> unchanged, so the SDK operation is stable.</td></tr>
+<tr><td><code>PATCH /v1/roles/:role_id</code></td><td>org-admin</td><td>edit a custom role's entries/metadata; supplying <code>permissions</code> replaces the whole set. Managed roles stay read-only (reconciler owns them).</td></tr>
+<tr><td><code>DELETE /v1/roles/:role_id</code></td><td>org-admin</td><td>delete a custom role; revokes its <code>account_roles</code>. Managed roles cannot be deleted.</td></tr>
 </table>
+<h3>Titles are unique within an org</h3>
+<p>A title is what every picker <em>displays</em>, so two roles sharing one are indistinguishable in a dropdown and collapse to a single entry in the team table's title lookup. Uniqueness is enforced twice:</p>
+<ul>
+<li><strong>Validation</strong> on create/update trims the title, requires it non-empty, and rejects one already held by <em>any</em> role in the org &mdash; managed included, since a custom role named &ldquo;Admin&rdquo; is equally confusing. Compared case-insensitively: &ldquo;Release manager&rdquo; and &ldquo;release manager&rdquo; do not read as different options.</li>
+<li><strong>A partial unique index</strong> on <code>(org_id, title)</code> closes the race between concurrent creates, scoped <code>WHERE deleted_at = 0 AND role_type = 'custom'</code>. Managed titles are left to the reconciler &mdash; including them would put existing production rows at the mercy of this index at migration time &mdash; and excluding soft-deleted rows lets a deleted role's title be reused.</li>
+</ul>
 <p>Assignment is <strong>unchanged</strong>: <code>account_roles</code> via the existing team / API-token / trust-policy / invite flows, which already accept any role the org owns. The role management routes are bare <code>/v1/roles</code> and authorize at the org tier (org-admin) &mdash; managing who-can-access is an org-admin action.</p>
 <h3>Managed roles are immutable</h3>
 <p>The managed roles (<code>org_admin</code>, <code>org_read_only</code>, <code>runner</code>, and the deprecated set) are owned and kept in sync by the authz reconciler. They are the platform's guarantee of a consistent baseline, so the write endpoints above <strong>must refuse to touch them</strong>:</p>
@@ -127,16 +145,19 @@ So a <code>create</code> permission authorizes deploys <em>and</em> deprovision/
 <li>The reconciler remains the <em>sole</em> writer of managed roles &mdash; this API never competes with it.</li>
 </ul>
 <p>This keeps the managed catalog fixed and reconciler-authoritative while custom roles are freely additive.</p>
-<div class="callout warn"><strong>Other guardrails to settle at review.</strong> (1) A custom role's entries are bounded by the org (no cross-org ids). (2) Do we cap scope depth or entry count per role? Recommend a generous soft cap, enforced in validation.</div>
+<div class="callout good"><strong>Guardrails (settled).</strong> Entries are bounded by the org &mdash; every id is resolved within it, so cross-org ids cannot be referenced. Entry count is capped at <strong>100</strong> per role in validation. Scope depth needs no cap: the only legal wildcard scope is an <code>app</code> parent (&sect;4).</div>
 
-<h2>7. Files (anticipated)</h2>
+<h2>7. Files (as built)</h2>
 <ul>
-<li><code>services/ctl-api/internal/app/policy.go</code> &mdash; add <code>ScopedPermissions []PermissionEntry</code> (jsonb) + the <code>PermissionEntry</code> / <code>Level</code> types.</li>
-<li><code>services/ctl-api/internal/app/account.go</code> &mdash; fold <code>ScopedPermissions</code> in <code>AfterQuery</code> (object grants + <code>TypeGrants</code>).</li>
-<li><code>services/ctl-api/internal/pkg/authz/permissions/*</code> &mdash; generalize <code>Set</code> to a verb set per object (&sect;2).</li>
-<li><code>services/ctl-api/internal/pkg/authz/authorize.go</code> (+ test) &mdash; scope-aware walk-up (&sect;4).</li>
-<li><code>services/ctl-api/internal/app/roles/service/</code> &mdash; extend create/patch/delete to accept scoped permission entries; enforce managed-role immutability.</li>
-<li>One migration adding the <code>scoped_permissions</code> JSONB column (via AutoMigrate; no data transform). SDK regen.</li>
+<li><code>services/ctl-api/internal/app/policy.go</code> &mdash; <code>ScopedPermissions []PermissionEntry</code> (jsonb) + the <code>PermissionEntry</code> / <code>Level</code> / <code>TypeGrant(s)</code> types, and <code>PolicyNameCustom</code>.</li>
+<li><code>services/ctl-api/internal/app/account.go</code> &mdash; folds <code>ScopedPermissions</code> in <code>AfterQuery</code> (object grants + <code>TypeGrants</code>); <code>swaggertype:"object,string"</code> on <code>AllPermissions</code> (&sect;2).</li>
+<li><code>services/ctl-api/internal/app/role.go</code> &mdash; <code>RoleTypeCustom</code>, <code>AssignmentIdentifier()</code>, and the partial unique index on <code>(org_id, title)</code>.</li>
+<li><code>services/ctl-api/internal/pkg/authz/permissions/*</code> &mdash; <code>Verbs</code>, <code>Grant</code>, <code>NewVerbs</code>, and the legacy-shape <code>MarshalJSON</code>/<code>UnmarshalJSON</code> (&sect;2).</li>
+<li><code>services/ctl-api/internal/pkg/authz/authorize.go</code> (+ test) &mdash; scope-aware walk-up (&sect;4). Not called until Phase 3.</li>
+<li><code>services/ctl-api/internal/pkg/authz/find_org_role.go</code>, <code>add_account_role.go</code>, <code>set_account_role.go</code>, <code>assignable_roles.go</code> &mdash; resolve a role by type <em>or</em> id.</li>
+<li><code>services/ctl-api/internal/app/roles/service/</code> &mdash; <strong>new</strong> fx service package (there was no roles service; <code>GET /v1/roles</code> lived in <code>accounts/service</code>). One handler per file, guards + registration in <code>service.go</code>. Registered in <code>internal/fxmodules/services.go</code>.</li>
+<li><strong>No migration.</strong> <code>Policy</code> is already registered with the migrator, so AutoMigrate adds the nullable <code>scoped_permissions</code> column and the new index; existing rows get <code>NULL</code> and behave exactly as before.</li>
+<li><code>services/ctl-api/cmd/gen/main.go</code> &mdash; the swagger tag allowlist is <strong>hardcoded</strong>; the <code>roles</code> tag must be added there or the endpoints are silently omitted from <code>swagger.json</code>. SDK regen for <code>nuon-go</code> + <code>nuon-runner-go</code>.</li>
 </ul>
 
 <h2>8. Acceptance</h2>
@@ -146,16 +167,28 @@ So a <code>create</code> permission authorizes deploys <em>and</em> deprovision/
 <li>A member holding a custom role sees the role's <code>ScopedPermissions</code> reflected in <code>AllPermissions</code> / <code>TypeGrants</code> after query; a member with only managed roles is byte-for-byte unchanged.</li>
 <li><code>authz.Authorize</code> unit tests cover: object entry hit, org-wide wildcard hit, org-tier hit, miss, and <strong>scoped wildcard</strong> (matches only when its <code>scopeID</code> is an ancestor in the chain — e.g. <code>all·app_branch·* scope=app_web</code> authorizes a branch under <code>app_web</code> but not under <code>app_billing</code>).</li>
 <li><strong>Verb-set permissions:</strong> an entry of <code>{read, create}</code> authorizes GET and POST on its resource but denies PATCH/DELETE; <code>read</code> and <code>all</code> aliases behave as <code>{read}</code> and all four verbs; managed-role hstore policies still authorize exactly as before through the generalized <code>Set</code>.</li>
+<li><strong>Wire compatibility:</strong> the account payload's <code>permissions</code> field still serializes as <code>{"obj":"all"}</code>, so an already-released CLI parses it unchanged; a <code>Set</code> survives a round trip through either that shape or a verb array.</li>
+<li><strong>Unique titles:</strong> creating or renaming onto a title already used in the org is refused (case- and whitespace-insensitive, managed titles included); a role keeps its own title on update; deleting a role frees its title.</li>
 <li>No enforcement wired yet (Phase 3) &mdash; custom roles exist and resolve into permissions but don't change request outcomes until the middleware consumes the chain.</li>
 </ul>
+<p class="meta">Covered by <code>internal/pkg/authz/{authorize,permissions}</code> unit tests and the <code>internal/app/roles/service</code> integration suite (<code>INTEGRATION=true</code>).</p>
 
-<h2>9. Review checkpoint</h2>
+<h2>9. Decisions settled</h2>
 <ol>
-<li>Confirm the additive-JSONB-column approach (no hstore conversion) <span class="tag info">rec: yes</span></li>
-<li>Confirm custom roles are the sole sub-org access vehicle &mdash; all access mediated by a role <span class="tag info">rec: yes</span></li>
-<li>Managed-role immutability + org-bounded entries + any per-role caps (&sect;6 guardrails).</li>
-<li>Ship verb-set permissions now; defer capability taxonomy <span class="tag info">rec: yes</span></li>
+<li>Additive JSONB column, no hstore conversion <span class="tag good">settled</span> &mdash; and no numbered migration was needed at all.</li>
+<li>Custom roles are the sole sub-org access vehicle; all access is mediated by a role <span class="tag good">settled</span></li>
+<li>Managed-role immutability, org-bounded entries, 100-entry cap, unique titles <span class="tag good">settled</span></li>
+<li>Verb-set permissions ship now; capability taxonomy deferred <span class="tag good">settled</span></li>
+<li>The account <code>permissions</code> field keeps its legacy wire shape <span class="tag good">settled</span> &mdash; released clients must keep working (&sect;2).</li>
 </ol>
+
+<h2>10. Carried into later phases</h2>
+<ul>
+<li><strong>Phase 3</strong> supplies the ownership chain from the URL and calls <code>authz.Authorize</code>, which exists and is tested but unused.</li>
+<li><strong>Phase 4</strong> must switch the dashboard role pickers off <code>role_type</code> onto role ids (&sect;6) &mdash; custom roles are visible but unusable until then. Open question to settle there: address <em>every</em> role by id for consistency (the backend accepts an id in the <code>role_type</code> field on all assignment flows, including invite acceptance, which means new <code>OrgInvite.RoleType</code> values become ids), or send an id only for custom roles.</li>
+<li><strong>Phase 5</strong> exposes custom roles in the CLI's role flags, with the same id-vs-type decision.</li>
+<li>Delegable org-owned <code>Level</code>s (webhook, vcs_connection, slack_subscription) join the enum when a route scopes to them.</li>
+</ul>
 
 </div>
 </body>

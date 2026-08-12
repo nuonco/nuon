@@ -10,16 +10,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
+// AddAccountOrgRole grants the account a role named by role type — or by role
+// id for custom roles, which all share app.RoleTypeCustom.
 func (h *Client) AddAccountOrgRole(ctx context.Context, roleType app.RoleType, orgID, accountID string) error {
-	var role app.Role
-	res := h.db.WithContext(ctx).
-		Where(app.Role{
-			OrgID:    generics.NewNullString(orgID),
-			RoleType: roleType,
-		}).
-		First(&role)
-	if res.Error != nil {
-		return fmt.Errorf("unable to find role: %w", res.Error)
+	role, err := findOrgRole(h.db.WithContext(ctx), orgID, roleType)
+	if err != nil {
+		return err
 	}
 
 	acctRole := &app.AccountRole{
@@ -28,7 +24,7 @@ func (h *Client) AddAccountOrgRole(ctx context.Context, roleType app.RoleType, o
 		AccountID: accountID,
 	}
 
-	res = h.db.WithContext(ctx).Clauses(
+	res := h.db.WithContext(ctx).Clauses(
 		clause.OnConflict{DoNothing: true},
 	).Create(&acctRole)
 	if res.Error != nil {

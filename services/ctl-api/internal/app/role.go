@@ -29,6 +29,11 @@ const (
 	RoleTypeInstaller       RoleType = "installer"
 	RoleTypeRunner          RoleType = "runner"
 	RoleTypeHostedInstaller RoleType = "hosted-installer"
+
+	// RoleTypeCustom marks org-defined roles carrying scoped permissions.
+	// Custom roles share this type, so assignment surfaces address them by
+	// role id rather than role type.
+	RoleTypeCustom RoleType = "custom"
 )
 
 // Role contexts name the assignment surfaces a role may be offered on. A role
@@ -68,6 +73,16 @@ type Role struct {
 	Policies []Policy `json:"policies,omitzero" temporaljson:"policies,omitzero,omitempty"`
 }
 
+// AssignmentIdentifier returns the value assignment flows address the role
+// by: its type for managed roles, its id for custom roles — which all share
+// RoleTypeCustom, so the type alone is ambiguous.
+func (a *Role) AssignmentIdentifier() RoleType {
+	if a.RoleType == RoleTypeCustom {
+		return RoleType(a.ID)
+	}
+	return a.RoleType
+}
+
 // AllowsContext reports whether the role may be offered on the given
 // assignment surface.
 func (a *Role) AllowsContext(roleContext string) bool {
@@ -84,6 +99,16 @@ func (a *Role) Indexes(db *gorm.DB) []migrations.Index {
 		{
 			Name:    indexes.Name(db, &Role{}, "org_id"),
 			Columns: []string{"org_id", "role_type"},
+		},
+		{
+			// Role titles are what every picker displays, so two custom roles
+			// in an org may not share one. Scoped to custom roles: managed
+			// titles are the reconciler's to keep unique, and constraining
+			// them here would put existing rows at the mercy of this index.
+			Name:        indexes.Name(db, &Role{}, "custom_title"),
+			Columns:     []string{"org_id", "title"},
+			UniqueValue: generics.NewNullBool(true),
+			Option:      "WHERE deleted_at = 0 AND role_type = 'custom'",
 		},
 	}
 }

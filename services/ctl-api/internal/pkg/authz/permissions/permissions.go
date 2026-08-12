@@ -22,6 +22,22 @@ func (p Permission) ToStrPtr() *string {
 	return generics.ToPtr(string(p))
 }
 
+func NewVerbs(vals []string) (Verbs, error) {
+	if len(vals) == 0 {
+		return nil, fmt.Errorf("at least one permission is required")
+	}
+
+	var out Verbs
+	for _, val := range vals {
+		perm, err := NewPermission(val)
+		if err != nil {
+			return nil, err
+		}
+		out = out.With(perm)
+	}
+	return out, nil
+}
+
 func NewPermission(val string) (Permission, error) {
 	switch val {
 	case "all":

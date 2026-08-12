@@ -39,7 +39,7 @@ type AppAccount struct {
 	OrgIds []string `json:"org_ids"`
 
 	// permissions
-	Permissions PermissionsSet `json:"permissions,omitempty"`
+	Permissions map[string]string `json:"permissions,omitempty"`
 
 	// roles
 	Roles []*AppRole `json:"roles"`
@@ -59,10 +59,6 @@ func (m *AppAccount) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateAccountType(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validatePermissions(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -96,29 +92,6 @@ func (m *AppAccount) validateAccountType(formats strfmt.Registry) error {
 		}
 
 		return err
-	}
-
-	return nil
-}
-
-func (m *AppAccount) validatePermissions(formats strfmt.Registry) error {
-	if swag.IsZero(m.Permissions) { // not required
-		return nil
-	}
-
-	if m.Permissions != nil {
-		if err := m.Permissions.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("permissions")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("permissions")
-			}
-
-			return err
-		}
 	}
 
 	return nil
@@ -192,10 +165,6 @@ func (m *AppAccount) ContextValidate(ctx context.Context, formats strfmt.Registr
 		res = append(res, err)
 	}
 
-	if err := m.contextValidatePermissions(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateRoles(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -224,28 +193,6 @@ func (m *AppAccount) contextValidateAccountType(ctx context.Context, formats str
 		ce := new(errors.CompositeError)
 		if stderrors.As(err, &ce) {
 			return ce.ValidateName("account_type")
-		}
-
-		return err
-	}
-
-	return nil
-}
-
-func (m *AppAccount) contextValidatePermissions(ctx context.Context, formats strfmt.Registry) error {
-
-	if swag.IsZero(m.Permissions) { // not required
-		return nil
-	}
-
-	if err := m.Permissions.ContextValidate(ctx, formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("permissions")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("permissions")
 		}
 
 		return err

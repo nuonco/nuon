@@ -40,7 +40,7 @@ func (s *service) resolveTokenRole(ctx *gin.Context, orgID, raw string) (app.Rol
 	if err != nil {
 		return "", err
 	}
-	return resolved.RoleType, nil
+	return resolved.AssignmentIdentifier(), nil
 }
 
 type StaticTokenResponse struct {

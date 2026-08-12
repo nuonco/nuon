@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -37,6 +38,11 @@ type AppPolicy struct {
 	// role id
 	RoleID string `json:"role_id,omitempty"`
 
+	// ScopedPermissions carry permissions confined to a single resource or a
+	// type-wildcard under a parent scope; org-tier permissions stay in the
+	// Permissions hstore untouched.
+	ScopedPermissions []*AppPermissionEntry `json:"scoped_permissions"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 }
@@ -46,6 +52,10 @@ func (m *AppPolicy) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateName(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateScopedPermissions(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -76,11 +86,45 @@ func (m *AppPolicy) validateName(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppPolicy) validateScopedPermissions(formats strfmt.Registry) error {
+	if swag.IsZero(m.ScopedPermissions) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.ScopedPermissions); i++ {
+		if swag.IsZero(m.ScopedPermissions[i]) { // not required
+			continue
+		}
+
+		if m.ScopedPermissions[i] != nil {
+			if err := m.ScopedPermissions[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("scoped_permissions" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("scoped_permissions" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app policy based on the context it is used
 func (m *AppPolicy) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateName(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateScopedPermissions(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -107,6 +151,35 @@ func (m *AppPolicy) contextValidateName(ctx context.Context, formats strfmt.Regi
 		}
 
 		return err
+	}
+
+	return nil
+}
+
+func (m *AppPolicy) contextValidateScopedPermissions(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.ScopedPermissions); i++ {
+
+		if m.ScopedPermissions[i] != nil {
+
+			if swag.IsZero(m.ScopedPermissions[i]) { // not required
+				return nil
+			}
+
+			if err := m.ScopedPermissions[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("scoped_permissions" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("scoped_permissions" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
 	}
 
 	return nil

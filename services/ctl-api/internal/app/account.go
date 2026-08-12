@@ -45,7 +45,8 @@ type Account struct {
 	// ReadOnly Fields
 	OrgIDs         []string        `json:"org_ids,omitzero" gorm:"-" temporaljson:"org_i_ds,omitzero,omitempty"`
 	Orgs           []*Org          `json:"-" gorm:"-" temporaljson:"orgs,omitzero,omitempty"`
-	AllPermissions permissions.Set `json:"permissions,omitzero" gorm:"-" temporaljson:"all_permissions,omitzero,omitempty"`
+	AllPermissions permissions.Set `json:"permissions,omitzero" gorm:"-" swaggertype:"object,string" temporaljson:"all_permissions,omitzero,omitempty"`
+	TypeGrants     TypeGrants      `json:"-" gorm:"-" temporaljson:"type_grants,omitzero,omitempty"`
 
 	IsEmployee bool `json:"-"`
 }
@@ -82,11 +83,28 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 
 	a.OrgIDs = make([]string, 0)
 	a.AllPermissions = permissions.NewSet()
+	a.TypeGrants = make(TypeGrants)
 
 	visited := make(map[string]struct{}, 0)
 	for _, role := range a.Roles {
 		for _, policy := range role.Policies {
 			a.AllPermissions.Add(policy.Permissions)
+
+			for _, entry := range policy.ScopedPermissions {
+				if entry.ResourceID != "*" {
+					a.AllPermissions.Grant(entry.ResourceID, entry.Permissions...)
+					continue
+				}
+
+				orgID := role.OrgID.ValueString()
+				if a.TypeGrants[orgID] == nil {
+					a.TypeGrants[orgID] = make(map[Level][]TypeGrant)
+				}
+				a.TypeGrants[orgID][entry.ResourceType] = append(a.TypeGrants[orgID][entry.ResourceType], TypeGrant{
+					ScopeID: entry.ScopeID,
+					Verbs:   entry.Permissions,
+				})
+			}
 		}
 
 		if role.OrgID.Empty() {

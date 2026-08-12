@@ -30,9 +30,9 @@ func (c *Client) AssignableRoles(ctx context.Context, orgID, roleContext string)
 	return assignable, nil
 }
 
-// ResolveAssignableRole validates that roleType is offerable on the given
-// surface in the org and returns its role row. The error lists the roles that
-// are assignable there.
+// ResolveAssignableRole validates that the role — named by role type, or by
+// role id for custom roles — is offerable on the given surface in the org and
+// returns its role row. The error lists the roles that are assignable there.
 func (c *Client) ResolveAssignableRole(ctx context.Context, orgID string, roleType app.RoleType, roleContext string) (*app.Role, error) {
 	assignable, err := c.AssignableRoles(ctx, orgID, roleContext)
 	if err != nil {
@@ -41,8 +41,12 @@ func (c *Client) ResolveAssignableRole(ctx context.Context, orgID string, roleTy
 
 	types := make([]string, 0, len(assignable))
 	for i := range assignable {
-		if assignable[i].RoleType == roleType {
+		if (assignable[i].RoleType == roleType && roleType != app.RoleTypeCustom) || assignable[i].ID == string(roleType) {
 			return &assignable[i], nil
+		}
+		if assignable[i].RoleType == app.RoleTypeCustom {
+			types = append(types, assignable[i].ID)
+			continue
 		}
 		types = append(types, string(assignable[i].RoleType))
 	}

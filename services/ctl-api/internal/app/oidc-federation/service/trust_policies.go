@@ -62,7 +62,7 @@ func (s *service) resolveTrustPolicyRole(ctx *gin.Context, orgID, raw string) (a
 	if err != nil {
 		return "", err
 	}
-	return resolved.RoleType, nil
+	return resolved.AssignmentIdentifier(), nil
 }
 
 func parseTrustPolicyTokenDuration(raw int) (int, error) {

@@ -276,6 +276,8 @@ type ClientService interface {
 
 	CreatePulumiComponentConfig(params *CreatePulumiComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreatePulumiComponentConfigCreated, error)
 
+	CreateRole(params *CreateRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRoleCreated, error)
+
 	CreateRunbook(params *CreateRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunbookCreated, error)
 
 	CreateRunbookConfig(params *CreateRunbookConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunbookConfigCreated, error)
@@ -339,6 +341,8 @@ type ClientService interface {
 	DeleteOIDCTrustPolicy(params *DeleteOIDCTrustPolicyParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOIDCTrustPolicyNoContent, error)
 
 	DeleteOrg(params *DeleteOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOrgOK, error)
+
+	DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRoleNoContent, error)
 
 	DeleteRunbook(params *DeleteRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRunbookOK, error)
 
@@ -750,6 +754,8 @@ type ClientService interface {
 
 	GetQueueStatus(params *GetQueueStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetQueueStatusOK, error)
 
+	GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRoleOK, error)
+
 	GetRunbook(params *GetRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunbookOK, error)
 
 	GetRunbookConfigs(params *GetRunbookConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunbookConfigsOK, error)
@@ -993,6 +999,8 @@ type ClientService interface {
 	UpdateOrgAccountRole(params *UpdateOrgAccountRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgAccountRoleOK, error)
 
 	UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgFeaturesOK, error)
+
+	UpdateRole(params *UpdateRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRoleOK, error)
 
 	UpdateRunbook(params *UpdateRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunbookOK, error)
 
@@ -4756,6 +4764,52 @@ func (a *Client) CreatePulumiComponentConfig(params *CreatePulumiComponentConfig
 }
 
 /*
+CreateRole creates a custom role for the current org
+
+Create a role whose policy carries scoped permission entries. Custom roles are assigned through the same flows as managed roles, addressed by role id.
+*/
+func (a *Client) CreateRole(params *CreateRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRoleCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateRoleParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateRole",
+		Method:             "POST",
+		PathPattern:        "/v1/roles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateRoleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateRoleCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateRole: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateRunbook creates a runbook for an app
 */
 func (a *Client) CreateRunbook(params *CreateRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunbookCreated, error) {
@@ -6218,6 +6272,52 @@ func (a *Client) DeleteOrg(params *DeleteOrgParams, authInfo runtime.ClientAuthI
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteOrg: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeleteRole deletes a custom role for the current org
+
+Delete a custom role, revoking it from every account it is assigned to. Managed roles cannot be deleted.
+*/
+func (a *Client) DeleteRole(params *DeleteRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRoleNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteRoleParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteRole",
+		Method:             "DELETE",
+		PathPattern:        "/v1/roles/{role_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteRoleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteRoleNoContent)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteRole: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -15760,6 +15860,52 @@ func (a *Client) GetQueueStatus(params *GetQueueStatusParams, authInfo runtime.C
 }
 
 /*
+GetRole gets one of your org s roles
+
+Get a role, including the scoped permission entries its policy carries.
+*/
+func (a *Client) GetRole(params *GetRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRoleOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetRoleParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetRole",
+		Method:             "GET",
+		PathPattern:        "/v1/roles/{role_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetRoleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetRoleOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRole: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetRunbook gets a runbook
 */
 func (a *Client) GetRunbook(params *GetRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunbookOK, error) {
@@ -21377,6 +21523,52 @@ func (a *Client) UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateOrgFeatures: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateRole updates a custom role for the current org
+
+Update a custom role's metadata or replace its scoped permission entries. Managed roles cannot be edited.
+*/
+func (a *Client) UpdateRole(params *UpdateRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRoleOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateRoleParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateRole",
+		Method:             "PATCH",
+		PathPattern:        "/v1/roles/{role_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateRoleReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateRoleOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateRole: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
