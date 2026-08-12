@@ -75,7 +75,7 @@ func (c *cli) extListCmd() *cobra.Command {
 			mgr := extensions.New(extensionsDir())
 			exts, err := mgr.List()
 			if err != nil {
-				return err
+				return ui.PrintError(err)
 			}
 
 			if PrintJSON {

@@ -99,11 +99,11 @@ func (s *Service) WorkflowsDeselect(ctx context.Context, asJSON bool) error {
 func (s *Service) setCurrentWorkflow(ctx context.Context, workflowID string, asJSON bool) error {
 	workflow, err := s.api.GetWorkflow(ctx, workflowID)
 	if err != nil {
-		return err
+		return ui.PrintError(err)
 	}
 
 	if err := s.setWorkflowID(ctx, workflow.ID); err != nil {
-		return err
+		return ui.PrintError(err)
 	}
 
 	if asJSON {

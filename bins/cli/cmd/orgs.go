@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nuonco/nuon/bins/cli/internal/services/orgs"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -328,7 +329,7 @@ Example (GitHub Actions, main branch of acme/app only):
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			conditions, err := orgs.ParseClaimConditions(claims)
 			if err != nil {
-				return err
+				return ui.PrintError(err)
 			}
 			svc := orgs.New(c.apiClient, c.cfg)
 			return svc.CreateOIDCTrustPolicy(cmd.Context(), name, issuer, audience, role, ttl, conditions, PrintJSON)
@@ -385,12 +386,12 @@ Example (GitHub Actions, main branch of acme/app only):
 		Long:  "Update an OIDC trust policy. Only the provided flags are changed; --claim replaces all existing claim conditions.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			if enable && disable {
-				return fmt.Errorf("--enable and --disable are mutually exclusive")
+				return ui.PrintError(fmt.Errorf("--enable and --disable are mutually exclusive"))
 			}
 
 			conditions, err := orgs.ParseClaimConditions(updateClaims)
 			if err != nil {
-				return err
+				return ui.PrintError(err)
 			}
 
 			req := &models.ServiceUpdateOIDCTrustPolicyRequest{

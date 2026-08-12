@@ -202,7 +202,10 @@ func (s *Service) EditInputs(ctx context.Context, installID string, deployDepend
 	if err != nil {
 		return ui.PrintError(err)
 	}
-	return editor.EditInputsApp(ctx, s.cfg, s.api, installID, deployDependents)
+	if err := editor.EditInputsApp(ctx, s.cfg, s.api, installID, deployDependents); err != nil {
+		return ui.PrintError(err)
+	}
+	return nil
 }
 
 // currentValues returns the non-redacted values map from a current-inputs
