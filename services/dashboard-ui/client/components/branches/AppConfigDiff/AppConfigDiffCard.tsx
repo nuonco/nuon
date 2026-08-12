@@ -46,11 +46,12 @@ export const AppConfigDiffCard = ({
               {versionLabel}
             </Text>
           )}
-          {summary && (
+          {!isLoading && (
             <ChangeCountSummary
-              added={summary.added}
-              updated={summary.changed}
-              removed={summary.removed}
+              added={summary?.added ?? 0}
+              updated={summary?.changed ?? 0}
+              removed={summary?.removed ?? 0}
+              emptyText="No changes"
               className="ml-auto"
             />
           )}
