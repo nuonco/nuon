@@ -44,9 +44,7 @@ func emitJSONError(err error) error {
 
 	cliUserErr := &CLIUserError{}
 	if errors.As(err, &cliUserErr) {
-		PrintJSON(jsonError{
-			Error: err.Error(),
-		})
+		PrintJSON(jsonError{Error: cliUserErr.Msg})
 		return err
 	}
 
