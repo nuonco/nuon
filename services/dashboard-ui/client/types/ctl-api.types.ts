@@ -41,6 +41,7 @@ export type TAppSandboxBuild = {
     status_human_description?: string
     metadata?: { [key: string]: unknown }
   }
+  composite_error?: TCompositeError
   log_stream?: { id?: string; open?: boolean }
   runner_job?: { id: string }
   vcs_connection_commit?: { sha?: string; message?: string }

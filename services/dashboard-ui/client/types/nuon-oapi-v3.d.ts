@@ -3879,6 +3879,7 @@ export interface components {
       app_config_id?: string;
       app_id?: string;
       app_sandbox_config_id?: string;
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
