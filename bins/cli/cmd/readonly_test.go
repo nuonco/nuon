@@ -27,10 +27,15 @@ func TestReadOnlyAllowlistEntriesMatchRealCommands(t *testing.T) {
 	collectCommandNames((&cli{}).rootCmd(), names)
 
 	// help/completion are cobra built-ins added lazily; init has no command.
+	// The noop commands only register under the debug command when
+	// config.Debug() is set.
 	exempt := map[string]struct{}{
 		"help":       {},
 		"completion": {},
 		"init":       {},
+		"noop":       {},
+		"noop-init":  {},
+		"noop-auth":  {},
 	}
 
 	for name := range readOnlyCommands {

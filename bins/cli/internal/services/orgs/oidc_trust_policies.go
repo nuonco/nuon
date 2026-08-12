@@ -44,8 +44,7 @@ func renderClaimConditions(conditions map[string]string) string {
 
 func (s *Service) CreateOIDCTrustPolicy(ctx context.Context, name, issuer, audience, role string, ttl int64, conditions map[string]string, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
 	view := ui.NewGetView()
@@ -81,8 +80,7 @@ func (s *Service) CreateOIDCTrustPolicy(ctx context.Context, name, issuer, audie
 
 func (s *Service) ListOIDCTrustPolicies(ctx context.Context, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
 	view := ui.NewListView()
@@ -124,8 +122,7 @@ func (s *Service) ListOIDCTrustPolicies(ctx context.Context, asJSON bool) error 
 
 func (s *Service) GetOIDCTrustPolicy(ctx context.Context, policyID string, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
 	view := ui.NewGetView()
@@ -158,8 +155,7 @@ func (s *Service) GetOIDCTrustPolicy(ctx context.Context, policyID string, asJSO
 
 func (s *Service) UpdateOIDCTrustPolicy(ctx context.Context, policyID string, req *models.ServiceUpdateOIDCTrustPolicyRequest, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
 	view := ui.NewGetView()
@@ -185,8 +181,7 @@ func (s *Service) UpdateOIDCTrustPolicy(ctx context.Context, policyID string, re
 
 func (s *Service) DeleteOIDCTrustPolicy(ctx context.Context, policyID string, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
 	view := ui.NewGetView()
