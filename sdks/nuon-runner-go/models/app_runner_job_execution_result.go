@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -22,7 +23,9 @@ type AppRunnerJobExecutionResult struct {
 	// for runner-driven composite errors: strictly 1:1 with the attempt and
 	// never reused, so it cannot go stale across retries. Aggregate rows derive
 	// their displayed error from the latest relevant result; they do not own it.
-	CompositeError any `json:"composite_error,omitempty"`
+	CompositeError struct {
+		CompositeerrorsCompositeErrorData
+	} `json:"composite_error,omitempty"`
 
 	// contents
 	Contents string `json:"contents,omitempty"`
@@ -66,11 +69,42 @@ type AppRunnerJobExecutionResult struct {
 
 // Validate validates this app runner job execution result
 func (m *AppRunnerJobExecutionResult) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateCompositeError(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this app runner job execution result based on context it is used
+func (m *AppRunnerJobExecutionResult) validateCompositeError(formats strfmt.Registry) error {
+	if swag.IsZero(m.CompositeError) { // not required
+		return nil
+	}
+
+	return nil
+}
+
+// ContextValidate validate this app runner job execution result based on the context it is used
 func (m *AppRunnerJobExecutionResult) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateCompositeError(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AppRunnerJobExecutionResult) contextValidateCompositeError(ctx context.Context, formats strfmt.Registry) error {
+
 	return nil
 }
 
