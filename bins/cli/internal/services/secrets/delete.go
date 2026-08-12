@@ -13,6 +13,11 @@ func (s *Service) Delete(ctx context.Context, appID, secretID string, asJSON boo
 		return ui.PrintError(err)
 	}
 
+	secretID, err = lookup.SecretID(ctx, s.api, appID, secretID)
+	if err != nil {
+		return ui.PrintError(err)
+	}
+
 	if asJSON {
 		res, err := s.api.DeleteAppSecret(ctx, appID, secretID)
 		if err != nil {
