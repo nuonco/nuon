@@ -31,7 +31,7 @@ These work on every command.
 |---------|--------------|
 | `nuon orgs select` | Switch your active org. A new trial account has a single org that's selected automatically when you log in, so you only need this once you belong to more than one. |
 | `nuon orgs current` | Show the active org. |
-| `nuon orgs api-tokens create --name <name>` | Create a durable API token for the current org (shown once). Requires org admin. Add `--role` (defaults to `org_read_only`; run `nuon roles list` or see [Access control](/concepts/access-control)) to set the token's permissions. |
+| `nuon orgs api-tokens create --name <name>` | Create a durable API token for the current org (shown once). Requires org admin. Add `--role` (defaults to `org_read_only`; run `nuon roles list` or see [Access control](/concepts/access-control)) to set the token's permissions, or `--personal` to issue the token against your own account and its existing roles instead. |
 | `nuon orgs api-tokens list` | List the current org's API tokens. |
 | `nuon orgs api-tokens delete --id <token-id>` | Revoke an API token. |
 | `nuon orgs update-user-role --user-id <id> --role <role>` | Change an org member's role (run `nuon roles list` or see [Access control](/concepts/access-control)). Requires org admin. |

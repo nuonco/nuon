@@ -5,14 +5,14 @@ boost: 10
 keywords: ["API", "api", "Nuon API", "REST API", "control plane API", "API reference", "API token", "access token", "Swagger", "OpenAPI", "programmatic install creation", "Bearer token"]
 ---
 
-You'll need an access token to use the Nuon API. Create an org-scoped [API token](/concepts/api-tokens) from the Nuon [Dashboard][1] or the Nuon CLI. Tokens are shown only once, so store them somewhere safe.
+You'll need an access token to use the Nuon API. Create an [API token](/concepts/api-tokens) from the Nuon [Dashboard][1] or the Nuon CLI. Tokens are shown only once, so store them somewhere safe.
 
 ```sh
 nuon login
 nuon orgs api-tokens create --name my-token
 ```
 
-For automation and CI/CD, use a [service account](/concepts/service-accounts) — a named machine identity you can assign a role and mint multiple tokens for.
+For automation and CI/CD, we recommend using [OIDC Federation](/concepts/oidc-federation) to avoid storing long-lived tokens.
 
 ## Using the Swagger API Reference
 

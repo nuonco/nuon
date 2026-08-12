@@ -27,8 +27,14 @@ type ServiceCreateStaticTokenRequest struct {
 	Name *string `json:"name"`
 
 	// org role granted to the token. must be assignable to API tokens; see
-	// GET /v1/roles?context=api_token. defaults to org_read_only.
+	// GET /v1/roles?context=api_token. defaults to org_read_only. must be
+	// empty for personal tokens.
 	Role string `json:"role,omitempty"`
+
+	// "service_account" (default) creates a dedicated service account with
+	// the given role; "personal" issues the token against your own account
+	// and its existing roles, across all your orgs.
+	TokenIdentity string `json:"token_identity,omitempty"`
 }
 
 // Validate validates this service create static token request
