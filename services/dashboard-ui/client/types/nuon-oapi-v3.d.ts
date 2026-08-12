@@ -6368,6 +6368,7 @@ export interface components {
       vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"][];
     };
     "app.VCSConnectionCommit": {
+      author_avatar_url?: string;
       author_email?: string;
       author_name?: string;
       created_at?: string;

@@ -14,9 +14,8 @@ import { useBranch } from '@/hooks/use-branch'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
 import { BranchProvider } from '@/providers/branch-provider'
-import { Badge } from '@/components/common/Badge'
-import { Icon } from '@/components/common/Icon'
 import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
+import { BranchVcsBadges } from '@/components/branches/BranchVcsBadges'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
 import { BranchPendingApprovals } from '@/components/branches/BranchRunApproval'
 import {
@@ -125,18 +124,7 @@ const BranchTemplate = () => {
                   <AppBranchSwitcher />
                 </div>
                 <span className="flex items-center gap-2 flex-wrap">
-                  {vcs?.repo ? (
-                    <Badge size="sm" theme="default">
-                      <Icon variant="GitHub" size={13} />
-                      {vcs.repo}
-                    </Badge>
-                  ) : null}
-                  {vcs?.branch ? (
-                    <Badge size="sm" theme="default">
-                      <Icon variant="GitBranchIcon" size={13} />
-                      {vcs.branch}
-                    </Badge>
-                  ) : null}
+                  <BranchVcsBadges repo={vcs?.repo} branch={vcs?.branch} />
                   <Text variant="subtext" theme="info">
                     Last updated{' '}
                     <Time
