@@ -42,7 +42,7 @@ export const Branches = () => {
             Manage app branches for version control and deployment
           </Text>
         </HeadingGroup>
-        <CreateBranchButton />
+        <CreateBranchButton variant="primary" />
       </div>
       {hasNewAppIA ? <BranchCards shouldPoll /> : <BranchesTable shouldPoll />}
     </PageSection>

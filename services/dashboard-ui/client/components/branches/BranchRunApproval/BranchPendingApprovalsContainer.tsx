@@ -7,6 +7,7 @@ import { BranchRunApproval, type IBranchRunApprovalItem } from './BranchRunAppro
 interface IBranchPendingApprovalsContainer {
   run?: TInstallWorkflow
   runHref?: string
+  className?: string
 }
 
 const getGroupName = (name?: string) =>
@@ -15,6 +16,7 @@ const getGroupName = (name?: string) =>
 export const BranchPendingApprovalsContainer = ({
   run,
   runHref,
+  className,
 }: IBranchPendingApprovalsContainer) => {
   const { org } = useOrg()
   const navigate = useNavigate()
@@ -54,5 +56,5 @@ export const BranchPendingApprovalsContainer = ({
       }
     })
 
-  return <BranchRunApproval items={items} />
+  return <BranchRunApproval items={items} className={className} />
 }

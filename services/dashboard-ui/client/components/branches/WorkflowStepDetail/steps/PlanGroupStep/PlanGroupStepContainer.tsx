@@ -1,8 +1,13 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
+import { getAppConfigDiff } from '@/lib'
+import {
+  extractSections,
+  computeSummary,
+} from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import type { TInstallWorkflowStep } from '@/types'
-import { PlanGroupStep } from './PlanGroupStep'
+import { PlanGroupStep, type PlanInstallDiff } from './PlanGroupStep'
 import { GroupApprovalActions } from './GroupApprovalActions'
 
 interface IPlanGroupStepContainer {
@@ -12,8 +17,9 @@ interface IPlanGroupStepContainer {
 
 export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContainer) => {
   const { org } = useOrg()
-  const { labelColors } = useApp()
+  const { app, labelColors } = useApp()
   const orgId = org?.id ?? ''
+  const appId = app?.id ?? ''
 
   const approvalId = step.approval?.id
   const hasApproval = step.execution_type === 'approval' && !!approvalId
@@ -32,15 +38,55 @@ export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContain
     enabled: !!orgId && !!step.id && !!step.install_workflow_id && !!approvalId,
   })
 
-  const installs = (plan?.installs || metadata.installs || []) as any[]
-  const groupName = plan?.install_group || metadata.install_group_name || step.name?.replace(/^plan install group:\s*/i, '')
+  const rawInstalls = (plan?.installs || metadata.installs || []) as any[]
+  const groupName =
+    plan?.install_group ||
+    metadata.install_group_name ||
+    step.name?.replace(/^plan install group:\s*/i, '')
   const showApproveBar = hasApproval && isAwaiting && !hasResponse
+
+  const diffQueries = useQueries({
+    queries: rawInstalls.map((inst) => ({
+      queryKey: ['app-config-diff', orgId, appId, inst.new_app_config_id, inst.old_app_config_id],
+      queryFn: () =>
+        getAppConfigDiff({
+          orgId,
+          appId,
+          configId: inst.new_app_config_id,
+          oldConfigId: inst.old_app_config_id,
+        }),
+      enabled: !!orgId && !!appId && !!inst.new_app_config_id,
+    })),
+  })
+
+  const installs: PlanInstallDiff[] = rawInstalls.map((inst, i) => {
+    const query = diffQueries[i]
+    const sections = query?.data?.diff ? extractSections(query.data.diff) : []
+    const summary =
+      sections.length > 0
+        ? computeSummary(sections)
+        : query?.data?.summary
+          ? {
+              added: query.data.summary.added,
+              removed: query.data.summary.removed,
+              changed: query.data.summary.changed,
+            }
+          : null
+
+    return {
+      installId: inst.install_id,
+      installName: inst.install_name || inst.install_id,
+      installLabels: inst.install_labels,
+      sections,
+      summary,
+      isLoading: !!query?.isLoading,
+    }
+  })
 
   return (
     <PlanGroupStep
       installs={installs}
       groupName={groupName}
-      orgId={orgId}
       labelColors={labelColors}
       hasResponse={hasResponse}
       responseType={step.approval?.response?.response_type}

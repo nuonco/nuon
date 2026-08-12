@@ -34,7 +34,24 @@ func (c *Check) Name() string { return "noop" }
 
 func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow) bool {
 	nc, ok := c.sig.(signal.SignalWithNoOpCheck)
-	return ok && nc.IsNoOpCheckable()
+	if !ok || !nc.IsNoOpCheckable() {
+		return false
+	}
+	return !groupHadFailedAttempt(step, flw)
+}
+
+// groupHadFailedAttempt checks if there was any failure in the group in that case
+// we dont need to run noop check.
+func groupHadFailedAttempt(step *app.WorkflowStep, flw *app.Workflow) bool {
+	for _, s := range flw.Steps {
+		if s.ID == step.ID || s.GroupIdx != step.GroupIdx {
+			continue
+		}
+		if s.Status.Status == app.StatusError {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, error) {

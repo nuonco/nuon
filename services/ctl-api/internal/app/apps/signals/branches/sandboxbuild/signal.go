@@ -14,6 +14,7 @@ const SignalType signal.SignalType = "app-branch-sandbox-build"
 type Signal struct {
 	AppBranchID string `json:"app_branch_id" validate:"required"`
 	RunID       string `json:"run_id" validate:"required"`
+	StepID      string `json:"step_id,omitempty"`
 }
 
 var _ signal.Signal = (*Signal)(nil)

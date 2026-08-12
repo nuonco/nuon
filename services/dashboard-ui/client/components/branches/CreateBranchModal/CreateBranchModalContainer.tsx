@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -69,6 +69,7 @@ export const CreateBranchModalContainer = ({
   ...props
 }: ICreateBranchModalContainer) => {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { app } = useApp()
   const { org } = useOrg()
   const { addToast } = useToast()
@@ -177,6 +178,7 @@ export const CreateBranchModalContainer = ({
       return branch
     },
     onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['app-branches'] })
       addToast(
         <Toast heading="Branch created" theme="success">
           <Text>Created app branch <Badge variant="code" size="md">{data.name}</Badge>.</Text>
@@ -226,8 +228,9 @@ export const CreateBranchButton = ({
   const modal = <CreateBranchModalContainer />
   return (
     <Button variant="secondary" onClick={() => addModal(modal)} {...props}>
-      <Icon variant="PlusIcon" size={16} />
+      {props?.isMenuButton ? null : <Icon variant="PlusIcon" size={16} />}
       Create branch
+      {props?.isMenuButton ? <Icon variant="PlusIcon" size={16} /> : null}
     </Button>
   )
 }

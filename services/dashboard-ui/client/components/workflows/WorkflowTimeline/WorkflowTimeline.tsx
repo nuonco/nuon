@@ -9,10 +9,13 @@ import { Time } from '@/components/common/Time'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
+import { Tooltip } from '@/components/common/Tooltip'
 import type { TInstall, TWorkflow } from '@/types'
 import {
   getWorkflowBadge,
   getWorkflowPendingApprovals,
+  isBranchRunWorkflow,
+  isServiceAccount,
 } from '@/utils/workflow-utils'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import { CancelWorkflowButton } from '../CancelWorkflow'
@@ -45,6 +48,25 @@ export const WorkflowTimeline = ({
       events={workflows}
       pagination={pagination}
       renderEvent={(workflow) => {
+        const isBranchRun = isBranchRunWorkflow(workflow)
+        const createdByAccount = workflow?.created_by
+        const createdBy = createdByAccount?.email ? (
+          isServiceAccount(createdByAccount) ? (
+            <Tooltip
+              position="left"
+              tipContent={
+                <Text variant="subtext" family="mono">
+                  {createdByAccount.email}
+                </Text>
+              }
+            >
+              a service account
+            </Tooltip>
+          ) : (
+            createdByAccount.email
+          )
+        ) : undefined
+
         const workflowTitle = (
           <span className="flex items-center gap-4 mb-1">
             <Link
@@ -85,19 +107,25 @@ export const WorkflowTimeline = ({
             additionalCaption={
               <span className="flex items-center gap-2">
                 {workflow.plan_only ? (
-                  <>
+                  isBranchRun ? (
                     <Badge variant="code" size="sm">
-                      drift scan
+                      preview
                     </Badge>
-                    {install?.drifted_objects &&
-                    install?.drifted_objects?.find(
-                      (d) => d?.install_workflow_id === workflow?.id
-                    ) ? (
-                      <Badge size="sm" variant="code" theme="warn">
-                        drift detected
+                  ) : (
+                    <>
+                      <Badge variant="code" size="sm">
+                        drift scan
                       </Badge>
-                    ) : null}
-                  </>
+                      {install?.drifted_objects &&
+                      install?.drifted_objects?.find(
+                        (d) => d?.install_workflow_id === workflow?.id
+                      ) ? (
+                        <Badge size="sm" variant="code" theme="warn">
+                          drift detected
+                        </Badge>
+                      ) : null}
+                    </>
+                  )
                 ) : null}
                 {workflow?.type === 'drift_run_reprovision_sandbox' ||
                 workflow.type === 'drift_run' ? (
@@ -178,7 +206,7 @@ export const WorkflowTimeline = ({
               </span>
             }
             createdAt={workflow?.created_at}
-            createdBy={workflow?.created_by?.email}
+            createdBy={createdBy}
             status={workflow?.status?.status}
             title={workflowTitle}
           />

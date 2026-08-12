@@ -26,9 +26,20 @@ type CreateStaticTokenRequest struct {
 	Name string `json:"name" validate:"required"`
 
 	// org role granted to the token. must be assignable to API tokens; see
-	// GET /v1/roles?context=api_token. defaults to org_read_only.
+	// GET /v1/roles?context=api_token. defaults to org_read_only. must be
+	// empty for personal tokens.
 	Role string `json:"role"`
+
+	// "service_account" (default) creates a dedicated service account with
+	// the given role; "personal" issues the token against your own account
+	// and its existing roles, across all your orgs.
+	TokenIdentity string `json:"token_identity"`
 }
+
+const (
+	TokenIdentityPersonal       = "personal"
+	TokenIdentityServiceAccount = "service_account"
+)
 
 const defaultTokenRole = app.RoleTypeOrgReadOnly
 
@@ -66,7 +77,7 @@ func parseTokenDuration(raw string) (time.Duration, error) {
 
 // @ID						CreateStaticToken
 // @Summary				create a static API token for your org
-// @Description			Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
+// @Description			Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
 // @Param					req	body	CreateStaticTokenRequest	true	"Input"
 // @Tags					accounts
 // @Security				APIKey
@@ -99,21 +110,15 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 		return
 	}
 
-	role, err := s.resolveTokenRole(ctx, org.ID, req.Role)
-	if err != nil {
-		ctx.Error(stderr.NewInvalidRequest(err))
-		return
-	}
-
 	caller, err := cctx.AccountFromGinContext(ctx)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	acct, err := s.createTokenServiceAccount(ctx, org.ID, role)
+	acct, role, err := s.resolveTokenAccount(ctx, org.ID, caller, &req)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create service account: %w", err))
+		ctx.Error(err)
 		return
 	}
 
@@ -127,6 +132,28 @@ func (s *service) CreateStaticToken(ctx *gin.Context) {
 		ID:       token.ID,
 		APIToken: token.Token,
 	})
+}
+
+func (s *service) resolveTokenAccount(ctx *gin.Context, orgID string, caller *app.Account, req *CreateStaticTokenRequest) (*app.Account, app.RoleType, error) {
+	switch req.TokenIdentity {
+	case TokenIdentityPersonal:
+		if req.Role != "" {
+			return nil, "", stderr.NewInvalidRequest(fmt.Errorf("role cannot be set for personal tokens; the token uses your account's existing roles"))
+		}
+		return caller, app.RoleTypeOrgAdmin, nil
+	case "", TokenIdentityServiceAccount:
+		role, err := s.resolveTokenRole(ctx, orgID, req.Role)
+		if err != nil {
+			return nil, "", stderr.NewInvalidRequest(err)
+		}
+		acct, err := s.createTokenServiceAccount(ctx, orgID, role)
+		if err != nil {
+			return nil, "", fmt.Errorf("unable to create service account: %w", err)
+		}
+		return acct, role, nil
+	default:
+		return nil, "", stderr.NewInvalidRequest(fmt.Errorf("invalid token_identity %q: must be %q or %q", req.TokenIdentity, TokenIdentityPersonal, TokenIdentityServiceAccount))
+	}
 }
 
 // @ID						ListStaticTokens
@@ -163,7 +190,7 @@ func (s *service) ListStaticTokens(ctx *gin.Context) {
 
 // @ID						DeleteStaticToken
 // @Summary				delete a static API token
-// @Description			Deletes a static API token belonging to your current org, along with its dedicated service account. Once deleted, the token can no longer be used to access the API.
+// @Description			Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
 // @Param					token_id	path	string	true	"token ID"
 // @Tags					accounts
 // @Security				APIKey
@@ -261,6 +288,20 @@ func (s *service) createTokenServiceAccount(ctx context.Context, orgID string, r
 }
 
 func (s *service) deleteTokenServiceAccount(ctx context.Context, orgID, accountID string) error {
+	var acct app.Account
+	res := s.db.WithContext(ctx).Where(app.Account{ID: accountID}).First(&acct)
+	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	if res.Error != nil {
+		return fmt.Errorf("unable to look up token account: %w", res.Error)
+	}
+
+	// never remove roles from or delete a personal token's real user account
+	if acct.AccountType != app.AccountTypeService {
+		return nil
+	}
+
 	if err := s.authzClient.RemoveAccountOrgRoles(ctx, orgID, accountID); err != nil {
 		return fmt.Errorf("unable to remove service account roles: %w", err)
 	}
