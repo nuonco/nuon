@@ -31,6 +31,7 @@ type AppendStepRequest struct {
 	StepTargetID   string `json:"step_target_id,omitempty"`
 	Retryable      bool   `json:"retryable,omitempty"`
 	Skippable      bool   `json:"skippable,omitempty"`
+	SkipOnFailure  bool   `json:"skip_on_failure,omitempty"`
 }
 
 // AppendStepResponse reports the IDs of the freshly-created group and step so the
@@ -126,6 +127,7 @@ func (s *Signal) appendStepHandler(ctx workflow.Context, req AppendStepRequest) 
 			StepTargetID:        req.StepTargetID,
 			Retryable:           req.Retryable,
 			Skippable:           req.Skippable,
+			SkipOnFailure:       req.SkipOnFailure,
 			QueueSignal:         &sig,
 		}},
 	})

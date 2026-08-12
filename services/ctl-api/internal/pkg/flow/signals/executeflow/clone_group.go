@@ -159,6 +159,7 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 			Metadata:            step.Metadata,
 			Retryable:           step.Retryable,
 			Skippable:           step.Skippable,
+			SkipOnFailure:       step.SkipOnFailure,
 			GroupIdx:            step.GroupIdx,
 			GroupRetryIdx:       newGroupRetryIdx,
 			StepTargetType:      step.StepTargetType,

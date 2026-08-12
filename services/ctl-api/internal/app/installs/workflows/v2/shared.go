@@ -41,6 +41,12 @@ func WithSkippable(skippable bool) WorkflowStepOptions {
 	}
 }
 
+func WithSkipOnFailure(skipOnFailure bool) WorkflowStepOptions {
+	return func(s *app.WorkflowStep) {
+		s.SkipOnFailure = skipOnFailure
+	}
+}
+
 func WithGroupIdx(n int) WorkflowStepOptions {
 	return func(s *app.WorkflowStep) {
 		s.GroupIdx = n
