@@ -39,13 +39,12 @@ type Config struct {
 	Interactive bool `mapstructure:"-"`
 
 	// internal configuration, not designed to be used by users
-	GitHubAppName   string        `mapstructure:"github_app_name"`
-	APIURLSource    string        `mapstructure:"-"`
-	Env             string        `mapstructure:"-"`
-	CleanupTimeout  time.Duration `mapstructure:"-"`
-	SegmentWriteKey string        `mapstructure:"-"`
-	SentryDSN       string        `mapstructure:"-"`
-	UserID          string        `mapstructure:"-"`
+	GitHubAppName  string        `mapstructure:"github_app_name"`
+	APIURLSource   string        `mapstructure:"-"`
+	Env            string        `mapstructure:"-"`
+	CleanupTimeout time.Duration `mapstructure:"-"`
+	SentryDSN      string        `mapstructure:"-"`
+	UserID         string        `mapstructure:"-"`
 }
 
 // NewConfig creates a new config instance.
@@ -106,7 +105,6 @@ func NewConfig(customFilepath string) (*Config, error) {
 
 	cfg.Interactive = IsInteractive()
 	cfg.Env = cfg.envFromAPIURL(cfg.APIURL)
-	cfg.SegmentWriteKey = cfg.segmentWriteKey(cfg.Env)
 	cfg.SentryDSN = cfg.sentryDSN(cfg.Env)
 
 	return cfg, nil

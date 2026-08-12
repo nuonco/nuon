@@ -10,7 +10,6 @@ import (
 	"github.com/charmbracelet/fang"
 	"github.com/getsentry/sentry-go"
 	"github.com/nuonco/nuon/bins/cli/internal/httpdebug"
-	"github.com/nuonco/nuon/pkg/analytics"
 	"github.com/spf13/cobra"
 )
 
@@ -34,21 +33,6 @@ func populateRootLongDescription(c *cli, rootCmd *cobra.Command, args []string) 
 	_ = c.initConfig()
 
 	rootCmd.Long = c.getLongDescription()
-}
-
-// Close makes a network round trip to Segment with the command's output already
-// printed. Bound it so an unreachable endpoint cannot stall exit indefinitely.
-func flushAnalytics(w analytics.Writer, timeout time.Duration) {
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		w.Close()
-	}()
-
-	select {
-	case <-done:
-	case <-time.After(timeout):
-	}
 }
 
 // Execute is essentially the init method of the CLI. It initializes all the components and composes them together.
@@ -82,9 +66,6 @@ func Execute() {
 	// Sentry should be flushed just the once, just prior to program exit
 	if c.cfg != nil && !c.cfg.DisableTelemetry {
 		sentry.Flush(c.cfg.CleanupTimeout)
-		if c.analyticsClient != nil {
-			flushAnalytics(c.analyticsClient, c.cfg.CleanupTimeout)
-		}
 	}
 
 	if Debug {

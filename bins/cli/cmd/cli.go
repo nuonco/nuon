@@ -18,15 +18,13 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/oidctoken"
 	"github.com/nuonco/nuon/bins/cli/internal/services/auth"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
-	"github.com/nuonco/nuon/pkg/analytics"
 )
 
 type cli struct {
-	v               *validator.Validate
-	apiClient       nuon.Client
-	ctx             context.Context
-	cfg             *config.Config
-	analyticsClient analytics.Writer
+	v         *validator.Validate
+	apiClient nuon.Client
+	ctx       context.Context
+	cfg       *config.Config
 
 	currentUserOnce sync.Once
 	currentUser     *models.AppAccount
@@ -138,10 +136,6 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 
 	if err := c.initSentry(); err != nil {
 		return errors.Wrap(err, "unable to initialize sentry")
-	}
-
-	if err := c.initAnalytics(); err != nil {
-		return errors.Wrap(err, "unable to initialize analytics")
 	}
 
 	c.cfg.BindCobraFlags(cmd)

@@ -4,13 +4,9 @@ import (
 	"errors"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 
-	"github.com/nuonco/nuon/bins/cli/internal/services/version"
-	"github.com/nuonco/nuon/pkg/analytics/events"
 	"github.com/nuonco/nuon/pkg/errs"
 )
 
@@ -22,7 +18,7 @@ type (
 
 // wrapCmd wraps all CLI commands, providing a central point to control error flow and handling.
 func (c *cli) wrapCmd(f cobraRunECommand) cobraRunCommand {
-	fn := c.sentryWrapCmd(c.analyticsWrapCmd(f))
+	fn := c.sentryWrapCmd(f)
 	return func(cmd *cobra.Command, args []string) {
 		if err := fn(cmd, args); err != nil {
 			os.Exit(exitCodeForErr(err))
@@ -51,54 +47,9 @@ func (c *cli) wrapCmdWithExitCode(f cobraRunECommandExitCode) cobraRunCommand {
 		}
 		return err
 	}
-	fn := c.sentryWrapCmd(c.analyticsWrapCmd(wrapped))
+	fn := c.sentryWrapCmd(wrapped)
 	return func(cmd *cobra.Command, args []string) {
 		_ = fn(cmd, args)
-	}
-}
-
-func (c *cli) analyticsWrapCmd(f cobraRunECommand) cobraRunECommand {
-	return func(cmd *cobra.Command, args []string) error {
-		startTS := time.Now()
-		err := f(cmd, args)
-
-		if c.cfg.UserID == "" {
-			// If the user is not logged in, we don't want to track any analytics
-			return err
-		}
-
-		namespace := "root"
-		if cmd.Root() != nil {
-			namespace = cmd.Root().Name()
-		}
-
-		flagsVisited := make([]string, 0)
-		cmd.Flags().VisitAll(func(flag *pflag.Flag) {
-			if flag.Changed { // Check if the flag was set by the user
-				flagsVisited = append(flagsVisited, flag.Name)
-			}
-		})
-
-		props := map[string]interface{}{
-			"namespace": namespace,
-			"cmd_args":  strings.Join(os.Args, " "),
-			"command":   cmd.Name(),
-			"latency":   time.Since(startTS).Seconds(),
-			"status":    "ok",
-			"version":   version.Version,
-		}
-
-		if err != nil {
-			props["status"] = "error"
-			props["error"] = err.Error()
-		}
-
-		c.analyticsClient.Identify(c.ctx)
-
-		eventname := strings.Join(strings.Split(cmd.CommandPath(), " ")[1:], "_")
-		c.analyticsClient.Track(c.ctx, events.Event(eventname), props)
-
-		return err
 	}
 }
 

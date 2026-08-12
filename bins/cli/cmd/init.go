@@ -1,21 +1,16 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	stdhttp "net/http"
 
 	"github.com/cockroachdb/errors"
 	"github.com/getsentry/sentry-go"
 	"github.com/nuonco/nuon/sdks/nuon-go"
-	"go.uber.org/zap"
-
-	segment "github.com/segmentio/analytics-go/v3"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/httpdebug"
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
-	"github.com/nuonco/nuon/pkg/analytics"
 	"github.com/nuonco/nuon/pkg/errs"
 )
 
@@ -81,53 +76,5 @@ func (c *cli) initUser() error {
 	}
 
 	c.cfg.UserID = user.ID
-	return nil
-}
-
-func (c *cli) identifyFn(ctx context.Context) (*segment.Identify, error) {
-	user, err := c.getCurrentUser(ctx)
-
-	if err != nil {
-		wrappedErr := errors.Wrap(err, "unable to get current user")
-		errs.ReportToSentry(wrappedErr, nil)
-		return nil, wrappedErr
-	}
-
-	return &segment.Identify{
-		UserId: user.ID,
-		Traits: segment.NewTraits().SetEmail(user.Email),
-	}, nil
-}
-
-func (c *cli) analyticsIDFn(ctx context.Context) (string, error) {
-	user, err := c.getCurrentUser(ctx)
-	if err != nil {
-		return "", errors.Wrap(err, "unable to get current user")
-	}
-
-	return user.ID, nil
-}
-
-func (c *cli) initAnalytics() error {
-	// Disable zap logging when for analytics
-	disabledLogger := zap.NewNop()
-
-	ac, err := analytics.New(c.v,
-		analytics.WithDisable(c.cfg.DisableTelemetry),
-		analytics.WithSegmentKey(c.cfg.SegmentWriteKey),
-		analytics.WithUserIDFn(c.analyticsIDFn),
-		analytics.WithIdentifyFn(c.identifyFn),
-		analytics.WithGroupFn(analytics.NoopGroupFn),
-		analytics.WithLogger(disabledLogger),
-		analytics.WithProperties(map[string]interface{}{
-			"platform": "cli",
-			"env":      c.cfg.Env,
-		}),
-	)
-	if err != nil {
-		return errors.Wrap(err, "unable to get analytics writer")
-	}
-
-	c.analyticsClient = ac
 	return nil
 }
