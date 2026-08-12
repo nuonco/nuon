@@ -17,11 +17,11 @@ import (
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	branchactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxRunPlanRequest) (*plantypes.SandboxRunPlan, *operationroles.RoleSelection, error) {
@@ -161,7 +161,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 		if sandboxBuild != nil {
 			l.Info("found active sandbox build, resolving OCI source", zap.String("sandbox_build_id", sandboxBuild.ID))
-			registry, regErr := branchactivities.AwaitGetSandboxBuildOCIRegistry(ctx, branchactivities.GetSandboxBuildOCIRegistryRequest{
+			registry, regErr := sharedactivities.AwaitGetSandboxBuildOCIRegistry(ctx, sharedactivities.GetSandboxBuildOCIRegistryRequest{
 				AppID: install.AppID,
 			})
 			if regErr != nil {
