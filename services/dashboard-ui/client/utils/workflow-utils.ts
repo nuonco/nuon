@@ -50,6 +50,19 @@ export function getWorkflowBadge(workflow: TWorkflow): TBadgeCfg {
   return status && WORKFLOW_BADGE_MAP[status] ? WORKFLOW_BADGE_MAP[status] : {}
 }
 
+export function isBranchRunWorkflow(workflow?: TWorkflow): boolean {
+  return workflow?.owner_type === 'app_branches'
+}
+
+export function isServiceAccount(account?: {
+  account_type?: string
+  email?: string
+}): boolean {
+  if (!account) return false
+  if (account.account_type === 'service') return true
+  return !!account.email?.endsWith('@serviceaccount.nuon.co')
+}
+
 export function getWorkflowHref(orgId: string, workflow: TWorkflow): string {
   if (workflow?.owner_type === 'app_branches') {
     const run = workflow?.app_branch_runs?.[0]

@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -23,6 +24,7 @@ import (
 // @Param					offset			query	int		false	"offset of results to return"	Default(0)
 // @Param					limit			query	int		false	"limit of results to return"	Default(10)
 // @Param					page			query	int		false	"page number of results to return"	Default(0)
+// @Param					planonly		query	bool	false	"exclude preview (plan only) runs when set to false"	Default(true)
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -54,6 +56,15 @@ func (s *service) GetAppBranchRuns(ctx *gin.Context) {
 	appID := ctx.Param("app_id")
 	appBranchID := ctx.Param("app_branch_id")
 
+	planOnly := true
+	if planOnlyParam := ctx.Query("planonly"); planOnlyParam != "" {
+		planOnly, err = strconv.ParseBool(planOnlyParam)
+		if err != nil {
+			ctx.Error(fmt.Errorf("invalid planonly parameter: %w", err))
+			return
+		}
+	}
+
 	// Verify branch exists and belongs to this org/app
 	var branch app.AppBranch
 	res := s.db.WithContext(ctx).
@@ -68,7 +79,7 @@ func (s *service) GetAppBranchRuns(ctx *gin.Context) {
 	}
 
 	// Get workflows
-	workflows, err := s.getAppBranchRuns(ctx, appBranchID)
+	workflows, err := s.getAppBranchRuns(ctx, appBranchID, planOnly)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get workflows: %w", err))
 		return
@@ -77,10 +88,10 @@ func (s *service) GetAppBranchRuns(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, workflows)
 }
 
-func (s *service) getAppBranchRuns(ctx *gin.Context, appBranchID string) ([]app.Workflow, error) {
+func (s *service) getAppBranchRuns(ctx *gin.Context, appBranchID string, includePlanOnly bool) ([]app.Workflow, error) {
 	var workflows []app.Workflow
 
-	res := s.db.WithContext(ctx).
+	query := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("CreatedBy").
 		Preload("Steps", func(db *gorm.DB) *gorm.DB {
@@ -95,8 +106,13 @@ func (s *service) getAppBranchRuns(ctx *gin.Context, appBranchID string) ([]app.
 		Preload("AppBranchRuns.VCSConnectionCommit").
 		Where("owner_type = ?", "app_branches").
 		Where("owner_id = ?", appBranchID).
-		Order("created_at DESC").
-		Find(&workflows)
+		Order("created_at DESC")
+
+	if !includePlanOnly {
+		query = query.Where("plan_only = ?", false)
+	}
+
+	res := query.Find(&workflows)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get workflows: %w", res.Error)
 	}
