@@ -14,10 +14,13 @@ const AVATAR_SIZES: Record<TAvatarSizeKey, TAvatarSize> = {
   sidebar: { tw: `h-[35px] w-[35px] text-xl`, px: 35 }
 }
 
+type TAvatarShape = 'square' | 'circle'
+
 interface IAvatarProps
   extends Omit<React.HTMLAttributes<HTMLSpanElement>, 'children'> {
   isLoading?: boolean
   size?: TAvatarSizeKey
+  shape?: TAvatarShape
 }
 
 type TAvatar = {
@@ -35,6 +38,7 @@ export const Avatar = ({
   name,
   src,
   size = 'md',
+  shape = 'square',
   ...props
 }: IAvatar) => {
   const [imageLoaded, setImageLoaded] = React.useState(false)
@@ -51,7 +55,8 @@ export const Avatar = ({
   return (
     <span
       className={cn(
-        'flex-none flex items-center justify-center rounded-md font-sans overflow-hidden transition-all',
+        'flex-none flex items-center justify-center font-sans overflow-hidden transition-all',
+        shape === 'circle' ? 'rounded-full' : 'rounded-md',
 
         isLoading
           ? 'bg-cool-grey-400 dark:bg-dark-grey-400 animate-pulse text-cool-grey-600 dark:text-white/50'

@@ -95,5 +95,9 @@ func (h *Helpers) GithubCommitToVCSConnectionCommit(ghCommit *github.RepositoryC
 		vcsCommit.Message = generics.FromPtrStr(ghCommit.Commit.Message)
 	}
 
+	if ghCommit.Author != nil {
+		vcsCommit.AuthorAvatarURL = ghCommit.Author.GetAvatarURL()
+	}
+
 	return vcsCommit
 }

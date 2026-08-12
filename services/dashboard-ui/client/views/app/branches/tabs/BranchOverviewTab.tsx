@@ -71,9 +71,28 @@ const BranchOverviewContent = () => {
 
   const runs = runsResult?.data ?? []
 
+  const latestRun = runs[0]
+  const latestBranchRun = latestRun?.app_branch_runs?.at(0)
+  const latestCommit = latestBranchRun?.vcs_connection_commit
+
   return (
     <PageSection className="flex flex-col gap-8">
-      <BranchSourceCard config={currentConfig} />
+      <BranchSourceCard
+        config={currentConfig}
+        latestRun={
+          latestRun
+            ? {
+                status: latestBranchRun?.status,
+                href: `${basePath}/runs/${latestRun.id}`,
+                message: latestCommit?.message?.split('\n')[0],
+                author: latestCommit?.author_name,
+                avatarUrl: latestCommit?.author_avatar_url,
+                sha: latestCommit?.sha,
+                createdAt: latestRun.created_at,
+              }
+            : undefined
+        }
+      />
 
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">

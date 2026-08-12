@@ -7,6 +7,7 @@ import { Menu } from '@/components/common/Menu'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { CreateBranchButton } from '@/components/branches/CreateBranchModal'
 import { cn } from '@/utils/classnames'
 import type { TAppBranch } from '@/types'
 
@@ -103,6 +104,8 @@ export const AppBranchSwitcher = ({
             </Text>
           </div>
         )}
+        <hr />
+        <CreateBranchButton isMenuButton />
       </Menu>
     </Dropdown>
   )
