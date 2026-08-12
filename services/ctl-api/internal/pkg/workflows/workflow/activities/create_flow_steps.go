@@ -23,6 +23,7 @@ type CreateFlowStep struct {
 	Metadata            pgtype.Hstore                 `json:"metadata"`
 	Retryable           bool                          `json:"retryable"`
 	Skippable           bool                          `json:"skippable"`
+	SkipOnFailure       bool                          `json:"skip_on_failure"`
 	GroupIdx            int                           `json:"group_idx"`
 	GroupRetryIdx       int                           `json:"group_retry_idx"`
 	WorkflowStepGroupID string                        `json:"workflow_step_group_id"`
@@ -63,6 +64,7 @@ func (a *Activities) PkgWorkflowsFlowCreateFlowSteps(ctx context.Context, reqs C
 			Metadata:            req.Metadata,
 			Retryable:           req.Retryable,
 			Skippable:           req.Skippable,
+			SkipOnFailure:       req.SkipOnFailure,
 			GroupIdx:            req.GroupIdx,
 			GroupRetryIdx:       req.GroupRetryIdx,
 			WorkflowStepGroupID: req.WorkflowStepGroupID,

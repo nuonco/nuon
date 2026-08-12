@@ -133,10 +133,13 @@ type WorkflowStep struct {
 	// Zero means use default fallback.
 	Timeout time.Duration `json:"timeout,omitzero" gorm:"default:0" swaggertype:"primitive,integer" temporaljson:"timeout,omitzero,omitempty"`
 
-	Retryable  bool `json:"retryable,omitzero" gorm:"default:false" temporaljson:"retryable,omitzero,omitempty"`
-	Skippable  bool `json:"skippable,omitzero" gorm:"default:false" temporaljson:"skippable,omitzero,omitempty"`
-	Retried    bool `json:"retried,omitzero" gorm:"default:false" temporaljson:"retried,omitzero,omitempty"`
-	RetryIndex int  `json:"retry_index" gorm:"default:0" temporaljson:"retry_index,omitzero,omitempty"`
+	Retryable bool `json:"retryable,omitzero" gorm:"default:false" temporaljson:"retryable,omitzero,omitempty"`
+	Skippable bool `json:"skippable,omitzero" gorm:"default:false" temporaljson:"skippable,omitzero,omitempty"`
+	// SkipOnFailure lets the workflow continue past this step after its retry
+	// budget is exhausted. Skippable only gates user-initiated skips.
+	SkipOnFailure bool `json:"skip_on_failure,omitzero" gorm:"default:false" temporaljson:"skip_on_failure,omitzero,omitempty"`
+	Retried       bool `json:"retried,omitzero" gorm:"default:false" temporaljson:"retried,omitzero,omitempty"`
+	RetryIndex    int  `json:"retry_index" gorm:"default:0" temporaljson:"retry_index,omitzero,omitempty"`
 
 	// ResultDirective is set by the execute-workflow-step signal to communicate
 	// the step's outcome directive back to the group signal. Values: continue,
