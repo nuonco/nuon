@@ -7,6 +7,7 @@ import { Time } from '@/components/common/Time'
 export interface IBranchRunCommit {
   status?: string
   href?: string
+  isExternal?: boolean
   message?: string
   author?: string
   avatarUrl?: string
@@ -17,6 +18,7 @@ export interface IBranchRunCommit {
 export const BranchRunCommit = ({
   status,
   href,
+  isExternal,
   message,
   author,
   avatarUrl,
@@ -35,7 +37,11 @@ export const BranchRunCommit = ({
         />
         <div className="min-w-0 flex-1 text-[13px] leading-5">
           {href ? (
-            <Link href={href} className="block truncate !w-full">
+            <Link
+              href={href}
+              isExternal={isExternal}
+              className="block truncate !w-full"
+            >
               {message || 'View run'}
             </Link>
           ) : (
