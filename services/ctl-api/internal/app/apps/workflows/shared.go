@@ -19,6 +19,14 @@ func WithSkippable(skippable bool) WorkflowStepOptions {
 	}
 }
 
+// WithSkipOnFailure sets whether the workflow continues past this step after
+// its retry budget is exhausted
+func WithSkipOnFailure(skipOnFailure bool) WorkflowStepOptions {
+	return func(s *app.WorkflowStep) {
+		s.SkipOnFailure = skipOnFailure
+	}
+}
+
 // WithGroupIdx sets the group index for a step
 func WithGroupIdx(n int) WorkflowStepOptions {
 	return func(s *app.WorkflowStep) {
