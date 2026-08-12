@@ -151,10 +151,13 @@ const BranchTemplate = () => {
       <PageContent className="border-t" variant="row">
         <SubNav basePath={basePath} links={navLinks} />
         <div className="flex flex-col flex-1 min-w-0">
-          <BranchPendingApprovals
-            run={latestRun}
-            runHref={latestRun ? `${basePath}/runs/${latestRun.id}` : undefined}
-          />
+          {latestRun && params.runId !== latestRun.id ? (
+            <BranchPendingApprovals
+              run={latestRun}
+              runHref={`${basePath}/runs/${latestRun.id}`}
+              className="px-4 md:px-6 pt-4 md:pt-6"
+            />
+          ) : null}
           <Outlet />
         </div>
       </PageContent>
