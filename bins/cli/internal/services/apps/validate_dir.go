@@ -27,7 +27,7 @@ func (s *Service) loadConfig(file string) (*config.AppConfig, error) {
 	return cfg, nil
 }
 
-func (s *Service) ValidateDir(ctx context.Context, dir string) error {
+func (s *Service) ValidateDir(ctx context.Context, dir string, asJSON bool) error {
 	ui.PrintLn("syncing directory from " + dir)
 
 	appName, err := parse.AppNameFromDirName(dir)
@@ -65,8 +65,10 @@ func (s *Service) ValidateDir(ctx context.Context, dir string) error {
 			return ui.PrintError(err)
 		}
 	}
-	ui.PrintLn("all configs valid")
-
+	ui.PrintResult(asJSON, "all configs valid", map[string]string{
+		"status":  "valid",
+		"message": "all configs valid",
+	})
 	return nil
 }
 

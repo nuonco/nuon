@@ -36,6 +36,7 @@ func (s *Service) ListConfigs(ctx context.Context, appID string, offset, limit i
 			cfg.ID,
 			fmt.Sprintf("%d", cfg.Version),
 			string(cfg.Status),
+			cfg.CreatedByID,
 			cfg.CreatedAt,
 		})
 	}

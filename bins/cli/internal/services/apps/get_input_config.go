@@ -13,15 +13,16 @@ func (s *Service) GetInputConfig(ctx context.Context, appID string, asJSON bool)
 		return ui.PrintError(err)
 	}
 
-	view := ui.NewGetView()
-
 	inputCfg, err := s.api.GetAppInputLatestConfig(ctx, appID)
 	if err != nil {
-		return view.Error(err)
+		return ui.PrintError(err)
 	}
 
-	// NOTE: ignore json flag and always output json
-	ui.PrintJSON(inputCfg)
+	if asJSON {
+		ui.PrintJSON(inputCfg)
+		return nil
+	}
 
+	ui.PrintIndentedJSON(inputCfg)
 	return nil
 }

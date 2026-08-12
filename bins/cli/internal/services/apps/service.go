@@ -49,26 +49,21 @@ func (s *Service) setAppID(ctx context.Context, appID string) error {
 }
 
 func (s *Service) unsetAppID(ctx context.Context) error {
-	hadInstall := s.cfg.GetString("install_id") != ""
 	s.cfg.Set("install_id", "")
 	s.cfg.Set("app_id", "")
-	ui.PrintLn("current app is now unset")
-	if hadInstall {
-		ui.PrintLn("the install has also been unset")
-	}
 	return s.cfg.WriteConfig()
 }
 
 func (s *Service) printAppSetMsg(name, id string) {
-	fmt.Printf("%s\n", bubbles.InfoStyle.Render(fmt.Sprintf("current app is now %s: %s", name, id)))
+	ui.Println(bubbles.InfoStyle.Render(fmt.Sprintf("current app is now %s: %s", name, id)))
 }
 
 func (s *Service) printNoAppsMsg() {
-	fmt.Printf("%s\n", bubbles.BaseStyle.Render("you don't have any apps, create one using apps create"))
+	ui.Println(bubbles.BaseStyle.Render("you don't have any apps, create one using apps create"))
 }
 
 func (s *Service) printAppNotFoundMsg(id string) {
-	fmt.Printf("%s\n", bubbles.BaseStyle.Render(fmt.Sprintf("can't find app %s, use apps list to view all apps", id)))
+	ui.Println(bubbles.BaseStyle.Render(fmt.Sprintf("can't find app %s, use apps list to view all apps", id)))
 }
 
 func (s *Service) notFoundErr(id string) error {

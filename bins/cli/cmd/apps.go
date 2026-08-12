@@ -141,7 +141,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Long:  "Deselect your current app",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.Deselect(cmd.Context())
+			return svc.Deselect(cmd.Context(), PrintJSON)
 		}),
 	}
 	appsCmd.AddCommand(deselectAppCmd)
@@ -153,7 +153,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Hidden:     true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.Deselect(cmd.Context())
+			return svc.Deselect(cmd.Context(), PrintJSON)
 		}),
 	}
 	appsCmd.AddCommand(unsetCurrentAppCmd)
@@ -210,7 +210,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short:       "Build all components for an app config [preview]",
 		Long:        "Triggers a workflow that builds all components defined in the app config. If no config ID is provided, uses the latest config.",
 		Hidden:      true,
-		Annotations: tuiAnnotation(TUIAltScreen),
+		Annotations: annotations(tuiAnnotation(TUIAltScreen), outputsAnnotation(OutputTable)),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			if err := c.persistentPreRunE(cmd, args); err != nil {
 				return err
@@ -270,7 +270,7 @@ func (c *cli) appsCmd() *cobra.Command {
 			}
 
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.ValidateDir(cmd.Context(), dirName)
+			return svc.ValidateDir(cmd.Context(), dirName, PrintJSON)
 		}),
 	}
 	appsCmd.AddCommand(validateCmd)
