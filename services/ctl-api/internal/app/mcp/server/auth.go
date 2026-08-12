@@ -13,21 +13,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-type authResult struct {
-	OrgID     string
-	AccountID string
-	lastSeen  time.Time
-}
-
 // authenticateToken validates the bearer access token and returns the associated
-// account plus the token's role/scope. It performs NO org authorization — that
-// is handled separately so a valid-but-org-less request (e.g. an OAuth client
+// account plus the token itself. It performs NO org authorization — that is
+// handled separately so a valid-but-org-less request (e.g. an OAuth client
 // before selecting an org) still authenticates rather than triggering a re-auth.
 // A nil error means the token is good; a non-nil error should result in a 401.
-func (s *Server) authenticateToken(r *http.Request) (*app.Account, string, error) {
+func (s *Server) authenticateToken(r *http.Request) (*app.Account, *app.Token, error) {
 	token := extractBearerToken(r)
 	if token == "" {
-		return nil, "", fmt.Errorf("missing authorization header")
+		return nil, nil, fmt.Errorf("missing authorization header")
 	}
 
 	var userToken app.Token
@@ -37,16 +31,16 @@ func (s *Server) authenticateToken(r *http.Request) (*app.Account, string, error
 		First(&userToken)
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		s.l.Warn("MCP auth: token not found in database")
-		return nil, "", fmt.Errorf("invalid token")
+		return nil, nil, fmt.Errorf("invalid token")
 	}
 	if res.Error != nil {
 		s.l.Warn("MCP auth: token lookup error", zap.Error(res.Error))
-		return nil, "", fmt.Errorf("unable to look up token: %w", res.Error)
+		return nil, nil, fmt.Errorf("unable to look up token: %w", res.Error)
 	}
 
 	if time.Now().After(userToken.ExpiresAt) {
 		s.l.Warn("MCP auth: token is expired")
-		return nil, "", fmt.Errorf("token is expired")
+		return nil, nil, fmt.Errorf("token is expired")
 	}
 
 	var acct app.Account
@@ -57,10 +51,10 @@ func (s *Server) authenticateToken(r *http.Request) (*app.Account, string, error
 		First(&acct, "id = ?", userToken.AccountID)
 	if res.Error != nil {
 		s.l.Warn("MCP auth: unable to fetch account", zap.Error(res.Error))
-		return nil, "", fmt.Errorf("unable to fetch account: %w", res.Error)
+		return nil, nil, fmt.Errorf("unable to fetch account: %w", res.Error)
 	}
 
-	return &acct, userToken.Role, nil
+	return &acct, &userToken, nil
 }
 
 // accountHasOrgAccess reports whether the account can access the given org.

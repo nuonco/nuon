@@ -67,10 +67,8 @@ func TestAccountHasOrgAccess(t *testing.T) {
 	assert.False(t, accountHasOrgAccess(&app.Account{}, "org_a"))
 }
 
-func timeNowForTest() time.Time { return time.Now() }
-
 func newTestServer() *Server {
-	return &Server{sessions: make(map[string]*authResult)}
+	return &Server{orgSelections: make(map[string]*orgSelection)}
 }
 
 func TestResolveOrg(t *testing.T) {
@@ -79,59 +77,64 @@ func TestResolveOrg(t *testing.T) {
 
 	t.Run("sole org auto-selected", func(t *testing.T) {
 		s := newTestServer()
-		assert.Equal(t, "org_only", s.resolveOrg(single, "sess1", ""))
-		// persisted to session
-		assert.Equal(t, "org_only", s.sessions["sess1"].OrgID)
+		assert.Equal(t, "org_only", s.resolveOrg(single, "tok1", ""))
+		assert.Equal(t, "org_only", s.orgSelections["tok1"].orgID)
 	})
 
 	t.Run("multi org, none selected -> empty", func(t *testing.T) {
 		s := newTestServer()
-		assert.Equal(t, "", s.resolveOrg(multi, "sess1", ""))
+		assert.Equal(t, "", s.resolveOrg(multi, "tok1", ""))
 	})
 
-	t.Run("valid header org used and persisted", func(t *testing.T) {
+	t.Run("valid header org used and remembered", func(t *testing.T) {
 		s := newTestServer()
-		assert.Equal(t, "org_b", s.resolveOrg(multi, "sess1", "org_b"))
-		assert.Equal(t, "org_b", s.sessions["sess1"].OrgID)
+		assert.Equal(t, "org_b", s.resolveOrg(multi, "tok1", "org_b"))
+		assert.Equal(t, "org_b", s.orgSelections["tok1"].orgID)
 	})
 
 	t.Run("inaccessible header org ignored", func(t *testing.T) {
 		s := newTestServer()
-		assert.Equal(t, "", s.resolveOrg(multi, "sess1", "org_x"))
+		assert.Equal(t, "", s.resolveOrg(multi, "tok1", "org_x"))
 	})
 
-	t.Run("session selection wins over header", func(t *testing.T) {
+	t.Run("prior selection wins over header", func(t *testing.T) {
 		s := newTestServer()
-		s.setSessionOrg("sess1", "acc1", "org_a")
-		assert.Equal(t, "org_a", s.resolveOrg(multi, "sess1", "org_b"))
+		s.setOrgSelection("tok1", "org_a")
+		assert.Equal(t, "org_a", s.resolveOrg(multi, "tok1", "org_b"))
 	})
 
-	t.Run("stale session org no longer accessible falls back", func(t *testing.T) {
+	t.Run("stale selection no longer accessible falls back", func(t *testing.T) {
 		s := newTestServer()
-		s.setSessionOrg("sess1", "acc1", "org_gone")
-		// account only has org_a/org_b now; header picks org_b
-		assert.Equal(t, "org_b", s.resolveOrg(multi, "sess1", "org_b"))
+		s.setOrgSelection("tok1", "org_gone")
+		assert.Equal(t, "org_b", s.resolveOrg(multi, "tok1", "org_b"))
+	})
+
+	t.Run("selections are per token", func(t *testing.T) {
+		s := newTestServer()
+		s.setOrgSelection("tok1", "org_a")
+		assert.Equal(t, "org_a", s.resolveOrg(multi, "tok1", ""))
+		assert.Equal(t, "", s.resolveOrg(multi, "tok2", ""))
 	})
 }
 
-func TestEvictStaleSessions(t *testing.T) {
+func TestEvictStaleOrgSelections(t *testing.T) {
 	s := newTestServer()
-	s.sessions["fresh"] = &authResult{OrgID: "org_a", AccountID: "acc", lastSeen: timeNowForTest()}
-	s.sessions["stale"] = &authResult{OrgID: "org_b", AccountID: "acc", lastSeen: timeNowForTest().Add(-2 * mcpSessionTTL)}
+	s.orgSelections["fresh"] = &orgSelection{orgID: "org_a", lastSeen: time.Now()}
+	s.orgSelections["stale"] = &orgSelection{orgID: "org_b", lastSeen: time.Now().Add(-2 * orgSelectionTTL)}
 
-	s.evictStaleSessions()
+	s.evictStaleOrgSelections()
 
-	_, freshOK := s.sessions["fresh"]
-	_, staleOK := s.sessions["stale"]
-	assert.True(t, freshOK, "fresh session should survive")
-	assert.False(t, staleOK, "stale session should be evicted")
+	_, freshOK := s.orgSelections["fresh"]
+	_, staleOK := s.orgSelections["stale"]
+	assert.True(t, freshOK, "fresh selection should survive")
+	assert.False(t, staleOK, "stale selection should be evicted")
 }
 
-func TestTouchSessionKeepsAlive(t *testing.T) {
+func TestTouchOrgSelectionKeepsAlive(t *testing.T) {
 	s := newTestServer()
-	s.sessions["s1"] = &authResult{OrgID: "org_a", AccountID: "acc", lastSeen: timeNowForTest().Add(-2 * mcpSessionTTL)}
-	s.touchSession("s1")
-	s.evictStaleSessions()
-	_, ok := s.sessions["s1"]
-	assert.True(t, ok, "touched session should not be evicted")
+	s.orgSelections["tok1"] = &orgSelection{orgID: "org_a", lastSeen: time.Now().Add(-2 * orgSelectionTTL)}
+	s.touchOrgSelection("tok1")
+	s.evictStaleOrgSelections()
+	_, ok := s.orgSelections["tok1"]
+	assert.True(t, ok, "touched selection should not be evicted")
 }

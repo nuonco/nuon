@@ -15,6 +15,6 @@ func (s *service) RegisterMCPTools(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "select_org",
-		Description: "Set the active organization for this session. Required before using org-scoped tools when the account belongs to more than one org. Takes an org_id from list_orgs.",
+		Description: "Set the active organization for subsequent tool calls. Required before using org-scoped tools when the account belongs to more than one org. Takes an org_id from list_orgs.",
 	}, s.mcpSelectOrg)
 }

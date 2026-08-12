@@ -12,7 +12,7 @@ import (
 )
 
 type mcpSelectOrgInput struct {
-	OrgID string `json:"org_id" jsonschema:"the ID of the org to make active for this session"`
+	OrgID string `json:"org_id" jsonschema:"the ID of the org to make active for subsequent tool calls"`
 }
 
 func (s *service) mcpSelectOrg(ctx context.Context, _ *mcp.CallToolRequest, in mcpSelectOrgInput) (*mcp.CallToolResult, any, error) {
@@ -50,6 +50,6 @@ func (s *service) mcpSelectOrg(ctx context.Context, _ *mcp.CallToolRequest, in m
 
 	return apiPkg.MCPJSONResult(map[string]any{
 		"selected_org": map[string]string{"id": selected.ID, "name": selected.Name},
-		"note":         "Active org set for this session. It applies to subsequent tool calls.",
+		"note":         "Active org set. It applies to subsequent tool calls made with this token.",
 	})
 }

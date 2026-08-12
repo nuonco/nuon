@@ -31,9 +31,14 @@ type Params struct {
 	Services   []api.Service `group:"services"`
 }
 
-// mcpSessionTTL bounds how long an idle MCP session (its cached org selection)
-// is retained. It matches the streamable-HTTP SessionTimeout.
-const mcpSessionTTL = 30 * time.Minute
+// orgSelectionTTL bounds how long an idle org selection is retained.
+const orgSelectionTTL = 30 * time.Minute
+
+// orgSelection is the active org chosen for a token via select_org.
+type orgSelection struct {
+	orgID    string
+	lastSeen time.Time
+}
 
 type Server struct {
 	db         *gorm.DB
@@ -42,28 +47,22 @@ type Server struct {
 	services   []api.Service
 	httpServer *http.Server
 
-	mu          sync.RWMutex
-	sessions    map[string]*authResult
-	stopJanitor chan struct{}
+	mu            sync.RWMutex
+	orgSelections map[string]*orgSelection
+	stopJanitor   chan struct{}
 }
 
 func New(params Params) *Server {
 	s := &Server{
-		db:          params.DB,
-		l:           params.L.Named("mcp"),
-		cfg:         params.Cfg,
-		services:    params.Services,
-		sessions:    make(map[string]*authResult),
-		stopJanitor: make(chan struct{}),
+		db:            params.DB,
+		l:             params.L.Named("mcp"),
+		cfg:           params.Cfg,
+		services:      params.Services,
+		orgSelections: make(map[string]*orgSelection),
+		stopJanitor:   make(chan struct{}),
 	}
 
-	mcpHandler := mcp.NewStreamableHTTPHandler(
-		s.getServerForRequest,
-		&mcp.StreamableHTTPOptions{
-			SessionTimeout: mcpSessionTTL,
-			Logger:         slog.Default(),
-		},
-	)
+	mcpHandler := s.newMCPHandler()
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/livez", s.healthHandler)
@@ -85,7 +84,7 @@ func New(params Params) *Server {
 					_ = params.Shutdowner.Shutdown()
 				}
 			}()
-			go s.runSessionJanitor()
+			go s.runSelectionJanitor()
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
@@ -96,6 +95,20 @@ func New(params Params) *Server {
 	})
 
 	return s
+}
+
+// newMCPHandler builds the streamable-HTTP handler. The server is stateless: it
+// neither reads nor sets Mcp-Session-Id, and each request gets a temporary
+// session. Everything a request needs is carried by its bearer token, so any
+// replica can serve any request.
+func (s *Server) newMCPHandler() http.Handler {
+	return mcp.NewStreamableHTTPHandler(
+		s.getServerForRequest,
+		&mcp.StreamableHTTPOptions{
+			Stateless: true,
+			Logger:    slog.Default(),
+		},
+	)
 }
 
 func (s *Server) healthHandler(w http.ResponseWriter, _ *http.Request) {
@@ -129,17 +142,20 @@ func (s *Server) getServerForRequest(r *http.Request) *mcp.Server {
 }
 
 // resolveOrg determines the active org for a request: a previously selected org
-// on the session wins; otherwise fall back to a valid X-Nuon-Org-ID header, or
-// auto-select the account's only org. The resolved default is persisted to the
-// session so it sticks across requests. Returns "" when the account has multiple
-// orgs and none has been selected yet.
-func (s *Server) resolveOrg(acct *app.Account, sessionID, headerOrg string) string {
-	if sessionID != "" {
+// for this token wins; otherwise fall back to a valid X-Nuon-Org-ID header, or
+// auto-select the account's only org. The resolved default is remembered so it
+// sticks across requests. Returns "" when the account has multiple orgs and none
+// has been selected yet.
+//
+// Selections are keyed by token rather than by Mcp-Session-Id because a
+// stateless server has no session identifier to key on.
+func (s *Server) resolveOrg(acct *app.Account, tokenID, headerOrg string) string {
+	if tokenID != "" {
 		s.mu.RLock()
-		sess, ok := s.sessions[sessionID]
+		sel, ok := s.orgSelections[tokenID]
 		s.mu.RUnlock()
-		if ok && sess.OrgID != "" && accountHasOrgAccess(acct, sess.OrgID) {
-			return sess.OrgID
+		if ok && sel.orgID != "" && accountHasOrgAccess(acct, sel.orgID) {
+			return sel.orgID
 		}
 	}
 
@@ -152,54 +168,55 @@ func (s *Server) resolveOrg(acct *app.Account, sessionID, headerOrg string) stri
 	}
 
 	if orgID != "" {
-		s.setSessionOrg(sessionID, acct.ID, orgID)
+		s.setOrgSelection(tokenID, orgID)
 	}
 	return orgID
 }
 
-// setSessionOrg persists the selected org for an MCP session.
-func (s *Server) setSessionOrg(sessionID, accountID, orgID string) {
-	if sessionID == "" {
+// setOrgSelection records the active org for a token.
+func (s *Server) setOrgSelection(tokenID, orgID string) {
+	if tokenID == "" {
 		return
 	}
 	s.mu.Lock()
-	s.sessions[sessionID] = &authResult{OrgID: orgID, AccountID: accountID, lastSeen: time.Now()}
+	s.orgSelections[tokenID] = &orgSelection{orgID: orgID, lastSeen: time.Now()}
 	s.mu.Unlock()
 }
 
-// touchSession refreshes a session's last-seen time so active sessions aren't
-// evicted by the janitor.
-func (s *Server) touchSession(sessionID string) {
-	if sessionID == "" {
+// touchOrgSelection refreshes a selection's last-seen time so tokens in active
+// use aren't evicted by the janitor.
+func (s *Server) touchOrgSelection(tokenID string) {
+	if tokenID == "" {
 		return
 	}
 	s.mu.Lock()
-	if sess, ok := s.sessions[sessionID]; ok {
-		sess.lastSeen = time.Now()
+	if sel, ok := s.orgSelections[tokenID]; ok {
+		sel.lastSeen = time.Now()
 	}
 	s.mu.Unlock()
 }
 
-// runSessionJanitor periodically evicts idle sessions so the map stays bounded.
-func (s *Server) runSessionJanitor() {
-	ticker := time.NewTicker(mcpSessionTTL / 3)
+// runSelectionJanitor periodically evicts idle selections so the map stays
+// bounded.
+func (s *Server) runSelectionJanitor() {
+	ticker := time.NewTicker(orgSelectionTTL / 3)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-s.stopJanitor:
 			return
 		case <-ticker.C:
-			s.evictStaleSessions()
+			s.evictStaleOrgSelections()
 		}
 	}
 }
 
-func (s *Server) evictStaleSessions() {
-	cutoff := time.Now().Add(-mcpSessionTTL)
+func (s *Server) evictStaleOrgSelections() {
+	cutoff := time.Now().Add(-orgSelectionTTL)
 	s.mu.Lock()
-	for id, sess := range s.sessions {
-		if sess.lastSeen.Before(cutoff) {
-			delete(s.sessions, id)
+	for id, sel := range s.orgSelections {
+		if sel.lastSeen.Before(cutoff) {
+			delete(s.orgSelections, id)
 		}
 	}
 	s.mu.Unlock()
@@ -210,22 +227,21 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 		// Every request must carry a valid access token. A token failure returns
 		// 401 + WWW-Authenticate so the client can discover the authorization
 		// server and start the OAuth flow.
-		acct, tokenRole, err := s.authenticateToken(r)
+		acct, tok, err := s.authenticateToken(r)
 		if err != nil {
 			s.l.Warn("MCP auth failed", zap.Error(err))
 			s.writeUnauthorized(w, r)
 			return
 		}
 
-		sessionID := r.Header.Get("Mcp-Session-Id")
-		orgID := s.resolveOrg(acct, sessionID, r.Header.Get("X-Nuon-Org-ID"))
-		s.touchSession(sessionID)
+		orgID := s.resolveOrg(acct, tok.ID, r.Header.Get("X-Nuon-Org-ID"))
+		s.touchOrgSelection(tok.ID)
 
 		ctx := withMCPAuth(r.Context(), orgID, acct.ID)
-		ctx = keys.WithTokenRole(ctx, tokenRole)
-		// Let the select_org tool change this session's active org.
+		ctx = keys.WithTokenRole(ctx, tok.Role)
+		// Let the select_org tool change the active org for this token.
 		ctx = keys.WithOrgSelector(ctx, func(newOrgID string) {
-			s.setSessionOrg(sessionID, acct.ID, newOrgID)
+			s.setOrgSelection(tok.ID, newOrgID)
 		})
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

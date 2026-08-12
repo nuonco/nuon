@@ -36,9 +36,9 @@ const (
 	TokenRoleCtxKey       string = "token_role"
 )
 
-// OrgSelectFunc persists the selected org for the current MCP session. It is
+// OrgSelectFunc persists the selected org for the authenticated MCP token. It is
 // injected by the MCP server so leaf tool handlers (in other packages) can
-// change the session's active org without importing the server package.
+// change the active org without importing the server package.
 type OrgSelectFunc func(orgID string)
 
 // WithOrgSelector attaches an org-selector to the context.
