@@ -87,6 +87,43 @@ export const SingleGroup = () => (
   </div>
 )
 
+const longNameInstalls: Record<string, any> = {
+  'inst-long': {
+    id: 'inst-long',
+    name: 'ws-workspace_01kzree4e4ejrsmaj9vbs4j0mg-sandbox-forge-runner-primary',
+    labels: { 'auto-deploy': 'true' },
+  },
+}
+
+const longNameConfig: any = {
+  install_groups: [
+    {
+      id: 'group-main',
+      name: 'main',
+      order: 0,
+      label_selector: { match_labels: { 'auto-deploy': 'true' } },
+      max_parallel: 1,
+    },
+    {
+      id: 'group-canary',
+      name: 'canary',
+      order: 1,
+      label_selector: { match_labels: { canary: 'true' } },
+      max_parallel: 1,
+    },
+  ],
+}
+
+export const LongInstallName = () => (
+  <div className="p-4">
+    <DeploymentPlanGraph
+      config={longNameConfig}
+      installsById={longNameInstalls}
+      orgId="org123"
+    />
+  </div>
+)
+
 export const Empty = () => (
   <div className="p-4">
     <DeploymentPlanGraph

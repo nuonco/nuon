@@ -11599,6 +11599,8 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
+        /** @description exclude preview (plan only) runs when set to false */
+        planonly?: boolean;
       };
       path: {
         /** @description app ID */
