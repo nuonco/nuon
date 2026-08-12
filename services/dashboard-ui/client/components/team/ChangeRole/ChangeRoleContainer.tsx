@@ -4,7 +4,11 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
-import { useRoleOptions, useRoleTitles } from '@/hooks/use-roles'
+import {
+  roleAssignmentID,
+  useRoleOptions,
+  useRoleTitles,
+} from '@/hooks/use-roles'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { updateAccountRole } from '@/lib'
@@ -22,7 +26,7 @@ const ChangeRoleModalContainer = ({
   const { roleOptions } = useRoleOptions('team')
   const roleTitles = useRoleTitles()
 
-  const currentRole = account.roles?.[0]?.role_type || ''
+  const currentRole = roleAssignmentID(account.roles?.[0])
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: ({ roleType }: { roleType: string }) =>

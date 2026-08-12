@@ -49,6 +49,11 @@ const SettingsTemplate = () => {
       text: 'Triggers',
     },
     hasServiceAccountsAndTokens && {
+      path: `/roles`,
+      iconVariant: 'ShieldCheckIcon' as const,
+      text: 'Roles',
+    },
+    hasServiceAccountsAndTokens && {
       path: `/api-tokens`,
       iconVariant: 'KeyIcon' as const,
       text: 'API tokens',

@@ -7,6 +7,7 @@ import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
+import { roleAssignmentID } from '@/hooks/use-roles'
 import type { TAccount } from '@/types'
 import { RemoveUserButton } from '@/components/team/RemoveUser'
 import { ChangeRoleButton } from '@/components/team/ChangeRole'
@@ -25,7 +26,7 @@ export function parseAccountToTableData(
   roleTitles: (roleType: string | undefined) => string
 ): TTeamMemberRow[] {
   return members.map((member) => {
-    const roleType = member.roles?.[0]?.role_type || ''
+    const roleType = roleAssignmentID(member.roles?.[0])
     return {
       id: member.id || '',
       name: member.email?.split('@')[0] || 'Unknown',

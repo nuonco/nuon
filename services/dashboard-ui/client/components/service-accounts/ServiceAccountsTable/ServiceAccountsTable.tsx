@@ -7,7 +7,8 @@ import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import type { TAccount, TRoleInfo } from '@/types'
+import { roleAssignmentID } from '@/hooks/use-roles'
+import type { TAccount } from '@/types'
 import { ChangeServiceAccountRoleButton } from '@/components/service-accounts/ChangeServiceAccountRole'
 import { RenameServiceAccountButton } from '@/components/service-accounts/RenameServiceAccount'
 import { CreateServiceAccountTokenButton } from '@/components/service-accounts/ServiceAccountToken'
@@ -22,24 +23,17 @@ export type TServiceAccountRow = {
   account: TAccount
 }
 
-export function roleTitleLookup(roles: TRoleInfo[]): Record<string, string> {
-  return roles.reduce<Record<string, string>>((acc, role) => {
-    acc[role.role_type] = role.title
-    return acc
-  }, {})
-}
-
 export function parseServiceAccountsToTableData(
   accounts: TAccount[],
-  roleTitles: Record<string, string>
+  roleTitles: (roleType: string | undefined) => string
 ): TServiceAccountRow[] {
   return accounts.map((account) => {
-    const roleType = account.roles?.[0]?.role_type || ''
+    const roleType = roleAssignmentID(account.roles?.[0])
     return {
       id: account.id || '',
       name: account.name || account.email || account.id || '',
       identity: account.email || account.id || '',
-      role: roleTitles[roleType] ?? roleType ?? '—',
+      role: roleTitles(roleType),
       createdAt: account.created_at || '',
       account,
     }
@@ -81,7 +75,7 @@ export const ServiceAccountsTable = ({
   pagination,
 }: {
   data: TAccount[]
-  roleTitles: Record<string, string>
+  roleTitles: (roleType: string | undefined) => string
   isLoading: boolean
   pagination: { hasNext: boolean; offset: number; limit: number }
 }) => {

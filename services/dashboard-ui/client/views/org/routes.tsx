@@ -9,6 +9,7 @@ import { RunnerProcesses } from './RunnerProcesses'
 import { ProcessSystemLogs } from './ProcessSystemLogs'
 import { Team } from './Team'
 import { ApiTokens } from './ApiTokens'
+import { AccessRoles } from './AccessRoles'
 import { ServiceAccounts } from './ServiceAccounts'
 import { VCSConnectionDetail } from './VCSConnectionDetail'
 import { Slack } from './Slack'
@@ -74,6 +75,7 @@ export const orgRoutes: RouteObject[] = [
           },
           { path: ':orgId/settings/webhooks', element: <Webhooks /> },
           { path: ':orgId/settings/api-tokens', element: <ApiTokens /> },
+          { path: ':orgId/settings/roles', element: <AccessRoles /> },
           {
             path: ':orgId/settings/service-accounts',
             element: <ServiceAccounts />,

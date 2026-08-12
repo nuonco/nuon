@@ -24,7 +24,8 @@ const mockAccounts: TAccount[] = [
   } as TAccount,
 ]
 
-const roleTitles = { runner: 'Runner', org_admin: 'Admin', org_read_only: 'Read-only' }
+const ROLE_TITLES: Record<string, string> = { runner: 'Runner', org_admin: 'Admin', org_read_only: 'Read-only' }
+const roleTitles = (roleType: string | undefined) => ROLE_TITLES[roleType ?? ''] ?? '—'
 
 export const Default = () => (
   <ServiceAccountsTable

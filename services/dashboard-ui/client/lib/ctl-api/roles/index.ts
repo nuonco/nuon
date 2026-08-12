@@ -1,1 +1,5 @@
+export * from './create-role'
+export * from './delete-role'
+export * from './get-role'
 export * from './list-roles'
+export * from './update-role'

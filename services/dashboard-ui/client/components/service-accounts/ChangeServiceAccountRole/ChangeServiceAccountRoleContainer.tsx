@@ -4,7 +4,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
-import { useRoleOptions } from '@/hooks/use-roles'
+import { roleAssignmentID, useRoleOptions } from '@/hooks/use-roles'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { updateServiceAccountRole } from '@/lib'
@@ -20,7 +20,7 @@ const ChangeServiceAccountRoleModalContainer = ({
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const currentRole = account.roles?.[0]?.role_type || ''
+  const currentRole = roleAssignmentID(account.roles?.[0])
   const identity = account.email || account.id || ''
 
   const { roleOptions } = useRoleOptions('service_account')

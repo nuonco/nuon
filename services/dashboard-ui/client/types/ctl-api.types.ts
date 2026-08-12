@@ -809,6 +809,7 @@ export interface TRoleInfo {
   description?: string
   applies_to?: string[]
   managed?: boolean
+  policies?: TRolePolicy[]
 }
 
 export type TRoleContext =
@@ -816,6 +817,45 @@ export type TRoleContext =
   | 'service_account'
   | 'api_token'
   | 'oidc_trust_policy'
+
+// Mirrors app.Level in services/ctl-api/internal/app/policy.go — the resource
+// kinds a scoped permission can target or be confined to.
+export type TPermissionResourceType = 'org' | 'app' | 'install' | 'app_branch'
+
+export type TPermissionVerb = 'create' | 'read' | 'update' | 'delete'
+
+// Mirrors app.PermissionEntry. resource_id is a resource id or "*" for every
+// resource of the type; scope_type/scope_id confine a "*" entry to a parent
+// and are only legal on wildcard entries. The generated OpenAPI types predate
+// scoped permissions, so this shape is hand-written alongside TRoleInfo.
+export interface TPermissionEntry {
+  resource_type: TPermissionResourceType
+  resource_id: string
+  scope_type?: TPermissionResourceType
+  scope_id?: string
+  permissions: TPermissionVerb[]
+}
+
+export interface TRolePolicy {
+  id?: string
+  name?: string
+  role_id?: string
+  scoped_permissions?: TPermissionEntry[]
+}
+
+export interface TCreateRoleBody {
+  title: string
+  description?: string
+  contexts?: TRoleContext[]
+  permissions: TPermissionEntry[]
+}
+
+export interface TUpdateRoleBody {
+  title?: string
+  description?: string
+  contexts?: TRoleContext[]
+  permissions?: TPermissionEntry[]
+}
 
 export interface TCreateServiceAccountBody {
   name: string
