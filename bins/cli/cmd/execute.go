@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/charmbracelet/fang"
-	"github.com/getsentry/sentry-go"
 	"github.com/nuonco/nuon/bins/cli/internal/httpdebug"
 	"github.com/spf13/cobra"
 )
@@ -62,11 +61,6 @@ func Execute() {
 		fang.WithColorSchemeFunc(fang.AnsiColorScheme),
 		fang.WithoutVersion(),
 	)
-
-	// Sentry should be flushed just the once, just prior to program exit
-	if c.cfg != nil && !c.cfg.DisableTelemetry {
-		sentry.Flush(c.cfg.CleanupTimeout)
-	}
 
 	if Debug {
 		httpdebug.PrintSummary(os.Stderr, time.Since(start))

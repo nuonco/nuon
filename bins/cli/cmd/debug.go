@@ -21,7 +21,7 @@ func (c *cli) debugCmd() *cobra.Command {
 		Run:         func(*cobra.Command, []string) {},
 	})
 
-	// Adds config, API client, and sentry init, but no auth.
+	// Adds config and API client init, but no auth.
 	debug.AddCommand(&cobra.Command{
 		Use:               "noop-init",
 		Short:             "Do nothing, after init but without auth",

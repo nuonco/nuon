@@ -134,10 +134,6 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if err := c.initSentry(); err != nil {
-		return errors.Wrap(err, "unable to initialize sentry")
-	}
-
 	c.cfg.BindCobraFlags(cmd)
 	return nil
 }

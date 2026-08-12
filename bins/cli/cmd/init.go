@@ -5,13 +5,11 @@ import (
 	stdhttp "net/http"
 
 	"github.com/cockroachdb/errors"
-	"github.com/getsentry/sentry-go"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/httpdebug"
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
-	"github.com/nuonco/nuon/pkg/errs"
 )
 
 // Construct an API client for the services to use.
@@ -44,25 +42,6 @@ func (c *cli) initConfig() error {
 	}
 
 	c.cfg = cfg
-	return nil
-}
-
-func (c *cli) initSentry() error {
-	err := sentry.Init(sentry.ClientOptions{
-		Dsn:         c.cfg.SentryDSN,
-		Environment: c.cfg.Env,
-		Tags: map[string]string{
-			"org_id":   c.cfg.OrgID,
-			"platform": "cli",
-		},
-	})
-
-	if err != nil {
-		wrappedErr := errors.Wrap(err, "unable to initialize sentry")
-		errs.ReportToSentry(wrappedErr, nil)
-		return wrappedErr
-	}
-
 	return nil
 }
 
