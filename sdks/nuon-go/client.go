@@ -47,6 +47,10 @@ type Client interface {
 
 	// roles and service accounts
 	ListRoles(ctx context.Context) ([]*models.AppRole, error)
+	CreateRole(ctx context.Context, req *models.ServiceCreateRoleRequest) (*models.AppRole, error)
+	GetRole(ctx context.Context, roleID string) (*models.AppRole, error)
+	UpdateRole(ctx context.Context, roleID string, req *models.ServiceUpdateRoleRequest) (*models.AppRole, error)
+	DeleteRole(ctx context.Context, roleID string) error
 	ListServiceAccounts(ctx context.Context, includeRunners bool, query *models.GetPaginatedQuery) ([]*models.AppAccount, bool, error)
 	CreateServiceAccount(ctx context.Context, req *models.ServiceCreateServiceAccountRequest) (*models.AppAccount, error)
 	UpdateServiceAccount(ctx context.Context, accountID string, req *models.ServiceUpdateServiceAccountRequest) (*models.AppAccount, error)

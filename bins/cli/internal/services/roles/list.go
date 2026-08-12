@@ -8,6 +8,16 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
+// AssignmentIdentifier returns what --role expects for the role: its type for
+// managed roles, its id for custom ones, which all share the "custom" type.
+// Mirrors app.Role.AssignmentIdentifier.
+func AssignmentIdentifier(role *models.AppRole) string {
+	if role.RoleType == models.AppRoleTypeCustom {
+		return role.ID
+	}
+	return string(role.RoleType)
+}
+
 func (s *Service) ListRoles(ctx context.Context, asJSON bool) error {
 	if s.cfg.OrgID == "" {
 		s.printOrgNotSetMsg()
@@ -37,7 +47,7 @@ func (s *Service) ListRoles(ctx context.Context, asJSON bool) error {
 
 	data := [][]string{
 		{
-			"ROLE TYPE",
+			"ROLE",
 			"TITLE",
 			"APPLIES TO",
 			"DESCRIPTION",
@@ -46,7 +56,7 @@ func (s *Service) ListRoles(ctx context.Context, asJSON bool) error {
 
 	for _, r := range roles {
 		data = append(data, []string{
-			string(r.RoleType),
+			AssignmentIdentifier(r),
 			r.Title,
 			strings.Join(r.AppliesTo, ", "),
 			r.Description,
