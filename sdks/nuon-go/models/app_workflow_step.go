@@ -98,6 +98,10 @@ type AppWorkflowStep struct {
 	// retryable
 	Retryable bool `json:"retryable,omitempty"`
 
+	// SkipOnFailure lets the workflow continue past this step after its retry
+	// budget is exhausted. Skippable only gates user-initiated skips.
+	SkipOnFailure bool `json:"skip_on_failure,omitempty"`
+
 	// skippable
 	Skippable bool `json:"skippable,omitempty"`
 
