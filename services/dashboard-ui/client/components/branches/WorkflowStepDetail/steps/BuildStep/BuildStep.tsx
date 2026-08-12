@@ -25,7 +25,6 @@ import {
 import type {
   TAppSandboxBuild,
   TBuild,
-  TComponentBuild,
   TComponentType,
 } from '@/types'
 import { cacheBadgeTheme } from '../../shared/format'
@@ -40,9 +39,17 @@ interface IBuildStep {
 const isSandboxBuild = (build: any) =>
   build.component_type === 'sandbox' || build.component_id === 'sandbox'
 
+const pollingBuildStatuses = new Set([
+  'queued',
+  'pending',
+  'planning',
+  'building',
+  'in-progress',
+])
+
 const shouldPollBuildDetail = (detail?: TBuild | TAppSandboxBuild) => {
   const status = detail?.status_v2?.status || detail?.status
-  return !detail?.composite_error && status !== 'active' && status !== 'success'
+  return !detail?.composite_error && pollingBuildStatuses.has(status || '')
 }
 
 interface IBuildRowDetail {
@@ -131,7 +138,7 @@ export const BuildRowDetail = ({
 
 interface IBuildRowDetailContainer {
   build: any
-  componentBuild?: TComponentBuild
+  componentBuildId?: string
   sandboxBuildId?: string
   orgId?: string
   appId?: string
@@ -141,7 +148,7 @@ interface IBuildRowDetailContainer {
 
 const BuildRowDetailContainer = ({
   build,
-  componentBuild,
+  componentBuildId,
   sandboxBuildId,
   orgId,
   appId,
@@ -152,19 +159,19 @@ const BuildRowDetailContainer = ({
   const componentId = build.component_id as string | undefined
 
   const componentBuildQuery = useQuery({
-    queryKey: ['build', orgId, componentId, componentBuild?.id],
+    queryKey: ['build', orgId, componentId, componentBuildId],
     queryFn: () =>
       getComponentBuild({
         orgId: orgId!,
         componentId: componentId!,
-        buildId: componentBuild!.id!,
+        buildId: componentBuildId!,
       }),
     enabled:
       isExpanded &&
       !isSandbox &&
       !!orgId &&
       !!componentId &&
-      !!componentBuild?.id,
+      !!componentBuildId,
     refetchInterval: (query) =>
       isExpanded && shouldPollBuildDetail(query.state.data) ? 5000 : false,
   })
@@ -188,13 +195,13 @@ const BuildRowDetailContainer = ({
     (isSandbox
       ? !!sandboxBuildId && sandboxBuildQuery.isLoading
       : isLoadingBuilds ||
-        (!!componentBuild?.id && componentBuildQuery.isLoading))
+        (!!componentBuildId && componentBuildQuery.isLoading))
   const buildHref = isSandbox
     ? sandboxBuildId && orgId && appId
       ? `/${orgId}/apps/${appId}/sandbox/builds/${sandboxBuildId}`
       : undefined
-    : componentBuild?.id && orgId && appId && componentId
-      ? `/${orgId}/apps/${appId}/components/${componentId}/builds/${componentBuild.id}`
+    : componentBuildId && orgId && appId && componentId
+      ? `/${orgId}/apps/${appId}/components/${componentId}/builds/${componentBuildId}`
       : undefined
 
   return (
@@ -212,7 +219,7 @@ export interface IBuildRow {
   rowId: string
   orgId?: string
   appId?: string
-  componentBuild?: TComponentBuild
+  componentBuildId?: string
   sandboxBuildId?: string
   isLoadingBuilds?: boolean
 }
@@ -223,7 +230,7 @@ export const BuildRow = ({
   rowId,
   orgId,
   appId,
-  componentBuild,
+  componentBuildId,
   sandboxBuildId,
   isLoadingBuilds,
 }: IBuildRow) => {
@@ -274,7 +281,7 @@ export const BuildRow = ({
     >
       <BuildRowDetailContainer
         build={build}
-        componentBuild={componentBuild}
+        componentBuildId={componentBuildId}
         sandboxBuildId={sandboxBuildId}
         orgId={orgId}
         appId={appId}
@@ -331,9 +338,9 @@ export const BuildStep = ({
   }, [componentsResult])
 
   const componentBuildMap = useMemo(() => {
-    const map = new Map<string, TComponentBuild>()
+    const map = new Map<string, string>()
     for (const build of branchBuilds || []) {
-      if (build.component_id) map.set(build.component_id, build)
+      if (build.component_id && build.id) map.set(build.component_id, build.id)
     }
     return map
   }, [branchBuilds])
@@ -389,7 +396,9 @@ export const BuildStep = ({
               rowId={rowId}
               orgId={org?.id}
               appId={app?.id}
-              componentBuild={componentBuildMap.get(build.component_id)}
+              componentBuildId={
+                build.build_id || componentBuildMap.get(build.component_id)
+              }
               sandboxBuildId={sandboxBuildId}
               isLoadingBuilds={isLoadingBuilds}
             />
