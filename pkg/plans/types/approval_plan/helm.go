@@ -23,12 +23,13 @@ func (h *HelmApprovalPlan) IsNoop() (bool, error) {
 }
 
 // A timed-out attempt records the new manifest on a pending/failed release, so the
-// retry diffs clean even though nothing rolled out. Old runners send no status, and
-// those keep the diff-only behaviour.
+// retry diffs clean even though nothing rolled out. A missing status (old runner, or
+// no previous release info) is treated as needing deploy so an empty diff never
+// silently skips an apply whose release state is unknown.
 func (h *HelmApprovalPlan) releaseNeedsDeploy() bool {
 	status := gjson.GetBytes(h.PlanJSON, "helm_release_status")
 	if !status.Exists() || status.String() == "" {
-		return false
+		return true
 	}
 	return status.String() != helmStatusDeployed
 }
