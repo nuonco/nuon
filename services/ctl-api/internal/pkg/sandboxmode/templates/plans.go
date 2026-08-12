@@ -641,7 +641,7 @@ func planTemplates() []Template {
 			Category:    "plans",
 			JobTypes:    []string{"helm-chart-deploy"},
 			IsNoop:      true,
-			Contents:    `{"plan":"no changes","op":"upgrade","helm_content_diff":[]}`,
+			Contents:    `{"plan":"no changes","op":"upgrade","helm_content_diff":[],"helm_release_status":"deployed"}`,
 		},
 		{
 			Key:         "helm-upgrade",

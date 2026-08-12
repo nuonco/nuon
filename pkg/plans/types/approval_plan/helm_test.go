@@ -16,12 +16,12 @@ func TestHelmApprovalPlan_IsNoop(t *testing.T) {
 		{
 			name:     "no content diff key",
 			planJSON: `{}`,
-			want:     true,
+			want:     false,
 		},
 		{
 			name:     "empty content diff",
 			planJSON: `{"helm_content_diff": []}`,
-			want:     true,
+			want:     false,
 		},
 		{
 			name:     "content diff present",
@@ -49,11 +49,11 @@ func TestHelmApprovalPlan_IsNoop(t *testing.T) {
 			planJSON: `{"helm_content_diff": [], "helm_release_status": "failed"}`,
 			want:     false,
 		},
-		// old runners send no status and must not start blocking unchanged deploys
+		// a missing status means the release state is unknown not noop
 		{
 			name:     "empty diff with an empty status",
 			planJSON: `{"helm_content_diff": [], "helm_release_status": ""}`,
-			want:     true,
+			want:     false,
 		},
 	}
 
