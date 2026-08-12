@@ -3,6 +3,7 @@ import { type Node, type NodeProps } from '@xyflow/react'
 
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { matchesSelector } from '@/components/match/matches'
 import { cn } from '@/utils/classnames'
 import type { TAppBranchConfig, TInstall } from '@/types'
@@ -18,6 +19,7 @@ interface GroupNodeData {
   installs: { id: string; name: string }[]
   labelEntries: [string, string][]
   maxParallel: number
+  useForPreviews: boolean
   compact: boolean
   [key: string]: unknown
 }
@@ -32,21 +34,32 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
       title={data.groupName}
       compact={compact}
       headerRight={
-        compact ? (
-          <span className="shrink-0 text-[9px] opacity-70">{installs.length}</span>
-        ) : data.maxParallel > 1 ? (
-          <span className={cn('rounded px-1.5 py-0.5 text-[10px]', accent.pill)}>
-            {data.maxParallel}x parallel
-          </span>
-        ) : null
+        <span className="flex shrink-0 items-center gap-1">
+          {data.useForPreviews && (
+            <span
+              className={cn(
+                'rounded px-1.5 py-0.5',
+                compact ? 'text-[9px]' : 'text-[10px]',
+                accent.pill
+              )}
+            >
+              preview
+            </span>
+          )}
+          {compact ? (
+            <span className="text-[9px] opacity-70">{installs.length}</span>
+          ) : data.maxParallel > 1 ? (
+            <span className={cn('rounded px-1.5 py-0.5 text-[10px]', accent.pill)}>
+              {data.maxParallel}x parallel
+            </span>
+          ) : null}
+        </span>
       }
     >
       {!compact && data.labelEntries.length > 0 && (
         <div className="flex flex-wrap gap-1 pb-1">
           {data.labelEntries.map(([k, v]) => (
-            <span key={k} className={cn('rounded px-1.5 py-0.5 text-[10px]', accent.pill)}>
-              {k}={v}
-            </span>
+            <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" />
           ))}
         </div>
       )}
@@ -57,7 +70,7 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
         </span>
       ) : (
         visible.map((inst) => (
-          <div key={inst.id} className="flex items-center gap-1.5">
+          <div key={inst.id} className="flex items-center gap-1.5 min-w-0">
             <Icon
               variant="CubeIcon"
               size={compact ? 10 : 12}
@@ -65,9 +78,10 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
             />
             <span
               className={cn(
-                'truncate text-cool-grey-700 dark:text-cool-grey-200',
+                'min-w-0 flex-1 truncate text-cool-grey-700 dark:text-cool-grey-200',
                 compact ? 'text-[9px]' : 'text-xs'
               )}
+              title={inst.name}
             >
               {inst.name}
             </span>
@@ -120,6 +134,7 @@ export const DeploymentPlanGraph = ({ config, installsById, compact = false }: I
           installs,
           labelEntries,
           maxParallel: group.max_parallel ?? 1,
+          useForPreviews: group.use_for_previews ?? false,
           compact,
         },
       }

@@ -30,3 +30,24 @@ export const PublicRepo = () => (
 )
 
 export const NoSource = () => <BranchSourceCard config={undefined} />
+
+export const WithLatestRun = () => (
+  <BranchSourceCard
+    config={{
+      public_git_vcs_config: {
+        repo: 'nuonco/example-app-configs',
+        branch: 'main',
+        directory: 'httpbin',
+      },
+    }}
+    latestRun={{
+      status: 'success',
+      href: '#',
+      message: 'feat: add resources section to customer portal readme (#273)',
+      author: 'Nat Hamilton',
+      avatarUrl: 'https://github.com/nat.png',
+      sha: '85d067ecafe1234',
+      createdAt: '2026-08-12T09:00:00Z',
+    }}
+  />
+)

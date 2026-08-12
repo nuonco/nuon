@@ -6368,6 +6368,7 @@ export interface components {
       vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"][];
     };
     "app.VCSConnectionCommit": {
+      author_avatar_url?: string;
       author_email?: string;
       author_name?: string;
       created_at?: string;
@@ -11598,6 +11599,8 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
+        /** @description exclude preview (plan only) runs when set to false */
+        planonly?: boolean;
       };
       path: {
         /** @description app ID */
