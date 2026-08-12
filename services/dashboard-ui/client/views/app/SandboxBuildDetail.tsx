@@ -1,6 +1,7 @@
 import { useParams } from 'react-router'
 import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
+import { CompositeError } from '@/components/common/CompositeError'
 import { Duration } from '@/components/common/Duration'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
@@ -76,6 +77,12 @@ const SandboxBuildDetailInner = () => {
           </div>
         </div>
       </header>
+
+      {build?.composite_error ? (
+        <div className="mx-6 mt-4">
+          <CompositeError error={build.composite_error} />
+        </div>
+      ) : null}
 
       <PageSection>
         {build?.log_stream ? (
