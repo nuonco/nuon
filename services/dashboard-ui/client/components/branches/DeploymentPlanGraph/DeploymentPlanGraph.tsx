@@ -19,6 +19,7 @@ interface GroupNodeData {
   installs: { id: string; name: string }[]
   labelEntries: [string, string][]
   maxParallel: number
+  useForPreviews: boolean
   compact: boolean
   [key: string]: unknown
 }
@@ -33,13 +34,26 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
       title={data.groupName}
       compact={compact}
       headerRight={
-        compact ? (
-          <span className="shrink-0 text-[9px] opacity-70">{installs.length}</span>
-        ) : data.maxParallel > 1 ? (
-          <span className={cn('rounded px-1.5 py-0.5 text-[10px]', accent.pill)}>
-            {data.maxParallel}x parallel
-          </span>
-        ) : null
+        <span className="flex shrink-0 items-center gap-1">
+          {data.useForPreviews && (
+            <span
+              className={cn(
+                'rounded px-1.5 py-0.5',
+                compact ? 'text-[9px]' : 'text-[10px]',
+                accent.pill
+              )}
+            >
+              preview
+            </span>
+          )}
+          {compact ? (
+            <span className="text-[9px] opacity-70">{installs.length}</span>
+          ) : data.maxParallel > 1 ? (
+            <span className={cn('rounded px-1.5 py-0.5 text-[10px]', accent.pill)}>
+              {data.maxParallel}x parallel
+            </span>
+          ) : null}
+        </span>
       }
     >
       {!compact && data.labelEntries.length > 0 && (
@@ -120,6 +134,7 @@ export const DeploymentPlanGraph = ({ config, installsById, compact = false }: I
           installs,
           labelEntries,
           maxParallel: group.max_parallel ?? 1,
+          useForPreviews: group.use_for_previews ?? false,
           compact,
         },
       }

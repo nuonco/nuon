@@ -9,6 +9,7 @@ import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
 import { ToggleButton } from '@/components/common/ToggleButton'
 import { Input } from '@/components/common/form/Input'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import type { TInstall } from '@/types'
 import { cn } from '@/utils/classnames'
 import { matchesSelector } from '@/components/match/matches'
@@ -113,6 +114,16 @@ export const GroupEditor = ({
             </Menu>
           </Dropdown>
         </div>
+      </div>
+
+      <div className="flex items-center gap-4 px-4 py-2 border-b text-xs">
+        <CheckboxInput
+          id={`group-preview-${group.id}`}
+          checked={group.use_for_previews ?? false}
+          onChange={(e) => onUpdate({ use_for_previews: e.target.checked })}
+          disabled={disabled}
+          labelProps={{ labelText: 'Use for previews' }}
+        />
       </div>
 
       <div className="flex flex-col gap-3 p-4">

@@ -20,6 +20,7 @@ const mockConfig: any = {
       order: 0,
       label_selector: { match_labels: { env: 'staging' } },
       max_parallel: 2,
+      use_for_previews: true,
     },
     {
       id: 'group-prod-primary',
