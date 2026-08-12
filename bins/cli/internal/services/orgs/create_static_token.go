@@ -8,7 +8,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) CreateStaticToken(ctx context.Context, name, duration, role string, asJSON bool) error {
+func (s *Service) CreateStaticToken(ctx context.Context, name, duration, role string, personal, asJSON bool) error {
 	if s.cfg.OrgID == "" {
 		s.printOrgNotSetMsg()
 		return nil
@@ -19,11 +19,17 @@ func (s *Service) CreateStaticToken(ctx context.Context, name, duration, role st
 		return view.Error(fmt.Errorf("name is required"))
 	}
 
-	token, err := s.api.CreateStaticToken(ctx, &models.ServiceCreateStaticTokenRequest{
+	req := &models.ServiceCreateStaticTokenRequest{
 		Name:     &name,
 		Duration: &duration,
-		Role:     role,
-	})
+	}
+	if personal {
+		req.TokenIdentity = "personal"
+	} else {
+		req.Role = role
+	}
+
+	token, err := s.api.CreateStaticToken(ctx, req)
 	if err != nil {
 		return view.Error(err)
 	}
