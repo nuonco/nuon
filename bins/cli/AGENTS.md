@@ -417,9 +417,16 @@ failed, exit 3 (`builds_failed`) = synced but scheduled component builds failed,
 out. `--no-wait` skips the build wait entirely. The success envelope's `data.builds` reports
 `{scheduled, waited, components:[{component_id, component_name, status}]}`.
 
-Routing lives in `internal/agentmode` (`HumanWriter()` returns stderr when enabled). Any new command output must go
-through `ui.PrintJSON` / `ui.PrintError` to be enveloped; commands that write their own JSON or use `fmt.Println` bypass
-the envelope. `--output json` is unchanged from the old `--json` — raw output, no envelope.
+Routing lives in `internal/agentmode` (`HumanWriter()` returns stderr when enabled). Success output must go through
+`ui.PrintJSON` to be enveloped; commands that write their own JSON or use `fmt.Println` bypass the envelope.
+`--output json` is unchanged from the old `--json` — raw output, no envelope.
+
+**Errors: just `return err`.** The `wrapCmd` boundary (`cmd/wrap.go`) renders every command error once in the active
+output mode (table text, json error object, or agent envelope) before resolving the exit code — command and service
+code should return errors bare, not print them. `ui.PrintError` marks errors it renders (`printedError` in
+`internal/ui/print.go`), so code that intentionally renders early — spinner `view.Fail(...)` (which also finalizes
+the spinner line; return its result), or print-then-continue warnings — composes without double-printing. In agent
+mode spinner failures go to stderr and the boundary still emits the stdout envelope.
 
 #### Output annotations (REQUIRED when adding commands)
 
