@@ -13,7 +13,7 @@ const baseStep: TWorkflowStep = {
   install_workflow_id: 'wf-1',
   created_by: { email: 'dev@nuon.co' },
   status: {
-    status: 'succeeded',
+    status: 'success',
     history: [
       { status: 'pending', created_at_ts: 1716000000 },
       { status: 'running', created_at_ts: 1716000060 },
@@ -275,14 +275,14 @@ export const FailedWithErrorDescription = () => (
         id: 'step-failed',
         name: 'deploy database',
         status: {
-          status: 'failed',
+          status: 'error',
           status_human_description:
             'Terraform apply failed: resource limit exceeded',
           history: [
             { status: 'pending', created_at_ts: 1716000000 },
             { status: 'running', created_at_ts: 1716000060 },
             {
-              status: 'failed',
+              status: 'error',
               created_at_ts: 1716000120,
               status_human_description:
                 'Terraform apply failed: resource limit exceeded',
@@ -294,5 +294,48 @@ export const FailedWithErrorDescription = () => (
     workflowUrl="/org1/installs/inst-1/workflows/wf-1"
     targetData={mockDeployData}
     deployOutputs={mockDeployOutputs}
+  />
+)
+
+export const FailedWithCompositeError = () => (
+  <RunbookStepCard
+    step={
+      {
+        ...baseStep,
+        id: 'step-composite-error',
+        name: 'deploy database',
+        status: { status: 'error' },
+      } as unknown as TWorkflowStep
+    }
+    workflowUrl="/org1/installs/inst-1/workflows/wf-1"
+    targetData={{
+      ...mockDeployData,
+      composite_error: {
+        type: 'terraform.state_lock',
+        severity: 'error',
+        message: 'Terraform could not acquire the state lock',
+        sections: [
+          {
+            heading: 'How to fix',
+            body: 'Release the existing state lock, then retry the deploy.',
+          },
+        ],
+      },
+    }}
+  />
+)
+
+export const SuccessfulStepWithSharedFailedTarget = () => (
+  <RunbookStepCard
+    step={{ ...baseStep, status: { status: 'success' } } as TWorkflowStep}
+    workflowUrl="/org1/installs/inst-1/workflows/wf-1"
+    targetData={{
+      ...mockDeployData,
+      composite_error: {
+        type: 'terraform.state_lock',
+        severity: 'error',
+        message: 'Error from a later step that shares this deploy',
+      },
+    }}
   />
 )
