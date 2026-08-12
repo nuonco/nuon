@@ -9,6 +9,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	jobpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
@@ -111,7 +112,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to create sandbox build job: %w", err)
 	}
 
-	dstCfg, err := activities.AwaitGetSandboxBuildOCIRegistry(ctx, activities.GetSandboxBuildOCIRegistryRequest{
+	dstCfg, err := sharedactivities.AwaitGetSandboxBuildOCIRegistry(ctx, sharedactivities.GetSandboxBuildOCIRegistryRequest{
 		AppID: appConfig.AppID,
 	})
 	if err != nil {
