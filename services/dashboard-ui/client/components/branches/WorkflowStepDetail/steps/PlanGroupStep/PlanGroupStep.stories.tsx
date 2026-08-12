@@ -3,26 +3,104 @@ export default {
 }
 
 import { Button } from '@/components/common/Button'
-import { PlanGroupStep } from './PlanGroupStep'
+import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import { PlanGroupStep, type PlanInstallDiff } from './PlanGroupStep'
 
-const installs = [
-  {
-    install_id: 'i1',
-    install_name: 'acme-prod',
-    status: 'pending',
-    install_labels: { tier: 'prod', region: 'us-east-1' },
-    diff: {
-      added: [{ component_id: 'c1', component_name: 'worker', component_type: 'docker_build' }],
-      changed: [{ component_id: 'c2', component_name: 'api', component_type: 'helm_chart' }],
-      removed: [],
+const ec2ChangeSection: DiffSectionData = {
+  name: 'Components',
+  sectionKey: 'components',
+  grouped: true,
+  additions: 0,
+  removals: 0,
+  changed: 1,
+  entities: [
+    {
+      name: 'ec2',
+      op: 'change',
+      componentType: 'terraform_module',
+      fields: [
+        {
+          key: 'instance_type',
+          op: 'change',
+          diff: '- instance_type: t3.small\n+ instance_type: t3.medium',
+        },
+      ],
     },
+  ],
+  fields: [],
+}
+
+const mixedSection: DiffSectionData = {
+  name: 'Components',
+  sectionKey: 'components',
+  grouped: true,
+  additions: 1,
+  removals: 1,
+  changed: 1,
+  entities: [
+    {
+      name: 'redis',
+      op: 'add',
+      componentType: 'helm_chart',
+      fields: [{ key: 'image', op: 'add', diff: '+ image: redis:7' }],
+    },
+    {
+      name: 'ec2',
+      op: 'change',
+      componentType: 'terraform_module',
+      fields: [
+        {
+          key: 'instance_type',
+          op: 'change',
+          diff: '- instance_type: t3.small\n+ instance_type: t3.medium',
+        },
+      ],
+    },
+    {
+      name: 'legacy_worker',
+      op: 'remove',
+      componentType: 'docker_build',
+      fields: [{ key: 'image', op: 'remove', diff: '- image: legacy:1' }],
+    },
+  ],
+  fields: [],
+}
+
+const uatInstalls: PlanInstallDiff[] = [
+  {
+    installId: 'inlex6ib6i2yvkqpjt643h63fb',
+    installName: 'httpbin_dev',
+    sections: [],
+    summary: { added: 0, removed: 0, changed: 0 },
   },
   {
-    install_id: 'i2',
-    install_name: 'globex-staging',
-    status: 'pending',
-    sandbox_changed: true,
-    diff: { added: [], changed: [], removed: [] },
+    installId: 'inlrlganokl7ffhxr4jtje08sz',
+    installName: 'test',
+    sections: [],
+    summary: { added: 0, removed: 0, changed: 0 },
+  },
+  {
+    installId: 'inlq8tqxoz0jtdigksj3nnebhc',
+    installName: 'testtest',
+    sections: [ec2ChangeSection],
+    summary: { added: 0, removed: 0, changed: 1 },
+  },
+]
+
+const labeledInstalls: PlanInstallDiff[] = [
+  {
+    installId: 'inlacmeprod',
+    installName: 'acme-prod',
+    installLabels: { tier: 'prod', region: 'us-east-1' },
+    sections: [mixedSection],
+    summary: { added: 1, removed: 1, changed: 1 },
+  },
+  {
+    installId: 'inlacmestg',
+    installName: 'acme-staging',
+    installLabels: { tier: 'staging', region: 'us-west-2' },
+    sections: [],
+    summary: { added: 0, removed: 0, changed: 0 },
   },
 ]
 
@@ -35,9 +113,41 @@ const actions = (
 
 export const AwaitingApproval = () => (
   <PlanGroupStep
-    installs={installs}
+    installs={uatInstalls}
+    groupName="uat"
+    hasResponse={false}
+    showApproveBar
+    isInProgress={false}
+    actions={actions}
+  />
+)
+
+export const SingleInstall = () => (
+  <PlanGroupStep
+    installs={[uatInstalls[2]]}
     groupName="production"
-    orgId="org-1"
+    hasResponse={false}
+    showApproveBar
+    isInProgress={false}
+    actions={actions}
+  />
+)
+
+export const WithLabels = () => (
+  <PlanGroupStep
+    installs={labeledInstalls}
+    groupName="production"
+    hasResponse={false}
+    showApproveBar
+    isInProgress={false}
+    actions={actions}
+  />
+)
+
+export const Loading = () => (
+  <PlanGroupStep
+    installs={uatInstalls.map((i) => ({ ...i, sections: [], summary: null, isLoading: true }))}
+    groupName="uat"
     hasResponse={false}
     showApproveBar
     isInProgress={false}
@@ -47,9 +157,8 @@ export const AwaitingApproval = () => (
 
 export const Approved = () => (
   <PlanGroupStep
-    installs={installs}
-    groupName="production"
-    orgId="org-1"
+    installs={uatInstalls}
+    groupName="uat"
     hasResponse
     responseType="approve"
     showApproveBar={false}
@@ -57,13 +166,13 @@ export const Approved = () => (
   />
 )
 
-export const Computing = () => (
+export const Skipped = () => (
   <PlanGroupStep
-    installs={[]}
-    groupName="production"
-    orgId="org-1"
-    hasResponse={false}
+    installs={uatInstalls}
+    groupName="uat"
+    hasResponse
+    responseType="skip"
     showApproveBar={false}
-    isInProgress
+    isInProgress={false}
   />
 )

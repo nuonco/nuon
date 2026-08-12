@@ -14,9 +14,8 @@ import { useBranch } from '@/hooks/use-branch'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
 import { BranchProvider } from '@/providers/branch-provider'
-import { Badge } from '@/components/common/Badge'
-import { Icon } from '@/components/common/Icon'
 import { AppBranchSwitcher } from '@/components/branches/AppBranchSwitcher'
+import { BranchVcsBadges } from '@/components/branches/BranchVcsBadges'
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
 import { BranchPendingApprovals } from '@/components/branches/BranchRunApproval'
 import {
@@ -125,18 +124,7 @@ const BranchTemplate = () => {
                   <AppBranchSwitcher />
                 </div>
                 <span className="flex items-center gap-2 flex-wrap">
-                  {vcs?.repo ? (
-                    <Badge size="sm" theme="default">
-                      <Icon variant="GitHub" size={13} />
-                      {vcs.repo}
-                    </Badge>
-                  ) : null}
-                  {vcs?.branch ? (
-                    <Badge size="sm" theme="default">
-                      <Icon variant="GitBranchIcon" size={13} />
-                      {vcs.branch}
-                    </Badge>
-                  ) : null}
+                  <BranchVcsBadges repo={vcs?.repo} branch={vcs?.branch} />
                   <Text variant="subtext" theme="info">
                     Last updated{' '}
                     <Time
@@ -163,10 +151,13 @@ const BranchTemplate = () => {
       <PageContent className="border-t" variant="row">
         <SubNav basePath={basePath} links={navLinks} />
         <div className="flex flex-col flex-1 min-w-0">
-          <BranchPendingApprovals
-            run={latestRun}
-            runHref={latestRun ? `${basePath}/runs/${latestRun.id}` : undefined}
-          />
+          {latestRun && params.runId !== latestRun.id ? (
+            <BranchPendingApprovals
+              run={latestRun}
+              runHref={`${basePath}/runs/${latestRun.id}`}
+              className="px-4 md:px-6 pt-4 md:pt-6"
+            />
+          ) : null}
           <Outlet />
         </div>
       </PageContent>

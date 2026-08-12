@@ -48,11 +48,18 @@ interface IGraphCanvas {
 const GraphCanvasInner = ({ nodes: initialNodes, edges: initialEdges, nodeTypes, height, compact }: IGraphCanvas) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+  const { fitView } = useReactFlow()
 
   useEffect(() => {
     setNodes(initialNodes)
     setEdges(initialEdges)
   }, [initialNodes, initialEdges, setNodes, setEdges])
+
+  const nodeSignature = initialNodes.map((n) => n.id).join('|')
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => fitView({ padding: compact ? 0.15 : 0.25 }))
+    return () => cancelAnimationFrame(raf)
+  }, [nodeSignature, fitView, compact])
 
   const memoizedNodeTypes = useMemo(() => nodeTypes, [nodeTypes])
 

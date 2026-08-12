@@ -1,7 +1,4 @@
-import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
-import { ID } from '@/components/common/ID'
-import { LabeledValue } from '@/components/common/LabeledValue'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -81,46 +78,36 @@ export const WorkflowStepDetail = ({
         >
           {step.name || 'Step details'}
         </Text>
-        {step.group_idx !== undefined && (
-          <Badge size="sm" variant="code" className="shrink-0">
-            GROUP {step.group_idx}
-          </Badge>
-        )}
+
         <Status
           status={step.status?.status || 'pending'}
           variant="badge"
           className="shrink-0"
         />
         <div className="flex-1" />
-        {duration && (
-          <div className="flex items-center gap-1.5 text-cool-grey-400 dark:text-cool-grey-500 shrink-0">
-            <Icon variant="ClockIcon" size={13} />
-            <Text variant="subtext" family="mono" theme="neutral">
-              {duration}
-            </Text>
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-start gap-6 px-5 py-3 bg-cool-grey-50 dark:bg-dark-grey-800 border-b flex-wrap">
-        <LabeledValue label="Step ID">
-          <ID className="text-[12px]">{step.id}</ID>
-        </LabeledValue>
-        {step.started_at && (
-          <LabeledValue label="Started">
-            <Time time={step.started_at} format="relative" variant="subtext" />
-          </LabeledValue>
-        )}
-        <LabeledValue label="Execution">
-          <Text variant="subtext">{step.execution_type || 'system'}</Text>
-        </LabeledValue>
-        {step.retryable !== undefined && (
-          <LabeledValue label="Retryable">
-            <Badge theme={step.retryable ? 'success' : 'neutral'} size="sm">
-              {step.retryable ? 'Yes' : 'No'}
-            </Badge>
-          </LabeledValue>
-        )}
+        <div className="flex items-center gap-3 shrink-0">
+          {step.started_at && (
+            <div className="flex items-center gap-1.5">
+              <Text variant="subtext" theme="neutral">
+                Started
+              </Text>
+              <Time
+                time={step.started_at}
+                format="relative"
+                variant="subtext"
+                theme="neutral"
+              />
+            </div>
+          )}
+          {duration && (
+            <div className="flex items-center gap-1.5 text-cool-grey-400 dark:text-cool-grey-500">
+              <Icon variant="ClockIcon" size={13} />
+              <Text variant="subtext" family="mono" theme="neutral">
+                {duration}
+              </Text>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="p-5 flex flex-col gap-4">

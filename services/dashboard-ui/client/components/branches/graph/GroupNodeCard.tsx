@@ -28,7 +28,7 @@ export const GroupNodeCard = ({
         'overflow-hidden rounded-lg border bg-white dark:bg-dark-grey-900',
         accent.border
       )}
-      style={{ minWidth: compact ? NODE_WIDTH_COMPACT : NODE_WIDTH }}
+      style={{ width: compact ? NODE_WIDTH_COMPACT : NODE_WIDTH }}
     >
       <div
         className={cn(

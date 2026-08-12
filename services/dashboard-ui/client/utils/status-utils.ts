@@ -44,6 +44,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   degraded: 'warn',
 
   executing: 'info',
+  running: 'info',
   waiting: 'info',
   started: 'info',
   'in-progress': 'info',
@@ -110,6 +111,7 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   degraded: 'WarningIcon',
 
   executing: 'Loading',
+  running: 'Loading',
   waiting: 'Loading',
   started: 'Loading',
   'in-progress': 'Loading',

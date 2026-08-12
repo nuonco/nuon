@@ -17,6 +17,7 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
 import { BranchRunApproval } from '@/components/branches/BranchRunApproval'
+import { BranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { BranchRunSummary } from '@/components/branches/BranchRunSummary'
 import { RuntimeChanges } from '@/components/branches/RuntimeChanges'
 import { WorkflowRunPanelButton } from '@/components/branches/WorkflowRunPanel'
@@ -183,9 +184,17 @@ const BranchRunDetailContent = () => {
 
                 {branchRun?.pr_number && (
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge size="sm" theme="info">
-                      PR #{branchRun.pr_number}
-                    </Badge>
+                    {prUrl ? (
+                      <Link href={prUrl} isExternal>
+                        <Badge size="sm" theme="info">
+                          PR #{branchRun.pr_number}
+                        </Badge>
+                      </Link>
+                    ) : (
+                      <Badge size="sm" theme="info">
+                        PR #{branchRun.pr_number}
+                      </Badge>
+                    )}
                     {branchRun?.base_branch && (
                       <Text variant="subtext" theme="neutral">
                         into {branchRun.base_branch}
@@ -200,26 +209,16 @@ const BranchRunDetailContent = () => {
                 )}
 
                 {branchRun?.vcs_connection_commit && (
-                  <div className="flex items-start gap-3">
-                    <Icon variant="GitCommitIcon" size={16} className="mt-0.5 shrink-0 text-cool-grey-400" />
-                    <div className="flex flex-col gap-1 min-w-0">
-                      <Text variant="body" weight="strong" className="truncate">
-                        {branchRun.vcs_connection_commit.message?.split('\n')[0]?.trim()}
-                      </Text>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {branchRun.vcs_connection_commit.sha && (
-                          <Badge size="sm" variant="code">
-                            {branchRun.vcs_connection_commit.sha.slice(0, 8)}
-                          </Badge>
-                        )}
-                        {branchRun.vcs_connection_commit.author_name && (
-                          <Text variant="subtext" theme="neutral">
-                            {branchRun.vcs_connection_commit.author_name}
-                          </Text>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <BranchRunCommit
+                    status={branchRun.status}
+                    href={githubUrl}
+                    isExternal
+                    message={branchRun.vcs_connection_commit.message?.split('\n')[0]?.trim()}
+                    author={branchRun.vcs_connection_commit.author_name}
+                    avatarUrl={branchRun.vcs_connection_commit.author_avatar_url}
+                    sha={branchRun.vcs_connection_commit.sha}
+                    createdAt={branchRun.created_at}
+                  />
                 )}
 
                 {repoSlug && (

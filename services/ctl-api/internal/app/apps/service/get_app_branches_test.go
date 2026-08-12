@@ -424,3 +424,60 @@ func (s *GetAppBranchesTestSuite) TestInstallGroupsPreloaded() {
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), installGroup.ID, dbGroup.ID)
 }
+
+func (s *GetAppBranchesTestSuite) TestLatestConfigAttachedPerBranch() {
+	branchA := s.createBranch("per-branch-config-a")
+	branchB := s.createBranch("per-branch-config-b")
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(&app.AppBranch{}, "id IN ?", []string{branchA.ID, branchB.ID})
+	})
+
+	cfgA := s.createBranchConfig(branchA.ID)
+	cfgB := s.createBranchConfig(branchB.ID)
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(&app.AppBranchConfig{}, "id IN ?", []string{cfgA.ID, cfgB.ID})
+	})
+
+	groupA := &app.AppBranchInstallGroup{
+		ID:                domains.NewAppBranchInstallGroupID(),
+		OrgID:             s.testOrg.ID,
+		AppBranchConfigID: cfgA.ID,
+		CreatedByID:       s.testAcc.ID,
+		Name:              "group-a",
+		Order:             1,
+	}
+	groupB := &app.AppBranchInstallGroup{
+		ID:                domains.NewAppBranchInstallGroupID(),
+		OrgID:             s.testOrg.ID,
+		AppBranchConfigID: cfgB.ID,
+		CreatedByID:       s.testAcc.ID,
+		Name:              "group-b",
+		Order:             1,
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(groupA).Error)
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(groupB).Error)
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(&app.AppBranchInstallGroup{}, "id IN ?", []string{groupA.ID, groupB.ID})
+	})
+
+	branches := s.fetchBranches()
+
+	byID := make(map[string]*rawBranchResponse, len(branches))
+	for i := range branches {
+		byID[branches[i].ID] = &branches[i]
+	}
+
+	foundA := byID[branchA.ID]
+	require.NotNil(s.T(), foundA, "branch A not found in response")
+	require.Len(s.T(), foundA.Configs, 1, "expected branch A to have its own config")
+	require.Equal(s.T(), cfgA.ID, foundA.Configs[0].ID)
+	require.Len(s.T(), foundA.Configs[0].InstallGroups, 1)
+	require.Equal(s.T(), groupA.ID, foundA.Configs[0].InstallGroups[0].ID)
+
+	foundB := byID[branchB.ID]
+	require.NotNil(s.T(), foundB, "branch B not found in response")
+	require.Len(s.T(), foundB.Configs, 1, "expected branch B to have its own config")
+	require.Equal(s.T(), cfgB.ID, foundB.Configs[0].ID)
+	require.Len(s.T(), foundB.Configs[0].InstallGroups, 1)
+	require.Equal(s.T(), groupB.ID, foundB.Configs[0].InstallGroups[0].ID)
+}
