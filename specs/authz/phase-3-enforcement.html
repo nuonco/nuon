@@ -171,41 +171,49 @@
       <h1>Phase 3 — Enforcement</h1>
       <p class="sub">
         Authorize each request from its URL: build the ownership chain from the
-        matched route pattern + path params, then walk it with
-        <code>authz.Authorize</code>. No DB lookup to resolve ancestry.
-        Backwards compatible with today's org-scoped auth, gated by
-        <code>ScopedPermissionsEnabled</code>, with debug logging that says exactly
-        why a request was allowed or denied.
+        route's path params, then walk it with <code>authz.Authorize</code>. No
+        DB lookup to resolve ancestry. Backwards compatible with today's
+        org-scoped auth by construction rather than by feature flag, with
+        structured logging that says exactly why a request was allowed or
+        denied.
       </p>
 
-      <h2>1. Chain from the route pattern</h2>
+      <h2>1. Chain from the path params</h2>
       <p>
-        A single ordered table maps route-pattern prefixes to the tiers their
-        path params name &mdash; no database read, no denormalized columns.
+        The chain is built from the params the matched route declares &mdash; no
+        database read, no denormalized columns, no prefix table. Only the tiers
+        that can hold a grant contribute a link.
       </p>
-      <pre><code>chainFromPath(fullPath, params, orgID) -&gt; []authz.Link</code></pre>
-      <p>Rules (first match wins, most-specific prefix first):</p>
+      <pre><code>chainFromParams(param func(string) string, orgID string) -&gt; []authz.Link</code></pre>
       <table>
         <tr>
-          <th>Pattern contains</th>
-          <th>Chain</th>
+          <th>Params present</th>
+          <th>Chain (most-specific first)</th>
         </tr>
         <tr>
-          <td><code>:install_id</code></td>
+          <td><code>install_id</code> + <code>app_id</code></td>
+          <td class="tree">
+            [{install,&nbsp;id}, {app,&nbsp;appID}, {org,&nbsp;orgID}]
+          </td>
+        </tr>
+        <tr>
+          <td><code>install_id</code> only</td>
           <td class="tree">
             [{install,&nbsp;id}, {app,&nbsp;""}, {org,&nbsp;orgID}]
           </td>
         </tr>
         <tr>
-          <td><code>:app_id</code></td>
+          <td><code>app_branch_id</code> + <code>app_id</code></td>
+          <td class="tree">
+            [{app_branch,&nbsp;id}, {app,&nbsp;appID}, {org,&nbsp;orgID}]
+          </td>
+        </tr>
+        <tr>
+          <td><code>app_id</code> only</td>
           <td class="tree">[{app,&nbsp;id}, {org,&nbsp;orgID}]</td>
         </tr>
         <tr>
-          <td>org-owned prefix (webhook / vcs / slack)</td>
-          <td class="tree">[{type,&nbsp;id-or-""}, {org,&nbsp;orgID}]</td>
-        </tr>
-        <tr>
-          <td>otherwise (bare / unrecognized)</td>
+          <td>anything else (collections, bare, unrecognized leaf ids)</td>
           <td class="tree">[{org,&nbsp;orgID}]</td>
         </tr>
       </table>
@@ -218,30 +226,48 @@
           resolves name&rarr;row).
         </li>
         <li>
-          An app link inside an install chain carries an empty id (<code
-            >{app, ""}</code
-          >): the walk-up treats an empty-id link as &ldquo;no object grant at
-          this tier, but a type-wildcard here still authorizes.&rdquo;
+          <strong>As built, an app-nested route carries the real app id.</strong>
+          This doc originally specified <code>{app, ""}</code> for every install
+          chain, but several routes name both tiers
+          (<code>/v1/apps/:app_id/installs/…</code>). Using the id when the URL
+          has one is strictly better: app-scoped <em>object</em> grants work
+          there too.
         </li>
-        <li>The org id comes from the org middleware context, as today.</li>
+        <li>
+          Unrecognized leaf params (<code>component_id</code>,
+          <code>workflow_id</code>, <code>step_id</code>, <code>runner_id</code>,
+          &hellip;) create no links. Those tiers have no grant target, so they
+          authorize from their ancestors in the URL &mdash; which is exactly why
+          &sect;3 is load-bearing rather than hygienic.
+        </li>
+        <li>
+          The org link is appended <strong>unconditionally</strong>, outside the
+          tier checks, so no future edit to them can drop it and deny every
+          request at once. A test asserts every param combination ends in a
+          non-empty org link.
+        </li>
       </ul>
+      <div class="callout warn">
+        <strong>An empty app link does not help app-<em>scoped</em> wildcards.</strong>
+        A grant scoped to app A authorizes only if <code>A</code> appears among
+        the chain's ancestors, and on a flat install route the app link's id is
+        empty. Recovering the real app id would need the DB lookup this design
+        exists to avoid. So app-scoped grants take effect only through genuinely
+        app-nested URLs; the empty link is still worth keeping, but only so an
+        org-wide <em>app-typed</em> wildcard can authorize.
+      </div>
 
       <h2>2. The middleware, end to end</h2>
       <pre><code>if global/public: next()
 resolve org      (as today)
 resolve account  (as today)
 perm  := permissions.FromRequest(ctx)          // GET→read, POST→create, …
-chain := chainFromPath(ctx.FullPath(), params, org.ID)
+chain := chainFromParams(ctx.Param, org.ID)
 
-if !ScopedPermissionsEnabled:
-    // legacy: org tier only
-    if acct.AllPermissions.CanPerform(org.ID, perm) != nil: deny (permissionDeniedError)
-    else: allow
-else:
-    err := authz.Authorize(acct.AllPermissions, acct.OrgTypeGrants(org.ID), chain, perm)
-    if err == nil:              allow
-    else if !acct.HasOrg(org.ID): deny "no access to org"   // not even a member
-    else:                        deny (permissionDeniedError with resolved chain)</code></pre>
+authorizedBy, err := authz.Decide(acct.AllPermissions, acct.OrgTypeGrants(org.ID), chain, perm)
+if err == nil:                allow  (log at debug)
+else if !acct.HasOrg(org.ID): deny "no access to this organization"
+else:                         deny (permissionDeniedError, unchanged wording)</code></pre>
       <div class="callout good">
         The org-role fast path is <strong>not</strong> special-cased. An
         org-role holder has <code>CanPerform(org.ID, perm)</code>, and
@@ -251,15 +277,149 @@ else:
         than a branch.
       </div>
 
+      <p>
+        Two structural guarantees stand in for a rollout flag: the unconditional
+        org link (&sect;1), and skipping the object-grant check on empty-id
+        links &mdash; <code>CanPerform</code> treats a <code>"*"</code> key as
+        matching any object, so without the guard an empty app link could
+        authorize everything.
+      </p>
+
+      <h3>Collection endpoints</h3>
+      <p>
+        A collection route has chain <code>[{org, orgID}]</code>, so it is
+        authorized by an org-tier grant and nothing else. Custom roles reach
+        lists the same way the managed read-only role does: a permission entry
+        naming the org.
+      </p>
+      <pre><code>{"resource_type": "org", "resource_id": "&lt;org_id&gt;", "permissions": ["read"]}</code></pre>
+      <p>
+        That resolves to a concrete grant on the org id, lands in
+        <code>AllPermissions</code>, and matches the org link that ends every
+        chain. Write grants stay scoped to specific installs or apps on top of
+        it &mdash; &ldquo;read-all, write-scoped.&rdquo; No filtering layer, no
+        new mechanism.
+      </p>
+      <div class="callout warn">
+        This is explicitly <strong>not</strong> read-restriction. A custom role
+        cannot hide installs from its holder, because the list endpoints return
+        everything the org-tier read grant covers. Per-grant collection
+        filtering remains deferred; if read-restriction becomes a requirement,
+        that doc is a blocker rather than a follow-up.
+      </div>
+      <p>
+        Top-level routes being org-scoped is a deliberate design choice, not a
+        gap. Deprecated flat aliases that still exist beside nested forms
+        (<code>/v1/workflows/:workflow_id</code>,
+        <code>/v1/components/:component_id</code>, <code>/v1/app-branches</code>)
+        therefore authorize at the org tier. This is fail-closed: a custom-role
+        holder is denied through them, never over-granted.
+      </p>
+
       <h2>3. Ancestor-scoped handler queries (the safety rule)</h2>
       <p>
         Enforcement authorizes the <em>claim</em> the URL makes. The handler
         must make the claim true by scoping its primary read to the ancestors in
-        the path (see <a href="index.html#safety-rule">the ancestor-scoping rule</a>). Phase 3
-        includes an audit of the newly-nested handlers to confirm each does
-        this; a leaf fetched by id alone behind a nested route is a finding, not
-        an acceptable pattern.
+        the path (see <a href="index.html#safety-rule">the ancestor-scoping rule</a>). A leaf
+        fetched by id alone behind a nested route is a finding, not an
+        acceptable pattern.
       </p>
+      <p>
+        The audit found four such handlers. All are
+        <strong>pre-existing</strong> &mdash; today's org-tier check already lets
+        any org member reach them &mdash; but two were not scoped by
+        <em>org</em> either, making them cross-tenant rather than merely
+        cross-install:
+      </p>
+      <table>
+        <tr>
+          <th>Handler</th>
+          <th>Was</th>
+          <th>Fix</th>
+        </tr>
+        <tr>
+          <td><code>updateInstallConfig</code></td>
+          <td>
+            received <code>installID</code> and never used it; patched by
+            <code>config_id</code> alone &mdash; <strong>cross-org write</strong>
+          </td>
+          <td>
+            all three queries confined to
+            <code>{id, install_id, org_id}</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>deleteAppSecret</code></td>
+          <td>
+            deleted by <code>secret_id</code> alone &mdash;
+            <strong>cross-org destructive</strong>
+          </td>
+          <td>
+            scoped to <code>{id, app_id, org_id}</code>; 404 when nothing
+            matched
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <code>GetAppConfigGraph</code> / <code>V2</code>
+          </td>
+          <td>
+            passed a client-supplied config id to
+            <code>GetFullAppConfig</code>, which looks up by id alone
+          </td>
+          <td>
+            new <code>requireAppConfigOwner</code> guard before the helper call
+          </td>
+        </tr>
+      </table>
+      <div class="callout bad">
+        <strong
+          >The first two are exploitable on <code>main</code> today, independent
+          of this branch.</strong
+        >
+        Neither query was scoped by org, so any account with a membership in
+        <em>any</em> org and a known <code>config_id</code> or
+        <code>secret_id</code> can patch an install config or delete an app
+        secret belonging to a different tenant. Nothing about the authz redesign
+        introduced this; the redesign only found it.
+        <br /><br />
+        Both fixes are self-contained &mdash; two handlers, no shared helper, no
+        migration &mdash; so they can be cherry-picked into a small PR against
+        <code>main</code> rather than shipping on this branch's timeline. That
+        decision is independent of Phase 4 and should not wait for the rest of
+        the redesign to merge.
+      </div>
+      <div class="callout good">
+        <code>GetFullAppConfig</code> itself was left alone. It has 22 callers
+        and nearly all pass <code>install.AppConfigID</code> read off an
+        already-scoped install, so the helper is fine &mdash; only
+        client-supplied ids are exposed. Guarding the two handlers is the
+        narrow, correct fix; changing the signature would have touched 22 call
+        sites for no gain.
+      </div>
+      <p>
+        Most initial sweep hits were false positives that scope through helpers
+        such as <code>getInstallComponent(ctx, installID, componentID)</code> or
+        <code>findInstallComponent(ctx, orgID, installID, componentID)</code>.
+        Phase 1 had already solved the hardest case correctly:
+        <code>requireWorkflowOwner("installs", "install_id")</code> guards the
+        install- and branch-nested workflow subtrees at the <em>group</em> level,
+        so the handlers shared with the flat route cannot be reached with a
+        mismatched owner.
+      </p>
+      <div class="callout warn">
+        <strong>Left unfixed, deliberately.</strong>
+        <code>runner_get_app_config.go</code> has the same
+        client-supplied-id pattern but is a runner-token route that does not go
+        through the org middleware &mdash; a different auth model, not guessed
+        at here. Separately,
+        <code>get_install_sandbox_run.go</code>'s <code>@Router</code> claims
+        <code>/v1/installs/{install_id}/sandbox-runs/{run_id}</code> while the
+        route is registered at <code>/v1/installs/sandbox-runs/:run_id</code>
+        with no <code>install_id</code>. The code is correctly org-scoped; the
+        annotation is wrong, so the generated SDK and docs describe a path that
+        does not exist.
+      </div>
 
       <h2>4. Debug logging</h2>
       <p>
@@ -310,62 +470,123 @@ else:
         the full chain detail for operators.
       </p>
 
-      <h2>5. Files (anticipated)</h2>
+      <h2>5. Files (as built)</h2>
       <ul>
         <li>
-          <code>services/ctl-api/internal/middlewares/org/org.go</code> &mdash;
-          the flow above.
+          <code>middlewares/org/chain.go</code> +
+          <code>chain_test.go</code> (new) &mdash;
+          <code>chainFromParams</code>, taking a
+          <code>func(string) string</code> so tests drive it from a map rather
+          than a gin context.
         </li>
         <li>
-          <code>services/ctl-api/internal/middlewares/org/chain.go</code> (+
-          <code>chain_test.go</code>) &mdash; <code>chainFromPath</code> + the
-          route-pattern table (new).
+          <code>middlewares/org/org.go</code> &mdash; the flow above plus
+          <code>logDecision</code>. Params stay <code>L</code> / <code>DB</code>;
+          no <code>Cfg</code> threading, since there is no flag.
         </li>
         <li>
-          <code>internal/pkg/cctx/…</code> &mdash; reuse
-          <code>SetOrgAuthorized</code> only if collection filtering needs it;
-          otherwise omit.
+          <code>pkg/authz/authorize.go</code> &mdash; new
+          <code>Decide</code> (returns the reason) and
+          <code>ChainString</code>; <code>Authorize</code> delegates to
+          <code>Decide</code> so its Phase 2 tests keep passing unchanged.
+          Empty-id links no longer take the object-grant path.
         </li>
-        <li>No new migrations.</li>
+        <li>
+          <code>app/account.go</code> &mdash;
+          <code>OrgTypeGrants(orgID)</code> and <code>HasOrg(orgID)</code>.
+        </li>
+        <li>
+          <code>installs/service/update_install_config.go</code>,
+          <code>apps/service/delete_app_secret.go</code>,
+          <code>apps/service/get_app_config_graph.go</code> &mdash; the
+          &sect;3 scoping fixes.
+        </li>
+        <li>No new migrations. No <code>config.go</code> change.</li>
       </ul>
 
       <h2>6. Acceptance</h2>
       <ul>
         <li>
-          <strong><code>ScopedPermissionsEnabled=false</code>:</strong> behavior
-          byte-identical to current main; existing authz integration tests pass
-          unchanged.
+          <strong>Backwards compatibility</strong> holds by construction, not by
+          flag: for an account with no custom role the walk-up reduces to the
+          legacy org-tier check (&sect;2). No separate legacy code path exists to
+          test.
         </li>
         <li>
-          <strong><code>=true</code>:</strong> managed org-role holders reach
-          every route; an account holding only a custom role with
+          An account holding only a custom role with
           <code>read·install·X</code> can GET install-X nested routes and is
-          denied on install-Y and on bare routes; a custom role with
-          <code>all·app·A</code> reaches every install under A via
-          install-nested routes; a non-member is denied &ldquo;no access to
-          org.&rdquo;
+          denied on install-Y; a custom role with <code>all·app·A</code> reaches
+          every install under A via <em>app-nested</em> routes; a non-member is
+          denied &ldquo;no access to this organization.&rdquo;
         </li>
         <li>
-          <code>chainFromPath</code> table tests cover install / app / org-owned
-          / bare / name-as-id.
+          <code>chainFromParams</code> tests cover install / app-nested install
+          / branch / app / collection / bare / name-as-id, plus the two
+          invariants: every chain ends in a non-empty org link, and unrecognized
+          leaf params contribute nothing.
         </li>
         <li>
           Denials log the chain and the actionable <code>missing</code> line.
         </li>
       </ul>
 
-      <h2>7. Review checkpoint</h2>
+      <h2>7. Decisions settled</h2>
       <ol>
         <li>
-          Confirm the empty-id app-link semantics on install routes: app-scoped
-          <em>object</em> grants do not apply when the app id isn't in the URL
-          &mdash; only app <em>wildcard</em> grants do. Correct, but the one
-          subtle point worth an explicit sign-off.
+          <strong>No feature toggle</strong> &mdash; the new path is a provable
+          superset of the old one, and a flag would revoke deliberately granted
+          access rather than restore a safe baseline.
         </li>
         <li>
-          Confirm log levels (deny at info, allow at debug) and the field set.
+          <strong>Empty-id app links</strong> authorize only org-wide app-typed
+          wildcards, never app-scoped grants and never object grants.
+        </li>
+        <li>
+          <strong>Top-level routes are org-scoped by design</strong>, including
+          the deprecated flat aliases. Fail-closed, not a gap.
+        </li>
+        <li>
+          <strong>Collection filtering is out of scope.</strong> Custom roles
+          reach lists via an org-tier read entry; read-restriction is not
+          delivered by this phase.
+        </li>
+        <li>
+          Deny logs at info, allow at debug.
         </li>
       </ol>
+
+      <h2>8. Carried into later phases</h2>
+      <ul>
+        <li>
+          <strong>Phase 4 (dashboard):</strong>
+          <code>SetAccountOrgRole</code> <em>replaces</em> an account's roles, so
+          an account holds exactly one role per org and a custom role cannot be
+          layered on top of managed read-only. A custom role must therefore
+          carry its own org read entry to be usable &mdash; the role builder
+          should include it by default rather than making authors remember it.
+        </li>
+        <li>
+          <strong>Phase 4:</strong> <code>resolveResource</code> requires org
+          entries to name the org id literally; accepting
+          <code>"current"</code> would smooth the request shape.
+        </li>
+        <li>
+          <strong>Phase 4:</strong> the role pickers still key options on
+          <code>role_type</code>, so custom roles remain visible but unusable
+          (carried over from Phase 2).
+        </li>
+        <li>
+          <strong>Candidate for a separate PR against <code>main</code>:</strong>
+          the <code>updateInstallConfig</code> and
+          <code>deleteAppSecret</code> cross-org fixes in &sect;3, which address
+          a live exposure on <code>main</code> and need not wait for the
+          redesign.
+        </li>
+        <li>
+          <strong>Unscheduled:</strong> the runner-route and swagger-annotation
+          findings in &sect;3.
+        </li>
+      </ul>
     </div>
   </body>
 </html>

@@ -618,9 +618,10 @@
           Scoped access via custom roles is strictly additive.
         </li>
         <li>
-          <strong>Rollout is gated</strong> by
-          <code>ScopedPermissionsEnabled</code>. Off = today's org-scoped behavior,
-          byte-for-byte.
+          <strong>No rollout flag is needed.</strong> The walk-up is a superset
+          of the org-tier check: managed policies key only on the org id, so for
+          an account without a custom role it reduces to today's behavior
+          exactly.
         </li>
       </ul>
 
@@ -645,8 +646,8 @@
         ><span class="n">3</span>Enforcement
         <div class="d">
           Middleware authorizing from the URL; one code path that keeps org
-          roles working; actionable debug logging. Gated by
-          <code>ScopedPermissionsEnabled</code>.
+          roles working; actionable decision logging. No feature flag, plus the
+          ancestor-scoping audit and its four fixes.
         </div></a
       >
       <a class="phase" href="phase-4-dashboard.html"

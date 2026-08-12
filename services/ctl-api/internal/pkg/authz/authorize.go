@@ -1,6 +1,8 @@
 package authz
 
 import (
+	"strings"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 )
@@ -22,9 +24,22 @@ type Link struct {
 //
 // wildcards is the account's TypeGrants entry for the org the chain ends in.
 func Authorize(perms permissions.Set, wildcards map[app.Level][]app.TypeGrant, chain []Link, verb permissions.Permission) error {
+	_, err := Decide(perms, wildcards, chain, verb)
+	return err
+}
+
+// Decide is Authorize with the reason it allowed the verb, for operator
+// logging: "grant:install:inl_…", "wildcard:app", or "none" on denial.
+func Decide(perms permissions.Set, wildcards map[app.Level][]app.TypeGrant, chain []Link, verb permissions.Permission) (string, error) {
 	for i, link := range chain {
-		if err := perms.CanPerform(link.ID, verb); err == nil {
-			return nil
+		// An empty id names a tier the URL did not identify, so there is no
+		// object to hold a grant. Skipping the check also keeps a "*" key in a
+		// permission set from authorizing through such a link, since
+		// CanPerform treats "*" as matching any object.
+		if link.ID != "" {
+			if err := perms.CanPerform(link.ID, verb); err == nil {
+				return "grant:" + string(link.Type) + ":" + link.ID, nil
+			}
 		}
 
 		for _, grant := range wildcards[link.Type] {
@@ -32,11 +47,11 @@ func Authorize(perms permissions.Set, wildcards map[app.Level][]app.TypeGrant, c
 				continue
 			}
 			if grant.ScopeID == "" {
-				return nil
+				return "wildcard:" + string(link.Type), nil
 			}
 			for _, ancestor := range chain[i+1:] {
 				if ancestor.ID == grant.ScopeID {
-					return nil
+					return "wildcard:" + string(link.Type) + ":scoped:" + grant.ScopeID, nil
 				}
 			}
 		}
@@ -46,8 +61,21 @@ func Authorize(perms permissions.Set, wildcards map[app.Level][]app.TypeGrant, c
 	if len(chain) > 0 {
 		objectID = chain[0].ID
 	}
-	return permissions.NoAccessError{
+	return "none", permissions.NoAccessError{
 		Permission: verb,
 		ObjectID:   objectID,
 	}
+}
+
+// String renders a chain for logs: install:inl_… > app:* > org:org_…
+func ChainString(chain []Link) string {
+	parts := make([]string, 0, len(chain))
+	for _, link := range chain {
+		id := link.ID
+		if id == "" {
+			id = "*"
+		}
+		parts = append(parts, string(link.Type)+":"+id)
+	}
+	return strings.Join(parts, " > ")
 }

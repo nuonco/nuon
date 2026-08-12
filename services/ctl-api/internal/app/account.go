@@ -125,6 +125,18 @@ func (a *Account) AfterQuery(tx *gorm.DB) error {
 	return nil
 }
 
+// OrgTypeGrants returns the account's wildcard grants in an org, indexed by
+// resource type. Nil for an account with no custom roles there.
+func (a *Account) OrgTypeGrants(orgID string) map[Level][]TypeGrant {
+	return a.TypeGrants[orgID]
+}
+
+// HasOrg reports whether the account holds any role in the org, which
+// distinguishes "not a member" from "a member lacking a permission".
+func (a *Account) HasOrg(orgID string) bool {
+	return slices.Contains(a.OrgIDs, orgID)
+}
+
 func (*Account) JoinTables() []migrations.JoinTable {
 	return []migrations.JoinTable{
 		{
