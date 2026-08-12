@@ -15,6 +15,12 @@ type GetSandboxBuildOCIRegistryRequest struct {
 	AppID string `json:"app_id" validate:"required"`
 }
 
+// GetSandboxBuildOCIRegistry lives in the shared activity set because both the
+// apps namespace (building the sandbox artifact) and the installs namespace
+// (resolving it when planning a sandbox run) schedule it. Activities are
+// registered per worker, so an apps-only registration is invisible to installs
+// until it is called.
+//
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
 func (a *Activities) GetSandboxBuildOCIRegistry(ctx context.Context, req GetSandboxBuildOCIRegistryRequest) (*configs.OCIRegistryRepository, error) {
