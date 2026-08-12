@@ -13,6 +13,7 @@ export interface IWorkflowRunPanel extends IPanel {
   activeStep?: TInstallWorkflowStep
   onSelectStep: (step: TInstallWorkflowStep) => void
   onJumpToActive: () => void
+  appBranchId?: string
   appBranchRunId?: string
   runTitle: string
   status: string
@@ -26,6 +27,7 @@ export const WorkflowRunPanel = ({
   activeStep,
   onSelectStep,
   onJumpToActive,
+  appBranchId,
   appBranchRunId,
   runTitle,
   status,
@@ -70,7 +72,10 @@ export const WorkflowRunPanel = ({
 
           {selectedStep && (
             <div className="flex flex-col gap-2">
-              <div ref={stepDetailRef} className="flex items-baseline gap-3 scroll-mt-4">
+              <div
+                ref={stepDetailRef}
+                className="flex items-baseline gap-3 scroll-mt-4"
+              >
                 <Text variant="h3" weight="strong">
                   Step details
                 </Text>
@@ -80,6 +85,7 @@ export const WorkflowRunPanel = ({
               </div>
               <WorkflowStepDetail
                 step={selectedStep}
+                appBranchId={appBranchId}
                 appBranchRunId={appBranchRunId}
                 onClose={() => {}}
               />
