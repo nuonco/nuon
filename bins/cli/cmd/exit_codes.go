@@ -9,7 +9,7 @@ func (c *cli) exitCodesCmd() *cobra.Command {
 		Use:               "exit-codes",
 		Short:             "Learn about exit codes",
 		PersistentPreRunE: c.persistentPreRunE,
-		Annotations:       skipAuthAnnotation(),
+		Annotations:       annotations(skipAuthAnnotation(), outputsAnnotation(OutputTable)),
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Printf("Exit codes:\n")
 			cmd.Printf("  0 - Success\n")

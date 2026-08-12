@@ -12,7 +12,7 @@ func (c *cli) loginCmd() *cobra.Command {
 		Use:               "login",
 		Short:             "Login to Nuon (deprecated)",
 		PersistentPreRunE: c.persistentPreRunE,
-		Annotations:       skipAuthAnnotation(),
+		Annotations:       annotations(skipAuthAnnotation(), outputsAnnotation(OutputTable)),
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			svc := auth.New(c.apiClient, c.cfg)
 			return svc.Login(cmd.Context())

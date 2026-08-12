@@ -7,23 +7,22 @@ import (
 
 	"github.com/pkg/browser"
 
-	"github.com/nuonco/nuon/pkg/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) BrowseAPI(ctx context.Context, asJSON bool) error {
-	ui.Line(ctx, "opening up api docs with local api-key and org-id preauthorized")
-
 	params := url.Values{}
 	params.Add("org_id", s.cfg.OrgID)
 	params.Add("api_key", "Bearer "+s.cfg.APIToken)
 
-	url := fmt.Sprintf("%s/docs/index.html?%s", s.cfg.APIURL, params.Encode())
+	docsURL := fmt.Sprintf("%s/docs/index.html?%s", s.cfg.APIURL, params.Encode())
 
 	if asJSON {
-		ui.Line(ctx, "%s", url)
-	} else {
-		browser.OpenURL(url)
+		ui.PrintJSON(map[string]string{"url": docsURL})
+		return nil
 	}
 
+	ui.PrintLn("opening up api docs with local api-key and org-id preauthorized")
+	browser.OpenURL(docsURL)
 	return nil
 }

@@ -128,7 +128,7 @@ func (a *Service) selectAPIURL() (string, error) {
 
 	// Print dim context line showing URL and source
 	source := a.cfg.APIURLSource
-	fmt.Println(styles.TextDim.Render(fmt.Sprintf("  %s (%s)", configuredURL, source)))
+	ui.Println(styles.TextDim.Render(fmt.Sprintf("  %s (%s)", configuredURL, source)))
 
 	confirmed, err := bubbles.InlineConfirm(
 		fmt.Sprintf("Login to %s", displayName),
