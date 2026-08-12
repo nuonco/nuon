@@ -226,8 +226,9 @@ export const CreateBranchButton = ({
   const modal = <CreateBranchModalContainer />
   return (
     <Button variant="secondary" onClick={() => addModal(modal)} {...props}>
-      <Icon variant="PlusIcon" size={16} />
+      {props?.isMenuButton ? null : <Icon variant="PlusIcon" size={16} />}
       Create branch
+      {props?.isMenuButton ? <Icon variant="PlusIcon" size={16} /> : null}
     </Button>
   )
 }
