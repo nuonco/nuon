@@ -9,8 +9,7 @@ import (
 
 func (s *Service) DeleteStaticToken(ctx context.Context, tokenID string, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
 	if tokenID == "" {

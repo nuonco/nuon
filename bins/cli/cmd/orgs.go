@@ -132,7 +132,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:  "Connect GitHub account to your Nuon org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.ConnectGithub(cmd.Context())
+			return svc.ConnectGithub(cmd.Context(), PrintJSON)
 		}),
 	}
 	connectGithubCmd.MarkFlagRequired("org-id")
@@ -174,7 +174,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:  "Deselect your current org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.Deselect(cmd.Context())
+			return svc.Deselect(cmd.Context(), PrintJSON)
 		}),
 	}
 	orgsCmd.AddCommand(deselectOrgCmd)

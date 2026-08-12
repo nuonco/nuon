@@ -9,8 +9,7 @@ import (
 
 func (s *Service) DeleteVCSConnection(ctx context.Context, connID string, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
 	connID, err := lookup.VCSConnectionID(ctx, s.api, connID)

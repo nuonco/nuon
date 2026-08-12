@@ -11,8 +11,7 @@ import (
 
 func (s *Service) CreateWebhook(ctx context.Context, webhookURL, webhookSecret string, subscription SubscriptionFlags, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
 	view := ui.NewGetView()

@@ -10,8 +10,7 @@ import (
 
 func (s *Service) UpdateUserRole(ctx context.Context, userID, role string, asJSON bool) error {
 	if s.cfg.OrgID == "" {
-		s.printOrgNotSetMsg()
-		return nil
+		return ui.PrintError(ui.ErrOrgNotSet())
 	}
 
 	view := ui.NewGetView()
