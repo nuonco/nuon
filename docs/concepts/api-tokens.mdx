@@ -1,21 +1,26 @@
 ---
 title: "API Tokens"
 icon: "key"
-description: "Org-scoped tokens for authenticating to the Nuon Control Plane API."
+description: "Durable tokens for authenticating to the Nuon Control Plane API."
 keywords: ["API token", "access token", "Bearer token", "authentication", "static token", "org token", "programmatic access", "token", "tokens"]
 ---
 
 An **API token** authenticates requests to the [Nuon Control Plane API](/concepts/api). Use one to call the API, drive the CLI in CI/CD, or integrate Nuon into your own product.
+
+## Token types
+
+A token is issued against one of two identities:
+
+- **Service account token** (the default) — the token is backed by its own [service account](/concepts/service-accounts), which carries the role you choose. The token acts as that service account and only grants access to the current org. This service account is created and managed for you. If you want a service account you manage explicitly and can mint multiple tokens for, create one directly instead.
+- **Personal token** — the token is issued against your own account and uses your existing roles. It has the same access as you (including your other orgs) and stops working if your account loses access. Personal tokens have no role property.
 
 ## Token properties
 
 | Property | Description |
 | --- | --- |
 | **Name** | A human-readable label to identify the token. Required. |
-| **Role** | The permissions the token grants. Defaults to `org_read_only`. See [Access control](/concepts/access-control) for the available roles. |
+| **Role** | Service account tokens only. The permissions the token grants. Defaults to `org_read_only`. See [Access control](/concepts/access-control) for the available roles. |
 | **Duration** | How long the token is valid. Defaults to `8760h` (one year). |
-
-Each API token is backed by its own [service account](/concepts/service-accounts), which carries the token's role — the token acts as that service account when it calls the API. This service account is created and managed for you. If you want a service account you manage explicitly and can mint multiple tokens for, create one directly instead.
 
 Creating and managing API tokens requires **org admin** access.
 
@@ -37,6 +42,12 @@ By default, tokens will be read-only and expire after one year. Override these i
 
 ```sh
 nuon orgs api-tokens create --name ci-token --role org_admin --duration 720h
+```
+
+Add `--personal` to create a personal token issued against your own account instead (cannot be combined with `--role`):
+
+```sh
+nuon orgs api-tokens create --name my-token --personal
 ```
 
 <Note>

@@ -25,7 +25,7 @@ The same role set applies everywhere an identity is created. You choose a role w
 - Create an [API token](/concepts/api-tokens)
 - Create an [OIDC trust policy](/concepts/oidc-federation)
 
-[API tokens](/concepts/api-tokens) and [OIDC trust policies](/concepts/oidc-federation) are each backed by a dedicated [service account](/concepts/service-accounts) that carries the role — so a token or an exchanged token acts as that service account, with exactly the access its role grants.
+[API tokens](/concepts/api-tokens) (unless created as personal tokens) and [OIDC trust policies](/concepts/oidc-federation) are each backed by a dedicated [service account](/concepts/service-accounts) that carries the role — so a token or an exchanged token acts as that service account, with exactly the access its role grants. A personal API token instead acts as the team member who created it, with their role.
 
 <Note>
 An identity holds one role at a time; assigning a new role replaces the old one.

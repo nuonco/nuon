@@ -52,6 +52,20 @@ export const ApiTokensTable = ({
         ),
       },
       {
+        id: 'identity',
+        header: 'Type',
+        cell: (props) => {
+          const token = props.row.original
+          const isPersonal =
+            !!token.account_id && token.account_id === token.created_by_id
+          return (
+            <Text variant="body">
+              {isPersonal ? 'Personal' : 'Service account'}
+            </Text>
+          )
+        },
+      },
+      {
         header: 'Role',
         accessorKey: 'role',
         cell: (props) => (
@@ -101,6 +115,7 @@ export const ApiTokensTable = ({
 
 const skeletonColumns: ColumnDef<TStaticToken>[] = [
   { header: 'Name', accessorKey: 'name' },
+  { header: 'Type', id: 'identity' },
   { header: 'Role', accessorKey: 'role' },
   { header: 'Created', accessorKey: 'created_at' },
   { header: 'Expires', accessorKey: 'expires_at' },
