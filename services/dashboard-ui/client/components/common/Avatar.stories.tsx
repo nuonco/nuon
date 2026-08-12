@@ -108,6 +108,29 @@ export const Sizes = () => (
   </div>
 )
 
+export const Shapes = () => (
+  <div className="flex items-center gap-6">
+    <div className="text-center space-y-2">
+      <Avatar name="John Doe" />
+      <Text variant="label" className="text-xs">
+        square (default)
+      </Text>
+    </div>
+    <div className="text-center space-y-2">
+      <Avatar name="John Doe" shape="circle" />
+      <Text variant="label" className="text-xs">
+        circle
+      </Text>
+    </div>
+    <div className="text-center space-y-2">
+      <Avatar src="https://github.com/nat.png" alt="Nat" shape="circle" />
+      <Text variant="label" className="text-xs">
+        circle with image
+      </Text>
+    </div>
+  </div>
+)
+
 export const WithImage = () => (
   <div className="space-y-6">
     <div className="space-y-3">

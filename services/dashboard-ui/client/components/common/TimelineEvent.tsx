@@ -14,7 +14,7 @@ export interface ITimelineEvent
   badge?: IBadge
   caption?: React.ReactNode | string
   createdAt: string
-  createdBy?: string
+  createdBy?: React.ReactNode
   status: TStatusType
   title: React.ReactNode | string
   underline?: React.ReactNode | string
@@ -70,7 +70,7 @@ export const TimelineEvent = ({
           <span className="flex items-center gap-2">           
             <Text variant="subtext" theme="neutral">
               <Time time={createdAt} format="relative" variant="subtext" />{' '}
-              {createdBy ? `by ${createdBy}` : null}
+              {createdBy ? <>by {createdBy}</> : null}
             </Text>
              {actions ? <span>{actions}</span> : null}
           </span>

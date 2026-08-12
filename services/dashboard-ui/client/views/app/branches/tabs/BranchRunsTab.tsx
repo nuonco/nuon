@@ -7,6 +7,7 @@ import { useApp } from '@/hooks/use-app'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { useOrg } from '@/hooks/use-org'
 import { WorkflowTimelineComponent } from '@/components/workflows/WorkflowTimeline'
+import { ShowPreviewRunsContainer as ShowPreviewRuns } from '@/components/branches/filters/ShowPreviewRuns'
 import { getBranchWorkflowRuns } from '@/lib'
 import { BranchDetail } from '../BranchDetail'
 import { BranchTabPage } from './BranchTabPage'
@@ -22,12 +23,20 @@ const BranchRunsContent = () => {
   const orgId = org.id!
   const appId = app.id!
   const offset = Number(searchParams.get('offset') ?? 0)
+  const showPreviews = searchParams.get('preview') !== 'false'
   const basePath = `/${orgId}/apps/${appId}/branches/${branchId}`
 
   const { data: runsResult, isLoading } = useQuery({
-    queryKey: ['branch-runs', orgId, appId, branchId, offset],
+    queryKey: ['branch-runs', orgId, appId, branchId, offset, showPreviews],
     queryFn: () =>
-      getBranchWorkflowRuns({ orgId, appId, branchId, limit: LIMIT, offset }),
+      getBranchWorkflowRuns({
+        orgId,
+        appId,
+        branchId,
+        limit: LIMIT,
+        offset,
+        planonly: showPreviews,
+      }),
     enabled: !!orgId && !!appId && !!branchId,
     refetchInterval: 5000,
     placeholderData: keepPreviousData,
@@ -40,6 +49,7 @@ const BranchRunsContent = () => {
       tab="Runs"
       heading="Workflow runs"
       subheading="Every deployment of this branch, newest first."
+      actions={<ShowPreviewRuns />}
     >
       {isLoading ? (
         <TimelineSkeleton eventCount={3} />
