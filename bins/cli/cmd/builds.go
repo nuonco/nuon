@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/nuonco/nuon/bins/cli/internal/services/builds"
 )
 
 // newBuildsCmd constructs a new builds command
@@ -31,7 +29,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Short:   "List builds",
 		Long:    "List your app's builds",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := builds.New(c.apiClient, c.cfg)
+			svc := c.builds
 			return svc.List(cmd.Context(), compID, appID, offset, limit, PrintJSON)
 		}),
 	}
@@ -47,7 +45,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Short: "Get build",
 		Long:  "Get component build",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := builds.New(c.apiClient, c.cfg)
+			svc := c.builds
 			return svc.Get(cmd.Context(), appID, compID, buildID, PrintJSON)
 		}),
 	}
@@ -64,7 +62,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Short: "Create a build",
 		Long:  "Create a build of an app component",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := builds.New(c.apiClient, c.cfg)
+			svc := c.builds
 			return svc.Create(cmd.Context(), appID, compID, PrintJSON)
 		}),
 	}
@@ -79,7 +77,7 @@ func (c *cli) buildsCmd() *cobra.Command {
 		Short: "View build logs",
 		Long:  "View build logs by components and build ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := builds.New(c.apiClient, c.cfg)
+			svc := c.builds
 			return svc.Logs(cmd.Context(), appID, compID, buildID, PrintJSON)
 		}),
 	}

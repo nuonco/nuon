@@ -49,7 +49,7 @@ func (c *cli) initCmd() *cobra.Command {
 		Annotations:       tuiAnnotation(TUIContextual),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil }, // Skip auth for local init
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			params := apps.InitParams{
 				PrebuiltTemplate: prebuildTemplate,
 			}
@@ -135,7 +135,7 @@ func (c *cli) initCmd() *cobra.Command {
 	// 		Long:              fmt.Sprintf("Generate the %s configuration file", configFileName),
 	// 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error { return nil },
 	// 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-	// 			svc := apps.New(c.v, c.apiClient, c.cfg)
+	// 			svc := c.apps
 	// 			return svc.InitConfigFile(cmd.Context(), initPath, configFileName, initEnableDefaults, initEnableComments, initOverwrite)
 	// 		}),
 	// 	}
@@ -194,7 +194,7 @@ func (c *cli) initSandboxCmd() *cobra.Command {
 				VarFiles:         varFiles,
 			}
 
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			err := svc.InitSandboxConfig(cmd.Context(), genParams, params)
 			if err != nil {
 				return err
@@ -255,7 +255,7 @@ func (c *cli) initStackCmd() *cobra.Command {
 				RunnerNestedTemplateURL: runnerNestedTemplateURL,
 			}
 
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			err := svc.InitStackConfig(cmd.Context(), genParams, params)
 			if err != nil {
 				return err
@@ -304,7 +304,7 @@ func (c *cli) initRunnerCmd() *cobra.Command {
 				InitScriptURL: initScriptURL,
 			}
 
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			err := svc.InitRunnerConfig(cmd.Context(), genParams, params)
 			if err != nil {
 				return err
@@ -373,7 +373,7 @@ func (c *cli) initComponentTerraformModuleCmd() *cobra.Command {
 				DriftSchedule:    driftSchedule,
 			}
 
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			err := svc.InitTerraformModuleComponentConfig(cmd.Context(), genParams, params)
 			if err != nil {
 				return err
@@ -464,7 +464,7 @@ func (c *cli) initComponentHelmChartCmd() *cobra.Command {
 				DriftSchedule:    driftSchedule,
 			}
 
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			err := svc.InitHelmChartComponentConfig(cmd.Context(), genParams, params)
 			if err != nil {
 				return err
@@ -535,7 +535,7 @@ func (c *cli) initComponentKubernetesManifestCmd() *cobra.Command {
 				DriftSchedule: driftSchedule,
 			}
 
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			err := svc.InitKubernetesManifestComponentConfig(cmd.Context(), genParams, params)
 			if err != nil {
 				return err
@@ -629,7 +629,7 @@ func (c *cli) initActionCmd() *cobra.Command {
 				Dependencies:     dependencies,
 			}
 
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			err := svc.InitActionConfig(cmd.Context(), genParams, params)
 			if err != nil {
 				return err
