@@ -38,6 +38,19 @@ type Install struct {
 	LifecyclePhase lifecyclephase.LifecyclePhase `json:"lifecycle_phase,omitzero" gorm:"type:jsonb" swaggertype:"object" temporaljson:"lifecycle_phase,omitzero,omitempty"`
 	labels.Labeled
 
+	// LabelTemplates holds label values written with the .nuon interpolation
+	// syntax. Rendered values are materialized into Labels whenever install
+	// state changes, so downstream consumers (SQL label matching, subscription
+	// dispatch, pickers) only ever read literal values. NOTE: this comment ends
+	// up in the swagger spec, which swag executes as a Go text/template —
+	// literal moustaches here break spec generation.
+	LabelTemplates labels.Labels `json:"label_templates,omitzero" gorm:"default null" swaggertype:"object,string" temporaljson:"label_templates,omitzero,omitempty"`
+
+	// AppDefaultLabels is the snapshot of the app's default labels applied to
+	// this install. It is the lock set for label mutation endpoints, and lets
+	// reconciliation tell a removed default apart from a user-set label.
+	AppDefaultLabels labels.Labels `json:"app_default_labels,omitzero" gorm:"default null" swaggertype:"object,string" temporaljson:"app_default_labels,omitzero,omitempty"`
+
 	// used for RLS
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
