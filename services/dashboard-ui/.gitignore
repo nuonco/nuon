@@ -39,6 +39,9 @@ config.yml
 config.json
 .planning/
 
+# scratch / temp
+tmp/
+
 # playwright e2e
 e2e/.auth/
 e2e/.results/
