@@ -5,6 +5,7 @@ import (
 	stdhttp "net/http"
 
 	"github.com/cockroachdb/errors"
+	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
@@ -13,23 +14,32 @@ import (
 )
 
 // Construct an API client for the services to use.
-func (c *cli) initAPIClient() error {
+func newAPIClient(v *validator.Validate, cfg *config.Config) (nuon.Client, error) {
 	var transport stdhttp.RoundTripper
 	if Debug {
 		transport = httpdebug.NewTransport(nil)
 	}
 
 	api, err := nuon.New(
-		nuon.WithValidator(c.v),
-		nuon.WithAuthToken(c.cfg.APIToken),
-		nuon.WithOrgID(c.cfg.OrgID),
-		nuon.WithURL(c.cfg.APIURL),
+		nuon.WithValidator(v),
+		nuon.WithAuthToken(cfg.APIToken),
+		nuon.WithOrgID(cfg.OrgID),
+		nuon.WithURL(cfg.APIURL),
 		nuon.WithHTTPTransport(transport),
 	)
 	if err != nil {
-		return fmt.Errorf("unable to init API client: %w", err)
+		return nil, fmt.Errorf("unable to init API client: %w", err)
 	}
 	api.SetClientVersion(version.Version)
+
+	return api, nil
+}
+
+func (c *cli) initAPIClient() error {
+	api, err := newAPIClient(c.v, c.cfg)
+	if err != nil {
+		return err
+	}
 
 	c.apiClient = api
 	return nil

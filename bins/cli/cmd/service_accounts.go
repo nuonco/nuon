@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/nuonco/nuon/bins/cli/internal/services/serviceaccounts"
 )
 
 func (c *cli) serviceAccountsCmd() *cobra.Command {
@@ -32,7 +30,7 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List service accounts for the current org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := serviceaccounts.New(c.apiClient, c.cfg)
+			svc := c.serviceAccounts
 			return svc.ListServiceAccounts(cmd.Context(), includeRunners, offset, limit, PrintJSON)
 		}),
 	}
@@ -45,7 +43,7 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 		Use:   "create",
 		Short: "Create a service account for the current org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := serviceaccounts.New(c.apiClient, c.cfg)
+			svc := c.serviceAccounts
 			return svc.CreateServiceAccount(cmd.Context(), name, role, PrintJSON)
 		}),
 	}
@@ -59,7 +57,7 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 		Use:   "update-name",
 		Short: "Update the name of a service account",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := serviceaccounts.New(c.apiClient, c.cfg)
+			svc := c.serviceAccounts
 			return svc.UpdateServiceAccountName(cmd.Context(), id, name, PrintJSON)
 		}),
 	}
@@ -73,7 +71,7 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 		Use:   "update-role",
 		Short: "Update the role of a service account",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := serviceaccounts.New(c.apiClient, c.cfg)
+			svc := c.serviceAccounts
 			return svc.UpdateServiceAccountRole(cmd.Context(), id, role, PrintJSON)
 		}),
 	}
@@ -87,7 +85,7 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 		Use:   "delete",
 		Short: "Delete a service account for the current org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := serviceaccounts.New(c.apiClient, c.cfg)
+			svc := c.serviceAccounts
 			return svc.DeleteServiceAccount(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -106,7 +104,7 @@ func (c *cli) serviceAccountsCmd() *cobra.Command {
 		Short: "Create an API token for a service account",
 		Long:  "Create an API token for a service account. The token is only shown once.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := serviceaccounts.New(c.apiClient, c.cfg)
+			svc := c.serviceAccounts
 			return svc.CreateServiceAccountToken(cmd.Context(), id, duration, invalidate, PrintJSON)
 		}),
 	}

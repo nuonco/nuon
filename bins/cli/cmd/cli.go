@@ -16,7 +16,22 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/oidctoken"
+	"github.com/nuonco/nuon/bins/cli/internal/services/actions"
+	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
 	"github.com/nuonco/nuon/bins/cli/internal/services/auth"
+	"github.com/nuonco/nuon/bins/cli/internal/services/builds"
+	"github.com/nuonco/nuon/bins/cli/internal/services/components"
+	"github.com/nuonco/nuon/bins/cli/internal/services/docs"
+	"github.com/nuonco/nuon/bins/cli/internal/services/installs"
+	"github.com/nuonco/nuon/bins/cli/internal/services/mcpserver"
+	"github.com/nuonco/nuon/bins/cli/internal/services/orgs"
+	"github.com/nuonco/nuon/bins/cli/internal/services/roles"
+	"github.com/nuonco/nuon/bins/cli/internal/services/runbooks"
+	"github.com/nuonco/nuon/bins/cli/internal/services/secrets"
+	"github.com/nuonco/nuon/bins/cli/internal/services/serviceaccounts"
+	"github.com/nuonco/nuon/bins/cli/internal/services/triggers"
+	"github.com/nuonco/nuon/bins/cli/internal/services/variables"
+	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
@@ -25,6 +40,23 @@ type cli struct {
 	apiClient nuon.Client
 	ctx       context.Context
 	cfg       *config.Config
+
+	actions         *actions.Service
+	apps            *apps.Service
+	auth            *auth.Service
+	builds          *builds.Service
+	components      *components.Service
+	docs            *docs.Service
+	installs        *installs.Service
+	mcpserver       *mcpserver.Service
+	orgs            *orgs.Service
+	roles           *roles.Service
+	runbooks        *runbooks.Service
+	secrets         *secrets.Service
+	serviceAccounts *serviceaccounts.Service
+	triggers        *triggers.Service
+	variables       *variables.Service
+	version         *version.Service
 
 	currentUserOnce sync.Once
 	currentUser     *models.AppAccount
@@ -115,12 +147,11 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 		c.cfg.Interactive = false
 	}
 
-	if err := c.initAPIClient(); err != nil {
-		return errors.Wrap(err, "unable to initialize api client")
-	}
-
-	// Skip user initialization for auth commands (login, logout)
-	if !hasSkipAuthAnnotation(cmd) {
+	// The auth token must be resolved before the fx graph is built: services
+	// capture the API client at construction, so a client built with an empty
+	// token cannot be swapped out afterwards.
+	skipAuth := hasSkipAuthAnnotation(cmd)
+	if !skipAuth {
 		if c.cfg.APIToken == "" {
 			if err := c.tryAmbientOIDCExchange(cmd.Context()); err != nil {
 				return err
@@ -129,6 +160,13 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 		if c.cfg.APIToken == "" {
 			return errors.New("no API token configured; run `nuon login`, set api_token in config, or configure OIDC federation (NUON_OIDC_TOKEN or GitHub Actions with `permissions: id-token: write`)")
 		}
+	}
+
+	if err := c.populateDeps(); err != nil {
+		return errors.Wrap(err, "unable to initialize CLI dependencies")
+	}
+
+	if !skipAuth {
 		if err := c.initUser(); err != nil {
 			return errors.Wrap(err, "unable to initialize user")
 		}
@@ -153,17 +191,20 @@ func (c *cli) tryAmbientOIDCExchange(ctx context.Context) error {
 		return errors.Wrapf(err, "unable to get OIDC token from %s", source)
 	}
 
-	svc := auth.New(c.apiClient, c.cfg)
+	// The exchange runs before the fx graph exists, so it needs its own
+	// (tokenless) client: the exchange endpoint is unauthenticated.
+	exchangeClient, err := newAPIClient(c.v, c.cfg)
+	if err != nil {
+		return errors.Wrap(err, "unable to initialize api client for OIDC exchange")
+	}
+
+	svc := auth.New(exchangeClient, c.cfg)
 	resp, err := svc.ExchangeOIDCToken(ctx, oidcJWT, c.cfg.OrgID)
 	if err != nil {
 		return errors.Wrapf(err, "OIDC federation with token from %s failed", source)
 	}
 
 	c.cfg.APIToken = resp.Token
-	if err := c.initAPIClient(); err != nil {
-		return errors.Wrap(err, "unable to initialize api client with federated token")
-	}
-
 	ui.PrintLn(fmt.Sprintf("authenticated via OIDC federation (%s)", source))
 	return nil
 }

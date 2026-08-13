@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/nuonco/nuon/bins/cli/internal/services/docs"
 )
 
 func (c *cli) docsCmd() *cobra.Command {
@@ -21,7 +19,7 @@ func (c *cli) docsCmd() *cobra.Command {
 		Long:        "Open up documentation at https://docs.nuon.co",
 		Annotations: skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := docs.New(c.cfg)
+			svc := c.docs
 			return svc.Browse(cmd.Context(), PrintJSON)
 		}),
 	}
@@ -32,7 +30,7 @@ func (c *cli) docsCmd() *cobra.Command {
 		Short: "Open api-explorer",
 		Long:  "Open api explorer with preauthorized key and org-id.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := docs.New(c.cfg)
+			svc := c.docs
 			return svc.BrowseAPI(cmd.Context(), PrintJSON)
 		}),
 	}
