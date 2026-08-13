@@ -6,6 +6,7 @@ import { Tooltip } from '@/components/common/Tooltip'
 import { usePageSidebar } from '@/hooks/use-page-sidebar'
 import type { TNavLink } from '@/types'
 import { cn } from '@/utils/classnames'
+import { isNavLinkActive } from '@/utils/nav-active'
 
 export const SubNavLink = ({
   basePath,
@@ -15,21 +16,8 @@ export const SubNavLink = ({
   text,
 }: TNavLink & { basePath: string }) => {
   const { isPageSidebarOpen } = usePageSidebar()
-  const { pathname: pathName } = useLocation()
-  const normalizePath = (path: string) =>
-    path.endsWith('/') ? path.slice(0, -1) : path
-  const normalizedPathName = normalizePath(pathName)
-  const fullPath = normalizePath(`${basePath}${path}`)
-  const isActive =
-    fullPath === normalizedPathName ||
-    (path !== `/` && normalizedPathName.startsWith(`${fullPath}/`)) ||
-    (matchPaths ?? []).some((matchPath) => {
-      const fullMatchPath = normalizePath(`${basePath}${matchPath}`)
-      return (
-        fullMatchPath === normalizedPathName ||
-        normalizedPathName.startsWith(`${fullMatchPath}/`)
-      )
-    })
+  const { pathname } = useLocation()
+  const isActive = isNavLinkActive(basePath, path, pathname, matchPaths)
 
   const link = (
     <Link

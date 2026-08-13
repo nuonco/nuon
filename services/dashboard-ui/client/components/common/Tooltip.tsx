@@ -130,8 +130,20 @@ export const Tooltip = ({
 
   useEffect(() => {
     if (!isOpen) return
-    calculatePosition()
-    const raf = requestAnimationFrame(() => calculatePosition())
+    let raf = 0
+    let prevKey = ''
+    let frames = 0
+    const settle = () => {
+      calculatePosition()
+      const t = triggerRef.current?.getBoundingClientRect()
+      const key = t ? `${t.top},${t.left},${t.width},${t.height}` : ''
+      if (key !== prevKey && frames < 30) {
+        prevKey = key
+        frames += 1
+        raf = requestAnimationFrame(settle)
+      }
+    }
+    settle()
     return () => cancelAnimationFrame(raf)
   }, [isOpen])
 

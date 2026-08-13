@@ -32,7 +32,9 @@ export const VCSConnections = () => {
             repositories.
           </Text>
         </HeadingGroup>
-        <ConnectGithubButton>Add connection</ConnectGithubButton>
+        <ConnectGithubButton isIconFirst variant="primary">
+          Add connection
+        </ConnectGithubButton>
       </PageHeader>
       <PageContent>
         <PageSection>
