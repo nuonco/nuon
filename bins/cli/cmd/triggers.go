@@ -29,7 +29,7 @@ func (c *cli) triggerEventsCmd() *cobra.Command {
 		Args:        cobra.NoArgs,
 		Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			return triggersservice.New(c.apiClient).List(cmd.Context(), models.TriggerEventListQuery{Limit: limit, Trigger: trigger, EventType: eventType, Outcome: outcome, Search: search, ReceivedAfter: receivedAfter, ReceivedBefore: receivedBefore, Cursor: cursor}, PrintJSON)
+			return c.triggers.List(cmd.Context(), models.TriggerEventListQuery{Limit: limit, Trigger: trigger, EventType: eventType, Outcome: outcome, Search: search, ReceivedAfter: receivedAfter, ReceivedBefore: receivedBefore, Cursor: cursor}, PrintJSON)
 		}),
 	}
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 50, "Maximum events to return")
@@ -49,7 +49,7 @@ func (c *cli) triggerEventsCmd() *cobra.Command {
 			if len(args) != 1 {
 				return ui.PrintError(&ui.CLIUserError{Msg: "get requires exactly one event ID"})
 			}
-			return triggersservice.New(c.apiClient).Get(cmd.Context(), args[0], PrintJSON)
+			return c.triggers.Get(cmd.Context(), args[0], PrintJSON)
 		}),
 	}
 	replayCmd := &cobra.Command{
@@ -59,7 +59,7 @@ func (c *cli) triggerEventsCmd() *cobra.Command {
 			if len(args) != 1 {
 				return ui.PrintError(&ui.CLIUserError{Msg: "replay requires exactly one event ID"})
 			}
-			return triggersservice.New(c.apiClient).Replay(cmd.Context(), args[0], PrintJSON)
+			return c.triggers.Replay(cmd.Context(), args[0], PrintJSON)
 		}),
 	}
 	pathsCmd := &cobra.Command{
@@ -76,7 +76,7 @@ func (c *cli) triggerEventsCmd() *cobra.Command {
 			if len(args) == 1 {
 				id = args[0]
 			}
-			return triggersservice.New(c.apiClient).Paths(cmd.Context(), id, pathsLast, trigger, PrintJSON)
+			return c.triggers.Paths(cmd.Context(), id, pathsLast, trigger, PrintJSON)
 		}),
 	}
 	pathsCmd.Flags().BoolVar(&pathsLast, "last", false, "Inspect the most recent event")
@@ -95,7 +95,7 @@ func (c *cli) triggerEventsCmd() *cobra.Command {
 			if appConfig == "" {
 				return ui.PrintError(triggersservice.AppConfigError())
 			}
-			return triggersservice.New(c.apiClient).Test(cmd.Context(), eventID, last, trigger, appConfig, PrintJSON)
+			return c.triggers.Test(cmd.Context(), eventID, last, trigger, appConfig, PrintJSON)
 		}),
 	}
 	testCmd.Flags().StringVar(&eventID, "event", "", "Event ID to test")
@@ -106,7 +106,7 @@ func (c *cli) triggerEventsCmd() *cobra.Command {
 		Use: "tail", Short: "Continuously print newly received trigger events", Args: cobra.NoArgs,
 		Annotations: outputsAnnotation(OutputTable),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			return triggersservice.New(c.apiClient).Tail(cmd.Context(), trigger, pollInterval, tailRaw)
+			return c.triggers.Tail(cmd.Context(), trigger, pollInterval, tailRaw)
 		}),
 	}
 	tailCmd.Flags().StringVar(&trigger, "trigger", "", "Trigger ID or name")
@@ -124,15 +124,15 @@ func (c *cli) triggerDispatchesCmd() *cobra.Command {
 
 	dispatchesCmd := &cobra.Command{Use: "dispatches", Short: "Inspect and retry trigger dispatches"}
 	dispatchListCmd := &cobra.Command{Use: "list", Aliases: []string{"ls"}, Short: "List trigger dispatches", Args: cobra.NoArgs, Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent), Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-		return triggersservice.New(c.apiClient).ListDispatches(cmd.Context(), limit, eventID, cursor, PrintJSON)
+		return c.triggers.ListDispatches(cmd.Context(), limit, eventID, cursor, PrintJSON)
 	})}
 	dispatchListCmd.Flags().IntVarP(&limit, "limit", "l", 50, "Maximum dispatches to return")
 	dispatchListCmd.Flags().StringVar(&eventID, "event-id", "", "Filter by event ID")
 	dispatchListCmd.Flags().StringVar(&cursor, "cursor", "", "Continue listing from an opaque cursor")
 	dispatchesCmd.AddCommand(dispatchListCmd, &cobra.Command{Use: "get <dispatch-id>", Short: "Get a trigger dispatch", Args: cobra.ExactArgs(1), Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent), Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-		return triggersservice.New(c.apiClient).GetDispatch(cmd.Context(), args[0], PrintJSON)
+		return c.triggers.GetDispatch(cmd.Context(), args[0], PrintJSON)
 	})}, &cobra.Command{Use: "retry <dispatch-id>", Short: "Retry a trigger dispatch", Args: cobra.ExactArgs(1), Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent), Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-		return triggersservice.New(c.apiClient).RetryDispatch(cmd.Context(), args[0], PrintJSON)
+		return c.triggers.RetryDispatch(cmd.Context(), args[0], PrintJSON)
 	})})
 	return dispatchesCmd
 }
@@ -164,7 +164,7 @@ func (c *cli) triggersCmd() *cobra.Command {
 		if topicARN != "" {
 			req.AuthConfig.TopicARN = topicARN
 		}
-		return triggersservice.New(c.apiClient).CreateTrigger(cmd.Context(), req, PrintJSON)
+		return c.triggers.CreateTrigger(cmd.Context(), req, PrintJSON)
 	})}
 	createTriggerCmd.Flags().StringVar(&description, "description", "", "Trigger description")
 	createTriggerCmd.Flags().StringVar(&preset, "preset", "", "Provider preset: github, gitlab, bitbucket, gitea, forgejo, terraform-cloud, google-pubsub, azure-devops, aws-eventbridge, aws-sns, azure-event-grid, slack-events, or datadog")
@@ -182,11 +182,11 @@ func (c *cli) triggersCmd() *cobra.Command {
 	createTriggerCmd.Flags().StringVar(&idPayload, "id-payload", "", "Payload path containing the event ID")
 	triggerAction := func(use, short string, fn func(*triggersservice.Service, *cobra.Command, string) error) *cobra.Command {
 		return &cobra.Command{Use: use + " <trigger-id>", Short: short, Args: cobra.ExactArgs(1), Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent), Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			return fn(triggersservice.New(c.apiClient), cmd, args[0])
+			return fn(c.triggers, cmd, args[0])
 		})}
 	}
 	listTriggers := &cobra.Command{Use: "list", Aliases: []string{"ls"}, Short: "List event triggers", Args: cobra.NoArgs, Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent), Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-		return triggersservice.New(c.apiClient).ListTriggers(cmd.Context(), PrintJSON)
+		return c.triggers.ListTriggers(cmd.Context(), PrintJSON)
 	})}
 	getTrigger := triggerAction("get", "Get an event trigger", func(s *triggersservice.Service, cmd *cobra.Command, id string) error {
 		return s.GetTrigger(cmd.Context(), id, PrintJSON)
@@ -201,10 +201,10 @@ func (c *cli) triggersCmd() *cobra.Command {
 		return s.SetTrigger(cmd.Context(), id, false, PrintJSON)
 	})
 	revoke := &cobra.Command{Use: "revoke-secret <trigger-id> <secret-id>", Short: "Revoke a trigger secret", Args: cobra.ExactArgs(2), Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent), Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-		return triggersservice.New(c.apiClient).RevokeTriggerSecret(cmd.Context(), args[0], args[1], PrintJSON)
+		return c.triggers.RevokeTriggerSecret(cmd.Context(), args[0], args[1], PrintJSON)
 	})}
 	revealSecret := &cobra.Command{Use: "reveal-secret <trigger-id> <secret-id>", Short: "Reveal an active trigger secret", Args: cobra.ExactArgs(2), Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent), Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-		return triggersservice.New(c.apiClient).RevealTriggerSecret(cmd.Context(), args[0], args[1], PrintJSON)
+		return c.triggers.RevealTriggerSecret(cmd.Context(), args[0], args[1], PrintJSON)
 	})}
 	revealURL := triggerAction("reveal-ingress-url", "Reveal the current ingress URL", func(s *triggersservice.Service, cmd *cobra.Command, id string) error {
 		return s.RevealTriggerIngressURL(cmd.Context(), id, PrintJSON)

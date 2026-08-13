@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/nuonco/nuon/bins/cli/internal/services/runbooks"
 )
 
 func (c *cli) runbooksCmd() *cobra.Command {
@@ -28,7 +26,7 @@ func (c *cli) runbooksCmd() *cobra.Command {
 		Short:   "List runbooks",
 		Long:    "List all runbooks for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := runbooks.New(c.apiClient, c.cfg)
+			svc := c.runbooks
 			return svc.List(cmd.Context(), installID, PrintJSON)
 		}),
 	}
@@ -41,7 +39,7 @@ func (c *cli) runbooksCmd() *cobra.Command {
 		Short: "Get a runbook",
 		Long:  "Get a runbook by ID for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := runbooks.New(c.apiClient, c.cfg)
+			svc := c.runbooks
 			return svc.Get(cmd.Context(), installID, runbookID, PrintJSON)
 		}),
 	}
@@ -56,7 +54,7 @@ func (c *cli) runbooksCmd() *cobra.Command {
 		Short: "Run a runbook",
 		Long:  "Trigger a runbook run by Install ID and Runbook ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := runbooks.New(c.apiClient, c.cfg)
+			svc := c.runbooks
 			return svc.CreateRun(cmd.Context(), installID, runbookID, PrintJSON)
 		}),
 	}
@@ -71,7 +69,7 @@ func (c *cli) runbooksCmd() *cobra.Command {
 		Short: "Get recent runbook runs",
 		Long:  "List recent runbook runs for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := runbooks.New(c.apiClient, c.cfg)
+			svc := c.runbooks
 			return svc.GetRecentRuns(cmd.Context(), installID, runbookID, offset, limit, PrintJSON)
 		}),
 	}
@@ -87,7 +85,7 @@ func (c *cli) runbooksCmd() *cobra.Command {
 		Short: "Get a runbook run",
 		Long:  "Get a runbook run by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := runbooks.New(c.apiClient, c.cfg)
+			svc := c.runbooks
 			return svc.GetRun(cmd.Context(), installID, runID, PrintJSON)
 		}),
 	}

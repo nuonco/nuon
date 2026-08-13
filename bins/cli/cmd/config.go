@@ -4,10 +4,6 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
-
-	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
-	"github.com/nuonco/nuon/bins/cli/internal/services/installs"
-	"github.com/nuonco/nuon/bins/cli/internal/services/orgs"
 )
 
 func (c *cli) configCmd() *cobra.Command {
@@ -33,7 +29,7 @@ func (c *cli) configCmd() *cobra.Command {
 		Long:        "Select your current org from a list or by org ID",
 		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.Select(cmd.Context(), id, 0, 50, PrintJSON)
 		}),
 	}
@@ -47,7 +43,7 @@ func (c *cli) configCmd() *cobra.Command {
 		Long:        "Select your current app from a list or by app ID",
 		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.Select(cmd.Context(), appID, PrintJSON)
 		}),
 	}
@@ -61,7 +57,7 @@ func (c *cli) configCmd() *cobra.Command {
 		Long:        "Select your current install from a list or by install ID",
 		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Select(cmd.Context(), appID, installID, PrintJSON)
 		}),
 	}
