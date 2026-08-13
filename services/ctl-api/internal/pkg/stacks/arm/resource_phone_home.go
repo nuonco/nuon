@@ -51,6 +51,10 @@ func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput, customOutput
 		`  "subscription_id": "$SUBSCRIPTION_ID"`,
 		`  "subscription_tenant_id": "$SUBSCRIPTION_TENANT_ID"`,
 	}
+	// Local runners have no runnerDeployment to reference.
+	if !t.cfg.UseLocalRunners {
+		payloadFields = append(payloadFields, `  "runner_identity_principal_id": "$RUNNER_IDENTITY_PRINCIPAL_ID"`)
+	}
 	payloadFields = append(payloadFields, secretPayloadFields...)
 
 	// Custom nested stack outputs, mirroring the AWS phone-home shape:
@@ -130,6 +134,16 @@ fi
 		{"name": "PUBLIC_SUBNET_NAMES_CSV", "value": "[reference('vnetDeployment').outputs.publicSubnetNames.value]"},
 		{"name": "PRIVATE_SUBNET_IDS_CSV", "value": "[reference('vnetDeployment').outputs.privateSubnetIds.value]"},
 		{"name": "PRIVATE_SUBNET_NAMES_CSV", "value": "[reference('vnetDeployment').outputs.privateSubnetNames.value]"},
+	}
+	// The runner's system-assigned identity. Secret sync and image sync run as
+	// this identity rather than a per-operation one, so a sandbox has to be able
+	// to grant it cluster access -- the Azure counterpart of the runner role ARNs
+	// the AWS stack outputs.
+	if !t.cfg.UseLocalRunners {
+		envVars = append(envVars, map[string]any{
+			"name":  "RUNNER_IDENTITY_PRINCIPAL_ID",
+			"value": "[reference('runnerDeployment').outputs.vmssPrincipalId.value]",
+		})
 	}
 	envVars = append(envVars, secretEnvVars...)
 	envVars = append(envVars, customEnvVars...)
