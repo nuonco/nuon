@@ -129,7 +129,10 @@ export const Tooltip = ({
   }, [])
 
   useEffect(() => {
-    if (isOpen) calculatePosition()
+    if (!isOpen) return
+    calculatePosition()
+    const raf = requestAnimationFrame(() => calculatePosition())
+    return () => cancelAnimationFrame(raf)
   }, [isOpen])
 
   const tooltipContent = (
