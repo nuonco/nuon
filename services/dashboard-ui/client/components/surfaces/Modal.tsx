@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from 'react'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
+import { Tooltip } from '@/components/common/Tooltip'
 import { Text } from '@/components/common/Text'
 import { TransitionDiv } from '@/components/common/TransitionDiv'
 import { useAutoFocusOnVisible } from '@/hooks/use-auto-focus-on-visible'
@@ -22,6 +23,7 @@ export interface IModal
   modalKey?: string
   onClose?: () => void
   primaryActionTrigger?: IButtonAsButton
+  primaryActionTooltip?: React.ReactNode
   secondaryActionTrigger?: IButtonAsButton
   showFooter?: boolean
   showHeader?: boolean
@@ -41,6 +43,7 @@ export const ModalBase = ({
   modalKey,
   onClose,
   primaryActionTrigger,
+  primaryActionTooltip,
   secondaryActionTrigger,
   showFooter = true,
   showHeader = true,
@@ -135,7 +138,21 @@ export const ModalBase = ({
                   {primaryActionTrigger ? 'Cancel' : 'Close'}
                 </Button>
               )}
-              {primaryActionTrigger ? <Button {...primaryActionTrigger} /> : null}
+              {primaryActionTrigger ? (
+                primaryActionTooltip ? (
+                  <Tooltip tipContent={primaryActionTooltip} position="top">
+                    <Button
+                      {...primaryActionTrigger}
+                      className={cn(
+                        primaryActionTrigger.className,
+                        'disabled:pointer-events-none'
+                      )}
+                    />
+                  </Tooltip>
+                ) : (
+                  <Button {...primaryActionTrigger} />
+                )
+              ) : null}
             </div>
           </div>
           )}
