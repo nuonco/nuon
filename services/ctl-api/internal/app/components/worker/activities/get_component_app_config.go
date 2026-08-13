@@ -19,7 +19,7 @@ func (a *Activities) GetComponentAppConfig(ctx context.Context, req *GetComponen
 		return nil, fmt.Errorf("unable to get component: %w", err)
 	}
 
-	appCfg, err := a.appsHelpers.GetAppLatestConfig(ctx, cmp.AppID)
+	appCfg, err := a.appsHelpers.GetLatestActiveAppConfig(ctx, cmp.AppID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get app config for component: %w", err)
 	}

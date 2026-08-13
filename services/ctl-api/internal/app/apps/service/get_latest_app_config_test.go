@@ -34,6 +34,7 @@ func (s *AppConfigsTestSuite) TestGetAppLatestConfigSuccess() {
 					OrgID:             s.testOrg.ID,
 					AppID:             s.testApp.ID,
 					Status:            app.AppConfigStatusPending,
+					StatusV2:          app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusPending)),
 					StatusDescription: "pending",
 					Readme:            "older config",
 					CLIVersion:        "1.0.0",
@@ -46,6 +47,7 @@ func (s *AppConfigsTestSuite) TestGetAppLatestConfigSuccess() {
 					OrgID:             s.testOrg.ID,
 					AppID:             s.testApp.ID,
 					Status:            app.AppConfigStatusActive,
+					StatusV2:          app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusActive)),
 					StatusDescription: "success",
 					Readme:            "latest config",
 					CLIVersion:        "1.1.0",
@@ -71,8 +73,9 @@ func (s *AppConfigsTestSuite) TestGetAppLatestConfigSuccess() {
 					ID:                domains.NewAppCfgID(),
 					OrgID:             s.testOrg.ID,
 					AppID:             s.testApp.ID,
-					Status:            app.AppConfigStatusPending,
-					StatusDescription: "pending",
+					Status:            app.AppConfigStatusActive,
+					StatusV2:          app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusActive)),
+					StatusDescription: "success",
 					Readme:            "only config",
 					CLIVersion:        "1.0.0",
 				}
@@ -82,6 +85,46 @@ func (s *AppConfigsTestSuite) TestGetAppLatestConfigSuccess() {
 			},
 			validateFunc: func(cfg *models.AppAppConfig) {
 				assert.Equal(s.T(), "only config", cfg.Readme)
+				assert.Equal(s.T(), "1.0.0", cfg.CliVersion)
+			},
+		},
+		{
+			name: "skips newer failed config and returns last synced one",
+			setupFunc: func() []string {
+				ctx := context.Background()
+				ctx = cctx.SetAccountContext(ctx, s.testAcc)
+				ctx = cctx.SetOrgContext(ctx, s.testOrg)
+
+				synced := &app.AppConfig{
+					ID:                domains.NewAppCfgID(),
+					OrgID:             s.testOrg.ID,
+					AppID:             s.testApp.ID,
+					Status:            app.AppConfigStatusActive,
+					StatusV2:          app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusActive)),
+					StatusDescription: "success",
+					Readme:            "last synced config",
+					CLIVersion:        "1.0.0",
+				}
+				err := s.service.DB.WithContext(ctx).Create(synced).Error
+				require.NoError(s.T(), err)
+
+				failed := &app.AppConfig{
+					ID:                domains.NewAppCfgID(),
+					OrgID:             s.testOrg.ID,
+					AppID:             s.testApp.ID,
+					Status:            app.AppConfigStatusError,
+					StatusV2:          app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusError)),
+					StatusDescription: "sync failed: invalid name",
+					Readme:            "failed config",
+					CLIVersion:        "1.1.0",
+				}
+				err = s.service.DB.WithContext(ctx).Create(failed).Error
+				require.NoError(s.T(), err)
+
+				return []string{synced.ID, failed.ID}
+			},
+			validateFunc: func(cfg *models.AppAppConfig) {
+				assert.Equal(s.T(), "last synced config", cfg.Readme)
 				assert.Equal(s.T(), "1.0.0", cfg.CliVersion)
 			},
 		},
@@ -119,6 +162,36 @@ func (s *AppConfigsTestSuite) TestGetAppLatestConfigSuccess() {
 }
 
 func (s *AppConfigsTestSuite) TestGetAppLatestConfigNotFound() {
+	path := fmt.Sprintf("/v1/apps/%s/latest-config", s.testApp.ID)
+	rr := s.makeGetRequest(http.MethodGet, path)
+
+	if rr.Code != http.StatusNotFound {
+		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+	}
+	require.Equal(s.T(), http.StatusNotFound, rr.Code)
+}
+
+// TestGetAppLatestConfigNeverSynced asserts a config that never finished syncing is not served as
+// the app's latest config.
+func (s *AppConfigsTestSuite) TestGetAppLatestConfigNeverSynced() {
+	ctx := context.Background()
+	ctx = cctx.SetAccountContext(ctx, s.testAcc)
+	ctx = cctx.SetOrgContext(ctx, s.testOrg)
+
+	cfg := &app.AppConfig{
+		ID:                domains.NewAppCfgID(),
+		OrgID:             s.testOrg.ID,
+		AppID:             s.testApp.ID,
+		Status:            app.AppConfigStatusPending,
+		StatusV2:          app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusPending)),
+		StatusDescription: "sync pending",
+		CLIVersion:        "1.0.0",
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(cfg).Error)
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(&app.AppConfig{}, "id = ?", cfg.ID)
+	})
+
 	path := fmt.Sprintf("/v1/apps/%s/latest-config", s.testApp.ID)
 	rr := s.makeGetRequest(http.MethodGet, path)
 

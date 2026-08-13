@@ -107,6 +107,14 @@ type AppConfig struct {
 func (a *AppConfig) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
+			Name: indexes.Name(db, &AppConfig{}, "preload"),
+			Columns: []string{
+				"app_id",
+				"deleted_at",
+				"created_at DESC",
+			},
+		},
+		{
 			Name: indexes.Name(db, &AppConfig{}, "org_id"),
 			Columns: []string{
 				"org_id",

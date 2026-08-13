@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/oci/metadata"
@@ -55,15 +54,15 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 
 	l.Info("preparing external image policy evaluation")
 
-	build, err := a.getBuildWithAppConfig(ctx, req.BuildID)
+	build, err := a.getBuildWithComponentApp(ctx, req.BuildID)
 	if err != nil {
 		l.Error("unable to get build with app config", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to get build with app config")
 	}
 
 	component := build.ComponentConfigConnection.Component
-	appConfigs := component.App.AppConfigs
-	if len(appConfigs) == 0 {
+	appConfigID := build.ComponentConfigConnection.AppConfigID
+	if appConfigID == "" {
 		l.Info("no app config found, skipping policy evaluation")
 		return &PrepExternalImagePolicyResult{
 			Policies:      []ExternalImagePolicyToEvaluate{},
@@ -77,7 +76,6 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 			ComponentName: component.Name,
 		}, nil
 	}
-	appConfigID := appConfigs[0].ID
 
 	l = l.With(zap.String("app_config_id", appConfigID))
 
@@ -161,13 +159,10 @@ func (a *Activities) PrepExternalImagePolicy(ctx context.Context, req *PrepExter
 	}, nil
 }
 
-func (a *Activities) getBuildWithAppConfig(ctx context.Context, buildID string) (*app.ComponentBuild, error) {
+func (a *Activities) getBuildWithComponentApp(ctx context.Context, buildID string) (*app.ComponentBuild, error) {
 	var bld app.ComponentBuild
 
 	res := a.db.WithContext(ctx).
-		Preload("ComponentConfigConnection.Component.App.AppConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("created_at DESC").Limit(1)
-		}).
 		Preload("ComponentConfigConnection.Component.App.Org").
 		First(&bld, "id = ?", buildID)
 	if res.Error != nil {
