@@ -8,10 +8,56 @@ import {
   detectValueFormat,
   isOutputAfterUnknown,
   parseTerraformPlan,
+  generateDiffLines,
 } from './terraform-utils'
 import type { TTerraformPlan } from '@/types'
 
 describe('terraform-utils', () => {
+  describe('generateDiffLines', () => {
+    const render = (before: any, after: any) =>
+      generateDiffLines(before, after).map(
+        (l) => `${l.prefix}${' '.repeat(l.indent)}${l.text}`
+      )
+
+    test('keeps the key on both sides of a changed scalar', () => {
+      expect(
+        render(
+          { name: 'agents', node_count: 1, node_labels: {} },
+          { name: 'agents', node_count: 2, node_labels: {} }
+        )
+      ).toEqual([
+        '~{',
+        '  "name": "agents"',
+        '- "node_count": 1',
+        '+ "node_count": 2',
+        '  "node_labels": {}',
+        '~}',
+      ])
+    })
+
+    test('keeps the key when a value changes type', () => {
+      expect(render({ tags: 'a' }, { tags: ['a'] })).toEqual([
+        '~{',
+        '- "tags": "a"',
+        '+ "tags": [',
+        '+  "a"',
+        '+ ]',
+        '~}',
+      ])
+    })
+
+    test('keeps the key on nested collections', () => {
+      expect(render({ pool: { size: 1 } }, { pool: { size: 2 } })).toEqual([
+        '~{',
+        '~ "pool": {',
+        '-  "size": 1',
+        '+  "size": 2',
+        '~ }',
+        '~}',
+      ])
+    })
+  })
+
   describe('cleanString', () => {
     test('should remove surrounding quotes', () => {
       expect(cleanString('"hello world"')).toBe('hello world')

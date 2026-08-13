@@ -64,7 +64,7 @@ func (s *service) DeleteApp(ctx *gin.Context) {
 		}
 	}
 
-	appCfg, cfgErr := s.helpers.GetAppLatestConfig(ctx, appID)
+	appCfg, cfgErr := s.helpers.GetLatestActiveAppConfig(ctx, appID)
 	if cfgErr != nil && !errors.Is(cfgErr, gorm.ErrRecordNotFound) {
 		ctx.Error(cfgErr)
 		return

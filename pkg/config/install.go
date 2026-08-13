@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/invopop/jsonschema"
 	"github.com/nuonco/nuon/pkg/config/diff"
+	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/pelletier/go-toml/v2"
 )
@@ -210,8 +213,8 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("approve-all").
 		Example("prompt").
 		Field("labels").Short("key/value labels for the install").
-		Long("Tag installs with arbitrary metadata like environment, region, or version.").
-		Example(map[string]string{"env": "production", "region": "us-east"}).
+		Long("Tag installs with arbitrary metadata like environment, region, or version. Values can use the .nuon interpolation syntax to render from install state, and re-render as state changes.").
+		Example(map[string]string{"env": "production", "region": "{{ .nuon.cloud_account.aws.region }}"}).
 		Field("aws_account").Short("AWS account configuration").
 		Long("AWS-specific settings for this install, including region and other account details").
 		Field("gcp_account").Short("GCP account configuration").
@@ -240,6 +243,26 @@ func (i *Install) Parse() error {
 func (i *Install) Validate() error {
 	if i == nil {
 		return nil
+	}
+
+	// Keys are lookup identifiers on every matching surface, so they can never
+	// be templated; templated values must parse now, not fail at render time.
+	for key, val := range i.Labels {
+		if strings.Contains(key, "{{") {
+			return ErrConfig{
+				Description: fmt.Sprintf("install %q label key %q must not use the interpolation syntax", i.Name, key),
+				Err:         fmt.Errorf("install %q label key %q is templated; only label values may be templated", i.Name, key),
+			}
+		}
+		if !labels.IsTemplatedValue(val) {
+			continue
+		}
+		if err := render.ValidateTextTemplate(val); err != nil {
+			return ErrConfig{
+				Description: fmt.Sprintf("install %q label %q is not a valid template", i.Name, key),
+				Err:         fmt.Errorf("install %q label %q template: %w", i.Name, key, err),
+			}
+		}
 	}
 
 	// Catch malformed override documents at config-parse time, before any API

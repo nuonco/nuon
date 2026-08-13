@@ -2,7 +2,6 @@ package secrets
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
@@ -17,7 +16,6 @@ func (s *Service) Create(ctx context.Context, appID, name, value string, asJSON 
 
 	view := ui.NewCreateView("secret", asJSON, s.cfg.Interactive)
 	view.Start()
-	view.Update("creating secret")
 
 	secret, err := s.api.CreateAppSecret(ctx, appID, &models.ServiceCreateAppSecretRequest{
 		Name:  &name,
@@ -27,6 +25,6 @@ func (s *Service) Create(ctx context.Context, appID, name, value string, asJSON 
 		return view.Fail(err)
 	}
 
-	view.Update(fmt.Sprintf("successfully created secret (%s)\n", secret.ID))
+	view.Success(secret.ID)
 	return nil
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
-	"github.com/nuonco/nuon/bins/cli/internal/services/variables"
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 )
 
@@ -32,7 +31,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List all your apps",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.List(cmd.Context(), offset, limit, PrintJSON)
 		}),
 	}
@@ -47,7 +46,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "Get an app",
 		Long:  "Get either the current app or an app by name or ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.Get(cmd.Context(), appID, PrintJSON)
 		}),
 	}
@@ -62,7 +61,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			printDeprecatedCommandWarning(cmd, "Use `nuon apps get` instead")
 
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.Get(cmd.Context(), c.cfg.GetString("app_id"), PrintJSON)
 		}),
 	}
@@ -73,7 +72,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "View sandbox config",
 		Long:  "View apps latest sandbox config",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.GetSandboxConfig(cmd.Context(), appID, PrintJSON)
 		}),
 	}
@@ -86,7 +85,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "List app configs",
 		Long:  "List app configs",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.ListConfigs(cmd.Context(), appID, offset, limit, PrintJSON)
 		}),
 	}
@@ -101,7 +100,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "View app input config",
 		Long:  "View latest app input config",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.GetInputConfig(cmd.Context(), appID, PrintJSON)
 		}),
 	}
@@ -114,7 +113,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "View app runner config",
 		Long:  "View latest app runner config",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.GetRunnerConfig(cmd.Context(), appID, PrintJSON)
 		}),
 	}
@@ -128,7 +127,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Long:        "Select your current app from a list or by app ID",
 		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.Select(cmd.Context(), appID, PrintJSON)
 		}),
 	}
@@ -140,7 +139,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short: "Deselect your current app",
 		Long:  "Deselect your current app",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.Deselect(cmd.Context())
 		}),
 	}
@@ -152,7 +151,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short:      "Unset your current app (deprecated)",
 		Hidden:     true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.Deselect(cmd.Context())
 		}),
 	}
@@ -188,7 +187,7 @@ func (c *cli) appsCmd() *cobra.Command {
 				PrintJSON: PrintJSON,
 				NoWait:    syncNoWait,
 			}
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			if syncCreate {
 				return svc.SyncDirWithCreate(cmd.Context(), dirName, version.Version, opts)
 			}
@@ -221,7 +220,7 @@ func (c *cli) appsCmd() *cobra.Command {
 			return nil
 		},
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.Build(cmd.Context(), buildAppID, buildConfigID)
 		}),
 	}
@@ -247,7 +246,7 @@ func (c *cli) appsCmd() *cobra.Command {
 				}
 			}
 
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.DeprecatedSyncDir(cmd.Context(), dirName, version.Version, apps.SyncOptions{})
 		}),
 	}
@@ -269,7 +268,7 @@ func (c *cli) appsCmd() *cobra.Command {
 				}
 			}
 
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.ValidateDir(cmd.Context(), dirName)
 		}),
 	}
@@ -281,7 +280,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short:             "Create a new app",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.Create(cmd.Context(), name, PrintJSON, noSelect)
 		}),
 	}
@@ -298,7 +297,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short:             "Delete an existing app",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.Delete(cmd.Context(), appID, PrintJSON)
 		}),
 	}
@@ -318,7 +317,7 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short:             "Rename an app",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.Rename(cmd.Context(), appID, name, rename, PrintJSON)
 		}),
 	}
@@ -359,7 +358,7 @@ func (c *cli) branchesCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List branches for an app",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.ListBranches(cmd.Context(), appID, PrintJSON)
 		}),
 	}
@@ -370,7 +369,7 @@ func (c *cli) branchesCmd() *cobra.Command {
 		Use:   "get",
 		Short: "Get branch details",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.GetBranch(cmd.Context(), appID, branchID, PrintJSON)
 		}),
 	}
@@ -384,7 +383,7 @@ func (c *cli) branchesCmd() *cobra.Command {
 		Use:   "create",
 		Short: "Create a new branch",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.CreateBranch(cmd.Context(), appID, branchName, PrintJSON)
 		}),
 	}
@@ -407,7 +406,7 @@ func (c *cli) branchesCmd() *cobra.Command {
 		Short:       "Trigger a branch run",
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			opts := apps.TriggerBranchRunOptions{
 				PlanOnly:   planOnly,
 				Force:      force,
@@ -436,7 +435,7 @@ func (c *cli) branchesCmd() *cobra.Command {
 		Use:   "delete",
 		Short: "Delete an app branch",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.DeleteBranch(cmd.Context(), appID, branchID, PrintJSON)
 		}),
 	}
@@ -453,7 +452,7 @@ func (c *cli) branchesCmd() *cobra.Command {
 		Short:       "List branch runs and monitor a selected workflow",
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := apps.New(c.v, c.apiClient, c.cfg)
+			svc := c.apps
 			return svc.ListBranchRuns(cmd.Context(), appID, branchID, PrintJSON)
 		}),
 	}
@@ -484,7 +483,7 @@ func (c *cli) variablesCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List all app variables",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := variables.New(c.apiClient, c.cfg)
+			svc := c.variables
 			return svc.List(cmd.Context(), appID, offset, limit, PrintJSON)
 		}),
 	}
@@ -501,7 +500,7 @@ func (c *cli) variablesCmd() *cobra.Command {
 		Short: "Delete an app variable",
 		Long:  "Delete an app variable value",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := variables.New(c.apiClient, c.cfg)
+			svc := c.variables
 			return svc.Delete(cmd.Context(), appID, variableID, PrintJSON)
 		}),
 	}
@@ -524,7 +523,7 @@ func (c *cli) variablesCmd() *cobra.Command {
 		Short:             "Create a new app variable.",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := variables.New(c.apiClient, c.cfg)
+			svc := c.variables
 			return svc.Create(cmd.Context(), appID, name, value, PrintJSON)
 		}),
 	}

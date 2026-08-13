@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Badge } from '@/components/common/Badge'
 import { Duration } from '@/components/common/Duration'
 import { Icon } from '@/components/common/Icon'
 import { Loading } from '@/components/common/Loading'
@@ -217,19 +216,14 @@ export const WorkflowStepsPipeline = ({
                     {toSentenceCase(step.name || 'Unknown')}
                   </Text>
 
-                  <div className="flex items-center gap-2">
-                    <Badge size="sm" variant="code">
-                      Group {step.group_idx ?? idx + 1}
-                    </Badge>
-                    {step.execution_time ? (
-                      <Duration
-                        nanoseconds={step.execution_time}
-                        variant="label"
-                        theme="neutral"
-                        family="mono"
-                      />
-                    ) : null}
-                  </div>
+                  {step.execution_time ? (
+                    <Duration
+                      nanoseconds={step.execution_time}
+                      variant="label"
+                      theme="neutral"
+                      family="mono"
+                    />
+                  ) : null}
                 </div>
               </div>
             )

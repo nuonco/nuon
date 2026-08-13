@@ -136,6 +136,9 @@ func (a *Service) selectAPIURL() (string, error) {
 		a.cfg.Interactive,
 	)
 	if err != nil {
+		if !a.cfg.Interactive {
+			return "", fmt.Errorf("logging in requires an interactive terminal")
+		}
 		return "", fmt.Errorf("failed to confirm API URL: %w", err)
 	}
 

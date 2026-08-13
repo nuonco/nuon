@@ -14,7 +14,10 @@ export type TCreateAppBranchRequest =
   components['schemas']['service.CreateAppBranchRequest']
 export type TVCSBranch = { name: string }
 
-export type TApp = components['schemas']['app.App']
+export type TApp = components['schemas']['app.App'] & {
+  // labels from the app config's default_labels, applied to every install
+  default_labels?: Record<string, string>
+}
 export type TAppConfig = components['schemas']['app.AppConfig']
 export type TAppInputConfig = components['schemas']['app.AppInputConfig']
 export type TAppInput = components['schemas']['app.AppInput']
@@ -442,6 +445,11 @@ export type TInstall = Omit<components['schemas']['app.Install'], 'sandbox'> & {
   app?: components['schemas']['app.App']
   created_by?: components['schemas']['app.Account']
   gcp_account?: { project_id?: string; region?: string }
+  // label values written with the {{ .nuon.* }} interpolation syntax, keyed by
+  // label key; `labels` holds their rendered values
+  label_templates?: Record<string, string>
+  // labels inherited from the app config's default_labels; read-only per install
+  app_default_labels?: Record<string, string>
   lifecycle_phase?: {
     phase?: string
     description?: string
@@ -795,6 +803,7 @@ export interface TCreateStaticTokenBody {
   name: string
   duration?: string
   role?: string
+  token_identity?: 'personal' | 'service_account'
 }
 
 export interface TCreateStaticTokenResponse {

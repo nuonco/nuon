@@ -17,6 +17,9 @@ import (
 // swagger:model app.VCSConnectionCommit
 type AppVCSConnectionCommit struct {
 
+	// author avatar url
+	AuthorAvatarURL string `json:"author_avatar_url,omitempty"`
+
 	// author email
 	AuthorEmail string `json:"author_email,omitempty"`
 

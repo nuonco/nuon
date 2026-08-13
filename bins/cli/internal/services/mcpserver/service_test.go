@@ -59,7 +59,7 @@ func connect(t *testing.T, api nuon.Client, allowWrites bool, cfg ...*config.Con
 	if len(cfg) > 0 {
 		c = cfg[0]
 	}
-	srv := New(api, c, allowWrites).buildServer()
+	srv := New(api, c).buildServer(allowWrites)
 	st, ct := mcp.NewInMemoryTransports()
 
 	_, err := srv.Connect(ctx, st, nil)

@@ -64,3 +64,25 @@ export const MediumSize = () => {
     />
   )
 }
+
+export const WithDescriptions = () => {
+  const [value, setValue] = useState('personal')
+  return (
+    <ToggleButton
+      value={value}
+      onChange={setValue}
+      options={[
+        {
+          value: 'personal',
+          label: 'Personal token',
+          description: 'Issued against your own account and uses your existing role.',
+        },
+        {
+          value: 'service_account',
+          label: 'Service account token',
+          description: 'Creates a dedicated service account with the role you choose.',
+        },
+      ]}
+    />
+  )
+}

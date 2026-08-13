@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -90,4 +91,110 @@ func TestExistingToConfigRoundTripsWithoutDrift(t *testing.T) {
 	require.Error(t, err, "a changed account id must be refused, not silently ignored")
 	assert.Contains(t, err.Error(), "aws_account.account_id")
 	assert.Contains(t, err.Error(), "immutable")
+}
+
+// Template-managed keys must echo the template text back to the diff: a config that
+// declares a dynamic label otherwise diffs against its rendered value and shows
+// drift on every sync.
+func TestExistingToConfigEchoesLabelTemplates(t *testing.T) {
+	t.Run("templates overlay rendered values", func(t *testing.T) {
+		cfg := existingToConfig(&app.Install{
+			Name: "inst",
+			Labeled: labels.Labeled{
+				Labels: labels.Labels{
+					"env":    "production",
+					"region": "us-west-2",
+				},
+			},
+			LabelTemplates: labels.Labels{
+				"region": "{{ .nuon.cloud_account.aws.region }}",
+			},
+		})
+
+		assert.Equal(t, map[string]string{
+			"env":    "production",
+			"region": "{{ .nuon.cloud_account.aws.region }}",
+		}, cfg.Labels)
+	})
+
+	t.Run("a template that never rendered still echoes", func(t *testing.T) {
+		cfg := existingToConfig(&app.Install{
+			Name: "inst",
+			LabelTemplates: labels.Labels{
+				"version": "{{ .nuon.components.api.outputs.version }}",
+			},
+		})
+
+		assert.Equal(t, map[string]string{
+			"version": "{{ .nuon.components.api.outputs.version }}",
+		}, cfg.Labels)
+	})
+
+	t.Run("no templates leaves labels untouched", func(t *testing.T) {
+		cfg := existingToConfig(&app.Install{
+			Name:    "inst",
+			Labeled: labels.Labeled{Labels: labels.Labels{"env": "staging"}},
+		})
+
+		assert.Equal(t, map[string]string{"env": "staging"}, cfg.Labels)
+	})
+
+	// App-default keys never appear in install configs, so echoing them shows
+	// permanent "removed" drift on every sync.
+	t.Run("app-default keys are stripped from the upstream echo", func(t *testing.T) {
+		install := &app.Install{
+			Name: "inst",
+			Labeled: labels.Labeled{
+				Labels: labels.Labels{
+					"env":    "production",
+					"tier":   "gold",
+					"region": "us-west-2",
+				},
+			},
+			LabelTemplates: labels.Labels{
+				"region": "{{ .nuon.cloud_account.aws.region }}",
+			},
+			AppDefaultLabels: labels.Labels{
+				"tier":   "gold",
+				"region": "{{ .nuon.cloud_account.aws.region }}",
+			},
+		}
+
+		cfg := existingToConfig(install)
+		assert.Equal(t, map[string]string{"env": "production"}, cfg.Labels)
+
+		desired := &config.Install{
+			Name:   "inst",
+			Labels: map[string]string{"env": "production"},
+		}
+		d, err := desired.Diff(cfg)
+		require.NoError(t, err)
+		assert.False(t, d.Summary().HasChanged)
+	})
+
+	t.Run("a dynamic label config diffs clean against its rendered value", func(t *testing.T) {
+		desired := &config.Install{
+			Name: "inst",
+			Labels: map[string]string{
+				"env":    "production",
+				"region": "{{ .nuon.cloud_account.aws.region }}",
+			},
+		}
+		upstream := existingToConfig(&app.Install{
+			Name: "inst",
+			Labeled: labels.Labeled{
+				Labels: labels.Labels{
+					"env":    "production",
+					"region": "us-west-2",
+				},
+			},
+			LabelTemplates: labels.Labels{
+				"region": "{{ .nuon.cloud_account.aws.region }}",
+			},
+		})
+
+		d, err := desired.Diff(upstream)
+		require.NoError(t, err)
+		assert.False(t, d.Summary().HasChanged)
+	})
 }

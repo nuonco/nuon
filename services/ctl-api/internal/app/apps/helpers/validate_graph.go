@@ -7,11 +7,15 @@ import (
 	"github.com/dominikbraun/graph"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 func (h *Helpers) ValidateGraph(ctx context.Context, appID string) error {
-	latestCfg, err := h.GetAppLatestConfig(ctx, appID)
+	latestCfg, err := h.GetLatestActiveAppConfig(ctx, appID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		return errors.Wrap(err, "unable to get latest config")
 	}
 

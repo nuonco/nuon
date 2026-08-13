@@ -33,10 +33,11 @@ type VCSConnectionCommit struct {
 
 	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_builds,omitzero,omitempty"`
 
-	SHA         string `json:"sha,omitzero" gorm:"notnull" temporaljson:"sha,omitzero,omitempty"`
-	AuthorName  string `json:"author_name,omitzero" temporaljson:"author_name,omitzero,omitempty"`
-	AuthorEmail string `json:"author_email,omitzero" temporaljson:"author_email,omitzero,omitempty"`
-	Message     string `json:"message,omitzero" temporaljson:"message,omitzero,omitempty"`
+	SHA             string `json:"sha,omitzero" gorm:"notnull" temporaljson:"sha,omitzero,omitempty"`
+	AuthorName      string `json:"author_name,omitzero" temporaljson:"author_name,omitzero,omitempty"`
+	AuthorEmail     string `json:"author_email,omitzero" temporaljson:"author_email,omitzero,omitempty"`
+	AuthorAvatarURL string `json:"author_avatar_url,omitzero" temporaljson:"author_avatar_url,omitzero,omitempty"`
+	Message         string `json:"message,omitzero" temporaljson:"message,omitzero,omitempty"`
 }
 
 func (v *VCSConnectionCommit) Indexes(db *gorm.DB) []migrations.Index {
