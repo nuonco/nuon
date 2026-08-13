@@ -126,14 +126,19 @@ export function generateDiffLines(
   before: any,
   after: any,
   indent = 0,
-  maxDepth = 10
+  maxDepth = 10,
+  key?: string
 ): DiffLine[] {
+  const keyPrefix = key !== undefined ? `${JSON.stringify(key)}: ` : ''
+
   if (indent > maxDepth) {
     const text =
       before !== undefined && after !== undefined
         ? `${JSON.stringify(before).slice(0, 60)} -> ${JSON.stringify(after).slice(0, 60)}`
         : JSON.stringify(before ?? after).slice(0, 120)
-    return [{ indent, prefix: '~', type: 'changed', text }]
+    return [
+      { indent, prefix: '~', type: 'changed', text: `${keyPrefix}${text}` },
+    ]
   }
 
   before = maybeParseJsonString(before)
@@ -147,11 +152,11 @@ export function generateDiffLines(
   }
 
   if (before === null || before === undefined) {
-    return renderFullValue(after, '+', indent)
+    return renderFullValue(after, '+', indent, key)
   }
 
   if (after === null || after === undefined) {
-    return renderFullValue(before, '-', indent)
+    return renderFullValue(before, '-', indent, key)
   }
 
   if (!isComplex(before) && !isComplex(after)) {
@@ -161,19 +166,29 @@ export function generateDiffLines(
           indent,
           prefix: ' ',
           type: 'unchanged',
-          text: renderScalar(after),
+          text: `${keyPrefix}${renderScalar(after)}`,
         },
       ]
     }
     return [
-      { indent, prefix: '-', type: 'removed', text: renderScalar(before) },
-      { indent, prefix: '+', type: 'added', text: renderScalar(after) },
+      {
+        indent,
+        prefix: '-',
+        type: 'removed',
+        text: `${keyPrefix}${renderScalar(before)}`,
+      },
+      {
+        indent,
+        prefix: '+',
+        type: 'added',
+        text: `${keyPrefix}${renderScalar(after)}`,
+      },
     ]
   }
 
   if (Array.isArray(before) && Array.isArray(after)) {
     if (deepEqual(before, after)) {
-      return renderFullValue(after, ' ' as any, indent).map((l) => ({
+      return renderFullValue(after, ' ' as any, indent, key).map((l) => ({
         ...l,
         prefix: ' ' as const,
         type: 'unchanged' as const,
@@ -215,7 +230,7 @@ export function generateDiffLines(
         indent,
         prefix: bracketPrefix as DiffLine['prefix'],
         type: bracketType as DiffLine['type'],
-        text: '[',
+        text: `${keyPrefix}[`,
       },
       ...innerLines,
       {
@@ -285,15 +300,9 @@ export function generateDiffLines(
             innerLines.push(l)
           )
         } else {
-          const childLines = generateDiffLines(bVal, aVal, indent + 1, maxDepth)
-          if (childLines.length > 0) {
-            const firstLine = childLines[0]
-            childLines[0] = {
-              ...firstLine,
-              text: `${JSON.stringify(key)}: ${firstLine.text}`,
-            }
-          }
-          innerLines.push(...childLines)
+          innerLines.push(
+            ...generateDiffLines(bVal, aVal, indent + 1, maxDepth, key)
+          )
         }
       }
     })
@@ -305,7 +314,7 @@ export function generateDiffLines(
         indent,
         prefix: bracePrefix as DiffLine['prefix'],
         type: braceType as DiffLine['type'],
-        text: '{',
+        text: `${keyPrefix}{`,
       },
       ...innerLines,
       {
@@ -319,8 +328,8 @@ export function generateDiffLines(
 
   // Type mismatch
   return [
-    ...renderFullValue(before, '-', indent),
-    ...renderFullValue(after, '+', indent),
+    ...renderFullValue(before, '-', indent, key),
+    ...renderFullValue(after, '+', indent, key),
   ]
 }
 
