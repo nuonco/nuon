@@ -183,6 +183,15 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		}
 	}
 
+	// The install runner does not share the control plane's cloud, so a GAR
+	// artifact has to travel with its own credentials rather than relying on
+	// the runner finding GCP application default credentials.
+	if ociSource != nil {
+		if err := sharedactivities.EnsureGARAuth(ctx, ociSource.Registry); err != nil {
+			return nil, nil, errors.Wrap(err, "unable to get GAR access token for sandbox artifact")
+		}
+	}
+
 	l.Info("getting auth with role selection")
 	cloudAuth, roleSelection, err := p.getAuthForSandbox(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
 	if err != nil {
