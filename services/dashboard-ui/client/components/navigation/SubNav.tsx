@@ -84,7 +84,7 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
                   'hidden md:flex items-center transition-all duration-fast ease-cubic',
                   {
                     'px-3 mt-2 mb-0.5': isPageSidebarOpen,
-                    'mx-2 mt-4 mb-1': !isPageSidebarOpen,
+                    'mx-2 mt-1 mb-1': !isPageSidebarOpen,
                   }
                 )}
               >
