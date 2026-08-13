@@ -1,8 +1,8 @@
 import { useForm, useStore } from '@tanstack/react-form'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Tooltip } from '@/components/common/Tooltip'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormInput } from '@/components/common/form/FormInput'
 import { Input } from '@/components/common/form/Input'
@@ -76,7 +76,7 @@ export const EditLabelsModal = ({
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <Text variant="label" weight="strong">
-              Labels
+              Install labels
             </Text>
             <form.Field name="labels" mode="array">
               {(labelsField) => (
@@ -100,39 +100,10 @@ export const EditLabelsModal = ({
             values update as install state changes.
           </Text>
 
-          {Object.entries(defaultLabels)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([key, value]) => (
-              <fieldset
-                key={`default:${key}`}
-                className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end border-t pt-2 opacity-60"
-              >
-                <label className="flex flex-col gap-1">
-                  <Text variant="label">Key</Text>
-                  <Input name="" type="text" disabled defaultValue={key} />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <Text variant="label">Value</Text>
-                  <Input name="" type="text" disabled defaultValue={value} />
-                </label>
-                <Tooltip
-                  tipContent="Defined in the app config's default_labels"
-                  position="left"
-                  tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs"
-                >
-                  <span className="mb-3 flex">
-                    <Icon variant="LockIcon" size="16" />
-                  </span>
-                </Tooltip>
-              </fieldset>
-            ))}
-
           <form.Field name="labels" mode="array">
             {(labelsField) =>
               labelsField.state.value.length === 0 ? (
-                Object.keys(defaultLabels).length === 0 ? (
-                  <Text variant="subtext">No labels added</Text>
-                ) : null
+                <Text variant="subtext">No labels added</Text>
               ) : (
                 <>
                   {labelsField.state.value.map((_, idx) => (
@@ -178,6 +149,46 @@ export const EditLabelsModal = ({
               )
             }
           </form.Field>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Text variant="label" weight="strong">
+            Default labels
+          </Text>
+          <Text variant="subtext">
+            Applied to every install of this app. Edit them via{' '}
+            <code>default_labels</code> in the app config.
+          </Text>
+
+          {Object.keys(defaultLabels).length === 0 ? (
+            <Banner theme="neutral">
+              <Text>
+                No default labels yet. Add a <code>default_labels</code> block
+                to the app config to label every install of this app.
+              </Text>
+            </Banner>
+          ) : (
+            Object.entries(defaultLabels)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([key, value]) => (
+                <fieldset
+                  key={`default:${key}`}
+                  className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end border-t pt-2 opacity-60"
+                >
+                  <label className="flex flex-col gap-1">
+                    <Text variant="label">Key</Text>
+                    <Input name="" type="text" disabled defaultValue={key} />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <Text variant="label">Value</Text>
+                    <Input name="" type="text" disabled defaultValue={value} />
+                  </label>
+                  <span className="mb-3 flex">
+                    <Icon variant="LockIcon" size="16" />
+                  </span>
+                </fieldset>
+              ))
+          )}
         </div>
       </form>
     </Modal>
