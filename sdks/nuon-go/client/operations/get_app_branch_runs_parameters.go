@@ -94,6 +94,14 @@ type GetAppBranchRunsParams struct {
 	*/
 	Page *int64
 
+	/* Planonly.
+
+	   exclude preview (plan only) runs when set to false
+
+	   Default: true
+	*/
+	Planonly *bool
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -117,12 +125,15 @@ func (o *GetAppBranchRunsParams) SetDefaults() {
 		offsetDefault = int64(0)
 
 		pageDefault = int64(0)
+
+		planonlyDefault = bool(true)
 	)
 
 	val := GetAppBranchRunsParams{
-		Limit:  &limitDefault,
-		Offset: &offsetDefault,
-		Page:   &pageDefault,
+		Limit:    &limitDefault,
+		Offset:   &offsetDefault,
+		Page:     &pageDefault,
+		Planonly: &planonlyDefault,
 	}
 
 	val.timeout = o.timeout
@@ -219,6 +230,17 @@ func (o *GetAppBranchRunsParams) SetPage(page *int64) {
 	o.Page = page
 }
 
+// WithPlanonly adds the planonly to the get app branch runs params
+func (o *GetAppBranchRunsParams) WithPlanonly(planonly *bool) *GetAppBranchRunsParams {
+	o.SetPlanonly(planonly)
+	return o
+}
+
+// SetPlanonly adds the planonly to the get app branch runs params
+func (o *GetAppBranchRunsParams) SetPlanonly(planonly *bool) {
+	o.Planonly = planonly
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetAppBranchRunsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -283,6 +305,23 @@ func (o *GetAppBranchRunsParams) WriteToRequest(r runtime.ClientRequest, reg str
 		if qPage != "" {
 
 			if err := r.SetQueryParam("page", qPage); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Planonly != nil {
+
+		// query param planonly
+		var qrPlanonly bool
+
+		if o.Planonly != nil {
+			qrPlanonly = *o.Planonly
+		}
+		qPlanonly := swag.FormatBool(qrPlanonly)
+		if qPlanonly != "" {
+
+			if err := r.SetQueryParam("planonly", qPlanonly); err != nil {
 				return err
 			}
 		}
