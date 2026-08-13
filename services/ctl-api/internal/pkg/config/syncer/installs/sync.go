@@ -150,6 +150,13 @@ func updateInstall(ctx context.Context, db *gorm.DB, installHelpers *installhelp
 		if err := syncInstallInputs(ctx, db, installHelpers, existing, definedInputs); err != nil {
 			return nil, fmt.Errorf("unable to update inputs for install %s: %w", installCfg.Name, err)
 		}
+		// syncLabels only renders when the label config itself changed; an
+		// inputs-only sync still moves state that templates can reference.
+		if len(existing.LabelTemplates) > 0 {
+			if err := installHelpers.RenderInstallLabels(ctx, existing.ID); err != nil {
+				return nil, fmt.Errorf("unable to render install label templates for install %s: %w", installCfg.Name, err)
+			}
+		}
 	}
 
 	hasConfigFields := installCfg.ApprovalOption != config.InstallApprovalOptionUnknown ||
