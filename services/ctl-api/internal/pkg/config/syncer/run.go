@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 
@@ -80,37 +81,59 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 		opts = append(opts, WithComponentBuildDispatch())
 	}
 
-	s := NewDBSyncer(deps.DB, deps.AppsHelpers, deps.ComponentHelpers, deps.ActionsHelpers, deps.RunbooksHelpers,
-		deps.InstallHelpers, deps.VCSHelpers, deps.TFClient, req.AppID, &cfg, req.AppConfigID, opts...)
-	if err := s.Sync(ctx); err != nil {
-		return nil, markSyncFailed(ctx, deps.DB, &appConfig, err)
-	}
-
-	activeStatus := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusActive))
-	activeStatus.StatusHumanDescription = "synced successfully"
-	if err := deps.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := triggers.Sync(ctx, tx, &cfg, appConfig.OrgID, appConfig.AppID, appConfig.ID); err != nil {
+	var result RunResult
+	err = deps.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		s := NewDBSyncer(
+			tx,
+			deps.AppsHelpers,
+			deps.ComponentHelpers,
+			deps.ActionsHelpers,
+			deps.RunbooksHelpers,
+			deps.InstallHelpers,
+			deps.VCSHelpers,
+			deps.TFClient,
+			req.AppID,
+			&cfg,
+			req.AppConfigID,
+			opts...,
+		)
+		if err := s.Sync(ctx); err != nil {
+			return err
+		}
+		activeStatus := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusActive))
+		activeStatus.StatusHumanDescription = "synced successfully"
+		if err := triggers.Sync(
+			ctx, tx, &cfg, appConfig.OrgID, appConfig.AppID, appConfig.ID,
+		); err != nil {
 			return fmt.Errorf("unable to sync triggers: %w", err)
 		}
-		return tx.Model(&appConfig).Updates(map[string]any{
+
+		if err = tx.Model(&appConfig).Updates(map[string]any{
 			"status":             app.AppConfigStatusActive,
 			"status_description": "synced successfully",
 			"status_v2":          activeStatus,
 			"component_ids":      pq.StringArray(s.GetComponentStateIds()),
 			"action_ids":         pq.StringArray(s.GetActionStateIds()),
 			"runbook_ids":        pq.StringArray(s.GetRunbookStateIds()),
-		}).Error
-	}); err != nil {
-		return nil, markSyncFailed(ctx, deps.DB, &appConfig, fmt.Errorf("unable to activate app config: %w", err))
+		}).Error; err != nil {
+			return errors.Wrap(err, "unable to activate app config")
+		}
+
+		result = RunResult{
+			AppConfigID:         s.GetAppConfigID(),
+			ComponentIDs:        s.GetComponentStateIds(),
+			ActionIDs:           s.GetActionStateIds(),
+			RunbookIDs:          s.GetRunbookStateIds(),
+			ComponentsScheduled: s.GetComponentsScheduled(),
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, markSyncFailed(ctx, deps.DB, &appConfig, err)
 	}
 
-	return &RunResult{
-		AppConfigID:         s.GetAppConfigID(),
-		ComponentIDs:        s.GetComponentStateIds(),
-		ActionIDs:           s.GetActionStateIds(),
-		RunbookIDs:          s.GetRunbookStateIds(),
-		ComponentsScheduled: s.GetComponentsScheduled(),
-	}, nil
+	return &result, nil
 }
 
 func setStatus(ctx context.Context, db *gorm.DB, appConfig *app.AppConfig, status app.AppConfigStatus, description string) {

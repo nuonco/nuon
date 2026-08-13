@@ -221,7 +221,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 		// (ComponentBuild.NoOp) handles unchanged-digest cases without
 		// re-pushing the artifact, so the cost is one extra DB row per
 		// (image component × sync).
-		if _, err := helpers.CreateComponentBuild(ctx, apiComp.ID, false, nil); err != nil {
+		if _, err := helpers.CreateComponentBuildInTx(ctx, db, apiComp.ID, false, nil); err != nil {
 			return sync.SyncInternalErr{
 				Description: fmt.Sprintf("unable to queue build for component %s", comp.Name),
 				Err:         err,
