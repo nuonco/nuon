@@ -1162,7 +1162,7 @@ func (a *Client) AddAppComponentLabels(params *AddAppComponentLabelsParams, auth
 /*
 AddInstallLabels adds labels to an install
 
-Merge the provided labels into the install's existing labels. Existing keys are overwritten.
+Merge the provided labels into the install's existing labels. Existing keys are overwritten. A value using the .nuon interpolation syntax becomes a dynamic label: the template is stored and its rendered value is re-materialized whenever install state changes. Keys managed by the app config's default_labels cannot be changed here.
 */
 func (a *Client) AddInstallLabels(params *AddInstallLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddInstallLabelsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -18897,7 +18897,7 @@ func (a *Client) RemoveAppComponentLabels(params *RemoveAppComponentLabelsParams
 /*
 RemoveInstallLabels removes labels from an install
 
-Remove the specified label keys from the install.
+Remove the specified label keys from the install. Removing a dynamic label's key also removes its template. Keys managed by the app config's default_labels cannot be removed here.
 */
 func (a *Client) RemoveInstallLabels(params *RemoveInstallLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveInstallLabelsOK, error) {
 	// NOTE: parameters are not validated before sending

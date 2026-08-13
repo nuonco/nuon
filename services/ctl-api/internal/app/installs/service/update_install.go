@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/patcher"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
+	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -144,6 +145,13 @@ func (s *service) updateInstall(ctx context.Context, installID string, req *Upda
 
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install: %w", res.Error)
+	}
+
+	// The cloud partial (and the install identity fields is.ID/is.Name) derive
+	// from the install row; stale_at alone never lazily regenerates, so without a
+	// named partial the updated signal's label render reads the old name.
+	if err := s.helpers.MarkInstallStatePartialsStale(ctx, s.db, installID, pkgstate.PartialCloud); err != nil {
+		return nil, fmt.Errorf("unable to mark install state partials stale: %w", err)
 	}
 
 	return &currentInstall, nil
