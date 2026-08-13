@@ -180,6 +180,13 @@ type Event struct {
 	// signal. Used by notification-only events (e.g. role-change) to pass
 	// fields like role_name, change_type, etc. to the renderer.
 	Metadata map[string]any
+
+	// SlackUserIDByEmail maps an email rendered on this event (workflow
+	// creator, approval responder) to that person's user id in the
+	// destination workspace. User ids are workspace-scoped, so the producer
+	// sets a per-team copy of the event; emails without an entry render as
+	// plain escaped text.
+	SlackUserIDByEmail map[string]string
 }
 
 // IsTerminal reports whether the event represents a terminal transition.

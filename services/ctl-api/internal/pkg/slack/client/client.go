@@ -5,6 +5,8 @@
 //   - chat.postMessage — post lifecycle / approval messages
 //   - chat.update      — edit a previously posted message (e.g. mark approved)
 //   - conversations.list — enumerate channels for the /nuon subscribe flow
+//   - users.lookupByEmail — resolve an email to a workspace user id for
+//     @-mentions in lifecycle messages
 //   - auth.test        — probe a token (used after install to capture
 //     bot_user_id, app_id, etc.)
 //
@@ -283,6 +285,40 @@ func (c *Client) ConversationsInfo(ctx context.Context, botToken, channelID stri
 	}
 	if !resp.OK {
 		return nil, fmt.Errorf("slack conversations.info: %s", resp.Error)
+	}
+	return &resp, nil
+}
+
+// UsersLookupByEmailResponse mirrors users.lookupByEmail.
+type UsersLookupByEmailResponse struct {
+	baseResponse
+
+	User struct {
+		ID string `json:"id"`
+	} `json:"user"`
+}
+
+// UsersLookupByEmail resolves an email address to the workspace user that
+// owns it. Requires the users:read.email scope; workspaces installed before
+// the scope was added return missing_scope, and emails without a member in
+// the workspace return users_not_found — callers treat both as a miss.
+func (c *Client) UsersLookupByEmail(ctx context.Context, botToken, email string) (*UsersLookupByEmailResponse, error) {
+	q := url.Values{}
+	q.Set("email", email)
+
+	endpoint := c.baseURL + "/users.lookupByEmail?" + q.Encode()
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("slack: build users.lookupByEmail: %w", err)
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+botToken)
+
+	var resp UsersLookupByEmailResponse
+	if err := c.do(httpReq, &resp); err != nil {
+		return nil, err
+	}
+	if !resp.OK {
+		return nil, fmt.Errorf("slack users.lookupByEmail: %s", resp.Error)
 	}
 	return &resp, nil
 }

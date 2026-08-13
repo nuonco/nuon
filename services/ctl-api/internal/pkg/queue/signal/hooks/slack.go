@@ -321,6 +321,13 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 	// to this call rather than a long-lived hook field.
 	labelLoader := newLabelLoader(h.db)
 
+	// Per-team mention resolution: user ids are workspace-scoped, so each
+	// team gets its own copy of the rendered event with emails resolved
+	// against that workspace. Resolved lazily (only when a message will
+	// actually post) and memoised per team for this publish call.
+	userResolver := newSlackUserResolver(h.slackClient, h.l)
+	teamRendered := make(map[string]renderEvent)
+
 	logger := h.l.With(
 		zap.String("hook", h.Name()),
 		zap.String("org_id", event.OrgID),
@@ -383,6 +390,12 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 			}
 			seen[dedupKey] = struct{}{}
 
+			tr, ok := teamRendered[link.TeamID]
+			if !ok {
+				tr = h.withResolvedMentions(ctx, userResolver, install, rendered)
+				teamRendered[link.TeamID] = tr
+			}
+
 			// Drift-detected events bypass the parent-anchor / threaded-reply
 			// machinery: they are the only meaningful signal subscribers get
 			// from a drift scan (the surrounding drift_run /
@@ -391,9 +404,9 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 			// message linked directly to the affected component or sandbox.
 			var err error
 			if isNotificationOnlySignalType(event.SignalType) {
-				err = h.postFlatNotification(ctx, install, sub, rendered, event.SignalType)
+				err = h.postFlatNotification(ctx, install, sub, tr, event.SignalType)
 			} else {
-				err = h.postOrThread(ctx, install, sub, data, rendered, logger)
+				err = h.postOrThread(ctx, install, sub, data, tr, logger)
 			}
 			if err == nil {
 				delivered = true

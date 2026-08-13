@@ -104,7 +104,7 @@ func parentFields(e Event, startedAt, now time.Time) []kv {
 		fields = append(fields, kv{"Org", slackEscape(name)})
 	}
 	if e.Workflow.CreatedByEmail != "" {
-		fields = append(fields, kv{"By", slackEscape(e.Workflow.CreatedByEmail)})
+		fields = append(fields, kv{"By", personLabel(e, e.Workflow.CreatedByEmail)})
 	}
 	return fields
 }
@@ -144,7 +144,7 @@ func parentLatestStep(e Event) string {
 	}
 	v := "*" + slackEscape(title) + "*  " + statusEmoji(e.Transition) + " " + transitionPhrase(e.Transition)
 	if rb := approvalRespondedBy(e); rb != "" {
-		v = v + " by " + slackEscape(rb)
+		v = v + " by " + personLabel(e, rb)
 	}
 	return v
 }
@@ -180,7 +180,7 @@ func childContextParts(e Event) []string {
 	parts := []string{}
 	if phrase := transitionPhrase(e.Transition); phrase != "" {
 		if rb := approvalRespondedBy(e); rb != "" {
-			phrase = phrase + " by " + rb
+			phrase = phrase + " by " + personLabel(e, rb)
 		}
 		parts = append(parts, phrase)
 	}
@@ -188,7 +188,7 @@ func childContextParts(e Event) []string {
 		parts = append(parts, humanDurationMs(e.Outcome.DurationMs))
 	}
 	if e.Outcome != nil && e.Outcome.Error != "" {
-		parts = append(parts, "error: "+trimContext(e.Outcome.Error, 220))
+		parts = append(parts, "error: "+slackEscape(trimContext(e.Outcome.Error, 220)))
 	}
 	return parts
 }
@@ -864,11 +864,13 @@ func errorSection(e Event) (*slack.SectionBlock, bool) {
 }
 
 // contextBlock builds the small grey context line: footer parts joined by
-// " · " followed by link chips. Returns ok=false when empty.
+// " · " followed by link chips. Parts must arrive pre-escaped — escaping
+// here would mangle <@id> mentions embedded in them. Returns ok=false when
+// empty.
 func contextBlock(parts []string, links []LinkChip) (*slack.ContextBlock, bool) {
 	elements := []slack.MixedElement{}
 	if len(parts) > 0 {
-		elements = append(elements, slack.NewTextBlockObject(slack.MarkdownType, slackEscape(strings.Join(parts, " · ")), false, false))
+		elements = append(elements, slack.NewTextBlockObject(slack.MarkdownType, strings.Join(parts, " · "), false, false))
 	}
 	for _, link := range links {
 		if link.URL == "" {
@@ -1175,4 +1177,14 @@ func metadataString(e Event, key string) string {
 func slackEscape(s string) string {
 	r := strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;")
 	return r.Replace(s)
+}
+
+// personLabel renders a person reference: an <@id> mention when the event
+// carries a workspace user id for the email, otherwise the escaped raw
+// value (email or account-id fallback).
+func personLabel(e Event, person string) string {
+	if id := e.SlackUserIDByEmail[person]; id != "" {
+		return "<@" + id + ">"
+	}
+	return slackEscape(person)
 }
