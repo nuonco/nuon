@@ -203,6 +203,7 @@ const InstallTemplate = () => {
             <SubNav
               basePath={`/${org?.id}/installs/${install?.id}`}
               links={navLinks}
+              storageKey="subnav:install"
             />
             <div className="flex flex-col flex-1 min-w-0">
               <ErrorBoundary key={pathname} fallback={<InstallContentError />}>
@@ -288,6 +289,7 @@ const InstallTemplate = () => {
               <SubNav
                 basePath={`/${org?.id}/installs/${install?.id}`}
                 links={navLinks}
+                storageKey="subnav:install"
               />
               <div className="flex flex-col flex-1 min-w-0">
                 <ErrorBoundary key={pathname} fallback={<InstallContentError />}>
