@@ -68,8 +68,11 @@ func (s *service) GetAppComponents(ctx *gin.Context) {
 }
 
 func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []string, componentIDs []string, lbls labels.Labels) ([]app.Component, error) {
-	appCfg, err := s.appsHelpers.GetAppLatestConfig(ctx, appID)
+	appCfg, err := s.appsHelpers.GetLatestActiveAppConfig(ctx, appID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []app.Component{}, nil
+		}
 		return nil, errors.Wrap(err, "unable to get latest app config")
 	}
 
