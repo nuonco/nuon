@@ -29,7 +29,7 @@ func (a *Activities) CheckContainerImagePoliciesExist(ctx context.Context, req *
 
 	l.Info("checking if container image policies exist")
 
-	build, err := a.getBuildWithAppConfig(ctx, req.BuildID)
+	build, err := a.getBuildWithComponentApp(ctx, req.BuildID)
 	if err != nil {
 		l.Error("unable to get build with app config", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to get build with app config")
@@ -37,15 +37,14 @@ func (a *Activities) CheckContainerImagePoliciesExist(ctx context.Context, req *
 
 	componentName := build.ComponentConfigConnection.Component.Name
 
-	appConfigs := build.ComponentConfigConnection.Component.App.AppConfigs
-	if len(appConfigs) == 0 {
+	appConfigID := build.ComponentConfigConnection.AppConfigID
+	if appConfigID == "" {
 		l.Info("no app config found, no policies to evaluate")
 		return &CheckContainerImagePoliciesExistResult{
 			HasPolicies:   false,
 			ComponentName: componentName,
 		}, nil
 	}
-	appConfigID := appConfigs[0].ID
 
 	l = l.With(zap.String("app_config_id", appConfigID))
 

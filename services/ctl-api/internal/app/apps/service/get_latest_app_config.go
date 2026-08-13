@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"gorm.io/gorm"
 )
 
@@ -27,36 +26,31 @@ import (
 // @Success				200	{object}	app.AppConfig
 // @Router					/v1/apps/{app_id}/latest-config [get]
 func (s *service) GetAppLatestConfig(ctx *gin.Context) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
-		return
-	}
-
 	appID := ctx.Param("app_id")
 	recurse := ctx.DefaultQuery("recurse", "false") == "true"
-	app, err := s.findApp(ctx, org.ID, appID)
+
+	currentApp, err := s.appByNameOrID(ctx, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
 		return
 	}
 
-	if len(app.AppConfigs) < 1 {
-		ctx.Error(fmt.Errorf("no configs found for app: %w", gorm.ErrRecordNotFound))
+	response, err := s.helpers.GetLatestActiveAppConfigBare(ctx, currentApp.ID)
+	if err != nil {
+		ctx.Error(err)
 		return
 	}
 
-	response := &app.AppConfigs[0]
 	if recurse {
-		response, err = s.helpers.GetFullAppConfig(ctx, app.AppConfigs[0].ID, true)
+		response, err = s.helpers.GetFullAppConfig(ctx, response.ID, true)
 		if err != nil {
-			ctx.Error(fmt.Errorf("unable to get app config %s: %w", app.AppConfigs[0].ID, err))
+			ctx.Error(fmt.Errorf("unable to get app config %s: %w", response.ID, err))
 			return
 		}
-	}
-	if response == nil {
-		ctx.Error(fmt.Errorf("no configs found for app: %w", gorm.ErrRecordNotFound))
-		return
+		if response == nil {
+			ctx.Error(fmt.Errorf("no configs found for app: %w", gorm.ErrRecordNotFound))
+			return
+		}
 	}
 
 	ctx.JSON(http.StatusOK, response)

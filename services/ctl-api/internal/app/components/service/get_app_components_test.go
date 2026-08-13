@@ -137,4 +137,57 @@ func (s *ComponentsServiceTestSuite) TestGetAppComponentsEmptyApp() {
 
 		assert.Len(s.T(), response, 0, "should return empty when component not in app config")
 	})
+
+	s.Run("returns empty when the app has never synced a config", func() {
+		unsyncedApp := s.deps.Seeder.CreateApp(s.ctx, s.T())
+		cfg := s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), unsyncedApp.ID)
+		s.setAppConfigStatus(cfg.ID, app.AppConfigStatusPending)
+
+		path := fmt.Sprintf("/v1/apps/%s/components", unsyncedApp.ID)
+		rr := s.makeRequest(http.MethodGet, path, nil)
+
+		if rr.Code != http.StatusOK {
+			s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+		}
+		require.Equal(s.T(), http.StatusOK, rr.Code)
+
+		var response []app.Component
+		err := json.Unmarshal(rr.Body.Bytes(), &response)
+		require.NoError(s.T(), err)
+		assert.Len(s.T(), response, 0)
+	})
+}
+
+// TestGetAppComponentsIgnoresFailedConfig covers the case where a failed sync creates a newer app
+// config: the components from the last successfully synced config must still be listed.
+func (s *ComponentsServiceTestSuite) TestGetAppComponentsIgnoresFailedConfig() {
+	failed := s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
+	s.setAppConfigStatus(failed.ID, app.AppConfigStatusError)
+	s.T().Cleanup(func() {
+		s.deps.DB.Unscoped().Delete(&app.AppConfig{}, "id = ?", failed.ID)
+	})
+
+	path := fmt.Sprintf("/v1/apps/%s/components", s.testApp.ID)
+	rr := s.makeRequest(http.MethodGet, path, nil)
+
+	if rr.Code != http.StatusOK {
+		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+	}
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+
+	var response []app.Component
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	require.NoError(s.T(), err)
+
+	assert.Len(s.T(), response, len(s.testAppConfig.ComponentIDs))
+}
+
+// setAppConfigStatus writes both status columns, matching how the syncer records a status.
+func (s *ComponentsServiceTestSuite) setAppConfigStatus(appConfigID string, status app.AppConfigStatus) {
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Model(&app.AppConfig{ID: appConfigID}).
+		Updates(map[string]any{
+			"status":    status,
+			"status_v2": app.NewCompositeStatus(s.ctx, app.Status(status)),
+		}).Error)
 }

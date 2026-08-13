@@ -60,7 +60,7 @@ func (s *service) GetInstallReadme(ctx *gin.Context) {
 	}
 
 	// get app readme template
-	appConfig, err := s.appsHelpers.GetAppLatestConfig(ctx, install.AppID)
+	appConfig, err := s.appsHelpers.GetLatestActiveAppConfig(ctx, install.AppID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get latest app config: %w", err))
 		return
