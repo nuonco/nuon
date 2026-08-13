@@ -1,5 +1,7 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
+import { useLocation } from 'react-router'
 import { useHashScroll } from '@/hooks/use-hash-scroll'
+import { useIsDesktop } from '@/hooks/use-is-desktop'
 import { useSidebar } from '@/hooks/use-sidebar'
 import type { TNuonVersion } from '@/types'
 import { cn } from '@/utils/classnames'
@@ -17,7 +19,16 @@ export const MainLayout = ({
   hideOrgContent,
 }: IMainLayout) => {
   useHashScroll()
-  const { isSidebarOpen, toggleSidebar } = useSidebar()
+  const { isSidebarOpen, openSidebar, toggleSidebar } = useSidebar()
+  const isDesktop = useIsDesktop()
+  const { pathname } = useLocation()
+  const prevPathname = useRef(pathname)
+
+  useEffect(() => {
+    if (prevPathname.current === pathname) return
+    prevPathname.current = pathname
+    if (!isDesktop && !isSidebarOpen) openSidebar?.()
+  }, [pathname, isDesktop, isSidebarOpen, openSidebar])
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
