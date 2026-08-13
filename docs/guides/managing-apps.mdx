@@ -84,3 +84,18 @@ customer = "#3357FF"
 ```
 
 The colors apply wherever those label keys appear in the dashboard — on apps, installs, and components. You can also set label colors directly in the dashboard; either source can be updated later, and a sync will reconcile the values from your config.
+
+### Default labels
+
+Apply labels to every install of an app with a `default_labels` table in `metadata.toml`:
+
+```toml metadata.toml
+[default_labels]
+service_tier   = "{{ .nuon.inputs.service_tier }}"
+```
+
+Values can use the [interpolation syntax](/guides/using-variables) to render per install from install state,
+and re-render automatically as that state changes.
+
+Default labels are owned by the app config. They locked on each install and cannot be updated manually or via install config.
+To change or remove a default label, you must edit `default_labels` in the app config. The change will propagate to each install when the new version of that app is released.

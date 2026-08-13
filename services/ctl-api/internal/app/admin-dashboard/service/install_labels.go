@@ -39,6 +39,11 @@ func (s *service) AddInstallLabel(c *gin.Context) {
 		return
 	}
 
+	if _, isDefault := install.AppDefaultLabels[req.Key]; isDefault {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Label is a default label defined in the app config"})
+		return
+	}
+
 	install.Labels.Merge(labels.Labels{req.Key: req.Value})
 
 	if err := s.db.WithContext(ctx).Model(&install).Select("labels").Updates(&install).Error; err != nil {
@@ -68,6 +73,11 @@ func (s *service) RemoveInstallLabel(c *gin.Context) {
 	if err := s.db.WithContext(ctx).First(&install, "id = ?", installID).Error; err != nil {
 		s.l.Error("failed to get install", zap.String("install_id", installID), zap.Error(err))
 		c.JSON(http.StatusNotFound, gin.H{"error": "Install not found"})
+		return
+	}
+
+	if _, isDefault := install.AppDefaultLabels[key]; isDefault {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Label is a default label defined in the app config"})
 		return
 	}
 

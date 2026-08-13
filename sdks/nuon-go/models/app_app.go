@@ -41,6 +41,10 @@ type AppApp struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// DefaultLabels are applied to every install of the app and can only be
+	// changed via app config sync — install label endpoints reject these keys.
+	DefaultLabels map[string]string `json:"default_labels,omitempty"`
+
 	// description
 	Description string `json:"description,omitempty"`
 

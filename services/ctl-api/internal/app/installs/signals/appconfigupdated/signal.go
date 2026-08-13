@@ -78,6 +78,27 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
+	// Best-effort: default-label reconciliation must not fail config updates.
+	if err := activities.AwaitApplyAppDefaultLabels(ctx, &activities.ApplyAppDefaultLabelsRequest{
+		InstallID: s.InstallID,
+	}); err != nil {
+		l.Warn("unable to apply app default labels",
+			zap.String("install_id", s.InstallID),
+			zap.Error(err))
+	}
+
+	// A config change can move config-derived state (.nuon.app, migrated inputs)
+	// without touching the default-label set, and ApplyAppDefaultLabels only
+	// renders when that set changed. Best-effort re-render so templates pick up
+	// the new config; reads regenerate the partials marked stale above.
+	if err := activities.AwaitRenderInstallLabels(ctx, &activities.RenderInstallLabelsRequest{
+		InstallID: s.InstallID,
+	}); err != nil {
+		l.Warn("unable to render install label templates",
+			zap.String("install_id", s.InstallID),
+			zap.Error(err))
+	}
+
 	signalsQueue, err := activities.AwaitGetInstallSignalsQueueByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return fmt.Errorf("unable to get install signals queue: %w", err)
