@@ -2,7 +2,10 @@ package telemetryexport
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -17,13 +20,19 @@ import (
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zapio"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
-const collectorBinary = "/bin/nuon-runner-otelcol"
-const secretSyncInterval = 30 * time.Second
+const (
+	collectorBinary             = "/bin/nuon-runner-otelcol"
+	collectorHealthURL          = "http://127.0.0.1:13133/"
+	collectorStartTimeout       = 5 * time.Second
+	collectorHealthPollInterval = 50 * time.Millisecond
+	secretSyncInterval          = 30 * time.Second
+)
 
-var Module = fx.Options(fx.Provide(newAWSFactory, newAzureFactory, newGCPFactory, newConfigSourceResolver, New), fx.Invoke(func(*Supervisor) {}))
+var Module = fx.Options(fx.Provide(audit.New, newAWSFactory, newAzureFactory, newGCPFactory, newConfigSourceResolver, New), fx.Invoke(func(*Supervisor) {}))
 
 type Params struct {
 	fx.In
@@ -31,27 +40,34 @@ type Params struct {
 	Settings  *settings.Settings
 	Logger    *zap.Logger `name:"system"`
 	Sources   configSourceResolver
+	Audit     *audit.Writer
 }
 
 type Supervisor struct {
-	installID          string
-	platform           string
-	local              bool
-	logger             *zap.Logger
-	sources            configSourceResolver
-	cancel             context.CancelFunc
-	done               chan struct{}
-	mu                 sync.Mutex
-	child              *childProcess
-	active             string
-	backoff            time.Duration
-	nextStart          time.Time
-	reported           bool
-	collectorEnabled   bool
-	auditExportEnabled bool
+	installID        string
+	platform         string
+	local            bool
+	logger           *zap.Logger
+	sources          configSourceResolver
+	cancel           context.CancelFunc
+	done             chan struct{}
+	mu               sync.Mutex
+	child            *childProcess
+	active           string
+	backoff          time.Duration
+	nextStart        time.Time
+	reported         bool
+	collectorEnabled bool
+	audit            auditConfigurator
 
 	replaceChildFn func(config) error
 	stopChildFn    func()
+}
+
+type auditConfigurator interface {
+	Enable() error
+	Disable()
+	ProcessStopping(context.Context, string, string) error
 }
 
 type childProcess struct {
@@ -63,7 +79,7 @@ type childProcess struct {
 }
 
 func New(params Params) *Supervisor {
-	s := &Supervisor{installID: params.Settings.Metadata["install.id"], platform: params.Settings.Platform, local: params.Settings.Cfg.IsNuonctl, logger: params.Logger, sources: params.Sources, done: make(chan struct{}), backoff: time.Second}
+	s := &Supervisor{installID: params.Settings.Metadata["install.id"], platform: params.Settings.Platform, local: params.Settings.Cfg.IsNuonctl, logger: params.Logger, sources: params.Sources, audit: params.Audit, done: make(chan struct{}), backoff: time.Second}
 	s.replaceChildFn = s.replaceChild
 	s.stopChildFn = s.stopChild
 	params.Lifecycle.Append(fx.Hook{OnStart: s.start, OnStop: s.stop})
@@ -78,6 +94,11 @@ func (s *Supervisor) start(context.Context) error {
 }
 
 func (s *Supervisor) stop(ctx context.Context) error {
+	if s.audit != nil {
+		if err := s.audit.ProcessStopping(ctx, "graceful_shutdown", "fx_lifecycle"); err != nil && !errors.Is(err, audit.ErrUnavailable) {
+			s.logger.Warn("customer audit shutdown event export failed", zap.Error(err))
+		}
+	}
 	if s.cancel != nil {
 		s.cancel()
 		select {
@@ -87,20 +108,6 @@ func (s *Supervisor) stop(ctx context.Context) error {
 		}
 	}
 	return nil
-}
-
-func (s *Supervisor) AuditExportAvailable() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if !s.auditExportEnabled || s.child == nil {
-		return false
-	}
-	select {
-	case <-s.child.done:
-		return false
-	default:
-		return true
-	}
 }
 
 func (s *Supervisor) run(ctx context.Context) {
@@ -177,13 +184,43 @@ func (s *Supervisor) reconcile(update configUpdate) {
 	s.active = value
 	s.backoff = time.Second
 	s.nextStart = time.Time{}
-	s.setAuditExportEnabled(cfg.AuditLogsEnabled)
+	var auditVerificationErr error
+	if s.audit != nil {
+		if cfg.AuditLogsEnabled {
+			auditVerificationErr = s.audit.Enable()
+		} else {
+			s.audit.Disable()
+		}
+	}
 	s.logEnabled(cfg)
+	if auditVerificationErr != nil {
+		endpoint, _ := url.Parse(cfg.OTLPHTTP.Endpoint)
+		s.logger.Warn("customer audit collector is active but the startup event was not acknowledged; the backend may be unavailable or rejecting credentials",
+			zap.String("audit_export.backend", endpoint.Host),
+			zap.Bool("audit_export.delivery_verified", false),
+			zap.String("audit_export.failure_type", auditExportFailureType(auditVerificationErr)),
+		)
+	}
+}
+
+func auditExportFailureType(err error) string {
+	switch {
+	case errors.Is(err, context.DeadlineExceeded):
+		return "timeout"
+	case errors.Is(err, context.Canceled):
+		return "canceled"
+	case errors.Is(err, audit.ErrUnavailable):
+		return "unavailable"
+	default:
+		return "failure"
+	}
 }
 
 func (s *Supervisor) disable(reason string) {
 	s.stopChildFn()
-	s.setAuditExportEnabled(false)
+	if s.audit != nil {
+		s.audit.Disable()
+	}
 	s.active = ""
 	s.nextStart = time.Time{}
 	if !s.reported || s.collectorEnabled {
@@ -212,12 +249,6 @@ func (s *Supervisor) logEnabled(cfg config) {
 	s.logger.Info("runner telemetry export collector enabled", fields...)
 	s.reported = true
 	s.collectorEnabled = true
-}
-
-func (s *Supervisor) setAuditExportEnabled(enabled bool) {
-	s.mu.Lock()
-	s.auditExportEnabled = enabled
-	s.mu.Unlock()
 }
 
 func (s *Supervisor) replaceChild(cfg config) error {
@@ -253,7 +284,6 @@ func (s *Supervisor) replaceChild(cfg config) error {
 	child := &childProcess{cmd: cmd, tempDir: tempDir, done: make(chan struct{}), startedAt: time.Now(), outputWriters: []io.Closer{stdout, stderr}}
 	s.mu.Lock()
 	s.child = child
-	s.auditExportEnabled = cfg.AuditLogsEnabled
 	s.mu.Unlock()
 	go func() {
 		_ = cmd.Wait()
@@ -262,7 +292,37 @@ func (s *Supervisor) replaceChild(cfg config) error {
 		}
 		close(child.done)
 	}()
+	if err := waitForCollector(child, collectorHealthURL); err != nil {
+		s.stopChild()
+		return err
+	}
 	return nil
+}
+
+func waitForCollector(child *childProcess, healthURL string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), collectorStartTimeout)
+	defer cancel()
+	client := &http.Client{Timeout: collectorHealthPollInterval}
+	for {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, healthURL, nil)
+		if err != nil {
+			return err
+		}
+		resp, err := client.Do(req)
+		if err == nil {
+			_ = resp.Body.Close()
+			if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
+				return nil
+			}
+		}
+		select {
+		case <-child.done:
+			return fmt.Errorf("telemetry export collector exited before becoming healthy")
+		case <-ctx.Done():
+			return fmt.Errorf("telemetry export collector did not become healthy: %w", ctx.Err())
+		case <-time.After(collectorHealthPollInterval):
+		}
+	}
 }
 
 func (s *Supervisor) stopChild() {

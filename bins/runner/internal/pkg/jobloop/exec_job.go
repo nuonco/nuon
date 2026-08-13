@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/sandboxhandler"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/runner/errcapture"
@@ -35,11 +36,7 @@ type executeJobStep struct {
 func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) error {
 	job.RunnerProcessID = j.processRegistrar.ProcessID()
 
-	var auditExportAvailable func() bool
-	if j.telemetryExport != nil {
-		auditExportAvailable = j.telemetryExport.AuditExportAvailable
-	}
-	jl, err := slog.NewOTELProvider(j.cfg, j.settings, job.LogStreamID, auditExportAvailable)
+	jl, err := slog.NewOTELProvider(j.cfg, j.settings, job.LogStreamID)
 	if err != nil {
 		return errors.Wrap(err, "unable to create otel provider")
 	}
@@ -122,17 +119,16 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 
 	ctx = pkgctx.SetLogger(ctx, l)
 
-	auditL := log.NewAudit(l, job)
-	log.AuditEvent(auditL, "job execution started", log.OutcomeStarted)
+	j.writeJobAudit(job, "job execution started", audit.OutcomeStarted, nil)
 
 	var jobErr error
 	defer func() {
 		if jobErr != nil {
-			log.AuditEvent(auditL, "job execution failed", log.OutcomeFailed, zap.Error(jobErr))
+			j.writeJobAudit(job, "job execution failed", audit.OutcomeFailed, map[string]string{"error": jobErr.Error()})
 			rootSpan.RecordError(jobErr)
 			rootSpan.SetStatus(codes.Error, jobErr.Error())
 		} else {
-			log.AuditEvent(auditL, "job execution finished", log.OutcomeSucceeded)
+			j.writeJobAudit(job, "job execution finished", audit.OutcomeSucceeded, nil)
 		}
 		rootSpan.End()
 	}()
@@ -223,17 +219,17 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		stepL := l.With(pkgctx.ContextField(stepCtx))
 		stepL.Info("executing job step "+step.name, zap.String("step", step.name))
 
-		stepAuditL := log.NewAudit(stepL, job)
-		stepNameField := zap.String("runner_job_execution_step.name", step.name)
-		log.AuditEvent(stepAuditL, "job step started", log.OutcomeStarted, stepNameField)
+		stepAttrs := map[string]string{"runner_job_execution_step.name": step.name}
+		j.writeJobAudit(job, "job step started", audit.OutcomeStarted, stepAttrs)
 
 		stepErr := j.execJobStep(stepCtx, stepL, jl, step, job, execution)
 		if stepErr != nil {
-			log.AuditEvent(stepAuditL, "job step failed", log.OutcomeFailed, stepNameField, zap.Error(stepErr))
+			stepAttrs["error"] = stepErr.Error()
+			j.writeJobAudit(job, "job step failed", audit.OutcomeFailed, stepAttrs)
 			stepSpan.RecordError(stepErr)
 			stepSpan.SetStatus(codes.Error, stepErr.Error())
 		} else {
-			log.AuditEvent(stepAuditL, "job step finished", log.OutcomeSucceeded, stepNameField)
+			j.writeJobAudit(job, "job step finished", audit.OutcomeSucceeded, stepAttrs)
 		}
 		stepSpan.End()
 		if stepErr != nil {
@@ -250,4 +246,21 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	l.Info("finished job", zap.String("name", handler.Name()))
 
 	return nil
+}
+
+func (j *jobLoop) writeJobAudit(job *models.AppRunnerJob, message, outcome string, attributes map[string]string) {
+	event, ok := audit.JobEvent(job, message, outcome, attributes)
+	if !ok {
+		return
+	}
+	if err := j.audit.WriteAsync(event); err != nil {
+		if errors.Is(err, audit.ErrUnavailable) {
+			return
+		}
+		j.l.Warn("customer job audit event enqueue failed",
+			zap.String("audit.event", event.Name),
+			zap.String("audit.outcome", event.Outcome),
+			zap.Error(err),
+		)
+	}
 }

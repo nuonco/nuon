@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/shutdownbeacon"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/telemetryexport"
 	"github.com/nuonco/nuon/pkg/runner/log"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/spf13/cobra"
@@ -47,6 +48,7 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 	providers = append(c.commonProviders(), providers...)
 	providers = append(providers, management.GetJobs()...)
 	providers = append(providers, fx.Provide(shutdownbeacon.New))
+	providers = append(providers, telemetryexport.Module)
 	// add mng and heartbeater to the mng process
 	providers = append(providers,
 		[]fx.Option{

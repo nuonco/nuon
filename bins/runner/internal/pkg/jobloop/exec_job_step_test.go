@@ -10,7 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/runner/jobs"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
@@ -44,6 +46,16 @@ type jobLoopTestHandler struct {
 }
 
 func (h *jobLoopTestHandler) Name() string { return h.name }
+
+func TestWriteJobAuditIgnoresUnavailableExporter(t *testing.T) {
+	core, observed := observer.New(zap.WarnLevel)
+	j := &jobLoop{audit: new(audit.Writer), l: zap.New(core)}
+
+	j.writeJobAudit(&models.AppRunnerJob{Group: models.AppRunnerJobGroupDeploy}, "job started", audit.OutcomeStarted, nil)
+	if observed.Len() != 0 {
+		t.Fatalf("unavailable audit exporter produced %d warnings, want 0", observed.Len())
+	}
+}
 
 func TestExecJobStepWritesFallbackResultBeforeFailedStatus(t *testing.T) {
 	events := make([]string, 0, 3)
