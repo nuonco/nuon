@@ -2,18 +2,18 @@ import { Avatar } from '@/components/common/Avatar'
 import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
-import { useSidebar } from '@/hooks/use-sidebar'
 import type { TOrg } from '@/types'
 import { cn } from '@/utils/classnames'
 
 const OrgAvatar = ({
   isButtonSummary = false,
+  isSidebarOpen = true,
   org,
 }: {
   isButtonSummary?: boolean
+  isSidebarOpen?: boolean
   org: TOrg
 }) => {
-  const { isSidebarOpen } = useSidebar()
   return (
     <div className={cn({ 'org-avatar-summary relative': isButtonSummary })}>
       <Avatar
@@ -47,7 +47,7 @@ export const OrgSummary = ({
 }: IOrgSummary) => {
   return (
     <div className="flex gap-4 items-center overflow-hidden">
-      <OrgAvatar {...{ isButtonSummary, org }} />
+      <OrgAvatar {...{ isButtonSummary, isSidebarOpen, org }} />
       <div
         className={cn('transition-all max-w-full overflow-hidden', {
           'md:opacity-100': isSidebarOpen,

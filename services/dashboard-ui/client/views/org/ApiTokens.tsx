@@ -41,7 +41,7 @@ export const ApiTokens = () => {
             Manage static tokens for accessing the Nuon API in this org.
           </Text>
         </HeadingGroup>
-        <CreateApiTokenButton />
+        <CreateApiTokenButton variant="primary" />
       </PageHeader>
       <PageContent>
         <PageSection>

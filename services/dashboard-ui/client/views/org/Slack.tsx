@@ -76,7 +76,7 @@ export const Slack = () => {
               <Text variant="base" weight="strong">
                 Channel subscriptions
               </Text>
-              <CreateChannelSubscriptionButton size="sm" />
+              <CreateChannelSubscriptionButton variant="secondary" />
             </div>
             <ChannelSubscriptionsTable shouldPoll />
           </div>
