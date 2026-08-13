@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -26,7 +27,7 @@ func (r *AddInstallLabelsRequest) Validate(v *validator.Validate) error {
 
 // @ID						AddInstallLabels
 // @Summary				add labels to an install
-// @Description			Merge the provided labels into the install's existing labels. Existing keys are overwritten.
+// @Description			Merge the provided labels into the install's existing labels. Existing keys are overwritten. A value using the .nuon interpolation syntax becomes a dynamic label: the template is stored and its rendered value is re-materialized whenever install state changes. Keys managed by the app config's default_labels cannot be changed here.
 // @Param					install_id	path	string					true	"install ID"
 // @Param					req			body	AddInstallLabelsRequest	true	"Input"
 // @Tags					installs
@@ -60,20 +61,76 @@ func (s *service) AddInstallLabels(ctx *gin.Context) {
 		return
 	}
 
-	merged := make(labels.Labels)
+	// Default labels are set in the app config; a write that echoes the current
+	// rendered value or the default itself is a harmless round-trip, anything
+	// else is rejected.
+	for key, val := range req.Labels {
+		def, isDefault := install.AppDefaultLabels[key]
+		if !isDefault {
+			continue
+		}
+		if val == install.Labels[key] || val == def {
+			delete(req.Labels, key)
+			continue
+		}
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("label %q is a default label; edit default_labels in the app config and sync", key),
+			Description: fmt.Sprintf("label %q is a default label; edit default_labels in the app config and sync", key),
+		})
+		return
+	}
+
+	static, templated := labels.Labels(req.Labels).SplitTemplated()
+	for key, tmpl := range templated {
+		if err := render.ValidateTextTemplate(tmpl); err != nil {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("label %q uses the interpolation syntax but is not a valid template: %w", key, err),
+				Description: fmt.Sprintf("label %q uses the interpolation syntax but is not a valid template", key),
+			})
+			return
+		}
+	}
+
+	// A static write echoing a template-managed key's rendered value is a
+	// round-trip from a client that only sees rendered labels — keep the
+	// template. A differing value converts the key back to static.
+	for key, val := range static {
+		if _, managed := install.LabelTemplates[key]; managed && install.Labels[key] == val {
+			delete(static, key)
+		}
+	}
+
+	newTemplates := make(labels.Labels, len(install.LabelTemplates)+len(templated))
+	for k, v := range install.LabelTemplates {
+		newTemplates[k] = v
+	}
+	newTemplates.RemoveKeys(mapKeys(static))
+	newTemplates.Merge(templated)
+
+	merged := make(labels.Labels, len(install.Labels)+len(req.Labels))
 	for k, v := range install.Labels {
 		merged[k] = v
 	}
-	merged.Merge(labels.Labels(req.Labels))
+	merged.Merge(static)
+
+	if len(templated) > 0 {
+		rendered, err := s.helpers.RenderLabelTemplates(ctx, installID, templated)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to render label templates: %w", err))
+			return
+		}
+		merged.Merge(rendered)
+	}
 
 	if err := s.appsHelpers.ValidateInstallBranchExclusivity(ctx, &install, merged); err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	install.Labels.Merge(labels.Labels(req.Labels))
+	install.Labels = merged
+	install.LabelTemplates = newTemplates
 
-	if err := s.db.WithContext(ctx).Model(&install).Select("labels").Updates(&install).Error; err != nil {
+	if err := s.db.WithContext(ctx).Model(&install).Select("labels", "label_templates").Updates(&install).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update install labels: %w", err))
 		return
 	}
@@ -84,4 +141,12 @@ func (s *service) AddInstallLabels(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, install)
+}
+
+func mapKeys(m labels.Labels) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
 }

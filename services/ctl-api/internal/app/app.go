@@ -37,6 +37,10 @@ type App struct {
 	DisplayName generics.NullString `json:"display_name,omitzero" swaggertype:"string" temporaljson:"display_name,omitzero,omitempty"`
 	LabelColors labels.Labels       `json:"label_colors,omitzero" gorm:"type:jsonb" temporaljson:"label_colors,omitzero,omitempty" swaggertype:"object"`
 
+	// DefaultLabels are applied to every install of the app and can only be
+	// changed via app config sync — install label endpoints reject these keys.
+	DefaultLabels labels.Labels `json:"default_labels,omitzero" gorm:"type:jsonb" temporaljson:"default_labels,omitzero,omitempty" swaggertype:"object,string"`
+
 	OrgID string `json:"org_id,omitzero" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
 	Org   *Org   `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
