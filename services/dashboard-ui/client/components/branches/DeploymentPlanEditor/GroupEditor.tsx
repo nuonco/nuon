@@ -8,6 +8,7 @@ import { LabelBadge } from '@/components/common/LabelBadge'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
 import { ToggleButton } from '@/components/common/ToggleButton'
+import { Tooltip } from '@/components/common/Tooltip'
 import { Input } from '@/components/common/form/Input'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import type { TInstall } from '@/types'
@@ -155,20 +156,33 @@ export const GroupEditor = ({
                 variant="table"
                 size="sm"
                 emptyTitle="No installs"
-                emptyMessage="Use Add install to assign installs to this group."
+                emptyMessage="Add an install below, or delete this group — a group can't be saved empty."
+                action={
+                  <Button variant="danger" onClick={onDelete} disabled={disabled}>
+                    <Icon variant="TrashIcon" size={16} />
+                    Delete group
+                  </Button>
+                }
               />
             )}
 
-            <AddInstallPicker
-              groupId={group.id}
-              unassignedInstalls={unassignedInstalls}
-              disabled={disabled}
-              onAdd={onAddInstalls}
-            />
+            <Tooltip
+              isOpen={!!contentError}
+              disableHover
+              position="right"
+              tipContent={<Text variant="subtext">{contentError}</Text>}
+            >
+              <AddInstallPicker
+                groupId={group.id}
+                unassignedInstalls={unassignedInstalls}
+                disabled={disabled}
+                onAdd={onAddInstalls}
+              />
+            </Tooltip>
           </>
         )}
 
-        {contentError && (
+        {group.selection_mode === 'labels' && contentError && (
           <Text variant="subtext" theme="error">{contentError}</Text>
         )}
       </div>
