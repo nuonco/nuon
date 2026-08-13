@@ -113,6 +113,18 @@ export const DeploymentPlanEditor = ({
   const canSave = !isSaving && !loadingInstalls && groups.length > 0 && !hasErrors
   const isDisabled = isSaving || loadingInstalls
 
+  const saveDisabledReason = (() => {
+    if (canSave || isSaving || loadingInstalls) return undefined
+    if (groups.length === 0) return 'Add at least one install group.'
+    const needsName = groups.some((g) => !g.name.trim())
+    const needsInstalls = groups.some((g) => !!groupContentError(g))
+    if (needsName && needsInstalls)
+      return 'Every group needs a name and at least one install.'
+    if (needsInstalls) return 'Every group needs at least one install.'
+    if (needsName) return 'Every group needs a name.'
+    return undefined
+  })()
+
   const updateGroup = (id: string, updates: Partial<IInstallGroup>) => {
     setGroups((curr) =>
       curr.map((g) => (g.id === id ? { ...g, ...updates } : g))
@@ -197,6 +209,11 @@ export const DeploymentPlanEditor = ({
         disabled: !canSave,
         variant: 'primary',
       }}
+      primaryActionTooltip={
+        saveDisabledReason ? (
+          <Text variant="subtext">{saveDisabledReason}</Text>
+        ) : undefined
+      }
       secondaryActionTrigger={{
         children: 'Cancel',
         onClick: onCancel,
@@ -238,7 +255,7 @@ export const DeploymentPlanEditor = ({
                   showValidation && !group.name.trim()
                     ? 'Group name is required'
                     : undefined
-                const contentError = showValidation ? groupContentError(group) : undefined
+                const contentError = groupContentError(group)
 
                 return (
                   <div
