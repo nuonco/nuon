@@ -21,6 +21,8 @@ type AppConfig struct {
 	Readme string `mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
 	// Color codes for label keys
 	LabelColors map[string]string `mapstructure:"label_colors,omitempty" toml:"label_colors,omitempty"`
+	// Labels applied to every install of the app; editable only via app config
+	DefaultLabels map[string]string `mapstructure:"default_labels,omitempty" toml:"default_labels,omitempty"`
 
 	// Default App Branch config
 	Branch *AppBranchConfig `mapstructure:"branch,omitempty" toml:"branch,omitempty"`
@@ -96,6 +98,8 @@ func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Markdown file with app documentation. Supports templating and external file sources: HTTP(S) URLs (https://example.com/readme.md), git repositories (git::https://github.com/org/repo//readme.md), file paths (file:///path/to/readme.md), and relative paths (./readme.md)").
 		Field("label_colors").Short("label key color codes").
 		Long("Map of label key names to hex color codes for customizing label display in the dashboard").
+		Field("default_labels").Short("default labels for all installs").
+		Long("Labels applied to every install of the app. Values may use the interpolation syntax. Editable only via app config").
 		Field("branch").Short("default app branch configuration").
 		Long("Default branch configuration for all installs. Can be overridden per install").
 		Field("inputs").Short("input configuration").

@@ -55,6 +55,20 @@ export const Default = () => (
   />
 )
 
+export const WithDefaultLabels = () => (
+  <AppLabels
+    labels={mockLabels}
+    defaultLabels={{
+      service: 'eks',
+      tier: 'standard',
+      region: '{{ .nuon.cloud_account.aws.region }}',
+    }}
+    resetAction={<ResetAction />}
+    onOverride={noop}
+    onRemoveOverride={noop}
+  />
+)
+
 export const Loading = () => (
   <AppLabels labels={[]} isLoading onOverride={noop} onRemoveOverride={noop} />
 )

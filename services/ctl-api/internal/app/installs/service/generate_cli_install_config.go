@@ -79,9 +79,23 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 		return nil, fmt.Errorf("unable to get install %s: %w", installID, err)
 	}
 
+	// Template-managed keys echo template text, and app-default keys are
+	// omitted — otherwise every CLI sync diffs against rendered values it can
+	// never declare. Kept in step with upstreamLabels in the installs syncer.
+	installLabels := make(map[string]string, len(install.Labels)+len(install.LabelTemplates))
+	for k, v := range install.Labels {
+		installLabels[k] = v
+	}
+	for k, v := range install.LabelTemplates {
+		installLabels[k] = v
+	}
+	for key := range install.AppDefaultLabels {
+		delete(installLabels, key)
+	}
+
 	installCfg := config.Install{
 		Name:   install.Name,
-		Labels: map[string]string(install.Labels),
+		Labels: installLabels,
 	}
 
 	// The target identifiers must be echoed back, otherwise a config that legitimately

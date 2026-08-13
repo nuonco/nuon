@@ -807,3 +807,52 @@ account_id = "123456789012"
 	assert.Equal(t, "us-west-2", install.AWSAccount.Region)
 	assert.Equal(t, "123456789012", install.AWSAccount.AccountID)
 }
+
+func TestInstallValidate_Labels(t *testing.T) {
+	t.Run("static labels pass", func(t *testing.T) {
+		install := Install{
+			Name:   "prod",
+			Labels: map[string]string{"env": "production", "team": "platform"},
+		}
+		require.NoError(t, install.Validate())
+	})
+
+	t.Run("valid dynamic label values pass", func(t *testing.T) {
+		install := Install{
+			Name: "prod",
+			Labels: map[string]string{
+				"region":  "{{ .nuon.cloud_account.aws.region }}",
+				"version": "{{ .nuon.components.api.outputs.version }}",
+			},
+		}
+		require.NoError(t, install.Validate())
+	})
+
+	t.Run("unparsable template is rejected", func(t *testing.T) {
+		install := Install{
+			Name:   "prod",
+			Labels: map[string]string{"region": "{{ .nuon.cloud_account.aws.region "},
+		}
+		err := install.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "region")
+	})
+
+	t.Run("templated key is rejected", func(t *testing.T) {
+		install := Install{
+			Name:   "prod",
+			Labels: map[string]string{"{{ .nuon.id }}": "value"},
+		}
+		err := install.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "label key")
+	})
+
+	t.Run("braces without nuon namespace stay literal", func(t *testing.T) {
+		install := Install{
+			Name:   "prod",
+			Labels: map[string]string{"note": "{{ literal braces }}"},
+		}
+		require.NoError(t, install.Validate())
+	})
+}
