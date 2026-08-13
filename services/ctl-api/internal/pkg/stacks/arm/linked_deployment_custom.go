@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"slices"
 	"sort"
+	"strings"
 
 	"github.com/iancoleman/strcase"
 
@@ -25,6 +26,28 @@ func sanitizeDeploymentName(name string) string {
 // role assignment that the identity needs.
 type customDeploymentIdentity struct {
 	DeploymentName string
+	// output holding the identity's principalId, resolved from the template
+	PrincipalIDOutput string
+}
+
+// resolvePrincipalIDOutput finds the output carrying a managed identity's
+// principalId. An exact "identityPrincipalId" wins; otherwise any output with
+// that suffix matches, so a template may prefix it to keep outputs unique.
+func resolvePrincipalIDOutput(outputKeys []string) (string, bool) {
+	const want = "identityprincipalid"
+
+	for _, key := range outputKeys {
+		if strings.EqualFold(key, want) {
+			return key, true
+		}
+	}
+	for _, key := range outputKeys {
+		if strings.HasSuffix(strings.ToLower(key), want) {
+			return key, true
+		}
+	}
+
+	return "", false
 }
 
 // customDeploymentOutputs records a custom stack's deployment name and its
@@ -132,8 +155,19 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		// Track custom nested stacks that declare managed identities so the
 		// parent template can create subscription-level role assignments.
 		if armTmpl.hasManagedIdentity() {
+			principalIDOutput, ok := resolvePrincipalIDOutput(outputKeys)
+			if !ok {
+				// Caught here rather than at deploy time, where ARM reports it
+				// as a missing output on a Nuon-generated resource.
+				return nil, nil, nil, nil, fmt.Errorf(
+					"custom_nested_stacks[%d] (%s): declares a managed identity but no output named %q (found: %v); add one so the subscription-level role assignment can read its principalId",
+					i, stack.Name, "identityPrincipalId", outputKeys,
+				)
+			}
+
 			identities = append(identities, customDeploymentIdentity{
-				DeploymentName: deploymentName,
+				DeploymentName:    deploymentName,
+				PrincipalIDOutput: principalIDOutput,
 			})
 		}
 
