@@ -18,6 +18,21 @@ export const Default = () => (
   </ModalStory>
 )
 
+export const WithDefaultLabels = () => (
+  <ModalStory>
+    <EditLabelsModal
+      labels={{ env: 'production' }}
+      defaultLabels={{
+        tier: 'gold',
+        region: '{{ .nuon.cloud_account.aws.region }}',
+      }}
+      isPending={false}
+      error={null}
+      onSubmit={noop}
+    />
+  </ModalStory>
+)
+
 export const Empty = () => (
   <ModalStory>
     <EditLabelsModal labels={{}} isPending={false} error={null} onSubmit={noop} />

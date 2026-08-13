@@ -37,6 +37,32 @@ tier = "enterprise"
 
 See [Label badges](/guides/using-readmes#label-badge) for how labels render in install READMEs.
 
+### Dynamic labels
+
+Label values can use the [interpolation syntax](/guides/using-variables) to render from install state:
+
+```toml install.toml
+name = "customer-acme"
+
+[labels]
+env    = "production"
+region = "{{ .nuon.cloud_account.aws.region }}"
+tier   = "{{ .nuon.install.inputs.tier }}"
+```
+
+Dynamic values are rendered when the install install state changes — deploys, input updates, and config updates all trigger a refresh.
+The rendered value is displayed in the dashboard and what [webhook and Slack label selectors](/guides/webhooks) match against.
+
+If a template references state that doesn't exist yet (for example, a component output before its first
+deploy), the label is skipped rather than failing the sync; it appears once the referenced state is
+available.
+
+### Default labels
+
+Labels defined in the app's [`default_labels`](/guides/managing-apps#default-labels) apply to every install
+and are owned by the app config — an install config cannot override or remove those keys, and a sync that
+tries to set a different value for one fails with an error.
+
 ## Toggling components
 
 If your app has [toggleable components](/guides/toggleable-components), the install config decides which ones are enabled. Set the state per component in a `[component_toggles]` section, keyed by component name:

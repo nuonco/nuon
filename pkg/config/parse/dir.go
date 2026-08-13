@@ -253,6 +253,7 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 		cfg.SlackWebhookURL = c.Metadata.SlackWebhookURL
 		cfg.Readme = c.Metadata.Readme
 		cfg.LabelColors = c.Metadata.LabelColors
+		cfg.DefaultLabels = c.Metadata.DefaultLabels
 	}
 
 	return cfg, nil

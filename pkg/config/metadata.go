@@ -18,6 +18,8 @@ type MetadataConfig struct {
 	Readme string `mapstructure:"readme,omitempty" toml:"readme,omitempty"`
 	// Color codes for label keys, keyed by label key name
 	LabelColors map[string]string `mapstructure:"label_colors,omitempty" toml:"label_colors,omitempty"`
+	// Labels applied to every install of the app; editable only via app config
+	DefaultLabels map[string]string `mapstructure:"default_labels,omitempty" toml:"default_labels,omitempty"`
 }
 
 func (m MetadataConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -41,5 +43,8 @@ func (m MetadataConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("./README.md").
 		Field("label_colors").Short("label key color codes").
 		Long("Map of label key names to hex color codes for customizing label display in the dashboard").
-		Example(`{"env": "#FF5733", "region": "#33FF57"}`)
+		Example(`{"env": "#FF5733", "region": "#33FF57"}`).
+		Field("default_labels").Short("default labels for all installs").
+		Long("Labels applied to every install of the app. Values may use the interpolation syntax ({{ .nuon.* }}). These labels cannot be edited or removed on individual installs — only via the app config").
+		Example(`{"tier": "prod", "region": "{{ .nuon.cloud_account.aws.region }}"}`)
 }
