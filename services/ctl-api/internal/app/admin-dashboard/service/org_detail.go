@@ -163,7 +163,7 @@ func (s *service) getMostRecentApp(ctx context.Context, orgID string) (*app.App,
 
 func (s *service) getAppComponentGraph(ctx context.Context, appID string) (string, error) {
 	// 1. Get the latest app config
-	appConfig, err := s.appsHelpers.GetAppLatestConfig(ctx, appID)
+	appConfig, err := s.appsHelpers.GetLatestActiveAppConfig(ctx, appID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", nil // No config yet, not an error
