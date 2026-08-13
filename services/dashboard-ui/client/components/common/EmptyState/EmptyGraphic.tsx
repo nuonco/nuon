@@ -13,6 +13,8 @@ export const EmptyGraphic = ({
   variant = '404',
 }: IEmptyGraphic) => {
   const sizeSuffix = size === 'sm' ? '-small' : ''
+  const dims = size === 'sm' ? { w: 94, h: 64 } : { w: 154, h: 94 }
+  const sizeClass = size === 'sm' ? 'w-[94px] h-[64px]' : 'w-[154px] h-[94px]'
   const variants = {
     light: `/empty-graphics/${variant}-light${sizeSuffix}.svg`,
     dark: `/empty-graphics/${variant}-dark${sizeSuffix}.svg`,
@@ -21,25 +23,25 @@ export const EmptyGraphic = ({
   return (
     <>
       <img
-        className={cn('w-auto relative block', {
+        className={cn(sizeClass, 'relative block', {
           hidden: isDarkModeOnly,
           'dark:hidden': !isDarkModeOnly,
         })}
         src={variants.light}
         alt=""
-        height={90}
-        width={150}
+        width={dims.w}
+        height={dims.h}
         draggable={false}
       />
       <img
-        className={cn('w-auto relative dark:block', {
+        className={cn(sizeClass, 'relative dark:block', {
           block: isDarkModeOnly,
           hidden: !isDarkModeOnly,
         })}
         src={variants.dark}
         alt=""
-        height={90}
-        width={150}
+        width={dims.w}
+        height={dims.h}
         draggable={false}
       />
     </>
