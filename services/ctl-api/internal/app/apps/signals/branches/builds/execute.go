@@ -84,26 +84,38 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("component builds failed: %w", err)
 	}
 
-	sandboxEntry := buildEntry{
-		ComponentID:   "sandbox",
-		ComponentName: "Sandbox",
-		ComponentType: "sandbox",
-		Status:        "in-progress",
-		CacheStatus:   "no cache",
+	ociArtifacts, err := activities.AwaitOrgHasFeature(ctx, activities.OrgHasFeatureRequest{
+		OrgID:   run.OrgID,
+		Feature: string(app.OrgFeatureSandboxOCIArtifacts),
+	})
+	if err != nil {
+		return fmt.Errorf("unable to check sandbox-oci-artifacts feature flag: %w", err)
 	}
-	builds = append(builds, sandboxEntry)
-	s.updateBuildMetadata(ctx, builds)
 
-	if err := s.buildSandbox(ctx, l); err != nil {
-		s.setBuildStatus(builds, "sandbox", "error")
-		s.updateBuildMetadata(ctx, builds)
-		if isPreview && run.PRNumber != nil {
-			s.finalizePreview(ctx, l, run, err)
+	if ociArtifacts {
+		sandboxEntry := buildEntry{
+			ComponentID:   "sandbox",
+			ComponentName: "Sandbox",
+			ComponentType: "sandbox",
+			Status:        "in-progress",
+			CacheStatus:   "no cache",
 		}
-		return fmt.Errorf("sandbox build failed: %w", err)
+		builds = append(builds, sandboxEntry)
+		s.updateBuildMetadata(ctx, builds)
+
+		if err := s.buildSandbox(ctx, l); err != nil {
+			s.setBuildStatus(builds, "sandbox", "error")
+			s.updateBuildMetadata(ctx, builds)
+			if isPreview && run.PRNumber != nil {
+				s.finalizePreview(ctx, l, run, err)
+			}
+			return fmt.Errorf("sandbox build failed: %w", err)
+		}
+		s.setBuildStatus(builds, "sandbox", "success")
+		s.updateBuildMetadata(ctx, builds)
+	} else {
+		l.Info("sandbox-oci-artifacts disabled, skipping sandbox build")
 	}
-	s.setBuildStatus(builds, "sandbox", "success")
-	s.updateBuildMetadata(ctx, builds)
 
 	if isPreview && run.PRNumber != nil {
 		s.finalizePreview(ctx, l, run, nil)

@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 type FetchImageMetadataRequest struct {
@@ -135,7 +136,7 @@ func (a *Activities) getACRAuth(ctx context.Context, acrCfg *app.AzureACRImageCo
 }
 
 func (a *Activities) getGARAuth(ctx context.Context, garCfg *app.GCPGARImageConfig) (*metadata.RegistryAuth, error) {
-	tok, err := a.GetGARAccessToken(ctx, &GetGARAccessTokenRequest{
+	tok, err := a.sharedActs.GetGARAccessToken(ctx, &sharedactivities.GetGARAccessTokenRequest{
 		ServiceAccountEmail:      garCfg.ServiceAccountEmail,
 		WorkloadIdentityProvider: garCfg.WorkloadIdentityProvider,
 	})
