@@ -149,7 +149,7 @@ const BranchTemplate = () => {
       ) : null}
       <BranchSettingsPanel />
       <PageContent className="border-t" variant="row">
-        <SubNav basePath={basePath} links={navLinks} />
+        <SubNav basePath={basePath} links={navLinks} storageKey="subnav:branch" />
         <div className="flex flex-col flex-1 min-w-0">
           {latestRun && params.runId !== latestRun.id ? (
             <BranchPendingApprovals

@@ -21,13 +21,22 @@ export const Menu = ({ className, children, ...props }: IMenu) => {
         const childProps = (c as any).props ?? {}
         const menuItemClass =
           '!p-2 text-sm !leading-none h-8 w-full flex justify-between !rounded-md'
+        const menuLinkItem =
+          '!bg-transparent !text-cool-grey-800 dark:!text-white/70 hover:!bg-cool-grey-500/8 dark:hover:!bg-cool-grey-500/8 focus:!bg-cool-grey-500/8 dark:focus:!bg-cool-grey-500/8 active:!bg-cool-grey-500/16 dark:active:!bg-cool-grey-500/16'
+        const menuLinkDanger =
+          '!bg-transparent !text-red-800 dark:!text-red-500 hover:!bg-red-50 dark:hover:!bg-[#1D0D10] focus:!bg-red-50 dark:focus:!bg-[#1D0D10] active:!bg-red-100 dark:active:!bg-[#2E1013]'
 
         if (c.type === Button || c.type === Link || childProps.isMenuButton) {
           const isDanger = childProps.variant === 'danger'
+          const isLink = c.type === Link
           return React.cloneElement<IButtonAsButton | ILink>(c, {
             variant: isDanger ? 'danger' : 'ghost',
-            isMenuButton: isDanger ? true : childProps.isMenuButton,
-            className: cn(menuItemClass, childProps.className),
+            isMenuButton: isLink ? childProps.isMenuButton : true,
+            className: cn(
+              menuItemClass,
+              isLink && (isDanger ? menuLinkDanger : menuLinkItem),
+              childProps.className
+            ),
           })
         }
 

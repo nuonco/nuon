@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { CreateAppButton } from '@/components/apps/CreateAppModal'
 import { useOrg } from '@/hooks/use-org'
 import { getApps } from '@/lib'
 import { AppsTable, parseAppsToTableData } from './AppsTable'
@@ -17,6 +18,7 @@ export const AppsTableContainer = ({
 } = {}) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
+  const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: result, isLoading } = useQuery({
@@ -40,6 +42,14 @@ export const AppsTableContainer = ({
           <Icon variant="PlusIcon" size={16} />
           Create app
         </Button>
+      }
+      filterActions={
+        hasAppBranchesUI ? (
+          <CreateAppButton
+            className="!w-full !flex !justify-center md:!w-fit"
+            variant="primary"
+          />
+        ) : undefined
       }
       pagination={{ hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }}
     />

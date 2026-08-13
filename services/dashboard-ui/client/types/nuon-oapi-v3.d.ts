@@ -43,7 +43,7 @@ export interface paths {
   "/v1/account/static-token": {
     /**
      * create a static API token for your org
-     * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
+     * @description Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
      */
     post: operations["CreateStaticToken"];
   };
@@ -57,7 +57,7 @@ export interface paths {
   "/v1/account/static-tokens/{token_id}": {
     /**
      * delete a static API token
-     * @description Deletes a static API token belonging to your current org, along with its dedicated service account. Once deleted, the token can no longer be used to access the API.
+     * @description Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
      */
     delete: operations["DeleteStaticToken"];
   };
@@ -6523,6 +6523,11 @@ export interface components {
       retried?: boolean;
       retry_index?: number;
       retryable?: boolean;
+      /**
+       * @description SkipOnFailure lets the workflow continue past this step after its retry
+       * budget is exhausted. Skippable only gates user-initiated skips.
+       */
+      skip_on_failure?: boolean;
       skippable?: boolean;
       started_at?: string;
       status?: components["schemas"]["app.CompositeStatus"];
@@ -8322,9 +8327,16 @@ export interface components {
       name: string;
       /**
        * @description org role granted to the token. must be assignable to API tokens; see
-       * GET /v1/roles?context=api_token. defaults to org_read_only.
+       * GET /v1/roles?context=api_token. defaults to org_read_only. must be
+       * empty for personal tokens.
        */
       role?: string;
+      /**
+       * @description "service_account" (default) creates a dedicated service account with
+       * the given role; "personal" issues the token against your own account
+       * and its existing roles, across all your orgs.
+       */
+      token_identity?: string;
     };
     "service.CreateTerraformModuleComponentConfigRequest": {
       app_config_id?: string;
@@ -9331,7 +9343,7 @@ export interface operations {
   };
   /**
    * create a static API token for your org
-   * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
+   * @description Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
    */
   CreateStaticToken: {
     /** @description Input */
@@ -9365,7 +9377,7 @@ export interface operations {
   };
   /**
    * delete a static API token
-   * @description Deletes a static API token belonging to your current org, along with its dedicated service account. Once deleted, the token can no longer be used to access the API.
+   * @description Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
    */
   DeleteStaticToken: {
     parameters: {
