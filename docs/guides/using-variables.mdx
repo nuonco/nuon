@@ -56,6 +56,11 @@ For example, the install id can be passed as a variable to the Sandbox for an EK
 cluster_name    = "n-{{.nuon.install.id}}"
 ```
 
+## Labels
+
+Interpolation also works in [install labels](/guides/install-configs#dynamic-labels) and app-level [default labels](/guides/managing-apps#default-labels).
+Label values re-render automatically as the install state changes.
+
 ## Variable Data Sources
 
 ### Nuon Information

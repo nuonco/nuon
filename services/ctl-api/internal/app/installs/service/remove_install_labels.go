@@ -25,7 +25,7 @@ func (r *RemoveInstallLabelsRequest) Validate(v *validator.Validate) error {
 
 // @ID						RemoveInstallLabels
 // @Summary				remove labels from an install
-// @Description			Remove the specified label keys from the install.
+// @Description			Remove the specified label keys from the install. Removing a dynamic label's key also removes its template. Keys managed by the app config's default_labels cannot be removed here.
 // @Param					install_id	path	string						true	"install ID"
 // @Param					req			body	RemoveInstallLabelsRequest	true	"Input"
 // @Tags					installs
@@ -59,9 +59,20 @@ func (s *service) RemoveInstallLabels(ctx *gin.Context) {
 		return
 	}
 
-	install.Labels.RemoveKeys(req.Keys)
+	for _, key := range req.Keys {
+		if _, isDefault := install.AppDefaultLabels[key]; isDefault {
+			ctx.Error(stderr.ErrUser{
+				Err:         fmt.Errorf("label %q is a default label; remove it from default_labels in the app config and sync", key),
+				Description: fmt.Sprintf("label %q is a default label; remove it from default_labels in the app config and sync", key),
+			})
+			return
+		}
+	}
 
-	if err := s.db.WithContext(ctx).Model(&install).Select("labels").Updates(&install).Error; err != nil {
+	install.Labels.RemoveKeys(req.Keys)
+	install.LabelTemplates.RemoveKeys(req.Keys)
+
+	if err := s.db.WithContext(ctx).Model(&install).Select("labels", "label_templates").Updates(&install).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update install labels: %w", err))
 		return
 	}

@@ -32,6 +32,11 @@ type AppInstall struct {
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
+	// AppDefaultLabels is the snapshot of the app's default labels applied to
+	// this install. It is the lock set for label mutation endpoints, and lets
+	// reconciliation tell a removed default apart from a user-set label.
+	AppDefaultLabels map[string]string `json:"app_default_labels,omitempty"`
+
 	// app id
 	AppID string `json:"app_id,omitempty"`
 
@@ -134,6 +139,14 @@ type AppInstall struct {
 
 	// install states
 	InstallStates []*AppInstallState `json:"install_states"`
+
+	// LabelTemplates holds label values written with the .nuon interpolation
+	// syntax. Rendered values are materialized into Labels whenever install
+	// state changes, so downstream consumers (SQL label matching, subscription
+	// dispatch, pickers) only ever read literal values. NOTE: this comment ends
+	// up in the swagger spec, which swag executes as a Go text/template —
+	// literal moustaches here break spec generation.
+	LabelTemplates map[string]string `json:"label_templates,omitempty"`
 
 	// labels
 	Labels GithubComNuoncoNuonPkgLabelsLabels `json:"labels,omitempty"`

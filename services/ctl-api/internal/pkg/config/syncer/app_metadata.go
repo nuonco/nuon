@@ -17,13 +17,14 @@ func (s *syncer) syncApp(ctx context.Context) error {
 	}
 
 	updates := app.App{
-		Description: generics.NewNullString(s.cfg.Description),
-		DisplayName: generics.NewNullString(s.cfg.DisplayName),
-		LabelColors: labels.Labels(s.cfg.LabelColors),
+		Description:   generics.NewNullString(s.cfg.Description),
+		DisplayName:   generics.NewNullString(s.cfg.DisplayName),
+		LabelColors:   labels.Labels(s.cfg.LabelColors),
+		DefaultLabels: labels.Labels(s.cfg.DefaultLabels),
 	}
 
 	res := s.db.WithContext(ctx).
-		Select("description", "display_name", "label_colors").
+		Select("description", "display_name", "label_colors", "default_labels").
 		Model(&currentApp).
 		Updates(updates)
 	if res.Error != nil {
