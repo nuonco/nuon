@@ -53,8 +53,7 @@ export const AppLabels = ({
         <HeadingGroup className="gap-1.5">
           <Text variant="base" weight="stronger" level={2}>Default labels</Text>
           <Text variant="subtext" theme="neutral">
-            Applied to every install of this app. Edit them via default_labels in the app config
-            and sync.
+            Applied to every install of this app. Edit them via default_labels in the app config.
           </Text>
         </HeadingGroup>
         <Card>
