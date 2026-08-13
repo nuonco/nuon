@@ -147,12 +147,23 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, nil, errors.Wrap(err, "unable to get policies")
 	}
 
+	ociArtifacts, err := activities.AwaitHasOrgFeature(ctx, activities.HasOrgFeatureRequest{
+		OrgID:   install.OrgID,
+		Feature: string(app.OrgFeatureSandboxOCIArtifacts),
+	})
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "unable to check sandbox-oci-artifacts feature")
+	}
+
 	var gitSource *plantypes.GitSource
 	var ociSource *plantypes.OCISource
-	if req.OCISource != nil {
+	switch {
+	case !ociArtifacts:
+		l.Info("sandbox-oci-artifacts disabled, using git source")
+	case req.OCISource != nil:
 		l.Info("using OCI source from caller")
 		ociSource = req.OCISource
-	} else {
+	default:
 		l.Info("checking for active sandbox build OCI artifact")
 		sandboxBuild, sbErr := activities.AwaitGetLatestActiveSandboxBuildByAppConfigID(ctx, appCfg.ID)
 		if sbErr != nil {
@@ -173,13 +184,22 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 				}
 			}
 		}
+	}
 
-		if ociSource == nil {
-			l.Info("fetching sandbox git source")
-			gitSource, err = activities.AwaitGetSandboxRunGitSourceByAppConfigID(ctx, appCfg.ID)
-			if err != nil {
-				return nil, nil, errors.Wrap(err, "unable to get sandbox run git source")
-			}
+	if ociSource == nil {
+		l.Info("fetching sandbox git source")
+		gitSource, err = activities.AwaitGetSandboxRunGitSourceByAppConfigID(ctx, appCfg.ID)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "unable to get sandbox run git source")
+		}
+	}
+
+	// The install runner does not share the control plane's cloud, so a GAR
+	// artifact has to travel with its own credentials rather than relying on
+	// the runner finding GCP application default credentials.
+	if ociSource != nil {
+		if err := sharedactivities.EnsureGARAuth(ctx, ociSource.Registry); err != nil {
+			return nil, nil, errors.Wrap(err, "unable to get GAR access token for sandbox artifact")
 		}
 	}
 
