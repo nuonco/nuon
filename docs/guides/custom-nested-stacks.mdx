@@ -177,6 +177,30 @@ On `azure-bicep`, the reserved set follows ARM's camelCase convention and adds t
 Azure has no equivalent of the Role Enable parameters — per-operation access is granted through managed identities
 rather than template conditions.
 
+### Azure Managed Identities
+
+If an `azure-bicep` custom nested stack declares a `Microsoft.ManagedIdentity/userAssignedIdentities` resource, Nuon
+adds a subscription-level role assignment granting that identity `*/register/action`, so it can register Azure resource
+providers. ARM does not allow subscription-scoped deployments inside a linked deployment, so this has to live in the
+parent template — which means Nuon needs the identity's `principalId` as an **output**.
+
+Your template must expose an output named `identityPrincipalId`, or one ending in that suffix (for example
+`bauleiterIdentityPrincipalId`, useful when a stack has several identities' outputs to keep distinct). Matching is
+case-insensitive and an exact `identityPrincipalId` wins over a suffixed one.
+
+```json
+"outputs": {
+  "bauleiterIdentityPrincipalId": {
+    "type": "string",
+    "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'my-identity'), '2023-01-31').principalId]"
+  }
+}
+```
+
+If a stack declares a managed identity but exposes no matching output, install stack generation fails with an error
+listing the outputs it did find. This has no CloudFormation equivalent — IAM resources in an AWS nested stack are
+already account-scoped, so nothing needs hoisting to the parent.
+
 ## First-Class Output Wiring
 
 If a parameter in your custom template matches the name of an **output** from the VPC or runner nested stacks, Nuon

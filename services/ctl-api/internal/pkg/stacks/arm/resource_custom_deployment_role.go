@@ -6,9 +6,8 @@ import "fmt"
 // deployment that defines a custom role with */register/action and assigns it
 // to the managed identity created inside a custom linked deployment.
 //
-// The identity's principalId is read from the linked deployment's
-// "identityPrincipalId" output, so the custom nested stack template must
-// expose that output.
+// The identity's principalId is read from an output resolved by
+// resolvePrincipalIDOutput, which the generator requires the template to expose.
 func (t *Templates) getCustomDeploymentRoleAssignment(id customDeploymentIdentity) map[string]any {
 	deploymentName := fmt.Sprintf("%s-identity-role", id.DeploymentName)
 
@@ -26,7 +25,7 @@ func (t *Templates) getCustomDeploymentRoleAssignment(id customDeploymentIdentit
 			"mode": "Incremental",
 			"parameters": map[string]any{
 				"deploymentName": map[string]any{"value": id.DeploymentName},
-				"principalID":    map[string]any{"value": fmt.Sprintf("[reference('%s').outputs.identityPrincipalId.value]", id.DeploymentName)},
+				"principalID":    map[string]any{"value": fmt.Sprintf("[reference('%s').outputs.%s.value]", id.DeploymentName, id.PrincipalIDOutput)},
 			},
 			"template": map[string]any{
 				"$schema":        "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
