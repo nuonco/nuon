@@ -53,3 +53,36 @@ func TestGetPhoneHomeResource_CustomStackOutputs(t *testing.T) {
 	}
 	assertNoNestedBrackets(t, resBytes)
 }
+
+func TestGetPhoneHomeResource_RunnerIdentityPrincipalID(t *testing.T) {
+	t.Run("reported when a runner deployment exists", func(t *testing.T) {
+		tmpl := &Templates{cfg: &internal.Config{}}
+		res := tmpl.getPhoneHomeResource(minimalTemplateInput(), nil)
+
+		props := res["properties"].(map[string]any)
+		script := props["scriptContent"].(string)
+		if !strings.Contains(script, `"runner_identity_principal_id": "$RUNNER_IDENTITY_PRINCIPAL_ID"`) {
+			t.Error("payload missing runner_identity_principal_id")
+		}
+
+		var found string
+		for _, ev := range props["environmentVariables"].([]map[string]any) {
+			if ev["name"] == "RUNNER_IDENTITY_PRINCIPAL_ID" {
+				found = ev["value"].(string)
+			}
+		}
+		if want := "[reference('runnerDeployment').outputs.vmssPrincipalId.value]"; found != want {
+			t.Errorf("env var = %q, want %q", found, want)
+		}
+	})
+
+	t.Run("omitted for local runners", func(t *testing.T) {
+		tmpl := &Templates{cfg: &internal.Config{UseLocalRunners: true}}
+		res := tmpl.getPhoneHomeResource(minimalTemplateInput(), nil)
+
+		script := res["properties"].(map[string]any)["scriptContent"].(string)
+		if strings.Contains(script, "RUNNER_IDENTITY_PRINCIPAL_ID") {
+			t.Error("local runners have no runnerDeployment to reference")
+		}
+	})
+}
