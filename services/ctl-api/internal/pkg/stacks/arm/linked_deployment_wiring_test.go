@@ -17,10 +17,11 @@ import (
 )
 
 type wiringStack struct {
-	name       string
-	params     map[string]any
-	outputs    []string
-	parameters map[string]string
+	name            string
+	params          map[string]any
+	outputs         []string
+	parameters      map[string]string
+	managedIdentity bool
 }
 
 func armWiringInput(t *testing.T, stacksIn ...wiringStack) *stacks.TemplateInput {
@@ -35,11 +36,20 @@ func armWiringInput(t *testing.T, stacksIn ...wiringStack) *stacks.TemplateInput
 			outputs[name] = map[string]any{"type": "string", "value": "x"}
 		}
 
+		resources := []any{}
+		if s.managedIdentity {
+			resources = append(resources, map[string]any{
+				"type":       "Microsoft.ManagedIdentity/userAssignedIdentities",
+				"apiVersion": "2023-01-31",
+				"name":       s.name + "-identity",
+			})
+		}
+
 		body, err := json.Marshal(map[string]any{
 			"$schema":        "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
 			"contentVersion": "1.0.0.0",
 			"parameters":     params,
-			"resources":      []any{},
+			"resources":      resources,
 			"outputs":        outputs,
 		})
 		require.NoError(t, err)
@@ -276,5 +286,81 @@ func TestGetCustomLinkedDeployments_OutputWiring(t *testing.T) {
 				fmt.Sprintf("stack %d", idx),
 			)
 		}
+	})
+}
+
+func TestGetCustomLinkedDeployments_PrincipalIDOutput(t *testing.T) {
+	t.Run("exact identityPrincipalId resolves", func(t *testing.T) {
+		tmpl := &Templates{cfg: &internal.Config{}}
+		inp := armWiringInput(t, wiringStack{
+			name:            "bauleiter",
+			managedIdentity: true,
+			outputs:         []string{"identityPrincipalId"},
+		})
+
+		_, _, identities, _, err := tmpl.getCustomLinkedDeployments(inp)
+		require.NoError(t, err)
+		require.Len(t, identities, 1)
+		assert.Equal(t, "identityPrincipalId", identities[0].PrincipalIDOutput)
+	})
+
+	t.Run("prefixed output resolves", func(t *testing.T) {
+		tmpl := &Templates{cfg: &internal.Config{}}
+		inp := armWiringInput(t, wiringStack{
+			name:            "bauleiter",
+			managedIdentity: true,
+			outputs: []string{
+				"bauleiterIdentityClientId", "bauleiterIdentityId",
+				"bauleiterIdentityName", "bauleiterIdentityPrincipalId",
+			},
+		})
+
+		_, _, identities, _, err := tmpl.getCustomLinkedDeployments(inp)
+		require.NoError(t, err)
+		require.Len(t, identities, 1)
+		assert.Equal(t, "bauleiterIdentityPrincipalId", identities[0].PrincipalIDOutput)
+
+		role := tmpl.getCustomDeploymentRoleAssignment(identities[0])
+		params := role["properties"].(map[string]any)["parameters"].(map[string]any)
+		assert.Equal(t,
+			"[reference('Bauleiter').outputs.bauleiterIdentityPrincipalId.value]",
+			params["principalID"].(map[string]any)["value"],
+		)
+	})
+
+	t.Run("exact match wins over a prefixed one", func(t *testing.T) {
+		tmpl := &Templates{cfg: &internal.Config{}}
+		inp := armWiringInput(t, wiringStack{
+			name:            "both",
+			managedIdentity: true,
+			outputs:         []string{"appIdentityPrincipalId", "identityPrincipalId"},
+		})
+
+		_, _, identities, _, err := tmpl.getCustomLinkedDeployments(inp)
+		require.NoError(t, err)
+		assert.Equal(t, "identityPrincipalId", identities[0].PrincipalIDOutput)
+	})
+
+	t.Run("managed identity without the output fails at generation", func(t *testing.T) {
+		tmpl := &Templates{cfg: &internal.Config{}}
+		inp := armWiringInput(t, wiringStack{
+			name:            "bauleiter",
+			managedIdentity: true,
+			outputs:         []string{"identityId", "identityName"},
+		})
+
+		_, _, _, _, err := tmpl.getCustomLinkedDeployments(inp)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "declares a managed identity but no output named")
+		assert.Contains(t, err.Error(), "identityId")
+	})
+
+	t.Run("stack without a managed identity needs no such output", func(t *testing.T) {
+		tmpl := &Templates{cfg: &internal.Config{}}
+		inp := armWiringInput(t, wiringStack{name: "storage", outputs: []string{"blobEndpoint"}})
+
+		_, _, identities, _, err := tmpl.getCustomLinkedDeployments(inp)
+		require.NoError(t, err)
+		assert.Empty(t, identities)
 	})
 }
