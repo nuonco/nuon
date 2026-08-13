@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	createdsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/created"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
@@ -205,20 +204,10 @@ func (s *Signal) execBuild(ctx workflow.Context, compID, buildID string, current
 		return errors.Wrap(err, "unable to create plan")
 	}
 
-	if runPlan.ContainerImagePullPlan != nil &&
-		runPlan.ContainerImagePullPlan.RepoCfg != nil &&
-		runPlan.ContainerImagePullPlan.RepoCfg.RegistryType == configs.OCIRegistryTypeGAR {
-		garToken, err := activities.AwaitGetGARAccessToken(ctx, &activities.GetGARAccessTokenRequest{
-			ServiceAccountEmail:      runPlan.ContainerImagePullPlan.RepoCfg.ServiceAccountEmail,
-			WorkloadIdentityProvider: runPlan.ContainerImagePullPlan.RepoCfg.WorkloadIdentityProvider,
-		})
-		if err != nil {
+	if runPlan.ContainerImagePullPlan != nil {
+		if err := sharedactivities.EnsureGARAuth(ctx, runPlan.ContainerImagePullPlan.RepoCfg); err != nil {
 			s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get GAR access token")
 			return errors.Wrap(err, "unable to get GAR access token")
-		}
-		runPlan.ContainerImagePullPlan.RepoCfg.OCIAuth = &configs.OCIRegistryAuth{
-			Username: garToken.Username,
-			Password: garToken.Password,
 		}
 	}
 
