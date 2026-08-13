@@ -1,15 +1,18 @@
 import { useForm, useStore } from '@tanstack/react-form'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormInput } from '@/components/common/form/FormInput'
+import { Input } from '@/components/common/form/Input'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 import { editLabelsSchema, type EditLabelsValues } from './schema'
 
 interface IEditLabelsModal extends Omit<IModal, 'onSubmit'> {
   labels: Record<string, string>
+  defaultLabels?: Record<string, string>
   isPending: boolean
   error: TAPIError | null
   onSubmit: (labels: Record<string, string>) => void
@@ -17,6 +20,7 @@ interface IEditLabelsModal extends Omit<IModal, 'onSubmit'> {
 
 export const EditLabelsModal = ({
   labels: initialLabels,
+  defaultLabels = {},
   isPending,
   error,
   onSubmit,
@@ -72,7 +76,7 @@ export const EditLabelsModal = ({
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <Text variant="label" weight="strong">
-              Labels
+              Install labels
             </Text>
             <form.Field name="labels" mode="array">
               {(labelsField) => (
@@ -89,6 +93,12 @@ export const EditLabelsModal = ({
               )}
             </form.Field>
           </div>
+
+          <Text variant="subtext">
+            Values can use the interpolation syntax, e.g.{' '}
+            <code>{'{{ .nuon.cloud_account.aws.region }}'}</code>. Dynamic
+            values update as install state changes.
+          </Text>
 
           <form.Field name="labels" mode="array">
             {(labelsField) =>
@@ -139,6 +149,46 @@ export const EditLabelsModal = ({
               )
             }
           </form.Field>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Text variant="label" weight="strong">
+            Default labels
+          </Text>
+          <Text variant="subtext">
+            Applied to every install of this app. Edit them via{' '}
+            <code>default_labels</code> in the app config.
+          </Text>
+
+          {Object.keys(defaultLabels).length === 0 ? (
+            <Banner theme="neutral">
+              <Text>
+                No default labels yet. Add a <code>default_labels</code> block
+                to the app config to label every install of this app.
+              </Text>
+            </Banner>
+          ) : (
+            Object.entries(defaultLabels)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([key, value]) => (
+                <fieldset
+                  key={`default:${key}`}
+                  className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end border-t pt-2 opacity-60"
+                >
+                  <label className="flex flex-col gap-1">
+                    <Text variant="label">Key</Text>
+                    <Input name="" type="text" disabled defaultValue={key} />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <Text variant="label">Value</Text>
+                    <Input name="" type="text" disabled defaultValue={value} />
+                  </label>
+                  <span className="mb-3 flex">
+                    <Icon variant="LockIcon" size="16" />
+                  </span>
+                </fieldset>
+              ))
+          )}
         </div>
       </form>
     </Modal>
