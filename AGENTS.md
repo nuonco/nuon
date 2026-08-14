@@ -3,6 +3,16 @@
 This is a comprehensive monorepo for Nuon, a BYOC (Bring Your Own Cloud) platform that helps software vendors deploy
 applications to their customers' cloud accounts.
 
+## HARD RULE: Never Name Customers
+
+Never write a customer's name anywhere — code, comments, tests, fixtures, Storybook stories, docs, migrations, commit
+messages, PR titles/descriptions, or review comments. This includes company names, product names, org/app/install
+names, email domains, and cluster or namespace names derived from them.
+
+Use a neutral placeholder instead (`acme-*`, `payments`, `example.com`) or describe the situation generically ("an org
+created before the flag was widened"). Reference customers by opaque IDs (org ID, install ID) when a specific case has
+to be identified; never in a way that discloses who they are.
+
 ## Repository Structure
 
 This monorepo is written primarily in **Go** (main module: `github.com/nuonco/nuon`) with several TypeScript/JavaScript

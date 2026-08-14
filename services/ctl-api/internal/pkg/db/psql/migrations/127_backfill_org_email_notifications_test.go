@@ -98,7 +98,7 @@ func (s *migration127TestSuite) emailEnabled(ctx context.Context, id string) boo
 func (s *migration127TestSuite) TestBackfillsOnlyUserCreatedOrgConfigs() {
 	ctx := context.Background()
 
-	// the Restate Cloud case: org created by a new-auth-service user while
+	// the regressed case: org created by a new-auth-service user while
 	// create_org still gated the flag on auth0 only
 	_, authOrgCfg := s.seedOrgWithNotificationsConfig(ctx, app.AccountTypeAuth, "orgs", false)
 	_, auth0OrgCfg := s.seedOrgWithNotificationsConfig(ctx, app.AccountTypeAuth0, "orgs", false)
