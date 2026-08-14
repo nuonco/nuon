@@ -2,7 +2,6 @@ import { useMutation } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Tooltip } from '@/components/common/Tooltip'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
@@ -108,12 +107,20 @@ export const EditStackOverridesButton = ({
 
   if (isManagedByConfig) {
     return (
-      <Tooltip tipContent={MANAGED_BY_CONFIG_TIP} position="left" tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs" className="w-full">
-        <Button disabled className="pointer-events-none" {...props}>
-          <Icon variant="StackSimpleIcon" />
-          Edit stack overrides
-        </Button>
-      </Tooltip>
+      <Button
+        disabled
+        tooltipProps={{
+          tipContent: MANAGED_BY_CONFIG_TIP,
+          position: 'left',
+          tipContentClassName:
+            '!whitespace-normal !w-auto max-w-[200px] text-xs',
+          className: 'w-full',
+        }}
+        {...props}
+      >
+        <Icon variant="StackSimpleIcon" />
+        Edit stack overrides
+      </Button>
     )
   }
 

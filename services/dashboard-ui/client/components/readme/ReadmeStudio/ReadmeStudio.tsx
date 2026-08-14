@@ -144,7 +144,14 @@ function BlockMenuItems({ onAdd }: { onAdd: (type: TBlockType) => void }) {
       {blockGroups.flatMap((group) => [
         <Text key={group.label}>{group.label}</Text>,
         ...group.types.map((type) => (
-          <Button key={type} title={blockMeta[type].hint} onClick={() => onAdd(type)}>
+          <Button
+            key={type}
+            onClick={() => onAdd(type)}
+            tooltipProps={{
+              position: 'right',
+              tipContent: blockMeta[type].hint,
+            }}
+          >
             <span className="flex items-center gap-2">
               <Icon variant={blockMeta[type].icon} size="14" />
               {blockMeta[type].label}
