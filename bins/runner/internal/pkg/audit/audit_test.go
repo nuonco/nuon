@@ -229,6 +229,27 @@ func TestEnableEmitsStartupOnce(t *testing.T) {
 	}
 }
 
+func TestEnableRetriesStartupAfterFailedExport(t *testing.T) {
+	syncExporter := &testExporter{err: errors.New("collector unavailable")}
+	w := newWriter(map[string]string{"runner_process.id": "proc-123"}, nil, new(testExporter), syncExporter)
+
+	if err := w.Enable(); err == nil {
+		t.Fatal("Enable() returned nil for failed startup export")
+	}
+	syncExporter.mu.Lock()
+	syncExporter.err = nil
+	syncExporter.mu.Unlock()
+	if err := w.Enable(); err != nil {
+		t.Fatalf("Enable() retry error = %v", err)
+	}
+	if err := w.Enable(); err != nil {
+		t.Fatalf("Enable() after success error = %v", err)
+	}
+	if len(syncExporter.records) != 2 {
+		t.Fatalf("startup export attempts = %d, want 2", len(syncExporter.records))
+	}
+}
+
 func TestLifecycleEnvelopeAndStoppingAreSynchronousAndDeduplicated(t *testing.T) {
 	asyncExporter := new(testExporter)
 	syncExporter := new(testExporter)

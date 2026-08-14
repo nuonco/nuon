@@ -37,8 +37,8 @@ const (
 )
 
 const (
-	AsyncCollectorAddress = "127.0.0.1:4318"
-	SyncCollectorAddress  = "127.0.0.1:4319"
+	AsyncRouteAddress = "127.0.0.1:4318"
+	SyncRouteAddress  = "127.0.0.1:4319"
 )
 
 var ErrUnavailable = errors.New("customer audit export is unavailable")
@@ -117,22 +117,25 @@ type Writer struct {
 	asyncExporter exporter
 	syncExporter  exporter
 
-	startOnce sync.Once
-	stopping  struct {
+	starting struct {
+		sync.Mutex
+		complete bool
+	}
+	stopping struct {
 		sync.Mutex
 		complete bool
 	}
 }
 
 func New(params Params) (*Writer, error) {
-	asyncExporter, err := newOTLPExporter(context.Background(), "http://"+AsyncCollectorAddress)
+	asyncExporter, err := newOTLPExporter(context.Background(), "http://"+AsyncRouteAddress)
 	if err != nil {
-		return nil, fmt.Errorf("create asynchronous customer audit collector exporter: %w", err)
+		return nil, fmt.Errorf("create asynchronous customer audit exporter: %w", err)
 	}
-	syncExporter, err := newOTLPExporter(context.Background(), "http://"+SyncCollectorAddress)
+	syncExporter, err := newOTLPExporter(context.Background(), "http://"+SyncRouteAddress)
 	if err != nil {
 		shutdownExporter(asyncExporter)
-		return nil, fmt.Errorf("create synchronous customer audit collector exporter: %w", err)
+		return nil, fmt.Errorf("create synchronous customer audit exporter: %w", err)
 	}
 	w := newWriter(processIdentity(params.Registrar.ProcessID(), params.Registrar.ProcessType(), params.Settings), params.Metrics, asyncExporter, syncExporter)
 	params.Lifecycle.Append(fx.Hook{
@@ -190,11 +193,16 @@ func (w *Writer) Enable() error {
 	w.enabled = true
 	w.mu.Unlock()
 
-	var startErr error
-	w.startOnce.Do(func() {
-		startErr = w.WriteSync(context.Background(), Event{Name: "runner_process_lifecycle", Message: "runner process started", Outcome: OutcomeStarted})
-	})
-	return startErr
+	w.starting.Lock()
+	defer w.starting.Unlock()
+	if w.starting.complete {
+		return nil
+	}
+	if err := w.WriteSync(context.Background(), Event{Name: "runner_process_lifecycle", Message: "runner process started", Outcome: OutcomeStarted}); err != nil {
+		return err
+	}
+	w.starting.complete = true
+	return nil
 }
 
 func (w *Writer) Disable() {
@@ -220,7 +228,7 @@ func (w *Writer) WriteAsync(event Event) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), asyncExportTimeout)
 	defer cancel()
 	if err := w.export(ctx, w.asyncExporter, event); err != nil {
-		return fmt.Errorf("enqueue customer audit event in collector: %w", err)
+		return fmt.Errorf("enqueue customer audit event through asynchronous route: %w", err)
 	}
 	return nil
 }

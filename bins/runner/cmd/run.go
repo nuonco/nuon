@@ -16,6 +16,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/registry"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/componenthealth"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
@@ -65,7 +66,7 @@ func (c *cli) runOptions() []fx.Option {
 
 	// install-only proviers
 	providers = append(providers, deploy.GetJobs()...)
-	providers = append(providers, telemetryexport.Module)
+	providers = append(providers, audit.Module, telemetryexport.Module)
 
 	providers = append(
 		providers,

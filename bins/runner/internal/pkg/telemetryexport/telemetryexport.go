@@ -2,7 +2,6 @@ package telemetryexport
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,7 +19,6 @@ import (
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zapio"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
@@ -32,15 +30,12 @@ const (
 	secretSyncInterval          = 30 * time.Second
 )
 
-var Module = fx.Options(fx.Provide(audit.New, newAWSFactory, newAzureFactory, newGCPFactory, newConfigSourceResolver, New), fx.Invoke(func(*Supervisor) {}))
-
 type Params struct {
 	fx.In
 	Lifecycle fx.Lifecycle
 	Settings  *settings.Settings
 	Logger    *zap.Logger `name:"system"`
 	Sources   configSourceResolver
-	Audit     *audit.Writer
 }
 
 type Supervisor struct {
@@ -58,16 +53,9 @@ type Supervisor struct {
 	nextStart        time.Time
 	reported         bool
 	collectorEnabled bool
-	audit            auditConfigurator
 
 	replaceChildFn func(config) error
 	stopChildFn    func()
-}
-
-type auditConfigurator interface {
-	Enable() error
-	Disable()
-	ProcessStopping(context.Context, string, string) error
 }
 
 type childProcess struct {
@@ -79,7 +67,7 @@ type childProcess struct {
 }
 
 func New(params Params) *Supervisor {
-	s := &Supervisor{installID: params.Settings.Metadata["install.id"], platform: params.Settings.Platform, local: params.Settings.Cfg.IsNuonctl, logger: params.Logger, sources: params.Sources, audit: params.Audit, done: make(chan struct{}), backoff: time.Second}
+	s := &Supervisor{installID: params.Settings.Metadata["install.id"], platform: params.Settings.Platform, local: params.Settings.Cfg.IsNuonctl, logger: params.Logger, sources: params.Sources, done: make(chan struct{}), backoff: time.Second}
 	s.replaceChildFn = s.replaceChild
 	s.stopChildFn = s.stopChild
 	params.Lifecycle.Append(fx.Hook{OnStart: s.start, OnStop: s.stop})
@@ -94,11 +82,6 @@ func (s *Supervisor) start(context.Context) error {
 }
 
 func (s *Supervisor) stop(ctx context.Context) error {
-	if s.audit != nil {
-		if err := s.audit.ProcessStopping(ctx, "graceful_shutdown", "fx_lifecycle"); err != nil && !errors.Is(err, audit.ErrUnavailable) {
-			s.logger.Warn("customer audit shutdown event export failed", zap.Error(err))
-		}
-	}
 	if s.cancel != nil {
 		s.cancel()
 		select {
@@ -184,43 +167,11 @@ func (s *Supervisor) reconcile(update configUpdate) {
 	s.active = value
 	s.backoff = time.Second
 	s.nextStart = time.Time{}
-	var auditVerificationErr error
-	if s.audit != nil {
-		if cfg.AuditLogsEnabled {
-			auditVerificationErr = s.audit.Enable()
-		} else {
-			s.audit.Disable()
-		}
-	}
 	s.logEnabled(cfg)
-	if auditVerificationErr != nil {
-		endpoint, _ := url.Parse(cfg.OTLPHTTP.Endpoint)
-		s.logger.Warn("customer audit collector is active but the startup event was not acknowledged; the backend may be unavailable or rejecting credentials",
-			zap.String("audit_export.backend", endpoint.Host),
-			zap.Bool("audit_export.delivery_verified", false),
-			zap.String("audit_export.failure_type", auditExportFailureType(auditVerificationErr)),
-		)
-	}
-}
-
-func auditExportFailureType(err error) string {
-	switch {
-	case errors.Is(err, context.DeadlineExceeded):
-		return "timeout"
-	case errors.Is(err, context.Canceled):
-		return "canceled"
-	case errors.Is(err, audit.ErrUnavailable):
-		return "unavailable"
-	default:
-		return "failure"
-	}
 }
 
 func (s *Supervisor) disable(reason string) {
 	s.stopChildFn()
-	if s.audit != nil {
-		s.audit.Disable()
-	}
 	s.active = ""
 	s.nextStart = time.Time{}
 	if !s.reported || s.collectorEnabled {

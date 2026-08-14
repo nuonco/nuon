@@ -168,8 +168,8 @@ func collectorConfig(cfg config) ([]byte, []string, error) {
 		environment = append(environment, envName+"="+value)
 	}
 	document["receivers"] = map[string]any{
-		"otlp/async": map[string]any{"protocols": map[string]any{"http": map[string]any{"endpoint": audit.AsyncCollectorAddress}}},
-		"otlp/sync":  map[string]any{"protocols": map[string]any{"http": map[string]any{"endpoint": audit.SyncCollectorAddress}}},
+		"otlp/async": map[string]any{"protocols": map[string]any{"http": map[string]any{"endpoint": audit.AsyncRouteAddress}}},
+		"otlp/sync":  map[string]any{"protocols": map[string]any{"http": map[string]any{"endpoint": audit.SyncRouteAddress}}},
 	}
 	document["processors"] = map[string]any{
 		"memory_limiter": map[string]any{"check_interval": "1s", "limit_mib": 128, "spike_limit_mib": 32},

@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/registry"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
@@ -49,7 +50,7 @@ func (c *cli) buildOptions() []fx.Option {
 	// org-mode providers
 	providers = append(providers, sync.GetJobs()...)
 	providers = append(providers, build.GetJobs()...)
-	providers = append(providers, telemetryexport.Module)
+	providers = append(providers, audit.Module, telemetryexport.Module)
 
 	// heartbeat, registry, job loop execution
 	providers = append(
