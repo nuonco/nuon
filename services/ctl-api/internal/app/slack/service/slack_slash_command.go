@@ -27,7 +27,7 @@ const defaultSlashCommand = "/nuon"
 // slashHelpText renders the canonical help shown for `<command> help` and
 // unknown subcommands. command is the actual invoked slash command from the
 // Slack payload (e.g. "/nuon", or a workspace-custom name like
-// "/byoc-retool-dev"), so the examples match exactly what the user types.
+// "/byoc-acme-dev"), so the examples match exactly what the user types.
 // Kept as a single string (vs. block-kit) since the slash command surface is
 // intentionally thin in v1; richer affordances live in the dashboard.
 func slashHelpText(command string) string {

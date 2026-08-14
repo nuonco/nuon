@@ -112,18 +112,18 @@ export const ObjectValue = () => (
 const yamlBodyBefore = `apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: restate-cloud-ingress
-  namespace: restate-cloud-ingress
+  name: acme-cloud-ingress
+  namespace: acme-cloud-ingress
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: restate-cloud-ingress
+      app: acme-cloud-ingress
   template:
     spec:
       containers:
       - name: ingress
-        image: registry.example.com/restate-cloud-ingress:v1.2.0
+        image: registry.example.com/acme-cloud-ingress:v1.2.0
         ports:
         - containerPort: 8080
         resources:
@@ -137,18 +137,18 @@ spec:
 const yamlBodyAfter = `apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: restate-cloud-ingress
-  namespace: restate-cloud-ingress
+  name: acme-cloud-ingress
+  namespace: acme-cloud-ingress
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: restate-cloud-ingress
+      app: acme-cloud-ingress
   template:
     spec:
       containers:
       - name: ingress
-        image: registry.example.com/restate-cloud-ingress:v1.3.0
+        image: registry.example.com/acme-cloud-ingress:v1.3.0
         ports:
         - containerPort: 8080
         - containerPort: 9090
