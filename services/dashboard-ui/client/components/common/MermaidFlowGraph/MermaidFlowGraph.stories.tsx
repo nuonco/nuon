@@ -205,3 +205,20 @@ const edgesToSubgraphs = `graph TD
   API -->|enqueue| Search`
 
 export const CrossSubgraphEdges = () => <MermaidFlowGraph code={edgesToSubgraphs} />
+
+const branchDeploymentPlan = `flowchart LR
+  subgraph b0["app branch · main · acme/example-app@main · nuon/example-app-aws"]
+    direction LR
+    b0g0["<b>canary</b> <i>(order 1)</i><br/>─────────────<br/>auto-deploy=true<br/>canary=true"]
+    b0g1["<b>stable</b> <i>(order 2)</i><br/>─────────────<br/>auto-deploy=true<br/>stable=true"]
+
+    b0g0 -.->|promote| b0g1
+  end
+
+  class b0g0 abClass0;
+  class b0g1 abClass1;
+
+  classDef abClass0 fill:#D6B0FC,stroke:#8040BF,color:#000;
+  classDef abClass1 fill:#A8E6A3,stroke:#4C9A48,color:#000;`
+
+export const BranchDeploymentPlan = () => <MermaidFlowGraph code={branchDeploymentPlan} />

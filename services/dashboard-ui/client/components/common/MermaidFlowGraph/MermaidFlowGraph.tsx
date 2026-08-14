@@ -22,6 +22,8 @@ const MAX_NODE_WIDTH = 260
 const CHAR_WIDTH = 7.5
 const NODE_PADDING_X = 24
 const NODE_HEIGHT = 44
+const LINE_HEIGHT = 15
+const NODE_PADDING_Y = 16
 const SUBGRAPH_PADDING = 30
 
 const THEME = {
@@ -51,10 +53,38 @@ const THEME = {
   },
 } as const
 
+function stripInlineTags(text: string): string {
+  return text.replace(/<\/?(?:b|i|strong|em)>/gi, '')
+}
+
+function renderInline(text: string): React.ReactNode {
+  const nodes: React.ReactNode[] = []
+  const regex = /<(b|i|strong|em)>([\s\S]*?)<\/\1>/gi
+  let lastIndex = 0
+  let key = 0
+  let match: RegExpExecArray | null
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) nodes.push(text.slice(lastIndex, match.index))
+    const tag = match[1].toLowerCase()
+    const inner = renderInline(match[2])
+    nodes.push(tag === 'b' || tag === 'strong' ? <strong key={key++}>{inner}</strong> : <em key={key++}>{inner}</em>)
+    lastIndex = regex.lastIndex
+  }
+  if (lastIndex < text.length) nodes.push(text.slice(lastIndex))
+  return nodes
+}
+
 function measureNodeWidth(label: string): number {
-  const longestLine = label.split('\n').reduce((max, line) => Math.max(max, line.length), 0)
+  const longestLine = label
+    .split('\n')
+    .reduce((max, line) => Math.max(max, stripInlineTags(line).length), 0)
   const measured = longestLine * CHAR_WIDTH + NODE_PADDING_X
   return Math.min(MAX_NODE_WIDTH, Math.max(MIN_NODE_WIDTH, measured))
+}
+
+function measureNodeHeight(label: string): number {
+  const lineCount = label.split('\n').length
+  return Math.max(NODE_HEIGHT, lineCount * LINE_HEIGHT + NODE_PADDING_Y)
 }
 
 type ShapeConfig = {
@@ -76,14 +106,14 @@ const shapeConfigs: Record<string, ShapeConfig> = {
   parallelogram: { clipPath: 'polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%)' },
 }
 
-function getNodeDimensions(shape: string, baseWidth: number): { width: number; height: number } {
+function getNodeDimensions(shape: string, baseWidth: number, baseHeight: number): { width: number; height: number } {
   const config = shapeConfigs[shape] || shapeConfigs.rect
   const mult = config.sizeMultiplier || 1
   if (shape === 'circle') {
-    const size = Math.max(baseWidth, NODE_HEIGHT) * mult
+    const size = Math.max(baseWidth, baseHeight) * mult
     return { width: size, height: size }
   }
-  return { width: baseWidth * mult, height: NODE_HEIGHT * mult }
+  return { width: baseWidth * mult, height: baseHeight * mult }
 }
 
 function getNodeStyle(
@@ -171,7 +201,7 @@ const CylinderNode = ({ label, style }: { label: string; style: React.CSSPropert
           {label.split('\n').map((line, i) => (
             <span key={i}>
               {i > 0 && <br />}
-              {line}
+              {renderInline(line)}
             </span>
           ))}
         </span>
@@ -185,7 +215,7 @@ const NodeLabel = ({ label }: { label: string }) => (
     {label.split('\n').map((line, i) => (
       <span key={i}>
         {i > 0 && <br />}
-        {line}
+        {renderInline(line)}
       </span>
     ))}
   </span>
@@ -196,8 +226,8 @@ const MermaidNode = memo(({ data }: NodeProps) => {
 
   return (
     <>
-      <Handle type="target" position={Position.Top} style={{ opacity: 0 }} />
-      <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
+      <Handle id="top" type="target" position={Position.Top} style={{ opacity: 0 }} />
+      <Handle id="left" type="target" position={Position.Left} style={{ opacity: 0 }} />
       {isCylinder ? (
         <CylinderNode label={label} style={nodeStyle} />
       ) : (
@@ -205,8 +235,8 @@ const MermaidNode = memo(({ data }: NodeProps) => {
           <NodeLabel label={label} />
         </div>
       )}
-      <Handle type="source" position={Position.Bottom} style={{ opacity: 0 }} />
-      <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
+      <Handle id="bottom" type="source" position={Position.Bottom} style={{ opacity: 0 }} />
+      <Handle id="right" type="source" position={Position.Right} style={{ opacity: 0 }} />
     </>
   )
 })
@@ -268,7 +298,8 @@ function buildLayout(
   const nodeDims = new Map<string, { width: number; height: number }>()
   for (const node of parsedNodes) {
     const baseWidth = measureNodeWidth(node.label)
-    nodeDims.set(node.id, getNodeDimensions(node.nodeShape, baseWidth))
+    const baseHeight = measureNodeHeight(node.label)
+    nodeDims.set(node.id, getNodeDimensions(node.nodeShape, baseWidth, baseHeight))
   }
 
   const nodeMap = new Map(parsedNodes.map((n) => [n.id, n]))
@@ -505,6 +536,10 @@ function buildLayout(
     })
   }
 
+  const horizontal = direction === 'LR' || direction === 'RL'
+  const sourceHandle = horizontal ? 'right' : 'bottom'
+  const targetHandle = horizontal ? 'left' : 'top'
+
   const validNodeIds = new Set(parsedNodes.map((n) => n.id))
   const edges: Edge[] = parsedEdges
     .filter((e) => validNodeIds.has(e.source) && validNodeIds.has(e.target))
@@ -512,6 +547,8 @@ function buildLayout(
       id: `e-${e.source}-${e.target}-${i}`,
       source: e.source,
       target: e.target,
+      sourceHandle,
+      targetHandle,
       type: 'smoothstep',
       label: e.label,
       labelStyle: { fontSize: 9, fontFamily: 'var(--font-hack)', fill: colors.edgeLabelText },

@@ -1961,12 +1961,12 @@ export interface paths {
   "/v1/installs/{install_id}/labels": {
     /**
      * add labels to an install
-     * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten.
+     * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten. A value using the .nuon interpolation syntax becomes a dynamic label: the template is stored and its rendered value is re-materialized whenever install state changes. Keys managed by the app config's default_labels cannot be changed here.
      */
     post: operations["AddInstallLabels"];
     /**
      * remove labels from an install
-     * @description Remove the specified label keys from the install.
+     * @description Remove the specified label keys from the install. Removing a dynamic label's key also removes its template. Keys managed by the app config's default_labels cannot be removed here.
      */
     delete: operations["RemoveInstallLabels"];
   };
@@ -3448,6 +3448,13 @@ export interface components {
       config_repo?: string;
       created_at?: string;
       created_by_id?: string;
+      /**
+       * @description DefaultLabels are applied to every install of the app and can only be
+       * changed via app config sync — install label endpoints reject these keys.
+       */
+      default_labels?: {
+        [key: string]: string;
+      };
       description?: string;
       display_name?: string;
       id?: string;
@@ -4055,6 +4062,12 @@ export interface components {
       resource_group_id?: string;
       resource_group_location?: string;
       resource_group_name?: string;
+      /**
+       * @description Principal ID of the runner VMSS's system-assigned identity. Secret sync and
+       * image sync run as this identity, not a per-operation one, so sandboxes need
+       * it to grant cluster access.
+       */
+      runner_identity_principal_id?: string;
       subscription_id?: string;
       subscription_tenant_id?: string;
     };
@@ -4474,6 +4487,14 @@ export interface components {
       app_branch_connections?: components["schemas"]["app.InstallAppBranchConnection"][];
       app_branch_id?: string;
       app_config_id?: string;
+      /**
+       * @description AppDefaultLabels is the snapshot of the app's default labels applied to
+       * this install. It is the lock set for label mutation endpoints, and lets
+       * reconciliation tell a removed default apart from a user-set label.
+       */
+      app_default_labels?: {
+        [key: string]: string;
+      };
       app_id?: string;
       app_runner_config?: components["schemas"]["app.AppRunnerConfig"];
       app_sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
@@ -4530,6 +4551,17 @@ export interface components {
       install_sandbox_runs?: components["schemas"]["app.InstallSandboxRun"][];
       install_stack?: components["schemas"]["app.InstallStack"];
       install_states?: components["schemas"]["app.InstallState"][];
+      /**
+       * @description LabelTemplates holds label values written with the .nuon interpolation
+       * syntax. Rendered values are materialized into Labels whenever install
+       * state changes, so downstream consumers (SQL label matching, subscription
+       * dispatch, pickers) only ever read literal values. NOTE: this comment ends
+       * up in the swagger spec, which swag executes as a Go text/template —
+       * literal moustaches here break spec generation.
+       */
+      label_templates?: {
+        [key: string]: string;
+      };
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       /**
        * @description LastHealthReportAt is when a runner last reported component health. It is
@@ -23746,7 +23778,7 @@ export interface operations {
   };
   /**
    * add labels to an install
-   * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten.
+   * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten. A value using the .nuon interpolation syntax becomes a dynamic label: the template is stored and its rendered value is re-materialized whenever install state changes. Keys managed by the app config's default_labels cannot be changed here.
    */
   AddInstallLabels: {
     parameters: {
@@ -23802,7 +23834,7 @@ export interface operations {
   };
   /**
    * remove labels from an install
-   * @description Remove the specified label keys from the install.
+   * @description Remove the specified label keys from the install. Removing a dynamic label's key also removes its template. Keys managed by the app config's default_labels cannot be removed here.
    */
   RemoveInstallLabels: {
     parameters: {
