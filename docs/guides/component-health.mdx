@@ -238,6 +238,58 @@ wait longer on its own.
 Every required check starts the window as `unknown` and only counts once it reports, so a value left
 over from a previous deploy can't satisfy the gate for this one.
 
+### Example: gate a deploy on a k6 smoke suite
+
+Say you want no deploy to count as finished until k6 has run a smoke suite against the install and
+Datadog confirms error rate is within budget. Both are things only your systems know, so both are
+pushed checks — and both are listed as required.
+
+```toml
+[components.api.health]
+block_deploy         = true
+stabilization_window = "10m"          # room for the suite to run
+required_checks      = ["smoke-tests", "error-budget"]
+```
+
+```mermaid
+sequenceDiagram
+    participant N as Nuon
+    participant CI as Your CI
+    participant K as k6 / Datadog
+
+    N->>N: apply finishes
+    N->>N: verify health starts<br/>both checks unknown
+    Note over N: deploy is held here
+    CI->>K: run smoke suite, query error budget
+    K-->>CI: results
+    CI->>N: PUT smoke-tests = healthy
+    CI->>N: PUT error-budget = healthy
+    N->>N: both reported in-window,<br/>resources healthy
+    N->>N: window closes, deploy succeeds
+```
+
+Your pipeline pushes the results whenever they're ready:
+
+```bash
+BASE="https://api.nuon.co/v1/installs/$INSTALL_ID/components/$COMPONENT_ID/health/checks"
+AUTH=(-H "Authorization: Bearer $NUON_API_TOKEN" -H "X-Nuon-Org-ID: $NUON_ORG_ID")
+
+k6 run smoke.js \
+  && curl -X PUT "$BASE/smoke-tests" "${AUTH[@]}" \
+       -d '{"status":"healthy","message":"42 checks passed"}' \
+  || curl -X PUT "$BASE/smoke-tests" "${AUTH[@]}" \
+       -d '{"status":"unhealthy","message":"checkout flow failed"}'
+```
+
+Push the failure too, rather than staying silent — a reported failure fails the deploy immediately
+with a reason attached, where silence just waits out the window and fails with "never reported".
+
+<Note>
+The same pattern works with anything that can make an HTTP call: a Datadog monitor webhook, a Grafana
+alert, a GitHub Action, an Argo workflow step, a nightly audit job. Nuon doesn't care what produced
+the answer — only that it arrived after the apply and inside the window.
+</Note>
+
 ## Alerting
 
 Health transitions fan out through webhooks and Slack like any other Nuon event. Subscribe with a
