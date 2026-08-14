@@ -286,6 +286,12 @@ document the code.
 
 This applies to ALL code in this monorepo — Go, TypeScript, Terraform, everything.
 
+This rule is enforced for Claude Code sessions by a checked-in `PostToolUse` hook in `.claude/settings.json`. After
+each edit it inspects the newly-added comments and blocks ones that merely narrate the adjacent code, while allowing
+comments that explain a non-obvious "why", gotchas, doc comments, TODOs, and build/lint directives. Claude Code will
+prompt you to trust the project hooks the first time you open the repo — this is expected. The hook only affects Claude
+Code; it does not police hand-written comments or other tools.
+
 ### GORM Query Conventions
 
 **Always use struct-based `Where` clauses instead of raw SQL strings.** This applies to all GORM queries throughout the
