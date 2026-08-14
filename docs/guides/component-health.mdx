@@ -71,7 +71,7 @@ warning events too, so those surface as well.
 
 **Terraform components** get their cloud resources listed so you can see what a component owns. Those
 rows are inventory, not assessment, so they don't move the verdict on their own — [add a probe or a
-check](#choosing-a-check) to give a Terraform component a real verdict.
+custom check](#choosing-a-check) to give a Terraform component a real verdict.
 
 ## How a verdict is reached
 
@@ -81,7 +81,7 @@ flowchart LR
 
     k8s["Kubernetes resources<br/>automatic"] --> v
     probes["Probes<br/>http, tcp, exec"] --> v
-    pushed["Pushed checks<br/>your systems"] --> v
+    custom["Custom checks<br/>your systems"] --> v
 
     v --> badge["Health badge<br/>and Resources tab"]
     v --> alerts["Slack and webhooks"]
@@ -123,7 +123,7 @@ Three ways to add your own signal. They compose freely — most components need 
 | | Use it when | Runs where | Can gate a deploy |
 | --- | --- | --- | --- |
 | **Probe** | Nuon can reach the thing — an endpoint, a port, a command | Nuon, every cycle | Yes |
-| **Pushed check** | Only *your* systems know — CI, a business metric, a nightly audit | Your systems, on your clock | Yes, with `required_checks` |
+| **Custom check** | Only *your* systems know — CI, a business metric, a nightly audit | Your systems, on your clock | Yes, with `required_checks` |
 | **Required check** | A deploy must not finish until an external system says so | — | That's its whole job |
 
 <Note>
@@ -178,7 +178,7 @@ output can't resolve until that component has applied at least once. Until then 
 `unknown` and says so — it stays visible rather than silently vanishing, and it never fails a deploy.
 </Note>
 
-## Pushed checks
+## Custom checks
 
 For anything Nuon can't reach — a business metric, a queue depth, something your CI already
 computed — push it in and it becomes part of the component's health.
@@ -194,7 +194,7 @@ curl -X PUT \
 `status` is one of `healthy`, `degraded`, `unhealthy`, `unknown`. Names are 1–100 characters of
 letters, digits, dots, dashes or underscores.
 
-**A pushed check can make a component worse, never better.** Reporting `healthy` will not paper over
+**A custom check can make a component worse, never better.** Reporting `healthy` will not paper over
 crash-looping pods.
 
 **Say how often you'll report.** A check's last value stands for 5 minutes by default. If yours
@@ -219,7 +219,7 @@ block_deploy    = true
 required_checks = ["migrations-applied", "smoke-tests"]
 ```
 
-Each name must be [pushed](#pushed-checks) **after the apply finishes** and be healthy when the
+Each name must be [pushed as a custom check](#custom-checks) **after the apply finishes** and be healthy when the
 window closes. Nuon can't produce these itself — that's the point — so something in your pipeline has
 to push them:
 
@@ -242,7 +242,7 @@ over from a previous deploy can't satisfy the gate for this one.
 
 Say you want no deploy to count as finished until k6 has run a smoke suite against the install and
 Datadog confirms error rate is within budget. Both are things only your systems know, so both are
-pushed checks — and both are listed as required.
+custom checks — and both are listed as required.
 
 ```toml
 [components.api.health]
@@ -421,14 +421,14 @@ followed — useful as input to a runbook or an agent.
   <Accordion title="A component shows a dash instead of a verdict">
     That's `not-applicable` — either the component has no observable runtime footprint (a Terraform
     component with no probe, a build-only component), or it has never deployed. Add a
-    [probe or a pushed check](#choosing-a-check) to give it a verdict.
+    [probe or a custom check](#choosing-a-check) to give it a verdict.
   </Accordion>
   <Accordion title="My custom resources aren't listed">
     Kinds are read from what your chart or manifest actually ships, and are picked up on deploy. If
     you've just added a CRD, deploy the component once — or wait for its next drift check, which
     also refreshes them without applying anything.
   </Accordion>
-  <Accordion title="A pushed check went unknown on its own">
+  <Accordion title="A custom check went unknown on its own">
     Its window expired. Set `stale_after` to match how often you actually report, up to `60m`.
   </Accordion>
   <Accordion title="A verdict took a few minutes to change">
