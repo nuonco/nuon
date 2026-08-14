@@ -50,3 +50,15 @@ export const TriggerPending = () => (
     onTriggerPreview={noop}
   />
 )
+
+export const WithNudge = () => (
+  <BranchDetailActions
+    editButton={<MockEditButton />}
+    deploymentPlanButton={<MockDeploymentPlanButton />}
+    deleteButton={<MockDeleteButton />}
+    isTriggerPending={false}
+    showTriggerNudge
+    onTriggerRun={noop}
+    onTriggerPreview={noop}
+  />
+)

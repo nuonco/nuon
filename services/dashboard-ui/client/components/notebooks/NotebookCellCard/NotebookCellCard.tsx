@@ -6,7 +6,6 @@ import { Input } from '@/components/common/form/Input'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { Tooltip } from '@/components/common/Tooltip'
 
 interface INotebookCellCard {
   index: number
@@ -46,25 +45,16 @@ export const NotebookCellCard = ({
   return (
     <div className="flex flex-col gap-3 rounded-md border bg-background p-4">
       <div className="flex items-center gap-2">
-        <Tooltip
-          tipContentClassName="leading-none"
-          tipContent={
-            <Text variant="subtext">
-              {isRunning ? 'Running...' : 'Run cell'}
-            </Text>
-          }
-          position="top"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="!p-1"
+          disabled={isRunning}
+          onClick={onRun}
+          tooltipProps={{ tipContent: isRunning ? 'Running...' : 'Run cell' }}
         >
-          <Button
-            variant="ghost"
-            size="sm"
-            className="!p-1"
-            disabled={isRunning}
-            onClick={onRun}
-          >
-            <Icon variant="PlayIcon" size={16} />
-          </Button>
-        </Tooltip>
+          <Icon variant="PlayIcon" size={16} />
+        </Button>
         {runStatus ? (
           <>
             <Status status={runStatus} />
@@ -93,41 +83,29 @@ export const NotebookCellCard = ({
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          <Tooltip
-            tipContentClassName="leading-none"
-            tipContent={
-              <Text variant="subtext">
-                {isSaving ? 'Saving...' : 'Save changes'}
-              </Text>
-            }
-            position="top"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="!p-1"
+            disabled={!isDirty || isSaving}
+            onClick={onSave}
+            tooltipProps={{
+              tipContent: isSaving ? 'Saving...' : 'Save changes',
+            }}
           >
-            <Button
-              variant="ghost"
-              size="sm"
-              className="!p-1"
-              disabled={!isDirty || isSaving}
-              onClick={onSave}
-            >
-              <Icon variant="FloppyDiskIcon" size={16} />
-            </Button>
-          </Tooltip>
+            <Icon variant="FloppyDiskIcon" size={16} />
+          </Button>
 
-          <Tooltip
-            tipContentClassName="leading-none"
-            tipContent={<Text variant="subtext">Delete cell</Text>}
-            position="top"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="!p-1 !text-red-800 dark:!text-red-500"
+            disabled={isDeleting}
+            onClick={onDelete}
+            tooltipProps={{ tipContent: 'Delete cell' }}
           >
-            <Button
-              variant="ghost"
-              size="sm"
-              className="!p-1 !text-red-800 dark:!text-red-500"
-              disabled={isDeleting}
-              onClick={onDelete}
-            >
-              <Icon variant="TrashIcon" size={16} />
-            </Button>
-          </Tooltip>
+            <Icon variant="TrashIcon" size={16} />
+          </Button>
         </div>
       </div>
 

@@ -622,6 +622,39 @@ import { Link } from 'react-router'
 <Link to={`/${org.id}/connections/vcs/${id}`}>View</Link>
 ```
 
+### Button tooltips (disabled reasons & nudges)
+
+**The `Button` owns its tooltip via the `tooltipProps` prop** (`tooltipProps?: Omit<ITooltip, 'children'>`). When present, Button renders itself wrapped in `Tooltip`. **Never hand-wrap `<Tooltip>` around a `Button`, and never put `title=` on a button** — both are review smells.
+
+Button solves the disabled-hover problem internally: when `disabled` + `tooltipProps`, it renders `aria-disabled` (not native `disabled`, which swallows pointer events) so the reason shows on hover **and** keyboard focus.
+
+```tsx
+// ✅ Disabled reason — shows on hover/focus even though disabled
+<Button disabled tooltipProps={{ tipContent: 'Sync the app config first' }}>
+  Trigger run
+</Button>
+
+// ❌ Wrong — native disabled swallows hover, tooltip never shows
+<Tooltip tipContent="Sync the app config first">
+  <Button disabled>Trigger run</Button>
+</Tooltip>
+```
+
+**Every disabled button whose reason isn't obvious from context gets a `tooltipProps` reason.** Reason copy follows [COPY_STYLE.md](./COPY_STYLE.md): sentence case, explains the unmet condition, fragment (no trailing period). A plain-string `tipContent` auto-wraps in `Text` `subtext` — pass a string, don't wrap it yourself.
+
+"Obvious from context" (→ **no** tooltip needed): the label already changes for an async op ("Saving…"), form fields show their own validation errors, a type-to-confirm input sits right above, or it's a pagination/positional convention.
+
+**Nudge** — a controlled tooltip opened by app state (not hover). Use `useNudge(trigger, durationMs?)` (`client/hooks/use-nudge.ts`) → `{ isOpen, close }`, wired to `tooltipProps`. Never re-implement the open/auto-close timer:
+
+```tsx
+const { isOpen, close } = useNudge(showNudge)
+<Button onClick={() => { close(); onRun() }} tooltipProps={{ isOpen, disableHover: true, position: 'bottom', tipContent: 'Trigger a run to deploy this branch' }}>
+  Trigger run
+</Button>
+```
+
+Tooltips on **non-Button** elements (text, icons, badges, toggles) keep the hand-wrapped `<Tooltip>` — `tooltipProps` is Button-only.
+
 ### Admin Tool Links
 
 **Never create ad-hoc links to admin tooling (admin dashboard, Temporal UI).** Always use the dedicated components in `client/components/admin/`. These components handle auth checks and demo mode internally — they render nothing for non-admin users, so consumers don't need any conditional logic.
