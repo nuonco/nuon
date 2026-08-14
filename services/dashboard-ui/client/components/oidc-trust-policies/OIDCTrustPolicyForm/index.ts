@@ -1,0 +1,1 @@
+export { OIDCTrustPolicyFormModal } from './OIDCTrustPolicyForm'
