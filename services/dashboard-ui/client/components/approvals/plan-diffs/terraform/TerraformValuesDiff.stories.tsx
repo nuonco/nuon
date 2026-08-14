@@ -233,14 +233,14 @@ export const KubectlManifestYamlBody = () => (
         force_conflicts: false,
         force_new: false,
         kind: 'Deployment',
-        name: 'restate-cloud-ingress',
-        namespace: 'restate-cloud-ingress',
+        name: 'acme-cloud-ingress',
+        namespace: 'acme-cloud-ingress',
         server_side_apply: false,
         wait_for_rollout: true,
         yaml_body:
-          'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: restate-cloud-ingress\n  namespace: restate-cloud-ingress\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: restate-cloud-ingress\n  template:\n    spec:\n      containers:\n      - name: ingress\n        image: registry.example.com/restate-cloud-ingress:v1.2.0\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi',
+          'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: acme-cloud-ingress\n  namespace: acme-cloud-ingress\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: acme-cloud-ingress\n  template:\n    spec:\n      containers:\n      - name: ingress\n        image: registry.example.com/acme-cloud-ingress:v1.2.0\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi',
         yaml_body_parsed:
-          'apiVersion: apps/v1 kind: Deployment metadata: name: restate-cloud-ingress namespace: restate-cloud-ingress spec: replicas: 2',
+          'apiVersion: apps/v1 kind: Deployment metadata: name: acme-cloud-ingress namespace: acme-cloud-ingress spec: replicas: 2',
       },
       after: {
         api_version: 'apps/v1',
@@ -248,14 +248,14 @@ export const KubectlManifestYamlBody = () => (
         force_conflicts: false,
         force_new: false,
         kind: 'Deployment',
-        name: 'restate-cloud-ingress',
-        namespace: 'restate-cloud-ingress',
+        name: 'acme-cloud-ingress',
+        namespace: 'acme-cloud-ingress',
         server_side_apply: false,
         wait_for_rollout: true,
         yaml_body:
-          'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: restate-cloud-ingress\n  namespace: restate-cloud-ingress\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: restate-cloud-ingress\n  template:\n    spec:\n      containers:\n      - name: ingress\n        image: registry.example.com/restate-cloud-ingress:v1.3.0\n        ports:\n        - containerPort: 8080\n        - containerPort: 9090\n          name: metrics\n        resources:\n          requests:\n            cpu: 200m\n            memory: 256Mi\n          limits:\n            cpu: "1"\n            memory: 512Mi\n        env:\n        - name: OTEL_ENABLED\n          value: "true"',
+          'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: acme-cloud-ingress\n  namespace: acme-cloud-ingress\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: acme-cloud-ingress\n  template:\n    spec:\n      containers:\n      - name: ingress\n        image: registry.example.com/acme-cloud-ingress:v1.3.0\n        ports:\n        - containerPort: 8080\n        - containerPort: 9090\n          name: metrics\n        resources:\n          requests:\n            cpu: 200m\n            memory: 256Mi\n          limits:\n            cpu: "1"\n            memory: 512Mi\n        env:\n        - name: OTEL_ENABLED\n          value: "true"',
         yaml_body_parsed:
-          'apiVersion: apps/v1 kind: Deployment metadata: name: restate-cloud-ingress namespace: restate-cloud-ingress spec: replicas: 3',
+          'apiVersion: apps/v1 kind: Deployment metadata: name: acme-cloud-ingress namespace: acme-cloud-ingress spec: replicas: 3',
       },
     }}
   />
