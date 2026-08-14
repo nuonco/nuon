@@ -68,7 +68,22 @@ const (
 	WorkflowMetadataKeyRole               = "role"
 	WorkflowMetadataKeyOwnerName          = "owner_name"
 	WorkflowMetadataKeyChangedInputValues = "changed_input_values"
+	WorkflowMetadataKeyStackOnly          = "stack_only"
+	WorkflowMetadataKeyInputsOnly         = "inputs_only"
 )
+
+// IsStackOnly reports whether this workflow was asked to stop once the install
+// stack and runner are up, leaving the sandbox and components unprovisioned so
+// inputs can be set first.
+func (w *Workflow) IsStackOnly() bool {
+	return generics.FromPtrStr(w.Metadata[WorkflowMetadataKeyStackOnly]) == "true"
+}
+
+// IsInputsOnly reports whether this workflow should record input values without
+// deploying anything against them.
+func (w *Workflow) IsInputsOnly() bool {
+	return generics.FromPtrStr(w.Metadata[WorkflowMetadataKeyInputsOnly]) == "true"
+}
 
 func (i WorkflowType) PastTenseName() string {
 	switch i {

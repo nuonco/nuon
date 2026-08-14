@@ -32,6 +32,14 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	steps = append(steps, step)
 
+	// Record the values and stop. Nothing is deployed against them — not the
+	// components that reference them, not the sandbox, not the update-inputs
+	// lifecycle actions — so an input can be set while the install still lacks
+	// the resources those steps would need.
+	if flw.IsInputsOnly() {
+		return sg.Result(steps), nil
+	}
+
 	changedInputsRaw := generics.FromPtrStr(flw.Metadata["inputs"])
 	changedInputs := strings.Split(changedInputsRaw, ",")
 	deployDependents := generics.FromPtrStr(flw.Metadata["deploy_dependents"]) == strconv.FormatBool(true)
