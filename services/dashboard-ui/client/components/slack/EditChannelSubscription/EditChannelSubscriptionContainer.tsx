@@ -8,10 +8,8 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { updateSlackChannelSubscription } from '@/lib'
 import type { TAPIError, TSlackChannelSubscription } from '@/types'
-import {
-  EditChannelSubscriptionModal,
-  type EditChannelSubscriptionInput,
-} from './EditChannelSubscription'
+import { ChannelSubscriptionFormModal } from '@/components/slack/ChannelSubscriptionForm'
+import type { ChannelSubscriptionOutput } from '@/components/slack/ChannelSubscriptionForm/schema'
 
 const EditChannelSubscriptionModalContainer = ({
   subscription,
@@ -25,16 +23,11 @@ const EditChannelSubscriptionModalContainer = ({
   const { addToast } = useToast()
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: (input: EditChannelSubscriptionInput) =>
+    mutationFn: (input: ChannelSubscriptionOutput) =>
       updateSlackChannelSubscription({
         orgId: org.id,
         subId: subscription.id ?? '',
         body: {
-          // PATCH treats `match` with PUT semantics — explicit `null`
-          // resets to org-wide; an undefined wire value would mean
-          // "leave unchanged". Map `undefined` to `null` so the modal
-          // can clear the scope by toggling the radio back to
-          // "Everything in this org".
           match: input.match ?? null,
           interests: input.interests,
         },
@@ -50,24 +43,23 @@ const EditChannelSubscriptionModalContainer = ({
       )
       removeModal(props.modalId)
     },
-    onError: (err: TAPIError) => {
-      const heading =
-        err?.status === 409
-          ? 'Scope already subscribed to this channel'
-          : 'Unable to save changes'
-      addToast(
-        <Toast heading={heading} theme="error">
-          <Text>{err?.description || err?.error || 'Try again.'}</Text>
-        </Toast>
-      )
-    },
   })
 
+  const friendlyError =
+    error && (error as TAPIError).status === 409
+      ? {
+          ...(error as TAPIError),
+          error:
+            'This channel is already subscribed with this scope. Pick a different scope.',
+        }
+      : (error as TAPIError | null)
+
   return (
-    <EditChannelSubscriptionModal
+    <ChannelSubscriptionFormModal
+      mode="edit"
       subscription={subscription}
       isPending={isPending}
-      error={error as TAPIError | null}
+      error={friendlyError}
       onSubmit={mutate}
       {...props}
     />

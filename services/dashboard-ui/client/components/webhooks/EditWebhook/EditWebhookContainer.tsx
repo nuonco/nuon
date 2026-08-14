@@ -7,8 +7,9 @@ import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { updateCurrentOrgWebhook } from '@/lib'
-import type { TAPIError, TWebhook } from '@/types'
-import { EditWebhookModal, type EditWebhookFormInput } from './EditWebhook'
+import type { TWebhook } from '@/types'
+import { WebhookFormModal } from '@/components/webhooks/WebhookForm'
+import type { WebhookFormOutput } from '@/components/webhooks/WebhookForm/schema'
 
 const EditWebhookModalContainer = ({
   webhook,
@@ -20,17 +21,12 @@ const EditWebhookModalContainer = ({
   const { addToast } = useToast()
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: (input: EditWebhookFormInput) =>
+    mutationFn: (input: WebhookFormOutput) =>
       updateCurrentOrgWebhook({
         body: {
           ...(input.webhookSecret !== undefined
             ? { webhook_secret: input.webhookSecret }
             : {}),
-          // PATCH treats `match` with PUT semantics — explicit `null`
-          // resets to org-wide; an undefined wire value would mean "leave
-          // unchanged". Map `undefined` to `null` so the modal can clear
-          // the scope by toggling the radio back to "Everything in this
-          // org".
           match: input.match ?? null,
           interests: input.interests,
         },
@@ -46,24 +42,23 @@ const EditWebhookModalContainer = ({
       )
       removeModal(props.modalId)
     },
-    onError: (err: TAPIError) => {
-      const heading =
-        err?.status === 409
-          ? 'Another webhook for this URL already uses this scope'
-          : 'Unable to update webhook'
-      addToast(
-        <Toast heading={heading} theme="error">
-          <Text>{err?.description || err?.error || 'Try again.'}</Text>
-        </Toast>
-      )
-    },
   })
 
+  const friendlyError =
+    error && error.status === 409
+      ? {
+          ...error,
+          error:
+            'Another webhook for this URL already uses this scope. Pick a different scope.',
+        }
+      : error
+
   return (
-    <EditWebhookModal
+    <WebhookFormModal
+      mode="edit"
       webhook={webhook}
       isPending={isPending}
-      error={error}
+      error={friendlyError}
       onSubmit={(input) => mutate(input)}
       {...props}
     />

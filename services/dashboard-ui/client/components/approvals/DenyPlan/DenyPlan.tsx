@@ -35,7 +35,7 @@ export const DenyPlanModal = ({
         ),
         onClick: onSubmit,
         disabled: isPending,
-        variant: 'primary',
+        variant: 'danger',
       }}
       {...props}
     >
