@@ -50,6 +50,14 @@ This skill enforces the two-component (Button + Modal) pattern using useSurfaces
 
 7. For panel flows (sliding side panel): follow the same pattern with `addPanel`/`removePanel` and `Panel` from `client/components/surfaces/Panel`.
 
+8. If the trigger Button is **disabled** because an upstream condition isn't met (not just async pending), give it a reason via `tooltipProps` — never hand-wrap `<Tooltip>` and never use `title=`. Button renders `aria-disabled` internally so the reason shows on hover/focus even while disabled:
+   ```typescript
+   <Button disabled={!hasConfig} tooltipProps={!hasConfig ? { tipContent: 'Sync the app config first' } : undefined} onClick={() => addModal(modal)} {...props}>
+     Trigger run
+   </Button>
+   ```
+   Skip the tooltip when the reason is obvious from context (label already changes for async ops, form errors are shown, a type-to-confirm input is right above). Copy follows `COPY_STYLE.md` (sentence case, fragment, no period).
+
 Canonical source: `client/components/approvals/ApprovePlan.tsx`
 
 ## Anti-Patterns
@@ -58,3 +66,4 @@ Canonical source: `client/components/approvals/ApprovePlan.tsx`
 - **Do not** build a modal with `<div className="fixed inset-0 ...">` — use `Modal` from `client/components/surfaces/Modal`
 - **Do not** destructure `modalId` from props — always spread `{...props}` onto `<Modal>`, or `removeModal(props.modalId)` will fail
 - **Do not** use `useState(isOpen)` to control modal visibility — use `useSurfaces().addModal` / `removeModal`
+- **Do not** hand-wrap `<Tooltip>` around a trigger `Button` or use `title=` — a disabled trigger's reason goes in `tooltipProps`
