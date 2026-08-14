@@ -1,12 +1,9 @@
-import { type ReactNode, useEffect, useState } from 'react'
+import { type ReactNode } from 'react'
 import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
-import { Text } from '@/components/common/Text'
-import { Tooltip } from '@/components/common/Tooltip'
-
-const NUDGE_DURATION_MS = 8000
+import { useNudge } from '@/hooks/use-nudge'
 
 interface IBranchDetailActions {
   editButton: ReactNode
@@ -29,17 +26,7 @@ export const BranchDetailActions = ({
   onTriggerRun,
   onTriggerPreview,
 }: IBranchDetailActions) => {
-  const [nudgeOpen, setNudgeOpen] = useState(false)
-
-  useEffect(() => {
-    if (!showTriggerNudge) {
-      setNudgeOpen(false)
-      return
-    }
-    setNudgeOpen(true)
-    const timer = setTimeout(() => setNudgeOpen(false), NUDGE_DURATION_MS)
-    return () => clearTimeout(timer)
-  }, [showTriggerNudge])
+  const { isOpen: nudgeOpen, close: closeNudge } = useNudge(showTriggerNudge)
 
   return (
     <div className="flex items-center gap-3">
@@ -65,28 +52,24 @@ export const BranchDetailActions = ({
       ) : null}
 
       <div className="flex items-center">
-        <Tooltip
-          isOpen={nudgeOpen}
-          disableHover
-          position="bottom"
-          tipContent={
-            <Text variant="subtext">Trigger a run to deploy this branch</Text>
-          }
+        <Button
+          variant="primary"
+          disabled={isTriggerPending}
+          onClick={() => {
+            closeNudge()
+            onTriggerRun()
+          }}
+          className="!rounded-r-none"
+          tooltipProps={{
+            isOpen: nudgeOpen,
+            disableHover: true,
+            position: 'bottom',
+            tipContent: 'Trigger a run to deploy this branch',
+          }}
         >
-          <Button
-            variant="primary"
-            disabled={isTriggerPending}
-            onClick={() => {
-              setNudgeOpen(false)
-              onTriggerRun()
-            }}
-            className="!rounded-r-none"
-            title="Trigger a new run"
-          >
-            <Icon variant="PlayIcon" size={16} />
-            {isTriggerPending ? 'Triggering...' : 'Trigger run'}
-          </Button>
-        </Tooltip>
+          <Icon variant="PlayIcon" size={16} />
+          {isTriggerPending ? 'Triggering...' : 'Trigger run'}
+        </Button>
 
         <Dropdown
           id="trigger-run-options"
