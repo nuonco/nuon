@@ -16,6 +16,8 @@ const base: InstallFormValues = {
   labels: [],
   role: '',
   deployDependents: true,
+  stackOnly: false,
+  inputsOnly: false,
   inputs: { db_url: 'postgres://x', enable_tls: true, replicas: '3' },
 }
 
@@ -96,5 +98,12 @@ describe('buildCreateInstallBody', () => {
     )
     expect(body.inputs).toBeUndefined()
     expect(body.labels).toBeUndefined()
+  })
+
+  test('sends stack_only only when the stack-only scope is chosen', () => {
+    expect(buildCreateInstallBody(base, 'aws').stack_only).toBeUndefined()
+    expect(
+      buildCreateInstallBody({ ...base, stackOnly: true }, 'aws').stack_only
+    ).toBe(true)
   })
 })

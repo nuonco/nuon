@@ -31,6 +31,8 @@ func (c *cli) installsCmd() *cobra.Command {
 		deployDeps         bool
 		deployDependents   bool
 		deployDependencies bool
+		stackOnly          bool
+		inputsOnly         bool
 		offset             int
 		limit              int
 		planOnly           bool
@@ -127,11 +129,18 @@ determined automatically from the stack output after provisioning.
 Use --label (repeatable, format key=value) to attach labels at creation time:
 
   nuon installs create -a my-app -n my-install -r us-west-2 \
-    --label env=prod --label team=platform`,
+    --label env=prod --label team=platform
+
+Use --stack-only to provision the stack and runner and stop there, leaving the
+sandbox and components unprovisioned:
+
+  nuon installs create -a my-app -n my-install -r us-west-2 --stack-only
+  nuon installs inputs set bootstrap_token=... -i my-install --inputs-only
+  nuon installs reprovision-sandbox -i my-install`,
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.Create(cmd.Context(), appID, name, region, awsAccountID, inputs, labelArgs, PrintJSON, noSelect)
+			return svc.Create(cmd.Context(), appID, name, region, awsAccountID, inputs, labelArgs, PrintJSON, noSelect, stackOnly)
 		}),
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
@@ -145,6 +154,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	createCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
 	createCmd.Flags().StringSliceVar(&labelArgs, "label", []string{}, "Labels to set on the install (repeatable, format: key=value). Example: --label env=prod --label team=platform")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "Do not automatically set the created install as the current install")
+	createCmd.Flags().BoolVar(&stackOnly, "stack-only", false, "Provision the install stack and runner only, stopping before the sandbox and components")
 	installsCmds.AddCommand(createCmd)
 
 	confirmDelete := false
@@ -871,14 +881,18 @@ Accepts a list of inputs in key=value format, e.g.:
   nuon installs inputs set foo=bar baz=qux
 
 The current inputs are fetched first so changed values can be shown. Setting an
-input that is not declared on the app raises an error.`,
+input that is not declared on the app raises an error.
+
+Use --inputs-only to save the values without deploying components or
+reprovisioning the sandbox.`,
 		Args: cobra.MinimumNArgs(1),
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			svc := c.installs
-			return svc.SetInputs(cmd.Context(), id, args, deployDependents, PrintJSON)
+			return svc.SetInputs(cmd.Context(), id, args, deployDependents, inputsOnly, PrintJSON)
 		}),
 	}
 	inputsSetCmd.Flags().BoolVar(&deployDependents, "deploy-dependents", true, "Deploy components that depend on the updated inputs")
+	inputsSetCmd.Flags().BoolVar(&inputsOnly, "inputs-only", false, "Record the new input values without deploying components or reprovisioning the sandbox")
 	inputsCmd.AddCommand(inputsSetCmd)
 
 	// `inputs edit` is a preview feature, gated behind NUON_PREVIEW.

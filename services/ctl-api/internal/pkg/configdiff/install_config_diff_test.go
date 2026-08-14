@@ -142,7 +142,7 @@ func TestSandboxConfigEqualIgnoresOrchestrationKnobs(t *testing.T) {
 func TestStackConfigEqualIgnoresID(t *testing.T) {
 	a := app.AppStackConfig{
 		Type: app.StackTypeGCP,
-		Name: "aqd-{{.nuon.install.id}}",
+		Name: "acme-{{.nuon.install.id}}",
 	}
 	a.ID = "appstackcfgold"
 

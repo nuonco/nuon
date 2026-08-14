@@ -23,7 +23,7 @@ const (
 	statusAccessError = "access_error"
 )
 
-func (s *Service) Create(ctx context.Context, appID, name, region, awsAccountID string, inputs, labelArgs []string, asJSON, noSelect bool) error {
+func (s *Service) Create(ctx context.Context, appID, name, region, awsAccountID string, inputs, labelArgs []string, asJSON, noSelect, stackOnly bool) error {
 	if appID == "" {
 		selectedID, err := appselector.App(ctx, s.cfg, s.api)
 		if err != nil {
@@ -82,6 +82,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region, awsAccountID 
 	if err != nil {
 		return ui.PrintError(err)
 	}
+	req.StackOnly = stackOnly
 
 	if asJSON {
 		install, err := s.api.CreateInstall(ctx, appID, req)

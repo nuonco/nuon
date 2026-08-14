@@ -82,6 +82,7 @@ export const EditInputsFormModalContainer = ({
         body: {
           inputs: payload.inputs,
           deploy_dependents: payload.deployDependents,
+          ...(payload.inputsOnly && { inputs_only: true }),
           ...(payload.role && { role: payload.role }),
         },
       })

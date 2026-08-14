@@ -110,7 +110,7 @@ func (s *service) ToggleInstallComponent(ctx *gin.Context) {
 		workflowType = app.WorkflowTypeComponentDisabled
 	}
 
-	inputs, err := s.applyInstallInputsUpdate(ctx, install, patch, "", true, req.PlanOnly, workflowType)
+	inputs, err := s.applyInstallInputsUpdate(ctx, install, patch, "", true, false, req.PlanOnly, workflowType)
 	if err != nil {
 		ctx.Error(err)
 		return
