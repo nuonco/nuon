@@ -38,4 +38,8 @@ type HelmDeployPlan struct {
 	// merged as the highest-precedence layer at deploy time, winning over both
 	// ValuesFiles and Values. Empty means no override (exact no-op).
 	ValuesOverride string `json:"values_override,omitempty"`
+
+	// Must stay a bool: go-swagger renders a documented $ref field as an inline
+	// struct value, which decodes non-nil on every deploy.
+	RecoverRelease bool `json:"recover_release,omitempty"`
 }

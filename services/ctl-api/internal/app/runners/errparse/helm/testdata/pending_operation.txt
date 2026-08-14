@@ -1,0 +1,2 @@
+executing helm upgrade
+release my-app is stuck in pending-upgrade at revision 7 from an operation that never finished; helm refuses every further operation on it until it is recovered
