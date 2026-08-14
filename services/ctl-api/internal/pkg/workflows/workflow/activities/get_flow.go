@@ -2,8 +2,10 @@ package activities
 
 import (
 	"context"
+	stderrors "errors"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -31,6 +33,9 @@ func (a *Activities) PkgWorkflowsFlowGetFlow(ctx context.Context, req GetFlowReq
 			return db.Select("id, name")
 		}).
 		First(&wf, "id = ?", req.ID); res.Error != nil {
+		if stderrors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, temporal.NewNonRetryableApplicationError("workflow not found", "not found", res.Error)
+		}
 		return nil, errors.Wrap(res.Error, "unable to get install workflow")
 	}
 
