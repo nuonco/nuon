@@ -630,7 +630,10 @@ func getImageDepSyncSteps(
 	return steps, nil
 }
 
-func deployAllComponents(ctx workflow.Context, dg *genCtx) ([]*app.WorkflowStep, error) {
+// gateRunnerHealthy is false when the caller's preceding phase already waited on
+// the install's runner, where a second wait immediately after can only
+// re-confirm the same result.
+func deployAllComponents(ctx workflow.Context, dg *genCtx, gateRunnerHealthy bool) ([]*app.WorkflowStep, error) {
 	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
 		InstallID: dg.installID,
 	})
@@ -640,15 +643,11 @@ func deployAllComponents(ctx workflow.Context, dg *genCtx) ([]*app.WorkflowStep,
 
 	steps := make([]*app.WorkflowStep, 0)
 
-	// Gate the deploys on runner health, unless the preceding phase's last step
-	// already did. ReprovisionStack recreates the runner and ends on that wait,
-	// so a second gate immediately after can only re-confirm the same result.
-	//
 	// The gate opens its own group rather than appending into whichever group the
 	// caller left current: it belongs to the deploys, and sharing a group with a
 	// caller that also ends in a runner-health step makes the two
 	// indistinguishable downstream, where a step's identity is its group + name.
-	if dg.sg.needsRunnerHealthyGate() {
+	if gateRunnerHealthy {
 		dg.sg.nextGroup()
 
 		step, err := dg.sg.installSignalStep(ctx, dg.installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{

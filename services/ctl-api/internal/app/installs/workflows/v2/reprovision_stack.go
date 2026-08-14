@@ -60,7 +60,9 @@ func ReprovisionStack(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSte
 
 	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
 
-	deploySteps, err := deployAllComponents(ctx, dg)
+	// getStackReprovisionSteps ends on the wait for the recreated runner, so the
+	// deploys do not need to gate on it again.
+	deploySteps, err := deployAllComponents(ctx, dg, false)
 	if err != nil {
 		return nil, err
 	}
