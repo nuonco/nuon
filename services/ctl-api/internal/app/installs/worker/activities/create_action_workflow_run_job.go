@@ -34,11 +34,19 @@ func (a *Activities) CreateActionWorkflowRunRunnerJob(ctx context.Context, req *
 	}
 	ctx = cctx.SetFlowInstallIDContext(ctx, run.InstallID)
 
+	// image-backed actions are launched by the mng process on VM runners, which
+	// polls the dedicated image-actions group.
+	group := app.RunnerJobGroupActions
+	if cfg.Image != "" {
+		group = app.RunnerJobGroupImageActions
+	}
+
 	job, err := a.runnersHelpers.CreateActionsWorkflowRunJob(ctx,
 		req.RunnerID,
 		req.ActionWorkflowRunID,
 		req.LogStreamID,
 		&cfg,
+		group,
 		req.Metadata,
 	)
 	if err != nil {

@@ -69,6 +69,7 @@ export const ActionDetail = () => {
     installState?.install_stack?.outputs?.break_glass_role_arns
   const kubeConfigEnabled =
     action?.action_workflow?.configs?.[0]?.enable_kube_config
+  const actionImage = action?.action_workflow?.configs?.[0]?.image
 
   if (isLoading) {
     return (
@@ -221,17 +222,19 @@ export const ActionDetail = () => {
             </div>
           </div>
 
-          {action?.runs?.[0] ? (
+          {action?.runs?.[0] || actionImage ? (
             <div className="flex flex-wrap gap-x-8 gap-y-4 items-start">
-              <LabeledStatus
-                label="Last status"
-                statusProps={{ status: action.runs[0].status_v2?.status }}
-                tooltipProps={{
-                  position: 'top',
-                  tipContent:
-                    action.runs[0].status_v2?.status_human_description,
-                }}
-              />
+              {action?.runs?.[0] ? (
+                <LabeledStatus
+                  label="Last status"
+                  statusProps={{ status: action.runs[0].status_v2?.status }}
+                  tooltipProps={{
+                    position: 'top',
+                    tipContent:
+                      action.runs[0].status_v2?.status_human_description,
+                  }}
+                />
+              ) : null}
               <LabeledValue label="Kube config">
                 <Badge
                   theme={kubeConfigEnabled ? 'info' : 'warn'}
@@ -247,16 +250,24 @@ export const ActionDetail = () => {
                   variant="subtext"
                 />
               </LabeledValue>
-              <LabeledValue label="Last trigger">
-                <ActionTriggerType
-                  size="sm"
-                  triggerType={
-                    action.runs[0].triggered_by_type as TActionConfigTriggerType
-                  }
-                  componentName={action.runs[0].run_env_vars?.COMPONENT_NAME}
-                  componentPath={`/${org?.id}/installs/${install?.id}/components/${action.runs[0].run_env_vars?.COMPONENT_ID}`}
-                />
-              </LabeledValue>
+              {actionImage ? (
+                <LabeledValue label="Container image">
+                  <Code variant="inline">{actionImage}</Code>
+                </LabeledValue>
+              ) : null}
+              {action?.runs?.[0] ? (
+                <LabeledValue label="Last trigger">
+                  <ActionTriggerType
+                    size="sm"
+                    triggerType={
+                      action.runs[0]
+                        .triggered_by_type as TActionConfigTriggerType
+                    }
+                    componentName={action.runs[0].run_env_vars?.COMPONENT_NAME}
+                    componentPath={`/${org?.id}/installs/${install?.id}/components/${action.runs[0].run_env_vars?.COMPONENT_ID}`}
+                  />
+                </LabeledValue>
+              ) : null}
             </div>
           ) : null}
         </header>

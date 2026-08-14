@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nuonco/nuon/bins/runner/internal/jobs/actions"
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/management"
 	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
@@ -47,6 +48,9 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{fx.Provide(log.NewSystem)}
 	providers = append(c.commonProviders(), providers...)
 	providers = append(providers, management.GetJobs()...)
+	// image-backed actions run on the mng host (which has docker); registering
+	// this loop only here is what gates image-backed actions to VM runners.
+	providers = append(providers, actions.GetImageActionJobs()...)
 	providers = append(providers, fx.Provide(shutdownbeacon.New))
 	providers = append(providers, audit.Module)
 	// add mng and heartbeater to the mng process
