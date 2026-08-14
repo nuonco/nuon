@@ -9,10 +9,8 @@ import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { updateCurrentOrgOIDCTrustPolicy } from '@/lib'
 import type { TOIDCTrustPolicy } from '@/types'
-import {
-  EditOIDCTrustPolicyModal,
-  type EditOIDCTrustPolicyFormInput,
-} from './EditOIDCTrustPolicy'
+import { OIDCTrustPolicyFormModal } from '@/components/oidc-trust-policies/OIDCTrustPolicyForm'
+import type { OIDCFormValues } from '@/components/oidc-trust-policies/OIDCTrustPolicyForm/schema'
 
 const EditOIDCTrustPolicyModalContainer = ({
   policy,
@@ -25,7 +23,7 @@ const EditOIDCTrustPolicyModalContainer = ({
   const { addToast } = useToast()
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: (input: EditOIDCTrustPolicyFormInput) =>
+    mutationFn: (input: OIDCFormValues) =>
       updateCurrentOrgOIDCTrustPolicy({
         body: {
           name: input.name,
@@ -62,7 +60,8 @@ const EditOIDCTrustPolicyModalContainer = ({
   })
 
   return (
-    <EditOIDCTrustPolicyModal
+    <OIDCTrustPolicyFormModal
+      mode="edit"
       policy={policy}
       isPending={isPending}
       error={error}

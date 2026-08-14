@@ -12,7 +12,7 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { recoverHelmRelease } from '@/lib'
 import { trackEvent } from '@/lib/segment-analytics'
-import type { TComponent } from '@/types'
+import type { TAPIError, TComponent } from '@/types'
 import { RecoverHelmReleaseModal } from './RecoverHelmRelease'
 
 interface IRecoverHelmRelease {
@@ -54,7 +54,7 @@ export const RecoverHelmReleaseModalContainer = ({
     mutate: execute,
     isPending,
     error,
-  } = useMutation({
+  } = useMutation<Awaited<ReturnType<typeof recoverHelmRelease>>, TAPIError>({
     mutationFn: () =>
       recoverHelmRelease({
         componentId: component.id,
@@ -87,7 +87,7 @@ export const RecoverHelmReleaseModalContainer = ({
           : `/${org.id}/installs/${install.id}/workflows`
       )
     },
-    onError: (err: any) => {
+    onError: (err) => {
       trackEvent({
         event: 'component_helm_release_recover',
         status: 'error',
@@ -107,7 +107,7 @@ export const RecoverHelmReleaseModalContainer = ({
       componentName={component.name}
       status={status}
       isPending={isPending}
-      error={error as any}
+      error={error}
       onSubmit={() => execute()}
       onClose={() => removeModal(props.modalId)}
       {...props}
