@@ -30,7 +30,7 @@ metadata:
 			Type: config.AppPolicyTypeKubernetesCluster,
 			Contents: `kind: ClusterPolicy
 metadata:
-  name: linkerd-authz-for-restate
+  name: linkerd-authz-for-payments
 `,
 		},
 	}
@@ -45,7 +45,7 @@ metadata:
 
 	assert.Equal(t, first, second, "reordering policies must not change the rendered key→content map")
 	assert.Contains(t, first, "clusterrole-kyverno-linkerd-manage.yaml")
-	assert.Contains(t, first, "clusterpolicy-linkerd-authz-for-restate.yaml")
+	assert.Contains(t, first, "clusterpolicy-linkerd-authz-for-payments.yaml")
 }
 
 func TestGetPoliciesDuplicateKeyErrors(t *testing.T) {
