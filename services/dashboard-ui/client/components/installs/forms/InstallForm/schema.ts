@@ -29,6 +29,8 @@ export interface InstallFormValues {
   labels: { key: string; value: string }[]
   role: string
   deployDependents: boolean
+  stackOnly: boolean
+  inputsOnly: boolean
   inputs: Record<string, string | boolean>
 }
 

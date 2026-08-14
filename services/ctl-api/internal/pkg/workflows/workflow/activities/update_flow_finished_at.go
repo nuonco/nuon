@@ -52,6 +52,12 @@ func (a *Activities) installLifecycleTransition(wf *app.Workflow) *lifecyclephas
 		if failed {
 			description = "Provision workflow failed"
 		}
+		// A stack-only provision deliberately leaves the sandbox and components
+		// unprovisioned, so it must not read as fully provisioned.
+		if wf.IsStackOnly() && !failed {
+			phase = lifecyclephase.Provisioning
+			description = "Stack and runner ready, waiting to provision the sandbox and components"
+		}
 		return &lifecyclephase.LifecyclePhase{Phase: phase, Description: description}
 	case app.WorkflowTypeDeprovision:
 		description := "Deprovision workflow completed"

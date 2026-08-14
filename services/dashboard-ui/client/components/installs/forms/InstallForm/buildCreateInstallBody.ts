@@ -30,6 +30,7 @@ export const buildCreateInstallBody = (
     install_config: installConfig,
     labels: Object.keys(labels).length > 0 ? labels : undefined,
     metadata: { managed_by: 'nuon/dashboard' },
+    ...(values.stackOnly && { stack_only: true }),
   }
 
   if (platform === 'aws' && values.region) {

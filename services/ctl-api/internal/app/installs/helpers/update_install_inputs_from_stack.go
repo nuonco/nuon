@@ -145,6 +145,7 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(
 			"",
 			true,
 			false,
+			false,
 			app.WorkflowTypeInputUpdate,
 		)
 		if err != nil {
