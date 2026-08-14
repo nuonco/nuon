@@ -86,7 +86,7 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 	workflow, err := s.helpers.CreateWorkflow(ctx,
 		install.ID,
 		app.WorkflowTypeProvision,
-		map[string]string{},
+		provisionWorkflowMetadata(req.StackOnly),
 		false,
 	)
 	if err != nil {
@@ -94,7 +94,7 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		return
 	}
 
-	lp := lifecyclephase.New(lifecyclephase.Provisioning, "Setting up runner and sandbox resources")
+	lp := lifecyclephase.New(lifecyclephase.Provisioning, provisionPhaseDescription(req.StackOnly))
 	s.db.WithContext(ctx).Model(&app.Install{ID: install.ID}).Updates(map[string]any{
 		"lifecycle_phase": lp,
 	})
@@ -217,7 +217,7 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 	workflow, err := s.helpers.CreateWorkflow(ctx,
 		install.ID,
 		app.WorkflowTypeProvision,
-		map[string]string{},
+		provisionWorkflowMetadata(req.StackOnly),
 		false,
 	)
 	if err != nil {
@@ -225,7 +225,7 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		return
 	}
 
-	lp2 := lifecyclephase.New(lifecyclephase.Provisioning, "Setting up runner and sandbox resources")
+	lp2 := lifecyclephase.New(lifecyclephase.Provisioning, provisionPhaseDescription(req.StackOnly))
 	s.db.WithContext(ctx).Model(&app.Install{ID: install.ID}).Updates(map[string]any{
 		"lifecycle_phase": lp2,
 	})

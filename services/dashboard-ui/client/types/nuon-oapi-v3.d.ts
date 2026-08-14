@@ -8168,6 +8168,11 @@ export interface components {
       };
       metadata?: components["schemas"]["helpers.InstallMetadata"];
       name: string;
+      /**
+       * @description StackOnly provisions the install stack and runner, then stops. The sandbox
+       * and components stay unprovisioned until the install is provisioned again.
+       */
+      stack_only?: boolean;
     };
     "service.CreateInstallV2Request": {
       app_id: string;
@@ -8187,6 +8192,11 @@ export interface components {
       };
       metadata?: components["schemas"]["helpers.InstallMetadata"];
       name: string;
+      /**
+       * @description StackOnly provisions the install stack and runner, then stops. The sandbox
+       * and components stay unprovisioned until the install is provisioned again.
+       */
+      stack_only?: boolean;
     };
     "service.CreateJobComponentConfigRequest": {
       app_config_id?: string;
@@ -8977,6 +8987,11 @@ export interface components {
       inputs: {
         [key: string]: string;
       };
+      /**
+       * @description InputsOnly saves the new input values without deploying components,
+       * reprovisioning the sandbox, or running update-input lifecycle actions.
+       */
+      inputs_only?: boolean;
       role?: string;
     };
     "service.UpdateInstallRequest": {
