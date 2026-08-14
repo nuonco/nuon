@@ -123,7 +123,7 @@ func getStackReprovisionSteps(ctx workflow.Context, sg *stepGroup, install *app.
 	}
 	steps = append(steps, step)
 
-	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+	step, err = sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, planOnly)
 	if err != nil {

@@ -8,10 +8,19 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
+// runnerHealthyStepName gates a phase on the install's runner reporting
+// healthy. Named so generators can tell whether the previous step already
+// waited on it instead of matching the string in several places.
+const runnerHealthyStepName = "runner healthy"
+
 type stepGroup struct {
 	idx          int
 	groups       []*app.WorkflowStepGroup
 	currentGroup *app.WorkflowStepGroup
+
+	// lastStepName is the name of the most recently emitted step, letting a
+	// generator skip a gate the preceding phase has already satisfied.
+	lastStepName string
 
 	// flw is the install workflow currently being generated. It is used to
 	// stamp install workflow identity onto signals that implement
@@ -53,6 +62,13 @@ func (s *stepGroup) nextGroupWithOpts(name string, parallel bool) {
 	s.currentGroup = g
 }
 
+// needsRunnerHealthyGate reports whether a phase about to run on the install's
+// runner still has to wait for it. False when the preceding step was already
+// that wait, where a second one can only re-confirm the same result.
+func (s *stepGroup) needsRunnerHealthyGate() bool {
+	return s.lastStepName != runnerHealthyStepName
+}
+
 func (s *stepGroup) Groups() []*app.WorkflowStepGroup {
 	return s.groups
 }
@@ -75,5 +91,11 @@ func (s *stepGroup) installSignalStep(ctx workflow.Context, installID, name stri
 		}
 	}
 
-	return installSignalStep(ctx, installID, name, metadata, sig, planOnly, opts...)
+	step, err := installSignalStep(ctx, installID, name, metadata, sig, planOnly, opts...)
+	if err != nil {
+		return nil, err
+	}
+	s.lastStepName = name
+
+	return step, nil
 }

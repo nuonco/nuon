@@ -640,21 +640,25 @@ func deployAllComponents(ctx workflow.Context, dg *genCtx) ([]*app.WorkflowStep,
 
 	steps := make([]*app.WorkflowStep, 0)
 
-	// Open a group for the deploy phase rather than appending into whichever
-	// group the caller left current. The health gate belongs to the deploys, not
-	// to the preceding phase, and sharing a group with a caller that also ends in
-	// a "runner healthy" step (ReprovisionStack) makes the two indistinguishable
-	// downstream: the dashboard keys a step's identity off group + name, so it
-	// renders the pair as retry attempts of one step.
-	dg.sg.nextGroup()
+	// Gate the deploys on runner health, unless the preceding phase's last step
+	// already did. ReprovisionStack recreates the runner and ends on that wait,
+	// so a second gate immediately after can only re-confirm the same result.
+	//
+	// The gate opens its own group rather than appending into whichever group the
+	// caller left current: it belongs to the deploys, and sharing a group with a
+	// caller that also ends in a runner-health step makes the two
+	// indistinguishable downstream, where a step's identity is its group + name.
+	if dg.sg.needsRunnerHealthyGate() {
+		dg.sg.nextGroup()
 
-	step, err := dg.sg.installSignalStep(ctx, dg.installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: dg.installID,
-	}, dg.flw.PlanOnly)
-	if err != nil {
-		return nil, err
+		step, err := dg.sg.installSignalStep(ctx, dg.installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: dg.installID,
+		}, dg.flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
 	}
-	steps = append(steps, step)
 
 	var lifecycleSteps []*app.WorkflowStep
 	if !dg.flw.PlanOnly {
