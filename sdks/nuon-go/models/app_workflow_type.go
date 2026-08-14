@@ -101,6 +101,9 @@ const (
 
 	// AppWorkflowTypeComponentDisabled captures enum value "component_disabled"
 	AppWorkflowTypeComponentDisabled AppWorkflowType = "component_disabled"
+
+	// AppWorkflowTypeRecoverHelmRelease captures enum value "recover_helm_release"
+	AppWorkflowTypeRecoverHelmRelease AppWorkflowType = "recover_helm_release"
 )
 
 // for schema
@@ -108,7 +111,7 @@ var appWorkflowTypeEnum []any
 
 func init() {
 	var res []AppWorkflowType
-	if err := json.Unmarshal([]byte(`["provision","deprovision","deprovision_sandbox","manual_deploy","input_update","deploy_components","teardown_component","teardown_components","reprovision_sandbox","drift_run_reprovision_sandbox","action_workflow_run","sync_secrets","drift_run","app_branches_manual_update","app_branches_config_repo_update","app_branches_component_repo_update","app_branch_config_update","app_install_sync","reprovision","reprovision_stack","app_config_build","runbook_run","component_enabled","component_disabled"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["provision","deprovision","deprovision_sandbox","manual_deploy","input_update","deploy_components","teardown_component","teardown_components","reprovision_sandbox","drift_run_reprovision_sandbox","action_workflow_run","sync_secrets","drift_run","app_branches_manual_update","app_branches_config_repo_update","app_branches_component_repo_update","app_branch_config_update","app_install_sync","reprovision","reprovision_stack","app_config_build","runbook_run","component_enabled","component_disabled","recover_helm_release"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

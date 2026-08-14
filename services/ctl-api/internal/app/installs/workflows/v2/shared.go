@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeploysyncandplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componenthelmrecover"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentsyncimage"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownsyncandplan"
@@ -129,7 +130,8 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 	case awaitcomponenthealthy.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallComponents)
 	case componentdeployapplyplan.SignalType, componentdeploysyncandplan.SignalType, componentsyncimage.SignalType,
-		componentteardownsyncandplan.SignalType, componentteardownapplyplan.SignalType:
+		componentteardownsyncandplan.SignalType, componentteardownapplyplan.SignalType,
+		componenthelmrecover.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallDeploys)
 	case provisionsandboxplan.SignalType, provisionsandboxapplyplan.SignalType,
 		deprovisionsandboxplan.SignalType, deprovisionsandboxapplyplan.SignalType,

@@ -170,6 +170,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 				component.GET("/outputs", s.GetInstallComponentOutputs)
 				component.GET("/deploys/latest", s.GetInstallComponentLatestDeploy)
 				component.POST("/deploys", s.CreateInstallComponentDeploy)
+				component.POST("/recover-helm-release", s.RecoverInstallComponentHelmRelease)
 
 				// component health: gin can't mix wildcard names at the same path
 				// depth, so these reuse the ":component_id" node above, but the
