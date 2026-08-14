@@ -12,7 +12,7 @@ export const StuckHelmReleaseBanner = ({ component, status }: IStuckHelmReleaseB
   return (
     <Banner theme="warn">
       <div className="flex items-center gap-8">
-        <div className="flex flex-col max-w-86">
+        <div className="flex flex-col max-w-sm">
           <Text weight="strong" variant="base">
             Helm release is stuck
           </Text>

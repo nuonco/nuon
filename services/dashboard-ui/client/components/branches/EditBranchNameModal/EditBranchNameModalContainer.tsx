@@ -13,10 +13,8 @@ import { useVcsRepoBrowser } from '@/hooks/use-vcs-repo-browser'
 import { createBranchConfig, updateBranch } from '@/lib'
 import type { TCreateBranchConfigRequest } from '@/lib/ctl-api/apps/branches/create-branch-config'
 import type { TAPIError, TAppBranch, TAppBranchConfig } from '@/types'
-import {
-  EditBranchNameModal,
-  type IEditBranchNameModalSubmitData,
-} from './EditBranchNameModal'
+import { BranchFormModal } from '@/components/branches/BranchForm'
+import type { BranchFormOutput } from '@/components/branches/BranchForm/schema'
 
 interface IEditBranchNameModalContainer extends IModal {
   branch: TAppBranch
@@ -36,8 +34,6 @@ export const EditBranchNameModalContainer = ({
   const { addToast } = useToast()
   const { removeModal } = useSurfaces()
   const queryClient = useQueryClient()
-
-  const [validationError, setValidationError] = useState<string | null>(null)
 
   const vcsConnections = org?.vcs_connections || []
   const existingConnectionId =
@@ -88,15 +84,15 @@ export const EditBranchNameModalContainer = ({
     return 'An error occurred'
   }
 
-  const { mutate: handleSave, isPending: isSubmitting } = useMutation({
-    mutationFn: async (data: IEditBranchNameModalSubmitData) => {
-      if (data.branchName !== branch.name) {
+  const { mutate: handleSave, isPending: isSubmitting, error: submitError } = useMutation({
+    mutationFn: async (data: BranchFormOutput) => {
+      if (data.name !== branch.name) {
         try {
           await updateBranch({
             appId: app.id,
             branchId: branch.id || '',
             orgId: org.id,
-            request: { name: data.branchName },
+            request: { name: data.name },
           })
         } catch (err) {
           throw new Error(formatError(err as TAPIError))
@@ -163,28 +159,30 @@ export const EditBranchNameModalContainer = ({
       queryClient.invalidateQueries({ queryKey: ['branch-configs', org.id, app.id, branch.id] })
       addToast(
         <Toast heading="Branch updated" theme="success">
-          <Text>Updated branch {data.branchName}.</Text>
+          <Text>Updated branch {data.name}.</Text>
         </Toast>
       )
-      setValidationError(null)
       onSuccess?.()
       removeModal(props.modalId)
     },
-    onError: (error: Error) => {
-      const msg = error?.message || 'An error occurred'
-      setValidationError(msg)
-      addToast(
-        <Toast heading="Branch update failed" theme="error">
-          <Text>{msg}</Text>
-        </Toast>
-      )
-    },
   })
 
+  const defaultUseVcs = !!(
+    currentConfig?.connected_github_vcs_config ||
+    currentConfig?.public_git_vcs_config
+  )
+  const defaultDirectory =
+    currentConfig?.connected_github_vcs_config?.directory ||
+    currentConfig?.public_git_vcs_config?.directory ||
+    '.'
+  const defaultPathFilter =
+    currentConfig?.connected_github_vcs_config?.path_filter ||
+    currentConfig?.public_git_vcs_config?.path_filter ||
+    ''
+
   return (
-    <EditBranchNameModal
-      branch={branch}
-      currentConfig={currentConfig}
+    <BranchFormModal
+      mode="edit"
       vcsConnections={vcsConnections}
       repos={repos}
       branches={vcsBrowser.branches}
@@ -198,9 +196,13 @@ export const EditBranchNameModalContainer = ({
       onRepoChange={vcsBrowser.setSelectedRepo}
       selectedBranch={vcsBrowser.selectedBranch}
       onBranchChange={vcsBrowser.setSelectedBranch}
+      defaultName={branch.name || ''}
+      defaultUseVcs={defaultUseVcs}
+      defaultDirectory={defaultDirectory}
+      defaultPathFilter={defaultPathFilter}
       isSubmitting={isSubmitting}
-      validationError={validationError}
-      onSubmit={(data) => handleSave(data)}
+      submitError={submitError}
+      onSubmit={(output) => handleSave(output)}
       onCancel={() => removeModal(props.modalId)}
       {...props}
     />
