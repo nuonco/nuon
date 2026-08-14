@@ -20,6 +20,11 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 		return err
 	}
 
+	if h.isRecovery() {
+		l.Info("recovery job, no chart to unpack")
+		return nil
+	}
+
 	l.Info("initializing archive...")
 	if err := h.state.arch.Initialize(ctx); err != nil {
 		return fmt.Errorf("unable to initialize archive: %w", err)
