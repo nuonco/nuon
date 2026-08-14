@@ -16,10 +16,12 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/registry"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/componenthealth"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/telemetryexport"
 	"github.com/nuonco/nuon/pkg/runner/settings"
 
 	check "github.com/nuonco/nuon/bins/runner/internal/jobs/healthcheck/check"
@@ -36,7 +38,11 @@ func (c *cli) registerRun() error {
 	return nil
 }
 
-func (c *cli) runRun(cmd *cobra.Command, _ []string) {
+func (c *cli) runRun(_ *cobra.Command, _ []string) {
+	fx.New(c.runOptions()...).Run()
+}
+
+func (c *cli) runOptions() []fx.Option {
 	providers := []fx.Option{}
 
 	// common providers
@@ -60,6 +66,7 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 
 	// install-only proviers
 	providers = append(providers, deploy.GetJobs()...)
+	providers = append(providers, audit.Module, telemetryexport.Module)
 
 	providers = append(
 		providers,
@@ -90,6 +97,5 @@ func (c *cli) runRun(cmd *cobra.Command, _ []string) {
 		}...,
 	)
 
-	// NOTE(fd): we need a way to determine what kind of runner we are running as
-	fx.New(providers...).Run()
+	return providers
 }

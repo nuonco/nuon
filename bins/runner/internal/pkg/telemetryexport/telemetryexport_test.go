@@ -3,12 +3,52 @@ package telemetryexport
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 )
+
+func TestWaitForCollector(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	if err := waitForCollector(&childProcess{done: make(chan struct{})}, server.URL); err != nil {
+		t.Fatalf("waitForCollector() error = %v", err)
+	}
+}
+
+func TestWaitForCollectorDetectsExitedProcess(t *testing.T) {
+	done := make(chan struct{})
+	close(done)
+	if err := waitForCollector(&childProcess{done: done}, "http://127.0.0.1:0"); err == nil {
+		t.Fatal("waitForCollector() returned nil for exited process")
+	}
+}
+
+func TestStopStopsCollector(t *testing.T) {
+	stopped := false
+	done := make(chan struct{})
+	close(done)
+	s := &Supervisor{
+		logger: zap.NewNop(),
+		cancel: func() {
+			stopped = true
+		},
+		done: done,
+	}
+	if err := s.stop(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if !stopped {
+		t.Fatal("collector supervisor was not stopped")
+	}
+}
 
 func TestReconcilePreservesLastKnownGoodConfiguration(t *testing.T) {
 	valid := auditEnabledConfig("https://otlp.example.com")
@@ -82,21 +122,45 @@ func TestReconcileSchedulesRestartWhenUpdateAndRollbackFail(t *testing.T) {
 	}
 }
 
+func TestReconcileFailedUpdateRestoresLastKnownGoodCollector(t *testing.T) {
+	current := auditEnabledConfig("https://current.example.com")
+	updated := auditEnabledConfig("https://updated.example.com")
+	var endpoints []string
+	s := &Supervisor{
+		installID:        "inst-test",
+		logger:           zap.NewNop(),
+		active:           current,
+		collectorEnabled: true,
+		replaceChildFn: func(cfg config) error {
+			endpoints = append(endpoints, cfg.OTLPHTTP.Endpoint)
+			if cfg.OTLPHTTP.Endpoint == "https://updated.example.com" {
+				return errors.New("start failed")
+			}
+			return nil
+		},
+		stopChildFn: func() {},
+	}
+
+	s.reconcile(configUpdate{state: configAvailable, value: updated})
+	if s.active != current || len(endpoints) != 2 || endpoints[0] != "https://updated.example.com" || endpoints[1] != "https://current.example.com" {
+		t.Fatalf("failed update did not restore the active collector: active=%q endpoints=%q", s.active, endpoints)
+	}
+}
+
 func TestReconcileDisablesUnavailableSecret(t *testing.T) {
 	valid := auditEnabledConfig("https://otlp.example.com")
 	stops := 0
 	s := &Supervisor{
-		installID:          "inst-test",
-		logger:             zap.NewNop(),
-		active:             valid,
-		collectorEnabled:   true,
-		auditExportEnabled: true,
-		reported:           true,
-		stopChildFn:        func() { stops++ },
+		installID:        "inst-test",
+		logger:           zap.NewNop(),
+		active:           valid,
+		collectorEnabled: true,
+		reported:         true,
+		stopChildFn:      func() { stops++ },
 	}
 
 	s.reconcile(configUpdate{state: configUnavailable})
-	if stops != 1 || s.active != "" || s.collectorEnabled || s.auditExportEnabled {
+	if stops != 1 || s.active != "" || s.collectorEnabled {
 		t.Fatal("unavailable secret did not disable the collector")
 	}
 }
@@ -107,13 +171,12 @@ func TestReconcileKeepsCollectorWithoutAuditPipeline(t *testing.T) {
 	replacements := 0
 	stops := 0
 	s := &Supervisor{
-		installID:          "inst-test",
-		logger:             zap.NewNop(),
-		active:             active,
-		nextStart:          time.Now().Add(time.Minute),
-		collectorEnabled:   true,
-		auditExportEnabled: true,
-		reported:           true,
+		installID:        "inst-test",
+		logger:           zap.NewNop(),
+		active:           active,
+		nextStart:        time.Now().Add(time.Minute),
+		collectorEnabled: true,
+		reported:         true,
 		replaceChildFn: func(config) error {
 			replacements++
 			return nil
@@ -122,7 +185,7 @@ func TestReconcileKeepsCollectorWithoutAuditPipeline(t *testing.T) {
 	}
 
 	s.reconcile(configUpdate{state: configAvailable, value: disabledAudit})
-	if replacements != 1 || stops != 0 || s.active != disabledAudit || !s.nextStart.IsZero() || !s.collectorEnabled || s.auditExportEnabled {
+	if replacements != 1 || stops != 0 || s.active != disabledAudit || !s.nextStart.IsZero() || !s.collectorEnabled {
 		t.Fatal("disabled audit logs did not leave the collector running without the audit pipeline")
 	}
 }
@@ -139,7 +202,7 @@ func TestRunDoesNothingInLocalDevelopment(t *testing.T) {
 	select {
 	case <-s.done:
 	default:
-		t.Fatal("local audit export supervisor did not exit")
+		t.Fatal("local telemetry export supervisor did not exit")
 	}
 }
 
@@ -156,31 +219,8 @@ func TestEmptySecretDoesNotStartCollector(t *testing.T) {
 	}
 
 	s.reconcile(configUpdate{state: configAvailable})
-	if replacements != 0 || s.active != "" || s.collectorEnabled || s.auditExportEnabled {
-		t.Fatal("empty secret started the audit export collector")
-	}
-}
-
-func TestAuditExportAvailableTracksPipelineAndCollectorProcess(t *testing.T) {
-	s := &Supervisor{}
-	if s.AuditExportAvailable() {
-		t.Fatal("supervisor without a collector is available")
-	}
-
-	done := make(chan struct{})
-	s.child = &childProcess{done: done}
-	if s.AuditExportAvailable() {
-		t.Fatal("collector without an audit pipeline reported audit export as available")
-	}
-
-	s.auditExportEnabled = true
-	if !s.AuditExportAvailable() {
-		t.Fatal("running collector is unavailable")
-	}
-
-	close(done)
-	if s.AuditExportAvailable() {
-		t.Fatal("exited collector is available")
+	if replacements != 0 || s.active != "" || s.collectorEnabled {
+		t.Fatal("empty secret started the telemetry export collector")
 	}
 }
 
