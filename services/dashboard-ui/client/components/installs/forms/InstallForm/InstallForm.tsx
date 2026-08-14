@@ -98,6 +98,37 @@ export const InstallForm = ({
         </FieldRow>
       )}
 
+      {mode === 'create' && (
+        <FieldRow
+          labelText="Provisioning scope"
+          helpText="Choose how much of the install to provision now"
+        >
+          <form.Field name="stackOnly">
+            {(field) => (
+              <FormCheckbox
+                field={field}
+                className="mt-[6px]"
+                labelProps={{
+                  className: 'items-start',
+                  labelText: (
+                    <div className="flex flex-col gap-1">
+                      <Text variant="body" weight="stronger">
+                        Stack and runner only
+                      </Text>
+                      <Text variant="subtext" theme="neutral">
+                        Provision the stack and runner, and stop there. The
+                        sandbox and components stay unprovisioned until you
+                        provision the install.
+                      </Text>
+                    </div>
+                  ),
+                }}
+              />
+            )}
+          </form.Field>
+        </FieldRow>
+      )}
+
       {mode === 'create' && <LabelsField form={form} />}
 
       {mode === 'create' && platform === 'aws' && (
