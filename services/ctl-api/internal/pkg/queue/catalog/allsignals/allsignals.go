@@ -72,7 +72,6 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/executeactionworkflow"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/forgotten"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateinstallstackversion"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/inputsupdated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigdiff"

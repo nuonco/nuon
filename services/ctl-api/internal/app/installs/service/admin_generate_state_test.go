@@ -20,7 +20,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
+	generatestatev2 "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -116,7 +116,7 @@ func (s *AdminGenerateStateTestSuite) makeRequest(method, path string, body inte
 	return rr
 }
 
-func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
+func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallStateV2() {
 	testCases := []struct {
 		name             string
 		setupFunc        func() string
@@ -136,7 +136,7 @@ func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
 			validateFunc: func(installID string) {
 				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1)
-				assert.Equal(s.T(), generatestate.SignalType, capturedSignals[0].Type)
+				assert.Equal(s.T(), generatestatev2.SignalType, capturedSignals[0].Type)
 			},
 		},
 		{
@@ -150,7 +150,7 @@ func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
 			validateFunc: func(installID string) {
 				sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), sigs, 1)
-				assert.Equal(s.T(), generatestate.SignalType, sigs[0].Type)
+				assert.Equal(s.T(), generatestatev2.SignalType, sigs[0].Type)
 			},
 		},
 		{
@@ -163,7 +163,7 @@ func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
 			validateFunc: func(installName string) {
 				sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), sigs, 1)
-				assert.Equal(s.T(), generatestate.SignalType, sigs[0].Type)
+				assert.Equal(s.T(), generatestatev2.SignalType, sigs[0].Type)
 			},
 		},
 		{
@@ -180,7 +180,7 @@ func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			installID := tc.setupFunc()
-			rr := s.makeRequest("POST", "/v1/installs/"+installID+"/admin-generate-state", tc.requestBody)
+			rr := s.makeRequest("POST", "/v1/installs/"+installID+"/admin-generate-state-v2", tc.requestBody)
 
 			if rr.Code != tc.expectedCode {
 				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())

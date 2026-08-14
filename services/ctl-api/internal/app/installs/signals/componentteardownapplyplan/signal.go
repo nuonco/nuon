@@ -226,12 +226,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusInactive, "successfully torn down")
 	s.updateInstallComponentStatus(ctx, installDeploy.InstallComponentID, app.InstallComponentStatusInactive, "successfully torn down")
 
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
 	if err := stategen.HintOrGenerate(ctx, stategen.Request{
-		StateGenV2:      statemanager.UseStateGenV2(orgEnabled, install.Metadata),
 		InstallID:       install.ID,
 		Targets:         statemanager.TargetsForHint(statemanager.HintComponentTeardown, s.InstallComponentID),
 		ForceAll:        true,

@@ -2,14 +2,10 @@ package v2
 
 import (
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
@@ -19,22 +15,11 @@ import (
 // which are all driven by a synthetic-input change. The caller is responsible
 // for opening the step group (sg.nextGroup()) beforehand.
 func stateInputsRefreshStep(ctx workflow.Context, sg *stepGroup, install *app.Install, planOnly bool) (*app.WorkflowStep, error) {
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
-
-	var stateSignal signal.Signal
-	if stateGenV2 {
-		stateSignal = &statepartialgenerate.Signal{
-			InstallID:       install.ID,
-			Targets:         statemanager.TargetsForHint(statemanager.HintInputsUpdated, ""),
-			TriggeredByID:   install.ID,
-			TriggeredByType: "installs",
-		}
-	} else {
-		stateSignal = &generatestate.Signal{InstallID: install.ID}
+	stateSignal := &statepartialgenerate.Signal{
+		InstallID:       install.ID,
+		Targets:         statemanager.TargetsForHint(statemanager.HintInputsUpdated, ""),
+		TriggeredByID:   install.ID,
+		TriggeredByType: "installs",
 	}
 
 	return sg.installSignalStep(

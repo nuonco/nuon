@@ -55,7 +55,6 @@ const (
 	OrgFeatureTerraformProviderMirror OrgFeature = "terraform-provider-mirror"
 	OrgFeatureAppBranchesUI           OrgFeature = "app-branches-ui"
 	OrgFeatureTraceView               OrgFeature = "trace-view"
-	OrgFeatureStateGenV2              OrgFeature = "state-gen-v2"
 	OrgFeatureAutoSkipNoop            OrgFeature = "auto-skip-noop"
 	OrgFeatureSlack                   OrgFeature = "slack"
 	OrgFeaturePulumiSandbox           OrgFeature = "pulumi-sandbox"
@@ -226,7 +225,6 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureSupportRole:             false,
 		OrgFeatureTerraformProviderMirror: false,
 		OrgFeatureTraceView:               false,
-		OrgFeatureStateGenV2:              true,
 		OrgFeatureSlack:                   false,
 		OrgFeaturePulumiSandbox:           false,
 		OrgFeaturePulumiUpdatePlans:       false,
@@ -284,7 +282,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureSupportRole,
 		OrgFeatureInstallRename,
 		OrgFeatureTerraformProviderMirror,
-		OrgFeatureStateGenV2,
 		OrgFeatureAppBranchesUI,
 		OrgFeatureTraceView,
 		OrgFeatureAutoSkipNoop,
@@ -326,7 +323,6 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureTerraformProviderMirror:  "Vendor terraform providers at build time and ship them inside the OCI artifact so install runners can `terraform init` without reaching registry.terraform.io",
 		OrgFeatureAppBranchesUI:            "Enable the app branches UI in the dashboard for managing and switching between app branches",
 		OrgFeatureTraceView:                "Enable the trace view tab on action runs, deploys, and sandbox runs to visualize OTEL spans emitted by the runner",
-		OrgFeatureStateGenV2:               "Use the new queue-based partial state regeneration system instead of the legacy full-regeneration workflow",
 		OrgFeatureAutoSkipNoop:             "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
 		OrgFeatureSlack:                    "Enable the Slack integration, including the Slack link in the dashboard sidebar and per-org Slack workspace/channel subscriptions",
 		OrgFeaturePulumiSandbox:            "Enable Pulumi-typed app sandboxes (sandbox type=pulumi) in addition to Terraform",

@@ -208,12 +208,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	})
 
 	s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully provisioned")
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
 	if err := stategen.HintOrGenerate(ctx, stategen.Request{
-		StateGenV2:      statemanager.UseStateGenV2(orgEnabled, install.Metadata),
 		InstallID:       install.ID,
 		Targets:         statemanager.TargetsForHint(statemanager.HintSandboxProvisioned, ""),
 		ForceAll:        true,

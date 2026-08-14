@@ -23,7 +23,6 @@ import (
 type InstallStateGenerateSource string
 
 const (
-	InstallStateGenerateSourceLegacy       InstallStateGenerateSource = "legacy"
 	InstallStateGenerateSourceStateManager InstallStateGenerateSource = "state-manager"
 )
 

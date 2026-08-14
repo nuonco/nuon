@@ -8,13 +8,11 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisiondns"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/syncsecrets"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -53,20 +51,7 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 func getSandboxReprovisionSteps(ctx workflow.Context, dg *genCtx, install *app.Install) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
-	dg.sg.nextGroupEager() // generate install state
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
-	if !stateGenV2 {
-		stateSignal := &generatestate.Signal{InstallID: dg.installID}
-		step, err := dg.sg.installSignalStep(ctx, dg.installID, "generate install state", pgtype.Hstore{}, stateSignal, dg.flw.PlanOnly, WithSkippable(false))
-		if err != nil {
-			return nil, err
-		}
-		steps = append(steps, step)
-	}
+	dg.sg.nextGroupEager()
 
 	step, err := dg.sg.installSignalStep(ctx, dg.installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: dg.installID,

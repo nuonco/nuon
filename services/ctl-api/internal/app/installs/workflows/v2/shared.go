@@ -21,7 +21,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/executeactionworkflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateinstallstackversion"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionrunner"
@@ -138,7 +137,7 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallSandboxRuns)
 	case executeactionworkflow.SignalType, actionworkflowrun.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallActionWorkflowRuns)
-	case generatestate.SignalType, statepartialgenerate.SignalType:
+	case statepartialgenerate.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallStates)
 	}
 

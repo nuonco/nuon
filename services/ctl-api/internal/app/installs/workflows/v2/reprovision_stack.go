@@ -8,11 +8,9 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionrunner"
 	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
@@ -95,21 +93,11 @@ func getStackReprovisionSteps(ctx workflow.Context, sg *stepGroup, install *app.
 	steps = append(steps, versionSteps...)
 
 	sg.nextGroupEager() // generate install state (after stack is ready)
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
-	var stateSignal signal.Signal
-	if stateGenV2 {
-		stateSignal = &statepartialgenerate.Signal{
-			InstallID:       installID,
-			Targets:         statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),
-			TriggeredByID:   installID,
-			TriggeredByType: "installs",
-		}
-	} else {
-		stateSignal = &generatestate.Signal{InstallID: installID}
+	stateSignal := &statepartialgenerate.Signal{
+		InstallID:       installID,
+		Targets:         statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),
+		TriggeredByID:   installID,
+		TriggeredByType: "installs",
 	}
 	step, err = sg.installSignalStep(
 		ctx,

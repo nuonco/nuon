@@ -19,14 +19,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/executeactionworkflow"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/waitforevent"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -88,23 +86,7 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 		enabledInputs = install.CurrentInstallInputs.Values
 	}
 
-	// Generate state
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
-
 	sg.nextGroupEager()
-	if !stateGenV2 {
-		stateStep, err := sg.installSignalStep(ctx, installID, "generate-state", pgtype.Hstore{}, &generatestate.Signal{
-			InstallID: installID,
-		}, false)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to generate state step")
-		}
-		steps = append(steps, stateStep)
-	}
 
 	// Generate steps for each runbook step
 	for _, stepCfg := range runbookSteps {
