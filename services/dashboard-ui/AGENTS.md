@@ -976,6 +976,25 @@ e2e/
 
 `e2e/flows/` contains structured markdown describing test scenarios. These are the source-of-truth — update the flow markdown, then regenerate or update the corresponding spec in `e2e/specs/`. See `e2e/flows/README.md` for the format.
 
+### Throwaway / scratch e2e checks (agent workflow) — CRITICAL
+
+**A scratch e2e check an agent writes to verify local work is a standalone Playwright `.mjs` script in the gitignored `tmp/` dir (i.e. `services/dashboard-ui/tmp/`), run with `bun run tmp/<name>.mjs`.** Never write it as a committed file — not `e2e/specs/`, not anywhere else in the tree. `tmp/` is in `.gitignore`, so scripts there can't be committed by accident; that's the whole point.
+
+This is the same pattern as the **Screenshotting the Running Dashboard** recipe below — auth via seed-user token → `X-Nuon-Auth` cookie → drive the page — just with assertions instead of a screenshot. Do NOT reach for the Playwright test runner (`playwright test` / `.spec.ts` / `e2e/playwright.config.ts`): a spec outside the repo's `testDir` isn't discovered and drags in a custom config + `NODE_PATH`. A plain `.mjs` needs none of that.
+
+**Recipe:**
+
+- Import chromium with a **bare specifier** — because the script lives inside the repo tree, Bun resolves `node_modules` by walking up, so no absolute path is needed:
+  ```js
+  import { chromium } from 'playwright'
+  ```
+- Get a token: `POST http://127.0.0.1:8082/v1/general/seed-user` with `X-Nuon-Admin-Email` (use `seed@nuon.co`, or `NUON_DEV_EMAIL` for your own orgs). Inject it as the `X-Nuon-Auth` cookie on `127.0.0.1`.
+- Seed/inspect state you need via the public API (`:8081`) with `Authorization: Bearer <token>` + `X-Nuon-Org-ID`.
+- `page.goto(..., { waitUntil: 'domcontentloaded' })` — never `networkidle` (the SPA polls). Drive with `getByRole`, assert with `waitFor`, `console.log` PASS/FAIL, `process.exit(pass ? 0 : 1)`, and screenshot to `tmp/` on failure.
+- Run from `services/dashboard-ui`: `bun run tmp/<name>.mjs`. No config, no env plumbing.
+
+Only turn a check into a committed `e2e/specs/*.spec.ts` (with a matching `e2e/flows/*.flow.md`) when it should become a permanent smoke test — and say so explicitly.
+
 ## Screenshotting the Running Dashboard (agent workflow)
 
 When verifying a UI change, take a real screenshot of the running dashboard instead of relying on Ladle stories or guessing. This authenticates against the **local dev stack** the same way the e2e setup does — no personal credentials, no browser login.
@@ -995,9 +1014,9 @@ When verifying a UI change, take a real screenshot of the running dashboard inst
 
 - **Do NOT `waitUntil: 'networkidle'`** — the SPA polls (SSE + `refetchInterval`), so the network never goes idle and `goto` times out. Use `waitUntil: 'domcontentloaded'` then `waitFor` a selector unique to the page.
 - **Dark mode** is `prefers-color-scheme`-based (no `.dark` class), so set `colorScheme: 'dark'` on the Playwright context — that's what triggers the app's dark styles.
-- Use `deviceScaleFactor: 2`+ for crisp screenshots; write them to a tmp dir.
+- Use `deviceScaleFactor: 2`+ for crisp screenshots; write them to the gitignored `tmp/` dir (`services/dashboard-ui/tmp/`), same as scratch e2e scripts.
 
-**Reusable script** (`bun run <file>.mjs`, or `node`):
+**Reusable script** — save under `tmp/` and run from `services/dashboard-ui` with `bun run tmp/<file>.mjs`:
 
 ```js
 import { chromium } from 'playwright-core'
@@ -1029,7 +1048,7 @@ for (const scheme of ['light', 'dark']) {
   await page.goto(`${APP}${path}`, { waitUntil: 'domcontentloaded' })
   await page.getByRole('heading').first().waitFor({ timeout: 15000 }).catch(() => {})
   await page.waitForTimeout(1500)
-  await page.screenshot({ path: `/tmp/shot-${scheme}.png`, fullPage: true })
+  await page.screenshot({ path: `tmp/shot-${scheme}.png`, fullPage: true })
   await ctx.close()
 }
 await browser.close()

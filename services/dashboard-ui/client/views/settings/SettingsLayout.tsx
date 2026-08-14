@@ -68,7 +68,7 @@ const SettingsTemplate = () => {
   return (
     <PageLayout>
       <PageContent className="border-t" variant="row">
-        <SubNav basePath={`/${org?.id}/settings`} links={navLinks} />
+        <SubNav basePath={`/${org?.id}/settings`} links={navLinks} storageKey="subnav:settings" />
         <div className="flex flex-col flex-1 min-w-0">
           <Outlet />
         </div>
