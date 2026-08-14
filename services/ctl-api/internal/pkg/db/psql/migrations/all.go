@@ -180,5 +180,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "126-backfill-role-metadata",
 			Fn:   m.Migration126BackfillRoleMetadata,
 		},
+		{
+			Name: "127-backfill-org-email-notifications",
+			Fn:   m.Migration127BackfillOrgEmailNotifications,
+		},
 	}
 }
