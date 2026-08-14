@@ -2,7 +2,9 @@ package telemetryexport
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -20,10 +22,13 @@ import (
 	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
-const collectorBinary = "/bin/nuon-runner-otelcol"
-const secretSyncInterval = 30 * time.Second
-
-var Module = fx.Options(fx.Provide(newAWSFactory, newAzureFactory, newGCPFactory, newConfigSourceResolver, New), fx.Invoke(func(*Supervisor) {}))
+const (
+	collectorBinary             = "/bin/nuon-runner-otelcol"
+	collectorHealthURL          = "http://127.0.0.1:13133/"
+	collectorStartTimeout       = 5 * time.Second
+	collectorHealthPollInterval = 50 * time.Millisecond
+	secretSyncInterval          = 30 * time.Second
+)
 
 type Params struct {
 	fx.In
@@ -34,21 +39,20 @@ type Params struct {
 }
 
 type Supervisor struct {
-	installID          string
-	platform           string
-	local              bool
-	logger             *zap.Logger
-	sources            configSourceResolver
-	cancel             context.CancelFunc
-	done               chan struct{}
-	mu                 sync.Mutex
-	child              *childProcess
-	active             string
-	backoff            time.Duration
-	nextStart          time.Time
-	reported           bool
-	collectorEnabled   bool
-	auditExportEnabled bool
+	installID        string
+	platform         string
+	local            bool
+	logger           *zap.Logger
+	sources          configSourceResolver
+	cancel           context.CancelFunc
+	done             chan struct{}
+	mu               sync.Mutex
+	child            *childProcess
+	active           string
+	backoff          time.Duration
+	nextStart        time.Time
+	reported         bool
+	collectorEnabled bool
 
 	replaceChildFn func(config) error
 	stopChildFn    func()
@@ -87,20 +91,6 @@ func (s *Supervisor) stop(ctx context.Context) error {
 		}
 	}
 	return nil
-}
-
-func (s *Supervisor) AuditExportAvailable() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if !s.auditExportEnabled || s.child == nil {
-		return false
-	}
-	select {
-	case <-s.child.done:
-		return false
-	default:
-		return true
-	}
 }
 
 func (s *Supervisor) run(ctx context.Context) {
@@ -177,13 +167,11 @@ func (s *Supervisor) reconcile(update configUpdate) {
 	s.active = value
 	s.backoff = time.Second
 	s.nextStart = time.Time{}
-	s.setAuditExportEnabled(cfg.AuditLogsEnabled)
 	s.logEnabled(cfg)
 }
 
 func (s *Supervisor) disable(reason string) {
 	s.stopChildFn()
-	s.setAuditExportEnabled(false)
 	s.active = ""
 	s.nextStart = time.Time{}
 	if !s.reported || s.collectorEnabled {
@@ -212,12 +200,6 @@ func (s *Supervisor) logEnabled(cfg config) {
 	s.logger.Info("runner telemetry export collector enabled", fields...)
 	s.reported = true
 	s.collectorEnabled = true
-}
-
-func (s *Supervisor) setAuditExportEnabled(enabled bool) {
-	s.mu.Lock()
-	s.auditExportEnabled = enabled
-	s.mu.Unlock()
 }
 
 func (s *Supervisor) replaceChild(cfg config) error {
@@ -253,7 +235,6 @@ func (s *Supervisor) replaceChild(cfg config) error {
 	child := &childProcess{cmd: cmd, tempDir: tempDir, done: make(chan struct{}), startedAt: time.Now(), outputWriters: []io.Closer{stdout, stderr}}
 	s.mu.Lock()
 	s.child = child
-	s.auditExportEnabled = cfg.AuditLogsEnabled
 	s.mu.Unlock()
 	go func() {
 		_ = cmd.Wait()
@@ -262,7 +243,37 @@ func (s *Supervisor) replaceChild(cfg config) error {
 		}
 		close(child.done)
 	}()
+	if err := waitForCollector(child, collectorHealthURL); err != nil {
+		s.stopChild()
+		return err
+	}
 	return nil
+}
+
+func waitForCollector(child *childProcess, healthURL string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), collectorStartTimeout)
+	defer cancel()
+	client := &http.Client{Timeout: collectorHealthPollInterval}
+	for {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, healthURL, nil)
+		if err != nil {
+			return err
+		}
+		resp, err := client.Do(req)
+		if err == nil {
+			_ = resp.Body.Close()
+			if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
+				return nil
+			}
+		}
+		select {
+		case <-child.done:
+			return fmt.Errorf("telemetry export collector exited before becoming healthy")
+		case <-ctx.Done():
+			return fmt.Errorf("telemetry export collector did not become healthy: %w", ctx.Err())
+		case <-time.After(collectorHealthPollInterval):
+		}
+	}
 }
 
 func (s *Supervisor) stopChild() {
