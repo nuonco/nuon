@@ -23,6 +23,7 @@ const (
 	terraformType      compositeerrors.Type = "terraform.error"
 	terraformStateLock compositeerrors.Type = "terraform.state_lock"
 	helmNameInUseType  compositeerrors.Type = "helm.name_in_use"
+	helmPendingOpType  compositeerrors.Type = "helm.pending_operation"
 )
 
 func readFixture(t *testing.T, tool, name string) string {
@@ -82,6 +83,27 @@ func TestDefaultRegistry_Contract(t *testing.T) {
 		{
 			Name:     "provider layer beats helm tool layer",
 			Raw:      awsHelmBlob,
+			Tool:     errparse.ToolHelm,
+			WantType: awsPermissionType,
+		},
+		{
+			Name:     "pending-operation parser beats helm catch-all",
+			Raw:      readFixture(t, "helm", "pending_operation.txt"),
+			Tool:     errparse.ToolHelm,
+			WantType: helmPendingOpType,
+		},
+		{
+			// The ambiguous name-collision wording must not be pulled into
+			// pending_operation, since recovery is wrong advice for a real
+			// collision with a release Nuon does not own.
+			Name:     "name-in-use stays on the helm catch-all",
+			Raw:      helmNameInUse,
+			Tool:     errparse.ToolHelm,
+			WantType: helmNameInUseType,
+		},
+		{
+			Name:     "provider layer beats the pending-operation parser",
+			Raw:      awsHelmBlob + "\nrelease acme is stuck in pending-upgrade at revision 3",
 			Tool:     errparse.ToolHelm,
 			WantType: awsPermissionType,
 		},
