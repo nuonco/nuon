@@ -640,6 +640,14 @@ func deployAllComponents(ctx workflow.Context, dg *genCtx) ([]*app.WorkflowStep,
 
 	steps := make([]*app.WorkflowStep, 0)
 
+	// Open a group for the deploy phase rather than appending into whichever
+	// group the caller left current. The health gate belongs to the deploys, not
+	// to the preceding phase, and sharing a group with a caller that also ends in
+	// a "runner healthy" step (ReprovisionStack) makes the two indistinguishable
+	// downstream: the dashboard keys a step's identity off group + name, so it
+	// renders the pair as retry attempts of one step.
+	dg.sg.nextGroup()
+
 	step, err := dg.sg.installSignalStep(ctx, dg.installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: dg.installID,
 	}, dg.flw.PlanOnly)
