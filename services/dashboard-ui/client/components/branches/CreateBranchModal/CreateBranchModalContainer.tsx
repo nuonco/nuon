@@ -13,8 +13,44 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { useVcsRepoBrowser } from '@/hooks/use-vcs-repo-browser'
 import { createAppBranch, createBranchConfig, getAppBranches } from '@/lib'
-import type { TAPIError, TAppBranchConfig, TCreateAppBranchRequest, TVCSConnectionRepo } from '@/types'
-import { CreateBranchModal } from './CreateBranchModal'
+import type { TAppBranchConfig, TCreateAppBranchRequest, TVCSConnectionRepo } from '@/types'
+import { BranchFormModal } from '@/components/branches/BranchForm'
+import type { BranchFormOutput } from '@/components/branches/BranchForm/schema'
+
+type TCreateBranchBody = TCreateAppBranchRequest & {
+  vcs_connection_id?: string
+  connected_github_vcs_config?: {
+    repo: string
+    branch: string
+    directory: string
+    path_filter?: string
+  }
+  public_git_vcs_config?: {
+    repo: string
+    branch: string
+    directory: string
+    path_filter?: string
+  }
+}
+
+const buildCreateBranchBody = (output: BranchFormOutput): TCreateBranchBody => {
+  const body: TCreateBranchBody = { name: output.name }
+  if (output.useVcs && output.selectedRepo) {
+    const config = {
+      repo: output.selectedRepo.full_name,
+      branch: output.selectedBranch,
+      directory: output.directory,
+      ...(output.pathFilter ? { path_filter: output.pathFilter } : {}),
+    }
+    if (output.selectedRepo.private) {
+      body.vcs_connection_id = output.selectedVcsConnectionId
+      body.connected_github_vcs_config = config
+    } else {
+      body.public_git_vcs_config = config
+    }
+  }
+  return body
+}
 
 function extractRepoFromConfig(config: TAppBranchConfig): {
   repo: TVCSConnectionRepo
@@ -133,23 +169,7 @@ export const CreateBranchModalContainer = ({
   }, [vcsBrowser.repos, vcsBrowser.selectedRepo])
 
   const { mutate, isPending: isLoading, error: submitError } = useMutation({
-    mutationFn: async (
-      body: TCreateAppBranchRequest & {
-        vcs_connection_id?: string
-        connected_github_vcs_config?: {
-          repo: string
-          branch: string
-          directory: string
-          path_filter?: string
-        }
-        public_git_vcs_config?: {
-          repo: string
-          branch: string
-          directory: string
-          path_filter?: string
-        }
-      }
-    ) => {
+    mutationFn: async (body: TCreateBranchBody) => {
       const branch = await createAppBranch({ appId: app.id, body: { name: body.name }, orgId: org.id })
 
       if (body.connected_github_vcs_config) {
@@ -187,17 +207,11 @@ export const CreateBranchModalContainer = ({
       removeModal(props.modalId)
       navigate(`/${org.id}/apps/${app.id}/branches/${data.id}`)
     },
-    onError: (error: TAPIError) => {
-      addToast(
-        <Toast heading="Branch creation failed" theme="error">
-          <Text>{error.error || 'Failed to create app branch.'}</Text>
-        </Toast>
-      )
-    },
   })
 
   return (
-    <CreateBranchModal
+    <BranchFormModal
+      mode="create"
       vcsConnections={vcsConnections}
       repos={repos}
       branches={vcsBrowser.branches}
@@ -211,10 +225,10 @@ export const CreateBranchModalContainer = ({
       onRepoChange={vcsBrowser.setSelectedRepo}
       selectedBranch={vcsBrowser.selectedBranch}
       onBranchChange={vcsBrowser.setSelectedBranch}
-      initialDirectory={existingRepoInfo?.directory}
+      defaultDirectory={existingRepoInfo?.directory ?? '.'}
       isSubmitting={isLoading}
       submitError={submitError}
-      onSubmit={(body) => mutate(body)}
+      onSubmit={(output) => mutate(buildCreateBranchBody(output))}
       onCancel={() => removeModal(props.modalId)}
       {...props}
     />
