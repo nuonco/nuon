@@ -26,18 +26,18 @@ metadata:
 			name: "cluster_policy",
 			contents: `kind: ClusterPolicy
 metadata:
-  name: linkerd-authz-for-restate
+  name: linkerd-authz-for-payments
 `,
-			want: "clusterpolicy-linkerd-authz-for-restate.yaml",
+			want: "clusterpolicy-linkerd-authz-for-payments.yaml",
 		},
 		{
 			name: "namespaced_includes_namespace",
 			contents: `kind: Role
 metadata:
   name: view
-  namespace: restate
+  namespace: payments
 `,
-			want: "role-restate-view.yaml",
+			want: "role-payments-view.yaml",
 		},
 		{
 			name: "trims_leading_trailing_dashes",
