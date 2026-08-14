@@ -38,4 +38,18 @@ type HelmDeployPlan struct {
 	// merged as the highest-precedence layer at deploy time, winning over both
 	// ValuesFiles and Values. Empty means no override (exact no-op).
 	ValuesOverride string `json:"values_override,omitempty"`
+
+	// Recover, when set, makes this job unstick a release that helm left in a
+	// pending state instead of applying the chart. Nil is the normal deploy.
+	//
+	// A recovery reads the chart and values from the stored revision, so the
+	// runner skips fetching the OCI artifact entirely — requiring it would make
+	// recovery fail whenever the artifact is unreachable, which is exactly when
+	// an install is most likely to be wedged.
+	Recover *HelmRecover `json:"recover,omitempty"`
 }
+
+// HelmRecover carries the recovery directive. It is a struct rather than a bool
+// so a caller-chosen target revision can be added later without another change
+// to the plan shape.
+type HelmRecover struct{}

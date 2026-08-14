@@ -6,9 +6,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 )
 
 // @ID						GetInstallComponent
@@ -57,6 +59,26 @@ func (s *service) getInstallComponent(ctx context.Context, installID, componentI
 		First(&installCmp)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
+	}
+
+	// The latest deploy's composite error is derived from its newest runner job
+	// rather than stored on the row, the same way getInstallDeploy does it. The
+	// component page needs it to tell a stuck Helm release apart from an ordinary
+	// deploy failure, and a stale mirror would keep claiming a release is stuck
+	// after it had been recovered.
+	if len(installCmp.InstallDeploys) > 0 {
+		latest := &installCmp.InstallDeploys[0]
+		compositeError, err := runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{
+			OwnerID:   latest.ID,
+			OwnerType: "install_deploys",
+		})
+		if err != nil {
+			s.l.Warn("unable to hydrate install component deploy composite error",
+				zap.String("deploy_id", latest.ID),
+				zap.Error(err))
+		} else if compositeError != nil {
+			latest.CompositeError = compositeError
+		}
 	}
 
 	var driftedObj app.DriftedObject

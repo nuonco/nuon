@@ -1764,6 +1764,34 @@ export interface paths {
      */
     get: operations["GetInstallComponentOutputs"];
   };
+  "/v1/installs/{install_id}/components/{component_id}/recover-helm-release": {
+    /**
+     * recover a stuck helm release for an install component
+     * @description Recover a Helm release that was left part-way through an operation.
+     *
+     * Helm records a `pending-install`, `pending-upgrade` or `pending-rollback` status before it
+     * starts changing the cluster and clears it once the operation finishes. A release left in one
+     * of those statuses is a rollout whose runner went away — a crash, a cancelled workflow, or a
+     * job that timed out. Helm then refuses every further operation on that release, and retrying
+     * the deploy cannot clear it.
+     *
+     * This endpoint starts a workflow that returns the release to a usable state:
+     *
+     * - when an earlier revision finished a rollout, the release is rolled back to it
+     * - when no revision ever rolled out, the stuck release is removed
+     *
+     * It deploys nothing and changes no desired state. Deploy the component afterwards to roll out
+     * the version you want.
+     *
+     * The recovery refuses to act on a release that is not pending, so it is safe to run when you
+     * are unsure and it is a no-op on a second run.
+     *
+     * Returns `409` when a job is already running for the component (recovering while Helm is
+     * genuinely mid-operation can corrupt the release) or when the component has never been
+     * deployed on this install. Returns `400` when the component is not a Helm chart.
+     */
+    post: operations["RecoverInstallComponentHelmRelease"];
+  };
   "/v1/installs/{install_id}/components/{component_id}/teardown": {
     /**
      * teardown an install component
@@ -1961,12 +1989,12 @@ export interface paths {
   "/v1/installs/{install_id}/labels": {
     /**
      * add labels to an install
-     * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten.
+     * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten. A value using the .nuon interpolation syntax becomes a dynamic label: the template is stored and its rendered value is re-materialized whenever install state changes. Keys managed by the app config's default_labels cannot be changed here.
      */
     post: operations["AddInstallLabels"];
     /**
      * remove labels from an install
-     * @description Remove the specified label keys from the install.
+     * @description Remove the specified label keys from the install. Removing a dynamic label's key also removes its template. Keys managed by the app config's default_labels cannot be removed here.
      */
     delete: operations["RemoveInstallLabels"];
   };
@@ -3448,6 +3476,13 @@ export interface components {
       config_repo?: string;
       created_at?: string;
       created_by_id?: string;
+      /**
+       * @description DefaultLabels are applied to every install of the app and can only be
+       * changed via app config sync — install label endpoints reject these keys.
+       */
+      default_labels?: {
+        [key: string]: string;
+      };
       description?: string;
       display_name?: string;
       id?: string;
@@ -4055,6 +4090,12 @@ export interface components {
       resource_group_id?: string;
       resource_group_location?: string;
       resource_group_name?: string;
+      /**
+       * @description Principal ID of the runner VMSS's system-assigned identity. Secret sync and
+       * image sync run as this identity, not a per-operation one, so sandboxes need
+       * it to grant cluster access.
+       */
+      runner_identity_principal_id?: string;
       subscription_id?: string;
       subscription_tenant_id?: string;
     };
@@ -4474,6 +4515,14 @@ export interface components {
       app_branch_connections?: components["schemas"]["app.InstallAppBranchConnection"][];
       app_branch_id?: string;
       app_config_id?: string;
+      /**
+       * @description AppDefaultLabels is the snapshot of the app's default labels applied to
+       * this install. It is the lock set for label mutation endpoints, and lets
+       * reconciliation tell a removed default apart from a user-set label.
+       */
+      app_default_labels?: {
+        [key: string]: string;
+      };
       app_id?: string;
       app_runner_config?: components["schemas"]["app.AppRunnerConfig"];
       app_sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
@@ -4530,6 +4579,17 @@ export interface components {
       install_sandbox_runs?: components["schemas"]["app.InstallSandboxRun"][];
       install_stack?: components["schemas"]["app.InstallStack"];
       install_states?: components["schemas"]["app.InstallState"][];
+      /**
+       * @description LabelTemplates holds label values written with the .nuon interpolation
+       * syntax. Rendered values are materialized into Labels whenever install
+       * state changes, so downstream consumers (SQL label matching, subscription
+       * dispatch, pickers) only ever read literal values. NOTE: this comment ends
+       * up in the swagger spec, which swag executes as a Go text/template —
+       * literal moustaches here break spec generation.
+       */
+      label_templates?: {
+        [key: string]: string;
+      };
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       /**
        * @description LastHealthReportAt is when a runner last reported component health. It is
@@ -4874,7 +4934,7 @@ export interface components {
       workflow_id?: string;
     };
     /** @enum {string} */
-    "app.InstallDeployType": "sync-image" | "apply" | "teardown";
+    "app.InstallDeployType": "sync-image" | "apply" | "teardown" | "recover";
     "app.InstallEvent": {
       created_at?: string;
       created_by_id?: string;
@@ -6636,7 +6696,7 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
     /** @enum {string} */
-    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "app_install_sync" | "reprovision" | "reprovision_stack" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled";
+    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "app_install_sync" | "reprovision" | "reprovision_stack" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled" | "recover_helm_release";
     "blobstore.Blob": Record<string, never>;
     "callback.Ref": {
       namespace?: string;
@@ -7178,6 +7238,16 @@ export interface components {
        */
       name?: string;
       namespace?: string;
+      /**
+       * @description Recover, when set, makes this job unstick a release that helm left in a
+       * pending state instead of applying the chart. Nil is the normal deploy.
+       *
+       * A recovery reads the chart and values from the stored revision, so the
+       * runner skips fetching the OCI artifact entirely — requiring it would make
+       * recovery fail whenever the artifact is unreachable, which is exactly when
+       * an install is most likely to be wedged.
+       */
+      recover?: components["schemas"]["plantypes.HelmRecover"];
       skip_crds?: boolean;
       storage_driver?: string;
       take_ownership?: boolean;
@@ -7190,6 +7260,7 @@ export interface components {
        */
       values_override?: string;
     };
+    "plantypes.HelmRecover": Record<string, never>;
     "plantypes.HelmSandboxMode": {
       plan_contents?: string;
       plan_display_contents?: string;
@@ -8690,6 +8761,9 @@ export interface components {
       original?: string;
       readme?: string;
       warnings?: string[];
+    };
+    "service.RecoverInstallComponentHelmReleaseRequest": {
+      role?: string;
     };
     "service.RefreshInstallHealthClusterAccessRequest": {
       /**
@@ -22264,6 +22338,91 @@ export interface operations {
     };
   };
   /**
+   * recover a stuck helm release for an install component
+   * @description Recover a Helm release that was left part-way through an operation.
+   *
+   * Helm records a `pending-install`, `pending-upgrade` or `pending-rollback` status before it
+   * starts changing the cluster and clears it once the operation finishes. A release left in one
+   * of those statuses is a rollout whose runner went away — a crash, a cancelled workflow, or a
+   * job that timed out. Helm then refuses every further operation on that release, and retrying
+   * the deploy cannot clear it.
+   *
+   * This endpoint starts a workflow that returns the release to a usable state:
+   *
+   * - when an earlier revision finished a rollout, the release is rolled back to it
+   * - when no revision ever rolled out, the stuck release is removed
+   *
+   * It deploys nothing and changes no desired state. Deploy the component afterwards to roll out
+   * the version you want.
+   *
+   * The recovery refuses to act on a release that is not pending, so it is safe to run when you
+   * are unsure and it is a no-op on a second run.
+   *
+   * Returns `409` when a job is already running for the component (recovering while Helm is
+   * genuinely mid-operation can corrupt the release) or when the component has never been
+   * deployed on this install. Returns `400` when the component is not a Helm chart.
+   */
+  RecoverInstallComponentHelmRelease: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["service.RecoverInstallComponentHelmReleaseRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * teardown an install component
    * @description Teardown and remove an install component's resources.
    */
@@ -23746,7 +23905,7 @@ export interface operations {
   };
   /**
    * add labels to an install
-   * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten.
+   * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten. A value using the .nuon interpolation syntax becomes a dynamic label: the template is stored and its rendered value is re-materialized whenever install state changes. Keys managed by the app config's default_labels cannot be changed here.
    */
   AddInstallLabels: {
     parameters: {
@@ -23802,7 +23961,7 @@ export interface operations {
   };
   /**
    * remove labels from an install
-   * @description Remove the specified label keys from the install.
+   * @description Remove the specified label keys from the install. Removing a dynamic label's key also removes its template. Keys managed by the app config's default_labels cannot be removed here.
    */
   RemoveInstallLabels: {
     parameters: {
