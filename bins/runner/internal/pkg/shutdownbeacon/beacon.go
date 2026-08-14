@@ -16,6 +16,7 @@ package shutdownbeacon
 
 import (
 	"context"
+	"errors"
 	"os"
 	"time"
 
@@ -24,17 +25,18 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 )
 
 const (
-	// beaconTimeout and flushTimeout share the logind inhibitor delay window
+	// These operations share the logind inhibitor delay window
 	// (InhibitDelayMaxSec, default 5s). Keep their sum under that so logind
-	// does not force shutdown to proceed mid-call. The beacon goes first since
-	// it is the authoritative signal; the log flush is secondary.
-	beaconTimeout = 2 * time.Second
-	flushTimeout  = 2 * time.Second
+	// does not force shutdown to proceed mid-call.
+	auditTimeout  = 2 * time.Second
+	beaconTimeout = time.Second
+	flushTimeout  = time.Second
 )
 
 type Params struct {
@@ -42,6 +44,7 @@ type Params struct {
 
 	APIClient   nuonrunner.Client
 	Registrar   *process.Registrar
+	Audit       *audit.Writer
 	L           *zap.Logger             `name:"system"`
 	LogProvider *otellog.LoggerProvider `name:"process-log-provider" optional:"true"`
 	LC          fx.Lifecycle
@@ -50,6 +53,7 @@ type Params struct {
 type Beacon struct {
 	apiClient   nuonrunner.Client
 	registrar   *process.Registrar
+	audit       *audit.Writer
 	l           *zap.Logger
 	logProvider *otellog.LoggerProvider
 
@@ -62,6 +66,7 @@ func New(p Params) *Beacon {
 	b := &Beacon{
 		apiClient:   p.APIClient,
 		registrar:   p.Registrar,
+		audit:       p.Audit,
 		l:           p.L,
 		logProvider: p.LogProvider,
 		stop:        make(chan struct{}),
@@ -147,9 +152,21 @@ func (b *Beacon) loop(ch <-chan *dbus.Signal) {
 
 func (b *Beacon) onShutdown() {
 	b.l.Info("host shutdown detected, firing terminating beacon")
+	b.writeAudit()
 	b.fire()
 	b.flushLogs()
 	b.releaseInhibitor()
+}
+
+func (b *Beacon) writeAudit() {
+	ctx, cancel := context.WithTimeout(context.Background(), auditTimeout)
+	defer cancel()
+	if err := b.audit.ProcessStopping(ctx, "host_shutdown", "systemd_logind"); err != nil {
+		if errors.Is(err, audit.ErrUnavailable) {
+			return
+		}
+		b.l.Warn("customer audit host shutdown event export failed", zap.Error(err))
+	}
 }
 
 func (b *Beacon) fire() {
