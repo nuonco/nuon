@@ -630,7 +630,10 @@ func getImageDepSyncSteps(
 	return steps, nil
 }
 
-func deployAllComponents(ctx workflow.Context, dg *genCtx) ([]*app.WorkflowStep, error) {
+// gateRunnerHealthy is false when the caller's preceding phase already waited on
+// the install's runner, where a second wait immediately after can only
+// re-confirm the same result.
+func deployAllComponents(ctx workflow.Context, dg *genCtx, gateRunnerHealthy bool) ([]*app.WorkflowStep, error) {
 	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
 		InstallID: dg.installID,
 	})
@@ -640,13 +643,21 @@ func deployAllComponents(ctx workflow.Context, dg *genCtx) ([]*app.WorkflowStep,
 
 	steps := make([]*app.WorkflowStep, 0)
 
-	step, err := dg.sg.installSignalStep(ctx, dg.installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: dg.installID,
-	}, dg.flw.PlanOnly)
-	if err != nil {
-		return nil, err
+	// The gate opens its own group rather than appending into whichever group the
+	// caller left current: it belongs to the deploys, and sharing a group with a
+	// caller that also ends in a runner-health step makes the two
+	// indistinguishable downstream, where a step's identity is its group + name.
+	if gateRunnerHealthy {
+		dg.sg.nextGroup()
+
+		step, err := dg.sg.installSignalStep(ctx, dg.installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: dg.installID,
+		}, dg.flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
 	}
-	steps = append(steps, step)
 
 	var lifecycleSteps []*app.WorkflowStep
 	if !dg.flw.PlanOnly {

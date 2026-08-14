@@ -8,6 +8,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
+// runnerHealthyStepName gates a phase on the install's runner reporting healthy.
+const runnerHealthyStepName = "runner healthy"
+
 type stepGroup struct {
 	idx          int
 	groups       []*app.WorkflowStepGroup

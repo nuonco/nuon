@@ -109,7 +109,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		}
 		steps = append(steps, step)
 
-		deploySteps, err := deployAllComponents(ctx, dg)
+		deploySteps, err := deployAllComponents(ctx, dg, true)
 		if err != nil {
 			return nil, err
 		}

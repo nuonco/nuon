@@ -203,6 +203,26 @@ export function getStepKind(step: TWorkflowStep): string {
   return `${step?.group_idx ?? ''}:${step?.step_target_type ?? ''}:${step?.name ?? step?.id ?? ''}`
 }
 
+/**
+ * Whether same-kind siblings are retry attempts of one step rather than
+ * distinct steps that happen to share a group and name.
+ *
+ * A kind is only a retry chain if every step but the last has run — a retry
+ * clone is created after its predecessor fails. Two steps that have not started
+ * cannot be attempts of each other, which is what a workflow emitting the same
+ * step name twice in one group produces.
+ */
+export function isRetryChain(kindSteps: TWorkflowStep[]): boolean {
+  if (kindSteps.length < 2) return false
+  return kindSteps
+    .slice(0, -1)
+    .every((step) => hasStepStarted(step?.status?.status))
+}
+
+function hasStepStarted(status?: string): boolean {
+  return !!status && status !== 'pending' && status !== 'not-attempted'
+}
+
 export type TStepButtonsCfg = {
   cancel: boolean
   approval: boolean
