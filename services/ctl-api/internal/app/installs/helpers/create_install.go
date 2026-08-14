@@ -69,6 +69,10 @@ type CreateInstallParams struct {
 	Labels map[string]string `json:"labels,omitempty"`
 
 	SandboxMode bool `json:"sandbox_mode,omitempty" swaggerignore:"true"`
+
+	// StackOnly provisions the install stack and runner, then stops. The sandbox
+	// and components stay unprovisioned until the install is provisioned again.
+	StackOnly bool `json:"stack_only,omitempty"`
 }
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
