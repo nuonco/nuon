@@ -301,6 +301,14 @@ single per-resource flag:
   this as well: when a component's failure is what moved the install, the component alert reports
   both in one message.
 
+A failure and its recovery, as they arrive in Slack. The failing resource and the reason travel with
+the alert, so the first thing you read is already the diagnosis — and because the component's crossing
+is what moved the install, both are reported in one message rather than two.
+
+<Frame caption="A component degrading and recovering, delivered to Slack.">
+  <img src="/images/guides/component-health/slack-alert.png" alt="Two Slack messages from Nuon Cloud. The first is titled Component degraded, install degraded, ctl_api, and shows the component, its previous healthy verdict, the failing Deployment and a readiness probe connection-refused error. The second is titled Component recovered, install recovered, and shows all 52 resources healthy." />
+</Frame>
+
 Three things are deliberately quiet:
 
 - **`unknown` never alerts.** A runner going offline is already reported as runner inactivity, and
@@ -381,6 +389,10 @@ pass, so the endpoint won't let it.
 
 Every debounced transition is kept for 90 days, giving each component and install a timeline and an
 uptime percentage, drawn as status-page-style daily bars.
+
+<Frame caption="90-day health for an install, with per-component uptime.">
+  <img src="/images/guides/component-health/90-day-health.png" alt="A 90-day health card showing 97.57% uptime, a row of daily status bars, and a list of components each with a Healthy badge and its own uptime percentage." />
+</Frame>
 
 **Time in `unknown` is excluded from uptime** rather than counted as up or down — Nuon won't claim
 availability it didn't observe. An install with no observations reports zero observed time instead of
