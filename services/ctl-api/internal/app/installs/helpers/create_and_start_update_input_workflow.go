@@ -15,6 +15,7 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(
 	changedInputValues string,
 	role string,
 	deployDependents bool,
+	inputsOnly bool,
 	planOnly bool,
 	workflowType app.WorkflowType,
 ) (*app.Workflow, error) {
@@ -24,6 +25,9 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(
 		// maybe that will change at some point, but this metadata should not be abused.
 		"inputs":            strings.Join(changedInputs, ","),
 		"deploy_dependents": strconv.FormatBool(deployDependents),
+	}
+	if inputsOnly {
+		metadata[app.WorkflowMetadataKeyInputsOnly] = strconv.FormatBool(true)
 	}
 	if changedInputValues != "" {
 		metadata[app.WorkflowMetadataKeyChangedInputValues] = changedInputValues
