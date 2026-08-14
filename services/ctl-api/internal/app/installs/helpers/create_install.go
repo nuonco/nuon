@@ -70,9 +70,8 @@ type CreateInstallParams struct {
 
 	SandboxMode bool `json:"sandbox_mode,omitempty" swaggerignore:"true"`
 
-	// StackOnly provisions the install stack and runner, then stops before the
-	// sandbox and components. Use it when an input can only be set once the
-	// runner is up — set the inputs, then provision the install to finish.
+	// StackOnly provisions the install stack and runner, then stops. The sandbox
+	// and components stay unprovisioned until the install is provisioned again.
 	StackOnly bool `json:"stack_only,omitempty"`
 }
 

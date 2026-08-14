@@ -26,10 +26,8 @@ type ServiceUpdateInstallInputsRequest struct {
 	// Required: true
 	Inputs map[string]string `json:"inputs"`
 
-	// InputsOnly records the new input values without deploying anything — no
-	// component deploys, no sandbox reprovision, no lifecycle actions. Use it to
-	// set an input the install cannot deploy against yet, then provision or
-	// reprovision explicitly afterwards.
+	// InputsOnly saves the new input values without deploying components,
+	// reprovisioning the sandbox, or running update-input lifecycle actions.
 	InputsOnly bool `json:"inputs_only,omitempty"`
 
 	// role
