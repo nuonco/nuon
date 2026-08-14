@@ -14,7 +14,6 @@ import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { Tooltip } from '@/components/common/Tooltip'
 import type {
   TTriggerEvent,
   TTriggerEventRaw,
@@ -373,6 +372,9 @@ export const EventDetails = ({
       variant="primary"
       disabled={cannotReplay || isReplaying}
       onClick={onReplay}
+      tooltipProps={
+        cannotReplay ? { tipContent: replayUnavailableReason } : undefined
+      }
     >
       {isReplaying ? 'Replaying event' : 'Replay event'}
     </Button>
@@ -427,11 +429,7 @@ export const EventDetails = ({
             </Text>
           </ClickToCopy>
         </div>
-        {cannotReplay ? (
-          <Tooltip tipContent={replayUnavailableReason}>{replayButton}</Tooltip>
-        ) : (
-          replayButton
-        )}
+        {replayButton}
       </div>
 
       <Card className="!p-4 !gap-4">

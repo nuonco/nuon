@@ -1764,34 +1764,6 @@ export interface paths {
      */
     get: operations["GetInstallComponentOutputs"];
   };
-  "/v1/installs/{install_id}/components/{component_id}/recover-helm-release": {
-    /**
-     * recover a stuck helm release for an install component
-     * @description Recover a Helm release that was left part-way through an operation.
-     *
-     * Helm records a `pending-install`, `pending-upgrade` or `pending-rollback` status before it
-     * starts changing the cluster and clears it once the operation finishes. A release left in one
-     * of those statuses is a rollout whose runner went away — a crash, a cancelled workflow, or a
-     * job that timed out. Helm then refuses every further operation on that release, and retrying
-     * the deploy cannot clear it.
-     *
-     * This endpoint starts a workflow that returns the release to a usable state:
-     *
-     * - when an earlier revision finished a rollout, the release is rolled back to it
-     * - when no revision ever rolled out, the stuck release is removed
-     *
-     * It deploys nothing and changes no desired state. Deploy the component afterwards to roll out
-     * the version you want.
-     *
-     * The recovery refuses to act on a release that is not pending, so it is safe to run when you
-     * are unsure and it is a no-op on a second run.
-     *
-     * Returns `409` when a job is already running for the component (recovering while Helm is
-     * genuinely mid-operation can corrupt the release) or when the component has never been
-     * deployed on this install. Returns `400` when the component is not a Helm chart.
-     */
-    post: operations["RecoverInstallComponentHelmRelease"];
-  };
   "/v1/installs/{install_id}/components/{component_id}/teardown": {
     /**
      * teardown an install component
@@ -4934,7 +4906,7 @@ export interface components {
       workflow_id?: string;
     };
     /** @enum {string} */
-    "app.InstallDeployType": "sync-image" | "apply" | "teardown" | "recover";
+    "app.InstallDeployType": "sync-image" | "apply" | "teardown";
     "app.InstallEvent": {
       created_at?: string;
       created_by_id?: string;
@@ -6696,7 +6668,7 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
     /** @enum {string} */
-    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "app_install_sync" | "reprovision" | "reprovision_stack" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled" | "recover_helm_release";
+    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "app_install_sync" | "reprovision" | "reprovision_stack" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled";
     "blobstore.Blob": Record<string, never>;
     "callback.Ref": {
       namespace?: string;
@@ -7238,16 +7210,6 @@ export interface components {
        */
       name?: string;
       namespace?: string;
-      /**
-       * @description Recover, when set, makes this job unstick a release that helm left in a
-       * pending state instead of applying the chart. Nil is the normal deploy.
-       *
-       * A recovery reads the chart and values from the stored revision, so the
-       * runner skips fetching the OCI artifact entirely — requiring it would make
-       * recovery fail whenever the artifact is unreachable, which is exactly when
-       * an install is most likely to be wedged.
-       */
-      recover?: components["schemas"]["plantypes.HelmRecover"];
       skip_crds?: boolean;
       storage_driver?: string;
       take_ownership?: boolean;
@@ -7260,7 +7222,6 @@ export interface components {
        */
       values_override?: string;
     };
-    "plantypes.HelmRecover": Record<string, never>;
     "plantypes.HelmSandboxMode": {
       plan_contents?: string;
       plan_display_contents?: string;
@@ -8168,11 +8129,6 @@ export interface components {
       };
       metadata?: components["schemas"]["helpers.InstallMetadata"];
       name: string;
-      /**
-       * @description StackOnly provisions the install stack and runner, then stops. The sandbox
-       * and components stay unprovisioned until the install is provisioned again.
-       */
-      stack_only?: boolean;
     };
     "service.CreateInstallV2Request": {
       app_id: string;
@@ -8192,11 +8148,6 @@ export interface components {
       };
       metadata?: components["schemas"]["helpers.InstallMetadata"];
       name: string;
-      /**
-       * @description StackOnly provisions the install stack and runner, then stops. The sandbox
-       * and components stay unprovisioned until the install is provisioned again.
-       */
-      stack_only?: boolean;
     };
     "service.CreateJobComponentConfigRequest": {
       app_config_id?: string;
@@ -8772,9 +8723,6 @@ export interface components {
       readme?: string;
       warnings?: string[];
     };
-    "service.RecoverInstallComponentHelmReleaseRequest": {
-      role?: string;
-    };
     "service.RefreshInstallHealthClusterAccessRequest": {
       /**
        * @description RoleName is the identity health should read the cluster through. Empty
@@ -8987,11 +8935,6 @@ export interface components {
       inputs: {
         [key: string]: string;
       };
-      /**
-       * @description InputsOnly saves the new input values without deploying components,
-       * reprovisioning the sandbox, or running update-input lifecycle actions.
-       */
-      inputs_only?: boolean;
       role?: string;
     };
     "service.UpdateInstallRequest": {
@@ -22340,91 +22283,6 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * recover a stuck helm release for an install component
-   * @description Recover a Helm release that was left part-way through an operation.
-   *
-   * Helm records a `pending-install`, `pending-upgrade` or `pending-rollback` status before it
-   * starts changing the cluster and clears it once the operation finishes. A release left in one
-   * of those statuses is a rollout whose runner went away — a crash, a cancelled workflow, or a
-   * job that timed out. Helm then refuses every further operation on that release, and retrying
-   * the deploy cannot clear it.
-   *
-   * This endpoint starts a workflow that returns the release to a usable state:
-   *
-   * - when an earlier revision finished a rollout, the release is rolled back to it
-   * - when no revision ever rolled out, the stuck release is removed
-   *
-   * It deploys nothing and changes no desired state. Deploy the component afterwards to roll out
-   * the version you want.
-   *
-   * The recovery refuses to act on a release that is not pending, so it is safe to run when you
-   * are unsure and it is a no-op on a second run.
-   *
-   * Returns `409` when a job is already running for the component (recovering while Helm is
-   * genuinely mid-operation can corrupt the release) or when the component has never been
-   * deployed on this install. Returns `400` when the component is not a Helm chart.
-   */
-  RecoverInstallComponentHelmRelease: {
-    parameters: {
-      path: {
-        /** @description install ID */
-        install_id: string;
-        /** @description component ID */
-        component_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody?: {
-      content: {
-        "application/json": components["schemas"]["service.RecoverInstallComponentHelmReleaseRequest"];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": components["schemas"]["app.WorkflowResponse"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Conflict */
-      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
