@@ -18,7 +18,9 @@ import { ComponentConfigContextTooltip } from '@/components/components/Component
 import { CommitDetails } from '@/components/common/CommitDetails'
 import { RunnerJobPlanButton } from '@/components/runners/RunnerJobPlan'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
+import { CancelBuildModal } from '@/components/builds/CancelBuild'
 import { useOrg } from '@/hooks/use-org'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { cancelComponentBuild } from '@/lib'
 import type { TApp, TAPIError, TBuild, TComponent } from '@/types'
@@ -34,6 +36,7 @@ interface IBuildHeader {
 export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
   const { org } = useOrg()
   const { addToast } = useToast()
+  const { addModal } = useSurfaces()
   const [hasBeenCanceled, setHasBeenCanceled] = useState(false)
   const executionJobId = build?.build_runner_job_id ?? build?.runner_job?.id
 
@@ -164,7 +167,14 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
               <Button
                 variant="danger"
                 disabled={isCanceling || hasBeenCanceled}
-                onClick={() => cancelBuild()}
+                onClick={() =>
+                  addModal(
+                    <CancelBuildModal
+                      componentName={component?.name}
+                      onConfirm={() => cancelBuild()}
+                    />
+                  )
+                }
               >
                 {isCanceling ? (
                   <span className="flex items-center gap-2">
