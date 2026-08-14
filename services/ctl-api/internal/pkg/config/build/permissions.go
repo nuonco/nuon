@@ -101,6 +101,9 @@ func validatePermissionRoles(in PermissionsInput) error {
 		if entry.role == nil {
 			continue
 		}
+		if err := ValidateAzureBuiltInRoles(entry.name, entry.role.Policies); err != nil {
+			return err
+		}
 		if err := ValidatePolicyMutualExclusivity(entry.name, entry.role.Policies); err != nil {
 			return err
 		}
