@@ -1,10 +1,10 @@
 export default {
-  title: 'Webhooks/EditWebhook',
+  title: 'Webhooks/WebhookForm',
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'
 import type { TWebhook } from '@/types'
-import { EditWebhookModal } from './EditWebhook'
+import { WebhookFormModal } from './WebhookForm'
 
 const noop = () => {}
 
@@ -18,9 +18,55 @@ const baseWebhook: TWebhook = {
   interests: { all_events: true },
 }
 
-export const Default = () => (
+export const Create = () => (
   <ModalStory>
-    <EditWebhookModal
+    <WebhookFormModal mode="create" isPending={false} error={null} onSubmit={noop} />
+  </ModalStory>
+)
+
+export const CreatePending = () => (
+  <ModalStory>
+    <WebhookFormModal mode="create" isPending={true} error={null} onSubmit={noop} />
+  </ModalStory>
+)
+
+export const CreateWithConflictError = () => (
+  <ModalStory>
+    <WebhookFormModal
+      mode="create"
+      isPending={false}
+      error={{
+        error:
+          'A webhook with this URL already exists for this org. Delete the existing webhook to recreate it.',
+        description: '',
+        user_error: true,
+        status: 409,
+      }}
+      onSubmit={noop}
+    />
+  </ModalStory>
+)
+
+export const CreateWithInterestsValidationError = () => (
+  <ModalStory>
+    <WebhookFormModal
+      mode="create"
+      isPending={false}
+      error={{
+        error: 'invalid interests: unknown op "foo" for resource "installs"',
+        description: '',
+        user_error: true,
+        status: 400,
+      }}
+      onSubmit={noop}
+    />
+  </ModalStory>
+)
+
+export const Edit = () => (
+  <ModalStory>
+    <WebhookFormModal
+      mode="edit"
       webhook={baseWebhook}
       isPending={false}
       error={null}
@@ -29,9 +75,10 @@ export const Default = () => (
   </ModalStory>
 )
 
-export const NoSecretConfigured = () => (
+export const EditNoSecretConfigured = () => (
   <ModalStory>
-    <EditWebhookModal
+    <WebhookFormModal
+      mode="edit"
       webhook={{ ...baseWebhook, has_secret: false }}
       isPending={false}
       error={null}
@@ -40,9 +87,10 @@ export const NoSecretConfigured = () => (
   </ModalStory>
 )
 
-export const ScopedToInstallLabels = () => (
+export const EditScopedToInstallLabels = () => (
   <ModalStory>
-    <EditWebhookModal
+    <WebhookFormModal
+      mode="edit"
       webhook={{
         ...baseWebhook,
         match: {
@@ -56,9 +104,10 @@ export const ScopedToInstallLabels = () => (
   </ModalStory>
 )
 
-export const ScopedToSpecificInstalls = () => (
+export const EditScopedToSpecificInstalls = () => (
   <ModalStory>
-    <EditWebhookModal
+    <WebhookFormModal
+      mode="edit"
       webhook={{
         ...baseWebhook,
         match: { installs: { ids: ['ins_001', 'ins_002'] } },
@@ -70,9 +119,10 @@ export const ScopedToSpecificInstalls = () => (
   </ModalStory>
 )
 
-export const PerResourceInterests = () => (
+export const EditPerResourceInterests = () => (
   <ModalStory>
-    <EditWebhookModal
+    <WebhookFormModal
+      mode="edit"
       webhook={{
         ...baseWebhook,
         interests: {
@@ -96,9 +146,10 @@ export const PerResourceInterests = () => (
   </ModalStory>
 )
 
-export const Pending = () => (
+export const EditPending = () => (
   <ModalStory>
-    <EditWebhookModal
+    <WebhookFormModal
+      mode="edit"
       webhook={baseWebhook}
       isPending={true}
       error={null}
@@ -107,9 +158,10 @@ export const Pending = () => (
   </ModalStory>
 )
 
-export const WithError = () => (
+export const EditWithError = () => (
   <ModalStory>
-    <EditWebhookModal
+    <WebhookFormModal
+      mode="edit"
       webhook={baseWebhook}
       isPending={false}
       error={{
