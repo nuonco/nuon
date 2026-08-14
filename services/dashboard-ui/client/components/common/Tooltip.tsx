@@ -186,6 +186,15 @@ export const Tooltip = ({
         if (disableHover) return
         setOpen(false)
       }}
+      onFocus={() => {
+        if (disableHover) return
+        calculatePosition()
+        setOpen(true)
+      }}
+      onBlur={() => {
+        if (disableHover) return
+        setOpen(false)
+      }}
       {...props}
     >
       {showIcon ? (

@@ -141,6 +141,42 @@ export const Sizes = () => (
   </div>
 )
 
+export const Tooltips = () => (
+  <div className="space-y-6">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">Button Tooltips</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Pass{' '}
+        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          tooltipProps
+        </code>{' '}
+        to let the Button own its tooltip. On a disabled button the reason still
+        shows on hover and keyboard focus — the Button renders itself{' '}
+        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          aria-disabled
+        </code>{' '}
+        instead of using the native attribute that swallows pointer events.
+      </p>
+    </div>
+
+    <div className="flex flex-wrap gap-4 items-center p-8 border rounded-lg">
+      <Button
+        variant="primary"
+        disabled
+        tooltipProps={{ tipContent: 'Sync the app config first' }}
+      >
+        Deploy
+      </Button>
+      <Button
+        variant="secondary"
+        tooltipProps={{ tipContent: 'Opens the docs in a new tab' }}
+      >
+        Docs
+      </Button>
+    </div>
+  </div>
+)
+
 export const Links = () => (
   <div className="space-y-6">
     <div className="space-y-3">
