@@ -98,8 +98,23 @@ If you need a Phosphor icon that isn't already available, add it to `client/comp
 
 Never import directly from `@phosphor-icons/react`, `lucide-react`, or `heroicons` in component files.
 
+## Button tooltips (disabled reasons & nudges)
+
+The `Button` owns its tooltip via `tooltipProps` (`Omit<ITooltip, 'children'>`). **Never hand-wrap `<Tooltip>` around a `Button`, and never put `title=` on a button.** With `disabled` + `tooltipProps`, Button renders `aria-disabled` (not native `disabled`, which swallows pointer events) so the reason shows on hover and keyboard focus.
+
+```tsx
+<Button disabled tooltipProps={{ tipContent: 'Sync the app config first' }}>Trigger run</Button>
+```
+
+- **Every disabled button whose reason isn't obvious from context gets a `tooltipProps` reason.** Copy follows `COPY_STYLE.md`: sentence case, explains the unmet condition, fragment (no period). A plain-string `tipContent` auto-wraps in `Text subtext` — pass a string, don't wrap it.
+- "Obvious from context" (no tooltip needed): label already changes for async ops, form fields show their own errors, a type-to-confirm input is right above, or pagination/positional convention.
+- **Nudge** (controlled tooltip opened by app state): `useNudge(trigger)` → `{ isOpen, close }` + `tooltipProps={{ isOpen, disableHover: true, tipContent }}`. Don't re-implement the timer.
+- Tooltips on **non-Button** elements (text, icons, badges, toggles) keep the hand-wrapped `<Tooltip>` — `tooltipProps` is Button-only.
+
 ## Anti-Patterns
 
+- **Do not** hand-wrap `<Tooltip>` around a `Button` or put `title=` on a button — use `Button`'s `tooltipProps`
+- **Do not** leave a disabled button unexplained when its reason isn't obvious from context — add a `tooltipProps` reason
 - **Do not** create a component that duplicates an existing one — always check existing components first
 - **Do not** pass props to a component without reading its interface — wrong props cause runtime errors
 - **Do not** use `ModalBase` or `PanelBase` directly — always use the `Modal`/`Panel` wrappers from `surfaces/`

@@ -221,6 +221,23 @@ inside `labelProps`:
 - One **primary** action per surface — never two primary buttons on the same page (see §4.8);
   everything else `secondary`/`ghost`. `danger` only for destructive actions.
 
+### Button tooltips (disabled reasons + nudges)
+The `Button` owns its tooltip via `tooltipProps` — **never hand-wrap `<Tooltip>` around a `Button`,
+and never put `title=` on a button** (both are review smells). `Button` solves the disabled-hover
+problem internally: with `tooltipProps` + `disabled` it renders `aria-disabled` (not native
+`disabled`, which swallows pointer events), so the reason shows on hover **and** keyboard focus.
+```tsx
+<Button disabled tooltipProps={{ tipContent: 'Sync the app config first' }}>Trigger run</Button>
+```
+- **Every disabled button whose reason isn't obvious from context gets a `tooltipProps` reason.**
+  Reason copy follows [COPY_STYLE.md](./COPY_STYLE.md): sentence case, explains the unmet condition,
+  fragment (no trailing period). A plain-string `tipContent` auto-wraps in `Text` `subtext`.
+- "Obvious from context" (→ **no** tooltip needed): the label already changes for an async op
+  ("Saving…"), form fields show their own validation errors, a type-to-confirm input sits right
+  above, or it's a pagination/positional convention (first item can't move up).
+- **Nudge** (a controlled tooltip opened by app state, not hover) uses `useNudge(trigger)` +
+  `tooltipProps={{ isOpen, disableHover: true, tipContent }}` — don't re-implement the timer.
+
 ### Tables
 Prefer the Stratus `Table`. If you must hand-roll (e.g. inside a modal), mirror its styling:
 - Header row on the secondary surface: `bg-cool-grey-100 dark:bg-dark-grey-700`.
