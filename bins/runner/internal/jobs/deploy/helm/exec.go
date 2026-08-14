@@ -132,6 +132,16 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		l.Debug("extracting apply plan contents", zap.String("plan.op", helmPlan.Op))
 	}
 
+	// A pending release breaks the plan's dry-run as well as the apply, and helm's
+	// own errors there are ambiguous ("cannot reuse a name that is still in use"
+	// also means a genuine name collision). Failing here instead names the status
+	// and revision, which is what the operator needs to act on.
+	if job.Operation == models.AppRunnerJobOperationTypeCreateDashApplyDashPlan && helm.IsPending(prevRel) {
+		err := newPendingReleaseError(h.state.plan.HelmDeployPlan.Name, prevRel)
+		h.writeErrorResult(ctx, "create-apply-plan", err)
+		return err
+	}
+
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
 		var contentDiff *[]diff.ResourceDiff
@@ -197,12 +207,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		l = l.With(zap.String("helm.operation", helmPlan.Op))
 		l.Info(fmt.Sprintf("executing helm %s", helmPlan.Op))
 
-		// Fail fast on a release helm parked mid-operation. Attempting the apply
-		// anyway produces one of two SDK errors depending on which branch is
-		// taken, and one of them ("cannot reuse a name that is still in use")
-		// also means a genuine name collision — so the operator is left guessing.
-		// Recovery is deliberately not automatic; this only makes the diagnosis
-		// unambiguous and stops the step burning its retries.
 		if helmPlan.Op != "uninstall" && helm.IsPending(prevRel) {
 			err := newPendingReleaseError(h.state.plan.HelmDeployPlan.Name, prevRel)
 			h.writeErrorResult(ctx, helmPlan.Op, err)

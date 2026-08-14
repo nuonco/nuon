@@ -1,13 +1,12 @@
-import { useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Icon } from '@/components/common/Icon'
-import { Input } from '@/components/common/form/Input'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
 interface IRecoverHelmReleaseModal extends Omit<IModal, 'onSubmit'> {
   componentName: string
+  status?: string
   isPending: boolean
   error?: TAPIError | null
   onSubmit: () => void
@@ -16,15 +15,13 @@ interface IRecoverHelmReleaseModal extends Omit<IModal, 'onSubmit'> {
 
 export const RecoverHelmReleaseModal = ({
   componentName,
+  status,
   isPending,
   error,
   onSubmit,
   onClose,
   ...props
 }: IRecoverHelmReleaseModal) => {
-  const [confirm, setConfirm] = useState('')
-  const canSubmit = confirm === componentName && !isPending
-
   return (
     <Modal
       heading={
@@ -50,7 +47,7 @@ export const RecoverHelmReleaseModal = ({
             Recover release
           </span>
         ),
-        disabled: !canSubmit,
+        disabled: isPending,
         onClick: onSubmit,
         variant: 'danger' as const,
       }}
@@ -66,42 +63,17 @@ export const RecoverHelmReleaseModal = ({
 
         <div className="flex flex-col gap-4">
           <Text variant="body" theme="neutral">
-            Helm marks a release as pending before it starts changing the cluster and clears
-            that when the operation finishes. A release left pending is a rollout whose runner
-            went away, and Helm refuses every further operation on it until it is recovered.
+            Recovering should only be done when a previous operation left the release
+            {status ? ` in ${status}` : ' part-way through'}. Nothing is deployed — deploy{' '}
+            {componentName} afterwards.
           </Text>
 
           <Banner theme="warn">
             <Text variant="body">
-              If an earlier revision of {componentName} rolled out successfully, the release is
-              rolled back to it. If none ever did, the stuck release is{' '}
-              <strong>removed</strong> so the next deploy can start clean. Nothing is deployed
-              either way — deploy {componentName} afterwards to roll out the version you want.
+              <strong>Warning:</strong> the release is rolled back to the last revision that
+              rolled out. If none ever did, it is removed instead.
             </Text>
           </Banner>
-
-          <div className="flex flex-col gap-2">
-            <Text variant="body">
-              To verify, type{' '}
-              <span className="font-mono font-medium text-red-800 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1 py-0.5 rounded">
-                {componentName}
-              </span>{' '}
-              below.
-            </Text>
-            <Input
-              id="confirm-recover-component-name"
-              placeholder="component name"
-              type="text"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              error={confirm.length > 0 && confirm !== componentName}
-              errorMessage={
-                confirm.length > 0 && confirm !== componentName
-                  ? "Component name doesn't match"
-                  : undefined
-              }
-            />
-          </div>
         </div>
       </div>
     </Modal>

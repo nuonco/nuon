@@ -40,9 +40,9 @@ func recoverHandler(t *testing.T, revisions ...*release.Release) (*handler, *act
 		state: &handlerState{
 			plan: &plantypes.DeployPlan{
 				HelmDeployPlan: &plantypes.HelmDeployPlan{
-					Name:      testReleaseName,
-					Namespace: "default",
-					Recover:   &plantypes.HelmRecover{},
+					Name:           testReleaseName,
+					Namespace:      "default",
+					RecoverRelease: true,
 				},
 			},
 			timeout: time.Minute,
@@ -179,7 +179,10 @@ func TestIsRecovery(t *testing.T) {
 	h, _ := recoverHandler(t)
 	assert.True(t, h.isRecovery())
 
-	h.state.plan.HelmDeployPlan.Recover = nil
+	// The field must be a plain bool: as a struct it becomes a $ref, and a
+	// documented $ref field is generated as an inline struct VALUE that decodes
+	// non-nil on every deploy, skipping the chart for all of them.
+	h.state.plan.HelmDeployPlan.RecoverRelease = false
 	assert.False(t, h.isRecovery(), "a normal deploy must not skip the chart")
 
 	assert.False(t, (&handler{}).isRecovery(), "no state means no recovery")

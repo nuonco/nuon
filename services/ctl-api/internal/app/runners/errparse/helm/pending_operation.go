@@ -8,37 +8,24 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-// HelmPendingOperationType is the discriminator for a deploy blocked by a release
-// that helm left mid-operation. It is split out of the generic helm.error so the
-// dashboard can surface targeted remediation (recover the release) and so the
-// orchestrator parks the step instead of burning retries: helm writes a pending
-// status before it touches the cluster and only clears it when the operation
-// finishes, so a release left pending is a rollout whose driver went away and no
-// number of retries will move it.
+// HelmPendingOperationType is split out of the generic helm.error so the step
+// parks with targeted remediation instead of burning retries a pending release
+// can never clear.
 const HelmPendingOperationType compositeerrors.Type = "helm.pending_operation"
 
 const (
-	// stuckSignal is the runner's own deterministic message, emitted when it sees
-	// a pending release before attempting an apply. It is the preferred signal
-	// because it is unambiguous and names the status and revision.
+	// The runner's own message, which also names the status and revision.
 	stuckSignal = "is stuck in pending-"
-	// inProgressSignal is helm's SDK error for the same condition, kept as a
-	// fallback for jobs that predate the runner check.
+	// Helm's SDK wording, for jobs that predate the runner check.
 	inProgressSignal = "another operation (install/upgrade/rollback) is in progress"
 )
 
-// Deliberately NOT a signal: "cannot reuse a name that is still in use". Helm
-// emits it both for a pending release and for a genuine name collision with a
-// release Nuon does not own, and recovery is wrong advice for the latter. That
-// string stays on helm.name_in_use.
+// "cannot reuse a name that is still in use" is deliberately NOT a signal: helm
+// emits it for a genuine name collision too, where recovery is wrong advice.
 
-// pendingStatusPattern pulls the helm status out of the runner's message so the
-// headline can name it. Helm only ever has these three pending statuses.
 var pendingStatusPattern = regexp.MustCompile(`pending-(install|upgrade|rollback)`)
 
 // PendingOperationError is the payload for a deploy blocked by a stuck release.
-// Status is the helm status when it could be recovered from the output, empty
-// otherwise; Output carries the captured context.
 type PendingOperationError struct {
 	Status string `json:"status,omitempty"`
 	Output string `json:"output,omitempty"`
@@ -76,9 +63,7 @@ func (e *PendingOperationError) Sections() []compositeerrors.Section {
 	return sections
 }
 
-// parsePendingOperation recognises a deploy blocked by a pending helm release. It
-// registers at LayerToolSpecific, independently of the helm catch-all, so the two
-// classifiers stay decoupled and the more specific one wins the tie.
+// Registers at LayerToolSpecific so it wins the tie against the helm catch-all.
 func parsePendingOperation(ctx *errparse.ParseContext) compositeerrors.CompositeError {
 	lines := cleanedLines(ctx.Raw)
 	if !containsPendingOperation(lines) {
@@ -98,8 +83,6 @@ func init() {
 	))
 }
 
-// containsPendingOperation reports whether any cleaned line carries one of the
-// pending-release signals.
 func containsPendingOperation(lines []string) bool {
 	for _, l := range lines {
 		if strings.Contains(l, stuckSignal) || strings.Contains(l, inProgressSignal) {
@@ -109,8 +92,7 @@ func containsPendingOperation(lines []string) bool {
 	return false
 }
 
-// pendingStatus returns the helm status named in the output, or "" when only the
-// SDK's status-less "another operation ... in progress" wording is present.
+// Empty when only helm's status-less SDK wording is present.
 func pendingStatus(lines []string) string {
 	for _, l := range lines {
 		if m := pendingStatusPattern.FindString(l); m != "" {
@@ -120,10 +102,8 @@ func pendingStatus(lines []string) string {
 	return ""
 }
 
-// pendingOperationRemediation renders the "How to fix" body (markdown). Recovery
-// is presented as the whole fix because, unlike a state lock, there is nothing
-// for the operator to confirm first: the recovery itself refuses to act unless
-// the release really is pending.
+// No "confirm nothing is running" step, unlike a state lock: the recovery itself
+// refuses to act unless the release really is pending.
 func pendingOperationRemediation(status string) string {
 	var intro string
 	if status != "" {
@@ -142,6 +122,6 @@ func pendingOperationRemediation(status string) string {
 		"removes the release when it never rolled out at all:\n\n" +
 		"```\nnuon installs components recover-helm-release --component <component>\n```\n\n" +
 		"2. Deploy the component again.\n\n" +
-		"You can also recover from the dashboard: open the component and choose " +
-		"**Recover Helm release** under Component controls."
+		"You can also recover from the dashboard: open the component and use " +
+		"**Recover Helm release** on the stuck-release banner."
 }

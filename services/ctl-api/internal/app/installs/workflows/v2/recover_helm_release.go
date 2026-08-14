@@ -41,10 +41,8 @@ func RecoverHelmRelease(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 	sg := newStepGroup(flw)
 	steps := make([]*app.WorkflowStep, 0)
 
-	// One eager group holds both the state generation and the runner check, as
-	// the deploy and teardown generators do. Opening a second group here would
-	// leave the first one empty whenever state-gen-v2 skips the state step, and
-	// an empty group stops the conductor from ever fetching the later groups.
+	// One eager group for both: a second would be left empty when state-gen-v2
+	// skips the state step, and an empty group stops later groups being fetched.
 	sg.nextGroupEager()
 	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
 	if err != nil {

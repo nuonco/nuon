@@ -22,7 +22,12 @@ export const StuckHelmReleaseBanner = ({ component, status }: IStuckHelmReleaseB
             keep failing until the release is recovered.
           </Text>
         </div>
-        <RecoverHelmReleaseButton className="ml-auto" component={component} variant="primary" />
+        <RecoverHelmReleaseButton
+          className="ml-auto"
+          component={component}
+          status={status}
+          variant="primary"
+        />
       </div>
     </Banner>
   )

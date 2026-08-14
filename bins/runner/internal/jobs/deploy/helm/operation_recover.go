@@ -13,8 +13,6 @@ import (
 )
 
 const (
-	// recoverOp is the plan-contents op name for a recovery, alongside helm's
-	// own install/upgrade/uninstall values.
 	recoverOp = "recover"
 
 	recoverActionNone      = "none"
@@ -22,10 +20,8 @@ const (
 	recoverActionUninstall = "uninstall"
 )
 
-// newPendingReleaseError describes a release helm left mid-operation. The
-// wording is the contract the control plane's error parser keys on to classify
-// the failure as helm.pending_operation, so the "is stuck in pending-" phrasing
-// must not drift without updating the parser's signal alongside it.
+// The "is stuck in pending-" phrasing is the errparse signal for
+// helm.pending_operation; changing it must change the parser too.
 func newPendingReleaseError(releaseName string, rel *release.Release) error {
 	return fmt.Errorf(
 		"release %s is stuck in %s at revision %d from an operation that never finished; "+
@@ -34,20 +30,15 @@ func newPendingReleaseError(releaseName string, rel *release.Release) error {
 	)
 }
 
-// isRecovery reports whether this job is a recovery rather than a deploy. It
-// gates the chart fetch and unpack as well as the operation itself, so it has to
-// be readable before the plan's apply contents are decoded.
+// Readable before the apply contents are decoded, since it gates the chart fetch.
 func (h *handler) isRecovery() bool {
 	return h.state != nil &&
 		h.state.plan != nil &&
 		h.state.plan.HelmDeployPlan != nil &&
-		h.state.plan.HelmDeployPlan.Recover != nil
+		h.state.plan.HelmDeployPlan.RecoverRelease
 }
 
-// basePath is the unpacked chart's directory, or "" for a recovery, which never
-// fetches an archive. It exists so logging the path cannot depend on whether an
-// archive was fetched — reading it off the nil archive directly would panic on
-// every recovery.
+// Empty for a recovery, which fetches no archive; reading the nil archive panics.
 func (h *handler) basePath() string {
 	if h.state == nil || h.state.arch == nil {
 		return ""
@@ -55,12 +46,10 @@ func (h *handler) basePath() string {
 	return h.state.arch.BasePath()
 }
 
-// recoverResult is what the recovery did, so the job result and the log stream
-// can both say it plainly rather than leaving the operator to infer it.
+// recoverResult is what the recovery did, for the job result and the log stream.
 type recoverResult struct {
 	Action   string
 	Revision int
-	// Before and After are the release statuses either side of the operation.
 	// After is empty when the release no longer exists.
 	Before string
 	After  string
@@ -81,21 +70,15 @@ func (r *recoverResult) Summary(releaseName string) string {
 	}
 }
 
-// recoverRelease returns a release that helm parked mid-operation to a usable
-// state. It rolls back to the last revision that finished a rollout, or removes
-// the release when there is no such revision — a first install that never rolled
-// out has nothing behind it to return to.
-//
-// It refuses to touch a release that is not pending. That is the property that
-// makes this safe to expose as a break-glass button: it cannot revert a healthy
-// release, and running it twice is a no-op the second time.
+// recoverRelease rolls a stuck release back to the last revision that finished a
+// rollout, or removes it when none did. Refusing to touch a non-pending release
+// is what makes it safe to expose and idempotent.
 func (h *handler) recoverRelease(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration) (*recoverResult, error) {
 	releaseName := h.state.plan.HelmDeployPlan.Name
 
 	rel, err := helm.GetRelease(actionCfg, releaseName)
-	// The error is checked before the nil release: a store or API failure that
-	// was read as "not installed" would make a recovery silently report success
-	// while the release stayed stuck.
+	// Error before nil: a store failure read as "not installed" would report
+	// success while the release stayed stuck.
 	if err != nil {
 		return nil, fmt.Errorf("unable to read release %s: %w", releaseName, err)
 	}
@@ -152,10 +135,7 @@ func (h *handler) recoverRelease(ctx context.Context, l *zap.Logger, actionCfg *
 	return res, nil
 }
 
-// writeRecoverResult reports the recovery to the control plane. The resulting
-// release status rides along in the plan contents, which is the existing channel
-// for it, so the dashboard can drop its stuck-release banner without a new field
-// on the job result.
+// The release status rides in the plan contents, the existing channel for it.
 func (h *handler) writeRecoverResult(
 	ctx context.Context,
 	l *zap.Logger,
@@ -183,10 +163,7 @@ func (h *handler) writeRecoverResult(
 	return nil
 }
 
-// releaseStatusAfterRecovery re-reads the release so the control plane records
-// where recovery actually left it. A read failure here is not fatal: the
-// recovery already succeeded, and reporting an unknown status is better than
-// failing a job that did its work.
+// A read failure is not fatal: the recovery already succeeded.
 func (h *handler) releaseStatusAfterRecovery(l *zap.Logger, actionCfg *action.Configuration, releaseName string) string {
 	rel, err := helm.GetRelease(actionCfg, releaseName)
 	if err != nil {

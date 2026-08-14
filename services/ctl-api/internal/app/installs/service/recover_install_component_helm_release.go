@@ -91,20 +91,15 @@ func (s *service) RecoverInstallComponentHelmRelease(ctx *gin.Context) {
 		return
 	}
 
-	// The recovery reads the chart and values from the revision Helm stored, but
-	// the plan still needs a build to resolve the release name, namespace, storage
-	// driver and cluster access. No deploy means nothing was ever released.
+	// The plan needs a build to resolve the release name, namespace and driver.
 	deploy, err := s.getLatestDeployForRecovery(ctx, installComponent.ID)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	// Recovering while Helm is genuinely mid-operation can corrupt the release, so
-	// this is enforced rather than left to a warning. The check is deliberately on
-	// live runner jobs and not on workflow status: a deploy that died leaves its
-	// workflow parked in failed-pending-retry indefinitely, which is exactly the
-	// situation this action exists for.
+	// Gated on live runner jobs, not workflow status: a died deploy parks its
+	// workflow in failed-pending-retry forever, which is this action's whole case.
 	running, err := s.hasRunningDeployJob(ctx, installComponent.ID)
 	if err != nil {
 		ctx.Error(err)
@@ -200,9 +195,8 @@ func (s *service) hasRunningDeployJob(ctx context.Context, installComponentID st
 		Select("id").
 		Where(app.InstallDeploy{InstallComponentID: installComponentID})
 
-	// Columns are left unqualified and the deploys are matched with a subquery
-	// rather than a join: RunnerJob reads resolve to runner_jobs_view_v2, not the
-	// runner_jobs table, so anything that names the table breaks at runtime.
+	// Unqualified columns and a subquery, not a join: RunnerJob reads resolve to
+	// runner_jobs_view_v2, so naming the table breaks at runtime.
 	var count int64
 	res := s.db.WithContext(ctx).
 		Model(&app.RunnerJob{}).

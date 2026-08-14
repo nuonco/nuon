@@ -61,11 +61,8 @@ func (s *service) getInstallComponent(ctx context.Context, installID, componentI
 		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
 	}
 
-	// The latest deploy's composite error is derived from its newest runner job
-	// rather than stored on the row, the same way getInstallDeploy does it. The
-	// component page needs it to tell a stuck Helm release apart from an ordinary
-	// deploy failure, and a stale mirror would keep claiming a release is stuck
-	// after it had been recovered.
+	// Derived from the newest job, as getInstallDeploy does: a stored mirror would
+	// keep claiming a release is stuck after it was recovered.
 	if len(installCmp.InstallDeploys) > 0 {
 		latest := &installCmp.InstallDeploys[0]
 		compositeError, err := runnershelpers.GetLatestJobCompositeError(ctx, s.db, runnershelpers.GetLatestJobCompositeErrorRequest{

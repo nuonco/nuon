@@ -11,6 +11,7 @@ export const Default = () => (
   <ModalStory>
     <RecoverHelmReleaseModal
       componentName="api-server"
+      status="pending-upgrade"
       isPending={false}
       onSubmit={noop}
       onClose={noop}
@@ -22,6 +23,7 @@ export const Pending = () => (
   <ModalStory>
     <RecoverHelmReleaseModal
       componentName="api-server"
+      status="pending-upgrade"
       isPending
       onSubmit={noop}
       onClose={noop}
@@ -33,6 +35,7 @@ export const WithError = () => (
   <ModalStory>
     <RecoverHelmReleaseModal
       componentName="api-server"
+      status="pending-upgrade"
       isPending={false}
       error={
         {

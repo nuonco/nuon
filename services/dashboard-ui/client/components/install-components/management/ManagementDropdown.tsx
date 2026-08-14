@@ -7,7 +7,6 @@ import { Tooltip } from '@/components/common/Tooltip'
 import { DeployComponentButton } from '@/components/install-components/management/DeployComponent'
 import { DriftScanComponentButton } from '@/components/install-components/management/DriftScanComponent'
 import { ForgetComponentButton } from '@/components/install-components/management/Forget'
-import { RecoverHelmReleaseButton } from '@/components/install-components/management/RecoverHelmRelease'
 import { TeardownComponentButton } from '@/components/install-components/management/TeardownComponent'
 import { ToggleComponentButton } from '@/components/install-components/management/ToggleComponent'
 import { UnlockTerraformWorkspaceButton } from '@/components/terraform-workspace/UnlockTerraformWorkspace'
@@ -101,9 +100,6 @@ export const ManagementDropdown = ({
             description={component.name}
             isMenuButton
           />
-        ) : null}
-        {component?.type === 'helm_chart' ? (
-          <RecoverHelmReleaseButton component={component} isMenuButton />
         ) : null}
         <hr />
         <Text>Remove</Text>

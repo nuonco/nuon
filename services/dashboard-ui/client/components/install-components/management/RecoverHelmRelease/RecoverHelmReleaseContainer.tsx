@@ -17,14 +17,16 @@ import { RecoverHelmReleaseModal } from './RecoverHelmRelease'
 
 interface IRecoverHelmRelease {
   component: TComponent
+  status?: string
 }
 
 export const RecoverHelmReleaseButton = ({
   component,
+  status,
   ...props
 }: IRecoverHelmRelease & IButtonAsButton) => {
   const { addModal } = useSurfaces()
-  const modal = <RecoverHelmReleaseModalContainer component={component} />
+  const modal = <RecoverHelmReleaseModalContainer component={component} status={status} />
 
   return (
     <Button onClick={() => addModal(modal)} {...props}>
@@ -37,6 +39,7 @@ export const RecoverHelmReleaseButton = ({
 
 export const RecoverHelmReleaseModalContainer = ({
   component,
+  status,
   ...props
 }: IRecoverHelmRelease & Omit<IModal, 'onSubmit'>) => {
   const navigate = useNavigate()
@@ -102,6 +105,7 @@ export const RecoverHelmReleaseModalContainer = ({
   return (
     <RecoverHelmReleaseModal
       componentName={component.name}
+      status={status}
       isPending={isPending}
       error={error as any}
       onSubmit={() => execute()}

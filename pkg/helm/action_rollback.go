@@ -20,10 +20,7 @@ func ConfigureDefaultRollback(client *action.Rollback) *action.Rollback {
 	client.ForceReplace = false
 	client.MaxHistory = 0
 
-	// "auto" reuses whatever apply method the target revision was rolled out
-	// with. An empty value is rejected outright by the SDK, and hardcoding
-	// "false" would silently change the apply method of a release that was
-	// created server-side.
+	// Empty is rejected by the SDK; "auto" reuses the target revision's method.
 	client.ServerSideApply = "auto"
 
 	// wait
@@ -32,13 +29,8 @@ func ConfigureDefaultRollback(client *action.Rollback) *action.Rollback {
 	return client
 }
 
-// Rollback returns the release to an earlier revision. revision must name a
-// revision that still exists in the release history; the SDK does not accept a
-// relative offset and rejects 0 as "the previous one" only by convention, which
-// is too implicit to rely on for a recovery path.
-//
-// Unlike install and upgrade this needs no chart on disk: the SDK rebuilds the
-// target release from the chart and values stored in the revision itself.
+// Rollback returns the release to revision, which must still exist in history.
+// Needs no chart on disk: the SDK rebuilds it from the stored revision.
 func Rollback(actionCfg *action.Configuration, name string, revision int, timeout time.Duration) error {
 	client := DefaultRollback(actionCfg)
 	client.Version = revision

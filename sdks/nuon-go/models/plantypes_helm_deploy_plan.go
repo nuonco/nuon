@@ -47,16 +47,12 @@ type PlantypesHelmDeployPlan struct {
 	// namespace
 	Namespace string `json:"namespace,omitempty"`
 
-	// Recover, when set, makes this job unstick a release that helm left in a
-	// pending state instead of applying the chart. Nil is the normal deploy.
-	//
-	// A recovery reads the chart and values from the stored revision, so the
-	// runner skips fetching the OCI artifact entirely — requiring it would make
-	// recovery fail whenever the artifact is unreachable, which is exactly when
-	// an install is most likely to be wedged.
-	Recover struct {
-		PlantypesHelmRecover
-	} `json:"recover,omitempty"`
+	// RecoverRelease makes this job unstick a release helm left pending instead
+	// of applying the chart, so it fetches no chart artifact. Deliberately a
+	// bool: a struct here becomes a $ref, and go-swagger renders a documented
+	// $ref field as an inline struct VALUE, which decodes non-nil on every
+	// deploy and would skip the chart for all of them.
+	RecoverRelease bool `json:"recover_release,omitempty"`
 
 	// skip crds
 	SkipCrds bool `json:"skip_crds,omitempty"`
@@ -96,10 +92,6 @@ func (m *PlantypesHelmDeployPlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateGcpAuth(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateRecover(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -185,14 +177,6 @@ func (m *PlantypesHelmDeployPlan) validateGcpAuth(formats strfmt.Registry) error
 
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *PlantypesHelmDeployPlan) validateRecover(formats strfmt.Registry) error {
-	if swag.IsZero(m.Recover) { // not required
-		return nil
 	}
 
 	return nil
