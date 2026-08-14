@@ -51,5 +51,6 @@ func installGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
 		app.WorkflowTypeAppBranchConfigUpdate:      v2workflows.AppBranchConfigUpdate,
 		app.WorkflowTypeComponentEnabled:           v2workflows.ComponentEnabledSteps,
 		app.WorkflowTypeComponentDisabled:          v2workflows.ComponentDisabledSteps,
+		app.WorkflowTypeRecoverHelmRelease:         v2workflows.RecoverHelmRelease,
 	}
 }

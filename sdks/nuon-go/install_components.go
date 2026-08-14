@@ -125,6 +125,22 @@ func (c *client) TeardownInstallComponent(ctx context.Context, installID, compon
 	return resp.Payload, nil
 }
 
+func (c *client) RecoverInstallComponentHelmRelease(ctx context.Context, installID, componentID string, roleName string) (*models.AppWorkflowResponse, error) {
+	resp, err := c.genClient.Operations.RecoverInstallComponentHelmRelease(&operations.RecoverInstallComponentHelmReleaseParams{
+		InstallID:   installID,
+		ComponentID: componentID,
+		Context:     ctx,
+		Req: &models.ServiceRecoverInstallComponentHelmReleaseRequest{
+			Role: roleName,
+		},
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) ForgetInstallComponent(ctx context.Context, installID, componentID string) error {
 	_, err := c.genClient.Operations.ForgetInstallComponent(&operations.ForgetInstallComponentParams{
 		InstallID:   installID,
