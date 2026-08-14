@@ -8,7 +8,8 @@ import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { createCurrentOrgWebhook } from '@/lib'
 import type { TAPIError } from '@/types'
-import { CreateWebhookModal, type CreateWebhookInput } from './CreateWebhook'
+import { WebhookFormModal } from '@/components/webhooks/WebhookForm'
+import type { WebhookFormOutput } from '@/components/webhooks/WebhookForm/schema'
 
 const CreateWebhookModalContainer = (props: Record<string, any>) => {
   const { org } = useOrg()
@@ -17,7 +18,7 @@ const CreateWebhookModalContainer = (props: Record<string, any>) => {
   const { addToast } = useToast()
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: (input: CreateWebhookInput) =>
+    mutationFn: (input: WebhookFormOutput) =>
       createCurrentOrgWebhook({
         body: {
           webhook_url: input.webhookUrl,
@@ -38,19 +39,6 @@ const CreateWebhookModalContainer = (props: Record<string, any>) => {
       )
       removeModal(props.modalId)
     },
-    onError: (err: TAPIError) => {
-      const heading =
-        err?.status === 409
-          ? 'Webhook already exists with this scope'
-          : 'Unable to create webhook'
-      addToast(
-        <Toast heading={heading} theme="error">
-          <Text>
-            {err?.description || err?.error || 'Try again.'}
-          </Text>
-        </Toast>
-      )
-    },
   })
 
   const errorWithFriendlyConflict: TAPIError | null = error
@@ -64,7 +52,8 @@ const CreateWebhookModalContainer = (props: Record<string, any>) => {
     : null
 
   return (
-    <CreateWebhookModal
+    <WebhookFormModal
+      mode="create"
       isPending={isPending}
       error={errorWithFriendlyConflict}
       onSubmit={(input) => mutate(input)}

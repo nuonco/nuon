@@ -26,6 +26,7 @@ export const DeprovisionSandboxModal = ({
 }: IDeprovisionSandboxModal) => {
   const [confirm, setConfirm] = useState<string>('')
   const [selectedRole, setSelectedRole] = useState<string>('')
+  const isConfirmValid = confirm === installName
 
   return (
     <Modal
@@ -43,7 +44,7 @@ export const DeprovisionSandboxModal = ({
             Deprovision sandbox
           </span>
         ),
-        disabled: confirm !== 'deprovision' || isPending,
+        disabled: !isConfirmValid || isPending,
         onClick: () => onSubmit({ selectedRole }),
         variant: 'danger' as const,
       }}
@@ -81,19 +82,25 @@ export const DeprovisionSandboxModal = ({
           <label className="flex flex-col gap-1 w-full">
             <Text variant="base" weight="strong">
               To verify, type{' '}
-              <span className="text-red-800 dark:text-red-500">
-                deprovision
+              <span className="font-mono font-medium text-red-800 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1 py-0.5 rounded">
+                {installName}
               </span>{' '}
               below.
             </Text>
             <Input
-              placeholder="deprovision"
+              placeholder="install name"
               className="w-full"
               type="text"
               value={confirm}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 setConfirm(e?.currentTarget?.value)
               }}
+              error={confirm.length > 0 && !isConfirmValid}
+              errorMessage={
+                confirm.length > 0 && !isConfirmValid
+                  ? "Install name doesn't match"
+                  : undefined
+              }
             />
           </label>
         </div>
