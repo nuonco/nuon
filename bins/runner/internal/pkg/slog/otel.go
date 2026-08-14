@@ -6,83 +6,23 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
-	otellog "go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/sdk/log"
 
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
-	runnerlog "github.com/nuonco/nuon/pkg/runner/log"
 	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
 const (
 	defaultOTLPLogsEndpointTmpl string = "%s/v1/log-streams/%s/logs"
-
-	auditCollectorEndpoint string = "http://127.0.0.1:4318/v1/logs"
 )
 
-type auditProcessor struct {
-	next      log.Processor
-	available func() bool
-}
-
-type availabilityExporter struct {
-	log.Exporter
-	available func() bool
-}
-
-func (e *availabilityExporter) Export(ctx context.Context, records []log.Record) error {
-	if !e.available() {
-		return nil
-	}
-	return e.Exporter.Export(ctx, records)
-}
-
-func (p *auditProcessor) Enabled(ctx context.Context, params log.EnabledParameters) bool {
-	return p.available() && p.next.Enabled(ctx, params)
-}
-
-func (p *auditProcessor) OnEmit(ctx context.Context, record *log.Record) error {
-	if !p.available() {
-		return nil
-	}
-
-	isAudit := false
-	record.WalkAttributes(func(attr otellog.KeyValue) bool {
-		isAudit = attr.Key == runnerlog.AuditAttr &&
-			attr.Value.Kind() == otellog.KindString &&
-			attr.Value.AsString() == runnerlog.AuditAttrValue
-		return !isAudit
-	})
-	if !isAudit {
-		return nil
-	}
-
-	return p.next.OnEmit(ctx, record)
-}
-
-func (p *auditProcessor) Shutdown(ctx context.Context) error {
-	return p.next.Shutdown(ctx)
-}
-
-func (p *auditProcessor) ForceFlush(ctx context.Context) error {
-	return p.next.ForceFlush(ctx)
-}
-
-func NewOTELProvider(cfg *runnerconfig.Config, set *settings.Settings, logStreamID string, auditExportAvailable func() bool) (*log.LoggerProvider, error) {
+func NewOTELProvider(cfg *runnerconfig.Config, set *settings.Settings, logStreamID string) (*log.LoggerProvider, error) {
 	opts := []log.LoggerProviderOption{
 		log.WithResource(getResource(set, logStreamID)),
 	}
 
 	if set.EnableLogging {
 		processor, err := newAPIProcessor(cfg, logStreamID)
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, log.WithProcessor(processor))
-	}
-
-	if auditExportAvailable != nil {
-		processor, err := newAuditCollectorProcessor(auditExportAvailable)
 		if err != nil {
 			return nil, err
 		}
@@ -105,19 +45,6 @@ func newAPIProcessor(cfg *runnerconfig.Config, logStreamID string) (log.Processo
 	}
 
 	return newBatchProcessor(exporter), nil
-}
-
-func newAuditCollectorProcessor(available func() bool) (log.Processor, error) {
-	exporter, err := otlploghttp.New(context.Background(),
-		otlploghttp.WithEndpointURL(auditCollectorEndpoint),
-		otlploghttp.WithRetry(otlploghttp.RetryConfig{Enabled: false}),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("unable to initialize audit collector log exporter: %w", err)
-	}
-
-	availableExporter := &availabilityExporter{Exporter: exporter, available: available}
-	return &auditProcessor{next: newBatchProcessor(availableExporter), available: available}, nil
 }
 
 func newBatchProcessor(exporter log.Exporter) log.Processor {
