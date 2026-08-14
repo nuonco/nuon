@@ -3,6 +3,16 @@
 This is a comprehensive monorepo for Nuon, a BYOC (Bring Your Own Cloud) platform that helps software vendors deploy
 applications to their customers' cloud accounts.
 
+## HARD RULE: Never Name Customers
+
+Never write a customer's name anywhere — code, comments, tests, fixtures, Storybook stories, docs, migrations, commit
+messages, PR titles/descriptions, or review comments. This includes company names, product names, org/app/install
+names, email domains, and cluster or namespace names derived from them.
+
+Use a neutral placeholder instead (`acme-*`, `payments`, `example.com`) or describe the situation generically ("an org
+created before the flag was widened"). Reference customers by opaque IDs (org ID, install ID) when a specific case has
+to be identified; never in a way that discloses who they are.
+
 ## Repository Structure
 
 This monorepo is written primarily in **Go** (main module: `github.com/nuonco/nuon`) with several TypeScript/JavaScript
@@ -275,6 +285,12 @@ does (no "// loop through items", "// close modal", "// fetch data" style commen
 document the code.
 
 This applies to ALL code in this monorepo — Go, TypeScript, Terraform, everything.
+
+This rule is enforced for Claude Code sessions by a checked-in `PostToolUse` hook in `.claude/settings.json`. After
+each edit it inspects the newly-added comments and blocks ones that merely narrate the adjacent code, while allowing
+comments that explain a non-obvious "why", gotchas, doc comments, TODOs, and build/lint directives. Claude Code will
+prompt you to trust the project hooks the first time you open the repo — this is expected. The hook only affects Claude
+Code; it does not police hand-written comments or other tools.
 
 ### GORM Query Conventions
 

@@ -243,7 +243,7 @@ func TestGetCustomLinkedDeployments_OutputWiring(t *testing.T) {
 		assert.Empty(t, hoisted)
 	})
 
-	t.Run("lovable-enterprise-azure stack set generates", func(t *testing.T) {
+	t.Run("enterprise-azure stack set generates", func(t *testing.T) {
 		tmpl := &Templates{cfg: &internal.Config{}}
 		inp := armWiringInput(t,
 			wiringStack{name: "storage", outputs: []string{"storageAccountName"}},
@@ -256,7 +256,7 @@ func TestGetCustomLinkedDeployments_OutputWiring(t *testing.T) {
 				name:       "dns_zones",
 				params:     map[string]any{"vnetName": stringParam(), "rootDomain": stringParam()},
 				outputs:    []string{"publicZoneId", "internalZoneId"},
-				parameters: map[string]string{"rootDomain": "example.installs.lovable.dev"},
+				parameters: map[string]string{"rootDomain": "example.installs.acme.dev"},
 			},
 			wiringStack{name: "apps_postgres", params: map[string]any{
 				"dbSubnetId": stringParam(), "privateDnsZoneId": stringParam(),

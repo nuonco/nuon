@@ -5,6 +5,7 @@ export type TUpdateInstallInputsBody = {
   inputs?: Record<string, string>
   role?: string
   deploy_dependents?: boolean
+  inputs_only?: boolean
 }
 
 export const updateInstallInputs = ({

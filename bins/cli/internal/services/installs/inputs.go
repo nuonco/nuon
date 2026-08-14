@@ -94,7 +94,7 @@ func (s *Service) GetInputs(ctx context.Context, installID string, asJSON bool) 
 // SetInputs patches install inputs from a list of key=value pairs. It fetches
 // the current inputs first so it can show which values changed, and validates
 // that each key refers to a declared input.
-func (s *Service) SetInputs(ctx context.Context, installID string, args []string, deployDependents bool, asJSON bool) error {
+func (s *Service) SetInputs(ctx context.Context, installID string, args []string, deployDependents bool, inputsOnly bool, asJSON bool) error {
 	updates, err := parseInputArgs(args)
 	if err != nil {
 		return ui.PrintError(err)
@@ -147,6 +147,7 @@ func (s *Service) SetInputs(ctx context.Context, installID string, args []string
 	request := &models.ServiceUpdateInstallInputsRequest{
 		Inputs:           updates,
 		DeployDependents: &deployDependents,
+		InputsOnly:       inputsOnly,
 	}
 	if config.Debug() {
 		ui.PrintJSON(request)

@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "A code edit just ran. This repo forbids comments that merely describe what the code does. Here is the tool call as JSON: $ARGUMENTS\n\nInspect ONLY the comments being ADDED in tool_input (the `new_string`, `edits[].new_string`, or `content` fields). Judge each newly-added comment:\n\nVIOLATION — a comment that narrates the adjacent code, e.g. `// loop through items`, `// return the result`, `// close the modal`, `// fetch data`, `// set the value`, `# increment counter`. These restate what the code plainly already says.\n\nALLOWED — a comment that conveys non-obvious information: WHY something is done, a workaround, a subtle invariant or gotcha, a TODO/FIXME, a license header, a struct/field/function doc comment that adds real meaning, or a build/lint directive (e.g. `//go:generate`, `// nolint`, `# noqa`, `eslint-disable`).\n\nIf one or more VIOLATION comments are being added, fail: list each offending comment line verbatim and instruct that it be removed because it only describes what the code does. If no comments are added, or every added comment is legitimately non-obvious, pass.",
+            "continueOnBlock": true,
+            "statusMessage": "Checking for narration comments"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -7,7 +7,7 @@ import (
 
 func TestBuildPRCommentBodyIncludesInstallImpact(t *testing.T) {
 	body := BuildPRCommentBody(&PRCommentParams{
-		AppName: "aqd",
+		AppName: "acme",
 		RunID:   "abrq7fplr1up5atx5zpxotbabm",
 		Status:  PRCommentStatusSuccess,
 		InstallImpact: []InstallGroupImpact{
@@ -41,7 +41,7 @@ func TestBuildPRCommentBodyIncludesInstallImpact(t *testing.T) {
 
 func TestBuildPRCommentBodyOmitsEmptyInstallImpact(t *testing.T) {
 	body := BuildPRCommentBody(&PRCommentParams{
-		AppName: "aqd",
+		AppName: "acme",
 		RunID:   "abrq7fplr1up5atx5zpxotbabm",
 		Status:  PRCommentStatusSuccess,
 	})
@@ -55,7 +55,7 @@ func TestBuildPRCommentBodyOmitsEmptyInstallImpact(t *testing.T) {
 // impact section would be misleading there.
 func TestBuildPRCommentBodySkippedHasNoInstallImpact(t *testing.T) {
 	body := BuildPRCommentBody(&PRCommentParams{
-		AppName: "aqd",
+		AppName: "acme",
 		RunID:   "abrq7fplr1up5atx5zpxotbabm",
 		Status:  PRCommentStatusSkipped,
 		InstallImpact: []InstallGroupImpact{

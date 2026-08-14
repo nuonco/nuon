@@ -25,6 +25,9 @@ type UpdateInstallInputsRequest struct {
 	Inputs           map[string]*string `json:"inputs" validate:"required,gte=1"`
 	Role             string             `json:"role"`
 	DeployDependents *bool              `json:"deploy_dependents,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
+	// InputsOnly saves the new input values without deploying components,
+	// reprovisioning the sandbox, or running update-input lifecycle actions.
+	InputsOnly bool `json:"inputs_only,omitempty"`
 }
 
 func (c *UpdateInstallInputsRequest) Validate(v *validator.Validate) error {
@@ -83,7 +86,7 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	// historical always-deploy behavior; an explicit false is now respected.
 	deployDependents := req.DeployDependents == nil || *req.DeployDependents
 
-	inputs, err := s.applyInstallInputsUpdate(ctx, install, req.Inputs, req.Role, deployDependents, false, app.WorkflowTypeInputUpdate)
+	inputs, err := s.applyInstallInputsUpdate(ctx, install, req.Inputs, req.Role, deployDependents, req.InputsOnly, false, app.WorkflowTypeInputUpdate)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -97,7 +100,7 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 // input-update workflow that reconciles the change. It is shared by the
 // inputs PATCH endpoint and any flow that drives install inputs (e.g. the
 // component enable/disable toggle, which writes the synthetic enabled input).
-func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Install, patch map[string]*string, role string, deployDependents bool, planOnly bool, workflowType app.WorkflowType) (*app.InstallInputs, error) {
+func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Install, patch map[string]*string, role string, deployDependents bool, inputsOnly bool, planOnly bool, workflowType app.WorkflowType) (*app.InstallInputs, error) {
 	pinnedAppInputConfig, err := s.helpers.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get latest app input config: %w", err)
@@ -163,6 +166,7 @@ func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Ins
 		changedInputValues,
 		role,
 		deployDependents,
+		inputsOnly,
 		planOnly,
 		workflowType,
 	)
