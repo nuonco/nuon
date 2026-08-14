@@ -1,17 +1,10 @@
 import { z } from 'zod'
 
+export type OIDCTrustPolicyMode = 'create' | 'edit'
+
 export type ClaimCondition = { key: string; value: string }
 
 export type OIDCPreset = 'github_actions' | 'custom'
-
-export type OIDCTrustPolicyFormInput = {
-  name: string
-  issuerUrl: string
-  audience: string
-  role: string
-  tokenDurationSeconds: string
-  claimConditions: ClaimCondition[]
-}
 
 export const GITHUB_ACTIONS_ISSUER =
   'https://token.actions.githubusercontent.com'
@@ -45,10 +38,17 @@ export interface OIDCFormValues {
   audience: string
   role: string
   tokenDurationSeconds: string
+  enabled: boolean
   claimConditions: ClaimCondition[]
 }
 
-export const buildCreateOIDCSchema = (reservedNames: string[] = []) =>
+export const buildOIDCSchema = ({
+  mode,
+  reservedNames = [],
+}: {
+  mode: OIDCTrustPolicyMode
+  reservedNames?: string[]
+}) =>
   z
     .object({
       name: z.string().trim().min(1, 'Name is required'),
@@ -59,13 +59,16 @@ export const buildCreateOIDCSchema = (reservedNames: string[] = []) =>
       audience: z.string().trim().min(1, 'Audience is required'),
       role: z.string(),
       tokenDurationSeconds: z.string(),
+      enabled: z.boolean(),
       claimConditions: z.array(
         z.object({ key: z.string(), value: z.string() })
       ),
     })
     .superRefine((v, ctx) => {
+      if (mode !== 'create') return
       const taken = reservedNames.some(
-        (reserved) => reserved.trim().toLowerCase() === v.name.trim().toLowerCase()
+        (reserved) =>
+          reserved.trim().toLowerCase() === v.name.trim().toLowerCase()
       )
       if (taken) {
         ctx.addIssue({

@@ -11,12 +11,13 @@ import { Label } from '@/components/common/form/Label'
 import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
 import { FormInput } from '@/components/common/form/FormInput'
 import { FormSelect } from '@/components/common/form/FormSelect'
+import { FormToggle } from '@/components/common/form/FormToggle'
 import { Select } from '@/components/common/form/Select'
 import { fieldErrorMessage } from '@/components/common/form/field-error'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-import type { TAPIError, TVCSConnectionRepo } from '@/types'
+import type { TAPIError, TOIDCTrustPolicy, TVCSConnectionRepo } from '@/types'
 import {
-  buildCreateOIDCSchema,
+  buildOIDCSchema,
   defaultRepoPolicyName,
   GITHUB_ACTIONS_ISSUER,
   githubSubClaim,
@@ -24,12 +25,7 @@ import {
   type ClaimCondition,
   type OIDCFormValues,
   type OIDCPreset,
-} from './schema'
-
-export {
-  hasSubCondition,
-  type ClaimCondition,
-  type OIDCTrustPolicyFormInput,
+  type OIDCTrustPolicyMode,
 } from './schema'
 
 const PRESET_OPTIONS = [
@@ -37,35 +33,97 @@ const PRESET_OPTIONS = [
   { value: 'custom', label: 'Custom' },
 ]
 
-export const CreateOIDCTrustPolicyModal = ({
+const conditionsToRows = (
+  claimConditions: TOIDCTrustPolicy['claim_conditions']
+): ClaimCondition[] => {
+  const entries = Object.entries(claimConditions ?? {})
+  return entries.length
+    ? entries.map(([key, value]) => ({ key, value }))
+    : [{ key: 'sub', value: '' }]
+}
+
+const buildDefaultValues = ({
+  mode,
+  policy,
+  initialRepoFullName,
+  initialRepoDefaultBranch,
+  githubAudience,
+  reservedNames,
+}: {
+  mode: OIDCTrustPolicyMode
+  policy?: TOIDCTrustPolicy
+  initialRepoFullName?: string
+  initialRepoDefaultBranch?: string
+  githubAudience: string
+  reservedNames?: string[]
+}): OIDCFormValues => {
+  if (mode === 'edit' && policy) {
+    return {
+      name: policy.name ?? '',
+      issuerUrl: policy.issuer_url ?? '',
+      audience: policy.audience ?? '',
+      role: policy.role ?? 'org_read_only',
+      tokenDurationSeconds: policy.token_duration_seconds
+        ? String(policy.token_duration_seconds)
+        : '',
+      enabled: policy.enabled ?? true,
+      claimConditions: conditionsToRows(policy.claim_conditions),
+    }
+  }
+  return {
+    name: initialRepoFullName
+      ? defaultRepoPolicyName(initialRepoFullName, reservedNames)
+      : '',
+    issuerUrl: GITHUB_ACTIONS_ISSUER,
+    audience: githubAudience,
+    role: 'org_read_only',
+    tokenDurationSeconds: '900',
+    enabled: true,
+    claimConditions: [
+      {
+        key: 'sub',
+        value:
+          initialRepoFullName && initialRepoDefaultBranch
+            ? githubSubClaim(initialRepoFullName, initialRepoDefaultBranch)
+            : '',
+      },
+    ],
+  }
+}
+
+export const OIDCTrustPolicyFormModal = ({
+  mode,
+  policy,
   isPending,
   error,
   onSubmit,
-  repos,
+  roleOptions,
+  repos = [],
   isLoadingRepos,
   hasVCSConnections,
-  vcsConnectionsHref,
-  githubAudience,
+  vcsConnectionsHref = '',
+  githubAudience = '',
   initialRepoFullName,
   initialRepoDefaultBranch,
   lockPreset,
   reservedNames,
-  roleOptions,
   ...props
 }: {
+  mode: OIDCTrustPolicyMode
+  policy?: TOIDCTrustPolicy
   isPending: boolean
   error: TAPIError | null
   onSubmit: (input: OIDCFormValues) => void
-  repos: TVCSConnectionRepo[]
+  roleOptions: { value: string; label: string; description?: string }[]
+  repos?: TVCSConnectionRepo[]
   isLoadingRepos?: boolean
   hasVCSConnections?: boolean
-  vcsConnectionsHref: string
-  githubAudience: string
+  vcsConnectionsHref?: string
+  githubAudience?: string
   initialRepoFullName?: string
   initialRepoDefaultBranch?: string
   lockPreset?: boolean
   reservedNames?: string[]
-  roleOptions: { value: string; label: string; description?: string }[]
 } & Omit<IModal, 'onSubmit'>) => {
   const [preset, setPreset] = useState<OIDCPreset>('github_actions')
   const [repoFullName, setRepoFullName] = useState(initialRepoFullName ?? '')
@@ -73,30 +131,20 @@ export const CreateOIDCTrustPolicyModal = ({
   const [isSubDirty, setIsSubDirty] = useState(false)
 
   const schema = useMemo(
-    () => buildCreateOIDCSchema(reservedNames),
-    [reservedNames]
+    () => buildOIDCSchema({ mode, reservedNames }),
+    [mode, reservedNames]
   )
   const validator = schema as unknown as FormValidateOrFn<OIDCFormValues>
 
   const form = useForm({
-    defaultValues: {
-      name: initialRepoFullName
-        ? defaultRepoPolicyName(initialRepoFullName, reservedNames)
-        : '',
-      issuerUrl: GITHUB_ACTIONS_ISSUER,
-      audience: githubAudience,
-      role: 'org_read_only',
-      tokenDurationSeconds: '900',
-      claimConditions: [
-        {
-          key: 'sub',
-          value:
-            initialRepoFullName && initialRepoDefaultBranch
-              ? githubSubClaim(initialRepoFullName, initialRepoDefaultBranch)
-              : '',
-        },
-      ],
-    } as OIDCFormValues,
+    defaultValues: buildDefaultValues({
+      mode,
+      policy,
+      initialRepoFullName,
+      initialRepoDefaultBranch,
+      githubAudience,
+      reservedNames,
+    }),
     validators: { onMount: validator, onChange: validator },
     onSubmit: ({ value }) =>
       onSubmit({
@@ -105,6 +153,7 @@ export const CreateOIDCTrustPolicyModal = ({
         audience: value.audience.trim(),
         role: value.role,
         tokenDurationSeconds: value.tokenDurationSeconds,
+        enabled: value.enabled,
         claimConditions: value.claimConditions,
       }),
   })
@@ -113,12 +162,13 @@ export const CreateOIDCTrustPolicyModal = ({
   const claimConditions = useStore(form.store, (s) => s.values.claimConditions)
   const hasSub = hasSubCondition(claimConditions)
 
+  const isCreate = mode === 'create'
   const isGithub = preset === 'github_actions'
 
   const setSubCondition = (value: string) => {
     const prev = form.getFieldValue('claimConditions') as ClaimCondition[]
-    const hasSub = prev.some((condition) => condition.key.trim() === 'sub')
-    const next = hasSub
+    const existing = prev.some((condition) => condition.key.trim() === 'sub')
+    const next = existing
       ? prev.map((condition) =>
           condition.key.trim() === 'sub' ? { ...condition, value } : condition
         )
@@ -165,19 +215,22 @@ export const CreateOIDCTrustPolicyModal = ({
       heading={
         <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="ShieldCheckIcon" size="24" />
-          Create OIDC trust policy
+          {isCreate ? 'Create OIDC trust policy' : 'Edit trust policy'}
         </Text>
       }
       primaryActionTrigger={{
         children: isPending ? (
           <span className="flex items-center gap-2">
-            <Icon variant="Loading" /> Creating trust policy
+            <Icon variant="Loading" />
+            {isCreate ? 'Creating trust policy' : 'Saving changes'}
           </span>
-        ) : (
+        ) : isCreate ? (
           <span className="flex items-center gap-2">
             <Icon variant="PlusIcon" />
             Create trust policy
           </span>
+        ) : (
+          'Save changes'
         ),
         disabled: !canSubmit || !hasSub || isPending,
         onClick: () => form.handleSubmit(),
@@ -191,9 +244,28 @@ export const CreateOIDCTrustPolicyModal = ({
         onSubmit={(e) => e.preventDefault()}
         className="flex flex-col gap-6"
       >
-        <FormErrorBanner error={error} fallback="Unable to create trust policy" />
+        <FormErrorBanner
+          error={error}
+          fallback={
+            isCreate
+              ? 'Unable to create trust policy'
+              : 'Unable to update trust policy'
+          }
+        />
 
-        {lockPreset ? null : (
+        {!isCreate && (
+          <form.Field name="enabled">
+            {(field) => (
+              <FormToggle
+                field={field}
+                label="Enabled"
+                description="Disabled policies reject token exchange requests."
+              />
+            )}
+          </form.Field>
+        )}
+
+        {isCreate && !lockPreset && (
           <Select
             labelProps={{ labelText: 'Provider' }}
             options={PRESET_OPTIONS}
@@ -202,7 +274,7 @@ export const CreateOIDCTrustPolicyModal = ({
           />
         )}
 
-        {isGithub ? (
+        {isCreate && isGithub ? (
           hasVCSConnections === false && !isLoadingRepos ? (
             <Banner theme="warn">
               Connect a GitHub organization to fill this in from one of your
@@ -230,29 +302,42 @@ export const CreateOIDCTrustPolicyModal = ({
           )
         ) : null}
 
-        <form.Field name="name">
-          {(field) => {
-            const message = fieldErrorMessage(field)
-            return (
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="policy-name">Name</Label>
-                <Input
-                  id="policy-name"
-                  placeholder="ci-deploy"
-                  value={field.state.value}
-                  onChange={(e) => {
-                    setIsNameDirty(true)
-                    field.handleChange(e.target.value)
-                  }}
-                  onBlur={field.handleBlur}
-                  disabled={isPending}
-                  error={!!message}
-                  errorMessage={message}
-                />
-              </div>
-            )
-          }}
-        </form.Field>
+        {isCreate ? (
+          <form.Field name="name">
+            {(field) => {
+              const message = fieldErrorMessage(field)
+              return (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="policy-name">Name</Label>
+                  <Input
+                    id="policy-name"
+                    placeholder="ci-deploy"
+                    value={field.state.value}
+                    onChange={(e) => {
+                      setIsNameDirty(true)
+                      field.handleChange(e.target.value)
+                    }}
+                    onBlur={field.handleBlur}
+                    disabled={isPending}
+                    error={!!message}
+                    errorMessage={message}
+                  />
+                </div>
+              )
+            }}
+          </form.Field>
+        ) : (
+          <form.Field name="name">
+            {(field) => (
+              <FormInput
+                field={field}
+                id="policy-name"
+                disabled={isPending}
+                labelProps={{ labelText: 'Name' }}
+              />
+            )}
+          </form.Field>
+        )}
 
         <form.Field name="issuerUrl">
           {(field) => (
@@ -335,10 +420,11 @@ export const CreateOIDCTrustPolicyModal = ({
                       <form.Field name={`claimConditions[${index}].value`}>
                         {(f) => (
                           <Input
-                            placeholder="acme/app:main"
+                            placeholder="repo:acme/app:ref:refs/heads/main"
                             value={f.state.value}
                             onChange={(e) => {
-                              if (row.key.trim() === 'sub') setIsSubDirty(true)
+                              if (isCreate && row.key.trim() === 'sub')
+                                setIsSubDirty(true)
                               f.handleChange(e.target.value)
                             }}
                             onBlur={f.handleBlur}
