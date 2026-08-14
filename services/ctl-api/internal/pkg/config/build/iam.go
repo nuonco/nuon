@@ -7,10 +7,12 @@ package build
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/azureroles"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
@@ -68,6 +70,27 @@ func ValidatePolicyMutualExclusivity(roleName string, policies []config.AppAWSIA
 		}
 		if len(p.AzureActions) > 0 && len(p.AzureBuiltInRoles) > 0 {
 			return fmt.Errorf("role %q policy %q: azure_actions and azure_built_in_roles are mutually exclusive; use azure_actions for a fine-grained custom role or azure_built_in_roles for Azure-managed roles, not both", roleName, p.Name)
+		}
+	}
+	return nil
+}
+
+// ValidateAzureBuiltInRoles rejects a built-in role that cannot be resolved to a
+// definition GUID. ARM assignments reference a definition by GUID with no name
+// lookup, and the renderer forwards an unresolvable value verbatim -- so a typo,
+// or a real role absent from the name map, passes sync and generation and instead
+// fails the customer's stack deployment with InvalidRoleDefinitionId. Catch it
+// here, where the error can name the offending value.
+func ValidateAzureBuiltInRoles(roleName string, policies []config.AppAWSIAMPolicy) error {
+	for _, p := range policies {
+		for _, r := range p.AzureBuiltInRoles {
+			if azureroles.Resolvable(r) {
+				continue
+			}
+			return fmt.Errorf(
+				"role %q policy %q: azure_built_in_roles entry %q is neither a role definition GUID nor a known role name; pass the GUID or one of: %s",
+				roleName, p.Name, r, strings.Join(azureroles.KnownNames(), ", "),
+			)
 		}
 	}
 	return nil
