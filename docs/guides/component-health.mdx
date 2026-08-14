@@ -301,9 +301,12 @@ single per-resource flag:
   this as well: when a component's failure is what moved the install, the component alert reports
   both in one message.
 
-A failure and its recovery, as they arrive in Slack. The failing resource and the reason travel with
-the alert, so the first thing you read is already the diagnosis — and because the component's crossing
-is what moved the install, both are reported in one message rather than two.
+Two events below: the component degrading, then recovering a couple of minutes later. The failing
+resource and the reason travel with the alert, so the first thing you read is already the diagnosis.
+
+Notice that each message covers the component **and** the install. When a component's crossing is what
+moved the install rollup, the headline says `install degraded` and an **Install health** field carries
+`healthy → degraded` — rather than a second, separate install message arriving alongside it.
 
 <Frame caption="A component degrading and recovering, delivered to Slack.">
   <img src="/images/guides/component-health/slack-alert.png" alt="Two Slack messages from Nuon Cloud. The first is titled Component degraded, install degraded, ctl_api, and shows the component, its previous healthy verdict, the failing Deployment and a readiness probe connection-refused error. The second is titled Component recovered, install recovered, and shows all 52 resources healthy." />
