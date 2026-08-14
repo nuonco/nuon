@@ -2,7 +2,11 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"go.temporal.io/sdk/temporal"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -22,6 +26,9 @@ type CheckWorkflowRetryableResponse struct {
 func (a *Activities) CheckWorkflowRetryable(ctx context.Context, req CheckWorkflowRetryableRequest) (*CheckWorkflowRetryableResponse, error) {
 	var workflow app.Workflow
 	if res := a.db.WithContext(ctx).First(&workflow, "id = ?", req.WorkflowID); res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, temporal.NewNonRetryableApplicationError("workflow not found", "not found", res.Error)
+		}
 		return nil, fmt.Errorf("unable to get workflow: %w", res.Error)
 	}
 
