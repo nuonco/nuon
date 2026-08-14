@@ -3,7 +3,6 @@ import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
-import { Tooltip } from '@/components/common/Tooltip'
 import { DeployComponentButton } from '@/components/install-components/management/DeployComponent'
 import { DriftScanComponentButton } from '@/components/install-components/management/DriftScanComponent'
 import { ForgetComponentButton } from '@/components/install-components/management/Forget'
@@ -21,12 +20,15 @@ const DisabledMenuItem = ({
   icon: 'CloudArrowDownIcon' | 'CloudArrowUpIcon' | 'TrashIcon'
   reason: string
 }) => (
-  <Tooltip className="block !w-full" position="left" tipContent={reason}>
-    <Button isMenuButton disabled className="pointer-events-none w-full">
-      {label}
-      <Icon variant={icon} />
-    </Button>
-  </Tooltip>
+  <Button
+    isMenuButton
+    disabled
+    className="w-full"
+    tooltipProps={{ className: 'block !w-full', position: 'left', tipContent: reason }}
+  >
+    {label}
+    <Icon variant={icon} />
+  </Button>
 )
 
 export const ManagementDropdown = ({
