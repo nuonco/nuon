@@ -36,6 +36,7 @@ export type TCreateAppInstallBody = {
   }
   labels?: Record<string, string>
   name: string
+  stack_only?: boolean
 }
 
 export const createAppInstall = ({
