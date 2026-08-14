@@ -20,7 +20,6 @@ import { InstallActionManualRunButton } from '@/components/actions/InstallAction
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { InstallActionRunTimeline } from '@/components/actions/InstallActionRunTimeline'
 import { RemovedFromAppConfigBanner } from '@/components/installs/RemovedFromAppConfig'
-import { Tooltip } from '@/components/common/Tooltip'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -193,20 +192,18 @@ export const ActionDetail = () => {
                 (t) => t.type === 'manual'
               ) ? (
                 removed ? (
-                  <Tooltip
-                    position="left"
-                    tipContent={
-                      <Text variant="subtext">
-                        This action is no longer in the install's app config
-                        version.
-                      </Text>
-                    }
+                  <Button
+                    variant="primary"
+                    disabled
+                    tooltipProps={{
+                      position: 'left',
+                      tipContent:
+                        "This action is no longer in the install's app config version.",
+                    }}
                   >
-                    <Button variant="primary" disabled>
-                      Run action
-                      <Icon variant="PlayIcon" />
-                    </Button>
-                  </Tooltip>
+                    Run action
+                    <Icon variant="PlayIcon" />
+                  </Button>
                 ) : (
                   <InstallActionManualRunButton
                     action={action.action_workflow}
