@@ -7,6 +7,7 @@ import { CodeBlock } from '@/components/common/CodeBlock'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { RevokeTriggerSecretButton } from '@/components/triggers/RevokeTriggerSecret'
 import type { TEventFieldSelector, TTrigger, TTriggerSecret } from '@/types'
 import { buildTriggerCurl, buildTriggerSetupSteps } from '@/utils/trigger-utils'
 
@@ -145,12 +146,9 @@ export const TriggerOverview = ({
                       : 'Reveal secret'}
                 </Button>
               ) : null}
-              <Button
-                variant="danger"
-                onClick={() => onRevokeSecret?.(secret.id!)}
-              >
-                Revoke
-              </Button>
+              <RevokeTriggerSecretButton
+                onConfirm={() => onRevokeSecret?.(secret.id!)}
+              />
             </div>
           ) : null}
         </div>
