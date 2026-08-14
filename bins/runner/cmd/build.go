@@ -11,9 +11,11 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/registry"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/telemetryexport"
 
 	check "github.com/nuonco/nuon/bins/runner/internal/jobs/healthcheck/check"
 )
@@ -31,7 +33,11 @@ func (c *cli) registerBuild() error {
 	return nil
 }
 
-func (c *cli) runBuild(cmd *cobra.Command, _ []string) {
+func (c *cli) runBuild(_ *cobra.Command, _ []string) {
+	fx.New(c.buildOptions()...).Run()
+}
+
+func (c *cli) buildOptions() []fx.Option {
 	providers := []fx.Option{}
 
 	// common providers
@@ -44,6 +50,7 @@ func (c *cli) runBuild(cmd *cobra.Command, _ []string) {
 	// org-mode providers
 	providers = append(providers, sync.GetJobs()...)
 	providers = append(providers, build.GetJobs()...)
+	providers = append(providers, audit.Module, telemetryexport.Module)
 
 	// heartbeat, registry, job loop execution
 	providers = append(
@@ -64,6 +71,5 @@ func (c *cli) runBuild(cmd *cobra.Command, _ []string) {
 		}...,
 	)
 
-	// run
-	fx.New(providers...).Run()
+	return providers
 }
