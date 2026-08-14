@@ -2,6 +2,8 @@ export default {
   title: 'Common/Button',
 }
 
+import { useState } from 'react'
+import { useNudge } from '@/hooks/use-nudge'
 import { Button } from './Button'
 import { Icon } from './Icon'
 
@@ -176,6 +178,50 @@ export const Tooltips = () => (
     </div>
   </div>
 )
+
+export const Nudge = () => {
+  const [triggered, setTriggered] = useState(false)
+  const { isOpen, close } = useNudge(triggered, 4000)
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Nudge tooltip</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          A one-time, programmatically opened tooltip. The{' '}
+          <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+            useNudge
+          </code>{' '}
+          hook opens the tooltip when a trigger flips true, auto-closes it after
+          the duration, and hands back a{' '}
+          <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+            close()
+          </code>{' '}
+          wired to the button&apos;s onClick.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-4 items-center p-8 border rounded-lg">
+        <Button variant="secondary" onClick={() => setTriggered(true)}>
+          Simulate app config synced
+        </Button>
+        <Button
+          variant="primary"
+          tooltipProps={{
+            isOpen,
+            disableHover: true,
+            position: 'bottom',
+            tipContent: 'Trigger a run to deploy this branch',
+          }}
+          onClick={close}
+        >
+          <Icon variant="PlayIcon" size={16} />
+          Trigger run
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export const Links = () => (
   <div className="space-y-6">
