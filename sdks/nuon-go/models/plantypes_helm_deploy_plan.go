@@ -47,6 +47,13 @@ type PlantypesHelmDeployPlan struct {
 	// namespace
 	Namespace string `json:"namespace,omitempty"`
 
+	// RecoverRelease makes this job unstick a release helm left pending instead
+	// of applying the chart, so it fetches no chart artifact. Deliberately a
+	// bool: a struct here becomes a $ref, and go-swagger renders a documented
+	// $ref field as an inline struct VALUE, which decodes non-nil on every
+	// deploy and would skip the chart for all of them.
+	RecoverRelease bool `json:"recover_release,omitempty"`
+
 	// skip crds
 	SkipCrds bool `json:"skip_crds,omitempty"`
 
