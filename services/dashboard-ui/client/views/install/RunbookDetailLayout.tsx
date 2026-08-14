@@ -7,7 +7,6 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
-import { Tooltip } from '@/components/common/Tooltip'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { RunRunbookButton } from '@/components/runbooks/RunRunbook'
@@ -165,20 +164,18 @@ export const RunbookDetailLayout = () => {
 
             {installRunbook ? (
               removed ? (
-                <Tooltip
-                  position="left"
-                  tipContent={
-                    <Text variant="subtext">
-                      This runbook is no longer in the install's app config
-                      version.
-                    </Text>
-                  }
+                <Button
+                  variant="primary"
+                  disabled
+                  tooltipProps={{
+                    position: 'left',
+                    tipContent:
+                      "This runbook is no longer in the install's app config version.",
+                  }}
                 >
-                  <Button variant="primary" disabled>
-                    Run runbook
-                    <Icon variant="PlayIcon" />
-                  </Button>
-                </Tooltip>
+                  Run runbook
+                  <Icon variant="PlayIcon" />
+                </Button>
               ) : (
                 <RunRunbookButton
                   installRunbook={installRunbook}
