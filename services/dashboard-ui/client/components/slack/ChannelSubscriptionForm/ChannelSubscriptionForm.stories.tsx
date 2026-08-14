@@ -1,7 +1,8 @@
 import { ModalStory } from '@/components/__stories__/helpers'
-import { CreateChannelSubscriptionModal } from './CreateChannelSubscription'
+import type { TSlackChannelSubscription } from '@/types'
+import { ChannelSubscriptionFormModal } from './ChannelSubscriptionForm'
 
-export default { title: 'Slack/CreateChannelSubscription' }
+export default { title: 'Slack/ChannelSubscriptionForm' }
 
 const installations = [
   {
@@ -27,9 +28,22 @@ const channels = [
   { id: 'C0789', name: 'general', is_member: true } as const,
 ]
 
-export const Default = () => (
+const baseSub: TSlackChannelSubscription = {
+  id: 'slcs-001',
+  org_id: 'org-001',
+  org_link_id: 'slo-001',
+  team_id: 'T0123456789',
+  channel_id: 'C0123',
+  channel_name: 'deploys',
+  created_at: '2026-04-01T00:00:00Z',
+  updated_at: '2026-04-01T00:00:00Z',
+  interests: { all_events: true },
+} as TSlackChannelSubscription
+
+export const Create = () => (
   <ModalStory>
-    <CreateChannelSubscriptionModal
+    <ChannelSubscriptionFormModal
+      mode="create"
       installations={installations}
       orgLinks={orgLinks}
       channels={channels}
@@ -49,9 +63,10 @@ export const Default = () => (
   </ModalStory>
 )
 
-export const NoInstallations = () => (
+export const CreateNoInstallations = () => (
   <ModalStory>
-    <CreateChannelSubscriptionModal
+    <ChannelSubscriptionFormModal
+      mode="create"
       installations={[]}
       orgLinks={[]}
       channels={[]}
@@ -71,13 +86,10 @@ export const NoInstallations = () => (
   </ModalStory>
 )
 
-// Stories don't drive the internal MatchPicker via a prop — the picker
-// owns its own state — so this variant doesn't preconfigure scope at the
-// modal level. The pre-scoped flow is exercised by EditChannelSubscription
-// stories instead, which seed `subscription.match` directly.
-export const LoadingMore = () => (
+export const CreateLoadingMore = () => (
   <ModalStory>
-    <CreateChannelSubscriptionModal
+    <ChannelSubscriptionFormModal
+      mode="create"
       installations={installations}
       orgLinks={orgLinks}
       channels={channels}
@@ -92,6 +104,67 @@ export const LoadingMore = () => (
       isPending={false}
       error={null}
       onSelectInstallation={() => {}}
+      onSubmit={() => {}}
+    />
+  </ModalStory>
+)
+
+export const EditOrgWide = () => (
+  <ModalStory>
+    <ChannelSubscriptionFormModal
+      mode="edit"
+      subscription={baseSub}
+      isPending={false}
+      error={null}
+      onSubmit={() => {}}
+    />
+  </ModalStory>
+)
+
+export const EditInstallScoped = () => (
+  <ModalStory>
+    <ChannelSubscriptionFormModal
+      mode="edit"
+      subscription={{
+        ...baseSub,
+        match: { installs: { ids: ['inst_a', 'inst_b'] } },
+      }}
+      isPending={false}
+      error={null}
+      onSubmit={() => {}}
+    />
+  </ModalStory>
+)
+
+export const EditLabelScoped = () => (
+  <ModalStory>
+    <ChannelSubscriptionFormModal
+      mode="edit"
+      subscription={{
+        ...baseSub,
+        match: {
+          installs: {
+            selector: { match_labels: { env: 'prod', tier: 'critical' } },
+          },
+        },
+      }}
+      isPending={false}
+      error={null}
+      onSubmit={() => {}}
+    />
+  </ModalStory>
+)
+
+export const EditComponentsScoped = () => (
+  <ModalStory>
+    <ChannelSubscriptionFormModal
+      mode="edit"
+      subscription={{
+        ...baseSub,
+        match: { components: { ids: ['cmp_a'] } },
+      }}
+      isPending={false}
+      error={null}
       onSubmit={() => {}}
     />
   </ModalStory>
