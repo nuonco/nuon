@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
+
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 )
 
 func auditEnabledConfig(endpoint string) string {
@@ -70,6 +74,7 @@ func TestParseSecretRejectsInvalidV1(t *testing.T) {
 		"invalid header name":        auditEnabledConfig("https://example.com") + "    headers:\n      'bad header': value\n",
 		"empty header value":         auditEnabledConfig("https://example.com") + "    headers:\n      Authorization: ''\n",
 		"header with expansion":      auditEnabledConfig("https://example.com") + "    headers:\n      Authorization: '${env:RUNNER_API_TOKEN}'\n",
+		"runtime sync timeout":       strings.Replace(auditEnabledConfig("https://example.com"), "      enabled: true\n", "      enabled: true\n      sync_timeout: 12s\n", 1),
 	}
 	for name, value := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -114,14 +119,44 @@ func TestCollectorConfigKeepsHeaderValuesOutOfFile(t *testing.T) {
 	if len(environment) != 1 || !strings.HasSuffix(environment[0], "=super-secret-value") {
 		t.Fatalf("unexpected child environment: %q", environment)
 	}
-	if !strings.Contains(string(contents), "127.0.0.1:4318") || !strings.Contains(string(contents), "logs/audit:") {
-		t.Fatal("generated collector configuration lacks loopback logs pipeline")
+	for _, component := range []string{"127.0.0.1:4318", "127.0.0.1:4319", "logs/audit_async:", "logs/audit_sync:", "otlp_http/async:", "otlp_http/sync:"} {
+		if !strings.Contains(string(contents), component) {
+			t.Fatalf("generated collector configuration lacks %q", component)
+		}
 	}
 	if !strings.Contains(string(contents), `attributes["nuon.audit"] != "true"`) {
 		t.Fatal("generated collector configuration does not filter non-audit logs")
 	}
 	if !strings.Contains(string(contents), "- filter/audit") {
 		t.Fatal("generated collector pipeline does not use the audit filter")
+	}
+	var generated struct {
+		Exporters map[string]struct {
+			Timeout      string `yaml:"timeout"`
+			SendingQueue struct {
+				Enabled bool `yaml:"enabled"`
+			} `yaml:"sending_queue"`
+			Retry struct {
+				Enabled         bool   `yaml:"enabled"`
+				InitialInterval string `yaml:"initial_interval"`
+				MaxInterval     string `yaml:"max_interval"`
+				MaxElapsedTime  string `yaml:"max_elapsed_time"`
+			} `yaml:"retry_on_failure"`
+		} `yaml:"exporters"`
+	}
+	if err := yaml.Unmarshal(contents, &generated); err != nil {
+		t.Fatal(err)
+	}
+	async := generated.Exporters["otlp_http/async"]
+	if !async.SendingQueue.Enabled || !async.Retry.Enabled || async.Retry.InitialInterval != "1s" || async.Retry.MaxInterval != "30s" || async.Retry.MaxElapsedTime != "5m" {
+		t.Fatalf("asynchronous exporter does not queue and retry: %#v", async)
+	}
+	sync := generated.Exporters["otlp_http/sync"]
+	if sync.SendingQueue.Enabled || sync.Retry.Enabled || sync.Timeout != audit.SyncExportTimeout.String() {
+		t.Fatalf("synchronous exporter can acknowledge before backend response: %#v", sync)
+	}
+	if strings.Contains(string(contents), "batch:") {
+		t.Fatal("generated collector configuration contains an asynchronous processor before exporter routing")
 	}
 }
 
@@ -141,7 +176,7 @@ func TestCollectorConfigOmitsAuditPipelineWhenDisabled(t *testing.T) {
 	if !strings.Contains(config, "health_check:") || !strings.Contains(config, "pipelines: {}") {
 		t.Fatalf("generated collector configuration does not contain an empty service: %s", config)
 	}
-	for _, unexpected := range []string{"127.0.0.1:4318", "logs/audit:", "filter/audit:", "otlp_http:"} {
+	for _, unexpected := range []string{"127.0.0.1:4318", "127.0.0.1:4319", "logs/audit_async:", "logs/audit_sync:", "filter/audit:", "otlp_http/async:", "otlp_http/sync:"} {
 		if strings.Contains(config, unexpected) {
 			t.Fatalf("generated collector configuration contains disabled audit component %q", unexpected)
 		}
