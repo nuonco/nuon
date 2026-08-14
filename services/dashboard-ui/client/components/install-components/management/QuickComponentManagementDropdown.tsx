@@ -3,7 +3,6 @@ import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
-import { Tooltip } from '@/components/common/Tooltip'
 import { DeployComponentButton } from '@/components/install-components/management/DeployComponent'
 import { DriftScanComponentButton } from '@/components/install-components/management/DriftScanComponent'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
@@ -45,21 +44,20 @@ export const QuickComponentManagementDropdown = ({
             Controls
           </Text>
           {removed ? (
-            <Tooltip
-              className="block !w-full"
-              position="left"
-              tipContent={
-                <Text variant="subtext">
-                  This component is no longer in the install's app config
-                  version.
-                </Text>
-              }
+            <Button
+              isMenuButton
+              disabled
+              className="w-full"
+              tooltipProps={{
+                className: 'block !w-full',
+                position: 'left',
+                tipContent:
+                  "This component is no longer in the install's app config version.",
+              }}
             >
-              <Button isMenuButton disabled className="pointer-events-none w-full">
-                Deploy component
-                <Icon variant="CloudArrowUpIcon" />
-              </Button>
-            </Tooltip>
+              Deploy component
+              <Icon variant="CloudArrowUpIcon" />
+            </Button>
           ) : (
             <>
               <DriftScanComponentButton component={component} isMenuButton />
