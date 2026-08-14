@@ -52,6 +52,15 @@ export const BranchManagementDropdown = ({
           isMenuButton
           onClick={onTriggerRun}
           disabled={!hasConfig || isTriggerPending}
+          tooltipProps={
+            !hasConfig
+              ? {
+                  className: 'block !w-full',
+                  position: 'left',
+                  tipContent: 'Sync the app config first',
+                }
+              : undefined
+          }
         >
           Trigger run
           <Icon variant="PlayIcon" />
