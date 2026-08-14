@@ -12,6 +12,7 @@ type GetRunnerStatusRequest struct {
 }
 
 // @temporal-gen-v2 activity
+// @max-retries 1
 // @by-field ID
 func (a *Activities) GetRunnerStatus(ctx context.Context, req GetRunnerStatusRequest) (app.RunnerStatus, error) {
 	runner, err := a.getRunner(ctx, req.ID)
