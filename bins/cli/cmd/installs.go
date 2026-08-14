@@ -136,7 +136,7 @@ sandbox and components unprovisioned:
 
   nuon installs create -a my-app -n my-install -r us-west-2 --stack-only
   nuon installs inputs set bootstrap_token=... -i my-install --inputs-only
-  nuon installs reprovision-sandbox -i my-install`,
+  nuon installs sandbox reprovision -i my-install`,
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
