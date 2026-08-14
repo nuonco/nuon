@@ -393,8 +393,13 @@ pass, so the endpoint won't let it.
 Every debounced transition is kept for 90 days, giving each component and install a timeline and an
 uptime percentage, drawn as status-page-style daily bars.
 
+The badge and the percentage answer different questions: the badge is the verdict **right now**, the
+percentage is the **last 90 days**. A component reading `Healthy` at 97.57% is currently fine and had
+a bad spell earlier — and because an install is degraded whenever any of its components is, that one
+component is what sets the install's number.
+
 <Frame caption="90-day health for an install, with per-component uptime.">
-  <img src="/images/guides/component-health/90-day-health.png" alt="A 90-day health card showing 97.57% uptime, a row of daily status bars, and a list of components each with a Healthy badge and its own uptime percentage." />
+  <img src="/images/guides/component-health/90-day-health.png" alt="A 90-day health card showing 97.57% uptime, a row of daily status bars, and a list of components each with a Healthy badge and its own uptime percentage. One component, nginx_gateway, reads 97.57% while the rest read 100%." />
 </Frame>
 
 **Time in `unknown` is excluded from uptime** rather than counted as up or down — Nuon won't claim
