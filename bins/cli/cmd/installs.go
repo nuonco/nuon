@@ -387,6 +387,30 @@ sandbox and components unprovisioned:
 	componentsTeardownCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for component teardown")
 	componentsCmd.AddCommand(componentsTeardownCmd)
 
+	var recoverAutoApprove bool
+	componentsRecoverHelmReleaseCmd := &cobra.Command{
+		Use:   "recover-helm-release",
+		Short: "Recover a stuck helm release for a component on an install",
+		Long: "Recover a Helm release that was left part-way through an operation, so the component can be deployed again.\n\n" +
+			"Helm marks a release pending before it starts changing the cluster and clears that when the operation finishes. " +
+			"A release left pending is a rollout whose runner went away, and Helm refuses every further operation on it until " +
+			"it is recovered.\n\n" +
+			"If an earlier revision rolled out successfully, the release is rolled back to it. If none ever did, the stuck " +
+			"release is removed so the next deploy can start clean. Nothing is deployed either way — deploy the component " +
+			"afterwards to roll out the version you want.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := c.installs
+			return svc.RecoverHelmRelease(cmd.Context(), id, componentID, roleName, recoverAutoApprove, PrintJSON)
+		}),
+	}
+	componentsRecoverHelmReleaseCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	componentsRecoverHelmReleaseCmd.MarkFlagRequired("install-id")
+	componentsRecoverHelmReleaseCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The ID of the component whose helm release you want to recover")
+	componentsRecoverHelmReleaseCmd.MarkFlagRequired("component-id")
+	componentsRecoverHelmReleaseCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for the recovery")
+	componentsRecoverHelmReleaseCmd.Flags().BoolVarP(&recoverAutoApprove, "yes", "y", false, "Skip the confirmation prompt")
+	componentsCmd.AddCommand(componentsRecoverHelmReleaseCmd)
+
 	componentsTeardownAllCmd := &cobra.Command{
 		Use:   "teardown-all",
 		Short: "Teardown all components on an install",
