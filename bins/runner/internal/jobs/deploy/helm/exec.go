@@ -70,7 +70,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	l.Debug("Initializing Helm...",
-		zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()},
+		zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.basePath()},
 	)
 	actionCfg, kubeCfg, err := h.actionInit(ctx, l)
 	if err != nil {
@@ -85,8 +85,24 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	actionCfg.Releases = releaseStore
 
+	// A recovery job unsticks a pending release and stops. It is handled before
+	// the operation switch because it shares nothing with the apply path: no
+	// chart, no diff, no plan contents to honour.
+	if job.Operation == models.AppRunnerJobOperationTypeApplyDashPlan && h.isRecovery() {
+		opCtx, end := pkgop.Tool(ctx, "helm", "recover")
+		opLog := pkgctx.LoggerOrDefault(opCtx, l)
+		res, err := h.recoverRelease(opCtx, opLog, actionCfg)
+		end(err)
+		if err != nil {
+			h.writeErrorResult(ctx, "recover", err)
+			return fmt.Errorf("unable to recover helm release: %w", err)
+		}
+
+		return h.writeRecoverResult(ctx, l, job, jobExecution, res)
+	}
+
 	l.Debug("Checking for previous Helm release...",
-		zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()},
+		zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.basePath()},
 	)
 	prevRel, err := helm.GetRelease(actionCfg, h.state.plan.HelmDeployPlan.Name)
 	if err != nil {
@@ -114,6 +130,16 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}
 
 		l.Debug("extracting apply plan contents", zap.String("plan.op", helmPlan.Op))
+	}
+
+	// A pending release breaks the plan's dry-run as well as the apply, and helm's
+	// own errors there are ambiguous ("cannot reuse a name that is still in use"
+	// also means a genuine name collision). Failing here instead names the status
+	// and revision, which is what the operator needs to act on.
+	if job.Operation == models.AppRunnerJobOperationTypeCreateDashApplyDashPlan && helm.IsPending(prevRel) {
+		err := newPendingReleaseError(h.state.plan.HelmDeployPlan.Name, prevRel)
+		h.writeErrorResult(ctx, "create-apply-plan", err)
+		return err
 	}
 
 	switch job.Operation {
@@ -180,6 +206,13 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		l = l.With(zap.String("helm.operation", helmPlan.Op))
 		l.Info(fmt.Sprintf("executing helm %s", helmPlan.Op))
+
+		if helmPlan.Op != "uninstall" && helm.IsPending(prevRel) {
+			err := newPendingReleaseError(h.state.plan.HelmDeployPlan.Name, prevRel)
+			h.writeErrorResult(ctx, helmPlan.Op, err)
+			return err
+		}
+
 		switch helmPlan.Op {
 		case "install":
 			if helm.ShouldUpgrade(prevRel) {

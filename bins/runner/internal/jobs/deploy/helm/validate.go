@@ -21,6 +21,15 @@ func (h *handler) Validate(ctx context.Context, job *models.AppRunnerJob, jobExe
 		return err
 	}
 
+	// A recovery rebuilds the target release from the revision helm already
+	// stored, so it needs no chart. Skipping the artifact is not just an
+	// optimisation: requiring it would make recovery fail whenever the artifact
+	// is unreachable, which is exactly when an install is most likely wedged.
+	if h.isRecovery() {
+		l.Info("recovery job, skipping chart artifact")
+		return nil
+	}
+
 	l.Info("parsing job plan to ensure correct")
 	h.state.srcCfg = h.state.plan.Src
 	h.state.srcTag = h.state.plan.SrcTag

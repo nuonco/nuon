@@ -880,6 +880,8 @@ type ClientService interface {
 
 	PutInstallComponentHealthCheck(params *PutInstallComponentHealthCheckParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutInstallComponentHealthCheckOK, error)
 
+	RecoverInstallComponentHelmRelease(params *RecoverInstallComponentHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RecoverInstallComponentHelmReleaseCreated, error)
+
 	RefreshInstallHealthClusterAccess(params *RefreshInstallHealthClusterAccessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RefreshInstallHealthClusterAccessOK, error)
 
 	RemoveAppActionLabels(params *RemoveAppActionLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveAppActionLabelsOK, error)
@@ -18753,6 +18755,73 @@ func (a *Client) PutInstallComponentHealthCheck(params *PutInstallComponentHealt
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for PutInstallComponentHealthCheck: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	RecoverInstallComponentHelmRelease recovers a stuck helm release for an install component
+
+	Recover a Helm release that was left part-way through an operation.
+
+Helm records a `pending-install`, `pending-upgrade` or `pending-rollback` status before it
+starts changing the cluster and clears it once the operation finishes. A release left in one
+of those statuses is a rollout whose runner went away — a crash, a cancelled workflow, or a
+job that timed out. Helm then refuses every further operation on that release, and retrying
+the deploy cannot clear it.
+
+This endpoint starts a workflow that returns the release to a usable state:
+
+- when an earlier revision finished a rollout, the release is rolled back to it
+- when no revision ever rolled out, the stuck release is removed
+
+It deploys nothing and changes no desired state. Deploy the component afterwards to roll out
+the version you want.
+
+The recovery refuses to act on a release that is not pending, so it is safe to run when you
+are unsure and it is a no-op on a second run.
+
+Returns `409` when a job is already running for the component (recovering while Helm is
+genuinely mid-operation can corrupt the release) or when the component has never been
+deployed on this install. Returns `400` when the component is not a Helm chart.
+*/
+func (a *Client) RecoverInstallComponentHelmRelease(params *RecoverInstallComponentHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RecoverInstallComponentHelmReleaseCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRecoverInstallComponentHelmReleaseParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RecoverInstallComponentHelmRelease",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/components/{component_id}/recover-helm-release",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RecoverInstallComponentHelmReleaseReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RecoverInstallComponentHelmReleaseCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RecoverInstallComponentHelmRelease: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
