@@ -3,35 +3,25 @@ import { useForm, useStore } from '@tanstack/react-form'
 import { Banner } from '@/components/common/Banner'
 import { FormCheckbox } from '@/components/common/form/FormCheckbox'
 import { FormInput } from '@/components/common/form/FormInput'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { BranchVcsConfigFields } from '@/components/branches/BranchVcsConfigFields'
 import type {
   TAPIError,
-  TCreateAppBranchRequest,
   TVCSConnectionRepo,
   TVCSBranch,
   TVCSConnection,
 } from '@/types'
-import { createBranchSchema, type CreateBranchValues } from './schema'
+import {
+  branchFormSchema,
+  type BranchFormMode,
+  type BranchFormOutput,
+  type BranchFormValues,
+} from './schema'
 
-type TCreateBranchBody = TCreateAppBranchRequest & {
-  vcs_connection_id?: string
-  connected_github_vcs_config?: {
-    repo: string
-    branch: string
-    directory: string
-    path_filter?: string
-  }
-  public_git_vcs_config?: {
-    repo: string
-    branch: string
-    directory: string
-    path_filter?: string
-  }
-}
-
-interface ICreateBranchModal extends Omit<IModal, 'onSubmit'> {
+interface IBranchFormModal extends Omit<IModal, 'onSubmit'> {
+  mode: BranchFormMode
   vcsConnections: TVCSConnection[]
   repos: TVCSConnectionRepo[]
   branches: TVCSBranch[]
@@ -45,14 +35,18 @@ interface ICreateBranchModal extends Omit<IModal, 'onSubmit'> {
   onRepoChange: (repo: TVCSConnectionRepo | null) => void
   selectedBranch: string
   onBranchChange: (branch: string) => void
-  initialDirectory?: string
+  defaultName?: string
+  defaultUseVcs?: boolean
+  defaultDirectory?: string
+  defaultPathFilter?: string
   isSubmitting: boolean
   submitError?: TAPIError | Error | null
-  onSubmit: (body: TCreateBranchBody) => void
+  onSubmit: (output: BranchFormOutput) => void
   onCancel: () => void
 }
 
-export const CreateBranchModal = ({
+export const BranchFormModal = ({
+  mode,
   vcsConnections,
   repos,
   branches,
@@ -66,24 +60,27 @@ export const CreateBranchModal = ({
   onRepoChange,
   selectedBranch,
   onBranchChange,
-  initialDirectory,
+  defaultName = '',
+  defaultUseVcs = true,
+  defaultDirectory = '.',
+  defaultPathFilter = '',
   isSubmitting,
   submitError,
   onSubmit,
   onCancel,
   ...props
-}: ICreateBranchModal) => {
+}: IBranchFormModal) => {
   const [repoError, setRepoError] = useState<string | null>(null)
   const bannerRef = useRef<HTMLDivElement>(null)
 
   const form = useForm({
     defaultValues: {
-      name: '',
-      useVcs: true,
-      directory: initialDirectory || '.',
-      pathFilter: '',
-    } as CreateBranchValues,
-    validators: { onMount: createBranchSchema, onChange: createBranchSchema },
+      name: defaultName,
+      useVcs: defaultUseVcs,
+      directory: defaultDirectory,
+      pathFilter: defaultPathFilter,
+    } as BranchFormValues,
+    validators: { onMount: branchFormSchema, onChange: branchFormSchema },
     onSubmit: ({ value }) => {
       if (value.useVcs && !selectedRepo) {
         setRepoError(
@@ -93,26 +90,15 @@ export const CreateBranchModal = ({
       }
       setRepoError(null)
 
-      const body: TCreateBranchBody = { name: value.name.trim() }
-
-      if (value.useVcs && selectedRepo) {
-        const config = {
-          repo: selectedRepo.full_name,
-          branch: selectedBranch,
-          directory: value.directory.trim(),
-          ...(value.pathFilter.trim()
-            ? { path_filter: value.pathFilter.trim() }
-            : {}),
-        }
-        if (selectedRepo.private) {
-          body.vcs_connection_id = selectedVcsConnectionId
-          body.connected_github_vcs_config = config
-        } else {
-          body.public_git_vcs_config = config
-        }
-      }
-
-      onSubmit(body)
+      onSubmit({
+        name: value.name.trim(),
+        useVcs: value.useVcs,
+        selectedVcsConnectionId,
+        selectedRepo,
+        selectedBranch,
+        directory: value.directory.trim(),
+        pathFilter: value.pathFilter.trim(),
+      })
     },
   })
 
@@ -125,7 +111,7 @@ export const CreateBranchModal = ({
       ? ('error' in submitError && submitError.error) ||
         ('description' in submitError && submitError.description) ||
         ('message' in submitError && submitError.message) ||
-        'Unable to create branch.'
+        'Unable to save branch.'
       : undefined)
 
   useEffect(() => {
@@ -136,10 +122,22 @@ export const CreateBranchModal = ({
 
   return (
     <Modal
-      heading="Create app branch"
+      heading={mode === 'create' ? 'Create app branch' : 'Edit branch'}
       size="lg"
       primaryActionTrigger={{
-        children: isSubmitting ? 'Creating branch' : 'Create branch',
+        children: isSubmitting ? (
+          <span className="flex items-center gap-2">
+            <Icon variant="Loading" />
+            {mode === 'create' ? 'Creating branch' : 'Saving changes'}
+          </span>
+        ) : mode === 'create' ? (
+          <span className="flex items-center gap-2">
+            <Icon variant="PlusIcon" />
+            Create branch
+          </span>
+        ) : (
+          'Save changes'
+        ),
         disabled: !canSubmit || isSubmitting,
         onClick: () => form.handleSubmit(),
         variant: 'primary',

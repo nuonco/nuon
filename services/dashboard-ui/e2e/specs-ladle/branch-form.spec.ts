@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-const STORY = "/?story=branches--createbranchmodal--default&mode=preview";
+const CREATE_STORY = "/?story=branches--branchform--create&mode=preview";
+const EDIT_STORY = "/?story=branches--branchform--edit&mode=preview";
 
-test.describe("CreateBranch form behavior", () => {
+test.describe("BranchForm create behavior", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto(STORY, { waitUntil: "domcontentloaded" });
+    await page.goto(CREATE_STORY, { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: "Open modal" }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
   });
@@ -34,5 +35,28 @@ test.describe("CreateBranch form behavior", () => {
 
     await name.fill("production");
     await expect(dialog.getByText("Branch name is required")).toBeHidden();
+  });
+});
+
+test.describe("BranchForm edit behavior", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(EDIT_STORY, { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: "Open modal" }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+  });
+
+  test("edit prefills the name and opens valid; clearing it disables save", async ({
+    page,
+  }) => {
+    const dialog = page.getByRole("dialog");
+    const submit = dialog.getByRole("button", { name: "Save changes" });
+
+    await expect(submit).toBeEnabled();
+
+    await dialog.getByLabel("Branch name").fill("");
+    await expect(submit).toBeDisabled();
+
+    await dialog.getByLabel("Branch name").fill("production");
+    await expect(submit).toBeEnabled();
   });
 });
