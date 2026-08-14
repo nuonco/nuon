@@ -11,10 +11,8 @@ import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useVCSRepos } from '@/hooks/use-vcs-repos'
 import { createCurrentOrgOIDCTrustPolicy } from '@/lib'
-import {
-  CreateOIDCTrustPolicyModal,
-  type OIDCTrustPolicyFormInput,
-} from './CreateOIDCTrustPolicy'
+import { OIDCTrustPolicyFormModal } from '@/components/oidc-trust-policies/OIDCTrustPolicyForm'
+import type { OIDCFormValues } from '@/components/oidc-trust-policies/OIDCTrustPolicyForm/schema'
 
 const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
   const { org } = useOrg()
@@ -26,7 +24,7 @@ const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
   const { addToast } = useToast()
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: (input: OIDCTrustPolicyFormInput) =>
+    mutationFn: (input: OIDCFormValues) =>
       createCurrentOrgOIDCTrustPolicy({
         body: {
           name: input.name,
@@ -63,7 +61,8 @@ const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
   })
 
   return (
-    <CreateOIDCTrustPolicyModal
+    <OIDCTrustPolicyFormModal
+      mode="create"
       isPending={isPending}
       error={error}
       onSubmit={(input) => mutate(input)}
