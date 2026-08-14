@@ -45,6 +45,11 @@ type ServiceCreateInstallRequest struct {
 	// name
 	// Required: true
 	Name *string `json:"name"`
+
+	// StackOnly provisions the install stack and runner, then stops before the
+	// sandbox and components. Use it when an input can only be set once the
+	// runner is up — set the inputs, then provision the install to finish.
+	StackOnly bool `json:"stack_only,omitempty"`
 }
 
 // Validate validates this service create install request
