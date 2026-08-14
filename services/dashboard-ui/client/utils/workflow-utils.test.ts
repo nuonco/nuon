@@ -5,6 +5,7 @@ import {
   getStepButtons,
   getStepBanner,
   getWorkflowStepTitle,
+  isRetryChain,
 } from './workflow-utils'
 import type { TWorkflow, TWorkflowStep } from '@/types'
 
@@ -556,6 +557,50 @@ describe('workflow-utils', () => {
 
       const banner = getStepBanner(step)
       expect(banner).toBeUndefined()
+    })
+  })
+
+  describe('isRetryChain', () => {
+    const step = (id: string, status?: string) =>
+      ({ id, name: 'runner healthy', status: { status } }) as TWorkflowStep
+
+    test('treats a failed step followed by a clone as attempts', () => {
+      expect(
+        isRetryChain([step('a', 'error'), step('b', 'in-progress')])
+      ).toBe(true)
+    })
+
+    test('treats several exhausted attempts as attempts', () => {
+      expect(
+        isRetryChain([
+          step('a', 'error'),
+          step('b', 'error'),
+          step('c', 'failed-pending-retry'),
+        ])
+      ).toBe(true)
+    })
+
+    // A workflow that emits the same step name twice in one group produces two
+    // unstarted siblings; rendering them as attempts showed "1 previous
+    // attempt" on a step that had never run.
+    test('does not treat unstarted duplicates as attempts', () => {
+      expect(isRetryChain([step('a', 'pending'), step('b', 'pending')])).toBe(
+        false
+      )
+      expect(
+        isRetryChain([step('a', 'not-attempted'), step('b', 'not-attempted')])
+      ).toBe(false)
+    })
+
+    test('does not treat a single step as a chain', () => {
+      expect(isRetryChain([step('a', 'error')])).toBe(false)
+      expect(isRetryChain([])).toBe(false)
+    })
+
+    test('requires every prior sibling to have run', () => {
+      expect(
+        isRetryChain([step('a', 'error'), step('b', 'pending'), step('c', 'pending')])
+      ).toBe(false)
     })
   })
 })

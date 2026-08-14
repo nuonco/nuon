@@ -42,7 +42,7 @@ export const ServiceAccounts = () => {
             Manage machine users.
           </Text>
         </HeadingGroup>
-        <CreateServiceAccountButton />
+        <CreateServiceAccountButton variant="primary" />
       </PageHeader>
       <PageContent>
         <PageSection>

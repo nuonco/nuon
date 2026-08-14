@@ -186,7 +186,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		}
 		steps = append(steps, step)
 
-		deploySteps, err := deployAllComponents(ctx, dg)
+		deploySteps, err := deployAllComponents(ctx, dg, true)
 		if err != nil {
 			return nil, err
 		}
