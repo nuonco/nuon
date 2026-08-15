@@ -18,6 +18,7 @@ var allRunnerJobGroups = []app.RunnerJobGroup{
 	app.RunnerJobGroupOperations,
 	app.RunnerJobGroupManagement,
 	app.RunnerJobGroupActions,
+	app.RunnerJobGroupImageActions,
 }
 
 // CreateRunnerQueues creates one queue per job group for the given runner.

@@ -1,6 +1,8 @@
 package plan
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -132,6 +134,22 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		plan.Steps = append(plan.Steps, stepPlan)
 	}
 
+	if !run.ActionWorkflowConfigID.Empty() && run.ActionWorkflowConfig.Image != "" {
+		sourceImage, err := RenderText(run.ActionWorkflowConfig.Image, stateMap)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "unable to render action image")
+		}
+
+		imageRegistry, err := p.getOrgRegistryRepositoryConfig(ctx, run.InstallID, runID)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "unable to get registry for action image")
+		}
+
+		plan.SourceImage = sourceImage
+		plan.ImageRegistry = imageRegistry
+		plan.ImageTag = actionImageTag(sourceImage, runID)
+	}
+
 	if slimInstall.SandboxMode.Bool {
 		targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)
 
@@ -143,6 +161,15 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 
 	l.Info("successfully created plan")
 	return plan, roleSelection, nil
+}
+
+// actionImageTag derives the install-registry destination tag for a mirrored
+// action image. It includes the run ID so concurrent runs of the same source
+// ref never share a destination tag, which would let one run overwrite the tag
+// another run is about to pull (mutable-tag race).
+func actionImageTag(sourceImage, runID string) string {
+	sum := sha256.Sum256([]byte(sourceImage))
+	return fmt.Sprintf("action-%s-%s", hex.EncodeToString(sum[:])[:16], runID)
 }
 
 // TODO(ja): make this a method on the run struct?
