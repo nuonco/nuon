@@ -18,6 +18,10 @@ import (
 )
 
 func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *plantypes.GitSource, envVars map[string]string) error {
+	if h.state.plan.SourceImage != "" {
+		return h.execCommandInContainer(ctx, l, cfg, envVars)
+	}
+
 	defaultEnvVars := map[string]string{
 		"COLUMNS": "500",
 	}
