@@ -61,6 +61,22 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		}
 	}
 
+	if action.Image != "" {
+		enabled, err := s.orgHasFeature(ctx, app.OrgFeatureImageBackedActions)
+		if err != nil {
+			return sync.SyncInternalErr{
+				Description: "unable to check image-backed-actions feature",
+				Err:         err,
+			}
+		}
+		if !enabled {
+			return sync.SyncErr{
+				Resource:    fmt.Sprintf("action-%s", action.Name),
+				Description: "image-backed actions are not enabled for this organization; contact Nuon to enable the image-backed-actions feature",
+			}
+		}
+	}
+
 	// Sync labels
 	labelRes := s.db.WithContext(ctx).
 		Model(&actionWorkflow).
@@ -235,6 +251,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		Role:                  action.Role,
 		EnableKubeConfig:      action.EnableKubeConfig,
 		KubernetesContextName: action.KubernetesContext,
+		Image:                 action.Image,
 	})
 	built.Triggers = triggers
 	built.Steps = steps
@@ -264,6 +281,19 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 	})
 
 	return nil
+}
+
+func (s *syncer) orgHasFeature(ctx context.Context, feature app.OrgFeature) (bool, error) {
+	var org app.Org
+	res := s.db.WithContext(ctx).
+		Select("id", "features").
+		Where(&app.Org{ID: s.orgID}).
+		First(&org)
+	if res.Error != nil {
+		return false, res.Error
+	}
+
+	return org.Features[string(feature)], nil
 }
 
 // getAction finds an action workflow by name.

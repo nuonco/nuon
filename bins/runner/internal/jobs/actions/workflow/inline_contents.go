@@ -3,7 +3,6 @@ package workflow
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -24,7 +23,7 @@ func (h *handler) prepareInlineContentsCommand(ctx context.Context, l *zap.Logge
 	}
 
 	fp := h.state.workspace.AbsPath(fmt.Sprintf(".inline-contents-step-%d", cfg.Idx))
-	if err := os.WriteFile(fp, []byte(contents), 0o755); err != nil {
+	if err := safeWriteFile(fp, []byte(contents), 0o755); err != nil {
 		return "", errors.Wrap(err, "unable to write inline contents")
 	}
 

@@ -11,8 +11,8 @@ import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { Code } from '@/components/common/Code'
 import type { TActionConfigTriggerType, TInstallActionRun, TWorkflow, TWorkflowStep } from '@/types'
+import { cn } from '@/utils/classnames'
 import { toSentenceCase } from '@/utils/string-utils'
 
 interface IInstallActionRunHeader {
@@ -83,7 +83,12 @@ export const InstallActionRunHeader = ({
       </div>
 
       <Card>
-        <div className="grid grid-cols-5">
+        <div
+          className={cn(
+            'grid',
+            installActionRun?.config?.image ? 'grid-cols-6' : 'grid-cols-5'
+          )}
+        >
           <LabeledValue
             label={`Triggered via ${installActionRun?.triggered_by_type}`}
           >
@@ -123,6 +128,14 @@ export const InstallActionRunHeader = ({
               </Text>
             )}
           </LabeledValue>
+
+          {installActionRun?.config?.image ? (
+            <LabeledValue label="Container image">
+              <Text variant="subtext" family="mono" className="text-xs break-all">
+                {installActionRun.config.image}
+              </Text>
+            </LabeledValue>
+          ) : null}
         </div>
       </Card>
 
