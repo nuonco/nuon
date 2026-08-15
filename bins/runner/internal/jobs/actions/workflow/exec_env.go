@@ -15,12 +15,18 @@ import (
 func (h *handler) createExecEnv(ctx context.Context, l *zap.Logger, src *plantypes.GitSource, cfg *models.AppActionWorkflowStepConfig) error {
 	fp := h.outputsFP(cfg)
 
-	// create file for outputs
-	f, err := os.OpenFile(fp, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		return errors.Wrap(err, "unable to open file")
+	// create an empty regular file for outputs, refusing to follow a symlink a
+	// prior image-backed action container may have planted at this path. An
+	// image-backed step appends to it from inside the container, which may run as
+	// a user that can't write a file owned by the runner, so that path needs the
+	// wider mode. Host steps keep the tighter one.
+	outputsPerm := os.FileMode(0o644)
+	if h.state.plan != nil && h.state.plan.SourceImage != "" {
+		outputsPerm = 0o666
 	}
-	f.Close()
+	if err := safeWriteFile(fp, nil, outputsPerm); err != nil {
+		return errors.Wrap(err, "unable to create outputs file")
+	}
 
 	if src == nil || src.URL == "" {
 		l.Warn("no connected or public vcs config configured")
