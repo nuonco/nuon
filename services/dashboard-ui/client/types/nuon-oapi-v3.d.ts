@@ -3360,6 +3360,8 @@ export interface components {
       created_by_id?: string;
       enable_kube_config?: components["schemas"]["sql.NullBool"];
       id?: string;
+      /** @description Image is an optional container image the action's steps run inside. */
+      image?: string;
       /**
        * @description KubernetesContextName is the name of an AppKubernetesContextConfig on
        * the same AppConfig. Empty means fall back to the implicit sandbox
@@ -6071,7 +6073,7 @@ export interface components {
     /** @enum {string} */
     "app.RunnerJobExecutionStatus": "pending" | "initializing" | "in-progress" | "cleaning-up" | "finished" | "failed" | "timed-out" | "not-attempted" | "cancelled" | "unknown";
     /** @enum {string} */
-    "app.RunnerJobGroup": "health-checks" | "sync" | "build" | "deploy" | "sandbox" | "runner" | "operations" | "management" | "actions" | "" | "any";
+    "app.RunnerJobGroup": "health-checks" | "sync" | "build" | "deploy" | "sandbox" | "runner" | "operations" | "management" | "actions" | "image-actions" | "" | "any";
     /** @enum {string} */
     "app.RunnerJobOperationType": "exec" | "build" | "create-apply-plan" | "create-teardown-plan" | "apply-plan" | "unknown";
     "app.RunnerJobPlan": {
@@ -7067,11 +7069,26 @@ export interface components {
       cluster_info?: components["schemas"]["kube.ClusterInfo"];
       gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
       id?: string;
+      /**
+       * @description ImageDigestRef is the digest-pinned pull reference resolved by the mirror
+       * job (<login_server>/<repository>@sha256:...). When set, the runner pulls
+       * this exact manifest instead of the mutable tag, binding execution to the
+       * content that was mirrored.
+       */
+      image_digest_ref?: string;
+      image_registry?: components["schemas"]["configs.OCIRegistryRepository"];
+      image_tag?: string;
       install_id?: string;
       override_env_vars?: {
         [key: string]: string;
       };
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
+      /**
+       * @description Image-backed actions: SourceImage is the rendered app-authored ref
+       * (e.g. ghcr.io/acme/tools:v1); ImageRegistry/ImageTag point at the
+       * install-registry mirror the runner pulls from.
+       */
+      source_image?: string;
       steps?: components["schemas"]["plantypes.ActionWorkflowRunStepPlan"][];
       timeout?: number;
     };
@@ -7743,6 +7760,7 @@ export interface components {
       break_glass_role_arn?: string;
       dependencies?: string[];
       enable_kube_config?: boolean | null;
+      image?: string;
       kubernetes_context?: string;
       references?: string[];
       role?: string;

@@ -34,6 +34,9 @@ type ServiceCreateActionWorkflowConfigRequest struct {
 	// enable kube config
 	EnableKubeConfig *bool `json:"enable_kube_config,omitempty"`
 
+	// image
+	Image string `json:"image,omitempty"`
+
 	// kubernetes context
 	KubernetesContext string `json:"kubernetes_context,omitempty"`
 

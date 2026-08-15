@@ -85,6 +85,10 @@ const (
 	// actions workflows
 	RunnerJobGroupActions RunnerJobGroup = "actions"
 
+	// image-backed action workflows, polled only by the mng process on VM
+	// runners (which has host docker access to launch the action container).
+	RunnerJobGroupImageActions RunnerJobGroup = "image-actions"
+
 	RunnerJobGroupUnknown RunnerJobGroup = ""
 	RunnerJobGroupAny     RunnerJobGroup = "any"
 )
