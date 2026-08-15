@@ -91,6 +91,12 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	execCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	if h.state.plan != nil && h.state.plan.SourceImage != "" {
+		if err := h.prepareActionImage(execCtx, l, jobExecution.ID); err != nil {
+			return errors.Wrap(err, "unable to prepare action image")
+		}
+	}
+
 	for idx, step := range h.state.run.Steps {
 		var configStepCfg *models.AppActionWorkflowStepConfig
 		if h.state.workflowCfg != nil {

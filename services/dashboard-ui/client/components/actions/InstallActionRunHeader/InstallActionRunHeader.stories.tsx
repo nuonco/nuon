@@ -67,3 +67,23 @@ export const NoWorkflow = () => (
     cancelWorkflowButton={null}
   />
 )
+
+export const ImageBacked = () => (
+  <InstallActionRunHeader
+    actionId="action-1"
+    actionName="healthcheck"
+    workflow={mockWorkflow}
+    installActionRun={
+      {
+        ...mockRun,
+        config: { ...mockRun.config, image: 'ghcr.io/acme/checker:v1.8.2' },
+      } as any
+    }
+    basePath="/org-1/installs/install-1"
+    isAdmin={false}
+    step={{ id: 'step-1' } as any}
+    cancelWorkflowButton={<Button variant="danger">Cancel workflow</Button>}
+    runnerJobPlanButton={<Button>View plan</Button>}
+    runActionButton={<Button>Run action</Button>}
+  />
+)
