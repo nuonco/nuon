@@ -73,7 +73,8 @@ export const ActionDetail = () => {
         {config &&
         (config.triggers?.length ||
           config.break_glass_role_arn ||
-          config.role) ? (
+          config.role ||
+          config.image) ? (
           <div className="flex flex-row gap-6 items-start">
             {config?.timeout ? (
               <LabeledValue label="Timeout">
@@ -90,6 +91,12 @@ export const ActionDetail = () => {
                 {config?.enable_kube_config ? 'Enabled' : 'Disabled'}
               </Badge>
             </LabeledValue>
+
+            {config?.image ? (
+              <LabeledValue label="Container image">
+                <Code variant="inline">{config.image}</Code>
+              </LabeledValue>
+            ) : null}
             {config.triggers?.length ? (
               <LabeledValue label="Triggers">
                 <div className="flex flex-col gap-2">

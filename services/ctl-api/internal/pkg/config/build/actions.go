@@ -24,6 +24,7 @@ type ActionWorkflowInput struct {
 	Role                  string
 	EnableKubeConfig      *bool
 	KubernetesContextName string
+	Image                 string
 }
 
 // ActionWorkflowConfig builds the row; the caller attaches triggers and steps.
@@ -46,5 +47,6 @@ func ActionWorkflowConfig(in ActionWorkflowInput) *app.ActionWorkflowConfig {
 		Role:                   in.Role,
 		EnableKubeConfig:       generics.NewNullBoolFromPtr(&enableKubeConfig),
 		KubernetesContextName:  in.KubernetesContextName,
+		Image:                  in.Image,
 	}
 }

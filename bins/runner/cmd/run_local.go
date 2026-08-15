@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/nuonco/nuon/bins/runner/internal/jobs/actions"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/dev"
 )
 
@@ -69,6 +70,9 @@ func (c *cli) runLocalRun(cmd *cobra.Command, args []string) {
 	case "org", "build":
 		c.runBuild(cmd, nil)
 	case "install":
+		// register the image-actions loop in-process so image-backed actions
+		// can be exercised locally (they normally run only in the mng process).
+		c.extraProviders = actions.GetImageActionJobs()
 		c.runInstall(cmd, nil)
 	default:
 		log.Fatalf("we know naught of this arg: %s", arg)
