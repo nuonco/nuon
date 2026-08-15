@@ -25,6 +25,10 @@ const (
 	// the server's empty 200 reaches us before the client cancels.
 	tailJobPollWait    time.Duration = 25 * time.Second
 	tailJobPollTimeout time.Duration = tailJobPollWait + 5*time.Second
+
+	// idleHookInterval bounds how often a loop's idle hook runs, since an empty
+	// poll comes around every few seconds.
+	idleHookInterval time.Duration = 10 * time.Minute
 )
 
 func (j *jobLoop) runWorker() {
@@ -79,6 +83,8 @@ func (j *jobLoop) worker() error {
 		}
 
 		if len(jobs) < 1 {
+			j.runIdleHook()
+
 			if !useTail {
 				if err := smithytime.SleepWithContext(j.pollCtx, starvedJobPollBackoff); err != nil {
 					close(j.jobDoneCh)
@@ -119,6 +125,17 @@ func (j *jobLoop) worker() error {
 			return nil
 		}
 	}
+}
+
+// runIdleHook runs the loop's optional idle work between jobs. Polls come every
+// few seconds, so it is rate-limited to idleHookInterval.
+func (j *jobLoop) runIdleHook() {
+	if j.idleFn == nil || time.Since(j.lastIdle) < idleHookInterval {
+		return
+	}
+
+	j.lastIdle = time.Now()
+	j.idleFn(j.pollCtx)
 }
 
 // fetchAvailableJobs branches between the long-poll tail endpoint and the
