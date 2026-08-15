@@ -1,81 +1,144 @@
 ---
 title: 'Component Health'
-description: "Live health for every component on every install — independent of the last deploy — with alerting, verified deploys, and uptime history."
+description: "Know whether every component on every install is running right now — not whether its last deploy worked. Alerts, deploy gates, and uptime history included."
 icon: "heart-pulse"
-keywords: ["component health", "health checks", "uptime", "verified deploys", "canary", "bake period", "custom health check", "probes", "resource explorer"]
+keywords: ["component health", "health checks", "uptime", "verified deploys", "canary", "bake period", "custom health check", "required checks", "probes", "resource explorer"]
 ---
 
-## Why health is separate from deploy status
+Your deploy succeeded. Is your app actually serving?
 
-A component's deploy status answers "did the last apply succeed?". That is a statement about the
-past. Health answers "is it running right now?".
+Those are different questions, and only one of them is what your customer asks you. Deploy status
+tells you the last apply worked — `helm upgrade` can exit 0 while the release sits in
+`pending-install` and nothing serves traffic. Terraform and Helm skip when state already matches, so
+a component reports Active while its pods are stuck. Something fixed by hand out of band keeps
+showing yesterday's error.
 
-Those two diverge constantly. Terraform and Helm skip when state already matches, so a component can
-report Active while its pods are stuck. `helm upgrade` can exit 0 while the release sits in
-`pending-install` and nothing serves traffic. A component fixed by hand out of band keeps showing
-yesterday's error.
+Component health answers the live question instead — continuously, per component, on every install.
+It's a **separate axis**: Nuon never overwrites deploy status with health or the other way round.
 
-Health is therefore a **separate axis**. Nuon never overwrites deploy status with health or the other
-way round, and it never guesses: if we cannot see a component, its health is `unknown`, never
-`healthy` and never `unhealthy`.
+<CardGroup cols={2}>
+  <Card title="See what's actually running" icon="eyes">
+    Every resource each component manages, with live status, browsable per install.
+  </Card>
+  <Card title="Get told when it breaks" icon="bell">
+    Debounced alerts to Slack and webhooks, with the failing resource and why.
+  </Card>
+  <Card title="Gate your deploys" icon="shield-check">
+    A deploy isn't done when `helm` exits — it's done when the component stays healthy.
+  </Card>
+  <Card title="Prove it stayed up" icon="chart-line">
+    90 days of timeline and uptime per component and install.
+  </Card>
+</CardGroup>
 
-## Verdicts
+## Turn it on
+
+<Steps>
+  <Step title="Ask Nuon to enable it">
+    Component health is behind the `component-health` org feature. Ask us to switch it on for your
+    organization — there's nothing to install and no agent runs in your customers' clusters.
+  </Step>
+  <Step title="Deploy, or refresh cluster access">
+    Health reads your customers' clusters using the same access your deploys already use. An install
+    that hasn't deployed since the feature was enabled needs one deploy — or click **Refresh cluster
+    access** on the install's health card to pick it up immediately.
+  </Step>
+  <Step title="Open the install's Resources tab">
+    Within a minute or two you'll see every resource each component manages, with per-resource
+    health, filterable by component, kind, namespace and status.
+  </Step>
+</Steps>
+
+<Note>
+No configuration is required for any of this. Everything below is optional and only extends what
+already happens.
+</Note>
+
+## What you get with no configuration
+
+Helm chart and Kubernetes manifest components are checked automatically, about once a minute.
+
+**Standard workloads** — Deployments, StatefulSets, DaemonSets, Pods, Services,
+PersistentVolumeClaims, Ingresses and Jobs — plus the Helm release's own status.
+
+**Your custom resources too.** Nuon reads the kinds your chart or manifest actually ships, so a
+`Certificate`, an `Issuer`, a Karpenter `NodePool` or your own CRD is watched like anything else. A
+component that starts shipping a new kind picks it up on its next deploy or drift check.
+
+**Controller-side failures.** Some failures never appear in an object's own status — an Ingress whose
+load balancer rejected a certificate looks fine if you only read the Ingress. Nuon reads Kubernetes
+warning events too, so those surface as well.
+
+**Terraform components** get their cloud resources listed so you can see what a component owns. Those
+rows are inventory, not assessment, so they don't move the verdict on their own — [add a probe or a
+custom check](#choosing-a-check) to give a Terraform component a real verdict.
+
+## How a verdict is reached
+
+```mermaid
+flowchart LR
+    v{"Component verdict<br/>debounced"}
+
+    k8s["Kubernetes resources<br/>automatic"] --> v
+    probes["Probes<br/>http, tcp, exec"] --> v
+    custom["Custom checks<br/>your systems"] --> v
+
+    v --> badge["Health badge<br/>and Resources tab"]
+    v --> alerts["Slack and webhooks"]
+    v --> gate["Deploy gate<br/>opt-in"]
+    v --> history["Timeline and uptime"]
+```
+
+The worst thing observed sets the verdict. A component is only as healthy as its unhappiest part.
 
 | Verdict | Meaning |
 | --- | --- |
-| `healthy` | Everything Nuon observes for the component is fine. |
-| `progressing` | A rollout or provision is in flight and can still converge; not yet a problem. |
+| `healthy` | Everything Nuon observes is fine. |
+| `progressing` | A rollout is in flight and can still converge. Not yet a problem. |
 | `degraded` | Something is wrong but the component is partly serving. |
 | `unhealthy` | The component is not serving. |
-| `unknown` | Nuon has no fresh observations — usually the runner is offline. Not a failure. |
-| `not-applicable` | The component has no observable runtime footprint, or has never been deployed. |
+| `unknown` | No fresh observations — usually the runner is offline. **Not a failure.** |
+| `not-applicable` | Nothing observable here, or the component has never deployed. |
 
-A component that has never deployed reports `not-applicable` and shows no resources — probes and
-pushed checks describe a workload, and until one exists there is nothing for them to describe.
+Two rules are worth knowing, because they're why you won't get paged at 3am for nothing:
 
-A rollout that cannot converge is `degraded`, not `progressing`. If a pod is stuck pulling a bad
-image tag, crash-looping, or unschedulable, that surfaces on its workload immediately rather than
-waiting out the Kubernetes progress deadline.
+**Verdicts are debounced.** Three consecutive bad observations flip a component bad; two good ones
+bring it back. A single pod restart or a controller backing off doesn't alert.
 
-Verdicts are **debounced**: it takes three consecutive bad observations to flip a component bad and
-two good ones to bring it back, so a single restart or a controller backing off does not page anyone.
-Observations stop arriving for five minutes and the verdict becomes `unknown`, which is visually
-distinct from a failure and never alerts.
+**Absence of data is never failure.** If observations stop for five minutes the verdict becomes
+`unknown` — visually distinct from a failure, and it never alerts. Nuon doesn't guess in either
+direction.
 
-Nuon also computes an install-level rollup, so an install reads "all components healthy" or "2
-components unhealthy" at a glance.
+<Tip>
+A rollout that *can't* converge is reported as `degraded`, not `progressing` — a bad image tag or an
+unschedulable pod surfaces straight away rather than waiting out the Kubernetes progress deadline.
+And anything stuck `progressing` for 30 minutes is treated as `degraded`, because at that point it
+isn't progressing.
+</Tip>
 
-## What gets checked, with no configuration
+## Choosing a check
 
-Helm chart and Kubernetes manifest components are checked automatically. The runner lists the
-resources each component owns roughly every minute, assesses each one, and reports. Deployments,
-StatefulSets, DaemonSets, Jobs, PVCs, Ingresses and Pods are all covered, plus the Helm release's own
-status. Controller-side failures that never appear in an object's own status — an Ingress whose load
-balancer rejected a certificate, for example — are picked up from Kubernetes warning events.
+Three ways to add your own signal. They compose freely — most components need none of them.
 
-Terraform components have their cloud resources listed so you can see what a component owns. Those
-rows are inventory, not assessment, so they do not affect the verdict.
+| | Use it when | Runs where | Can gate a deploy |
+| --- | --- | --- | --- |
+| **Probe** | Nuon can reach the thing — an endpoint, a port, a command | Nuon, every cycle | Yes |
+| **Custom check** | Only *your* systems know — CI, a business metric, a nightly audit | Your systems, on your clock | Yes, with `required_checks` |
+| **Required check** | A deploy must not finish until an external system says so | — | That's its whole job |
 
-Everything the runner sees is browsable per install under **Resources**, filterable by component,
-kind, namespace and health.
-
-## Tuning it
-
-Configuration is optional. It only tunes or extends what already happens.
-
-```toml
-[components.api.health]
-enabled = true                  # default true
-stabilization_window = "3m"     # used by verified deploys, below
-block_deploy = false            # default false
-```
+<Note>
+**Probes work on every component type, including Terraform.** You don't need a Kubernetes footprint,
+and you don't need to write an action. If Nuon can reach it over HTTP, TCP, or a command, a probe is
+the simplest thing that works.
+</Note>
 
 ## Probes
 
-Probes assert that your app is actually serving, above the level of infrastructure. A Deployment can
-be perfectly ready while the thing inside it returns 500.
+Probes assert your app is actually serving, above the level of infrastructure. A Deployment can be
+perfectly ready while the thing inside it returns 500.
 
-```toml
+<CodeGroup>
+```toml Kubernetes component
 [[components.api.health.probes]]
 type = "http"
 url  = "https://{{.nuon.install.sandbox.outputs.public_domain}}/healthz"
@@ -90,20 +153,35 @@ name = "migrations-current"
 command = ["/usr/local/bin/check-migrations", "--strict"]
 ```
 
-An `http` probe passes on 2xx/3xx and never follows redirects. A `tcp` probe passes if the port
-accepts a connection. An `exec` probe passes on exit code 0 and reports the command's output when it
-fails; the command is an argv, never a shell string, and runs with a minimal environment (`PATH`,
-`HOME`, `TMPDIR`) — it does not inherit the runner's credentials. Every probe is bounded by a short
-timeout, and probes run once per report cycle.
+```toml Terraform component
+# An EC2 instance has no Kubernetes status to read, so give it a probe.
+# Reference the module's own output.
+[[components.ec2.health.probes]]
+type = "http"
+url  = "http://{{.nuon.components.ec2.outputs.public_ip}}/status/200"
+```
+</CodeGroup>
 
-Probe results are ordinary health observations: they feed the same verdict, the same debounce, the
-same alerts and the same history as everything else.
+- **`http`** passes on 2xx/3xx and never follows redirects.
+- **`tcp`** passes if the port accepts a connection.
+- **`exec`** passes on exit code 0 and reports the command's output when it fails.
+
+`exec` commands are an argv, never a shell string, and run with a minimal environment (`PATH`,
+`HOME`, `TMPDIR`) — they can't see the runner's credentials. Every probe is bounded by a short
+timeout and runs once per cycle.
+
+Probe results are ordinary observations: same verdict, same debounce, same alerts, same history.
+
+<Note>
+Templated targets are resolved from the install's state, so a probe pointing at a component's own
+output can't resolve until that component has applied at least once. Until then the probe reports
+`unknown` and says so — it stays visible rather than silently vanishing, and it never fails a deploy.
+</Note>
 
 ## Custom checks
 
-Probes cover what the runner can reach. For anything else — a business metric, a queue depth, a
-result your CI already computed, a Datadog monitor — push the check to Nuon and it becomes part of
-the component's health:
+For anything Nuon can't reach — a business metric, a queue depth, something your CI already
+computed — push it in and it becomes part of the component's health.
 
 ```bash
 curl -X PUT \
@@ -113,78 +191,178 @@ curl -X PUT \
   -d '{"status":"degraded","message":"p99 1.8s over 1.2s budget"}'
 ```
 
-`status` is one of `healthy`, `degraded`, `unhealthy`, `unknown`. Check names are 1-100 characters of
-letters, digits, dots, dashes, or underscores. A custom check can make a component
-worse but never better — reporting `healthy` will not paper over crash-looping pods. Checks are
-merged in on the runner's report cadence, so the normal debounce applies to them unchanged.
+`status` is one of `healthy`, `degraded`, `unhealthy`, `unknown`. Names are 1–100 characters of
+letters, digits, dots, dashes or underscores.
 
-A pushed check's last report stands for 5 minutes by default. If yours reports less often than that,
-say so with `stale_after` (up to `60m`) or it will read as `unknown` between reports:
+**A custom check can make a component worse, never better.** Reporting `healthy` will not paper over
+crash-looping pods.
+
+**Say how often you'll report.** A check's last value stands for 5 minutes by default. If yours
+reports less often, set `stale_after` (up to `60m`):
 
 ```bash
   -d '{"status":"healthy","stale_after":"30m","message":"nightly audit clean"}'
 ```
 
-Past its window the check reads `unknown` rather than keeping its last verdict — it stays visible and
-counted, but stops voting, because a stale answer is not an answer. `unknown` never alerts and never
-outranks a check that did report.
+Past its window a check reads `unknown` rather than keeping its last answer — it stays visible but
+stops voting, because a stale answer isn't an answer.
 
-Custom checks work on any component type, including Terraform components that have no Kubernetes
-footprint.
+## Required checks
+
+Sometimes a deploy shouldn't be considered finished until something outside Nuon confirms it —
+migrations applied, a smoke suite green, a canary analysis passed. List those by name and the deploy
+waits for them, the same way a GitHub branch rule waits for a required status check.
+
+```toml
+[components.api.health]
+block_deploy    = true
+required_checks = ["migrations-applied", "smoke-tests"]
+```
+
+Each name must be [pushed as a custom check](#custom-checks) **after the apply finishes** and be healthy when the
+window closes. Nuon can't produce these itself — that's the point — so something in your pipeline has
+to push them:
+
+```bash
+curl -X PUT ".../health/checks/migrations-applied" \
+  -H "Authorization: Bearer $NUON_API_TOKEN" -H "X-Nuon-Org-ID: $NUON_ORG_ID" \
+  -d '{"status":"healthy","message":"schema at revision 41"}'
+```
+
+<Warning>
+If a required check never reports inside the window, the deploy **fails** — it doesn't wait forever.
+Give your pipeline room by lengthening `stabilization_window`, rather than expecting the gate to
+wait longer on its own.
+</Warning>
+
+Every required check starts the window as `unknown` and only counts once it reports, so a value left
+over from a previous deploy can't satisfy the gate for this one.
+
+### Example: gate a deploy on a k6 smoke suite
+
+Say you want no deploy to count as finished until k6 has run a smoke suite against the install and
+Datadog confirms error rate is within budget. Both are things only your systems know, so both are
+custom checks — and both are listed as required.
+
+```toml
+[components.api.health]
+block_deploy         = true
+stabilization_window = "10m"          # room for the suite to run
+required_checks      = ["smoke-tests", "error-budget"]
+```
+
+```mermaid
+sequenceDiagram
+    participant N as Nuon
+    participant CI as Your CI
+    participant K as k6 / Datadog
+
+    N->>N: apply finishes
+    N->>N: verify health starts<br/>both checks unknown
+    Note over N: deploy is held here
+    CI->>K: run smoke suite, query error budget
+    K-->>CI: results
+    CI->>N: PUT smoke-tests = healthy
+    CI->>N: PUT error-budget = healthy
+    N->>N: both reported in-window,<br/>resources healthy
+    N->>N: window closes, deploy succeeds
+```
+
+Your pipeline pushes the results whenever they're ready:
+
+```bash
+BASE="https://api.nuon.co/v1/installs/$INSTALL_ID/components/$COMPONENT_ID/health/checks"
+AUTH=(-H "Authorization: Bearer $NUON_API_TOKEN" -H "X-Nuon-Org-ID: $NUON_ORG_ID")
+
+k6 run smoke.js \
+  && curl -X PUT "$BASE/smoke-tests" "${AUTH[@]}" \
+       -d '{"status":"healthy","message":"42 checks passed"}' \
+  || curl -X PUT "$BASE/smoke-tests" "${AUTH[@]}" \
+       -d '{"status":"unhealthy","message":"checkout flow failed"}'
+```
+
+Push the failure too, rather than staying silent — a reported failure fails the deploy immediately
+with a reason attached, where silence just waits out the window and fails with "never reported".
+
+<Note>
+The same pattern works with anything that can make an HTTP call: a Datadog monitor webhook, a Grafana
+alert, a GitHub Action, an Argo workflow step, a nightly audit job. Nuon doesn't care what produced
+the answer — only that it arrived after the apply and inside the window.
+</Note>
 
 ## Alerting
 
 Health transitions fan out through webhooks and Slack like any other Nuon event. Subscribe with a
 single per-resource flag:
 
-- `component_health` on `components` — delivers both directions, so a channel that hears about a
+- **`component_health`** on `components` — delivers both directions, so a channel that hears about a
   failure always hears the recovery.
-- `install_degraded` on `installs` — the install-level rollup crossing.
+- **`install_degraded`** on `installs` — the install-level rollup crossing. Usually you don't need
+  this as well: when a component's failure is what moved the install, the component alert reports
+  both in one message.
 
-Two things are deliberately quiet. A verdict of `unknown` never alerts, because a runner going
-offline is already reported as runner inactivity and would otherwise page you once per component. And
-when a component fails because something it depends on failed, the dependents are labelled
-`downstream of <component>` and only the root cause alerts — one outage, one alert.
+Two events below: the component degrading, then recovering a couple of minutes later. The failing
+resource and the reason travel with the alert, so the first thing you read is already the diagnosis.
+
+Notice that each message covers the component **and** the install. When a component's crossing is what
+moved the install rollup, the headline says `install degraded` and an **Install health** field carries
+`healthy → degraded` — rather than a second, separate install message arriving alongside it.
+
+<Frame caption="A component degrading and recovering, delivered to Slack.">
+  <img src="/images/guides/component-health/slack-alert.png" alt="Two Slack messages from Nuon Cloud. The first is titled Component degraded, install degraded, ctl_api, and shows the component, its previous healthy verdict, the failing Deployment and a readiness probe connection-refused error. The second is titled Component recovered, install recovered, and shows all 52 resources healthy." />
+</Frame>
+
+Three things are deliberately quiet:
+
+- **`unknown` never alerts.** A runner going offline is already reported as runner inactivity, and
+  would otherwise page you once per component.
+- **Only root causes alert.** When a component fails because something it depends on failed, the
+  dependents are labelled `downstream of <component>` and stay silent. One outage, one alert.
+- **Recoveries are always paired** with the failure that preceded them.
 
 See [Webhooks](/guides/webhooks) for the full subscription model.
 
 ## Verified deploys
 
-By default a deploy finishes when the apply succeeds. Set `block_deploy` and it finishes only when
-the component has held `healthy` for `stabilization_window` afterwards:
+By default a deploy finishes when the apply succeeds. Set `block_deploy` and it finishes only once
+the component has held `healthy` for `stabilization_window` afterwards.
 
 ```toml
 [components.api.health]
-stabilization_window = "3m"
-block_deploy = true
+stabilization_window = "3m"      # default 3m, max 1h
+block_deploy         = true      # default false
 ```
 
-The gate appears as its own `verify health` step on the deploy workflow, narrating as it waits —
-how much of the window is left, what it is watching, and which check is holding things up. It judges
-the runner's raw observations directly: everything observed inside the window is post-apply
-evidence, so a failing observation fails the step immediately, and an all-healthy window passes the
-moment the window ends. The wait is measured from the moment the apply finished, so a component that
-was already healthy beforehand still has to prove it survived the change — and a deploy that fixes
-an unhealthy component passes as soon as its own observations come back healthy.
+The gate appears as its own **verify health** step, showing what it's watching and what's still
+outstanding. Only observations from inside the window count, so a component that was already healthy
+still has to prove it survived the change — and a deploy that *fixes* a broken component passes as
+soon as its own observations come back healthy.
 
-This is off by default. Turning it on is the only way health can affect whether a deploy passes, and
-a component Nuon cannot observe never blocks a deploy — absence of data is not treated as failure.
+This is off by default, and it's the only way health can affect whether a deploy passes. A component
+Nuon can't observe never blocks a deploy.
 
-**Gate probes must assert what the component itself provides.** A probe that checks the public
-endpoint belongs on the load-balancer component that exposes it — not on the app behind it. If a
-component's gate asserts something a *downstream* component provides, a first install deadlocks:
-the app's gate can never pass before the load balancer deploys, and the load balancer (which
-depends on the app) never deploys because the gate is holding it back.
+<Warning>
+**A gate must only assert what the component itself provides.** Put a probe for a public endpoint on
+the load balancer component that exposes it, not on the app behind it. If a component's gate depends
+on a *downstream* component, a first install deadlocks: the app's gate can't pass until the load
+balancer exists, and the load balancer never deploys because the app's gate is holding the workflow.
+</Warning>
 
-## Gating a rollout: canary and bake periods
+## Canary and bake periods
 
-The pieces above compose into progressive delivery. The primitive is a fleet health summary, scoped
-by install label:
+The pieces above compose into progressive delivery. The primitive is a fleet health summary scoped by
+install label:
 
-```bash
+<CodeGroup>
+```bash CLI
+nuon installs health --labels tier:canary --output agent
+```
+
+```bash API
 curl "https://api.nuon.co/v1/installs/health?labels=tier%3Dcanary" \
   -H "Authorization: Bearer $NUON_API_TOKEN" -H "X-Nuon-Org-ID: $NUON_ORG_ID"
 ```
+</CodeGroup>
 
 ```jsonc
 {
@@ -194,14 +372,8 @@ curl "https://api.nuon.co/v1/installs/health?labels=tier%3Dcanary" \
 }
 ```
 
-The CLI wraps the same thing, which is usually easier to drop into CI:
-
-```bash
-nuon installs health --labels tier:canary --output agent
-```
-
-A rollout then looks like: deploy to the installs labelled `tier=canary`, poll until `all_healthy` is
-true and has stayed true for your bake period, and only then continue to the rest of the fleet.
+A rollout then reads: deploy to `tier=canary`, hold until `all_healthy` has stayed true for your bake
+period, then continue to the rest of the fleet.
 
 ```bash
 # bake for 10 minutes, requiring health the whole way
@@ -212,27 +384,59 @@ for i in $(seq 1 20); do
 done
 ```
 
-`all_healthy` is never true unless at least one install was actually evaluated, and installs whose
-health has never been evaluated are counted separately in `unset`. A rollout must never read "no
-data" as a pass, so the endpoint will not let it.
+`all_healthy` is never true unless at least one install was actually evaluated, and installs that
+have never been evaluated are counted separately in `unset`. A rollout must never read "no data" as a
+pass, so the endpoint won't let it.
 
-Combine this with custom checks and the gate becomes whatever you need it to be — error rate,
-latency, or a business metric your own systems already track.
+## Uptime and incidents
 
-## Proving it stayed up
+Every debounced transition is kept for 90 days, giving each component and install a timeline and an
+uptime percentage, drawn as status-page-style daily bars.
 
-Every debounced transition is recorded for 90 days, which gives each component and install a health
-timeline and an uptime percentage, rendered as status-page-style daily bars in the dashboard.
+The badge and the percentage answer different questions: the badge is the verdict **right now**, the
+percentage is the **last 90 days**. A component reading `Healthy` at 97.57% is currently fine and had
+a bad spell earlier — and because an install is degraded whenever any of its components is, that one
+component is what sets the install's number.
 
-Time spent in `unknown` is excluded from uptime rather than counted as either up or down: we will not
-claim availability we did not observe. An install with no observations reports zero observed time
-instead of a misleading 100%.
+<Frame caption="90-day health for an install, with per-component uptime.">
+  <img src="/images/guides/component-health/90-day-health.png" alt="A 90-day health card showing 97.57% uptime, a row of daily status bars, and a list of components each with a Healthy badge and its own uptime percentage. One component, nginx_gateway, reads 97.57% while the rest read 100%." />
+</Frame>
 
-There is also an incident bundle per component, pulling together the failing transition, the captured
-diagnosis (Kubernetes events, restart counts, termination reasons such as `OOMKilled`) and the deploy
-it followed — useful as input to a runbook or an agent.
+**Time in `unknown` is excluded from uptime** rather than counted as up or down — Nuon won't claim
+availability it didn't observe. An install with no observations reports zero observed time instead of
+a misleading 100%.
 
-## Enabling it
+There's also an incident bundle per component, pulling together the failing transition, the captured
+diagnosis (Kubernetes events, restart counts, termination reasons like `OOMKilled`) and the deploy it
+followed — useful as input to a runbook or an agent.
 
-Component health is currently behind the `component-health` org feature. Ask Nuon to switch it on for
-your organization.
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Everything shows unknown or no resources at all">
+    Nuon can't reach the cluster. This is almost always an install that hasn't deployed since
+    component health was enabled. Click **Refresh cluster access** on the install's health card, or
+    run any deploy. Resources should appear within a minute or two.
+  </Accordion>
+  <Accordion title="A component shows a dash instead of a verdict">
+    That's `not-applicable` — either the component has no observable runtime footprint (a Terraform
+    component with no probe, a build-only component), or it has never deployed. Add a
+    [probe or a custom check](#choosing-a-check) to give it a verdict.
+  </Accordion>
+  <Accordion title="My custom resources aren't listed">
+    Kinds are read from what your chart or manifest actually ships, and are picked up on deploy. If
+    you've just added a CRD, deploy the component once — or wait for its next drift check, which
+    also refreshes them without applying anything.
+  </Accordion>
+  <Accordion title="A custom check went unknown on its own">
+    Its window expired. Set `stale_after` to match how often you actually report, up to `60m`.
+  </Accordion>
+  <Accordion title="A verdict took a few minutes to change">
+    That's the debounce: three bad observations to flip, two good to recover, at roughly one
+    observation a minute. It's what stops a single restart paging anyone.
+  </Accordion>
+  <Accordion title="My deploy failed on a required check that did run">
+    It has to be pushed *after* the apply finishes, and be healthy when the window closes. A value
+    pushed before the deploy started doesn't count for that deploy.
+  </Accordion>
+</AccordionGroup>
