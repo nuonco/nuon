@@ -47,6 +47,9 @@ type AppActionWorkflowConfig struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// Image is an optional container image the action's steps run inside.
+	Image string `json:"image,omitempty"`
+
 	// KubernetesContextName is the name of an AppKubernetesContextConfig on
 	// the same AppConfig. Empty means fall back to the implicit sandbox
 	// default. Stored as a name (not an FK) so it remains stable across
