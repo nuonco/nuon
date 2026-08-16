@@ -6,7 +6,6 @@ import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Tooltip } from '@/components/common/Tooltip'
@@ -183,8 +182,4 @@ export const ComponentsTable = ({
       searchPlaceholder="Search by name or ID..."
     />
   )
-}
-
-export const ComponentsTableSkeleton = () => {
-  return <TableSkeleton columns={columns} skeletonRows={5} />
 }

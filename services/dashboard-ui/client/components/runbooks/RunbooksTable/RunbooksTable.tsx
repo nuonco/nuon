@@ -5,7 +5,6 @@ import { ID } from '@/components/common/ID'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TRunbook } from '@/lib/ctl-api/apps/runbooks'
@@ -141,8 +140,4 @@ export const RunbooksTable = ({
       searchPlaceholder="Search by name or ID..."
     />
   )
-}
-
-export const RunbooksTableSkeleton = () => {
-  return <TableSkeleton columns={columns} skeletonRows={5} />
 }

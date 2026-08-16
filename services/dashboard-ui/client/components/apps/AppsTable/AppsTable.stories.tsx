@@ -4,7 +4,7 @@ export default {
 
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
-import { AppsTable, AppsTableSkeleton, type TAppRow } from './AppsTable'
+import { AppsTable, type TAppRow } from './AppsTable'
 
 const mockRows: TAppRow[] = Array.from({ length: 3 }, (_, i) => ({
   actionHref: `/org-1/apps/app-${i + 1}`,
@@ -40,4 +40,10 @@ export const Empty = () => (
   />
 )
 
-export const Loading = () => <AppsTableSkeleton />
+export const Loading = () => (
+  <AppsTable
+    data={[]}
+    isLoading
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)

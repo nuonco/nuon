@@ -3,7 +3,7 @@ export default {
 }
 
 import { Button } from '@/components/common/Button'
-import { InstallsTable, InstallsTableSkeleton, type InstallRow } from './InstallsTable'
+import { InstallsTable, type InstallRow } from './InstallsTable'
 
 const mockRows: InstallRow[] = Array.from({ length: 5 }, (_, i) => ({
   name: `prod-acme-${i + 1}`,
@@ -41,4 +41,10 @@ export const Empty = () => (
   />
 )
 
-export const Loading = () => <InstallsTableSkeleton />
+export const Loading = () => (
+  <InstallsTable
+    data={[]}
+    isLoading
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)

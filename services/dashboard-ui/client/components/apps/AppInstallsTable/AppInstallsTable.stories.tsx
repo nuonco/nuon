@@ -2,7 +2,7 @@ export default {
   title: 'Apps/AppInstallsTable',
 }
 
-import { AppInstallsTable, AppInstallsTableSkeleton, type InstallRow } from './AppInstallsTable'
+import { AppInstallsTable, type InstallRow } from './AppInstallsTable'
 import { Button } from '@/components/common/Button'
 
 const mockRows: InstallRow[] = Array.from({ length: 3 }, (_, i) => ({
@@ -32,4 +32,10 @@ export const Empty = () => (
   />
 )
 
-export const Loading = () => <AppInstallsTableSkeleton />
+export const Loading = () => (
+  <AppInstallsTable
+    data={[]}
+    isLoading
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)

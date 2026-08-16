@@ -8,7 +8,6 @@ import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Menu } from '@/components/common/Menu'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { RunRunbookButton } from '@/components/runbooks/RunRunbook'
@@ -231,8 +230,4 @@ export const InstallRunbooksTable = ({
       searchPlaceholder="Search by name or ID..."
     />
   )
-}
-
-export const InstallRunbooksTableSkeleton = () => {
-  return <TableSkeleton columns={columns} skeletonRows={5} />
 }
