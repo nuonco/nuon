@@ -2,7 +2,7 @@ export default {
   title: 'Sandbox/SandboxConfigCard',
 }
 
-import { SandboxConfigCard, SandboxConfigCardSkeleton } from './SandboxConfigCard'
+import { SandboxConfigCard } from './SandboxConfigCard'
 
 const mockTerraformConfig = {
   id: 'config-1',
@@ -48,6 +48,6 @@ export const Pulumi = () => (
 
 export const Loading = () => (
   <div className="max-w-2xl p-4">
-    <SandboxConfigCardSkeleton />
+    <SandboxConfigCard loading />
   </div>
 )
