@@ -3,7 +3,11 @@ import { useOrg } from '@/hooks/use-org'
 import { AwaitAWSDetails } from './AwaitAWSDetails'
 import type { IStackDetails } from '../types'
 
-export const AwaitAWSDetailsContainer = ({ stack, step }: IStackDetails) => {
+export const AwaitAWSDetailsContainer = ({
+  stack,
+  step,
+  loading,
+}: IStackDetails) => {
   const { org } = useOrg()
   const { install } = useInstall()
 
@@ -11,6 +15,7 @@ export const AwaitAWSDetailsContainer = ({ stack, step }: IStackDetails) => {
     <AwaitAWSDetails
       stack={stack}
       step={step}
+      loading={loading}
       orgId={org.id}
       installId={install?.id}
       installAwsRegion={install?.aws_account?.region}

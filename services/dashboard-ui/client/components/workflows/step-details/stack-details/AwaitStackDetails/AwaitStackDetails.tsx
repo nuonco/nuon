@@ -6,16 +6,12 @@ import {
 } from '@/components/common/KeyValueList'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { objectToKeyValueArray } from '@/utils/data-utils'
-import { AwaitAWSDetails, AwaitAWSDetailsSkeleton } from '../AwaitAWSDetails'
-import {
-  AwaitAzureDetails,
-  AwaitAzureDetailsSkeleton,
-} from '../AwaitAzureDetails'
-import { AwaitGCPDetails, AwaitGCPDetailsSkeleton } from '../AwaitGCPDetails'
+import { AwaitAWSDetails } from '../AwaitAWSDetails'
+import { AwaitAzureDetails } from '../AwaitAzureDetails'
+import { AwaitGCPDetails } from '../AwaitGCPDetails'
 import type { IStackDetails } from '../types'
 
 interface IAwaitStackDetails extends IStackDetails {
@@ -29,6 +25,7 @@ export const AwaitStackDetails = ({
   runnerType,
   spaceliftEnabled,
   tfProvider,
+  loading,
   ...props
 }: IAwaitStackDetails) => {
   const outputValues = useMemo(
@@ -36,30 +33,43 @@ export const AwaitStackDetails = ({
     [stack?.install_stack_outputs]
   )
 
+  const cloudDetails = runnerType?.startsWith('aws') ? (
+    <AwaitAWSDetails stack={stack} loading={loading} {...props} />
+  ) : runnerType === 'gcp' ? (
+    <AwaitGCPDetails
+      stack={stack}
+      loading={loading}
+      spaceliftEnabled={spaceliftEnabled}
+      tfProvider={tfProvider}
+      {...props}
+    />
+  ) : (
+    <AwaitAzureDetails stack={stack} loading={loading} {...props} />
+  )
+
   return (
     <div className="flex flex-col gap-6">
       <Card>
-        <Text>
-          Install stack{' '}
-          {stack?.versions?.at(0)?.composite_status?.status === 'active'
-            ? 'up and running'
-            : 'is waiting to run'}
-        </Text>
+        <Text>{loading ? 'Install stack' : stack?.versions?.at(0)?.composite_status?.status === 'active' ? 'Install stack up and running' : 'Install stack is waiting to run'}</Text>
 
         <div className="grid grid-cols-4">
-          <LabeledStatus
-            label="Current status"
-            statusProps={{
-              status: stack?.versions?.at(0)?.composite_status?.status,
-            }}
-            tooltipProps={{
-              tipContent:
-                stack?.versions?.at(0)?.composite_status
-                  ?.status_human_description,
-            }}
-          />
+          {loading ? (
+            <LabeledStatus label="Current status" loading />
+          ) : (
+            <LabeledStatus
+              label="Current status"
+              statusProps={{
+                status: stack?.versions?.at(0)?.composite_status?.status,
+              }}
+              tooltipProps={{
+                tipContent:
+                  stack?.versions?.at(0)?.composite_status
+                    ?.status_human_description,
+              }}
+            />
+          )}
 
-          <LabeledValue label="Last checked">
+          <LabeledValue label="Last checked" loading={loading}>
             <Time
               variant="subtext"
               time={stack?.versions?.at(0)?.runs?.at(-1)?.updated_at}
@@ -69,61 +79,15 @@ export const AwaitStackDetails = ({
         </div>
       </Card>
 
-      {runnerType?.startsWith('aws') ? (
-        <AwaitAWSDetails stack={stack} {...props} />
-      ) : runnerType === 'gcp' ? (
-        <AwaitGCPDetails
-          stack={stack}
-          spaceliftEnabled={spaceliftEnabled}
-          tfProvider={tfProvider}
-          {...props}
-        />
-      ) : (
-        <AwaitAzureDetails stack={stack} {...props} />
-      )}
+      {cloudDetails}
 
       <Card>
         <Text>Stack outputs</Text>
-        <KeyValueList values={outputValues} />
-      </Card>
-    </div>
-  )
-}
-
-interface IAwaitStackDetailsSkeleton {
-  runnerType?: string
-}
-
-export const AwaitStackDetailsSkeleton = ({
-  runnerType,
-}: IAwaitStackDetailsSkeleton) => {
-  return (
-    <div className="flex flex-col gap-6">
-      <Card>
-        <Skeleton height="17px" width="175px" />
-
-        <div className="grid grid-cols-4">
-          <LabeledValue label={<Skeleton height="17px" width="34px" />}>
-            <Skeleton height="23px" width="75px" />
-          </LabeledValue>
-
-          <LabeledValue label={<Skeleton height="17px" width="53px" />}>
-            <Skeleton height="23px" width="148px" />
-          </LabeledValue>
-        </div>
-      </Card>
-
-      {runnerType?.startsWith('aws') ? (
-        <AwaitAWSDetailsSkeleton />
-      ) : runnerType === 'gcp' ? (
-        <AwaitGCPDetailsSkeleton />
-      ) : (
-        <AwaitAzureDetailsSkeleton />
-      )}
-
-      <Card>
-        <Skeleton height="24px" width="142px" />
-        <KeyValueListSkeleton />
+        {loading ? (
+          <KeyValueListSkeleton />
+        ) : (
+          <KeyValueList values={outputValues} />
+        )}
       </Card>
     </div>
   )

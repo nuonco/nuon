@@ -12,12 +12,14 @@ export const AwaitGCPDetailsContainer = ({
   step,
   spaceliftEnabled,
   tfProvider,
+  loading,
 }: IAwaitGCPDetailsContainer) => {
   const { install } = useInstall()
   return (
     <AwaitGCPDetails
       stack={stack}
       step={step}
+      loading={loading}
       installId={install?.id}
       gcpProjectId={install?.gcp_account?.project_id}
       spaceliftEnabled={spaceliftEnabled}

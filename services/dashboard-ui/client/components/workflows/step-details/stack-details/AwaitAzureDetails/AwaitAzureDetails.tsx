@@ -5,7 +5,6 @@ import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
 import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import type { TAppSecretConfig } from '@/types'
 import { createFileDownload } from '@/utils/file-download'
@@ -36,7 +35,40 @@ export const AwaitAzureDetails = ({
   installId,
   azureLocation,
   secrets,
+  loading,
 }: IAwaitAzureDetails) => {
+  if (loading) {
+    return (
+      <>
+        <div className="flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            Provision the install stack using the Azure CLI
+          </Text>
+          <Card>
+            <Text>
+              Ensure you are logged into the Azure subscription you want to
+              install into
+            </Text>
+            <Code loading />
+          </Card>
+          <Card>
+            <Text>Create a resource group to deploy into</Text>
+            <Code loading />
+          </Card>
+        </div>
+        <div className="flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            Create the Key Vault
+          </Text>
+          <Card>
+            <Text>Create a Key Vault in the resource group</Text>
+            <Code loading />
+          </Card>
+        </div>
+      </>
+    )
+  }
+
   const vaultName = installId.slice(0, 24)
   const customerSecrets = secrets?.filter((s) => !s.auto_generate)
   const hasCustomerSecrets = (customerSecrets?.length ?? 0) > 0
@@ -296,33 +328,6 @@ export const AwaitAzureDetails = ({
           </Link>
         </Card>
       </div>
-    </>
-  )
-}
-
-export const AwaitAzureDetailsSkeleton = () => {
-  return (
-    <>
-      <Skeleton height="24px" width="175px" />
-
-      <Card>
-        <Skeleton height="17px" width="100px" />
-        <Skeleton height="52px" width="100%" />
-      </Card>
-
-      <Card>
-        <Skeleton height="17px" width="120px" />
-        <Skeleton height="52px" width="100%" />
-      </Card>
-
-      <Divider dividerWord="or" />
-
-      <Skeleton height="24px" width="325px" />
-
-      <Card>
-        <Skeleton height="17px" width="219px" />
-        <Skeleton height="72px" width="100%" />
-      </Card>
     </>
   )
 }
