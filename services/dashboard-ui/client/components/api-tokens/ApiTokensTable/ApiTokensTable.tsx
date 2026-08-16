@@ -4,7 +4,6 @@ import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TStaticToken } from '@/types'
@@ -95,14 +94,11 @@ export const ApiTokensTable = ({
     [roleTitles]
   )
 
-  if (isLoading) {
-    return <ApiTokensTableSkeleton />
-  }
-
   return (
     <Table<TStaticToken>
       columns={columns}
       data={data}
+      isLoading={isLoading}
       pagination={pagination}
       searchPlaceholder="Search tokens"
       emptyStateProps={{
@@ -112,16 +108,3 @@ export const ApiTokensTable = ({
     />
   )
 }
-
-const skeletonColumns: ColumnDef<TStaticToken>[] = [
-  { header: 'Name', accessorKey: 'name' },
-  { header: 'Type', id: 'identity' },
-  { header: 'Role', accessorKey: 'role' },
-  { header: 'Created', accessorKey: 'created_at' },
-  { header: 'Expires', accessorKey: 'expires_at' },
-  { header: 'Action', id: 'action' },
-]
-
-export const ApiTokensTableSkeleton = () => (
-  <TableSkeleton<TStaticToken> columns={skeletonColumns} skeletonRows={5} />
-)

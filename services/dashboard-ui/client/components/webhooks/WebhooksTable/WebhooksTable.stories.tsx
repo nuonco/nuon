@@ -2,7 +2,7 @@ export default {
   title: 'Webhooks/WebhooksTable',
 }
 
-import { WebhooksTable, WebhooksTableSkeleton } from './WebhooksTable'
+import { WebhooksTable } from './WebhooksTable'
 import type { TWebhook } from '@/types'
 
 const mockWebhooks: TWebhook[] = [
@@ -32,4 +32,4 @@ export const Default = () => (
 
 export const Empty = () => <WebhooksTable data={[]} isLoading={false} />
 
-export const Loading = () => <WebhooksTableSkeleton />
+export const Loading = () => <WebhooksTable data={[]} isLoading />

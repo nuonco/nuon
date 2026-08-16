@@ -3,7 +3,6 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
 import { Code } from '@/components/common/Code'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { DeleteOrgLinkButton } from '@/components/slack/DeleteOrgLink'
@@ -86,12 +85,11 @@ export const InstallationsTable = ({
     [links]
   )
 
-  if (isLoading) return <InstallationsTableSkeleton />
-
   return (
     <Table<TSlackInstallation>
       columns={columns}
       data={data}
+      isLoading={isLoading}
       enableSearch={false}
       emptyStateProps={{
         emptyTitle: 'No Slack workspaces installed',
@@ -101,14 +99,3 @@ export const InstallationsTable = ({
     />
   )
 }
-
-const skeletonColumns: ColumnDef<TSlackInstallation>[] = [
-  { header: 'Workspace', accessorKey: 'team_name' },
-  { header: 'Status', accessorKey: 'status' },
-  { header: 'Installed', accessorKey: 'created_at' },
-  { header: '', id: 'action' },
-]
-
-export const InstallationsTableSkeleton = () => (
-  <TableSkeleton<TSlackInstallation> columns={skeletonColumns} skeletonRows={2} />
-)
