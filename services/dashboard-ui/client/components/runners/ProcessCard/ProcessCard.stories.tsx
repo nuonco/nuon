@@ -3,7 +3,7 @@ export default {
 }
 
 import type { TRunnerHealthCheck } from '@/types'
-import { ProcessCard, ProcessCardSkeleton } from './ProcessCard'
+import { ProcessCard } from './ProcessCard'
 
 const now = new Date()
 const minutesAgo = (m: number) => new Date(now.getTime() - m * 60000).toISOString()
@@ -246,4 +246,4 @@ export const SideBySide = () => (
   </div>
 )
 
-export const Skeleton = () => <ProcessCardSkeleton />
+export const Loading = () => <ProcessCard loading />

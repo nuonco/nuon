@@ -5,7 +5,7 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import {
   ProcessCard,
-  ProcessCardSkeleton,
+  ProcessCardComponent,
 } from '@/components/runners/ProcessCard'
 import type { TRunnerProcess, TRunnerSettings, TWorkflowStep } from '@/types'
 
@@ -41,8 +41,8 @@ export const RunnerStepDetails = ({
       {processesLoading ? (
         <div className="@container">
           <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6">
-            <ProcessCardSkeleton />
-            <ProcessCardSkeleton />
+            <ProcessCardComponent loading />
+            <ProcessCardComponent loading />
           </div>
         </div>
       ) : processes.length === 0 ? (
