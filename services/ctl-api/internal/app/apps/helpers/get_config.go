@@ -17,9 +17,10 @@ func (h *Helpers) GetLatestActiveAppConfig(ctx context.Context, appID string) (*
 
 	res := h.db.WithContext(ctx).
 		Scopes(
-			LatestActiveAppConfig(appID),
+			ActiveAppConfigs(appID),
 			PreloadAppConfigComponentConfigConnections,
 		).
+		Order("created_at DESC").
 		First(&appConfig)
 	if res.Error != nil {
 		return nil, wrapAppConfigErr(res.Error)
@@ -33,7 +34,8 @@ func (h *Helpers) GetLatestActiveAppConfigBare(ctx context.Context, appID string
 	var appConfig app.AppConfig
 
 	res := h.db.WithContext(ctx).
-		Scopes(LatestActiveAppConfig(appID)).
+		Scopes(ActiveAppConfigs(appID)).
+		Order("created_at DESC").
 		First(&appConfig)
 	if res.Error != nil {
 		return nil, wrapAppConfigErr(res.Error)
