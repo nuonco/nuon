@@ -2,7 +2,7 @@ export default {
   title: 'Components/ComponentsTable',
 }
 
-import { ComponentsTable, ComponentsTableSkeleton, type TComponentRow } from './ComponentsTable'
+import { ComponentsTable, type TComponentRow } from './ComponentsTable'
 
 const mockRows: TComponentRow[] = Array.from({ length: 3 }, (_, i) => ({
   buildStatus: <span>active</span>,
@@ -30,4 +30,10 @@ export const Empty = () => (
   />
 )
 
-export const Loading = () => <ComponentsTableSkeleton />
+export const Loading = () => (
+  <ComponentsTable
+    data={[]}
+    isLoading
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)

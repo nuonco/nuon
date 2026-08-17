@@ -1,9 +1,9 @@
 import { useParams } from 'react-router'
 import { useOutletContext } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { HelmOutputs, HelmOutputsSkeleton } from '@/components/deploys/outputs/HelmOutputs/HelmOutputs'
+import { HelmOutputs } from '@/components/deploys/outputs/HelmOutputs/HelmOutputs'
 import { EmptyState } from '@/components/common/EmptyState'
-import { Skeleton } from '@/components/common/Skeleton'
+import { Loading } from '@/components/common/Loading'
 import { TerraformOutputs } from '@/components/terraform-outputs/TerraformOutputs'
 import { useOrg } from '@/hooks/use-org'
 import { useDeploy } from '@/hooks/use-deploy'
@@ -29,9 +29,11 @@ export const DeployOutputsTab = () => {
   })
 
   if (isLoading) {
-    return component?.type === 'helm_chart'
-      ? <HelmOutputsSkeleton />
-      : <Skeleton height="400px" width="100%" />
+    return (
+      <div className="flex justify-center py-10">
+        <Loading variant="large" />
+      </div>
+    )
   }
 
   if (error || !outputs) {

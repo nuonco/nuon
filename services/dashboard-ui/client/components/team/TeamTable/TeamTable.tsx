@@ -5,7 +5,6 @@ import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import type { TAccount } from '@/types'
 import { RemoveUserButton } from '@/components/team/RemoveUser'
@@ -132,14 +131,11 @@ export const TeamTable = ({
     [currentAccountId]
   )
 
-  if (isLoading) {
-    return <TeamTableSkeleton />
-  }
-
   return (
     <Table<TTeamMemberRow>
       columns={columns}
       data={parseAccountToTableData(data, roleTitles)}
+      isLoading={isLoading}
       pagination={pagination}
       enableSearch={false}
       emptyStateProps={{
@@ -149,15 +145,3 @@ export const TeamTable = ({
     />
   )
 }
-
-const skeletonColumns: ColumnDef<TTeamMemberRow>[] = [
-  { header: 'Name', accessorKey: 'name' },
-  { header: 'Email', accessorKey: 'email' },
-  { header: 'Role', accessorKey: 'role' },
-  { header: 'Status', accessorKey: 'status' },
-  { header: 'Action', id: 'action' },
-]
-
-export const TeamTableSkeleton = () => (
-  <TableSkeleton<TTeamMemberRow> columns={skeletonColumns} skeletonRows={5} />
-)

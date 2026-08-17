@@ -1,17 +1,11 @@
 import { Text } from '@/components/common/Text'
 import { CompositeError } from '@/components/common/CompositeError'
 import type { TInstallActionRun, TAccount, TWorkflowStep } from '@/types'
-import { ActionRunHeader, ActionRunHeaderSkeleton } from '../ActionRunHeader'
-import {
-  ActionRunMetadata,
-  ActionRunMetadataSkeleton,
-} from '../ActionRunMetadata'
+import { ActionRunHeader } from '../ActionRunHeader'
+import { ActionRunMetadata } from '../ActionRunMetadata'
 import { AdhocActionDetails } from '../AdhocActionDetails'
-import {
-  StandardActionSteps,
-  StandardActionStepsSkeleton,
-} from '../StandardActionSteps'
-import { ActionRunLogs, ActionRunLogsSkeleton } from '../ActionRunLogs'
+import { StandardActionSteps } from '../StandardActionSteps'
+import { ActionRunLogs } from '../ActionRunLogs'
 
 export interface IActionRunStepDetails {
   step?: TWorkflowStep
@@ -33,7 +27,10 @@ export const ActionRunStepDetails = ({
   if (isLoading && !actionRun) {
     return (
       <div className="flex flex-col gap-4">
-        <ActionRunStepDetailsSkeleton />
+        <ActionRunHeader loading />
+        <ActionRunMetadata loading />
+        <StandardActionSteps loading />
+        <ActionRunLogs loading />
       </div>
     )
   }
@@ -70,16 +67,5 @@ export const ActionRunStepDetails = ({
 
       <ActionRunLogs actionRun={actionRun} isAdhoc={isAdhoc} step={step} />
     </div>
-  )
-}
-
-export const ActionRunStepDetailsSkeleton = () => {
-  return (
-    <>
-      <ActionRunHeaderSkeleton />
-      <ActionRunMetadataSkeleton />
-      <StandardActionStepsSkeleton />
-      <ActionRunLogsSkeleton />
-    </>
   )
 }

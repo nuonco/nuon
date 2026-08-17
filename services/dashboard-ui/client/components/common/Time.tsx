@@ -50,6 +50,7 @@ export const Time = ({
   time,
   seconds,
   shouldTick = false,
+  loading,
   ...props
 }: ITime) => {
   const [, setTick] = useState(0)
@@ -59,6 +60,10 @@ export const Time = ({
     const id = setInterval(() => setTick((t) => t + 1), 30_000)
     return () => clearInterval(id)
   }, [shouldTick])
+
+  if (loading) {
+    return <Text {...props} loading />
+  }
 
   let datetime: DateTime
 

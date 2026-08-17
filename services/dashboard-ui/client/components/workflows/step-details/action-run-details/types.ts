@@ -5,14 +5,16 @@ export interface IActionRunDetails {
 }
 
 export interface IActionRunHeader {
-  actionRun: TInstallActionRun
-  isAdhoc: boolean
+  actionRun?: TInstallActionRun
+  isAdhoc?: boolean
+  loading?: boolean
   step?: TWorkflowStep
 }
 
 export interface IActionRunMetadata {
-  actionRun: TInstallActionRun
+  actionRun?: TInstallActionRun
   createdBy?: TAccount
+  loading?: boolean
   step?: TWorkflowStep
 }
 
@@ -21,11 +23,13 @@ export interface IAdhocActionDetails {
 }
 
 export interface IStandardActionSteps {
-  actionRun: TInstallActionRun
+  actionRun?: TInstallActionRun
+  loading?: boolean
 }
 
 export interface IActionRunLogs {
-  actionRun: TInstallActionRun
-  isAdhoc: boolean
+  actionRun?: TInstallActionRun
+  isAdhoc?: boolean
+  loading?: boolean
   step?: TWorkflowStep
 }

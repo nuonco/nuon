@@ -1,6 +1,7 @@
 import type { ElementType, HTMLAttributes } from 'react'
 import type { TTheme } from '@/types'
 import { cn } from '@/utils/classnames'
+import { SKELETON_CLASSES } from './Skeleton'
 
 export type TTextFamily = 'sans' | 'mono'
 export type TTextVariant =
@@ -19,6 +20,8 @@ export interface IText extends HTMLAttributes<HTMLSpanElement> {
   family?: TTextFamily
   flex?: boolean
   level?: 1 | 2 | 3 | 4 | 5 | 6
+  loading?: boolean
+  loadingWidth?: number
   nowrap?: boolean
   role?: 'paragraph' | 'heading' | 'code' | 'time'
   theme?: TTextTheme
@@ -39,6 +42,16 @@ const VARIANT_CLASSES: Record<TTextVariant, string> = {
   body: 'text-sm leading-6 tracking-[-0.2px]',
   subtext: 'text-xs leading-[17px] tracking-[-0.2px]',
   label: 'text-[11px] leading-[14px] tracking-[-0.2px]',
+}
+
+const VARIANT_LOADING: Record<TTextVariant, { height: string; ch: number }> = {
+  h1: { height: '40px', ch: 10 },
+  h2: { height: '30px', ch: 10 },
+  h3: { height: '27px', ch: 9 },
+  base: { height: '24px', ch: 12 },
+  body: { height: '24px', ch: 14 },
+  subtext: { height: '17px', ch: 12 },
+  label: { height: '14px', ch: 8 },
 }
 
 const WEIGHT_CLASSES: Record<TTextWeight, string> = {
@@ -67,6 +80,8 @@ export const Text = ({
   family = 'sans',
   flex,
   level,
+  loading,
+  loadingWidth,
   nowrap,
   role,
   variant = 'body',
@@ -74,6 +89,24 @@ export const Text = ({
   weight = 'normal',
   ...props
 }: IText) => {
+  if (loading) {
+    const { height, ch } = VARIANT_LOADING[variant]
+    return (
+      <span
+        aria-hidden
+        className={cn(
+          'inline-block align-middle',
+          FAMILY_CLASSES[family],
+          VARIANT_CLASSES[variant],
+          SKELETON_CLASSES,
+          className
+        )}
+        style={{ width: `${loadingWidth ?? ch}ch`, height }}
+        {...props}
+      />
+    )
+  }
+
   const isHeading = role === 'heading' || (level && !role)
   let Element: ElementType = 'span'
   if (as) Element = as

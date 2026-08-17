@@ -7,7 +7,6 @@ import { GitRepo } from '@/components/common/GitRepo'
 import { Hash } from '@/components/common/Hash'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { OperationRolesList } from '@/components/common/OperationRolesList'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { ComponentType } from '@/components/components/ComponentType'
@@ -30,10 +29,11 @@ import { getComponentConfigDisplayData } from '@/utils/component-config-display'
 import { isImageBuild } from '@/utils/image-ref'
 
 interface IComponentConfigCard extends Omit<ICard, 'children'> {
-  config: TComponentConfig
+  config?: TComponentConfig
   footer?: React.ReactNode
   headerActions?: React.ReactNode
   latestBuild?: TBuild
+  loading?: boolean
 }
 
 export const ComponentConfigCard = ({
@@ -41,11 +41,29 @@ export const ComponentConfigCard = ({
   footer,
   headerActions,
   latestBuild,
+  loading,
   ...props
 }: IComponentConfigCard) => {
+  const { addModal } = useSurfaces()
+
+  if (loading || !config) {
+    return (
+      <Card {...props}>
+        <div className="flex flex-col gap-6">
+          <Text weight="strong">Configuration</Text>
+          <div className="flex gap-6 items-start flex-wrap">
+            <LabeledValue label="Version" loading />
+            <LabeledValue label="Type" loading />
+            <LabeledValue label="Build timeout" loading />
+            <LabeledValue label="Deploy timeout" loading />
+          </div>
+        </div>
+      </Card>
+    )
+  }
+
   const { commonFields, typeSpecificFields, vcsInfo, operationRoles } =
     getComponentConfigDisplayData(config)
-  const { addModal } = useSurfaces()
 
   const getConfigButtons = () => {
     const buttons: Array<{ label: string; onClick: () => void }> = []
@@ -323,42 +341,3 @@ const LatestResolvedImage = ({ build }: { build: TBuild }) => {
   )
 }
 
-export const ComponentConfigCardSkeleton = (props: Omit<ICard, 'children'>) => {
-  return (
-    <Card {...props}>
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-wrap items-center gap-4">
-          <Skeleton height="24px" width="200px" />
-          <Skeleton height="17px" width="120px" />
-        </div>
-
-        <div className="flex gap-6 items-start justify-start flex-wrap">
-          <div className="space-y-2">
-            <Skeleton height="20px" width="200px" />
-            <Skeleton height="20px" width="150px" />
-          </div>
-
-          <LabeledValue label={<Skeleton height="17px" width="50px" />}>
-            <Skeleton height="23px" width="30px" />
-          </LabeledValue>
-
-          <LabeledValue label={<Skeleton height="17px" width="40px" />}>
-            <Skeleton height="23px" width="100px" />
-          </LabeledValue>
-
-          <LabeledValue label={<Skeleton height="17px" width="80px" />}>
-            <Skeleton height="23px" width="50px" />
-          </LabeledValue>
-
-          <LabeledValue label={<Skeleton height="17px" width="90px" />}>
-            <Skeleton height="23px" width="120px" />
-          </LabeledValue>
-
-          <LabeledValue label={<Skeleton height="17px" width="70px" />}>
-            <Skeleton height="23px" width="80px" />
-          </LabeledValue>
-        </div>
-      </div>
-    </Card>
-  )
-}
