@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"slices"
 	"sort"
+	"strings"
 
 	"github.com/iancoleman/strcase"
 
@@ -25,6 +26,28 @@ func sanitizeDeploymentName(name string) string {
 // role assignment that the identity needs.
 type customDeploymentIdentity struct {
 	DeploymentName string
+	// output holding the identity's principalId, resolved from the template
+	PrincipalIDOutput string
+}
+
+// resolvePrincipalIDOutput finds the output carrying a managed identity's
+// principalId. An exact "identityPrincipalId" wins; otherwise any output with
+// that suffix matches, so a template may prefix it to keep outputs unique.
+func resolvePrincipalIDOutput(outputKeys []string) (string, bool) {
+	const want = "identityprincipalid"
+
+	for _, key := range outputKeys {
+		if strings.EqualFold(key, want) {
+			return key, true
+		}
+	}
+	for _, key := range outputKeys {
+		if strings.HasSuffix(strings.ToLower(key), want) {
+			return key, true
+		}
+	}
+
+	return "", false
 }
 
 // customDeploymentOutputs records a custom stack's deployment name and its
@@ -63,6 +86,23 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 	hoistedParams := map[string]ARMParameter{}
 	allParamNames := map[string]string{}
 	prevDeploymentName := ""
+
+	// param name -> producing deployment; seeded with vnet outputs so they win over custom ones
+	wiredOutputs := map[string]string{}
+	for _, name := range []string{
+		"vnetId", "vnetName",
+		"publicSubnet1Id", "publicSubnet1Name",
+		"publicSubnet2Id", "publicSubnet2Name",
+		"publicSubnet3Id", "publicSubnet3Name",
+		"privateSubnet1Id", "privateSubnet1Name",
+		"privateSubnet2Id", "privateSubnet2Name",
+		"privateSubnet3Id", "privateSubnet3Name",
+		"runnerSubnetId", "runnerSubnetName",
+		"publicSubnetIds", "publicSubnetNames",
+		"privateSubnetIds", "privateSubnetNames",
+	} {
+		wiredOutputs[name] = "vnetDeployment"
+	}
 
 	for i, stack := range sorted {
 		if stack.Name == "" {
@@ -115,17 +155,20 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		// Track custom nested stacks that declare managed identities so the
 		// parent template can create subscription-level role assignments.
 		if armTmpl.hasManagedIdentity() {
-			identities = append(identities, customDeploymentIdentity{
-				DeploymentName: deploymentName,
-			})
-		}
-
-		// Check for parameter name conflicts
-		for paramName := range defaultParams {
-			if owner, exists := allParamNames[paramName]; exists {
-				return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q conflicts with stack %q", i, stack.Name, paramName, owner)
+			principalIDOutput, ok := resolvePrincipalIDOutput(outputKeys)
+			if !ok {
+				// Caught here rather than at deploy time, where ARM reports it
+				// as a missing output on a Nuon-generated resource.
+				return nil, nil, nil, nil, fmt.Errorf(
+					"custom_nested_stacks[%d] (%s): declares a managed identity but no output named %q (found: %v); add one so the subscription-level role assignment can read its principalId",
+					i, stack.Name, "identityPrincipalId", outputKeys,
+				)
 			}
-			allParamNames[paramName] = stack.Name
+
+			identities = append(identities, customDeploymentIdentity{
+				DeploymentName:    deploymentName,
+				PrincipalIDOutput: principalIDOutput,
+			})
 		}
 
 		// Build deployment parameters
@@ -164,26 +207,28 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			delete(defaultParams, cfnParamName)
 		}
 
-		// Wire VNet outputs to matching parameter names
-		vnetOutputs := []string{
-			"vnetId", "vnetName",
-			"publicSubnet1Id", "publicSubnet1Name",
-			"publicSubnet2Id", "publicSubnet2Name",
-			"publicSubnet3Id", "publicSubnet3Name",
-			"privateSubnet1Id", "privateSubnet1Name",
-			"privateSubnet2Id", "privateSubnet2Name",
-			"privateSubnet3Id", "privateSubnet3Name",
-			"runnerSubnetId", "runnerSubnetName",
-			"publicSubnetIds", "publicSubnetNames",
-			"privateSubnetIds", "privateSubnetNames",
-		}
+		// Wire VNet and earlier custom stack outputs to matching parameter names
 		for paramName := range params {
-			if slices.Contains(vnetOutputs, paramName) {
-				deploymentParams[paramName] = map[string]any{
-					"value": fmt.Sprintf("[reference('vnetDeployment').outputs.%s.value]", paramName),
-				}
-				delete(defaultParams, paramName)
+			if _, alreadySet := deploymentParams[paramName]; alreadySet {
+				continue
 			}
+			sourceDeployment, ok := wiredOutputs[paramName]
+			if !ok {
+				continue
+			}
+
+			deploymentParams[paramName] = map[string]any{
+				"value": fmt.Sprintf("[reference('%s').outputs.%s.value]", sourceDeployment, paramName),
+			}
+			delete(defaultParams, paramName)
+		}
+
+		// Runs after pruning: only names that actually reach the parent can conflict
+		for paramName := range defaultParams {
+			if owner, exists := allParamNames[paramName]; exists {
+				return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): parameter %q conflicts with stack %q", i, stack.Name, paramName, owner)
+			}
+			allParamNames[paramName] = stack.Name
 		}
 
 		// Remaining params are hoisted into parent
@@ -198,7 +243,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			hoistedParams[k] = v
 		}
 
-		// Build dependsOn chain
+		// Sequential: output wiring needs every earlier stack to be a transitive dependency
 		var dependsOn []string
 		if prevDeploymentName != "" {
 			dependsOn = append(dependsOn, prevDeploymentName)
@@ -224,6 +269,18 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		}
 
 		resources = append(resources, deployment)
+
+		// Registered after the deployment so a stack cannot wire to its own outputs
+		for _, key := range outputKeys {
+			// a custom output must not shadow a Nuon-injected param for later stacks
+			if slices.Contains(ReservedParamNames, key) {
+				continue
+			}
+			if _, exists := wiredOutputs[key]; !exists {
+				wiredOutputs[key] = deploymentName
+			}
+		}
+
 		prevDeploymentName = deploymentName
 	}
 

@@ -23,7 +23,11 @@ export const WithError = () => (
   <ModalStory>
     <CreateNotebookModal
       isPending={false}
-      error={{ error: 'A notebook with this name already exists.' }}
+      error={{
+        error: 'A notebook with this name already exists.',
+        description: '',
+        user_error: true,
+      }}
       onSubmit={noop}
     />
   </ModalStory>

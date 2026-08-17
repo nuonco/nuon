@@ -8,11 +8,9 @@ import { useRoleOptions } from '@/hooks/use-roles'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { updateCurrentOrgOIDCTrustPolicy } from '@/lib'
-import type { TAPIError, TOIDCTrustPolicy } from '@/types'
-import {
-  EditOIDCTrustPolicyModal,
-  type EditOIDCTrustPolicyFormInput,
-} from './EditOIDCTrustPolicy'
+import type { TOIDCTrustPolicy } from '@/types'
+import { OIDCTrustPolicyFormModal } from '@/components/oidc-trust-policies/OIDCTrustPolicyForm'
+import type { OIDCFormValues } from '@/components/oidc-trust-policies/OIDCTrustPolicyForm/schema'
 
 const EditOIDCTrustPolicyModalContainer = ({
   policy,
@@ -25,7 +23,7 @@ const EditOIDCTrustPolicyModalContainer = ({
   const { addToast } = useToast()
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: (input: EditOIDCTrustPolicyFormInput) =>
+    mutationFn: (input: OIDCFormValues) =>
       updateCurrentOrgOIDCTrustPolicy({
         body: {
           name: input.name,
@@ -59,17 +57,11 @@ const EditOIDCTrustPolicyModalContainer = ({
       )
       removeModal(props.modalId)
     },
-    onError: (err: TAPIError) => {
-      addToast(
-        <Toast heading="Unable to update trust policy" theme="error">
-          <Text>{err?.description || err?.error || 'Try again.'}</Text>
-        </Toast>
-      )
-    },
   })
 
   return (
-    <EditOIDCTrustPolicyModal
+    <OIDCTrustPolicyFormModal
+      mode="edit"
       policy={policy}
       isPending={isPending}
       error={error}

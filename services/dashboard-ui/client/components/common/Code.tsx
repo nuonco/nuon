@@ -1,6 +1,10 @@
 import { cn } from '@/utils/classnames'
+import { Skeleton } from './Skeleton'
+import { Text } from './Text'
 
 export interface ICode extends React.HTMLAttributes<HTMLSpanElement> {
+  loading?: boolean
+  loadingWidth?: number
   variant?: 'default' | 'preformated' | 'inline'
 }
 
@@ -16,10 +20,25 @@ const VARIANT_CLASSES: Record<string, string> = {
 export const Code = ({
   className,
   children,
+  loading,
+  loadingWidth,
   variant = 'default',
   ...props
 }: ICode) => {
   const classes = cn(BASE_CLASSES, VARIANT_CLASSES[variant] || '', className)
+
+  if (loading) {
+    if (variant === 'inline') {
+      return (
+        <Text family="mono" variant="body" loading loadingWidth={loadingWidth} />
+      )
+    }
+    return (
+      <div className={classes} aria-hidden {...props}>
+        <Skeleton lines={3} width={['85%', '95%', '60%']} />
+      </div>
+    )
+  }
 
   if (variant === 'preformated') {
     return (

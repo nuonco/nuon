@@ -26,13 +26,13 @@ func (s *Helpers) DeleteAppComponent(ctx context.Context, compID string) error {
 	}
 
 	appID := comp.AppID
-	appCfg, err := s.GetAppLatestConfig(ctx, appID)
-	if err != nil {
+	appCfg, err := s.GetLatestActiveAppConfig(ctx, appID)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("unable to get app latest config: %w", err)
 	}
 
 	// Check if the component is part of the current app config, if so, do not allow deletion.
-	if slices.Contains(appCfg.ComponentIDs, compID) {
+	if appCfg != nil && slices.Contains(appCfg.ComponentIDs, compID) {
 		msg := fmt.Sprintf("unable to delete component %s as it's a part of current app config", compID)
 		return stderr.ErrUser{
 			Description: msg,

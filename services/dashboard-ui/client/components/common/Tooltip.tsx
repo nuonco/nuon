@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/utils/classnames'
 import { Icon } from './Icon'
+import { Text } from './Text'
 import './Tooltip.css'
 
 export interface ITooltip extends React.HTMLAttributes<HTMLSpanElement> {
@@ -129,14 +130,29 @@ export const Tooltip = ({
   }, [])
 
   useEffect(() => {
-    if (isOpen) calculatePosition()
+    if (!isOpen) return
+    let raf = 0
+    let prevKey = ''
+    let frames = 0
+    const settle = () => {
+      calculatePosition()
+      const t = triggerRef.current?.getBoundingClientRect()
+      const key = t ? `${t.top},${t.left},${t.width},${t.height}` : ''
+      if (key !== prevKey && frames < 30) {
+        prevKey = key
+        frames += 1
+        raf = requestAnimationFrame(settle)
+      }
+    }
+    settle()
+    return () => cancelAnimationFrame(raf)
   }, [isOpen])
 
   const tooltipContent = (
     <span
       ref={tooltipRef}
       className={cn(
-        `tooltip-content bg-background text-foreground fixed block px-2 py-1 rounded-md drop-shadow-lg w-max whitespace-nowrap ${effPosition}`,
+        `tooltip-content bg-background text-foreground fixed flex items-center px-2 py-1 rounded-md drop-shadow-lg w-max whitespace-nowrap ${effPosition}`,
         {
           enter: isOpen,
           exit: !isOpen,
@@ -154,7 +170,11 @@ export const Tooltip = ({
           : undefined
       }
     >
-      {tipContent}
+      {typeof tipContent === 'string' ? (
+        <Text variant="subtext">{tipContent}</Text>
+      ) : (
+        tipContent
+      )}
     </span>
   )
 
@@ -168,6 +188,15 @@ export const Tooltip = ({
         setOpen(true)
       }}
       onMouseLeave={() => {
+        if (disableHover) return
+        setOpen(false)
+      }}
+      onFocus={() => {
+        if (disableHover) return
+        calculatePosition()
+        setOpen(true)
+      }}
+      onBlur={() => {
         if (disableHover) return
         setOpen(false)
       }}

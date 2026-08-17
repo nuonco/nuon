@@ -111,7 +111,7 @@ const AppTemplate = () => {
     <PageLayout>
       {!isChildRoute ? <AppHeader /> : null}
       <PageContent className="border-t" variant="row">
-        <SubNav basePath={`/${org?.id}/apps/${app?.id}`} links={navLinks} />
+        <SubNav basePath={`/${org?.id}/apps/${app?.id}`} links={navLinks} storageKey="subnav:app" />
         <div className="flex flex-col flex-1 min-w-0">
           <Outlet />
         </div>

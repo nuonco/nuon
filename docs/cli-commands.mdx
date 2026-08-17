@@ -7,6 +7,17 @@ keywords: ["nuon cli commands", "nuon auth login", "nuon orgs select", "nuon org
 
 The commands you'll use most. Run `nuon --help` (or `nuon <command> --help`) for the full set.
 
+## Global flags
+
+These work on every command.
+
+| Flag | What it does |
+|------|--------------|
+| `--config <path>`, `-C <path>` | Use a custom config file instead of `~/.nuon`. Can also be set with the `NUON_CONFIG_FILE` env var. |
+| `--output <format>` | Output format: `table` (default), `json`, or `agent`. Can also be set with `NUON_OUTPUT`. |
+| `--read-only` | Block any command that modifies state. Can also be set with `NUON_READ_ONLY=1`. |
+| `--debug` | Print per-request API timing to stderr. |
+
 ## Authenticate
 
 | Command | What it does |
@@ -20,10 +31,10 @@ The commands you'll use most. Run `nuon --help` (or `nuon <command> --help`) for
 |---------|--------------|
 | `nuon orgs select` | Switch your active org. A new trial account has a single org that's selected automatically when you log in, so you only need this once you belong to more than one. |
 | `nuon orgs current` | Show the active org. |
-| `nuon orgs api-tokens create --name <name>` | Create a durable API token for the current org (shown once). Requires org admin. Add `--role` (`org_admin`, `org_support`, `org_read_only`; defaults to `org_read_only`) to set the token's permissions. |
+| `nuon orgs api-tokens create --name <name>` | Create a durable API token for the current org (shown once). Requires org admin. Add `--role` (defaults to `org_read_only`; run `nuon roles list` or see [Access control](/concepts/access-control)) to set the token's permissions, or `--personal` to issue the token against your own account and its existing roles instead. |
 | `nuon orgs api-tokens list` | List the current org's API tokens. |
 | `nuon orgs api-tokens delete --id <token-id>` | Revoke an API token. |
-| `nuon orgs update-user-role --user-id <id> --role <role>` | Change an org member's role (`org_admin`, `org_read_only`). Requires org admin. |
+| `nuon orgs update-user-role --user-id <id> --role <role>` | Change an org member's role (run `nuon roles list` or see [Access control](/concepts/access-control)). Requires org admin. |
 
 ## Apps & config
 

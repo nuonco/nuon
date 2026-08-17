@@ -128,6 +128,7 @@
               "concepts/policies",
               "concepts/operation-roles",
               "concepts/triggers",
+              "concepts/access-control",
               "concepts/api-tokens",
               "concepts/service-accounts",
               "concepts/oidc-federation"

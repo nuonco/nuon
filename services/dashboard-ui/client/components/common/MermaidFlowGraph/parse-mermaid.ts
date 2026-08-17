@@ -41,7 +41,11 @@ function parseNodeDeclaration(token: string): { id: string; label: string; nodeS
   for (const { re, nodeShape } of patterns) {
     const m = token.match(re)
     if (m) {
-      return { id: m[1], label: m[2].replace(/<br\s*\/?>/gi, '\n').replace(/"/g, ''), nodeShape }
+      const label = m[2]
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/?(?!(?:b|i|strong|em)\b)[a-z][^>]*>/gi, '')
+        .replace(/"/g, '')
+      return { id: m[1], label, nodeShape }
     }
   }
 
@@ -97,6 +101,29 @@ function parseStyleDirective(line: string): { nodeId: string; styles: Record<str
   return { nodeId, styles }
 }
 
+function parseClassDefDirective(line: string): { names: string[]; styles: Record<string, string> } | null {
+  const m = line.match(/^classDef\s+([\w,]+)\s+(.+?);?$/)
+  if (!m) return null
+
+  const names = m[1].split(',').map((s) => s.trim()).filter(Boolean)
+  const styles: Record<string, string> = {}
+
+  for (const part of m[2].split(',')) {
+    const [key, val] = part.split(':').map((s) => s.trim())
+    if (key && val) styles[key] = val
+  }
+
+  return { names, styles }
+}
+
+function parseClassAssignment(line: string): { nodeIds: string[]; className: string } | null {
+  const m = line.match(/^class\s+([\w,]+)\s+(\w+);?$/)
+  if (!m) return null
+
+  const nodeIds = m[1].split(',').map((s) => s.trim()).filter(Boolean)
+  return { nodeIds, className: m[2] }
+}
+
 function collectAllDescendantNodes(
   sg: ParsedSubgraph,
   allSubgraphs: ParsedSubgraph[],
@@ -124,6 +151,8 @@ export function parseMermaidFlowchart(code: string): ParseResult {
   const edges: ParsedEdge[] = []
   const subgraphs: ParsedSubgraph[] = []
   const styleMap = new Map<string, Record<string, string>>()
+  const classDefMap = new Map<string, Record<string, string>>()
+  const nodeClassMap = new Map<string, string>()
 
   const headerMatch = lines[0]?.match(/^(?:graph|flowchart)\s+(TD|TB|LR|RL|BT)\s*$/i)
   if (headerMatch) {
@@ -232,7 +261,23 @@ export function parseMermaidFlowchart(code: string): ParseResult {
       continue
     }
 
-    if (/^classDef\s/.test(line) || /^class\s/.test(line) || /^click\s/.test(line) || /^linkStyle\s/.test(line)) {
+    const classDefResult = parseClassDefDirective(line)
+    if (classDefResult) {
+      for (const name of classDefResult.names) {
+        classDefMap.set(name, classDefResult.styles)
+      }
+      continue
+    }
+
+    const classAssignResult = parseClassAssignment(line)
+    if (classAssignResult) {
+      for (const nodeId of classAssignResult.nodeIds) {
+        nodeClassMap.set(nodeId, classAssignResult.className)
+      }
+      continue
+    }
+
+    if (/^direction\s/.test(line) || /^click\s/.test(line) || /^linkStyle\s/.test(line)) {
       continue
     }
 
@@ -257,13 +302,26 @@ export function parseMermaidFlowchart(code: string): ParseResult {
     tryRegisterNode(line) || ensureNode(line.match(/^(\w+)$/)?.[1] || '')
   }
 
+  for (const [nodeId, className] of nodeClassMap) {
+    const classStyles = classDefMap.get(className)
+    const node = nodes.get(nodeId)
+    if (node && classStyles) {
+      node.style = {
+        fill: classStyles.fill,
+        stroke: classStyles.stroke,
+        color: classStyles.color,
+      }
+    }
+  }
+
   for (const [nodeId, styles] of styleMap) {
     const node = nodes.get(nodeId)
     if (node) {
       node.style = {
-        fill: styles.fill,
-        stroke: styles.stroke,
-        color: styles.color,
+        ...node.style,
+        ...(styles.fill ? { fill: styles.fill } : {}),
+        ...(styles.stroke ? { stroke: styles.stroke } : {}),
+        ...(styles.color ? { color: styles.color } : {}),
       }
     }
   }

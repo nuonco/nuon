@@ -5,7 +5,6 @@ import { Card } from '@/components/common/Card'
 import { Duration } from '@/components/common/Duration'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -69,26 +68,50 @@ function HealthCheckGraph({
 }
 
 interface IProcessCard {
-  process: TRunnerProcess
+  process?: TRunnerProcess
   settings?: TRunnerSettings
-  isConnected: boolean
+  isConnected?: boolean
   heartbeatCreatedAt?: string
-  configuredVersion: string
-  reportedVersion: string
-  healthchecks: TRunnerHealthCheck[]
+  configuredVersion?: string
+  reportedVersion?: string
+  healthchecks?: TRunnerHealthCheck[]
   managementDropdown?: React.ReactNode
+  loading?: boolean
 }
 
 export const ProcessCard = ({
   process,
-  settings,
   isConnected,
   heartbeatCreatedAt,
   configuredVersion,
   reportedVersion,
   healthchecks,
   managementDropdown,
+  loading,
 }: IProcessCard) => {
+  if (loading || !process) {
+    return (
+      <Card className="min-w-0">
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+              <Text variant="base" weight="strong" loading loadingWidth={16} />
+              <Status loading variant="badge" />
+            </div>
+            <ID loading loadingWidth={26} />
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-x-6 gap-y-4">
+          <LabeledValue label="Connectivity" loading />
+          <LabeledValue label="Uptime" loading />
+          <LabeledValue label="Last heartbeat" loading />
+          <LabeledValue label="Configured version" loading />
+          <LabeledValue label="Reported version" loading />
+        </div>
+      </Card>
+    )
+  }
+
   const warnings = process.warnings ?? []
 
   return (
@@ -123,7 +146,7 @@ export const ProcessCard = ({
         </Banner>
       ))}
 
-      <HealthCheckGraph healthchecks={healthchecks} />
+      <HealthCheckGraph healthchecks={healthchecks ?? []} />
 
       <div className="grid grid-cols-3 gap-x-6 gap-y-4">
         <LabeledValue label="Connectivity">
@@ -165,21 +188,3 @@ export const ProcessCard = ({
     </Card>
   )
 }
-
-export const ProcessCardSkeleton = () => (
-  <Card className="min-w-0">
-    <div className="flex items-center justify-between">
-      <Skeleton height="24px" width="160px" />
-      <Skeleton height="32px" width="80px" />
-    </div>
-    <Skeleton height="32px" width="100%" />
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex flex-col gap-1">
-          <Skeleton height="14px" width="60px" />
-          <Skeleton height="20px" width="80px" />
-        </div>
-      ))}
-    </div>
-  </Card>
-)

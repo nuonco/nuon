@@ -23,6 +23,9 @@ type AppRunnerJob struct {
 	// available timeout is how long a job can be marked as "available" before being requeued
 	AvailableTimeout int64 `json:"available_timeout,omitempty"`
 
+	// composite error
+	CompositeError *CompositeerrorsCompositeErrorData `json:"composite_error,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -124,6 +127,10 @@ type AppRunnerJob struct {
 func (m *AppRunnerJob) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCompositeError(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateExecutions(formats); err != nil {
 		res = append(res, err)
 	}
@@ -159,6 +166,29 @@ func (m *AppRunnerJob) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppRunnerJob) validateCompositeError(formats strfmt.Registry) error {
+	if swag.IsZero(m.CompositeError) { // not required
+		return nil
+	}
+
+	if m.CompositeError != nil {
+		if err := m.CompositeError.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("composite_error")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("composite_error")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -349,6 +379,10 @@ func (m *AppRunnerJob) validateType(formats strfmt.Registry) error {
 func (m *AppRunnerJob) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateCompositeError(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateExecutions(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -384,6 +418,31 @@ func (m *AppRunnerJob) ContextValidate(ctx context.Context, formats strfmt.Regis
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppRunnerJob) contextValidateCompositeError(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.CompositeError != nil {
+
+		if swag.IsZero(m.CompositeError) { // not required
+			return nil
+		}
+
+		if err := m.CompositeError.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("composite_error")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("composite_error")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

@@ -2,7 +2,28 @@ package helpers
 
 import (
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
+
+// ActiveAppConfigs restricts a query to the app's configs that finished syncing.
+// A pending, syncing or errored config has no component_ids and no config records, so it must never
+// stand in as the app's current config.
+//
+// Ordering must be chained on the query builder by the caller, NOT added here: an Order clause
+// inside a scope is dropped at execution time, which silently turns "newest active config" into
+// First()'s primary-key ordering (i.e. the config with the smallest ID).
+func ActiveAppConfigs(appID string) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.
+			Where(app.AppConfig{AppID: appID}).
+			Where(
+				views.TableOrViewName(db, &app.AppConfig{}, ".status_v2 ->> 'status' = ?"),
+				string(app.AppConfigStatusActive),
+			)
+	}
+}
 
 // secrets config
 func PreloadAppSecretsConfig(db *gorm.DB) *gorm.DB {

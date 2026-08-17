@@ -2,10 +2,9 @@ import { useState } from 'react'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Loading } from '@/components/common/Loading'
 import { SearchInput } from '@/components/common/SearchInput'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import type { TWorkflowStep } from '@/types'
-import { getStepKind } from '@/utils/workflow-utils'
+import { getStepKind, isRetryChain } from '@/utils/workflow-utils'
 import { WorkflowStepGroup } from './WorkflowStepGroup'
 import { WorkflowStepRoundGroup } from './WorkflowStepRoundGroup'
 import { WorkflowStepRow } from './WorkflowStepRow'
@@ -75,8 +74,8 @@ export const WorkflowSteps = ({
       }
     }
 
-    return [...byKind.values()].map((kindSteps) => {
-      if (kindSteps.length > 1) {
+    return [...byKind.values()].flatMap((kindSteps) => {
+      if (isRetryChain(kindSteps)) {
         return (
           <WorkflowStepGroup
             key={kindSteps[0].id}
@@ -85,6 +84,19 @@ export const WorkflowSteps = ({
             planOnly={planOnly}
           />
         )
+      }
+
+      if (kindSteps.length > 1) {
+        return kindSteps.map((step) => (
+          <div key={step.id} className="flex px-4 py-2">
+            <WorkflowStepRow
+              step={step}
+              approvalPrompt={approvalPrompt}
+              planOnly={planOnly}
+              showRetry
+            />
+          </div>
+        ))
       }
 
       const step = kindSteps[0]
@@ -144,7 +156,7 @@ export const WorkflowSteps = ({
   )
 }
 
-const SKELETON_TITLE_WIDTHS = ['12rem', '16rem', '10rem', '14rem', '11rem']
+const SKELETON_TITLE_WIDTHS = [30, 40, 25, 35, 28]
 
 export const WorkflowStepsSkeleton = () => {
   return (
@@ -154,7 +166,7 @@ export const WorkflowStepsSkeleton = () => {
           <span className="flex items-center justify-center w-6 h-6 shrink-0">
             <Loading className="h-5 w-5 text-cool-grey-500 dark:text-white/50" />
           </span>
-          <Skeleton height="1rem" width={width} />
+          <Text variant="body" loading loadingWidth={width} />
         </div>
       ))}
     </div>

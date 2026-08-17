@@ -24,7 +24,7 @@ export const ActionDetail = () => {
   const { org } = useOrg()
   const { app } = useApp()
 
-  const { data: action } = useQuery({
+  const { data: action, isLoading } = useQuery({
     queryKey: ['action', org?.id, app?.id, actionId],
     queryFn: () =>
       getAction({ orgId: org.id, appId: app.id, actionId: actionId! }),
@@ -53,7 +53,7 @@ export const ActionDetail = () => {
       <div className="p-6 border-b flex items-start justify-between gap-8">
         <HeadingGroup>
           <BackLink className="mb-6" />
-          <Text variant="base" weight="strong">
+          <Text variant="base" weight="strong" loading={isLoading} loadingWidth={20}>
             {action?.name}
           </Text>
           {actionId ? <ID>{actionId}</ID> : null}
@@ -70,10 +70,17 @@ export const ActionDetail = () => {
           ) : null}
         </HeadingGroup>
 
-        {config &&
-        (config.triggers?.length ||
-          config.break_glass_role_arn ||
-          config.role) ? (
+        {isLoading ? (
+          <div className="flex flex-row gap-6 items-start">
+            <LabeledValue label="Timeout" loading />
+            <LabeledValue label="Kube config" loading />
+            <LabeledValue label="Triggers" loading />
+          </div>
+        ) : config &&
+          (config.triggers?.length ||
+            config.break_glass_role_arn ||
+            config.role ||
+            config.image) ? (
           <div className="flex flex-row gap-6 items-start">
             {config?.timeout ? (
               <LabeledValue label="Timeout">
@@ -90,6 +97,12 @@ export const ActionDetail = () => {
                 {config?.enable_kube_config ? 'Enabled' : 'Disabled'}
               </Badge>
             </LabeledValue>
+
+            {config?.image ? (
+              <LabeledValue label="Container image">
+                <Code variant="inline">{config.image}</Code>
+              </LabeledValue>
+            ) : null}
             {config.triggers?.length ? (
               <LabeledValue label="Triggers">
                 <div className="flex flex-col gap-2">

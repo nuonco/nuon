@@ -5,7 +5,6 @@ import { ID } from '@/components/common/ID'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import type { TActionConfigTriggerType, TAction } from '@/types'
 import { ActionTriggerType } from '../ActionTriggerType'
@@ -161,8 +160,4 @@ export const ActionsTable = ({
       searchPlaceholder="Search by name or ID..."
     />
   )
-}
-
-export const ActionsTableSkeleton = () => {
-  return <TableSkeleton columns={columns} skeletonRows={5} />
 }

@@ -1,10 +1,15 @@
-import { useState } from 'react'
-import { Banner } from '@/components/common/Banner'
+import { useForm, useStore } from '@tanstack/react-form'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Select, type SelectOption } from '@/components/common/form/Select'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { FormSelect } from '@/components/common/form/FormSelect'
+import { type SelectOption } from '@/components/common/form/Select'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
+import {
+  changeServiceAccountRoleSchema,
+  type ChangeServiceAccountRoleValues,
+} from './schema'
 
 export const ChangeServiceAccountRoleModal = ({
   accountIdentity,
@@ -22,7 +27,19 @@ export const ChangeServiceAccountRoleModal = ({
   error: TAPIError | null
   onSubmit: (params: { role: string }) => void
 } & Omit<IModal, 'onSubmit'>) => {
-  const [role, setRole] = useState(currentRole || roleOptions[0]?.value || '')
+  const form = useForm({
+    defaultValues: {
+      role: currentRole || roleOptions[0]?.value || '',
+    } as ChangeServiceAccountRoleValues,
+    validators: {
+      onMount: changeServiceAccountRoleSchema,
+      onChange: changeServiceAccountRoleSchema,
+    },
+    onSubmit: ({ value }) => onSubmit({ role: value.role }),
+  })
+
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
+  const role = useStore(form.store, (s) => s.values.role)
 
   return (
     <Modal
@@ -35,35 +52,40 @@ export const ChangeServiceAccountRoleModal = ({
       primaryActionTrigger={{
         children: isPending ? (
           <span className="flex items-center gap-2">
-            <Icon variant="Loading" /> Saving...
+            <Icon variant="Loading" /> Saving
           </span>
         ) : (
           'Save'
         ),
-        disabled: isPending || role === currentRole,
-        onClick: () => onSubmit({ role }),
+        disabled: !canSubmit || isPending || role === currentRole,
+        onClick: () => form.handleSubmit(),
         variant: 'primary',
       }}
       {...props}
     >
-      <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to change role'}
-          </Banner>
-        ) : null}
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-6"
+      >
+        <FormErrorBanner error={error} fallback="Unable to change role" />
 
         <Text>
           Change the role for <strong>{accountIdentity}</strong>.
         </Text>
 
-        <Select
-          value={role}
-          onChange={(value) => setRole(value)}
-          options={roleOptions}
-          labelProps={{ labelText: 'Role' }}
-        />
-      </div>
+        <form.Field name="role">
+          {(field) => (
+            <FormSelect
+              field={field}
+              options={roleOptions}
+              disabled={isPending}
+              labelProps={{ labelText: 'Role' }}
+            />
+          )}
+        </form.Field>
+      </form>
     </Modal>
   )
 }

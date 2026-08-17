@@ -4,7 +4,6 @@ import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TStaticToken } from '@/types'
@@ -52,6 +51,20 @@ export const ApiTokensTable = ({
         ),
       },
       {
+        id: 'identity',
+        header: 'Type',
+        cell: (props) => {
+          const token = props.row.original
+          const isPersonal =
+            !!token.account_id && token.account_id === token.created_by_id
+          return (
+            <Text variant="body">
+              {isPersonal ? 'Personal' : 'Service account'}
+            </Text>
+          )
+        },
+      },
+      {
         header: 'Role',
         accessorKey: 'role',
         cell: (props) => (
@@ -81,14 +94,11 @@ export const ApiTokensTable = ({
     [roleTitles]
   )
 
-  if (isLoading) {
-    return <ApiTokensTableSkeleton />
-  }
-
   return (
     <Table<TStaticToken>
       columns={columns}
       data={data}
+      isLoading={isLoading}
       pagination={pagination}
       searchPlaceholder="Search tokens"
       emptyStateProps={{
@@ -98,15 +108,3 @@ export const ApiTokensTable = ({
     />
   )
 }
-
-const skeletonColumns: ColumnDef<TStaticToken>[] = [
-  { header: 'Name', accessorKey: 'name' },
-  { header: 'Role', accessorKey: 'role' },
-  { header: 'Created', accessorKey: 'created_at' },
-  { header: 'Expires', accessorKey: 'expires_at' },
-  { header: 'Action', id: 'action' },
-]
-
-export const ApiTokensTableSkeleton = () => (
-  <TableSkeleton<TStaticToken> columns={skeletonColumns} skeletonRows={5} />
-)

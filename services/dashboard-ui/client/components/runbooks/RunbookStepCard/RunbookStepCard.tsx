@@ -2,6 +2,7 @@ import { InstallActionRunOutputs } from '@/components/actions/InstallActionRunOu
 import { TerraformOutputs } from '@/components/terraform-outputs/TerraformOutputs'
 import { Card } from '@/components/common/Card'
 import { Code } from '@/components/common/Code'
+import { CompositeError } from '@/components/common/CompositeError'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { JSONViewer } from '@/components/common/JSONViewer'
@@ -12,7 +13,7 @@ import { Stack } from '@/components/common/Stack'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import type { TInstallActionRun, TWorkflowStep } from '@/types'
+import type { TCompositeError, TInstallActionRun, TWorkflowStep } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 
 type TStatusHistoryEntry = NonNullable<
@@ -88,9 +89,20 @@ export const RunbookStepCard = ({
       ? 'sandbox run'
       : 'action run'
   const actionRun = isActionRun ? (targetData as TInstallActionRun) : undefined
+  const compositeError =
+    typeof targetData === 'object' &&
+    targetData !== null &&
+    'composite_error' in targetData
+      ? (targetData as { composite_error?: TCompositeError }).composite_error
+      : undefined
   const envVarEntries = Object.entries(actionRun?.run_env_vars ?? {})
   const stepStatus =
     typeof step.status === 'object' ? step.status?.status : step.status
+  const canShowCompositeError =
+    stepStatus === 'error' ||
+    stepStatus === 'failed-pending-retry' ||
+    stepStatus === 'cancelled' ||
+    stepStatus === 'discarded'
   const eventWait = step?.links?.event_wait
 
   return (
@@ -108,6 +120,10 @@ export const RunbookStepCard = ({
           </Text>
         </Link>
       </div>
+
+      {compositeError && canShowCompositeError ? (
+        <CompositeError error={compositeError} />
+      ) : null}
 
       {isActionRun && actionRun ? (
         <div className="flex flex-col gap-4">

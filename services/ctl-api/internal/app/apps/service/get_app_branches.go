@@ -70,12 +70,6 @@ func (s *service) getAppBranches(ctx *gin.Context, orgID, appID string) ([]app.A
 			"WHERE w.owner_type = 'app_branches' AND w.owner_id = app_branches.id AND w.deleted_at = 0) AS workflow_count",
 			(&app.Workflow{}).TableName())).
 		Scopes(scopes.WithOffsetPagination).
-		Preload("Configs", func(db *gorm.DB) *gorm.DB {
-			return db.Order("app_branch_configs_view_v1.created_at DESC").Limit(1)
-		}).
-		Preload("Configs.ConnectedGithubVCSConfig").
-		Preload("Configs.PublicGitVCSConfig").
-		Preload("Configs.InstallGroups").
 		Where(app.AppBranch{
 			OrgID: orgID,
 			AppID: appID,
@@ -91,11 +85,56 @@ func (s *service) getAppBranches(ctx *gin.Context, orgID, appID string) ([]app.A
 		return nil, fmt.Errorf("unable to get app branches: %w", err)
 	}
 
+	if err := s.attachLatestBranchConfigs(ctx, branches); err != nil {
+		return nil, fmt.Errorf("unable to get latest branch configs: %w", err)
+	}
+
 	if err := s.attachLatestBranchRuns(ctx, branches); err != nil {
 		return nil, fmt.Errorf("unable to get latest branch runs: %w", err)
 	}
 
 	return branches, nil
+}
+
+func (s *service) attachLatestBranchConfigs(ctx *gin.Context, branches []app.AppBranch) error {
+	if len(branches) == 0 {
+		return nil
+	}
+
+	branchIDs := make([]string, 0, len(branches))
+	for _, branch := range branches {
+		branchIDs = append(branchIDs, branch.ID)
+	}
+
+	latestConfigIDs := s.db.WithContext(ctx).
+		Model(&app.AppBranchConfig{}).
+		Select("DISTINCT ON (app_branch_id) id").
+		Where("app_branch_id IN ?", branchIDs).
+		Order("app_branch_id, created_at DESC")
+
+	configs := make([]app.AppBranchConfig, 0)
+	res := s.db.WithContext(ctx).
+		Preload("ConnectedGithubVCSConfig").
+		Preload("PublicGitVCSConfig").
+		Preload("InstallGroups", func(db *gorm.DB) *gorm.DB {
+			return db.Order("\"order\" ASC")
+		}).
+		Where("id IN (?)", latestConfigIDs).
+		Find(&configs)
+	if res.Error != nil {
+		return res.Error
+	}
+
+	configsByBranchID := make(map[string][]app.AppBranchConfig, len(configs))
+	for _, config := range configs {
+		configsByBranchID[config.AppBranchID] = []app.AppBranchConfig{config}
+	}
+
+	for i := range branches {
+		branches[i].Configs = configsByBranchID[branches[i].ID]
+	}
+
+	return nil
 }
 
 func (s *service) attachLatestBranchRuns(ctx *gin.Context, branches []app.AppBranch) error {

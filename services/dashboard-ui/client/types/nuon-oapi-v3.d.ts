@@ -43,7 +43,7 @@ export interface paths {
   "/v1/account/static-token": {
     /**
      * create a static API token for your org
-     * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
+     * @description Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
      */
     post: operations["CreateStaticToken"];
   };
@@ -57,7 +57,7 @@ export interface paths {
   "/v1/account/static-tokens/{token_id}": {
     /**
      * delete a static API token
-     * @description Deletes a static API token belonging to your current org, along with its dedicated service account. Once deleted, the token can no longer be used to access the API.
+     * @description Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
      */
     delete: operations["DeleteStaticToken"];
   };
@@ -1764,6 +1764,34 @@ export interface paths {
      */
     get: operations["GetInstallComponentOutputs"];
   };
+  "/v1/installs/{install_id}/components/{component_id}/recover-helm-release": {
+    /**
+     * recover a stuck helm release for an install component
+     * @description Recover a Helm release that was left part-way through an operation.
+     *
+     * Helm records a `pending-install`, `pending-upgrade` or `pending-rollback` status before it
+     * starts changing the cluster and clears it once the operation finishes. A release left in one
+     * of those statuses is a rollout whose runner went away — a crash, a cancelled workflow, or a
+     * job that timed out. Helm then refuses every further operation on that release, and retrying
+     * the deploy cannot clear it.
+     *
+     * This endpoint starts a workflow that returns the release to a usable state:
+     *
+     * - when an earlier revision finished a rollout, the release is rolled back to it
+     * - when no revision ever rolled out, the stuck release is removed
+     *
+     * It deploys nothing and changes no desired state. Deploy the component afterwards to roll out
+     * the version you want.
+     *
+     * The recovery refuses to act on a release that is not pending, so it is safe to run when you
+     * are unsure and it is a no-op on a second run.
+     *
+     * Returns `409` when a job is already running for the component (recovering while Helm is
+     * genuinely mid-operation can corrupt the release) or when the component has never been
+     * deployed on this install. Returns `400` when the component is not a Helm chart.
+     */
+    post: operations["RecoverInstallComponentHelmRelease"];
+  };
   "/v1/installs/{install_id}/components/{component_id}/teardown": {
     /**
      * teardown an install component
@@ -1961,12 +1989,12 @@ export interface paths {
   "/v1/installs/{install_id}/labels": {
     /**
      * add labels to an install
-     * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten.
+     * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten. A value using the .nuon interpolation syntax becomes a dynamic label: the template is stored and its rendered value is re-materialized whenever install state changes. Keys managed by the app config's default_labels cannot be changed here.
      */
     post: operations["AddInstallLabels"];
     /**
      * remove labels from an install
-     * @description Remove the specified label keys from the install.
+     * @description Remove the specified label keys from the install. Removing a dynamic label's key also removes its template. Keys managed by the app config's default_labels cannot be removed here.
      */
     delete: operations["RemoveInstallLabels"];
   };
@@ -3360,6 +3388,8 @@ export interface components {
       created_by_id?: string;
       enable_kube_config?: components["schemas"]["sql.NullBool"];
       id?: string;
+      /** @description Image is an optional container image the action's steps run inside. */
+      image?: string;
       /**
        * @description KubernetesContextName is the name of an AppKubernetesContextConfig on
        * the same AppConfig. Empty means fall back to the implicit sandbox
@@ -3448,6 +3478,13 @@ export interface components {
       config_repo?: string;
       created_at?: string;
       created_by_id?: string;
+      /**
+       * @description DefaultLabels are applied to every install of the app and can only be
+       * changed via app config sync — install label endpoints reject these keys.
+       */
+      default_labels?: {
+        [key: string]: string;
+      };
       description?: string;
       display_name?: string;
       id?: string;
@@ -3534,7 +3571,11 @@ export interface components {
       id?: string;
       install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
       org_id?: string;
-      /** @description PostDeployRunbookIDs are runbooks run on each install, in order, after its deploy succeeds. Distinct from RunbookIDs, which tracks the runbooks the branch's synced app config produced. */
+      /**
+       * @description PostDeployRunbookIDs are runbooks run on each install, in order, after its
+       * deploy succeeds. Distinct from RunbookIDs, which tracks the runbooks the
+       * branch's synced app config produced.
+       */
       post_deploy_runbook_ids?: string[];
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       runbook_ids?: string[];
@@ -3875,6 +3916,7 @@ export interface components {
       app_config_id?: string;
       app_id?: string;
       app_sandbox_config_id?: string;
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
@@ -4050,6 +4092,12 @@ export interface components {
       resource_group_id?: string;
       resource_group_location?: string;
       resource_group_name?: string;
+      /**
+       * @description Principal ID of the runner VMSS's system-assigned identity. Secret sync and
+       * image sync run as this identity, not a per-operation one, so sandboxes need
+       * it to grant cluster access.
+       */
+      runner_identity_principal_id?: string;
       subscription_id?: string;
       subscription_tenant_id?: string;
     };
@@ -4095,6 +4143,7 @@ export interface components {
       /** @description Read-only fields set on the object to de-nest data */
       component_id?: string;
       component_name?: string;
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
@@ -4468,6 +4517,14 @@ export interface components {
       app_branch_connections?: components["schemas"]["app.InstallAppBranchConnection"][];
       app_branch_id?: string;
       app_config_id?: string;
+      /**
+       * @description AppDefaultLabels is the snapshot of the app's default labels applied to
+       * this install. It is the lock set for label mutation endpoints, and lets
+       * reconciliation tell a removed default apart from a user-set label.
+       */
+      app_default_labels?: {
+        [key: string]: string;
+      };
       app_id?: string;
       app_runner_config?: components["schemas"]["app.AppRunnerConfig"];
       app_sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
@@ -4524,6 +4581,17 @@ export interface components {
       install_sandbox_runs?: components["schemas"]["app.InstallSandboxRun"][];
       install_stack?: components["schemas"]["app.InstallStack"];
       install_states?: components["schemas"]["app.InstallState"][];
+      /**
+       * @description LabelTemplates holds label values written with the .nuon interpolation
+       * syntax. Rendered values are materialized into Labels whenever install
+       * state changes, so downstream consumers (SQL label matching, subscription
+       * dispatch, pickers) only ever read literal values. NOTE: this comment ends
+       * up in the swagger spec, which swag executes as a Go text/template —
+       * literal moustaches here break spec generation.
+       */
+      label_templates?: {
+        [key: string]: string;
+      };
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       /**
        * @description LastHealthReportAt is when a runner last reported component health. It is
@@ -4539,6 +4607,11 @@ export interface components {
         [key: string]: string;
       };
       name?: string;
+      /**
+       * @description PhoneHomeAuthStatus can take the phone_home_auth JSON name precisely because the
+       * column itself never serializes.
+       */
+      phone_home_auth?: components["schemas"]["app.PhoneHomeAuthStatus"];
       queues?: components["schemas"]["app.Queue"][];
       runner_id?: string;
       runner_status?: string;
@@ -4577,6 +4650,7 @@ export interface components {
     };
     "app.InstallActionWorkflowRun": {
       action_workflow_config_id?: string;
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       config?: components["schemas"]["app.ActionWorkflowConfig"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
@@ -4862,7 +4936,7 @@ export interface components {
       workflow_id?: string;
     };
     /** @enum {string} */
-    "app.InstallDeployType": "sync-image" | "apply" | "teardown";
+    "app.InstallDeployType": "sync-image" | "apply" | "teardown" | "recover";
     "app.InstallEvent": {
       created_at?: string;
       created_by_id?: string;
@@ -4903,8 +4977,12 @@ export interface components {
       status?: string;
       workflow_id?: string;
     };
-    /** @description InstallGroupRunRunbook records one post-deploy runbook run for an install. */
     "app.InstallGroupRunRunbook": {
+      /**
+       * @description Attempt increments when a retry of the step re-runs a runbook that failed,
+       * so the retry gets a fresh idempotency key instead of adopting the failed run.
+       */
+      attempt?: number;
       run_id?: string;
       runbook_id?: string;
       runbook_name?: string;
@@ -4985,6 +5063,11 @@ export interface components {
       /** @description after query */
       execution_time?: number;
       id?: string;
+      /**
+       * @description IdempotencyKey lets a retryable caller (e.g. a Temporal activity) repeat a
+       * trigger without starting the runbook twice. Unique where set.
+       */
+      idempotency_key?: string;
       install_id?: string;
       install_runbook?: components["schemas"]["app.InstallRunbook"];
       install_runbook_id?: string;
@@ -5476,6 +5559,16 @@ export interface components {
       trace_id?: string;
       updated_at?: string;
     };
+    "app.PhoneHomeAuthStatus": {
+      last_rejected_at?: string;
+      last_verified_at?: string;
+      /**
+       * @description ProvisionedAt is omitzero because recordPhoneHomeAuthResult can create the column
+       * from an empty struct, so a row can carry verification timestamps but no
+       * provisioning one. Serializing that as year 1 would render as a bogus timestamp.
+       */
+      provisioned_at?: string;
+    };
     "app.Policy": {
       created_at?: string;
       created_by_id?: string;
@@ -5910,6 +6003,7 @@ export interface components {
     "app.RunnerJob": {
       /** @description available timeout is how long a job can be marked as "available" before being requeued */
       available_timeout?: number;
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at?: string;
       created_by_id?: string;
       execution_count?: number;
@@ -5986,7 +6080,7 @@ export interface components {
        * never reused, so it cannot go stale across retries. Aggregate rows derive
        * their displayed error from the latest relevant result; they do not own it.
        */
-      composite_error?: Record<string, never>;
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       contents?: string;
       contents_display?: string;
       contents_display_gzip?: string;
@@ -6007,7 +6101,7 @@ export interface components {
     /** @enum {string} */
     "app.RunnerJobExecutionStatus": "pending" | "initializing" | "in-progress" | "cleaning-up" | "finished" | "failed" | "timed-out" | "not-attempted" | "cancelled" | "unknown";
     /** @enum {string} */
-    "app.RunnerJobGroup": "health-checks" | "sync" | "build" | "deploy" | "sandbox" | "runner" | "operations" | "management" | "actions" | "" | "any";
+    "app.RunnerJobGroup": "health-checks" | "sync" | "build" | "deploy" | "sandbox" | "runner" | "operations" | "management" | "actions" | "image-actions" | "" | "any";
     /** @enum {string} */
     "app.RunnerJobOperationType": "exec" | "build" | "create-apply-plan" | "create-teardown-plan" | "apply-plan" | "unknown";
     "app.RunnerJobPlan": {
@@ -6336,6 +6430,7 @@ export interface components {
       vcs_connection_commit?: components["schemas"]["app.VCSConnectionCommit"][];
     };
     "app.VCSConnectionCommit": {
+      author_avatar_url?: string;
       author_email?: string;
       author_name?: string;
       created_at?: string;
@@ -6490,6 +6585,11 @@ export interface components {
       retried?: boolean;
       retry_index?: number;
       retryable?: boolean;
+      /**
+       * @description SkipOnFailure lets the workflow continue past this step after its retry
+       * budget is exhausted. Skippable only gates user-initiated skips.
+       */
+      skip_on_failure?: boolean;
       skippable?: boolean;
       started_at?: string;
       status?: components["schemas"]["app.CompositeStatus"];
@@ -6598,7 +6698,7 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
     /** @enum {string} */
-    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "app_install_sync" | "reprovision" | "reprovision_stack" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled";
+    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "app_install_sync" | "reprovision" | "reprovision_stack" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled" | "recover_helm_release";
     "blobstore.Blob": Record<string, never>;
     "callback.Ref": {
       namespace?: string;
@@ -6997,11 +7097,26 @@ export interface components {
       cluster_info?: components["schemas"]["kube.ClusterInfo"];
       gcp_auth?: components["schemas"]["github_com_nuonco_nuon_pkg_gcp_credentials.Config"];
       id?: string;
+      /**
+       * @description ImageDigestRef is the digest-pinned pull reference resolved by the mirror
+       * job (<login_server>/<repository>@sha256:...). When set, the runner pulls
+       * this exact manifest instead of the mutable tag, binding execution to the
+       * content that was mirrored.
+       */
+      image_digest_ref?: string;
+      image_registry?: components["schemas"]["configs.OCIRegistryRepository"];
+      image_tag?: string;
       install_id?: string;
       override_env_vars?: {
         [key: string]: string;
       };
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
+      /**
+       * @description Image-backed actions: SourceImage is the rendered app-authored ref
+       * (e.g. ghcr.io/acme/tools:v1); ImageRegistry/ImageTag point at the
+       * install-registry mirror the runner pulls from.
+       */
+      source_image?: string;
       steps?: components["schemas"]["plantypes.ActionWorkflowRunStepPlan"][];
       timeout?: number;
     };
@@ -7140,6 +7255,11 @@ export interface components {
        */
       name?: string;
       namespace?: string;
+      /**
+       * @description Must stay a bool: go-swagger renders a documented $ref field as an inline
+       * struct value, which decodes non-nil on every deploy.
+       */
+      recover_release?: boolean;
       skip_crds?: boolean;
       storage_driver?: string;
       take_ownership?: boolean;
@@ -7673,6 +7793,7 @@ export interface components {
       break_glass_role_arn?: string;
       dependencies?: string[];
       enable_kube_config?: boolean | null;
+      image?: string;
       kubernetes_context?: string;
       references?: string[];
       role?: string;
@@ -7729,6 +7850,11 @@ export interface components {
     "service.CreateAppBranchConfigRequest": {
       connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
       install_groups?: components["schemas"]["service.InstallGroupRequest"][];
+      /**
+       * @description PostDeployRunbookIDs run on each install, in order, after its deploy succeeds.
+       * Omit to carry the current setting forward; send an empty array to clear it.
+       */
+      post_deploy_runbook_ids?: string[];
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
     };
     "service.CreateAppBranchRequest": {
@@ -8054,6 +8180,11 @@ export interface components {
       };
       metadata?: components["schemas"]["helpers.InstallMetadata"];
       name: string;
+      /**
+       * @description StackOnly provisions the install stack and runner, then stops. The sandbox
+       * and components stay unprovisioned until the install is provisioned again.
+       */
+      stack_only?: boolean;
     };
     "service.CreateInstallV2Request": {
       app_id: string;
@@ -8073,6 +8204,11 @@ export interface components {
       };
       metadata?: components["schemas"]["helpers.InstallMetadata"];
       name: string;
+      /**
+       * @description StackOnly provisions the install stack and runner, then stops. The sandbox
+       * and components stay unprovisioned until the install is provisioned again.
+       */
+      stack_only?: boolean;
     };
     "service.CreateJobComponentConfigRequest": {
       app_config_id?: string;
@@ -8284,9 +8420,16 @@ export interface components {
       name: string;
       /**
        * @description org role granted to the token. must be assignable to API tokens; see
-       * GET /v1/roles?context=api_token. defaults to org_read_only.
+       * GET /v1/roles?context=api_token. defaults to org_read_only. must be
+       * empty for personal tokens.
        */
       role?: string;
+      /**
+       * @description "service_account" (default) creates a dedicated service account with
+       * the given role; "personal" issues the token against your own account
+       * and its existing roles, across all your orgs.
+       */
+      token_identity?: string;
     };
     "service.CreateTerraformModuleComponentConfigRequest": {
       app_config_id?: string;
@@ -8641,6 +8784,9 @@ export interface components {
       readme?: string;
       warnings?: string[];
     };
+    "service.RecoverInstallComponentHelmReleaseRequest": {
+      role?: string;
+    };
     "service.RefreshInstallHealthClusterAccessRequest": {
       /**
        * @description RoleName is the identity health should read the cluster through. Empty
@@ -8760,12 +8906,19 @@ export interface components {
     "service.TriggerAppBranchRunRequest": {
       /** @description optional - use pre-existing app config (skips VCS fetch + config parse) */
       app_config_id?: string;
+      base_branch?: string;
       /** @description optional - use latest if not provided */
       config_id?: string;
       /** @description force run even if no changes detected */
       force?: boolean;
+      head_sha?: string;
       /** @description plan-only preview mode (no apply) */
       plan_only?: boolean;
+      /**
+       * @description PR context, for previews triggered from CI rather than a GitHub webhook.
+       * Supplying PRNumber is what lets the run report back onto the pull request.
+       */
+      pr_number?: number;
       /** @description skip builds step (e.g. rollback to existing config with existing builds) */
       skip_builds?: boolean;
     };
@@ -8846,6 +8999,11 @@ export interface components {
       inputs: {
         [key: string]: string;
       };
+      /**
+       * @description InputsOnly saves the new input values without deploying components,
+       * reprovisioning the sandbox, or running update-input lifecycle actions.
+       */
+      inputs_only?: boolean;
       role?: string;
     };
     "service.UpdateInstallRequest": {
@@ -9286,7 +9444,7 @@ export interface operations {
   };
   /**
    * create a static API token for your org
-   * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
+   * @description Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
    */
   CreateStaticToken: {
     /** @description Input */
@@ -9320,7 +9478,7 @@ export interface operations {
   };
   /**
    * delete a static API token
-   * @description Deletes a static API token belonging to your current org, along with its dedicated service account. Once deleted, the token can no longer be used to access the API.
+   * @description Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
    */
   DeleteStaticToken: {
     parameters: {
@@ -11554,6 +11712,8 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
+        /** @description exclude preview (plan only) runs when set to false */
+        planonly?: boolean;
       };
       path: {
         /** @description app ID */
@@ -16235,6 +16395,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -22199,6 +22365,91 @@ export interface operations {
     };
   };
   /**
+   * recover a stuck helm release for an install component
+   * @description Recover a Helm release that was left part-way through an operation.
+   *
+   * Helm records a `pending-install`, `pending-upgrade` or `pending-rollback` status before it
+   * starts changing the cluster and clears it once the operation finishes. A release left in one
+   * of those statuses is a rollout whose runner went away — a crash, a cancelled workflow, or a
+   * job that timed out. Helm then refuses every further operation on that release, and retrying
+   * the deploy cannot clear it.
+   *
+   * This endpoint starts a workflow that returns the release to a usable state:
+   *
+   * - when an earlier revision finished a rollout, the release is rolled back to it
+   * - when no revision ever rolled out, the stuck release is removed
+   *
+   * It deploys nothing and changes no desired state. Deploy the component afterwards to roll out
+   * the version you want.
+   *
+   * The recovery refuses to act on a release that is not pending, so it is safe to run when you
+   * are unsure and it is a no-op on a second run.
+   *
+   * Returns `409` when a job is already running for the component (recovering while Helm is
+   * genuinely mid-operation can corrupt the release) or when the component has never been
+   * deployed on this install. Returns `400` when the component is not a Helm chart.
+   */
+  RecoverInstallComponentHelmRelease: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["service.RecoverInstallComponentHelmReleaseRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * teardown an install component
    * @description Teardown and remove an install component's resources.
    */
@@ -23681,7 +23932,7 @@ export interface operations {
   };
   /**
    * add labels to an install
-   * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten.
+   * @description Merge the provided labels into the install's existing labels. Existing keys are overwritten. A value using the .nuon interpolation syntax becomes a dynamic label: the template is stored and its rendered value is re-materialized whenever install state changes. Keys managed by the app config's default_labels cannot be changed here.
    */
   AddInstallLabels: {
     parameters: {
@@ -23737,7 +23988,7 @@ export interface operations {
   };
   /**
    * remove labels from an install
-   * @description Remove the specified label keys from the install.
+   * @description Remove the specified label keys from the install. Removing a dynamic label's key also removes its template. Keys managed by the app config's default_labels cannot be removed here.
    */
   RemoveInstallLabels: {
     parameters: {

@@ -14,7 +14,10 @@ export type TCreateAppBranchRequest =
   components['schemas']['service.CreateAppBranchRequest']
 export type TVCSBranch = { name: string }
 
-export type TApp = components['schemas']['app.App']
+export type TApp = components['schemas']['app.App'] & {
+  // labels from the app config's default_labels, applied to every install
+  default_labels?: Record<string, string>
+}
 export type TAppConfig = components['schemas']['app.AppConfig']
 export type TAppInputConfig = components['schemas']['app.AppInputConfig']
 export type TAppInput = components['schemas']['app.AppInput']
@@ -41,6 +44,7 @@ export type TAppSandboxBuild = {
     status_human_description?: string
     metadata?: { [key: string]: unknown }
   }
+  composite_error?: TCompositeError
   log_stream?: { id?: string; open?: boolean }
   runner_job?: { id: string }
   vcs_connection_commit?: { sha?: string; message?: string }
@@ -345,10 +349,7 @@ export type TComponentConfig =
   components['schemas']['app.ComponentConfigConnection']
 export type TComponentType = components['schemas']['app.ComponentType']
 
-export type TComponentBuild = components['schemas']['app.ComponentBuild'] & {
-  app_branch_id?: string
-  composite_error?: TCompositeError
-}
+export type TComponentBuild = components['schemas']['app.ComponentBuild']
 export type TBuild = TComponentBuild & {
   org_id: string
   build_runner_job_id?: string | null
@@ -432,15 +433,29 @@ export type TSubscriptionMatch =
 
 export type TInstallSandbox = components['schemas']['app.InstallSandbox']
 
+// Mirrors app.PhoneHomeAuthStatus in ctl-api. Every field is optional: the API omits
+// a timestamp that has not happened yet.
+export type TPhoneHomeAuthStatus = {
+  provisioned_at?: string
+  last_verified_at?: string
+  last_rejected_at?: string
+}
+
 export type TInstall = Omit<components['schemas']['app.Install'], 'sandbox'> & {
   app?: components['schemas']['app.App']
   created_by?: components['schemas']['app.Account']
   gcp_account?: { project_id?: string; region?: string }
+  // label values written with the {{ .nuon.* }} interpolation syntax, keyed by
+  // label key; `labels` holds their rendered values
+  label_templates?: Record<string, string>
+  // labels inherited from the app config's default_labels; read-only per install
+  app_default_labels?: Record<string, string>
   lifecycle_phase?: {
     phase?: string
     description?: string
   }
   org_id?: string
+  phone_home_auth?: TPhoneHomeAuthStatus
   sandbox?: TInstallSandbox
 }
 export type TInstallAzureAccount = components['schemas']['app.AzureAccount']
@@ -531,7 +546,6 @@ export type TCompositeError =
 
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
   org_id: string
-  composite_error?: TCompositeError
 }
 export type TDeploy = TInstallDeploy
 export type TInstallDeployPlanIntermediateData = {
@@ -760,9 +774,7 @@ export type TInstallActionWorkflow =
 // new action types
 export type TAction = components['schemas']['app.ActionWorkflow']
 export type TInstallActionRun =
-  components['schemas']['app.InstallActionWorkflowRun'] & {
-    composite_error?: TCompositeError
-  }
+  components['schemas']['app.InstallActionWorkflowRun']
 export type TInstallActionRunStep =
   components['schemas']['app.InstallActionWorkflowRunStep']
 export type TInstallAction = components['schemas']['app.InstallActionWorkflow']
@@ -791,6 +803,7 @@ export interface TCreateStaticTokenBody {
   name: string
   duration?: string
   role?: string
+  token_identity?: 'personal' | 'service_account'
 }
 
 export interface TCreateStaticTokenResponse {

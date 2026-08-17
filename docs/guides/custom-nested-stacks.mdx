@@ -11,11 +11,17 @@ or any components run. This feature is useful for setting up resources that must
 that require permissions the vendor does not need to retain throughout the remainder of an app's lifetime.
 
 <Warning>
-Custom nested stacks are **CloudFormation-only**. The Terraform Stack templates do not include them or reference them. If you
-rely on this feature and your customers want to deploy via Terraform, see
-[Customizing Terraform Stack Templates](/guides/customizing-terraform-stack-templates), to learn how make equivalent changes to
-the Terraform templates.
+Custom nested stacks are supported on **CloudFormation** and **`azure-bicep`** install stacks. The Terraform Stack
+templates do not include them or reference them. If you rely on this feature and your customers want to deploy via
+Terraform, see [Customizing Terraform Stack Templates](/guides/customizing-terraform-stack-templates), to learn how make
+equivalent changes to the Terraform templates.
 </Warning>
+
+<Note>
+On `azure-bicep`, templates must be compiled ARM JSON — a `.bicep` source file will not parse. Parameter resolution,
+output wiring, and hoisting behave identically to CloudFormation, with the Azure-specific reserved parameters and
+first-class outputs listed below.
+</Note>
 
 ## Use Cases
 
@@ -156,6 +162,45 @@ Resources:
       InstallId: !Ref NuonInstallID
 ```
 
+### Azure Reserved Parameters
+
+On `azure-bicep`, the reserved set follows ARM's camelCase convention and adds two more:
+
+| Parameter         | Value                                        |
+| ----------------- | -------------------------------------------- |
+| `nuonInstallID`   | The install ID                               |
+| `nuonAppID`       | The app ID                                   |
+| `nuonOrgID`       | The org ID                                   |
+| `location`        | The install's Azure region                   |
+| `deployTimestamp` | Deployment timestamp                         |
+
+Azure has no equivalent of the Role Enable parameters — per-operation access is granted through managed identities
+rather than template conditions.
+
+### Azure Managed Identities
+
+If an `azure-bicep` custom nested stack declares a `Microsoft.ManagedIdentity/userAssignedIdentities` resource, Nuon
+adds a subscription-level role assignment granting that identity `*/register/action`, so it can register Azure resource
+providers. ARM does not allow subscription-scoped deployments inside a linked deployment, so this has to live in the
+parent template — which means Nuon needs the identity's `principalId` as an **output**.
+
+Your template must expose an output named `identityPrincipalId`, or one ending in that suffix (for example
+`bauleiterIdentityPrincipalId`, useful when a stack has several identities' outputs to keep distinct). Matching is
+case-insensitive and an exact `identityPrincipalId` wins over a suffixed one.
+
+```json
+"outputs": {
+  "bauleiterIdentityPrincipalId": {
+    "type": "string",
+    "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'my-identity'), '2023-01-31').principalId]"
+  }
+}
+```
+
+If a stack declares a managed identity but exposes no matching output, install stack generation fails with an error
+listing the outputs it did find. This has no CloudFormation equivalent — IAM resources in an AWS nested stack are
+already account-scoped, so nothing needs hoisting to the parent.
+
 ## First-Class Output Wiring
 
 If a parameter in your custom template matches the name of an **output** from the VPC or runner nested stacks, Nuon
@@ -176,6 +221,10 @@ Parameters:
 ```
 
 These auto-wired parameters are not hoisted to the parent stack.
+
+On `azure-bicep`, the equivalent source is the built-in VNet deployment. A parameter named `vnetId`, `vnetName`,
+`runnerSubnetId`, `runnerSubnetName`, `publicSubnet1Id`, `privateSubnet1Name` (and the rest of the subnet outputs) is
+wired to `[reference('vnetDeployment').outputs.<name>.value]`.
 
 ## Inter-Stack Output Wiring
 
@@ -214,8 +263,9 @@ explicitly mapped via `parameters` are **hoisted** into the parent CloudFormatio
 - Default values from your template are preserved.
 - Parameter types (e.g., `AWS::EC2::VPC::Id`, `String`, `Number`) are preserved.
 
-**Important:** Parameter names must be unique across all nested stacks (including the VPC and runner stacks). If two
-stacks define a parameter with the same name, `nuon apps sync` will fail with a conflict error.
+**Important:** *Hoisted* parameter names must be unique across all nested stacks (including the VPC and runner stacks).
+If two stacks hoist a parameter with the same name, install stack generation fails with a conflict error. Names that are
+auto-wired or explicitly mapped never reach the parent, so any number of stacks may declare them.
 
 ## Parameter Mapping
 

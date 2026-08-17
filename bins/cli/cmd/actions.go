@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/nuonco/nuon/bins/cli/internal/services/actions"
 )
 
 func (c *cli) actionsCmd() *cobra.Command {
@@ -26,7 +24,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List all app actions",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := actions.New(c.v, c.apiClient, c.cfg)
+			svc := c.actions
 			return svc.List(cmd.Context(), appID, offset, limit, PrintJSON)
 		}),
 	}
@@ -44,7 +42,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 		Short: "Get action's most recent runs",
 		Long:  "Get action's most recent runs for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := actions.New(c.v, c.apiClient, c.cfg)
+			svc := c.actions
 			return svc.GetRecentRuns(cmd.Context(), installID, actionWorkflowID, offset, limit, PrintJSON)
 		}),
 	}
@@ -61,7 +59,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 		Short: "Delete an action workflow",
 		Long:  "Delete an action workflow by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := actions.New(c.v, c.apiClient, c.cfg)
+			svc := c.actions
 			return svc.DeleteWorkflow(cmd.Context(), actionWorkflowID)
 		}),
 	}
@@ -75,7 +73,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 		Short: "Get an action run",
 		Long:  "Get an action run by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := actions.New(c.v, c.apiClient, c.cfg)
+			svc := c.actions
 			return svc.GetRun(cmd.Context(), installID, runID, PrintJSON)
 		}),
 	}
@@ -90,7 +88,7 @@ func (c *cli) actionsCmd() *cobra.Command {
 		Short: "Run an action",
 		Long:  "Run an action by Install ID and Action Workflow ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := actions.New(c.v, c.apiClient, c.cfg)
+			svc := c.actions
 			return svc.CreateRun(cmd.Context(), installID, actionWorkflowID, roleName, PrintJSON)
 		}),
 	}

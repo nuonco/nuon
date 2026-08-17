@@ -5,7 +5,6 @@ import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
-import { Tooltip } from '@/components/common/Tooltip'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
 import { useInstall } from '@/hooks/use-install'
@@ -82,6 +81,7 @@ export const EditInputsFormModalContainer = ({
         body: {
           inputs: payload.inputs,
           deploy_dependents: payload.deployDependents,
+          ...(payload.inputsOnly && { inputs_only: true }),
           ...(payload.role && { role: payload.role }),
         },
       })
@@ -184,18 +184,21 @@ export const EditInputsButton = ({
 
   if (isManagedByConfig) {
     return (
-      <Tooltip
-        tipContent={MANAGED_BY_CONFIG_TIP}
-        position="left"
-        tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs"
-        className="w-full"
+      <Button
+        disabled
+        tooltipProps={{
+          tipContent: MANAGED_BY_CONFIG_TIP,
+          position: 'left',
+          tipContentClassName:
+            '!whitespace-normal !w-auto max-w-[200px] text-xs',
+          className: 'w-full',
+        }}
+        {...props}
       >
-        <Button disabled className="pointer-events-none" {...props}>
-          {props?.isMenuButton ? null : <Icon variant="PencilSimpleLineIcon" />}
-          {showNameField ? 'Edit install' : 'Edit inputs'}
-          {props?.isMenuButton ? <Icon variant="PencilSimpleLineIcon" /> : null}
-        </Button>
-      </Tooltip>
+        {props?.isMenuButton ? null : <Icon variant="PencilSimpleLineIcon" />}
+        {showNameField ? 'Edit install' : 'Edit inputs'}
+        {props?.isMenuButton ? <Icon variant="PencilSimpleLineIcon" /> : null}
+      </Button>
     )
   }
 

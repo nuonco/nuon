@@ -68,6 +68,11 @@ type AppAzureStackOutputs struct {
 	// resource group name
 	ResourceGroupName string `json:"resource_group_name,omitempty"`
 
+	// Principal ID of the runner VMSS's system-assigned identity. Secret sync and
+	// image sync run as this identity, not a per-operation one, so sandboxes need
+	// it to grant cluster access.
+	RunnerIdentityPrincipalID string `json:"runner_identity_principal_id,omitempty"`
+
 	// subscription id
 	SubscriptionID string `json:"subscription_id,omitempty"`
 

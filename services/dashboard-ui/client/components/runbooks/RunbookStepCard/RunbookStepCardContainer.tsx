@@ -1,8 +1,9 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import {
   getDeploy,
   getInstallActionRun,
   getInstallComponentOutputs,
+  getInstallSandboxRun,
 } from '@/lib'
 import type { TDeploy, TWorkflowStep } from '@/types'
 import { RunbookStepCard } from './RunbookStepCard'
@@ -22,10 +23,12 @@ export const RunbookStepCardContainer = ({
 }: IRunbookStepCardContainer) => {
   const isDeploy = step.step_target_type === 'install_deploys'
   const isActionRun = step.step_target_type === 'install_action_workflow_runs'
+  const isSandboxRun = step.step_target_type === 'install_sandbox_runs'
   const targetId = step.step_target_id
+  const stepStatus = step.status?.status
 
   const { data, isLoading } = useQuery({
-    queryKey: ['runbook-step-data', step.id, targetId],
+    queryKey: ['runbook-step-data', step.id, targetId, stepStatus],
     queryFn: () => {
       if (isDeploy) {
         return getDeploy({ installId, deployId: targetId!, orgId })
@@ -33,9 +36,13 @@ export const RunbookStepCardContainer = ({
       if (isActionRun) {
         return getInstallActionRun({ installId, runId: targetId!, orgId })
       }
+      if (isSandboxRun) {
+        return getInstallSandboxRun({ runId: targetId!, orgId })
+      }
       return Promise.resolve(null)
     },
-    enabled: !!targetId && (isDeploy || isActionRun),
+    enabled: !!targetId && (isDeploy || isActionRun || isSandboxRun),
+    placeholderData: keepPreviousData,
   })
 
   const componentId = isDeploy ? (data as TDeploy)?.component_id : undefined

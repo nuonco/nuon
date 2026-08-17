@@ -16,7 +16,7 @@ const CreateApiTokenModalContainer = (props: Record<string, any>) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
-  const { roleOptions } = useRoleOptions('api_token')
+  const { roleOptions, isLoading } = useRoleOptions('api_token')
   const [createdToken, setCreatedToken] = useState<string | null>(null)
 
   const { mutate, isPending, error } = useMutation({
@@ -24,11 +24,20 @@ const CreateApiTokenModalContainer = (props: Record<string, any>) => {
       name,
       duration,
       role,
+      identity,
     }: {
       name: string
       duration: string
       role: string
-    }) => createStaticToken({ body: { name, duration, role }, orgId: org.id }),
+      identity: 'personal' | 'service_account'
+    }) =>
+      createStaticToken({
+        body:
+          identity === 'personal'
+            ? { name, duration, token_identity: 'personal' }
+            : { name, duration, role },
+        orgId: org.id,
+      }),
     onSuccess: (data, { name }) => {
       queryClient.invalidateQueries({ queryKey: ['static-tokens', org?.id] })
       setCreatedToken(data?.api_token ?? null)
@@ -46,7 +55,10 @@ const CreateApiTokenModalContainer = (props: Record<string, any>) => {
       error={error}
       createdToken={createdToken}
       roleOptions={roleOptions}
-      onSubmit={({ name, duration, role }) => mutate({ name, duration, role })}
+      rolesLoading={isLoading}
+      onSubmit={({ name, duration, role, identity }) =>
+        mutate({ name, duration, role, identity })
+      }
       onDone={() => removeModal(props.modalId)}
       {...props}
     />

@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-
-	"github.com/nuonco/nuon/bins/cli/internal/services/components"
 )
 
 func (c *cli) componentsCmd() *cobra.Command {
@@ -28,7 +26,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Short:   "List components",
 		Long:    "List your app's components",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := components.New(c.apiClient, c.cfg)
+			svc := c.components
 			return svc.List(cmd.Context(), appID, listOffset, listLimit, PrintJSON)
 		}),
 	}
@@ -42,7 +40,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Short: "Get component",
 		Long:  "Get app component by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := components.New(c.apiClient, c.cfg)
+			svc := c.components
 			return svc.Get(cmd.Context(), appID, id, PrintJSON)
 		}),
 	}
@@ -57,7 +55,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Short: "Delete component",
 		Long:  "Delete app component by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := components.New(c.apiClient, c.cfg)
+			svc := c.components
 			return svc.Delete(cmd.Context(), appID, id, PrintJSON)
 		}),
 	}
@@ -72,7 +70,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Short: "Latest component config",
 		Long:  "Show latest component config",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := components.New(c.apiClient, c.cfg)
+			svc := c.components
 			return svc.LatestConfig(cmd.Context(), appID, id, PrintJSON)
 		}),
 	}
@@ -87,7 +85,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Short: "List component configs",
 		Long:  "List component configs",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := components.New(c.apiClient, c.cfg)
+			svc := c.components
 			return svc.ListConfigs(cmd.Context(), appID, id, offset, limit, PrintJSON)
 		}),
 	}

@@ -10,6 +10,7 @@ import (
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -68,6 +69,10 @@ type CreateInstallParams struct {
 	Labels map[string]string `json:"labels,omitempty"`
 
 	SandboxMode bool `json:"sandbox_mode,omitempty" swaggerignore:"true"`
+
+	// StackOnly provisions the install stack and runner, then stops. The sandbox
+	// and components stay unprovisioned until the install is provisioned again.
+	StackOnly bool `json:"stack_only,omitempty"`
 }
 
 func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateInstallParams) (*app.Install, error) {
@@ -135,8 +140,39 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}),
 	}
 
+	if len(parentApp.DefaultLabels) > 0 {
+		combined := make(map[string]string, len(req.Labels)+len(parentApp.DefaultLabels))
+		for k, v := range req.Labels {
+			combined[k] = v
+		}
+		for key, val := range parentApp.DefaultLabels {
+			if cur, ok := combined[key]; ok && cur != val {
+				return nil, stderr.ErrUser{
+					Err:         fmt.Errorf("label %q is a default label defined in the app config and cannot be overridden", key),
+					Description: fmt.Sprintf("label %q is a default label defined in the app config and cannot be overridden", key),
+				}
+			}
+			combined[key] = val
+		}
+		req.Labels = combined
+		install.AppDefaultLabels = parentApp.DefaultLabels
+	}
+
 	if len(req.Labels) > 0 {
-		install.Labels = labels.Labels(req.Labels)
+		static, templated := labels.Labels(req.Labels).SplitTemplated()
+		for key, tmpl := range templated {
+			if err := render.ValidateTextTemplate(tmpl); err != nil {
+				return nil, stderr.ErrUser{
+					Err:         fmt.Errorf("label %q template is invalid: %w", key, err),
+					Description: fmt.Sprintf("label %q uses the interpolation syntax but is not a valid template", key),
+				}
+			}
+		}
+		install.Labels = static
+		if len(templated) > 0 {
+			// Rendered once install state exists; the keys stay absent until then.
+			install.LabelTemplates = templated
+		}
 	}
 
 	// When enabled, every install must declare which cloud account it targets, so a

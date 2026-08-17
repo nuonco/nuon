@@ -15,7 +15,8 @@ const CreateServiceAccountModalContainer = (props: Record<string, any>) => {
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
-  const { roleOptions } = useRoleOptions('service_account')
+  const { roleOptions, isLoading: rolesLoading } =
+    useRoleOptions('service_account')
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: ({ name, role }: { name: string; role: string }) =>
@@ -34,6 +35,7 @@ const CreateServiceAccountModalContainer = (props: Record<string, any>) => {
   return (
     <CreateServiceAccountModal
       roleOptions={roleOptions}
+      rolesLoading={rolesLoading}
       isPending={isPending}
       error={error}
       onSubmit={({ name, role }) => mutate({ name, role })}

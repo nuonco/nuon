@@ -5,7 +5,6 @@ import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import type { TApp, TCloudPlatform } from '@/types'
 
@@ -114,6 +113,7 @@ interface IAppsTable {
   data: TAppRow[]
   isLoading: boolean
   emptyStateAction?: ReactNode
+  filterActions?: ReactNode
   pagination: { hasNext?: boolean; offset: number; limit: number }
 }
 
@@ -121,6 +121,7 @@ export const AppsTable = ({
   data,
   isLoading,
   emptyStateAction,
+  filterActions,
   pagination,
 }: IAppsTable) => {
   return (
@@ -135,12 +136,9 @@ export const AppsTable = ({
           'An app is the configuration that gets deployed into your customers cloud accounts.',
         action: emptyStateAction,
       }}
+      filterActions={filterActions}
       pagination={pagination}
       searchPlaceholder="Search by name or ID..."
     />
   )
-}
-
-export const AppsTableSkeleton = () => {
-  return <TableSkeleton columns={columns} skeletonRows={3} />
 }

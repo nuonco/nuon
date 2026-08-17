@@ -59,5 +59,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			return errors.Wrap(err, "unable to mark state as stale")
 		}
 	}
+
+	// Dynamic labels are materialized from install state; nothing else regenerates
+	// state on this path (input/install updates only mark it stale), so render here
+	// or templated values sit stale until an unrelated deploy. The render reads
+	// state through GetInstallState, which regenerates the partials the enqueueing
+	// endpoint marked stale. Best-effort: label rendering must not fail the update.
+	if err := activities.AwaitRenderInstallLabels(ctx, &activities.RenderInstallLabelsRequest{
+		InstallID: s.InstallID,
+	}); err != nil {
+		workflow.GetLogger(ctx).Warn("unable to render install label templates",
+			"install_id", s.InstallID, "error", err)
+	}
 	return nil
 }

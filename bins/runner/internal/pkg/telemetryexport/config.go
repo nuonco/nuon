@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 )
 
 var headerNamePattern = regexp.MustCompile(`^[!#$%&'*+.^_` + "`" + `|~0-9A-Za-z-]+$`)
@@ -165,7 +167,10 @@ func collectorConfig(cfg config) ([]byte, []string, error) {
 		headers[name] = "${env:" + envName + "}"
 		environment = append(environment, envName+"="+value)
 	}
-	document["receivers"] = map[string]any{"otlp": map[string]any{"protocols": map[string]any{"http": map[string]any{"endpoint": "127.0.0.1:4318"}}}}
+	document["receivers"] = map[string]any{
+		"otlp/async": map[string]any{"protocols": map[string]any{"http": map[string]any{"endpoint": audit.AsyncRouteAddress}}},
+		"otlp/sync":  map[string]any{"protocols": map[string]any{"http": map[string]any{"endpoint": audit.SyncRouteAddress}}},
+	}
 	document["processors"] = map[string]any{
 		"memory_limiter": map[string]any{"check_interval": "1s", "limit_mib": 128, "spike_limit_mib": 32},
 		"filter/audit": map[string]any{
@@ -174,14 +179,21 @@ func collectorConfig(cfg config) ([]byte, []string, error) {
 				"log_record": []string{`attributes["nuon.audit"] != "true"`},
 			},
 		},
-		"batch": map[string]any{"send_batch_size": 512, "timeout": "5s"},
 	}
-	document["exporters"] = map[string]any{"otlp_http": map[string]any{
-		"endpoint": cfg.OTLPHTTP.Endpoint, "headers": headers, "compression": "gzip",
-		"sending_queue":    map[string]any{"enabled": true, "queue_size": 1000, "num_consumers": 2},
-		"retry_on_failure": map[string]any{"enabled": true, "initial_interval": "1s", "max_interval": "30s", "max_elapsed_time": "5m"},
-	}}
-	pipelines["logs/audit"] = map[string]any{"receivers": []string{"otlp"}, "processors": []string{"memory_limiter", "filter/audit", "batch"}, "exporters": []string{"otlp_http"}}
+	document["exporters"] = map[string]any{
+		"otlp_http/async": map[string]any{
+			"endpoint": cfg.OTLPHTTP.Endpoint, "headers": headers, "compression": "gzip",
+			"sending_queue":    map[string]any{"enabled": true, "queue_size": 1000, "num_consumers": 2},
+			"retry_on_failure": map[string]any{"enabled": true, "initial_interval": "1s", "max_interval": "30s", "max_elapsed_time": "5m"},
+		},
+		"otlp_http/sync": map[string]any{
+			"endpoint": cfg.OTLPHTTP.Endpoint, "headers": headers, "compression": "gzip", "timeout": audit.SyncExportTimeout.String(),
+			"sending_queue":    map[string]any{"enabled": false},
+			"retry_on_failure": map[string]any{"enabled": false},
+		},
+	}
+	pipelines["logs/audit_async"] = map[string]any{"receivers": []string{"otlp/async"}, "processors": []string{"memory_limiter", "filter/audit"}, "exporters": []string{"otlp_http/async"}}
+	pipelines["logs/audit_sync"] = map[string]any{"receivers": []string{"otlp/sync"}, "processors": []string{"memory_limiter", "filter/audit"}, "exporters": []string{"otlp_http/sync"}}
 
 	contents, err := yaml.Marshal(document)
 	return contents, environment, err

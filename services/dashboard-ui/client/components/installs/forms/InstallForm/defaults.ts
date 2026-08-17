@@ -52,6 +52,8 @@ export const buildInstallDefaults = ({
   labels: [],
   role: '',
   deployDependents: true,
+  stackOnly: false,
+  inputsOnly: false,
   inputs: buildInstallInputDefaults(inputConfig, install),
 })
 

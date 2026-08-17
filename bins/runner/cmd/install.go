@@ -13,6 +13,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/registry"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/componenthealth"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
@@ -49,7 +50,11 @@ func (c *cli) runInstall(cmd *cobra.Command, _ []string) {
 	providers = append(providers, sandbox.GetJobs()...)
 	providers = append(providers, deploy.GetJobs()...)
 	providers = append(providers, actions.GetJobs()...)
-	providers = append(providers, telemetryexport.Module)
+	providers = append(providers, audit.Module, telemetryexport.Module)
+
+	// dev-only: run-local appends the image-actions loop so image-backed
+	// actions can be exercised locally without a separate mng process.
+	providers = append(providers, c.extraProviders...)
 
 	// heartbeat, registry, job loop execution
 	providers = append(

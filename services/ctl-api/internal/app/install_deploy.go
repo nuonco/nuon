@@ -21,6 +21,10 @@ const (
 	InstallDeployTypeSync     InstallDeployType = "sync-image"
 	InstallDeployTypeApply    InstallDeployType = "apply"
 	InstallDeployTypeTeardown InstallDeployType = "teardown"
+	// InstallDeployTypeRecover unsticks a release a tool left mid-operation. It
+	// changes no desired state: it exists so the operation gets a log stream, a
+	// timeline entry and an audit trail like any other install operation.
+	InstallDeployTypeRecover InstallDeployType = "recover"
 )
 
 type InstallDeployStatus string

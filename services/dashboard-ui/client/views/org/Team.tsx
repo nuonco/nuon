@@ -37,7 +37,7 @@ export const Team = () => {
           </Text>
           <Text theme="neutral">Manage your team members and permissions.</Text>
         </HeadingGroup>
-        <InviteUserButton />
+        <InviteUserButton variant="primary" />
       </PageHeader>
       <PageContent>
         <PageSection>

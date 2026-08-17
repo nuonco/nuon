@@ -9,10 +9,8 @@ import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
-import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { Duration } from '@/components/common/Duration'
 import { ActionStep } from '@/components/actions/ActionStep'
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
@@ -20,7 +18,6 @@ import { InstallActionManualRunButton } from '@/components/actions/InstallAction
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { InstallActionRunTimeline } from '@/components/actions/InstallActionRunTimeline'
 import { RemovedFromAppConfigBanner } from '@/components/installs/RemovedFromAppConfig'
-import { Tooltip } from '@/components/common/Tooltip'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -69,63 +66,7 @@ export const ActionDetail = () => {
     installState?.install_stack?.outputs?.break_glass_role_arns
   const kubeConfigEnabled =
     action?.action_workflow?.configs?.[0]?.enable_kube_config
-
-  if (isLoading) {
-    return (
-      <PageSection flush className="flex-1">
-        <PageTitle title={`Action | ${install?.name}`} />
-        <Breadcrumbs
-          breadcrumbs={[
-            { path: `/${org?.id}`, text: org?.name },
-            { path: `/${org?.id}/installs`, text: 'Installs' },
-            { path: `/${org?.id}/installs/${install?.id}`, text: install?.name },
-            {
-              path: `/${org?.id}/installs/${install?.id}/actions`,
-              text: 'Actions',
-            },
-            {
-              path: `/${org?.id}/installs/${install?.id}/actions/${actionId}`,
-              text: undefined,
-            },
-          ]}
-        />
-        <div className="@container flex flex-col flex-1">
-          <header className="p-6 border-b flex flex-col gap-6">
-            <div className="flex flex-wrap items-start gap-4 justify-between w-full">
-              <HeadingGroup>
-                <BackLink className="mb-4" />
-                <Skeleton height="28px" width="200px" />
-                <span className="flex items-center gap-4 mt-1">
-                  <Skeleton height="20px" width="240px" />
-                </span>
-              </HeadingGroup>
-              <Skeleton height="36px" width="100px" />
-            </div>
-            <div className="flex flex-wrap gap-x-8 gap-y-4 items-start">
-              <Skeleton height="40px" width="120px" />
-              <Skeleton height="40px" width="120px" />
-              <Skeleton height="40px" width="120px" />
-              <Skeleton height="40px" width="160px" />
-            </div>
-          </header>
-
-          <div className="grid grid-cols-1 @5xl:grid-cols-12 flex-1">
-            <div className="@5xl:col-span-8 flex flex-col gap-6">
-              <PageSection className="flex flex-col gap-4">
-                <Skeleton height="20px" width="60px" />
-                <Skeleton height="120px" width="100%" />
-                <Skeleton height="120px" width="100%" />
-              </PageSection>
-            </div>
-            <PageSection className="hidden @5xl:flex flex-col @5xl:col-span-4 gap-4">
-              <Skeleton height="20px" width="100px" />
-              <TimelineSkeleton eventCount={3} />
-            </PageSection>
-          </div>
-        </div>
-      </PageSection>
-    )
-  }
+  const actionImage = action?.action_workflow?.configs?.[0]?.image
 
   return (
     <PageSection flush className="flex-1">
@@ -153,7 +94,12 @@ export const ActionDetail = () => {
           <div className="flex flex-wrap items-start gap-4 justify-between w-full">
             <HeadingGroup>
               <BackLink className="mb-4" />
-              <Text variant="h3" weight="strong">
+              <Text
+                variant="h3"
+                weight="strong"
+                loading={isLoading}
+                loadingWidth={20}
+              >
                 {action?.action_workflow?.name}
               </Text>
               <span className="flex flex-wrap items-center gap-4 mt-1">
@@ -193,20 +139,18 @@ export const ActionDetail = () => {
                 (t) => t.type === 'manual'
               ) ? (
                 removed ? (
-                  <Tooltip
-                    position="left"
-                    tipContent={
-                      <Text variant="subtext">
-                        This action is no longer in the install's app config
-                        version.
-                      </Text>
-                    }
+                  <Button
+                    variant="primary"
+                    disabled
+                    tooltipProps={{
+                      position: 'left',
+                      tipContent:
+                        "This action is no longer in the install's app config version.",
+                    }}
                   >
-                    <Button variant="primary" disabled>
-                      Run action
-                      <Icon variant="PlayIcon" />
-                    </Button>
-                  </Tooltip>
+                    Run action
+                    <Icon variant="PlayIcon" />
+                  </Button>
                 ) : (
                   <InstallActionManualRunButton
                     action={action.action_workflow}
@@ -221,17 +165,25 @@ export const ActionDetail = () => {
             </div>
           </div>
 
-          {action?.runs?.[0] ? (
+          {isLoading ? (
             <div className="flex flex-wrap gap-x-8 gap-y-4 items-start">
-              <LabeledStatus
-                label="Last status"
-                statusProps={{ status: action.runs[0].status_v2?.status }}
-                tooltipProps={{
-                  position: 'top',
-                  tipContent:
-                    action.runs[0].status_v2?.status_human_description,
-                }}
-              />
+              <LabeledStatus label="Last status" loading />
+              <LabeledValue label="Kube config" loading />
+              <LabeledValue label="Timeout" loading />
+            </div>
+          ) : action?.runs?.[0] || actionImage ? (
+            <div className="flex flex-wrap gap-x-8 gap-y-4 items-start">
+              {action?.runs?.[0] ? (
+                <LabeledStatus
+                  label="Last status"
+                  statusProps={{ status: action.runs[0].status_v2?.status }}
+                  tooltipProps={{
+                    position: 'top',
+                    tipContent:
+                      action.runs[0].status_v2?.status_human_description,
+                  }}
+                />
+              ) : null}
               <LabeledValue label="Kube config">
                 <Badge
                   theme={kubeConfigEnabled ? 'info' : 'warn'}
@@ -247,16 +199,24 @@ export const ActionDetail = () => {
                   variant="subtext"
                 />
               </LabeledValue>
-              <LabeledValue label="Last trigger">
-                <ActionTriggerType
-                  size="sm"
-                  triggerType={
-                    action.runs[0].triggered_by_type as TActionConfigTriggerType
-                  }
-                  componentName={action.runs[0].run_env_vars?.COMPONENT_NAME}
-                  componentPath={`/${org?.id}/installs/${install?.id}/components/${action.runs[0].run_env_vars?.COMPONENT_ID}`}
-                />
-              </LabeledValue>
+              {actionImage ? (
+                <LabeledValue label="Container image">
+                  <Code variant="inline">{actionImage}</Code>
+                </LabeledValue>
+              ) : null}
+              {action?.runs?.[0] ? (
+                <LabeledValue label="Last trigger">
+                  <ActionTriggerType
+                    size="sm"
+                    triggerType={
+                      action.runs[0]
+                        .triggered_by_type as TActionConfigTriggerType
+                    }
+                    componentName={action.runs[0].run_env_vars?.COMPONENT_NAME}
+                    componentPath={`/${org?.id}/installs/${install?.id}/components/${action.runs[0].run_env_vars?.COMPONENT_ID}`}
+                  />
+                </LabeledValue>
+              ) : null}
             </div>
           ) : null}
         </header>

@@ -9,8 +9,10 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	jobpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -82,6 +84,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	l.Info("sandbox build created", "build_id", build.ID)
+	if s.StepID != "" {
+		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: s.StepID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusInProgress,
+				StatusHumanDescription: "building sandbox",
+				Metadata: map[string]any{
+					"sandbox_build_id": build.ID,
+				},
+			},
+		}); err != nil {
+			l.Warn("unable to add sandbox build to step metadata", "error", err, "build_id", build.ID)
+		}
+	}
 
 	// Create a log stream for the sandbox build
 	logStreamID := ""
@@ -111,7 +127,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to create sandbox build job: %w", err)
 	}
 
-	dstCfg, err := activities.AwaitGetSandboxBuildOCIRegistry(ctx, activities.GetSandboxBuildOCIRegistryRequest{
+	dstCfg, err := sharedactivities.AwaitGetSandboxBuildOCIRegistry(ctx, sharedactivities.GetSandboxBuildOCIRegistryRequest{
 		AppID: appConfig.AppID,
 	})
 	if err != nil {

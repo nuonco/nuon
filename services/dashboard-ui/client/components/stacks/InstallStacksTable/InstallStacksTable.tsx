@@ -4,7 +4,6 @@ import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TInstallStack } from '@/types'
@@ -114,8 +113,4 @@ export const InstallStacksTable = ({
       searchPlaceholder="Search stack version..."
     />
   )
-}
-
-export const InstallStacksTableSkeleton = () => {
-  return <TableSkeleton columns={columns} skeletonRows={5} />
 }

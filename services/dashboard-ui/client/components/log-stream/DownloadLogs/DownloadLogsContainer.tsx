@@ -10,12 +10,14 @@ import { DownloadLogsModal, DownloadLogsButton } from './DownloadLogs'
 interface IDownloadLogsModalContainer extends IModal {
   orgId: string
   logStreamId: string
+  runnerJobId?: string
   includeSystemLogs: boolean
 }
 
 export const DownloadLogsModalContainer = ({
   orgId,
   logStreamId,
+  runnerJobId,
   includeSystemLogs,
   ...props
 }: IDownloadLogsModalContainer) => {
@@ -23,9 +25,12 @@ export const DownloadLogsModalContainer = ({
 
   const { mutate: download, isPending } = useMutation({
     mutationFn: async (includeSystem: boolean) => {
-      const params = includeSystem ? '' : '?job_output=true'
+      const params = new URLSearchParams()
+      if (!includeSystem) params.set('job_output', 'true')
+      if (runnerJobId) params.set('runner_job_id', runnerJobId)
+      const query = params.toString()
       const resp = await fetch(
-        `/api/orgs/${orgId}/log-streams/${logStreamId}/logs/download${params}`
+        `/api/orgs/${orgId}/log-streams/${logStreamId}/logs/download${query ? `?${query}` : ''}`
       )
       if (!resp.ok) {
         throw new Error('Failed to download logs')
@@ -54,12 +59,13 @@ export const DownloadLogsButtonContainer = ({
   ...props
 }: { includeSystemLogs?: boolean } & IButtonAsButton) => {
   const { org } = useOrg()
-  const { logStreamId } = useLogStreamData()
+  const { logStreamId, runnerJobId } = useLogStreamData()
   const { addModal } = useSurfaces()
   const modal = (
     <DownloadLogsModalContainer
       orgId={org.id}
       logStreamId={logStreamId}
+      runnerJobId={runnerJobId}
       includeSystemLogs={includeSystemLogs}
     />
   )

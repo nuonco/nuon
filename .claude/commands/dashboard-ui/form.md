@@ -76,9 +76,13 @@ sign-off (allowlist: `DeploymentPlanEditor`). Anything else with inputs → TanS
    the `<Text>` body (see `COPY_STYLE.md`). Navigate only for a canonical destination; edits never
    navigate.
 
-8. **Edit reuses create** (contract §5): one component + schema per resource with a
-   `mode: 'create' | 'edit'` prop; edit prefills; mode-specific fields conditional. Never a forked
-   `EditXModal`.
+8. **Edit reuses create** (contract §5) **when create and edit hit the SAME endpoint** (webhooks,
+   channel subs): one component + schema per resource with a `mode: 'create' | 'edit'` prop; edit
+   prefills; mode-specific fields conditional; never a forked `EditXModal`. **When create and edit hit
+   DIFFERENT endpoints** (branches, OIDC policies, the install editors), keep them as **separate
+   in-place forms** — do NOT force-collapse them into one `mode` component. For a genuine edit-only
+   form, gate the submit button on a "no change" check too (e.g. `name === currentName`) alongside
+   `canSubmit`.
 
 9. **Buttons:** create = "Create {thing}" + PlusIcon; edit = "Save changes", no icon. Submitting =
    gerund + Loading icon.
@@ -96,14 +100,36 @@ sign-off (allowlist: `DeploymentPlanEditor`). Anything else with inputs → TanS
   owns state; the modal trigger calls `form.handleSubmit()`. **DO** wrap fields in a
   `<form autoComplete="off" noValidate onSubmit={(e) => e.preventDefault()}>` element (it's a form —
   the element turns off autocomplete); just don't wire the mutation to native submit.
-- **No** nested-object fields — flatten them (`canSubmit` breaks on nested objects in v1).
+- **No** nested-object fields — flatten them (`canSubmit` breaks on nested objects in v1). Array
+  fields (`mode="array"` of `{...}` rows) are fine — that's different from a single field whose value
+  is an object.
+- **No** cross-row / array-level rules inside the Zod schema — TanStack v1 will NOT clear a
+  form-level standard-schema error mapped to an ARRAY field even after it's satisfied (the button
+  stays disabled forever). Put "at least one row must …" checks as a **live computed gate** on the
+  submit button instead: `const rows = useStore(form.store, s => s.values.items); disabled: !canSubmit
+  || !hasValidRow(rows)`. Per-row field rules (`z.string().min(1)` on `items[i].key`) are fine.
 - **No** native `required` on fields — Zod is the sole validation source (avoids double-validation).
 - **No** error toasts — errors are an in-form `FormErrorBanner`.
 - **No** OpenAPI-derived schemas — hand-write Zod (wire shape ≠ UX validation).
+
+## Advanced patterns (only when needed)
+
+- **Programmatic set + dirty-tracking** (a picker autofills fields while preserving user edits): do
+  NOT use TanStack's `field.meta.isDirty` — a programmatic `form.setFieldValue` also flips it. Keep a
+  local `isXDirty` flag, set it only from the field's own `onChange` (bind a raw `Input`/`Select` to
+  `form.Field` so you can add the side-effect), and skip the autofill when dirty. See
+  `CreateOIDCTrustPolicy`.
+- **Container-owned ephemeral state** (repo browser, role selector) stays a prop passed into the form,
+  not a form field — the form owns only the committed values; cross-checks against it (e.g. "a repo
+  must be selected") run imperatively inside `form.onSubmit`. See branches / run-action forms.
+- **Multi-page wizard**: keep the page/step state local; gate each step's Next on `canSubmit` (or the
+  relevant subset) instead of the old `reportValidity()` dance. See `RunRunbookForm`.
 
 ## Canonical sources
 
 - Simple: `client/components/api-tokens/CreateApiToken/`
 - Custom validation: `client/components/webhooks/CreateWebhook/`
 - Composite widgets: `client/components/slack/CreateChannelSubscription/`
-- Plan: `services/dashboard-ui/.planning/ux/011-plan-tanstack-form-migration.md`
+- Dynamic array + dirty-tracking + array-gate: `client/components/oidc-trust-policies/CreateOIDCTrustPolicy/`
+- Multi-page wizard: `client/components/runbooks/RunRunbook/RunRunbookForm.tsx`
+- Plan (completed): `services/dashboard-ui/.planning/ux/011-plan-tanstack-form-migration.md`

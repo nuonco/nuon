@@ -37,7 +37,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short: "Get current org",
 		Long:  "Get the org you are currently authenticated with",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.Current(cmd.Context(), PrintJSON)
 		}),
 	}
@@ -49,7 +49,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			printDeprecatedCommandWarning(cmd, "Use `nuon orgs get` instead")
 
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.Current(cmd.Context(), PrintJSON)
 		}),
 	}
@@ -67,7 +67,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			printDeprecatedCommandWarning(cmd, "Use `nuon orgs api-tokens` instead")
 
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.APIToken(cmd.Context(), PrintJSON)
 		}),
 	}
@@ -78,7 +78,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short: "Get current org id",
 		Long:  "Get id for current org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.ID(cmd.Context(), PrintJSON)
 		}),
 	}
@@ -90,7 +90,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short:   "List orgs",
 		Long:    "List all your orgs",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.List(cmd.Context(), offset, limit, search, PrintJSON)
 		}),
 	}
@@ -104,7 +104,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short: "List VCS connections",
 		Long:  "List all connected GitHub accounts",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.VCSConnections(cmd.Context(), offset, limit, PrintJSON)
 		}),
 	}
@@ -117,7 +117,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short: "Delete VCS Connection",
 		Long:  "Delete a VCS connection from your Nuon org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.DeleteVCSConnection(cmd.Context(), connectionID, PrintJSON)
 		}),
 	}
@@ -131,7 +131,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short: "Connect GitHub account",
 		Long:  "Connect GitHub account to your Nuon org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.ConnectGithub(cmd.Context())
 		}),
 	}
@@ -143,7 +143,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short: "Create new org",
 		Long:  "Create a new org and set it as the current org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.Create(cmd.Context(), name, sandbox, noSelect, PrintJSON)
 		}),
 	}
@@ -159,7 +159,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:        "Select your current org from a list or by org ID",
 		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.Select(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
@@ -173,7 +173,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short: "Deselect your current org",
 		Long:  "Deselect your current org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.Deselect(cmd.Context())
 		}),
 	}
@@ -184,7 +184,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short: "Print the current cli config",
 		Long:  "Print the current cli config being used",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.PrintConfig(PrintJSON)
 		}),
 	})
@@ -194,7 +194,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short: "Invite a user to org",
 		Long:  "Invite a user by email to org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.CreateInvite(cmd.Context(), email, role, PrintJSON)
 		}),
 	}
@@ -207,7 +207,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short: "Change an org member's role",
 		Long:  "Change the role of an existing member of the current org. Requires org admin.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.UpdateUserRole(cmd.Context(), userID, role, PrintJSON)
 		}),
 	}
@@ -222,7 +222,7 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Short: "List all org invites",
 		Long:  "List all org invites",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.ListInvites(cmd.Context(), offset, limit, PrintJSON)
 		}),
 	}
@@ -240,6 +240,7 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 		name     string
 		duration string
 		role     string
+		personal bool
 		tokenID  string
 	)
 
@@ -253,16 +254,17 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 	createCmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a static API token for the current org",
-		Long:  "Create a static API token scoped to the current org's service account. The token is only shown once.",
+		Long:  "Create a static API token. By default the token is backed by a dedicated service account with the given role; use --personal to issue the token against your own account and its existing roles instead. The token is only shown once.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.CreateStaticToken(cmd.Context(), name, duration, role, PrintJSON)
+			svc := c.orgs
+			return svc.CreateStaticToken(cmd.Context(), name, duration, role, personal, PrintJSON)
 		}),
 	}
 	createCmd.Flags().StringVarP(&name, "name", "n", "", "A human-friendly name to identify the token")
 	createCmd.MarkFlagRequired("name")
 	createCmd.Flags().StringVar(&duration, "duration", "8760h", "How long the token is valid (Go duration, e.g. 720h)")
 	createCmd.Flags().StringVar(&role, "role", "org_read_only", "The org role granted to the token (see 'nuon roles list')")
+	createCmd.Flags().BoolVar(&personal, "personal", false, "Issue the token against your own account instead of a dedicated service account")
 	apiTokensCmd.AddCommand(createCmd)
 
 	listCmd := &cobra.Command{
@@ -270,7 +272,7 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List static API tokens for the current org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.ListStaticTokens(cmd.Context(), PrintJSON)
 		}),
 	}
@@ -280,7 +282,7 @@ func (c *cli) apiTokensCmd() *cobra.Command {
 		Use:   "delete",
 		Short: "Delete a static API token for the current org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.DeleteStaticToken(cmd.Context(), tokenID, PrintJSON)
 		}),
 	}
@@ -330,7 +332,7 @@ Example (GitHub Actions, main branch of acme/app only):
 			if err != nil {
 				return err
 			}
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.CreateOIDCTrustPolicy(cmd.Context(), name, issuer, audience, role, ttl, conditions, PrintJSON)
 		}),
 	}
@@ -351,7 +353,7 @@ Example (GitHub Actions, main branch of acme/app only):
 		Aliases: []string{"ls"},
 		Short:   "List OIDC trust policies for the current org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.ListOIDCTrustPolicies(cmd.Context(), PrintJSON)
 		}),
 	}
@@ -361,7 +363,7 @@ Example (GitHub Actions, main branch of acme/app only):
 		Use:   "get",
 		Short: "Get an OIDC trust policy",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.GetOIDCTrustPolicy(cmd.Context(), policyID, PrintJSON)
 		}),
 	}
@@ -405,7 +407,7 @@ Example (GitHub Actions, main branch of acme/app only):
 				req.Enabled = &enable
 			}
 
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.UpdateOIDCTrustPolicy(cmd.Context(), policyID, req, PrintJSON)
 		}),
 	}
@@ -426,7 +428,7 @@ Example (GitHub Actions, main branch of acme/app only):
 		Short: "Delete an OIDC trust policy",
 		Long:  "Delete an OIDC trust policy and its service account. Tokens already exchanged under the policy stop working immediately.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.DeleteOIDCTrustPolicy(cmd.Context(), policyID, PrintJSON)
 		}),
 	}
@@ -591,7 +593,7 @@ func (c *cli) orgWebhooksCmd() *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "List webhooks for the current org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.ListWebhooks(cmd.Context(), PrintJSON)
 		}),
 	}
@@ -615,7 +617,7 @@ path/to/subscription.json.
 ` + subscriptionJSONHelp,
 		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.CreateWebhook(cmd.Context(), webhookURL, webhookSecret, createSubscription, PrintJSON)
 		}),
 	}
@@ -650,7 +652,7 @@ to preserve it.
 ` + subscriptionJSONHelp,
 		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.UpdateWebhook(cmd.Context(), webhookID, webhookSecret, updateSubscription, PrintJSON)
 		}),
 	}
@@ -665,7 +667,7 @@ to preserve it.
 		Use:   "delete",
 		Short: "Delete a webhook for the current org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := orgs.New(c.apiClient, c.cfg)
+			svc := c.orgs
 			return svc.DeleteWebhook(cmd.Context(), webhookID, PrintJSON)
 		}),
 	}

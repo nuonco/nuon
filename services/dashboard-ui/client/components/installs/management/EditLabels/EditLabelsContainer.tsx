@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Tooltip } from '@/components/common/Tooltip'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
@@ -21,7 +20,16 @@ export const EditLabelsModalContainer = ({ ...props }: IModal) => {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const currentLabels: Record<string, string> = install?.labels || {}
+  // Template-managed keys edit as template text so saving unchanged rows
+  // round-trips the template instead of converting the label to static.
+  // App-default keys are excluded — they are read-only per install.
+  const defaultLabels = install?.app_default_labels || {}
+  const currentLabels: Record<string, string> = Object.fromEntries(
+    Object.entries({
+      ...(install?.labels || {}),
+      ...(install?.label_templates || {}),
+    }).filter(([key]) => !(key in defaultLabels)),
+  )
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: async (newLabels: Record<string, string>) => {
@@ -55,19 +63,13 @@ export const EditLabelsModalContainer = ({ ...props }: IModal) => {
       )
       removeModal(props.modalId)
     },
-    onError: () => {
-      addToast(
-        <Toast heading="Label update failed" theme="error">
-          <Text>Unable to update labels for {install.name}.</Text>
-        </Toast>,
-      )
-    },
   })
 
   return (
     <EditLabelsModal
       {...props}
       labels={currentLabels}
+      defaultLabels={defaultLabels}
       isPending={isPending}
       error={error}
       onSubmit={(labels) => mutate(labels)}
@@ -88,12 +90,20 @@ export const EditLabelsButton = ({ ...props }: IButtonAsButton) => {
 
   if (isManagedByConfig) {
     return (
-      <Tooltip tipContent={MANAGED_BY_CONFIG_TIP} position="left" tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs" className="w-full">
-        <Button disabled className="pointer-events-none" {...props}>
-          Edit labels
-          <Icon variant="TagIcon" />
-        </Button>
-      </Tooltip>
+      <Button
+        disabled
+        tooltipProps={{
+          tipContent: MANAGED_BY_CONFIG_TIP,
+          position: 'left',
+          tipContentClassName:
+            '!whitespace-normal !w-auto max-w-[200px] text-xs',
+          className: 'w-full',
+        }}
+        {...props}
+      >
+        Edit labels
+        <Icon variant="TagIcon" />
+      </Button>
     )
   }
 

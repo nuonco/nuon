@@ -47,6 +47,10 @@ type PlantypesHelmDeployPlan struct {
 	// namespace
 	Namespace string `json:"namespace,omitempty"`
 
+	// Must stay a bool: go-swagger renders a documented $ref field as an inline
+	// struct value, which decodes non-nil on every deploy.
+	RecoverRelease bool `json:"recover_release,omitempty"`
+
 	// skip crds
 	SkipCrds bool `json:"skip_crds,omitempty"`
 

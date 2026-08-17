@@ -11,9 +11,9 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/audit"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/drain"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/telemetryexport"
 	"github.com/nuonco/nuon/pkg/metrics"
 	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 	"github.com/nuonco/nuon/pkg/runner/errs"
@@ -56,7 +56,7 @@ type jobLoop struct {
 	shutdowner fx.Shutdowner
 
 	processRegistrar *process.Registrar
-	telemetryExport  *telemetryexport.Supervisor
+	audit            *audit.Writer
 
 	drainer   *drain.Drainer
 	jobDoneCh chan struct{}
@@ -68,11 +68,29 @@ type jobLoop struct {
 	coalescersMu sync.Mutex
 	coalescers   map[string]*statusCoalescer
 
+	// idleFn is optional maintenance work that must not overlap a job. The
+	// worker is a single goroutine, so calling it from the no-work branch is
+	// what guarantees nothing this loop owns is in flight.
+	idleFn   func(context.Context)
+	lastIdle time.Time
+
 	// for healthcheck
 	healthcheck Healthcheck
 }
 
-func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params BaseParams) *jobLoop {
+// Option configures a job loop beyond its handlers and group.
+type Option func(*jobLoop)
+
+// WithIdleHook registers work to run when a poll finds no jobs, rate-limited to
+// idleHookInterval. The image-actions loop uses it to collect cached action
+// images only while it isn't running one.
+func WithIdleHook(fn func(context.Context)) Option {
+	return func(j *jobLoop) {
+		j.idleFn = fn
+	}
+}
+
+func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params BaseParams, opts ...Option) *jobLoop {
 	pollCtx, pollCancel := context.WithCancel(context.Background())
 	jobCtx, jobCancel := context.WithCancel(context.Background())
 
@@ -98,11 +116,15 @@ func New(handlers []jobs.JobHandler, jobGroup models.AppRunnerJobGroup, params B
 		shutdowner: params.Shutdowner,
 
 		processRegistrar: params.ProcessRegistrar,
-		telemetryExport:  params.TelemetryExport,
+		audit:            params.Audit,
 
 		drainer:    params.Drainer,
 		jobDoneCh:  jobDoneCh,
 		coalescers: make(map[string]*statusCoalescer),
+	}
+
+	for _, opt := range opts {
+		opt(jl)
 	}
 
 	params.LC.Append(jl.LifecycleHook())

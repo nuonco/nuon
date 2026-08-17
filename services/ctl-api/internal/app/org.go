@@ -107,6 +107,16 @@ const (
 	// and /installs-configs endpoints, the VCS push fan-out, the installs config
 	// record written during app config sync, and the dashboard install syncs tab.
 	OrgFeatureAppInstallSyncing OrgFeature = "app-install-syncing"
+	// OrgFeatureSandboxOCIArtifacts builds the app sandbox into an OCI artifact
+	// during branch runs and resolves sandbox runs against that artifact instead
+	// of cloning the sandbox git source. With it off, sandbox runs always clone
+	// git — the path every install used before artifacts existed.
+	OrgFeatureSandboxOCIArtifacts OrgFeature = "sandbox-oci-artifacts"
+	// OrgFeatureImageBackedActions lets actions declare a container image
+	// their steps run inside. Nuon mirrors the image into the install
+	// registry and the mng process runs each step's inline_contents in the
+	// image via the mounted actions-supervisor. VM-based runners only.
+	OrgFeatureImageBackedActions OrgFeature = "image-backed-actions"
 )
 
 type Org struct {
@@ -228,6 +238,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureNotebooks:               false,
 		OrgFeatureSpaceliftInstallStacks:  false,
 		OrgFeatureStackTFProvider:         false,
+		OrgFeatureImageBackedActions:      false,
 		OrgFeatureOrgRunner:               false,
 		OrgFeatureAWSAccountConnections:   false,
 		OrgFeatureComponentHealth:         false,
@@ -238,6 +249,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureNewAppIA:                false,
 		OrgFeatureOrgHealthcheckSweeps:    false,
 		OrgFeatureAppInstallSyncing:       false,
+		OrgFeatureSandboxOCIArtifacts:     false,
 
 		// Enabled by default
 		OrgFeatureAppBranches:   true,
@@ -299,6 +311,8 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureNewAppIA,
 		OrgFeatureOrgHealthcheckSweeps,
 		OrgFeatureAppInstallSyncing,
+		OrgFeatureSandboxOCIArtifacts,
+		OrgFeatureImageBackedActions,
 	}
 }
 
@@ -338,6 +352,8 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureNewAppIA:                 "Enable the branch-centric app information architecture in the dashboard: branches as the app landing page, grouped navigation, and the app source header. Requires app-branches-ui.",
 		OrgFeatureOrgHealthcheckSweeps:     "Replace per-runner and per-process healthcheck cron emitters with two per-org sweep emitters that check all runners/processes in paginated batches. Toggle via POST /v1/orgs/{org_id}/migrate-healthcheck-sweeps, which also migrates the emitters.",
 		OrgFeatureAppInstallSyncing:        "Enable app install config syncing: point an app at a git repo of per-install configs so pushes to that repo sync every install's config and create missing installs behind an approval step. Gates the install syncs API, the VCS push fan-out, and the dashboard install syncs tab.",
+		OrgFeatureSandboxOCIArtifacts:      "Build the app sandbox into an OCI artifact during branch runs and resolve sandbox runs against that artifact instead of cloning the sandbox git source. With it off, sandbox runs always clone git.",
+		OrgFeatureImageBackedActions:       "Allow actions to declare a container image their steps run inside. Nuon mirrors the image into the install registry and the mng process runs each step's inline_contents in the image via the mounted actions-supervisor. VM-based runners only.",
 	}
 }
 

@@ -132,6 +132,7 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 			Metadata:       step.Metadata,
 			Retryable:      step.Retryable,
 			Skippable:      step.Skippable,
+			SkipOnFailure:  step.SkipOnFailure,
 			GroupIdx:       step.GroupIdx,
 			GroupRetryIdx:  newGroupRetryIdx,
 			StepTargetType: step.StepTargetType,

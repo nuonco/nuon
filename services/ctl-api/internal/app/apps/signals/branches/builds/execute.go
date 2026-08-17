@@ -20,6 +20,7 @@ const buildBatchSize = 5
 
 // buildEntry tracks a single component build for metadata updates.
 type buildEntry struct {
+	BuildID       string  `json:"build_id,omitempty"`
 	ComponentID   string  `json:"component_id"`
 	ComponentName string  `json:"component_name"`
 	ComponentType string  `json:"component_type,omitempty"`
@@ -48,7 +49,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
 	}
 
-	isPreview := run.RunType == app.AppBranchRunTypeGitPreview
+	isPreview := run.IsPreview()
 
 	// Get app config with component IDs
 	appConfig, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, run.AppConfigID)
@@ -83,26 +84,38 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("component builds failed: %w", err)
 	}
 
-	sandboxEntry := buildEntry{
-		ComponentID:   "sandbox",
-		ComponentName: "Sandbox",
-		ComponentType: "sandbox",
-		Status:        "in-progress",
-		CacheStatus:   "no cache",
+	ociArtifacts, err := activities.AwaitOrgHasFeature(ctx, activities.OrgHasFeatureRequest{
+		OrgID:   run.OrgID,
+		Feature: string(app.OrgFeatureSandboxOCIArtifacts),
+	})
+	if err != nil {
+		return fmt.Errorf("unable to check sandbox-oci-artifacts feature flag: %w", err)
 	}
-	builds = append(builds, sandboxEntry)
-	s.updateBuildMetadata(ctx, builds)
 
-	if err := s.buildSandbox(ctx, l); err != nil {
-		s.setBuildStatus(builds, "sandbox", "error")
-		s.updateBuildMetadata(ctx, builds)
-		if isPreview && run.PRNumber != nil {
-			s.finalizePreview(ctx, l, run, err)
+	if ociArtifacts {
+		sandboxEntry := buildEntry{
+			ComponentID:   "sandbox",
+			ComponentName: "Sandbox",
+			ComponentType: "sandbox",
+			Status:        "in-progress",
+			CacheStatus:   "no cache",
 		}
-		return fmt.Errorf("sandbox build failed: %w", err)
+		builds = append(builds, sandboxEntry)
+		s.updateBuildMetadata(ctx, builds)
+
+		if err := s.buildSandbox(ctx, l); err != nil {
+			s.setBuildStatus(builds, "sandbox", "error")
+			s.updateBuildMetadata(ctx, builds)
+			if isPreview && run.PRNumber != nil {
+				s.finalizePreview(ctx, l, run, err)
+			}
+			return fmt.Errorf("sandbox build failed: %w", err)
+		}
+		s.setBuildStatus(builds, "sandbox", "success")
+		s.updateBuildMetadata(ctx, builds)
+	} else {
+		l.Info("sandbox-oci-artifacts disabled, skipping sandbox build")
 	}
-	s.setBuildStatus(builds, "sandbox", "success")
-	s.updateBuildMetadata(ctx, builds)
 
 	if isPreview && run.PRNumber != nil {
 		s.finalizePreview(ctx, l, run, nil)
@@ -152,6 +165,7 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 					"component_id", componentID,
 					"existing_build_id", check.ExistingBuildID)
 				builds = append(builds, buildEntry{
+					BuildID:       check.ExistingBuildID,
 					ComponentID:   componentID,
 					ComponentName: name,
 					ComponentType: info.Type,
@@ -260,6 +274,7 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 
 		if result.AllDone {
 			for _, br := range result.Builds {
+				s.setBuildID(builds, br.ComponentID, br.BuildID)
 				if br.Status == string(app.ComponentBuildStatusActive) {
 					s.setBuildStatus(builds, br.ComponentID, "success")
 				} else {
@@ -276,6 +291,7 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 
 		// Update metadata with current statuses
 		for _, br := range result.Builds {
+			s.setBuildID(builds, br.ComponentID, br.BuildID)
 			switch br.Status {
 			case string(app.ComponentBuildStatusActive):
 				s.setBuildStatus(builds, br.ComponentID, "success")
@@ -305,6 +321,15 @@ func (s *Signal) setBuildStatus(builds []buildEntry, componentID, status string)
 	}
 }
 
+func (s *Signal) setBuildID(builds []buildEntry, componentID, buildID string) {
+	for i := range builds {
+		if builds[i].ComponentID == componentID {
+			builds[i].BuildID = buildID
+			return
+		}
+	}
+}
+
 // updateBuildMetadata writes the current builds list to the parent step's
 // status metadata so the UI can display real-time build progress.
 func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) {
@@ -323,6 +348,9 @@ func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) 
 			"status":         b.Status,
 			"skipped":        b.Skipped,
 			"cache_status":   b.CacheStatus,
+		}
+		if b.BuildID != "" {
+			entry["build_id"] = b.BuildID
 		}
 		if b.ImageDigest != "" {
 			entry["image_digest"] = b.ImageDigest
@@ -439,6 +467,7 @@ func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger) error {
 		Signal: &sandboxbuild.Signal{
 			AppBranchID: s.AppBranchID,
 			RunID:       s.RunID,
+			StepID:      s.StepID,
 		},
 		Callback: cb,
 	})

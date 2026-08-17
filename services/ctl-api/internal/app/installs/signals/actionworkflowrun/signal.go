@@ -4,12 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/distribution/reference"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
+	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/stategen"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
@@ -26,6 +30,7 @@ import (
 
 const SignalType signal.SignalType = "install-action-workflow-run"
 const runbookEventOutputsVersion = "runbook-event-outputs-v1"
+const preparationCompositeErrorVersion = "action-preparation-composite-error-v1"
 
 type Signal struct {
 	signal.LifecycleBase
@@ -251,6 +256,14 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 	if err != nil {
 		return errors.Wrap(err, "unable to get action workflow run")
 	}
+	preparationCompositeErrorsEnabled := workflow.GetVersion(ctx, preparationCompositeErrorVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if preparationCompositeErrorsEnabled {
+		if err := activities.AwaitSetActionWorkflowRunPreparationCompositeError(ctx, activities.SetActionWorkflowRunPreparationCompositeErrorRequest{
+			RunID: run.ID,
+		}); err != nil {
+			l.Warn("unable to clear action workflow run preparation composite error", zap.Error(err))
+		}
+	}
 
 	parentLS, _ := cctx.GetLogStreamWorkflow(ctx)
 
@@ -292,8 +305,20 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		WorkflowID: fmt.Sprintf("%s-create-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
 	})
 	if err != nil {
+		if preparationCompositeErrorsEnabled {
+			s.recordPreparationCompositeError(ctx, run.ID, err)
+		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create plan")
 		return errors.Wrap(err, "unable to create plan")
+	}
+
+	// image-backed actions: mirror the app image into the install registry
+	// and verify the runner can host the container before dispatching.
+	if planResponse.Plan.SourceImage != "" {
+		if err := s.mirrorActionImage(ctx, run, ls.ID, planResponse.Plan); err != nil {
+			s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, err.Error())
+			return errors.Wrap(err, "unable to prepare image-backed action")
+		}
 	}
 
 	// execute job
@@ -310,6 +335,9 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		},
 	})
 	if err != nil {
+		if preparationCompositeErrorsEnabled {
+			s.recordPreparationCompositeError(ctx, run.ID, err)
+		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
 		return errors.Wrap(err, "unable to create runner job")
 	}
@@ -318,6 +346,9 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 	// save runner job plan
 	planJSON, err := json.Marshal(planResponse.Plan)
 	if err != nil {
+		if preparationCompositeErrorsEnabled {
+			s.recordPreparationCompositeError(ctx, run.ID, err)
+		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to create job")
 		return errors.Wrap(err, "unable to convert plan to json")
 	}
@@ -327,6 +358,9 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		PlanJSON:      string(planJSON),
 		CompositePlan: plantypes.CompositePlan{ActionWorkflowRunPlan: planResponse.Plan},
 	}); err != nil {
+		if preparationCompositeErrorsEnabled {
+			s.recordPreparationCompositeError(ctx, run.ID, err)
+		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to save job plan")
 		return errors.Wrap(err, "unable to save runner job plan")
 	}
@@ -336,6 +370,9 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		RunnerJobID:   runnerJob.ID,
 		RoleSelection: planResponse.RoleSelection,
 	}); err != nil {
+		if preparationCompositeErrorsEnabled {
+			s.recordPreparationCompositeError(ctx, run.ID, err)
+		}
 		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "unable to record install role usage")
 		return errors.Wrap(err, "unable to record install role usage")
 	}
@@ -376,6 +413,186 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 	}
 
 	return nil
+}
+
+func (s *Signal) recordPreparationCompositeError(ctx workflow.Context, runID string, runErr error) {
+	if err := activities.AwaitSetActionWorkflowRunPreparationCompositeError(ctx, activities.SetActionWorkflowRunPreparationCompositeErrorRequest{
+		RunID:  runID,
+		Detail: signal.HumanError(runErr),
+	}); err != nil {
+		workflow.GetLogger(ctx).Warn("unable to record action workflow run preparation composite error", zap.Error(err))
+	}
+}
+
+// mirrorActionImage mirrors an image-backed action's app-authored image into
+// the install registry via an oci-sync job, after confirming the org has the
+// feature enabled and the install's runner platform is supported. It pins the
+// plan to the mirrored digest; any error here prevents the action job from
+// being dispatched at all.
+func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionWorkflowRun, logStreamID string, awPlan *plantypes.ActionWorkflowRunPlan) error {
+	l := workflow.GetLogger(ctx)
+
+	enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureImageBackedActions))
+	if err != nil {
+		return errors.Wrap(err, "unable to check image-backed-actions feature")
+	}
+	if !enabled {
+		return errors.New("image-backed actions are not enabled for this organization")
+	}
+
+	platform := run.Install.RunnerGroup.Platform
+	if !supportedImageActionPlatform(platform) {
+		return fmt.Errorf("image-backed actions are only supported on AWS runners; runner platform %q is not supported", platform)
+	}
+
+	src, srcTag, err := parseActionImageSource(awPlan.SourceImage)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse action image reference")
+	}
+
+	l.Info("mirroring image-backed action image into install registry",
+		zap.String("source_image", awPlan.SourceImage))
+
+	syncJob, err := activities.AwaitCreateActionImageSyncJob(ctx, &activities.CreateActionImageSyncJobRequest{
+		ActionWorkflowRunID: run.ID,
+		RunnerID:            run.Install.RunnerID,
+		LogStreamID:         logStreamID,
+		Metadata: map[string]string{
+			"install_id":             run.InstallID,
+			"action_workflow_run_id": run.ID,
+			"source_image":           awPlan.SourceImage,
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to create image sync job")
+	}
+
+	syncPlan := &plantypes.SyncOCIPlan{
+		Src:    src,
+		SrcTag: srcTag,
+		Dst:    awPlan.ImageRegistry,
+		DstTag: awPlan.ImageTag,
+	}
+	if awPlan.SandboxMode != nil {
+		syncPlan.SandboxMode = &plantypes.SandboxMode{Enabled: true}
+	}
+
+	syncPlanJSON, err := json.Marshal(syncPlan)
+	if err != nil {
+		return errors.Wrap(err, "unable to marshal sync plan")
+	}
+
+	if err := activities.AwaitSaveRunnerJobPlan(ctx, &activities.SaveRunnerJobPlanRequest{
+		JobID:         syncJob.ID,
+		PlanJSON:      string(syncPlanJSON),
+		CompositePlan: plantypes.CompositePlan{SyncOCIPlan: syncPlan},
+	}); err != nil {
+		return errors.Wrap(err, "unable to save sync job plan")
+	}
+
+	if _, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+		RunnerID:   run.Install.RunnerID,
+		JobID:      syncJob.ID,
+		WorkflowID: "action-image-sync-exec-job-" + run.ID,
+	}); err != nil {
+		return errors.Wrap(err, "image sync job failed")
+	}
+
+	// Bind execution to the exact manifest just mirrored: read the resolved
+	// digest-pinned ref from the sync job outputs so the runner pulls by digest
+	// rather than the mutable tag. This fails closed. If the digest can't be
+	// resolved and validated we don't dispatch the action job at all, otherwise
+	// the runner would execute whatever the mutable tag points at.
+	digestRef, err := resolveMirroredDigestRef(ctx, syncJob.ID)
+	if err != nil {
+		return err
+	}
+	awPlan.ImageDigestRef = digestRef
+
+	l.Info("bound image-backed action to mirrored manifest",
+		zap.String("image_digest_ref", digestRef))
+
+	return nil
+}
+
+// resolveMirroredDigestRef reads the digest-pinned image ref the oci-sync job
+// recorded and verifies it actually carries a digest, so execution can only
+// ever run the manifest that was just mirrored.
+func resolveMirroredDigestRef(ctx workflow.Context, syncJobID string) (string, error) {
+	syncedJob, err := activities.AwaitGetJobByID(ctx, syncJobID)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to get image sync job to resolve mirrored digest")
+	}
+
+	raw, ok := syncedJob.ParsedOutputs["image"]
+	if !ok {
+		return "", errors.New("image sync job recorded no image output, unable to pin action image to a digest")
+	}
+
+	var out state.OCIArtifactOutputs
+	if err := mapstructure.Decode(raw, &out); err != nil {
+		return "", errors.Wrap(err, "unable to decode image sync job output")
+	}
+	if out.Ref == "" {
+		return "", errors.New("image sync job recorded an empty image ref, unable to pin action image to a digest")
+	}
+
+	parsed, err := reference.Parse(out.Ref)
+	if err != nil {
+		return "", fmt.Errorf("mirrored image ref %q is not a valid reference: %w", out.Ref, err)
+	}
+	if _, ok := parsed.(reference.Digested); !ok {
+		return "", fmt.Errorf("mirrored image ref %q is not digest-pinned", out.Ref)
+	}
+
+	return out.Ref, nil
+}
+
+// supportedImageActionPlatform gates image-backed actions to AWS (plus local
+// runners, which only run on a developer machine). AWS is the only platform
+// that mints the selected role's credentials on the runner and injects them, so
+// the container never needs the VM's metadata identity. GCP injects only an
+// impersonation hint and Azure injects nothing, so both fall back to the node
+// identity and need credential work before they can honor the role boundary.
+func supportedImageActionPlatform(p app.AppRunnerType) bool {
+	switch p {
+	case app.AppRunnerTypeAWS, app.AppRunnerTypeLocal:
+		return true
+	default:
+		return false
+	}
+}
+
+// parseActionImageSource splits an app-authored image ref (e.g.
+// ghcr.io/acme/tools:v1) into the source registry descriptor and tag the
+// oci-sync copier pulls from.
+func parseActionImageSource(sourceImage string) (*configs.OCIRegistryRepository, string, error) {
+	named, err := reference.ParseDockerRef(sourceImage)
+	if err != nil {
+		return nil, "", fmt.Errorf("invalid image reference %q: %w", sourceImage, err)
+	}
+
+	// Prefer a pinned digest over a tag so a digest-pinned ref actually mirrors
+	// and runs the pinned content instead of silently resolving to "latest" (or
+	// discarding the digest on a tag+digest ref). oras resolves the source ref
+	// by digest or tag, so passing the digest here is valid.
+	ref := "latest"
+	if digested, ok := named.(reference.Digested); ok {
+		ref = digested.Digest().String()
+	} else if tagged, ok := named.(reference.Tagged); ok {
+		ref = tagged.Tag()
+	}
+
+	loginServer := ""
+	if reference.Domain(named) == "docker.io" {
+		loginServer = "docker.io"
+	}
+
+	return &configs.OCIRegistryRepository{
+		RegistryType: configs.OCIRegistryTypePublicOCI,
+		Repository:   named.Name(),
+		LoginServer:  loginServer,
+	}, ref, nil
 }
 
 func (s *Signal) updateActionRunStatus(ctx workflow.Context, runID string, status app.InstallActionWorkflowRunStatus, msg string) {

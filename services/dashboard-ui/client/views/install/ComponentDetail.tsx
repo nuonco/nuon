@@ -10,13 +10,14 @@ import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { ComponentDependencyGraphButton } from '@/components/components/ComponentDependencyGraph'
 import { ComponentType } from '@/components/components/ComponentType'
-import {
-  ComponentConfigCard,
-  ComponentConfigCardSkeleton,
-} from '@/components/components/ComponentConfigCard'
+import { ComponentConfigCard } from '@/components/components/ComponentConfigCard'
 import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import { HealthTimeline } from '@/components/install-health/HealthTimeline'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
+import {
+  StuckHelmReleaseBanner,
+  stuckHelmReleaseStatus,
+} from '@/components/install-components/StuckHelmReleaseBanner'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
 import { ComponentOverrideCard } from '@/components/install-overrides/ComponentOverrideCard'
 import { RemovedFromAppConfigBanner } from '@/components/installs/RemovedFromAppConfig'
@@ -72,6 +73,7 @@ export const InstallComponentDetail = () => {
 
   const component = installComponent?.component
   const latestDeploy = installComponent?.install_deploys?.[0]
+  const stuckHelmStatus = stuckHelmReleaseStatus(latestDeploy)
   const config = appConfig?.component_config_connections?.find(
     (c) => c.component_id === componentId
   )
@@ -223,8 +225,12 @@ export const InstallComponentDetail = () => {
               <DriftedBanner drifted={installComponent.drifted_object} />
             ) : null}
 
+            {component && stuckHelmStatus ? (
+              <StuckHelmReleaseBanner component={component} status={stuckHelmStatus} />
+            ) : null}
+
             {isLoadingConfig ? (
-              <ComponentConfigCardSkeleton />
+              <ComponentConfigCard loading />
             ) : config ? (
               <ComponentConfigCard
                 config={config}

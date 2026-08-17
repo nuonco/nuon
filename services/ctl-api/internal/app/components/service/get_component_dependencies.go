@@ -56,7 +56,7 @@ func (s *service) GetAppComponentDependencies(ctx *gin.Context) {
 		return
 	}
 
-	appCfg, err := s.appsHelpers.GetAppLatestConfig(ctx, component.AppID)
+	appCfg, err := s.appsHelpers.GetLatestActiveAppConfig(ctx, component.AppID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get app config"))
 		return
@@ -103,7 +103,7 @@ func (s *service) GetComponentDependencies(ctx *gin.Context) {
 		return
 	}
 
-	appCfg, err := s.appsHelpers.GetAppLatestConfig(ctx, component.AppID)
+	appCfg, err := s.appsHelpers.GetLatestActiveAppConfig(ctx, component.AppID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get app config"))
 		return

@@ -40,8 +40,12 @@ export const WorkflowRunPanelContainer = ({
   })
 
   const steps = (run?.steps || []).filter((s) => s.owner_type !== 'components')
-  const activeStep = steps.find((step) => isActiveStepStatus(step.status?.status))
-  const urlStep = urlStepId ? steps.find((s) => s.id === urlStepId) ?? null : null
+  const activeStep = steps.find((step) =>
+    isActiveStepStatus(step.status?.status)
+  )
+  const urlStep = urlStepId
+    ? (steps.find((s) => s.id === urlStepId) ?? null)
+    : null
   const selectedStep = urlStep ?? activeStep ?? steps[0] ?? null
   const selectedStepId = selectedStep?.id ?? null
   const branchRun = run?.app_branch_runs?.at(0)
@@ -73,6 +77,7 @@ export const WorkflowRunPanelContainer = ({
       activeStep={activeStep}
       onSelectStep={(step) => setUrlStepId(step?.id ?? null)}
       onJumpToActive={handleJumpToActive}
+      appBranchId={branchId}
       appBranchRunId={branchRun?.id}
       stepDetailRef={stepDetailRef}
       runTitle={getRunTitle(run)}

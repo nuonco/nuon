@@ -31,6 +31,8 @@ func (c *cli) installsCmd() *cobra.Command {
 		deployDeps         bool
 		deployDependents   bool
 		deployDependencies bool
+		stackOnly          bool
+		inputsOnly         bool
 		offset             int
 		limit              int
 		planOnly           bool
@@ -67,7 +69,7 @@ provided labels must match (AND semantics):
 
   nuon installs list --labels env=prod --labels team=platform`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.List(cmd.Context(), appID, offset, limit, labelArgs, PrintJSON)
 		}),
 	}
@@ -82,7 +84,7 @@ provided labels must match (AND semantics):
 		Short: "Get an install",
 		Long:  "Get an install by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Get(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -97,7 +99,7 @@ provided labels must match (AND semantics):
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			printDeprecatedCommandWarning(cmd, "Use `nuon installs get` instead")
 
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Get(cmd.Context(), c.cfg.GetString("install_id"), PrintJSON)
 		}),
 	}
@@ -108,7 +110,7 @@ provided labels must match (AND semantics):
 		Short: "Generate config for an existing install",
 		Long:  "Generate config file for an existing install, to be used with a nuon app config",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.GenerateConfig(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -127,11 +129,18 @@ determined automatically from the stack output after provisioning.
 Use --label (repeatable, format key=value) to attach labels at creation time:
 
   nuon installs create -a my-app -n my-install -r us-west-2 \
-    --label env=prod --label team=platform`,
+    --label env=prod --label team=platform
+
+Use --stack-only to provision the stack and runner and stop there, leaving the
+sandbox and components unprovisioned:
+
+  nuon installs create -a my-app -n my-install -r us-west-2 --stack-only
+  nuon installs inputs set bootstrap_token=... -i my-install --inputs-only
+  nuon installs reprovision-sandbox -i my-install`,
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Create(cmd.Context(), appID, name, region, awsAccountID, inputs, labelArgs, PrintJSON, noSelect)
+			svc := c.installs
+			return svc.Create(cmd.Context(), appID, name, region, awsAccountID, inputs, labelArgs, PrintJSON, noSelect, stackOnly)
 		}),
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
@@ -145,6 +154,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	createCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
 	createCmd.Flags().StringSliceVar(&labelArgs, "label", []string{}, "Labels to set on the install (repeatable, format: key=value). Example: --label env=prod --label team=platform")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "Do not automatically set the created install as the current install")
+	createCmd.Flags().BoolVar(&stackOnly, "stack-only", false, "Provision the install stack and runner only, stopping before the sandbox and components")
 	installsCmds.AddCommand(createCmd)
 
 	confirmDelete := false
@@ -153,7 +163,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Delete install",
 		Long:  "Delete an install by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Delete(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -169,7 +179,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Forget install",
 		Long:  "Forget an install by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Forget(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -184,7 +194,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Sync install",
 		Long:  "Sync install(s) with the help of config files",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Sync(cmd.Context(), fileOrDir, appID, confirm, wait, dryRun, PrintJSON)
 		}),
 	}
@@ -202,7 +212,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Enable/disable install config sync",
 		Long:  "Toggle syncing of install using a config file",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ToggleSync(cmd.Context(), id, enable, disable, PrintJSON)
 		}),
 	}
@@ -221,7 +231,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 			"Intended for gating a rollout: poll this with --output agent and continue only once all_healthy is true.",
 		Args: cobra.NoArgs,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Health(cmd.Context(), healthAppID, healthLabels, PrintJSON)
 		}),
 	}
@@ -235,7 +245,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Manage install components",
 		Long:  "Manage the components on an install. With no subcommand, lists the components on an install.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Components(cmd.Context(), id, compOffset, compLimit, false, PrintJSON)
 		}),
 	}
@@ -262,7 +272,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 				return nil
 			}
 
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ComponentOutputs(cmd.Context(), id, componentID, PrintJSON)
 		}),
 	}
@@ -279,7 +289,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 			if enable && disable {
 				return fmt.Errorf("only one of --enable or --disable can be set")
 			}
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ToggleComponent(cmd.Context(), id, componentID, enable, disable, planOnly, PrintJSON)
 		}),
 	}
@@ -299,7 +309,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short:   "List install components",
 		Long:    "List all components on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Components(cmd.Context(), id, compOffset, compLimit, compShowAll, PrintJSON)
 		}),
 	}
@@ -316,7 +326,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short:   "List deploys for an install component",
 		Long:    "List the deploys for a single component on an install (alias for `nuon installs deploys list`)",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ComponentDeploysList(cmd.Context(), id, componentID, offset, limit, PrintJSON)
 		}),
 	}
@@ -333,7 +343,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Deploy an install component",
 		Long:  "Deploy a single component on an install (alias for `nuon installs deploys create --type=deploy`). Uses the component's latest build unless --build-id is given.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ComponentDeployCreate(cmd.Context(), id, componentID, deployID, deployDeps, deployDependencies, PrintJSON)
 		}),
 	}
@@ -351,7 +361,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Deploy all components to an install",
 		Long:  "Deploy all components to an install.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.DeployComponents(cmd.Context(), id, roleName, planOnly, PrintJSON)
 		}),
 	}
@@ -366,7 +376,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Teardown a component on an install",
 		Long:  "Teardown a deployed component on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.TeardownComponent(cmd.Context(), id, componentID, roleName, PrintJSON)
 		}),
 	}
@@ -377,12 +387,36 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	componentsTeardownCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for component teardown")
 	componentsCmd.AddCommand(componentsTeardownCmd)
 
+	var recoverAutoApprove bool
+	componentsRecoverHelmReleaseCmd := &cobra.Command{
+		Use:   "recover-helm-release",
+		Short: "Recover a stuck helm release for a component on an install",
+		Long: "Recover a Helm release that was left part-way through an operation, so the component can be deployed again.\n\n" +
+			"Helm marks a release pending before it starts changing the cluster and clears that when the operation finishes. " +
+			"A release left pending is a rollout whose runner went away, and Helm refuses every further operation on it until " +
+			"it is recovered.\n\n" +
+			"If an earlier revision rolled out successfully, the release is rolled back to it. If none ever did, the stuck " +
+			"release is removed so the next deploy can start clean. Nothing is deployed either way — deploy the component " +
+			"afterwards to roll out the version you want.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := c.installs
+			return svc.RecoverHelmRelease(cmd.Context(), id, componentID, roleName, recoverAutoApprove, PrintJSON)
+		}),
+	}
+	componentsRecoverHelmReleaseCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
+	componentsRecoverHelmReleaseCmd.MarkFlagRequired("install-id")
+	componentsRecoverHelmReleaseCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The ID of the component whose helm release you want to recover")
+	componentsRecoverHelmReleaseCmd.MarkFlagRequired("component-id")
+	componentsRecoverHelmReleaseCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for the recovery")
+	componentsRecoverHelmReleaseCmd.Flags().BoolVarP(&recoverAutoApprove, "yes", "y", false, "Skip the confirmation prompt")
+	componentsCmd.AddCommand(componentsRecoverHelmReleaseCmd)
+
 	componentsTeardownAllCmd := &cobra.Command{
 		Use:   "teardown-all",
 		Short: "Teardown all components on an install",
 		Long:  "Teardown all deployed components on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.TeardownComponents(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -395,7 +429,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Forget a component on an install",
 		Long:  "Remove a component from Nuon's tracking without destroying its underlying infrastructure. The component must first be removed from the app config (via nuon apps sync). This is irreversible via the API.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ForgetComponent(cmd.Context(), id, componentID, skipConfirm, PrintJSON)
 		}),
 	}
@@ -421,7 +455,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short:   "List deploys for an install component",
 		Long:    "List the deploys for a single component on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ComponentDeploysList(cmd.Context(), id, componentID, offset, limit, PrintJSON)
 		}),
 	}
@@ -438,7 +472,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Get an install deploy",
 		Long:  "Get an install deploy by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.GetDeploy(cmd.Context(), id, deployID, PrintJSON)
 		}),
 	}
@@ -458,7 +492,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
   --type=deploy     deploy the component (uses its latest build unless --build-id is given)
   --type=teardown   teardown the component`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			switch deployType {
 			case "deploy":
 				return svc.ComponentDeployCreate(cmd.Context(), id, componentID, deployID, deployDeps, deployDependencies, PrintJSON)
@@ -486,7 +520,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Cancel an install deploy",
 		Long:  "Cancel an in-flight install deploy by cancelling its workflow",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.DeployCancel(cmd.Context(), id, deployID, PrintJSON)
 		}),
 	}
@@ -503,7 +537,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Long:        "View deploy logs by install and deploy ID",
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.DeployLogs(cmd.Context(), id, deployID, installCompID, PrintJSON)
 		}),
 	}
@@ -522,7 +556,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short:      "Get an install deploy",
 		Long:       "Get an install deploy by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.GetDeploy(cmd.Context(), id, deployID, PrintJSON)
 		}),
 	}
@@ -538,7 +572,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short:      "Create an install deploy",
 		Long:       "Create an install deploy by install ID and build ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.CreateDeploy(cmd.Context(), id, deployID, deployDeps, deployDependencies, PrintJSON)
 		}),
 	}
@@ -558,7 +592,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Long:        "View deploy logs by install and deploy ID",
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.DeployLogs(cmd.Context(), id, deployID, installCompID, PrintJSON)
 		}),
 	}
@@ -575,7 +609,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short:      "View all install deploys",
 		Long:       "View all install deploys by install ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ListDeploys(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
@@ -601,7 +635,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short:   "List install sandbox runs",
 		Long:    "List the sandbox runs for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.SandboxRuns(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
@@ -616,7 +650,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Get an install sandbox run",
 		Long:  "Get an install sandbox run by ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.SandboxRunGet(cmd.Context(), id, runID, PrintJSON)
 		}),
 	}
@@ -635,7 +669,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
   --type=reprovision   reprovision the install sandbox
   --type=deprovision   deprovision the install sandbox`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			switch sandboxRunType {
 			case "reprovision":
 				return svc.ReprovisionSandbox(cmd.Context(), id, sandboxSkipComponents, PrintJSON)
@@ -658,7 +692,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Cancel an install sandbox run",
 		Long:  "Cancel an in-flight install sandbox run by cancelling its workflow",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.SandboxRunCancel(cmd.Context(), id, runID, PrintJSON)
 		}),
 	}
@@ -673,7 +707,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "View sandbox run logs",
 		Long:  "View sandbox run logs by run & install IDs",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.SandboxRunLogs(cmd.Context(), id, runID, PrintJSON)
 		}),
 	}
@@ -698,7 +732,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short:   "List install sandbox runs",
 		Long:    "List the sandbox runs for an install (alias for `nuon installs sandbox-runs list`)",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.SandboxRuns(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
@@ -713,7 +747,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Reprovision an install sandbox",
 		Long:  "Reprovision an install sandbox (alias for `nuon installs sandbox-runs create --type=reprovision`)",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ReprovisionSandbox(cmd.Context(), id, sandboxSkipComponents, PrintJSON)
 		}),
 	}
@@ -727,7 +761,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short: "Deprovision an install sandbox",
 		Long:  "Deprovision an install sandbox (alias for `nuon installs sandbox-runs create --type=deprovision`)",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.DeprovisionSandbox(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -744,7 +778,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Short:      "View sandbox run logs",
 		Long:       "View sandbox run logs by run & install IDs",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.SandboxRunLogs(cmd.Context(), id, runID, PrintJSON)
 		}),
 	}
@@ -761,7 +795,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Hidden:     true,
 		Short:      "View sandbox outputs (deprecated)",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Outputs(cmd.Context(), id, installs.OutputsOptions{SandboxOnly: true}, PrintJSON)
 		}),
 	}
@@ -787,7 +821,7 @@ a single section:
 
 The --stack, --sandbox, and --component-id flags are mutually exclusive.`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Outputs(cmd.Context(), id, installs.OutputsOptions{
 				StackOnly:   outputsStack,
 				SandboxOnly: outputsSandbox,
@@ -810,7 +844,7 @@ The --stack, --sandbox, and --component-id flags are mutually exclusive.`,
 		Short:      "View current inputs",
 		Long:       "View current set app inputs",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.CurrentInputs(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -831,7 +865,7 @@ The --stack, --sandbox, and --component-id flags are mutually exclusive.`,
 		Short:   "View install inputs",
 		Long:    "View the install's current input values alongside their declared defaults",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.GetInputs(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -847,14 +881,18 @@ Accepts a list of inputs in key=value format, e.g.:
   nuon installs inputs set foo=bar baz=qux
 
 The current inputs are fetched first so changed values can be shown. Setting an
-input that is not declared on the app raises an error.`,
+input that is not declared on the app raises an error.
+
+Use --inputs-only to save the values without deploying components or
+reprovisioning the sandbox.`,
 		Args: cobra.MinimumNArgs(1),
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
-			return svc.SetInputs(cmd.Context(), id, args, deployDependents, PrintJSON)
+			svc := c.installs
+			return svc.SetInputs(cmd.Context(), id, args, deployDependents, inputsOnly, PrintJSON)
 		}),
 	}
 	inputsSetCmd.Flags().BoolVar(&deployDependents, "deploy-dependents", true, "Deploy components that depend on the updated inputs")
+	inputsSetCmd.Flags().BoolVar(&inputsOnly, "inputs-only", false, "Record the new input values without deploying components or reprovisioning the sandbox")
 	inputsCmd.AddCommand(inputsSetCmd)
 
 	// `inputs edit` is a preview feature, gated behind NUON_PREVIEW.
@@ -865,7 +903,7 @@ input that is not declared on the app raises an error.`,
 			Long:        "Edit an install's inputs in an interactive TUI form pre-filled with the current values",
 			Annotations: annotations(tuiAnnotation(TUIAltScreen), outputsAnnotation(OutputTable)),
 			Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-				svc := installs.New(c.apiClient, c.cfg)
+				svc := c.installs
 				return svc.EditInputs(cmd.Context(), id, deployDependents)
 			}),
 		}
@@ -881,7 +919,7 @@ input that is not declared on the app raises an error.`,
 		Long:        "Select your current install from a list or by install ID",
 		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Select(cmd.Context(), appID, id, PrintJSON)
 		}),
 	}
@@ -894,7 +932,7 @@ input that is not declared on the app raises an error.`,
 		Short: "Deselect your current install",
 		Long:  "Deselect your current install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Deselect(cmd.Context(), PrintJSON)
 		}),
 	}
@@ -906,7 +944,7 @@ input that is not declared on the app raises an error.`,
 		Short:      "Unset your current install selection (deprecated)",
 		Hidden:     true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Deselect(cmd.Context(), PrintJSON)
 		}),
 	}
@@ -917,7 +955,7 @@ input that is not declared on the app raises an error.`,
 		Short: "Reprovision install",
 		Long:  "Reprovision an install sandbox",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Reprovision(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -930,7 +968,7 @@ input that is not declared on the app raises an error.`,
 		Short: "Deprovision install",
 		Long:  "Deprovision an install sandbox",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Deprovision(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -945,7 +983,7 @@ input that is not declared on the app raises an error.`,
 		Short:      "Teardown components on install.",
 		Long:       "Teardown all deployed components on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.TeardownComponents(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -960,7 +998,7 @@ input that is not declared on the app raises an error.`,
 		Short:      "Teardown component on install.",
 		Long:       "Teardown a deployed component on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.TeardownComponent(cmd.Context(), id, componentID, roleName, PrintJSON)
 		}),
 	}
@@ -978,7 +1016,7 @@ input that is not declared on the app raises an error.`,
 		Short:      "Forget a component on an install.",
 		Long:       "Remove a component from Nuon's tracking without destroying its underlying infrastructure. The component must first be removed from the app config (via nuon apps sync). This is irreversible via the API.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ForgetComponent(cmd.Context(), id, componentID, skipConfirm, PrintJSON)
 		}),
 	}
@@ -996,7 +1034,7 @@ input that is not declared on the app raises an error.`,
 		Short:      "Deploy all components to an install.",
 		Long:       "Deploy all components to an install.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.DeployComponents(cmd.Context(), id, roleName, planOnly, PrintJSON)
 		}),
 	}
@@ -1013,7 +1051,7 @@ input that is not declared on the app raises an error.`,
 		Short:      "Update install input",
 		Long:       "Update an install input value",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.UpdateInput(cmd.Context(), id, inputs, deployDependents, PrintJSON)
 		}),
 	}
@@ -1031,7 +1069,7 @@ input that is not declared on the app raises an error.`,
 		Short:      "Deprovision install sandbox",
 		Long:       "Deprovision an install sandbox",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.DeprovisionSandbox(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -1057,7 +1095,7 @@ input that is not declared on the app raises an error.`,
 			return nil
 		},
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ReprovisionSandbox(cmd.Context(), id, skipComponents, PrintJSON)
 		}),
 	}
@@ -1075,7 +1113,7 @@ By default, launches an interactive TUI to view workflows.`,
 		Args:        cobra.NoArgs,
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.WorkflowsTUI(cmd.Context(), id, workflowID, PrintJSON, autoRetry)
 		}),
 	}
@@ -1090,7 +1128,7 @@ By default, launches an interactive TUI to view workflows.`,
 		Short:   "List workflows",
 		Long:    "List all workflows for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.WorkflowsList(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
@@ -1105,7 +1143,7 @@ By default, launches an interactive TUI to view workflows.`,
 		Short: "Get a workflow",
 		Long:  "Get workflow details including steps summary",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			wfID := workflowID
 			if wfID == "" {
 				wfID = svc.GetWorkflowID()
@@ -1125,7 +1163,7 @@ By default, launches an interactive TUI to view workflows.`,
 		Long:        "Select a workflow to use as default for subsequent commands",
 		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.WorkflowsSelect(cmd.Context(), id, workflowID, offset, limit, PrintJSON)
 		}),
 	}
@@ -1140,7 +1178,7 @@ By default, launches an interactive TUI to view workflows.`,
 		Short: "Deselect the current workflow",
 		Long:  "Clear the currently selected workflow",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.WorkflowsDeselect(cmd.Context(), PrintJSON)
 		}),
 	}
@@ -1170,7 +1208,7 @@ Examples:
   nuon installs workflows watch`,
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmdWithExitCode(func(cmd *cobra.Command, _ []string) (int, error) {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 
 			// Try to get workflow ID from flag or config
 			wfID := workflowID
@@ -1210,7 +1248,7 @@ Examples:
 		Short:   "List workflow steps",
 		Long:    "List all steps for a workflow",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			wfID, err := getWorkflowID(svc)
 			if err != nil {
 				return err
@@ -1226,7 +1264,7 @@ Examples:
 		Short: "Get a workflow step",
 		Long:  "Get detailed information about a workflow step",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			wfID, err := getWorkflowID(svc)
 			if err != nil {
 				return err
@@ -1244,7 +1282,7 @@ Examples:
 		Short: "View step plan",
 		Long:  "View the deploy plan for a workflow step",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			wfID, err := getWorkflowID(svc)
 			if err != nil {
 				return err
@@ -1286,7 +1324,7 @@ Filtering examples:
 Available severity levels: Trace, Debug, Info, Warn, Error, Fatal
 Available service names: api, runner (or any service name present in the logs)`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			wfID, err := getWorkflowID(svc)
 			if err != nil {
 				return err
@@ -1322,7 +1360,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Short: "Approve a step",
 		Long:  "Approve a waiting workflow step. If step-id is not provided, uses the latest step and prompts for confirmation.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			wfID, err := getWorkflowID(svc)
 			if err != nil {
 				return err
@@ -1342,7 +1380,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Short: "Reject a step",
 		Long:  "Reject a waiting workflow step. If step-id is not provided, uses the latest step and prompts for confirmation.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			wfID, err := getWorkflowID(svc)
 			if err != nil {
 				return err
@@ -1362,7 +1400,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Short: "Retry a step",
 		Long:  "Retry a failed workflow step. If step-id is not provided, uses the latest step and prompts for confirmation.",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			wfID, err := getWorkflowID(svc)
 			if err != nil {
 				return err
@@ -1383,7 +1421,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Short: "Set workflow approval option",
 		Long:  "Set the approval option for a workflow (auto-approve all steps or prompt for each)",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			wfID, err := getWorkflowID(svc)
 			if err != nil {
 				return err
@@ -1410,7 +1448,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Long:        "Get runner information for an install",
 		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.RunnerGet(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -1422,7 +1460,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Short: "Restart the install runner",
 		Long:  "Restart the runner process for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.RunnerRestart(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -1435,7 +1473,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Short: "Shut down the install runner VM",
 		Long:  "Shut down the VM running the install runner",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.RunnerVMShutDown(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -1449,7 +1487,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Long:   "Shut down the mng process for an install runner (does not shut down the runner process)",
 		Hidden: true,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.RunnerShutDown(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -1470,7 +1508,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Short:   "List install stack versions",
 		Long:    "List all stack versions for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.StacksList(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -1484,7 +1522,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Short: "Get an install stack",
 		Long:  "Get an install stack by stack ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.StacksGet(cmd.Context(), installStackID, PrintJSON)
 		}),
 	}
@@ -1497,7 +1535,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Short: "Get the latest install stack version",
 		Long:  "Get the latest stack version for an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.StacksLatest(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -1511,7 +1549,7 @@ Available service names: api, runner (or any service name present in the logs)`,
 		Short: "Reprovision an install stack",
 		Long:  "Reprovision an install stack, recreating the runner and its infrastructure",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ReprovisionStack(cmd.Context(), id, stackSkipComponents, PrintJSON)
 		}),
 	}
@@ -1539,7 +1577,7 @@ By default, launches an interactive TUI to browse and execute actions.`,
 			return nil
 		},
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.Actions(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
@@ -1557,7 +1595,7 @@ By default, launches an interactive TUI to browse and execute actions.`,
 		Args:        cobra.NoArgs,
 		Annotations: previewAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ActionsList(cmd.Context(), id, offset, limit, PrintJSON)
 		}),
 	}
@@ -1575,7 +1613,7 @@ By default, launches an interactive TUI to browse and execute actions.`,
 				return nil
 			}
 
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.ActionOutputs(cmd.Context(), id, actionWorkflowID, PrintJSON)
 		}),
 	}
@@ -1600,7 +1638,7 @@ Labels are key-value strings used to organize and filter installs.`,
 Examples:
   nuon installs labels list --install-id inst_abc`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.LabelsList(cmd.Context(), id, PrintJSON)
 		}),
 	}
@@ -1617,7 +1655,7 @@ Examples:
 Examples:
   nuon installs labels set --install-id inst_abc env=prod team=platform`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.LabelsSet(cmd.Context(), id, args, PrintJSON)
 		}),
 	}
@@ -1634,7 +1672,7 @@ Examples:
 Examples:
   nuon installs labels unset --install-id inst_abc env team`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			svc := installs.New(c.apiClient, c.cfg)
+			svc := c.installs
 			return svc.LabelsUnset(cmd.Context(), id, args, PrintJSON)
 		}),
 	}

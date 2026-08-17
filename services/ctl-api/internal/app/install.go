@@ -38,6 +38,19 @@ type Install struct {
 	LifecyclePhase lifecyclephase.LifecyclePhase `json:"lifecycle_phase,omitzero" gorm:"type:jsonb" swaggertype:"object" temporaljson:"lifecycle_phase,omitzero,omitempty"`
 	labels.Labeled
 
+	// LabelTemplates holds label values written with the .nuon interpolation
+	// syntax. Rendered values are materialized into Labels whenever install
+	// state changes, so downstream consumers (SQL label matching, subscription
+	// dispatch, pickers) only ever read literal values. NOTE: this comment ends
+	// up in the swagger spec, which swag executes as a Go text/template —
+	// literal moustaches here break spec generation.
+	LabelTemplates labels.Labels `json:"label_templates,omitzero" gorm:"default null" swaggertype:"object,string" temporaljson:"label_templates,omitzero,omitempty"`
+
+	// AppDefaultLabels is the snapshot of the app's default labels applied to
+	// this install. It is the lock set for label mutation endpoints, and lets
+	// reconciliation tell a removed default apart from a user-set label.
+	AppDefaultLabels labels.Labels `json:"app_default_labels,omitzero" gorm:"default null" swaggertype:"object,string" temporaljson:"app_default_labels,omitzero,omitempty"`
+
 	// used for RLS
 	OrgID string `json:"org_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" faker:"-" temporaljson:"org,omitzero,omitempty"`
@@ -150,6 +163,10 @@ type Install struct {
 	DriftedObjects                   []DriftedObject              `json:"drifted_objects,omitzero" gorm:"-" temporaljson:"drifted_objects,omitzero,omitempty"`
 	Links                            map[string]any               `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
+	// PhoneHomeAuthStatus can take the phone_home_auth JSON name precisely because the
+	// column itself never serializes.
+	PhoneHomeAuthStatus *PhoneHomeAuthStatus `json:"phone_home_auth,omitzero,omitempty" gorm:"-" temporaljson:"-"`
+
 	// Expected* coalesce the target identifier with the observed one, so callers get
 	// the strongest identifier available without caring which is set.
 	ExpectedAccountID      string `json:"expected_account_id,omitzero" gorm:"-" temporaljson:"expected_account_id,omitzero,omitempty"`
@@ -252,6 +269,7 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	}
 
 	i.setExpectedCloudIdentifiers()
+	i.PhoneHomeAuthStatus = i.PhoneHomeAuth.Status()
 
 	return nil
 }
@@ -511,6 +529,30 @@ type PhoneHomeAuth struct {
 
 	LastVerifiedAt *time.Time `json:"last_verified_at,omitempty"`
 	LastRejectedAt *time.Time `json:"last_rejected_at,omitempty"`
+}
+
+// PhoneHomeAuthStatus is everything about an install's phone-home credentials that is
+// safe to serialize — the timestamps, never the secret's location. LastVerifiedAt and
+// LastRejectedAt are how a consumer tells whether stack outputs may be stale.
+type PhoneHomeAuthStatus struct {
+	// ProvisionedAt is omitzero because recordPhoneHomeAuthResult can create the column
+	// from an empty struct, so a row can carry verification timestamps but no
+	// provisioning one. Serializing that as year 1 would render as a bogus timestamp.
+	ProvisionedAt  time.Time  `json:"provisioned_at,omitzero"`
+	LastVerifiedAt *time.Time `json:"last_verified_at,omitempty"`
+	LastRejectedAt *time.Time `json:"last_rejected_at,omitempty"`
+}
+
+func (p *PhoneHomeAuth) Status() *PhoneHomeAuthStatus {
+	if p == nil {
+		return nil
+	}
+
+	return &PhoneHomeAuthStatus{
+		ProvisionedAt:  p.CreatedAt,
+		LastVerifiedAt: p.LastVerifiedAt,
+		LastRejectedAt: p.LastRejectedAt,
+	}
 }
 
 // Scan implements the database/sql.Scanner interface.

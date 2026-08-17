@@ -2,10 +2,7 @@ export default {
   title: 'Workflows/StepDetails/AwaitStackDetails',
 }
 
-import {
-  AwaitStackDetails,
-  AwaitStackDetailsSkeleton,
-} from './AwaitStackDetails'
+import { AwaitStackDetails } from './AwaitStackDetails'
 
 const mockStep = {
   id: 'step-1',
@@ -47,6 +44,11 @@ export const Azure = () => (
 
 export const Loading = () => (
   <div className="max-w-2xl p-4">
-    <AwaitStackDetailsSkeleton runnerType="aws" />
+    <AwaitStackDetails
+      stack={mockStack}
+      step={mockStep}
+      runnerType="aws"
+      loading
+    />
   </div>
 )

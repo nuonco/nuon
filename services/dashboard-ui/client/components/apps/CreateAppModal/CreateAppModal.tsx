@@ -1,27 +1,29 @@
-import { type FormEvent, useRef } from 'react'
-import { Input } from '@/components/common/form/Input'
+import { useForm, useStore } from '@tanstack/react-form'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { FormInput } from '@/components/common/form/FormInput'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-
-interface ICreateAppModal extends Omit<IModal, 'onSubmit'> {
-  isSubmitting: boolean
-  onSubmit: (body: { name: string }) => void
-}
+import type { TAPIError } from '@/types'
+import { createAppSchema, type CreateAppValues } from './schema'
 
 export const CreateAppModal = ({
   isSubmitting,
+  error,
   onSubmit,
   ...props
-}: ICreateAppModal) => {
-  const formRef = useRef<HTMLFormElement>(null)
+}: {
+  isSubmitting: boolean
+  error: TAPIError | null
+  onSubmit: (body: CreateAppValues) => void
+} & Omit<IModal, 'onSubmit'>) => {
+  const form = useForm({
+    defaultValues: { name: '' } as CreateAppValues,
+    validators: { onMount: createAppSchema, onChange: createAppSchema },
+    onSubmit: ({ value }) => onSubmit(value),
+  })
 
-  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const name = (new FormData(e.currentTarget).get('name') as string).trim()
-    if (!name) return
-    onSubmit({ name })
-  }
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
 
   return (
     <Modal
@@ -32,27 +34,40 @@ export const CreateAppModal = ({
         </Text>
       }
       primaryActionTrigger={{
-        children: isSubmitting ? 'Creating app' : 'Create app',
-        onClick: () => formRef.current?.requestSubmit(),
-        disabled: isSubmitting,
+        children: isSubmitting ? (
+          <span className="flex items-center gap-2">
+            <Icon variant="Loading" /> Creating app
+          </span>
+        ) : (
+          'Create app'
+        ),
+        disabled: !canSubmit || isSubmitting,
+        onClick: () => form.handleSubmit(),
         variant: 'primary',
       }}
       {...props}
     >
       <form
-        ref={formRef}
-        onSubmit={handleFormSubmit}
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
         className="flex flex-col gap-4"
       >
-        <Input
-          name="name"
-          type="text"
-          labelProps={{ labelText: 'App name' }}
-          placeholder="my-app"
-          required
-          maxLength={255}
-          disabled={isSubmitting}
-        />
+        <FormErrorBanner error={error} fallback="Unable to create app" />
+
+        <form.Field name="name">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="app-name"
+              type="text"
+              placeholder="my-app"
+              maxLength={255}
+              disabled={isSubmitting}
+              labelProps={{ labelText: 'App name' }}
+            />
+          )}
+        </form.Field>
       </form>
     </Modal>
   )

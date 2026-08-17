@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeploysyncandplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componenthelmrecover"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentsyncimage"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownsyncandplan"
@@ -24,6 +25,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionrunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/stackrun"
@@ -37,6 +39,12 @@ type WorkflowStepOptions func(*app.WorkflowStep)
 func WithSkippable(skippable bool) WorkflowStepOptions {
 	return func(s *app.WorkflowStep) {
 		s.Skippable = skippable
+	}
+}
+
+func WithSkipOnFailure(skipOnFailure bool) WorkflowStepOptions {
+	return func(s *app.WorkflowStep) {
+		s.SkipOnFailure = skipOnFailure
 	}
 }
 
@@ -123,7 +131,8 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 	case awaitcomponenthealthy.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallComponents)
 	case componentdeployapplyplan.SignalType, componentdeploysyncandplan.SignalType, componentsyncimage.SignalType,
-		componentteardownsyncandplan.SignalType, componentteardownapplyplan.SignalType:
+		componentteardownsyncandplan.SignalType, componentteardownapplyplan.SignalType,
+		componenthelmrecover.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallDeploys)
 	case provisionsandboxplan.SignalType, provisionsandboxapplyplan.SignalType,
 		deprovisionsandboxplan.SignalType, deprovisionsandboxapplyplan.SignalType,
@@ -147,11 +156,16 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 		meta.executionType = app.WorkflowStepExecutionTypeApproval
 	}
 
-	// Plan-only skip signals
+	// Plan-only skip signals. The stack pair is here because generating a stack
+	// version is itself a write — it creates a stack version row that supersedes
+	// the install's active one, mints a service account and runner token, and
+	// then parks awaiting a human to apply the stack.
 	if planOnly {
 		switch sigType {
 		case provisionsandboxapplyplan.SignalType, deprovisionsandboxapplyplan.SignalType, reprovisionsandboxapplyplan.SignalType,
-			componentdeployapplyplan.SignalType, componentteardownapplyplan.SignalType:
+			componentdeployapplyplan.SignalType, componentteardownapplyplan.SignalType,
+			generateinstallstackversion.SignalType, awaitinstallstackversionrun.SignalType,
+			reprovisionrunner.SignalType:
 			meta.executionType = app.WorkflowStepExecutionTypeSkipped
 		}
 	}

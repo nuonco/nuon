@@ -4,7 +4,7 @@ export default {
 
 import type { ReactNode } from 'react'
 import { WorkflowApprovalsContext } from '@/providers/workflow-approvals-provider'
-import { WorkflowTimeline, WorkflowTimelineSkeleton } from './WorkflowTimeline'
+import { WorkflowTimeline } from './WorkflowTimeline'
 import type { TWorkflow } from '@/types'
 
 const ApprovalsProvider = ({ children }: { children: ReactNode }) => (
@@ -48,6 +48,34 @@ const unnamedWorkflow: TWorkflow = {
   status: { status: 'success' },
 } as TWorkflow
 
+const branchRunWorkflow: TWorkflow = {
+  ...mockWorkflow,
+  id: 'inwykcx31yhqs8sb3w9ynmuig3',
+  name: 'Manual run',
+  type: 'app_branch_run',
+  owner_type: 'app_branches',
+  finished: true,
+  status: { status: 'success' },
+  created_by: { email: 'nat@nuon.co' },
+  app_branch_runs: [{ commit_sha: '83061cbabc123' }],
+} as unknown as TWorkflow
+
+const previewBranchRunWorkflow: TWorkflow = {
+  ...branchRunWorkflow,
+  id: 'inw5lhpdxb26o9qdrgp3zpq0zq',
+  plan_only: true,
+} as TWorkflow
+
+const serviceAccountBranchRunWorkflow: TWorkflow = {
+  ...previewBranchRunWorkflow,
+  id: 'inwm6oxsvulflygj3z77xo55l',
+  created_by: {
+    email:
+      'orgl9cvkaqh1g8yv2jqdb19247-oidc-accbx92unf2s9wi0ve72bwlfzi@serviceaccount.nuon.co',
+    account_type: 'service',
+  },
+} as TWorkflow
+
 export const Default = () => (
   <ApprovalsProvider>
     <WorkflowTimeline
@@ -70,6 +98,43 @@ export const NoName = () => (
   </ApprovalsProvider>
 )
 
+export const BranchRuns = () => (
+  <ApprovalsProvider>
+    <WorkflowTimeline
+      workflows={[
+        serviceAccountBranchRunWorkflow,
+        previewBranchRunWorkflow,
+        branchRunWorkflow,
+      ]}
+      pagination={{ hasNext: false, offset: 0, limit: 10 }}
+      orgId="org-123"
+      getWorkflowHref={(wf) => `/org-123/apps/app-1/branches/branch-1/runs/${wf.id}`}
+    />
+  </ApprovalsProvider>
+)
+
+export const BranchRunPreview = () => (
+  <ApprovalsProvider>
+    <WorkflowTimeline
+      workflows={[previewBranchRunWorkflow]}
+      pagination={{ hasNext: false, offset: 0, limit: 10 }}
+      orgId="org-123"
+      getWorkflowHref={(wf) => `/org-123/apps/app-1/branches/branch-1/runs/${wf.id}`}
+    />
+  </ApprovalsProvider>
+)
+
+export const BranchRunServiceAccount = () => (
+  <ApprovalsProvider>
+    <WorkflowTimeline
+      workflows={[serviceAccountBranchRunWorkflow]}
+      pagination={{ hasNext: false, offset: 0, limit: 10 }}
+      orgId="org-123"
+      getWorkflowHref={(wf) => `/org-123/apps/app-1/branches/branch-1/runs/${wf.id}`}
+    />
+  </ApprovalsProvider>
+)
+
 export const Empty = () => (
   <ApprovalsProvider>
     <WorkflowTimeline
@@ -81,4 +146,14 @@ export const Empty = () => (
   </ApprovalsProvider>
 )
 
-export const Loading = () => <WorkflowTimelineSkeleton />
+export const Loading = () => (
+  <ApprovalsProvider>
+    <WorkflowTimeline
+      workflows={[]}
+      pagination={{ hasNext: false, offset: 0, limit: 10 }}
+      orgId="org-123"
+      installId="inst-456"
+      isLoading
+    />
+  </ApprovalsProvider>
+)

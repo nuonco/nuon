@@ -32,9 +32,14 @@ export function parseBranchToCardData(
     repoBranch: vcs?.branch,
     latestRun: branch.latest_run
       ? {
-          href: `${href}/runs/${branch.latest_run.id}`,
+          href: branch.latest_run.workflow_id
+            ? `${href}/runs/${branch.latest_run.workflow_id}`
+            : undefined,
           status: branch.latest_run.status || 'pending',
           commitMessage: branch.latest_run.vcs_connection_commit?.message,
+          author: branch.latest_run.vcs_connection_commit?.author_name,
+          avatarUrl: branch.latest_run.vcs_connection_commit?.author_avatar_url,
+          sha: branch.latest_run.vcs_connection_commit?.sha,
           createdAt: branch.latest_run.created_at,
           awaitingApproval: branch.latest_run.awaiting_approval,
         }

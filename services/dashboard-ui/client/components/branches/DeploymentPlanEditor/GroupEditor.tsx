@@ -8,7 +8,9 @@ import { LabelBadge } from '@/components/common/LabelBadge'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
 import { ToggleButton } from '@/components/common/ToggleButton'
+import { Tooltip } from '@/components/common/Tooltip'
 import { Input } from '@/components/common/form/Input'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import type { TInstall } from '@/types'
 import { cn } from '@/utils/classnames'
 import { matchesSelector } from '@/components/match/matches'
@@ -115,6 +117,16 @@ export const GroupEditor = ({
         </div>
       </div>
 
+      <div className="flex items-center gap-4 px-4 py-2 border-b text-xs">
+        <CheckboxInput
+          id={`group-preview-${group.id}`}
+          checked={group.use_for_previews ?? false}
+          onChange={(e) => onUpdate({ use_for_previews: e.target.checked })}
+          disabled={disabled}
+          labelProps={{ labelText: 'Use for previews' }}
+        />
+      </div>
+
       <div className="flex flex-col gap-3 p-4">
         {group.selection_mode === 'labels' ? (
           <LabelSelectorEditor
@@ -144,20 +156,33 @@ export const GroupEditor = ({
                 variant="table"
                 size="sm"
                 emptyTitle="No installs"
-                emptyMessage="Use Add install to assign installs to this group."
+                emptyMessage="Add an install below, or delete this group — a group can't be saved empty."
+                action={
+                  <Button variant="danger" onClick={onDelete} disabled={disabled}>
+                    <Icon variant="TrashIcon" size={16} />
+                    Delete group
+                  </Button>
+                }
               />
             )}
 
-            <AddInstallPicker
-              groupId={group.id}
-              unassignedInstalls={unassignedInstalls}
-              disabled={disabled}
-              onAdd={onAddInstalls}
-            />
+            <Tooltip
+              isOpen={!!contentError}
+              disableHover
+              position="right"
+              tipContent={<Text variant="subtext">{contentError}</Text>}
+            >
+              <AddInstallPicker
+                groupId={group.id}
+                unassignedInstalls={unassignedInstalls}
+                disabled={disabled}
+                onAdd={onAddInstalls}
+              />
+            </Tooltip>
           </>
         )}
 
-        {contentError && (
+        {group.selection_mode === 'labels' && contentError && (
           <Text variant="subtext" theme="error">{contentError}</Text>
         )}
       </div>

@@ -9,7 +9,6 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { createApp } from '@/lib'
-import type { TAPIError } from '@/types'
 import { CreateAppModal } from './CreateAppModal'
 
 type ICreateAppModalContainer = Omit<IModal, 'onSubmit'>
@@ -23,7 +22,7 @@ export const CreateAppModalContainer = ({
   const { removeModal } = useSurfaces()
   const queryClient = useQueryClient()
 
-  const { mutate, isPending: isSubmitting } = useMutation({
+  const { mutate, isPending: isSubmitting, error } = useMutation({
     mutationFn: (body: { name: string }) =>
       createApp({ orgId: org.id, body }),
     onSuccess: (app) => {
@@ -36,18 +35,12 @@ export const CreateAppModalContainer = ({
       removeModal(props.modalId)
       navigate(`/${org.id}/apps/${app.id}/branches`)
     },
-    onError: (error: TAPIError) => {
-      addToast(
-        <Toast heading="App creation failed" theme="error">
-          <Text>{error.error || 'Failed to create app.'}</Text>
-        </Toast>
-      )
-    },
   })
 
   return (
     <CreateAppModal
       isSubmitting={isSubmitting}
+      error={error}
       onSubmit={(body) => mutate(body)}
       {...props}
     />

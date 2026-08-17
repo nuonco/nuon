@@ -880,6 +880,8 @@ type ClientService interface {
 
 	PutInstallComponentHealthCheck(params *PutInstallComponentHealthCheckParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PutInstallComponentHealthCheckOK, error)
 
+	RecoverInstallComponentHelmRelease(params *RecoverInstallComponentHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RecoverInstallComponentHelmReleaseCreated, error)
+
 	RefreshInstallHealthClusterAccess(params *RefreshInstallHealthClusterAccessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RefreshInstallHealthClusterAccessOK, error)
 
 	RemoveAppActionLabels(params *RemoveAppActionLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveAppActionLabelsOK, error)
@@ -1162,7 +1164,7 @@ func (a *Client) AddAppComponentLabels(params *AddAppComponentLabelsParams, auth
 /*
 AddInstallLabels adds labels to an install
 
-Merge the provided labels into the install's existing labels. Existing keys are overwritten.
+Merge the provided labels into the install's existing labels. Existing keys are overwritten. A value using the .nuon interpolation syntax becomes a dynamic label: the template is stored and its rendered value is re-materialized whenever install state changes. Keys managed by the app config's default_labels cannot be changed here.
 */
 func (a *Client) AddInstallLabels(params *AddInstallLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*AddInstallLabelsOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -5081,7 +5083,7 @@ func (a *Client) CreateSlackChannelSubscription(params *CreateSlackChannelSubscr
 /*
 CreateStaticToken creates a static API token for your org
 
-Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
+Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
 */
 func (a *Client) CreateStaticToken(params *CreateStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateStaticTokenCreated, error) {
 	// NOTE: parameters are not validated before sending
@@ -6409,7 +6411,7 @@ func (a *Client) DeleteSlackOrgLink(params *DeleteSlackOrgLinkParams, authInfo r
 /*
 DeleteStaticToken deletes a static API token
 
-Deletes a static API token belonging to your current org, along with its dedicated service account. Once deleted, the token can no longer be used to access the API.
+Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
 */
 func (a *Client) DeleteStaticToken(params *DeleteStaticTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteStaticTokenNoContent, error) {
 	// NOTE: parameters are not validated before sending
@@ -18757,6 +18759,73 @@ func (a *Client) PutInstallComponentHealthCheck(params *PutInstallComponentHealt
 }
 
 /*
+	RecoverInstallComponentHelmRelease recovers a stuck helm release for an install component
+
+	Recover a Helm release that was left part-way through an operation.
+
+Helm records a `pending-install`, `pending-upgrade` or `pending-rollback` status before it
+starts changing the cluster and clears it once the operation finishes. A release left in one
+of those statuses is a rollout whose runner went away — a crash, a cancelled workflow, or a
+job that timed out. Helm then refuses every further operation on that release, and retrying
+the deploy cannot clear it.
+
+This endpoint starts a workflow that returns the release to a usable state:
+
+- when an earlier revision finished a rollout, the release is rolled back to it
+- when no revision ever rolled out, the stuck release is removed
+
+It deploys nothing and changes no desired state. Deploy the component afterwards to roll out
+the version you want.
+
+The recovery refuses to act on a release that is not pending, so it is safe to run when you
+are unsure and it is a no-op on a second run.
+
+Returns `409` when a job is already running for the component (recovering while Helm is
+genuinely mid-operation can corrupt the release) or when the component has never been
+deployed on this install. Returns `400` when the component is not a Helm chart.
+*/
+func (a *Client) RecoverInstallComponentHelmRelease(params *RecoverInstallComponentHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RecoverInstallComponentHelmReleaseCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRecoverInstallComponentHelmReleaseParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RecoverInstallComponentHelmRelease",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/components/{component_id}/recover-helm-release",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RecoverInstallComponentHelmReleaseReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RecoverInstallComponentHelmReleaseCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RecoverInstallComponentHelmRelease: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 RefreshInstallHealthClusterAccess refreshes the cluster access component health reads through
 
 Derives the install's cluster access from its current stack outputs and the chosen role, then stores it for the runner's health engine. Use when health reports unknown because the install has not been deployed since component health was enabled, or after the cluster's endpoint or role changed. The runner picks the refreshed access up within a minute. Requires the component-health feature.
@@ -18897,7 +18966,7 @@ func (a *Client) RemoveAppComponentLabels(params *RemoveAppComponentLabelsParams
 /*
 RemoveInstallLabels removes labels from an install
 
-Remove the specified label keys from the install.
+Remove the specified label keys from the install. Removing a dynamic label's key also removes its template. Keys managed by the app config's default_labels cannot be removed here.
 */
 func (a *Client) RemoveInstallLabels(params *RemoveInstallLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveInstallLabelsOK, error) {
 	// NOTE: parameters are not validated before sending

@@ -555,7 +555,8 @@ There is **no "it's an editor" exception** an agent can invoke. Bespoke direct-m
 - **Flat fields, never nested objects** — `canSubmit` validation breaks on nested-object fields in TanStack Form v1 (`channelId`/`channelName`, not `channel: {id,name}`).
 - **Do not pass native `required`** to fields — Zod is the sole validation source.
 - **Errors → in-form `FormErrorBanner`, never a toast.** Success → close modal + toast.
-- **Edit reuses create** via a `mode: 'create' | 'edit'` prop — never a forked `EditXModal`.
+- **Edit reuses create** via a `mode: 'create' | 'edit'` prop **when create and edit hit the same endpoint** (webhooks, channel subs) — never a forked `EditXModal`. When they hit **different endpoints** (branches, OIDC policies, install editors), keep them as **separate in-place forms**. Edit-only forms also gate submit on a "no change" check (`name === currentName`) alongside `canSubmit`.
+- **No array-level Zod rules** — TanStack v1 won't clear a form-level schema error mapped to an array field, so the button stays disabled forever; gate "at least one valid row" on a live computed value on the submit button instead. Per-row field rules (`z.string().min(1)` on `items[i].key`) are fine.
 - Every form/wrapper gets a `.stories.tsx` and a Ladle behavior test (`e2e/specs-ladle/`).
 
 ## Component Patterns
@@ -620,6 +621,39 @@ import { Button } from '@/components/common/Button'
 import { Link } from 'react-router'
 <Link to={`/${org.id}/connections/vcs/${id}`}>View</Link>
 ```
+
+### Button tooltips (disabled reasons & nudges)
+
+**The `Button` owns its tooltip via the `tooltipProps` prop** (`tooltipProps?: Omit<ITooltip, 'children'>`). When present, Button renders itself wrapped in `Tooltip`. **Never hand-wrap `<Tooltip>` around a `Button`, and never put `title=` on a button** — both are review smells.
+
+Button solves the disabled-hover problem internally: when `disabled` + `tooltipProps`, it renders `aria-disabled` (not native `disabled`, which swallows pointer events) so the reason shows on hover **and** keyboard focus.
+
+```tsx
+// ✅ Disabled reason — shows on hover/focus even though disabled
+<Button disabled tooltipProps={{ tipContent: 'Sync the app config first' }}>
+  Trigger run
+</Button>
+
+// ❌ Wrong — native disabled swallows hover, tooltip never shows
+<Tooltip tipContent="Sync the app config first">
+  <Button disabled>Trigger run</Button>
+</Tooltip>
+```
+
+**Every disabled button whose reason isn't obvious from context gets a `tooltipProps` reason.** Reason copy follows [COPY_STYLE.md](./COPY_STYLE.md): sentence case, explains the unmet condition, fragment (no trailing period). A plain-string `tipContent` auto-wraps in `Text` `subtext` — pass a string, don't wrap it yourself.
+
+"Obvious from context" (→ **no** tooltip needed): the label already changes for an async op ("Saving…"), form fields show their own validation errors, a type-to-confirm input sits right above, or it's a pagination/positional convention.
+
+**Nudge** — a controlled tooltip opened by app state (not hover). Use `useNudge(trigger, durationMs?)` (`client/hooks/use-nudge.ts`) → `{ isOpen, close }`, wired to `tooltipProps`. Never re-implement the open/auto-close timer:
+
+```tsx
+const { isOpen, close } = useNudge(showNudge)
+<Button onClick={() => { close(); onRun() }} tooltipProps={{ isOpen, disableHover: true, position: 'bottom', tipContent: 'Trigger a run to deploy this branch' }}>
+  Trigger run
+</Button>
+```
+
+Tooltips on **non-Button** elements (text, icons, badges, toggles) keep the hand-wrapped `<Tooltip>` — `tooltipProps` is Button-only.
 
 ### Admin Tool Links
 
@@ -975,6 +1009,25 @@ e2e/
 
 `e2e/flows/` contains structured markdown describing test scenarios. These are the source-of-truth — update the flow markdown, then regenerate or update the corresponding spec in `e2e/specs/`. See `e2e/flows/README.md` for the format.
 
+### Throwaway / scratch e2e checks (agent workflow) — CRITICAL
+
+**A scratch e2e check an agent writes to verify local work is a standalone Playwright `.mjs` script in the gitignored `tmp/` dir (i.e. `services/dashboard-ui/tmp/`), run with `bun run tmp/<name>.mjs`.** Never write it as a committed file — not `e2e/specs/`, not anywhere else in the tree. `tmp/` is in `.gitignore`, so scripts there can't be committed by accident; that's the whole point.
+
+This is the same pattern as the **Screenshotting the Running Dashboard** recipe below — auth via seed-user token → `X-Nuon-Auth` cookie → drive the page — just with assertions instead of a screenshot. Do NOT reach for the Playwright test runner (`playwright test` / `.spec.ts` / `e2e/playwright.config.ts`): a spec outside the repo's `testDir` isn't discovered and drags in a custom config + `NODE_PATH`. A plain `.mjs` needs none of that.
+
+**Recipe:**
+
+- Import chromium with a **bare specifier** — because the script lives inside the repo tree, Bun resolves `node_modules` by walking up, so no absolute path is needed:
+  ```js
+  import { chromium } from 'playwright'
+  ```
+- Get a token: `POST http://127.0.0.1:8082/v1/general/seed-user` with `X-Nuon-Admin-Email` (use `seed@nuon.co`, or `NUON_DEV_EMAIL` for your own orgs). Inject it as the `X-Nuon-Auth` cookie on `127.0.0.1`.
+- Seed/inspect state you need via the public API (`:8081`) with `Authorization: Bearer <token>` + `X-Nuon-Org-ID`.
+- `page.goto(..., { waitUntil: 'domcontentloaded' })` — never `networkidle` (the SPA polls). Drive with `getByRole`, assert with `waitFor`, `console.log` PASS/FAIL, `process.exit(pass ? 0 : 1)`, and screenshot to `tmp/` on failure.
+- Run from `services/dashboard-ui`: `bun run tmp/<name>.mjs`. No config, no env plumbing.
+
+Only turn a check into a committed `e2e/specs/*.spec.ts` (with a matching `e2e/flows/*.flow.md`) when it should become a permanent smoke test — and say so explicitly.
+
 ## Screenshotting the Running Dashboard (agent workflow)
 
 When verifying a UI change, take a real screenshot of the running dashboard instead of relying on Ladle stories or guessing. This authenticates against the **local dev stack** the same way the e2e setup does — no personal credentials, no browser login.
@@ -994,9 +1047,9 @@ When verifying a UI change, take a real screenshot of the running dashboard inst
 
 - **Do NOT `waitUntil: 'networkidle'`** — the SPA polls (SSE + `refetchInterval`), so the network never goes idle and `goto` times out. Use `waitUntil: 'domcontentloaded'` then `waitFor` a selector unique to the page.
 - **Dark mode** is `prefers-color-scheme`-based (no `.dark` class), so set `colorScheme: 'dark'` on the Playwright context — that's what triggers the app's dark styles.
-- Use `deviceScaleFactor: 2`+ for crisp screenshots; write them to a tmp dir.
+- Use `deviceScaleFactor: 2`+ for crisp screenshots; write them to the gitignored `tmp/` dir (`services/dashboard-ui/tmp/`), same as scratch e2e scripts.
 
-**Reusable script** (`bun run <file>.mjs`, or `node`):
+**Reusable script** — save under `tmp/` and run from `services/dashboard-ui` with `bun run tmp/<file>.mjs`:
 
 ```js
 import { chromium } from 'playwright-core'
@@ -1028,7 +1081,7 @@ for (const scheme of ['light', 'dark']) {
   await page.goto(`${APP}${path}`, { waitUntil: 'domcontentloaded' })
   await page.getByRole('heading').first().waitFor({ timeout: 15000 }).catch(() => {})
   await page.waitForTimeout(1500)
-  await page.screenshot({ path: `/tmp/shot-${scheme}.png`, fullPage: true })
+  await page.screenshot({ path: `tmp/shot-${scheme}.png`, fullPage: true })
   await ctx.close()
 }
 await browser.close()

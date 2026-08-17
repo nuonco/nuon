@@ -3,7 +3,6 @@ import {
   KeyValueList,
   KeyValueListSkeleton,
 } from '@/components/common/KeyValueList'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import type { TAppConfig } from '@/types'
 
@@ -30,21 +29,14 @@ export const GenerateStackDetails = ({
     { key: 'type', value: appConfig?.stack?.type },
   ]
 
-  return isLoading ? (
-    <GenerateStackDetailsSkeleton />
-  ) : (
-    <Card>
-      <Text>Stack template details</Text>
-      <KeyValueList values={values} />
-    </Card>
-  )
-}
-
-export const GenerateStackDetailsSkeleton = () => {
   return (
     <Card>
-      <Skeleton height="24px" width="142px" />
-      <KeyValueListSkeleton />
+      <Text>Stack template details</Text>
+      {isLoading ? (
+        <KeyValueListSkeleton />
+      ) : (
+        <KeyValueList values={values} />
+      )}
     </Card>
   )
 }

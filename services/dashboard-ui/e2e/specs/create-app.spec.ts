@@ -19,9 +19,9 @@ test.describe("Create app", () => {
     const name = `e2e-app-${Date.now()}`;
     await createButton.click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByText("Create app")).toBeVisible();
+    await expect(dialog.getByPlaceholder("my-app")).toBeVisible();
     await dialog.getByPlaceholder("my-app").fill(name);
-    await dialog.getByRole("button", { name: "Create", exact: true }).click();
+    await dialog.getByRole("button", { name: "Create app" }).click();
     await expect(page.getByText("App created")).toBeVisible({ timeout: 10000 });
     await expect(page).toHaveURL(/\/apps\/.*\/branches/, { timeout: 15000 });
   });

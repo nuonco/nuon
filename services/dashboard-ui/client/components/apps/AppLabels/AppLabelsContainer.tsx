@@ -62,6 +62,7 @@ export const AppLabelsContainer = () => {
   return (
     <AppLabels
       labels={labels}
+      defaultLabels={app?.default_labels ?? {}}
       isLoading={isLoading}
       isPending={isPending}
       resetAction={

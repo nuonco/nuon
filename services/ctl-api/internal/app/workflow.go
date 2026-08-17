@@ -59,6 +59,8 @@ const (
 	// toggleable components
 	WorkflowTypeComponentEnabled  WorkflowType = "component_enabled"
 	WorkflowTypeComponentDisabled WorkflowType = "component_disabled"
+
+	WorkflowTypeRecoverHelmRelease WorkflowType = "recover_helm_release"
 )
 
 type WorkflowMetadataKey string
@@ -68,7 +70,22 @@ const (
 	WorkflowMetadataKeyRole               = "role"
 	WorkflowMetadataKeyOwnerName          = "owner_name"
 	WorkflowMetadataKeyChangedInputValues = "changed_input_values"
+	WorkflowMetadataKeyStackOnly          = "stack_only"
+	WorkflowMetadataKeyInputsOnly         = "inputs_only"
 )
+
+// IsStackOnly reports whether this workflow was asked to stop once the install
+// stack and runner are up, leaving the sandbox and components unprovisioned so
+// inputs can be set first.
+func (w *Workflow) IsStackOnly() bool {
+	return generics.FromPtrStr(w.Metadata[WorkflowMetadataKeyStackOnly]) == "true"
+}
+
+// IsInputsOnly reports whether this workflow should record input values without
+// deploying anything against them.
+func (w *Workflow) IsInputsOnly() bool {
+	return generics.FromPtrStr(w.Metadata[WorkflowMetadataKeyInputsOnly]) == "true"
+}
 
 func (i WorkflowType) PastTenseName() string {
 	switch i {
@@ -106,6 +123,8 @@ func (i WorkflowType) PastTenseName() string {
 		return "Enabled component"
 	case WorkflowTypeComponentDisabled:
 		return "Disabled component"
+	case WorkflowTypeRecoverHelmRelease:
+		return "Recovered Helm release"
 	case WorkflowTypeAppBranchesConfigRepoUpdate:
 		return "Config repo updated"
 	case WorkflowTypeAppBranchesComponentRepoUpdate:
@@ -154,6 +173,8 @@ func (i WorkflowType) Name() string {
 		return "Enabling component"
 	case WorkflowTypeComponentDisabled:
 		return "Disabling component"
+	case WorkflowTypeRecoverHelmRelease:
+		return "Recovering Helm release"
 	case WorkflowTypeAppBranchesConfigRepoUpdate:
 		return "Config repo update"
 	case WorkflowTypeAppBranchesComponentRepoUpdate:
@@ -196,6 +217,8 @@ func (i WorkflowType) Description() string {
 		return "Enables a toggleable component by deploying it."
 	case WorkflowTypeComponentDisabled:
 		return "Disables a toggleable component by tearing it down."
+	case WorkflowTypeRecoverHelmRelease:
+		return "Returns a Helm release left mid-operation to a usable state, so the component can be deployed again. Deploys nothing."
 	}
 
 	return "unknown"

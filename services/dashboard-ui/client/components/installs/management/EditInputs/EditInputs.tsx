@@ -19,6 +19,7 @@ export interface IEditInputsUpdatePayload {
   inputs: Record<string, string>
   role?: string
   deployDependents: boolean
+  inputsOnly: boolean
 }
 
 interface IEditInstallModal extends Omit<IModal, 'onSubmit'> {
@@ -78,6 +79,7 @@ export const EditInstallModal = ({
               inputs: toInputsPayload(values.inputs),
               role: values.role || undefined,
               deployDependents: values.deployDependents,
+              inputsOnly: values.inputsOnly,
             })
           }
           clearDraft()
@@ -146,23 +148,61 @@ export const EditInstallModal = ({
         variant: 'primary',
       }}
       footerActions={
-        <div className="flex flex-col gap-1 pl-4">
-          <form.Field name="deployDependents">
-            {(field) => (
-              <FormCheckbox
-                field={field}
-                labelProps={{
-                  className:
-                    'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-4 max-w-none',
-                  labelText: 'Deploy dependents',
-                  labelTextProps: { variant: 'base', weight: 'stronger' },
-                }}
-              />
-            )}
-          </form.Field>
-          <Text variant="subtext" theme="neutral" className="ml-8 leading-none">
-            Deploy all dependents as well as the affected components.
-          </Text>
+        <div className="flex flex-col gap-4 pl-4">
+          <div className="flex flex-col gap-1">
+            <form.Field name="inputsOnly">
+              {(field) => (
+                <FormCheckbox
+                  field={field}
+                  labelProps={{
+                    className:
+                      'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-4 max-w-none',
+                    labelText: 'Save inputs only',
+                    labelTextProps: { variant: 'base', weight: 'stronger' },
+                  }}
+                />
+              )}
+            </form.Field>
+            <Text
+              variant="subtext"
+              theme="neutral"
+              className="ml-8 leading-none"
+            >
+              Save the values without deploying components or reprovisioning the
+              sandbox.
+            </Text>
+          </div>
+          <form.Subscribe selector={(state) => state.values.inputsOnly}>
+            {(inputsOnly) =>
+              inputsOnly ? null : (
+                <div className="flex flex-col gap-1">
+                  <form.Field name="deployDependents">
+                    {(field) => (
+                      <FormCheckbox
+                        field={field}
+                        labelProps={{
+                          className:
+                            'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-4 max-w-none',
+                          labelText: 'Deploy dependents',
+                          labelTextProps: {
+                            variant: 'base',
+                            weight: 'stronger',
+                          },
+                        }}
+                      />
+                    )}
+                  </form.Field>
+                  <Text
+                    variant="subtext"
+                    theme="neutral"
+                    className="ml-8 leading-none"
+                  >
+                    Deploy all dependents as well as the affected components.
+                  </Text>
+                </div>
+              )
+            }
+          </form.Subscribe>
         </div>
       }
     >

@@ -8,11 +8,9 @@ import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Menu } from '@/components/common/Menu'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { Tooltip } from '@/components/common/Tooltip'
-import { RunRunbookButton } from '@/components/runbooks/RunRunbook/RunRunbook'
+import { RunRunbookButton } from '@/components/runbooks/RunRunbook'
 import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig'
 import type { TInstallRunbook } from '@/lib/ctl-api/installs/runbooks'
 
@@ -165,24 +163,20 @@ const columns: ColumnDef<TInstallRunbookRow>[] = [
       >
         <Menu>
           {info.row.original.removed ? (
-            <Tooltip
-              className="block !w-full"
-              position="left"
-              tipContent={
-                <Text variant="subtext">
-                  This runbook is no longer in the install's app config version.
-                </Text>
-              }
+            <Button
+              isMenuButton
+              disabled
+              className="w-full"
+              tooltipProps={{
+                className: 'block !w-full',
+                position: 'left',
+                tipContent:
+                  "This runbook is no longer in the install's app config version.",
+              }}
             >
-              <Button
-                isMenuButton
-                disabled
-                className="pointer-events-none w-full"
-              >
-                Run runbook
-                <Icon variant="PlayIcon" />
-              </Button>
-            </Tooltip>
+              Run runbook
+              <Icon variant="PlayIcon" />
+            </Button>
           ) : (
             <RunRunbookButton
               installRunbook={info.row.original.installRunbook}
@@ -236,8 +230,4 @@ export const InstallRunbooksTable = ({
       searchPlaceholder="Search by name or ID..."
     />
   )
-}
-
-export const InstallRunbooksTableSkeleton = () => {
-  return <TableSkeleton columns={columns} skeletonRows={5} />
 }

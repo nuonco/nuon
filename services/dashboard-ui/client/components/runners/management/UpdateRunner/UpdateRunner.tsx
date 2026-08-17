@@ -1,11 +1,12 @@
-import { useRef, useState } from 'react'
-import { Banner } from '@/components/common/Banner'
+import { useForm, useStore } from '@tanstack/react-form'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
-import { Input } from '@/components/common/form/Input'
 import { Text } from '@/components/common/Text'
+import { FormErrorBanner } from '@/components/common/form/FormErrorBanner'
+import { FormInput } from '@/components/common/form/FormInput'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
+import { updateRunnerSchema, type UpdateRunnerValues } from './schema'
 
 interface IUpdateRunnerModal extends Omit<IModal, 'onSubmit'> {
   isPending: boolean
@@ -29,26 +30,13 @@ export const UpdateRunnerModal = ({
   submitLabel = 'Update runner version',
   ...props
 }: IUpdateRunnerModal) => {
-  const formRef = useRef<HTMLFormElement>(null)
-  const [tag, setTag] = useState('')
+  const form = useForm({
+    defaultValues: { tag: '' } as UpdateRunnerValues,
+    validators: { onMount: updateRunnerSchema, onChange: updateRunnerSchema },
+    onSubmit: ({ value }) => onSubmit(value.tag),
+  })
 
-  const canUpdate = tag.trim().length > 0 && !isPending
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSubmit(tag)
-  }
-
-  const handleFormSubmit = () => {
-    if (formRef.current) {
-      formRef.current.requestSubmit()
-    }
-  }
-
-  const handleClose = () => {
-    setTag('')
-    onClose()
-  }
+  const canSubmit = useStore(form.store, (s) => s.canSubmit)
 
   return (
     <Modal
@@ -77,37 +65,34 @@ export const UpdateRunnerModal = ({
             {submitLabel}
           </span>
         ),
-        disabled: !canUpdate,
-        onClick: handleFormSubmit,
+        disabled: !canSubmit || isPending,
+        onClick: () => form.handleSubmit(),
         variant: 'primary' as const,
       }}
-      onClose={handleClose}
+      onClose={onClose}
       {...props}
     >
-      <div className="flex flex-col gap-6">
-        {error ? (
-          <Banner theme="error">
-            {error?.error || 'Unable to update runner.'}
-          </Banner>
-        ) : null}
-        <form ref={formRef} onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Text variant="base" weight="stronger">
-                {inputLabel}
-              </Text>
-              <Input
-                id="runner-tag"
-                placeholder={inputPlaceholder}
-                type="text"
-                value={tag}
-                onChange={(e) => setTag(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-        </form>
-      </div>
+      <form
+        autoComplete="off"
+        noValidate
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-6"
+      >
+        <FormErrorBanner error={error} fallback="Unable to update runner" />
+
+        <form.Field name="tag">
+          {(field) => (
+            <FormInput
+              field={field}
+              id="runner-tag"
+              type="text"
+              placeholder={inputPlaceholder}
+              disabled={isPending}
+              labelProps={{ labelText: inputLabel }}
+            />
+          )}
+        </form.Field>
+      </form>
     </Modal>
   )
 }

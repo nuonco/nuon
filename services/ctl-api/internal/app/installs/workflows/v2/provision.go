@@ -101,6 +101,13 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	}
 	steps = append(steps, step)
 
+	// Stop with the stack and runner up so inputs that are only knowable once the
+	// runner exists can be set before the sandbox reads them. Provisioning the
+	// sandbox and components is a separate, explicit step afterwards.
+	if flw.IsStackOnly() {
+		return sg.Result(steps), nil
+	}
+
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app config")
@@ -186,7 +193,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		}
 		steps = append(steps, step)
 
-		deploySteps, err := deployAllComponents(ctx, dg)
+		deploySteps, err := deployAllComponents(ctx, dg, true)
 		if err != nil {
 			return nil, err
 		}

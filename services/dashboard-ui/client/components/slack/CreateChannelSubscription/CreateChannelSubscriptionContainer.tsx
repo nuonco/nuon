@@ -19,10 +19,8 @@ import {
   getSlackOrgLinks,
 } from '@/lib'
 import type { TAPIError } from '@/types'
-import {
-  CreateChannelSubscriptionModal,
-  type CreateChannelSubscriptionInput,
-} from './CreateChannelSubscription'
+import { ChannelSubscriptionFormModal } from '@/components/slack/ChannelSubscriptionForm'
+import type { ChannelSubscriptionOutput } from '@/components/slack/ChannelSubscriptionForm/schema'
 
 const CHANNELS_PAGE_SIZE = 100
 
@@ -87,7 +85,7 @@ const CreateChannelSubscriptionModalContainer = (
   ])
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: (input: CreateChannelSubscriptionInput) =>
+    mutationFn: (input: ChannelSubscriptionOutput) =>
       createSlackChannelSubscription({
         orgId: org.id,
         body: {
@@ -109,21 +107,20 @@ const CreateChannelSubscriptionModalContainer = (
       )
       removeModal(props.modalId)
     },
-    onError: (err: TAPIError) => {
-      const heading =
-        err?.status === 409
-          ? 'Channel already subscribed'
-          : 'Unable to subscribe channel'
-      addToast(
-        <Toast heading={heading} theme="error">
-          <Text>{err?.description || err?.error || 'Try again.'}</Text>
-        </Toast>
-      )
-    },
   })
 
+  const friendlyError =
+    error && (error as TAPIError).status === 409
+      ? {
+          ...(error as TAPIError),
+          error:
+            'This channel is already subscribed with this scope. Pick a different scope.',
+        }
+      : (error as TAPIError | null)
+
   return (
-    <CreateChannelSubscriptionModal
+    <ChannelSubscriptionFormModal
+      mode="create"
       installations={installationsQuery.data ?? []}
       orgLinks={orgLinksQuery.data ?? []}
       channels={channels}
@@ -144,7 +141,7 @@ const CreateChannelSubscriptionModalContainer = (
         }
       }}
       isPending={isPending}
-      error={error}
+      error={friendlyError}
       onSelectInstallation={(id) => {
         setSelectedInstallationId(id)
         setChannelSearch('')

@@ -38,13 +38,6 @@ const RenameServiceAccountModalContainer = ({
       )
       removeModal(props.modalId)
     },
-    onError: () => {
-      addToast(
-        <Toast heading="Rename failed" theme="error">
-          <Text>There was an error renaming {identity}.</Text>
-        </Toast>
-      )
-    },
   })
 
   return (
