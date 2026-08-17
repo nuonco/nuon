@@ -12,15 +12,6 @@ export interface IStackCard {
   error?: string
 }
 
-const Skeleton = () => (
-  <div className="flex w-fit items-center gap-3 rounded-lg border border-cool-grey-200 dark:border-cool-grey-800 px-3 py-2.5 animate-pulse">
-    <div className="h-4 w-12 rounded bg-cool-grey-200 dark:bg-cool-grey-800" />
-    <div className="h-4 w-14 rounded bg-cool-grey-200 dark:bg-cool-grey-800" />
-    <div className="h-4 w-12 rounded bg-cool-grey-200 dark:bg-cool-grey-800" />
-    <div className="h-4 w-16 rounded bg-cool-grey-200 dark:bg-cool-grey-800" />
-  </div>
-)
-
 export const StackCard = ({
   status,
   runCount,
@@ -29,7 +20,18 @@ export const StackCard = ({
   isLoading,
   error,
 }: IStackCard) => {
-  if (isLoading) return <Skeleton />
+  if (isLoading) {
+    return (
+      <div className="flex w-fit items-center gap-3 rounded-lg border px-3 py-2.5">
+        <Text variant="body" className="font-strong">
+          Stack
+        </Text>
+        <Status loading variant="badge" />
+        <Text variant="subtext" loading loadingWidth={6} />
+        <Text variant="subtext" loading loadingWidth={10} />
+      </div>
+    )
+  }
 
   if (error) {
     return (

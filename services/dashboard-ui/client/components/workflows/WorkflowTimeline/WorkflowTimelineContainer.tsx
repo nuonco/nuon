@@ -6,9 +6,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useSSETimelineQuery } from '@/hooks/use-sse-timeline-query'
 import { getInstallWorkflows } from '@/lib'
 import { createSSEQueryListener } from '@/lib/sse-listeners'
-import { WorkflowTimeline, WorkflowTimelineSkeleton } from './WorkflowTimeline'
-
-export { WorkflowTimelineSkeleton }
+import { WorkflowTimeline } from './WorkflowTimeline'
 
 const LIMIT = 10
 

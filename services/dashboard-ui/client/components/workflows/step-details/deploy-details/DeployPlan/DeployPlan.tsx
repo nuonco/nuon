@@ -3,25 +3,12 @@ import { HelmDiff } from '@/components/approvals/plan-diffs/helm/HelmDiff'
 import { KubernetesDiff } from '@/components/approvals/plan-diffs/kubernetes/KubernetesDiff'
 import { PulumiDiff } from '@/components/approvals/plan-diffs/pulumi/PulumiDiff'
 import { TerraformDiff } from '@/components/approvals/plan-diffs/terraform/TerraformDiff'
-import { Skeleton } from '@/components/common/Skeleton'
+import { Loading } from '@/components/common/Loading'
 import type { TWorkflowStep, TWorkflowStepApprovalType } from '@/types'
 
 type TApprovalType = Exclude<TWorkflowStepApprovalType, 'approve-all' | 'noop'>
 
 type TDiffViewer = Record<TApprovalType, ReactNode>
-
-function getApprovalPlanSkeleton(planType: TApprovalType): ReactNode {
-  const diffSkeletons: TDiffViewer = {
-    helm_approval: <HelmPlanSkeleton />,
-    kubernetes_manifest_approval: <KubernetesPlanSkeleton />,
-    terraform_plan: <TerraformPlanSkeleton />,
-    pulumi_plan: <Skeleton height="350px" width="100%" />,
-    app_branch_plan: <Skeleton height="200px" width="100%" />,
-    install_creation: <Skeleton height="200px" width="100%" />,
-  }
-
-  return diffSkeletons[planType]
-}
 
 function getApprovalPlanDiff(step: TWorkflowStep, plan: any): ReactNode {
   const diffs: TDiffViewer = {
@@ -46,26 +33,13 @@ export interface IDeployPlan {
 export const DeployPlan = ({ step, plan, isLoading }: IDeployPlan) => {
   return (
     <>
-      {isLoading || !plan
-        ? getApprovalPlanSkeleton(step?.approval?.type as TApprovalType)
-        : getApprovalPlanDiff(step, plan)}
+      {isLoading || !plan ? (
+        <div className="flex justify-center py-10">
+          <Loading variant="large" />
+        </div>
+      ) : (
+        getApprovalPlanDiff(step, plan)
+      )}
     </>
-  )
-}
-
-const HelmPlanSkeleton = () => {
-  return <Skeleton height="350px" width="100%" />
-}
-
-const KubernetesPlanSkeleton = () => {
-  return <Skeleton height="350px" width="100%" />
-}
-
-const TerraformPlanSkeleton = () => {
-  return (
-    <div className="flex flex-col gap-6">
-      <Skeleton height="350px" width="100%" />
-      <Skeleton height="350px" width="100%" />
-    </div>
   )
 }

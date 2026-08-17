@@ -1,11 +1,14 @@
 import type { HTMLAttributes } from 'react'
 import type { TTheme } from '@/types'
 import { cn } from '@/utils/classnames'
+import { SKELETON_CLASSES } from './Skeleton'
 
 type TBadgeVariant = 'default' | 'code'
 export type TBadgeTheme = TTheme
 
 export interface IBadge extends HTMLAttributes<HTMLSpanElement> {
+  loading?: boolean
+  loadingWidth?: number
   size?: 'sm' | 'md' | 'lg'
   theme?: TBadgeTheme | 'none'
   variant?: TBadgeVariant
@@ -38,14 +41,43 @@ const THEME_CLASSES: Record<NonNullable<IBadge['theme']>, string> = {
   info: 'bg-[#FAFBFF] text-blue-800 !border-blue-400 dark:bg-[#0F172A] dark:!border-blue-500/40 dark:text-blue-500',
 }
 
+const LOADING_SIZE: Record<
+  NonNullable<IBadge['size']>,
+  { height: string; ch: number; text: string }
+> = {
+  sm: { height: '18px', ch: 8, text: 'text-[11px]' },
+  md: { height: '21px', ch: 8, text: 'text-[12px]' },
+  lg: { height: '25px', ch: 10, text: 'text-[12px]' },
+}
+
 export const Badge = ({
   className,
   children,
+  loading,
+  loadingWidth,
   size = 'lg',
   theme = 'neutral',
   variant = 'default',
   ...props
 }: IBadge) => {
+  if (loading) {
+    const { height, ch, text } = LOADING_SIZE[size]
+    return (
+      <span
+        aria-hidden
+        className={cn(
+          'inline-block',
+          text,
+          variant === 'code' ? 'rounded-md' : 'rounded-full',
+          SKELETON_CLASSES,
+          className
+        )}
+        style={{ width: `${loadingWidth ?? ch}ch`, height }}
+        {...props}
+      />
+    )
+  }
+
   return (
     <span
       className={cn(

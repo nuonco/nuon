@@ -4,6 +4,8 @@ import type { TTheme } from '@/types'
 import { cn } from '@/utils/classnames'
 import { kebabToWords, toSentenceCase } from '@/utils/string-utils'
 import { getStatusTheme, getStatusIconVariant } from '@/utils/status-utils'
+import { SKELETON_CLASSES } from './Skeleton'
+import { Text } from './Text'
 
 export type TStatusTheme = TTheme
 export type TStatusType = string | 'success' | 'error'
@@ -72,7 +74,9 @@ export interface IStatus
   children?: React.ReactNode
   iconSize?: number
   isWithoutText?: boolean
-  status: TStatusType
+  loading?: boolean
+  loadingWidth?: number
+  status?: TStatusType
   statusText?: string
   variant?: TStatusVariant
 }
@@ -82,13 +86,42 @@ export const Status = ({
   className,
   iconSize = 18,
   isWithoutText = false,
+  loading,
+  loadingWidth,
   status,
   variant = 'default',
   ...props
 }: IStatus) => {
-  const theme = getStatusTheme(status)
+  if (loading) {
+    if (variant === 'timeline') {
+      return (
+        <span
+          aria-hidden
+          className={cn(INDICATOR_BASE, SKELETON_CLASSES, className)}
+          style={{ width: iconSize + 8, height: iconSize + 8 }}
+          {...props}
+        />
+      )
+    }
+    return (
+      <span
+        aria-hidden
+        className={cn(VARIANT_CLASSES[variant], className)}
+        {...props}
+      >
+        <span
+          className={cn(INDICATOR_BASE, INDICATOR_SIZE[variant], SKELETON_CLASSES)}
+        />
+        {isWithoutText ? null : (
+          <Text variant="subtext" loading loadingWidth={loadingWidth} />
+        )}
+      </span>
+    )
+  }
+
+  const theme = getStatusTheme(status ?? '')
   const iconVariant =
-    variant === 'timeline' ? getStatusIconVariant(status) : null
+    variant === 'timeline' ? getStatusIconVariant(status ?? '') : null
 
   const rootClass = cn(VARIANT_CLASSES[variant], className)
   const indicatorClass = cn(

@@ -12,11 +12,7 @@ import { TraceView } from '@/components/spans/TraceView'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { TWorkflowStep, TSandboxRun } from '@/types'
-import {
-  SandboxRunApply,
-  SandboxRunApplySkeleton,
-  SandboxRunLogsSkeleton,
-} from '../SandboxRunApply'
+import { SandboxRunApply } from '../SandboxRunApply'
 
 export interface ISandboxRunStepDetails {
   step?: TWorkflowStep
@@ -29,7 +25,6 @@ export const SandboxRunStepDetails = ({
   step,
   orgId,
   sandboxRun,
-  isLoading,
 }: ISandboxRunStepDetails) => {
   return (
     <div className="flex flex-col gap-4">
@@ -89,11 +84,6 @@ export const SandboxRunStepDetails = ({
 
       {step?.execution_type === 'approval' ? (
         <ApprovalStepTabs step={step} sandboxRun={sandboxRun} />
-      ) : isLoading && !sandboxRun ? (
-        <div className="flex flex-col gap-4">
-          <SandboxRunApplySkeleton />
-          <SandboxRunLogsSkeleton />
-        </div>
       ) : (
         <SandboxRunApply step={step} sandboxRun={sandboxRun} />
       )}

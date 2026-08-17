@@ -2,10 +2,7 @@ export default {
   title: 'OIDCTrustPolicies/OIDCTrustPoliciesTable',
 }
 
-import {
-  OIDCTrustPoliciesTable,
-  OIDCTrustPoliciesTableSkeleton,
-} from './OIDCTrustPoliciesTable'
+import { OIDCTrustPoliciesTable } from './OIDCTrustPoliciesTable'
 import type { TOIDCTrustPolicy } from '@/types'
 
 const mockPolicies: TOIDCTrustPolicy[] = [
@@ -48,4 +45,4 @@ export const Empty = () => (
   <OIDCTrustPoliciesTable data={[]} isLoading={false} />
 )
 
-export const Loading = () => <OIDCTrustPoliciesTableSkeleton />
+export const Loading = () => <OIDCTrustPoliciesTable data={[]} isLoading />

@@ -1,5 +1,8 @@
 import { cn } from '@/utils/classnames'
 
+export const SKELETON_CLASSES =
+  'animate-pulse rounded-sm bg-cool-grey-400 dark:bg-dark-grey-400'
+
 interface ISkeleton {
   className?: string
   lines?: number
@@ -22,7 +25,7 @@ export const Skeleton = ({
       {Array.from({ length: lines }).map((_, index) => (
         <div
           key={index}
-          className="animate-pulse rounded-sm bg-cool-grey-400 dark:bg-dark-grey-400"
+          className={SKELETON_CLASSES}
           style={{
             width: widths[index] || '100%',
             height: height,

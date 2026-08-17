@@ -1,7 +1,6 @@
 import { ID } from '@/components/common/ID'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { LogsSkeleton } from '@/components/log-stream/SSELogs'
@@ -12,18 +11,20 @@ import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { TWorkflowStep, TSandboxRun } from '@/types'
 
 export const SandboxRunApply = ({
-  step,
   sandboxRun,
 }: {
-  step: TWorkflowStep
-  sandboxRun: TSandboxRun
+  step?: TWorkflowStep
+  sandboxRun?: TSandboxRun
 }) => {
   return (
     <>
       {!sandboxRun ? (
         <div className="flex flex-col gap-4">
-          <SandboxRunApplySkeleton />
-          <SandboxRunLogsSkeleton />
+          <div className="flex items-start gap-6">
+            <LabeledStatus label="Status" loading />
+            <LabeledValue label="Sandbox Run ID" loading />
+          </div>
+          <LogsSkeleton />
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -67,37 +68,5 @@ export const SandboxRunApply = ({
         </div>
       )}
     </>
-  )
-}
-
-export const SandboxRunApplySkeleton = () => {
-  return (
-    <div className="flex items-start gap-6">
-      <LabeledValue label={<Skeleton height="17px" width="34px" />}>
-        <Skeleton height="23px" width="75px" />
-      </LabeledValue>
-    </div>
-  )
-}
-
-export const SandboxRunLogsSkeleton = () => {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Skeleton height="36px" width="320px" />
-          <Skeleton height="17px" width="85px" />
-        </div>
-
-        <div className="flex items-center gap-4">
-          <Skeleton height="32px" width="86px" />
-          <Skeleton height="32px" width="135px" />
-          <Skeleton height="32px" width="140px" />
-        </div>
-      </div>
-      <div>
-        <LogsSkeleton />
-      </div>
-    </div>
   )
 }

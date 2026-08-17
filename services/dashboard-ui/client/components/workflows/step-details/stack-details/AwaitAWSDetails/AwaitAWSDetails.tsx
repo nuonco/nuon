@@ -6,7 +6,6 @@ import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
 import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { createFileDownload } from '@/utils/file-download'
@@ -79,6 +78,7 @@ export const AwaitAWSDetails = ({
   installId,
   installAwsRegion,
   tfProvider = false,
+  loading,
 }: IAwaitAWSDetails) => {
   const version = stack?.versions?.at(0)
   // The new TerraformContents fields aren't in the regenerated OpenAPI types
@@ -95,6 +95,29 @@ export const AwaitAWSDetails = ({
     [versionExt?.terraform_contents]
   )
   const hasTerraform = tfvars.inputs.length > 0 || tfvars.secrets.length > 0
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          Setup your install stack
+        </Text>
+        <Card>
+          <Text weight="strong">CloudFormation template</Text>
+          <Code loading />
+        </Card>
+        <div className="flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            Deploy with AWS CLI
+          </Text>
+          <Card>
+            <Text>Create stack</Text>
+            <Code loading />
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -526,42 +549,5 @@ const AWSTelemetryExportInstructions = ({
         </Card>
       </div>
     </Expand>
-  )
-}
-
-export const AwaitAWSDetailsSkeleton = () => {
-  return (
-    <>
-      <Skeleton height="24px" width="175px" />
-
-      <Card>
-        <Skeleton height="17px" width="100px" />
-        <Skeleton height="132px" width="100%" />
-      </Card>
-
-      <Card>
-        <Skeleton height="17px" width="120px" />
-        <Skeleton height="72px" width="100%" />
-      </Card>
-
-      <Card>
-        <Skeleton height="17px" width="175px" />
-        <Skeleton height="32px" width="100%" />
-      </Card>
-
-      <Skeleton height="24px" width="325px" />
-
-      <Card>
-        <Skeleton height="17px" width="219px" />
-        <Skeleton height="92px" width="100%" />
-      </Card>
-
-      <Skeleton height="24px" width="382px" />
-
-      <Card>
-        <Skeleton height="17px" width="223px" />
-        <Skeleton height="92px" width="100%" />
-      </Card>
-    </>
   )
 }

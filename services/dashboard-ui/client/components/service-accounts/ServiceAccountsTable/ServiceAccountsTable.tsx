@@ -4,7 +4,6 @@ import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TAccount, TRoleInfo } from '@/types'
@@ -127,14 +126,11 @@ export const ServiceAccountsTable = ({
     []
   )
 
-  if (isLoading) {
-    return <ServiceAccountsTableSkeleton />
-  }
-
   return (
     <Table<TServiceAccountRow>
       columns={columns}
       data={parseServiceAccountsToTableData(data, roleTitles)}
+      isLoading={isLoading}
       pagination={pagination}
       enableSearch={false}
       emptyStateProps={{
@@ -144,15 +140,3 @@ export const ServiceAccountsTable = ({
     />
   )
 }
-
-const skeletonColumns: ColumnDef<TServiceAccountRow>[] = [
-  { header: 'Name', accessorKey: 'name' },
-  { header: 'Identity', accessorKey: 'identity' },
-  { header: 'Role', accessorKey: 'role' },
-  { header: 'Created', accessorKey: 'createdAt' },
-  { header: 'Action', id: 'action' },
-]
-
-export const ServiceAccountsTableSkeleton = () => (
-  <TableSkeleton<TServiceAccountRow> columns={skeletonColumns} skeletonRows={5} />
-)

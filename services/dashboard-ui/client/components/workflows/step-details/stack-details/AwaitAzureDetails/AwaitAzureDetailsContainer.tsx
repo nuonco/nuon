@@ -5,7 +5,11 @@ import { getAppSecretsConfig } from '@/lib'
 import { AwaitAzureDetails } from './AwaitAzureDetails'
 import type { IStackDetails } from '../types'
 
-export const AwaitAzureDetailsContainer = ({ stack, step }: IStackDetails) => {
+export const AwaitAzureDetailsContainer = ({
+  stack,
+  step,
+  loading,
+}: IStackDetails) => {
   const { install } = useInstall()
   const { org } = useOrg()
 
@@ -23,6 +27,7 @@ export const AwaitAzureDetailsContainer = ({ stack, step }: IStackDetails) => {
     <AwaitAzureDetails
       stack={stack}
       step={step}
+      loading={loading}
       installId={install?.id ?? ''}
       azureLocation={install?.azure_account?.location}
       secrets={secretsConfig?.secrets}

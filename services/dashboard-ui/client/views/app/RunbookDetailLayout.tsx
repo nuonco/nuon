@@ -18,7 +18,7 @@ export const RunbookDetailLayout = () => {
   const { org } = useOrg()
   const { app } = useApp()
 
-  const { data: runbook } = useQuery({
+  const { data: runbook, isLoading } = useQuery({
     queryKey: ['runbook', org?.id, app?.id, runbookId],
     queryFn: () =>
       getRunbook({ orgId: org!.id, appId: app!.id, runbookId: runbookId! }),
@@ -56,7 +56,12 @@ export const RunbookDetailLayout = () => {
           <div className="flex flex-wrap items-start gap-4 justify-between w-full">
             <HeadingGroup>
               <BackLink className="mb-4" />
-              <Text variant="h3" weight="strong">
+              <Text
+                variant="h3"
+                weight="strong"
+                loading={isLoading}
+                loadingWidth={20}
+              >
                 {runbook?.name}
               </Text>
               <span className="flex flex-wrap items-center gap-4 mt-1">
@@ -97,7 +102,15 @@ export const RunbookDetailLayout = () => {
               },
             ]}
           />
-          <Outlet context={{ runbook }} />
+          {isLoading ? (
+            <div className="flex flex-col gap-3">
+              <Text variant="body" loading loadingWidth={40} />
+              <Text variant="body" loading loadingWidth={60} />
+              <Text variant="body" loading loadingWidth={30} />
+            </div>
+          ) : (
+            <Outlet context={{ runbook }} />
+          )}
         </PageSection>
       </div>
     </PageSection>
