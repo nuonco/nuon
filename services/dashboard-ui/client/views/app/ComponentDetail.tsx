@@ -8,10 +8,7 @@ import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { BuildTimeline } from '@/components/builds/BuildTimeline'
-import {
-  ComponentConfigCard,
-  ComponentConfigCardSkeleton,
-} from '@/components/components/ComponentConfigCard'
+import { ComponentConfigCard } from '@/components/components/ComponentConfigCard'
 import { ComponentDependencies } from '@/components/components/ComponentDependencies'
 import { ComponentDependencyGraphButton } from '@/components/components/ComponentDependencyGraph'
 import { ComponentType } from '@/components/components/ComponentType'
@@ -172,7 +169,7 @@ export const ComponentDetail = () => {
         <div className="grid grid-cols-1 @5xl:grid-cols-12 gap-6">
           <div className="@5xl:col-span-8 flex flex-col gap-6">
             {isLoadingConfig ? (
-              <ComponentConfigCardSkeleton />
+              <ComponentConfigCard loading />
             ) : config ? (
               <ComponentConfigCard
                 config={config}

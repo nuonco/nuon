@@ -2,7 +2,7 @@ export default {
   title: 'Team/TeamTable',
 }
 
-import { TeamTable, TeamTableSkeleton } from './TeamTable'
+import { TeamTable } from './TeamTable'
 import type { TAccount } from '@/types'
 
 const mockAccounts: TAccount[] = [
@@ -58,4 +58,11 @@ export const Empty = () => (
   />
 )
 
-export const Loading = () => <TeamTableSkeleton />
+export const Loading = () => (
+  <TeamTable
+    data={[]}
+    roleTitles={roleTitles}
+    isLoading
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)

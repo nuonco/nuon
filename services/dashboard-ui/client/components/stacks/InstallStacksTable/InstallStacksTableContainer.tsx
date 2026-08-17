@@ -4,7 +4,6 @@ import { useOrg } from '@/hooks/use-org'
 import { getInstallStack } from '@/lib'
 import {
   InstallStacksTable,
-  InstallStacksTableSkeleton,
   parseInstallStackSummaryToTableData,
 } from './InstallStacksTable'
 
@@ -29,7 +28,9 @@ export const InstallStacksTableContainer = ({
 
   const pagination = { hasNext: false, offset: 0, limit: LIMIT }
 
-  if (isLoading) return <InstallStacksTableSkeleton />
+  if (isLoading) {
+    return <InstallStacksTable data={[]} isLoading pagination={pagination} />
+  }
   if (!stack) return null
 
   return (
@@ -40,5 +41,3 @@ export const InstallStacksTableContainer = ({
     />
   )
 }
-
-export { InstallStacksTableSkeleton } from './InstallStacksTable'

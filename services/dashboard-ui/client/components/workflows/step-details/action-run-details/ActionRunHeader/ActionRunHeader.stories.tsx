@@ -2,7 +2,7 @@ export default {
   title: 'Workflows/StepDetails/ActionRunHeader',
 }
 
-import { ActionRunHeader, ActionRunHeaderSkeleton } from './ActionRunHeader'
+import { ActionRunHeader } from './ActionRunHeader'
 
 const mockActionRun = {
   id: 'run-1',
@@ -32,6 +32,6 @@ export const Adhoc = () => (
 
 export const Loading = () => (
   <div className="p-4">
-    <ActionRunHeaderSkeleton />
+    <ActionRunHeader loading orgId="org-1" />
   </div>
 )

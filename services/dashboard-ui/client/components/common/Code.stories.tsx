@@ -308,3 +308,12 @@ export const UsageExamples = () => (
     </div>
   </div>
 )
+
+export const Loading = () => (
+  <div className="flex flex-col gap-4">
+    <Code loading />
+    <Text>
+      Inline <Code loading variant="inline" loadingWidth={10} /> within text.
+    </Text>
+  </div>
+)

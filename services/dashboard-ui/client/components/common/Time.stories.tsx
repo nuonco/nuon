@@ -435,3 +435,11 @@ export const UsageExamples = () => (
     </div>
   </div>
 )
+
+export const Loading = () => (
+  <div className="flex flex-col gap-4">
+    <Time loading />
+    <Time loading variant="subtext" />
+    <Time loading loadingWidth={18} />
+  </div>
+)

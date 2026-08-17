@@ -2,7 +2,7 @@ export default {
   title: 'Workflows/StepDetails/AwaitAWSDetails',
 }
 
-import { AwaitAWSDetails, AwaitAWSDetailsSkeleton } from './AwaitAWSDetails'
+import { AwaitAWSDetails } from './AwaitAWSDetails'
 
 const mockStack = {
   versions: [
@@ -151,6 +151,6 @@ export const LegacyContents = () => (
 
 export const Loading = () => (
   <div className="max-w-2xl p-4">
-    <AwaitAWSDetailsSkeleton />
+    <AwaitAWSDetails stack={mockStack} step={mockStep} orgId="org-1" loading />
   </div>
 )

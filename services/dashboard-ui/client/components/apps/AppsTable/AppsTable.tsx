@@ -5,7 +5,6 @@ import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import type { TApp, TCloudPlatform } from '@/types'
 
@@ -142,8 +141,4 @@ export const AppsTable = ({
       searchPlaceholder="Search by name or ID..."
     />
   )
-}
-
-export const AppsTableSkeleton = () => {
-  return <TableSkeleton columns={columns} skeletonRows={3} />
 }

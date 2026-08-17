@@ -2,7 +2,7 @@ export default {
   title: 'Workflows/StepDetails/AwaitGCPDetails',
 }
 
-import { AwaitGCPDetails, AwaitGCPDetailsSkeleton } from './AwaitGCPDetails'
+import { AwaitGCPDetails } from './AwaitGCPDetails'
 
 const mockStack = {
   versions: [
@@ -175,6 +175,11 @@ export const LegacyContents = () => (
 
 export const Loading = () => (
   <div className="max-w-2xl p-4">
-    <AwaitGCPDetailsSkeleton />
+    <AwaitGCPDetails
+      stack={mockStack}
+      step={mockStep}
+      installId="install-1"
+      loading
+    />
   </div>
 )
