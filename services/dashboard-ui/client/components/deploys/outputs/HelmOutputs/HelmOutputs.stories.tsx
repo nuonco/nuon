@@ -2,7 +2,7 @@ export default {
   title: 'Deploys/HelmOutputs/HelmOutputs',
 }
 
-import { HelmOutputs, HelmOutputsSkeleton } from './HelmOutputs'
+import { HelmOutputs } from './HelmOutputs'
 
 const mockOutputs = {
   deployments: {
@@ -55,5 +55,3 @@ metadata:
 }
 
 export const Default = () => <HelmOutputs createdAt="2024-01-15T10:30:00Z" outputs={mockOutputs} />
-
-export const Loading = () => <HelmOutputsSkeleton />

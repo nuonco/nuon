@@ -3,7 +3,6 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TNotebook } from '@/lib'
@@ -113,8 +112,4 @@ export const NotebooksTable = ({
     pagination={pagination}
     searchPlaceholder="Search by name or ID..."
   />
-)
-
-export const NotebooksTableSkeleton = () => (
-  <TableSkeleton columns={columns} skeletonRows={5} />
 )

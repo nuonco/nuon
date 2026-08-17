@@ -4,7 +4,7 @@ export default {
 
 import { Button } from '@/components/common/Button'
 import { LabelBadge } from '@/components/common/LabelBadge'
-import { InstallActionsTable, InstallActionsTableSkeleton, type InstallActionRow } from './InstallActionsTable'
+import { InstallActionsTable, type InstallActionRow } from './InstallActionsTable'
 
 const mockRows: InstallActionRow[] = Array.from({ length: 3 }, (_, i) => ({
   actionId: `action-${i + 1}`,
@@ -32,4 +32,10 @@ export const Empty = () => (
   />
 )
 
-export const Loading = () => <InstallActionsTableSkeleton />
+export const Loading = () => (
+  <InstallActionsTable
+    data={[]}
+    isLoading
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)

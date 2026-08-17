@@ -4,7 +4,7 @@ export default {
 
 import type { ReactNode } from 'react'
 import { WorkflowApprovalsContext } from '@/providers/workflow-approvals-provider'
-import { WorkflowTimeline, WorkflowTimelineSkeleton } from './WorkflowTimeline'
+import { WorkflowTimeline } from './WorkflowTimeline'
 import type { TWorkflow } from '@/types'
 
 const ApprovalsProvider = ({ children }: { children: ReactNode }) => (
@@ -146,4 +146,14 @@ export const Empty = () => (
   </ApprovalsProvider>
 )
 
-export const Loading = () => <WorkflowTimelineSkeleton />
+export const Loading = () => (
+  <ApprovalsProvider>
+    <WorkflowTimeline
+      workflows={[]}
+      pagination={{ hasNext: false, offset: 0, limit: 10 }}
+      orgId="org-123"
+      installId="inst-456"
+      isLoading
+    />
+  </ApprovalsProvider>
+)

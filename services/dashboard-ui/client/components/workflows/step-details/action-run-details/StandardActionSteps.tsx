@@ -1,14 +1,36 @@
 'use client'
 
 import { Duration } from '@/components/common/Duration'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { hydrateActionRunSteps, sortByIdx } from '@/utils/action-utils'
 import { toSentenceCase } from '@/utils/string-utils'
 import type { IStandardActionSteps } from './types'
 
-export const StandardActionSteps = ({ actionRun }: IStandardActionSteps) => {
+export const StandardActionSteps = ({
+  actionRun,
+  loading,
+}: IStandardActionSteps) => {
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-2">
+        <Text weight="strong">Action steps</Text>
+        {Array.from({ length: 3 }).map((_, idx) => (
+          <span
+            key={idx}
+            className="py-2 px-4 border rounded-md flex items-center justify-between"
+          >
+            <span className="flex items-center gap-2">
+              <Status loading isWithoutText status="" />
+              <Text loading loadingWidth={16} />
+            </span>
+            <Text variant="subtext" loading loadingWidth={10} />
+          </span>
+        ))}
+      </div>
+    )
+  }
+
   if (!actionRun?.steps) return null
 
   const hydratedSteps = sortByIdx(
@@ -49,17 +71,6 @@ export const StandardActionSteps = ({ actionRun }: IStandardActionSteps) => {
             ) : null}
           </Text>
         </span>
-      ))}
-    </div>
-  )
-}
-
-export const StandardActionStepsSkeleton = () => {
-  return (
-    <div className="flex flex-col gap-2">
-      <Skeleton height="17px" width="80px" />
-      {Array.from({ length: 3 }).map((_, idx) => (
-        <Skeleton key={idx} height="42px" width="100%" />
       ))}
     </div>
   )

@@ -2,10 +2,7 @@ export default {
   title: 'Workflows/StepDetails/StandardActionSteps',
 }
 
-import {
-  StandardActionSteps,
-  StandardActionStepsSkeleton,
-} from './StandardActionSteps'
+import { StandardActionSteps } from './StandardActionSteps'
 import type { TInstallActionRun } from '@/types'
 
 const mockActionRun: TInstallActionRun = {
@@ -41,4 +38,4 @@ export const AllSucceeded = () => (
   />
 )
 
-export const Loading = () => <StandardActionStepsSkeleton />
+export const Loading = () => <StandardActionSteps loading />

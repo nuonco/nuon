@@ -6,7 +6,7 @@ import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import {
   ProcessCard,
-  ProcessCardSkeleton,
+  ProcessCardComponent,
 } from '@/components/runners/ProcessCard'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
 import { RunnerStatusBanner } from '@/components/runners/RunnerStatusBanner'
@@ -75,8 +75,8 @@ const RunnerContent = ({
       {processesLoading ? (
         <div className="@container">
           <div className="grid grid-cols-1 @5xl:grid-cols-2 gap-6 items-start">
-            <ProcessCardSkeleton />
-            <ProcessCardSkeleton />
+            <ProcessCardComponent loading />
+            <ProcessCardComponent loading />
           </div>
         </div>
       ) : processes.length === 0 ? (

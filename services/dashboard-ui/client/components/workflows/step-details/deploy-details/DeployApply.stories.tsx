@@ -2,11 +2,7 @@ export default {
   title: 'Workflows/StepDetails/DeployApply',
 }
 
-import {
-  DeployApply,
-  DeployApplySkeleton,
-  DeployLogsSkeleton,
-} from './DeployApply'
+import { DeployApply } from './DeployApply'
 import type { TInstallDeploy } from '@/types'
 
 const mockDeploy: TInstallDeploy = {
@@ -34,8 +30,4 @@ export const Error = () => (
   />
 )
 
-export const Null = () => <DeployApply initDeploy={null as any} />
-
-export const ApplySkeleton = () => <DeployApplySkeleton />
-
-export const LogsSkeleton = () => <DeployLogsSkeleton />
+export const Loading = () => <DeployApply />

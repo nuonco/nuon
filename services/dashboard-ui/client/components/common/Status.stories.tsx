@@ -359,3 +359,12 @@ export const UsageExamples = () => (
     </div>
   </div>
 )
+
+export const Loading = () => (
+  <div className="flex items-center gap-6">
+    <Status loading variant="default" />
+    <Status loading variant="badge" />
+    <Status loading variant="timeline" />
+    <Status loading isWithoutText />
+  </div>
+)
