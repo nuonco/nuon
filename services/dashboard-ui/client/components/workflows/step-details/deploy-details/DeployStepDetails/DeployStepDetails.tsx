@@ -4,7 +4,6 @@ import { Duration } from '@/components/common/Duration'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -34,7 +33,11 @@ export const DeployStepDetails = ({
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-4">
         {isLoading && !deploy ? (
-          <DeployStepDetailsSkeleton />
+          <>
+            <Text variant="base" weight="strong" loading loadingWidth={20} />
+            <Text variant="subtext" loading loadingWidth={12} />
+            <Text variant="subtext" loading loadingWidth={12} />
+          </>
         ) : error ? (
           <Text variant="base" weight="strong" theme="error">
             Unable to load deploy details
@@ -155,15 +158,5 @@ const ApprovalStepTabs = ({
         <Tabs tabs={tabs} />
       </LogViewerProvider>
     </LogStreamProvider>
-  )
-}
-
-export const DeployStepDetailsSkeleton = () => {
-  return (
-    <>
-      <Skeleton height="24px" width="180px" />
-      <Skeleton height="17px" width="115px" />
-      <Skeleton height="17px" width="115px" />
-    </>
   )
 }

@@ -7,7 +7,6 @@ import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
 import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { createFileDownload } from '@/utils/file-download'
@@ -100,6 +99,7 @@ export const AwaitGCPDetails = ({
   gcpProjectId,
   spaceliftEnabled,
   tfProvider = false,
+  loading,
 }: IAwaitGCPDetails) => {
   const version = stack?.versions?.at(0)
   const envelope = useMemo(
@@ -115,6 +115,51 @@ export const AwaitGCPDetails = ({
   const createTelemetryExportSecretVersionCmd = `gcloud secrets versions add "${telemetryExportSecretID}" \\
   --data-file="${telemetryExportConfigFilename}" \\
   --project="${projectID}"`
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          Setup your install stack
+        </Text>
+        <div className="flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            1. Clone the install stack module
+          </Text>
+          <Card>
+            <Code loading />
+          </Card>
+        </div>
+        <Divider />
+        <div className="flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            2. Configure remote state (recommended)
+          </Text>
+          <Card>
+            <Code loading />
+          </Card>
+        </div>
+        <Divider />
+        <div className="flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            3. Save the install configuration
+          </Text>
+          <Card>
+            <Code loading />
+          </Card>
+        </div>
+        <Divider />
+        <div className="flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            4. Apply with Terraform
+          </Text>
+          <Card>
+            <Code loading />
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -694,45 +739,5 @@ const BlueprintSubTab = ({ blueprintYaml }: IBlueprintSubTab) => {
         </Text>
       </div>
     </div>
-  )
-}
-
-export const AwaitGCPDetailsSkeleton = () => {
-  return (
-    <>
-      <Skeleton height="24px" width="275px" />
-
-      <Card>
-        <Skeleton height="17px" width="250px" />
-        <Skeleton height="52px" width="100%" />
-      </Card>
-
-      <Divider />
-
-      <Skeleton height="24px" width="300px" />
-
-      <Card>
-        <Skeleton height="17px" width="300px" />
-        <Skeleton height="72px" width="100%" />
-      </Card>
-
-      <Divider />
-
-      <Skeleton height="24px" width="250px" />
-
-      <Card>
-        <Skeleton height="17px" width="200px" />
-        <Skeleton height="100px" width="100%" />
-      </Card>
-
-      <Divider />
-
-      <Skeleton height="24px" width="200px" />
-
-      <Card>
-        <Skeleton height="17px" width="150px" />
-        <Skeleton height="52px" width="100%" />
-      </Card>
-    </>
   )
 }

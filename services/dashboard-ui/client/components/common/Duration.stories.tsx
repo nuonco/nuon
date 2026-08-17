@@ -427,3 +427,10 @@ export const UsageExamples = () => (
     </div>
   </div>
 )
+
+export const Loading = () => (
+  <div className="flex flex-col gap-4">
+    <Duration loading />
+    <Duration loading variant="subtext" loadingWidth={6} />
+  </div>
+)

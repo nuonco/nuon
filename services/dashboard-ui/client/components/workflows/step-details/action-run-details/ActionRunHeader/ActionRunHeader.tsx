@@ -1,6 +1,5 @@
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import type { IActionRunHeader } from '../types'
 
@@ -11,9 +10,22 @@ interface IActionRunHeaderPresentation extends IActionRunHeader {
 export const ActionRunHeader = ({
   actionRun,
   isAdhoc,
+  loading,
   step,
   orgId,
 }: IActionRunHeaderPresentation) => {
+  if (loading) {
+    return (
+      <div className="flex items-center gap-4">
+        <Text variant="base" weight="strong">
+          Action run
+        </Text>
+        <Text variant="subtext" loading loadingWidth={12} />
+        <Text variant="subtext" loading loadingWidth={12} />
+      </div>
+    )
+  }
+
   return (
     <div className="flex items-center gap-4">
       {isAdhoc ? (
@@ -48,16 +60,6 @@ export const ActionRunHeader = ({
           ) : null}
         </>
       )}
-    </div>
-  )
-}
-
-export const ActionRunHeaderSkeleton = () => {
-  return (
-    <div className="flex items-center gap-4">
-      <Skeleton height="24px" width="76px" />
-      <Skeleton height="17" width="85px" />
-      <Skeleton height="17" width="70px" />
     </div>
   )
 }

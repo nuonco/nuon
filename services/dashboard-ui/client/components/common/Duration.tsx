@@ -26,10 +26,15 @@ export const Duration = ({
   ],
   format = 'default',
   listStyle = 'narrow',
+  loading,
   nanoseconds,
   unitDisplay = 'narrow',
   ...props
 }: IDuration) => {
+  if (loading) {
+    return <Text {...props} loading />
+  }
+
   let duration: LuxonDuration | undefined
 
   if (typeof nanoseconds === 'number') {

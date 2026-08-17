@@ -41,7 +41,7 @@ export const WorkflowTimeline = ({
 }: IWorkflowTimeline) => {
   const { approvals } = useWorkflowApprovals()
 
-  if (isLoading) return <WorkflowTimelineSkeleton />
+  if (isLoading) return <TimelineSkeleton eventCount={10} />
 
   return workflows?.length ? (
     <Timeline<TWorkflow>
@@ -222,8 +222,4 @@ export const WorkflowTimeline = ({
       />
     </div>
   )
-}
-
-export const WorkflowTimelineSkeleton = () => {
-  return <TimelineSkeleton eventCount={10} />
 }

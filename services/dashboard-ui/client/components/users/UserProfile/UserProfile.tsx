@@ -1,5 +1,4 @@
 import { Avatar } from '@/components/common/Avatar'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
 
@@ -33,8 +32,8 @@ export const UserProfile = ({
               collapsible && !isCollapsed && 'md:opacity-100'
             )}
           >
-            <Skeleton height="14px" />
-            <Skeleton height="11px" width="75%" />
+            <Text variant="body" loading loadingWidth={10} />
+            <Text variant="label" loading loadingWidth={14} />
           </div>
         </>
       ) : (

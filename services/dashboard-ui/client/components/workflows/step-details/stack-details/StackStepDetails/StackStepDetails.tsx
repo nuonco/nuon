@@ -1,13 +1,7 @@
 import type { TInstallStack } from '@/types'
 import type { IStepDetails } from '../../types'
-import {
-  AwaitStackDetailsContainer,
-  AwaitStackDetailsSkeletonContainer,
-} from '../AwaitStackDetails'
-import {
-  GenerateStackDetails,
-  GenerateStackDetailsSkeleton,
-} from '../GenerateStackDetails'
+import { AwaitStackDetailsContainer } from '../AwaitStackDetails'
+import { GenerateStackDetails } from '../GenerateStackDetails'
 
 export interface IStackStepDetails extends IStepDetails {
   stack?: TInstallStack
@@ -26,15 +20,13 @@ export const StackStepDetails = ({
   return (
     <div>
       {isGenerateStack ? (
-        isLoading && !stack ? (
-          <GenerateStackDetailsSkeleton />
-        ) : (
-          <GenerateStackDetails />
-        )
-      ) : isLoading || !linksReady ? (
-        <AwaitStackDetailsSkeletonContainer />
+        <GenerateStackDetails />
       ) : (
-        <AwaitStackDetailsContainer stack={stack} step={step} />
+        <AwaitStackDetailsContainer
+          stack={stack}
+          step={step}
+          loading={isLoading || !linksReady}
+        />
       )}
     </div>
   )

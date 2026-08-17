@@ -5,13 +5,13 @@ import { GitRepo } from '@/components/common/GitRepo'
 import { KeyValueList } from '@/components/common/KeyValueList'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { OperationRolesList } from '@/components/common/OperationRolesList'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import type { TSandboxConfig } from '@/types'
 import { objectToKeyValueArray } from '@/utils/data-utils'
 
 interface ISandboxConfigCard extends Omit<ICard, 'children'> {
-  config: TSandboxConfig
+  config?: TSandboxConfig
+  loading?: boolean
   onViewEnvVars?: () => void
   onViewVariablesFiles?: () => void
   onViewPulumiConfig?: () => void
@@ -19,11 +19,26 @@ interface ISandboxConfigCard extends Omit<ICard, 'children'> {
 
 export const SandboxConfigCard = ({
   config,
+  loading,
   onViewEnvVars,
   onViewVariablesFiles,
   onViewPulumiConfig,
   ...props
 }: ISandboxConfigCard) => {
+  if (loading || !config) {
+    return (
+      <Card {...props}>
+        <div className="flex flex-col gap-6">
+          <Text weight="strong">Configuration</Text>
+          <div className="flex gap-6 items-start flex-wrap">
+            <LabeledValue label="Type" loading />
+            <LabeledValue label="Version" loading />
+          </div>
+        </div>
+      </Card>
+    )
+  }
+
   const isPulumi = config.type === 'pulumi'
   const hasEnvVars = config.env_vars && Object.keys(config.env_vars).length > 0
   const hasVariablesFiles =
@@ -117,28 +132,6 @@ export const SandboxConfigCard = ({
               <OperationRolesList operationRoles={config.operation_roles} />
             </div>
           )}
-      </div>
-    </Card>
-  )
-}
-
-export const SandboxConfigCardSkeleton = (props: Omit<ICard, 'children'>) => {
-  return (
-    <Card {...props}>
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-4">
-          <Skeleton height="24px" width="150px" />
-        </div>
-
-        <div className="flex gap-6 items-start flex-wrap">
-          <LabeledValue label={<Skeleton height="17px" width="120px" />}>
-            <Skeleton height="23px" width="80px" />
-          </LabeledValue>
-
-          <LabeledValue label={<Skeleton height="17px" width="100px" />}>
-            <Skeleton height="23px" width="60px" />
-          </LabeledValue>
-        </div>
       </div>
     </Card>
   )

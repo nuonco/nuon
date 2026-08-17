@@ -5,7 +5,6 @@ import { Icon } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { Link } from '@/components/common/Link'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
@@ -19,10 +18,20 @@ interface IActionRunMetadataPresentation extends IActionRunMetadata {
 export const ActionRunMetadata = ({
   actionRun,
   createdBy,
+  loading,
   step,
   orgId,
   rerunButton,
 }: IActionRunMetadataPresentation) => {
+  if (loading) {
+    return (
+      <div className="flex items-start gap-6">
+        <LabeledStatus label="Status" loading />
+        <LabeledValue label="Triggered by" loading />
+      </div>
+    )
+  }
+
   const isAdhocActionRun = actionRun?.trigger_type === 'adhoc'
   const firstStep = actionRun?.steps?.at(0)
   const adhocConfig = firstStep?.adhoc_config
@@ -103,20 +112,6 @@ export const ActionRunMetadata = ({
       ) : rerunButton ? (
         <div className="self-end">{rerunButton}</div>
       ) : null}
-    </div>
-  )
-}
-
-export const ActionRunMetadataSkeleton = () => {
-  return (
-    <div className="flex items-start gap-6">
-      <LabeledValue label={<Skeleton height="17px" width="34px" />}>
-        <Skeleton height="23px" width="75px" />
-      </LabeledValue>
-
-      <LabeledValue label={<Skeleton height="17px" width="34px" />}>
-        <Skeleton height="23px" width="162px" />
-      </LabeledValue>
     </div>
   )
 }

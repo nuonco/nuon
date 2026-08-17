@@ -6,10 +6,7 @@ import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { SandboxRunsTimeline } from '@/components/sandbox/SandboxRunsTimeline'
 import { ManagementDropdown } from '@/components/sandbox/management/ManagementDropdown'
-import {
-  SandboxConfigCard,
-  SandboxConfigCardSkeleton,
-} from '@/components/sandbox/SandboxConfigCard'
+import { SandboxConfigCard } from '@/components/sandbox/SandboxConfigCard'
 import { TerraformWorkspaceCard } from '@/components/terraform-workspace/TerraformWorkspaceCard'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -84,11 +81,10 @@ export const Sandbox = () => {
           <div className="@5xl:col-span-8 flex flex-col gap-6 min-w-0">
             {driftedObject ? <DriftedBanner drifted={driftedObject} /> : null}
 
-            {sandboxConfig ? (
-              <SandboxConfigCard config={sandboxConfig} />
-            ) : (
-              <SandboxConfigCardSkeleton />
-            )}
+            <SandboxConfigCard
+              config={sandboxConfig}
+              loading={!sandboxConfig}
+            />
 
             <TerraformWorkspaceCard
               componentType={isPulumi ? 'pulumi' : 'terraform_module'}
