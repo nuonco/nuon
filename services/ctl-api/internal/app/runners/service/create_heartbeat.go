@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -93,6 +94,13 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 	s.mw.Incr("runner.heart_beat", tags)
 	s.mw.Timing("runner.heart_beat.alive_time", req.AliveTime, tags)
 
+	setRunnerSpanAttributes(ctx, runner, installID, installName,
+		attribute.String("nuon.runner_version", req.Version),
+		attribute.String("nuon.process_id", req.ProcessID),
+		attribute.String("nuon.process_type", string(req.Process)),
+		attribute.Int64("nuon.runner_alive_time_ms", req.AliveTime.Milliseconds()),
+	)
+
 	ctx.JSON(http.StatusCreated, heartBeat)
 }
 
@@ -155,7 +163,7 @@ func (s *service) heartbeatGetInstall(ctx context.Context, installID string) *ap
 
 	var install app.Install
 	if err := s.db.WithContext(ctx).
-		Select("id", "name", "labels").
+		Select("id", "name").
 		First(&install, "id = ?", installID).Error; err != nil {
 		s.l.Warn("unable to look up install for heartbeat metric tag",
 			zap.String("install_id", installID),
