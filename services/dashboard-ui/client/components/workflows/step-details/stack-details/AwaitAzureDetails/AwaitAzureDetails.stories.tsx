@@ -2,10 +2,7 @@ export default {
   title: 'Workflows/StepDetails/AwaitAzureDetails',
 }
 
-import {
-  AwaitAzureDetails,
-  AwaitAzureDetailsSkeleton,
-} from './AwaitAzureDetails'
+import { AwaitAzureDetails } from './AwaitAzureDetails'
 import type { TAppSecretConfig } from '@/types'
 
 const mockStack = {
@@ -56,6 +53,11 @@ export const WithApplicationSecrets = () => (
 
 export const Loading = () => (
   <div className="max-w-2xl p-4">
-    <AwaitAzureDetailsSkeleton />
+    <AwaitAzureDetails
+      stack={mockStack}
+      step={mockStep}
+      installId="install-1"
+      loading
+    />
   </div>
 )

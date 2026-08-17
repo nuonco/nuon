@@ -3,11 +3,7 @@ export default {
 }
 
 import { Text } from '@/components/common/Text'
-import {
-  RunbooksTable,
-  RunbooksTableSkeleton,
-  type TRunbookRow,
-} from './RunbooksTable'
+import { RunbooksTable, type TRunbookRow } from './RunbooksTable'
 
 const mockRows: TRunbookRow[] = Array.from({ length: 3 }, (_, i) => ({
   runbookId: `runbook-${i + 1}`,
@@ -38,4 +34,10 @@ export const Empty = () => (
   />
 )
 
-export const Loading = () => <RunbooksTableSkeleton />
+export const Loading = () => (
+  <RunbooksTable
+    data={[]}
+    isLoading
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)

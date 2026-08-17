@@ -2,6 +2,6 @@ export default {
   title: 'Workflows/StepDetails/ActionRunLogs',
 }
 
-import { ActionRunLogsSkeleton } from './ActionRunLogs'
+import { ActionRunLogs } from './ActionRunLogs'
 
-export const Skeleton = () => <ActionRunLogsSkeleton />
+export const Loading = () => <ActionRunLogs loading />

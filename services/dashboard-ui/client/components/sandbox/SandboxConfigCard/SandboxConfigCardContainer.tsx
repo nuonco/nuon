@@ -9,14 +9,20 @@ import type { ICard } from '@/components/common/Card'
 import type { TSandboxConfig } from '@/types'
 
 interface ISandboxConfigCardContainer extends Omit<ICard, 'children'> {
-  config: TSandboxConfig
+  config?: TSandboxConfig
+  loading?: boolean
 }
 
 export const SandboxConfigCardContainer = ({
   config,
+  loading,
   ...props
 }: ISandboxConfigCardContainer) => {
   const { addModal } = useSurfaces()
+
+  if (loading || !config) {
+    return <SandboxConfigCard loading {...props} />
+  }
 
   const hasEnvVars = config.env_vars && Object.keys(config.env_vars).length > 0
   const hasVariablesFiles = config.variables_files && config.variables_files.length > 0

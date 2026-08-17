@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Loading } from '@/components/common/Loading'
 import { SearchInput } from '@/components/common/SearchInput'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import type { TWorkflowStep } from '@/types'
 import { getStepKind, isRetryChain } from '@/utils/workflow-utils'
@@ -157,7 +156,7 @@ export const WorkflowSteps = ({
   )
 }
 
-const SKELETON_TITLE_WIDTHS = ['12rem', '16rem', '10rem', '14rem', '11rem']
+const SKELETON_TITLE_WIDTHS = [30, 40, 25, 35, 28]
 
 export const WorkflowStepsSkeleton = () => {
   return (
@@ -167,7 +166,7 @@ export const WorkflowStepsSkeleton = () => {
           <span className="flex items-center justify-center w-6 h-6 shrink-0">
             <Loading className="h-5 w-5 text-cool-grey-500 dark:text-white/50" />
           </span>
-          <Skeleton height="1rem" width={width} />
+          <Text variant="body" loading loadingWidth={width} />
         </div>
       ))}
     </div>

@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Code } from '@/components/common/Code'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { DeleteOIDCTrustPolicyButton } from '@/components/oidc-trust-policies/DeleteOIDCTrustPolicy'
@@ -97,14 +96,11 @@ export const OIDCTrustPoliciesTable = ({
     []
   )
 
-  if (isLoading) {
-    return <OIDCTrustPoliciesTableSkeleton />
-  }
-
   return (
     <Table<TOIDCTrustPolicy>
       columns={columns}
       data={data}
+      isLoading={isLoading}
       enableSearch={false}
       emptyStateProps={{
         emptyTitle: 'No OIDC trust policies configured',
@@ -114,17 +110,3 @@ export const OIDCTrustPoliciesTable = ({
     />
   )
 }
-
-const skeletonColumns: ColumnDef<TOIDCTrustPolicy>[] = [
-  { header: 'Name', accessorKey: 'name' },
-  { header: 'Issuer URL', accessorKey: 'issuer_url' },
-  { header: 'Audience', accessorKey: 'audience' },
-  { header: 'Role', accessorKey: 'role' },
-  { header: 'Enabled', accessorKey: 'enabled' },
-  { header: 'Last used', accessorKey: 'last_used_at' },
-  { header: '', id: 'action' },
-]
-
-export const OIDCTrustPoliciesTableSkeleton = () => (
-  <TableSkeleton<TOIDCTrustPolicy> columns={skeletonColumns} skeletonRows={3} />
-)

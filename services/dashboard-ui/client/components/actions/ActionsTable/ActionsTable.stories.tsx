@@ -3,7 +3,7 @@ export default {
 }
 
 import { LabelBadge } from '@/components/common/LabelBadge'
-import { ActionsTable, ActionsTableSkeleton, type TActionRow } from './ActionsTable'
+import { ActionsTable, type TActionRow } from './ActionsTable'
 
 const mockRows: TActionRow[] = Array.from({ length: 3 }, (_, i) => ({
   actionId: `action-${i + 1}`,
@@ -34,4 +34,10 @@ export const Empty = () => (
   />
 )
 
-export const Loading = () => <ActionsTableSkeleton />
+export const Loading = () => (
+  <ActionsTable
+    data={[]}
+    isLoading
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)

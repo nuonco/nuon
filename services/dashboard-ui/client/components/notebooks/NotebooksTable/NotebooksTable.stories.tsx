@@ -2,11 +2,7 @@ export default {
   title: 'Notebooks/NotebooksTable',
 }
 
-import {
-  NotebooksTable,
-  NotebooksTableSkeleton,
-  type TNotebookRow,
-} from './NotebooksTable'
+import { NotebooksTable, type TNotebookRow } from './NotebooksTable'
 
 const mockRows: TNotebookRow[] = [
   {
@@ -56,4 +52,10 @@ export const Empty = () => (
   <NotebooksTable data={[]} isLoading={false} pagination={pagination} />
 )
 
-export const Loading = () => <NotebooksTableSkeleton />
+export const Loading = () => (
+  <NotebooksTable
+    data={[]}
+    isLoading
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)

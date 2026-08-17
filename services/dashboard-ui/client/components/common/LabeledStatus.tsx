@@ -6,19 +6,25 @@ import {
 
 interface ILabeledStatus
   extends Omit<ILabeledValue, 'children'>,
-    IStatusWithDescription {}
+    Omit<IStatusWithDescription, 'statusProps'> {
+  statusProps?: IStatusWithDescription['statusProps']
+}
 
 export const LabeledStatus = ({
   statusProps,
   tooltipProps,
+  loading,
+  loadingWidth,
   ...props
 }: ILabeledStatus) => {
   return (
-    <LabeledValue {...props}>
-      <StatusWithDescription
-        statusProps={statusProps}
-        tooltipProps={tooltipProps}
-      />
+    <LabeledValue loading={loading} loadingWidth={loadingWidth} {...props}>
+      {statusProps ? (
+        <StatusWithDescription
+          statusProps={statusProps}
+          tooltipProps={tooltipProps}
+        />
+      ) : null}
     </LabeledValue>
   )
 }

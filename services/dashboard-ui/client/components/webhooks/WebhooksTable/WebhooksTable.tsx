@@ -3,7 +3,6 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Code } from '@/components/common/Code'
 import { Icon } from '@/components/common/Icon'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { describeMatch } from '@/components/match/types'
@@ -82,14 +81,11 @@ export const WebhooksTable = ({
     []
   )
 
-  if (isLoading) {
-    return <WebhooksTableSkeleton />
-  }
-
   return (
     <Table<TWebhook>
       columns={columns}
       data={data}
+      isLoading={isLoading}
       enableSearch={false}
       emptyStateProps={{
         emptyTitle: 'No webhooks configured',
@@ -99,14 +95,3 @@ export const WebhooksTable = ({
     />
   )
 }
-
-const skeletonColumns: ColumnDef<TWebhook>[] = [
-  { header: 'URL', accessorKey: 'webhook_url' },
-  { header: 'Secret', accessorKey: 'has_secret' },
-  { header: 'Created', accessorKey: 'created_at' },
-  { header: '', id: 'action' },
-]
-
-export const WebhooksTableSkeleton = () => (
-  <TableSkeleton<TWebhook> columns={skeletonColumns} skeletonRows={3} />
-)

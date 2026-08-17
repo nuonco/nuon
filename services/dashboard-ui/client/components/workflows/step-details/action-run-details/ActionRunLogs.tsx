@@ -1,6 +1,5 @@
 import { EmptyState } from '@/components/common/EmptyState'
 import { KeyValueList } from '@/components/common/KeyValueList'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { InstallActionRunLogs } from '@/components/actions/InstallActionRunLogs'
@@ -12,7 +11,19 @@ import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { IActionRunLogs } from './types'
 
-export const ActionRunLogs = ({ actionRun, isAdhoc }: IActionRunLogs) => {
+export const ActionRunLogs = ({
+  actionRun,
+  isAdhoc,
+  loading,
+}: IActionRunLogs) => {
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-4">
+        <LogsSkeleton />
+      </div>
+    )
+  }
+
   if (!actionRun?.log_stream) {
     return (
       <div className="flex flex-col gap-2">
@@ -90,35 +101,6 @@ export const ActionRunLogs = ({ actionRun, isAdhoc }: IActionRunLogs) => {
           )}
         </LogViewerProvider>
       </LogStreamProvider>
-    </div>
-  )
-}
-
-export const ActionRunLogsSkeleton = () => {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap gap-2">
-        <Skeleton height="32px" width="120px" />
-        <Skeleton height="32px" width="100px" />
-        <Skeleton height="32px" width="140px" />
-        <Skeleton height="32px" width="110px" />
-      </div>
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Skeleton height="36px" width="320px" />
-            <Skeleton height="17px" width="85px" />
-          </div>
-          <div className="flex items-center gap-4">
-            <Skeleton height="32px" width="86px" />
-            <Skeleton height="32px" width="135px" />
-            <Skeleton height="32px" width="140px" />
-          </div>
-        </div>
-        <div>
-          <LogsSkeleton />
-        </div>
-      </div>
     </div>
   )
 }

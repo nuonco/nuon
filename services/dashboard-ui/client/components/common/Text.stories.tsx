@@ -377,6 +377,48 @@ export const LevelHeadings = () => (
   </div>
 )
 
+export const Loading = () => (
+  <div className="space-y-6">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">Loading state</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        The{' '}
+        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          loading
+        </code>{' '}
+        prop renders a shimmer sized by the variant&apos;s line-height, with a
+        per-variant <code>ch</code>-based width. Override the width with{' '}
+        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          loadingWidth
+        </code>{' '}
+        (in <code>ch</code>).
+      </p>
+    </div>
+
+    <div className="flex flex-col gap-4">
+      <Text variant="h1" loading />
+      <Text variant="h2" loading />
+      <Text variant="h3" loading />
+      <Text variant="base" loading />
+      <Text variant="body" loading />
+      <Text variant="subtext" loading />
+      <Text variant="label" loading />
+    </div>
+
+    <div className="flex flex-col gap-4">
+      <Text variant="body" loading loadingWidth={4} />
+      <Text variant="body" loading loadingWidth={20} />
+      <Text variant="body" loading loadingWidth={40} />
+    </div>
+
+    <div className="flex flex-col gap-4">
+      <Text variant="body">
+        Loaded value: <Text loading loadingWidth={8} /> inline with real text.
+      </Text>
+    </div>
+  </div>
+)
+
 export const SemanticRoles = () => (
   <div className="space-y-6">
     <div className="space-y-3">

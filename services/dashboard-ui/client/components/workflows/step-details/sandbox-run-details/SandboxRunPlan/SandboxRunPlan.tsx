@@ -1,5 +1,5 @@
 import { TerraformDiff } from '@/components/approvals/plan-diffs/terraform/TerraformDiff'
-import { Skeleton } from '@/components/common/Skeleton'
+import { Loading } from '@/components/common/Loading'
 
 export interface ISandboxRunPlan {
   plan: any
@@ -9,16 +9,13 @@ export interface ISandboxRunPlan {
 export const SandboxRunPlan = ({ plan, isLoading }: ISandboxRunPlan) => {
   return (
     <>
-      {isLoading ? <SandboxRunPlanSkeleton /> : <TerraformDiff plan={plan} />}
+      {isLoading ? (
+        <div className="flex justify-center py-10">
+          <Loading variant="large" />
+        </div>
+      ) : (
+        <TerraformDiff plan={plan} />
+      )}
     </>
-  )
-}
-
-export const SandboxRunPlanSkeleton = () => {
-  return (
-    <div className="flex flex-col gap-6">
-      <Skeleton height="350px" width="100%" />
-      <Skeleton height="350px" width="100%" />
-    </div>
   )
 }
