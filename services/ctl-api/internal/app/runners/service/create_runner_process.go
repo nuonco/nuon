@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
@@ -64,7 +65,7 @@ func (s *service) CreateRunnerProcess(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, process)
 }
 
-func (s *service) emitProcessStart(ctx context.Context, runnerID string, process *app.RunnerProcess) {
+func (s *service) emitProcessStart(ctx *gin.Context, runnerID string, process *app.RunnerProcess) {
 	runner, err := s.heartbeatGetRunner(ctx, runnerID)
 	if err != nil {
 		s.l.Warn("unable to fetch runner for runner.process.start metric",
@@ -93,6 +94,12 @@ func (s *service) emitProcessStart(ctx context.Context, runnerID string, process
 	tagMap["install_name"] = installName
 
 	s.mw.Incr("runner.process.start", metrics.ToTags(tagMap))
+
+	setRunnerSpanAttributes(ctx, runner, installID, installName,
+		attribute.String("nuon.runner_version", process.Version),
+		attribute.String("nuon.process_id", process.ID),
+		attribute.String("nuon.process_type", string(process.Type)),
+	)
 }
 
 func (s *service) createRunnerProcess(ctx context.Context, runnerID string, req CreateRunnerProcessRequest) (*app.RunnerProcess, error) {
