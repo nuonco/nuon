@@ -59,7 +59,7 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
       {!compact && data.labelEntries.length > 0 && (
         <div className="flex flex-wrap gap-1 pb-1">
           {data.labelEntries.map(([k, v]) => (
-            <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" />
+            <LabelBadge key={k} labelKey={k} labelValue={v} size="xs" />
           ))}
         </div>
       )}

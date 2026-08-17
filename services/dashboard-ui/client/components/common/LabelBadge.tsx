@@ -50,7 +50,7 @@ export const LabelBadge = ({
     }
   }
 
-  const iconSize = size === 'lg' ? 13 : size === 'md' ? 12 : 11
+  const iconSize = size === 'lg' ? 13 : size === 'md' ? 12 : size === 'sm' ? 11 : 10
 
   const customStyle = customColor
     ? ({ '--label-color': customColor } as CSSProperties)

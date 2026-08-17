@@ -24,6 +24,7 @@ export const AllThemes = () => (
 
 export const Sizes = () => (
   <div className="flex flex-col gap-2">
+    <LabelBadge label="size:xs" size="xs" />
     <LabelBadge label="size:sm" size="sm" />
     <LabelBadge label="size:md" size="md" />
     <LabelBadge label="size:lg" size="lg" />
