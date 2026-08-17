@@ -2,7 +2,7 @@ export default {
   title: 'ServiceAccounts/ServiceAccountsTable',
 }
 
-import { ServiceAccountsTable, ServiceAccountsTableSkeleton } from './ServiceAccountsTable'
+import { ServiceAccountsTable } from './ServiceAccountsTable'
 import type { TAccount } from '@/types'
 
 const mockAccounts: TAccount[] = [
@@ -53,4 +53,11 @@ export const Empty = () => (
   />
 )
 
-export const Loading = () => <ServiceAccountsTableSkeleton />
+export const Loading = () => (
+  <ServiceAccountsTable
+    data={[]}
+    roleTitles={roleTitles}
+    isLoading
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)

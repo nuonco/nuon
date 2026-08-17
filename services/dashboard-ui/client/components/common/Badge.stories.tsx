@@ -430,3 +430,13 @@ export const UsageExamples = () => (
     </div>
   </div>
 )
+
+export const Loading = () => (
+  <div className="flex items-center gap-4">
+    <Badge loading size="sm" />
+    <Badge loading size="md" />
+    <Badge loading size="lg" />
+    <Badge loading variant="code" />
+    <Badge loading loadingWidth={16} />
+  </div>
+)

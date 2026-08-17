@@ -6,7 +6,6 @@ import { ContextTooltip } from '@/components/common/ContextTooltip'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -15,46 +14,6 @@ import { QuickManagementDropdown } from '@/components/installs/management/QuickM
 import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import type { TCloudPlatform, TInstall } from '@/types'
-
-const InstallNameSkeleton = () => (
-  <span className="block my-1">
-    <div className="mb-1">
-      <Skeleton height="16px" width="140px" />
-    </div>
-    <Skeleton height="12px" width="200px" />
-  </span>
-)
-
-const AppNameSkeleton = () => <Skeleton height="16px" width="100px" />
-
-const StatusesSkeleton = () => (
-  <div className="flex items-center gap-2">
-    <Skeleton height="20px" width="50px" className="rounded-full" />
-    <Skeleton height="20px" width="60px" className="rounded-full" />
-    <Skeleton height="20px" width="75px" className="rounded-full" />
-  </div>
-)
-
-const RegionSkeleton = () => (
-  <div className="flex items-center gap-1">
-    <Skeleton height="16px" width="16px" />
-    <Skeleton height="14px" width="120px" />
-  </div>
-)
-
-const PlatformSkeleton = () => (
-  <div className="flex items-center gap-1">
-    <Skeleton height="16px" width="16px" />
-    <Skeleton height="14px" width="40px" />
-  </div>
-)
-
-const ActionSkeleton = () => (
-  <div className="flex items-center gap-1">
-    <Skeleton height="14px" width="30px" />
-    <Skeleton height="12px" width="12px" />
-  </div>
-)
 
 export type InstallRow = {
   action: ReactNode
@@ -286,89 +245,3 @@ export const InstallsTable = ({
   )
 }
 
-export const InstallsTableSkeleton = () => {
-  const skeletonData = Array.from({ length: 5 }, (_, i) => ({
-    appHref: '',
-    appName: '',
-    installId: '',
-    name: '',
-    nameHref: '',
-    region: <RegionSkeleton />,
-    statuses: <StatusesSkeleton />,
-    platform: <PlatformSkeleton />,
-    labels: <Skeleton height="14px" width="100px" />,
-    branch: <Skeleton height="14px" width="60px" />,
-    activity: <Skeleton height="14px" width="80px" />,
-    updatedAt: '',
-    action: '',
-  }))
-
-  const skeletonColumns: ColumnDef<InstallRow>[] = [
-    {
-      accessorKey: 'name',
-      header: 'Install name',
-      cell: () => <InstallNameSkeleton />,
-      enableSorting: true,
-    },
-    {
-      accessorKey: 'appName',
-      header: 'App',
-      cell: () => <AppNameSkeleton />,
-    },
-    {
-      enableSorting: false,
-      accessorKey: 'statuses',
-      header: 'Statuses',
-      cell: (info) => info.getValue() as ReactNode,
-    },
-    {
-      accessorKey: 'platform',
-      header: 'Platform',
-      cell: (info) => info.getValue() as ReactNode,
-      enableSorting: true,
-    },
-    {
-      enableSorting: true,
-      accessorKey: 'region',
-      header: 'Region',
-      cell: (info) => info.getValue() as ReactNode,
-    },
-    {
-      enableSorting: false,
-      accessorKey: 'labels',
-      header: 'Labels',
-      cell: (info) => info.getValue() as ReactNode,
-    },
-    {
-      enableSorting: false,
-      accessorKey: 'branch',
-      header: 'Branch',
-      cell: (info) => info.getValue() as ReactNode,
-    },
-    {
-      id: 'activity',
-      accessorKey: 'updatedAt',
-      header: 'Activity',
-      cell: (info) => info.row.original.activity,
-      enableSorting: true,
-    },
-    {
-      enableSorting: false,
-      accessorKey: 'action',
-      id: 'action',
-      header: '',
-      cell: () => <ActionSkeleton />,
-    },
-  ]
-
-  return (
-    <Table<InstallRow>
-      columns={skeletonColumns}
-      data={skeletonData}
-      filterActions={<Skeleton height="32px" width="130px" />}
-      pagination={{ limit: 5, offset: 0 }}
-      isLoading={false}
-      enableSorting={false}
-    />
-  )
-}

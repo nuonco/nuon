@@ -10,10 +10,7 @@ import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { ComponentDependencyGraphButton } from '@/components/components/ComponentDependencyGraph'
 import { ComponentType } from '@/components/components/ComponentType'
-import {
-  ComponentConfigCard,
-  ComponentConfigCardSkeleton,
-} from '@/components/components/ComponentConfigCard'
+import { ComponentConfigCard } from '@/components/components/ComponentConfigCard'
 import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import { HealthTimeline } from '@/components/install-health/HealthTimeline'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
@@ -233,7 +230,7 @@ export const InstallComponentDetail = () => {
             ) : null}
 
             {isLoadingConfig ? (
-              <ComponentConfigCardSkeleton />
+              <ComponentConfigCard loading />
             ) : config ? (
               <ComponentConfigCard
                 config={config}

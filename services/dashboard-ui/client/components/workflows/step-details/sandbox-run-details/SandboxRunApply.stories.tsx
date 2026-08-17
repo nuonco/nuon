@@ -2,11 +2,7 @@ export default {
   title: 'Workflows/StepDetails/SandboxRunApply',
 }
 
-import {
-  SandboxRunApply,
-  SandboxRunApplySkeleton,
-  SandboxRunLogsSkeleton,
-} from './SandboxRunApply'
+import { SandboxRunApply } from './SandboxRunApply'
 import type { TWorkflowStep, TSandboxRun } from '@/types'
 
 const mockStep: TWorkflowStep = {
@@ -42,10 +38,4 @@ export const Error = () => (
   />
 )
 
-export const Null = () => (
-  <SandboxRunApply step={mockStep} sandboxRun={null as any} />
-)
-
-export const ApplySkeleton = () => <SandboxRunApplySkeleton />
-
-export const LogsSkeleton = () => <SandboxRunLogsSkeleton />
+export const Loading = () => <SandboxRunApply step={mockStep} />

@@ -7,7 +7,6 @@ import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
 import { StatusWithDescription } from '@/components/common/StatusWithDescription'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig'
@@ -195,8 +194,4 @@ export const InstallActionsTable = ({
       searchPlaceholder="Search by name or ID..."
     />
   )
-}
-
-export const InstallActionsTableSkeleton = () => {
-  return <TableSkeleton columns={columns} skeletonRows={5} />
 }

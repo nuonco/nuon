@@ -1,5 +1,2 @@
 export { GenerateStackDetailsContainer as GenerateStackDetails } from './GenerateStackDetailsContainer'
-export {
-  GenerateStackDetails as GenerateStackDetailsComponent,
-  GenerateStackDetailsSkeleton,
-} from './GenerateStackDetails'
+export { GenerateStackDetails as GenerateStackDetailsComponent } from './GenerateStackDetails'

@@ -2,7 +2,7 @@ export default {
   title: 'Team/InvitedUsers',
 }
 
-import { InvitedUsers, InvitedUsersSkeleton } from './InvitedUsers'
+import { InvitedUsers } from './InvitedUsers'
 import type { TOrgInvite } from '@/types'
 
 const mockInvites: TOrgInvite[] = [
@@ -49,4 +49,6 @@ export const Error = () => (
   <InvitedUsers invites={[]} roleTitles={roleTitles} isLoading={false} isError={true} />
 )
 
-export const Loading = () => <InvitedUsersSkeleton />
+export const Loading = () => (
+  <InvitedUsers invites={[]} roleTitles={roleTitles} isLoading isError={false} />
+)

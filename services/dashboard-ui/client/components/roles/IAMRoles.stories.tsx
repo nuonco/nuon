@@ -2,7 +2,7 @@ export default {
   title: 'Roles/IAMRoles',
 }
 
-import { IAMRoles, IAMRolesSkeleton } from './IAMRoles'
+import { IAMRoles } from './IAMRoles'
 import type { TAppConfig } from '@/types'
 
 const mockAppConfig: TAppConfig = {
@@ -36,8 +36,6 @@ const mockAppConfig: TAppConfig = {
 } as any
 
 export const Default = () => <IAMRoles appConfig={mockAppConfig} />
-
-export const Loading = () => <IAMRolesSkeleton />
 
 export const NoRoles = () => (
   <IAMRoles
