@@ -1,6 +1,5 @@
 import { Badge } from '@/components/common/Badge'
 import { EmptyState } from '@/components/common/EmptyState'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { ResendOrgInviteButton } from '@/components/team/ResendOrgInvite'
@@ -18,7 +17,19 @@ export const InvitedUsers = ({
   isLoading: boolean
   isError: boolean
 }) => {
-  if (isLoading) return <InvitedUsersSkeleton />
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4">
+            <Status loading variant="badge" />
+            <Text variant="subtext" loading loadingWidth={18} />
+            <Badge loading size="sm" variant="code" />
+          </div>
+        ))}
+      </div>
+    )
+  }
   if (isError) return <InvitedUsersError />
 
   const pendingInvites = invites?.filter((i) => i?.status !== 'accepted') ?? []
@@ -57,21 +68,4 @@ export const InvitedUsersError = ({
   title?: string
 }) => {
   return <EmptyState variant="table" emptyMessage={message} emptyTitle={title} />
-}
-
-export const InvitedUsersSkeleton = () => {
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-4">
-        <Skeleton height="23px" width="75px" />
-        <Skeleton height="17px" width="110px" />
-        <Skeleton height="20px" width="50px" />
-      </div>
-      <div className="flex items-center gap-4">
-        <Skeleton height="23px" width="75px" />
-        <Skeleton height="17px" width="110px" />
-        <Skeleton height="20px" width="50px" />
-      </div>
-    </div>
-  )
 }

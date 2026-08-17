@@ -4,12 +4,16 @@ import { Text } from './Text'
 
 export interface ILabeledValue extends React.HTMLAttributes<HTMLDivElement> {
   label: React.ReactNode
+  loading?: boolean
+  loadingWidth?: number
 }
 
 export const LabeledValue = ({
   children,
   className,
   label,
+  loading,
+  loadingWidth,
   ...props
 }: ILabeledValue) => {
   return (
@@ -21,7 +25,9 @@ export const LabeledValue = ({
       ) : (
         label
       )}
-      {typeof children === 'string' ? (
+      {loading ? (
+        <Text variant="subtext" loading loadingWidth={loadingWidth} />
+      ) : typeof children === 'string' ? (
         <Text variant="subtext">{children}</Text>
       ) : (
         children

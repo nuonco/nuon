@@ -2,10 +2,7 @@ export default {
   title: 'Workflows/ActionRunStepDetails',
 }
 
-import {
-  ActionRunStepDetails,
-  ActionRunStepDetailsSkeleton,
-} from './ActionRunStepDetails'
+import { ActionRunStepDetails } from './ActionRunStepDetails'
 import type { TWorkflowStep, TInstallActionRun } from '@/types'
 
 const mockStep = {
@@ -72,5 +69,3 @@ export const WithError = () => (
     isLoading={false}
   />
 )
-
-export const Skeleton = () => <ActionRunStepDetailsSkeleton />

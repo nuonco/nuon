@@ -3,7 +3,6 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
 import { Code } from '@/components/common/Code'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import {
@@ -115,12 +114,11 @@ export const ChannelSubscriptionsTable = ({
     [links]
   )
 
-  if (isLoading) return <ChannelSubscriptionsTableSkeleton />
-
   return (
     <Table<TSlackChannelSubscription>
       columns={columns}
       data={data}
+      isLoading={isLoading}
       enableSearch={false}
       emptyStateProps={{
         emptyTitle: 'No channel subscriptions',
@@ -130,21 +128,6 @@ export const ChannelSubscriptionsTable = ({
     />
   )
 }
-
-const skeletonColumns: ColumnDef<TSlackChannelSubscription>[] = [
-  { header: 'Channel', accessorKey: 'channel_name' },
-  { header: 'Workspace', id: 'workspace' },
-  { header: 'Interests', accessorKey: 'interests' },
-  { header: 'Subscribed', accessorKey: 'created_at' },
-  { header: '', id: 'action' },
-]
-
-export const ChannelSubscriptionsTableSkeleton = () => (
-  <TableSkeleton<TSlackChannelSubscription>
-    columns={skeletonColumns}
-    skeletonRows={3}
-  />
-)
 
 // Compact summary of an Interests config for the table cell. Mirrors the
 // picker semantics AND the backend matcher (interests.Matches):

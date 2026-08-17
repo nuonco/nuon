@@ -6,7 +6,6 @@ import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { SimpleInstallStatuses } from '@/components/installs/InstallStatuses'
 import type { TInstall, TCloudPlatform } from '@/types'
@@ -165,8 +164,4 @@ export const AppInstallsTable = ({
       searchPlaceholder="Search by name or ID..."
     />
   )
-}
-
-export const AppInstallsTableSkeleton = () => {
-  return <TableSkeleton columns={columns} skeletonRows={5} />
 }

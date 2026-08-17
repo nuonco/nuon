@@ -5,7 +5,6 @@ import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
-import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -58,57 +57,12 @@ export const RunbookDetailLayout = () => {
   const steps =
     latestConfig?.steps?.slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)) ??
     []
-  const runs = installRunbook?.runs ?? []
   const basePath = `/${org?.id}/installs/${install?.id}/runbooks/${runbookId}`
 
   const isIndexRoute = pathname === basePath || pathname === `${basePath}/`
 
   if (!isLoading && isIndexRoute) {
     return <Navigate to={`${basePath}/readme`} replace />
-  }
-
-  if (isLoading) {
-    return (
-      <PageSection flush className="flex-1">
-        <PageTitle title={`Runbook | ${install?.name}`} />
-        <Breadcrumbs
-          breadcrumbs={[
-            { path: `/${org?.id}`, text: org?.name },
-            { path: `/${org?.id}/installs`, text: 'Installs' },
-            {
-              path: `/${org?.id}/installs/${install?.id}`,
-              text: install?.name,
-            },
-            {
-              path: `/${org?.id}/installs/${install?.id}/runbooks`,
-              text: 'Runbooks',
-            },
-            {
-              path: basePath,
-              text: undefined,
-            },
-          ]}
-        />
-        <div className="@container flex flex-col flex-1">
-          <header className="p-6 border-b flex flex-col gap-6">
-            <div className="flex flex-wrap items-start gap-4 justify-between w-full">
-              <HeadingGroup>
-                <BackLink className="mb-4" />
-                <Skeleton height="28px" width="200px" />
-                <span className="flex items-center gap-4 mt-1">
-                  <Skeleton height="20px" width="240px" />
-                </span>
-              </HeadingGroup>
-              <Skeleton height="36px" width="100px" />
-            </div>
-          </header>
-          <PageSection className="flex flex-col gap-4">
-            <Skeleton height="40px" width="300px" />
-            <Skeleton height="200px" width="100%" />
-          </PageSection>
-        </div>
-      </PageSection>
-    )
   }
 
   return (
@@ -141,7 +95,12 @@ export const RunbookDetailLayout = () => {
             <HeadingGroup>
               <BackLink className="mb-4" />
               <span className="flex flex-wrap items-center gap-3">
-                <Text variant="h3" weight="strong">
+                <Text
+                  variant="h3"
+                  weight="strong"
+                  loading={isLoading}
+                  loadingWidth={20}
+                >
                   {runbook?.name}
                 </Text>
                 {runbook?.labels && Object.keys(runbook.labels).length > 0 ? (
@@ -208,7 +167,15 @@ export const RunbookDetailLayout = () => {
               { path: '/history', text: 'Run history' },
             ]}
           />
-          <Outlet context={{ installRunbook }} />
+          {isLoading ? (
+            <div className="flex flex-col gap-3">
+              <Text variant="body" loading loadingWidth={40} />
+              <Text variant="body" loading loadingWidth={60} />
+              <Text variant="body" loading loadingWidth={30} />
+            </div>
+          ) : (
+            <Outlet context={{ installRunbook }} />
+          )}
         </PageSection>
       </div>
     </PageSection>
