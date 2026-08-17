@@ -93,6 +93,47 @@ func TestRenderStepPlanChainsAndRebinds(t *testing.T) {
 	require.Nil(t, deployAuth["assume_role"])
 }
 
+func TestStepPlanPersistedOnRender(t *testing.T) {
+	envelope := latebindEnvelope(t)
+	require.NoError(t, envelope.Validate())
+
+	store, err := statestore.NewDisk(t.TempDir())
+	require.NoError(t, err)
+	client, err := NewClient(envelope, store, zap.NewNop())
+	require.NoError(t, err)
+
+	ctx := context.Background()
+
+	_, found, err := store.ReadFile(statestore.StepPlanKey("create"))
+	require.NoError(t, err)
+	require.False(t, found, "plan must not exist before the runner renders it")
+
+	rendered, err := client.GetJobPlanJSON(ctx, "create")
+	require.NoError(t, err)
+
+	persisted, found, err := store.ReadFile(statestore.StepPlanKey("create"))
+	require.NoError(t, err)
+	require.True(t, found)
+	require.JSONEq(t, rendered, string(persisted))
+
+	var plan map[string]any
+	require.NoError(t, json.Unmarshal(persisted, &plan))
+	auth := plan["sandbox_run_plan"].(map[string]any)["aws_auth"].(map[string]any)
+	require.Equal(t, true, auth["use_default"], "persisted plan must be the late-bound render, not the vendor envelope")
+
+	_, err = client.GetJobCompositePlan(ctx, "create")
+	require.NoError(t, err)
+	_, found, err = store.ReadFile(statestore.StepPlanKey("create"))
+	require.NoError(t, err)
+	require.True(t, found)
+
+	_, err = client.GetJobPlanJSON(ctx, "apply")
+	require.ErrorContains(t, err, "no execution result recorded")
+	_, found, err = store.ReadFile(statestore.StepPlanKey("apply"))
+	require.NoError(t, err)
+	require.False(t, found, "failed renders must not persist a plan")
+}
+
 func TestRenderStepPlanRebindsInstallStackOutputs(t *testing.T) {
 	createPlan := json.RawMessage(`{
 		"sandbox_run_plan": {

@@ -17,6 +17,9 @@ import (
 // swagger:model app.AirgapBundleArtifact
 type AppAirgapBundleArtifact struct {
 
+	// action workflow id
+	ActionWorkflowID string `json:"action_workflow_id,omitempty"`
+
 	// app sandbox config id
 	AppSandboxConfigID string `json:"app_sandbox_config_id,omitempty"`
 
@@ -25,6 +28,9 @@ type AppAirgapBundleArtifact struct {
 
 	// component config connection id
 	ComponentConfigConnectionID string `json:"component_config_connection_id,omitempty"`
+
+	// component id
+	ComponentID string `json:"component_id,omitempty"`
 
 	// config digest
 	ConfigDigest string `json:"config_digest,omitempty"`

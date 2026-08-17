@@ -26,6 +26,7 @@ type RuntimeJob struct {
 	JobGroup      string
 	JobOperation  string
 	CompositePlan json.RawMessage
+	Envelope      *Envelope
 	runID         string
 	templateID    string
 	started       bool
@@ -75,6 +76,10 @@ func (h *Day2JobHandle) PlanJSON() ([]byte, error) {
 }
 
 func (c *Client) EnqueueDay2Job(runtimeJobID, jobType, jobGroup, jobOperation string, compositePlan json.RawMessage) (*Day2JobHandle, error) {
+	return c.EnqueueDay2JobWithEnvelope(runtimeJobID, jobType, jobGroup, jobOperation, compositePlan, c.envelope)
+}
+
+func (c *Client) EnqueueDay2JobWithEnvelope(runtimeJobID, jobType, jobGroup, jobOperation string, compositePlan json.RawMessage, envelope *Envelope) (*Day2JobHandle, error) {
 	runID, templateID, ok := strings.Cut(runtimeJobID, "--")
 	if !ok || runID == "" || templateID == "" {
 		return nil, fmt.Errorf("runtime job ID %q must be <run-id>--<template-id>", runtimeJobID)
@@ -87,7 +92,7 @@ func (c *Client) EnqueueDay2Job(runtimeJobID, jobType, jobGroup, jobOperation st
 	if _, exists := c.runtimeJobs[runtimeJobID]; exists {
 		return nil, fmt.Errorf("runtime job %q already exists", runtimeJobID)
 	}
-	job := &RuntimeJob{RuntimeJobID: runtimeJobID, JobType: jobType, JobGroup: jobGroup, JobOperation: jobOperation, CompositePlan: compositePlan, runID: runID, templateID: templateID, done: make(chan struct{})}
+	job := &RuntimeJob{RuntimeJobID: runtimeJobID, JobType: jobType, JobGroup: jobGroup, JobOperation: jobOperation, CompositePlan: compositePlan, Envelope: envelope, runID: runID, templateID: templateID, done: make(chan struct{})}
 	c.runtimeJobs[runtimeJobID] = job
 	c.runtimeQueue = append(c.runtimeQueue, runtimeJobID)
 	return &Day2JobHandle{job: job}, nil

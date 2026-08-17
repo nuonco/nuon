@@ -380,7 +380,7 @@ func verifyBlobGraph(dir string, desc ocispec.Descriptor, traversed map[traversa
 	if !metadata {
 		return nil
 	}
-	children, err := successors(desc.MediaType, contents.Bytes())
+	children, err := Successors(desc.MediaType, contents.Bytes())
 	if err != nil {
 		return fmt.Errorf("parse %s: %w", desc.Digest, err)
 	}

@@ -3,36 +3,119 @@ package statestore
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 )
 
 const (
-	RunStatusInProgress = "in-progress"
-	RunStatusFinished   = "finished"
-	RunStatusFailed     = "failed"
+	RunStatusInProgress         = "in-progress"
+	RunStatusFailedPendingRetry = "failed-pending-retry"
+	RunStatusFinished           = "finished"
+	RunStatusFailed             = "failed"
+	RunStatusCancelled          = "cancelled"
+	RunTypeInstall              = "installation"
+	RunTypeUpgrade              = "upgrade"
+	InstallRunsPrefix           = "install-runs/"
+	JobLogsPrefix               = "job-logs/"
 )
 
+func JobLogKey(jobID string) string { return JobLogsPrefix + jobID + ".ndjson" }
+
+type ResultDirective string
+
+const (
+	DirectiveContinue      ResultDirective = "continue"
+	DirectiveStop          ResultDirective = "stop"
+	DirectiveRetryGroup    ResultDirective = "retry-group"
+	DirectiveSkipGroup     ResultDirective = "skip-group"
+	DirectiveAwaitApproval ResultDirective = "await-approval"
+	DirectiveAwaitRetry    ResultDirective = "await-retry"
+)
+
+const (
+	ControlActionRetry    = "retry"
+	ControlActionUserSkip = "user-skip"
+	ControlActionCancel   = "cancel"
+)
+
+func InstallRunStatusKey(runID string) string {
+	return InstallRunsPrefix + runID + "/status.json"
+}
+
+func InstallRunEventsPrefix(runID string) string { return InstallRunsPrefix + runID + "/events/" }
+func InstallRunEventKey(runID string, sequence uint64) string {
+	return fmt.Sprintf("%s%020d.json", InstallRunEventsPrefix(runID), sequence)
+}
+func InstallControlKey(runID, action string) string {
+	return "install-controls/" + runID + "/" + action + ".json"
+}
+func InstallControlHandledKey(runID, action string) string {
+	return "install-controls/" + runID + "/" + action + ".handled.json"
+}
+
 type Status struct {
-	InstallID   string                     `json:"install_id"`
-	RunID       string                     `json:"run_id"`
-	Status      string                     `json:"status"`
-	FailedStep  string                     `json:"failed_step,omitempty"`
-	StartedAt   time.Time                  `json:"started_at"`
-	FinishedAt  *time.Time                 `json:"finished_at,omitempty"`
-	HeartbeatAt time.Time                  `json:"heartbeat_at"`
-	Steps       []StepStatus               `json:"steps"`
-	Outputs     map[string]json.RawMessage `json:"outputs,omitempty"`
+	InstallID        string                     `json:"install_id"`
+	BundleDigest     string                     `json:"bundle_digest,omitempty"`
+	RunID            string                     `json:"run_id"`
+	RunType          string                     `json:"run_type,omitempty"`
+	PreviousRunID    string                     `json:"previous_run_id,omitempty"`
+	Status           string                     `json:"status"`
+	FailedStep       string                     `json:"failed_step,omitempty"`
+	StartedAt        time.Time                  `json:"started_at"`
+	FinishedAt       *time.Time                 `json:"finished_at,omitempty"`
+	HeartbeatAt      time.Time                  `json:"heartbeat_at"`
+	Steps            []StepStatus               `json:"steps"`
+	Outputs          map[string]json.RawMessage `json:"outputs,omitempty"`
+	ApprovalRequired bool                       `json:"approval_required,omitempty"`
+	ApprovalPhase    string                     `json:"approval_phase,omitempty"`
+	ResultDirective  ResultDirective            `json:"result_directive,omitempty"`
 }
 
 type StepStatus struct {
-	ID          string     `json:"id"`
-	Name        string     `json:"name"`
-	Status      string     `json:"status"`
-	ExecutionID string     `json:"execution_id,omitempty"`
-	StartedAt   *time.Time `json:"started_at,omitempty"`
-	FinishedAt  *time.Time `json:"finished_at,omitempty"`
-	Error       string     `json:"error,omitempty"`
+	ID              string          `json:"id"`
+	Name            string          `json:"name"`
+	Status          string          `json:"status"`
+	ExecutionID     string          `json:"execution_id,omitempty"`
+	StartedAt       *time.Time      `json:"started_at,omitempty"`
+	FinishedAt      *time.Time      `json:"finished_at,omitempty"`
+	SourceRunID     string          `json:"source_run_id,omitempty"`
+	Error           string          `json:"error,omitempty"`
+	ResultDirective ResultDirective `json:"result_directive,omitempty"`
 }
+
+type StatusEvent struct {
+	SchemaVersion int       `json:"schema_version"`
+	Sequence      uint64    `json:"sequence"`
+	CreatedAt     time.Time `json:"created_at"`
+	Status        Status    `json:"status"`
+}
+
+type ControlRequest struct {
+	RunID       string    `json:"run_id"`
+	Action      string    `json:"action"`
+	RequestedBy string    `json:"requested_by"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type ControlHandled struct {
+	ControlRequest
+	HandledAt time.Time `json:"handled_at"`
+}
+
+// StepPlansPrefix holds the late-bound rendered plan for each bootstrap step,
+// written when the runner fetches the plan for execution. The portal reads
+// these to preview what a step will apply; day-2 raw terraform plans live
+// under the separate "job-plans/" prefix.
+const StepPlansPrefix = "step-plans/"
+
+func StepPlanKey(stepID string) string { return StepPlansPrefix + stepID + ".json" }
+
+// StepResultKey is the state-store key where WriteResult persists a bootstrap
+// step's execution result (Disk.stepPath layout). For terraform steps the
+// result carries the compressed `terraform plan` JSON; helm and kubernetes
+// manifest steps carry their computed resource diffs. The portal decodes these
+// to show the real plan/diff instead of the internal composite plan.
+func StepResultKey(stepID string) string { return "steps/" + stepID + "/result.json" }
 
 type Store interface {
 	WriteFile(relPath string, data []byte) error

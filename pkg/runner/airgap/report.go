@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon/pkg/runner/airgap/statestore"
-	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 // Report is the post-trip summary of an offline run: everything a vendor or
@@ -82,7 +81,7 @@ func BuildReport(envelope *Envelope, status *statestore.Status, store statestore
 			}
 		}
 		if row.Success == nil && row.Status != "" {
-			finished := row.Status == string(models.AppRunnerJobStatusFinished)
+			finished := stepSucceeded(row.Status)
 			row.Success = &finished
 		}
 		if outputs, ok := status.Outputs[step.ID]; ok && string(outputs) != "null" {

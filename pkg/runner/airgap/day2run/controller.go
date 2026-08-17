@@ -23,6 +23,9 @@ type ControllerConfig struct {
 	Logger       *zap.Logger
 	FlushRun     func(context.Context, string) error
 	WriteLocal   func(string, []byte) error
+	// Bundle, when set, is published at startup alongside the catalog so
+	// portals can render the active bundle's inventory and history.
+	Bundle       *day2.BundleInfo
 	PollInterval time.Duration
 }
 
@@ -47,6 +50,9 @@ func NewController(cfg ControllerConfig) (*Controller, error) {
 
 func (c *Controller) Run(ctx context.Context) error {
 	if err := c.publishCatalog(ctx); err != nil {
+		return err
+	}
+	if err := c.publishBundleInfo(ctx); err != nil {
 		return err
 	}
 	poller := &Poller{dispatcher: c.dispatcher, interval: c.cfg.PollInterval}
@@ -81,6 +87,37 @@ func (c *Controller) publishCatalog(ctx context.Context) error {
 	}
 	if err := c.cfg.Mailbox.PutCatalog(ctx, catalog); err != nil {
 		return fmt.Errorf("publish day-2 catalog: %w", err)
+	}
+	return nil
+}
+
+func (c *Controller) publishBundleInfo(ctx context.Context) error {
+	if c.cfg.Bundle == nil {
+		return nil
+	}
+	info := *c.cfg.Bundle
+	if prev, found, err := c.cfg.Mailbox.GetBundleHistory(ctx, info.BundleDigest); err != nil {
+		c.cfg.Logger.Warn("read bundle activation history; keeping current activation time", zap.Error(err))
+	} else if found && !prev.ActivatedAt.IsZero() {
+		info.ActivatedAt = prev.ActivatedAt
+	}
+	if c.cfg.WriteLocal != nil {
+		b, err := json.MarshalIndent(info, "", "  ")
+		if err != nil {
+			return err
+		}
+		if err := c.cfg.WriteLocal(day2.BundleKey, append(b, '\n')); err != nil {
+			return fmt.Errorf("write local bundle info: %w", err)
+		}
+		if err := c.cfg.WriteLocal(day2.BundleHistoryKey(info.BundleDigest), append(b, '\n')); err != nil {
+			return fmt.Errorf("write local bundle history: %w", err)
+		}
+	}
+	if err := c.cfg.Mailbox.PutBundleInfo(ctx, info); err != nil {
+		return fmt.Errorf("publish bundle info: %w", err)
+	}
+	if err := c.cfg.Mailbox.PutBundleHistory(ctx, info); err != nil {
+		return fmt.Errorf("publish bundle history: %w", err)
 	}
 	return nil
 }

@@ -19,6 +19,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/runner/airgap"
 	"github.com/nuonco/nuon/pkg/runner/airgap/day2"
+	"github.com/nuonco/nuon/pkg/runner/airgap/statestore"
 )
 
 type fakeObject struct {
@@ -104,6 +105,49 @@ func validRequest(id string) day2.Request {
 	return day2.Request{SchemaVersion: 1, DeploymentID: "dep", BundleDigest: "digest", RefID: "act", DispatchID: id, Source: day2.SourceCLI, CreatedAt: time.Now()}
 }
 
+func TestNamespacedMailboxSeparatesControlAndRunnerWrites(t *testing.T) {
+	ctx := context.Background()
+	s := newFakeS3()
+	m := NewNamespacedMailbox(s, "b", "state")
+	req := validRequest("dispatch-1")
+
+	require.NoError(t, m.PutRequest(ctx, req))
+	require.NoError(t, m.ClaimNew(ctx, day2.Claim{DispatchID: req.DispatchID}))
+	require.NoError(t, m.PutReceipt(ctx, day2.Receipt{DispatchID: req.DispatchID}))
+	require.NoError(t, m.PutCatalog(ctx, day2.Catalog{DeploymentID: "dep"}))
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	require.Contains(t, s.objects, "state/control/dispatch/requests/dispatch-1.json")
+	require.Contains(t, s.objects, "state/runner/dispatch/claims/dispatch-1.json")
+	require.Contains(t, s.objects, "state/runner/dispatch/receipts/dispatch-1.json")
+	require.Contains(t, s.objects, "state/runner/day2/catalog.json")
+}
+
+func TestNamespacedMailboxHonorsAndTakesOverLegacyClaim(t *testing.T) {
+	ctx := context.Background()
+	s := newFakeS3()
+	legacy := NewMailbox(s, "b", "state")
+	claim := day2.Claim{DispatchID: "dispatch-1", Owner: "old"}
+	require.NoError(t, legacy.ClaimNew(ctx, claim))
+	m := NewNamespacedMailbox(s, "b", "state")
+
+	require.ErrorIs(t, m.ClaimNew(ctx, claim), ErrAlreadyClaimed)
+	got, etag, found, err := m.GetClaim(ctx, claim.DispatchID)
+	require.NoError(t, err)
+	require.True(t, found)
+	require.Equal(t, "old", got.Owner)
+	require.True(t, strings.HasPrefix(etag, legacyETagPrefix))
+
+	claim.Owner = "new"
+	require.NoError(t, m.TakeOverClaim(ctx, claim, etag))
+	_, namespaced := s.objects["state/runner/"+day2.ClaimKey(claim.DispatchID)]
+	require.False(t, namespaced)
+	var persisted day2.Claim
+	require.NoError(t, json.Unmarshal(s.objects["state/"+day2.ClaimKey(claim.DispatchID)].body, &persisted))
+	require.Equal(t, "new", persisted.Owner)
+}
+
 func TestDispatchAndDuplicate(t *testing.T) {
 	d, m, _, ex := testDispatcher(t)
 	req := validRequest("dispatch-1")
@@ -131,6 +175,45 @@ func TestRejectedRequests(t *testing.T) {
 		require.NotEmpty(t, receipt.Reason)
 		require.Empty(t, ex.runs)
 	}
+}
+
+func TestBundlePlanAcceptsCandidateDigestAndUsesRequestedRunID(t *testing.T) {
+	d, m, _, ex := testDispatcher(t)
+	req := validRequest("candidate-plan")
+	req.RefKind = day2.RefKindBundlePlan
+	req.RunID = "portal-run"
+	req.BundleDigest = "sha256:candidate"
+	req.CandidateArchiveKey = "candidate.tar.zst"
+	req.CandidateRecordKey = "candidate.json"
+	req.PlanStepIDs = []string{"sandbox-plan"}
+
+	require.NoError(t, d.handle(context.Background(), req.DispatchID, req))
+	receipt, found, err := m.GetReceipt(context.Background(), req.DispatchID)
+	require.NoError(t, err)
+	require.True(t, found)
+	require.Equal(t, day2.ReceiptStatusFinished, receipt.Status)
+	require.Equal(t, req.RunID, receipt.RunID)
+	require.Equal(t, []string{req.RunID}, ex.runs)
+}
+
+type staticCandidateLoader struct {
+	envelope *airgap.Envelope
+}
+
+func (l staticCandidateLoader) Load(context.Context, day2.Request) (*CandidateBundle, error) {
+	return &CandidateBundle{Envelope: l.envelope}, nil
+}
+
+func TestBundlePlanRejectsNonPlanOperations(t *testing.T) {
+	store, err := statestore.NewDisk(t.TempDir())
+	require.NoError(t, err)
+	envelope := &airgap.Envelope{InstallID: "dep", Steps: []airgap.Step{{ID: "sandbox-apply", JobOperation: "apply-plan"}}}
+	executor := &Executor{envelope: &airgap.Envelope{InstallID: "dep"}, store: store, loader: staticCandidateLoader{envelope: envelope}}
+	req := day2.Request{RefKind: day2.RefKindBundlePlan, DeploymentID: "dep", BundleDigest: "sha256:candidate", PlanStepIDs: []string{"sandbox-apply"}}
+
+	run, err := executor.Execute(context.Background(), req, "run")
+	require.Nil(t, run)
+	require.ErrorContains(t, err, "is not create-apply-plan")
 }
 func TestClaimTakeoverAndLiveSkip(t *testing.T) {
 	d, m, _, ex := testDispatcher(t)
@@ -209,4 +292,46 @@ func TestClassifyDriftIgnoresNoopsAndNullEmptyNormalization(t *testing.T) {
 	require.True(t, result.Drifted)
 	require.Equal(t, 1, result.ResourceChanges)
 	require.Equal(t, 1, result.ResourceDrift)
+}
+
+func TestClassifyDriftResources(t *testing.T) {
+	plan := []byte(`{
+		"format_version":"1.2",
+		"terraform_version":"1.11.3",
+		"resource_changes":[
+			{"address":"aws_acm_certificate.demo","change":{"actions":["update"]}},
+			{"address":"aws_s3_bucket.new","change":{"actions":["create"]}},
+			{"address":"aws_iam_role.replaced","change":{"actions":["delete","create"]}},
+			{"address":"aws_vpc.untouched","change":{"actions":["no-op"]}}
+		],
+		"resource_drift":[
+			{"address":"aws_acm_certificate.demo","change":{"actions":["update"]}}
+		]
+	}`)
+	result, err := ClassifyDrift(plan)
+	require.NoError(t, err)
+	require.True(t, result.Drifted)
+	require.False(t, result.ResourcesTruncated)
+	require.Equal(t, []day2.DriftResourceChange{
+		{Address: "aws_acm_certificate.demo", Action: "update", Drifted: true},
+		{Address: "aws_s3_bucket.new", Action: "create"},
+		{Address: "aws_iam_role.replaced", Action: "replace"},
+		{Address: "aws_vpc.untouched", Action: "noop"},
+	}, result.Resources)
+}
+
+func TestClassifyDriftResourcesTruncated(t *testing.T) {
+	changes := make([]string, 0, day2.MaxDriftResources+10)
+	for i := 0; i < day2.MaxDriftResources+10; i++ {
+		changes = append(changes, fmt.Sprintf(`{"address":"aws_vpc.r%d","change":{"actions":["no-op"]}}`, i))
+	}
+	plan := []byte(`{
+		"format_version":"1.2",
+		"terraform_version":"1.11.3",
+		"resource_changes":[` + strings.Join(changes, ",") + `]
+	}`)
+	result, err := ClassifyDrift(plan)
+	require.NoError(t, err)
+	require.True(t, result.ResourcesTruncated)
+	require.Len(t, result.Resources, day2.MaxDriftResources)
 }

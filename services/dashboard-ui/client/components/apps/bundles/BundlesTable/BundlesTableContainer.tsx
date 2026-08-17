@@ -22,5 +22,12 @@ export const BundlesTableContainer = () => {
         : 30000,
   })
 
-  return <BundlesTable data={result?.data ?? []} isLoading={isLoading} />
+  return (
+    <BundlesTable
+      data={result?.data ?? []}
+      isLoading={isLoading}
+      orgId={org?.id}
+      appId={app?.id}
+    />
+  )
 }

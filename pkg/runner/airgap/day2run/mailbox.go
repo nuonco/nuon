@@ -14,9 +14,12 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/runner/airgap/day2"
+	"github.com/nuonco/nuon/pkg/runner/airgap/day2state"
 )
 
 const mailboxTimeout = 15 * time.Second
+
+const legacyETagPrefix = "legacy:"
 
 var ErrAlreadyClaimed = errors.New("dispatch already claimed")
 
@@ -32,10 +35,13 @@ type ListedRequest struct {
 }
 
 type Mailbox struct {
-	client S3Client
-	bucket string
-	prefix string
-	logger *zap.Logger
+	client         S3Client
+	bucket         string
+	legacyPrefix   string
+	runnerPrefix   string
+	controlPrefix  string
+	legacyFallback bool
+	logger         *zap.Logger
 }
 
 func NewMailbox(client S3Client, bucket, prefix string, logger ...*zap.Logger) *Mailbox {
@@ -43,20 +49,50 @@ func NewMailbox(client S3Client, bucket, prefix string, logger ...*zap.Logger) *
 	if len(logger) > 0 && logger[0] != nil {
 		l = logger[0]
 	}
-	return &Mailbox{client: client, bucket: bucket, prefix: strings.Trim(prefix, "/"), logger: l}
+	prefix = strings.Trim(prefix, "/")
+	return &Mailbox{client: client, bucket: bucket, legacyPrefix: prefix, runnerPrefix: prefix, controlPrefix: prefix, logger: l}
 }
 
-func (m *Mailbox) key(name string) string {
-	if m.prefix == "" {
+func NewNamespacedMailbox(client S3Client, bucket, prefix string, logger ...*zap.Logger) *Mailbox {
+	m := NewMailbox(client, bucket, prefix, logger...)
+	m.runnerPrefix = joinMailboxKey(m.legacyPrefix, day2state.RunnerNamespace)
+	m.controlPrefix = joinMailboxKey(m.legacyPrefix, day2state.ControlNamespace)
+	m.legacyFallback = true
+	return m
+}
+
+func joinMailboxKey(prefix, name string) string {
+	if prefix == "" {
 		return name
 	}
-	return m.prefix + "/" + strings.TrimPrefix(name, "/")
+	return strings.TrimSuffix(prefix, "/") + "/" + strings.TrimPrefix(name, "/")
 }
 
 func (m *Mailbox) ListRequests(ctx context.Context) ([]ListedRequest, error) {
+	requests, err := m.listRequests(ctx, m.controlPrefix)
+	if err != nil || !m.legacyFallback {
+		return requests, err
+	}
+	legacy, err := m.listRequests(ctx, m.legacyPrefix)
+	if err != nil {
+		return nil, err
+	}
+	seen := make(map[string]bool, len(requests))
+	for _, request := range requests {
+		seen[request.DispatchID] = true
+	}
+	for _, request := range legacy {
+		if !seen[request.DispatchID] {
+			requests = append(requests, request)
+		}
+	}
+	return requests, nil
+}
+
+func (m *Mailbox) listRequests(ctx context.Context, statePrefix string) ([]ListedRequest, error) {
 	var requests []ListedRequest
 	var token *string
-	prefix := m.key(day2.RequestsPrefix)
+	prefix := joinMailboxKey(statePrefix, day2.RequestsPrefix)
 	for {
 		callCtx, cancel := context.WithTimeout(ctx, mailboxTimeout)
 		out, err := m.client.ListObjectsV2(callCtx, &s3.ListObjectsV2Input{Bucket: &m.bucket, Prefix: &prefix, ContinuationToken: token})
@@ -88,15 +124,25 @@ func (m *Mailbox) ListRequests(ctx context.Context) ([]ListedRequest, error) {
 
 func (m *Mailbox) GetReceipt(ctx context.Context, id string) (*day2.Receipt, bool, error) {
 	var receipt day2.Receipt
-	found, err := m.get(ctx, m.key(day2.ReceiptKey(id)), &receipt)
+	found, err := m.getOwned(ctx, day2.ReceiptKey(id), &receipt)
 	return &receipt, found, err
 }
 
 func (m *Mailbox) PutReceipt(ctx context.Context, receipt day2.Receipt) error {
-	return m.put(ctx, day2.ReceiptKey(receipt.DispatchID), receipt, "", "")
+	return m.put(ctx, m.runnerPrefix, day2.ReceiptKey(receipt.DispatchID), receipt, "", "")
 }
 func (m *Mailbox) ClaimNew(ctx context.Context, claim day2.Claim) error {
-	err := m.put(ctx, day2.ClaimKey(claim.DispatchID), claim, "*", "")
+	if m.legacyFallback {
+		var legacy day2.Claim
+		_, found, err := m.getETag(ctx, joinMailboxKey(m.legacyPrefix, day2.ClaimKey(claim.DispatchID)), &legacy)
+		if err != nil {
+			return err
+		}
+		if found {
+			return ErrAlreadyClaimed
+		}
+	}
+	err := m.put(ctx, m.runnerPrefix, day2.ClaimKey(claim.DispatchID), claim, "*", "")
 	if isConditionFailed(err) {
 		return ErrAlreadyClaimed
 	}
@@ -104,21 +150,67 @@ func (m *Mailbox) ClaimNew(ctx context.Context, claim day2.Claim) error {
 }
 func (m *Mailbox) GetClaim(ctx context.Context, id string) (*day2.Claim, string, bool, error) {
 	var claim day2.Claim
-	etag, found, err := m.getETag(ctx, m.key(day2.ClaimKey(id)), &claim)
+	etag, found, err := m.getETag(ctx, joinMailboxKey(m.runnerPrefix, day2.ClaimKey(id)), &claim)
+	if err == nil && !found && m.legacyFallback {
+		etag, found, err = m.getETag(ctx, joinMailboxKey(m.legacyPrefix, day2.ClaimKey(id)), &claim)
+		if found {
+			etag = legacyETagPrefix + etag
+		}
+	}
 	return &claim, etag, found, err
 }
 func (m *Mailbox) TakeOverClaim(ctx context.Context, claim day2.Claim, etag string) error {
-	return m.put(ctx, day2.ClaimKey(claim.DispatchID), claim, "", etag)
+	prefix := m.runnerPrefix
+	if strings.HasPrefix(etag, legacyETagPrefix) {
+		prefix = m.legacyPrefix
+		etag = strings.TrimPrefix(etag, legacyETagPrefix)
+	}
+	return m.put(ctx, prefix, day2.ClaimKey(claim.DispatchID), claim, "", etag)
 }
 func (m *Mailbox) PutRequest(ctx context.Context, req day2.Request) error {
-	err := m.put(ctx, day2.RequestKey(req.DispatchID), req, "*", "")
+	if m.legacyFallback {
+		var legacy day2.Request
+		found, err := m.get(ctx, joinMailboxKey(m.legacyPrefix, day2.RequestKey(req.DispatchID)), &legacy)
+		if err != nil || found {
+			return err
+		}
+	}
+	err := m.put(ctx, m.controlPrefix, day2.RequestKey(req.DispatchID), req, "*", "")
 	if isConditionFailed(err) {
 		return nil
 	}
 	return err
 }
 func (m *Mailbox) PutCatalog(ctx context.Context, catalog day2.Catalog) error {
-	return m.put(ctx, day2.CatalogKey, catalog, "", "")
+	return m.put(ctx, m.runnerPrefix, day2.CatalogKey, catalog, "", "")
+}
+
+func (m *Mailbox) PutBundleInfo(ctx context.Context, info day2.BundleInfo) error {
+	return m.put(ctx, m.runnerPrefix, day2.BundleKey, info, "", "")
+}
+
+// PutBundleHistory records the digest's first activation; a pre-existing
+// record wins so restarts and successor runners never rewrite history.
+func (m *Mailbox) PutBundleHistory(ctx context.Context, info day2.BundleInfo) error {
+	err := m.put(ctx, m.runnerPrefix, day2.BundleHistoryKey(info.BundleDigest), info, "*", "")
+	if isConditionFailed(err) {
+		return nil
+	}
+	return err
+}
+
+func (m *Mailbox) GetBundleHistory(ctx context.Context, digest string) (*day2.BundleInfo, bool, error) {
+	var info day2.BundleInfo
+	found, err := m.getOwned(ctx, day2.BundleHistoryKey(digest), &info)
+	return &info, found, err
+}
+
+func (m *Mailbox) getOwned(ctx context.Context, key string, dst any) (bool, error) {
+	found, err := m.get(ctx, joinMailboxKey(m.runnerPrefix, key), dst)
+	if err == nil && !found && m.legacyFallback {
+		return m.get(ctx, joinMailboxKey(m.legacyPrefix, key), dst)
+	}
+	return found, err
 }
 
 func (m *Mailbox) get(ctx context.Context, key string, dst any) (bool, error) {
@@ -141,12 +233,12 @@ func (m *Mailbox) getETag(ctx context.Context, key string, dst any) (string, boo
 	}
 	return aws.ToString(out.ETag), true, nil
 }
-func (m *Mailbox) put(ctx context.Context, rel string, value any, ifNone, ifMatch string) error {
+func (m *Mailbox) put(ctx context.Context, prefix, rel string, value any, ifNone, ifMatch string) error {
 	b, err := json.Marshal(value)
 	if err != nil {
 		return err
 	}
-	key := m.key(rel)
+	key := joinMailboxKey(prefix, rel)
 	in := &s3.PutObjectInput{Bucket: &m.bucket, Key: &key, Body: strings.NewReader(string(b))}
 	if ifNone != "" {
 		in.IfNoneMatch = &ifNone

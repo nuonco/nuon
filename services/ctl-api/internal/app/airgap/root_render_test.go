@@ -10,7 +10,7 @@ import (
 )
 
 func TestVirtualInstallIDMatchesEnvelopeFrozenID(t *testing.T) {
-	require.Equal(t, virtualID("vinst", "apc-test"), VirtualInstallID("apc-test"))
+	require.Equal(t, virtualID("vinst", "app-test"), VirtualInstallID("app-test"))
 }
 
 func TestRenderConfigForStackCompileRendersRoleTemplates(t *testing.T) {

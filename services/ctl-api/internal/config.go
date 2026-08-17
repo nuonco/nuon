@@ -563,6 +563,8 @@ type Config struct {
 	AirgapBundleGrantTTL              time.Duration `config:"airgap_bundle_grant_ttl"`
 	// AirgapRunnerBinaryURL accepts HTTPS or file URLs; an empty value omits the runner binary from bundles.
 	AirgapRunnerBinaryURL string `config:"airgap_runner_binary_url"`
+	// AirgapPortalBinaryURL accepts HTTPS or file URLs; an empty value omits the standalone portal binary from bundles.
+	AirgapPortalBinaryURL string `config:"airgap_portal_binary_url"`
 	BlobStorageProvider   string `config:"blob_storage_provider" validate:"required,oneof=s3 gcs"`
 
 	// Enqueuer worker pool size — how many signals can be enqueued in parallel.

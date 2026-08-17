@@ -170,6 +170,8 @@ type ClientService interface {
 
 	CreateAirgapBundle(params *CreateAirgapBundleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAirgapBundleOK, *CreateAirgapBundleAccepted, error)
 
+	CreateAirgapBundleBlobGrants(params *CreateAirgapBundleBlobGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAirgapBundleBlobGrantsOK, error)
+
 	CreateAirgapBundleDownloadGrant(params *CreateAirgapBundleDownloadGrantParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAirgapBundleDownloadGrantOK, error)
 
 	CreateAirgapInstall(params *CreateAirgapInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAirgapInstallCreated, error)
@@ -2342,6 +2344,52 @@ func (a *Client) CreateAirgapBundle(params *CreateAirgapBundleParams, authInfo r
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for operations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateAirgapBundleBlobGrants creates download grants for individual content addressed bundle blobs
+
+Grants presigned access to individual bundle blobs so clients can download only blobs missing from their local store. Call with no digests to discover the bundle's OCI index digest, then request grants for missing blobs in batches.
+*/
+func (a *Client) CreateAirgapBundleBlobGrants(params *CreateAirgapBundleBlobGrantsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAirgapBundleBlobGrantsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAirgapBundleBlobGrantsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAirgapBundleBlobGrants",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/airgap-bundles/{bundle_id}/blob-grants",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAirgapBundleBlobGrantsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateAirgapBundleBlobGrantsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateAirgapBundleBlobGrants: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

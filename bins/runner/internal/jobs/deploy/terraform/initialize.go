@@ -20,7 +20,15 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 	}
 
 	l.Info("unpacking archive...")
-	if err := h.state.arch.Unpack(ctx, h.state.srcCfg, h.state.srcTag); err != nil {
+	if h.archiveSource != nil {
+		store, ref, ok := h.archiveSource.ResolveArchive(h.state.srcTag)
+		if !ok {
+			return fmt.Errorf("component source tag %s is not packaged in the bundle; air-gapped runs cannot pull from remote registries", h.state.srcTag)
+		}
+		if err := h.state.arch.UnpackFromStore(ctx, store, ref); err != nil {
+			return fmt.Errorf("unable to unpack archive from bundle: %w", err)
+		}
+	} else if err := h.state.arch.Unpack(ctx, h.state.srcCfg, h.state.srcTag); err != nil {
 		return fmt.Errorf("unable to unpack archive: %w", err)
 	}
 

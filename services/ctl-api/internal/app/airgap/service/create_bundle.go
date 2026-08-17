@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	runnerairgap "github.com/nuonco/nuon/pkg/runner/airgap"
+	ocibundle "github.com/nuonco/nuon/pkg/runner/oci/bundle"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/airgap"
 	publishsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/airgap/signals/publish"
@@ -91,7 +92,7 @@ func (s *service) createBundle(ctx context.Context, orgID, appID string, req cre
 	err = s.db.WithContext(ctx).Preload("Replicas", func(db *gorm.DB) *gorm.DB { return db.Where(app.AirgapBundleTransportReplica{OrgID: orgID}) }).Where(app.AirgapBundle{OrgID: orgID, AppID: appID, AppConfigID: cfg.ID, TargetPlatform: req.TargetPlatform}).Order("created_at DESC").First(&bundle).Error
 	if err == nil {
 		for _, replica := range bundle.Replicas {
-			if replica.VerifiedAt != nil {
+			if replica.VerifiedAt != nil && bundle.OCIIndexDigest != "" {
 				if bundle.Status != app.AirgapBundleStatusActive {
 					bundle.Status = app.AirgapBundleStatusActive
 					bundle.StatusDescription = "bundle published and verified"
@@ -122,7 +123,7 @@ func (s *service) createBundle(ctx context.Context, orgID, appID string, req cre
 		if err != nil {
 			return nil, 0, err
 		}
-		bundle = app.AirgapBundle{OrgID: orgID, AppID: appID, AppConfigID: cfg.ID, SandboxBuildID: selection.sandboxBuildID, ComponentBuildIDs: selection.componentBuildIDs, TargetPlatform: req.TargetPlatform, SchemaVersion: 1, Status: app.AirgapBundleStatusQueued, StatusDescription: "waiting to publish"}
+		bundle = app.AirgapBundle{OrgID: orgID, AppID: appID, AppConfigID: cfg.ID, SandboxBuildID: selection.sandboxBuildID, ComponentBuildIDs: selection.componentBuildIDs, TargetPlatform: req.TargetPlatform, SchemaVersion: ocibundle.CurrentSchemaVersion, Status: app.AirgapBundleStatusQueued, StatusDescription: "waiting to publish"}
 		if err := s.db.WithContext(ctx).Create(&bundle).Error; err != nil {
 			return nil, 0, err
 		}

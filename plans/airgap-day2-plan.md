@@ -139,6 +139,23 @@ Where install state lives in an air-gapped deployment:
 | secrets                                | NOT AVAILABLE (deferred)           |
 | approvals, webhooks, Slack, event bus  | NOT AVAILABLE                      |
 
+State under a deployment prefix has explicit ownership:
+
+```text
+state/
+├── runner/   # status, runs, logs, plans, health, tfstate, receipts
+└── control/  # dispatch requests, install controls, candidates, approvals
+```
+
+The runner keeps only runner-owned durable files in its local state directory
+and mirrors that entire directory to `runner/`. There is no artifact allowlist:
+a new runner artifact is durable without a second sync configuration change.
+The portal writes only through the `control/` store and reads an overlay of
+`runner/`, `control/`, and the legacy flat layout. A successor runner restores
+legacy runner-owned files once, then lets namespaced files win. `LEASE` and
+`DONE` remain transport-level coordination keys at the deployment state root
+for stack-bootstrap compatibility; they are never part of bulk state sync.
+
 Footgun today: the airgap API client silently no-ops many write surfaces,
 so vendor configs can appear to work while state goes nowhere.
 (DONE 2026-08-10 for component health: CreateComponentHealth persists

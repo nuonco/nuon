@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -37,6 +38,10 @@ type presigner interface {
 	PresignGetObject(context.Context, *s3.GetObjectInput, ...func(*s3.PresignOptions)) (*v4.PresignedHTTPRequest, error)
 }
 
+type headClient interface {
+	HeadObject(context.Context, *s3.HeadObjectInput, ...func(*s3.Options)) (*s3.HeadObjectOutput, error)
+}
+
 type S3Params struct {
 	fx.In
 	Config *ctlconfig.Config
@@ -49,6 +54,7 @@ type S3Store struct {
 	defaultTTL time.Duration
 	uploader   uploader
 	get        getClient
+	head       headClient
 	presigner  presigner
 	now        func() time.Time
 }
@@ -99,17 +105,17 @@ func NewS3(params S3Params) (*S3Store, error) {
 			options.BaseEndpoint = &cfg.AirgapBundleStorageEndpoint
 		}
 	})
-	return newS3Store(bucket, region, prefix, cfg.AirgapBundleGrantTTL, manager.NewUploader(client), client, s3.NewPresignClient(client)), nil
+	return newS3Store(bucket, region, prefix, cfg.AirgapBundleGrantTTL, manager.NewUploader(client), client, client, s3.NewPresignClient(client)), nil
 }
 
-func newS3Store(bucket, region, prefix string, ttl time.Duration, upload uploader, get getClient, presign presigner) *S3Store {
+func newS3Store(bucket, region, prefix string, ttl time.Duration, upload uploader, get getClient, head headClient, presign presigner) *S3Store {
 	if prefix == "" {
 		prefix = "airgap-bundles"
 	}
 	if ttl == 0 {
 		ttl = 15 * time.Minute
 	}
-	return &S3Store{bucket: bucket, region: region, prefix: strings.Trim(prefix, "/"), defaultTTL: ttl, uploader: upload, get: get, presigner: presign, now: time.Now}
+	return &S3Store{bucket: bucket, region: region, prefix: strings.Trim(prefix, "/"), defaultTTL: ttl, uploader: upload, get: get, head: head, presigner: presign, now: time.Now}
 }
 
 func (s *S3Store) Configured() bool { return true }
@@ -206,6 +212,76 @@ func (s *S3Store) Grant(ctx context.Context, replica Replica, filename string, e
 		return DownloadGrant{}, fmt.Errorf("presign air-gap bundle: %w", err)
 	}
 	return DownloadGrant{URL: out.URL, ExpiresAt: expiresAt, SupportsRange: true}, nil
+}
+
+func (s *S3Store) blobKey(orgID, sha256Hex string) (string, error) {
+	if orgID == "" || strings.ContainsAny(orgID, "/\\") {
+		return "", errors.New("valid org ID is required for blob storage")
+	}
+	hexDigest, _, err := canonicalSHA256(sha256Hex)
+	if err != nil {
+		return "", err
+	}
+	return path.Join(s.prefix, "blobs", orgID, "sha256", hexDigest), nil
+}
+
+// PublishBlob stores one content-addressed bundle blob, skipping the upload
+// when an object of the same digest and size already exists. Blobs are shared
+// across bundle versions within an org, so republishing a bundle only uploads
+// blobs that changed.
+func (s *S3Store) PublishBlob(ctx context.Context, orgID, sha256Hex string, data []byte) error {
+	key, err := s.blobKey(orgID, sha256Hex)
+	if err != nil {
+		return err
+	}
+	size := int64(len(data))
+	existing, err := s.head.HeadObject(ctx, &s3.HeadObjectInput{Bucket: &s.bucket, Key: &key})
+	if err == nil {
+		if existing.ContentLength != nil && *existing.ContentLength == size {
+			return nil
+		}
+	} else {
+		var notFound *types.NotFound
+		if !errors.As(err, &notFound) {
+			return fmt.Errorf("check existing blob %s: %w", sha256Hex, err)
+		}
+	}
+	if _, _, err := canonicalSHA256(sha256Hex); err != nil {
+		return err
+	}
+	// ChecksumAlgorithm (not a precomputed full-object ChecksumSHA256): large
+	// blobs go through multipart uploads, where the manager computes per-part
+	// checksums. Without the algorithm declared at CreateMultipartUpload, or
+	// with a full-object checksum supplied, CompleteMultipartUpload fails with
+	// InvalidPart (aws-sdk-go-v2#3165). End-to-end integrity is covered by
+	// content-addressed keys and digest verification on download.
+	_, err = s.uploader.Upload(ctx, &s3.PutObjectInput{Bucket: &s.bucket, Key: &key, Body: bytes.NewReader(data), ContentLength: &size, ContentType: stringPtr("application/octet-stream"), ChecksumAlgorithm: types.ChecksumAlgorithmSha256})
+	if err != nil {
+		return fmt.Errorf("upload blob %s: %w", sha256Hex, err)
+	}
+	return nil
+}
+
+func (s *S3Store) GrantBlob(ctx context.Context, orgID, sha256Hex string) (BlobGrant, error) {
+	key, err := s.blobKey(orgID, sha256Hex)
+	if err != nil {
+		return BlobGrant{}, err
+	}
+	existing, err := s.head.HeadObject(ctx, &s3.HeadObjectInput{Bucket: &s.bucket, Key: &key})
+	if err != nil {
+		return BlobGrant{}, fmt.Errorf("blob %s is not available: %w", sha256Hex, err)
+	}
+	var size int64
+	if existing.ContentLength != nil {
+		size = *existing.ContentLength
+	}
+	now := s.now()
+	expiresAt := now.Add(s.defaultTTL)
+	out, err := s.presigner.PresignGetObject(ctx, &s3.GetObjectInput{Bucket: &s.bucket, Key: &key}, func(options *s3.PresignOptions) { options.Expires = expiresAt.Sub(now) })
+	if err != nil {
+		return BlobGrant{}, fmt.Errorf("presign blob %s: %w", sha256Hex, err)
+	}
+	return BlobGrant{URL: out.URL, ExpiresAt: expiresAt, Size: size}, nil
 }
 
 func canonicalSHA256(value string) (string, []byte, error) {

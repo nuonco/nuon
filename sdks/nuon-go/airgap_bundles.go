@@ -50,6 +50,20 @@ func (c *client) GetAirgapBundle(ctx context.Context, appID, bundleID string) (*
 	return resp.Payload, nil
 }
 
+func (c *client) CreateAirgapBundleBlobGrants(ctx context.Context, appID, bundleID string, digests []string) (*models.ServiceBlobGrantsResponse, error) {
+	resp, err := c.genClient.Operations.CreateAirgapBundleBlobGrants(&operations.CreateAirgapBundleBlobGrantsParams{
+		AppID:    appID,
+		BundleID: bundleID,
+		Context:  ctx,
+		Req:      &models.ServiceBlobGrantsRequest{Digests: digests},
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) CreateAirgapInstall(ctx context.Context, appID, bundleID, name string) (*models.ServiceAirgapInstallResponse, error) {
 	resp, err := c.genClient.Operations.CreateAirgapInstall(&operations.CreateAirgapInstallParams{
 		AppID:    appID,

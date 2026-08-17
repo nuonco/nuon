@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -14,6 +15,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/pkg/runner/airgap"
+	"github.com/nuonco/nuon/pkg/runner/airgap/day2"
+	"github.com/nuonco/nuon/pkg/runner/airgap/day2state"
+	"github.com/nuonco/nuon/pkg/runner/airgap/statestore"
 )
 
 type airgapS3Client interface {
@@ -151,60 +157,105 @@ func fetchInstallStackOutputs(ctx context.Context, uri string, logger *zap.Logge
 	}
 }
 
-func (s *airgapS3Sync) downloadPrefix(ctx context.Context, dir string) error {
-	if err := os.MkdirAll(dir, 0o700); err != nil {
+func (s *airgapS3Sync) restoreRunnerState(ctx context.Context, dir string) error {
+	if _, err := s.downloadPrefix(ctx, s.prefix, dir, legacyRunnerStatePath); err != nil {
 		return err
 	}
-	if err := removeTerraformLocks(dir); err != nil {
+	_, err := s.downloadPrefix(ctx, s.runnerPrefix(), dir, nil)
+	return err
+}
+
+func migrateLegacyLocalRunnerState(root, runnerDir string) error {
+	files, err := collectUploadFiles(root, "", legacyRunnerStatePath)
+	if err != nil {
 		return err
 	}
-	var token *string
-	for {
-		out, err := s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{Bucket: &s.bucket, Prefix: &s.prefix, ContinuationToken: token})
+	for _, file := range files {
+		rel, err := filepath.Rel(root, file.path)
 		if err != nil {
 			return err
 		}
+		destination := filepath.Join(runnerDir, rel)
+		if _, err := os.Stat(destination); err == nil {
+			continue
+		} else if !os.IsNotExist(err) {
+			return err
+		}
+		if err := os.MkdirAll(filepath.Dir(destination), 0o700); err != nil {
+			return err
+		}
+		raw, err := os.ReadFile(file.path)
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(destination, raw, 0o600); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *airgapS3Sync) downloadPrefix(ctx context.Context, remotePrefix, dir string, include func(string) bool) (int, error) {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return 0, err
+	}
+	if err := removeTerraformLocks(dir); err != nil {
+		return 0, err
+	}
+	remotePrefix = strings.TrimSuffix(remotePrefix, "/")
+	listPrefix := remotePrefix
+	if listPrefix != "" {
+		listPrefix += "/"
+	}
+	count := 0
+	var token *string
+	for {
+		out, err := s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{Bucket: &s.bucket, Prefix: &listPrefix, ContinuationToken: token})
+		if err != nil {
+			return count, err
+		}
 		for _, object := range out.Contents {
-			if object.Key == nil || strings.HasSuffix(*object.Key, "/") || *object.Key == s.objectKey("DONE") || *object.Key == s.objectKey(airgapLeaseObject) {
+			if object.Key == nil || strings.HasSuffix(*object.Key, "/") {
 				continue
 			}
-			rel := strings.TrimPrefix(*object.Key, s.prefix)
+			rel := strings.TrimPrefix(*object.Key, remotePrefix)
 			rel = strings.TrimPrefix(rel, "/")
-			if strings.HasPrefix(rel, "dispatch/") || isTerraformLock(rel) {
+			if rel == "" || isTerraformLock(rel) || (include != nil && !include(rel)) {
 				continue
 			}
-			if rel == "" || filepath.IsAbs(rel) || strings.HasPrefix(filepath.Clean(rel), "..") {
-				return fmt.Errorf("unsafe state object key %q", *object.Key)
+			if filepath.IsAbs(rel) || strings.HasPrefix(filepath.Clean(rel), "..") {
+				return count, fmt.Errorf("unsafe state object key %q", *object.Key)
 			}
 			out, err := s.client.GetObject(ctx, &s3.GetObjectInput{Bucket: &s.bucket, Key: object.Key})
 			if err != nil {
-				return err
+				return count, err
 			}
 			path := filepath.Join(dir, filepath.FromSlash(rel))
 			if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 				out.Body.Close()
-				return err
+				return count, err
 			}
 			f, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
 			if err != nil {
 				out.Body.Close()
-				return err
+				return count, err
 			}
 			_, copyErr := io.Copy(f, out.Body)
 			closeBodyErr := out.Body.Close()
 			closeFileErr := f.Close()
 			if copyErr != nil {
-				return copyErr
+				return count, copyErr
 			}
 			if closeBodyErr != nil {
-				return closeBodyErr
+				return count, closeBodyErr
 			}
 			if closeFileErr != nil {
-				return closeFileErr
+				return count, closeFileErr
 			}
+			count++
 		}
 		if !aws.ToBool(out.IsTruncated) || out.NextContinuationToken == nil {
-			return nil
+			return count, nil
 		}
 		token = out.NextContinuationToken
 	}
@@ -215,7 +266,7 @@ type uploadFile struct {
 	key  string
 }
 
-func collectUploadFiles(dir, prefix string) ([]uploadFile, error) {
+func collectUploadFiles(dir, prefix string, include func(string) bool) ([]uploadFile, error) {
 	var files []uploadFile
 	err := filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
 		if err != nil {
@@ -229,7 +280,7 @@ func collectUploadFiles(dir, prefix string) ([]uploadFile, error) {
 			return err
 		}
 		name := filepath.ToSlash(rel)
-		if name == "DONE" || name == airgapLeaseObject || strings.HasPrefix(name, "dispatch/") || isTerraformLock(name) {
+		if isTerraformLock(name) || (include != nil && !include(name)) {
 			return nil
 		}
 		files = append(files, uploadFile{path: path, key: joinS3Key(prefix, name)})
@@ -239,6 +290,32 @@ func collectUploadFiles(dir, prefix string) ([]uploadFile, error) {
 		return nil, nil
 	}
 	return files, err
+}
+
+func legacyRunnerStatePath(name string) bool {
+	if name == "status.json" || name == "report.json" || name == day2.CatalogKey || name == day2.BundleKey {
+		return true
+	}
+	if strings.HasPrefix(name, "install-controls/") {
+		return strings.HasSuffix(name, ".handled.json")
+	}
+	for _, prefix := range []string{
+		statestore.InstallRunsPrefix,
+		"steps/",
+		statestore.StepPlansPrefix,
+		statestore.JobLogsPrefix,
+		"health/",
+		"tfstate/",
+		day2.RunsPrefix,
+		day2.JobPlansPrefix,
+		day2.SchedulesPrefix,
+		day2.BundlesPrefix,
+	} {
+		if strings.HasPrefix(name, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func isTerraformLock(name string) bool {
@@ -259,7 +336,7 @@ func removeTerraformLocks(dir string) error {
 }
 
 func (s *airgapS3Sync) uploadDir(ctx context.Context, dir string) error {
-	files, err := collectUploadFiles(dir, s.prefix)
+	files, err := collectUploadFiles(dir, s.runnerPrefix(), nil)
 	if err != nil {
 		return err
 	}
@@ -281,7 +358,7 @@ func (s *airgapS3Sync) uploadDir(ctx context.Context, dir string) error {
 }
 
 func (s *airgapS3Sync) uploadSubdir(ctx context.Context, dir, rel string) error {
-	files, err := collectUploadFiles(dir, joinS3Key(s.prefix, rel))
+	files, err := collectUploadFiles(dir, joinS3Key(s.runnerPrefix(), rel), nil)
 	if err != nil {
 		return err
 	}
@@ -308,6 +385,14 @@ func (s *airgapS3Sync) writeDone(ctx context.Context, result string) error {
 	return err
 }
 
+func (s *airgapS3Sync) writeRunnerHeartbeat(ctx context.Context, raw []byte) error {
+	key := s.runnerObjectKey(airgap.RunnerHeartbeatKey)
+	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket: &s.bucket, Key: &key, Body: bytes.NewReader(raw), ContentType: aws.String("application/json"),
+	})
+	return err
+}
+
 func (s *airgapS3Sync) syncLoop(ctx context.Context, dir string, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -322,6 +407,40 @@ func (s *airgapS3Sync) syncLoop(ctx context.Context, dir string, interval time.D
 }
 
 func (s *airgapS3Sync) objectKey(name string) string { return joinS3Key(s.prefix, name) }
+
+func (s *airgapS3Sync) runnerPrefix() string {
+	return joinS3Key(s.prefix, day2state.RunnerNamespace)
+}
+
+func (s *airgapS3Sync) runnerObjectKey(name string) string {
+	return joinS3Key(s.runnerPrefix(), name)
+}
+
+func (s *airgapS3Sync) controlObjectKey(name string) string {
+	return joinS3Key(joinS3Key(s.prefix, day2state.ControlNamespace), name)
+}
+
+func (s *airgapS3Sync) readControlObject(ctx context.Context, name string) ([]byte, bool, error) {
+	for _, key := range []string{s.controlObjectKey(name), s.objectKey(name)} {
+		out, err := s.client.GetObject(ctx, &s3.GetObjectInput{Bucket: &s.bucket, Key: &key})
+		if err != nil {
+			if isS3NotFound(err) {
+				continue
+			}
+			return nil, false, err
+		}
+		raw, readErr := io.ReadAll(out.Body)
+		closeErr := out.Body.Close()
+		if readErr != nil {
+			return nil, false, readErr
+		}
+		if closeErr != nil {
+			return nil, false, closeErr
+		}
+		return raw, true, nil
+	}
+	return nil, false, nil
+}
 
 func joinS3Key(prefix, name string) string {
 	if prefix == "" {

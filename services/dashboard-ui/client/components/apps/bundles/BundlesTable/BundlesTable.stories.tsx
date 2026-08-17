@@ -37,7 +37,12 @@ const mockBundles: TAirgapBundle[] = [
 ]
 
 export const Default = () => (
-  <BundlesTable data={mockBundles} isLoading={false} />
+  <BundlesTable
+    data={mockBundles}
+    isLoading={false}
+    orgId="org-mock-001"
+    appId="appke1qx2unrp2a0onzb2jy7uv"
+  />
 )
 
 export const Empty = () => <BundlesTable data={[]} isLoading={false} />

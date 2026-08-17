@@ -42,6 +42,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	group.GET("", s.ListBundles)
 	group.GET("/:bundle_id", s.GetBundle)
 	group.POST("/:bundle_id/download-grants", s.CreateDownloadGrant)
+	group.POST("/:bundle_id/blob-grants", s.CreateBlobGrants)
 	group.POST("/:bundle_id/installs", s.CreateAirgapInstall)
 	group.GET("/:bundle_id/installs", s.ListAirgapInstalls)
 	return nil

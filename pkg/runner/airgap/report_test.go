@@ -55,7 +55,7 @@ func TestSuccessfulRunFinalizesStatusAndReport(t *testing.T) {
 	}
 }
 
-func TestFailedRunFinalizesStatusAndReport(t *testing.T) {
+func TestFailedRunAwaitsRetryBeforeFinalReport(t *testing.T) {
 	store, err := statestore.NewDisk(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -70,22 +70,15 @@ func TestFailedRunFinalizesStatusAndReport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status.Status != statestore.RunStatusFailed || status.FailedStep != "sandbox" || status.FinishedAt == nil {
-		t.Fatalf("failed run not finalized: %#v", status)
+	if status.Status != statestore.RunStatusFailedPendingRetry || status.FailedStep != "sandbox" || status.FinishedAt != nil || status.ResultDirective != statestore.DirectiveAwaitRetry {
+		t.Fatalf("failed run is not awaiting retry: %#v", status)
 	}
-
-	report := readReport(t, store)
-	if report.Status != statestore.RunStatusFailed || report.FailedStep != "sandbox" {
-		t.Fatalf("unexpected failed report: %#v", report)
-	}
-	for _, step := range report.Steps {
-		if step.ID == "sandbox" && (step.Success == nil || *step.Success || step.Error == "") {
-			t.Fatalf("failed step should report failure: %#v", step)
-		}
+	if _, ok, err := store.ReadReport(); err != nil || ok {
+		t.Fatalf("pending retry must not publish a terminal report: %v %v", ok, err)
 	}
 }
 
-func TestResumeAfterFailureResetsRunStatus(t *testing.T) {
+func TestResumeAfterFailureKeepsAwaitingDecision(t *testing.T) {
 	store, err := statestore.NewDisk(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -103,8 +96,8 @@ func TestResumeAfterFailureResetsRunStatus(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status.Status != statestore.RunStatusInProgress || status.FailedStep != "" || status.FinishedAt != nil {
-		t.Fatalf("resume should reset run status: %#v", status)
+	if status.Status != statestore.RunStatusFailedPendingRetry || status.FailedStep != "sandbox" || status.FinishedAt != nil {
+		t.Fatalf("resume should preserve pending retry status: %#v", status)
 	}
 }
 
@@ -123,6 +116,9 @@ func TestResumeAfterFailureWithoutOutputsAcceptsOutputs(t *testing.T) {
 
 	resumed, err := NewClient(testEnvelope(), store, zap.NewNop())
 	if err != nil {
+		t.Fatal(err)
+	}
+	if err := resumed.ApplyControl(statestore.ControlActionRetry); err != nil {
 		t.Fatal(err)
 	}
 	finishWithArtifacts(t, resumed, models.AppRunnerJobGroupSandbox, "sandbox", true)

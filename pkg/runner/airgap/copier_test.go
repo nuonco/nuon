@@ -151,3 +151,47 @@ func TestResolveArchive(t *testing.T) {
 	_, _, ok = source.ResolveArchive("bldunknown")
 	require.False(t, ok)
 }
+
+func TestBundleSourceAddsDeploymentAliasesFromSyncPlans(t *testing.T) {
+	source, d, store := testBundleSource(t)
+	envelope := &Envelope{Steps: []Step{syncStep(t, "whoami", "bldwhoami")}}
+
+	require.NoError(t, source.AddPlanAliases(envelope))
+	gotStore, ref, ok := source.ResolveArchive("dst-whoami")
+	require.True(t, ok)
+	require.Same(t, store, gotStore)
+	require.Equal(t, d.String(), ref)
+}
+
+func TestBundleSourceRejectsDeploymentAliasForUnpackagedSource(t *testing.T) {
+	source, _, _ := testBundleSource(t)
+	envelope := &Envelope{Steps: []Step{syncStep(t, "missing", "bldmissing")}}
+
+	err := source.AddPlanAliases(envelope)
+	require.ErrorContains(t, err, "bldmissing is not packaged")
+}
+
+func TestBundleSourceMergeUsesCandidateAndKeepsActiveSources(t *testing.T) {
+	activeStore := memory.New()
+	candidateStore := memory.New()
+	activeDigest := digest.FromString("active")
+	candidateDigest := digest.FromString("candidate")
+	active := &BundleSource{byTag: map[string]bundleArtifact{
+		"active": {store: activeStore, digest: activeDigest},
+		"shared": {store: activeStore, digest: activeDigest},
+	}}
+	candidate := &BundleSource{byTag: map[string]bundleArtifact{
+		"candidate": {store: candidateStore, digest: candidateDigest},
+		"shared":    {store: candidateStore, digest: candidateDigest},
+	}}
+
+	merged := active.Merge(candidate)
+	store, ref, found := merged.ResolveArchive("active")
+	require.True(t, found)
+	require.Same(t, activeStore, store)
+	require.Equal(t, activeDigest.String(), ref)
+	store, ref, found = merged.ResolveArchive("shared")
+	require.True(t, found)
+	require.Same(t, candidateStore, store)
+	require.Equal(t, candidateDigest.String(), ref)
+}

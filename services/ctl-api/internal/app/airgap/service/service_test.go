@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -19,9 +20,11 @@ import (
 )
 
 type fakeStore struct {
-	replica  transport.Replica
-	filename string
-	grant    transport.DownloadGrant
+	replica    transport.Replica
+	filename   string
+	grant      transport.DownloadGrant
+	blobGrants map[string]transport.BlobGrant
+	granted    []string
 }
 
 func (*fakeStore) Configured() bool { return true }
@@ -36,6 +39,17 @@ func (s *fakeStore) Grant(_ context.Context, replica transport.Replica, filename
 	return s.grant, nil
 }
 
+func (*fakeStore) PublishBlob(context.Context, string, string, []byte) error { return nil }
+
+func (s *fakeStore) GrantBlob(_ context.Context, _ string, sha256Hex string) (transport.BlobGrant, error) {
+	s.granted = append(s.granted, sha256Hex)
+	grant, ok := s.blobGrants[sha256Hex]
+	if !ok {
+		return transport.BlobGrant{}, fmt.Errorf("blob %s is not available", sha256Hex)
+	}
+	return grant, nil
+}
+
 func testService(t *testing.T) (*service, *fakeStore) {
 	t.Helper()
 	database, err := gorm.Open(sqlite.Open("file:"+t.Name()+"?mode=memory&cache=shared"), &gorm.Config{DisableForeignKeyConstraintWhenMigrating: true})
@@ -43,11 +57,11 @@ func testService(t *testing.T) (*service, *fakeStore) {
 	require.NoError(t, database.Exec(`CREATE TABLE airgap_bundles (
 		id text primary key, created_by_id text, created_at datetime, org_id text, app_id text,
 		app_config_id text, sandbox_build_id text, component_build_ids json, target_platform text, schema_version integer, manifest_digest text,
-		oci_root_digest text, transport_checksum text, size integer, status text, status_description text
+		oci_root_digest text, oci_index_digest text, transport_checksum text, size integer, status text, status_description text
 	)`).Error)
 	require.NoError(t, database.Exec(`CREATE TABLE airgap_bundle_artifacts (
 		id text primary key, org_id text, bundle_id text, kind text, logical_name text,
-		component_config_connection_id text, app_sandbox_config_id text, config_digest text,
+		component_config_connection_id text, component_id text, action_workflow_id text, app_sandbox_config_id text, config_digest text,
 		source_type text, source_identity json, repository text, digest text, media_type text,
 		size integer, platform_os text, platform_architecture text
 	)`).Error)

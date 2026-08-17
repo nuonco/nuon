@@ -367,3 +367,41 @@ func untar(t *testing.T, compressed []byte) map[string][]byte {
 	}
 	return files
 }
+
+func TestTotalSizeSumsUniqueBlobs(t *testing.T) {
+	ctx := context.Background()
+	store := memory.New()
+	layerA, err := oras.PushBytes(ctx, store, "application/octet-stream", bytes.Repeat([]byte("a"), 1000))
+	require.NoError(t, err)
+	layerB, err := oras.PushBytes(ctx, store, "application/octet-stream", bytes.Repeat([]byte("b"), 500))
+	require.NoError(t, err)
+	desc, err := oras.PackManifest(ctx, store, oras.PackManifestVersion1_1, "application/vnd.test.artifact.v1", oras.PackManifestOptions{Layers: []ocispec.Descriptor{layerA, layerB, layerA}})
+	require.NoError(t, err)
+
+	manifestBytes, err := io.ReadAll(mustFetch(t, ctx, store, desc))
+	require.NoError(t, err)
+	var m struct {
+		Config ocispec.Descriptor `json:"config"`
+	}
+	require.NoError(t, json.Unmarshal(manifestBytes, &m))
+
+	total, err := TotalSize(ctx, store, desc)
+	require.NoError(t, err)
+	require.Equal(t, desc.Size+m.Config.Size+1000+500, total)
+}
+
+func TestTotalSizeLeafBlobIsNotFetched(t *testing.T) {
+	ctx := context.Background()
+	leaf := ocispec.Descriptor{MediaType: "application/octet-stream", Digest: digest.FromString("never-fetched"), Size: 12345}
+	total, err := TotalSize(ctx, memory.New(), leaf)
+	require.NoError(t, err)
+	require.Equal(t, int64(12345), total)
+}
+
+func mustFetch(t *testing.T, ctx context.Context, store oras.ReadOnlyTarget, desc ocispec.Descriptor) io.Reader {
+	t.Helper()
+	r, err := store.Fetch(ctx, desc)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = r.Close() })
+	return r
+}

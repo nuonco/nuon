@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -62,7 +63,7 @@ func (a *Activities) PublishBundle(ctx context.Context, req *PublishBundleReques
 	if err := a.db.WithContext(ctx).Where(app.AirgapBundle{ID: req.BundleID}).First(&published).Error; err != nil {
 		return fmt.Errorf("load bundle: %w", err)
 	}
-	if published.ManifestDigest != "" && published.OCIRootDigest != "" && published.TransportChecksum != "" {
+	if published.ManifestDigest != "" && published.OCIRootDigest != "" && published.TransportChecksum != "" && published.OCIIndexDigest != "" {
 		var replicas []app.AirgapBundleTransportReplica
 		if err := a.db.WithContext(ctx).Where(app.AirgapBundleTransportReplica{BundleID: published.ID, OrgID: published.OrgID}).Find(&replicas).Error; err != nil {
 			return fmt.Errorf("load bundle replicas: %w", err)
@@ -96,6 +97,10 @@ func (a *Activities) PublishBundle(ctx context.Context, req *PublishBundleReques
 	if err := airgap.RewriteEnvelopeForBundle(ctx, a.db, envelope, pins); err != nil {
 		return fmt.Errorf("rewrite plan envelope to pinned bundle members: %w", err)
 	}
+	logical.Runbooks, err = canonicalRunbookDefinitions(ctx, a.db, cfg, envelope)
+	if err != nil {
+		return fmt.Errorf("canonicalize runbooks: %w", err)
+	}
 	envelopeJSON, err := json.Marshal(envelope)
 	if err != nil {
 		return fmt.Errorf("marshal plan envelope: %w", err)
@@ -108,7 +113,13 @@ func (a *Activities) PublishBundle(ctx context.Context, req *PublishBundleReques
 	}
 	defer os.Remove(f.Name())
 	defer f.Close()
-	result, err := bundle.GenerateWithOptions(ctx, f, logical, bundle.Documents{Provenance: provenanceJSON, QualificationReport: reportJSON, PlanEnvelope: envelopeJSON}, roots, bundle.GenerateOptions{MaxContentBytes: maxBundleContent, MaxBlobBytes: maxBundleBlob})
+	generateOpts := bundle.GenerateOptions{MaxContentBytes: maxBundleContent, MaxBlobBytes: maxBundleBlob}
+	if a.store.Configured() {
+		generateOpts.BlobSink = func(dgst digest.Digest, data []byte) error {
+			return a.store.PublishBlob(ctx, published.OrgID, dgst.Encoded(), data)
+		}
+	}
+	result, err := bundle.GenerateWithOptions(ctx, f, logical, bundle.Documents{Provenance: provenanceJSON, QualificationReport: reportJSON, PlanEnvelope: envelopeJSON}, roots, generateOpts)
 	if err != nil {
 		return fmt.Errorf("generate bundle: %w", err)
 	}
@@ -116,12 +127,18 @@ func (a *Activities) PublishBundle(ctx context.Context, req *PublishBundleReques
 	if err != nil {
 		return err
 	}
+	indexDigest := digest.FromBytes(result.Index)
+	if a.store.Configured() {
+		if err := a.store.PublishBlob(ctx, published.OrgID, indexDigest.Encoded(), result.Index); err != nil {
+			return fmt.Errorf("publish bundle index blob: %w", err)
+		}
+	}
 	replica, err := a.store.Publish(ctx, transport.PublishRequest{Body: f, Size: stat.Size(), SHA256: result.TransportSHA256})
 	if err != nil {
 		return fmt.Errorf("publish bundle: %w", err)
 	}
 	err = a.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		updates := app.AirgapBundle{ManifestDigest: result.ManifestDescriptor.Digest.String(), OCIRootDigest: result.BundleDescriptor.Digest.String(), TransportChecksum: result.TransportSHA256, Size: stat.Size(), Status: app.AirgapBundleStatusActive, StatusDescription: "bundle published and verified"}
+		updates := app.AirgapBundle{ManifestDigest: result.ManifestDescriptor.Digest.String(), OCIRootDigest: result.BundleDescriptor.Digest.String(), OCIIndexDigest: indexDigest.String(), TransportChecksum: result.TransportSHA256, Size: stat.Size(), Status: app.AirgapBundleStatusActive, StatusDescription: "bundle published and verified"}
 		if err := tx.Model(&app.AirgapBundle{ID: published.ID}).Updates(updates).Error; err != nil {
 			return err
 		}
@@ -167,7 +184,7 @@ func (a *Activities) bundlePins(ctx context.Context, published *app.AirgapBundle
 }
 
 func (a *Activities) bundleInputs(ctx context.Context, published *app.AirgapBundle, cfg *app.AppConfig, referenceInstallID string) (bundle.LogicalManifest, []bundle.Root, []app.AirgapBundleArtifact, map[string]any, error) {
-	logical := bundle.LogicalManifest{SchemaVersion: 1, Target: bundle.Target{OS: "linux", Architecture: "amd64"}}
+	logical := bundle.LogicalManifest{SchemaVersion: bundle.CurrentSchemaVersion, Target: bundle.Target{OS: "linux", Architecture: "amd64"}}
 	var currentApp app.App
 	if err := a.db.WithContext(ctx).Preload("Repository").Where(app.App{ID: published.AppID, OrgID: published.OrgID}).First(&currentApp).Error; err != nil {
 		return logical, nil, nil, nil, err
@@ -197,14 +214,26 @@ func (a *Activities) bundleInputs(ctx context.Context, published *app.AirgapBund
 		if name == "" {
 			name = connection.ComponentID
 		}
-		configDigest := objectDigest(connection)
+		definition, err := canonicalComponentDefinition(connection, cfg.ComponentConfigConnections)
+		if err != nil {
+			return logical, nil, nil, nil, fmt.Errorf("canonicalize component %s: %w", name, err)
+		}
+		configDigest := objectDigest(definition)
 		artifact := bundleArtifact(desc)
-		logical.Components = append(logical.Components, bundle.Component{Name: name, Type: string(connection.Type), ConfigDigest: configDigest, Source: bundle.Source{Digest: build.SourceDigest, RequestedRef: build.SourceRef}, Artifact: artifact})
+		totalSize, err := bundle.TotalSize(ctx, repo, desc)
+		if err != nil {
+			return logical, nil, nil, nil, fmt.Errorf("compute total size for component %s: %w", name, err)
+		}
+		logical.Components = append(logical.Components, bundle.Component{Name: name, Type: string(connection.Type), ConfigDigest: configDigest, Definition: definition, Source: bundle.Source{Digest: build.SourceDigest, RequestedRef: build.SourceRef}, Artifact: artifact})
 		roots = append(roots, bundle.Root{Descriptor: desc, Source: repo})
-		records = append(records, artifactRecord("component", name, artifact, currentApp.Repository.RepositoryURI, configDigest, connection.ID, ""))
+		componentRecord := artifactRecord("component", name, artifact, currentApp.Repository.RepositoryURI, configDigest, connection.ID, "")
+		componentRecord.ComponentID = connection.ComponentID
+		componentRecord.Size = totalSize
+		records = append(records, componentRecord)
 		buildIDs["component:"+name] = build.ID
 		if image, record := externalImageEntries(connection, name, artifact, currentApp.Repository.RepositoryURI, configDigest); image != nil {
 			logical.Images = append(logical.Images, *image)
+			record.Size = totalSize
 			records = append(records, *record)
 		}
 	}
@@ -221,9 +250,15 @@ func (a *Activities) bundleInputs(ctx context.Context, published *app.AirgapBund
 	}
 	sandboxArtifact := bundleArtifact(sandboxDesc)
 	sandboxConfigDigest := objectDigest(cfg.SandboxConfig)
+	sandboxTotalSize, err := bundle.TotalSize(ctx, repo, sandboxDesc)
+	if err != nil {
+		return logical, nil, nil, nil, fmt.Errorf("compute total size for sandbox: %w", err)
+	}
 	logical.Sandbox = &bundle.Sandbox{Type: cfg.SandboxConfig.Type, ConfigDigest: sandboxConfigDigest, Artifact: sandboxArtifact}
 	roots = append(roots, bundle.Root{Descriptor: sandboxDesc, Source: repo})
-	records = append(records, artifactRecord("sandbox", "sandbox", sandboxArtifact, currentApp.Repository.RepositoryURI, sandboxConfigDigest, "", cfg.SandboxConfig.ID))
+	sandboxRecord := artifactRecord("sandbox", "sandbox", sandboxArtifact, currentApp.Repository.RepositoryURI, sandboxConfigDigest, "", cfg.SandboxConfig.ID)
+	sandboxRecord.Size = sandboxTotalSize
+	records = append(records, sandboxRecord)
 	buildIDs["sandbox"] = sandboxBuild.ID
 
 	for _, actionCfg := range cfg.ActionWorkflowConfigs {
@@ -244,7 +279,8 @@ func (a *Activities) bundleInputs(ctx context.Context, published *app.AirgapBund
 		if gitSourced {
 			continue
 		}
-		action := bundle.Action{Name: name, ConfigDigest: objectDigest(actionCfg)}
+		definition := canonicalActionDefinition(actionCfg, cfg.ComponentConfigConnections)
+		action := bundle.Action{Name: name, ConfigDigest: objectDigest(definition), Definition: &definition}
 		for _, stepCfg := range actionCfg.Steps {
 			step := bundle.Step{Name: stepCfg.Name, Command: stepCfg.Command}
 			if stepCfg.InlineContents != "" {
@@ -256,7 +292,14 @@ func (a *Activities) bundleInputs(ctx context.Context, published *app.AirgapBund
 				artifact := bundleArtifact(desc)
 				step.Artifact = &artifact
 				roots = append(roots, bundle.Root{Descriptor: desc, Source: store})
-				records = append(records, artifactRecord("action_step", name+"/"+stepCfg.Name, artifact, "inline", objectDigest(stepCfg), "", ""))
+				stepTotalSize, err := bundle.TotalSize(ctx, store, desc)
+				if err != nil {
+					return logical, nil, nil, nil, fmt.Errorf("compute total size for action step %s/%s: %w", name, stepCfg.Name, err)
+				}
+				stepRecord := artifactRecord("action_step", name+"/"+stepCfg.Name, artifact, "inline", objectDigest(stepCfg), "", "")
+				stepRecord.ActionWorkflowID = actionCfg.ActionWorkflowID
+				stepRecord.Size = stepTotalSize
+				records = append(records, stepRecord)
 			}
 			action.Steps = append(action.Steps, step)
 		}
@@ -303,9 +346,15 @@ func (a *Activities) bundleInputs(ctx context.Context, published *app.AirgapBund
 		}
 		logical.StackAssets = append(logical.StackAssets, bundle.StackAsset{Role: asset.role, SourceURL: asset.source, Digest: desc.Digest.String(), MediaType: desc.MediaType, Size: desc.Size})
 		roots = append(roots, bundle.Root{Descriptor: desc, Source: store})
-		records = append(records, artifactRecord("stack_asset", asset.role, bundleArtifact(desc), asset.source, "", "", ""))
+		assetTotalSize, err := bundle.TotalSize(ctx, store, desc)
+		if err != nil {
+			return logical, nil, nil, nil, fmt.Errorf("compute total size for stack asset %s: %w", asset.role, err)
+		}
+		assetRecord := artifactRecord("stack_asset", asset.role, bundleArtifact(desc), asset.source, "", "", "")
+		assetRecord.Size = assetTotalSize
+		records = append(records, assetRecord)
 	}
-	rootTemplate, rootTemplateSource, err := a.rootTemplateInputs(ctx, published.OrgID, referenceInstallID, airgap.VirtualInstallID(cfg.ID), cfg)
+	rootTemplate, rootTemplateSource, err := a.rootTemplateInputs(ctx, published.OrgID, referenceInstallID, airgap.VirtualInstallID(published.AppID), cfg)
 	if err != nil {
 		return logical, nil, nil, nil, err
 	}
@@ -315,7 +364,22 @@ func (a *Activities) bundleInputs(ctx context.Context, published *app.AirgapBund
 	}
 	logical.StackAssets = append(logical.StackAssets, bundle.StackAsset{Role: rootTemplateAssetRole, SourceURL: rootTemplateSource, Digest: rootDesc.Digest.String(), MediaType: rootDesc.MediaType, Size: rootDesc.Size})
 	roots = append(roots, bundle.Root{Descriptor: rootDesc, Source: rootStore})
-	records = append(records, artifactRecord("stack_asset", rootTemplateAssetRole, bundleArtifact(rootDesc), rootTemplateSource, "", "", ""))
+	rootTemplateTotalSize, err := bundle.TotalSize(ctx, rootStore, rootDesc)
+	if err != nil {
+		return logical, nil, nil, nil, fmt.Errorf("compute total size for stack asset %s: %w", rootTemplateAssetRole, err)
+	}
+	rootTemplateRecord := artifactRecord("stack_asset", rootTemplateAssetRole, bundleArtifact(rootDesc), rootTemplateSource, "", "", "")
+	rootTemplateRecord.Size = rootTemplateTotalSize
+	records = append(records, rootTemplateRecord)
+	if a.cfg.AirgapPortalBinaryURL != "" {
+		portalRoot, portalRecord, portalAsset, err := a.portalInputs(ctx)
+		if err != nil {
+			return logical, nil, nil, nil, err
+		}
+		logical.StackAssets = append(logical.StackAssets, portalAsset)
+		roots = append(roots, portalRoot)
+		records = append(records, portalRecord)
+	}
 	if a.cfg.AirgapRunnerBinaryURL != "" {
 		runnerRoots, runnerRecords, runner, err := a.runnerInputs(ctx, logical.Target)
 		if err != nil {
@@ -328,8 +392,28 @@ func (a *Activities) bundleInputs(ctx context.Context, published *app.AirgapBund
 	return logical, uniqueRoots(roots), records, map[string]any{"app_config_id": cfg.ID, "build_ids": buildIDs}, nil
 }
 
+func (a *Activities) portalInputs(ctx context.Context) (bundle.Root, app.AirgapBundleArtifact, bundle.StackAsset, error) {
+	data, err := fetchBinary(ctx, a.cfg.AirgapPortalBinaryURL)
+	if err != nil {
+		return bundle.Root{}, app.AirgapBundleArtifact{}, bundle.StackAsset{}, fmt.Errorf("fetch portal binary: %w", err)
+	}
+	store, desc, err := packedArtifact(ctx, "application/vnd.nuon.airgap.portal-binary.v1", bundle.RunnerBinaryMediaType, data)
+	if err != nil {
+		return bundle.Root{}, app.AirgapBundleArtifact{}, bundle.StackAsset{}, err
+	}
+	artifact := bundleArtifact(desc)
+	totalSize, err := bundle.TotalSize(ctx, store, desc)
+	if err != nil {
+		return bundle.Root{}, app.AirgapBundleArtifact{}, bundle.StackAsset{}, fmt.Errorf("compute total size for portal binary: %w", err)
+	}
+	record := artifactRecord("portal_binary", "portal", artifact, a.cfg.AirgapPortalBinaryURL, "", "", "")
+	record.Size = totalSize
+	asset := bundle.StackAsset{Role: "portal_binary", SourceURL: a.cfg.AirgapPortalBinaryURL, Digest: desc.Digest.String(), MediaType: desc.MediaType, Size: desc.Size}
+	return bundle.Root{Descriptor: desc, Source: store}, record, asset, nil
+}
+
 func (a *Activities) runnerInputs(ctx context.Context, target bundle.Target) ([]bundle.Root, []app.AirgapBundleArtifact, *bundle.Runner, error) {
-	data, err := fetchRunnerBinary(ctx, a.cfg.AirgapRunnerBinaryURL)
+	data, err := fetchBinary(ctx, a.cfg.AirgapRunnerBinaryURL)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("fetch runner binary: %w", err)
 	}
@@ -340,7 +424,13 @@ func (a *Activities) runnerInputs(ctx context.Context, target bundle.Target) ([]
 	binaryArtifact := bundleArtifact(desc)
 	runner := &bundle.Runner{Version: a.cfg.RunnerContainerImageTag, SourceURL: a.cfg.AirgapRunnerBinaryURL, Binary: &binaryArtifact}
 	roots := []bundle.Root{{Descriptor: desc, Source: store}}
-	records := []app.AirgapBundleArtifact{artifactRecord("runner_binary", "runner", binaryArtifact, a.cfg.AirgapRunnerBinaryURL, "", "", "")}
+	binaryTotalSize, err := bundle.TotalSize(ctx, store, desc)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("compute total size for runner binary: %w", err)
+	}
+	binaryRecord := artifactRecord("runner_binary", "runner", binaryArtifact, a.cfg.AirgapRunnerBinaryURL, "", "", "")
+	binaryRecord.Size = binaryTotalSize
+	records := []app.AirgapBundleArtifact{binaryRecord}
 
 	imageRepoCfg := &configs.OCIRegistryRepository{RegistryType: configs.OCIRegistryTypePublicOCI, Repository: a.cfg.RunnerContainerImageURL}
 	imageRepo, err := oci.GetRepo(ctx, imageRepoCfg)
@@ -358,7 +448,13 @@ func (a *Activities) runnerInputs(ctx context.Context, target bundle.Target) ([]
 	}
 	runner.Image = &bundle.Image{Name: "runner", Repository: a.cfg.RunnerContainerImageURL + ":" + a.cfg.RunnerContainerImageTag, Artifact: imageArtifact}
 	roots = append(roots, bundle.Root{Descriptor: imageDesc, Source: imageRepo})
-	records = append(records, artifactRecord("runner_image", "runner", imageArtifact, a.cfg.RunnerContainerImageURL, "", "", ""))
+	imageTotalSize, err := bundle.TotalSize(ctx, imageRepo, imageDesc)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("compute total size for runner image: %w", err)
+	}
+	imageRecord := artifactRecord("runner_image", "runner", imageArtifact, a.cfg.RunnerContainerImageURL, "", "", "")
+	imageRecord.Size = imageTotalSize
+	records = append(records, imageRecord)
 	return roots, records, runner, nil
 }
 
@@ -391,9 +487,9 @@ func resolvePlatformImage(ctx context.Context, repo registry.Repository, tag str
 	return ocispec.Descriptor{}, fmt.Errorf("image index has no %s/%s manifest", target.OS, target.Architecture)
 }
 
-const maxRunnerBinary = int64(1 << 30)
+const maxBinaryAsset = int64(1 << 30)
 
-func fetchRunnerBinary(ctx context.Context, source string) ([]byte, error) {
+func fetchBinary(ctx context.Context, source string) ([]byte, error) {
 	u, err := url.Parse(source)
 	if err != nil {
 		return nil, err
@@ -405,7 +501,7 @@ func fetchRunnerBinary(ctx context.Context, source string) ([]byte, error) {
 			return nil, err
 		}
 		defer f.Close()
-		return readAtMost(f, maxRunnerBinary)
+		return readAtMost(f, maxBinaryAsset)
 	case "https", "http":
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, source, nil)
 		if err != nil {
@@ -417,11 +513,11 @@ func fetchRunnerBinary(ctx context.Context, source string) ([]byte, error) {
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("unexpected status %d fetching runner binary", resp.StatusCode)
+			return nil, fmt.Errorf("unexpected status %d fetching binary", resp.StatusCode)
 		}
-		return readAtMost(resp.Body, maxRunnerBinary)
+		return readAtMost(resp.Body, maxBinaryAsset)
 	default:
-		return nil, fmt.Errorf("unsupported runner binary URL scheme %q", u.Scheme)
+		return nil, fmt.Errorf("unsupported binary URL scheme %q", u.Scheme)
 	}
 }
 
@@ -431,10 +527,10 @@ func readAtMost(r io.Reader, limit int64) ([]byte, error) {
 		return nil, err
 	}
 	if int64(len(data)) > limit {
-		return nil, fmt.Errorf("runner binary exceeds %d byte limit", limit)
+		return nil, fmt.Errorf("binary exceeds %d byte limit", limit)
 	}
 	if len(data) == 0 {
-		return nil, fmt.Errorf("runner binary is empty")
+		return nil, fmt.Errorf("binary is empty")
 	}
 	return data, nil
 }
@@ -465,6 +561,244 @@ func uniqueRoots(roots []bundle.Root) []bundle.Root {
 }
 
 func objectDigest(v any) string { b, _ := json.Marshal(v); return digest.FromBytes(b).String() }
+
+func canonicalComponentDefinition(connection app.ComponentConfigConnection, connections []app.ComponentConfigConnection) (bundle.ComponentDefinition, error) {
+	raw, err := json.Marshal(connection)
+	if err != nil {
+		return nil, err
+	}
+	var definition bundle.ComponentDefinition
+	if err := json.Unmarshal(raw, &definition); err != nil {
+		return nil, err
+	}
+	stripPersistenceFields(map[string]any(definition))
+	for _, key := range []string{"Refs", "app_config_version", "checksum", "component_dependency_ids", "component_id", "component_name", "latest_build_id", "version"} {
+		delete(definition, key)
+	}
+	componentNames := make(map[string]string, len(connections))
+	for _, candidate := range connections {
+		name := candidate.ComponentName
+		if name == "" {
+			name = candidate.ComponentID
+		}
+		componentNames[candidate.ComponentID] = name
+	}
+	dependencies := make([]string, 0, len(connection.ComponentDependencyIDs))
+	for _, componentID := range connection.ComponentDependencyIDs {
+		name := componentNames[componentID]
+		if name == "" {
+			name = componentID
+		}
+		dependencies = append(dependencies, name)
+	}
+	if len(dependencies) > 0 {
+		sort.Strings(dependencies)
+		definition["dependencies"] = dependencies
+	}
+	return definition, nil
+}
+
+func stripPersistenceFields(value any) {
+	persistenceFields := map[string]bool{
+		"app_config_id": true, "component_config_connection_id": true, "component_config_id": true,
+		"component_config_type": true, "created_at": true, "created_by_id": true, "deleted_at": true,
+		"id": true, "org_id": true, "updated_at": true, "vcs_connection_id": true,
+	}
+	switch value := value.(type) {
+	case map[string]any:
+		for key, child := range value {
+			if persistenceFields[key] {
+				delete(value, key)
+				continue
+			}
+			stripPersistenceFields(child)
+		}
+	case []any:
+		for _, child := range value {
+			stripPersistenceFields(child)
+		}
+	}
+}
+
+func canonicalActionDefinition(actionCfg app.ActionWorkflowConfig, connections []app.ComponentConfigConnection) bundle.ActionDefinition {
+	componentNames := make(map[string]string, len(connections))
+	for _, connection := range connections {
+		componentNames[connection.ComponentID] = connection.ComponentName
+	}
+	definition := bundle.ActionDefinition{
+		TimeoutNanos: actionCfg.Timeout.Nanoseconds(), Role: actionCfg.Role,
+		BreakGlassRoleARN:     actionCfg.BreakGlassRoleARN.ValueString(),
+		EnableKubeConfig:      actionCfg.EnableKubeConfig.Valid && actionCfg.EnableKubeConfig.Bool,
+		KubernetesContextName: actionCfg.KubernetesContextName,
+		References:            append([]string(nil), actionCfg.References...),
+	}
+	for _, componentID := range actionCfg.ComponentDependencyIDs {
+		name := componentNames[componentID]
+		if name == "" {
+			name = componentID
+		}
+		definition.ComponentDependencies = append(definition.ComponentDependencies, name)
+	}
+	for _, trigger := range actionCfg.Triggers {
+		componentID := trigger.ComponentID.ValueString()
+		componentName := componentNames[componentID]
+		if componentName == "" {
+			componentName = componentID
+		}
+		definition.Triggers = append(definition.Triggers, bundle.ActionTriggerDefinition{
+			Type: string(trigger.Type), Index: trigger.Index, CronSchedule: trigger.CronSchedule, ComponentName: componentName,
+		})
+	}
+	for _, step := range actionCfg.Steps {
+		environment := make(map[string]string, len(step.EnvVars))
+		for name, value := range step.EnvVars {
+			if value == nil {
+				environment[name] = ""
+				continue
+			}
+			environment[name] = digest.FromString(*value).String()
+		}
+		inlineDigest := ""
+		if step.InlineContents != "" {
+			inlineDigest = digest.FromString(step.InlineContents).String()
+		}
+		definition.Steps = append(definition.Steps, bundle.ActionStepDefinition{
+			Name: step.Name, Index: step.Idx, Command: step.Command, InlineContentsDigest: inlineDigest, Environment: environment,
+		})
+	}
+	sort.Strings(definition.ComponentDependencies)
+	sort.Strings(definition.References)
+	sort.Slice(definition.Triggers, func(i, j int) bool {
+		if definition.Triggers[i].Index == definition.Triggers[j].Index {
+			return definition.Triggers[i].Type < definition.Triggers[j].Type
+		}
+		return definition.Triggers[i].Index < definition.Triggers[j].Index
+	})
+	sort.Slice(definition.Steps, func(i, j int) bool {
+		if definition.Steps[i].Index == definition.Steps[j].Index {
+			return definition.Steps[i].Name < definition.Steps[j].Name
+		}
+		return definition.Steps[i].Index < definition.Steps[j].Index
+	})
+	return definition
+}
+
+func canonicalRunbookDefinitions(ctx context.Context, db *gorm.DB, cfg *app.AppConfig, envelope *runnerairgap.Envelope) ([]bundle.Runbook, error) {
+	result := canonicalEnvelopeRunbookDefinitions(envelope)
+	byName := make(map[string]bundle.Runbook, len(result))
+	for _, runbook := range result {
+		byName[runbook.Name] = runbook
+	}
+	var configs []app.RunbookConfig
+	if err := db.WithContext(ctx).
+		Preload("Runbook").Preload("Steps").Preload("Inputs").
+		Where(app.RunbookConfig{OrgID: cfg.OrgID, AppConfigID: cfg.ID}).Find(&configs).Error; err != nil {
+		return nil, err
+	}
+	actionNames := make(map[string]string, len(cfg.ActionWorkflowConfigs))
+	for _, action := range cfg.ActionWorkflowConfigs {
+		actionNames[action.ActionWorkflowID] = action.ActionWorkflow.Name
+	}
+	for _, runbookConfig := range configs {
+		name := runbookConfig.Runbook.Name
+		if name == "" {
+			name = runbookConfig.RunbookID
+		}
+		definition := bundle.RunbookDefinition{}
+		if runbookConfig.Readme != "" {
+			definition.ReadmeDigest = digest.FromString(runbookConfig.Readme).String()
+		}
+		for _, input := range runbookConfig.Inputs {
+			defaultValue := input.Default
+			if input.Sensitive && defaultValue != "" {
+				defaultValue = digest.FromString(defaultValue).String()
+			}
+			definition.Inputs = append(definition.Inputs, bundle.RunbookInputDefinition{
+				Name: input.Name, DisplayName: input.DisplayName, Description: input.Description,
+				Default: defaultValue, Type: string(input.Type), Index: input.Idx, Required: input.Required, Sensitive: input.Sensitive,
+			})
+		}
+		for _, step := range runbookConfig.Steps {
+			reference := ""
+			if actionID := step.ActionWorkflowID.ValueString(); actionID != "" {
+				reference = actionNames[actionID]
+				if reference == "" {
+					reference = actionID
+				}
+			}
+			environment := make(map[string]string, len(step.EnvVars))
+			for key, value := range step.EnvVars {
+				if value == nil {
+					environment[key] = ""
+				} else {
+					environment[key] = digest.FromString(*value).String()
+				}
+			}
+			inlineDigest := ""
+			if step.InlineContents != "" {
+				inlineDigest = digest.FromString(step.InlineContents).String()
+			}
+			filtersDigest := ""
+			if len(step.Filters) > 0 {
+				filtersDigest = objectDigest(step.Filters)
+			}
+			eventTypes := append([]string(nil), step.EventTypes...)
+			sort.Strings(eventTypes)
+			definition.Steps = append(definition.Steps, bundle.RunbookStepDefinition{
+				Kind: string(step.Type), Name: step.Name, Index: step.Idx, Reference: reference, Component: step.ComponentName,
+				Role: step.Role, PlanOnly: step.PlanOnly, DeployDependents: step.DeployDependents,
+				TearDownDependents: step.TearDownDependents, SkipComponentDeploys: step.SkipComponentDeploys,
+				Command: step.Command, InlineContentsDigest: inlineDigest, Environment: environment,
+				TimeoutNanos: step.Timeout.Nanoseconds(), TriggerName: step.TriggerName, EventTypes: eventTypes, FiltersDigest: filtersDigest,
+			})
+		}
+		sort.Slice(definition.Inputs, func(i, j int) bool {
+			if definition.Inputs[i].Index == definition.Inputs[j].Index {
+				return definition.Inputs[i].Name < definition.Inputs[j].Name
+			}
+			return definition.Inputs[i].Index < definition.Inputs[j].Index
+		})
+		sort.Slice(definition.Steps, func(i, j int) bool {
+			if definition.Steps[i].Index == definition.Steps[j].Index {
+				return definition.Steps[i].Name < definition.Steps[j].Name
+			}
+			return definition.Steps[i].Index < definition.Steps[j].Index
+		})
+		byName[name] = bundle.Runbook{Name: name, ConfigDigest: objectDigest(definition), Definition: definition}
+	}
+	result = result[:0]
+	for _, runbook := range byName {
+		result = append(result, runbook)
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].Name < result[j].Name })
+	return result, nil
+}
+
+func canonicalEnvelopeRunbookDefinitions(envelope *runnerairgap.Envelope) []bundle.Runbook {
+	references := make(map[string]string, len(envelope.Actions)+len(envelope.Drift))
+	for _, action := range envelope.Actions {
+		references[action.ID] = "action:" + action.Name
+	}
+	for _, drift := range envelope.Drift {
+		references[drift.ID] = "drift:" + drift.ComponentName
+	}
+	result := make([]bundle.Runbook, 0, len(envelope.Runbooks))
+	for _, runbook := range envelope.Runbooks {
+		definition := bundle.RunbookDefinition{Steps: make([]bundle.RunbookStepDefinition, 0, len(runbook.Steps))}
+		for _, step := range runbook.Steps {
+			reference := references[step.RefID]
+			if reference == "" {
+				reference = step.RefID
+			}
+			definition.Steps = append(definition.Steps, bundle.RunbookStepDefinition{
+				Kind: step.Kind, Reference: reference, Component: step.Component,
+			})
+		}
+		result = append(result, bundle.Runbook{Name: runbook.Name, ConfigDigest: objectDigest(definition), Definition: definition})
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].Name < result[j].Name })
+	return result
+}
 func bundleArtifact(d ocispec.Descriptor) bundle.Artifact {
 	return bundle.Artifact{MediaType: d.MediaType, Digest: d.Digest.String(), Size: d.Size}
 }
@@ -478,6 +812,7 @@ func externalImageEntries(connection app.ComponentConfigConnection, name string,
 	}
 	image := bundle.Image{Name: name, Repository: connection.ExternalImageComponentConfig.ImageURL, Artifact: artifact}
 	record := artifactRecord("image", name, artifact, repository, configDigest, connection.ID, "")
+	record.ComponentID = connection.ComponentID
 	return &image, &record
 }
 

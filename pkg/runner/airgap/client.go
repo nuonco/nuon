@@ -22,6 +22,15 @@ type Result struct {
 	FailedStep string
 }
 
+type ClientOptions struct {
+	BundleDigest      string
+	BundleUpgrade     bool
+	UpgradeSandbox    bool
+	UpgradeComponents []string
+	RequireApproval   bool
+	ApprovalPhase     string
+}
+
 type Client struct {
 	envelope            *Envelope
 	store               statestore.Store
@@ -38,6 +47,9 @@ type Client struct {
 	result              Result
 	runtimeJobs         map[string]*RuntimeJob
 	runtimeQueue        []string
+	applyApproved       bool
+	upgradeSandbox      bool
+	upgradeComponents   int
 
 	healthMu     sync.Mutex
 	healthLoaded bool
@@ -85,6 +97,10 @@ func (c *Client) SetInstallInputs(values map[string]string) {
 }
 
 func NewClient(envelope *Envelope, store statestore.Store, logger *zap.Logger) (*Client, error) {
+	return NewClientWithOptions(envelope, store, logger, ClientOptions{})
+}
+
+func NewClientWithOptions(envelope *Envelope, store statestore.Store, logger *zap.Logger, options ClientOptions) (*Client, error) {
 	now := time.Now().UTC()
 	status, err := store.ReadStatus()
 	if err != nil {
@@ -95,74 +111,133 @@ func NewClient(envelope *Envelope, store statestore.Store, logger *zap.Logger) (
 		return nil, fmt.Errorf("state was initialized for install %q but this envelope resolves to %q; resume with the same --deployment-id the run was started with", status.InstallID, envelope.InstallID)
 	}
 	if status == nil {
-		status = &statestore.Status{InstallID: envelope.InstallID, RunID: uuid.NewString(), Status: statestore.RunStatusInProgress, StartedAt: now, HeartbeatAt: now, Outputs: map[string]json.RawMessage{}}
+		status = &statestore.Status{InstallID: envelope.InstallID, BundleDigest: options.BundleDigest, RunID: uuid.NewString(), RunType: statestore.RunTypeInstall, Status: statestore.RunStatusInProgress, StartedAt: now, HeartbeatAt: now, Outputs: map[string]json.RawMessage{}}
 		for _, step := range envelope.Steps {
 			status.Steps = append(status.Steps, statestore.StepStatus{ID: step.ID, Name: step.Name, Status: string(models.AppRunnerJobStatusAvailable)})
 		}
 		if err := store.WriteStatus(status); err != nil {
 			return nil, fmt.Errorf("initialize airgap status: %w", err)
 		}
+	} else if options.BundleDigest != "" && status.BundleDigest != "" && status.BundleDigest != options.BundleDigest {
+		if !options.BundleUpgrade {
+			return nil, fmt.Errorf("bundle digest changed from %q to %q without a staged upgrade candidate", status.BundleDigest, options.BundleDigest)
+		}
+		changed := make(map[string]bool, len(options.UpgradeComponents))
+		for _, component := range options.UpgradeComponents {
+			changed[component] = true
+		}
+		if err := store.WriteStatus(status); err != nil {
+			return nil, fmt.Errorf("archive previous airgap run: %w", err)
+		}
+		previousRunID := status.RunID
+		previousSteps := make(map[string]statestore.StepStatus, len(status.Steps))
+		for _, step := range status.Steps {
+			previousSteps[step.ID] = step
+		}
+		status = &statestore.Status{
+			InstallID: envelope.InstallID, BundleDigest: options.BundleDigest, RunID: uuid.NewString(),
+			RunType: statestore.RunTypeUpgrade, PreviousRunID: previousRunID,
+			Status: statestore.RunStatusInProgress, StartedAt: now, HeartbeatAt: now,
+			Outputs: status.Outputs, ApprovalRequired: options.RequireApproval, ApprovalPhase: options.ApprovalPhase,
+		}
+		if options.RequireApproval {
+			status.ResultDirective = statestore.DirectiveAwaitApproval
+		}
+		for _, step := range envelope.Steps {
+			stepStatus := string(models.AppRunnerJobStatusAvailable)
+			sourceRunID := ""
+			var resultDirective statestore.ResultDirective
+			previousStep, found := previousSteps[step.ID]
+			if found && previousStep.Status == string(models.AppRunnerJobStatusFinished) {
+				stepStatus = string(models.AppStatusAutoDashSkipped)
+				sourceRunID = previousRunID
+				resultDirective = statestore.DirectiveSkipGroup
+			}
+			if options.UpgradeSandbox && (step.ID == "sandbox-plan" || step.ID == "sandbox-apply") {
+				stepStatus = string(models.AppRunnerJobStatusAvailable)
+				sourceRunID = ""
+				resultDirective = ""
+			}
+			for component := range changed {
+				if step.ID == "sync-"+component || step.ID == "deploy-"+component+"-plan" || step.ID == "deploy-"+component+"-apply" {
+					stepStatus = string(models.AppRunnerJobStatusAvailable)
+					sourceRunID = ""
+					resultDirective = ""
+					break
+				}
+			}
+			status.Steps = append(status.Steps, statestore.StepStatus{ID: step.ID, Name: step.Name, Status: stepStatus, SourceRunID: sourceRunID, ResultDirective: resultDirective})
+		}
+		if err := store.WriteStatus(status); err != nil {
+			return nil, fmt.Errorf("initialize bundle upgrade status: %w", err)
+		}
 	} else {
-		// Interrupted and failed steps become available when the same state directory is resumed.
+		if status.BundleDigest == "" {
+			status.BundleDigest = options.BundleDigest
+		}
 		if status.Outputs == nil {
 			status.Outputs = map[string]json.RawMessage{}
 		}
-		resumed := false
-		persistedSteps := make(map[string]bool, len(status.Steps))
-		for _, step := range status.Steps {
-			persistedSteps[step.ID] = true
-		}
-		for _, step := range envelope.Steps {
-			if persistedSteps[step.ID] {
-				continue
-			}
-			status.Steps = append(status.Steps, statestore.StepStatus{ID: step.ID, Name: step.Name, Status: string(models.AppRunnerJobStatusAvailable)})
-			resumed = true
-		}
-		reset := map[string]bool{}
-		for i := range status.Steps {
-			switch status.Steps[i].Status {
-			case string(models.AppRunnerJobStatusFinished), string(models.AppRunnerJobStatusAvailable):
-			default:
-				status.Steps[i].Status = string(models.AppRunnerJobStatusAvailable)
-				status.Steps[i].ExecutionID = ""
-				status.Steps[i].Error = ""
-				status.Steps[i].StartedAt = nil
-				status.Steps[i].FinishedAt = nil
-				reset[status.Steps[i].ID] = true
-				resumed = true
-			}
-		}
-		if len(reset) > 0 {
-			// Failed applies may advance state, so chained Terraform plans must be regenerated on retry.
-			replan := map[string]bool{}
-			for _, step := range envelope.Steps {
-				if step.PlanFromStep != "" && reset[step.ID] {
-					replan[step.PlanFromStep] = true
-				}
-			}
+		if status.Status == statestore.RunStatusInProgress {
+			status.Status = statestore.RunStatusFailed
+			status.ResultDirective = statestore.DirectiveRetryGroup
+			now := time.Now().UTC()
+			status.FinishedAt = &now
 			for i := range status.Steps {
-				if replan[status.Steps[i].ID] {
-					status.Steps[i].Status = string(models.AppRunnerJobStatusAvailable)
-					status.Steps[i].ExecutionID = ""
-					status.Steps[i].Error = ""
-					status.Steps[i].StartedAt = nil
-					status.Steps[i].FinishedAt = nil
+				if status.Steps[i].Status == string(models.AppRunnerJobStatusInDashProgress) {
+					status.Steps[i].Status = string(models.AppRunnerJobStatusCancelled)
+					status.Steps[i].FinishedAt = &now
 				}
 			}
-		}
-		if resumed {
-			status.Status = statestore.RunStatusInProgress
-			status.FailedStep = ""
-			status.FinishedAt = nil
-		}
-		if err := store.WriteStatus(status); err != nil {
-			return nil, fmt.Errorf("reset airgap status for resume: %w", err)
+			if err := store.WriteStatus(status); err != nil {
+				return nil, fmt.Errorf("terminalize interrupted airgap run: %w", err)
+			}
+			status = retryStatus(envelope, status, now)
+			if err := store.WriteStatus(status); err != nil {
+				return nil, fmt.Errorf("initialize retry after interruption: %w", err)
+			}
+		} else if status.Status != statestore.RunStatusFailedPendingRetry {
+			if err := store.WriteStatus(status); err != nil {
+				return nil, fmt.Errorf("persist airgap status: %w", err)
+			}
 		}
 	}
-	c := &Client{envelope: envelope, store: store, logger: logger, status: status, executions: map[string]*models.AppRunnerJobExecution{}, results: map[string]*models.ServiceCreateRunnerJobExecutionResultRequest{}, runtimeJobs: map[string]*RuntimeJob{}, done: make(chan struct{})}
+	c := &Client{envelope: envelope, store: store, logger: logger, status: status, executions: map[string]*models.AppRunnerJobExecution{}, results: map[string]*models.ServiceCreateRunnerJobExecutionResultRequest{}, runtimeJobs: map[string]*RuntimeJob{}, done: make(chan struct{}), applyApproved: !status.ApprovalRequired, upgradeSandbox: options.UpgradeSandbox, upgradeComponents: len(options.UpgradeComponents)}
 	c.checkDoneLocked()
 	return c, nil
+}
+
+func retryStatus(envelope *Envelope, previous *statestore.Status, now time.Time) *statestore.Status {
+	replan := map[string]bool{}
+	for _, step := range envelope.Steps {
+		if step.PlanFromStep != "" {
+			prior := findStepStatus(previous.Steps, step.ID)
+			if prior == nil || prior.Status != string(models.AppRunnerJobStatusFinished) {
+				replan[step.PlanFromStep] = true
+			}
+		}
+	}
+	next := &statestore.Status{InstallID: previous.InstallID, BundleDigest: previous.BundleDigest, RunID: uuid.NewString(), RunType: previous.RunType, PreviousRunID: previous.RunID, Status: statestore.RunStatusInProgress, StartedAt: now, HeartbeatAt: now, Outputs: previous.Outputs, ApprovalRequired: previous.ApprovalRequired, ApprovalPhase: previous.ApprovalPhase}
+	for _, step := range envelope.Steps {
+		prior := findStepStatus(previous.Steps, step.ID)
+		status, source := string(models.AppRunnerJobStatusAvailable), ""
+		var resultDirective statestore.ResultDirective
+		if prior != nil && prior.Status == string(models.AppRunnerJobStatusFinished) && !replan[step.ID] {
+			status, source = string(models.AppStatusAutoDashSkipped), previous.RunID
+			resultDirective = statestore.DirectiveSkipGroup
+		}
+		next.Steps = append(next.Steps, statestore.StepStatus{ID: step.ID, Name: step.Name, Status: status, SourceRunID: source, ResultDirective: resultDirective})
+	}
+	return next
+}
+
+func findStepStatus(steps []statestore.StepStatus, id string) *statestore.StepStatus {
+	for i := range steps {
+		if steps[i].ID == id {
+			return &steps[i]
+		}
+	}
+	return nil
 }
 
 func (c *Client) Done() <-chan struct{} { return c.done }
@@ -170,6 +245,25 @@ func (c *Client) Result() Result {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.result
+}
+
+func (c *Client) ApproveApply() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.applyApproved = true
+	c.status.ApprovalRequired = false
+	c.status.ResultDirective = statestore.DirectiveContinue
+	if err := c.store.WriteStatus(c.status); err != nil {
+		return err
+	}
+	c.checkDoneLocked()
+	return nil
+}
+
+func (c *Client) Approval() (bool, string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.status.ApprovalRequired, c.status.ApprovalPhase
 }
 func (c *Client) SetRunnerID(string)  {}
 func (c *Client) SetAuthToken(string) {}
@@ -190,7 +284,7 @@ func (c *Client) GetJobs(_ context.Context, group models.AppRunnerJobGroup, _ mo
 		return nil, nil
 	}
 	for _, step := range c.envelope.Steps {
-		if models.AppRunnerJobGroup(step.JobGroup) != group || c.stepStatus(step.ID).Status != string(models.AppRunnerJobStatusAvailable) || !c.dependenciesFinished(step) {
+		if models.AppRunnerJobGroup(step.JobGroup) != group || c.stepStatus(step.ID).Status != string(models.AppRunnerJobStatusAvailable) || !c.dependenciesFinished(step) || (step.JobOperation == "apply-plan" && !c.applyApproved) {
 			continue
 		}
 		return []*models.AppRunnerJob{c.job(step)}, nil
@@ -231,7 +325,7 @@ func (c *Client) GetJob(_ context.Context, id string) (*models.AppRunnerJob, err
 
 func (c *Client) GetJobPlanJSON(_ context.Context, id string) (string, error) {
 	if runtime := c.getRuntimeJob(id); runtime != nil {
-		plan, err := c.renderPlan(id, runtime.CompositePlan, "")
+		plan, err := c.renderPlanWithEnvelope(id, runtime.CompositePlan, "", runtime.Envelope)
 		return string(plan), err
 	}
 	step, err := c.findStep(id)
@@ -242,12 +336,13 @@ func (c *Client) GetJobPlanJSON(_ context.Context, id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	c.persistStepPlan(step.ID, plan)
 	return string(plan), nil
 }
 
 func (c *Client) GetJobCompositePlan(_ context.Context, id string) (*models.PlantypesCompositePlan, error) {
 	if runtime := c.getRuntimeJob(id); runtime != nil {
-		raw, err := c.renderPlan(id, runtime.CompositePlan, "")
+		raw, err := c.renderPlanWithEnvelope(id, runtime.CompositePlan, "", runtime.Envelope)
 		if err != nil {
 			return nil, err
 		}
@@ -269,7 +364,17 @@ func (c *Client) GetJobCompositePlan(_ context.Context, id string) (*models.Plan
 	if err := json.Unmarshal(raw, &plan); err != nil {
 		return nil, fmt.Errorf("decode composite plan for %s: %w", id, err)
 	}
+	c.persistStepPlan(step.ID, raw)
 	return &plan, nil
+}
+
+// persistStepPlan mirrors the late-bound rendered plan into the state store so
+// the portal can preview what a bootstrap step is about to apply. The write is
+// best-effort: rendering is authoritative and must not fail with it.
+func (c *Client) persistStepPlan(id string, plan json.RawMessage) {
+	if err := c.store.WriteFile(statestore.StepPlanKey(id), plan); err != nil {
+		c.logger.Warn("persist rendered step plan", zap.String("step_id", id), zap.Error(err))
+	}
 }
 
 func (c *Client) UpdateJob(ctx context.Context, id string, req *models.ServiceUpdateRunnerJobRequest) (*models.AppRunnerJob, error) {
@@ -344,10 +449,21 @@ func (c *Client) UpdateJobExecution(_ context.Context, id, executionID string, r
 	case models.AppRunnerJobExecutionStatusFinished:
 		status.Status = string(models.AppRunnerJobStatusFinished)
 		status.FinishedAt = &now
+		status.ResultDirective = statestore.DirectiveContinue
+		if id == "sandbox-apply" && c.upgradeSandbox && c.status.ApprovalPhase == "sandbox" {
+			if c.upgradeComponents > 0 {
+				c.status.ApprovalRequired = true
+				c.status.ApprovalPhase = "components"
+				c.applyApproved = false
+			} else {
+				c.status.ApprovalPhase = ""
+			}
+		}
 	case models.AppRunnerJobExecutionStatusFailed, models.AppRunnerJobExecutionStatusCancelled, models.AppRunnerJobExecutionStatusTimedDashOut:
 		status.Status = string(req.Status)
 		status.Error = req.StatusDescription
 		status.FinishedAt = &now
+		status.ResultDirective = statestore.DirectiveAwaitRetry
 		c.result = Result{FailedStep: id}
 	default:
 		status.Status = string(models.AppRunnerJobStatusInDashProgress)
@@ -650,7 +766,13 @@ func (c *Client) stepStatus(id string) *statestore.StepStatus {
 }
 func (c *Client) dependenciesFinished(step Step) bool {
 	for _, id := range step.DependsOn {
-		if c.stepStatus(id).Status != string(models.AppRunnerJobStatusFinished) {
+		if !stepSucceeded(c.stepStatus(id).Status) {
+			return false
+		}
+	}
+	if step.PlanFromStep != "" {
+		plan := c.stepStatus(step.PlanFromStep)
+		if plan == nil || plan.Status != string(models.AppRunnerJobStatusFinished) || plan.SourceRunID != "" {
 			return false
 		}
 	}
@@ -662,11 +784,19 @@ func (c *Client) job(step Step) *models.AppRunnerJob {
 }
 func (c *Client) checkDoneLocked() {
 	if c.result.FailedStep != "" {
-		c.finalizeLocked(statestore.RunStatusFailed, c.result.FailedStep)
+		c.status.Status = statestore.RunStatusFailedPendingRetry
+		c.status.FailedStep = c.result.FailedStep
+		c.status.ResultDirective = statestore.DirectiveAwaitRetry
+		if err := c.store.WriteStatus(c.status); err != nil {
+			c.logger.Error("write pending-retry airgap status", zap.Error(err))
+		}
+		return
+	}
+	if c.status.ApprovalRequired {
 		return
 	}
 	for _, step := range c.status.Steps {
-		if step.Status != string(models.AppRunnerJobStatusFinished) {
+		if !stepResolved(step.Status) {
 			return
 		}
 	}
@@ -674,11 +804,130 @@ func (c *Client) checkDoneLocked() {
 	c.finalizeLocked(statestore.RunStatusFinished, "")
 }
 
+func stepSucceeded(status string) bool {
+	return status == string(models.AppRunnerJobStatusFinished) || status == string(models.AppStatusAutoDashSkipped) || status == string(models.AppStatusUserDashSkipped)
+}
+
+func stepResolved(status string) bool {
+	return stepSucceeded(status) || status == string(models.AppRunnerJobStatusNotDashAttempted)
+}
+
+func (c *Client) RunID() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.status.RunID
+}
+
+func (c *Client) ApplyControl(action string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if action != statestore.ControlActionCancel && c.status.Status != statestore.RunStatusFailedPendingRetry {
+		return fmt.Errorf("run %s is not awaiting a retry decision", c.status.RunID)
+	}
+	if action == statestore.ControlActionCancel && c.status.Status != statestore.RunStatusInProgress && c.status.Status != statestore.RunStatusFailedPendingRetry {
+		return fmt.Errorf("run %s is not cancellable", c.status.RunID)
+	}
+	switch action {
+	case statestore.ControlActionRetry:
+		now := time.Now().UTC()
+		c.status.Status = statestore.RunStatusFailed
+		c.status.ResultDirective = statestore.DirectiveRetryGroup
+		c.status.FinishedAt = &now
+		if err := c.store.WriteStatus(c.status); err != nil {
+			return err
+		}
+		c.status = retryStatus(c.envelope, c.status, now)
+		c.result = Result{}
+		c.executions = map[string]*models.AppRunnerJobExecution{}
+		c.applyApproved = !c.status.ApprovalRequired
+		return c.store.WriteStatus(c.status)
+	case statestore.ControlActionUserSkip:
+		failed := c.stepStatus(c.status.FailedStep)
+		if failed == nil {
+			return fmt.Errorf("failed step not found")
+		}
+		failed.Status = string(models.AppStatusUserDashSkipped)
+		failed.ResultDirective = statestore.DirectiveContinue
+		if c.isPlanStep(failed.ID) {
+			c.invalidatePlanDescendantsLocked(failed.ID)
+			c.status.ApprovalRequired = false
+			c.applyApproved = false
+		}
+		c.status.Status = statestore.RunStatusInProgress
+		c.status.FailedStep = ""
+		c.status.ResultDirective = statestore.DirectiveContinue
+		c.result = Result{}
+		if err := c.store.WriteStatus(c.status); err != nil {
+			return err
+		}
+		c.checkDoneLocked()
+		return nil
+	case statestore.ControlActionCancel:
+		now := time.Now().UTC()
+		for i := range c.status.Steps {
+			switch c.status.Steps[i].Status {
+			case string(models.AppRunnerJobStatusInDashProgress):
+				c.status.Steps[i].Status = string(models.AppRunnerJobStatusCancelled)
+				c.status.Steps[i].FinishedAt = &now
+			case string(models.AppRunnerJobStatusAvailable):
+				c.status.Steps[i].Status = string(models.AppRunnerJobStatusNotDashAttempted)
+			}
+		}
+		c.status.ResultDirective = statestore.DirectiveStop
+		c.finalizeLocked(statestore.RunStatusCancelled, c.status.FailedStep)
+		return nil
+	default:
+		return fmt.Errorf("unknown control action %q", action)
+	}
+}
+
+func (c *Client) isPlanStep(id string) bool {
+	for _, step := range c.envelope.Steps {
+		if step.PlanFromStep == id {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Client) invalidatePlanDescendantsLocked(planID string) {
+	invalid := map[string]bool{planID: true}
+	for changed := true; changed; {
+		changed = false
+		for _, step := range c.envelope.Steps {
+			blocked := step.PlanFromStep != "" && invalid[step.PlanFromStep]
+			for _, dependency := range step.DependsOn {
+				blocked = blocked || invalid[dependency]
+			}
+			if blocked && !invalid[step.ID] {
+				invalid[step.ID], changed = true, true
+			}
+		}
+	}
+	delete(invalid, planID)
+	for i := range c.status.Steps {
+		if invalid[c.status.Steps[i].ID] {
+			c.status.Steps[i].Status = string(models.AppRunnerJobStatusNotDashAttempted)
+			c.status.Steps[i].ResultDirective = ""
+		}
+	}
+}
+
 // finalizeLocked runs after handlers persist all artifacts and only once per process.
 func (c *Client) finalizeLocked(runStatus, failedStep string) {
 	c.doneOnce.Do(func() {
 		c.status.Status = runStatus
 		c.status.FailedStep = failedStep
+		if runStatus == statestore.RunStatusFinished && c.status.ResultDirective == "" {
+			c.status.ResultDirective = statestore.DirectiveContinue
+		}
+		if failedStep != "" {
+			for i := range c.status.Steps {
+				if c.status.Steps[i].Status == string(models.AppRunnerJobStatusAvailable) {
+					c.status.Steps[i].Status = string(models.AppRunnerJobStatusNotDashAttempted)
+				}
+			}
+		}
 		if c.status.FinishedAt == nil {
 			now := time.Now().UTC()
 			c.status.FinishedAt = &now

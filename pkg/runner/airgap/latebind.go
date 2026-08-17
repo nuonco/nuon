@@ -16,6 +16,10 @@ func (c *Client) renderStepPlan(step *Step) (json.RawMessage, error) {
 }
 
 func (c *Client) renderPlan(id string, compositePlan json.RawMessage, planFromStep string) (json.RawMessage, error) {
+	return c.renderPlanWithEnvelope(id, compositePlan, planFromStep, c.envelope)
+}
+
+func (c *Client) renderPlanWithEnvelope(id string, compositePlan json.RawMessage, planFromStep string, envelope *Envelope) (json.RawMessage, error) {
 	var plan map[string]any
 	if err := json.Unmarshal(compositePlan, &plan); err != nil {
 		return nil, fmt.Errorf("decode composite plan for %s: %w", id, err)
@@ -67,16 +71,16 @@ func (c *Client) renderPlan(id string, compositePlan json.RawMessage, planFromSt
 		rebindClusterInfo(plan, cluster)
 	}
 
-	SubstituteInputValues(plan, ResolveInputValues(c.envelope.Inputs, installInputs))
-	if missing := UnresolvedInputPlaceholders(plan, c.envelope.Inputs); len(missing) > 0 {
+	SubstituteInputValues(plan, ResolveInputValues(envelope.Inputs, installInputs))
+	if missing := UnresolvedInputPlaceholders(plan, envelope.Inputs); len(missing) > 0 {
 		return nil, fmt.Errorf("step %s: no value for install input(s) %s; supply them via --install-inputs", id, strings.Join(missing, ", "))
 	}
 
-	if err := c.bindComponentOutputs(id, plan); err != nil {
+	if err := c.bindComponentOutputs(id, plan, envelope); err != nil {
 		return nil, err
 	}
 
-	if c.envelope.ForceDefaultCloudAuth {
+	if envelope.ForceDefaultCloudAuth {
 		existingRoles := map[string]bool{}
 		collectIAMRoleARNs(existingRoles, stackOutputs)
 		collectIAMRoleARNs(existingRoles, sandboxOutputs)
@@ -94,12 +98,12 @@ func (c *Client) renderPlan(id string, compositePlan json.RawMessage, planFromSt
 // values from the producing steps' recorded terraform outputs. Envelope
 // dependency ordering guarantees producers apply before consumers render, so
 // a token that cannot be resolved is a hard error.
-func (c *Client) bindComponentOutputs(id string, plan map[string]any) error {
-	if len(c.envelope.OutputBindings) == 0 {
+func (c *Client) bindComponentOutputs(id string, plan map[string]any, envelope *Envelope) error {
+	if len(envelope.OutputBindings) == 0 {
 		return nil
 	}
 	values := map[string]string{}
-	for _, binding := range c.envelope.OutputBindings {
+	for _, binding := range envelope.OutputBindings {
 		if !containsString(plan, binding.Token) {
 			continue
 		}
@@ -121,7 +125,7 @@ func (c *Client) bindComponentOutputs(id string, plan map[string]any) error {
 		values[binding.Token] = rendered
 	}
 	SubstituteComponentOutputs(plan, values)
-	if missing := UnresolvedComponentOutputs(plan, c.envelope.OutputBindings); len(missing) > 0 {
+	if missing := UnresolvedComponentOutputs(plan, envelope.OutputBindings); len(missing) > 0 {
 		refs := make([]string, 0, len(missing))
 		for _, binding := range missing {
 			refs = append(refs, binding.ComponentName+"."+binding.OutputPath)
@@ -254,7 +258,7 @@ func (c *Client) latestSandboxOutputs() map[string]any {
 	defer c.mu.Unlock()
 	for i := len(c.status.Steps) - 1; i >= 0; i-- {
 		st := c.status.Steps[i]
-		if st.Status != string(models.AppRunnerJobStatusFinished) {
+		if st.Status != string(models.AppRunnerJobStatusFinished) && st.Status != string(models.AppStatusAutoDashSkipped) {
 			continue
 		}
 		step, err := c.findStep(st.ID)
@@ -281,7 +285,7 @@ func (c *Client) latestClusterOutput() map[string]any {
 	defer c.mu.Unlock()
 	for i := len(c.status.Steps) - 1; i >= 0; i-- {
 		st := c.status.Steps[i]
-		if st.Status != string(models.AppRunnerJobStatusFinished) {
+		if st.Status != string(models.AppRunnerJobStatusFinished) && st.Status != string(models.AppStatusAutoDashSkipped) {
 			continue
 		}
 		raw, ok := c.status.Outputs[st.ID]

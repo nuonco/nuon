@@ -20,8 +20,8 @@ import (
 // only occurrences of the envelope's frozen ID, so a template compiled under
 // any other ID would keep its physical IAM/log/secret names constant across
 // deployments of the same bundle and collide within one account.
-func VirtualInstallID(appConfigID string) string {
-	return virtualID("vinst", appConfigID)
+func VirtualInstallID(appID string) string {
+	return virtualID("vinst", appID)
 }
 
 // RenderConfigForStackCompile mirrors the connected install flow

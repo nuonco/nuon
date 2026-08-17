@@ -33,10 +33,18 @@ type DownloadGrant struct {
 	SupportsRange bool
 }
 
+type BlobGrant struct {
+	URL       string
+	ExpiresAt time.Time
+	Size      int64
+}
+
 type Store interface {
 	Configured() bool
 	Publish(context.Context, PublishRequest) (Replica, error)
 	Grant(context.Context, Replica, string, time.Time) (DownloadGrant, error)
+	PublishBlob(ctx context.Context, orgID, sha256Hex string, data []byte) error
+	GrantBlob(ctx context.Context, orgID, sha256Hex string) (BlobGrant, error)
 }
 
 func AsStore(constructor any) any {
@@ -55,4 +63,12 @@ func (disabledStore) Publish(context.Context, PublishRequest) (Replica, error) {
 
 func (disabledStore) Grant(context.Context, Replica, string, time.Time) (DownloadGrant, error) {
 	return DownloadGrant{}, ErrNotConfigured
+}
+
+func (disabledStore) PublishBlob(context.Context, string, string, []byte) error {
+	return ErrNotConfigured
+}
+
+func (disabledStore) GrantBlob(context.Context, string, string) (BlobGrant, error) {
+	return BlobGrant{}, ErrNotConfigured
 }

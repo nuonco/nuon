@@ -75,7 +75,7 @@ func (d *dispatcher) handle(ctx context.Context, id string, req day2.Request) er
 	if reason := d.rejectReason(id, req); reason != "" {
 		return d.mailbox.PutReceipt(ctx, day2.Receipt{DispatchID: id, RefID: req.RefID, Status: day2.ReceiptStatusRejected, Reason: reason, FinishedAt: d.now().UTC()})
 	}
-	claim, won, err := d.claim(ctx, id)
+	claim, won, err := d.claim(ctx, id, req)
 	if err != nil || !won {
 		return err
 	}
@@ -108,6 +108,12 @@ func (d *dispatcher) rejectReason(id string, req day2.Request) string {
 	if req.DeploymentID != d.deploymentID {
 		return fmt.Sprintf("deployment ID mismatch: got %q", req.DeploymentID)
 	}
+	if req.RefKind == day2.RefKindBundlePlan {
+		if err := req.ValidateBundlePlan(); err != nil {
+			return err.Error()
+		}
+		return ""
+	}
 	if req.BundleDigest != d.digest {
 		return fmt.Sprintf("bundle digest mismatch: got %q", req.BundleDigest)
 	}
@@ -117,14 +123,18 @@ func (d *dispatcher) rejectReason(id string, req day2.Request) string {
 	return ""
 }
 
-func (d *dispatcher) claim(ctx context.Context, id string) (*day2.Claim, bool, error) {
+func (d *dispatcher) claim(ctx context.Context, id string, req day2.Request) (*day2.Claim, bool, error) {
 	now := d.now().UTC()
 	existing, etag, found, err := d.mailbox.GetClaim(ctx, id)
 	if err != nil {
 		return nil, false, err
 	}
 	if !found {
-		claim := &day2.Claim{DispatchID: id, Owner: d.owner, RunID: ulid.Make().String(), Attempt: 1, CreatedAt: now, ExpiresAt: now.Add(claimTTL)}
+		runID := ulid.Make().String()
+		if req.RefKind == day2.RefKindBundlePlan {
+			runID = req.RunID
+		}
+		claim := &day2.Claim{DispatchID: id, Owner: d.owner, RunID: runID, Attempt: 1, CreatedAt: now, ExpiresAt: now.Add(claimTTL)}
 		if err := d.mailbox.ClaimNew(ctx, *claim); err != nil {
 			if errors.Is(err, ErrAlreadyClaimed) {
 				return nil, false, nil
@@ -136,7 +146,11 @@ func (d *dispatcher) claim(ctx context.Context, id string) (*day2.Claim, bool, e
 	if now.Before(existing.ExpiresAt.Add(claimGrace)) {
 		return nil, false, nil
 	}
-	claim := &day2.Claim{DispatchID: id, Owner: d.owner, RunID: ulid.Make().String(), Attempt: existing.Attempt + 1, CreatedAt: now, ExpiresAt: now.Add(claimTTL)}
+	runID := ulid.Make().String()
+	if req.RefKind == day2.RefKindBundlePlan {
+		runID = req.RunID
+	}
+	claim := &day2.Claim{DispatchID: id, Owner: d.owner, RunID: runID, Attempt: existing.Attempt + 1, CreatedAt: now, ExpiresAt: now.Add(claimTTL)}
 	if err := d.mailbox.TakeOverClaim(ctx, *claim, etag); err != nil {
 		if isConditionFailed(err) {
 			return nil, false, nil

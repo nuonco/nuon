@@ -124,6 +124,29 @@ func (c *cli) appsCmd() *cobra.Command {
 	bundlesDownloadCmd.MarkFlagRequired("file")
 	bundlesCmd.AddCommand(bundlesDownloadCmd)
 
+	var bundleCacheDir string
+	bundlesPullCmd := &cobra.Command{
+		Use:         "pull <bundle-id>",
+		Short:       "Differentially download a published air-gap bundle",
+		Long:        "Download only the bundle blobs missing from the local cache, then reassemble the exact bundle archive at --file. Repeat pulls of similar bundles transfer only what changed.",
+		Args:        cobra.ExactArgs(1),
+		Annotations: outputsAnnotation(OutputTable),
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.PullBundle(cmd.Context(), bundleAppID, args[0], apps.PullBundleOptions{
+				File:      bundleFile,
+				CacheDir:  bundleCacheDir,
+				Overwrite: bundleOverwrite,
+			})
+		}),
+	}
+	bundlesPullCmd.Flags().StringVarP(&bundleAppID, "app-id", "a", "", "The ID or name of an app (defaults to the selected app)")
+	bundlesPullCmd.Flags().StringVar(&bundleFile, "file", "", "Destination file path (required; --output controls CLI formatting)")
+	bundlesPullCmd.Flags().StringVar(&bundleCacheDir, "cache-dir", "", "Blob cache directory (defaults to ~/.config/nuon/bundle-blobs)")
+	bundlesPullCmd.Flags().BoolVar(&bundleOverwrite, "overwrite", false, "Replace an existing destination file")
+	bundlesPullCmd.MarkFlagRequired("file")
+	bundlesCmd.AddCommand(bundlesPullCmd)
+
 	var bundleInstallName string
 	bundleInstallsCmd := &cobra.Command{
 		Use:   "installs",

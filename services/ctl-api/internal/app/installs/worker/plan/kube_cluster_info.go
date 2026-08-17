@@ -67,6 +67,22 @@ func (p *Planner) resolveKubernetesContextByName(
 		return nil, errors.Wrap(err, "unable to get state data")
 	}
 
+	return p.ResolveKubernetesContextFromData(l, contextName, appCfg, stack, stateData, cloudAuth)
+}
+
+// ResolveKubernetesContextFromData is the pure core of
+// resolveKubernetesContextByName: it resolves a named kubernetes_context (or
+// the sandbox default when name is empty) against already-materialized state
+// data, with no Temporal dependency, so it can also be driven by callers that
+// render plans outside an install workflow.
+func (p *Planner) ResolveKubernetesContextFromData(
+	l *zap.Logger,
+	contextName string,
+	appCfg *app.AppConfig,
+	stack *app.InstallStack,
+	stateData map[string]any,
+	cloudAuth *CloudAuth,
+) (*kube.ClusterInfo, error) {
 	var (
 		clusterPath string
 		obj         *kube.ClusterInfo

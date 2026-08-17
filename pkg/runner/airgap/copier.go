@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"sync"
 
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -26,8 +27,13 @@ var _ ociarchive.Source = (*BundleSource)(nil)
 // build ID each packaged member was resolved from, which lets an offline run
 // map a source tag back to the bundled artifact without any registry access.
 type BundleSource struct {
-	store oras.ReadOnlyTarget
-	byTag map[string]digest.Digest
+	mu    sync.RWMutex
+	byTag map[string]bundleArtifact
+}
+
+type bundleArtifact struct {
+	store  oras.ReadOnlyTarget
+	digest digest.Digest
 }
 
 func NewBundleSource(store oras.ReadOnlyTarget, members []bundle.Member, provenance json.RawMessage) (*BundleSource, error) {
@@ -43,25 +49,98 @@ func NewBundleSource(store oras.ReadOnlyTarget, members []bundle.Member, provena
 	for _, member := range members {
 		byKey[member.Key] = member.Digest
 	}
-	byTag := make(map[string]digest.Digest, len(doc.BuildIDs))
+	byTag := make(map[string]bundleArtifact, len(doc.BuildIDs))
 	for key, buildID := range doc.BuildIDs {
 		d, ok := byKey[key]
 		if !ok {
 			return nil, fmt.Errorf("bundle provenance references member %q which is not in the bundle manifest", key)
 		}
-		byTag[buildID] = d
+		byTag[buildID] = bundleArtifact{store: store, digest: d}
 	}
-	return &BundleSource{store: store, byTag: byTag}, nil
+	return &BundleSource{byTag: byTag}, nil
+}
+
+func (s *BundleSource) AddPlanAliases(envelope *Envelope) error {
+	aliases := make(map[string]bundleArtifact)
+	for _, step := range envelope.Steps {
+		var cp plantypes.CompositePlan
+		if err := json.Unmarshal(step.CompositePlan, &cp); err != nil {
+			return fmt.Errorf("decode plan step %s: %w", step.ID, err)
+		}
+		if cp.SyncOCIPlan == nil {
+			continue
+		}
+		s.mu.RLock()
+		artifact, found := s.byTag[cp.SyncOCIPlan.SrcTag]
+		s.mu.RUnlock()
+		if !found {
+			return fmt.Errorf("step %s source tag %s is not packaged in the bundle", step.ID, cp.SyncOCIPlan.SrcTag)
+		}
+		aliases[cp.SyncOCIPlan.DstTag] = artifact
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for tag, artifact := range aliases {
+		s.byTag[tag] = artifact
+	}
+	return nil
+}
+
+// Merge returns a source containing both bundles without mutating either
+// source. Candidate tags take precedence when the same build ID is present.
+func (s *BundleSource) Merge(candidate *BundleSource) *BundleSource {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	candidate.mu.RLock()
+	defer candidate.mu.RUnlock()
+	merged := &BundleSource{byTag: make(map[string]bundleArtifact, len(s.byTag)+len(candidate.byTag))}
+	for tag, artifact := range s.byTag {
+		merged.byTag[tag] = artifact
+	}
+	for tag, artifact := range candidate.byTag {
+		merged.byTag[tag] = artifact
+	}
+	return merged
+}
+
+func (s *BundleSource) Overlay(candidate *BundleSource) func() {
+	s.mu.Lock()
+	candidate.mu.RLock()
+	previous := make(map[string]bundleArtifact, len(candidate.byTag))
+	missing := make(map[string]bool, len(candidate.byTag))
+	for tag, artifact := range candidate.byTag {
+		old, found := s.byTag[tag]
+		if found {
+			previous[tag] = old
+		} else {
+			missing[tag] = true
+		}
+		s.byTag[tag] = artifact
+	}
+	candidate.mu.RUnlock()
+	s.mu.Unlock()
+	return func() {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		for tag, artifact := range previous {
+			s.byTag[tag] = artifact
+		}
+		for tag := range missing {
+			delete(s.byTag, tag)
+		}
+	}
 }
 
 // ResolveArchive maps a plan's OCI source tag to the packaged artifact in the
 // bundle store, implementing ociarchive.Source for sandbox source unpacks.
 func (s *BundleSource) ResolveArchive(tag string) (oras.ReadOnlyTarget, string, bool) {
-	d, ok := s.byTag[tag]
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	artifact, ok := s.byTag[tag]
 	if !ok {
 		return nil, "", false
 	}
-	return s.store, d.String(), true
+	return artifact.store, artifact.digest.String(), true
 }
 
 // MissingPlanSources returns a description of every plan source in the
@@ -70,6 +149,8 @@ func (s *BundleSource) ResolveArchive(tag string) (oras.ReadOnlyTarget, string, 
 // packaged). A non-empty result means the run would need network access and
 // must not start.
 func (s *BundleSource) MissingPlanSources(envelope *Envelope) []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	var missing []string
 	for _, step := range envelope.Steps {
 		var cp plantypes.CompositePlan
@@ -111,11 +192,13 @@ type bundleCopier struct {
 var _ ocicopy.Copier = (*bundleCopier)(nil)
 
 func (c *bundleCopier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (*ocispec.Descriptor, error) {
-	d, ok := c.source.byTag[srcTag]
+	c.source.mu.RLock()
+	artifact, ok := c.source.byTag[srcTag]
+	c.source.mu.RUnlock()
 	if !ok {
 		return nil, fmt.Errorf("source %s:%s is not packaged in the bundle; air-gapped runs cannot pull from remote registries", srcCfg.Repository, srcTag)
 	}
-	return c.inner.CopyFromStore(ctx, c.source.store, d.String(), dstCfg, dstTag)
+	return c.inner.CopyFromStore(ctx, artifact.store, artifact.digest.String(), dstCfg, dstTag)
 }
 
 func (c *bundleCopier) CopyFromStore(ctx context.Context, store oras.ReadOnlyTarget, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (*ocispec.Descriptor, error) {

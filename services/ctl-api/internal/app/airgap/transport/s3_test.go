@@ -44,6 +44,23 @@ func (m *getMock) GetObject(_ context.Context, input *s3.GetObjectInput, _ ...fu
 	return m.out, nil
 }
 
+type headMock struct {
+	input *s3.HeadObjectInput
+	out   *s3.HeadObjectOutput
+	err   error
+}
+
+func (m *headMock) HeadObject(_ context.Context, input *s3.HeadObjectInput, _ ...func(*s3.Options)) (*s3.HeadObjectOutput, error) {
+	m.input = input
+	if m.err != nil {
+		return nil, m.err
+	}
+	if m.out == nil {
+		return nil, &types.NotFound{}
+	}
+	return m.out, nil
+}
+
 type presignMock struct {
 	input   *s3.GetObjectInput
 	expires time.Duration
@@ -66,7 +83,7 @@ func TestPublishNormalizesBodyAndVerifiesExactBytes(t *testing.T) {
 	size := int64(len(payload))
 	upload := &uploadMock{out: &manager.UploadOutput{VersionID: &version}}
 	get := successfulGet(payload, version, size)
-	store := newS3Store("bucket", "us-west-2", "/bundles/", time.Minute, upload, get, &presignMock{})
+	store := newS3Store("bucket", "us-west-2", "/bundles/", time.Minute, upload, get, &headMock{}, &presignMock{})
 	now := time.Date(2026, 7, 21, 12, 0, 0, 0, time.UTC)
 	store.now = func() time.Time { return now }
 	body := bytes.NewReader(payload)
@@ -90,7 +107,7 @@ func TestPublishMultipartDoesNotSetFullObjectChecksum(t *testing.T) {
 	version := "v1"
 	size := int64(len(payload))
 	upload := &uploadMock{out: &manager.UploadOutput{VersionID: &version}}
-	store := newS3Store("bucket", "region", "prefix", time.Minute, upload, successfulGet(payload, version, size), &presignMock{})
+	store := newS3Store("bucket", "region", "prefix", time.Minute, upload, successfulGet(payload, version, size), &headMock{}, &presignMock{})
 
 	_, err := store.Publish(context.Background(), PublishRequest{Body: bytes.NewReader(payload), Size: size, SHA256: digest})
 	require.NoError(t, err)
@@ -121,13 +138,13 @@ func TestPublishRejectsInvalidInputAndVerification(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			get := successfulGet(tt.getBody, tt.getVers, tt.getSize)
-			store := newS3Store("bucket", "region", "prefix", time.Minute, &uploadMock{out: &manager.UploadOutput{VersionID: tt.uploadVers}}, get, &presignMock{})
+			store := newS3Store("bucket", "region", "prefix", time.Minute, &uploadMock{out: &manager.UploadOutput{VersionID: tt.uploadVers}}, get, &headMock{}, &presignMock{})
 			_, err := store.Publish(context.Background(), PublishRequest{Body: bytes.NewReader(tt.body), Size: tt.size, SHA256: digest})
 			require.Error(t, err)
 		})
 	}
 
-	store := newS3Store("bucket", "region", "prefix", time.Minute, &uploadMock{}, &getMock{}, &presignMock{})
+	store := newS3Store("bucket", "region", "prefix", time.Minute, &uploadMock{}, &getMock{}, &headMock{}, &presignMock{})
 	_, err := store.Publish(context.Background(), PublishRequest{Size: -1, SHA256: digest})
 	require.Error(t, err)
 }
@@ -173,7 +190,7 @@ func TestNewS3RejectsInvalidResolvedConfiguration(t *testing.T) {
 
 func TestGrantPinsVersionDispositionAndEnforcesTTL(t *testing.T) {
 	presign := &presignMock{}
-	store := newS3Store("bucket", "region", "prefix", 15*time.Minute, &uploadMock{}, &getMock{}, presign)
+	store := newS3Store("bucket", "region", "prefix", 15*time.Minute, &uploadMock{}, &getMock{}, &headMock{}, presign)
 	now := time.Date(2026, 7, 21, 12, 0, 0, 0, time.UTC)
 	store.now = func() time.Time { return now }
 	replica := Replica{Provider: ProviderAWSS3, StorageRef: "key", StorageVersion: "v7"}
@@ -198,7 +215,7 @@ func TestGrantWithRealPresigner(t *testing.T) {
 		options.BaseEndpoint = aws.String("https://objects.example.test")
 		options.UsePathStyle = true
 	})
-	store := newS3Store("bundle-bucket", "us-west-2", "prefix", 15*time.Minute, &uploadMock{}, &getMock{}, s3.NewPresignClient(client))
+	store := newS3Store("bundle-bucket", "us-west-2", "prefix", 15*time.Minute, &uploadMock{}, &getMock{}, &headMock{}, s3.NewPresignClient(client))
 	now := time.Date(2026, 7, 21, 12, 0, 0, 0, time.UTC)
 	store.now = func() time.Time { return now }
 
@@ -211,6 +228,55 @@ func TestGrantWithRealPresigner(t *testing.T) {
 	require.Equal(t, `attachment; filename="bundle.tar.zst"`, parsed.Query().Get("response-content-disposition"))
 	require.NotEmpty(t, parsed.Query().Get("X-Amz-Signature"))
 	require.Equal(t, "host", strings.ToLower(parsed.Query().Get("X-Amz-SignedHeaders")))
+}
+
+func TestPublishBlobUploadsAndSkipsExisting(t *testing.T) {
+	payload := []byte("blob payload")
+	blobDigest := digestOf(payload)
+	upload := &uploadMock{out: &manager.UploadOutput{}}
+	head := &headMock{}
+	store := newS3Store("bucket", "us-west-2", "bundles", time.Minute, upload, &getMock{}, head, &presignMock{})
+
+	require.NoError(t, store.PublishBlob(context.Background(), "org123", blobDigest, payload))
+	require.Equal(t, "bundles/blobs/org123/sha256/"+blobDigest, *head.input.Key)
+	require.Equal(t, "bundles/blobs/org123/sha256/"+blobDigest, *upload.input.Key)
+	require.Equal(t, payload, upload.payload)
+	require.Nil(t, upload.input.ChecksumSHA256)
+	require.Equal(t, types.ChecksumAlgorithmSha256, upload.input.ChecksumAlgorithm)
+
+	size := int64(len(payload))
+	skipUpload := &uploadMock{out: &manager.UploadOutput{}}
+	existing := &headMock{out: &s3.HeadObjectOutput{ContentLength: &size}}
+	store = newS3Store("bucket", "us-west-2", "bundles", time.Minute, skipUpload, &getMock{}, existing, &presignMock{})
+	require.NoError(t, store.PublishBlob(context.Background(), "org123", blobDigest, payload))
+	require.Nil(t, skipUpload.input)
+}
+
+func TestPublishBlobRejectsInvalidInputs(t *testing.T) {
+	store := newS3Store("bucket", "us-west-2", "bundles", time.Minute, &uploadMock{}, &getMock{}, &headMock{}, &presignMock{})
+	require.Error(t, store.PublishBlob(context.Background(), "", digestOf([]byte("x")), []byte("x")))
+	require.Error(t, store.PublishBlob(context.Background(), "org/../123", digestOf([]byte("x")), []byte("x")))
+	require.Error(t, store.PublishBlob(context.Background(), "org123", "not-a-digest", []byte("x")))
+}
+
+func TestGrantBlobPresignsExistingBlobOnly(t *testing.T) {
+	payload := []byte("blob payload")
+	blobDigest := digestOf(payload)
+	size := int64(len(payload))
+	presign := &presignMock{}
+	head := &headMock{out: &s3.HeadObjectOutput{ContentLength: &size}}
+	store := newS3Store("bucket", "us-west-2", "bundles", time.Minute, &uploadMock{}, &getMock{}, head, presign)
+
+	grant, err := store.GrantBlob(context.Background(), "org123", blobDigest)
+	require.NoError(t, err)
+	require.Equal(t, "https://example.test/download", grant.URL)
+	require.Equal(t, size, grant.Size)
+	require.Equal(t, time.Minute, presign.expires)
+	require.Equal(t, "bundles/blobs/org123/sha256/"+blobDigest, *presign.input.Key)
+
+	missing := newS3Store("bucket", "us-west-2", "bundles", time.Minute, &uploadMock{}, &getMock{}, &headMock{}, &presignMock{})
+	_, err = missing.GrantBlob(context.Background(), "org123", blobDigest)
+	require.Error(t, err)
 }
 
 func successfulGet(payload []byte, version string, size int64) *getMock {

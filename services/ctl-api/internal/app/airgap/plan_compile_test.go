@@ -19,13 +19,13 @@ import (
 )
 
 func TestVirtualIDsAreDeterministic(t *testing.T) {
-	firstInstall := virtualID("vinst", "apc-test")
-	secondInstall := virtualID("vinst", "apc-test")
+	firstInstall := VirtualInstallID("app-test")
+	secondInstall := VirtualInstallID("app-test")
 
 	require.Equal(t, firstInstall, secondInstall)
 	require.Equal(t, "vinst"+firstInstall[5:], firstInstall)
 	require.Len(t, firstInstall, 21)
-	require.Equal(t, virtualID("vic", "apc-test:component-a"), virtualID("vic", "apc-test:component-a"))
+	require.Equal(t, virtualID("vic", "app-test:component-a"), virtualID("vic", "app-test:component-a"))
 }
 
 func TestCompileInstallSetsSandboxTerraformWorkspaceID(t *testing.T) {

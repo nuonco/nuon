@@ -36,6 +36,7 @@ type AirgapBundle struct {
 	SchemaVersion     int    `json:"schema_version" gorm:"notnull"`
 	ManifestDigest    string `json:"manifest_digest" gorm:"notnull;uniqueIndex:idx_airgap_bundle_identity"`
 	OCIRootDigest     string `json:"oci_root_digest" gorm:"notnull"`
+	OCIIndexDigest    string `json:"oci_index_digest"`
 	TransportChecksum string `json:"transport_checksum" gorm:"notnull"`
 	Size              int64  `json:"size" gorm:"notnull;type:bigint"`
 	Status            string `json:"status" gorm:"notnull"`
@@ -99,6 +100,8 @@ type AirgapBundleArtifact struct {
 	Kind                        string         `json:"kind" gorm:"notnull;uniqueIndex:idx_airgap_bundle_artifact_name"`
 	LogicalName                 string         `json:"logical_name" gorm:"notnull;uniqueIndex:idx_airgap_bundle_artifact_name"`
 	ComponentConfigConnectionID string         `json:"component_config_connection_id,omitempty"`
+	ComponentID                 string         `json:"component_id,omitempty"`
+	ActionWorkflowID            string         `json:"action_workflow_id,omitempty"`
 	AppSandboxConfigID          string         `json:"app_sandbox_config_id,omitempty"`
 	ConfigDigest                string         `json:"config_digest,omitempty"`
 	SourceType                  string         `json:"source_type,omitempty"`

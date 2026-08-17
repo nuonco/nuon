@@ -22,6 +22,7 @@ var ErrObjectExists = errors.New("state object already exists")
 
 type State interface {
 	Get(context.Context, string) ([]byte, bool, error)
+	Put(context.Context, string, []byte) error
 	PutIfAbsent(context.Context, string, []byte) error
 	List(context.Context, string) ([]string, error)
 }
@@ -57,6 +58,14 @@ func (s *Local) PutIfAbsent(_ context.Context, key string, raw []byte) error {
 	defer f.Close()
 	_, err = f.Write(raw)
 	return err
+}
+
+func (s *Local) Put(_ context.Context, key string, raw []byte) error {
+	path := filepath.Join(s.dir, filepath.FromSlash(key))
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
+	return os.WriteFile(path, raw, 0o600)
 }
 
 func (s *Local) List(_ context.Context, prefix string) ([]string, error) {
@@ -137,6 +146,19 @@ func (s *S3) PutIfAbsent(ctx context.Context, key string, raw []byte) error {
 		if errors.As(err, &apiError) && (apiError.ErrorCode() == "PreconditionFailed" || apiError.ErrorCode() == "ConditionalRequestConflict") {
 			return ErrObjectExists
 		}
+		return fmt.Errorf("put s3://%s/%s: %w", s.bucket, s.key(key), err)
+	}
+	return nil
+}
+
+func (s *S3) Put(ctx context.Context, key string, raw []byte) error {
+	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(s.bucket),
+		Key:         aws.String(s.key(key)),
+		Body:        bytes.NewReader(raw),
+		ContentType: aws.String("application/json"),
+	})
+	if err != nil {
 		return fmt.Errorf("put s3://%s/%s: %w", s.bucket, s.key(key), err)
 	}
 	return nil

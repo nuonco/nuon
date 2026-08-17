@@ -103,6 +103,7 @@ type Client interface {
 	ListAirgapBundles(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.ServiceBundleResponse, bool, error)
 	GetAirgapBundle(ctx context.Context, appID, bundleID string) (*models.ServiceBundleResponse, error)
 	CreateAirgapBundleDownloadGrant(ctx context.Context, appID, bundleID string) (*models.ServiceDownloadGrantResponse, error)
+	CreateAirgapBundleBlobGrants(ctx context.Context, appID, bundleID string, digests []string) (*models.ServiceBlobGrantsResponse, error)
 	CreateAirgapInstall(ctx context.Context, appID, bundleID, name string) (*models.ServiceAirgapInstallResponse, error)
 	ListAirgapInstalls(ctx context.Context, appID, bundleID string, query *models.GetPaginatedQuery) ([]*models.ServiceAirgapInstallResponse, bool, error)
 	ListTriggerEvents(ctx context.Context, limit int, trigger string) ([]*models.TriggerEventSummary, error)

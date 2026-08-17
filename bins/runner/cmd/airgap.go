@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -39,6 +40,7 @@ import (
 	ocicopy "github.com/nuonco/nuon/pkg/runner/oci/copy"
 	ociresolve "github.com/nuonco/nuon/pkg/runner/oci/resolve"
 	"github.com/nuonco/nuon/pkg/runner/settings"
+	"github.com/nuonco/nuon/pkg/runner/version"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 )
 
@@ -52,6 +54,8 @@ type airgapOptions struct {
 	installStackOutputs string
 	installInputs       string
 	deploymentID        string
+
+	archiveDigest string
 }
 
 func (c *cli) registerAirgap() error {
@@ -109,11 +113,16 @@ func (c *cli) runAirgap(ctx context.Context, options *airgapOptions) error {
 	var syncDone chan struct{}
 	var leaseLost atomic.Bool
 	owner := airgapLeaseOwner()
+	runnerStateDir := options.state
 	// ownerCtx gates writes that must only happen while we own the lease
 	// (final state upload, DONE marker). It survives SIGTERM but is canceled
 	// the moment the lease is lost.
 	ownerCtx := context.Background()
 	if options.stateS3 != "" {
+		runnerStateDir = filepath.Join(options.state, "runner")
+		if err := migrateLegacyLocalRunnerState(options.state, runnerStateDir); err != nil {
+			return fmt.Errorf("migrate local runner state: %w", err)
+		}
 		syncer, err = newAirgapS3Sync(ctx, options.stateS3)
 		if err != nil {
 			return err
@@ -162,7 +171,7 @@ func (c *cli) runAirgap(ctx context.Context, options *airgapOptions) error {
 				logger.Warn("unable to release deployment lease; a successor must wait out the TTL", zap.Error(releaseErr))
 			}
 		}()
-		if err := syncer.downloadPrefix(runCtx, options.state); err != nil {
+		if err := syncer.restoreRunnerState(runCtx, runnerStateDir); err != nil {
 			return fmt.Errorf("restore state: %w", err)
 		}
 		var syncCtx context.Context
@@ -171,7 +180,7 @@ func (c *cli) runAirgap(ctx context.Context, options *airgapOptions) error {
 		syncDone = make(chan struct{})
 		go func() {
 			defer close(syncDone)
-			syncer.syncLoop(syncCtx, options.state, 30*time.Second)
+			syncer.syncLoop(syncCtx, runnerStateDir, 30*time.Second)
 		}()
 	}
 
@@ -179,7 +188,7 @@ func (c *cli) runAirgap(ctx context.Context, options *airgapOptions) error {
 		if syncer == nil {
 			return nil
 		}
-		if err := syncer.uploadDir(cbCtx, options.state); err != nil {
+		if err := syncer.uploadDir(cbCtx, runnerStateDir); err != nil {
 			return fmt.Errorf("upload state: %w", err)
 		}
 		return syncer.writeDone(cbCtx, "success")
@@ -189,7 +198,7 @@ func (c *cli) runAirgap(ctx context.Context, options *airgapOptions) error {
 	if syncer != nil {
 		day2Deps = &airgapDay2Deps{syncer: syncer, owner: owner}
 	}
-	err = c.executeAirgap(runCtx, options, bundleDir, logger, onBootstrapDone, day2Deps)
+	err = c.executeAirgap(runCtx, options, runnerStateDir, bundleDir, logger, onBootstrapDone, day2Deps)
 	if syncer != nil {
 		stopSync()
 		<-syncDone
@@ -197,7 +206,7 @@ func (c *cli) runAirgap(ctx context.Context, options *airgapOptions) error {
 			return errors.Join(err, fmt.Errorf("deployment lease lost; skipping final state sync so the new owner's state is not overwritten"))
 		}
 		finalCtx, finalCancel := context.WithTimeout(ownerCtx, 2*time.Minute)
-		finalErr := syncer.uploadDir(finalCtx, options.state)
+		finalErr := syncer.uploadDir(finalCtx, runnerStateDir)
 		finalCancel()
 		err = errors.Join(err, finalErr)
 	}
@@ -230,11 +239,12 @@ func prepareAirgapBundle(ctx context.Context, options *airgapOptions) (string, s
 	if err != nil {
 		return "", "", "", fmt.Errorf("open bundle: %w", err)
 	}
-	_, extractErr := bundle.Extract(extractDir, f)
+	checksum, extractErr := bundle.Extract(extractDir, f)
 	closeErr := f.Close()
 	if extractErr != nil {
 		return "", "", "", fmt.Errorf("extract bundle: %w", extractErr)
 	}
+	options.archiveDigest = "sha256:" + checksum
 	if closeErr != nil {
 		return "", "", "", fmt.Errorf("close bundle: %w", closeErr)
 	}
@@ -271,7 +281,7 @@ type airgapDay2Deps struct {
 	owner  string
 }
 
-func (c *cli) executeAirgap(ctx context.Context, options *airgapOptions, bundleDir string, logger *zap.Logger, onBootstrapDone func(context.Context) error, day2Deps *airgapDay2Deps) error {
+func (c *cli) executeAirgap(ctx context.Context, options *airgapOptions, stateDir, bundleDir string, logger *zap.Logger, onBootstrapDone func(context.Context) error, day2Deps *airgapDay2Deps) error {
 	rawEnvelope, err := os.ReadFile(options.plan)
 	if err != nil {
 		return fmt.Errorf("read plan envelope: %w", err)
@@ -286,7 +296,7 @@ func (c *cli) executeAirgap(ctx context.Context, options *airgapOptions, bundleD
 			return err
 		}
 	}
-	store, err := statestore.NewDisk(options.state)
+	store, err := statestore.NewDisk(stateDir)
 	if err != nil {
 		return err
 	}
@@ -297,13 +307,22 @@ func (c *cli) executeAirgap(ctx context.Context, options *airgapOptions, bundleD
 	}
 	copierProvider := fx.Provide(ocicopy.New)
 	archiveSourceProvider := fx.Options()
+	var bundleSource *airgap.BundleSource
+	var bundleInfo *day2.BundleInfo
+	bundleDigest := day2.EnvelopeDigest(rawEnvelope)
 	if b, openErr := bundle.Open(ctx, bundleDir); openErr == nil {
+		bundleInfo = day2run.BundleInfoFromManifest(envelope.InstallID, bundleDigest, b.Manifest, time.Now())
+		bundleInfo.ArchiveDigest = options.archiveDigest
 		source, err := airgap.NewBundleSource(b.Store(), b.Members(), b.Provenance)
 		if err != nil {
 			return err
 		}
+		bundleSource = source
 		if missing := source.MissingPlanSources(envelope); len(missing) > 0 {
 			return fmt.Errorf("bundle does not package these plan sources: %s", strings.Join(missing, "; "))
+		}
+		if err := source.AddPlanAliases(envelope); err != nil {
+			return fmt.Errorf("resolve bundle plan sources: %w", err)
 		}
 		copierProvider = fx.Provide(func(params ocicopy.CopierParams) ocicopy.Copier {
 			return source.Copier(ocicopy.New(params))
@@ -320,10 +339,80 @@ func (c *cli) executeAirgap(ctx context.Context, options *airgapOptions, bundleD
 		return err
 	}
 	defer backend.Close()
-	client, err := airgap.NewClient(envelope, store, logger)
+	clientOptions := airgap.ClientOptions{BundleDigest: bundleDigest}
+	var activeBundle day2.BundleInfo
+	if raw, found, readErr := store.ReadFile(day2.BundleKey); readErr != nil {
+		return readErr
+	} else if found {
+		if err := json.Unmarshal(raw, &activeBundle); err != nil {
+			return fmt.Errorf("parse active bundle inventory: %w", err)
+		}
+	}
+	var candidate *day2.BundleCandidate
+	readCandidate := store.ReadFile
+	if day2Deps != nil {
+		readCandidate = func(key string) ([]byte, bool, error) {
+			return day2Deps.syncer.readControlObject(ctx, key)
+		}
+	}
+	if raw, found, readErr := readCandidate(day2.CandidateKey); readErr != nil {
+		return readErr
+	} else if found {
+		var parsed day2.BundleCandidate
+		if err := json.Unmarshal(raw, &parsed); err != nil {
+			return fmt.Errorf("parse bundle candidate: %w", err)
+		}
+		candidate = &parsed
+		if candidate.Bundle.BundleDigest == bundleDigest && activeBundle.BundleDigest != bundleDigest {
+			if candidate.PreviousDigest != activeBundle.BundleDigest {
+				return fmt.Errorf("bundle candidate was staged against %q but active bundle is %q", candidate.PreviousDigest, activeBundle.BundleDigest)
+			}
+			if candidate.Bundle.DeploymentID != envelope.InstallID {
+				return fmt.Errorf("bundle candidate targets deployment %q but runner is %q", candidate.Bundle.DeploymentID, envelope.InstallID)
+			}
+			clientOptions.BundleUpgrade = true
+			clientOptions.ApprovalPhase = "components"
+			for _, change := range candidate.Changes {
+				if change.Kind == day2.BundleContentKindSandbox && change.Change != day2.BundleChangeUnchanged {
+					if change.Change != day2.BundleChangeChanged || change.Name != "terraform" {
+						return fmt.Errorf("bundle candidate sandbox transition %q for %q is not supported", change.Change, change.Name)
+					}
+					clientOptions.UpgradeSandbox = true
+					clientOptions.ApprovalPhase = "sandbox"
+				}
+				if change.Kind == day2.BundleContentKindComponent {
+					switch change.Change {
+					case day2.BundleChangeAdded, day2.BundleChangeChanged:
+						clientOptions.UpgradeComponents = append(clientOptions.UpgradeComponents, change.Name)
+					case day2.BundleChangeRemoved:
+						return fmt.Errorf("bundle candidate removes component %q; component removal is not supported", change.Name)
+					}
+				}
+			}
+			if status, err := store.ReadStatus(); err != nil {
+				return err
+			} else if status != nil && status.BundleDigest == bundleDigest && status.ApprovalPhase != "" {
+				clientOptions.ApprovalPhase = status.ApprovalPhase
+			}
+			approvalKey := day2.CandidateApprovalKey(bundleDigest)
+			if clientOptions.ApprovalPhase == "sandbox" {
+				approvalKey = day2.CandidateSandboxApprovalKey(bundleDigest)
+			}
+			_, approved, err := readCandidate(approvalKey)
+			if err != nil {
+				return err
+			}
+			clientOptions.RequireApproval = !approved
+		}
+	}
+	client, err := airgap.NewClientWithOptions(envelope, store, logger, clientOptions)
 	if err != nil {
 		return err
 	}
+	if clientOptions.BundleUpgrade && day2Deps != nil {
+		go waitForCandidateApproval(ctx, day2Deps.syncer, bundleDigest, client, logger)
+	}
+	go waitForInstallControls(ctx, store, day2Deps, client, logger)
 	if options.installStackOutputs != "" {
 		var raw []byte
 		if strings.HasPrefix(options.installStackOutputs, "s3://") {
@@ -364,7 +453,7 @@ func (c *cli) executeAirgap(ctx context.Context, options *airgapOptions, bundleD
 	cfg := &runnerconfig.Config{
 		GitRef: "airgap", RunnerAPIURL: "http://" + backend.Addr(), RunnerAPIToken: "airgap",
 		RunnerID: "airgap-" + envelope.InstallID, HostIP: "127.0.0.1", LogLevel: options.logLevel,
-		JobLogDir: filepath.Join(options.state, "job-logs"),
+		JobLogDir: filepath.Join(stateDir, statestore.JobLogsPrefix),
 		BundleDir: bundleDir, RegistryDir: options.state + "/registry", RegistryPort: 5001,
 		HealthPort: 9999, SandboxJobDuration: 5 * time.Second, SandboxControlPort: 9095,
 	}
@@ -375,6 +464,27 @@ func (c *cli) executeAirgap(ctx context.Context, options *airgapOptions, bundleD
 		OTELConfiguration: "{}", OtelSchemaURL: cfg.RunnerAPIURL, Platform: "airgap", Cfg: cfg,
 	}
 	drainer := drain.New()
+	heartbeatCtx, stopHeartbeat := context.WithCancel(ctx)
+	heartbeatDone := make(chan struct{})
+	go func() {
+		defer close(heartbeatDone)
+		runAirgapHeartbeat(heartbeatCtx, airgap.RunnerHeartbeat{
+			RunnerID: cfg.RunnerID, SessionID: uuid.NewString(), Version: version.Version,
+			BundleDigest: day2.EnvelopeDigest(rawEnvelope), Capabilities: []string{airgap.RunnerCapabilityCandidateArtifactPlans}, StartedAt: time.Now().UTC(),
+		}, time.Minute, func(writeCtx context.Context, raw []byte) error {
+			if err := store.WriteFile(airgap.RunnerHeartbeatKey, raw); err != nil {
+				return err
+			}
+			if day2Deps != nil {
+				return day2Deps.syncer.writeRunnerHeartbeat(writeCtx, raw)
+			}
+			return nil
+		}, logger)
+	}()
+	defer func() {
+		stopHeartbeat()
+		<-heartbeatDone
+	}()
 
 	providers := []fx.Option{
 		fx.Provide(func() *runnerconfig.Config { return cfg }),
@@ -422,13 +532,15 @@ func (c *cli) executeAirgap(ctx context.Context, options *airgapOptions, bundleD
 		}
 		if result.Succeeded {
 			if day2Deps != nil {
-				executor := day2run.NewExecutor(client, envelope, store)
+				loader := &s3CandidateBundleLoader{syncer: day2Deps.syncer, deploymentID: options.deploymentID}
+				executor := day2run.NewExecutorWithCandidateLoader(client, envelope, store, bundleSource, loader)
 				controller, controllerErr := day2run.NewController(day2run.ControllerConfig{
-					Mailbox:  day2run.NewMailbox(day2Deps.syncer.client, day2Deps.syncer.bucket, day2Deps.syncer.prefix, logger),
+					Mailbox:  day2run.NewNamespacedMailbox(day2Deps.syncer.client, day2Deps.syncer.bucket, day2Deps.syncer.prefix, logger),
 					Envelope: envelope, Digest: day2.EnvelopeDigest(rawEnvelope), DeploymentID: envelope.InstallID,
 					Owner: day2Deps.owner, Executor: executor, Logger: logger, WriteLocal: store.WriteFile,
+					Bundle: bundleInfo,
 					FlushRun: func(flushCtx context.Context, runID string) error {
-						return day2Deps.syncer.uploadSubdir(flushCtx, filepath.Join(options.state, "runs", runID), day2.RunsPrefix+runID)
+						return day2Deps.syncer.uploadSubdir(flushCtx, filepath.Join(stateDir, "runs", runID), day2.RunsPrefix+runID)
 					},
 				})
 				if controllerErr != nil {

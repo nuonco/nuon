@@ -43,7 +43,7 @@ export interface paths {
   "/v1/account/static-token": {
     /**
      * create a static API token for your org
-     * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
+     * @description Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
      */
     post: operations["CreateStaticToken"];
   };
@@ -57,7 +57,7 @@ export interface paths {
   "/v1/account/static-tokens/{token_id}": {
     /**
      * delete a static API token
-     * @description Deletes a static API token belonging to your current org, along with its dedicated service account. Once deleted, the token can no longer be used to access the API.
+     * @description Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
      */
     delete: operations["DeleteStaticToken"];
   };
@@ -280,6 +280,13 @@ export interface paths {
   "/v1/apps/{app_id}/airgap-bundles/{bundle_id}": {
     /** get a published air-gap bundle */
     get: operations["GetAirgapBundle"];
+  };
+  "/v1/apps/{app_id}/airgap-bundles/{bundle_id}/blob-grants": {
+    /**
+     * create download grants for individual content-addressed bundle blobs
+     * @description Grants presigned access to individual bundle blobs so clients can download only blobs missing from their local store. Call with no digests to discover the bundle's OCI index digest, then request grants for missing blobs in batches.
+     */
+    post: operations["CreateAirgapBundleBlobGrants"];
   };
   "/v1/apps/{app_id}/airgap-bundles/{bundle_id}/download-grants": {
     /** create a download grant for a published air-gap bundle */
@@ -3485,9 +3492,11 @@ export interface components {
       updated_at?: string;
     };
     "app.AirgapBundleArtifact": {
+      action_workflow_id?: string;
       app_sandbox_config_id?: string;
       bundle_id?: string;
       component_config_connection_id?: string;
+      component_id?: string;
       config_digest?: string;
       digest?: string;
       id?: string;
@@ -6598,6 +6607,11 @@ export interface components {
       retried?: boolean;
       retry_index?: number;
       retryable?: boolean;
+      /**
+       * @description SkipOnFailure lets the workflow continue past this step after its retry
+       * budget is exhausted. Skippable only gates user-initiated skips.
+       */
+      skip_on_failure?: boolean;
       skippable?: boolean;
       started_at?: string;
       status?: components["schemas"]["app.CompositeStatus"];
@@ -8397,9 +8411,16 @@ export interface components {
       name: string;
       /**
        * @description org role granted to the token. must be assignable to API tokens; see
-       * GET /v1/roles?context=api_token. defaults to org_read_only.
+       * GET /v1/roles?context=api_token. defaults to org_read_only. must be
+       * empty for personal tokens.
        */
       role?: string;
+      /**
+       * @description "service_account" (default) creates a dedicated service account with
+       * the given role; "personal" issues the token against your own account
+       * and its existing roles, across all your orgs.
+       */
+      token_identity?: string;
     };
     "service.CreateTerraformModuleComponentConfigRequest": {
       app_config_id?: string;
@@ -9118,6 +9139,27 @@ export interface components {
       registry_url?: string;
       tenant_id?: string;
     };
+    "service.blobGrantItem": {
+      digest?: string;
+      expires_at?: string;
+      size?: number;
+      url?: string;
+    };
+    "service.blobGrantsRequest": {
+      /**
+       * @description Digests are content-addressed blob digests (sha256 hex, with or
+       * without the sha256: prefix) to grant download access for. When
+       * empty, only bundle metadata is returned so clients can discover the
+       * OCI index digest and diff against their local store first.
+       */
+      digests?: string[];
+    };
+    "service.blobGrantsResponse": {
+      grants?: components["schemas"]["service.blobGrantItem"][];
+      manifest_digest?: string;
+      oci_index_digest?: string;
+      transport_checksum?: string;
+    };
     "service.bundleResponse": {
       app_config_id?: string;
       app_id?: string;
@@ -9446,7 +9488,7 @@ export interface operations {
   };
   /**
    * create a static API token for your org
-   * @description Creates a long-lived static API token scoped to your current org. Each token gets its own dedicated service account, and only grants access to the current org. The role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only.
+   * @description Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
    */
   CreateStaticToken: {
     /** @description Input */
@@ -9480,7 +9522,7 @@ export interface operations {
   };
   /**
    * delete a static API token
-   * @description Deletes a static API token belonging to your current org, along with its dedicated service account. Once deleted, the token can no longer be used to access the API.
+   * @description Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
    */
   DeleteStaticToken: {
     parameters: {
@@ -11335,6 +11377,58 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create download grants for individual content-addressed bundle blobs
+   * @description Grants presigned access to individual bundle blobs so clients can download only blobs missing from their local store. Call with no digests to discover the bundle's OCI index digest, then request grants for missing blobs in batches.
+   */
+  CreateAirgapBundleBlobGrants: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description bundle ID */
+        bundle_id: string;
+      };
+    };
+    /** @description blob grant request */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.blobGrantsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.blobGrantsResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

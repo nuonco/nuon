@@ -43,7 +43,7 @@ func planExportTestDB(t *testing.T) *gorm.DB {
 			max_executions integer, status text, status_description text, status_v2 json,
 			type text, "group" text, operation text, executor text,
 			started_at datetime, finished_at datetime, metadata text,
-			execution_count integer, final_runner_job_execution_id text, outputs json
+			execution_count integer, final_runner_job_execution_id text, outputs json, composite_error json
 		)`,
 		`CREATE VIEW runner_jobs_view_v2 AS SELECT * FROM runner_jobs`,
 		`CREATE TABLE runners (id text primary key, runner_group_id text, deleted_at integer not null default 0)`,

@@ -68,7 +68,7 @@ func CompilePlanEnvelope(ctx context.Context, db *gorm.DB, v *validator.Validate
 	for i := range inputs {
 		inputs[i].Bindable = true
 	}
-	installID := virtualID("vinst", cfg.ID)
+	installID := VirtualInstallID(appID)
 	st, stateData, err := compileState(orgID, appID, installID, appConfigJSON, inputs, componentRefs, needsSandboxCluster(connections, cfgJSON, appConfigJSON), roleConfigNames(cfg.BreakGlassConfig.Roles), roleConfigNames(cfg.PermissionsConfig.CustomRoles), cfg.StackConfig.Type)
 	if err != nil {
 		return nil, err
@@ -129,8 +129,8 @@ func CompilePlanEnvelope(ctx context.Context, db *gorm.DB, v *validator.Validate
 		if err != nil {
 			return nil, err
 		}
-		installComponentID := virtualID("vic", cfg.ID+":"+connection.ComponentID)
-		deployID := virtualID("vdep", cfg.ID+":"+connection.ComponentID)
+		installComponentID := virtualID("vic", appID+":"+connection.ComponentID)
+		deployID := virtualID("vdep", appID+":"+connection.ComponentID)
 		ic := app.InstallComponent{ID: installComponentID, InstallID: installID, ComponentID: connection.ComponentID, Component: connection.Component}
 		installComponents = append(installComponents, ic)
 		deploy := &app.InstallDeploy{ID: deployID, OrgID: orgID, InstallID: installID, InstallComponentID: installComponentID, InstallComponent: ic, ComponentBuildID: build.ID, ComponentBuild: *build, ComponentID: connection.ComponentID, ComponentName: connection.ComponentName, Type: app.InstallDeployTypeApply}

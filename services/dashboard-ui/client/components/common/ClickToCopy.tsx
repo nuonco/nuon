@@ -4,6 +4,7 @@ import { cn } from '@/utils/classnames'
 
 export interface IClickToCopy extends React.HTMLAttributes<HTMLSpanElement> {
   noticeClassName?: string
+  copyValue?: string
 }
 
 type TUseCopyStateResult = {
@@ -47,16 +48,19 @@ export function ClickToCopy({
   className,
   children,
   noticeClassName,
+  copyValue,
   ...props
 }: IClickToCopy) {
-  let text = ''
-  if (typeof children === 'string' || typeof children === 'number') {
-    text = String(children)
-  } else if (
-    React.isValidElement(children) &&
-    typeof (children.props as any)?.children === 'string'
-  ) {
-    text = (children.props as any).children
+  let text = copyValue ?? ''
+  if (!text) {
+    if (typeof children === 'string' || typeof children === 'number') {
+      text = String(children)
+    } else if (
+      React.isValidElement(children) &&
+      typeof (children.props as any)?.children === 'string'
+    ) {
+      text = (children.props as any).children
+    }
   }
 
   const { isCopied, handleCopy } = useCopyState()

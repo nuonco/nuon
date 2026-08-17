@@ -17,12 +17,28 @@ type Executor struct {
 	client   *airgap.Client
 	envelope *airgap.Envelope
 	store    statestore.Store
+	loader   CandidateBundleLoader
+	source   *airgap.BundleSource
 	mu       sync.Mutex
 	busy     bool
 }
 
+type CandidateBundle struct {
+	Envelope *airgap.Envelope
+	Source   *airgap.BundleSource
+	Close    func() error
+}
+
+type CandidateBundleLoader interface {
+	Load(context.Context, day2.Request) (*CandidateBundle, error)
+}
+
 func NewExecutor(client *airgap.Client, envelope *airgap.Envelope, store statestore.Store) *Executor {
 	return &Executor{client: client, envelope: envelope, store: store}
+}
+
+func NewExecutorWithCandidateLoader(client *airgap.Client, envelope *airgap.Envelope, store statestore.Store, source *airgap.BundleSource, loader CandidateBundleLoader) *Executor {
+	return &Executor{client: client, envelope: envelope, store: store, source: source, loader: loader}
 }
 
 func (e *Executor) Busy() bool { e.mu.Lock(); defer e.mu.Unlock(); return e.busy }
@@ -36,6 +52,9 @@ func (e *Executor) Execute(ctx context.Context, request day2.Request, runID stri
 	e.busy = true
 	e.mu.Unlock()
 	defer func() { e.mu.Lock(); e.busy = false; e.mu.Unlock() }()
+	if request.RefKind == day2.RefKindBundlePlan {
+		return e.executeBundlePlan(ctx, request, runID)
+	}
 
 	run := &day2.RunStatus{RunID: runID, DispatchID: request.DispatchID, RefID: request.RefID, Source: request.Source, Status: day2.RunStatusInProgress, StartedAt: time.Now().UTC()}
 	if action := e.envelope.FindAction(request.RefID); action != nil {
@@ -59,7 +78,7 @@ func (e *Executor) Execute(ctx context.Context, request day2.Request, runID stri
 	failed := false
 	for i := range run.Steps {
 		if failed {
-			run.Steps[i].Status = "noop"
+			run.Steps[i].Status = day2.StepStatusDiscarded
 			continue
 		}
 		step := &run.Steps[i]
@@ -75,6 +94,92 @@ func (e *Executor) Execute(ctx context.Context, request day2.Request, runID stri
 		}
 		if err := e.persist(run); err != nil {
 			return nil, err
+		}
+	}
+	finished := time.Now().UTC()
+	run.FinishedAt = &finished
+	if failed {
+		run.Status = day2.RunStatusFailed
+		for _, step := range run.Steps {
+			if step.Error != "" {
+				run.Error = step.Error
+				break
+			}
+		}
+	} else {
+		run.Status = day2.RunStatusFinished
+	}
+	return run, e.persist(run)
+}
+
+func (e *Executor) executeBundlePlan(ctx context.Context, request day2.Request, runID string) (*day2.RunStatus, error) {
+	if e.loader == nil {
+		return nil, fmt.Errorf("candidate bundle loading is not configured")
+	}
+	candidate, err := e.loader.Load(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	if candidate == nil {
+		return nil, fmt.Errorf("candidate bundle loader returned no bundle")
+	}
+	if candidate.Close != nil {
+		defer candidate.Close()
+	}
+	if candidate.Envelope == nil || candidate.Envelope.InstallID != request.DeploymentID {
+		return nil, fmt.Errorf("candidate deployment ID mismatch")
+	}
+	if e.source != nil && candidate.Source != nil {
+		defer e.source.Overlay(candidate.Source)()
+	}
+
+	now := time.Now().UTC()
+	run := &day2.RunStatus{
+		RunID: runID, DispatchID: request.DispatchID, RefID: request.RefID, RefKind: day2.RefKindBundlePlan,
+		RefName: "candidate bundle plan", Source: request.Source, Status: day2.RunStatusInProgress,
+		BundleDigest: request.BundleDigest, StartedAt: now,
+		Steps: []day2.RunStep{{ID: "install-stack-plan", Name: "install stack plan", Kind: day2.RefKindBundlePlan, Status: day2.RunStatusFinished, StartedAt: &now, FinishedAt: &now}},
+	}
+	steps := make(map[string]airgap.Step, len(candidate.Envelope.Steps))
+	for _, step := range candidate.Envelope.Steps {
+		steps[step.ID] = step
+	}
+	for _, id := range request.PlanStepIDs {
+		step, found := steps[id]
+		if !found {
+			return nil, fmt.Errorf("candidate plan step %q not found", id)
+		}
+		if step.JobOperation != "create-apply-plan" {
+			return nil, fmt.Errorf("candidate step %q operation %q is not create-apply-plan", id, step.JobOperation)
+		}
+		run.Steps = append(run.Steps, day2.RunStep{ID: step.ID, Name: step.Name, Kind: step.JobGroup, Status: "available"})
+	}
+	if err := e.persist(run); err != nil {
+		return nil, err
+	}
+	failed := false
+	for i := 1; i < len(run.Steps); i++ {
+		stepStatus := &run.Steps[i]
+		step := steps[stepStatus.ID]
+		started := time.Now().UTC()
+		stepStatus.StartedAt, stepStatus.Status = &started, day2.RunStatusInProgress
+		stepStatus.JobID = runID + "--" + step.ID
+		handle, jobErr := e.client.EnqueueDay2JobWithEnvelope(stepStatus.JobID, step.JobType, step.JobGroup, step.JobOperation, step.CompositePlan, candidate.Envelope)
+		if jobErr == nil {
+			jobErr = handle.Await(ctx)
+		}
+		finished := time.Now().UTC()
+		stepStatus.FinishedAt = &finished
+		if jobErr != nil {
+			stepStatus.Status, stepStatus.Error, failed = day2.RunStatusFailed, jobErr.Error(), true
+		} else {
+			stepStatus.Status = day2.RunStatusFinished
+		}
+		if err := e.persist(run); err != nil {
+			return nil, err
+		}
+		if failed {
+			break
 		}
 	}
 	finished := time.Now().UTC()
@@ -128,6 +233,9 @@ func (e *Executor) executeStep(ctx context.Context, runID string, step *day2.Run
 		if err != nil {
 			return err
 		}
+		// Best-effort: the raw plan is a debugging artifact; classification
+		// below is the authoritative verdict and must not fail with it.
+		_ = e.store.WriteFile(day2.JobPlanKey(step.JobID), plan)
 		result, err := ClassifyDrift(plan)
 		step.Drift = result
 		return err
@@ -194,11 +302,35 @@ func ClassifyDrift(planJSON []byte) (*day2.DriftResult, error) {
 			result.OutputChanges++
 		}
 	}
+	driftedResources := make(map[string]bool, len(plan.ResourceDrift))
 	for _, drift := range plan.ResourceDrift {
 		if drift != nil && isTerraformChange(drift.Change) && actionableResources[drift.Address] {
 			result.ResourceDrift++
+			driftedResources[drift.Address] = true
 		}
 	}
+	var changed, noops []day2.DriftResourceChange
+	for _, change := range plan.ResourceChanges {
+		if change == nil {
+			continue
+		}
+		rc := day2.DriftResourceChange{
+			Address: change.Address,
+			Action:  changeAction(change.Change),
+			Drifted: driftedResources[change.Address],
+		}
+		if rc.Action == "noop" && !rc.Drifted {
+			noops = append(noops, rc)
+		} else {
+			changed = append(changed, rc)
+		}
+	}
+	resources := append(changed, noops...)
+	if len(resources) > day2.MaxDriftResources {
+		resources = resources[:day2.MaxDriftResources]
+		result.ResourcesTruncated = true
+	}
+	result.Resources = resources
 	result.Drifted = result.ResourceChanges > 0 || result.OutputChanges > 0 || result.ResourceDrift > 0 || len(plan.DeferredChanges) > 0
 	if result.Drifted {
 		result.Summary = fmt.Sprintf("%d resource changes, %d output changes, %d drifted resources", result.ResourceChanges, result.OutputChanges, result.ResourceDrift)
@@ -206,6 +338,24 @@ func ClassifyDrift(planJSON []byte) (*day2.DriftResult, error) {
 		result.Summary = "no drift"
 	}
 	return result, nil
+}
+
+func changeAction(change *tfjson.Change) string {
+	if change == nil {
+		return "noop"
+	}
+	switch {
+	case change.Actions.Replace():
+		return "replace"
+	case change.Actions.Create():
+		return "create"
+	case change.Actions.Delete():
+		return "destroy"
+	case change.Actions.Update():
+		return "update"
+	default:
+		return "noop"
+	}
 }
 
 func isTerraformChange(change *tfjson.Change) bool {

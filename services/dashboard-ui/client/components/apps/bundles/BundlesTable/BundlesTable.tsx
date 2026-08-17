@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Code } from '@/components/common/Code'
+import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
@@ -14,9 +15,13 @@ import { formatBytes } from '@/utils/string-utils'
 export const BundlesTable = ({
   data,
   isLoading,
+  orgId,
+  appId,
 }: {
   data: TAirgapBundle[]
   isLoading: boolean
+  orgId?: string
+  appId?: string
 }) => {
   const columns: ColumnDef<TAirgapBundle>[] = useMemo(
     () => [
@@ -25,9 +30,13 @@ export const BundlesTable = ({
         accessorKey: 'id',
         cell: (props) => (
           <div className="flex flex-col gap-1">
-            <Code variant="inline" className="!px-2 !py-1 w-fit">
-              {props.getValue<string>()}
-            </Code>
+            <Link
+              href={`/${orgId}/apps/${appId}/bundles/${props.getValue<string>()}`}
+            >
+              <Code variant="inline" className="!px-2 !py-1 w-fit">
+                {props.getValue<string>()}
+              </Code>
+            </Link>
             {props.row.original.status_description ? (
               <Text variant="subtext" theme="neutral">
                 {props.row.original.status_description}
@@ -91,7 +100,7 @@ export const BundlesTable = ({
           ) : null,
       },
     ],
-    []
+    [orgId, appId]
   )
 
   if (isLoading) {

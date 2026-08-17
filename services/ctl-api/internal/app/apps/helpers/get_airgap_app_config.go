@@ -26,6 +26,7 @@ func (h *Helpers) GetAirgapAppConfig(ctx context.Context, orgID, appID, appConfi
 			PreloadAppConfigInputConfig,
 			PreloadAppActionWorkflowConfigs,
 		).
+		Preload("ActionWorkflowConfigs.ActionWorkflow").
 		First(&appConfig)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get exact app config for air-gap bundle: %w", res.Error)

@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Disk struct {
@@ -68,13 +71,77 @@ func (d *Disk) ReadStatus() (*Status, error) {
 	if err := json.Unmarshal(b, &status); err != nil {
 		return nil, err
 	}
+	if status.RunID != "" {
+		latest, eventErr := d.readLatestEvent(status.RunID)
+		if eventErr != nil {
+			return nil, eventErr
+		}
+		if latest != nil {
+			return &latest.Status, nil
+		}
+	}
 	return &status, nil
 }
 
 func (d *Disk) WriteStatus(status *Status) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
+	if status.RunID != "" {
+		sequence, err := d.nextEventSequence(status.RunID)
+		if err != nil {
+			return err
+		}
+		event := StatusEvent{SchemaVersion: 1, Sequence: sequence, CreatedAt: time.Now().UTC(), Status: *status}
+		if err := d.writeJSON(filepath.Join(d.root, filepath.FromSlash(InstallRunEventKey(status.RunID, sequence))), event); err != nil {
+			return err
+		}
+		if err := d.writeJSON(filepath.Join(d.root, filepath.FromSlash(InstallRunStatusKey(status.RunID))), status); err != nil {
+			return err
+		}
+	}
 	return d.writeJSON(filepath.Join(d.root, "status.json"), status)
+}
+
+func (d *Disk) nextEventSequence(runID string) (uint64, error) {
+	latest, err := d.readLatestEvent(runID)
+	if err != nil || latest == nil {
+		return 1, err
+	}
+	return latest.Sequence + 1, nil
+}
+
+func (d *Disk) readLatestEvent(runID string) (*StatusEvent, error) {
+	dir := filepath.Join(d.root, filepath.FromSlash(InstallRunEventsPrefix(runID)))
+	entries, err := os.ReadDir(dir)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".json") {
+			names = append(names, entry.Name())
+		}
+	}
+	if len(names) == 0 {
+		return nil, nil
+	}
+	sort.Strings(names)
+	b, err := os.ReadFile(filepath.Join(dir, names[len(names)-1]))
+	if err != nil {
+		return nil, err
+	}
+	var event StatusEvent
+	if err := json.Unmarshal(b, &event); err != nil {
+		return nil, err
+	}
+	if event.Sequence == 0 {
+		value := strings.TrimSuffix(names[len(names)-1], ".json")
+		event.Sequence, _ = strconv.ParseUint(value, 10, 64)
+	}
+	return &event, nil
 }
 
 func (d *Disk) WriteResult(id string, value any) error {

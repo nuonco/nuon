@@ -3,8 +3,64 @@ package statestore
 import (
 	"encoding/json"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 )
+
+func TestDiskWriteStatusKeepsRunHistory(t *testing.T) {
+	root := t.TempDir()
+	store, err := NewDisk(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	status := &Status{InstallID: "install", RunID: "run-1", RunType: RunTypeInstall, Status: RunStatusInProgress}
+	if err := store.WriteStatus(status); err != nil {
+		t.Fatal(err)
+	}
+	status.Status = RunStatusFinished
+	if err := store.WriteStatus(status); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(InstallRunStatusKey("run-1"))))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var archived Status
+	if err := json.Unmarshal(raw, &archived); err != nil {
+		t.Fatal(err)
+	}
+	if archived.Status != RunStatusFinished {
+		t.Fatalf("expected archived status to track the run, got %q", archived.Status)
+	}
+	first, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(InstallRunEventKey("run-1", 1))))
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(InstallRunEventKey("run-1", 2))))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var firstEvent, secondEvent StatusEvent
+	if err := json.Unmarshal(first, &firstEvent); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(second, &secondEvent); err != nil {
+		t.Fatal(err)
+	}
+	if firstEvent.Status.Status != RunStatusInProgress || secondEvent.Status.Status != RunStatusFinished {
+		t.Fatalf("events are not immutable snapshots: %#v %#v", firstEvent, secondEvent)
+	}
+	archived.Status = RunStatusFailed
+	projection, _ := json.Marshal(archived)
+	if err := os.WriteFile(filepath.Join(root, "status.json"), projection, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	latest, err := store.ReadStatus()
+	if err != nil || latest.Status != RunStatusFinished {
+		t.Fatalf("latest event must win over projection: %#v %v", latest, err)
+	}
+}
 
 func TestDiskTerraformStateAndLock(t *testing.T) {
 	store, err := NewDisk(t.TempDir())

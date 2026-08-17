@@ -29,6 +29,7 @@ import { Readme } from './Readme'
 import { Sandbox } from './Sandbox'
 import { SandboxBuildDetail } from './SandboxBuildDetail'
 import { Bundles } from './Bundles'
+import { BundleDetail } from './BundleDetail'
 import { Branches } from './branches/Branches'
 import { BranchLayout } from './branches/BranchLayout'
 import { BranchOverviewTab } from './branches/tabs/BranchOverviewTab'
@@ -41,10 +42,9 @@ import { BranchRunbooks } from './branches/scoped/BranchRunbooks'
 import { BranchInstalls } from './branches/scoped/BranchInstalls'
 import { BranchRunDetail } from './branches/BranchRunDetail'
 
-const legacy = (
-  element: ReactNode,
-  subPath?: (params: Params) => string
-) => <LegacyAppRoute subPath={subPath}>{element}</LegacyAppRoute>
+const legacy = (element: ReactNode, subPath?: (params: Params) => string) => (
+  <LegacyAppRoute subPath={subPath}>{element}</LegacyAppRoute>
+)
 
 export const appRoutes: RouteObject[] = [
   {
@@ -114,7 +114,14 @@ export const appRoutes: RouteObject[] = [
         element: legacy(<PoliciesLayout />, () => 'policies'),
         children: [
           { index: true, element: <Policies /> },
-          { path: 'analytics', element: <Suspense><PolicyAnalytics /></Suspense> },
+          {
+            path: 'analytics',
+            element: (
+              <Suspense>
+                <PolicyAnalytics />
+              </Suspense>
+            ),
+          },
         ],
       },
       {
@@ -154,7 +161,14 @@ export const appRoutes: RouteObject[] = [
             element: <PoliciesLayout />,
             children: [
               { index: true, element: <Policies /> },
-              { path: 'analytics', element: <Suspense><PolicyAnalytics /></Suspense> },
+              {
+                path: 'analytics',
+                element: (
+                  <Suspense>
+                    <PolicyAnalytics />
+                  </Suspense>
+                ),
+              },
             ],
           },
           { path: 'policies/:policyId', element: <PolicyDetail /> },
@@ -179,6 +193,10 @@ export const appRoutes: RouteObject[] = [
         ),
       },
       { path: ':orgId/apps/:appId/bundles', element: <Bundles /> },
+      {
+        path: ':orgId/apps/:appId/bundles/:bundleId',
+        element: <BundleDetail />,
+      },
       {
         path: ':orgId/apps/:appId/installs',
         element: legacy(<Installs />, () => 'installs'),

@@ -21,6 +21,7 @@ import (
 )
 
 const (
+	CurrentSchemaVersion     = 2
 	LogicalManifestMediaType = "application/vnd.nuon.airgap.manifest.v1+json"
 	ProvenanceMediaType      = "application/vnd.nuon.airgap.provenance.v1+json"
 	QualificationMediaType   = "application/vnd.nuon.airgap.qualification.v1+json"
@@ -37,6 +38,7 @@ type LogicalManifest struct {
 	Sandbox       *Sandbox     `json:"sandbox,omitempty"`
 	Images        []Image      `json:"images,omitempty"`
 	Actions       []Action     `json:"actions,omitempty"`
+	Runbooks      []Runbook    `json:"runbooks,omitempty"`
 	StackAssets   []StackAsset `json:"stack_assets,omitempty"`
 	Runner        *Runner      `json:"runner,omitempty"`
 }
@@ -57,12 +59,15 @@ type Target struct {
 }
 
 type Component struct {
-	Name         string   `json:"name"`
-	Type         string   `json:"type"`
-	ConfigDigest string   `json:"config_digest"`
-	Source       Source   `json:"source"`
-	Artifact     Artifact `json:"artifact"`
+	Name         string              `json:"name"`
+	Type         string              `json:"type"`
+	ConfigDigest string              `json:"config_digest"`
+	Definition   ComponentDefinition `json:"definition,omitempty"`
+	Source       Source              `json:"source"`
+	Artifact     Artifact            `json:"artifact"`
 }
+
+type ComponentDefinition map[string]any
 
 type Sandbox struct {
 	Type         string   `json:"type"`
@@ -95,9 +100,80 @@ type Artifact struct {
 }
 
 type Action struct {
-	Name         string `json:"name"`
-	ConfigDigest string `json:"config_digest"`
-	Steps        []Step `json:"steps,omitempty"`
+	Name         string            `json:"name"`
+	ConfigDigest string            `json:"config_digest"`
+	Definition   *ActionDefinition `json:"definition,omitempty"`
+	Steps        []Step            `json:"steps,omitempty"`
+}
+
+type ActionDefinition struct {
+	TimeoutNanos          int64                     `json:"timeout_nanos,omitempty"`
+	Role                  string                    `json:"role,omitempty"`
+	BreakGlassRoleARN     string                    `json:"break_glass_role_arn,omitempty"`
+	EnableKubeConfig      bool                      `json:"enable_kube_config,omitempty"`
+	KubernetesContextName string                    `json:"kubernetes_context_name,omitempty"`
+	ComponentDependencies []string                  `json:"component_dependencies,omitempty"`
+	References            []string                  `json:"references,omitempty"`
+	Triggers              []ActionTriggerDefinition `json:"triggers,omitempty"`
+	Steps                 []ActionStepDefinition    `json:"steps,omitempty"`
+}
+
+type ActionTriggerDefinition struct {
+	Type          string `json:"type"`
+	Index         int    `json:"index,omitempty"`
+	CronSchedule  string `json:"cron_schedule,omitempty"`
+	ComponentName string `json:"component_name,omitempty"`
+}
+
+type ActionStepDefinition struct {
+	Name                 string            `json:"name"`
+	Index                int               `json:"index,omitempty"`
+	Command              string            `json:"command,omitempty"`
+	InlineContentsDigest string            `json:"inline_contents_digest,omitempty"`
+	Environment          map[string]string `json:"environment,omitempty"`
+}
+
+type Runbook struct {
+	Name         string            `json:"name"`
+	ConfigDigest string            `json:"config_digest"`
+	Definition   RunbookDefinition `json:"definition"`
+}
+
+type RunbookDefinition struct {
+	ReadmeDigest string                   `json:"readme_digest,omitempty"`
+	Inputs       []RunbookInputDefinition `json:"inputs,omitempty"`
+	Steps        []RunbookStepDefinition  `json:"steps"`
+}
+
+type RunbookStepDefinition struct {
+	Kind                 string            `json:"kind"`
+	Name                 string            `json:"name,omitempty"`
+	Index                int               `json:"index,omitempty"`
+	Reference            string            `json:"reference,omitempty"`
+	Component            string            `json:"component,omitempty"`
+	Role                 string            `json:"role,omitempty"`
+	PlanOnly             bool              `json:"plan_only,omitempty"`
+	DeployDependents     bool              `json:"deploy_dependents,omitempty"`
+	TearDownDependents   bool              `json:"tear_down_dependents,omitempty"`
+	SkipComponentDeploys bool              `json:"skip_component_deploys,omitempty"`
+	Command              string            `json:"command,omitempty"`
+	InlineContentsDigest string            `json:"inline_contents_digest,omitempty"`
+	Environment          map[string]string `json:"environment,omitempty"`
+	TimeoutNanos         int64             `json:"timeout_nanos,omitempty"`
+	TriggerName          string            `json:"trigger_name,omitempty"`
+	EventTypes           []string          `json:"event_types,omitempty"`
+	FiltersDigest        string            `json:"filters_digest,omitempty"`
+}
+
+type RunbookInputDefinition struct {
+	Name        string `json:"name"`
+	DisplayName string `json:"display_name,omitempty"`
+	Description string `json:"description,omitempty"`
+	Default     string `json:"default,omitempty"`
+	Type        string `json:"type,omitempty"`
+	Index       int    `json:"index,omitempty"`
+	Required    bool   `json:"required,omitempty"`
+	Sensitive   bool   `json:"sensitive,omitempty"`
 }
 
 type Step struct {
@@ -131,12 +207,18 @@ type Result struct {
 	ManifestDescriptor ocispec.Descriptor
 	BundleDescriptor   ocispec.Descriptor
 	TransportSHA256    string
+	Index              json.RawMessage
 }
 
 type GenerateOptions struct {
 	MaxContentBytes int64
 	MaxBlobBytes    int64
 	OnBlobVerified  func(ocispec.Descriptor)
+	// BlobSink receives every content-addressed blob in the bundle (in
+	// digest order) after the archive has been written successfully. It
+	// enables publishing the bundle as individual blobs for differential
+	// downloads alongside the monolithic archive.
+	BlobSink func(digest.Digest, []byte) error
 }
 
 func Generate(ctx context.Context, dst io.Writer, logical LogicalManifest, roots []Root) (Result, error) {
@@ -176,7 +258,7 @@ func GenerateWithOptions(ctx context.Context, dst io.Writer, logical LogicalMani
 	}
 	sort.Slice(rootDescs, func(i, j int) bool { return rootDescs[i].Digest.String() < rootDescs[j].Digest.String() })
 	layers := make([]ocispec.Descriptor, 0, 2)
-	files := map[string][]byte{"oci-layout": []byte("{\"imageLayoutVersion\":\"1.0.0\"}\n"), "bundle-manifest.json": logicalJSON}
+	files := map[string][]byte{"oci-layout": []byte(ociLayoutContents), "bundle-manifest.json": logicalJSON}
 	for _, document := range []struct {
 		name      string
 		mediaType string
@@ -225,7 +307,19 @@ func GenerateWithOptions(ctx context.Context, dst io.Writer, logical LogicalMani
 	if err := writeArchive(io.MultiWriter(dst, h), files); err != nil {
 		return Result{}, err
 	}
-	return Result{ManifestDescriptor: logicalDesc, BundleDescriptor: bundleDesc, TransportSHA256: hex.EncodeToString(h.Sum(nil))}, nil
+	if opts.BlobSink != nil {
+		digests := make([]digest.Digest, 0, len(blobs))
+		for dgst := range blobs {
+			digests = append(digests, dgst)
+		}
+		sort.Slice(digests, func(i, j int) bool { return digests[i].String() < digests[j].String() })
+		for _, dgst := range digests {
+			if err := opts.BlobSink(dgst, blobs[dgst]); err != nil {
+				return Result{}, fmt.Errorf("sink blob %s: %w", dgst, err)
+			}
+		}
+	}
+	return Result{ManifestDescriptor: logicalDesc, BundleDescriptor: bundleDesc, TransportSHA256: hex.EncodeToString(h.Sum(nil)), Index: indexJSON}, nil
 }
 
 func specsVersioned() specs.Versioned { return specs.Versioned{SchemaVersion: 2} }
@@ -237,12 +331,13 @@ func canonicalize(m LogicalManifest) LogicalManifest {
 	for i := range m.Actions {
 		sort.Slice(m.Actions[i].Steps, func(j, k int) bool { return m.Actions[i].Steps[j].Name < m.Actions[i].Steps[k].Name })
 	}
+	sort.Slice(m.Runbooks, func(i, j int) bool { return m.Runbooks[i].Name < m.Runbooks[j].Name })
 	sort.Slice(m.StackAssets, func(i, j int) bool { return m.StackAssets[i].Role < m.StackAssets[j].Role })
 	return m
 }
 
 func validateMembers(logical LogicalManifest, roots []Root) error {
-	if logical.SchemaVersion != 1 {
+	if logical.SchemaVersion < 1 || logical.SchemaVersion > CurrentSchemaVersion {
 		return fmt.Errorf("unsupported bundle manifest schema version %d", logical.SchemaVersion)
 	}
 	if logical.Target.OS != "linux" || logical.Target.Architecture != "amd64" {
@@ -345,6 +440,17 @@ func validateMembers(logical LogicalManifest, roots []Root) error {
 			if err := claim("action:" + action.Name + "/step:" + step.Name); err != nil {
 				return err
 			}
+		}
+	}
+	for _, runbook := range logical.Runbooks {
+		if runbook.Name == "" {
+			return fmt.Errorf("runbook name is required")
+		}
+		if err := validateContentDigest(runbook.ConfigDigest); err != nil {
+			return fmt.Errorf("runbook %s config digest: %w", runbook.Name, err)
+		}
+		if err := claim("runbook:" + runbook.Name); err != nil {
+			return err
 		}
 	}
 	if logical.Runner != nil {
@@ -483,7 +589,7 @@ func collect(ctx context.Context, src oras.ReadOnlyTarget, desc ocispec.Descript
 		return nil
 	}
 	traversed[key] = true
-	children, err := successors(desc.MediaType, b)
+	children, err := Successors(desc.MediaType, b)
 	if err != nil {
 		return fmt.Errorf("parse %s: %w", desc.Digest, err)
 	}
@@ -495,7 +601,73 @@ func collect(ctx context.Context, src oras.ReadOnlyTarget, desc ocispec.Descript
 	return nil
 }
 
-func successors(mediaType string, b []byte) ([]ocispec.Descriptor, error) {
+// TotalSize walks the artifact graph rooted at desc and returns the sum of
+// every unique referenced blob's size, including manifests. Only manifest
+// blobs are fetched to discover children; leaf blob sizes come from their
+// descriptors.
+func TotalSize(ctx context.Context, src oras.ReadOnlyTarget, desc ocispec.Descriptor) (int64, error) {
+	seen := map[digest.Digest]bool{}
+	var total int64
+	var walk func(ocispec.Descriptor) error
+	walk = func(d ocispec.Descriptor) error {
+		if err := validateDescriptor(d); err != nil {
+			return err
+		}
+		if seen[d.Digest] {
+			return nil
+		}
+		seen[d.Digest] = true
+		total += d.Size
+		if !IsManifestMediaType(d.MediaType) {
+			return nil
+		}
+		r, err := src.Fetch(ctx, d)
+		if err != nil {
+			return fmt.Errorf("fetch %s: %w", d.Digest, err)
+		}
+		b, err := io.ReadAll(io.LimitReader(r, d.Size+1))
+		closeErr := r.Close()
+		if err != nil {
+			return fmt.Errorf("read %s: %w", d.Digest, err)
+		}
+		if closeErr != nil {
+			return fmt.Errorf("close %s: %w", d.Digest, closeErr)
+		}
+		if int64(len(b)) != d.Size {
+			return fmt.Errorf("size mismatch for %s: expected %d, got %d", d.Digest, d.Size, len(b))
+		}
+		children, err := Successors(d.MediaType, b)
+		if err != nil {
+			return fmt.Errorf("parse %s: %w", d.Digest, err)
+		}
+		for _, child := range children {
+			if err := walk(child); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if err := walk(desc); err != nil {
+		return 0, err
+	}
+	return total, nil
+}
+
+func IsManifestMediaType(mediaType string) bool {
+	switch mediaType {
+	case ocispec.MediaTypeImageManifest, "application/vnd.docker.distribution.manifest.v2+json",
+		"application/vnd.oci.artifact.manifest.v1+json",
+		ocispec.MediaTypeImageIndex, "application/vnd.docker.distribution.manifest.list.v2+json":
+		return true
+	default:
+		return false
+	}
+}
+
+// Successors returns the descriptors directly referenced by a manifest-like
+// blob, or nil for leaf media types. It lets callers walk a bundle's OCI graph
+// without fetching leaf content.
+func Successors(mediaType string, b []byte) ([]ocispec.Descriptor, error) {
 	switch mediaType {
 	case ocispec.MediaTypeImageManifest, "application/vnd.docker.distribution.manifest.v2+json":
 		var m struct {
