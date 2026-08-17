@@ -21,6 +21,7 @@ func setupCheckBuildNeededDB(t *testing.T) *gorm.DB {
 			app_config_id TEXT,
 			component_id TEXT,
 			checksum TEXT,
+			latest_build_id TEXT,
 			created_at DATETIME,
 			updated_at DATETIME,
 			deleted_at INTEGER DEFAULT 0
@@ -50,12 +51,20 @@ func setupCheckBuildNeededDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-func insertConnection(t *testing.T, db *gorm.DB, id, appConfigID, componentID, checksum string) {
+func insertConnection(t *testing.T, db *gorm.DB, id, appConfigID, componentID, checksum, latestBuildID string) {
 	t.Helper()
 	require.NoError(t, db.Exec(`
-		INSERT INTO component_config_connections (id, app_config_id, component_id, checksum, created_at, updated_at)
-		VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
-	`, id, appConfigID, componentID, checksum).Error)
+		INSERT INTO component_config_connections (id, app_config_id, component_id, checksum, latest_build_id, created_at, updated_at)
+		VALUES (?, ?, ?, ?, nullif(?, ''), datetime('now'), datetime('now'))
+	`, id, appConfigID, componentID, checksum, latestBuildID).Error)
+}
+
+func insertBuild(t *testing.T, db *gorm.DB, id, connID, status string) {
+	t.Helper()
+	require.NoError(t, db.Exec(`
+		INSERT INTO component_builds (id, component_config_connection_id, status, created_at, updated_at)
+		VALUES (?, ?, ?, datetime('now'), datetime('now'))
+	`, id, connID, status).Error)
 }
 
 func TestCheckBuildNeeded(t *testing.T) {
@@ -63,12 +72,9 @@ func TestCheckBuildNeeded(t *testing.T) {
 
 	t.Run("unchanged checksum with active build reuses build", func(t *testing.T) {
 		db := setupCheckBuildNeededDB(t)
-		insertConnection(t, db, "conn-old", "cfg-old", componentID, "sum")
-		insertConnection(t, db, "conn-new", "cfg-new", componentID, "sum")
-		require.NoError(t, db.Exec(`
-			INSERT INTO component_builds (id, component_config_connection_id, status, created_at, updated_at)
-			VALUES ('bld-1', 'conn-old', 'active', datetime('now'), datetime('now'))
-		`).Error)
+		insertConnection(t, db, "conn-old", "cfg-old", componentID, "sum", "")
+		insertConnection(t, db, "conn-new", "cfg-new", componentID, "sum", "")
+		insertBuild(t, db, "bld-1", "conn-old", "active")
 
 		a := &Activities{db: db}
 		out, err := a.CheckBuildNeeded(context.Background(), &CheckBuildNeededInput{
@@ -83,16 +89,13 @@ func TestCheckBuildNeeded(t *testing.T) {
 
 	t.Run("update_policy always rebuilds even when checksum unchanged", func(t *testing.T) {
 		db := setupCheckBuildNeededDB(t)
-		insertConnection(t, db, "conn-old", "cfg-old", componentID, "sum")
-		insertConnection(t, db, "conn-new", "cfg-new", componentID, "sum")
+		insertConnection(t, db, "conn-old", "cfg-old", componentID, "sum", "")
+		insertConnection(t, db, "conn-new", "cfg-new", componentID, "sum", "")
 		require.NoError(t, db.Exec(`
 			INSERT INTO external_image_component_configs (id, component_config_connection_id, update_policy, created_at, updated_at)
 			VALUES ('img-1', 'conn-new', '~1.10.0', datetime('now'), datetime('now'))
 		`).Error)
-		require.NoError(t, db.Exec(`
-			INSERT INTO component_builds (id, component_config_connection_id, status, created_at, updated_at)
-			VALUES ('bld-1', 'conn-old', 'active', datetime('now'), datetime('now'))
-		`).Error)
+		insertBuild(t, db, "bld-1", "conn-old", "active")
 
 		a := &Activities{db: db}
 		out, err := a.CheckBuildNeeded(context.Background(), &CheckBuildNeededInput{
@@ -104,18 +107,11 @@ func TestCheckBuildNeeded(t *testing.T) {
 		require.True(t, out.NeedsBuild)
 	})
 
-	t.Run("external image without update_policy still reuses build", func(t *testing.T) {
+	t.Run("pinned active build reuses without checksum compare", func(t *testing.T) {
 		db := setupCheckBuildNeededDB(t)
-		insertConnection(t, db, "conn-old", "cfg-old", componentID, "sum")
-		insertConnection(t, db, "conn-new", "cfg-new", componentID, "sum")
-		require.NoError(t, db.Exec(`
-			INSERT INTO external_image_component_configs (id, component_config_connection_id, update_policy, created_at, updated_at)
-			VALUES ('img-1', 'conn-new', '', datetime('now'), datetime('now'))
-		`).Error)
-		require.NoError(t, db.Exec(`
-			INSERT INTO component_builds (id, component_config_connection_id, status, created_at, updated_at)
-			VALUES ('bld-1', 'conn-old', 'active', datetime('now'), datetime('now'))
-		`).Error)
+		insertConnection(t, db, "conn-old", "cfg-old", componentID, "sum-old", "")
+		insertConnection(t, db, "conn-new", "cfg-new", componentID, "sum-new", "bld-1")
+		insertBuild(t, db, "bld-1", "conn-old", "active")
 
 		a := &Activities{db: db}
 		out, err := a.CheckBuildNeeded(context.Background(), &CheckBuildNeededInput{
@@ -126,6 +122,23 @@ func TestCheckBuildNeeded(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, out.NeedsBuild)
 		require.Equal(t, "bld-1", out.ExistingBuildID)
+	})
+
+	t.Run("pinned queued build forces build", func(t *testing.T) {
+		db := setupCheckBuildNeededDB(t)
+		insertConnection(t, db, "conn-old", "cfg-old", componentID, "sum", "")
+		insertConnection(t, db, "conn-new", "cfg-new", componentID, "sum", "bld-2")
+		insertBuild(t, db, "bld-1", "conn-old", "active")
+		insertBuild(t, db, "bld-2", "conn-new", "queued")
+
+		a := &Activities{db: db}
+		out, err := a.CheckBuildNeeded(context.Background(), &CheckBuildNeededInput{
+			ComponentID:    componentID,
+			NewAppConfigID: "cfg-new",
+			OldAppConfigID: "cfg-old",
+		})
+		require.NoError(t, err)
+		require.True(t, out.NeedsBuild)
 	})
 
 	t.Run("no previous config always builds", func(t *testing.T) {

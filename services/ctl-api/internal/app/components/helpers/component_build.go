@@ -48,7 +48,7 @@ func (s *Helpers) createComponentBuild(ctx context.Context, buildID, cmpID strin
 
 	bld := app.ComponentBuild{
 		ID:                          buildID,
-		Status:                      "queued",
+		Status:                      app.ComponentBuildStatusQueued,
 		StatusDescription:           "queued and waiting for runner to pick up",
 		GitRef:                      gitRef,
 		ComponentConfigConnectionID: cmp.LatestConfig.ID,

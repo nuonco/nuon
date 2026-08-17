@@ -15,6 +15,7 @@ import (
 type ComponentBuildStatus string
 
 const (
+	ComponentBuildStatusQueued       ComponentBuildStatus = "queued"
 	ComponentBuildStatusPlanning     ComponentBuildStatus = "planning"
 	ComponentBuildStatusError        ComponentBuildStatus = "error"
 	ComponentBuildStatusBuilding     ComponentBuildStatus = "building"

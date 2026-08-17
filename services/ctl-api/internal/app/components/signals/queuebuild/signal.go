@@ -44,6 +44,19 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	buildID := s.BuildID
 
+	// Adopt the syncer's pre-created queued build instead of duplicating it.
+	if buildID == "" && s.AppConfigID != "" {
+		adopted, err := activities.AwaitAdoptQueuedComponentBuild(ctx, activities.AdoptQueuedComponentBuildRequest{
+			ComponentID:    s.ComponentID,
+			AppConfigID:    s.AppConfigID,
+			AppBranchRunID: s.AppBranchRunID,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to adopt queued build: %w", err)
+		}
+		buildID = adopted.BuildID
+	}
+
 	// If no pre-created build, create the build record.
 	if buildID == "" {
 		cmp, err := activities.AwaitGetComponentByComponentID(ctx, s.ComponentID)
