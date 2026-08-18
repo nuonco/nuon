@@ -805,6 +805,9 @@ func (h *WebhookSignalLifecycleHook) buildEventDataForSignal(ctx context.Context
 		if !emit {
 			return lifecycleEventData{}, false
 		}
+		if isAwaitRunnerHealthyStep(event, stepRef) {
+			return lifecycleEventData{}, false
+		}
 		data.Step = stepRef
 		// Fallback: if the step JOIN surfaced an install name and the event
 		// itself didn't carry one (older signals enqueued before owner_name
@@ -820,6 +823,11 @@ func (h *WebhookSignalLifecycleHook) buildEventDataForSignal(ctx context.Context
 	data.Links = h.buildContextLinks(event, data.Step)
 
 	return data, true
+}
+
+func isAwaitRunnerHealthyStep(event signal.SignalPhaseEvent, step *workflowStepRef) bool {
+	return event.StepName == "runner healthy" ||
+		step != nil && step.TargetType == string(app.WorkflowStepTargetTypeRunners)
 }
 
 func (h *WebhookSignalLifecycleHook) buildStackEventData(_ context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
