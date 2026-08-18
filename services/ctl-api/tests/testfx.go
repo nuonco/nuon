@@ -44,6 +44,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/salesforce"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/autolink"
+	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/blob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
@@ -132,6 +134,10 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 
 		// Blob storage service
 		fx.Provide(blobstore.NewService),
+
+		// Slack helpers (needed transitively by orgshelpers)
+		fx.Provide(func() *slackclient.Client { return slackclient.New() }),
+		fx.Provide(autolink.New),
 
 		// Temporal dependencies
 		fx.Provide(gzip.AsGzip(gzip.New)),

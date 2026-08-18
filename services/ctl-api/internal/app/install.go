@@ -259,14 +259,17 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 		i.SandboxMode.Bool = org.SandboxMode
 	}
 
-	if i.AppRunnerConfig.ID != "" {
-		i.CloudPlatform = i.AppRunnerConfig.CloudPlatform
-		i.RunnerType = i.AppRunnerConfig.Type
-
-	} else {
-		i.CloudPlatform = CloudPlatformUnknown
-		i.RunnerType = AppRunnerTypeUnknown
+	// app_runner_config_id is rewritten for every install in the app on every sync, so
+	// prefer the install's own pinned app config like the provisioning workflows do.
+	runnerType := i.AppRunnerConfig.Type
+	if i.AppConfig.RunnerConfig.ID != "" {
+		runnerType = i.AppConfig.RunnerConfig.Type
 	}
+	if runnerType == "" {
+		runnerType = AppRunnerTypeUnknown
+	}
+	i.RunnerType = runnerType
+	i.CloudPlatform = runnerType.CloudPlatform()
 
 	i.setExpectedCloudIdentifiers()
 	i.PhoneHomeAuthStatus = i.PhoneHomeAuth.Status()

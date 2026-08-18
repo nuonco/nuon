@@ -49,7 +49,7 @@ export function parseInstallsToTableData(
     region: (
       <CloudRegion
         variant="subtext"
-        platform={install?.gcp_account ? 'gcp' : install?.aws_account ? 'aws' : 'azure'}
+        platform={(install?.cloud_platform as TCloudPlatform) || 'unknown'}
         region={install.gcp_account?.region || install.aws_account?.region}
         location={install.azure_account?.location}
       />
