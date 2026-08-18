@@ -126,11 +126,18 @@ func (a *Templates) getRunnerPhoneHomeProps(inp *stacks.TemplateInput, customSta
 // phone-home Lambda uses.
 const lambdaInlineCodeLimit = 4096
 
-// validatePhoneHomeScriptSize fails the render rather than letting an oversized
+// validatePhoneHomeScript fails the render rather than letting an empty or oversized
 // script fail at CreateStack inside the customer's account, where the error is far
 // harder to attribute. The escape hatch when the script legitimately outgrows this
 // is an S3-hosted zip (Code.S3Bucket/S3Key) in the existing template bucket.
-func validatePhoneHomeScriptSize(script string) error {
+//
+// Empty is checked here rather than as a `validate:"required"` tag on TemplateInput
+// because the Azure and GCP renderers share that struct and have no phone-home Lambda.
+func validatePhoneHomeScript(script string) error {
+	if script == "" {
+		return fmt.Errorf("phone home script is empty")
+	}
+
 	if len(script) > lambdaInlineCodeLimit {
 		return fmt.Errorf(
 			"phone home script is %d bytes, over the %d byte limit for inline lambda source",

@@ -173,14 +173,18 @@ func TestGetRunnerPhoneHomeLambda_TimeoutAndMemory(t *testing.T) {
 	}
 }
 
-// An oversized script otherwise fails at CreateStack inside the customer's account,
-// where the cause is far harder to attribute.
-func TestValidatePhoneHomeScriptSize(t *testing.T) {
-	assert.NoError(t, validatePhoneHomeScriptSize(strings.Repeat("x", lambdaInlineCodeLimit)))
+// An empty or oversized script otherwise fails at CreateStack inside the customer's
+// account, where the cause is far harder to attribute.
+func TestValidatePhoneHomeScript(t *testing.T) {
+	assert.NoError(t, validatePhoneHomeScript(strings.Repeat("x", lambdaInlineCodeLimit)))
 
-	err := validatePhoneHomeScriptSize(strings.Repeat("x", lambdaInlineCodeLimit+1))
+	err := validatePhoneHomeScript(strings.Repeat("x", lambdaInlineCodeLimit+1))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "inline lambda source")
+
+	err = validatePhoneHomeScript("")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "empty")
 }
 
 // The role name is load-bearing: the secret's resource policy in the management account
