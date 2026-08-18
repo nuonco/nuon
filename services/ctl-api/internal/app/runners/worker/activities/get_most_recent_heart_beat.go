@@ -16,6 +16,7 @@ type GetMostRecentHeartBeatRequest struct {
 }
 
 // @temporal-gen-v2 activity
+// @max-retries 1
 // @by-field RunnerID
 func (a *Activities) GetMostRecentHeartBeatRequest(ctx context.Context, req GetMostRecentHeartBeatRequest) (*app.RunnerHeartBeat, error) {
 	hb, err := a.getMostRecentHeartBeat(ctx, req.RunnerID, req.Process)

@@ -14,6 +14,7 @@ type GetJobExecutionRequest struct {
 }
 
 // @temporal-gen-v2 activity
+// @max-retries 1
 func (a *Activities) GetJobExecution(ctx context.Context, req GetJobExecutionRequest) (*app.RunnerJobExecution, error) {
 	job, err := a.getRunnerJobExecution(ctx, req.JobExecutionID)
 	if err != nil {
