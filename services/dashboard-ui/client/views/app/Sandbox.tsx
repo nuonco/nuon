@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { AppSandbox as SandboxConfig } from '@/components/apps/config/AppSandbox'
 import { BuildSandboxButton } from '@/components/sandbox/management/BuildSandbox'
 import { SandboxBuildTimeline } from '@/components/sandbox/builds/SandboxBuildTimeline'
@@ -18,6 +18,7 @@ export const Sandbox = () => {
   const { app } = useApp()
 
   const { data: configs } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-configs', org?.id, app?.id],
     queryFn: () => getAppConfigs({ orgId: org.id, appId: app.id, limit: 1 }),
     enabled: !!org?.id && !!app?.id,
@@ -26,6 +27,7 @@ export const Sandbox = () => {
   const appConfigId = configs?.at(0)?.id
 
   const { data: appConfig, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-config', org?.id, app?.id, appConfigId, 'recurse'],
     queryFn: () =>
       getAppConfig({ orgId: org.id, appId: app.id, appConfigId, recurse: true }),

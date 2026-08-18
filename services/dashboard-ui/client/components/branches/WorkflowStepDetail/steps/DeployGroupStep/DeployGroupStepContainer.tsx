@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppInstalls } from '@/lib'
@@ -22,6 +22,7 @@ export const DeployGroupStepContainer = ({ step, metadata }: IDeployGroupStepCon
   const deployedCount = installEntries.filter((e: any) => e.status === 'success' || e.status === 'deployed').length
 
   const { data: appInstalls } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-installs', org?.id, app?.id],
     queryFn: () => getAppInstalls({ orgId: org!.id, appId: app!.id, limit: 100 }),
     enabled: !!org?.id && !!app?.id && installEntries.length > 0,

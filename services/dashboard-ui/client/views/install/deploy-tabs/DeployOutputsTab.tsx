@@ -1,6 +1,6 @@
 import { useParams } from 'react-router'
 import { useOutletContext } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { HelmOutputs } from '@/components/deploys/outputs/HelmOutputs/HelmOutputs'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Loading } from '@/components/common/Loading'
@@ -17,6 +17,7 @@ export const DeployOutputsTab = () => {
   const { deploy } = useDeploy()
 
   const { data: outputs, isLoading, error } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-component-outputs', org?.id, installId, componentId],
     queryFn: () =>
       getInstallComponentOutputs({

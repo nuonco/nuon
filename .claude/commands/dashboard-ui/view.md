@@ -100,6 +100,10 @@ import { redirect, type RouteObject } from 'react-router'
 
 See `client/views/install/routes.tsx` for examples.
 
+## Loading states
+
+A page's loading state is the page itself with `loading` primitives inside — breadcrumbs, headings, and tabs render real immediately; each region renders its normal components in loading mode. No full-page spinners, no hand-built page-skeleton blocks. Use the primitive `loading` prop, `<Table isLoading>` / `Timeline` for collections, and `<Loading variant="large" />` only for unknown-shape content. Add `placeholderData: keepPreviousData` to list/detail `useQuery` sites so revisits skip the cold load (leave SSE-backed views alone — they already write the cache). See `DESIGN.md` §5 "Loading states".
+
 ## Anti-Patterns
 
 - **Do not** register an install-level route outside `InstallLayout.children` — the view will render without its providers
@@ -108,3 +112,4 @@ See `client/views/install/routes.tsx` for examples.
 - **Do not** call `useInstall()` outside a route that is a child of `InstallLayout` — the provider won't be present
 - **Do not** add `isScrollable`, `CONTAINER_ID`, or `<BackToTop />` to view files — PageLayout handles scrolling and back-to-top automatically
 - **Do not** use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead
+- **Do not** hand-build a page-skeleton block or full-page spinner — render chrome real and drive regions off `loading` primitives

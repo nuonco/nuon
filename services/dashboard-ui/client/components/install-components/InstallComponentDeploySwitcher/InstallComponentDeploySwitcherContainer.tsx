@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { IDropdown } from '@/components/common/Dropdown'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -36,6 +36,7 @@ export const InstallComponentDeploySwitcherContainer = ({
         offset,
       }),
     enabled: !!org?.id && !!install?.id,
+    placeholderData: keepPreviousData,
   })
 
   const scrollToBottom = useScrollToBottom({

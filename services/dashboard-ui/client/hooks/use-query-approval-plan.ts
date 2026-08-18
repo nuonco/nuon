@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { TWorkflowStep } from '@/types'
 import { useOrg } from './use-org'
 
@@ -10,6 +10,7 @@ export function useQueryApprovalPlan({ step }: IUseQueryApprovalPlan) {
   const { org } = useOrg()
 
   const { data: plan, isLoading, error } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['approval-plan', org?.id, step?.id, step?.approval?.id],
     queryFn: async () => {
       const res = await fetch(

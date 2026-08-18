@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { type TContextTooltipItem } from '@/components/common/ContextTooltip'
 import { Status } from '@/components/common/Status'
@@ -26,12 +26,14 @@ export const OrgStatusBarContainer = () => {
   const { appId, branchId, installId } = useParams()
 
   const { data: app } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app', org.id, appId],
     queryFn: () => getApp({ orgId: org.id, appId: appId! }),
     enabled: !!appId,
   })
 
   const { data: appConfigs } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-configs', org.id, appId],
     queryFn: () => getAppConfigs({ orgId: org.id, appId: appId!, limit: 1 }),
     enabled: !!appId,
@@ -40,18 +42,21 @@ export const OrgStatusBarContainer = () => {
   const latestConfig = appConfigs?.[0]
 
   const { data: branch } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-branch', org.id, appId, branchId],
     queryFn: () => getAppBranch({ orgId: org.id, appId: appId!, branchId: branchId! }),
     enabled: !!appId && !!branchId,
   })
 
   const { data: install } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install', org.id, installId],
     queryFn: () => getInstall({ orgId: org.id, installId: installId! }),
     enabled: !!installId,
   })
 
   const { data: stack } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-stack', org.id, installId],
     queryFn: () => getInstallStack({ installId: installId!, orgId: org.id }),
     enabled: !!installId,
@@ -60,6 +65,7 @@ export const OrgStatusBarContainer = () => {
 
   const runner = org.runner_group?.runners?.[0]
   const { data: heartbeats } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner-heartbeat', org.id, runner?.id],
     queryFn: () =>
       getRunnerLatestHeartbeat({ runnerId: runner!.id!, orgId: org.id }),

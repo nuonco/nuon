@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { PoliciesTable, policiesTableColumns } from '@/components/policies/PoliciesTable'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { useApp } from '@/hooks/use-app'
@@ -10,6 +10,7 @@ export const Policies = () => {
   const { app } = useApp()
 
   const { data: policiesConfigs, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-policies-configs', org?.id, app?.id],
     queryFn: () => getAppPoliciesConfigs({ orgId: org.id, appId: app.id }),
     enabled: !!org?.id && !!app?.id,

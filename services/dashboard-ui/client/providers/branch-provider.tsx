@@ -1,5 +1,5 @@
 import { createContext, useEffect, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { useToast } from '@/hooks/use-toast'
@@ -36,6 +36,7 @@ export function BranchProvider({
   const { app } = useApp()
   const { addToast } = useToast()
   const { data: branch, isLoading, error, refetch } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-branch', org.id!, app.id!, branchId, 'with-config'],
     queryFn: () => getAppBranch({ orgId: org.id!, appId: app.id!, branchId, latestConfig: true }),
     refetchInterval: shouldPoll ? pollInterval : false,

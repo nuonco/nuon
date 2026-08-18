@@ -1,5 +1,5 @@
 import { useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
 import { Code } from '@/components/common/Code'
@@ -25,6 +25,7 @@ export const ActionDetail = () => {
   const { app } = useApp()
 
   const { data: action, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['action', org?.id, app?.id, actionId],
     queryFn: () =>
       getAction({ orgId: org.id, appId: app.id, actionId: actionId! }),

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Icon } from '@/components/common/Icon'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -45,6 +45,7 @@ const LazyComponentsStatus = ({
   const [hovered, setHovered] = useState(false)
 
   const { data } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-components', install.org_id, install.id],
     queryFn: () =>
       getInstallComponents({

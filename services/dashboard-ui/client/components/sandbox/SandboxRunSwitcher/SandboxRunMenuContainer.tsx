@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { type IMenu } from '@/components/common/Menu'
 import { useInstall } from '@/hooks/use-install'
 import { useScrollToBottom } from '@/hooks/use-on-scroll-to-bottom'
@@ -29,6 +29,7 @@ export const SandboxRunMenuContainer = ({ activeSandboxRunId }: ISandboxRunMenuC
         offset,
       }),
     enabled: !!org?.id && !!install?.id,
+    placeholderData: keepPreviousData,
   })
 
   const scrollToBottom = useScrollToBottom({

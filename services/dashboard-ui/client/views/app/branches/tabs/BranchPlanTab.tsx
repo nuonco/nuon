@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
@@ -22,6 +22,7 @@ const BranchPlanContent = () => {
   const currentConfig = useMemo(() => latestBranchConfig(branch), [branch])
 
   const { data: appInstallsResult } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-installs', orgId, appId],
     queryFn: () => getAppInstalls({ appId, orgId, limit: 100 }),
     enabled: !!orgId && !!appId,

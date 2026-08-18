@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { DateTime } from 'luxon'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
@@ -38,6 +38,7 @@ export const PolicyAnalyticsContainer = () => {
   const baseKey = [org?.id, app?.id, selectedRange]
 
   const { data: summary, isLoading: isLoadingSummary } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['policy-analytics-summary', ...baseKey],
     queryFn: () =>
       getPolicyAnalyticsSummary({ orgId: org.id, appId: app.id, start, end }),
@@ -45,6 +46,7 @@ export const PolicyAnalyticsContainer = () => {
   })
 
   const { data: timeseries, isLoading: isLoadingTimeseries } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['policy-analytics-timeseries', ...baseKey],
     queryFn: () =>
       getPolicyAnalyticsTimeseries({
@@ -57,6 +59,7 @@ export const PolicyAnalyticsContainer = () => {
   })
 
   const { data: byPolicy } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['policy-analytics-breakdown', 'policy_id', ...baseKey],
     queryFn: () =>
       getPolicyAnalyticsBreakdown({
@@ -70,6 +73,7 @@ export const PolicyAnalyticsContainer = () => {
   })
 
   const { data: byInstall } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['policy-analytics-breakdown', 'install_id', ...baseKey],
     queryFn: () =>
       getPolicyAnalyticsBreakdown({
@@ -83,6 +87,7 @@ export const PolicyAnalyticsContainer = () => {
   })
 
   const { data: byOwnerType } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['policy-analytics-breakdown', 'owner_type', ...baseKey],
     queryFn: () =>
       getPolicyAnalyticsBreakdown({
@@ -96,12 +101,14 @@ export const PolicyAnalyticsContainer = () => {
   })
 
   const { data: installs } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-installs', org?.id, app?.id],
     queryFn: () => getAppInstalls({ orgId: org.id, appId: app.id }),
     enabled,
   })
 
   const { data: policiesConfigs } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-policies-configs', org?.id, app?.id],
     queryFn: () => getAppPoliciesConfigs({ orgId: org.id, appId: app.id }),
     enabled,

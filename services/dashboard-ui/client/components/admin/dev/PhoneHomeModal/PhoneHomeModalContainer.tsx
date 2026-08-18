@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { getInstallStack, postPhoneHome } from '@/lib'
 import { PhoneHomeModal, type PhoneHomeResult } from './PhoneHomeModal'
 import type { IModal } from '@/components/surfaces/Modal'
@@ -18,6 +18,7 @@ export const PhoneHomeModalContainer = ({
   const [result, setResult] = useState<PhoneHomeResult | undefined>(undefined)
 
   const { data: stack, isLoading: isLoadingStack } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-stack', installId],
     queryFn: () => getInstallStack({ installId, orgId }),
     enabled: !!installId && !!orgId,

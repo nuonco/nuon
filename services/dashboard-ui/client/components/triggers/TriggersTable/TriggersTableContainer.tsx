@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { useOrg } from '@/hooks/use-org'
 import { getTriggers } from '@/lib'
@@ -15,6 +15,7 @@ export const TriggersTableContainer = () => {
   const { org } = useOrg()
   const [searchParams] = useSearchParams()
   const { data, error, isLoading, refetch } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['triggers', org?.id],
     queryFn: () => getTriggers({ orgId: org!.id }),
     enabled: !!org?.id,

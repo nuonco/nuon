@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { TerraformBackendConfigButton } from '@/components/terraform-workspace/TerraformBackendConfig'
 import { TerraformWorkspaceLockBadge } from '@/components/terraform-workspace/TerraformWorkspaceLockBadge'
 import { UnlockTerraformWorkspaceButton } from '@/components/terraform-workspace/UnlockTerraformWorkspace'
@@ -30,6 +30,7 @@ export const TerraformWorkspaceCardContainer = ({
   const isPulumi = componentType === 'pulumi'
 
   const { data: states } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['workspace-states', org?.id, workspaceId],
     queryFn: () =>
       getTerraformStates({
@@ -44,6 +45,7 @@ export const TerraformWorkspaceCardContainer = ({
   // For terraform, use the parsed state endpoint.
   // For pulumi, use the raw endpoint (pulumi state isn't terraform JSON).
   const { data: currentRevision } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['workspace-state', org?.id, workspaceId, latestStateId, isPulumi],
     queryFn: () =>
       isPulumi
@@ -61,6 +63,7 @@ export const TerraformWorkspaceCardContainer = ({
   })
 
   const { data: lock } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['terraform-workspace-lock', org?.id, workspaceId],
     queryFn: () =>
       getTerraformWorkspaceLock({

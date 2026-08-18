@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { AnnouncementsList } from '@/components/orgs/AnnouncementsList'
 import { PendingApprovals } from '@/components/orgs/PendingApprovals'
@@ -87,12 +87,14 @@ export const Dashboard = () => {
   const runnerId = org?.runner_group?.runners?.at(0)?.id
 
   const { data: stats } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['org-stats', org?.id],
     queryFn: () => getOrgStats({ orgId: org!.id }),
     enabled: !!org?.id,
   })
 
   const { data: jobs } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner-jobs', org?.id, runnerId, offset],
     queryFn: () =>
       getRunnerJobs({
