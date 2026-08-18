@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useQuery, useQueries } from '@tanstack/react-query'
+import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getAppBranches, getAppBranch } from '@/lib'
 import { BranchConnectionStep } from './BranchConnectionStep'
@@ -22,6 +22,7 @@ export const BranchConnectionStepContainer = ({
   const orgId = org?.id ?? ''
 
   const { data: branchList, isLoading, isSuccess } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-branches', orgId, appId],
     queryFn: () => getAppBranches({ appId, orgId: orgId! }),
     enabled: !!orgId && !!appId,

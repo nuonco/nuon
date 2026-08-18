@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -18,6 +18,7 @@ const InviteUserModalContainer = (props: Record<string, any>) => {
   const { roleOptions } = useRoleOptions('team')
 
   const { data: invites } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['org-invites', org?.id],
     queryFn: () => getOrgInvites({ orgId: org.id }),
     enabled: !!org?.id,

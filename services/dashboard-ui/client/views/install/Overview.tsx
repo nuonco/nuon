@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Expand } from '@/components/common/Expand'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -18,6 +18,7 @@ export const Overview = () => {
   const { org } = useOrg()
   const { install } = useInstall()
   const { data: readme } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-readme', org?.id, install?.id],
     queryFn: () =>
       getInstallReadme({ orgId: org.id, installId: install.id }),

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router'
 import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -22,6 +22,7 @@ export const VCSConnectionDetail = () => {
   const navigate = useNavigate()
 
   const { data: vcs_connection } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['vcs-connection', org?.id, connectionId],
     queryFn: () =>
       getVCSConnection({ orgId: org!.id, connectionId: connectionId! }),
@@ -29,6 +30,7 @@ export const VCSConnectionDetail = () => {
   })
 
   const { data: status, isLoading: isLoadingStatus } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['vcs-connection-status', org?.id, connectionId],
     queryFn: () =>
       checkVCSConnectionStatus({ orgId: org!.id, connectionId: connectionId! }),

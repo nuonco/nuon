@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate } from 'react-router'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { ManageInstallsConfigButton } from '@/components/apps/ManageInstallsConfig'
@@ -34,6 +34,7 @@ export const InstallSyncs = () => {
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
 
   const { data: syncs, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-install-syncs', org?.id, app?.id],
     queryFn: () => getAppInstallSyncs({ appId: app!.id, orgId: org!.id }),
     enabled: hasInstallSyncing && !!org?.id && !!app?.id,
@@ -41,6 +42,7 @@ export const InstallSyncs = () => {
   })
 
   const { data: installsConfig } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-installs-config', org?.id, app?.id],
     queryFn: () => getAppInstallsConfig({ appId: app!.id, orgId: org!.id }),
     enabled: hasInstallSyncing && !!org?.id && !!app?.id,

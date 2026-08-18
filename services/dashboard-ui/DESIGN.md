@@ -246,6 +246,32 @@ Prefer the Stratus `Table`. If you must hand-roll (e.g. inside a modal), mirror 
   `whitespace-nowrap` for fixed cols.
 - Use an inline table over an accordion when each row's content is short and scannable.
 
+### Loading states — primitives own skeletons
+Skeletons are **derived from the real components**, never hand-built. A hand-measured skeleton is
+a second implementation of the layout — it drifts from the real component, and that drift is the
+swap jank.
+
+- **Chrome and labels always render real.** Breadcrumbs, headings, section titles, modal
+  chrome, and a `LabeledValue`'s label are content the client already knows — render them as real
+  text during load. Only the unknown *value* shimmers.
+- **Primitives own their skeleton via a `loading` prop.** `Text`, `LabeledValue`,
+  `LabeledStatus`, `ID`, `Time`, `Duration`, `Badge`, `Status`, and `Code` take
+  `loading?: boolean` (+ `loadingWidth?: number` in `ch` to size the shimmer). Height comes free
+  from the variant's line-height. A loading surface is *itself* with `loading` primitives inside —
+  the container passes `isLoading` down and the presentational component fans it into `loading`
+  props.
+- **Collections own their skeleton via `isLoading`.** Pass `<Table isLoading>` / the `Timeline`
+  loading state — never a bespoke row skeleton.
+- **Spinner only for unknown shape.** `<Loading variant="large" />` is for content whose *shape*
+  isn't known until the fetch returns (plan diffs, dynamic-field forms like `LoadAppConfigs`,
+  unknown outputs). Known shape → loading primitives; unknown shape → spinner. No full-page
+  spinners, no bespoke page-skeleton blocks.
+- **Cold loads only.** List/detail `useQuery` sites use `placeholderData: keepPreviousData` so
+  revisits render cached data instantly and refresh in the background; loading states are for true
+  cold loads. (SSE-backed views already write straight to the query cache — leave them alone.)
+- **Do not build a standalone `*Skeleton` component.** Direct use of `common/Skeleton` in a
+  feature component is a review smell — it's the low-level block the primitives use internally.
+
 ### Destructive confirmation
 Follow the three severity tiers in [COPY_STYLE.md](./COPY_STYLE.md) (simple confirm → warning
 banner → type-to-confirm). For tier 3, require typing the **exact identifier** (e.g. the org name),

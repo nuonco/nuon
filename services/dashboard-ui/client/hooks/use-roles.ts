@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { listRoles } from '@/lib'
 import type { TRoleContext } from '@/types'
@@ -8,6 +8,7 @@ export function useRoles(context?: TRoleContext) {
   const { org } = useOrg()
 
   return useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['roles', org?.id, context ?? 'all'],
     queryFn: () => listRoles({ orgId: org!.id, context }),
     enabled: !!org?.id,

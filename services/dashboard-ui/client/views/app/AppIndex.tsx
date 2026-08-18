@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { PageContent } from '@/components/layout/PageContent'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
 import { useApp } from '@/hooks/use-app'
@@ -16,6 +16,7 @@ const BranchPicker = () => {
   const navigate = useNavigate()
 
   const { data: result, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-branches-source', org?.id, app?.id],
     queryFn: () =>
       getAppBranches({ orgId: org!.id!, appId: app!.id!, limit: 50, offset: 0 }),

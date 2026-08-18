@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { useOnboardingPoll } from '@/hooks/use-onboarding-poll'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
@@ -201,6 +201,7 @@ export const CloudSetupStepContainer = ({
   const cloudLabel = cloudPlatform ? CLOUD_LABELS[cloudPlatform] : null
 
   const { data: app } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app', appId],
     queryFn: () => getApp({ appId: appId!, orgId: orgId! }),
     enabled: !!appId && !!orgId,

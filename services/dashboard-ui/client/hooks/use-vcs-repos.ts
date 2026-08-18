@@ -1,4 +1,4 @@
-import { useQueries, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { getVCSConnectionRepos, getVCSConnections } from '@/lib'
 import { useOrg } from '@/hooks/use-org'
 import type { TVCSConnectionRepo } from '@/types'
@@ -7,6 +7,7 @@ export function useVCSRepos({ enabled = true }: { enabled?: boolean } = {}) {
   const { org } = useOrg()
 
   const { data: connections, isLoading: isLoadingConnections } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['vcs-connections', org?.id],
     queryFn: () => getVCSConnections({ orgId: org!.id }),
     enabled: enabled && !!org?.id,

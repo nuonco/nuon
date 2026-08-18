@@ -1,6 +1,6 @@
 import { createContext, useEffect, useRef, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getPendingApprovals } from '@/lib'
 import { useActiveWorkflows } from '@/hooks/use-active-workflows'
 import { useOrg } from '@/hooks/use-org'
@@ -43,6 +43,7 @@ export function WorkflowApprovalsProvider({
     isLoading,
     refetch,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['workflow-approvals', org.id],
     queryFn: () => getPendingApprovals({ orgId: org.id }),
     refetchInterval: sseConnected ? false : 20_000,

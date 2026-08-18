@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import type { ITimeline } from '@/components/common/Timeline'
 import { useOrg } from '@/hooks/use-org'
@@ -55,6 +55,7 @@ export const RunnerRecentActivityContainer = ({
       }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!runner?.id,
+    placeholderData: keepPreviousData,
   })
 
   const visibleJobs = (result?.data ?? [])

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ConnectAWSAccountButton,
   ConnectAWSAccountModalContainer,
@@ -15,6 +15,7 @@ export const AWSAccountConnectionsContainer = () => {
   const { addModal } = useSurfaces()
   const queryClient = useQueryClient()
   const { data = [] } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['aws-account-connections', org?.id],
     queryFn: () => getAWSAccountConnections({ orgId: org!.id }),
     enabled: !!org?.id,

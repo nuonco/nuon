@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Tabs } from '@/components/common/Tabs'
 import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
@@ -426,6 +426,7 @@ export const AppProfileStepContainer = ({
   }
 
   const { data: exampleApps = [], isLoading: appsLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['onboarding-example-apps'],
     queryFn: getExampleApps,
   })

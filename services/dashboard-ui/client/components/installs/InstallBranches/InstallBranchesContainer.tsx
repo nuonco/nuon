@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useQueries, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getBranchWorkflowRuns, getBranchRunBuilds, getBranchRunInstallGroups, getInstallAppConfigVersions } from '@/lib'
 import { InstallBranches, type IBranchEntry } from './InstallBranches'
@@ -86,6 +86,7 @@ export const InstallBranchesSection = ({ install }: IInstallBranchesContainer) =
 
   const installId = install?.id ?? ''
   const { data: configVersions } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-app-config-versions', orgId, installId],
     queryFn: () => getInstallAppConfigVersions({ installId: installId!, orgId: orgId! }),
     enabled: !!orgId && !!installId,
