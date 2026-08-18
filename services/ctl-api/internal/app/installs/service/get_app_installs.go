@@ -101,8 +101,14 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q, appBr
 			return db.Order("install_sandbox_runs.created_at DESC")
 		}).
 		Preload("AWSAccount").
+		Preload("AzureAccount").
+		Preload("GCPAccount").
 		Preload("AppBranch").
 		Preload("AppRunnerConfig").
+		Preload("AppConfig", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "app_id", "app_branch_id")
+		}).
+		Preload("AppConfig.RunnerConfig").
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").
 		Order("name ASC")
