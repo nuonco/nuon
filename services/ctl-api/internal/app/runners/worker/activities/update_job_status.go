@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type UpdateJobStatusRequest struct {
@@ -16,6 +17,7 @@ type UpdateJobStatusRequest struct {
 }
 
 // @temporal-gen-v2 activity
+// @max-retries 2
 func (a *Activities) UpdateJobStatus(ctx context.Context, req UpdateJobStatusRequest) error {
 	runner := app.RunnerJob{
 		ID: req.JobID,
@@ -28,7 +30,10 @@ func (a *Activities) UpdateJobStatus(ctx context.Context, req UpdateJobStatusReq
 		return fmt.Errorf("unable to update job status: %w", res.Error)
 	}
 	if res.RowsAffected < 1 {
-		return fmt.Errorf("no job found: %s %w", req.JobID, gorm.ErrRecordNotFound)
+		return generics.TemporalGormError(
+			gorm.ErrRecordNotFound,
+			fmt.Sprintf("no job found: %s", req.JobID),
+		)
 	}
 
 	return nil
