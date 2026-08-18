@@ -47,3 +47,23 @@ func (s *InstallsServiceTestSuite) TestGetInstallNotFound() {
 	rr := s.makeRequest(http.MethodGet, "/v1/installs/ins_nonexistent_00000000", nil)
 	assert.Equal(s.T(), http.StatusNotFound, rr.Code)
 }
+
+func (s *InstallsServiceTestSuite) TestGetInstallResolvesCloudPlatform() {
+	for _, tc := range s.cloudPlatformResolutionTestCases() {
+		s.Run(tc.name, func() {
+			install := tc.setup()
+
+			path := fmt.Sprintf("/v1/installs/%s", install.ID)
+			rr := s.makeRequest(http.MethodGet, path, nil)
+			if rr.Code != http.StatusOK {
+				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+			}
+			require.Equal(s.T(), http.StatusOK, rr.Code)
+
+			var resp app.Install
+			require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+			assert.Equal(s.T(), tc.expectedCloudPlatform, resp.CloudPlatform)
+			assert.Equal(s.T(), tc.expectedRunnerType, resp.RunnerType)
+		})
+	}
+}
