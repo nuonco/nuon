@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type UpdateJobExecutionStatusRequest struct {
@@ -16,6 +17,7 @@ type UpdateJobExecutionStatusRequest struct {
 }
 
 // @temporal-gen-v2 activity
+// @max-retries 2
 func (a *Activities) UpdateJobExecutionStatus(ctx context.Context, req UpdateJobExecutionStatusRequest) error {
 	runner := app.RunnerJobExecution{
 		ID: req.JobExecutionID,
@@ -27,7 +29,10 @@ func (a *Activities) UpdateJobExecutionStatus(ctx context.Context, req UpdateJob
 		return fmt.Errorf("unable to update job execution status: %w", res.Error)
 	}
 	if res.RowsAffected < 1 {
-		return fmt.Errorf("no job execution found: %s %w", req.JobExecutionID, gorm.ErrRecordNotFound)
+		return generics.TemporalGormError(
+			gorm.ErrRecordNotFound,
+			fmt.Sprintf("no job execution found: %s", req.JobExecutionID),
+		)
 	}
 	helpers.AuditJobExecutionResult(ctx, a.db, a.mw, req.JobExecutionID, req.Status, "runner_workflow")
 
