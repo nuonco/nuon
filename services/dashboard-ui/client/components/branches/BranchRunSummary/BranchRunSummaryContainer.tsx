@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useInstallsById } from '@/hooks/use-installs-by-id'
 import { useOrg } from '@/hooks/use-org'
 import { getBranchRunBuilds, getBranchRunInstallGroups, getBranchInstallGroupRuns } from '@/lib'
 import { BranchRunSummary } from './BranchRunSummary'
@@ -23,6 +24,7 @@ export const BranchRunSummaryContainer = ({
 }: IBranchRunSummaryContainer) => {
   const { org } = useOrg()
   const orgId = org?.id ?? ''
+  const installsById = useInstallsById(appId)
   const isTerminal = TERMINAL.has(runStatus)
 
   const { data: builds } = useQuery({
@@ -52,6 +54,7 @@ export const BranchRunSummaryContainer = ({
       builds={builds ?? []}
       installUpdates={installUpdates ?? []}
       installGroupRuns={installGroupRuns ?? []}
+      installsById={installsById}
       orgId={orgId}
       appId={appId}
       branchId={branchId}

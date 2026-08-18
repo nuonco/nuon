@@ -88,20 +88,24 @@ export const PlanGroupStep = ({
             const labelEntries = inst.installLabels ? Object.entries(inst.installLabels) : []
 
             const heading = (
-              <div className="flex items-center gap-3 w-full">
-                <Text weight="strong">{inst.installName || inst.installId}</Text>
-                {labelEntries.map(([k, v]) => (
-                  <LabelBadge
-                    key={k}
-                    labelKey={k}
-                    labelValue={v}
-                    size="sm"
-                    className="shrink-0"
-                    customColor={labelColors?.[k]}
-                  />
-                ))}
+              <div className="flex items-start gap-3 w-full">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 min-w-0 flex-1">
+                  <Text weight="strong" className="break-words">
+                    {inst.installName || inst.installId}
+                  </Text>
+                  {labelEntries.map(([k, v]) => (
+                    <LabelBadge
+                      key={k}
+                      labelKey={k}
+                      labelValue={v}
+                      size="sm"
+                      className="shrink-0"
+                      customColor={labelColors?.[k]}
+                    />
+                  ))}
+                </div>
                 {inst.isLoading ? (
-                  <Text variant="subtext" theme="neutral" className="ml-auto shrink-0">
+                  <Text variant="subtext" theme="neutral" className="shrink-0">
                     Loading…
                   </Text>
                 ) : (
@@ -110,7 +114,7 @@ export const PlanGroupStep = ({
                     updated={inst.summary?.changed ?? 0}
                     removed={inst.summary?.removed ?? 0}
                     emptyText="No changes"
-                    className="ml-auto shrink-0"
+                    className="shrink-0"
                   />
                 )}
               </div>

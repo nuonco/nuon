@@ -1,6 +1,9 @@
 import type { CSSProperties, HTMLAttributes } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Badge, type IBadge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
+import { Tooltip } from '@/components/common/Tooltip'
 import { cn } from '@/utils/classnames'
 import './LabelBadge.css'
 
@@ -47,16 +50,32 @@ export const LabelBadge = ({
     }
   }
 
-  const iconSize = size === 'lg' ? 13 : size === 'md' ? 12 : 11
+  const iconSize = size === 'lg' ? 13 : size === 'md' ? 12 : size === 'sm' ? 11 : 10
 
   const customStyle = customColor
     ? ({ '--label-color': customColor } as CSSProperties)
     : undefined
 
-  return (
+  const keyRef = useRef<HTMLSpanElement>(null)
+  const valueRef = useRef<HTMLSpanElement>(null)
+  const [truncated, setTruncated] = useState(false)
+
+  useLayoutEffect(() => {
+    const isOverflowing = (el: HTMLSpanElement | null) =>
+      !!el && el.scrollWidth > el.clientWidth
+    const check = () =>
+      setTruncated(isOverflowing(keyRef.current) || isOverflowing(valueRef.current))
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [key, value])
+
+  const badge = (
     <span className={cn('inline-flex', className)} {...props}>
       <Badge size={size} theme={keyTheme} variant={variant} className="rounded-r-none">
-        {key}
+        <span ref={keyRef} className="block max-w-[14rem] truncate">
+          {key}
+        </span>
       </Badge>
       <Badge
         size={size}
@@ -65,7 +84,9 @@ export const LabelBadge = ({
         className={cn('rounded-l-none border-l-0', customStyle && 'label-badge-value', onRemove && 'pr-1')}
         style={customStyle}
       >
-        {value}
+        <span ref={valueRef} className="block max-w-[22rem] truncate">
+          {value}
+        </span>
         {onRemove && (
           <button
             type="button"
@@ -79,5 +100,22 @@ export const LabelBadge = ({
         )}
       </Badge>
     </span>
+  )
+
+  if (!truncated) return badge
+
+  const fullLabel = value ? `${key}:${value}` : key
+
+  return (
+    <Tooltip
+      tipContent={
+        <Text variant="subtext" className="break-all" style={{ whiteSpace: 'normal' }}>
+          {fullLabel}
+        </Text>
+      }
+      tipContentClassName="max-w-sm"
+    >
+      {badge}
+    </Tooltip>
   )
 }
