@@ -33,7 +33,12 @@ type TemplateInput struct {
 
 	// subscripts and embedded templates
 	RunnerInitScriptURL string `validate:"required"`
-	PhonehomeScript     string `validate:"required"`
+
+	// AWS-only: the inline source for the phone-home Lambda (Code.ZipFile). Unvalidated
+	// because the Azure and GCP paths share this struct — ARM builds its own phone-home
+	// script from PhoneHomeURL, and GCP has no equivalent resource. The AWS renderer
+	// enforces it instead.
+	PhonehomeScript string
 
 	// Custom template URLs for VPC/VNet and runner nested/linked deployments (AWS CloudFormation, Azure ARM)
 	VPCNestedStackTemplateURL    string
