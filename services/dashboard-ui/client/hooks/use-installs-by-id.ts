@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getAppInstalls } from '@/lib'
 import type { TInstall } from '@/types'
@@ -9,6 +9,7 @@ export function useInstallsById(appId?: string): Record<string, TInstall> {
   const orgId = org?.id ?? ''
 
   const { data } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-installs', orgId, appId],
     queryFn: () => getAppInstalls({ appId: appId!, orgId, limit: 100 }),
     enabled: !!orgId && !!appId,

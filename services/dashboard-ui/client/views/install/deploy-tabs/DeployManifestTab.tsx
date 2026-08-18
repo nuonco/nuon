@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -18,6 +18,7 @@ export const DeployManifestTab = () => {
   )
 
   const { data: compositePlan, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner-job-plan', org?.id, planJob?.id],
     queryFn: () =>
       getRunnerJobPlan({ runnerJobId: planJob!.id, orgId: org.id }),

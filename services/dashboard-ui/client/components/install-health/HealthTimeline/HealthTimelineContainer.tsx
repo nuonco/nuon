@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import {
@@ -28,6 +28,7 @@ export const HealthTimelineContainer = ({
   const isComponentScope = !!installComponentId
 
   const { data: installTimeline, isLoading: isInstallLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-health-timeline', org?.id, install?.id, days],
     queryFn: () =>
       getInstallHealthTimeline({ orgId: org!.id, installId: install!.id, days }),
@@ -36,6 +37,7 @@ export const HealthTimelineContainer = ({
   })
 
   const { data: componentTimeline, isLoading: isComponentLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: [
       'install-component-health-timeline',
       org?.id,

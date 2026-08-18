@@ -1,5 +1,5 @@
 import { useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { Link } from '@/components/common/Link'
 import { Card } from '@/components/common/Card'
@@ -35,6 +35,7 @@ export const PolicyDetail = () => {
   const { app } = useApp()
 
   const { data: policyResult } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-policy', org?.id, app?.id, policyId],
     queryFn: () =>
       getAppPolicy({ orgId: org.id, appId: app.id, policyId: policyId! }),
@@ -42,6 +43,7 @@ export const PolicyDetail = () => {
   })
 
   const { data: componentsResult } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-components', org?.id, app?.id],
     queryFn: () => getComponents({ orgId: org.id, appId: app.id }),
     enabled: !!org?.id && !!app?.id,

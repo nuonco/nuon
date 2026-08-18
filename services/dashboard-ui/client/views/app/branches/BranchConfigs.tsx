@@ -1,5 +1,5 @@
 import { useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -18,6 +18,7 @@ const BranchConfigsContent = () => {
   const branchId = params.branchId as string
 
   const { data: configs } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['branch-configs', org.id, app.id, branchId],
     queryFn: () => getBranchConfigs({ orgId: org.id!, appId: app.id!, branchId }),
     enabled: !!org.id && !!app.id && !!branchId,

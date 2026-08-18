@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppBranches } from '@/lib'
@@ -15,6 +15,7 @@ export const AppSourceChipContainer = () => {
   const { app } = useApp()
 
   const { data: result, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-branches-source', org?.id, app?.id],
     queryFn: () =>
       getAppBranches({ orgId: org!.id!, appId: app!.id!, limit: 50, offset: 0 }),

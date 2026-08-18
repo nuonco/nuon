@@ -1,5 +1,5 @@
 import { useOutletContext } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Plan } from '@/components/approvals/Plan'
 import { HelmDiff } from '@/components/approvals/plan-diffs/helm/HelmDiff'
 import { KubernetesDiff } from '@/components/approvals/plan-diffs/kubernetes/KubernetesDiff'
@@ -37,6 +37,7 @@ const DeployPlanFallback = ({ componentType }: { componentType: TComponentType }
   )
 
   const { data: compositePlan, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner-job-plan', org?.id, applyJob?.id],
     queryFn: () =>
       getRunnerJobPlan({ runnerJobId: applyJob!.id, orgId: org.id }),

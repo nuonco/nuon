@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -32,12 +32,14 @@ const RunnerContent = ({
   const { runner } = useRunner()
 
   const { data: settings } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner-settings', org?.id, runnerId],
     queryFn: () => getRunnerSettings({ orgId: org.id, runnerId }),
     enabled: !!org?.id && !!runnerId,
   })
 
   const { data: processResult, isLoading: processesLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner-processes-active', org?.id, runnerId],
     queryFn: () =>
       getRunnerProcesses({

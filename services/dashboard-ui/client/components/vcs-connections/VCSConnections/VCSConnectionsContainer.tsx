@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -15,6 +15,7 @@ const VCSConnectionWithStatus = ({
 }) => {
   const { org } = useOrg()
   const { data, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['vcs-connection-status', org?.id, vcs_connection?.id],
     queryFn: () => checkVCSConnectionStatus({ orgId: org!.id, connectionId: vcs_connection.id }),
     enabled: !!org?.id && !!vcs_connection?.id,

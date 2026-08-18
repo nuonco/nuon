@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getAccount } from '@/lib'
 
 interface IOnboardingJourneyContext {
@@ -13,6 +13,7 @@ export const OnboardingJourneyContext = createContext<IOnboardingJourneyContext 
 
 export function OnboardingJourneyProvider({ children }: { children: React.ReactNode }) {
   const { data: account, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['onboarding-journey-account'],
     queryFn: getAccount,
     refetchInterval: 5000,
