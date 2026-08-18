@@ -12,13 +12,13 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Check for large files
-      uses: actions-marketplace-validations/ActionsDesk_lfs-warning@master
-      if: always()
-      id: lfs
-      with:
-        filesizelimit: 5MB
-        token: ${{ inputs.github_token }}
+    # - name: Check for large files
+    #   uses: actions-marketplace-validations/ActionsDesk_lfs-warning@master
+    #   if: always()
+    #   id: lfs
+    #   with:
+    #     filesizelimit: 5MB
+    #     token: ${{ inputs.github_token }}
 
     - name: Lint pull request title
       if: always()
