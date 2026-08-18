@@ -67,6 +67,10 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 		Preload("GCPAccount").
 		Preload("AppBranch").
 		Preload("AppRunnerConfig").
+		Preload("AppConfig", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id", "app_id", "app_branch_id")
+		}).
+		Preload("AppConfig.RunnerConfig").
 		Preload("App").
 		Preload("App.AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithOverrideTable(views.CustomViewName(s.db, &app.AppRunnerConfig{}, "latest_view_v1")))

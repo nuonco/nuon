@@ -44,3 +44,25 @@ func (s *InstallsServiceTestSuite) TestGetOrgInstallsSearch() {
 	require.Len(s.T(), resp, 1)
 	assert.Equal(s.T(), install.ID, resp[0].ID)
 }
+
+func (s *InstallsServiceTestSuite) TestGetOrgInstallsResolvesCloudPlatform() {
+	for _, tc := range s.cloudPlatformResolutionTestCases() {
+		s.Run(tc.name, func() {
+			install := tc.setup()
+
+			rr := s.makeRequest(http.MethodGet, "/v1/installs", nil)
+			if rr.Code != http.StatusOK {
+				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+			}
+			require.Equal(s.T(), http.StatusOK, rr.Code)
+
+			var resp []app.Install
+			require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+
+			found := findInstallByID(resp, install.ID)
+			require.NotNil(s.T(), found, "install %s should be present in org installs list", install.ID)
+			assert.Equal(s.T(), tc.expectedCloudPlatform, found.CloudPlatform)
+			assert.Equal(s.T(), tc.expectedRunnerType, found.RunnerType)
+		})
+	}
+}
