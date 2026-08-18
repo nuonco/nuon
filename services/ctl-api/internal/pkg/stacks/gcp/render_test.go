@@ -36,7 +36,6 @@ func testInput() *stacks.TemplateInput {
 		Settings:                     &app.RunnerGroupSettings{RunnerAPIURL: "https://runner.nuon.co"},
 		APIToken:                     "test-token",
 		RunnerInitScriptURL:          "https://example.com/init.sh",
-		PhonehomeScript:              "echo done",
 		VPCNestedStackTemplateURL:    "https://example.com/vpc.yaml",
 		RunnerNestedStackTemplateURL: "https://example.com/runner.yaml",
 	}
