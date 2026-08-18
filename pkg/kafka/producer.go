@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/plugin/kotel"
+	"go.opentelemetry.io/otel/propagation"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -48,11 +50,16 @@ func NewProducer(cfg Config, l *zap.Logger, mw metrics.Writer) (*Producer, error
 	if err != nil {
 		return nil, err
 	}
+	tracer := kotel.NewTracer(
+		kotel.ClientID(cfg.ClientID),
+		kotel.TracerPropagator(propagation.TraceContext{}),
+	)
 	opts = append(opts,
 		// idempotent producer is on by default with acks=all
 		kgo.RequiredAcks(kgo.AllISRAcks()),
 		kgo.ProducerBatchCompression(kgo.Lz4Compression()),
 		kgo.ProducerBatchMaxBytes(maxMessageBytes),
+		kgo.WithHooks(kotel.NewKotel(kotel.WithTracer(tracer)).Hooks()...),
 	)
 
 	client, err := kgo.NewClient(opts...)
