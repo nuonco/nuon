@@ -25,6 +25,7 @@ type GetRunnerJobForExecutionResponse struct {
 // shaves that latency for every job.
 //
 // @temporal-gen-v2 activity
+// @max-retries 1
 func (a *Activities) GetRunnerJobForExecution(ctx context.Context, req GetRunnerJobForExecutionRequest) (*GetRunnerJobForExecutionResponse, error) {
 	runner, err := a.getRunner(ctx, req.RunnerID)
 	if err != nil {

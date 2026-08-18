@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type UpdateStatusRequest struct {
@@ -16,6 +17,7 @@ type UpdateStatusRequest struct {
 }
 
 // @temporal-gen-v2 activity
+// @max-retries 2
 // @local
 func (a *Activities) UpdateStatus(ctx context.Context, req UpdateStatusRequest) error {
 	runner := app.Runner{
@@ -29,7 +31,10 @@ func (a *Activities) UpdateStatus(ctx context.Context, req UpdateStatusRequest) 
 		return fmt.Errorf("unable to update runner status: %w", res.Error)
 	}
 	if res.RowsAffected < 1 {
-		return fmt.Errorf("no runner found: %s %w", req.RunnerID, gorm.ErrRecordNotFound)
+		return generics.TemporalGormError(
+			gorm.ErrRecordNotFound,
+			fmt.Sprintf("no runner found: %s", req.RunnerID),
+		)
 	}
 
 	return nil
