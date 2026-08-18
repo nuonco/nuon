@@ -36,8 +36,9 @@ func TestGetAWSTemplate_RunnerResources(t *testing.T) {
 					RunnerNestedTemplateURL: server.URL + "/runner.yaml",
 				},
 			},
-			Runner:   &app.Runner{ID: "run123"},
-			Settings: &app.RunnerGroupSettings{},
+			Runner:          &app.Runner{ID: "run123"},
+			Settings:        &app.RunnerGroupSettings{},
+			PhonehomeScript: "print('phone home')",
 		}
 	}
 
