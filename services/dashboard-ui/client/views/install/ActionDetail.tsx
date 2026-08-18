@@ -1,5 +1,5 @@
 import { useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
@@ -38,6 +38,7 @@ export const ActionDetail = () => {
   const { addPanel } = useSurfaces()
 
   const { data: action, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-action', org?.id, install?.id, actionId],
     queryFn: () =>
       getInstallAction({
@@ -52,6 +53,7 @@ export const ActionDetail = () => {
   })
 
   const { data: installState } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-state', org?.id, install?.id],
     queryFn: () => getInstallState({ orgId: org.id, installId: install.id }),
     enabled: !!org?.id && !!install?.id,

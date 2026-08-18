@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -19,6 +19,7 @@ function useOnboardingWorkflow(onboarding: TOnboarding | undefined, setSharedDat
   const workflowId = onboarding?.workflow_id
 
   const { data: polledOnboarding } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['onboarding-provision-poll'],
     queryFn: getCurrentOnboarding,
     enabled: !!orgId && !workflowId,
@@ -34,6 +35,7 @@ function useOnboardingWorkflow(onboarding: TOnboarding | undefined, setSharedDat
   const effectiveWorkflowId = workflowId ?? polledOnboarding?.workflow_id
 
   const { data: workflow } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['onboarding-workflow', effectiveWorkflowId],
     queryFn: () => getWorkflow({ workflowId: effectiveWorkflowId!, orgId: orgId! }),
     enabled: !!effectiveWorkflowId && !!orgId,
@@ -44,6 +46,7 @@ function useOnboardingWorkflow(onboarding: TOnboarding | undefined, setSharedDat
   })
 
   const { data: steps = [] } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['onboarding-workflow-steps', effectiveWorkflowId],
     queryFn: () => getWorkflowSteps({ workflowId: effectiveWorkflowId!, orgId: orgId! }),
     enabled: !!effectiveWorkflowId && !!orgId,
@@ -260,6 +263,7 @@ interface IRunnerMeta {
 
 function useRunnerMeta(orgId?: string, installId?: string, runnerDone?: boolean): IRunnerMeta | undefined {
   const { data: install } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['onboarding-install', installId],
     queryFn: () => getInstall({ installId: installId!, orgId: orgId! }),
     enabled: !!installId && !!orgId && !!runnerDone,
@@ -268,6 +272,7 @@ function useRunnerMeta(orgId?: string, installId?: string, runnerDone?: boolean)
   const runnerId = install?.runner_id
 
   const { data: heartbeats } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['onboarding-runner-heartbeat', runnerId],
     queryFn: () => getRunnerLatestHeartbeat({ runnerId: runnerId!, orgId: orgId! }),
     enabled: !!runnerId && !!orgId,
@@ -416,6 +421,7 @@ function ProgressRing({
 
 function useInstallStackQuickLink(orgId?: string, installId?: string) {
   const { data: stack } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['onboarding-install-stack', installId],
     queryFn: () => getInstallStack({ installId: installId!, orgId: orgId! }),
     enabled: !!installId && !!orgId,
@@ -513,6 +519,7 @@ export const ProvisioningStepContainer = ({
   const cloudProvider = (onboarding?.cloud_provider as 'aws' | 'gcp' | 'azure') || 'aws'
 
   const { data: app } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app', appId],
     queryFn: () => getApp({ appId: appId!, orgId: orgId! }),
     enabled: !!appId && !!orgId,

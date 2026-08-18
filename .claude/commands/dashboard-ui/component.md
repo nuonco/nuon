@@ -111,6 +111,16 @@ The `Button` owns its tooltip via `tooltipProps` (`Omit<ITooltip, 'children'>`).
 - **Nudge** (controlled tooltip opened by app state): `useNudge(trigger)` → `{ isOpen, close }` + `tooltipProps={{ isOpen, disableHover: true, tipContent }}`. Don't re-implement the timer.
 - Tooltips on **non-Button** elements (text, icons, badges, toggles) keep the hand-wrapped `<Tooltip>` — `tooltipProps` is Button-only.
 
+## Loading states
+
+**Never hand-build a `*Skeleton` component** — a hand-measured skeleton is a second copy of the layout that drifts from the real component. Skeletons are derived from the real components:
+
+- **Primitive `loading` prop**: `Text`, `LabeledValue`, `LabeledStatus`, `ID`, `Time`, `Duration`, `Badge`, `Status`, `Code` all take `loading?: boolean` (+ `loadingWidth?: number` in `ch`). The container passes `isLoading` down; the presentational component fans it into `loading` props.
+- **Chrome and labels always render real** — only unknown values shimmer.
+- **Collections**: `<Table isLoading>` / the `Timeline` loading state own their skeleton — never a bespoke row skeleton.
+- **Spinner** (`<Loading variant="large" />`) only for genuinely unknown-shape content (plan diffs, dynamic-field forms, unknown outputs). Known shape → loading primitives.
+- Direct use of `common/Skeleton` in a feature component is a review smell (it's the low-level block the primitives use internally). See `DESIGN.md` §5 "Loading states".
+
 ## Anti-Patterns
 
 - **Do not** hand-wrap `<Tooltip>` around a `Button` or put `title=` on a button — use `Button`'s `tooltipProps`
@@ -123,3 +133,4 @@ The `Button` owns its tooltip via `tooltipProps` (`Omit<ITooltip, 'children'>`).
 - **Do not** skip the `.stories.tsx` file — every component directory must have one
 - **Do not** use `StoryObj` or `render:` in stories — Ladle v5 requires plain function exports
 - **Do not** import icons directly from `@phosphor-icons/react` — always use the `Icon` component
+- **Do not** hand-build a `*Skeleton` component — use the primitive `loading` prop, `<Table isLoading>`, or a spinner for unknown shape

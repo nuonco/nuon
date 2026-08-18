@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getComponents } from '@/lib'
@@ -21,6 +21,7 @@ export const ComponentDependenciesContainer = ({
   const { app } = useApp()
 
   const { data: result, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['components', org?.id, app?.id, 'deps', deps],
     queryFn: () =>
       getComponents({

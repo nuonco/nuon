@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
@@ -31,6 +31,7 @@ export const ConnectionDetailContainer = ({
     error: reposError,
     isLoading: isLoadingRepos,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['vcs-connection-repos', org?.id, connectionId],
     queryFn: () =>
       getVCSConnectionRepos({ orgId: org!.id, connectionId: connectionId! }),
@@ -42,6 +43,7 @@ export const ConnectionDetailContainer = ({
     isLoading: isLoadingSubscription,
     error: subscriptionError,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['vcs-connection-webhook-subscription', org?.id, connectionId],
     queryFn: () =>
       getVCSConnectionWebhookSubscription({

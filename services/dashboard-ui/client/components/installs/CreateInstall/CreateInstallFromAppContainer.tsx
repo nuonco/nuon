@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -75,6 +75,7 @@ export const CreateInstallFromAppContainer = ({
     isLoading: configsLoading,
     error: configsError,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-configs', org?.id, app.id],
     queryFn: () => getAppConfigs({ orgId: org.id, appId: app.id }),
     enabled: !!org?.id,
@@ -87,6 +88,7 @@ export const CreateInstallFromAppContainer = ({
     isLoading: configLoading,
     error: configError,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-config', org?.id, app.id, configId],
     queryFn: () =>
       getAppConfig({
@@ -100,12 +102,14 @@ export const CreateInstallFromAppContainer = ({
 
   const { data: awsAccountConnections, isLoading: awsAccountConnectionsLoading } =
     useQuery({
+      placeholderData: keepPreviousData,
       queryKey: ['aws-account-connections', org?.id],
       queryFn: () => getAWSAccountConnections({ orgId: org.id }),
       enabled: !!org?.id && awsConnectionsEnabled,
     })
 
   const { data: branchList, isSuccess: branchesLoaded } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-branches', org?.id, app.id],
     queryFn: () => getAppBranches({ appId: app.id, orgId: org?.id || '' }),
     enabled: !!org?.id && !!app.id,

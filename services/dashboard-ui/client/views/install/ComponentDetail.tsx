@@ -1,5 +1,5 @@
 import { useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
@@ -59,6 +59,7 @@ export const InstallComponentDetail = () => {
   const { addPanel, addModal } = useSurfaces()
 
   const { data: installComponent } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-component', org?.id, install?.id, componentId],
     queryFn: () =>
       getInstallComponent({
@@ -100,6 +101,7 @@ export const InstallComponentDetail = () => {
     .filter(Boolean) ?? []
 
   const { data: latestBuilds } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['component-builds', org?.id, componentId, 0],
     queryFn: () =>
       getComponentBuilds({

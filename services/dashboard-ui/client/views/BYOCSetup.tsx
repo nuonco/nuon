@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Avatar } from '@/components/common/Avatar'
 import { Button } from '@/components/common/Button'
 import { CodeBlock } from '@/components/common/CodeBlock'
@@ -31,6 +31,7 @@ export function BYOCSetup() {
   const { apiUrl } = useConfig()
 
   const { data: orgs } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['byoc-setup-orgs'],
     queryFn: () => getOrgs({ limit: 1 }),
     refetchInterval: 5000,

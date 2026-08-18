@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { ClickToCopy } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
@@ -213,6 +213,7 @@ export const TriggerOverviewContainer = ({
     },
   })
   const eventTypes = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['event-trigger-event-types', target.orgId, target.triggerId],
     queryFn: () =>
       getTriggerEventTypes({
@@ -222,6 +223,7 @@ export const TriggerOverviewContainer = ({
     enabled,
   })
   const ingressUrl = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['event-trigger-ingress-url', target.orgId, target.triggerId],
     queryFn: () =>
       getTriggerIngressURL({

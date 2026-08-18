@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -37,6 +37,7 @@ const BranchOverviewContent = () => {
   const hasDeploymentPlan = (currentConfig?.install_groups?.length ?? 0) > 0
 
   const { data: appInstallsResult } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-installs', orgId, appId],
     queryFn: () => getAppInstalls({ appId, orgId, limit: 100 }),
     enabled: !!orgId && !!appId && hasDeploymentPlan,
@@ -56,6 +57,7 @@ const BranchOverviewContent = () => {
   )
 
   const { data: runsResult, isLoading: isLoadingRuns } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['branch-runs-recent', orgId, appId, branchId],
     queryFn: () =>
       getBranchWorkflowRuns({

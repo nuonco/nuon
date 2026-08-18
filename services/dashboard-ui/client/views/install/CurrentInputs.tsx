@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -84,6 +84,7 @@ export const CurrentInputs = () => {
   const phoneHomeAuth = install?.phone_home_auth
 
   const { data: inputs, isLoading: inputsLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-inputs', org?.id, install?.id],
     queryFn: () =>
       getInstallCurrentInputs({ orgId: org.id, installId: install.id }),
