@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -36,6 +36,7 @@ export const InstallConfigs = () => {
   const queryClient = useQueryClient()
 
   const { data: versions, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-config-versions', org?.id, install?.id],
     queryFn: () =>
       getInstallConfigVersions({
@@ -146,6 +147,7 @@ const ConfigVersionRow = ({ version }: { version: TInstallConfigVersion }) => {
   const commit = sync?.vcs_connection_commit
 
   const { data: diff, isLoading: isDiffLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: [
       'install-config-version-diff',
       org?.id,

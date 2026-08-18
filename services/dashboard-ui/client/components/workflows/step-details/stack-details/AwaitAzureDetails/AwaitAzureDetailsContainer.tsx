@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getAppSecretsConfig } from '@/lib'
@@ -14,6 +14,7 @@ export const AwaitAzureDetailsContainer = ({
   const { org } = useOrg()
 
   const { data: secretsConfig } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-secrets-config', org?.id, install?.app_id],
     queryFn: () =>
       getAppSecretsConfig({

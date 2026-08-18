@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -49,6 +49,7 @@ export const DeploymentPlanEditorContainer = ({
   const queryClient = useQueryClient()
 
   const { data: installsResult, isLoading: loadingInstalls } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-installs', org.id, app.id],
     queryFn: () =>
       getAppInstalls({ appId: app.id!, orgId: org.id!, limit: 100 }),
@@ -64,6 +65,7 @@ export const DeploymentPlanEditorContainer = ({
   )
 
   const { data: runbooksResult, isLoading: loadingRunbooks } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runbooks', org?.id, app?.id, 'deployment-plan'],
     queryFn: () => getRunbooks({ appId: app!.id, orgId: org!.id, limit: 100 }),
     enabled: !!org?.id && !!app?.id,

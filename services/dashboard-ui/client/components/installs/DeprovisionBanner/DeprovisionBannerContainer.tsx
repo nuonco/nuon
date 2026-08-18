@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallWorkflows } from '@/lib'
@@ -14,6 +14,7 @@ export const DeprovisionBannerContainer = () => {
   const showBanner = !!lifecycleStatus && BANNER_STATUSES.includes(lifecycleStatus)
 
   const { data: workflows } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-workflows', org?.id, install?.id, 'lifecycle-banner'],
     queryFn: () =>
       getInstallWorkflows({ installId: install!.id, orgId: org!.id }),

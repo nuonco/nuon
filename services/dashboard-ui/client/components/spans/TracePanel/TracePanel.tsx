@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -48,6 +48,7 @@ const TracePanelContent = ({ logStream }: { logStream: TLogStream }) => {
   const { org } = useOrg()
   const shouldPoll = logStream.open
   const { data: spans, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['log-stream-spans', org?.id, logStream.id],
     queryFn: () => getLogStreamSpans({ orgId: org.id, logStreamId: logStream.id }),
     enabled: !!org?.id && !!logStream.id,

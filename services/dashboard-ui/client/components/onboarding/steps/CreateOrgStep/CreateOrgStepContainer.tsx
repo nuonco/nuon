@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { createOrg, getOrg } from '@/lib'
 import { useOnboardingJourney } from '@/hooks/use-onboarding-journey'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
@@ -69,6 +69,7 @@ function CompletedOrgCardContainer({
   nextStepTitle: IWizardStepComponentProps['nextStepTitle']
 }) {
   const { data: org, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['onboarding-org', orgId],
     queryFn: () => getOrg({ orgId }),
     refetchInterval: 10000,

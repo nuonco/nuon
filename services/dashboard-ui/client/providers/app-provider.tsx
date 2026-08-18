@@ -1,5 +1,5 @@
 import { createContext, useEffect, useMemo, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { getApp, getAppLabels, toLabelColorMap } from '@/lib'
@@ -31,6 +31,7 @@ export function AppProvider({
   const { org } = useOrg()
   const { addToast } = useToast()
   const { data: app, isLoading, error, refetch } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app', org.id!, appId],
     queryFn: () => getApp({ orgId: org.id!, appId }),
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -38,6 +39,7 @@ export function AppProvider({
   })
 
   const { data: labelsData } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-labels', org.id!, appId],
     queryFn: () => getAppLabels({ orgId: org.id!, appId }),
     enabled: !!org.id && !!appId,

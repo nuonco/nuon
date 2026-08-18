@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import type { IModal } from '@/components/surfaces/Modal'
@@ -20,6 +20,7 @@ export const GenerateInstallConfigModalContainer = ({ ...props }: IModal) => {
     error,
     isLoading,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-generate-cli-config', org.id, install.id],
     queryFn: () =>
       generateCLIInstallConfig({

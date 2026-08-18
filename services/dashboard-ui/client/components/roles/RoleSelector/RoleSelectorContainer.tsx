@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getAvailableRoles } from '@/lib'
 import type { TOperationType, TPrincipalType } from '@/types'
@@ -28,6 +28,7 @@ export const RoleSelectorContainer = ({
   const { org } = useOrg()
 
   const { data, isLoading, isError } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['available-roles', org.id, installId, operationType, principalType, principalId],
     queryFn: () =>
       getAvailableRoles({ installId, operationType, principalType, principalId, orgId: org.id }),

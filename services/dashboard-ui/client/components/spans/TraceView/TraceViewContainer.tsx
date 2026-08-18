@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { useOrg } from '@/hooks/use-org'
 import { useLogViewer } from '@/providers/log-viewer-provider'
@@ -36,6 +36,7 @@ export const TraceViewContainer = ({
   const selectedSpanId = searchParams.get('span_id') ?? undefined
 
   const { data: fetchedSpans, isLoading: fetchedLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['log-stream-spans', org?.id, logStreamId],
     queryFn: () => getLogStreamSpans({ orgId: org.id, logStreamId }),
     enabled: !!org?.id && !!logStreamId && propSpans === undefined,

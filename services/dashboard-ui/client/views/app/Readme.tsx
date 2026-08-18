@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Markdown } from '@/components/common/Markdown'
@@ -16,6 +16,7 @@ export const Readme = () => {
   const { app } = useApp()
 
   const { data: configs, isLoading: isLoadingConfigs } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-configs', org?.id, app?.id],
     queryFn: () => getAppConfigs({ orgId: org.id, appId: app.id, limit: 1 }),
     enabled: !!org?.id && !!app?.id,
@@ -24,6 +25,7 @@ export const Readme = () => {
   const appConfigId = configs?.at(0)?.id
 
   const { data: appConfig, isLoading: isLoadingConfig } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-config', org?.id, app?.id, appConfigId],
     queryFn: () =>
       getAppConfig({ orgId: org.id, appId: app.id, appConfigId }),

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useContext, useEffect, useRef, useState } from 'react'
 import type { TConfigDiffFocus } from '@/components/approvals/plan-diffs/config-diff-focus'
 import { useOrg } from '@/hooks/use-org'
@@ -24,6 +24,7 @@ export const AppConfigDiffContainer = ({ appConfigId, oldConfigId: oldConfigIdPr
   const [cardOpen, setCardOpen] = useState(true)
 
   const { data: recentConfigs } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-configs', org?.id, appId],
     queryFn: () => getAppConfigs({ orgId: org!.id, appId: appId!, limit: 10 }),
     enabled: !!org?.id && !!appId && !!appConfigId,
@@ -37,6 +38,7 @@ export const AppConfigDiffContainer = ({ appConfigId, oldConfigId: oldConfigIdPr
   const newConfig = (recentConfigs || []).find((c) => c.id === appConfigId)
 
   const { data: diffData, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-config-diff', org?.id, appId, appConfigId, oldConfigId],
     queryFn: () =>
       getAppConfigDiff({

@@ -1,5 +1,5 @@
 import { Outlet, useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { CompositeError } from '@/components/common/CompositeError'
 import { DeployHeader } from '@/components/deploys/DeployHeader'
@@ -70,12 +70,14 @@ const DeployLayoutInner = () => {
   const { org } = useOrg()
 
   const { data: component } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['component', org?.id, componentId],
     queryFn: () => getComponent({ orgId: org.id, componentId: componentId! }),
     enabled: !!org?.id && !!componentId,
   })
 
   const { data: workflow } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['workflow', org?.id, deploy?.install_workflow_id],
     queryFn: () => getWorkflow({ orgId: org.id, workflowId: deploy!.install_workflow_id }),
     enabled: !!org?.id && !!deploy?.install_workflow_id,

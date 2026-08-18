@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Outlet } from 'react-router'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { OrgStatusBar } from '@/components/orgs/OrgStatusBar'
@@ -29,6 +29,7 @@ const SpotlightListener = () => {
 
 export const OrgLayout = () => {
   const { data: versions } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['version'],
     queryFn: getAPIVersion,
   })

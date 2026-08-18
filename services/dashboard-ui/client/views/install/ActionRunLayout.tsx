@@ -1,5 +1,5 @@
 import { Outlet, useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { InstallActionRunHeader } from '@/components/actions/InstallActionRunHeader'
 import { CompositeError } from '@/components/common/CompositeError'
 import { PageSection } from '@/components/layout/PageSection'
@@ -19,6 +19,7 @@ const ActionRunLayoutInner = () => {
 
   const basePath = `/${org?.id}/installs/${install?.id}/actions/${actionId}/runs/${actionRunId}`
   const { data: action } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['action', org?.id, actionId],
     queryFn: () =>
       getInstallAction({
@@ -30,6 +31,7 @@ const ActionRunLayoutInner = () => {
   })
 
   const { data: workflow } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['workflow', org?.id, installActionRun?.install_workflow_id],
     queryFn: () =>
       getWorkflow({

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { BackLink } from '@/components/common/BackLink'
 import { Card } from '@/components/common/Card'
@@ -48,6 +48,7 @@ const BranchRunDetailContent = () => {
   }, [])
 
   const { data: run, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['branch-run', orgId, appId, branchId, runId],
     queryFn: () => getBranchWorkflowRun({ orgId, appId, branchId, runId }),
     enabled: !!orgId && !!appId && !!branchId && !!runId,
@@ -55,6 +56,7 @@ const BranchRunDetailContent = () => {
   })
 
   const { data: branchRunsResult } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['branch-runs', orgId, appId, branchId],
     queryFn: () => getBranchWorkflowRuns({ orgId, appId, branchId, limit: 10 }),
     enabled: !!orgId && !!appId && !!branchId,

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import type { TDependencyViewMode } from '@/components/common/DependencyViewToggle'
 import { useOrg } from '@/hooks/use-org'
@@ -21,6 +21,7 @@ export const ComponentsGraphInlineContainer = ({
   const { org } = useOrg()
 
   const { data, error, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-config-graph', org?.id, appId, configId],
     queryFn: () => getAppConfigGraph({ orgId: org.id, appId, appConfigId: configId }),
     enabled: !!org?.id,

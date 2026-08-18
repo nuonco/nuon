@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallStack } from '@/lib'
@@ -20,6 +20,7 @@ export const InstallStacksTableContainer = ({
   const { install } = useInstall()
 
   const { data: stack, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-stack', org?.id, install?.id],
     queryFn: () => getInstallStack({ orgId: org.id, installId: install.id }),
     refetchInterval: shouldPoll ? pollInterval : false,
