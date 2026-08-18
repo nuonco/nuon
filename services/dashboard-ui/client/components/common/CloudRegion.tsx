@@ -3,7 +3,7 @@ import { getFlagEmoji } from '@/utils/string-utils'
 import { Text, IText } from './Text'
 
 interface ICloudRegion extends Omit<IText, 'children'> {
-  platform: 'aws' | 'azure' | 'gcp'
+  platform: 'aws' | 'azure' | 'gcp' | 'unknown'
   location?: string
   region?: string
 }
