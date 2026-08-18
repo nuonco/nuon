@@ -85,7 +85,7 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	maps.Copy(tmpl.Parameters, customResult.params)
 
 	// Phone home Lambda + props — AFTER custom stacks so we have their output metadata
-	if err := validatePhoneHomeScriptSize(inp.PhonehomeScript); err != nil {
+	if err := validatePhoneHomeScript(inp.PhonehomeScript); err != nil {
 		return nil, err
 	}
 	tmpl.Resources["PhoneHomeProps"] = t.getRunnerPhoneHomeProps(inp, customResult)
