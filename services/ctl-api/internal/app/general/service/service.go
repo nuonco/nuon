@@ -93,6 +93,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	api.POST("/v1/general/metrics", s.PublishMetrics)
+	api.GET("/v1/general/max-runner-version", s.GetMaxRunnerVersion)
 
 	return nil
 }
