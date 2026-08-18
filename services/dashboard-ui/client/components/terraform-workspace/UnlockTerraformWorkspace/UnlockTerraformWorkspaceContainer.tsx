@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -29,6 +29,7 @@ export const UnlockTerraformWorkspaceButton = ({
   const { addModal } = useSurfaces()
 
   const { data: lock } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['terraform-workspace-lock', org?.id, workspaceId],
     queryFn: () => getTerraformWorkspaceLock({ orgId: org.id, workspaceId }),
     enabled: !!workspaceId,

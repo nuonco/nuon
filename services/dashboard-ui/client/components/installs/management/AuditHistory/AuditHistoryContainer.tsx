@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import type { IModal } from '@/components/surfaces/Modal'
@@ -26,6 +26,7 @@ export const AuditHistoryModalContainer = ({ ...props }: IModal) => {
     error,
     isLoading,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-audit-log', org.id, install.id, dateRange.start.toISOString(), dateRange.end.toISOString()],
     queryFn: () =>
       getInstallAuditLog({

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import {
@@ -55,6 +55,7 @@ function CompletedInstallCardContainer({
   orgId: string
 }) {
   const { data: install, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['onboarding-install', orgId, installId],
     queryFn: () => getInstall({ installId, orgId }),
     refetchInterval: 10000,
@@ -85,6 +86,7 @@ function CreateInstallStepContentContainer({
     isLoading,
     error: appError,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['onboarding-app', orgId, appId],
     queryFn: () => getApp({ appId, orgId }),
   })

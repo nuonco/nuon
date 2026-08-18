@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -115,6 +115,7 @@ export const CreateBranchModalContainer = ({
   const [vcsConnectionId, setVcsConnectionId] = useState(vcsConnections[0]?.id || '')
 
   const { data: existingBranches } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-branches', org?.id, app?.id, 0],
     queryFn: () => getAppBranches({ appId: app!.id, orgId: org!.id, limit: 20, offset: 0 }),
     enabled: !!org?.id && !!app?.id,

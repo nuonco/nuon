@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useRunner } from '@/hooks/use-runner'
 import {
@@ -27,6 +27,7 @@ export const ProcessCardContainer = ({
   const { runner } = useRunner()
 
   const { data: heartbeat } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['process-heartbeat', org?.id, runner?.id, process.id],
     queryFn: () =>
       getProcessLatestHeartbeat({
@@ -39,6 +40,7 @@ export const ProcessCardContainer = ({
   })
 
   const { data: healthchecks } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['process-health-checks', org?.id, runner?.id, process.id],
     queryFn: () =>
       getRunnerRecentHealthChecks({

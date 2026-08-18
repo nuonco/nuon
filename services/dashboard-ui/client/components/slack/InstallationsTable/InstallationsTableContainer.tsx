@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getSlackInstallations, getSlackOrgLinks } from '@/lib'
 import { InstallationsTable } from './InstallationsTable'
@@ -13,12 +13,14 @@ export const InstallationsTableContainer = ({
   const { org } = useOrg()
 
   const installationsQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['slack-installations', org.id],
     queryFn: () => getSlackInstallations({ orgId: org.id }),
     refetchInterval: shouldPoll ? pollInterval : false,
   })
 
   const linksQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['slack-org-links', org.id],
     queryFn: () => getSlackOrgLinks({ orgId: org.id }),
   })

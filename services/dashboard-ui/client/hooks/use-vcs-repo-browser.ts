@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getVCSConnectionRepos, getConnectionBranches } from '@/lib'
 import type { TVCSConnectionRepo, TVCSBranch } from '@/types'
 
@@ -24,6 +24,7 @@ export function useVcsRepoBrowser({
     isLoading: loadingRepos,
     error: reposQueryError,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['vcs-repos', orgId, vcsConnectionId],
     queryFn: () => getVCSConnectionRepos({ orgId, connectionId: vcsConnectionId }),
     enabled: enabled && !!orgId && !!vcsConnectionId,
@@ -65,6 +66,7 @@ export function useVcsRepoBrowser({
     isLoading: loadingBranches,
     error: branchesQueryError,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['vcs-branches', orgId, vcsConnectionId, owner, repoName],
     queryFn: () => getConnectionBranches(orgId, vcsConnectionId, owner!, repoName!),
     enabled: enabled && !!orgId && !!vcsConnectionId && !!owner && !!repoName,

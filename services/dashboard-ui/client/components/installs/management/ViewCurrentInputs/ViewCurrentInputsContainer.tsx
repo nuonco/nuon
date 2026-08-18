@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import type { IModal } from '@/components/surfaces/Modal'
@@ -18,6 +18,7 @@ export const ViewCurrentInputsModalContainer = ({ ...props }: IModal) => {
   const canRenameInstall = !!org?.features?.['install-rename']
 
   const { data: inputs, isLoading: inputsLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-inputs', org?.id, install?.id],
     queryFn: () =>
       getInstallCurrentInputs({ orgId: org.id, installId: install.id }),

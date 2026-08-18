@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getOrgs } from '@/lib/ctl-api/orgs'
 import { OrgsNav } from './OrgsNav'
 
@@ -13,6 +13,7 @@ export const OrgsNavContainer = () => {
   const { data: orgs, isLoading } = useQuery({
     queryKey: ['orgs', { offset, limit, q: searchTerm }],
     queryFn: () => getOrgs({ offset, limit, q: searchTerm }),
+    placeholderData: keepPreviousData,
   })
 
   return (

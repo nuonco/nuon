@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { useOrg } from '@/hooks/use-org'
 import { getTriggerEventsForTrigger, getTriggerEventTypes } from '@/lib'
@@ -43,6 +43,7 @@ export const TriggerEventsContainer = ({
     refetchInterval: 5000,
   })
   const facets = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['event-trigger-event-types', org?.id, triggerId],
     queryFn: () =>
       getTriggerEventTypes({ orgId: org!.id, triggerId: triggerId }),

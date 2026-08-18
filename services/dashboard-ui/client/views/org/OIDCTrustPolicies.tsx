@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageContent } from '@/components/layout/PageContent'
@@ -17,6 +17,7 @@ export const OIDCTrustPolicies = () => {
   const { org } = useOrg()
 
   const { data: policies } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['oidc-trust-policies', org.id],
     queryFn: () => getCurrentOrgOIDCTrustPolicies({ orgId: org.id }),
   })

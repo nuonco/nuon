@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getComponentBuilds } from '@/lib'
 import type { TBuild } from '@/types'
@@ -45,6 +45,7 @@ export const BuildSelectContainer = ({
         limit,
       }),
     enabled: !!org?.id && !!componentId,
+    placeholderData: keepPreviousData,
   })
 
   useEffect(() => {

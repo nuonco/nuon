@@ -1,5 +1,5 @@
 import { Outlet, useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -17,6 +17,7 @@ export const TriggerLayout = () => {
   const { triggerId } = useParams()
   const { org } = useOrg()
   const query = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['trigger', org?.id, triggerId],
     queryFn: () => getTrigger({ orgId: org!.id, triggerId: triggerId! }),
     enabled: !!org?.id && !!triggerId,

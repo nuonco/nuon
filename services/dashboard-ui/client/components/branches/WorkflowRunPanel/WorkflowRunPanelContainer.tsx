@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import type { IPanel } from '@/components/surfaces/Panel'
@@ -33,6 +33,7 @@ export const WorkflowRunPanelContainer = ({
   const pendingScrollRef = useRef(false)
 
   const { data: run, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['branch-run', orgId, appId, branchId, runId],
     queryFn: () => getBranchWorkflowRun({ orgId, appId, branchId, runId }),
     enabled: !!orgId && !!appId && !!branchId && !!runId,

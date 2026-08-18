@@ -1,5 +1,5 @@
 import { useParams } from 'react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -22,6 +22,7 @@ export const NotebookDetail = () => {
   const queryClient = useQueryClient()
 
   const { data: notebook, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['notebook', org?.id, install?.id, notebookId],
     queryFn: () =>
       getNotebook({ orgId: org!.id, installId: install!.id, notebookId: notebookId! }),

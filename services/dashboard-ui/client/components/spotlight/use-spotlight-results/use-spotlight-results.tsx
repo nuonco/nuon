@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { TIconVariant } from '@/components/common/Icon'
 import { getOrgs } from '@/lib/ctl-api/orgs/get-orgs'
 import { getApps } from '@/lib/ctl-api/apps/get-apps'
@@ -56,6 +56,7 @@ export function useSpotlightResults(
   )
 
   const { data: appsResult, isFetching: appsFetching } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['spotlight', 'apps', parsed.query, orgId],
     queryFn: () => getApps({ orgId, q: parsed.query || undefined, limit: 5 }),
     enabled: (parsed.prefix === 'app' || (parsed.prefix === null && parsed.query.length > 0)) && !!orgId,
@@ -65,6 +66,7 @@ export function useSpotlightResults(
   const isGlobalCommand = parsed.prefix === null && parsed.query.startsWith('/')
 
   const { data: installsResult, isFetching: installsFetching } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['spotlight', 'installs', parsed.query, orgId],
     queryFn: () =>
       getInstalls({ orgId, q: parsed.query || undefined, limit: 5 }),
@@ -72,12 +74,14 @@ export function useSpotlightResults(
   })
 
   const { data: globalCommandInstalls, isFetching: globalCommandInstallsFetching } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['spotlight', 'global-command-installs', orgId],
     queryFn: () => getInstalls({ orgId, limit: 20 }),
     enabled: isGlobalCommand && !!orgId,
   })
 
   const { data: runnerInstallsResult, isFetching: runnerInstallsFetching } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['spotlight', 'installs-by-runner', parsed.query, orgId],
     queryFn: () =>
       getInstalls({ orgId, runner_id: parsed.query, limit: 5 }),
@@ -85,6 +89,7 @@ export function useSpotlightResults(
   })
 
   const { data: actionResults, isFetching: actionsFetching } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['spotlight', 'actions', parsed.query, orgId],
     queryFn: async () => {
       const [appsRes, installsRes] = await Promise.all([
@@ -126,12 +131,14 @@ export function useSpotlightResults(
   })
 
   const { data: orgsResult, isFetching: orgsFetching } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['spotlight', 'orgs', parsed.query],
     queryFn: () => getOrgs({ q: parsed.query || undefined, limit: 10 }),
     enabled: parsed.prefix === 'org',
   })
 
   const { data: componentResults, isFetching: componentsFetching } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['spotlight', 'components', parsed.query, orgId],
     queryFn: async () => {
       const [appsRes, installsRes] = await Promise.all([
