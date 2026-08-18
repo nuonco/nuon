@@ -13,6 +13,7 @@ type GetHeartBeatRequest struct {
 }
 
 // @temporal-gen-v2 activity
+// @max-retries 1
 // @by-field ID
 func (a *Activities) GetHeartBeat(ctx context.Context, req GetHeartBeatRequest) (*app.RunnerHeartBeat, error) {
 	runner := app.RunnerHeartBeat{}
