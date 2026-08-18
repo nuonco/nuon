@@ -8,6 +8,7 @@ import (
 
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
+	"github.com/awslabs/goformation/v7/cloudformation/tags"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/render"
@@ -94,7 +95,7 @@ func (a *Templates) getRoleResources(role app.AppAWSIAMRoleConfig, t tagBuilder)
 		AssumeRolePolicyDocument: map[string]any{
 			"Statement": trustPolicies,
 		},
-		Tags: t.apply(nil, fmt.Sprintf("%s-role", role.Type)),
+		Tags: t.apply([]tags.Tag{{Key: TagKeyRunnerAssumable, Value: "true"}}, fmt.Sprintf("%s-role", role.Type)),
 	}
 
 	if len(role.PermissionsBoundaryJSON) < 1 || bytes.Equal(role.PermissionsBoundaryJSON, []byte("{}")) {
