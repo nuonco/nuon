@@ -21,6 +21,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -60,6 +61,9 @@ func (s *GetAllInstallsTestSuite) SetupSuite() {
 
 	options := append(
 		tests.CtlApiFXOptions(s.T()),
+		// flowclient is intentionally not in tests.CtlApiFXOptions (see the note
+		// in tests/testfx.go); the installs service constructor needs it.
+		fx.Provide(flowclient.New),
 		fx.Provide(New),
 		fx.Populate(&s.service),
 	)
@@ -221,6 +225,112 @@ func (s *GetAllInstallsTestSuite) TestGetAllInstalls() {
 				require.NoError(s.T(), err)
 				tc.validateFunc(installs)
 			}
+		})
+	}
+}
+
+// createAppRunnerConfig persists an AppRunnerConfig of an arbitrary type, unlike
+// testseed's CreateAppRunnerConfig which always creates an "aws" one.
+func (s *GetAllInstallsTestSuite) createAppRunnerConfig(ctx context.Context, appConfigID string, runnerType app.AppRunnerType) *app.AppRunnerConfig {
+	runner := &app.AppRunnerConfig{
+		AppID:       s.testApp.ID,
+		AppConfigID: appConfigID,
+		Type:        runnerType,
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(runner).Error)
+	return runner
+}
+
+// pinInstallConfig overwrites an install's app_config_id/app_runner_config_id
+// directly, mirroring the bulk `UPDATE installs SET app_runner_config_id = ...`
+// that internal/pkg/config/syncer/runner/sync.go runs on every app config sync.
+func (s *GetAllInstallsTestSuite) pinInstallConfig(ctx context.Context, installID, appConfigID, appRunnerConfigID string) {
+	require.NoError(s.T(), s.service.DB.WithContext(ctx).
+		Model(&app.Install{}).
+		Where(app.Install{ID: installID}).
+		Updates(map[string]any{
+			"app_config_id":        appConfigID,
+			"app_runner_config_id": appRunnerConfigID,
+		}).Error)
+}
+
+// TestGetAllInstallsResolvesCloudPlatform covers get_all_installs.go's
+// Preload("AppRunnerConfig") / Preload("AppConfig.RunnerConfig") fixes: before
+// them, this admin endpoint had no runner-config preload at all and every
+// install came back with cloud_platform "unknown".
+func (s *GetAllInstallsTestSuite) TestGetAllInstallsResolvesCloudPlatform() {
+	ctx := context.Background()
+	ctx = cctx.SetOrgIDContext(ctx, s.testOrg.ID)
+	ctx = cctx.SetAccountIDContext(ctx, s.testAcc.ID)
+
+	testCases := []struct {
+		name                  string
+		setup                 func() *app.Install
+		expectedCloudPlatform app.CloudPlatform
+		expectedRunnerType    app.AppRunnerType
+	}{
+		{
+			name: "pinned app config runner wins over stale app_runner_config_id FK",
+			setup: func() *app.Install {
+				azureCfg := s.service.Seeder.CreateBareAppConfig(ctx, s.T(), s.testApp.ID)
+				s.createAppRunnerConfig(ctx, azureCfg.ID, app.AppRunnerTypeAzure)
+
+				// Represents the runner config a later app config sync created — the
+				// syncer rewrites app_runner_config_id on every install for the app to
+				// point at this, without touching the install's pinned app_config_id.
+				staleCfg := s.service.Seeder.CreateBareAppConfig(ctx, s.T(), s.testApp.ID)
+				awsRunner := s.createAppRunnerConfig(ctx, staleCfg.ID, app.AppRunnerTypeAWS)
+
+				install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+				s.pinInstallConfig(ctx, install.ID, azureCfg.ID, awsRunner.ID)
+				return install
+			},
+			expectedCloudPlatform: app.CloudPlatformAzure,
+			expectedRunnerType:    app.AppRunnerTypeAzure,
+		},
+		{
+			name: "falls back to app_runner_config_id FK when pinned config has no runner config",
+			setup: func() *app.Install {
+				noRunnerCfg := s.service.Seeder.CreateBareAppConfig(ctx, s.T(), s.testApp.ID)
+
+				throwawayCfg := s.service.Seeder.CreateBareAppConfig(ctx, s.T(), s.testApp.ID)
+				azureRunner := s.createAppRunnerConfig(ctx, throwawayCfg.ID, app.AppRunnerTypeAzure)
+
+				install := s.service.Seeder.CreateInstall(ctx, s.T(), s.testApp)
+				s.pinInstallConfig(ctx, install.ID, noRunnerCfg.ID, azureRunner.ID)
+				return install
+			},
+			expectedCloudPlatform: app.CloudPlatformAzure,
+			expectedRunnerType:    app.AppRunnerTypeAzure,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			install := tc.setup()
+			s.T().Cleanup(func() {
+				s.service.DB.Unscoped().Delete(install)
+			})
+
+			rr := s.makeRequest(http.MethodGet, "/v1/installs?type=sandbox&limit=60", nil)
+			if rr.Code != http.StatusOK {
+				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+			}
+			require.Equal(s.T(), http.StatusOK, rr.Code)
+
+			var installs []*app.Install
+			require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &installs))
+
+			var found *app.Install
+			for _, i := range installs {
+				if i.ID == install.ID {
+					found = i
+					break
+				}
+			}
+			require.NotNil(s.T(), found, "install %s should be present in results", install.ID)
+			assert.Equal(s.T(), tc.expectedCloudPlatform, found.CloudPlatform)
+			assert.Equal(s.T(), tc.expectedRunnerType, found.RunnerType)
 		})
 	}
 }
