@@ -131,6 +131,7 @@ require (
 	github.com/tliron/commonlog v0.2.21
 	github.com/tliron/glsp v0.2.2
 	github.com/twmb/franz-go v1.21.5
+	github.com/twmb/franz-go/plugin/kotel v1.6.0
 	github.com/uber-go/tally/v4 v4.1.1
 	github.com/zclconf/go-cty v1.18.1
 	go.mozilla.org/pkcs7 v0.9.0
