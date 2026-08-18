@@ -27,6 +27,8 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 )
 
@@ -186,6 +188,18 @@ func NewSink(params Params, name Name, topic string) *Sink {
 func (s *Sink) instrument(handler pkgkafka.Handler) pkgkafka.Handler {
 	return func(ctx context.Context, partition int32, recs []*kgo.Record) error {
 		start := time.Now()
+
+		// Seed a MetricContext so the GORM metrics plugin tags this consumer's
+		// ClickHouse writes, the same way the Temporal activity interceptor does
+		// for worker activities. Without it the plugin has no request scope to
+		// attribute the write to and the per-table latency series is untagged.
+		ctx = context.WithValue(ctx, keys.MetricsKey, &cctx.MetricContext{
+			Endpoint:  string(s.name),
+			Method:    "kafka",
+			Context:   "consumer",
+			Namespace: s.topic,
+		})
+
 		err := handler(ctx, partition, recs)
 
 		tags := s.baseTags("status:ok")
