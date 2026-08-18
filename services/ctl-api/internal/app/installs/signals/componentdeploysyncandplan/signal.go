@@ -226,9 +226,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			if err != nil {
 				return fmt.Errorf("unable to get pinned component build: %w", err)
 			}
-			if pinned != nil {
-				buildID = pinned.ID
+			if pinned == nil {
+				return fmt.Errorf("no deployable build for component config connection %s", s.ComponentConfigConnectionID)
 			}
+			buildID = pinned.ID
 		}
 
 		installDeploy, err = activities.AwaitCreateInstallDeploy(ctx, activities.CreateInstallDeployRequest{
