@@ -10,6 +10,7 @@ aws_region               = "{{.Install.AWSAccount.Region}}"
 {{- end}}
 runner_api_url           = "{{.Settings.RunnerAPIURL}}"
 runner_id                = "{{.Runner.ID}}"
+runner_init_script_url   = "{{.RunnerInitScriptURL}}"
 phone_home_url           = "{{.CloudFormationStackVersion.PhoneHomeURL}}"
 nuon_support_iam_role_arns = {{.ControlPlaneAccountIDs}}
 provision_permissions              = {{.ProvisionPermissions}}
