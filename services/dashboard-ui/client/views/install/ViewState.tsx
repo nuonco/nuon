@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
@@ -21,6 +21,7 @@ export const ViewState = () => {
   const [isCopied, setIsCopied] = useState(false)
 
   const { data: state, error, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-state', org?.id, install?.id],
     queryFn: () => getInstallState({ orgId: org.id, installId: install.id }),
     enabled: !!org?.id && !!install?.id,

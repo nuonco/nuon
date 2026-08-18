@@ -1,5 +1,5 @@
 import { createContext, useEffect, useMemo, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { getInstall, getAppLabels, toLabelColorMap } from '@/lib'
@@ -44,6 +44,7 @@ export function InstallProvider({
     error,
     refetch,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install', org.id!, installId],
     queryFn: () => getInstall({ orgId: org.id!, installId }),
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -51,6 +52,7 @@ export function InstallProvider({
   })
 
   const { data: labelsData } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-labels', org.id!, install?.app_id],
     queryFn: () => getAppLabels({ orgId: org.id!, appId: install!.app_id! }),
     enabled: !!org.id && !!install?.app_id,

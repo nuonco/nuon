@@ -1,5 +1,5 @@
 import { Outlet, useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { CompositeError } from '@/components/common/CompositeError'
 import { SandboxHeader } from '@/components/sandbox/SandboxHeader'
@@ -31,6 +31,7 @@ const SandboxRunLayoutInner = () => {
   const { sandboxRun } = useSandboxRun()
 
   const { data: workflow } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['workflow', org?.id, sandboxRun?.install_workflow_id],
     queryFn: () =>
       getWorkflow({ orgId: org.id, workflowId: sandboxRun!.install_workflow_id }),

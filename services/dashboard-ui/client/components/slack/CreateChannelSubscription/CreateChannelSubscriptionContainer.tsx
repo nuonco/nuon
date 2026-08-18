@@ -1,10 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -38,11 +33,13 @@ const CreateChannelSubscriptionModalContainer = (
   const [channelSearch, setChannelSearch] = useState('')
 
   const installationsQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['slack-installations', org.id],
     queryFn: () => getSlackInstallations({ orgId: org.id }),
   })
 
   const orgLinksQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['slack-org-links', org.id],
     queryFn: () => getSlackOrgLinks({ orgId: org.id }),
   })

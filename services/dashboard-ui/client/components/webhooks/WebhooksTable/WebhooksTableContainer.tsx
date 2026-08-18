@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getCurrentOrgWebhooks } from '@/lib'
 import { WebhooksTable } from './WebhooksTable'
@@ -13,6 +13,7 @@ export const WebhooksTableContainer = ({
   const { org } = useOrg()
 
   const { data, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['webhooks', org.id],
     queryFn: () => getCurrentOrgWebhooks({ orgId: org.id }),
     refetchInterval: shouldPoll ? pollInterval : false,

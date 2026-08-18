@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getComponentConfig } from '@/lib'
@@ -25,6 +25,7 @@ export const ComponentConfigContextTooltipContainer = ({
     isLoading,
     error,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['component-config', org?.id, appId, componentId, configId],
     queryFn: () => getComponentConfig({ orgId: org.id, appId, componentId, configId }),
     enabled: !!org?.id && !!appId && !!componentId && !!configId,

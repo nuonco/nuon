@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -35,6 +35,7 @@ export const ManageInstallsConfigContainer = ({
   )
 
   const { data: currentConfig } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-installs-config', org?.id, app?.id],
     queryFn: () => getAppInstallsConfig({ appId: app!.id, orgId: org!.id }),
     enabled: !!org?.id && !!app?.id,

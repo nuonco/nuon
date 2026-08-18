@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstallsById } from '@/hooks/use-installs-by-id'
 import { useOrg } from '@/hooks/use-org'
 import { getBranchRunBuilds, getBranchRunInstallGroups, getBranchInstallGroupRuns } from '@/lib'
@@ -28,6 +28,7 @@ export const BranchRunSummaryContainer = ({
   const isTerminal = TERMINAL.has(runStatus)
 
   const { data: builds } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['branch-run-builds', orgId, appId, branchId, branchRunId],
     queryFn: () => getBranchRunBuilds({ orgId: orgId!, appId, branchId, runId: branchRunId! }),
     enabled: !!orgId && !!branchRunId,
@@ -35,6 +36,7 @@ export const BranchRunSummaryContainer = ({
   })
 
   const { data: installUpdates } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['branch-run-install-groups', orgId, appId, branchId, branchRunId],
     queryFn: () => getBranchRunInstallGroups({ orgId: orgId!, appId, branchId, runId: branchRunId! }),
     enabled: !!orgId && !!branchRunId,
@@ -42,6 +44,7 @@ export const BranchRunSummaryContainer = ({
   })
 
   const { data: installGroupRuns } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['branch-install-group-runs', orgId, appId, branchId, branchRunId],
     queryFn: () => getBranchInstallGroupRuns({ orgId: orgId!, appId, branchId, runId: branchRunId! }),
     enabled: !!orgId && !!branchRunId,

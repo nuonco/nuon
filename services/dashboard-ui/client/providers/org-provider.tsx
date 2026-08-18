@@ -1,6 +1,6 @@
 import { createContext, useEffect } from 'react'
 import { useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getOrg } from '@/lib/ctl-api/orgs'
 import { clearOrgSession, setOrgSession } from '@/lib/cookies'
 import { ProviderError } from '@/components/layout/ProviderError'
@@ -18,6 +18,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
   const { orgId } = useParams<{ orgId: string }>()
 
   const { data: org, isLoading, error, refetch } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['org', orgId],
     queryFn: () => getOrg({ orgId: orgId! }),
     refetchInterval: 30_000,

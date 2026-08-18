@@ -1,5 +1,5 @@
 import { useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
@@ -35,12 +35,14 @@ export const ComponentDetail = () => {
   const { addPanel } = useSurfaces()
 
   const { data: component, isLoading: isLoadingComponent } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['component', org?.id, app?.id, componentId],
     queryFn: () => getComponent({ orgId: org.id, componentId: componentId! }),
     enabled: !!org?.id && !!app?.id && !!componentId,
   })
 
   const { data: configs } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-configs', org?.id, app?.id],
     queryFn: () => getAppConfigs({ orgId: org.id, appId: app.id, limit: 1 }),
     enabled: !!org?.id && !!app?.id,
@@ -49,6 +51,7 @@ export const ComponentDetail = () => {
   const appConfigId = configs?.at(0)?.id
 
   const { data: appConfig, isLoading: isLoadingConfig } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-config', org?.id, app?.id, appConfigId, 'recurse'],
     queryFn: () =>
       getAppConfig({
@@ -70,6 +73,7 @@ export const ComponentDetail = () => {
     .filter(Boolean) ?? []
 
   const { data: latestBuilds } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['component-builds', org?.id, componentId, 0],
     queryFn: () =>
       getComponentBuilds({

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallComponent } from '@/lib'
 import type { IStepDetails } from '../types'
@@ -15,6 +15,7 @@ export const VerifyHealthStepDetailsContainer = ({
 
   // Component routes are keyed by component_id, not install_component_id.
   const { data: installComponent } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-component', org?.id, installId, installComponentId],
     queryFn: () =>
       getInstallComponent({

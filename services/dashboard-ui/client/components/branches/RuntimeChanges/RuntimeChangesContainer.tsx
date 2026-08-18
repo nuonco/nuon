@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getBranchRunBuilds, getComponents } from '@/lib'
@@ -18,6 +18,7 @@ export const RuntimeChangesContainer = ({ branchId, appBranchRunId }: IRuntimeCh
   const { app } = useApp()
 
   const { data: builds } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['branch-run-builds', org?.id, app?.id, branchId, appBranchRunId],
     queryFn: () =>
       getBranchRunBuilds({ orgId: org!.id, appId: app!.id, branchId, runId: appBranchRunId }),
@@ -26,6 +27,7 @@ export const RuntimeChangesContainer = ({ branchId, appBranchRunId }: IRuntimeCh
   })
 
   const { data: componentsResult } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['components', org?.id, app?.id],
     queryFn: () => getComponents({ orgId: org!.id, appId: app!.id, limit: 100 }),
     enabled: !!org?.id && !!app?.id,

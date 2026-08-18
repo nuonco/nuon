@@ -1,10 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getTriggerRules } from '@/lib'
 import { TriggerRules } from './TriggerRules'
 export const TriggerRulesContainer = ({ triggerId }: { triggerId: string }) => {
   const { org } = useOrg()
   const query = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['event-trigger-rules', org?.id, triggerId],
     queryFn: () => getTriggerRules({ triggerId: triggerId, orgId: org!.id }),
     enabled: !!org?.id && !!triggerId,

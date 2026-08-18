@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
 import { Icon } from '@/components/common/Icon'
 import { useOrg } from '@/hooks/use-org'
@@ -15,6 +15,7 @@ export const ActionRunMetadataContainer = (props: IActionRunMetadata) => {
   const actionWorkflowId = actionRun?.config?.action_workflow_id
 
   const { data: installAction } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['action', org?.id, actionWorkflowId],
     queryFn: () =>
       getInstallAction({

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -24,6 +24,7 @@ export const Versions = () => {
   const { install } = useInstall()
 
   const { data: versions, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-app-config-versions', org?.id, install?.id],
     queryFn: () =>
       getInstallAppConfigVersions({
