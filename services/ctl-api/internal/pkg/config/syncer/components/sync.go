@@ -156,7 +156,12 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 		}
 	}
 
-	in, err := build.ComponentConnectionInputFromConfig(comp, apiComp.ID, appConfigID, depIDs)
+	in, err := build.ComponentConnectionInputFromConfig(
+		comp, 
+		apiComp.ID, 
+		appConfigID, 
+		depIDs, 
+	)
 	if err != nil {
 		return sync.SyncErr{
 			Resource:    fmt.Sprintf("component-%s", comp.Name),
@@ -215,11 +220,11 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 		// Every CCC needs a build behind it. Reuse the previous CCC's Active
 		// build when nothing changed; otherwise pre-create a queued build for
 		// the branch run's builds step to adopt and execute via queuebuild.
-		reusableBuildID, err := reusableActiveBuildID(ctx, db, apiComp.ID, ccc)
+		found, reusableBuildID, err := reusableActiveBuildID(ctx, db, apiComp.ID, ccc)
 		if err != nil {
 			return err
 		}
-		if reusableBuildID != "" {
+		if found {
 			if err := db.WithContext(ctx).
 				Model(&app.ComponentConfigConnection{}).
 				Where("id = ?", ccc.ID).
@@ -229,7 +234,12 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 					Err:         err,
 				}
 			}
-		} else if _, err := helpers.CreateComponentBuild(ctx, apiComp.ID, false, nil); err != nil {
+		} else if _, err := helpers.CreateComponentBuild(
+			ctx,
+			apiComp.ID,
+			false,
+			nil,
+		); err != nil {
 			return sync.SyncInternalErr{
 				Description: fmt.Sprintf("unable to queue build for component %s", comp.Name),
 				Err:         err,
@@ -249,13 +259,11 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 }
 
 // reusableActiveBuildID returns the previous config connection's build ID when
-// the incoming config is unchanged and that build is Active, "" when a fresh
-// build is needed. Unlike reusableConfigID, the fresh connection is already
-// created (branch sync keeps a CCC per sync), so the previous connection is
-// the latest one excluding it.
-func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incoming *app.ComponentConfigConnection) (string, error) {
+// the incoming config is unchanged and that build is Active. retuurns false when
+// no reusable build.
+func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incoming *app.ComponentConfigConnection) (bool, string, error) {
 	if incoming.Checksum == "" || build.RequiresFreshBuild(incoming) {
-		return "", nil
+		return false, "", nil
 	}
 
 	var prev app.ComponentConfigConnection
@@ -267,16 +275,16 @@ func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incom
 		First(&prev)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			return "", nil
+			return false, "", nil
 		}
-		return "", sync.SyncInternalErr{
+		return false, "", sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to look up previous config for component %s", cmpID),
 			Err:         res.Error,
 		}
 	}
 
 	if prev.Checksum != incoming.Checksum || !prev.LatestBuildID.Valid {
-		return "", nil
+		return false, "", nil
 	}
 
 	var bld app.ComponentBuild
@@ -286,19 +294,19 @@ func reusableActiveBuildID(ctx context.Context, db *gorm.DB, cmpID string, incom
 		First(&bld)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			return "", nil
+			return false, "", nil
 		}
-		return "", sync.SyncInternalErr{
+		return false, "", sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to look up previous build for component %s", cmpID),
 			Err:         res.Error,
 		}
 	}
 
 	if bld.Status != app.ComponentBuildStatusActive {
-		return "", nil
+		return false, "", nil
 	}
 
-	return bld.ID, nil
+	return true, bld.ID, nil
 }
 
 // reusableConfigID returns the latest config connection's ID when it matches
