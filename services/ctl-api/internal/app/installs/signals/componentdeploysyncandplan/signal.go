@@ -39,12 +39,15 @@ type Signal struct {
 	// build instead of falling back to "latest build for component" at
 	// signal-run time. The workflow generator resolves this at step-gen
 	// so the build identity is captured up front.
-	BuildID        string
-	WorkflowStepID string
-	FlowStepID     string
-	FlowID         string
-	SandboxMode    bool
-	Role           string
+	BuildID string
+	// ComponentConfigConnectionID sets the ccc id for which we shuold lookup
+	// build for when build id is not passed in.
+	ComponentConfigConnectionID string
+	WorkflowStepID              string
+	FlowStepID                  string
+	FlowID                      string
+	SandboxMode                 bool
+	Role                        string
 
 	runnerJobID string
 }
@@ -215,11 +218,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	} else {
 		buildID := s.BuildID
 		if buildID == "" {
-			componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, s.ComponentID)
-			if err != nil {
-				return fmt.Errorf("unable to get component build: %w", err)
+			if s.ComponentConfigConnectionID == "" {
+				return fmt.Errorf("unable to lookup build, component config connection id empty")
 			}
-			buildID = componentBuild.ID
+
+			pinned, err := activities.AwaitGetComponentBuildForConfigConnectionByComponentConfigConnectionID(ctx, s.ComponentConfigConnectionID)
+			if err != nil {
+				return fmt.Errorf("unable to get pinned component build: %w", err)
+			}
+			if pinned != nil {
+				buildID = pinned.ID
+			}
 		}
 
 		installDeploy, err = activities.AwaitCreateInstallDeploy(ctx, activities.CreateInstallDeployRequest{

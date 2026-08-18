@@ -36,11 +36,14 @@ type Signal struct {
 	// build instead of falling back to "latest build for component" at
 	// signal-run time. The workflow generator resolves this at step-gen
 	// so the build identity is captured up front.
-	BuildID        string
-	WorkflowStepID string
-	FlowID         string
-	SandboxMode    bool
-	Role           string
+	BuildID string
+	// ComponentConfigConnectionID pins looking up build for specific ccc
+	// for that app config id, in case build id is not provided.
+	ComponentConfigConnectionID string
+	WorkflowStepID              string
+	FlowID                      string
+	SandboxMode                 bool
+	Role                        string
 
 	runnerJobID string
 }
@@ -54,10 +57,12 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.FlowID = flowID
 }
 
-var _ signal.SignalWithStepContext = (*Signal)(nil)
-var _ signal.SignalWithAutoRetry = (*Signal)(nil)
-var _ signal.SignalWithCancel = (*Signal)(nil)
-var _ signal.SignalWithOnRetry = (*Signal)(nil)
+var (
+	_ signal.SignalWithStepContext = (*Signal)(nil)
+	_ signal.SignalWithAutoRetry   = (*Signal)(nil)
+	_ signal.SignalWithCancel      = (*Signal)(nil)
+	_ signal.SignalWithOnRetry     = (*Signal)(nil)
+)
 
 func (s *Signal) OnRetry(ctx workflow.Context) error {
 	if s.DeployID != "" {
@@ -89,7 +94,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to create logger")
 	}
 
 	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
@@ -108,11 +113,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	} else {
 		buildID := s.BuildID
 		if buildID == "" {
-			componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, s.ComponentID)
-			if err != nil {
-				return fmt.Errorf("unable to get component build: %w", err)
+			if s.ComponentConfigConnectionID == "" {
+				return fmt.Errorf("unable to lookup builds, component config connection not provided")
 			}
-			buildID = componentBuild.ID
+			pinned, err := activities.AwaitGetComponentBuildForConfigConnectionByComponentConfigConnectionID(ctx, s.ComponentConfigConnectionID)
+			if err != nil {
+				return fmt.Errorf("unable to get pinned component build: %w", err)
+			}
+			if pinned != nil {
+				buildID = pinned.ID
+			}
 		}
 
 		typ := app.InstallDeployTypeSync
@@ -149,13 +159,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}()
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, logStream)
-	l, err = log.WorkflowLogger(ctx)
-	if err != nil {
-		return err
-	}
 
 	l.Info("syncing oci artifact")
-	if err := s.execSync(ctx, install, installDeploy, s.SandboxMode); err != nil {
+	if err := s.execSync(ctx, install, installDeploy); err != nil {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to sync")
 		return errors.Wrap(err, "unable to execute sync")
 	}
@@ -187,7 +193,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy, sandboxMode bool) error {
+func (s *Signal) execSync(ctx workflow.Context, install *app.Install, installDeploy *app.InstallDeploy) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
