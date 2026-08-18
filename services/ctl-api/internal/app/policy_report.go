@@ -134,6 +134,15 @@ func (r *PolicyReport) Indexes(db *gorm.DB) []migrations.Index {
 				"runner_job_id",
 			},
 		},
+		// install_audit_logs_view has no org_id predicate, so policy_reports_filter is unusable for it.
+		{
+			Name: indexes.Name(db, &PolicyReport{}, "install_evaluated_at"),
+			Columns: []string{
+				"install_id",
+				"evaluated_at",
+			},
+			Option: "WHERE install_id IS NOT NULL AND deleted_at = 0",
+		},
 	}
 }
 
