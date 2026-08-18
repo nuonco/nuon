@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import type { IModal } from '@/components/surfaces/Modal'
@@ -17,6 +17,7 @@ export const ViewStateModalContainer = ({ ...props }: IModal) => {
     error,
     isLoading,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-state', org?.id, install?.id],
     queryFn: () => getInstallState({ orgId: org.id, installId: install.id }),
     enabled: !!org?.id && !!install?.id,

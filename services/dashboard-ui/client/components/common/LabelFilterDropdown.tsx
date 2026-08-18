@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button } from './Button'
 import { Dropdown } from './Dropdown'
 import { Icon } from './Icon'
@@ -19,6 +19,7 @@ export const LabelFilterDropdown = ({
   const [searchParams, setSearchParams] = useSearchParams()
 
   const { data: labelMap } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey,
     queryFn,
   })

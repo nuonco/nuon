@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import type { ITimeline } from '@/components/common/Timeline'
 import { useOrg } from '@/hooks/use-org'
@@ -43,6 +43,7 @@ export const ControlPlaneRecentActivityContainer = ({
       }),
     refetchInterval: shouldPoll && !cursor ? pollInterval : false,
     enabled: !!org?.id,
+    placeholderData: keepPreviousData,
   })
 
   const setCursor = (nextCursor: string | null) => {

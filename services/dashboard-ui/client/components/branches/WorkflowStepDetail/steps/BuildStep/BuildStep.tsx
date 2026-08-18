@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { CompositeError } from '@/components/common/CompositeError'
 import { Duration } from '@/components/common/Duration'
@@ -159,6 +159,7 @@ const BuildRowDetailContainer = ({
   const componentId = build.component_id as string | undefined
 
   const componentBuildQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['build', orgId, componentId, componentBuildId],
     queryFn: () =>
       getComponentBuild({
@@ -177,6 +178,7 @@ const BuildRowDetailContainer = ({
   })
 
   const sandboxBuildQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['sandbox-build', orgId, appId, sandboxBuildId],
     queryFn: () =>
       getSandboxBuild({
@@ -304,6 +306,7 @@ export const BuildStep = ({
   const sandboxBuildId = metadata.sandbox_build_id as string | undefined
 
   const { data: branchBuilds, isLoading: isLoadingBuilds } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: [
       'branch-run-builds',
       org?.id,
@@ -323,6 +326,7 @@ export const BuildStep = ({
   })
 
   const { data: componentsResult } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['components', org?.id, app?.id],
     queryFn: () =>
       getComponents({ orgId: org!.id, appId: app!.id, limit: 100 }),

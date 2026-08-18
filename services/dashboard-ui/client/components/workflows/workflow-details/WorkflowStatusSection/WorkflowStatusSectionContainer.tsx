@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -20,6 +20,7 @@ export const WorkflowStatusSectionContainer = () => {
     workflow?.status?.status === 'queued'
 
   const { data: queuePosition } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['workflow-queue-position', org?.id, workflow?.id],
     queryFn: () =>
       getWorkflowQueuePosition({

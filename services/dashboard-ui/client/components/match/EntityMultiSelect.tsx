@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { SearchInput } from '@/components/common/SearchInput'
@@ -56,6 +56,7 @@ export const EntityMultiSelect = ({
   const fetchEnabled = !needsApp || !!appId
 
   const searchQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['match-picker-search', kind, org.id, appId ?? '', search],
     queryFn: () => fetchEntities({ kind, orgId: org.id, appId, q: search }),
     enabled: fetchEnabled,
@@ -71,6 +72,7 @@ export const EntityMultiSelect = ({
     [selectedIds, resolvedNames]
   )
   const lookupQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: [
       'match-picker-lookup',
       kind,

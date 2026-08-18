@@ -1,5 +1,5 @@
 import { createContext, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getOrgWorkflows } from '@/lib'
 import { useOrg } from '@/hooks/use-org'
 import { useOrgStatusSSE } from '@/hooks/use-org-status-sse'
@@ -28,6 +28,7 @@ export function ActiveWorkflowsProvider({
     isLoading,
     refetch,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['active-workflows', org.id],
     queryFn: () =>
       getOrgWorkflows({

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { TerraformRenderedVariables } from '@/components/deploys/TerraformRenderedVariables'
 import { TerraformRenderedVariablesFiles } from '@/components/deploys/TerraformRenderedVariablesFiles'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -19,6 +19,7 @@ export const SandboxRunVariablesTab = () => {
   )
 
   const { data: compositePlan, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner-job-plan', org?.id, planJob?.id],
     queryFn: () =>
       getRunnerJobPlan({ runnerJobId: planJob!.id, orgId: org.id }),
