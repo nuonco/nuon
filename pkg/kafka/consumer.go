@@ -7,6 +7,13 @@ import (
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/plugin/kotel"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
+	semconv "go.opentelemetry.io/otel/semconv/v1.40.0"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -58,9 +65,12 @@ type Handler func(ctx context.Context, partition int32, records []*kgo.Record) e
 // Consumer runs a consumer-group poll loop and dispatches each partition's
 // records to a Handler, committing offsets only after the handler succeeds.
 type Consumer struct {
-	l       *zap.Logger
-	client  *kgo.Client
-	handler Handler
+	l             *zap.Logger
+	client        *kgo.Client
+	batchTracer   trace.Tracer
+	clientID      string
+	consumerGroup string
+	handler       Handler
 
 	stopCh chan struct{}
 	doneCh chan struct{}
@@ -76,6 +86,11 @@ func NewConsumer(cfg Config, ccfg ConsumerConfig, handler Handler, l *zap.Logger
 	if err != nil {
 		return nil, err
 	}
+	tracer := kotel.NewTracer(
+		kotel.ClientID(cfg.ClientID),
+		kotel.ConsumerGroup(ccfg.Group),
+		kotel.TracerPropagator(propagation.TraceContext{}),
+	)
 
 	maxWait := ccfg.FetchMaxWait
 	if maxWait <= 0 {
@@ -117,6 +132,7 @@ func NewConsumer(cfg Config, ccfg ConsumerConfig, handler Handler, l *zap.Logger
 		kgo.FetchMaxBytes(maxBytes),
 		kgo.FetchMaxPartitionBytes(maxPartBytes),
 		kgo.MaxConcurrentFetches(maxConcurrentFetches),
+		kgo.WithHooks(kotel.NewKotel(kotel.WithTracer(tracer)).Hooks()...),
 	)
 
 	client, err := kgo.NewClient(opts...)
@@ -125,11 +141,14 @@ func NewConsumer(cfg Config, ccfg ConsumerConfig, handler Handler, l *zap.Logger
 	}
 
 	return &Consumer{
-		l:       l.Named("kafka-consumer"),
-		client:  client,
-		handler: handler,
-		stopCh:  make(chan struct{}),
-		doneCh:  make(chan struct{}),
+		l:             l.Named("kafka-consumer"),
+		client:        client,
+		batchTracer:   otel.Tracer("github.com/nuonco/nuon/pkg/kafka"),
+		clientID:      cfg.ClientID,
+		consumerGroup: ccfg.Group,
+		handler:       handler,
+		stopCh:        make(chan struct{}),
+		doneCh:        make(chan struct{}),
 	}, nil
 }
 
@@ -169,7 +188,7 @@ func (c *Consumer) run() {
 			}
 			started := time.Now()
 			c.inFlightSince.Store(&started)
-			err := c.handler(ctx, ftp.Partition, ftp.Records)
+			err := c.handle(ctx, ftp.Partition, ftp.Records)
 			c.inFlightSince.Store(nil)
 
 			if err != nil {
@@ -185,6 +204,49 @@ func (c *Consumer) run() {
 			}
 		})
 	}
+}
+
+func (c *Consumer) handle(ctx context.Context, partition int32, records []*kgo.Record) error {
+	links := make([]trace.Link, 0, len(records))
+	for _, record := range records {
+		propagatedCtx := propagation.TraceContext{}.Extract(context.Background(), kotel.NewRecordCarrier(record))
+		spanContext := trace.SpanContextFromContext(propagatedCtx)
+		if !spanContext.IsValid() {
+			spanContext = trace.SpanContextFromContext(record.Context)
+		}
+		if spanContext.IsValid() {
+			links = append(links, trace.Link{SpanContext: spanContext})
+		}
+	}
+
+	attributes := []attribute.KeyValue{
+		semconv.MessagingSystemKafka,
+		semconv.MessagingDestinationName(records[0].Topic),
+		semconv.MessagingDestinationPartitionID(fmt.Sprint(partition)),
+		semconv.MessagingOperationName("process"),
+		semconv.MessagingOperationTypeProcess,
+		semconv.MessagingBatchMessageCount(len(records)),
+	}
+	if c.clientID != "" {
+		attributes = append(attributes, semconv.MessagingClientID(c.clientID))
+	}
+	if c.consumerGroup != "" {
+		attributes = append(attributes, semconv.MessagingConsumerGroupName(c.consumerGroup))
+	}
+	processCtx, span := c.batchTracer.Start(ctx, records[0].Topic+" process",
+		trace.WithNewRoot(),
+		trace.WithSpanKind(trace.SpanKindConsumer),
+		trace.WithLinks(links...),
+		trace.WithAttributes(attributes...),
+	)
+	defer span.End()
+
+	err := c.handler(processCtx, partition, records)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	return err
 }
 
 // DedupToken builds a stable per-batch token from a partition's offset range,
