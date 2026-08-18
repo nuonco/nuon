@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getRunnerProcess } from '@/lib'
 
@@ -12,6 +12,7 @@ export const useRunnerProcess = ({
   const { org } = useOrg()
 
   return useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner-process', org?.id, runnerId, processId],
     queryFn: () =>
       getRunnerProcess({

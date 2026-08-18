@@ -1,5 +1,5 @@
 import { createContext, useEffect, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { getRunner, getRunnerLatestHeartbeat } from '@/lib'
@@ -33,6 +33,7 @@ export function RunnerProvider({
   const { addToast } = useToast()
 
   const { data: runner, isLoading, error } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner', org.id!, runnerId],
     queryFn: () => getRunner({ orgId: org.id!, runnerId }),
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -40,6 +41,7 @@ export function RunnerProvider({
   })
 
   const { data: heartbeat } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner-heartbeat-check', org.id, runnerId],
     queryFn: () => getRunnerLatestHeartbeat({ orgId: org.id!, runnerId }),
     enabled: !!org.id && !!runnerId,

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getRunnerJobs } from '@/lib'
 import { LoadRunnerJob } from './LoadRunnerJob'
@@ -20,6 +20,7 @@ export const LoadRunnerJobContainer = ({
   const orgId = org.id
 
   const { data, error: queryError, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner-jobs', orgId, runnerId, groups, statuses],
     queryFn: () =>
       getRunnerJobs({

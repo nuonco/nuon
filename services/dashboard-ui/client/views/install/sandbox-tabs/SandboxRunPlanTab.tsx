@@ -1,5 +1,5 @@
 import { useOutletContext } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Plan } from '@/components/approvals/Plan'
 import { PulumiDiff } from '@/components/approvals/plan-diffs/pulumi/PulumiDiff'
 import { TerraformDiff } from '@/components/approvals/plan-diffs/terraform/TerraformDiff'
@@ -21,6 +21,7 @@ const SandboxRunPlanFallback = () => {
   )
 
   const { data: compositePlan, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner-job-plan', org?.id, applyJob?.id],
     queryFn: () =>
       getRunnerJobPlan({ runnerJobId: applyJob!.id, orgId: org.id }),

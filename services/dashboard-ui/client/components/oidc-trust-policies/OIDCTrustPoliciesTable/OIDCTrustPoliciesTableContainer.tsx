@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getCurrentOrgOIDCTrustPolicies } from '@/lib'
 import { OIDCTrustPoliciesTable } from './OIDCTrustPoliciesTable'
@@ -13,6 +13,7 @@ export const OIDCTrustPoliciesTableContainer = ({
   const { org } = useOrg()
 
   const { data, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['oidc-trust-policies', org.id],
     queryFn: () => getCurrentOrgOIDCTrustPolicies({ orgId: org.id }),
     refetchInterval: shouldPoll ? pollInterval : false,

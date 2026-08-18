@@ -1,5 +1,5 @@
 import { createContext, useState, useCallback } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getMe } from '@/lib/ctl-api/auth/get-me'
 import { isNuonSession } from '@/utils/session-utils'
 import type { IUser, TMe } from '@/types'
@@ -31,6 +31,7 @@ function meToUser(me: TMe): IUser {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { data: me, isLoading, error } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['auth', 'me'],
     queryFn: getMe,
     staleTime: Infinity,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
@@ -89,6 +89,7 @@ export const MatchPicker = ({
   const needsApp = kind === 'components' || kind === 'actions' || kind === 'app_branches'
 
   const appsQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['match-picker-apps', org.id],
     queryFn: () => getApps({ orgId: org.id, limit: 100 }),
     enabled: mode === 'specific' && needsApp,

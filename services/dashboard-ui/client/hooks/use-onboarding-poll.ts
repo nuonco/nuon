@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getCurrentOnboarding } from '@/lib'
 import type { TOnboarding } from '@/types'
 
@@ -23,6 +23,7 @@ export function useOnboardingPoll({
   }, [enabled])
 
   const { data, dataUpdatedAt } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['onboarding-poll'],
     queryFn: getCurrentOnboarding,
     enabled,

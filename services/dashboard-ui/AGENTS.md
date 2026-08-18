@@ -572,6 +572,17 @@ Before building a new component, **check `client/components/common/` and other d
 glob pattern: client/components/**/*.stories.tsx
 ```
 
+### Loading states
+
+**Never hand-build a `*Skeleton` component.** Skeletons are derived from the real components, not a
+second hand-measured copy of the layout. Use the primitive `loading` prop (`Text`, `LabeledValue`,
+`LabeledStatus`, `ID`, `Time`, `Duration`, `Badge`, `Status`, `Code` all take `loading` +
+`loadingWidth` in `ch`), `<Table isLoading>` / the `Timeline` loading state for collections, and
+`<Loading variant="large" />` only for genuinely unknown-shape content (plan diffs, dynamic-field
+forms, unknown outputs). Chrome and labels always render real. List/detail `useQuery` sites use
+`placeholderData: keepPreviousData` so revisits skip the cold load. Direct use of `common/Skeleton`
+in a feature component is a review smell. See [DESIGN.md](./DESIGN.md) §5 "Loading states".
+
 ### Icons
 
 **Use the `Icon` component (`client/components/common/Icon.tsx`) for ALL icons.** Never import from `lucide-react`, `heroicons`, or any other icon package. The project uses `@phosphor-icons/react` via the `Icon` wrapper — all icon usage must go through it.

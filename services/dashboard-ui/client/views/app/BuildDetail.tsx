@@ -1,5 +1,5 @@
 import { useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { CompositeError } from '@/components/common/CompositeError'
@@ -93,6 +93,7 @@ export const BuildDetail = () => {
   const { app } = useApp()
 
   const { data: component } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['component', org?.id, app?.id, componentId],
     queryFn: () => getComponent({ orgId: org.id, componentId: componentId! }),
     enabled: !!org?.id && !!app?.id && !!componentId,

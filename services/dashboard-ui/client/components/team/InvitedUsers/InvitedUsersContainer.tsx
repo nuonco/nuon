@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useRoleTitles } from '@/hooks/use-roles'
 import { getOrgInvites } from '@/lib'
@@ -15,6 +15,7 @@ export const InvitedUsersContainer = ({
   const roleTitles = useRoleTitles()
 
   const { data: invites, isLoading, isError } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['org-invites', org?.id],
     queryFn: () => getOrgInvites({ orgId: org.id }),
     refetchInterval: shouldPoll ? pollInterval : false,

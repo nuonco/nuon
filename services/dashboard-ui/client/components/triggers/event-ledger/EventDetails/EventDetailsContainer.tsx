@@ -1,10 +1,5 @@
 import type { InfiniteData } from '@tanstack/react-query'
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { Loading } from '@/components/common/Loading'
 import { Text } from '@/components/common/Text'
@@ -43,6 +38,7 @@ export const EventDetailsContainer = ({
     error,
     refetch,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['trigger-event', org?.id, eventId],
     queryFn: () => getTriggerEvent({ eventId: eventId!, orgId: org!.id }),
     enabled: !!org?.id && !!eventId,
@@ -96,6 +92,7 @@ export const EventDetailsContainer = ({
     isFetching: isRawLoading,
     refetch: revealRaw,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['trigger-event-raw', org?.id, eventId],
     queryFn: () => getTriggerEventRaw({ eventId: eventId!, orgId: org!.id }),
     enabled: false,

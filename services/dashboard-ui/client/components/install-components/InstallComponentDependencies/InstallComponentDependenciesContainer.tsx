@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getComponents } from '@/lib'
@@ -21,6 +21,7 @@ export const InstallComponentDependenciesContainer = ({
   const { install } = useInstall()
 
   const { data: result, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['components', org?.id, install?.app_id, 'deps', deps],
     queryFn: () =>
       getComponents({

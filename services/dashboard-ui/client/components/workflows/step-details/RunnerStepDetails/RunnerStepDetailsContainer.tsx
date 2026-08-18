@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getRunnerProcesses, getRunnerSettings } from '@/lib'
 import { RunnerProvider } from '@/providers/runner-provider'
@@ -14,12 +14,14 @@ export const RunnerStepDetailsContainer = ({
   const runnerId = step?.step_target_id
 
   const { data: settings } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner-settings', org?.id, runnerId],
     queryFn: () => getRunnerSettings({ orgId: org!.id, runnerId: runnerId! }),
     enabled: !!org?.id && !!runnerId,
   })
 
   const { data: processResult, isLoading: processesLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runner-processes-active', org?.id, runnerId],
     queryFn: () =>
       getRunnerProcesses({

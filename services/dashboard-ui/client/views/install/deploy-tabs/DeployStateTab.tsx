@@ -1,6 +1,6 @@
 import { useParams } from 'react-router'
 import { useOutletContext } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { TerraformWorkspaceCard } from '@/components/terraform-workspace/TerraformWorkspaceCard'
 import { EmptyState } from '@/components/common/EmptyState'
 import { useOrg } from '@/hooks/use-org'
@@ -15,6 +15,7 @@ export const DeployStateTab = () => {
   const { install } = useInstall()
 
   const { data: installComponent } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-component', org?.id, installId, componentId],
     queryFn: () =>
       getInstallComponent({

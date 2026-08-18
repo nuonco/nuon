@@ -1,5 +1,5 @@
 import { createContext, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
 import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
@@ -31,6 +31,7 @@ export function APIHealthProvider({
     error,
     isLoading,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['api-health'],
     queryFn: getAPIHealth,
     refetchInterval: shouldPoll ? pollInterval : false,

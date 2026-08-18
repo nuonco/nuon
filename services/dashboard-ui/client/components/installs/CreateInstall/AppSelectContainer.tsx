@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getApps } from '@/lib'
 import type { TApp } from '@/types'
@@ -39,6 +39,7 @@ export const AppSelectContainer = ({ onSelectApp, onClose }: AppSelectContainerP
       q: searchQuery || undefined,
     }),
     enabled: !!org?.id,
+    placeholderData: keepPreviousData,
   })
 
   useEffect(() => {

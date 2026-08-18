@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -20,6 +20,7 @@ export const AppLabelsContainer = () => {
   const queryClient = useQueryClient()
 
   const { data, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-labels', org?.id, app?.id],
     queryFn: () => getAppLabels({ orgId: org.id, appId: app.id }),
     enabled: !!org?.id && !!app?.id,

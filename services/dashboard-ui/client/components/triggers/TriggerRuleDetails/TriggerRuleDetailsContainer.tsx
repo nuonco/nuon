@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -14,6 +14,7 @@ export const TriggerRuleDetailsContainer = ({
 }) => {
   const { org } = useOrg()
   const query = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['event-trigger-rule', org?.id, triggerId, ruleId],
     queryFn: () =>
       getTriggerRule({ orgId: org!.id, triggerId: triggerId, ruleId }),
