@@ -15,6 +15,7 @@ type HasActiveRunnerProcessResponse struct {
 }
 
 // @temporal-gen-v2 activity
+// @max-retries 1
 // @by-field RunnerID
 func (a *Activities) HasActiveRunnerProcess(ctx context.Context, req HasActiveRunnerProcessRequest) (*HasActiveRunnerProcessResponse, error) {
 	var count int64
