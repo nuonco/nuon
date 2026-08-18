@@ -40,8 +40,8 @@
         "pages": [
           "get-started/quickstart",
           "get-started/create-your-first-app",
-          "get-started/introduction",
           "get-started/app-branches-walkthrough",
+          "get-started/introduction",
           {
             "group": "Deployment Options",
             "root": "guides/deployment-options",
