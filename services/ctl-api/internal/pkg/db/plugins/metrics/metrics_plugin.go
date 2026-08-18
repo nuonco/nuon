@@ -165,9 +165,16 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 		tags = append(tags, "pool:"+string(routing.DecisionFromContext(ctx)))
 	}
 
+	// A MetricContext is seeded by the HTTP middleware and the Temporal activity
+	// interceptor, so anything driven by neither — the Kafka consumers, which
+	// write ClickHouse from a poll loop — has none. Fall back to an empty one and
+	// emit with the request-scoped tags blank: returning here instead meant every
+	// consumer-side write was silently unmeasured, which is how the otel ingest
+	// tables lost their gorm_operation_latency series when the writes moved off
+	// the api pods.
 	metricCtx, err := cctx.MetricsContextFromGinContext(ctx)
 	if err != nil {
-		return
+		metricCtx = &cctx.MetricContext{}
 	}
 
 	tags = append(tags,
