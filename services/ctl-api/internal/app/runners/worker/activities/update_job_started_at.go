@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/pkg/errors"
 )
 
@@ -17,6 +18,7 @@ type UpdateJobStartedAtRequest struct {
 }
 
 // @temporal-gen-v2 activity
+// @max-retries 2
 // @by-field JobID
 func (a *Activities) UpdateJobStartedAt(ctx context.Context, req UpdateJobStartedAtRequest) error {
 	runner := app.RunnerJob{
@@ -29,7 +31,10 @@ func (a *Activities) UpdateJobStartedAt(ctx context.Context, req UpdateJobStarte
 		return errors.Wrap(res.Error, "unable to update job started_at")
 	}
 	if res.RowsAffected < 1 {
-		return errors.Wrap(gorm.ErrRecordNotFound, fmt.Sprintf("no job found with id: %s", req.JobID))
+		return generics.TemporalGormError(
+			gorm.ErrRecordNotFound,
+			fmt.Sprintf("no job found with id: %s", req.JobID),
+		)
 	}
 
 	return nil
