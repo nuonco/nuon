@@ -9,12 +9,13 @@ export type TBadgeTheme = TTheme
 export interface IBadge extends HTMLAttributes<HTMLSpanElement> {
   loading?: boolean
   loadingWidth?: number
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
   theme?: TBadgeTheme | 'none'
   variant?: TBadgeVariant
 }
 
 const SIZE_CLASSES: Record<NonNullable<IBadge['size']>, string> = {
+  xs: 'text-[10px] leading-[13px] tracking-[-0.2px] px-1.5 py-px',
   sm: 'text-[11px] leading-[14px] tracking-[-0.2px] px-2 py-0.5',
   md: 'text-[12px] leading-[17px] tracking-[-0.2px] px-2 py-0.5',
   lg: 'text-[12px] leading-[17px] tracking-[-0.2px] px-3 py-1',
@@ -45,6 +46,7 @@ const LOADING_SIZE: Record<
   NonNullable<IBadge['size']>,
   { height: string; ch: number; text: string }
 > = {
+  xs: { height: '16px', ch: 8, text: 'text-[10px]' },
   sm: { height: '18px', ch: 8, text: 'text-[11px]' },
   md: { height: '21px', ch: 8, text: 'text-[12px]' },
   lg: { height: '25px', ch: 10, text: 'text-[12px]' },

@@ -142,6 +142,14 @@ export const Sizes = () => (
       <h4 className="text-sm font-medium">Size Comparison</h4>
       <div className="flex gap-6 items-center">
         <div className="text-center space-y-2">
+          <Badge size="xs" theme="brand">
+            Extra small
+          </Badge>
+          <Text variant="label" className="text-xs">
+            XS
+          </Text>
+        </div>
+        <div className="text-center space-y-2">
           <Badge size="sm" theme="brand">
             Small
           </Badge>

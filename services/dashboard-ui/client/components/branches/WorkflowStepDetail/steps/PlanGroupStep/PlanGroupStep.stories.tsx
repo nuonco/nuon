@@ -104,6 +104,34 @@ const labeledInstalls: PlanInstallDiff[] = [
   },
 ]
 
+const overflowingInstalls: PlanInstallDiff[] = [
+  {
+    installId: 'inlwsworkspace01kzree4e4e',
+    installName: 'ws-workspace_01kzree4e4ejrsmaj9vbs4j0mg-sandbox-fd-aug-11',
+    installLabels: {
+      'auto-deploy': 'true',
+      canary: 'true',
+      install_id: 'byoci_266gevfxpr9m7a7mpawv8vd01q',
+      workspace_id: 'workspace_01kzree4e4ejrsmaj9vbs4j0mg',
+    },
+    sections: [],
+    summary: { added: 0, removed: 0, changed: 0 },
+  },
+  {
+    installId: 'inlwsworkspace09ffb2c1aa22',
+    installName: 'ws-workspace_09ffb2c1aa22ppld5xkq7t1nz-sandbox-gh-sep-02',
+    installLabels: {
+      'auto-deploy': 'false',
+      canary: 'false',
+      environment: 'preproduction-eu-central',
+      install_id: 'byoci_744mnbvcx8qw3e5r6t7y8u9i0p',
+      workspace_id: 'workspace_09ffb2c1aa22ppld5xkq7t1nz',
+    },
+    sections: [mixedSection],
+    summary: { added: 1, removed: 1, changed: 1 },
+  },
+]
+
 const actions = (
   <>
     <Button variant="danger">Skip</Button>
@@ -141,6 +169,17 @@ export const WithLabels = () => (
     showApproveBar
     isInProgress={false}
     actions={actions}
+  />
+)
+
+export const OverflowingLabels = () => (
+  <PlanGroupStep
+    installs={overflowingInstalls}
+    groupName="canary"
+    hasResponse
+    responseType="approve"
+    showApproveBar={false}
+    isInProgress={false}
   />
 )
 
