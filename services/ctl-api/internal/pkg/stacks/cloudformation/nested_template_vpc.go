@@ -75,13 +75,17 @@ func (tpl *Templates) getVPCNestedStack(inp *stacks.TemplateInput, t tagBuilder)
 	return stack, defaultParameters, nil
 }
 
+type cfnParameterShape struct {
+	Type        string      `yaml:"Type" json:"Type"`
+	Description string      `yaml:"Description" json:"Description,omitempty"`
+	Default     interface{} `yaml:"Default" json:"Default,omitempty"`
+	MinValue    *float64    `yaml:"MinValue" json:"MinValue,omitempty"`
+	MaxValue    *float64    `yaml:"MaxValue" json:"MaxValue,omitempty"`
+}
+
 type cfnTemplateShape struct {
-	Parameters map[string]struct {
-		Type        string      `yaml:"Type" json:"Type"`
-		Description string      `yaml:"Description" json:"Description,omitempty"`
-		Default     interface{} `yaml:"Default" json:"Default,omitempty"`
-	} `yaml:"Parameters"`
-	Outputs map[string]struct{} `yaml:"Outputs"`
+	Parameters map[string]cfnParameterShape `yaml:"Parameters"`
+	Outputs    map[string]struct{}          `yaml:"Outputs"`
 }
 
 var templateFetchClient = &http.Client{Timeout: 30 * time.Second}

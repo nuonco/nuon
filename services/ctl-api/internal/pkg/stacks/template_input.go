@@ -19,6 +19,14 @@ type TemplateInput struct {
 	Settings *app.RunnerGroupSettings `validate:"required"`
 	APIToken string                   `validate:"required"`
 
+	// ConfiguredRunnerInstanceType is the instance type the app's runner config declares,
+	// empty when it declares none. Settings.AWSInstanceType cannot express "unset" — the
+	// stack generators resolve the platform default into it before rendering, because the
+	// GCP tfvars and the persisted runner group settings both need a concrete value — and
+	// the CloudFormation renderer needs the distinction to know whether it may fall back to
+	// the nested runner template's own default.
+	ConfiguredRunnerInstanceType string
+
 	// runner env vars from runner.toml [env_vars] section, formatted as
 	// newline-delimited "export key=value" pairs for injection into user-data.
 	RunnerEnvVars string
