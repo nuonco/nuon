@@ -165,7 +165,7 @@ func (s *service) heartbeatGetInstall(ctx context.Context, installID string) *ap
 	if err := s.db.WithContext(ctx).
 		Select("id", "name").
 		First(&install, "id = ?", installID).Error; err != nil {
-		s.l.Warn("unable to look up install for heartbeat metric tag",
+		s.l.Warn("unable to look up install for runner telemetry",
 			zap.String("install_id", installID),
 			zap.Error(err),
 		)
