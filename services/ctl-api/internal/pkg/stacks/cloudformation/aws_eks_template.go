@@ -16,6 +16,8 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 
 	tb := tagBuilder{
 		installID:  inp.Install.ID,
+		orgID:      inp.Install.OrgID,
+		appID:      inp.Install.AppID,
 		additional: generics.ToStringMap(inp.Settings.AWSTags),
 	}
 
