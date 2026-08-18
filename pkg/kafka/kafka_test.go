@@ -7,6 +7,12 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/require"
+	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/plugin/kotel"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -193,6 +199,86 @@ func TestDedupToken(t *testing.T) {
 			require.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestKafkaBatchTracePropagation(t *testing.T) {
+	recorder := tracetest.NewSpanRecorder()
+	tp := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(recorder))
+	t.Cleanup(func() { require.NoError(t, tp.Shutdown(context.Background())) })
+
+	kafkaTracer := kotel.NewTracer(
+		kotel.TracerProvider(tp),
+		kotel.TracerPropagator(propagation.TraceContext{}),
+	)
+
+	var requestSpans []trace.Span
+	var requestSpanContexts []trace.SpanContext
+	var publishSpanContexts []trace.SpanContext
+	var receiveSpanContexts []trace.SpanContext
+	var records []*kgo.Record
+	for i, key := range []string{"first", "second"} {
+		requestCtx, requestSpan := tp.Tracer("test").Start(context.Background(), "request "+key)
+		requestSpans = append(requestSpans, requestSpan)
+		requestSpanContexts = append(requestSpanContexts, requestSpan.SpanContext())
+
+		produced := &kgo.Record{Topic: "events", Key: []byte(key), Context: requestCtx}
+		kafkaTracer.OnProduceRecordBuffered(produced)
+		require.NotEmpty(t, produced.Headers)
+		publishSpanContexts = append(publishSpanContexts, trace.SpanContextFromContext(produced.Context))
+		kafkaTracer.OnProduceRecordUnbuffered(produced, nil)
+
+		consumed := &kgo.Record{
+			Topic:     produced.Topic,
+			Key:       produced.Key,
+			Headers:   produced.Headers,
+			Partition: 2,
+			Offset:    int64(42 + i),
+			Context:   context.Background(),
+		}
+		kafkaTracer.OnFetchRecordBuffered(consumed)
+		receiveSpanContexts = append(receiveSpanContexts, trace.SpanContextFromContext(consumed.Context))
+		kafkaTracer.OnFetchRecordUnbuffered(consumed, false)
+		records = append(records, consumed)
+	}
+
+	var handlerSpanContext trace.SpanContext
+	consumer := Consumer{
+		batchTracer: tp.Tracer("test-batch"),
+		handler: func(ctx context.Context, _ int32, _ []*kgo.Record) error {
+			handlerSpanContext = trace.SpanContextFromContext(ctx)
+			_, insertSpan := tp.Tracer("test").Start(ctx, "clickhouse insert")
+			insertSpan.End()
+			return nil
+		},
+	}
+	require.NoError(t, consumer.handle(context.Background(), 2, records))
+	for _, requestSpan := range requestSpans {
+		requestSpan.End()
+	}
+
+	var batchSpan, insertSpan sdktrace.ReadOnlySpan
+	for _, span := range recorder.Ended() {
+		switch span.Name() {
+		case "events process":
+			batchSpan = span
+		case "clickhouse insert":
+			insertSpan = span
+		}
+	}
+	require.NotNil(t, batchSpan)
+	require.NotNil(t, insertSpan)
+	require.False(t, batchSpan.Parent().IsValid())
+	require.Equal(t, batchSpan.SpanContext(), handlerSpanContext)
+	require.Equal(t, batchSpan.SpanContext().SpanID(), insertSpan.Parent().SpanID())
+	require.Len(t, batchSpan.Links(), 2)
+	require.Equal(t, requestSpanContexts[0].TraceID(), receiveSpanContexts[0].TraceID())
+	require.Equal(t, requestSpanContexts[1].TraceID(), receiveSpanContexts[1].TraceID())
+	require.NotEqual(t, receiveSpanContexts[0].TraceID(), batchSpan.SpanContext().TraceID())
+	require.NotEqual(t, receiveSpanContexts[1].TraceID(), batchSpan.SpanContext().TraceID())
+	require.ElementsMatch(t,
+		[]trace.SpanID{publishSpanContexts[0].SpanID(), publishSpanContexts[1].SpanID()},
+		[]trace.SpanID{batchSpan.Links()[0].SpanContext.SpanID(), batchSpan.Links()[1].SpanContext.SpanID()},
+	)
 }
 
 func TestDisabledProducer(t *testing.T) {
