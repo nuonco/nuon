@@ -68,3 +68,57 @@ func (s *InstallsServiceTestSuite) TestGetAppInstallsEmpty() {
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	assert.Empty(s.T(), resp)
 }
+
+func (s *InstallsServiceTestSuite) TestGetAppInstallsResolvesCloudPlatform() {
+	for _, tc := range s.cloudPlatformResolutionTestCases() {
+		s.Run(tc.name, func() {
+			install := tc.setup()
+
+			path := fmt.Sprintf("/v1/apps/%s/installs", s.testApp.ID)
+			rr := s.makeRequest(http.MethodGet, path, nil)
+			if rr.Code != http.StatusOK {
+				s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+			}
+			require.Equal(s.T(), http.StatusOK, rr.Code)
+
+			var resp []app.Install
+			require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+
+			found := findInstallByID(resp, install.ID)
+			require.NotNil(s.T(), found, "install %s should be present in app installs list", install.ID)
+			assert.Equal(s.T(), tc.expectedCloudPlatform, found.CloudPlatform)
+			assert.Equal(s.T(), tc.expectedRunnerType, found.RunnerType)
+		})
+	}
+}
+
+func (s *InstallsServiceTestSuite) TestGetAppInstallsSerializesAzureAccount() {
+	install := s.createTestInstall()
+
+	azureAccount := &app.AzureAccount{
+		InstallID:                install.ID,
+		Location:                 "eastus",
+		SubscriptionID:           "sub-1234",
+		SubscriptionTenantID:     "tenant-1234",
+		ServicePrincipalAppID:    "sp-app-1234",
+		ServicePrincipalPassword: "sp-secret",
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(azureAccount).Error)
+
+	path := fmt.Sprintf("/v1/apps/%s/installs", s.testApp.ID)
+	rr := s.makeRequest(http.MethodGet, path, nil)
+	if rr.Code != http.StatusOK {
+		s.T().Logf("Status: %d, Body: %s", rr.Code, rr.Body.String())
+	}
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+
+	var resp []app.Install
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+
+	found := findInstallByID(resp, install.ID)
+	require.NotNil(s.T(), found, "install %s should be present in app installs list", install.ID)
+	require.NotNil(s.T(), found.AzureAccount, "azure_account should be serialized on the app installs endpoint")
+	assert.Equal(s.T(), azureAccount.ID, found.AzureAccount.ID)
+	assert.Equal(s.T(), "eastus", found.AzureAccount.Location)
+	assert.Equal(s.T(), "sub-1234", found.AzureAccount.SubscriptionID)
+}
