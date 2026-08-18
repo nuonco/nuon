@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -52,6 +52,7 @@ const CreateInstallModalContainer = ({ ...props }: IModal) => {
     isLoading: configsLoading,
     error: configsError,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-configs', org?.id, app?.id],
     queryFn: () => getAppConfigs({ orgId: org.id, appId: app.id }),
     enabled: !!org?.id && !!app?.id,
@@ -64,6 +65,7 @@ const CreateInstallModalContainer = ({ ...props }: IModal) => {
     isLoading: configLoading,
     error: configError,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-config', org?.id, app?.id, configId],
     queryFn: () =>
       getAppConfig({
@@ -77,6 +79,7 @@ const CreateInstallModalContainer = ({ ...props }: IModal) => {
 
   const { data: awsAccountConnections, isLoading: awsAccountConnectionsLoading } =
     useQuery({
+      placeholderData: keepPreviousData,
       queryKey: ['aws-account-connections', org?.id],
       queryFn: () => getAWSAccountConnections({ orgId: org.id }),
       enabled: !!org?.id && awsConnectionsEnabled,

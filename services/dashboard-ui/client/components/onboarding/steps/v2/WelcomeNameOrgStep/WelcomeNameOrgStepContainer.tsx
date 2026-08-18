@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { completeOrganizationStep, getOrg, getOrgs } from '@/lib'
 import { useOnboardingPoll } from '@/hooks/use-onboarding-poll'
 import type { TAPIError, TOnboarding } from '@/types'
@@ -27,12 +27,14 @@ export const WelcomeNameOrgStepContainer = ({
   const [attachingOrgId, setAttachingOrgId] = useState<string | null>(null)
 
   const { data: org } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['org', orgId],
     queryFn: () => getOrg({ orgId: orgId! }),
     enabled: !!orgId,
   })
 
   const { data: existingOrgs, isLoading: isExistingOrgsLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['onboarding-existing-orgs'],
     queryFn: () => getOrgs({ limit: 50 }),
   })

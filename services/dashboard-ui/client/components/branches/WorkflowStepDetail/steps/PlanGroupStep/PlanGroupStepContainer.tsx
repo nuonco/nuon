@@ -1,4 +1,4 @@
-import { useQueries, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfigDiff } from '@/lib'
@@ -27,6 +27,7 @@ export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContain
   const isAwaiting = step.status?.status === 'approval-awaiting'
 
   const { data: plan } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['approval-plan', orgId, step.id, approvalId],
     queryFn: async () => {
       const res = await fetch(

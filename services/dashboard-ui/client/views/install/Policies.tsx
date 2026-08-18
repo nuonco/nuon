@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PolicyReportsFilter } from '@/components/policies/PolicyReportsFilter'
@@ -22,6 +22,7 @@ export const Policies = () => {
   const ownerType = searchParams.get('owner_type') as TPolicyReportOwnerType | null
 
   const { data: reportsResult, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-policy-reports', org?.id, install?.id, status, ownerType],
     queryFn: () =>
       getInstallPolicyReports({
@@ -34,6 +35,7 @@ export const Policies = () => {
   })
 
   const { data: policiesConfigs } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-policies-configs', org?.id, install?.app_id],
     queryFn: () =>
       getAppPoliciesConfigs({

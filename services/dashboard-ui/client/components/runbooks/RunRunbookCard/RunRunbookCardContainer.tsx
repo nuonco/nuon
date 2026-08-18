@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -24,6 +24,7 @@ export const RunRunbookCardContainer = ({
     isLoading,
     error,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-runbooks-card', org?.id, install?.id, name, id],
     queryFn: () =>
       getInstallRunbooks({

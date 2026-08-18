@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation, useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
@@ -25,6 +25,7 @@ export const RunbookDetailLayout = () => {
   const { install, labelColors } = useInstall()
 
   const { data: installRunbook, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-runbook', org?.id, install?.id, runbookId],
     queryFn: () =>
       getInstallRunbook({
@@ -37,6 +38,7 @@ export const RunbookDetailLayout = () => {
   })
 
   const { data: removedResult } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-runbooks-removed', org?.id, install?.id],
     queryFn: () =>
       getInstallRunbooks({

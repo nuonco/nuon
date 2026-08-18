@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
@@ -29,6 +29,7 @@ export const Stacks = () => {
     useInstallAppConfig()
 
   const { data: latestConfigs } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-configs', org?.id, install?.app_id, 'latest'],
     queryFn: () =>
       getAppConfigs({
@@ -43,6 +44,7 @@ export const Stacks = () => {
   const newerAppConfig = hasNewerAppConfig(latestConfigSummary, install)
 
   const { data: latestFullConfig } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: [
       'app-config',
       org?.id,
@@ -61,6 +63,7 @@ export const Stacks = () => {
   })
 
   const { data: stack } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-stack', org?.id, install?.id],
     queryFn: () => getInstallStack({ orgId: org.id, installId: install.id }),
     refetchInterval: 20000,

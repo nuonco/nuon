@@ -1,5 +1,5 @@
 import { useOutletContext } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
@@ -28,6 +28,7 @@ export const RunbookHistoryTab = () => {
   const basePath = `/${org?.id}/installs/${install?.id}`
 
   const { data: workflowSteps, isLoading: isLoadingSteps } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runbook-workflow-steps', workflowId],
     queryFn: () =>
       getWorkflowSteps({ workflowId: workflowId!, orgId: org!.id }),

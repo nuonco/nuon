@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate, useParams } from 'react-router'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { Badge } from '@/components/common/Badge'
@@ -31,6 +31,7 @@ export const InstallSyncDetail = () => {
   const hasInstallSyncing = !!org?.features?.['app-install-syncing']
 
   const { data: sync, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['app-install-sync', org?.id, app?.id, syncId],
     queryFn: () =>
       getAppInstallSync({ appId: app!.id, syncId, orgId: org!.id }),

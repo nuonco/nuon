@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { useOrg } from '@/hooks/use-org'
 import { useRunner } from '@/hooks/use-runner'
@@ -33,6 +33,7 @@ export const RunnerProcessesTableContainer = ({
       }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!runner?.id,
+    placeholderData: keepPreviousData,
   })
 
   return (

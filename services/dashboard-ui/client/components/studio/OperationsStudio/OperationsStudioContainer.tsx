@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import {
@@ -22,28 +22,33 @@ export function OperationsStudioContainer() {
   const enabled = !!org?.id && !!app?.id
   const [previewInstallId, setPreviewInstallId] = useState('')
   const installs = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['installs', org?.id, app?.id, 'operations-studio'],
     queryFn: () =>
       getAppInstalls({ orgId: org!.id, appId: app!.id, limit: 100 }),
     enabled,
   })
   const runbooks = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runbooks', org?.id, app?.id, 'operations-studio'],
     queryFn: () => getRunbooks({ orgId: org!.id, appId: app!.id, limit: 100 }),
     enabled,
   })
   const actions = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['actions', org?.id, app?.id, 'operations-studio'],
     queryFn: () => getActions({ orgId: org!.id, appId: app!.id, limit: 100 }),
     enabled,
   })
   const components = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['components', org?.id, app?.id, 'operations-studio'],
     queryFn: () =>
       getComponents({ orgId: org!.id, appId: app!.id, limit: 100 }),
     enabled,
   })
   const installState = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-state', org?.id, previewInstallId, 'operations-studio'],
     queryFn: () =>
       getInstallState({ orgId: org!.id, installId: previewInstallId }),

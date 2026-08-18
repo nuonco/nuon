@@ -1,5 +1,5 @@
 import { createContext, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
 import { getAppConfig } from '@/lib'
@@ -32,6 +32,7 @@ export function InstallAppConfigProvider({
     error,
     refetch,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: [
       'install-app-config',
       org?.id,

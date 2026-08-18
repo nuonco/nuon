@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
@@ -21,6 +21,7 @@ export const ConfigStepContainer = ({ metadata, status, statusDescription }: ICo
   const appConfigId = metadata.app_config_id as string | undefined
 
   const { data: branchRunsResult } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['branch-runs', org?.id, app?.id, branchId],
     queryFn: () => getBranchWorkflowRuns({ orgId: org!.id, appId: app!.id, branchId, limit: 10 }),
     enabled: !!org?.id && !!app?.id && !!branchId,

@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
@@ -28,6 +28,7 @@ export const Workflows = () => {
   const showDrifts = searchParams.get('drifts') !== 'false'
 
   const { data } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-active-workflows', org?.id, install?.id],
     queryFn: () =>
       getInstallWorkflows({

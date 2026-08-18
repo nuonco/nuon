@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
 import { getInstallComponent } from '@/lib'
@@ -22,6 +22,7 @@ export const ComponentCardContainer = ({ id, name }: IComponentCardContainer) =>
   const componentId = id || resolvedComponent?.component_id
 
   const { data: installComponent, isLoading, error } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-component', componentId],
     queryFn: () =>
       getInstallComponent({

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 
 import { Banner } from '@/components/common/Banner'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -33,6 +33,7 @@ const ArchitectureDiagramContainer = () => {
     isLoading: componentsLoading,
     isError: componentsError,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-components-diagram', org?.id, install?.id],
     queryFn: () =>
       getInstallComponents({
@@ -46,6 +47,7 @@ const ArchitectureDiagramContainer = () => {
   })
 
   const { data: stack } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-stack-diagram', org?.id, install?.id],
     queryFn: () =>
       getInstallStack({ orgId: org.id!, installId: install.id! }),
@@ -55,6 +57,7 @@ const ArchitectureDiagramContainer = () => {
   const { appConfig } = useInstallAppConfig()
 
   const { data: permissionsConfig } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-permissions-config-diagram', org?.id, install?.id],
     queryFn: () =>
       getInstallAppPermissionsConfig({
@@ -196,6 +199,7 @@ const AuditLogsTab = () => {
     error,
     isLoading,
   } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['install-audit-log', org.id, install.id, dateRange.start.toISOString(), dateRange.end.toISOString()],
     queryFn: () =>
       getInstallAuditLog({

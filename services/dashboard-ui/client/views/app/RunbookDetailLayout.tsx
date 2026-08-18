@@ -1,5 +1,5 @@
 import { Outlet, useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -19,6 +19,7 @@ export const RunbookDetailLayout = () => {
   const { app } = useApp()
 
   const { data: runbook, isLoading } = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ['runbook', org?.id, app?.id, runbookId],
     queryFn: () =>
       getRunbook({ orgId: org!.id, appId: app!.id, runbookId: runbookId! }),
