@@ -2,7 +2,9 @@ package cloudformation
 
 import (
 	"fmt"
+	"math"
 	"slices"
+	"strconv"
 
 	"github.com/awslabs/goformation/v7/cloudformation"
 	nestedcloudformation "github.com/awslabs/goformation/v7/cloudformation/cloudformation"
@@ -83,12 +85,55 @@ func (a *Templates) runnerAPIURL(inp *stacks.TemplateInput) string {
 	return a.cfg.RunnerAPIURL
 }
 
+const (
+	defaultRunnerRootVolumeSize = 30.0
+	minRunnerRootVolumeSize     = 8.0
+	maxRunnerRootVolumeSize     = 100.0
+)
+
 // getRunnerParameters returns the user-overridable top-level parameters for
 // the runner. These are exposed at the parent stack so customers can override
 // the defaults when creating/updating the stack; the nested runner ASG stack
 // references them via Ref().
+//
+// Defaults come from the nested runner template when it declares the matching
+// parameter, so a customer template that ships its own sizing is not silently
+// overridden by the platform defaults.
 func (a *Templates) getRunnerParameters(inp *stacks.TemplateInput) map[string]cloudformation.Parameter {
-	instanceType := inp.Settings.AWSInstanceType
+	tmplParams := a.runnerTemplateParameters(inp)
+
+	return map[string]cloudformation.Parameter{
+		"RunnerInstanceType":   a.runnerInstanceTypeParameter(inp, tmplParams["InstanceType"]),
+		"RunnerRootVolumeSize": a.runnerRootVolumeSizeParameter(tmplParams["RootVolumeSize"]),
+	}
+}
+
+// runnerTemplateParameters returns the parameters declared by the runner nested
+// template. It yields nil when the template cannot be fetched or parsed so the
+// platform defaults apply; getRunnerASGNestedStack surfaces the fetch error for
+// every stack that actually deploys the runner ASG.
+func (a *Templates) runnerTemplateParameters(inp *stacks.TemplateInput) map[string]cfnParameterShape {
+	if inp.AppCfg == nil || inp.AppCfg.StackConfig.RunnerNestedTemplateURL == "" {
+		return nil
+	}
+
+	tmpl, err := a.fetchTemplate(inp.AppCfg.StackConfig.RunnerNestedTemplateURL)
+	if err != nil {
+		return nil
+	}
+
+	return tmpl.Parameters
+}
+
+// The app's own runner config wins, then the nested template's declared default, then the
+// platform default. Settings.AWSInstanceType is deliberately not consulted: the stack
+// generators resolve the platform default into it, so it is never empty and would mask the
+// template's default entirely.
+func (a *Templates) runnerInstanceTypeParameter(inp *stacks.TemplateInput, tmplParam cfnParameterShape) cloudformation.Parameter {
+	instanceType := inp.ConfiguredRunnerInstanceType
+	if instanceType == "" {
+		instanceType, _ = tmplParam.Default.(string)
+	}
 	if instanceType == "" {
 		instanceType = app.DefaultAWSInstanceType
 	}
@@ -107,19 +152,53 @@ func (a *Templates) getRunnerParameters(inp *stacks.TemplateInput) map[string]cl
 		allowedInstanceTypes = append(allowedInstanceTypes, instanceType)
 	}
 
-	return map[string]cloudformation.Parameter{
-		"RunnerInstanceType": {
-			Type:          "String",
-			Description:   generics.ToPtr("EC2 instance type for the runner"),
-			Default:       instanceType,
-			AllowedValues: allowedInstanceTypes,
-		},
-		"RunnerRootVolumeSize": {
-			Type:        "Number",
-			Description: generics.ToPtr("Root EBS volume size (GiB) for the runner"),
-			Default:     "30",
-			MinValue:    ptr(8.0),
-			MaxValue:    ptr(100.0),
-		},
+	return cloudformation.Parameter{
+		Type:          "String",
+		Description:   generics.ToPtr("EC2 instance type for the runner"),
+		Default:       instanceType,
+		AllowedValues: allowedInstanceTypes,
+	}
+}
+
+func (a *Templates) runnerRootVolumeSizeParameter(tmplParam cfnParameterShape) cloudformation.Parameter {
+	size := defaultRunnerRootVolumeSize
+	if tmplDefault, ok := numericParamValue(tmplParam.Default); ok {
+		size = tmplDefault
+	}
+
+	minSize, maxSize := minRunnerRootVolumeSize, maxRunnerRootVolumeSize
+	if tmplParam.MinValue != nil {
+		minSize = *tmplParam.MinValue
+	}
+	if tmplParam.MaxValue != nil {
+		maxSize = *tmplParam.MaxValue
+	}
+	// the default has to satisfy the bounds, otherwise CloudFormation rejects the
+	// parent template outright.
+	minSize = math.Min(minSize, size)
+	maxSize = math.Max(maxSize, size)
+
+	return cloudformation.Parameter{
+		Type:        "Number",
+		Description: generics.ToPtr("Root EBS volume size (GiB) for the runner"),
+		Default:     strconv.FormatFloat(size, 'f', -1, 64),
+		MinValue:    ptr(minSize),
+		MaxValue:    ptr(maxSize),
+	}
+}
+
+func numericParamValue(val interface{}) (float64, bool) {
+	switch v := val.(type) {
+	case int:
+		return float64(v), true
+	case int64:
+		return float64(v), true
+	case float64:
+		return v, true
+	case string:
+		parsed, err := strconv.ParseFloat(v, 64)
+		return parsed, err == nil
+	default:
+		return 0, false
 	}
 }

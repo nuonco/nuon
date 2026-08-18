@@ -213,16 +213,17 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 	tmplByts := []byte{}
 	checksum := ""
 	inp := &stacks.TemplateInput{
-		Install:                    install,
-		CloudFormationStackVersion: stackVersion,
-		InstallState:               installState,
-		AppCfg:                     cfg,
-		Runner:                     runner,
-		Settings:                   &runner.RunnerGroup.Settings,
-		APIToken:                   generics.FromPtrStr(token),
-		RunnerEnvVars:              stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, w.cfg.RunnerContainerImageTag),
-		PhoneHomeSecretARN:         phoneHome.SecretARN,
-		PhoneHomeSecretRegion:      phoneHome.SecretRegion,
+		Install:                      install,
+		CloudFormationStackVersion:   stackVersion,
+		InstallState:                 installState,
+		AppCfg:                       cfg,
+		Runner:                       runner,
+		Settings:                     &runner.RunnerGroup.Settings,
+		APIToken:                     generics.FromPtrStr(token),
+		ConfiguredRunnerInstanceType: cfg.RunnerConfig.InstanceType,
+		RunnerEnvVars:                stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, w.cfg.RunnerContainerImageTag),
+		PhoneHomeSecretARN:           phoneHome.SecretARN,
+		PhoneHomeSecretRegion:        phoneHome.SecretRegion,
 	}
 
 	switch cfg.RunnerConfig.Type {
