@@ -4,6 +4,7 @@ import { type Node, type NodeProps } from '@xyflow/react'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
+import { Link } from '@/components/common/Link'
 import { matchesSelector } from '@/components/match/matches'
 import { cn } from '@/utils/classnames'
 import type { TAppBranchConfig, TInstall } from '@/types'
@@ -21,11 +22,12 @@ interface GroupNodeData {
   maxParallel: number
   useForPreviews: boolean
   compact: boolean
+  orgId: string
   [key: string]: unknown
 }
 
 const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
-  const { accent, installs, compact } = data
+  const { accent, installs, compact, orgId } = data
   const visible = compact ? installs.slice(0, 3) : installs
 
   return (
@@ -76,15 +78,16 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
               size={compact ? 10 : 12}
               className="shrink-0 text-cool-grey-400 dark:text-cool-grey-500"
             />
-            <span
+            <Link
+              href={`/${orgId}/installs/${inst.id}`}
               className={cn(
-                'min-w-0 flex-1 truncate text-cool-grey-700 dark:text-cool-grey-200',
+                'nodrag w-auto min-w-0 flex-1 truncate',
                 compact ? 'text-[9px]' : 'text-xs'
               )}
               title={inst.name}
             >
               {inst.name}
-            </span>
+            </Link>
           </div>
         ))
       )}
@@ -106,7 +109,7 @@ interface IDeploymentPlanGraph {
   compact?: boolean
 }
 
-export const DeploymentPlanGraph = ({ config, installsById, compact = false }: IDeploymentPlanGraph) => {
+export const DeploymentPlanGraph = ({ config, installsById, orgId, compact = false }: IDeploymentPlanGraph) => {
   const groups = config.install_groups ?? []
 
   const { nodes, edges, height } = useMemo(() => {
@@ -136,6 +139,7 @@ export const DeploymentPlanGraph = ({ config, installsById, compact = false }: I
           maxParallel: group.max_parallel ?? 1,
           useForPreviews: group.use_for_previews ?? false,
           compact,
+          orgId,
         },
       }
     })
@@ -153,7 +157,7 @@ export const DeploymentPlanGraph = ({ config, installsById, compact = false }: I
       ranksep: compact ? 40 : 80,
       nodesep: compact ? 20 : 40,
     })
-  }, [groups, installsById, compact])
+  }, [groups, installsById, orgId, compact])
 
   if (groups.length === 0) {
     return (

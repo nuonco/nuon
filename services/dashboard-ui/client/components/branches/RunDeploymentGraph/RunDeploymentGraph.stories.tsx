@@ -50,13 +50,13 @@ const mockRuns: any[] = [
 
 export const InProgress = () => (
   <div className="p-4">
-    <RunDeploymentGraph installGroupRuns={mockRuns} installsById={installsById} />
+    <RunDeploymentGraph installGroupRuns={mockRuns} installsById={installsById} orgId="org-demo" />
   </div>
 )
 
 export const WithoutInstallNames = () => (
   <div className="p-4">
-    <RunDeploymentGraph installGroupRuns={mockRuns} />
+    <RunDeploymentGraph installGroupRuns={mockRuns} orgId="org-demo" />
   </div>
 )
 
@@ -75,7 +75,7 @@ const failedRuns: any[] = [
 
 export const Failed = () => (
   <div className="p-4">
-    <RunDeploymentGraph installGroupRuns={failedRuns} installsById={installsById} />
+    <RunDeploymentGraph installGroupRuns={failedRuns} installsById={installsById} orgId="org-demo" />
   </div>
 )
 
@@ -113,12 +113,12 @@ const postDeployRunbookRuns: any[] = [
 
 export const WithPostDeployRunbooks = () => (
   <div className="p-4">
-    <RunDeploymentGraph installGroupRuns={postDeployRunbookRuns} installsById={installsById} />
+    <RunDeploymentGraph installGroupRuns={postDeployRunbookRuns} installsById={installsById} orgId="org-demo" />
   </div>
 )
 
 export const Empty = () => (
   <div className="p-4">
-    <RunDeploymentGraph installGroupRuns={[]} />
+    <RunDeploymentGraph installGroupRuns={[]} orgId="org-demo" />
   </div>
 )

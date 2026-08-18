@@ -3,6 +3,7 @@ import { type Node, type NodeProps } from '@xyflow/react'
 
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { EmptyState } from '@/components/common/EmptyState'
+import { Link } from '@/components/common/Link'
 import { cn } from '@/utils/classnames'
 import type { TInstall, TInstallGroupRun } from '@/types'
 
@@ -15,6 +16,7 @@ interface GroupRunNodeInstall {
   id: string
   name: string
   status: string
+  workflowId: string
   runbooks: { name: string; status: string }[]
 }
 
@@ -25,11 +27,12 @@ interface GroupRunNodeData {
   labelEntries: [string, string][]
   completedInstalls: number
   totalInstalls: number
+  orgId: string
   [key: string]: unknown
 }
 
 const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
-  const { accent, installs, labelEntries } = data
+  const { accent, installs, labelEntries, orgId } = data
 
   return (
     <GroupNodeCard
@@ -58,12 +61,17 @@ const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
               <span
                 className={cn('h-1.5 w-1.5 shrink-0 rounded-full', statusAccent(inst.status).dot)}
               />
-              <span
-                className="min-w-0 flex-1 truncate text-xs text-cool-grey-700 dark:text-cool-grey-200"
+              <Link
+                href={
+                  inst.workflowId
+                    ? `/${orgId}/installs/${inst.id}/workflows/${inst.workflowId}`
+                    : `/${orgId}/installs/${inst.id}`
+                }
+                className="nodrag w-auto min-w-0 flex-1 truncate text-xs"
                 title={inst.name}
               >
                 {inst.name}
-              </span>
+              </Link>
             </div>
             {inst.runbooks.map((rb) => (
               <div key={rb.name} className="flex items-center gap-1.5 pl-3">
@@ -89,11 +97,13 @@ const nodeTypes = { groupRunNode: GroupRunNode }
 export interface IRunDeploymentGraph {
   installGroupRuns: TInstallGroupRun[]
   installsById?: Record<string, TInstall>
+  orgId: string
 }
 
 export const RunDeploymentGraph = ({
   installGroupRuns,
   installsById = {},
+  orgId,
 }: IRunDeploymentGraph) => {
   const { nodes, edges, height } = useMemo(() => {
     if (installGroupRuns.length === 0) return { nodes: [], edges: [], height: 0 }
@@ -105,6 +115,7 @@ export const RunDeploymentGraph = ({
           id,
           name: installsById[id]?.name ?? id,
           status: inst.status ?? 'unknown',
+          workflowId: inst.workflow_id ?? '',
           runbooks: (inst.runbooks ?? []).map((rb) => ({
             name: rb.runbook_name ?? rb.runbook_id ?? '',
             status: rb.status ?? 'unknown',
@@ -123,6 +134,7 @@ export const RunDeploymentGraph = ({
           labelEntries: Object.entries(groupRun.install_group?.label_selector?.match_labels ?? {}),
           completedInstalls: groupRun.completed_installs ?? 0,
           totalInstalls: groupRun.total_installs ?? installs.length,
+          orgId,
         },
       }
     })
@@ -138,7 +150,7 @@ export const RunDeploymentGraph = ({
         return installRows + (d.labelEntries.length > 0 ? 1 : 0)
       },
     })
-  }, [installGroupRuns, installsById])
+  }, [installGroupRuns, installsById, orgId])
 
   if (installGroupRuns.length === 0) {
     return (

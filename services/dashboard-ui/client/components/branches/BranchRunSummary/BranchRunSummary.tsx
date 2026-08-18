@@ -24,9 +24,11 @@ interface IBranchRunSummary {
 const InstallsSection = ({
   installGroupRuns,
   installsById,
+  orgId,
 }: {
   installGroupRuns: TInstallGroupRun[]
   installsById?: Record<string, TInstall>
+  orgId: string
 }) => {
   if (installGroupRuns.length === 0) return null
 
@@ -35,7 +37,11 @@ const InstallsSection = ({
       <Text variant="base" weight="strong">
         Updated installs
       </Text>
-      <RunDeploymentGraph installGroupRuns={installGroupRuns} installsById={installsById} />
+      <RunDeploymentGraph
+        installGroupRuns={installGroupRuns}
+        installsById={installsById}
+        orgId={orgId}
+      />
     </div>
   )
 }
@@ -56,7 +62,11 @@ export const BranchRunSummary = ({
   return (
     <div className="flex flex-col gap-6">
       <BranchRunBuilds builds={builds} orgId={orgId} appId={appId} />
-      <InstallsSection installGroupRuns={installGroupRuns} installsById={installsById} />
+      <InstallsSection
+        installGroupRuns={installGroupRuns}
+        installsById={installsById}
+        orgId={orgId}
+      />
     </div>
   )
 }
