@@ -240,3 +240,94 @@ func (s *InstallsServiceTestSuite) getSeededComponent(componentType app.Componen
 	s.T().Fatalf("no seeded component of type %s", componentType)
 	return nil
 }
+
+// Pins an install into one of the states install.go's AfterQuery resolves from.
+type cloudPlatformTestCase struct {
+	name                  string
+	setup                 func() *app.Install
+	expectedCloudPlatform app.CloudPlatform
+	expectedRunnerType    app.AppRunnerType
+}
+
+// testseed's CreateAppRunnerConfig always creates an "aws" one.
+func (s *InstallsServiceTestSuite) createAppRunnerConfig(appConfigID string, runnerType app.AppRunnerType) *app.AppRunnerConfig {
+	runner := &app.AppRunnerConfig{
+		AppID:       s.testApp.ID,
+		AppConfigID: appConfigID,
+		Type:        runnerType,
+	}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(runner).Error)
+	return runner
+}
+
+// Mirrors the bulk install rewrite in internal/pkg/config/syncer/runner/sync.go.
+func (s *InstallsServiceTestSuite) pinInstallConfig(installID, appConfigID, appRunnerConfigID string) {
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Model(&app.Install{}).
+		Where(app.Install{ID: installID}).
+		Updates(map[string]any{
+			"app_config_id":        appConfigID,
+			"app_runner_config_id": appRunnerConfigID,
+		}).Error)
+}
+
+// The three fixture states shared by every install-read endpoint.
+func (s *InstallsServiceTestSuite) cloudPlatformResolutionTestCases() []cloudPlatformTestCase {
+	return []cloudPlatformTestCase{
+		{
+			name: "pinned app config runner wins over stale app_runner_config_id FK",
+			setup: func() *app.Install {
+				azureCfg := s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
+				s.createAppRunnerConfig(azureCfg.ID, app.AppRunnerTypeAzure)
+
+				// What a later sync creates, then repoints every install at.
+				staleCfg := s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
+				awsRunner := s.createAppRunnerConfig(staleCfg.ID, app.AppRunnerTypeAWS)
+
+				install := s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+				s.pinInstallConfig(install.ID, azureCfg.ID, awsRunner.ID)
+				return install
+			},
+			expectedCloudPlatform: app.CloudPlatformAzure,
+			expectedRunnerType:    app.AppRunnerTypeAzure,
+		},
+		{
+			name: "falls back to app_runner_config_id FK when pinned config has no runner config",
+			setup: func() *app.Install {
+				noRunnerCfg := s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
+				azureRunner := s.createAppRunnerConfig(s.testAppConfig.ID, app.AppRunnerTypeAzure)
+
+				install := s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+				s.pinInstallConfig(install.ID, noRunnerCfg.ID, azureRunner.ID)
+				return install
+			},
+			expectedCloudPlatform: app.CloudPlatformAzure,
+			expectedRunnerType:    app.AppRunnerTypeAzure,
+		},
+		{
+			name: "unknown when neither pinned runner config nor FK resolve",
+			setup: func() *app.Install {
+				noRunnerCfg := s.deps.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
+
+				// Soft-deleted satisfies the FK but Preload excludes it.
+				danglingRunner := s.createAppRunnerConfig(s.testAppConfig.ID, app.AppRunnerTypeAWS)
+				require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Delete(danglingRunner).Error)
+
+				install := s.deps.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+				s.pinInstallConfig(install.ID, noRunnerCfg.ID, danglingRunner.ID)
+				return install
+			},
+			expectedCloudPlatform: app.CloudPlatformUnknown,
+			expectedRunnerType:    app.AppRunnerTypeUnknown,
+		},
+	}
+}
+
+func findInstallByID(installs []app.Install, id string) *app.Install {
+	for i := range installs {
+		if installs[i].ID == id {
+			return &installs[i]
+		}
+	}
+	return nil
+}
