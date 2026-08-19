@@ -972,16 +972,19 @@ entry points reach it through `syncer.Run`, which reads the intermediate config 
 | Entry point                                | Path                                                                                     |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------- |
 | CLI (`nuon apps sync`)                     | `POST /configs` (intermediate config) → `POST /configs/:id/sync` → `appconfigsync` signal |
+| CLI with `app-branch-sync` on              | `POST /configs` with `app_branch_id` → branch run with `sync_app_config` → branch run's sync-app-config step |
 | App branch sync (VCS push / PR preview)    | branch run's fetch-app-config step → `branches/activities.syncAppConfig`                 |
 
 The CLI does not walk the per-resource `Create*Config` endpoints — it parses, validates, and pushes the whole config
 in one request. Those endpoints remain part of the public API surface, so they must keep working, but they are no
 longer how a sync happens.
 
-The one behavioural difference between the two entry points is build scheduling, and it is explicit:
-`syncer.RunRequest.DispatchBuilds` (CLI path) makes the syncer reuse an unchanged component's existing config
-connection and report the changed ones for the caller to enqueue `configcreated` signals for. The branch run leaves
-it off because its own builds step schedules builds. Turning it on in both places would double-build.
+The one behavioural difference between the entry points is build scheduling, and it is explicit:
+`syncer.RunRequest.DispatchBuilds` (standalone CLI path) makes the syncer reuse an unchanged component's existing config
+connection and report the changed ones for the caller to enqueue `configcreated` signals for. Every branch run leaves
+it off because its own builds step schedules builds. Turning it on in both places would double-build, which is why the
+`app-branch-sync` CLI path posts the config and lets the run sync it rather than calling `/configs/:id/sync`
+first.
 
 **Config MUST be converted into `app.*` models through `internal/pkg/config/build`.** The syncer and the per-type
 HTTP handlers previously had independent conversions and silently drifted, dropping custom roles, break-glass roles,
