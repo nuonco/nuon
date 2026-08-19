@@ -12,16 +12,14 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
-	createdsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/created"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/build"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 )
 
 // EnsureComponent creates a component if it doesn't exist, using the shared helpers
 // for full initialization (queue creation, dependencies, install components).
-func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.Helpers, comp *config.Component, appID string) error {
+func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.Helpers, comp *config.Component, appID string, state *sync.State) error {
 	_, err := getComponent(ctx, db, comp.Name, appID)
 	if err == nil {
 		return nil
@@ -34,13 +32,14 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 		}
 	}
 
-	newComp, err := helpers.CreateComponent(ctx, &componenthelpers.CreateComponentParams{
+	newComp, err := helpers.CreateComponentWithDB(ctx, db, &componenthelpers.CreateComponentParams{
 		AppID:            appID,
 		Name:             comp.Name,
 		VarName:          comp.VarName,
 		Dependencies:     comp.Dependencies,
 		Labels:           comp.Labels,
 		SkipDependencies: true,
+		SkipQueues:       true,
 	})
 	if err != nil {
 		return sync.SyncInternalErr{
@@ -49,26 +48,11 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 		}
 	}
 
-	q, err := helpers.QueueClient().GetQueueByOwner(ctx, newComp.ID, "components")
-	if err != nil {
-		return sync.SyncInternalErr{
-			Description: fmt.Sprintf("unable to get queue for component %s", comp.Name),
-			Err:         err,
+	if state != nil {
+		if state.Result == nil {
+			state.Result = &sync.Result{}
 		}
-	}
-
-	if _, err := helpers.QueueClient().EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID:   q.ID,
-		OwnerID:   newComp.ID,
-		OwnerType: "components",
-		Signal: &createdsignal.Signal{
-			ComponentID: newComp.ID,
-		},
-	}); err != nil {
-		return sync.SyncInternalErr{
-			Description: fmt.Sprintf("unable to enqueue created signal for component %s", comp.Name),
-			Err:         err,
-		}
+		state.Result.ComponentsCreated = append(state.Result.ComponentsCreated, newComp.ID)
 	}
 
 	return nil
@@ -221,7 +205,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 		// (ComponentBuild.NoOp) handles unchanged-digest cases without
 		// re-pushing the artifact, so the cost is one extra DB row per
 		// (image component × sync).
-		if _, err := helpers.CreateComponentBuild(ctx, apiComp.ID, false, nil); err != nil {
+		if _, err := helpers.CreateComponentBuildInTx(ctx, db, apiComp.ID, false, nil); err != nil {
 			return sync.SyncInternalErr{
 				Description: fmt.Sprintf("unable to queue build for component %s", comp.Name),
 				Err:         err,
