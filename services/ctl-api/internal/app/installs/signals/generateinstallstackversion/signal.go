@@ -336,6 +336,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 		inp.VPCNestedStackTemplateURL = cfg.StackConfig.VPCNestedTemplateURL
 		inp.RunnerNestedStackTemplateURL = cfg.StackConfig.RunnerNestedTemplateURL
+		inp.DeploymentScope = cfg.StackConfig.DeploymentScope
 
 		armResult, err := activities.AwaitRenderARMStackTemplate(ctx, &activities.RenderARMStackTemplateRequest{
 			Input: *inp,

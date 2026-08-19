@@ -89,18 +89,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 
 	// param name -> producing deployment; seeded with vnet outputs so they win over custom ones
 	wiredOutputs := map[string]string{}
-	for _, name := range []string{
-		"vnetId", "vnetName",
-		"publicSubnet1Id", "publicSubnet1Name",
-		"publicSubnet2Id", "publicSubnet2Name",
-		"publicSubnet3Id", "publicSubnet3Name",
-		"privateSubnet1Id", "privateSubnet1Name",
-		"privateSubnet2Id", "privateSubnet2Name",
-		"privateSubnet3Id", "privateSubnet3Name",
-		"runnerSubnetId", "runnerSubnetName",
-		"publicSubnetIds", "publicSubnetNames",
-		"privateSubnetIds", "privateSubnetNames",
-	} {
+	for _, name := range vnetContractOutputs {
 		wiredOutputs[name] = "vnetDeployment"
 	}
 
@@ -179,7 +168,10 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			"nuonInstallID": inp.Install.ID,
 			"nuonOrgID":     inp.Runner.OrgID,
 			"nuonAppID":     inp.Install.AppID,
-			"location":      "[parameters('location')]",
+			// Evaluated in the root, so it has to follow the root's declaration of the
+			// region — a parameter at resource-group scope, a variable at subscription
+			// scope where it is hidden from the portal's deployment form.
+			"location": scopeFor(inp).rootLocationRef(),
 		}
 		for paramName := range params {
 			if val, ok := nuonParams[paramName]; ok {

@@ -1,6 +1,8 @@
 package arm
 
 import (
+	"fmt"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
@@ -9,7 +11,7 @@ func (t *Templates) getCustomRoleDeployment(inp *stacks.TemplateInput, scope arm
 	return map[string]any{
 		"type":           "Microsoft.Resources/deployments",
 		"apiVersion":     "2022-09-01",
-		"name":           "[format('{0}-custom-role-deployment', parameters('nuonInstallID'))]",
+		"name":           fmt.Sprintf("[format('{0}-custom-role-deployment', %s)]", scope.nuonIDInner("nuonInstallID")),
 		"subscriptionId": "[subscription().subscriptionId]",
 		"location":       scope.locationExpr(),
 		"dependsOn":      []string{"runnerDeployment"},
@@ -19,7 +21,7 @@ func (t *Templates) getCustomRoleDeployment(inp *stacks.TemplateInput, scope arm
 			},
 			"mode": "Incremental",
 			"parameters": map[string]any{
-				"nuonInstallID": map[string]any{"value": "[parameters('nuonInstallID')]"},
+				"nuonInstallID": map[string]any{"value": scope.nuonIDRef("nuonInstallID")},
 				"principalID":   map[string]any{"value": "[reference('runnerDeployment').outputs.vmssPrincipalId.value]"},
 			},
 			"template": map[string]any{

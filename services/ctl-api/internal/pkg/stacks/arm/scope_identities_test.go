@@ -1,6 +1,7 @@
 package arm
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -39,7 +40,7 @@ func TestOperationIdentities_WrappedIntoInstallRG(t *testing.T) {
 	if !ok || wrapper["name"] != identitiesDeploymentName {
 		t.Fatalf("expected %s first, got %v", identitiesDeploymentName, resources[0])
 	}
-	if got := wrapper["resourceGroup"]; got != "[parameters('installResourceGroupName')]" {
+	if got := wrapper["resourceGroup"]; got != "[variables('installResourceGroupName')]" {
 		t.Errorf("wrapper resourceGroup = %v", got)
 	}
 
@@ -117,8 +118,10 @@ func TestOperationIdentities_RoleAssignmentNamesUnchangedByWrapping(t *testing.T
 }
 
 // A root resource cannot depend on something declared inside a nested deployment,
-// and a bare resourceId() read from a subscription-scoped root resolves against
-// the wrong scope.
+// and it cannot reference() it either: ARM resolves a reference() to a resource the
+// current template does not declare during preflight, so it races the wrapper that
+// creates it and the deployment fails with ResourceGroupNotFound even though the
+// resource group reports Created. The value has to come back out as an output.
 func TestOperationIdentities_RootReadsIdentitiesAcrossTheWrapper(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	id := identityFixture()[0]
@@ -131,11 +134,49 @@ func TestOperationIdentities_RootReadsIdentitiesAcrossTheWrapper(t *testing.T) {
 	}
 
 	principal := role["properties"].(map[string]any)["parameters"].(map[string]any)["principalID"].(map[string]any)["value"].(string)
-	want := "[reference(resourceId(subscription().subscriptionId, parameters('installResourceGroupName'), 'Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-provision', parameters('nuonInstallID'))), '2023-01-31').principalId]"
+	want := "[reference('identitiesDeployment').outputs.provisionPrincipalId.value]"
 	if principal != want {
 		t.Errorf("principalID:\n got: %s\nwant: %s", principal, want)
 	}
 	assertNoNestedBrackets(t, []byte(principal))
+
+	// The output has to actually be declared, or the read is just a different error.
+	wrapper := tmpl.getOperationIdentityResources(identityFixture(), armScope{subscription: true})[0].(map[string]any)
+	outputs, ok := wrapper["properties"].(map[string]any)["template"].(map[string]any)["outputs"].(map[string]any)
+	if !ok {
+		t.Fatal("identitiesDeployment declares no outputs")
+	}
+	if _, ok := outputs["provisionPrincipalId"]; !ok {
+		t.Errorf("identitiesDeployment does not export provisionPrincipalId, got %v", sortedKeys(outputs))
+	}
+}
+
+// Every identity the root reads has to be exported by the wrapper, for both fields.
+// A missing one only shows up as a failed deploy.
+func TestOperationIdentities_EveryRootReadHasAMatchingOutput(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+	ids := identityFixture()
+	sub := armScope{subscription: true}
+
+	wrapper := tmpl.getOperationIdentityResources(ids, sub)[0].(map[string]any)
+	outputs, _ := wrapper["properties"].(map[string]any)["template"].(map[string]any)["outputs"].(map[string]any)
+
+	for _, id := range ids {
+		for _, expr := range []string{identityPrincipalIDExpr(id, sub), identityClientIDExpr(id, sub)} {
+			key := strings.TrimSuffix(strings.TrimPrefix(expr, "[reference('identitiesDeployment').outputs."), ".value]")
+			if _, ok := outputs[key]; !ok {
+				t.Errorf("root reads %s but the wrapper exports only %v", expr, sortedKeys(outputs))
+			}
+		}
+	}
+
+	// The inner reads are the ones that resolve, because the identity is declared in
+	// the same template there.
+	for _, id := range ids {
+		if got := identityPrincipalIDExpr(id, armScope{}); strings.Contains(got, "outputs.") {
+			t.Errorf("resource-group scope should read the identity directly, got %s", got)
+		}
+	}
 }
 
 // The runner's inline template lives in the install resource group alongside the

@@ -34,7 +34,7 @@ func TestRunnerGrants_WrappedIntoInstallRG(t *testing.T) {
 	if !ok || wrapper["name"] != runnerGrantsDeploymentName {
 		t.Fatalf("expected %s first, got %v", runnerGrantsDeploymentName, resources[0])
 	}
-	if got := wrapper["resourceGroup"]; got != "[parameters('installResourceGroupName')]" {
+	if got := wrapper["resourceGroup"]; got != "[variables('installResourceGroupName')]" {
 		t.Errorf("wrapper resourceGroup = %v", got)
 	}
 
@@ -44,7 +44,7 @@ func TestRunnerGrants_WrappedIntoInstallRG(t *testing.T) {
 	if !slices.Contains(deps, "runnerDeployment") {
 		t.Errorf("wrapper does not wait for the runner: %v", deps)
 	}
-	if !slices.Contains(deps, "[resourceId('Microsoft.Resources/resourceGroups', parameters('installResourceGroupName'))]") {
+	if !slices.Contains(deps, "[resourceId('Microsoft.Resources/resourceGroups', variables('installResourceGroupName'))]") {
 		t.Errorf("wrapper does not wait for the resource group: %v", deps)
 	}
 

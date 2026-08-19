@@ -39,7 +39,10 @@ func (c runnerGrantContext) apply(assignment map[string]any) map[string]any {
 }
 
 func (t *Templates) getKeyVaultRoleAssignment(ctx runnerGrantContext) map[string]any {
-	kvName := keyVaultNameInner
+	// Resource-group scope deliberately: this assignment is either in the root at
+	// resource-group scope or inside runnerGrantsDeployment, and the name embeds this
+	// in a guid() that must not change.
+	kvName := armScope{}.keyVaultNameInner()
 
 	return ctx.apply(map[string]any{
 		"type":       "Microsoft.Authorization/roleAssignments",

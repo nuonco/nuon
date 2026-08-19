@@ -46,50 +46,54 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		Outputs:        make(map[string]ARMOutput),
 	}
 
-	// Add Nuon-managed parameters (always present, never customer-facing)
-	tmpl.Parameters["nuonInstallID"] = ARMParameter{
-		Type:         "string",
-		DefaultValue: inp.Install.ID,
-		Metadata:     &ARMParameterMetadata{Description: "The Nuon Install ID; prefixed to resource names."},
+	// Nuon-managed values. At resource-group scope they are parameters, which is what
+	// every existing install renders. At subscription scope they are variables
+	// instead: the portal builds its deployment form from a template's parameters and
+	// gives no way to hide one, so a parameter here is an editable field in front of
+	// the customer. None of these is customer-configurable.
+	nuonValues := map[string]struct {
+		value       string
+		description string
+	}{
+		"nuonInstallID": {inp.Install.ID, "The Nuon Install ID; prefixed to resource names."},
+		"nuonOrgID":     {inp.Runner.OrgID, "The Nuon Org ID. Used in tags."},
+		"nuonAppID":     {inp.Install.AppID, "The Nuon App ID. Used in tags."},
+		locationVarName: {inp.Install.AzureAccount.Location, "The location for all resources."},
 	}
-	tmpl.Parameters["nuonOrgID"] = ARMParameter{
-		Type:         "string",
-		DefaultValue: inp.Runner.OrgID,
-		Metadata:     &ARMParameterMetadata{Description: "The Nuon Org ID. Used in tags."},
+	for name, v := range nuonValues {
+		if scope.subscription {
+			tmpl.Variables[name] = v.value
+			continue
+		}
+		tmpl.Parameters[name] = ARMParameter{
+			Type:         "string",
+			DefaultValue: v.value,
+			Metadata:     &ARMParameterMetadata{Description: v.description},
+		}
 	}
-	tmpl.Parameters["nuonAppID"] = ARMParameter{
-		Type:         "string",
-		DefaultValue: inp.Install.AppID,
-		Metadata:     &ARMParameterMetadata{Description: "The Nuon App ID. Used in tags."},
-	}
-	tmpl.Parameters["location"] = ARMParameter{
-		Type:         "string",
-		DefaultValue: inp.Install.AzureAccount.Location,
-		Metadata:     &ARMParameterMetadata{Description: "The location for all resources."},
-	}
+
+	// deployTimestamp has to stay a parameter at both scopes: utcNow() is only legal
+	// in a parameter's default value. That is load-bearing rather than cosmetic — it
+	// is what re-triggers the phone-home script when the same template is applied
+	// again, e.g. retrying a failed deploy.
 	tmpl.Parameters["deployTimestamp"] = ARMParameter{
 		Type:         "string",
 		DefaultValue: "[utcNow()]",
 		Metadata:     &ARMParameterMetadata{Description: "Force re-run of deployment scripts on each deploy."},
 	}
 
-	// At subscription scope there is no ambient resource group, so the group Nuon's
-	// own resources live in becomes a named contract instead. The default is the
-	// name customers create by hand at resource-group scope, so nothing downstream
-	// of the phone-home changes.
-	if scope.subscription {
-		tmpl.Parameters[installRGParamName] = ARMParameter{
-			Type:         "string",
-			DefaultValue: "[format('{0}-rg', parameters('nuonInstallID'))]",
-			Metadata:     &ARMParameterMetadata{Description: "Resource group the install's Nuon-managed resources are created in."},
-		}
+	tmpl.Variables["commonTags"] = map[string]string{
+		"install_nuon_co_id": scope.nuonIDRef("nuonInstallID"),
+		"org_nuon_co_id":     scope.nuonIDRef("nuonOrgID"),
+		"app_nuon_co_id":     scope.nuonIDRef("nuonAppID"),
 	}
 
-	// Add common variables
-	tmpl.Variables["commonTags"] = map[string]string{
-		"install_nuon_co_id": "[parameters('nuonInstallID')]",
-		"org_nuon_co_id":     "[parameters('nuonOrgID')]",
-		"app_nuon_co_id":     "[parameters('nuonAppID')]",
+	// At subscription scope there is no ambient resource group, so the group Nuon's
+	// own resources live in becomes a named contract instead. The value is the name
+	// customers create by hand at resource-group scope, so nothing downstream of the
+	// phone-home changes.
+	if scope.subscription {
+		tmpl.Variables[installRGVarName] = installResourceGroupName(inp.Install.ID)
 	}
 
 	// When the app declares Azure roles, deploy work runs as per-operation
@@ -103,8 +107,15 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		tmpl.Resources = append(tmpl.Resources, rg)
 	}
 
+	// The Key Vault and its secrets, at subscription scope only — see
+	// getKeyVaultResources for why they cannot stay a customer prerequisite there.
+	tmpl.Resources = append(tmpl.Resources, t.getKeyVaultResources(inp, scope)...)
+	for name, p := range azureSecretParameters(inp, scope) {
+		tmpl.Parameters[name] = p
+	}
+
 	// Build VNet linked deployment (or use default inline)
-	vnetDeployment, vnetParams, err := t.getVNetLinkedDeployment(inp, scope)
+	vnetDeployment, vnetParams, vnetExtraOutputs, err := t.getVNetLinkedDeployment(inp, scope)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +165,7 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	}
 
 	// Phone home deployment script
-	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResources(inp, customOutputs, scope)...)
+	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResources(inp, customOutputs, vnetExtraOutputs, scope)...)
 
 	// Add standard outputs (VNet, subnets, key vault)
 	t.addStandardOutputs(tmpl, scope)
@@ -202,14 +213,14 @@ func (t *Templates) appendRunnerGrants(tmpl *ARMTemplate, inp *stacks.TemplateIn
 	grants = append(grants, t.getACRRoleAssignments(inner)...)
 
 	wrapper := scope.wrapInInstallRG(runnerGrantsDeploymentName, map[string]nestedParam{
-		"nuonInstallID": {typ: "string", value: "[parameters('nuonInstallID')]"},
+		"nuonInstallID": {typ: "string", value: scope.nuonIDRef("nuonInstallID")},
 		"principalId":   {typ: "string", value: "[reference('runnerDeployment').outputs.vmssPrincipalId.value]"},
-	}, grants)
+	}, grants, nil)
 
-	// The grants read the runner's identity, so the wrapper waits on the runner in
-	// addition to the resource group.
+	// The grants read the runner's identity and assign a role on the Key Vault, so
+	// the wrapper waits on both in addition to the resource group.
 	for _, r := range wrapper {
-		dependOn(r.(map[string]any), []string{"runnerDeployment"})
+		dependOn(r.(map[string]any), append([]string{"runnerDeployment"}, scope.keyVaultDependsOn()...))
 	}
 	tmpl.Resources = append(tmpl.Resources, wrapper...)
 
@@ -246,14 +257,14 @@ func (t *Templates) addStandardOutputs(tmpl *ARMTemplate, scope armScope) {
 	// Key Vault outputs
 	tmpl.Outputs["keyVaultName"] = ARMOutput{
 		Type:  "string",
-		Value: "[take(format('{0}', parameters('nuonInstallID')), 24)]",
+		Value: "[" + scope.keyVaultNameInner() + "]",
 	}
 	tmpl.Outputs["keyVaultId"] = ARMOutput{
 		Type:  "string",
-		Value: scope.rgResourceIDExpr("Microsoft.KeyVault/vaults", keyVaultNameInner),
+		Value: scope.rgResourceIDExpr("Microsoft.KeyVault/vaults", scope.keyVaultNameInner()),
 	}
 	tmpl.Outputs["keyVaultUri"] = ARMOutput{
 		Type:  "string",
-		Value: "[format('https://{0}.vault.azure.net/', take(format('{0}', parameters('nuonInstallID')), 24))]",
+		Value: "[format('https://{0}.vault.azure.net/', " + scope.keyVaultNameInner() + ")]",
 	}
 }

@@ -11,12 +11,6 @@ const (
 	rgTemplateSchema           = "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"
 	subscriptionTemplateSchema = "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#"
 
-	// keyVaultNameInner is the install Key Vault's name as an unbracketed ARM
-	// expression. Nothing in the stack creates the vault — the template only ever
-	// references it by this convention, which is why its resource ID has to be
-	// built scope-correctly rather than left to an ambient resource group.
-	keyVaultNameInner = "take(format('{0}', parameters('nuonInstallID')), 24)"
-
 	// runnerGrantsDeploymentName is the nested deployment the runner's system-identity
 	// role assignments move into at subscription scope.
 	runnerGrantsDeploymentName = "runnerGrantsDeployment"
@@ -25,12 +19,33 @@ const (
 	// resource moves into at subscription scope.
 	phoneHomeDeploymentName = "phoneHomeDeployment"
 
-	// installRGParamName names the install's resource group in the root template.
-	// At subscription scope there is no ambient resource group, so every expression
-	// that used to resolve against one has to name it explicitly. At RG scope the
-	// parameter is not declared at all.
-	installRGParamName = "installResourceGroupName"
+	// installRGVarName names the install's resource group in the root template. At
+	// subscription scope there is no ambient resource group, so every expression that
+	// used to resolve against one has to name it explicitly. At RG scope it is not
+	// declared at all.
+	//
+	// Deliberately a variable rather than a parameter: the portal builds its
+	// deployment form from a template's parameters and gives no way to hide one, so a
+	// parameter here would put a Nuon-internal value in front of the customer as an
+	// editable field. The name is renderer-owned and known at render time, so nothing
+	// is lost by baking it.
+	installRGVarName = "installResourceGroupName"
+
+	// locationVarName is the install's region in the root at subscription scope. A
+	// variable for the same reason installRGVarName is — see rootLocationRef.
+	locationVarName = "location"
 )
+
+// installResourceGroupName is the resource group Nuon's own install resources live
+// in. This is the single source of truth for the name.
+//
+// It is the same `<install-id>-rg` the customer creates by hand at resource-group
+// scope, which is what lets subscription scope drop the `az group create`
+// prerequisite without changing anything downstream: the Key Vault, the runner and
+// the phone-home all still resolve against a group by this name.
+func installResourceGroupName(installID string) string {
+	return installID + "-rg"
+}
 
 // armScope is the ARM scope the root template renders at.
 //
@@ -51,16 +66,36 @@ func (s armScope) rootSchema() string {
 	return rgTemplateSchema
 }
 
+// locationExpr is the location for a root resource that had no explicit location
+// of its own at resource-group scope, where it inherited the ambient group's.
 func (s armScope) locationExpr() string {
 	if s.subscription {
-		return "[parameters('location')]"
+		return s.rootLocationRef()
 	}
 	return "[resourceGroup().location]"
 }
 
+// rootLocationRef is how the root refers to the install's region.
+//
+// At subscription scope this is a variable rather than a parameter, for the same
+// reason as installResourceGroupName: the portal renders one form field per
+// parameter with no way to hide one, and the region is not customer-configurable —
+// it is whatever Nuon recorded on the Azure account, and the sandbox and components
+// already assume that value.
+//
+// Only for references evaluated in the root. A wrapped resource is inside a nested
+// template that declares its own `location` parameter, so it keeps using
+// parameters('location').
+func (s armScope) rootLocationRef() string {
+	if s.subscription {
+		return fmt.Sprintf("[variables('%s')]", locationVarName)
+	}
+	return "[parameters('location')]"
+}
+
 func (s armScope) rgNameExpr() string {
 	if s.subscription {
-		return fmt.Sprintf("[parameters('%s')]", installRGParamName)
+		return fmt.Sprintf("[variables('%s')]", installRGVarName)
 	}
 	return "[resourceGroup().name]"
 }
@@ -73,7 +108,7 @@ func (s armScope) rgNameExpr() string {
 // substitute: it emits a providers/-qualified form, not the canonical RG ID.
 func (s armScope) rgIDExpr() string {
 	if s.subscription {
-		return fmt.Sprintf("[format('{0}/resourceGroups/{1}', subscription().id, parameters('%s'))]", installRGParamName)
+		return fmt.Sprintf("[format('{0}/resourceGroups/{1}', subscription().id, variables('%s'))]", installRGVarName)
 	}
 	return "[resourceGroup().id]"
 }
@@ -98,13 +133,24 @@ func (s armScope) installRGResource() map[string]any {
 	}
 }
 
+// keyVaultDependsOn orders anything that needs the install Key Vault to exist —
+// the runner's role assignment on it, and the phone-home that reports its ID.
+// Empty at resource-group scope, where the customer creates the vault beforehand and
+// there is no deployment to wait on.
+func (s armScope) keyVaultDependsOn() []string {
+	if !s.subscription {
+		return nil
+	}
+	return []string{keyVaultDeploymentName}
+}
+
 // installRGDependsOn is the dependency on the declared install resource group.
 // Empty at resource-group scope, where there is nothing to depend on.
 func (s armScope) installRGDependsOn() []string {
 	if !s.subscription {
 		return nil
 	}
-	return []string{fmt.Sprintf("[resourceId('Microsoft.Resources/resourceGroups', parameters('%s'))]", installRGParamName)}
+	return []string{fmt.Sprintf("[resourceId('Microsoft.Resources/resourceGroups', variables('%s'))]", installRGVarName)}
 }
 
 // targetInstallRG points a nested deployment at the install resource group and
@@ -156,10 +202,43 @@ func (s armScope) rgResourceIDExpr(resourceType, nameInner string) string {
 // embedding in a larger expression — ARM does not allow nested [ ].
 func (s armScope) rgResourceIDInner(resourceType, nameInner string) string {
 	if s.subscription {
-		return fmt.Sprintf("resourceId(subscription().subscriptionId, parameters('%s'), '%s', %s)",
-			installRGParamName, resourceType, nameInner)
+		return fmt.Sprintf("resourceId(subscription().subscriptionId, variables('%s'), '%s', %s)",
+			installRGVarName, resourceType, nameInner)
 	}
 	return fmt.Sprintf("resourceId('%s', %s)", resourceType, nameInner)
+}
+
+// nuonIDNames are the Nuon-managed identifiers the template needs but the customer
+// must never be invited to change.
+var nuonIDNames = []string{"nuonInstallID", "nuonOrgID", "nuonAppID"}
+
+// nuonIDRef is how the root refers to one of the Nuon-managed IDs, bracketed.
+//
+// At subscription scope they are variables rather than parameters, so the portal's
+// deployment form does not offer them as editable fields. Inner templates are
+// unaffected: each declares its own nuonInstallID parameter and receives the value,
+// so inside one the reference is genuinely parameters('nuonInstallID').
+func (s armScope) nuonIDRef(name string) string {
+	return "[" + s.nuonIDInner(name) + "]"
+}
+
+// nuonIDInner is nuonIDRef unbracketed, for embedding in a larger expression.
+func (s armScope) nuonIDInner(name string) string {
+	if s.subscription {
+		return fmt.Sprintf("variables('%s')", name)
+	}
+	return fmt.Sprintf("parameters('%s')", name)
+}
+
+// keyVaultNameInner is the install Key Vault's name as an unbracketed expression.
+// Nothing in the stack creates the vault — the template only ever references it by
+// this convention.
+//
+// Call with resource-group scope for anything that ends up inside a wrapper: the
+// Key Vault role assignment embeds this in a guid(), and changing it would rename a
+// live assignment and fail redeploys with RoleAssignmentExists.
+func (s armScope) keyVaultNameInner() string {
+	return fmt.Sprintf("take(format('{0}', %s), 24)", s.nuonIDInner("nuonInstallID"))
 }
 
 // innerCommonTagsExpr is how a resource that wrapInInstallRG may relocate should
@@ -203,7 +282,15 @@ type nestedParam struct {
 //
 // The flip side of inner evaluation is that nothing from the root is visible:
 // every value the resources need must be declared in params.
-func (s armScope) wrapInInstallRG(name string, params map[string]nestedParam, resources []any) []any {
+// wrapInInstallRG relocates resources into the install resource group at
+// subscription scope, and is a no-op at resource-group scope where they already sit
+// in the root.
+//
+// outputs is how anything left behind in the root reads a value off a wrapped
+// resource. It has to be, rather than referencing the resource directly: a
+// reference() to a resource the current template does not declare is resolved by ARM
+// during preflight, so it races the wrapper that creates it.
+func (s armScope) wrapInInstallRG(name string, params map[string]nestedParam, resources []any, outputs map[string]any) []any {
 	if !s.subscription {
 		return resources
 	}
@@ -213,6 +300,16 @@ func (s armScope) wrapInInstallRG(name string, params map[string]nestedParam, re
 	for paramName, p := range params {
 		outerParams[paramName] = map[string]any{"value": p.value}
 		innerParams[paramName] = map[string]any{"type": p.typ}
+	}
+
+	inner := map[string]any{
+		"$schema":        rgTemplateSchema,
+		"contentVersion": "1.0.0.0",
+		"parameters":     innerParams,
+		"resources":      resources,
+	}
+	if len(outputs) > 0 {
+		inner["outputs"] = outputs
 	}
 
 	return []any{map[string]any{
@@ -227,12 +324,7 @@ func (s armScope) wrapInInstallRG(name string, params map[string]nestedParam, re
 				"scope": "inner",
 			},
 			"parameters": outerParams,
-			"template": map[string]any{
-				"$schema":        rgTemplateSchema,
-				"contentVersion": "1.0.0.0",
-				"parameters":     innerParams,
-				"resources":      resources,
-			},
+			"template":   inner,
 		},
 	}}
 }

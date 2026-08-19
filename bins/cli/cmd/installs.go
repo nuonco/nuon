@@ -950,17 +950,30 @@ reprovisioning the sandbox.`,
 	}
 	installsCmds.AddCommand(unsetCurrentInstallCmd)
 
+	var reprovisionStackOnly, reprovisionSkipComponents bool
 	reprovisionInstallCmd := &cobra.Command{
 		Use:   "reprovision",
 		Short: "Reprovision install",
-		Long:  "Reprovision an install sandbox",
+		Long: `Reprovision an install: the stack, then the sandbox, then all components.
+
+With --stack-only, only the stack is reprovisioned — the runner and its
+infrastructure are recreated and the sandbox is left alone. This is the same as
+` + "`nuon installs stacks reprovision`" + `.`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
+			if reprovisionSkipComponents && !reprovisionStackOnly {
+				return ui.PrintError(&ui.CLIUserError{Msg: "--skip-components is only supported with --stack-only"})
+			}
+			if reprovisionStackOnly {
+				return svc.ReprovisionStack(cmd.Context(), id, reprovisionSkipComponents, PrintJSON)
+			}
 			return svc.Reprovision(cmd.Context(), id, PrintJSON)
 		}),
 	}
 	reprovisionInstallCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	reprovisionInstallCmd.MarkFlagRequired("install-id")
+	reprovisionInstallCmd.Flags().BoolVar(&reprovisionStackOnly, "stack-only", false, "Only reprovision the install stack, leaving the sandbox untouched")
+	reprovisionInstallCmd.Flags().BoolVar(&reprovisionSkipComponents, "skip-components", false, "Skip deploying components after reprovisioning the stack (--stack-only only)")
 	installsCmds.AddCommand(reprovisionInstallCmd)
 
 	deprovisionInstallCmd := &cobra.Command{

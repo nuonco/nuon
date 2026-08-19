@@ -24,9 +24,10 @@ func TestArmScope_ResourceGroupExpressionsMatchLegacyLiterals(t *testing.T) {
 		{"locationExpr", s.locationExpr(), "[resourceGroup().location]"},
 		{"rgNameExpr", s.rgNameExpr(), "[resourceGroup().name]"},
 		{"rgIDExpr", s.rgIDExpr(), "[resourceGroup().id]"},
+		{"rootLocationRef", s.rootLocationRef(), "[parameters('location')]"},
 		{
 			"rgResourceIDExpr",
-			s.rgResourceIDExpr("Microsoft.KeyVault/vaults", keyVaultNameInner),
+			s.rgResourceIDExpr("Microsoft.KeyVault/vaults", s.keyVaultNameInner()),
 			"[resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))]",
 		},
 	} {
@@ -41,13 +42,14 @@ func TestArmScope_SubscriptionExpressions(t *testing.T) {
 
 	for _, tc := range []struct{ name, got, want string }{
 		{"rootSchema", s.rootSchema(), "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#"},
-		{"locationExpr", s.locationExpr(), "[parameters('location')]"},
-		{"rgNameExpr", s.rgNameExpr(), "[parameters('installResourceGroupName')]"},
-		{"rgIDExpr", s.rgIDExpr(), "[format('{0}/resourceGroups/{1}', subscription().id, parameters('installResourceGroupName'))]"},
+		{"locationExpr", s.locationExpr(), "[variables('location')]"},
+		{"rootLocationRef", s.rootLocationRef(), "[variables('location')]"},
+		{"rgNameExpr", s.rgNameExpr(), "[variables('installResourceGroupName')]"},
+		{"rgIDExpr", s.rgIDExpr(), "[format('{0}/resourceGroups/{1}', subscription().id, variables('installResourceGroupName'))]"},
 		{
 			"rgResourceIDExpr",
-			s.rgResourceIDExpr("Microsoft.KeyVault/vaults", keyVaultNameInner),
-			"[resourceId(subscription().subscriptionId, parameters('installResourceGroupName'), 'Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))]",
+			s.rgResourceIDExpr("Microsoft.KeyVault/vaults", s.keyVaultNameInner()),
+			"[resourceId(subscription().subscriptionId, variables('installResourceGroupName'), 'Microsoft.KeyVault/vaults', take(format('{0}', variables('nuonInstallID')), 24))]",
 		},
 	} {
 		if tc.got != tc.want {
@@ -124,8 +126,19 @@ func TestGetAzureTemplate_RGScopeUnchanged(t *testing.T) {
 				}
 			}
 
-			if strings.Contains(body, installRGParamName) {
-				t.Errorf("%s must not appear at resource-group scope", installRGParamName)
+			if strings.Contains(body, installRGVarName) {
+				t.Errorf("%s must not appear at resource-group scope", installRGVarName)
+			}
+
+			// The install resource group is created by the template only at
+			// subscription scope. At resource-group scope the customer creates it
+			// before deploying, and declaring one here is InvalidTemplate.
+			armTmpl, err := tmpl.getAzureTemplate(fixture.build())
+			if err != nil {
+				t.Fatalf("render: %v", err)
+			}
+			if got := countResourceType(armTmpl.Resources, "Microsoft.Resources/resourceGroups"); got != 0 {
+				t.Errorf("resource-group scope declared %d resource groups; it must declare none", got)
 			}
 		})
 	}
@@ -143,8 +156,8 @@ func TestArmScope_InstallRGResource(t *testing.T) {
 	for k, want := range map[string]string{
 		"type":       "Microsoft.Resources/resourceGroups",
 		"apiVersion": "2021-04-01",
-		"name":       "[parameters('installResourceGroupName')]",
-		"location":   "[parameters('location')]",
+		"name":       "[variables('installResourceGroupName')]",
+		"location":   "[variables('location')]",
 		"tags":       "[variables('commonTags')]",
 	} {
 		if got := rg[k]; got != want {
@@ -176,10 +189,10 @@ func TestArmScope_TargetInstallRG(t *testing.T) {
 		dep := map[string]any{"name": "runnerDeployment", "dependsOn": []string{"vnetDeployment", "uami"}}
 		armScope{subscription: true}.targetInstallRG(dep)
 
-		if got := dep["resourceGroup"]; got != "[parameters('installResourceGroupName')]" {
+		if got := dep["resourceGroup"]; got != "[variables('installResourceGroupName')]" {
 			t.Errorf("resourceGroup = %v", got)
 		}
-		want := []string{"vnetDeployment", "uami", "[resourceId('Microsoft.Resources/resourceGroups', parameters('installResourceGroupName'))]"}
+		want := []string{"vnetDeployment", "uami", "[resourceId('Microsoft.Resources/resourceGroups', variables('installResourceGroupName'))]"}
 		got := dep["dependsOn"].([]string)
 		if len(got) != len(want) {
 			t.Fatalf("dependsOn = %v, want %v", got, want)
@@ -212,8 +225,8 @@ func TestArmScope_TargetSubscription(t *testing.T) {
 	}
 
 	armScope{subscription: true}.targetSubscription(dep)
-	if got := dep["location"]; got != "[parameters('location')]" {
-		t.Errorf("location = %v, want [parameters('location')]", got)
+	if got := dep["location"]; got != "[variables('location')]" {
+		t.Errorf("location = %v, want [variables('location')]", got)
 	}
 	if _, ok := dep["resourceGroup"]; ok {
 		t.Error("a subscription-targeted deployment must not carry resourceGroup")
@@ -232,7 +245,7 @@ func TestBuiltInDeployments_TargetInstallRGAtSubscriptionScope(t *testing.T) {
 		"runner": tmpl.getDefaultRunnerDeployment(inp, nil, armScope{subscription: true}),
 	} {
 		t.Run(name, func(t *testing.T) {
-			if got := dep["resourceGroup"]; got != "[parameters('installResourceGroupName')]" {
+			if got := dep["resourceGroup"]; got != "[variables('installResourceGroupName')]" {
 				t.Errorf("resourceGroup = %v, want the install resource group", got)
 			}
 			if _, ok := dep["location"]; ok {
@@ -243,7 +256,7 @@ func TestBuiltInDeployments_TargetInstallRGAtSubscriptionScope(t *testing.T) {
 			if !ok {
 				t.Fatalf("dependsOn missing or wrong type: %v", dep["dependsOn"])
 			}
-			if !slices.Contains(deps, "[resourceId('Microsoft.Resources/resourceGroups', parameters('installResourceGroupName'))]") {
+			if !slices.Contains(deps, "[resourceId('Microsoft.Resources/resourceGroups', variables('installResourceGroupName'))]") {
 				t.Errorf("dependsOn does not wait for the resource group: %v", deps)
 			}
 		})
@@ -294,12 +307,15 @@ func TestGetAzureTemplate_SubscriptionScopeRoot(t *testing.T) {
 
 	// The portal renders a form from the parameters, so a parameter without a
 	// default is an empty required field the customer has to guess.
-	p, ok := armTmpl.Parameters[installRGParamName]
-	if !ok {
-		t.Fatalf("%s parameter missing", installRGParamName)
+	// A variable, so the portal never renders a form field for it, holding a literal
+	// that matches the group name the resource-group-scope flow tells customers to
+	// create by hand — nothing downstream moves.
+	want := minimalTemplateInput().Install.ID + "-rg"
+	if got := armTmpl.Variables[installRGVarName]; got != want {
+		t.Errorf("variable %s = %v, want the literal %q", installRGVarName, got, want)
 	}
-	if p.DefaultValue == nil {
-		t.Errorf("%s has no default", installRGParamName)
+	if _, ok := armTmpl.Parameters[installRGVarName]; ok {
+		t.Errorf("%s must not be a parameter: the portal would show it as an editable field", installRGVarName)
 	}
 	for name, param := range armTmpl.Parameters {
 		if param.DefaultValue == nil {
@@ -309,6 +325,71 @@ func TestGetAzureTemplate_SubscriptionScopeRoot(t *testing.T) {
 
 	if got := countResourceType(armTmpl.Resources, "Microsoft.Resources/resourceGroups"); got != 1 {
 		t.Errorf("expected exactly one resource group declaration, got %d", got)
+	}
+}
+
+// Both values are Nuon-internal and not customer-configurable, and the plain
+// deployment blade renders a field for every parameter with no way to hide one. As
+// variables they stay out of the form entirely.
+func TestGetAzureTemplate_SubscriptionScopeHidesNuonInternalsFromTheForm(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+	inp := subscriptionTemplateInput()
+
+	armTmpl, err := tmpl.getAzureTemplate(inp)
+	if err != nil {
+		t.Fatalf("render at subscription scope: %v", err)
+	}
+
+	for name, want := range map[string]string{
+		installRGVarName: installResourceGroupName(inp.Install.ID),
+		locationVarName:  inp.Install.AzureAccount.Location,
+	} {
+		if got := armTmpl.Variables[name]; got != want {
+			t.Errorf("variable %s = %v, want %q", name, got, want)
+		}
+		if _, ok := armTmpl.Parameters[name]; ok {
+			t.Errorf("%s must not be a parameter: the portal would render it as an editable field", name)
+		}
+	}
+
+	// Nothing may still be reaching for the parameter that no longer exists.
+	blob, err := json.Marshal(armTmpl)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if strings.Contains(string(blob), "parameters('installResourceGroupName')") {
+		t.Error("template references parameters('installResourceGroupName'), which is a variable at subscription scope")
+	}
+}
+
+// The portal prompts for a Region that a quick link cannot pre-set, and a
+// subscription-scoped deployment record's location is immutable — so Nuon has to
+// learn where the customer actually deployed rather than assume.
+func TestGetAzureTemplate_DeploymentLocationReportedOnlyAtSubscriptionScope(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+
+	sub := tmpl.getPhoneHomeResources(subscriptionTemplateInput(), nil, nil, armScope{subscription: true})
+	blob, err := json.Marshal(sub)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	for _, want := range []string{"DEPLOYMENT_LOCATION", "[deployment().location]", "deployment_location"} {
+		if !strings.Contains(string(blob), want) {
+			t.Errorf("subscription scope phone-home missing %s", want)
+		}
+	}
+
+	// deployment().location does not exist at resource-group scope, and emitting the
+	// field there would drift the golden template for every existing install.
+	rg := tmpl.getPhoneHomeResources(minimalTemplateInput(), nil, nil, armScope{})
+	rgBlob, err := json.Marshal(rg)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	for _, unwanted := range []string{"DEPLOYMENT_LOCATION", "deployment().location", "deployment_location"} {
+		if strings.Contains(string(rgBlob), unwanted) {
+			t.Errorf("resource-group scope phone-home must not contain %s", unwanted)
+		}
 	}
 }
 

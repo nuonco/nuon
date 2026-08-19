@@ -14,7 +14,17 @@ func envToken(s string) string {
 	return strings.ToUpper(envNameRegexp.ReplaceAllString(s, "_"))
 }
 
-func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs, scope armScope) []any {
+var camelBoundaryRegexp = regexp.MustCompile(`([a-z0-9])([A-Z])`)
+
+// snakeCase converts an ARM output name to the snake_case an install_stack
+// output key uses, so ARM's virtualNetworkId reaches a template as
+// vnet_virtual_network_id rather than vnet_virtualNetworkId.
+func snakeCase(s string) string {
+	s = camelBoundaryRegexp.ReplaceAllString(s, "${1}_${2}")
+	return strings.ToLower(envNameRegexp.ReplaceAllString(s, "_"))
+}
+
+func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs, vnetExtraOutputs []string, scope armScope) []any {
 	phoneHomeURL := inp.CloudFormationStackVersion.PhoneHomeURL
 
 	operationIDs := azureOperationIdentities(inp.AppCfg)
@@ -24,11 +34,12 @@ func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutpu
 	var secretPayloadFields []string
 	for _, secret := range inp.AppCfg.SecretsConfig.Secrets {
 		envName := fmt.Sprintf("SECRET_%s_ID", secret.Name)
-		// Construct the Key Vault secret URI from the vault name and secret name.
-		// Secrets are customer pre-created; we reference them by convention.
-		// Azure Key Vault secret names only allow alphanumeric characters and hyphens.
-		kvSecretName := strings.ReplaceAll(secret.Name, "_", "-")
-		envValue := fmt.Sprintf("[format('https://{0}.vault.azure.net/secrets/%s', take(format('{0}', parameters('nuonInstallID')), 24))]", kvSecretName)
+		// Construct the Key Vault secret URI from the vault name and secret name. The
+		// secret itself is created by keyVaultDeployment at subscription scope, and by
+		// the customer beforehand at resource-group scope; either way it is referenced
+		// by this convention rather than read.
+		kvSecretName := azureKeyVaultSecretName(secret.Name)
+		envValue := fmt.Sprintf("[format('https://{0}.vault.azure.net/secrets/%s', %s)]", kvSecretName, scope.keyVaultNameInner())
 		secretEnvVars = append(secretEnvVars, map[string]any{"name": envName, "value": envValue})
 		secretPayloadFields = append(secretPayloadFields, fmt.Sprintf(`  "%s_secret_id": "$%s"`, secret.Name, envName))
 	}
@@ -51,11 +62,32 @@ func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutpu
 		`  "subscription_id": "$SUBSCRIPTION_ID"`,
 		`  "subscription_tenant_id": "$SUBSCRIPTION_TENANT_ID"`,
 	}
+	// The region the customer picked in the portal, or passed to `az stack sub
+	// create`. Only meaningful at subscription scope, where deployment() carries a
+	// location and where the record's location is immutable — see
+	// AzureStackOutputs.DeploymentLocation. Gated so resource-group installs render
+	// unchanged.
+	if scope.subscription {
+		payloadFields = append(payloadFields, `  "deployment_location": "$DEPLOYMENT_LOCATION"`)
+	}
 	// Local runners have no runnerDeployment to reference.
 	if !t.cfg.UseLocalRunners {
 		payloadFields = append(payloadFields, `  "runner_identity_principal_id": "$RUNNER_IDENTITY_PRINCIPAL_ID"`)
 	}
 	payloadFields = append(payloadFields, secretPayloadFields...)
+
+	// Outputs a custom VNet template declares beyond the fixed contract. Namespaced
+	// under vnet_ because the raw names collide: a VNet stack that makes its own
+	// resource group emits resourceGroupName, which is already Nuon's install group.
+	var vnetExtraEnvVars []map[string]any
+	for _, key := range vnetExtraOutputs {
+		envName := "VNET_OUT_" + envToken(key)
+		vnetExtraEnvVars = append(vnetExtraEnvVars, map[string]any{
+			"name":  envName,
+			"value": fmt.Sprintf("[string(reference('vnetDeployment').outputs.%s.value)]", key),
+		})
+		payloadFields = append(payloadFields, fmt.Sprintf(`  "vnet_%s": "$%s"`, snakeCase(key), envName))
+	}
 
 	// Custom nested stack outputs, mirroring the AWS phone-home shape:
 	// custom_nested_stacks.<name>.outputs.<key>. Non-string ARM outputs are
@@ -111,13 +143,20 @@ fi
 	envVars := []map[string]any{
 		{"name": "SUBSCRIPTION_ID", "value": "[subscription().subscriptionId]"},
 		{"name": "SUBSCRIPTION_TENANT_ID", "value": "[subscription().tenantId]"},
+	}
+	// deployment().location exists only for subscription, management-group and
+	// tenant deployments; at resource-group scope it is not available at all.
+	if scope.subscription {
+		envVars = append(envVars, map[string]any{"name": "DEPLOYMENT_LOCATION", "value": "[deployment().location]"})
+	}
+	envVars = append(envVars, []map[string]any{
 		{"name": "RESOURCE_GROUP_ID", "value": scope.rgIDExpr()},
 		{"name": "RESOURCE_GROUP_NAME", "value": scope.rgNameExpr()},
 		{"name": "RESOURCE_GROUP_LOCATION", "value": scope.locationExpr()},
 		{"name": "VNET_ID", "value": "[reference('vnetDeployment').outputs.vnetId.value]"},
 		{"name": "VNET_NAME", "value": "[reference('vnetDeployment').outputs.vnetName.value]"},
-		{"name": "KEY_VAULT_ID", "value": scope.rgResourceIDExpr("Microsoft.KeyVault/vaults", keyVaultNameInner)},
-		{"name": "KEY_VAULT_NAME", "value": "[take(format('{0}', parameters('nuonInstallID')), 24)]"},
+		{"name": "KEY_VAULT_ID", "value": scope.rgResourceIDExpr("Microsoft.KeyVault/vaults", scope.keyVaultNameInner())},
+		{"name": "KEY_VAULT_NAME", "value": "[" + scope.keyVaultNameInner() + "]"},
 		{"name": "PUBLIC_SUBNET_1_ID", "value": "[reference('vnetDeployment').outputs.publicSubnet1Id.value]"},
 		{"name": "PUBLIC_SUBNET_1_NAME", "value": "[reference('vnetDeployment').outputs.publicSubnet1Name.value]"},
 		{"name": "PUBLIC_SUBNET_2_ID", "value": "[if(not(empty(reference('vnetDeployment').outputs.publicSubnet2Id.value)), reference('vnetDeployment').outputs.publicSubnet2Id.value, '')]"},
@@ -134,7 +173,7 @@ fi
 		{"name": "PUBLIC_SUBNET_NAMES_CSV", "value": "[reference('vnetDeployment').outputs.publicSubnetNames.value]"},
 		{"name": "PRIVATE_SUBNET_IDS_CSV", "value": "[reference('vnetDeployment').outputs.privateSubnetIds.value]"},
 		{"name": "PRIVATE_SUBNET_NAMES_CSV", "value": "[reference('vnetDeployment').outputs.privateSubnetNames.value]"},
-	}
+	}...)
 	// The runner's system-assigned identity. Secret sync and image sync run as
 	// this identity rather than a per-operation one, so a sandbox has to be able
 	// to grant it cluster access -- the Azure counterpart of the runner role ARNs
@@ -146,6 +185,7 @@ fi
 		})
 	}
 	envVars = append(envVars, secretEnvVars...)
+	envVars = append(envVars, vnetExtraEnvVars...)
 	envVars = append(envVars, customEnvVars...)
 	envVars = append(envVars, identityEnvVars...)
 
@@ -159,6 +199,9 @@ fi
 		dependsOn = append(dependsOn, uamiDependsOn...)
 	}
 	dependsOn = append(dependsOn, operationIdentitySetupDependencies(operationIDs, scope)...)
+	// The payload reports the vault's ID and a URI per secret, so it must not run
+	// before they exist.
+	dependsOn = append(dependsOn, scope.keyVaultDependsOn()...)
 
 	// Microsoft.Resources/deploymentScripts is resource-group-scoped only, so at
 	// subscription scope the script moves into the install resource group.
@@ -197,12 +240,12 @@ fi
 	}
 
 	resources := scope.wrapInInstallRG(phoneHomeDeploymentName, map[string]nestedParam{
-		"nuonInstallID":        {typ: "string", value: "[parameters('nuonInstallID')]"},
-		"location":             {typ: "string", value: "[parameters('location')]"},
+		"nuonInstallID":        {typ: "string", value: scope.nuonIDRef("nuonInstallID")},
+		"location":             {typ: "string", value: scope.rootLocationRef()},
 		"commonTags":           {typ: "object", value: "[variables('commonTags')]"},
 		"deployTimestamp":      {typ: "string", value: "[parameters('deployTimestamp')]"},
 		"environmentVariables": {typ: "array", value: envVars},
-	}, []any{script})
+	}, []any{script}, nil)
 
 	// Everything the script reports on has to exist first, and the script can no
 	// longer say so itself — inner evaluation hides the root.

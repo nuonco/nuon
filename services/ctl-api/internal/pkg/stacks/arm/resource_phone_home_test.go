@@ -14,7 +14,7 @@ import (
 // subscription-scope shape has its own tests.
 func phoneHomeScript(t *testing.T, tmpl *Templates, inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs) map[string]any {
 	t.Helper()
-	res := tmpl.getPhoneHomeResources(inp, customOutputs, armScope{})
+	res := tmpl.getPhoneHomeResources(inp, customOutputs, nil, armScope{})
 	if len(res) != 1 {
 		t.Fatalf("expected a single resource at resource-group scope, got %d", len(res))
 	}
