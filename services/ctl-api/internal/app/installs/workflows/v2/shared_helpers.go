@@ -107,9 +107,7 @@ func componentEnabledFromInputs(enabledInputs map[string]*string, ccc *app.Compo
 // trio used by the dep-aware deploy logic from an AppConfig's pinned
 // ComponentConfigConnections. cccByComp records membership of each component
 // in the install's pinned app config snapshot — used to skip deps that are
-// not part of this app config version. The build-to-push for each dep is
-// resolved at workflow generation time via the GetLatestActiveComponentBuild
-// activity (global heuristic — no cross-ACV pinning).
+// not part of this app config version and to pin build resolution.
 func buildComponentConfigMaps(appCfg *app.AppConfig) (
 	map[string]app.Component,
 	map[string][]string,
@@ -125,6 +123,21 @@ func buildComponentConfigMaps(appCfg *app.AppConfig) (
 		cccByComp[ccc.ComponentID] = ccc
 	}
 	return components, depIDsByComp, cccByComp
+}
+
+func resolvePinnedComponentBuild(ctx workflow.Context, dg *genCtx, compID string) (*app.ComponentBuild, error) {
+	ccc, ok := dg.cccByComp[compID]
+	if !ok || ccc == nil {
+		return nil, nil
+	}
+	return activities.AwaitGetComponentBuildForConfigConnectionByComponentConfigConnectionID(ctx, ccc.ID)
+}
+
+func pinnedCCCID(dg *genCtx, compID string) string {
+	if ccc, ok := dg.cccByComp[compID]; ok && ccc != nil {
+		return ccc.ID
+	}
+	return ""
 }
 
 // filterActionWorkflowsByTrigger filters pre-fetched install action workflows by trigger type,
@@ -335,30 +348,20 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 
 		// sync image
 		if comp.Type.IsImage() && !dg.flw.PlanOnly {
-			// Resolve the build to push using the global "latest active
-			// build for this component" heuristic. This does NOT enforce
-			// per-AppConfig-version pinning — a deploy of an install
-			// pinned to ACV vN may pick up a build created against vN+1
-			// or vN-1. Cross-ACV correctness is a deferred fix.
-			//
-			// When no Active build exists yet (e.g. the build is still
-			// in-flight), leave BuildID empty: the signal falls back to
-			// resolving the latest build at run time. This keeps a single
-			// component without an active build from aborting generation of
-			// the entire deploy workflow.
-			latestBuild, err := activities.AwaitGetLatestActiveComponentBuildByComponentID(ctx, comp.ID)
+			latestBuild, err := resolvePinnedComponentBuild(ctx, dg, compID)
 			if err != nil {
-				return nil, errors.Wrapf(err, "unable to resolve latest active build for image component %s", comp.Name)
+				return nil, errors.Wrapf(err, "unable to resolve pinned build for image component %s", comp.Name)
 			}
 			var buildID string
 			if latestBuild != nil {
 				buildID = latestBuild.ID
 			}
 			deployStep, err := dg.sg.installSignalStep(ctx, dg.installID, "sync "+comp.Name, pgtype.Hstore{}, &componentsyncimage.Signal{
-				InstallComponentID: installComponentID,
-				ComponentID:        comp.ID,
-				BuildID:            buildID,
-				Role:               dg.flw.Role,
+				InstallComponentID:          installComponentID,
+				ComponentID:                 comp.ID,
+				BuildID:                     buildID,
+				ComponentConfigConnectionID: pinnedCCCID(dg, compID),
+				Role:                        dg.flw.Role,
 			}, dg.flw.PlanOnly)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
@@ -370,25 +373,21 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 				continue
 			}
 
-			// Resolve the build to deploy using the global heuristic.
-			// Same caveat as the image-sync branch above — cross-ACV
-			// build leakage is possible. When no Active build exists yet,
-			// leave BuildID empty so the signal resolves the latest build
-			// at run time rather than aborting the whole workflow.
-			latestBuild, err := activities.AwaitGetLatestActiveComponentBuildByComponentID(ctx, comp.ID)
+			latestBuild, err := resolvePinnedComponentBuild(ctx, dg, compID)
 			if err != nil {
-				return nil, errors.Wrapf(err, "unable to resolve latest active build for component %s", comp.Name)
+				return nil, errors.Wrapf(err, "unable to resolve pinned build for component %s", comp.Name)
 			}
 			var buildID string
 			if latestBuild != nil {
 				buildID = latestBuild.ID
 			}
 			planStep, err := dg.sg.installSignalStep(ctx, dg.installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
-				InstallComponentID: installComponentID,
-				InstallID:          dg.installID,
-				ComponentID:        comp.ID,
-				BuildID:            buildID,
-				Role:               dg.flw.Role,
+				InstallComponentID:          installComponentID,
+				InstallID:                   dg.installID,
+				ComponentID:                 comp.ID,
+				BuildID:                     buildID,
+				ComponentConfigConnectionID: pinnedCCCID(dg, compID),
+				Role:                        dg.flw.Role,
 			}, dg.flw.PlanOnly, WithSkippable(false))
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
@@ -558,22 +557,13 @@ func getImageDepSyncSteps(
 			continue
 		}
 
-		// Membership check only: skip deps that aren't part of this app
-		// config snapshot. We don't use the CCC for build resolution —
-		// see note below on cross-ACV leakage.
 		if depCCC, hasCCC := dg.cccByComp[depID]; !hasCCC || depCCC == nil {
 			continue
 		}
 
-		// Resolve the dep's latest Active build via the global heuristic
-		// (most recent Active build for this component across all CCCs).
-		// This can leak a build from a newer/older AppConfig version into
-		// the sync decision — cross-ACV correctness is a deferred fix.
-		// Skip silently when no Active build exists yet — the next deploy
-		// attempt will pick it up once the build lands.
-		latestActive, err := activities.AwaitGetLatestActiveComponentBuildByComponentID(ctx, depID)
+		latestActive, err := resolvePinnedComponentBuild(ctx, dg, depID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to resolve latest active build for image dep %s", depID)
+			return nil, errors.Wrapf(err, "unable to resolve pinned build for image dep %s", depID)
 		}
 		if latestActive == nil {
 			continue
