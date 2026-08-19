@@ -1,0 +1,59 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "languageVersion": "2.0",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.46.1.21595",
+      "templateHash": "16230692149418818205"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "nuonInstallID": {
+      "type": "string"
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.0.0.0/16"
+    }
+  },
+  "resources": {
+    "identity": {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2023-01-31",
+      "name": "[format('{0}-identity', parameters('nuonInstallID'))]",
+      "location": "[parameters('location')]"
+    },
+    "virtualNetwork": {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}-vnet', parameters('nuonInstallID'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[parameters('vnetAddressPrefix')]"
+          ]
+        }
+      },
+      "dependsOn": [
+        "identity"
+      ]
+    }
+  },
+  "outputs": {
+    "identityPrincipalId": {
+      "type": "string",
+      "value": "[reference('identity').principalId]"
+    },
+    "networkName": {
+      "type": "string",
+      "value": "[format('{0}-vnet', parameters('nuonInstallID'))]"
+    }
+  }
+}
