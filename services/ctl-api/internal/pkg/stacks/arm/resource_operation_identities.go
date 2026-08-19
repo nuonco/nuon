@@ -92,16 +92,29 @@ func flattenAzurePolicies(policies []app.AppAWSIAMPolicyConfig) (actions []strin
 	return actions, builtInRoles
 }
 
-func uamiResourceIDExpr(suffix string) string {
-	return fmt.Sprintf("[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-%s', parameters('nuonInstallID')))]", suffix)
+// identitiesDeploymentName is the nested deployment the UAMIs and their built-in
+// role assignments move into at subscription scope. Anything in the root that
+// needs one of them depends on this rather than on the identity directly: a root
+// resource cannot depend on a resource declared inside a nested deployment.
+const identitiesDeploymentName = "identitiesDeployment"
+
+const uamiResourceType = "Microsoft.ManagedIdentity/userAssignedIdentities"
+
+// The uami*Expr helpers take the scope of the expression's *reader*, not of the
+// identity. Read from the root at subscription scope they need the fully
+// qualified four-argument form; read from inside identitiesDeployment they are
+// back at resource-group scope and take the short form, which is also exactly
+// what resource-group-scope installs have always emitted.
+func uamiResourceIDExpr(suffix string, scope armScope) string {
+	return scope.rgResourceIDExpr(uamiResourceType, uamiNameInner(suffix))
 }
 
-func uamiPrincipalIDExpr(suffix string) string {
-	return fmt.Sprintf("[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-%s', parameters('nuonInstallID'))), '2023-01-31').principalId]", suffix)
+func uamiPrincipalIDExpr(suffix string, scope armScope) string {
+	return fmt.Sprintf("[reference(%s, '2023-01-31').principalId]", scope.rgResourceIDInner(uamiResourceType, uamiNameInner(suffix)))
 }
 
-func uamiClientIDExpr(suffix string) string {
-	return fmt.Sprintf("[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('{0}-%s', parameters('nuonInstallID'))), '2023-01-31').clientId]", suffix)
+func uamiClientIDExpr(suffix string, scope armScope) string {
+	return fmt.Sprintf("[reference(%s, '2023-01-31').clientId]", scope.rgResourceIDInner(uamiResourceType, uamiNameInner(suffix)))
 }
 
 func uamiNameExpr(suffix string) string {
@@ -114,22 +127,60 @@ func uamiNameInner(suffix string) string {
 	return fmt.Sprintf("format('{0}-%s', parameters('nuonInstallID'))", suffix)
 }
 
-func (t *Templates) getOperationIdentityResources(ids []azureOperationIdentity, scope armScope) []any {
-	var resources []any
+func (t *Templates) uamiResource(id azureOperationIdentity, scope armScope) map[string]any {
+	return map[string]any{
+		"type":       uamiResourceType,
+		"apiVersion": "2023-01-31",
+		"name":       uamiNameExpr(id.suffix),
+		"location":   "[parameters('location')]",
+		"tags":       scope.innerCommonTagsExpr(),
+	}
+}
 
-	for _, id := range ids {
-		resources = append(resources, map[string]any{
-			"type":       "Microsoft.ManagedIdentity/userAssignedIdentities",
-			"apiVersion": "2023-01-31",
-			"name":       uamiNameExpr(id.suffix),
-			"location":   "[parameters('location')]",
-			"tags":       "[variables('commonTags')]",
-		})
+func (t *Templates) getOperationIdentityResources(ids []azureOperationIdentity, scope armScope) []any {
+	// Built-in role assignments are always emitted at resource-group scope: at
+	// resource-group scope that is the root, and at subscription scope it is inside
+	// the wrapper, where resourceGroup() resolves to the install group again. Either
+	// way their guid(resourceGroup().id, …) names are identical, which is what keeps
+	// redeploys off RoleAssignmentExists.
+	inner := armScope{}
+
+	if !scope.subscription {
+		// Emission order is load-bearing for the byte-identical guarantee, so keep
+		// the historical sequence exactly: every identity, then each identity's
+		// subscription role deployment followed by its built-in grants.
+		var resources []any
+		for _, id := range ids {
+			resources = append(resources, t.uamiResource(id, scope))
+		}
+		for _, id := range ids {
+			resources = append(resources, t.getOperationIdentityCustomRole(id, scope))
+			resources = append(resources, t.getOperationIdentityBuiltInRoleAssignments(id, inner)...)
+		}
+		return resources
 	}
 
+	// UAMIs and RG-scoped role assignments are not subscription-deployable, so they
+	// move into the install resource group together.
+	var grouped []any
+	for _, id := range ids {
+		grouped = append(grouped, t.uamiResource(id, scope))
+	}
+	for _, id := range ids {
+		grouped = append(grouped, t.getOperationIdentityBuiltInRoleAssignments(id, inner)...)
+	}
+
+	resources := scope.wrapInInstallRG(identitiesDeploymentName, map[string]nestedParam{
+		"nuonInstallID": {typ: "string", value: "[parameters('nuonInstallID')]"},
+		"location":      {typ: "string", value: "[parameters('location')]"},
+		"commonTags":    {typ: "object", value: "[variables('commonTags')]"},
+	}, grouped)
+
+	// The custom role deployments target the subscription, and ARM does not allow a
+	// subscription-scoped nested deployment inside another nested deployment, so
+	// they stay in the root and read the identities across the wrapper boundary.
 	for _, id := range ids {
 		resources = append(resources, t.getOperationIdentityCustomRole(id, scope))
-		resources = append(resources, t.getOperationIdentityBuiltInRoleAssignments(id)...)
 	}
 
 	return resources
@@ -168,7 +219,7 @@ func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity, sc
 		"name":           roleDeploymentNameExpr(id),
 		"subscriptionId": "[subscription().subscriptionId]",
 		"location":       scope.locationExpr(),
-		"dependsOn":      []string{uamiResourceIDExpr(id.suffix)},
+		"dependsOn":      []string{identityDependency(id, scope)},
 		"properties": map[string]any{
 			"expressionEvaluationOptions": map[string]any{
 				"scope": "inner",
@@ -176,7 +227,7 @@ func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity, sc
 			"mode": "Incremental",
 			"parameters": map[string]any{
 				"roleName":    map[string]any{"value": fmt.Sprintf("[format('{0}-%s-role', parameters('nuonInstallID'))]", id.suffix)},
-				"principalID": map[string]any{"value": uamiPrincipalIDExpr(id.suffix)},
+				"principalID": map[string]any{"value": uamiPrincipalIDExpr(id.suffix, scope)},
 			},
 			"template": map[string]any{
 				"$schema":        "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
@@ -227,7 +278,10 @@ func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity, sc
 	}
 }
 
-func (t *Templates) getOperationIdentityBuiltInRoleAssignments(id azureOperationIdentity) []any {
+// getOperationIdentityBuiltInRoleAssignments is always called with resource-group
+// scope — see getOperationIdentityResources. The scope parameter is explicit
+// rather than hardcoded so the assumption is visible at the call site.
+func (t *Templates) getOperationIdentityBuiltInRoleAssignments(id azureOperationIdentity, scope armScope) []any {
 	var assignments []any
 	for _, role := range id.builtInRoles {
 		guid := azureBuiltInRoleGUID(role)
@@ -235,15 +289,26 @@ func (t *Templates) getOperationIdentityBuiltInRoleAssignments(id azureOperation
 			"type":       "Microsoft.Authorization/roleAssignments",
 			"apiVersion": "2022-04-01",
 			"name":       fmt.Sprintf("[guid(resourceGroup().id, %s, '%s')]", uamiNameInner(id.suffix), guid),
-			"dependsOn":  []string{uamiResourceIDExpr(id.suffix)},
+			"dependsOn":  []string{uamiResourceIDExpr(id.suffix, scope)},
 			"properties": map[string]any{
 				"roleDefinitionId": fmt.Sprintf("[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '%s')]", guid),
-				"principalId":      uamiPrincipalIDExpr(id.suffix),
+				"principalId":      uamiPrincipalIDExpr(id.suffix, scope),
 				"principalType":    "ServicePrincipal",
 			},
 		})
 	}
 	return assignments
+}
+
+// identityDependency is what a root resource waits on to know an identity exists.
+// At subscription scope the identities live inside identitiesDeployment, and a
+// root resource cannot depend on a resource declared inside a nested deployment —
+// it depends on the deployment itself.
+func identityDependency(id azureOperationIdentity, scope armScope) string {
+	if scope.subscription {
+		return identitiesDeploymentName
+	}
+	return uamiResourceIDExpr(id.suffix, scope)
 }
 
 func azureIdentityEnvName(suffix string) string {
@@ -255,7 +320,7 @@ func azureIdentityEnvName(suffix string) string {
 // operationIdentityPhoneHomeFields returns phone-home env vars and payload lines
 // carrying each identity's client ID. Custom/break-glass are native JSON objects
 // keyed by role name so they decode into map[string]string.
-func operationIdentityPhoneHomeFields(ids []azureOperationIdentity) (envVars []map[string]any, payloadFields []string) {
+func operationIdentityPhoneHomeFields(ids []azureOperationIdentity, scope armScope) (envVars []map[string]any, payloadFields []string) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -265,7 +330,7 @@ func operationIdentityPhoneHomeFields(ids []azureOperationIdentity) (envVars []m
 
 	for _, id := range ids {
 		envName := azureIdentityEnvName(id.suffix)
-		envVars = append(envVars, map[string]any{"name": envName, "value": uamiClientIDExpr(id.suffix)})
+		envVars = append(envVars, map[string]any{"name": envName, "value": uamiClientIDExpr(id.suffix, scope)})
 
 		switch id.kind {
 		case "provision":
@@ -308,10 +373,15 @@ func jsonEnvObject(nameToEnv map[string]string) string {
 // operationIdentitySetupDependencies lists the role deployments and built-in
 // assignments the phone-home must wait on, so a failed role setup blocks the
 // outputs instead of reporting half-configured identities.
-func operationIdentitySetupDependencies(ids []azureOperationIdentity) []string {
+func operationIdentitySetupDependencies(ids []azureOperationIdentity, scope armScope) []string {
 	var deps []string
 	for _, id := range ids {
 		deps = append(deps, roleDeploymentNameExpr(id))
+		if scope.subscription {
+			// The built-in assignments are inside identitiesDeployment, which the
+			// caller already depends on via operationIdentityAttachment.
+			continue
+		}
 		for _, role := range id.builtInRoles {
 			guid := azureBuiltInRoleGUID(role)
 			deps = append(deps, fmt.Sprintf("[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, %s, '%s'))]", uamiNameInner(id.suffix), guid))
@@ -320,14 +390,24 @@ func operationIdentitySetupDependencies(ids []azureOperationIdentity) []string {
 	return deps
 }
 
-func operationIdentityAttachment(ids []azureOperationIdentity) (userAssigned map[string]any, dependsOn []string) {
+// operationIdentityAttachment returns the VMSS userAssignedIdentities map and the
+// dependencies a consumer needs. scope is the consumer's scope: the runner's inner
+// template reads at resource-group scope, while the root reads at its own.
+func operationIdentityAttachment(ids []azureOperationIdentity, scope armScope) (userAssigned map[string]any, dependsOn []string) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
 	userAssigned = map[string]any{}
+	seen := map[string]bool{}
 	for _, id := range ids {
-		userAssigned[uamiResourceIDExpr(id.suffix)] = map[string]any{}
-		dependsOn = append(dependsOn, uamiResourceIDExpr(id.suffix))
+		userAssigned[uamiResourceIDExpr(id.suffix, scope)] = map[string]any{}
+
+		dep := identityDependency(id, scope)
+		if seen[dep] {
+			continue
+		}
+		seen[dep] = true
+		dependsOn = append(dependsOn, dep)
 	}
 	return userAssigned, dependsOn
 }

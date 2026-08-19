@@ -138,9 +138,80 @@ func (s armScope) targetSubscription(deployment map[string]any) {
 // ambient scope — a bare resourceId() at subscription scope produces a malformed
 // ID rather than failing loudly.
 func (s armScope) rgResourceIDExpr(resourceType, nameInner string) string {
+	return "[" + s.rgResourceIDInner(resourceType, nameInner) + "]"
+}
+
+// rgResourceIDInner is rgResourceIDExpr without the surrounding brackets, for
+// embedding in a larger expression — ARM does not allow nested [ ].
+func (s armScope) rgResourceIDInner(resourceType, nameInner string) string {
 	if s.subscription {
-		return fmt.Sprintf("[resourceId(subscription().subscriptionId, parameters('%s'), '%s', %s)]",
+		return fmt.Sprintf("resourceId(subscription().subscriptionId, parameters('%s'), '%s', %s)",
 			installRGParamName, resourceType, nameInner)
 	}
-	return fmt.Sprintf("[resourceId('%s', %s)]", resourceType, nameInner)
+	return fmt.Sprintf("resourceId('%s', %s)", resourceType, nameInner)
+}
+
+// innerCommonTagsExpr is how a resource that wrapInInstallRG may relocate should
+// reference the standard tags. At resource-group scope such a resource stays in
+// the root, where commonTags is a variable; at subscription scope it moves into a
+// nested template, where the root's variables are out of reach and the tags
+// arrive as a parameter instead.
+func (s armScope) innerCommonTagsExpr() string {
+	if s.subscription {
+		return "[parameters('commonTags')]"
+	}
+	return "[variables('commonTags')]"
+}
+
+// nestedParam is one parameter threaded into a wrapped deployment: the expression
+// evaluated at the outer scope, plus the type the inner template declares.
+type nestedParam struct {
+	typ   string
+	value any
+}
+
+// wrapInInstallRG relocates resource-group-scoped resources into the install
+// resource group via a nested deployment, and returns them untouched at
+// resource-group scope where they already live there.
+//
+// The wrapper uses inner expression evaluation, which is what makes wrapping
+// safe: resourceGroup() resolves to the install group again inside it, so
+// guid(resourceGroup().id, …) role assignment names come out byte-identical to
+// resource-group scope. Rewriting those names instead of wrapping them would
+// fail every redeploy with RoleAssignmentExists.
+//
+// The flip side of inner evaluation is that nothing from the root is visible:
+// every value the resources need must be declared in params.
+func (s armScope) wrapInInstallRG(name string, params map[string]nestedParam, resources []any) []any {
+	if !s.subscription {
+		return resources
+	}
+
+	outerParams := make(map[string]any, len(params))
+	innerParams := make(map[string]any, len(params))
+	for paramName, p := range params {
+		outerParams[paramName] = map[string]any{"value": p.value}
+		innerParams[paramName] = map[string]any{"type": p.typ}
+	}
+
+	return []any{map[string]any{
+		"type":          "Microsoft.Resources/deployments",
+		"apiVersion":    "2022-09-01",
+		"name":          name,
+		"resourceGroup": s.rgNameExpr(),
+		"dependsOn":     s.installRGDependsOn(),
+		"properties": map[string]any{
+			"mode": "Incremental",
+			"expressionEvaluationOptions": map[string]any{
+				"scope": "inner",
+			},
+			"parameters": outerParams,
+			"template": map[string]any{
+				"$schema":        rgTemplateSchema,
+				"contentVersion": "1.0.0.0",
+				"parameters":     innerParams,
+				"resources":      resources,
+			},
+		},
+	}}
 }

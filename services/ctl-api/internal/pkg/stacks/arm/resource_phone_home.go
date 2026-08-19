@@ -79,7 +79,7 @@ func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput, customOutput
 	}
 
 	// Surface each identity's client ID as a stack output.
-	identityEnvVars, identityPayloadFields := operationIdentityPhoneHomeFields(operationIDs)
+	identityEnvVars, identityPayloadFields := operationIdentityPhoneHomeFields(operationIDs, scope)
 	payloadFields = append(payloadFields, identityPayloadFields...)
 
 	payloadJSON := "{\n" + strings.Join(payloadFields, ",\n") + "\n}"
@@ -155,10 +155,10 @@ fi
 	for _, co := range customOutputs {
 		dependsOn = append(dependsOn, co.DeploymentName)
 	}
-	if _, uamiDependsOn := operationIdentityAttachment(operationIDs); len(uamiDependsOn) > 0 {
+	if _, uamiDependsOn := operationIdentityAttachment(operationIDs, scope); len(uamiDependsOn) > 0 {
 		dependsOn = append(dependsOn, uamiDependsOn...)
 	}
-	dependsOn = append(dependsOn, operationIdentitySetupDependencies(operationIDs)...)
+	dependsOn = append(dependsOn, operationIdentitySetupDependencies(operationIDs, scope)...)
 
 	return map[string]any{
 		"type":       "Microsoft.Resources/deploymentScripts",

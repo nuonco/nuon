@@ -28,7 +28,9 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 	// attachment map. Without it the identities would exist but never reach the
 	// instance, and the runner would fail with an opaque IMDS "Identity not
 	// found" at deploy time — so we reject that combination up front.
-	userAssigned, uamiDependsOn := operationIdentityAttachment(operationIDs)
+	// Read from the root: the map is a parameter value the outer scope evaluates
+	// before handing it to the custom template.
+	userAssigned, uamiDependsOn := operationIdentityAttachment(operationIDs, scope)
 	if len(userAssigned) > 0 {
 		if _, ok := armTmpl.Parameters["userAssignedIdentities"]; !ok {
 			return nil, nil, fmt.Errorf(
@@ -98,7 +100,7 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 
 	// VMSS references the operation identities, so they must exist first.
 	dependsOn := []string{"vnetDeployment"}
-	if _, uamiDependsOn := operationIdentityAttachment(operationIDs); len(uamiDependsOn) > 0 {
+	if _, uamiDependsOn := operationIdentityAttachment(operationIDs, scope); len(uamiDependsOn) > 0 {
 		dependsOn = append(dependsOn, uamiDependsOn...)
 	}
 
@@ -130,7 +132,9 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 
 func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdentity) map[string]any {
 	identity := map[string]any{"type": "SystemAssigned"}
-	if userAssigned, _ := operationIdentityAttachment(operationIDs); len(userAssigned) > 0 {
+	// The runner deployment is RG-targeted, so its inline template reads the
+	// identities at resource-group scope alongside them.
+	if userAssigned, _ := operationIdentityAttachment(operationIDs, armScope{}); len(userAssigned) > 0 {
 		identity = map[string]any{
 			"type":                   "SystemAssigned, UserAssigned",
 			"userAssignedIdentities": userAssigned,
