@@ -32,10 +32,7 @@ func (h *Helpers) CreateComponentDependencies(ctx context.Context, compID string
 	return h.CreateComponentDependenciesWithDB(ctx, h.db, compID, dependencyIDs)
 }
 
-// CreateComponentDependenciesWithDB is the transaction-aware form. Callers inside
-// a transaction must use it: both sides of the dependency are often created in the
-// same transaction, and h.db cannot see them, so the insert fails the component
-// foreign keys.
+// Callers inside a transaction must use this, or the component FKs fail.
 func (h *Helpers) CreateComponentDependenciesWithDB(ctx context.Context, db *gorm.DB, compID string, dependencyIDs []string) error {
 	if len(dependencyIDs) < 1 {
 		return nil

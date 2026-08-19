@@ -123,10 +123,7 @@ func (s *SyncFieldsTestSuite) syncEmpty() (context.Context, *app.App, *app.AppCo
 
 // syncInto runs the branch-sync path — build dispatch off — into a fresh app
 // config on an existing app.
-//
-// The transaction mirrors Run: every step shares one handle, so a helper that
-// writes or reads through its own *gorm.DB instead fails here the way it fails
-// in production.
+// The transaction mirrors Run, so a helper that bypasses it fails here too.
 func (s *SyncFieldsTestSuite) syncInto(ctx context.Context, appID string, cfg *config.AppConfig) *app.AppConfig {
 	appCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), appID)
 

@@ -23,10 +23,7 @@ func (h *Helpers) CreateAppBranchConfig(
 	return h.CreateAppBranchConfigWithDB(ctx, h.db, appBranchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, postDeployRunbookIDs)
 }
 
-// CreateAppBranchConfigWithDB is the transaction-aware form. Callers inside a
-// transaction must use it: the branch this config points at is often created in
-// the same transaction, and h.db cannot see it, so the insert fails the
-// app_branch_id foreign key.
+// Callers inside a transaction must use this, or the app_branch_id FK fails.
 func (h *Helpers) CreateAppBranchConfigWithDB(
 	ctx context.Context,
 	db *gorm.DB,

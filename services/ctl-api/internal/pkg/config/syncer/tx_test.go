@@ -6,10 +6,7 @@ import (
 	testseedconfig "github.com/nuonco/nuon/services/ctl-api/tests/testseed/config"
 )
 
-// The sync steps run inside one transaction (see Run), so every write and every
-// read has to go through that handle. A helper that falls back to its own
-// *gorm.DB cannot see rows the sync just created, which surfaces as a foreign
-// key violation rather than as missing data.
+// A helper that bypasses the sync transaction fails the foreign key instead of seeing the new rows.
 func (s *SyncFieldsTestSuite) TestNewBranchGetsAConfig() {
 	cfg := testseedconfig.BuildMinimalAppConfig()
 	cfg.Branches = []*config.AppBranchConfig{

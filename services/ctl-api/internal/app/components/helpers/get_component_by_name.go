@@ -31,9 +31,7 @@ func (s *Helpers) GetComponentIDs(ctx context.Context, appID string, comps []str
 	return s.GetComponentIDsWithDB(ctx, s.db, appID, comps)
 }
 
-// GetComponentIDsWithDB is the transaction-aware form. Callers inside a
-// transaction must use it, or components created earlier in that transaction
-// resolve as "not created yet".
+// Callers inside a transaction must use this, or in-transaction components read as missing.
 func (s *Helpers) GetComponentIDsWithDB(ctx context.Context, db *gorm.DB, appID string, comps []string) ([]string, error) {
 	if len(comps) == 0 {
 		return []string{}, nil
