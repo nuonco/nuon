@@ -18,7 +18,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/syncappconfiginstalls"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	configcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/configcreated"
-	createdsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/created"
 	updatecomponenttype "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/updatecomponenttype"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
@@ -111,16 +110,6 @@ func (a *Activities) applyAppConfig(ctx context.Context, req *ApplyAppConfigInpu
 		return nil, fmt.Errorf("unable to sync config: %w", err)
 	}
 
-	if err := a.provisionCreatedComponents(ctx, result.ComponentsCreated); err != nil {
-		return nil, err
-	}
-
-	for _, branchID := range result.AppBranchesCreated {
-		if err := a.deps.AppsHelpers.EnsureAppBranchQueues(ctx, branchID); err != nil {
-			return nil, fmt.Errorf("unable to create queues for app branch %s: %w", branchID, err)
-		}
-	}
-
 	toBuild := make([]ComponentToBuild, 0, len(result.ComponentsScheduled))
 	for _, cmp := range result.ComponentsScheduled {
 		toBuild = append(toBuild, ComponentToBuild{
@@ -136,36 +125,6 @@ func (a *Activities) applyAppConfig(ctx context.Context, req *ApplyAppConfigInpu
 		RunbookIDs:          result.RunbookIDs,
 		ComponentIDsToBuild: toBuild,
 	}, nil
-}
-
-// Runs post-commit: starting queue workflows inside the sync transaction would
-// leave them behind for components a rollback removed.
-func (a *Activities) provisionCreatedComponents(ctx context.Context, componentIDs []string) error {
-	for _, componentID := range componentIDs {
-		if _, err := a.deps.ComponentHelpers.EnsureComponentQueues(ctx, componentID); err != nil {
-			return fmt.Errorf("unable to create queues for component %s: %w", componentID, err)
-		}
-
-		q, err := a.queueClient.GetQueueByOwner(ctx, componentID, "components")
-		if err != nil {
-			return fmt.Errorf("unable to get queue for component %s: %w", componentID, err)
-		}
-
-		dedupeKey := fmt.Sprintf("component-created:%s", componentID)
-		if _, err := a.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-			QueueID:   q.ID,
-			OwnerID:   componentID,
-			OwnerType: "components",
-			DedupeKey: &dedupeKey,
-			Signal: &createdsignal.Signal{
-				ComponentID: componentID,
-			},
-		}); err != nil {
-			return fmt.Errorf("unable to enqueue created signal for component %s: %w", componentID, err)
-		}
-	}
-
-	return nil
 }
 
 type FinalizeAppConfigSyncInput struct {
