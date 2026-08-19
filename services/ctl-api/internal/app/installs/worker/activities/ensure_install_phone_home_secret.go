@@ -31,6 +31,9 @@ const (
 	phoneHomeSkipNoTargetAccount = "install has no target account id"
 	phoneHomeSkipNoManagement    = "control plane cannot reach management secrets manager"
 	phoneHomeSkipSandboxMode     = "install is in sandbox mode"
+
+	phoneHomeSkipAzureDisabled  = "org feature phone-home-auth-azure is disabled"
+	phoneHomeSkipNoSubscription = "install has no target subscription id"
 )
 
 type EnsureInstallPhoneHomeSecretRequest struct {
@@ -59,6 +62,10 @@ type EnsureInstallPhoneHomeSecretResponse struct {
 	TokensMinted  int  `json:"tokens_minted"`
 	TokensRevoked int  `json:"tokens_revoked"`
 	SecretWritten bool `json:"secret_written"`
+
+	// Set on Azure instead of a secret: the stack presents a managed identity, so there
+	// is no credential to publish, only a name for the template and the verifier to agree on.
+	IdentityName string `json:"identity_name,omitempty"`
 }
 
 // EnsureInstallPhoneHomeSecret reconciles an install's phone-home credentials.
@@ -90,11 +97,16 @@ func (a *Activities) EnsureInstallPhoneHomeSecret(
 	var install app.Install
 	if res := a.db.WithContext(ctx).
 		Preload("AWSAccount").
+		Preload("AzureAccount").
 		Preload("Org").
 		Preload("InstallStack.InstallStackVersions").
 		Where(app.Install{ID: req.InstallID}).
 		First(&install); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error)
+	}
+
+	if install.AzureAccount != nil {
+		return a.ensureAzurePhoneHomeIdentity(ctx, &install, req.IgnoreOrgFeatureGate)
 	}
 
 	if skip, err := a.phoneHomeSecretSkipReason(ctx, &install, req.IgnoreOrgFeatureGate); err != nil {

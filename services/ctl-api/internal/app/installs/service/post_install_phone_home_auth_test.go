@@ -143,11 +143,35 @@ func TestCheckObservedCloudAccount(t *testing.T) {
 			wantReason: phoneHomeAuthOK,
 		},
 		{
-			// GCP and Azure stacks post no account_id; rejecting them here would break
-			// clouds this check does not cover.
+			// A stack that posts no identifier at all has nothing to contradict.
 			name:       "a payload without an account is not a rejection",
 			install:    &app.Install{ExpectedAccountID: expected},
 			props:      map[string]any{},
+			wantReason: phoneHomeAuthOK,
+		},
+		{
+			name:       "matching azure subscription passes",
+			install:    &app.Install{ExpectedSubscriptionID: "AAAAAAAA-bbbb-cccc-dddd-eeeeeeeeeeee"},
+			props:      map[string]any{"subscription_id": "aaaaaaaa-BBBB-cccc-dddd-eeeeeeeeeeee"},
+			wantReason: phoneHomeAuthOK,
+		},
+		{
+			name:       "differing azure subscription is rejected",
+			install:    &app.Install{ExpectedSubscriptionID: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"},
+			props:      map[string]any{"subscription_id": "ffffffff-bbbb-cccc-dddd-eeeeeeeeeeee"},
+			wantReason: phoneHomeRejectAccountMismatch,
+		},
+		{
+			name:       "differing gcp project is rejected",
+			install:    &app.Install{ExpectedProjectID: "acme-prod"},
+			props:      map[string]any{"project_id": "acme-staging"},
+			wantReason: phoneHomeRejectAccountMismatch,
+		},
+		{
+			// An install carries one cloud's identifier; the others must not false-positive.
+			name:       "an unrelated cloud identifier is ignored",
+			install:    &app.Install{ExpectedAccountID: expected},
+			props:      map[string]any{"subscription_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"},
 			wantReason: phoneHomeAuthOK,
 		},
 		{
@@ -196,6 +220,11 @@ func TestPhoneHomeRejectionReasonsAreStable(t *testing.T) {
 	assert.Equal(t, "revoked_stack_version", phoneHomeRejectRevokedVersion)
 	assert.Equal(t, "version_expired", phoneHomeRejectVersionExpired)
 	assert.Equal(t, "account_mismatch", phoneHomeRejectAccountMismatch)
+	assert.Equal(t, "invalid_identity_token", phoneHomeRejectIdentityToken)
+	assert.Equal(t, "identity_mismatch", phoneHomeRejectIdentityMismatch)
+	assert.Equal(t, "tenant_mismatch", phoneHomeRejectTenantMismatch)
+	assert.Equal(t, "principal_mismatch", phoneHomeRejectPrincipalPinned)
+	assert.Equal(t, "no_target_account", phoneHomeRejectNoTargetAccount)
 	assert.Equal(t, "skipped", phoneHomeAuthSkipped)
 	assert.Equal(t, "", phoneHomeAuthOK, "an empty reason must mean verified")
 }
