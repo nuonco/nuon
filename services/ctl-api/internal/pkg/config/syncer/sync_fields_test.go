@@ -123,23 +123,27 @@ func (s *SyncFieldsTestSuite) syncEmpty() (context.Context, *app.App, *app.AppCo
 
 // syncInto runs the branch-sync path — build dispatch off — into a fresh app
 // config on an existing app.
+// The transaction mirrors Run, so a helper that bypasses it fails here too.
 func (s *SyncFieldsTestSuite) syncInto(ctx context.Context, appID string, cfg *config.AppConfig) *app.AppConfig {
 	appCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), appID)
 
-	syncer := NewDBSyncer(
-		s.deps.DB,
-		s.deps.AppsHelpers,
-		s.deps.ComponentHelpers,
-		s.deps.ActionsHelpers,
-		s.deps.RunbooksHelpers,
-		s.deps.InstallHelpers,
-		s.deps.VCSHelpers,
-		s.deps.TFClient,
-		appID,
-		cfg,
-		appCfg.ID,
-	)
-	s.Require().NoError(syncer.Sync(ctx), "sync should succeed")
+	err := s.deps.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		syncer := NewDBSyncer(
+			tx,
+			s.deps.AppsHelpers,
+			s.deps.ComponentHelpers,
+			s.deps.ActionsHelpers,
+			s.deps.RunbooksHelpers,
+			s.deps.InstallHelpers,
+			s.deps.VCSHelpers,
+			s.deps.TFClient,
+			appID,
+			cfg,
+			appCfg.ID,
+		)
+		return syncer.Sync(ctx)
+	})
+	s.Require().NoError(err, "sync should succeed")
 
 	return appCfg
 }

@@ -89,8 +89,12 @@ type ComponentToBuild struct {
 	Type        app.ComponentType `json:"type"`
 }
 
+// Capped: the app sync queue runs one signal at a time, so an unbounded retry blocks every later sync.
+//
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 10m
+// @schedule-to-close-timeout 30m
+// @max-retries 3
 // @as-wrapper
 func (a *Activities) applyAppConfig(ctx context.Context, req *ApplyAppConfigInput) (*ApplyAppConfigOutput, error) {
 	result, err := syncer.Run(ctx, a.deps, syncer.RunRequest{
@@ -139,6 +143,8 @@ type FinalizeAppConfigSyncInput struct {
 //
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
+// @schedule-to-close-timeout 5m
+// @max-retries 3
 // @as-wrapper
 func (a *Activities) finalizeAppConfigSync(ctx context.Context, req *FinalizeAppConfigSyncInput) error {
 	var appConfig app.AppConfig
@@ -189,6 +195,8 @@ type DispatchComponentBuildsInput struct {
 //
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
+// @schedule-to-close-timeout 15m
+// @max-retries 3
 // @as-wrapper
 func (a *Activities) dispatchComponentBuilds(ctx context.Context, req *DispatchComponentBuildsInput) error {
 	for _, cmp := range req.Components {
