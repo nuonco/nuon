@@ -382,6 +382,19 @@ func (s *LogStreamReadLogsTestSuite) TestLogStreamReadLogs() {
 			},
 		},
 		{
+			name: "invalid pagination cursor returns error",
+			setupFunc: func() string {
+				return s.testLogStream.ID
+			},
+			headers: map[string]string{
+				"X-Nuon-API-Offset": "not-an-offset",
+			},
+			expectedCode: http.StatusBadRequest,
+			validateFunc: func(logs []app.OtelLogRecord, headers http.Header) {
+				// Error response
+			},
+		},
+		{
 			name: "pagination with X-Nuon-API-Next header (ascending)",
 			setupFunc: func() string {
 				ctx := context.Background()
