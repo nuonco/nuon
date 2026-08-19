@@ -1,6 +1,7 @@
 package arm
 
 import (
+	"encoding/json"
 	"slices"
 	"strings"
 	"testing"
@@ -150,6 +151,9 @@ func TestArmScope_InstallRGResource(t *testing.T) {
 			t.Errorf("installRGResource[%q] = %v, want %s", k, got, want)
 		}
 	}
+	if _, ok := rg["properties"].(map[string]any); !ok {
+		t.Errorf("installRGResource has no properties object: %v", rg["properties"])
+	}
 }
 
 func TestArmScope_TargetInstallRG(t *testing.T) {
@@ -270,20 +274,111 @@ func TestBuiltInDeployments_UnchangedAtResourceGroupScope(t *testing.T) {
 	}
 }
 
-// The guard exists because deployment_scope validates at sync before the
-// subscription-scoped root is built: without it a customer gets a template ARM
-// rejects with an opaque InvalidTemplate. Delete this test with the guard.
-func TestGetAzureTemplate_SubscriptionScopeNotImplementedYet(t *testing.T) {
+func subscriptionTemplateInput() *stacks.TemplateInput {
+	inp := azureRolesTemplateInput()
+	inp.DeploymentScope = app.StackDeploymentScopeSubscription
+	return inp
+}
+
+func TestGetAzureTemplate_SubscriptionScopeRoot(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
-	inp := minimalTemplateInput()
-	inp.DeploymentScope = app.StackDeploymentScopeSubscription
-
-	_, err := tmpl.getAzureTemplate(inp)
-	if err == nil {
-		t.Fatal("expected subscription scope to be rejected until the root template is implemented")
+	armTmpl, err := tmpl.getAzureTemplate(subscriptionTemplateInput())
+	if err != nil {
+		t.Fatalf("render at subscription scope: %v", err)
 	}
-	if !strings.Contains(err.Error(), "deployment_scope") {
-		t.Errorf("error should name deployment_scope so the operator knows what to unset, got: %v", err)
+
+	if armTmpl.Schema != subscriptionTemplateSchema {
+		t.Errorf("root $schema = %s, want the subscription schema", armTmpl.Schema)
+	}
+
+	// The portal renders a form from the parameters, so a parameter without a
+	// default is an empty required field the customer has to guess.
+	p, ok := armTmpl.Parameters[installRGParamName]
+	if !ok {
+		t.Fatalf("%s parameter missing", installRGParamName)
+	}
+	if p.DefaultValue == nil {
+		t.Errorf("%s has no default", installRGParamName)
+	}
+	for name, param := range armTmpl.Parameters {
+		if param.DefaultValue == nil {
+			t.Errorf("parameter %q has no default", name)
+		}
+	}
+
+	if got := countResourceType(armTmpl.Resources, "Microsoft.Resources/resourceGroups"); got != 1 {
+		t.Errorf("expected exactly one resource group declaration, got %d", got)
+	}
+}
+
+// The assertion that proves the phase: at subscription scope there is no ambient
+// resource group, so resourceGroup() may only appear inside the inline template of
+// an RG-targeted nested deployment. Anywhere else it is a render-time bug that
+// surfaces as an opaque ARM error at the customer.
+func TestGetAzureTemplate_SubscriptionScopeResourceGroupFuncOnlyInsideWrappers(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+
+	armTmpl, err := tmpl.getAzureTemplate(subscriptionTemplateInput())
+	if err != nil {
+		t.Fatalf("render at subscription scope: %v", err)
+	}
+
+	for _, r := range armTmpl.Resources {
+		res, ok := r.(map[string]any)
+		if !ok {
+			continue
+		}
+
+		// An RG-targeted nested deployment re-establishes an ambient resource group
+		// for everything in its inline template, so skip its contents.
+		if res["resourceGroup"] != nil {
+			continue
+		}
+
+		blob, err := json.Marshal(res)
+		if err != nil {
+			t.Fatalf("marshal resource: %v", err)
+		}
+		if strings.Contains(string(blob), "resourceGroup()") {
+			t.Errorf("resourceGroup() outside an RG-targeted wrapper, in %v:\n%s", res["name"], blob)
+		}
+	}
+}
+
+func TestGetAzureTemplate_SubscriptionScopeWrapsRGScopedResources(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+
+	armTmpl, err := tmpl.getAzureTemplate(subscriptionTemplateInput())
+	if err != nil {
+		t.Fatalf("render at subscription scope: %v", err)
+	}
+
+	// None of these types are subscription-deployable, so any left directly in the
+	// root would be rejected as InvalidTemplate.
+	for _, resourceType := range []string{
+		uamiResourceType,
+		"Microsoft.Authorization/roleAssignments",
+		"Microsoft.Resources/deploymentScripts",
+	} {
+		if got := countResourceType(armTmpl.Resources, resourceType); got != 0 {
+			t.Errorf("%d %s left directly in a subscription-scoped root", got, resourceType)
+		}
+	}
+
+	wrappers := map[string]bool{}
+	for _, r := range armTmpl.Resources {
+		res, ok := r.(map[string]any)
+		if !ok || res["resourceGroup"] == nil {
+			continue
+		}
+		if name, ok := res["name"].(string); ok {
+			wrappers[name] = true
+		}
+	}
+	for _, name := range []string{identitiesDeploymentName, runnerGrantsDeploymentName, phoneHomeDeploymentName} {
+		if !wrappers[name] {
+			t.Errorf("%s missing or not targeted at a resource group", name)
+		}
 	}
 }

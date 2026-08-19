@@ -3,7 +3,6 @@ package arm
 import (
 	"fmt"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
@@ -37,19 +36,6 @@ var ReservedParamNames = []string{"nuonInstallID", "nuonOrgID", "nuonAppID", "lo
 
 func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, error) {
 	scope := scopeFor(inp)
-	if scope.subscription {
-		// The scope now threads through the renderer, but the root still declares
-		// resource-group-scoped resources directly (UAMIs, role assignments, the
-		// phone-home deploymentScripts) and never declares installResourceGroupName,
-		// so rendering here would emit a template ARM rejects. Fail at generation
-		// with a message that says so rather than at the customer's az stack sub
-		// create with an opaque InvalidTemplate. Remove once the root template is
-		// built out.
-		return nil, fmt.Errorf(
-			"deployment_scope %q is accepted by app config but the subscription-scoped root template is not implemented yet; unset it or use %q",
-			app.StackDeploymentScopeSubscription, app.StackDeploymentScopeResourceGroup,
-		)
-	}
 
 	tmpl := &ARMTemplate{
 		Schema:         scope.rootSchema(),
@@ -168,7 +154,7 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	}
 
 	// Phone home deployment script
-	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResource(inp, customOutputs, scope))
+	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResources(inp, customOutputs, scope)...)
 
 	// Add standard outputs (VNet, subnets, key vault)
 	t.addStandardOutputs(tmpl, scope)
@@ -223,8 +209,7 @@ func (t *Templates) appendRunnerGrants(tmpl *ARMTemplate, inp *stacks.TemplateIn
 	// The grants read the runner's identity, so the wrapper waits on the runner in
 	// addition to the resource group.
 	for _, r := range wrapper {
-		dep := r.(map[string]any)
-		dep["dependsOn"] = append([]string{"runnerDeployment"}, dep["dependsOn"].([]string)...)
+		dependOn(r.(map[string]any), []string{"runnerDeployment"})
 	}
 	tmpl.Resources = append(tmpl.Resources, wrapper...)
 

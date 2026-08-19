@@ -21,6 +21,10 @@ const (
 	// role assignments move into at subscription scope.
 	runnerGrantsDeploymentName = "runnerGrantsDeployment"
 
+	// phoneHomeDeploymentName is the nested deployment the phone-home deploymentScripts
+	// resource moves into at subscription scope.
+	phoneHomeDeploymentName = "phoneHomeDeployment"
+
 	// installRGParamName names the install's resource group in the root template.
 	// At subscription scope there is no ambient resource group, so every expression
 	// that used to resolve against one has to name it explicitly. At RG scope the
@@ -88,6 +92,9 @@ func (s armScope) installRGResource() map[string]any {
 		"name":       s.rgNameExpr(),
 		"location":   s.locationExpr(),
 		"tags":       "[variables('commonTags')]",
+		// Empty but present, matching Microsoft's documented example for declaring a
+		// resource group from a subscription-scoped template.
+		"properties": map[string]any{},
 	}
 }
 
@@ -165,6 +172,16 @@ func (s armScope) innerCommonTagsExpr() string {
 		return "[parameters('commonTags')]"
 	}
 	return "[variables('commonTags')]"
+}
+
+// dependOn prepends dependencies to a resource's existing dependsOn. Used to hand
+// a wrapper the dependencies its contents can no longer express themselves.
+func dependOn(resource map[string]any, deps []string) {
+	if len(deps) == 0 {
+		return
+	}
+	existing, _ := resource["dependsOn"].([]string)
+	resource["dependsOn"] = append(append([]string{}, deps...), existing...)
 }
 
 // nestedParam is one parameter threaded into a wrapped deployment: the expression

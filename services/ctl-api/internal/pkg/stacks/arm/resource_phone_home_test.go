@@ -6,15 +6,28 @@ import (
 	"testing"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
+
+// phoneHomeScript returns the deploymentScripts resource itself. At resource-group
+// scope getPhoneHomeResources emits exactly one resource; the wrapped
+// subscription-scope shape has its own tests.
+func phoneHomeScript(t *testing.T, tmpl *Templates, inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs) map[string]any {
+	t.Helper()
+	res := tmpl.getPhoneHomeResources(inp, customOutputs, armScope{})
+	if len(res) != 1 {
+		t.Fatalf("expected a single resource at resource-group scope, got %d", len(res))
+	}
+	return res[0].(map[string]any)
+}
 
 func TestGetPhoneHomeResource_CustomStackOutputs(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 	inp := minimalTemplateInput()
 
-	res := tmpl.getPhoneHomeResource(inp, []customDeploymentOutputs{
+	res := phoneHomeScript(t, tmpl, inp, []customDeploymentOutputs{
 		{StackName: "preview_bucket", DeploymentName: "PreviewBucket", OutputKeys: []string{"bucketName", "bucketUrl"}},
-	}, armScope{})
+	})
 
 	props := res["properties"].(map[string]any)
 	script := props["scriptContent"].(string)
@@ -57,7 +70,7 @@ func TestGetPhoneHomeResource_CustomStackOutputs(t *testing.T) {
 func TestGetPhoneHomeResource_RunnerIdentityPrincipalID(t *testing.T) {
 	t.Run("reported when a runner deployment exists", func(t *testing.T) {
 		tmpl := &Templates{cfg: &internal.Config{}}
-		res := tmpl.getPhoneHomeResource(minimalTemplateInput(), nil, armScope{})
+		res := phoneHomeScript(t, tmpl, minimalTemplateInput(), nil)
 
 		props := res["properties"].(map[string]any)
 		script := props["scriptContent"].(string)
@@ -78,7 +91,7 @@ func TestGetPhoneHomeResource_RunnerIdentityPrincipalID(t *testing.T) {
 
 	t.Run("omitted for local runners", func(t *testing.T) {
 		tmpl := &Templates{cfg: &internal.Config{UseLocalRunners: true}}
-		res := tmpl.getPhoneHomeResource(minimalTemplateInput(), nil, armScope{})
+		res := phoneHomeScript(t, tmpl, minimalTemplateInput(), nil)
 
 		script := res["properties"].(map[string]any)["scriptContent"].(string)
 		if strings.Contains(script, "RUNNER_IDENTITY_PRINCIPAL_ID") {

@@ -14,7 +14,7 @@ func envToken(s string) string {
 	return strings.ToUpper(envNameRegexp.ReplaceAllString(s, "_"))
 }
 
-func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs, scope armScope) map[string]any {
+func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs, scope armScope) []any {
 	phoneHomeURL := inp.CloudFormationStackVersion.PhoneHomeURL
 
 	operationIDs := azureOperationIdentities(inp.AppCfg)
@@ -160,21 +160,54 @@ fi
 	}
 	dependsOn = append(dependsOn, operationIdentitySetupDependencies(operationIDs, scope)...)
 
-	return map[string]any{
+	// Microsoft.Resources/deploymentScripts is resource-group-scoped only, so at
+	// subscription scope the script moves into the install resource group.
+	//
+	// The environment variables stay evaluated at the *outer* scope and cross the
+	// boundary as a single array parameter. That is what makes this tractable: every
+	// reference('vnetDeployment') and identity lookup in there resolves in the root,
+	// where those deployments are declared, instead of needing ~25 individual
+	// parameters. It also means the scope-sensitive expressions among them —
+	// resourceGroup().id and friends — are correctly the subscription-scope forms.
+	environmentVariables := any(envVars)
+	if scope.subscription {
+		environmentVariables = "[parameters('environmentVariables')]"
+	}
+
+	script := map[string]any{
 		"type":       "Microsoft.Resources/deploymentScripts",
 		"apiVersion": "2023-08-01",
 		"name":       "[format('{0}-phone-home-script', parameters('nuonInstallID'))]",
 		"location":   "[parameters('location')]",
-		"tags":       "[variables('commonTags')]",
+		"tags":       scope.innerCommonTagsExpr(),
 		"kind":       "AzureCLI",
-		"dependsOn":  dependsOn,
 		"properties": map[string]any{
 			"forceUpdateTag":       "[parameters('deployTimestamp')]",
 			"azCliVersion":         "2.40.0",
 			"timeout":              "PT30M",
 			"retentionInterval":    "PT1H",
-			"environmentVariables": envVars,
+			"environmentVariables": environmentVariables,
 			"scriptContent":        scriptContent,
 		},
 	}
+
+	if !scope.subscription {
+		script["dependsOn"] = dependsOn
+		return []any{script}
+	}
+
+	resources := scope.wrapInInstallRG(phoneHomeDeploymentName, map[string]nestedParam{
+		"nuonInstallID":        {typ: "string", value: "[parameters('nuonInstallID')]"},
+		"location":             {typ: "string", value: "[parameters('location')]"},
+		"commonTags":           {typ: "object", value: "[variables('commonTags')]"},
+		"deployTimestamp":      {typ: "string", value: "[parameters('deployTimestamp')]"},
+		"environmentVariables": {typ: "array", value: envVars},
+	}, []any{script})
+
+	// Everything the script reports on has to exist first, and the script can no
+	// longer say so itself — inner evaluation hides the root.
+	for _, r := range resources {
+		dependOn(r.(map[string]any), dependsOn)
+	}
+	return resources
 }
