@@ -40,8 +40,7 @@ func (s *service) authorizeAzurePhoneHome(
 	// Without a pinned subscription there is nothing to bind to, and a token from any
 	// Entra tenant would pass. Fail closed: the template only carries an identity once
 	// the feature is on, and the feature requires a subscription at creation.
-	expectedSubscription := install.CloudPlatformMetadata.TargetSubscriptionID
-	if expectedSubscription == "" {
+	if install.CloudPlatformMetadata.TargetSubscriptionID == "" {
 		return phoneHomeRejectNoTargetAccount, rejectPhoneHome(
 			phoneHomeRejectNoTargetAccount,
 			fmt.Errorf("install %s has no target subscription to bind against", install.ID),
@@ -81,16 +80,36 @@ func (s *service) authorizeAzurePhoneHome(
 		return phoneHomeRejectIdentityToken, rejectPhoneHome(phoneHomeRejectIdentityToken, err)
 	}
 
-	// Guards against a pinned tenant being bypassed by a token whose own tid selected a
-	// different key set on an earlier code path.
-	if !strings.EqualFold(identity.TenantID, tenantID) {
+	if reason, err := bindAzureIdentity(install, stackVersion, identity, tenantID); err != nil {
+		return reason, err
+	}
+
+	s.pinAzurePhoneHomeIdentity(ctx, install, identity)
+
+	return phoneHomeAuthOK, nil
+}
+
+// bindAzureIdentity is the authorization step: it decides whether a token Entra has
+// already vouched for belongs to this install. Kept free of IO so every rejection path is
+// directly testable.
+func bindAzureIdentity(
+	install *app.Install,
+	stackVersion *app.InstallStackVersion,
+	identity *workloadjwt.AzureManagedIdentity,
+	expectedTenantID string,
+) (string, error) {
+	// Guards against a pinned tenant being bypassed by a token whose own tid selected the
+	// key set it was verified against.
+	if !strings.EqualFold(identity.TenantID, expectedTenantID) {
 		return phoneHomeRejectTenantMismatch, rejectPhoneHome(
 			phoneHomeRejectTenantMismatch,
 			fmt.Errorf("token tenant %s is not the tenant expected for this install", identity.TenantID),
 		)
 	}
 
-	if !strings.EqualFold(identity.SubscriptionID, expectedSubscription) {
+	// The load-bearing check. Azure assigns the subscription in a resource id and signs it
+	// into xms_mirid, so a token naming this subscription came from inside it.
+	if !strings.EqualFold(identity.SubscriptionID, install.CloudPlatformMetadata.TargetSubscriptionID) {
 		return phoneHomeRejectAccountMismatch, rejectPhoneHome(
 			phoneHomeRejectAccountMismatch,
 			fmt.Errorf("token subscription %s does not match the subscription expected for this install",
@@ -100,7 +119,8 @@ func (s *service) authorizeAzurePhoneHome(
 
 	// Scopes the credential to one install: every install in a subscription renders a
 	// differently named identity, so a neighbour's token cannot post here.
-	if !strings.EqualFold(identity.Name, stackVersion.PhoneHomeIdentityName) {
+	if stackVersion.PhoneHomeIdentityName == "" ||
+		!strings.EqualFold(identity.Name, stackVersion.PhoneHomeIdentityName) {
 		return phoneHomeRejectIdentityMismatch, rejectPhoneHome(
 			phoneHomeRejectIdentityMismatch,
 			fmt.Errorf("token identity %q is not %q", identity.Name, stackVersion.PhoneHomeIdentityName),
@@ -114,8 +134,6 @@ func (s *service) authorizeAzurePhoneHome(
 			fmt.Errorf("token principal %s is not the principal pinned for this install", identity.PrincipalID),
 		)
 	}
-
-	s.pinAzurePhoneHomeIdentity(ctx, install, identity)
 
 	return phoneHomeAuthOK, nil
 }
