@@ -61,6 +61,12 @@ func (o *LogStreamTailLogsReader) ReadResponse(response runtime.ClientResponse, 
 			return nil, err
 		}
 		return nil, result
+	case 503:
+		result := NewLogStreamTailLogsServiceUnavailable()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	default:
 		return nil, runtime.NewAPIError("[GET /v1/log-streams/{log_stream_id}/logs/tail] LogStreamTailLogs", response, response.Code())
 	}
@@ -475,6 +481,76 @@ func (o *LogStreamTailLogsInternalServerError) GetPayload() *models.StderrErrRes
 }
 
 func (o *LogStreamTailLogsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewLogStreamTailLogsServiceUnavailable creates a LogStreamTailLogsServiceUnavailable with default headers values
+func NewLogStreamTailLogsServiceUnavailable() *LogStreamTailLogsServiceUnavailable {
+	return &LogStreamTailLogsServiceUnavailable{}
+}
+
+/*
+LogStreamTailLogsServiceUnavailable describes a response with status code 503, with default header values.
+
+Service Unavailable
+*/
+type LogStreamTailLogsServiceUnavailable struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this log stream tail logs service unavailable response has a 2xx status code
+func (o *LogStreamTailLogsServiceUnavailable) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this log stream tail logs service unavailable response has a 3xx status code
+func (o *LogStreamTailLogsServiceUnavailable) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this log stream tail logs service unavailable response has a 4xx status code
+func (o *LogStreamTailLogsServiceUnavailable) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this log stream tail logs service unavailable response has a 5xx status code
+func (o *LogStreamTailLogsServiceUnavailable) IsServerError() bool {
+	return true
+}
+
+// IsCode returns true when this log stream tail logs service unavailable response a status code equal to that given
+func (o *LogStreamTailLogsServiceUnavailable) IsCode(code int) bool {
+	return code == 503
+}
+
+// Code gets the status code for the log stream tail logs service unavailable response
+func (o *LogStreamTailLogsServiceUnavailable) Code() int {
+	return 503
+}
+
+func (o *LogStreamTailLogsServiceUnavailable) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/log-streams/{log_stream_id}/logs/tail][%d] logStreamTailLogsServiceUnavailable %s", 503, payload)
+}
+
+func (o *LogStreamTailLogsServiceUnavailable) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/log-streams/{log_stream_id}/logs/tail][%d] logStreamTailLogsServiceUnavailable %s", 503, payload)
+}
+
+func (o *LogStreamTailLogsServiceUnavailable) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *LogStreamTailLogsServiceUnavailable) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

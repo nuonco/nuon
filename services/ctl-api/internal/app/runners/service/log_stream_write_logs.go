@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/kafka"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/otel"
@@ -53,7 +54,7 @@ func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 	// NOTE(fd): this is essentially our validation step. we do not use this object directly otherwise.
 	expreq := plogotlp.NewExportRequest()
 	if err := expreq.UnmarshalProto(byts); err != nil {
-		ctx.Error(fmt.Errorf("unable to unmarshal request: %w", err))
+		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("unable to unmarshal request: %w", err)))
 		return
 	}
 
