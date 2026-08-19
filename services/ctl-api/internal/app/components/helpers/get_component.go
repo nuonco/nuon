@@ -11,8 +11,18 @@ import (
 )
 
 func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Component, error) {
+	return s.getComponent(ctx, s.db, cmpID)
+}
+
+// GetComponentInTx reads the component through the caller's transaction so
+// config connections created within that transaction are visible.
+func (s *Helpers) GetComponentInTx(ctx context.Context, tx *gorm.DB, cmpID string) (*app.Component, error) {
+	return s.getComponent(ctx, tx, cmpID)
+}
+
+func (s *Helpers) getComponent(ctx context.Context, db *gorm.DB, cmpID string) (*app.Component, error) {
 	cmp := app.Component{}
-	res := s.db.WithContext(ctx).
+	res := db.WithContext(ctx).
 		// preload org
 		Preload("Org").
 		Preload("Org.RunnerGroup").
