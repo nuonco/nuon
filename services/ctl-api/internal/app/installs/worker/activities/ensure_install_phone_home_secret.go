@@ -32,7 +32,6 @@ const (
 	phoneHomeSkipNoManagement    = "control plane cannot reach management secrets manager"
 	phoneHomeSkipSandboxMode     = "install is in sandbox mode"
 
-	phoneHomeSkipAzureDisabled  = "org feature phone-home-auth-azure is disabled"
 	phoneHomeSkipNoSubscription = "install has no target subscription id"
 )
 

@@ -54,7 +54,7 @@ func TestAzurePhoneHomeSkipReasonIgnoringFeatureGate(t *testing.T) {
 			want: phoneHomeSkipSandboxMode,
 		},
 		{
-			name: "an otherwise eligible install proceeds even with the flags off",
+			name: "an otherwise eligible install proceeds even with the flag off",
 			install: &app.Install{
 				ID:                    "inst",
 				AzureAccount:          &app.AzureAccount{},
@@ -75,6 +75,11 @@ func TestAzurePhoneHomeSkipReasonIgnoringFeatureGate(t *testing.T) {
 
 // Skip reasons are metric tags and the backfill's progress output, so drift is silent.
 func TestAzurePhoneHomeSkipReasonsAreStable(t *testing.T) {
-	assert.Equal(t, "org feature phone-home-auth-azure is disabled", phoneHomeSkipAzureDisabled)
 	assert.Equal(t, "install has no target subscription id", phoneHomeSkipNoSubscription)
+}
+
+// Azure is gated by the same org flag as AWS, so enabling phone-home auth for an org
+// covers every cloud its installs run on.
+func TestAzureUsesTheSharedPhoneHomeAuthFlag(t *testing.T) {
+	assert.Equal(t, app.OrgFeature("phone-home-auth"), app.OrgFeaturePhoneHomeAuth)
 }

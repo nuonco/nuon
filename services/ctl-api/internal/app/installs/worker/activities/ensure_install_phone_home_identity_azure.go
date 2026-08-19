@@ -79,21 +79,12 @@ func (a *Activities) azurePhoneHomeSkipReason(
 	ctx context.Context, install *app.Install, ignoreFeatureGate bool,
 ) (string, error) {
 	if !ignoreFeatureGate {
-		for _, feature := range []app.OrgFeature{
-			app.OrgFeaturePhoneHomeAuth,
-			app.OrgFeaturePhoneHomeAuthAzure,
-		} {
-			enabled, err := a.features.OrgHasFeature(ctx, install.OrgID, feature)
-			if err != nil {
-				return "", fmt.Errorf("unable to check %s feature: %w", feature, err)
-			}
-			if !enabled {
-				if feature == app.OrgFeaturePhoneHomeAuth {
-					return phoneHomeSkipFeatureDisabled, nil
-				}
-
-				return phoneHomeSkipAzureDisabled, nil
-			}
+		enabled, err := a.features.OrgHasFeature(ctx, install.OrgID, app.OrgFeaturePhoneHomeAuth)
+		if err != nil {
+			return "", fmt.Errorf("unable to check phone home auth feature: %w", err)
+		}
+		if !enabled {
+			return phoneHomeSkipFeatureDisabled, nil
 		}
 	}
 

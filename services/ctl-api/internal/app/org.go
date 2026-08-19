@@ -88,10 +88,7 @@ const (
 	// HMAC signature derived from a per-install secret, and requires a target
 	// cloud account identifier at install creation.
 	OrgFeaturePhoneHomeAuth OrgFeature = "phone-home-auth"
-	// Enforcement is rolled out per cloud, so Azure is gated separately from the
-	// AWS-CloudFormation path OrgFeaturePhoneHomeAuth already covers.
-	OrgFeaturePhoneHomeAuthAzure OrgFeature = "phone-home-auth-azure"
-	OrgFeatureRunbookStudio      OrgFeature = "runbook-studio"
+	OrgFeatureRunbookStudio OrgFeature = "runbook-studio"
 	// OrgFeatureCronNamespaceIsolation routes the org's runner-healthcheck and
 	// install cron queues into dedicated Temporal namespaces + task queues polled
 	// by their own workers, instead of sharing the runners/installs namespaces on
@@ -246,7 +243,6 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureAWSAccountConnections:   false,
 		OrgFeatureComponentHealth:         false,
 		OrgFeaturePhoneHomeAuth:           false,
-		OrgFeaturePhoneHomeAuthAzure:      false,
 		OrgFeatureRunbookStudio:           false,
 		OrgFeatureCronNamespaceIsolation:  false,
 		OrgFeatureTriggers:                false,
@@ -317,7 +313,6 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureAppInstallSyncing,
 		OrgFeatureSandboxOCIArtifacts,
 		OrgFeatureImageBackedActions,
-		OrgFeaturePhoneHomeAuthAzure,
 	}
 }
 
@@ -351,7 +346,6 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureComponentHealth:          "Enable the live component resource explorer: the install runner reports the Kubernetes and cloud resources each component manages with per-resource health, surfaced in the install Resources tab.",
 		OrgFeatureServiceAccountsAndTokens: "Enable the API tokens and service accounts management pages in the dashboard settings navigation.",
 		OrgFeaturePhoneHomeAuth:            "Require install phone-home requests to carry an HMAC signature derived from a per-install secret, and require a target cloud account identifier (AWS account ID, GCP project ID, or Azure subscription ID) at install creation. Depends on the phone-home CMK and management-role IAM grants being in place.",
-		OrgFeaturePhoneHomeAuthAzure:       "Require Azure install phone-home requests to authenticate with an Entra managed identity token, bound to the install's target subscription. Applies only to stack versions rendered after it was enabled; requires phone-home-auth.",
 		OrgFeatureRunbookStudio:            "Enable the runbook studio in the dashboard — a literate editor for authoring runbook markdown around executable steps with a live install-state preview.",
 		OrgFeatureCronNamespaceIsolation:   "Route the org's runner-healthcheck and install cron queues into dedicated Temporal namespaces + task queues polled by their own workers, isolating cron load from the api task queue.",
 		OrgFeatureTriggers:                 "Enable triggers and payload-driven rules that start app branch runs or install runbooks.",
@@ -386,7 +380,6 @@ var adminOnlyFeatures = map[OrgFeature]struct{}{
 	OrgFeatureUserManagedFeatures:   {},
 	OrgFeatureAWSAccountConnections: {},
 	OrgFeaturePhoneHomeAuth:         {},
-	OrgFeaturePhoneHomeAuthAzure:    {},
 }
 
 // GetUserManageableFeatures returns features that users are allowed to toggle
