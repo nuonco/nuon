@@ -24,6 +24,10 @@ type InstallGroupRequest struct {
 	// LabelSelector dynamically resolves installs at deploy time.
 	// Mutually exclusive with InstallIDs.
 	LabelSelector *labels.Selector `json:"label_selector,omitempty"`
+
+	// AllInstalls targets every install on the app that no other branch owns.
+	// Mutually exclusive with InstallIDs and LabelSelector.
+	AllInstalls bool `json:"all_installs,omitempty"`
 }
 
 type CreateAppBranchConfigRequest struct {
@@ -56,19 +60,25 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 		}
 		orders[group.Order] = true
 
-		// InstallIDs and LabelSelector are mutually exclusive
+		// A group targets installs exactly one way
 		hasIDs := len(group.InstallIDs) > 0
 		hasSelector := group.LabelSelector != nil && len(group.LabelSelector.MatchLabels) > 0
-		if hasIDs && hasSelector {
-			return stderr.ErrUser{
-				Err:         fmt.Errorf("install group %q has both install_ids and label_selector", group.Name),
-				Description: "install groups must use either install_ids or label_selector, not both",
+		targets := 0
+		for _, set := range []bool{hasIDs, hasSelector, group.AllInstalls} {
+			if set {
+				targets++
 			}
 		}
-		if !hasIDs && !hasSelector {
+		if targets > 1 {
 			return stderr.ErrUser{
-				Err:         fmt.Errorf("install group %q has neither install_ids nor label_selector", group.Name),
-				Description: "install groups must specify either install_ids or label_selector",
+				Err:         fmt.Errorf("install group %q sets more than one of install_ids, label_selector, all_installs", group.Name),
+				Description: "install groups must use exactly one of install_ids, label_selector, or all_installs",
+			}
+		}
+		if targets == 0 {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("install group %q has none of install_ids, label_selector, all_installs", group.Name),
+				Description: "install groups must specify install_ids, label_selector, or all_installs",
 			}
 		}
 		if hasSelector {
@@ -226,6 +236,7 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 			Order:          g.Order,
 			InstallIDs:     g.InstallIDs,
 			LabelSelector:  selector,
+			AllInstalls:    g.AllInstalls,
 			UseForPreviews: g.UseForPreviews,
 		}
 	}
