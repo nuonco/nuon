@@ -19,7 +19,7 @@ const BranchActionsContent = () => {
       heading="Actions"
       subheading="The day-2 operations defined by this branch's configuration."
     >
-      <ActionsTable filterIds={filterIds} />
+      <ActionsTable filterIds={filterIds} branchId={branch?.id} />
     </BranchTabPage>
   )
 }

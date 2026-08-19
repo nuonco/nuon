@@ -19,7 +19,7 @@ const BranchRunbooksContent = () => {
       heading="Runbooks"
       subheading="The runbooks defined by this branch's configuration."
     >
-      <RunbooksTable filterIds={filterIds} />
+      <RunbooksTable filterIds={filterIds} branchId={branch?.id} />
     </BranchTabPage>
   )
 }

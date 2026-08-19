@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { getAppBranches, getAppBranch } from '@/lib'
+import { getAppBranches, getAppBranch, getInstall } from '@/lib'
 import { BranchConnectionStep } from './BranchConnectionStep'
 import { Text } from '@/components/common/Text'
 
@@ -45,6 +45,12 @@ export const BranchConnectionStepContainer = ({
     .map((q) => q.data)
     .filter(Boolean)
 
+  const { data: install } = useQuery({
+    queryKey: ['install', orgId, installId],
+    queryFn: () => getInstall({ installId, orgId }),
+    enabled: !!orgId && !!installId,
+  })
+
   useEffect(() => {
     if (isSuccess && !hasBranches) {
       onDone()
@@ -65,6 +71,7 @@ export const BranchConnectionStepContainer = ({
     <BranchConnectionStep
       branches={branchesWithConfigs as any[]}
       installId={installId}
+      installLabels={install?.labels}
       orgId={orgId}
       appId={appId}
       onDone={onDone}
