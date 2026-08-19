@@ -523,3 +523,203 @@ const longConfigMapEntriesPlan = {
 export const LongConfigMapEntries = () => (
   <KubernetesDiff plan={longConfigMapEntriesPlan} />
 )
+
+const singleImageTagChangePlan = {
+  plan: 'k8s-single-image-tag-change',
+  op: 'apply',
+  k8s_content_diff: [
+    {
+      _version: 'v1',
+      name: 'ctl-api-auth',
+      namespace: 'apps',
+      kind: 'Deployment',
+      api: 'apps/v1',
+      resource: 'deployments',
+      op: 'changed',
+      type: 3,
+      dry_run: false,
+      entries: [
+        { type: 0, payload: 'apiVersion: apps/v1', path: '' },
+        { type: 0, payload: 'kind: Deployment', path: '' },
+        { type: 0, payload: 'metadata:', path: '' },
+        { type: 0, payload: '  name: ctl-api-auth', path: '' },
+        { type: 0, payload: '  namespace: apps', path: '' },
+        { type: 0, payload: 'spec:', path: '' },
+        { type: 0, payload: '  replicas: 2', path: '' },
+        { type: 0, payload: '  template:', path: '' },
+        { type: 0, payload: '    spec:', path: '' },
+        { type: 0, payload: '      containers:', path: '' },
+        { type: 0, payload: '      - name: ctl-api-auth', path: '' },
+        { type: 0, payload: '        env:', path: '' },
+        { type: 0, payload: '        - name: SERVICE_TYPE', path: '' },
+        { type: 0, payload: '          value: api', path: '' },
+        { type: 0, payload: '        - name: SERVICE_DEPLOYMENT', path: '' },
+        { type: 0, payload: '          value: auth', path: '' },
+        { type: 0, payload: '        envFrom:', path: '' },
+        { type: 0, payload: '        - configMapRef:', path: '' },
+        { type: 0, payload: '            name: ctl-api', path: '' },
+        {
+          type: 1,
+          payload:
+            '        image: europe-west4-docker.pkg.dev/acme-platform/n-abc123def456ghi789jkl012mno/img-nuon-ctl-api:0.19.1129',
+          path: '',
+        },
+        {
+          type: 2,
+          payload:
+            '        image: europe-west4-docker.pkg.dev/acme-platform/n-abc123def456ghi789jkl012mno/img-nuon-ctl-api:0.19.1204',
+          path: '',
+        },
+        { type: 0, payload: '        imagePullPolicy: IfNotPresent', path: '' },
+        { type: 0, payload: '        lifecycle:', path: '' },
+        { type: 0, payload: '          preStop:', path: '' },
+        { type: 0, payload: '            exec:', path: '' },
+        { type: 0, payload: '              command:', path: '' },
+        { type: 0, payload: '              - /bin/sh', path: '' },
+        { type: 0, payload: '              - -c', path: '' },
+        { type: 0, payload: '              - sleep 20', path: '' },
+        { type: 0, payload: '        livenessProbe:', path: '' },
+        { type: 0, payload: '          httpGet:', path: '' },
+        { type: 0, payload: '            path: /healthz', path: '' },
+        { type: 0, payload: '            port: 8080', path: '' },
+        { type: 0, payload: '          initialDelaySeconds: 10', path: '' },
+        { type: 0, payload: '          periodSeconds: 10', path: '' },
+        { type: 0, payload: '        readinessProbe:', path: '' },
+        { type: 0, payload: '          httpGet:', path: '' },
+        { type: 0, payload: '            path: /readyz', path: '' },
+        { type: 0, payload: '            port: 8080', path: '' },
+        { type: 0, payload: '        ports:', path: '' },
+        { type: 0, payload: '        - containerPort: 8080', path: '' },
+        { type: 0, payload: '          name: http', path: '' },
+        { type: 0, payload: '        resources:', path: '' },
+        { type: 0, payload: '          requests:', path: '' },
+        { type: 0, payload: '            cpu: 200m', path: '' },
+        { type: 0, payload: '            memory: 256Mi', path: '' },
+        { type: 0, payload: '          limits:', path: '' },
+        { type: 0, payload: '            cpu: "1"', path: '' },
+        { type: 0, payload: '            memory: 512Mi', path: '' },
+      ],
+    },
+  ],
+} as any
+
+export const SingleImageTagChange = () => (
+  <KubernetesDiff plan={singleImageTagChangePlan} />
+)
+
+const unchanged = (payload: string) => ({ type: 0, payload, path: '' })
+const removed = (payload: string) => ({ type: 1, payload, path: '' })
+const added = (payload: string) => ({ type: 2, payload, path: '' })
+
+const envVarLines = (count: number, offset = 0) =>
+  Array.from({ length: count }, (_, i) => [
+    unchanged(`        - name: FEATURE_FLAG_${offset + i}`),
+    unchanged(`          value: "${(offset + i) % 2 === 0 ? 'enabled' : 'disabled'}"`),
+  ]).flat()
+
+const largeSingleChangePlan = {
+  plan: 'k8s-large-single-change',
+  op: 'apply',
+  k8s_content_diff: [
+    {
+      _version: 'v1',
+      name: 'ctl-api-auth',
+      namespace: 'apps',
+      kind: 'Deployment',
+      api: 'apps/v1',
+      resource: 'deployments',
+      op: 'changed',
+      type: 3,
+      dry_run: false,
+      entries: [
+        unchanged('apiVersion: apps/v1'),
+        unchanged('kind: Deployment'),
+        unchanged('metadata:'),
+        unchanged('  name: ctl-api-auth'),
+        unchanged('  namespace: apps'),
+        unchanged('spec:'),
+        unchanged('  replicas: 2'),
+        unchanged('  template:'),
+        unchanged('    spec:'),
+        unchanged('      containers:'),
+        unchanged('      - name: ctl-api-auth'),
+        unchanged('        env:'),
+        ...envVarLines(25),
+        removed(
+          '        image: europe-west4-docker.pkg.dev/acme-platform/n-abc123def456ghi789jkl012mno/img-nuon-ctl-api:0.19.1129'
+        ),
+        added(
+          '        image: europe-west4-docker.pkg.dev/acme-platform/n-abc123def456ghi789jkl012mno/img-nuon-ctl-api:0.19.1204'
+        ),
+        unchanged('        imagePullPolicy: IfNotPresent'),
+        ...envVarLines(25, 25),
+        unchanged('        resources:'),
+        unchanged('          requests:'),
+        unchanged('            cpu: 200m'),
+        unchanged('            memory: 256Mi'),
+        unchanged('          limits:'),
+        unchanged('            cpu: "1"'),
+        unchanged('            memory: 512Mi'),
+      ],
+    },
+  ],
+} as any
+
+export const LargeManifestSingleChange = () => (
+  <KubernetesDiff plan={largeSingleChangePlan} />
+)
+
+const largeScatteredChangesPlan = {
+  plan: 'k8s-large-scattered-changes',
+  op: 'apply',
+  k8s_content_diff: [
+    {
+      _version: 'v1',
+      name: 'ctl-api-auth',
+      namespace: 'apps',
+      kind: 'Deployment',
+      api: 'apps/v1',
+      resource: 'deployments',
+      op: 'changed',
+      type: 3,
+      dry_run: false,
+      entries: [
+        unchanged('apiVersion: apps/v1'),
+        unchanged('kind: Deployment'),
+        unchanged('metadata:'),
+        unchanged('  name: ctl-api-auth'),
+        unchanged('  namespace: apps'),
+        unchanged('spec:'),
+        removed('  replicas: 2'),
+        added('  replicas: 4'),
+        unchanged('  template:'),
+        unchanged('    spec:'),
+        unchanged('      containers:'),
+        unchanged('      - name: ctl-api-auth'),
+        unchanged('        env:'),
+        ...envVarLines(30),
+        removed(
+          '        image: europe-west4-docker.pkg.dev/acme-platform/n-abc123def456ghi789jkl012mno/img-nuon-ctl-api:0.19.1129'
+        ),
+        added(
+          '        image: europe-west4-docker.pkg.dev/acme-platform/n-abc123def456ghi789jkl012mno/img-nuon-ctl-api:0.19.1204'
+        ),
+        unchanged('        imagePullPolicy: IfNotPresent'),
+        ...envVarLines(30, 30),
+        unchanged('        resources:'),
+        unchanged('          requests:'),
+        unchanged('            cpu: 200m'),
+        removed('            memory: 256Mi'),
+        added('            memory: 512Mi'),
+        unchanged('          limits:'),
+        unchanged('            cpu: "1"'),
+        removed('            memory: 512Mi'),
+        added('            memory: 1Gi'),
+      ],
+    },
+  ],
+} as any
+
+export const LargeManifestScatteredChanges = () => (
+  <KubernetesDiff plan={largeScatteredChangesPlan} />
+)
