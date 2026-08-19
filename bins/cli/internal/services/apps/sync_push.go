@@ -23,13 +23,13 @@ const (
 	defaultConfigSyncLimit = time.Minute * 15
 )
 
-// pushConfig creates an app config carrying the parsed config in intermediate
-// form, asks the API to apply it, and waits for the result. All conversion to
-// database records is server-side (internal/pkg/config/syncer).
-func (s *Service) pushConfig(ctx context.Context, appID, version string, cfg *config.AppConfig, opts SyncOptions, branchID string) (*models.AppAppConfig, *sync.State, error) {
+// createConfig uploads the parsed config in intermediate form. Nothing is
+// converted to database records until something syncs it, either
+// POST /configs/:id/sync or a branch run's sync app config step.
+func (s *Service) createConfig(ctx context.Context, appID, version string, cfg *config.AppConfig, branchID string, planOnly bool) (*models.AppAppConfig, error) {
 	intermediateJSON, err := json.Marshal(cfg)
 	if err != nil {
-		return nil, nil, errs.WithUserFacing(err, "unable to serialize config")
+		return nil, errs.WithUserFacing(err, "unable to serialize config")
 	}
 
 	appConfig, err := s.api.CreateAppConfig(ctx, appID, &models.ServiceCreateAppConfigRequest{
@@ -37,26 +37,41 @@ func (s *Service) pushConfig(ctx context.Context, appID, version string, cfg *co
 		CliVersion:             version,
 		IntermediateConfigJSON: string(intermediateJSON),
 		AppBranchID:            branchID,
-		PlanOnly:               opts.Preview,
+		PlanOnly:               planOnly,
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
+	return appConfig, nil
+}
+
+// syncConfig asks the API to apply an already-uploaded app config and waits for
+// the result. All conversion to database records is server-side
+// (internal/pkg/config/syncer). This is the standalone path: it dispatches
+// component builds itself, which is why a branch run must not use it.
+func (s *Service) syncConfig(ctx context.Context, appID string, appConfig *models.AppAppConfig, opts SyncOptions) (*sync.State, error) {
 	if _, err := s.api.SyncAppConfig(ctx, appID, appConfig.ID); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	synced, err := s.waitForConfigSync(ctx, appID, appConfig.ID, opts.PrintJSON)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return synced, parseSyncState(synced.State), nil
+	return parseSyncState(synced.State), nil
 }
 
 // waitForConfigSync polls until the sync reaches a terminal state.
 func (s *Service) waitForConfigSync(ctx context.Context, appID, appConfigID string, printJSON bool) (*models.AppAppConfig, error) {
+	return s.waitForRunConfigSync(ctx, appID, appConfigID, "", printJSON)
+}
+
+// waitForRunConfigSync polls until the sync reaches a terminal state. When
+// workflowID is set the sync is a step of that workflow, so a workflow that dies
+// before reaching the step is reported instead of waiting out the full timeout.
+func (s *Service) waitForRunConfigSync(ctx context.Context, appID, appConfigID, workflowID string, printJSON bool) (*models.AppAppConfig, error) {
 	spinner := bubbles.NewSpinnerView(printJSON, s.cfg.Interactive)
 	spinner.Start("syncing config")
 
@@ -83,6 +98,13 @@ func (s *Service) waitForConfigSync(ctx context.Context, appID, appConfigID stri
 				return appConfig, nil
 			case appConfigStatusError:
 				err := errs.NewUserFacing("%s", syncFailureMessage(appConfig))
+				spinner.Fail(err)
+				return nil, err
+			}
+		}
+
+		if workflowID != "" {
+			if err := s.checkRunFailed(pollCtx, workflowID); err != nil {
 				spinner.Fail(err)
 				return nil, err
 			}
