@@ -38,4 +38,9 @@ type GCPOutputs struct {
 	// SecretNames maps `<name>_secret_name` to the fully-qualified Secret
 	// Manager resource name.
 	SecretNames map[string]string
+
+	// RunnerEnabled is false when the stack was applied with the runner module
+	// skipped, which ctl-api reads to mark the runner disabled rather than
+	// treating its silence as a failure.
+	RunnerEnabled bool
 }
