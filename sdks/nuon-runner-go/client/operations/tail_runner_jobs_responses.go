@@ -61,6 +61,12 @@ func (o *TailRunnerJobsReader) ReadResponse(response runtime.ClientResponse, con
 			return nil, err
 		}
 		return nil, result
+	case 503:
+		result := NewTailRunnerJobsServiceUnavailable()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	default:
 		return nil, runtime.NewAPIError("[GET /v1/runners/{runner_id}/jobs/tail] TailRunnerJobs", response, response.Code())
 	}
@@ -473,6 +479,76 @@ func (o *TailRunnerJobsInternalServerError) GetPayload() *models.StderrErrRespon
 }
 
 func (o *TailRunnerJobsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewTailRunnerJobsServiceUnavailable creates a TailRunnerJobsServiceUnavailable with default headers values
+func NewTailRunnerJobsServiceUnavailable() *TailRunnerJobsServiceUnavailable {
+	return &TailRunnerJobsServiceUnavailable{}
+}
+
+/*
+TailRunnerJobsServiceUnavailable describes a response with status code 503, with default header values.
+
+Service Unavailable
+*/
+type TailRunnerJobsServiceUnavailable struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this tail runner jobs service unavailable response has a 2xx status code
+func (o *TailRunnerJobsServiceUnavailable) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this tail runner jobs service unavailable response has a 3xx status code
+func (o *TailRunnerJobsServiceUnavailable) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this tail runner jobs service unavailable response has a 4xx status code
+func (o *TailRunnerJobsServiceUnavailable) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this tail runner jobs service unavailable response has a 5xx status code
+func (o *TailRunnerJobsServiceUnavailable) IsServerError() bool {
+	return true
+}
+
+// IsCode returns true when this tail runner jobs service unavailable response a status code equal to that given
+func (o *TailRunnerJobsServiceUnavailable) IsCode(code int) bool {
+	return code == 503
+}
+
+// Code gets the status code for the tail runner jobs service unavailable response
+func (o *TailRunnerJobsServiceUnavailable) Code() int {
+	return 503
+}
+
+func (o *TailRunnerJobsServiceUnavailable) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/runners/{runner_id}/jobs/tail][%d] tailRunnerJobsServiceUnavailable %s", 503, payload)
+}
+
+func (o *TailRunnerJobsServiceUnavailable) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/runners/{runner_id}/jobs/tail][%d] tailRunnerJobsServiceUnavailable %s", 503, payload)
+}
+
+func (o *TailRunnerJobsServiceUnavailable) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *TailRunnerJobsServiceUnavailable) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 
