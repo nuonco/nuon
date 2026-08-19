@@ -20,7 +20,7 @@ const BranchComponentsContent = () => {
       subheading="The components defined by this branch's configuration."
     >
       <div className="flex flex-auto min-w-0">
-        <ComponentsTable filterIds={filterIds} />
+        <ComponentsTable filterIds={filterIds} branchId={branch?.id} />
       </div>
     </BranchTabPage>
   )

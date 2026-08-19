@@ -9,6 +9,7 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { OperationRolesList } from '@/components/common/OperationRolesList'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { BranchRunCommit, type IBranchRunCommit } from '@/components/branches/BranchRunCommit'
 import { ComponentType } from '@/components/components/ComponentType'
 import {
   HelmValuesFilesModal,
@@ -33,6 +34,7 @@ interface IComponentConfigCard extends Omit<ICard, 'children'> {
   footer?: React.ReactNode
   headerActions?: React.ReactNode
   latestBuild?: TBuild
+  latestCommit?: IBranchRunCommit
   loading?: boolean
 }
 
@@ -41,6 +43,7 @@ export const ComponentConfigCard = ({
   footer,
   headerActions,
   latestBuild,
+  latestCommit,
   loading,
   ...props
 }: IComponentConfigCard) => {
@@ -270,6 +273,15 @@ export const ComponentConfigCard = ({
             <div className="w-fit">
               <GitRepo vcsConfig={vcsInfo.vcsConfig} isAutoGrid />
             </div>
+          </div>
+        )}
+
+        {latestCommit && (
+          <div className="pt-6 border-t flex flex-col gap-3">
+            <Text variant="body" weight="strong" level={5}>
+              Latest commit
+            </Text>
+            <BranchRunCommit {...latestCommit} />
           </div>
         )}
 
