@@ -33,6 +33,9 @@ type TriggerAppBranchRunRequest struct {
 	Metadata  map[string]string
 	Callback  callback.Ref
 	DedupeKey *string
+
+	// ApprovalOption gates the run's plan steps. Empty means prompt.
+	ApprovalOption app.InstallApprovalOption
 }
 
 type TriggerAppBranchRunResponse struct {
@@ -56,6 +59,10 @@ func (h *Helpers) ResumeAppBranchRun(ctx context.Context, run *app.AppBranchRun,
 	req.Metadata["run_id"] = run.ID
 	req.Metadata["app_branch_id"] = run.AppBranchID
 	req.Metadata["commit_sha"] = run.CommitSHA
+	approvalOption := req.ApprovalOption
+	if approvalOption == "" {
+		approvalOption = app.InstallApprovalOptionPrompt
+	}
 	var wf app.Workflow
 	err := h.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var locked app.AppBranchRun
@@ -63,7 +70,7 @@ func (h *Helpers) ResumeAppBranchRun(ctx context.Context, run *app.AppBranchRun,
 			return err
 		}
 		if locked.WorkflowID == nil {
-			created, err := h.createWorkflowWithDB(ctx, tx, locked.AppBranchID, plugins.TableName(h.db, app.AppBranch{}), app.WorkflowTypeAppBranchesRun, req.Metadata, locked.PlanOnly, app.InstallApprovalOptionPrompt, "")
+			created, err := h.createWorkflowWithDB(ctx, tx, locked.AppBranchID, plugins.TableName(h.db, app.AppBranch{}), app.WorkflowTypeAppBranchesRun, req.Metadata, locked.PlanOnly, approvalOption, "")
 			if err != nil {
 				return fmt.Errorf("unable to create workflow: %w", err)
 			}
