@@ -10,6 +10,7 @@ import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { Tooltip } from '@/components/common/Tooltip'
+import { getRunTitle } from '@/components/branches/shared/run-title'
 import type { TInstall, TWorkflow } from '@/types'
 import {
   getWorkflowBadge,
@@ -77,7 +78,9 @@ export const WorkflowTimeline = ({
                   : `/${orgId}/installs/${installId}/workflows/${workflow.id}`
               }
             >
-              {workflow.name || workflow?.type || workflow.id}
+              {isBranchRun
+                ? getRunTitle(workflow)
+                : workflow.name || workflow?.type || workflow.id}
             </Link>
             {workflow?.status?.status === 'in-progress' ? (
               <Badge size="sm" theme="info">

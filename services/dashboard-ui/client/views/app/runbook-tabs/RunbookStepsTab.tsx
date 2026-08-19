@@ -1,4 +1,4 @@
-import { useOutletContext } from 'react-router'
+import { useOutletContext, useParams } from 'react-router'
 import { Text } from '@/components/common/Text'
 import { RunbookStep } from '@/components/runbooks/RunbookStep'
 import { useApp } from '@/hooks/use-app'
@@ -9,6 +9,10 @@ export const RunbookStepsTab = () => {
   const { runbook } = useOutletContext<TRunbookOutletContext>()
   const { org } = useOrg()
   const { app } = useApp()
+  const { branchId } = useParams()
+  const actionBasePath = branchId
+    ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
+    : `/${org?.id}/apps/${app?.id}`
 
   const latestConfig = runbook?.configs?.[0]
   const steps =
@@ -27,7 +31,7 @@ export const RunbookStepsTab = () => {
           key={step.id ?? i}
           index={i}
           step={step}
-          actionBasePath={`/${org?.id}/apps/${app?.id}`}
+          actionBasePath={actionBasePath}
         />
       ))}
     </div>

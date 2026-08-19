@@ -20,9 +20,12 @@ import type { TActionConfigTriggerType } from '@/types'
 import { sortByIdx } from '@/utils/action-utils'
 
 export const ActionDetail = () => {
-  const { actionId } = useParams()
+  const { actionId, branchId } = useParams()
   const { org } = useOrg()
   const { app } = useApp()
+  const appBase = branchId
+    ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
+    : `/${org?.id}/apps/${app?.id}`
 
   const { data: action, isLoading } = useQuery({
     placeholderData: keepPreviousData,
@@ -43,9 +46,9 @@ export const ActionDetail = () => {
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
-          { path: `/${org?.id}/apps/${app?.id}/actions`, text: 'Actions' },
+          { path: `${appBase}/actions`, text: 'Actions' },
           {
-            path: `/${org?.id}/apps/${app?.id}/actions/${actionId}`,
+            path: `${appBase}/actions/${actionId}`,
             text: action?.name,
           },
         ]}
@@ -116,7 +119,7 @@ export const ActionDetail = () => {
                         size="sm"
                         triggerType={trigger.type as TActionConfigTriggerType}
                         componentName={trigger?.component?.name}
-                        componentPath={`/${org?.id}/apps/${app?.id}/components/${trigger?.component_id}`}
+                        componentPath={`${appBase}/components/${trigger?.component_id}`}
                         cronSchedule={trigger?.cron_schedule}
                       />
                     </div>

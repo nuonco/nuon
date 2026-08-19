@@ -24,12 +24,13 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import {
   getAppConfig,
   getAppConfigs,
+  getBranchWorkflowRuns,
   getComponent,
   getComponentBuilds,
 } from '@/lib'
 
 export const ComponentDetail = () => {
-  const { componentId } = useParams()
+  const { componentId, branchId } = useParams()
   const { org } = useOrg()
   const { app } = useApp()
   const { addPanel } = useSurfaces()
@@ -41,16 +42,32 @@ export const ComponentDetail = () => {
     enabled: !!org?.id && !!app?.id && !!componentId,
   })
 
+  const { data: branchRuns, isLoading: isLoadingBranchRuns } = useQuery({
+    placeholderData: keepPreviousData,
+    queryKey: ['branch-runs-latest', org?.id, app?.id, branchId],
+    queryFn: () =>
+      getBranchWorkflowRuns({
+        orgId: org.id,
+        appId: app.id,
+        branchId: branchId!,
+        limit: 1,
+      }),
+    enabled: !!org?.id && !!app?.id && !!branchId,
+  })
+  const branchAppConfigId = branchId
+    ? branchRuns?.data?.at(0)?.app_branch_runs?.at(0)?.app_config_id
+    : undefined
+
   const { data: configs } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-configs', org?.id, app?.id],
     queryFn: () => getAppConfigs({ orgId: org.id, appId: app.id, limit: 1 }),
-    enabled: !!org?.id && !!app?.id,
+    enabled: !!org?.id && !!app?.id && !branchId,
   })
 
-  const appConfigId = configs?.at(0)?.id
+  const appConfigId = branchId ? branchAppConfigId : configs?.at(0)?.id
 
-  const { data: appConfig, isLoading: isLoadingConfig } = useQuery({
+  const { data: appConfig, isLoading: isLoadingAppConfig } = useQuery({
     placeholderData: keepPreviousData,
     queryKey: ['app-config', org?.id, app?.id, appConfigId, 'recurse'],
     queryFn: () =>
@@ -62,6 +79,8 @@ export const ComponentDetail = () => {
       }),
     enabled: !!org?.id && !!app?.id && !!appConfigId,
   })
+  const isLoadingConfig =
+    isLoadingAppConfig || (!!branchId && isLoadingBranchRuns)
 
   const config = appConfig?.component_config_connections?.find(
     (c) => c.component_id === componentId
@@ -87,6 +106,26 @@ export const ComponentDetail = () => {
   const latestResolvedBuild = latestBuilds?.data?.find(
     (b) => !!b.source_digest
   )
+
+  const latestBuildWithCommit = latestBuilds?.data?.find(
+    (b) =>
+      !!b.vcs_connection_commit && (!branchId || b.app_branch_id === branchId)
+  )
+  const buildCommit = latestBuildWithCommit?.vcs_connection_commit
+  const componentBasePath = branchId
+    ? `/${org?.id}/apps/${app?.id}/branches/${branchId}/components/${componentId}`
+    : `/${org?.id}/apps/${app?.id}/components/${componentId}`
+  const latestCommit = buildCommit
+    ? {
+        status: latestBuildWithCommit?.status_v2?.status,
+        href: `${componentBasePath}/builds/${latestBuildWithCommit?.id}`,
+        message: buildCommit.message?.split('\n')[0],
+        author: buildCommit.author_name,
+        avatarUrl: buildCommit.author_avatar_url,
+        sha: buildCommit.sha,
+        createdAt: buildCommit.created_at,
+      }
+    : undefined
 
   return (
     <PageSection>
@@ -178,6 +217,7 @@ export const ComponentDetail = () => {
               <ComponentConfigCard
                 config={config}
                 latestBuild={latestResolvedBuild}
+                latestCommit={latestCommit}
                 headerActions={
                   appConfig && componentId && component?.name ? (
                     <ComponentDependencyGraphButton

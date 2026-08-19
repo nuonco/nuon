@@ -30,9 +30,12 @@ function getCodeLanguage(engine: string): string {
 }
 
 export const PolicyDetail = () => {
-  const { policyId } = useParams()
+  const { policyId, branchId } = useParams()
   const { org } = useOrg()
   const { app } = useApp()
+  const appBase = branchId
+    ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
+    : `/${org?.id}/apps/${app?.id}`
 
   const { data: policyResult } = useQuery({
     placeholderData: keepPreviousData,
@@ -73,9 +76,9 @@ export const PolicyDetail = () => {
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
-          { path: `/${org?.id}/apps/${app?.id}/policies`, text: 'Policies' },
+          { path: `${appBase}/policies`, text: 'Policies' },
           {
-            path: `/${org?.id}/apps/${app?.id}/policies/${policyId}`,
+            path: `${appBase}/policies/${policyId}`,
             text: policy?.name,
           },
         ]}
@@ -154,7 +157,7 @@ export const PolicyDetail = () => {
                   return componentId ? (
                     <Link
                       key={comp}
-                      href={`/${org?.id}/apps/${app?.id}/components/${componentId}`}
+                      href={`${appBase}/components/${componentId}`}
                       className="flex items-center gap-2 rounded px-3 py-2 text-sm border border-cool-grey-200 dark:border-dark-grey-600 hover:bg-grey-50 dark:hover:bg-dark-grey-800 transition-colors"
                     >
                       <Icon variant="CardsIcon" size={14} />
