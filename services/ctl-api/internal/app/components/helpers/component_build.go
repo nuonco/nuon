@@ -54,7 +54,7 @@ func (s *Helpers) createComponentBuild(ctx context.Context, db *gorm.DB, buildID
 
 	bld := app.ComponentBuild{
 		ID:                          buildID,
-		Status:                      "queued",
+		Status:                      app.ComponentBuildStatusQueued,
 		StatusDescription:           "queued and waiting for runner to pick up",
 		GitRef:                      gitRef,
 		ComponentConfigConnectionID: cmp.LatestConfig.ID,
