@@ -112,7 +112,7 @@ func SyncComponent(ctx context.Context, params SyncComponentParams) error {
 
 	depIDs := []string{}
 	if len(comp.Dependencies) > 0 {
-		depIDs, err = helpers.GetComponentIDs(ctx, appID, comp.Dependencies)
+		depIDs, err = helpers.GetComponentIDsWithDB(ctx, db, appID, comp.Dependencies)
 		if err != nil {
 			return sync.SyncInternalErr{
 				Description: fmt.Sprintf("unable to resolve dependencies for component %s", comp.Name),
@@ -416,7 +416,7 @@ func EnsureComponentDependencies(ctx context.Context, db *gorm.DB, helpers *comp
 		}
 	}
 
-	depIDs, err := helpers.GetComponentIDs(ctx, appID, comp.Dependencies)
+	depIDs, err := helpers.GetComponentIDsWithDB(ctx, db, appID, comp.Dependencies)
 	if err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to resolve dependencies for component %s", comp.Name),
@@ -424,14 +424,14 @@ func EnsureComponentDependencies(ctx context.Context, db *gorm.DB, helpers *comp
 		}
 	}
 
-	if err := helpers.ClearComponentDependencies(ctx, apiComp.ID); err != nil {
+	if err := helpers.ClearComponentDependenciesWithDB(ctx, db, apiComp.ID); err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to clear existing dependencies for component %s", comp.Name),
 			Err:         err,
 		}
 	}
 
-	if err := helpers.CreateComponentDependencies(ctx, apiComp.ID, depIDs); err != nil {
+	if err := helpers.CreateComponentDependenciesWithDB(ctx, db, apiComp.ID, depIDs); err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create dependencies for component %s", comp.Name),
 			Err:         err,
