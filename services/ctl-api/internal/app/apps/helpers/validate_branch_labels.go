@@ -223,6 +223,42 @@ func (h *Helpers) DeactivateInstallBranchConnections(ctx context.Context, instal
 		Update("app_branch_id", nil)
 }
 
+func (h *Helpers) ReconcileRemovedBranchInstalls(ctx context.Context, appBranchID string, keepInstallIDs []string, selectors []*labels.Selector) error {
+	var connected []app.Install
+	if err := h.db.WithContext(ctx).
+		Where("app_branch_id = ?", appBranchID).
+		Find(&connected).Error; err != nil {
+		return fmt.Errorf("unable to get branch installs: %w", err)
+	}
+
+	keep := make(map[string]struct{}, len(keepInstallIDs))
+	for _, id := range keepInstallIDs {
+		keep[id] = struct{}{}
+	}
+
+	for i := range connected {
+		install := &connected[i]
+		if _, ok := keep[install.ID]; ok {
+			continue
+		}
+
+		matched := false
+		for _, sel := range selectors {
+			if sel != nil && sel.Matches(install.Labels) {
+				matched = true
+				break
+			}
+		}
+		if matched {
+			continue
+		}
+
+		h.DeactivateInstallBranchConnections(ctx, install.ID)
+	}
+
+	return nil
+}
+
 // ValidateInstallIDsNotOnOtherBranch checks that installs referenced by
 // explicit IDs are not already assigned to a different branch.
 func (h *Helpers) ValidateInstallIDsNotOnOtherBranch(ctx context.Context, branchID string, installIDs []string) error {
