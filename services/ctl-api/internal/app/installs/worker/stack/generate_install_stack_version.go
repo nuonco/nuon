@@ -288,6 +288,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 
 		inp.VPCNestedStackTemplateURL = cfg.StackConfig.VPCNestedTemplateURL
 		inp.RunnerNestedStackTemplateURL = cfg.StackConfig.RunnerNestedTemplateURL
+		inp.DeploymentScope = cfg.StackConfig.DeploymentScope
 
 		renderedTemplate, err := activities.AwaitRenderARMStackTemplate(ctx, &activities.RenderARMStackTemplateRequest{
 			Input: *inp,

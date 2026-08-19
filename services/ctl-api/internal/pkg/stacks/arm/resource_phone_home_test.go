@@ -14,7 +14,7 @@ func TestGetPhoneHomeResource_CustomStackOutputs(t *testing.T) {
 
 	res := tmpl.getPhoneHomeResource(inp, []customDeploymentOutputs{
 		{StackName: "preview_bucket", DeploymentName: "PreviewBucket", OutputKeys: []string{"bucketName", "bucketUrl"}},
-	})
+	}, armScope{})
 
 	props := res["properties"].(map[string]any)
 	script := props["scriptContent"].(string)
@@ -57,7 +57,7 @@ func TestGetPhoneHomeResource_CustomStackOutputs(t *testing.T) {
 func TestGetPhoneHomeResource_RunnerIdentityPrincipalID(t *testing.T) {
 	t.Run("reported when a runner deployment exists", func(t *testing.T) {
 		tmpl := &Templates{cfg: &internal.Config{}}
-		res := tmpl.getPhoneHomeResource(minimalTemplateInput(), nil)
+		res := tmpl.getPhoneHomeResource(minimalTemplateInput(), nil, armScope{})
 
 		props := res["properties"].(map[string]any)
 		script := props["scriptContent"].(string)
@@ -78,7 +78,7 @@ func TestGetPhoneHomeResource_RunnerIdentityPrincipalID(t *testing.T) {
 
 	t.Run("omitted for local runners", func(t *testing.T) {
 		tmpl := &Templates{cfg: &internal.Config{UseLocalRunners: true}}
-		res := tmpl.getPhoneHomeResource(minimalTemplateInput(), nil)
+		res := tmpl.getPhoneHomeResource(minimalTemplateInput(), nil, armScope{})
 
 		script := res["properties"].(map[string]any)["scriptContent"].(string)
 		if strings.Contains(script, "RUNNER_IDENTITY_PRINCIPAL_ID") {

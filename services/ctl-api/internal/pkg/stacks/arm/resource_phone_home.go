@@ -14,7 +14,7 @@ func envToken(s string) string {
 	return strings.ToUpper(envNameRegexp.ReplaceAllString(s, "_"))
 }
 
-func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs) map[string]any {
+func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs, scope armScope) map[string]any {
 	phoneHomeURL := inp.CloudFormationStackVersion.PhoneHomeURL
 
 	operationIDs := azureOperationIdentities(inp.AppCfg)
@@ -111,12 +111,12 @@ fi
 	envVars := []map[string]any{
 		{"name": "SUBSCRIPTION_ID", "value": "[subscription().subscriptionId]"},
 		{"name": "SUBSCRIPTION_TENANT_ID", "value": "[subscription().tenantId]"},
-		{"name": "RESOURCE_GROUP_ID", "value": "[resourceGroup().id]"},
-		{"name": "RESOURCE_GROUP_NAME", "value": "[resourceGroup().name]"},
-		{"name": "RESOURCE_GROUP_LOCATION", "value": "[resourceGroup().location]"},
+		{"name": "RESOURCE_GROUP_ID", "value": scope.rgIDExpr()},
+		{"name": "RESOURCE_GROUP_NAME", "value": scope.rgNameExpr()},
+		{"name": "RESOURCE_GROUP_LOCATION", "value": scope.locationExpr()},
 		{"name": "VNET_ID", "value": "[reference('vnetDeployment').outputs.vnetId.value]"},
 		{"name": "VNET_NAME", "value": "[reference('vnetDeployment').outputs.vnetName.value]"},
-		{"name": "KEY_VAULT_ID", "value": "[resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))]"},
+		{"name": "KEY_VAULT_ID", "value": scope.rgResourceIDExpr("Microsoft.KeyVault/vaults", keyVaultNameInner)},
 		{"name": "KEY_VAULT_NAME", "value": "[take(format('{0}', parameters('nuonInstallID')), 24)]"},
 		{"name": "PUBLIC_SUBNET_1_ID", "value": "[reference('vnetDeployment').outputs.publicSubnet1Id.value]"},
 		{"name": "PUBLIC_SUBNET_1_NAME", "value": "[reference('vnetDeployment').outputs.publicSubnet1Name.value]"},

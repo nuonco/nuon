@@ -4,14 +4,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-func (t *Templates) getCustomRoleDeployment(inp *stacks.TemplateInput) map[string]any {
+func (t *Templates) getCustomRoleDeployment(inp *stacks.TemplateInput, scope armScope) map[string]any {
 	_ = inp
 	return map[string]any{
 		"type":           "Microsoft.Resources/deployments",
 		"apiVersion":     "2022-09-01",
 		"name":           "[format('{0}-custom-role-deployment', parameters('nuonInstallID'))]",
 		"subscriptionId": "[subscription().subscriptionId]",
-		"location":       "[resourceGroup().location]",
+		"location":       scope.locationExpr(),
 		"dependsOn":      []string{"runnerDeployment"},
 		"properties": map[string]any{
 			"expressionEvaluationOptions": map[string]any{

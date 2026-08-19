@@ -320,7 +320,7 @@ func TestGetCustomLinkedDeployments_PrincipalIDOutput(t *testing.T) {
 		require.Len(t, identities, 1)
 		assert.Equal(t, "bauleiterIdentityPrincipalId", identities[0].PrincipalIDOutput)
 
-		role := tmpl.getCustomDeploymentRoleAssignment(identities[0])
+		role := tmpl.getCustomDeploymentRoleAssignment(identities[0], armScope{})
 		params := role["properties"].(map[string]any)["parameters"].(map[string]any)
 		assert.Equal(t,
 			"[reference('Bauleiter').outputs.bauleiterIdentityPrincipalId.value]",

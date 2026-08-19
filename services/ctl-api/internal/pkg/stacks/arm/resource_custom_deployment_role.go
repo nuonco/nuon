@@ -8,7 +8,7 @@ import "fmt"
 //
 // The identity's principalId is read from an output resolved by
 // resolvePrincipalIDOutput, which the generator requires the template to expose.
-func (t *Templates) getCustomDeploymentRoleAssignment(id customDeploymentIdentity) map[string]any {
+func (t *Templates) getCustomDeploymentRoleAssignment(id customDeploymentIdentity, scope armScope) map[string]any {
 	deploymentName := fmt.Sprintf("%s-identity-role", id.DeploymentName)
 
 	return map[string]any{
@@ -16,7 +16,7 @@ func (t *Templates) getCustomDeploymentRoleAssignment(id customDeploymentIdentit
 		"apiVersion":     "2022-09-01",
 		"name":           deploymentName,
 		"subscriptionId": "[subscription().subscriptionId]",
-		"location":       "[resourceGroup().location]",
+		"location":       scope.locationExpr(),
 		"dependsOn":      []string{id.DeploymentName},
 		"properties": map[string]any{
 			"expressionEvaluationOptions": map[string]any{

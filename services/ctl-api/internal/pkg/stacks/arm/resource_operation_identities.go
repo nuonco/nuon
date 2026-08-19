@@ -114,7 +114,7 @@ func uamiNameInner(suffix string) string {
 	return fmt.Sprintf("format('{0}-%s', parameters('nuonInstallID'))", suffix)
 }
 
-func (t *Templates) getOperationIdentityResources(ids []azureOperationIdentity) []any {
+func (t *Templates) getOperationIdentityResources(ids []azureOperationIdentity, scope armScope) []any {
 	var resources []any
 
 	for _, id := range ids {
@@ -128,7 +128,7 @@ func (t *Templates) getOperationIdentityResources(ids []azureOperationIdentity) 
 	}
 
 	for _, id := range ids {
-		resources = append(resources, t.getOperationIdentityCustomRole(id))
+		resources = append(resources, t.getOperationIdentityCustomRole(id, scope))
 		resources = append(resources, t.getOperationIdentityBuiltInRoleAssignments(id)...)
 	}
 
@@ -159,7 +159,7 @@ func roleDeploymentNameExpr(id azureOperationIdentity) string {
 // getOperationIdentityCustomRole always includes */register/action so the azurerm
 // provider can register resource providers on apply (a subscription-scoped action
 // previously held by the runner's system identity).
-func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity) map[string]any {
+func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity, scope armScope) map[string]any {
 	roleActions := append([]string{"*/register/action"}, id.actions...)
 
 	return map[string]any{
@@ -167,7 +167,7 @@ func (t *Templates) getOperationIdentityCustomRole(id azureOperationIdentity) ma
 		"apiVersion":     "2022-09-01",
 		"name":           roleDeploymentNameExpr(id),
 		"subscriptionId": "[subscription().subscriptionId]",
-		"location":       "[resourceGroup().location]",
+		"location":       scope.locationExpr(),
 		"dependsOn":      []string{uamiResourceIDExpr(id.suffix)},
 		"properties": map[string]any{
 			"expressionEvaluationOptions": map[string]any{

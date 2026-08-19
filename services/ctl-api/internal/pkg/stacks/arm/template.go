@@ -3,6 +3,7 @@ package arm
 import (
 	"fmt"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
@@ -35,8 +36,23 @@ type ARMOutput struct {
 var ReservedParamNames = []string{"nuonInstallID", "nuonOrgID", "nuonAppID", "location", "deployTimestamp"}
 
 func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, error) {
+	scope := scopeFor(inp)
+	if scope.subscription {
+		// The scope now threads through the renderer, but the root still declares
+		// resource-group-scoped resources directly (UAMIs, role assignments, the
+		// phone-home deploymentScripts) and never declares installResourceGroupName,
+		// so rendering here would emit a template ARM rejects. Fail at generation
+		// with a message that says so rather than at the customer's az stack sub
+		// create with an opaque InvalidTemplate. Remove once the root template is
+		// built out.
+		return nil, fmt.Errorf(
+			"deployment_scope %q is accepted by app config but the subscription-scoped root template is not implemented yet; unset it or use %q",
+			app.StackDeploymentScopeSubscription, app.StackDeploymentScopeResourceGroup,
+		)
+	}
+
 	tmpl := &ARMTemplate{
-		Schema:         "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+		Schema:         scope.rootSchema(),
 		ContentVersion: "1.0.0.0",
 		Parameters:     make(map[string]ARMParameter),
 		Variables:      make(map[string]any),
@@ -94,7 +110,7 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	}
 
 	if useOperationIdentities {
-		tmpl.Resources = append(tmpl.Resources, t.getOperationIdentityResources(operationIDs)...)
+		tmpl.Resources = append(tmpl.Resources, t.getOperationIdentityResources(operationIDs, scope)...)
 	}
 
 	// Runner linked deployment (or use default inline)
@@ -113,7 +129,7 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	// identities are not in use.
 	if !t.cfg.UseLocalRunners && !useOperationIdentities {
 		tmpl.Resources = append(tmpl.Resources, t.getVMSSRoleAssignments()...)
-		tmpl.Resources = append(tmpl.Resources, t.getCustomRoleDeployment(inp))
+		tmpl.Resources = append(tmpl.Resources, t.getCustomRoleDeployment(inp, scope))
 	}
 
 	// Key Vault Secrets User and ACR pull/push stay on the system identity:
@@ -141,20 +157,20 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		// parent template because ARM does not support subscription-level
 		// nested deployments inside linked deployments.
 		for _, id := range customIdentities {
-			tmpl.Resources = append(tmpl.Resources, t.getCustomDeploymentRoleAssignment(id))
+			tmpl.Resources = append(tmpl.Resources, t.getCustomDeploymentRoleAssignment(id, scope))
 		}
 	}
 
 	// Phone home deployment script
-	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResource(inp, customOutputs))
+	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResource(inp, customOutputs, scope))
 
 	// Add standard outputs (VNet, subnets, key vault)
-	t.addStandardOutputs(tmpl)
+	t.addStandardOutputs(tmpl, scope)
 
 	return tmpl, nil
 }
 
-func (t *Templates) addStandardOutputs(tmpl *ARMTemplate) {
+func (t *Templates) addStandardOutputs(tmpl *ARMTemplate, scope armScope) {
 	// VNet outputs - reference linked deployment outputs
 	tmpl.Outputs["vnetId"] = ARMOutput{
 		Type:  "string",
@@ -186,7 +202,7 @@ func (t *Templates) addStandardOutputs(tmpl *ARMTemplate) {
 	}
 	tmpl.Outputs["keyVaultId"] = ARMOutput{
 		Type:  "string",
-		Value: "[resourceId('Microsoft.KeyVault/vaults', take(format('{0}', parameters('nuonInstallID')), 24))]",
+		Value: scope.rgResourceIDExpr("Microsoft.KeyVault/vaults", keyVaultNameInner),
 	}
 	tmpl.Outputs["keyVaultUri"] = ARMOutput{
 		Type:  "string",
