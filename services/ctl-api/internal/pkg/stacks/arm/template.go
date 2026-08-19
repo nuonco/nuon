@@ -143,19 +143,7 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		}
 	}
 
-	// Legacy broad grants on the system identity, only when per-operation
-	// identities are not in use.
-	if !t.cfg.UseLocalRunners && !useOperationIdentities {
-		tmpl.Resources = append(tmpl.Resources, t.getVMSSRoleAssignments()...)
-		tmpl.Resources = append(tmpl.Resources, t.getCustomRoleDeployment(inp, scope))
-	}
-
-	// Key Vault Secrets User and ACR pull/push stay on the system identity:
-	// secret-sync and image-sync run as the ambient identity.
-	if !t.cfg.UseLocalRunners {
-		tmpl.Resources = append(tmpl.Resources, t.getKeyVaultRoleAssignment())
-		tmpl.Resources = append(tmpl.Resources, t.getACRRoleAssignments()...)
-	}
+	t.appendRunnerGrants(tmpl, inp, scope, useOperationIdentities)
 
 	// Custom linked deployments (before phone home, which reports their outputs)
 	var customOutputs []customDeploymentOutputs
@@ -186,6 +174,63 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	t.addStandardOutputs(tmpl, scope)
 
 	return tmpl, nil
+}
+
+// appendRunnerGrants emits the role assignments held by the runner's system
+// identity. They are all resource-group-scoped, so at subscription scope they move
+// into the install resource group together as runnerGrantsDeployment.
+//
+// The custom role deployment stays in the root either way: it targets the
+// subscription, which ARM will not allow inside another nested deployment.
+func (t *Templates) appendRunnerGrants(tmpl *ARMTemplate, inp *stacks.TemplateInput, scope armScope, useOperationIdentities bool) {
+	if t.cfg.UseLocalRunners {
+		return
+	}
+
+	// Legacy broad grants on the system identity, only when per-operation
+	// identities are not in use.
+	legacyGrants := !useOperationIdentities
+
+	if !scope.subscription {
+		// Emission order is load-bearing for the byte-identical guarantee.
+		if legacyGrants {
+			tmpl.Resources = append(tmpl.Resources, t.getVMSSRoleAssignments(runnerGrantContextFor(scope))...)
+			tmpl.Resources = append(tmpl.Resources, t.getCustomRoleDeployment(inp, scope))
+		}
+		// Key Vault Secrets User and ACR pull/push stay on the system identity:
+		// secret-sync and image-sync run as the ambient identity.
+		tmpl.Resources = append(tmpl.Resources, t.getKeyVaultRoleAssignment(runnerGrantContextFor(scope)))
+		tmpl.Resources = append(tmpl.Resources, t.getACRRoleAssignments(runnerGrantContextFor(scope))...)
+		return
+	}
+
+	// Inside the wrapper the grants are back at resource-group scope, so their
+	// guid() names are unchanged; only the principal and the dependency move.
+	inner := runnerGrantContextFor(armScope{subscription: true})
+
+	var grants []any
+	if legacyGrants {
+		grants = append(grants, t.getVMSSRoleAssignments(inner)...)
+	}
+	grants = append(grants, t.getKeyVaultRoleAssignment(inner))
+	grants = append(grants, t.getACRRoleAssignments(inner)...)
+
+	wrapper := scope.wrapInInstallRG(runnerGrantsDeploymentName, map[string]nestedParam{
+		"nuonInstallID": {typ: "string", value: "[parameters('nuonInstallID')]"},
+		"principalId":   {typ: "string", value: "[reference('runnerDeployment').outputs.vmssPrincipalId.value]"},
+	}, grants)
+
+	// The grants read the runner's identity, so the wrapper waits on the runner in
+	// addition to the resource group.
+	for _, r := range wrapper {
+		dep := r.(map[string]any)
+		dep["dependsOn"] = append([]string{"runnerDeployment"}, dep["dependsOn"].([]string)...)
+	}
+	tmpl.Resources = append(tmpl.Resources, wrapper...)
+
+	if legacyGrants {
+		tmpl.Resources = append(tmpl.Resources, t.getCustomRoleDeployment(inp, scope))
+	}
 }
 
 func (t *Templates) addStandardOutputs(tmpl *ARMTemplate, scope armScope) {

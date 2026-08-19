@@ -17,6 +17,10 @@ const (
 	// built scope-correctly rather than left to an ambient resource group.
 	keyVaultNameInner = "take(format('{0}', parameters('nuonInstallID')), 24)"
 
+	// runnerGrantsDeploymentName is the nested deployment the runner's system-identity
+	// role assignments move into at subscription scope.
+	runnerGrantsDeploymentName = "runnerGrantsDeployment"
+
 	// installRGParamName names the install's resource group in the root template.
 	// At subscription scope there is no ambient resource group, so every expression
 	// that used to resolve against one has to name it explicitly. At RG scope the
