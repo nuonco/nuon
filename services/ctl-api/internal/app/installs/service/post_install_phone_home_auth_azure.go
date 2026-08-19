@@ -57,13 +57,13 @@ func (s *service) authorizeAzurePhoneHome(
 	if tenantID == "" {
 		var err error
 		if tenantID, err = unverifiedAzureTenantID(raw); err != nil {
-			return phoneHomeRejectIdentityToken, rejectPhoneHome(phoneHomeRejectIdentityToken, err)
+			return s.rejectAzureIdentityToken(install, err)
 		}
 	}
 
 	issuer, err := workloadjwt.AzureIssuer(tenantID)
 	if err != nil {
-		return phoneHomeRejectIdentityToken, rejectPhoneHome(phoneHomeRejectIdentityToken, err)
+		return s.rejectAzureIdentityToken(install, err)
 	}
 
 	claims, err := s.workloadJWT.Verify(ctx, workloadjwt.Request{
@@ -72,12 +72,12 @@ func (s *service) authorizeAzurePhoneHome(
 		Audience: workloadjwt.AzureGraphAudience,
 	})
 	if err != nil {
-		return phoneHomeRejectIdentityToken, rejectPhoneHome(phoneHomeRejectIdentityToken, err)
+		return s.rejectAzureIdentityToken(install, err)
 	}
 
 	identity, err := workloadjwt.ParseAzureManagedIdentity(claims)
 	if err != nil {
-		return phoneHomeRejectIdentityToken, rejectPhoneHome(phoneHomeRejectIdentityToken, err)
+		return s.rejectAzureIdentityToken(install, err)
 	}
 
 	if reason, err := bindAzureIdentity(install, stackVersion, identity, tenantID); err != nil {
@@ -136,6 +136,18 @@ func bindAzureIdentity(
 	}
 
 	return phoneHomeAuthOK, nil
+}
+
+// rejectAzureIdentityToken keeps verification detail out of the response. The underlying
+// error quotes the presented token's own claims and, for a discovery failure, Entra's reply
+// verbatim -- echoing either back to an unauthenticated caller tells them how far they got.
+func (s *service) rejectAzureIdentityToken(install *app.Install, err error) (string, error) {
+	s.l.Warn("rejected azure phone home identity token",
+		zap.String("install_id", install.ID), zap.Error(err))
+
+	return phoneHomeRejectIdentityToken, rejectPhoneHome(
+		phoneHomeRejectIdentityToken, errors.New("identity token verification failed"),
+	)
 }
 
 // pinAzurePhoneHomeIdentity records the tenant and principal the first verified call came

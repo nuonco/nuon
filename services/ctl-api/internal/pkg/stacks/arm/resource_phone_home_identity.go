@@ -44,7 +44,10 @@ trap 'rm -f "$CURL_CONFIG"' EXIT
 # failing the deployment on a propagation delay.
 TOKEN=""
 for attempt in $(seq 1 12); do
-  TOKEN=$(curl -s -f -H "Metadata: true" "$IMDS_URL" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+  # Whitespace around the colon is tolerated: the IMDS response is JSON, so its exact
+  # spacing is not part of the contract.
+  TOKEN=$(curl -s -f -H "Metadata: true" "$IMDS_URL" |
+    sed -n 's/.*"access_token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
   if [ -n "$TOKEN" ]; then
     break
   fi

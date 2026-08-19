@@ -88,6 +88,19 @@ func TestGetPhoneHomeResource_AuthenticatesWithoutLeakingToken(t *testing.T) {
 		t.Error("script must not echo the token")
 	}
 
+	// The IMDS response is JSON, so its spacing is not part of the contract. An
+	// extraction anchored on `"access_token":"` silently yields an empty token against a
+	// pretty-printed response, and the script then fails the deployment.
+	if !strings.Contains(script, `"access_token"[[:space:]]*:[[:space:]]*"`) {
+		t.Error("token extraction must tolerate whitespace around the colon")
+	}
+
+	// A token it could not fetch must fail the deployment, never phone home unauthenticated.
+	if !strings.Contains(script, "failed to acquire managed identity token") ||
+		!strings.Contains(script, "exit 1") {
+		t.Error("script must exit non-zero when no token could be acquired")
+	}
+
 	var found bool
 	for _, env := range props["environmentVariables"].([]map[string]any) {
 		if env["name"] == "PHONE_HOME_IDENTITY_CLIENT_ID" {
