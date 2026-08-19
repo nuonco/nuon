@@ -69,6 +69,6 @@ func (a *Activities) queryHeartBeat(ctx context.Context, runnerID string, proces
 		Version:   latest[0].Version,
 		AliveTime: latest[0].AliveTime,
 		CreatedAt: latest[0].CreatedAt,
-		StartedAt: latest[0].StartedAt,
+		StartedAt: latest[0].CreatedAt.Add(-1 * latest[0].AliveTime),
 	}, nil
 }
