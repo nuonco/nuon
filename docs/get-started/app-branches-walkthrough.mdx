@@ -224,7 +224,8 @@ config it already built from your working directory while `trigger` fetches one 
 
 From step 3 on they are identical:
 
-- `building components and sandbox` rebuilds only what changed.
+- `building components and sandbox` rebuilds only what changed. The sandbox half of it needs
+  [sandbox builds](/guides/sandbox-builds) enabled for your org; without it, components only.
 - each `plan install group` computes the diff for every install in the group and then **waits** for you.
 - each `deploy install group` runs once you approve the plan before it.
 
