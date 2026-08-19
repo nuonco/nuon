@@ -166,6 +166,100 @@ func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchAlwaysCreatesFreshConfig()
 		"branch sync must create a config connection per sync")
 }
 
+// Branch sync pre-creates exactly one queued build per fresh CCC for image
+// components, which the branch run's builds step adopts and executes via
+// queuebuild — never a duplicate.
+func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchPrecreatesOneImageBuild() {
+	cfg := testseedconfig.BuildMinimalAppConfig()
+	cmp := testseedconfig.BuildExternalImageComponent("plain-image")
+	cfg.Components = config.ComponentList{cmp}
+
+	ctx, testApp, _ := s.syncEmpty()
+
+	appCfg := s.syncInto(ctx, testApp.ID, cfg)
+	cmpID := s.componentID(ctx, testApp.ID, "plain-image")
+
+	var ccc app.ComponentConfigConnection
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Where(app.ComponentConfigConnection{ComponentID: cmpID, AppConfigID: appCfg.ID}).
+		First(&ccc).Error)
+
+	var builds []app.ComponentBuild
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Where(app.ComponentBuild{ComponentConfigConnectionID: ccc.ID}).
+		Find(&builds).Error)
+	s.Require().Len(builds, 1, "branch sync must pre-create exactly one build")
+	s.Equal(app.ComponentBuildStatusQueued, builds[0].Status)
+	s.Require().True(ccc.LatestBuildID.Valid)
+	s.Equal(builds[0].ID, ccc.LatestBuildID.String)
+}
+
+// An unchanged image component whose previous build is Active must not get a
+// new build on re-sync — the fresh CCC is pinned to the previous Active build.
+func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchReusesActiveImageBuild() {
+	cfg := testseedconfig.BuildMinimalAppConfig()
+	cmp := testseedconfig.BuildExternalImageComponent("stable-image")
+	cfg.Components = config.ComponentList{cmp}
+
+	ctx, testApp, _ := s.syncEmpty()
+
+	s.syncInto(ctx, testApp.ID, cfg)
+	cmpID := s.componentID(ctx, testApp.ID, "stable-image")
+
+	var firstBuild app.ComponentBuild
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Joins("JOIN component_config_connections ccc ON ccc.id = component_builds.component_config_connection_id").
+		Where("ccc.component_id = ?", cmpID).
+		First(&firstBuild).Error)
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Model(&app.ComponentBuild{}).
+		Where("id = ?", firstBuild.ID).
+		Update("status", app.ComponentBuildStatusActive).Error)
+
+	secondCfg := s.syncInto(ctx, testApp.ID, cfg)
+
+	var secondCCC app.ComponentConfigConnection
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Where(app.ComponentConfigConnection{ComponentID: cmpID, AppConfigID: secondCfg.ID}).
+		First(&secondCCC).Error)
+
+	var count int64
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Model(&app.ComponentBuild{}).
+		Joins("JOIN component_config_connections ccc ON ccc.id = component_builds.component_config_connection_id").
+		Where("ccc.component_id = ?", cmpID).
+		Count(&count).Error)
+	s.Equal(int64(1), count, "unchanged image must not get a second build")
+	s.Require().True(secondCCC.LatestBuildID.Valid)
+	s.Equal(firstBuild.ID, secondCCC.LatestBuildID.String,
+		"fresh CCC must be pinned to the previous Active build")
+}
+
+// An update_policy image resolves tags at build time, so it must pre-create a
+// fresh build every branch sync even when the config is unchanged.
+func (s *SyncFieldsTestSuite) TestWithoutBuildDispatchAlwaysBuildsUpdatePolicyImage() {
+	cfg := testseedconfig.BuildMinimalAppConfig()
+	cmp := testseedconfig.BuildExternalImageComponent("tracked-branch-image")
+	cmp.ExternalImage.PublicImageConfig.UpdatePolicy = ">= 1.0.0"
+	cfg.Components = config.ComponentList{cmp}
+
+	ctx, testApp, _ := s.syncEmpty()
+
+	s.syncInto(ctx, testApp.ID, cfg)
+	cmpID := s.componentID(ctx, testApp.ID, "tracked-branch-image")
+	s.markBuilt(ctx, cmpID)
+
+	s.syncInto(ctx, testApp.ID, cfg)
+
+	var count int64
+	s.Require().NoError(s.deps.DB.WithContext(ctx).
+		Model(&app.ComponentBuild{}).
+		Joins("JOIN component_config_connections ccc ON ccc.id = component_builds.component_config_connection_id").
+		Where("ccc.component_id = ?", cmpID).
+		Count(&count).Error)
+	s.GreaterOrEqual(count, int64(2), "update_policy image must pre-create a build per sync")
+}
+
 // An external image with an update_policy resolves its tag against the registry
 // at build time, so an unchanged config does not mean an unchanged artifact. It
 // must rebuild every sync or installs silently stop picking up new tags.
