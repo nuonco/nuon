@@ -70,6 +70,66 @@ func (s armScope) rgIDExpr() string {
 	return "[resourceGroup().id]"
 }
 
+// installRGResource declares the install resource group in the root, and returns
+// nil at resource-group scope where the customer creates it by hand before
+// deploying and nothing in the template may declare it — an RG in an RG-scoped
+// root's resources is InvalidTemplate.
+func (s armScope) installRGResource() map[string]any {
+	if !s.subscription {
+		return nil
+	}
+	return map[string]any{
+		"type":       "Microsoft.Resources/resourceGroups",
+		"apiVersion": "2021-04-01",
+		"name":       s.rgNameExpr(),
+		"location":   s.locationExpr(),
+		"tags":       "[variables('commonTags')]",
+	}
+}
+
+// installRGDependsOn is the dependency on the declared install resource group.
+// Empty at resource-group scope, where there is nothing to depend on.
+func (s armScope) installRGDependsOn() []string {
+	if !s.subscription {
+		return nil
+	}
+	return []string{fmt.Sprintf("[resourceId('Microsoft.Resources/resourceGroups', parameters('%s'))]", installRGParamName)}
+}
+
+// targetInstallRG points a nested deployment at the install resource group and
+// makes it wait for the group to exist. A no-op at resource-group scope, where
+// the deployment already runs in that group by virtue of the root's scope.
+//
+// Mutates deployment in place, and merges into any dependsOn already set rather
+// than replacing it — the runner deployment in particular already depends on the
+// VNet and on each operation identity.
+func (s armScope) targetInstallRG(deployment map[string]any) {
+	if !s.subscription {
+		return
+	}
+
+	deployment["resourceGroup"] = s.rgNameExpr()
+
+	deps := s.installRGDependsOn()
+	if existing, ok := deployment["dependsOn"].([]string); ok {
+		deps = append(existing, deps...)
+	}
+	deployment["dependsOn"] = deps
+}
+
+// targetSubscription points a nested deployment at the subscription rather than
+// at a resource group, which is what lets the template it runs declare its own
+// resource groups. A subscription-targeted child requires an explicit location:
+// without it the deployment fails.
+//
+// A no-op at resource-group scope, where the root cannot host one.
+func (s armScope) targetSubscription(deployment map[string]any) {
+	if !s.subscription {
+		return
+	}
+	deployment["location"] = s.locationExpr()
+}
+
 // rgResourceIDExpr addresses a resource in the install resource group. nameInner
 // is an unbracketed ARM expression, because ARM does not allow nested [ ].
 //

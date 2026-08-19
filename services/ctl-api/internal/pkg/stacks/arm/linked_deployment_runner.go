@@ -6,10 +6,10 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity) (map[string]any, map[string]ARMParameter, error) {
+func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity, scope armScope) (map[string]any, map[string]ARMParameter, error) {
 	templateURL := inp.RunnerNestedStackTemplateURL
 	if templateURL == "" {
-		return t.getDefaultRunnerDeployment(inp, operationIDs), nil, nil
+		return t.getDefaultRunnerDeployment(inp, operationIDs, scope), nil, nil
 	}
 
 	// Custom runner template — fetch and inspect declared parameters.
@@ -83,11 +83,17 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		},
 	}
 
+	// A custom runner template only ever creates a VMSS, so it stays RG-targeted
+	// even at subscription scope. That keeps the runnerSubnetId wiring and the
+	// userAssignedIdentities contract above untouched. A subscription-scoped runner
+	// template would be a separate opt-in.
+	scope.targetInstallRG(deployment)
+
 	// Nothing hoisted — runner params are never customer-facing.
 	return deployment, nil, nil
 }
 
-func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity) map[string]any {
+func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity, scope armScope) map[string]any {
 	customData := t.buildRunnerCustomData(inp)
 
 	// VMSS references the operation identities, so they must exist first.
@@ -116,6 +122,8 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 			"template": t.getDefaultRunnerTemplate(operationIDs),
 		},
 	}
+
+	scope.targetInstallRG(deployment)
 
 	return deployment
 }

@@ -35,11 +35,11 @@ var vnetHoistAllowlist = map[string]bool{
 	"privateSubnet3CIDR": true,
 }
 
-func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput) (map[string]any, map[string]ARMParameter, error) {
+func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope armScope) (map[string]any, map[string]ARMParameter, error) {
 	templateURL := inp.VPCNestedStackTemplateURL
 	if templateURL == "" {
 		// No custom VNet template - build inline default VNet resources
-		return t.getDefaultVNetDeployment(inp), nil, nil
+		return t.getDefaultVNetDeployment(inp, scope), nil, nil
 	}
 
 	// Custom VNet template — fetch and inspect declared parameters.
@@ -94,10 +94,15 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput) (map[stri
 		},
 	}
 
+	// A custom VNet template runs at subscription scope so it can declare its own
+	// resource groups — that is the whole point of opting into subscription scope.
+	// The built-in default below does the opposite and stays in the install group.
+	scope.targetSubscription(deployment)
+
 	return deployment, hoistedParams, nil
 }
 
-func (t *Templates) getDefaultVNetDeployment(inp *stacks.TemplateInput) map[string]any {
+func (t *Templates) getDefaultVNetDeployment(inp *stacks.TemplateInput, scope armScope) map[string]any {
 	installID := "[parameters('nuonInstallID')]"
 	location := "[parameters('location')]"
 
@@ -128,6 +133,8 @@ func (t *Templates) getDefaultVNetDeployment(inp *stacks.TemplateInput) map[stri
 			"template":   t.getDefaultVNetTemplate(),
 		},
 	}
+
+	scope.targetInstallRG(deployment)
 
 	return deployment
 }

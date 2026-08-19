@@ -87,6 +87,18 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		Metadata:     &ARMParameterMetadata{Description: "Force re-run of deployment scripts on each deploy."},
 	}
 
+	// At subscription scope there is no ambient resource group, so the group Nuon's
+	// own resources live in becomes a named contract instead. The default is the
+	// name customers create by hand at resource-group scope, so nothing downstream
+	// of the phone-home changes.
+	if scope.subscription {
+		tmpl.Parameters[installRGParamName] = ARMParameter{
+			Type:         "string",
+			DefaultValue: "[format('{0}-rg', parameters('nuonInstallID'))]",
+			Metadata:     &ARMParameterMetadata{Description: "Resource group the install's Nuon-managed resources are created in."},
+		}
+	}
+
 	// Add common variables
 	tmpl.Variables["commonTags"] = map[string]string{
 		"install_nuon_co_id": "[parameters('nuonInstallID')]",
@@ -99,8 +111,14 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	operationIDs := azureOperationIdentities(inp.AppCfg)
 	useOperationIdentities := len(operationIDs) > 0
 
+	// The install resource group has to exist before anything targets it, so it is
+	// declared ahead of every other resource.
+	if rg := scope.installRGResource(); rg != nil {
+		tmpl.Resources = append(tmpl.Resources, rg)
+	}
+
 	// Build VNet linked deployment (or use default inline)
-	vnetDeployment, vnetParams, err := t.getVNetLinkedDeployment(inp)
+	vnetDeployment, vnetParams, err := t.getVNetLinkedDeployment(inp, scope)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +133,7 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 
 	// Runner linked deployment (or use default inline)
 	if !t.cfg.UseLocalRunners {
-		runnerDeployment, runnerParams, err := t.getRunnerLinkedDeployment(inp, operationIDs)
+		runnerDeployment, runnerParams, err := t.getRunnerLinkedDeployment(inp, operationIDs, scope)
 		if err != nil {
 			return nil, err
 		}
