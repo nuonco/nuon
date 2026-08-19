@@ -69,7 +69,7 @@ func (s *service) authorizeAzurePhoneHome(
 	claims, err := s.workloadJWT.Verify(ctx, workloadjwt.Request{
 		Token:    raw,
 		Issuer:   issuer,
-		Audience: workloadjwt.AzureGraphAudience,
+		Audience: workloadjwt.AzureManagementAudience,
 	})
 	if err != nil {
 		return s.rejectAzureIdentityToken(install, err)

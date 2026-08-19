@@ -34,7 +34,7 @@ func phoneHomeIdentityClientID(identityName string) string {
 // the process list, and nothing echoes it: deployment script logs are readable by any
 // reader on the resource group.
 const phoneHomeAuthScript = `
-IMDS_URL="http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fgraph.microsoft.com&client_id=${PHONE_HOME_IDENTITY_CLIENT_ID}"
+IMDS_URL="http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fmanagement.azure.com%2F&client_id=${PHONE_HOME_IDENTITY_CLIENT_ID}"
 
 CURL_CONFIG=$(mktemp)
 chmod 600 "$CURL_CONFIG"

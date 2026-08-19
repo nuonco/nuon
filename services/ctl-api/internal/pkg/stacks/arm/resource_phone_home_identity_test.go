@@ -69,7 +69,7 @@ func TestGetPhoneHomeResource_AuthenticatesWithoutLeakingToken(t *testing.T) {
 
 	for _, want := range []string{
 		"169.254.169.254",
-		"graph.microsoft.com",
+		"management.azure.com",
 		`-K "$CURL_CONFIG"`,
 		"chmod 600",
 	} {

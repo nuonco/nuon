@@ -142,9 +142,11 @@ func TestAzurePhoneHomeIdentityName(t *testing.T) {
 	}
 }
 
-func TestAzureGraphAudience_IsNotARM(t *testing.T) {
-	// Sharing the runner-auth audience would make the two credentials interchangeable.
-	if AzureGraphAudience == "https://management.azure.com/" {
-		t.Error("phone home must not accept the ARM audience runner auth uses")
+// Graph would be the lower-value audience, but Microsoft signs Graph access tokens with a
+// key outside the tenant JWKS, so we cannot verify them. Separation from runner auth rests
+// on the identity-name bind instead.
+func TestAzureManagementAudience_IsVerifiable(t *testing.T) {
+	if AzureManagementAudience != "https://management.azure.com/" {
+		t.Errorf("expected the ARM audience, got %q", AzureManagementAudience)
 	}
 }

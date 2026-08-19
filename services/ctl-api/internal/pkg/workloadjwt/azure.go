@@ -6,9 +6,14 @@ import (
 	"strings"
 )
 
-// Deliberately not the ARM audience runner-auth uses: a Graph token held by a role-less
-// identity can do nothing, and cannot be replayed against runner-auth.
-const AzureGraphAudience = "https://graph.microsoft.com"
+// Graph looks like the safer audience -- a token for a role-less identity can do nothing
+// -- but Microsoft signs Graph access tokens with a key that is not in the tenant JWKS, so
+// a third party cannot verify them. ARM tokens are ordinary v1 tokens and verify against
+// the tenant keys, which is why runner auth already uses this audience.
+//
+// The identity is created with no role assignments, so an ARM token minted for it is
+// authorized for nothing either.
+const AzureManagementAudience = "https://management.azure.com/"
 
 // Applied before a tenant or subscription is interpolated into a URL or compared, so a
 // claim can never reshape the URL it lands in.
