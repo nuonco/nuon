@@ -16,12 +16,25 @@ import (
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
-	run, err := activities.AwaitGetAppBranchRunWithCommitByRunID(ctx, s.RunID)
-	if err != nil {
-		return fmt.Errorf("unable to get app branch run with commit: %w", err)
-	}
+	preCompiled := s.AppConfigID != ""
 
-	commitSHA := run.VCSConnectionCommit.SHA
+	var (
+		run       *app.AppBranchRun
+		commitSHA string
+		err       error
+	)
+	if preCompiled {
+		run, err = activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
+		if err != nil {
+			return fmt.Errorf("unable to get app branch run: %w", err)
+		}
+	} else {
+		run, err = activities.AwaitGetAppBranchRunWithCommitByRunID(ctx, s.RunID)
+		if err != nil {
+			return fmt.Errorf("unable to get app branch run with commit: %w", err)
+		}
+		commitSHA = run.VCSConnectionCommit.SHA
+	}
 
 	// Create log stream for this run
 	logStream, err := activities.AwaitCreateLogStream(ctx, activities.CreateLogStreamRequest{
@@ -70,9 +83,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		vcsConfigID = cfg.ID
 	} else if cfg := branch.Configs[0].PublicGitVCSConfig; cfg != nil {
 		vcsConfigID = cfg.ID
-	} else {
+	} else if !preCompiled {
 		closeLogStream()
 		return fmt.Errorf("app branch has no VCS config")
+	}
+
+	if preCompiled {
+		return s.syncAndFinalize(ctx, finalizeParams{
+			run:         run,
+			branch:      branch,
+			appConfigID: s.AppConfigID,
+			vcsConfigID: vcsConfigID,
+			isPreview:   run.IsPreview(),
+		}, closeLogStream)
 	}
 
 	cloneResult, err := activities.LocalAwaitCloneRepo(ctx, activities.CloneRepoRequest{
@@ -233,9 +256,37 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"app_config_id", createResp.AppConfigID,
 		"app_branch_id", branch.ID)
 
+	return s.syncAndFinalize(ctx, finalizeParams{
+		run:                     run,
+		branch:                  branch,
+		appConfigID:             createResp.AppConfigID,
+		vcsConfigID:             vcsConfigID,
+		isPreview:               isPreview,
+		previewDiff:             previewDiff,
+		previewBaselineConfigID: previewBaselineConfigID,
+	}, closeLogStream)
+}
+
+type finalizeParams struct {
+	run                     *app.AppBranchRun
+	branch                  *app.AppBranch
+	appConfigID             string
+	vcsConfigID             string
+	isPreview               bool
+	previewDiff             *activities.ComputeAppConfigDiffOutput
+	previewBaselineConfigID string
+}
+
+// syncAndFinalize turns an app config into database records and reports the
+// result onto the step. Shared by the VCS path, which has just created the
+// config from a cloned repo, and the pre-compiled path, which was handed one.
+func (s *Signal) syncAndFinalize(ctx workflow.Context, p finalizeParams, closeLogStream func()) error {
+	l := workflow.GetLogger(ctx)
+	run, branch := p.run, p.branch
+
 	syncResp, err := activities.AwaitSyncAppConfig(ctx, activities.SyncAppConfigRequest{
 		Req: &activities.SyncAppConfigInput{
-			AppConfigID: createResp.AppConfigID,
+			AppConfigID: p.appConfigID,
 			AppID:       branch.AppID,
 			AppBranchID: branch.ID,
 		},
@@ -280,8 +331,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 
 		var configDiff *activities.ComputeAppConfigDiffOutput
-		if previewDiff != nil {
-			configDiff = previewDiff
+		if p.previewDiff != nil {
+			configDiff = p.previewDiff
 		} else {
 			var oldConfigID string
 			if run.PreviousRunID != nil && *run.PreviousRunID != "" {
@@ -308,8 +359,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			meta["diff_changed"] = configDiff.Changed
 			meta["diff_sections"] = configDiff.Sections
 		}
-		if previewBaselineConfigID != "" {
-			meta["baseline_app_config_id"] = previewBaselineConfigID
+		if p.previewBaselineConfigID != "" {
+			meta["baseline_app_config_id"] = p.previewBaselineConfigID
 		}
 
 		_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -321,7 +372,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			},
 		})
 
-		if isPreview && run.PRNumber != nil {
+		if p.isPreview && run.PRNumber != nil {
 			commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
 				AppName: branch.Name,
 				RunID:   s.RunID,
@@ -329,7 +380,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				Diff:    configDiff,
 			})
 			_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
-				VcsConfigID:       vcsConfigID,
+				VcsConfigID:       p.vcsConfigID,
 				PRNumber:          *run.PRNumber,
 				ExistingCommentID: run.GithubCommentID,
 				Body:              commentBody,
