@@ -154,6 +154,13 @@ func (r *Runner) BeforeCreate(tx *gorm.DB) error {
 const missingMngProcessWarning = "The management process is not running. Remote restart, upgrade, and shutdown are unavailable until it recovers."
 
 func (r *Runner) AfterQuery(tx *gorm.DB) error {
+	// A disabled runner has no processes at all, so the missing-management
+	// warning is expected rather than actionable. The UI surfaces the disabled
+	// state itself.
+	if r.Status == RunnerStatusDisabled {
+		return nil
+	}
+
 	if missing, ok := r.StatusV2.Metadata["missing_mng_process"].(bool); ok && missing {
 		r.Warnings = append(r.Warnings, missingMngProcessWarning)
 	}
