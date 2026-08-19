@@ -1,9 +1,12 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 // @ID						AdminGetOrgRunner
@@ -22,6 +25,13 @@ func (s *service) AdminGetOrgRunner(ctx *gin.Context) {
 	org, err := s.adminGetOrg(ctx, nameOrID)
 	if err != nil {
 		ctx.Error(err)
+		return
+	}
+	if len(org.RunnerGroup.Runners) == 0 {
+		ctx.Error(stderr.ErrNotFound{
+			Err:         fmt.Errorf("org has no runner"),
+			Description: "no runner was found for this org",
+		})
 		return
 	}
 

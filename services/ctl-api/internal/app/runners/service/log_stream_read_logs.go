@@ -247,7 +247,7 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	if cursorStr != "" {
 		cursorVal, err := strconv.ParseInt(cursorStr, 10, 64)
 		if err != nil {
-			ctx.Error(errors.Wrap(err, "unable to parse pagination cursor"))
+			ctx.Error(stderr.NewInvalidRequest(errors.Wrap(err, "unable to parse pagination cursor")))
 			return
 		}
 		cursor = cursorVal

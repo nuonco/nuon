@@ -184,5 +184,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "127-backfill-org-email-notifications",
 			Fn:   m.Migration127BackfillOrgEmailNotifications,
 		},
+		{
+			Name: "128-runner-job-available-tail-indexes",
+			Fn:   m.Migration128RunnerJobAvailableTailIndexes,
+		},
 	}
 }

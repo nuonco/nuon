@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -53,7 +54,8 @@ const (
 	// run materially hotter (e.g. rows trickle in just often enough to
 	// keep resetting the backoff) this is where it shows before CH
 	// does.
-	metricTailProbe = "log_tail.probe"
+	metricTailProbe      = "log_tail.probe"
+	metricTailProbeError = "log_tail.probe_error"
 	// metricTailEmptyProbeMs — when CH had nothing to return, how
 	// long did the round-trip cost? Health of the idle path. Should
 	// sit in single-digit ms; a creeping p95 means CH is doing real
@@ -135,6 +137,7 @@ type LogStreamTailLogsResponse struct {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
+// @Failure				503	{object}	stderr.ErrResponse
 // @Success				200	{object}	LogStreamTailLogsResponse
 // @Router					/v1/log-streams/{log_stream_id}/logs/tail [GET]
 func (s *service) LogStreamTailLogs(ctx *gin.Context) {
@@ -181,9 +184,47 @@ func (s *service) LogStreamTailLogs(ctx *gin.Context) {
 		probes++
 		s.mw.Count(metricTailProbe, 1, nil)
 		if qerr != nil {
-			s.emitTailExit(tailOutcomeError, startedAt, probes)
-			ctx.Error(errors.Wrap(qerr, "unable to probe log tail"))
-			return
+			s.mw.Count(metricTailProbeError, 1, nil)
+			if ctx.Request.Context().Err() != nil {
+				s.emitTailExit(tailOutcomeClientCancel, startedAt, probes)
+				return
+			}
+			if !isTransientTailProbeError(qerr) {
+				s.emitTailExit(tailOutcomeError, startedAt, probes)
+				ctx.Error(errors.Wrap(qerr, "unable to probe log tail"))
+				return
+			}
+
+			firstIter = false
+			remaining := time.Until(deadline)
+			if remaining <= 0 {
+				s.emitTailExit(tailOutcomeError, startedAt, probes)
+				s.l.Warn("log tail probe retries exhausted", zap.Error(qerr))
+				writeTailUnavailable(ctx)
+				return
+			}
+
+			sleep := backoff + jitter(backoff)
+			if sleep > remaining {
+				sleep = remaining
+			}
+			select {
+			case <-ctx.Request.Context().Done():
+				s.emitTailExit(tailOutcomeClientCancel, startedAt, probes)
+				return
+			case <-time.After(sleep):
+			}
+			if time.Until(deadline) <= 0 {
+				s.emitTailExit(tailOutcomeError, startedAt, probes)
+				s.l.Warn("log tail probe retries exhausted", zap.Error(qerr))
+				writeTailUnavailable(ctx)
+				return
+			}
+			backoff *= 2
+			if backoff > tailMaxBackoff {
+				backoff = tailMaxBackoff
+			}
+			continue
 		}
 
 		if len(logs) > 0 {

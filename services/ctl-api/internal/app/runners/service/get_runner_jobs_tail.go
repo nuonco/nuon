@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -26,6 +27,8 @@ const (
 	jobTailBackstopInterval    = 5 * time.Second
 	jobTailMaxConcurrentProbes = 50
 	jobTailProbeQueryTimeout   = 2 * time.Second
+	jobTailErrorMinBackoff     = 250 * time.Millisecond
+	jobTailErrorMaxBackoff     = 1 * time.Second
 )
 
 var jobTailProbeSem = make(chan struct{}, jobTailMaxConcurrentProbes)
@@ -34,6 +37,7 @@ const (
 	metricJobTailHotProbeMs = "runner_job_tail.hot_probe_ms"
 	metricJobTailOutcome    = "runner_job_tail.outcome"
 	metricJobTailNotifyWake = "runner_job_tail.notify_wake_probe"
+	metricJobTailProbeError = "runner_job_tail.probe_error"
 )
 
 const (
@@ -60,6 +64,7 @@ const (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
+// @Failure				503	{object}	stderr.ErrResponse
 // @Success				200	{array}		app.RunnerJob
 // @Router					/v1/runners/{runner_id}/jobs/tail [get]
 func (s *service) TailRunnerJobs(ctx *gin.Context) {
@@ -88,6 +93,7 @@ func (s *service) TailRunnerJobs(ctx *gin.Context) {
 	startedAt := time.Now()
 	deadline := startedAt.Add(wait)
 	firstIter := true
+	errorBackoff := jobTailErrorMinBackoff
 	// Subscribe BEFORE the first probe so a NOTIFY that fires between our probe
 	// and entering the select isn't missed — the buffered wake channel holds it
 	// and the next select drains it immediately.
@@ -98,10 +104,49 @@ func (s *service) TailRunnerJobs(ctx *gin.Context) {
 		probeStart := time.Now()
 		job, qerr := s.tailJobProbe(ctx.Request.Context(), runnerID, grp)
 		if qerr != nil {
-			s.emitJobTailExit(jobTailOutcomeError)
-			ctx.Error(errors.Wrap(qerr, "unable to probe runner job tail"))
-			return
+			s.mw.Count(metricJobTailProbeError, 1, nil)
+			if ctx.Request.Context().Err() != nil {
+				s.emitJobTailExit(jobTailOutcomeClientCancel)
+				return
+			}
+			if !isTransientTailProbeError(qerr) {
+				s.emitJobTailExit(jobTailOutcomeError)
+				ctx.Error(errors.Wrap(qerr, "unable to probe runner job tail"))
+				return
+			}
+
+			firstIter = false
+			remaining := time.Until(deadline)
+			if remaining <= 0 {
+				s.emitJobTailExit(jobTailOutcomeError)
+				s.l.Warn("runner job tail probe retries exhausted", zap.Error(qerr))
+				writeTailUnavailable(ctx)
+				return
+			}
+
+			sleep := errorBackoff + jitter(errorBackoff)
+			if sleep > remaining {
+				sleep = remaining
+			}
+			select {
+			case <-ctx.Request.Context().Done():
+				s.emitJobTailExit(jobTailOutcomeClientCancel)
+				return
+			case <-time.After(sleep):
+			}
+			if time.Until(deadline) <= 0 {
+				s.emitJobTailExit(jobTailOutcomeError)
+				s.l.Warn("runner job tail probe retries exhausted", zap.Error(qerr))
+				writeTailUnavailable(ctx)
+				return
+			}
+			errorBackoff *= 2
+			if errorBackoff > jobTailErrorMaxBackoff {
+				errorBackoff = jobTailErrorMaxBackoff
+			}
+			continue
 		}
+		errorBackoff = jobTailErrorMinBackoff
 
 		if job != nil {
 			outcome := jobTailOutcomeIdleThenHit

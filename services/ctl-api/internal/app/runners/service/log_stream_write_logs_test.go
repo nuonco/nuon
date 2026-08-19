@@ -340,7 +340,7 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 				body := s.buildInvalidOTLPRequest()
 				return s.testLogStream.ID, body
 			},
-			expectedCode: http.StatusInternalServerError,
+			expectedCode: http.StatusBadRequest,
 			validateFunc: func(logStreamID string) {
 				// No logs should be written
 				count := s.countLogsInCH(logStreamID)
@@ -445,7 +445,7 @@ func (s *LogStreamWriteLogsTestSuite) TestLogStreamWriteLogs() {
 			setupFunc: func() (string, []byte) {
 				return s.testLogStream.ID, []byte{}
 			},
-			expectedCode: http.StatusInternalServerError,
+			expectedCode: http.StatusBadRequest,
 			validateFunc: func(logStreamID string) {
 				// No logs should be written
 				count := s.countLogsInCH(logStreamID)
