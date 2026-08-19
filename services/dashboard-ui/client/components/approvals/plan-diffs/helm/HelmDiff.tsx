@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { CodeBlock } from '@/components/common/CodeBlock'
@@ -29,6 +29,8 @@ export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
     filterStats,
   } = useHelmK8sPlanFilter<THelmPlanChange>(changes)
 
+  const [allExpanded, setAllExpanded] = useState(true)
+
   return (
     <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
       <div className="flex flex-col px-4 py-4 sm:px-6 border-b">
@@ -54,6 +56,8 @@ export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
         searchValue={searchQuery}
         onSearchChange={handleSearchChange}
         searchPlaceholder="Search by release, resource, or type"
+        isAllExpanded={allExpanded}
+        onToggleExpandAll={() => setAllExpanded((v) => !v)}
       />
 
       {filteredChanges && filteredChanges.length > 0 ? (
@@ -66,7 +70,7 @@ export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
               <Expand
                 id={`change-${idx}`}
                 key={`${change.release}-${idx}`}
-                isOpen
+                isOpen={allExpanded}
                 className={`border-l-4 ${borderColor}`}
                 headerClassName={`!px-4 sm:!px-6 ${bgColor}`}
                 heading={

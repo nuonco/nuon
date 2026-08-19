@@ -1324,3 +1324,192 @@ data:
 export const LongAnnotationsAndEnvVars = () => (
   <HelmDiff plan={longAnnotationsAndEnvVarsPlan} />
 )
+
+const singleImageTagChangePlan = {
+  plan: `apps, ctl-api-auth, Deployment (apps/v1) to be changed
+Plan: 0 to add, 1 to change, 0 to destroy`,
+  op: 'upgrade',
+  helm_content_diff: [
+    {
+      api: 'apps/v1',
+      kind: 'Deployment',
+      name: 'ctl-api-auth',
+      namespace: 'apps',
+      before: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ctl-api-auth
+  namespace: apps
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+      - name: ctl-api-auth
+        env:
+        - name: SERVICE_TYPE
+          value: api
+        - name: SERVICE_DEPLOYMENT
+          value: auth
+        envFrom:
+        - configMapRef:
+            name: ctl-api
+        image: europe-west4-docker.pkg.dev/acme-platform/n-abc123def456ghi789jkl012mno/img-nuon-ctl-api:0.19.1129
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - sleep 20
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: "1"
+            memory: 512Mi`,
+      after: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ctl-api-auth
+  namespace: apps
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+      - name: ctl-api-auth
+        env:
+        - name: SERVICE_TYPE
+          value: api
+        - name: SERVICE_DEPLOYMENT
+          value: auth
+        envFrom:
+        - configMapRef:
+            name: ctl-api
+        image: europe-west4-docker.pkg.dev/acme-platform/n-abc123def456ghi789jkl012mno/img-nuon-ctl-api:0.19.1204
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - sleep 20
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: "1"
+            memory: 512Mi`,
+    },
+  ],
+} as any
+
+export const SingleImageTagChange = () => (
+  <HelmDiff plan={singleImageTagChangePlan} />
+)
+
+const envVarBlock = (count: number, offset = 0) =>
+  Array.from(
+    { length: count },
+    (_, i) =>
+      `        - name: FEATURE_FLAG_${offset + i}\n          value: "${(offset + i) % 2 === 0 ? 'enabled' : 'disabled'}"`
+  ).join('\n')
+
+const largeDeploymentYaml = (
+  imageTag: string,
+  replicas: number,
+  memory: string
+) => `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ctl-api-auth
+  namespace: apps
+spec:
+  replicas: ${replicas}
+  template:
+    spec:
+      containers:
+      - name: ctl-api-auth
+        env:
+${envVarBlock(25)}
+        image: europe-west4-docker.pkg.dev/acme-platform/n-abc123def456ghi789jkl012mno/img-nuon-ctl-api:${imageTag}
+        imagePullPolicy: IfNotPresent
+${envVarBlock(25, 25)}
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: "1"
+            memory: ${memory}`
+
+const largeSingleChangePlan = {
+  plan: `apps, ctl-api-auth, Deployment (apps/v1) to be changed
+Plan: 0 to add, 1 to change, 0 to destroy`,
+  op: 'upgrade',
+  helm_content_diff: [
+    {
+      api: 'apps/v1',
+      kind: 'Deployment',
+      name: 'ctl-api-auth',
+      namespace: 'apps',
+      before: largeDeploymentYaml('0.19.1129', 2, '512Mi'),
+      after: largeDeploymentYaml('0.19.1204', 2, '512Mi'),
+    },
+  ],
+} as any
+
+export const LargeDeploymentSingleChange = () => (
+  <HelmDiff plan={largeSingleChangePlan} />
+)
+
+const largeScatteredChangesPlan = {
+  plan: `apps, ctl-api-auth, Deployment (apps/v1) to be changed
+Plan: 0 to add, 1 to change, 0 to destroy`,
+  op: 'upgrade',
+  helm_content_diff: [
+    {
+      api: 'apps/v1',
+      kind: 'Deployment',
+      name: 'ctl-api-auth',
+      namespace: 'apps',
+      before: largeDeploymentYaml('0.19.1129', 2, '512Mi'),
+      after: largeDeploymentYaml('0.19.1204', 4, '1Gi'),
+    },
+  ],
+} as any
+
+export const LargeDeploymentScatteredChanges = () => (
+  <HelmDiff plan={largeScatteredChangesPlan} />
+)

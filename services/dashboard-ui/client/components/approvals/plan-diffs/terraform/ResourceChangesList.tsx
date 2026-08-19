@@ -13,9 +13,13 @@ import {
 
 interface ResourceChangesListProps {
   changes: TTerraformResourceChange[]
+  isOpen?: boolean
 }
 
-export function ResourceChangesList({ changes }: ResourceChangesListProps) {
+export function ResourceChangesList({
+  changes,
+  isOpen = true,
+}: ResourceChangesListProps) {
   return (
     <div className="flex flex-col divide-y">
       {changes.length ? (
@@ -27,7 +31,7 @@ export function ResourceChangesList({ changes }: ResourceChangesListProps) {
             <Expand
               key={`${change.address}-${idx}`}
               id={change.address}
-              isOpen
+              isOpen={isOpen}
               className={`border-l-4 ${borderColor}`}
               headerClassName={`w-full px-4 py-3 gap-3 text-left focus:outline-none ${bgColor}`}
               heading={
