@@ -262,7 +262,7 @@ func (s *syncer) syncSteps() []syncStep {
 		steps = append(steps, syncStep{
 			Resource: fmt.Sprintf("component-ensure-%s", c.Name),
 			Method: func(ctx context.Context) error {
-				return components.EnsureComponent(ctx, s.db, s.componentHelpers, c, s.appID)
+				return components.EnsureComponent(ctx, s.db, s.componentHelpers, c, s.appID, s.state)
 			},
 		})
 	}
