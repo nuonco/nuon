@@ -43,6 +43,20 @@ func (s *syncer) GetComponentsScheduled() []sync.ComponentState {
 	return s.state.Result.ComponentsScheduled
 }
 
+func (s *syncer) GetComponentsCreated() []string {
+	if s.state == nil || s.state.Result == nil {
+		return nil
+	}
+	return s.state.Result.ComponentsCreated
+}
+
+func (s *syncer) GetAppBranchesCreated() []string {
+	if s.state == nil || s.state.Result == nil {
+		return nil
+	}
+	return s.state.Result.AppBranchesCreated
+}
+
 // orphanedResult collects the orphan maps for persistence, returning nil when
 // nothing was orphaned so the state stays free of empty objects.
 func (s *syncer) orphanedResult() *sync.Result {

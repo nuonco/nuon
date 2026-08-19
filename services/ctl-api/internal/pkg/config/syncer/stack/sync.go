@@ -50,7 +50,7 @@ func Sync(ctx context.Context, db *gorm.DB, appsHelpers *appshelpers.Helpers, cf
 		}
 	}
 
-	if _, err := appsHelpers.QueueClient().EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+	if _, err := appsHelpers.QueueClient().EnqueueSignalInTransaction(ctx, db, &queueclient.EnqueueSignalRequest{
 		QueueID: q.ID,
 		Signal: &customstacks.Signal{
 			AppStackConfigID: obj.ID,
