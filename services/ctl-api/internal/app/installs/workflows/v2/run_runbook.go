@@ -88,6 +88,18 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 		enabledInputs = install.CurrentInstallInputs.Values
 	}
 
+	// pin the build lookup to the config this run was generated against, not
+	// whatever the install points at by the time the step executes
+	rbAppCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
+	}
+	cccIDByComp := make(map[string]string, len(rbAppCfg.ComponentConfigConnections))
+	for i := range rbAppCfg.ComponentConfigConnections {
+		ccc := &rbAppCfg.ComponentConfigConnections[i]
+		cccIDByComp[ccc.ComponentID] = ccc.ID
+	}
+
 	// Generate state
 	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
 	if err != nil {
@@ -111,7 +123,7 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 		stepWorkflow := runbookStepWorkflow(flw, &stepCfg)
 		switch stepCfg.Type {
 		case app.RunbookStepTypeComponentDeploy:
-			deploySteps, err := runbookDeploySteps(ctx, installID, &stepCfg, sg, stepWorkflow, enabledInputs)
+			deploySteps, err := runbookDeploySteps(ctx, installID, &stepCfg, sg, stepWorkflow, enabledInputs, cccIDByComp)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to generate deploy step %s", stepCfg.Name)
 			}
@@ -159,7 +171,7 @@ func runbookStepWorkflow(flw *app.Workflow, stepCfg *app.RunbookStepConfig) *app
 	return &effective
 }
 
-func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.RunbookStepConfig, sg *stepGroup, flw *app.Workflow, enabledInputs map[string]*string) ([]*app.WorkflowStep, error) {
+func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.RunbookStepConfig, sg *stepGroup, flw *app.Workflow, enabledInputs map[string]*string, cccIDByComp map[string]string) ([]*app.WorkflowStep, error) {
 	// Find the primary component by name
 	component, err := activities.AwaitGetComponentByName(ctx, activities.GetComponentByNameRequest{
 		InstallID:     installID,
@@ -183,14 +195,14 @@ func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.Run
 		}
 
 		for _, compID := range componentIDs {
-			depSteps, err := runbookDeploySingleComponent(ctx, installID, compID, stepCfg.Name, sg, flw, enabledInputs)
+			depSteps, err := runbookDeploySingleComponent(ctx, installID, compID, stepCfg.Name, sg, flw, enabledInputs, cccIDByComp)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to deploy dependent %s", compID)
 			}
 			result = append(result, depSteps...)
 		}
 	} else {
-		steps, err := runbookDeploySingleComponent(ctx, installID, component.ID, stepCfg.Name, sg, flw, enabledInputs)
+		steps, err := runbookDeploySingleComponent(ctx, installID, component.ID, stepCfg.Name, sg, flw, enabledInputs, cccIDByComp)
 		if err != nil {
 			return nil, err
 		}
@@ -200,7 +212,7 @@ func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.Run
 	return result, nil
 }
 
-func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, stepName string, sg *stepGroup, flw *app.Workflow, enabledInputs map[string]*string) ([]*app.WorkflowStep, error) {
+func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, stepName string, sg *stepGroup, flw *app.Workflow, enabledInputs map[string]*string, cccIDByComp map[string]string) ([]*app.WorkflowStep, error) {
 	installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 		InstallID:   installID,
 		ComponentID: componentID,
@@ -253,9 +265,10 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 		}
 		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (sync)", name))
 		syncStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("sync %s", name), pgtype.Hstore{}, &componentsyncimage.Signal{
-			InstallComponentID: installComponentID,
-			ComponentID:        componentID,
-			Role:               flw.Role,
+			InstallComponentID:          installComponentID,
+			ComponentID:                 componentID,
+			ComponentConfigConnectionID: cccIDByComp[componentID],
+			Role:                        flw.Role,
 		}, flw.PlanOnly)
 		if err != nil {
 			return nil, err
@@ -264,10 +277,11 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 	} else {
 		sg.nextGroupNamed(fmt.Sprintf("deploy: %s", name))
 		planStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("sync and plan %s", name), pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
-			InstallComponentID: installComponentID,
-			InstallID:          installID,
-			ComponentID:        componentID,
-			Role:               flw.Role,
+			InstallComponentID:          installComponentID,
+			InstallID:                   installID,
+			ComponentID:                 componentID,
+			ComponentConfigConnectionID: cccIDByComp[componentID],
+			Role:                        flw.Role,
 		}, flw.PlanOnly, WithSkippable(false))
 		if err != nil {
 			return nil, err
