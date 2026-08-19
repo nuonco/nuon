@@ -7,6 +7,10 @@ import {
 import createElement from 'react-syntax-highlighter/dist/esm/create-element'
 import { useSystemTheme } from '@/hooks/use-system-theme'
 import { cn } from '@/utils/classnames'
+import { Expand } from './Expand'
+
+const COLLAPSE_THRESHOLD = 15
+const CONTEXT_LINES = 3
 
 type DiffOp = 'add' | 'remove' | 'change'
 
@@ -81,12 +85,126 @@ function renderChangedLine(line: string) {
   )
 }
 
+function renderDiffRow(
+  row: any,
+  i: number,
+  lines: string[],
+  stylesheet: any,
+  useInlineStyles: boolean
+) {
+  const line = lines[i] || ''
+  const defaultEl = createElement({
+    node: row,
+    stylesheet,
+    useInlineStyles,
+    key: `line-${i}`,
+  }) as any
+
+  const op = lineOp(line)
+  if (!op) return defaultEl
+
+  const children = Array.isArray(defaultEl.props.children)
+    ? defaultEl.props.children
+    : [defaultEl.props.children]
+
+  const isLineNumber = (child: any) =>
+    child?.props?.className?.includes('linenumber')
+
+  const lineNumberChild = children.find(isLineNumber)
+  const contentChildren = children.filter((c: any) => !isLineNumber(c))
+
+  const content =
+    op === 'change' && line.includes(' -> ')
+      ? renderChangedLine(line)
+      : colorFirstChar(contentChildren, MARKER_TEXT[op], { done: false })
+
+  const newChildren = lineNumberChild ? [lineNumberChild, content] : [content]
+
+  return {
+    ...defaultEl,
+    props: { ...defaultEl.props, children: newChildren },
+    key: `line-${i}`,
+  }
+}
+
+function DiffCollapsedLines({
+  id,
+  count,
+  children,
+}: {
+  id: string
+  count: number
+  children: React.ReactNode
+}) {
+  return (
+    <Expand
+      id={id}
+      isIconBeforeHeading
+      hasNoHoverStyle
+      className="border rounded-md my-1.5 overflow-hidden"
+      headerClassName="!py-1 !px-2 font-sans text-xs bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+      heading={
+        <span className="opacity-70">
+          {count} unmodified {count === 1 ? 'line' : 'lines'}
+        </span>
+      }
+    >
+      <div className="whitespace-pre">{children}</div>
+    </Expand>
+  )
+}
+
+function collapseUnchangedRuns(renderedRows: any[], lines: string[]) {
+  const nodes: React.ReactNode[] = []
+  const n = lines.length
+  let i = 0
+
+  while (i < n) {
+    if (lineOp(lines[i]) !== null) {
+      nodes.push(renderedRows[i])
+      i++
+      continue
+    }
+
+    let end = i
+    while (end < n && lineOp(lines[end]) === null) end++
+
+    const runLen = end - i
+    const top = i > 0 ? CONTEXT_LINES : 0
+    const bottom = end < n ? CONTEXT_LINES : 0
+    const hiddenStart = i + top
+    const hiddenEnd = end - bottom
+    const hiddenCount = hiddenEnd - hiddenStart
+
+    if (runLen >= COLLAPSE_THRESHOLD && hiddenCount > 0) {
+      for (let k = i; k < hiddenStart; k++) nodes.push(renderedRows[k])
+      nodes.push(
+        <DiffCollapsedLines
+          key={`collapse-${i}`}
+          id={`collapse-${i}`}
+          count={hiddenCount}
+        >
+          {renderedRows.slice(hiddenStart, hiddenEnd)}
+        </DiffCollapsedLines>
+      )
+      for (let k = hiddenEnd; k < end; k++) nodes.push(renderedRows[k])
+    } else {
+      for (let k = i; k < end; k++) nodes.push(renderedRows[k])
+    }
+
+    i = end
+  }
+
+  return nodes
+}
+
 interface IPrismCodeBlock
   extends Omit<React.HTMLAttributes<HTMLPreElement>, 'children'> {
   children: string
   language: string
   isDiff?: boolean
   showLineNumbers?: boolean
+  collapseUnchanged?: boolean
 }
 
 export function PrismCodeBlock({
@@ -95,6 +213,7 @@ export function PrismCodeBlock({
   language,
   isDiff = false,
   showLineNumbers = false,
+  collapseUnchanged = true,
 }: IPrismCodeBlock) {
   const colorScheme = useSystemTheme()
   const bgCode = colorScheme === 'dark' ? 'var(--color-dark-grey-800)' : 'var(--color-cool-grey-100)'
@@ -148,41 +267,15 @@ export function PrismCodeBlock({
       renderer={
         isDiff
           ? ({ rows, stylesheet, useInlineStyles }) => {
-              return rows.map((row, i) => {
-                const line = lines[i] || ''
-                const defaultEl = createElement({
-                  node: row,
-                  stylesheet,
-                  useInlineStyles,
-                  key: `line-${i}`,
-                }) as any
+              const renderedRows = rows.map((row, i) =>
+                renderDiffRow(row, i, lines, stylesheet, useInlineStyles)
+              )
 
-                const op = lineOp(line)
-                if (!op) return defaultEl
+              if (!collapseUnchanged || rows.length !== lines.length) {
+                return renderedRows
+              }
 
-                const children = Array.isArray(defaultEl.props.children)
-                  ? defaultEl.props.children
-                  : [defaultEl.props.children]
-
-                const isLineNumber = (child: any) =>
-                  child?.props?.className?.includes('linenumber')
-
-                const lineNumberChild = children.find(isLineNumber)
-                const contentChildren = children.filter((c: any) => !isLineNumber(c))
-
-                const content =
-                  op === 'change' && line.includes(' -> ')
-                    ? renderChangedLine(line)
-                    : colorFirstChar(contentChildren, MARKER_TEXT[op], { done: false })
-
-                const newChildren = lineNumberChild ? [lineNumberChild, content] : [content]
-
-                return {
-                  ...defaultEl,
-                  props: { ...defaultEl.props, children: newChildren },
-                  key: `line-${i}`,
-                }
-              })
+              return collapseUnchangedRuns(renderedRows, lines)
             }
           : undefined
       }
