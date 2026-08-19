@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
@@ -64,6 +64,10 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
     outputs.changes
   )
 
+  const [driftExpanded, setDriftExpanded] = useState(true)
+  const [resourcesExpanded, setResourcesExpanded] = useState(true)
+  const [outputsExpanded, setOutputsExpanded] = useState(true)
+
   if (!plan) {
     return (
       <Banner theme="neutral">No Terraform plan data available</Banner>
@@ -123,9 +127,14 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
             searchValue={driftFilter.searchQuery}
             onSearchChange={driftFilter.handleSearchChange}
             searchPlaceholder="Search by address, resource, or name"
+            isAllExpanded={driftExpanded}
+            onToggleExpandAll={() => setDriftExpanded((v) => !v)}
           />
 
-          <ResourceChangesList changes={driftFilter.filteredItems} />
+          <ResourceChangesList
+            changes={driftFilter.filteredItems}
+            isOpen={driftExpanded}
+          />
         </Card>
       ) : null}
 
@@ -150,9 +159,14 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
             searchValue={resourceFilter.searchQuery}
             onSearchChange={resourceFilter.handleSearchChange}
             searchPlaceholder="Search by address, resource, or name"
+            isAllExpanded={resourcesExpanded}
+            onToggleExpandAll={() => setResourcesExpanded((v) => !v)}
           />
 
-          <ResourceChangesList changes={resourceFilter.filteredItems} />
+          <ResourceChangesList
+            changes={resourceFilter.filteredItems}
+            isOpen={resourcesExpanded}
+          />
         </Card>
       ) : null}
 
@@ -175,10 +189,15 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
             searchValue={outputFilter.searchQuery}
             onSearchChange={outputFilter.handleSearchChange}
             searchPlaceholder="Search outputs by name"
+            isAllExpanded={outputsExpanded}
+            onToggleExpandAll={() => setOutputsExpanded((v) => !v)}
           />
 
           <TerraformSummary summary={outputs.summary} />
-          <OutputChangesList changes={outputFilter.filteredItems} />
+          <OutputChangesList
+            changes={outputFilter.filteredItems}
+            isOpen={outputsExpanded}
+          />
         </Card>
       ) : null}
     </div>

@@ -229,8 +229,10 @@ function InputsDiffBody({
 
 export function PulumiResourceChangesList({
   changes,
+  isOpen = true,
 }: {
   changes: IResourceChange[]
+  isOpen?: boolean
 }) {
   return (
     <div className="flex flex-col divide-y">
@@ -248,7 +250,7 @@ export function PulumiResourceChangesList({
             <Expand
               key={`${change.urn}-${idx}`}
               id={change.urn}
-              isOpen
+              isOpen={isOpen}
               className={`border-l-4 ${borderColor}`}
               headerClassName={`w-full px-4 py-3 gap-3 text-left focus:outline-none ${bgColor}`}
               heading={
