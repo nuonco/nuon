@@ -68,6 +68,71 @@ func (s *AppConfigSignalTestSuite) mockBranchAndRun() {
 		}, nil)
 }
 
+// mockPreCompiledBranchAndRun stands up a branch with no VCS config at all, the
+// shape the default app branch has.
+func (s *AppConfigSignalTestSuite) mockPreCompiledBranchAndRun() {
+	s.env.OnActivity((*activities.Activities).GetAppBranchRunByID, mock.Anything, mock.Anything, mock.Anything).Return(
+		&app.AppBranchRun{ID: "run-1"}, nil)
+
+	s.env.OnActivity((*activities.Activities).CreateLogStream, mock.Anything, mock.Anything, mock.Anything).Return(
+		(*app.LogStream)(nil), fmt.Errorf("no log stream"))
+
+	s.env.OnActivity((*activities.Activities).AppBranchesGetAppBranchByID, mock.Anything, mock.Anything, mock.Anything).Return(
+		&app.AppBranch{
+			ID:      "branch-1",
+			AppID:   "app-1",
+			OrgID:   "org-1",
+			Configs: []app.AppBranchConfig{{ID: "config-1"}},
+		}, nil)
+}
+
+// A pre-compiled config syncs without cloning: CloneRepo and
+// FetchIntermediateConfig are left unmocked, so the workflow fails if it reaches
+// them.
+func (s *AppConfigSignalTestSuite) TestPreCompiledConfigSyncsWithoutClone() {
+	sig := &Signal{
+		AppBranchID: "branch-1",
+		RunID:       "run-1",
+		AppConfigID: "cfg-1",
+	}
+
+	s.mockPreCompiledBranchAndRun()
+
+	s.env.OnActivity((*activities.Activities).SyncAppConfig, mock.Anything, mock.Anything, mock.Anything).Return(
+		&activities.SyncAppConfigOutput{
+			AppConfigID:  "cfg-1",
+			ComponentIDs: []string{"cmp-1"},
+		}, nil)
+
+	s.env.OnActivity((*activities.Activities).UpdateAppBranchConfigIDs, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity((*activities.Activities).UpdateAppBranchRunAppConfig, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	s.env.ExecuteWorkflow(sig.Execute)
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+}
+
+func (s *AppConfigSignalTestSuite) TestPreCompiledConfigSyncError() {
+	sig := &Signal{
+		AppBranchID: "branch-1",
+		RunID:       "run-1",
+		AppConfigID: "cfg-1",
+	}
+
+	s.mockPreCompiledBranchAndRun()
+
+	s.env.OnActivity((*activities.Activities).SyncAppConfig, mock.Anything, mock.Anything, mock.Anything).Return(
+		(*activities.SyncAppConfigOutput)(nil), fmt.Errorf("component validation failed"))
+
+	s.env.ExecuteWorkflow(sig.Execute)
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+	s.Contains(err.Error(), "unable to sync app config")
+}
+
 func (s *AppConfigSignalTestSuite) TestFetchIntermediateConfigError() {
 	sig := &Signal{
 		AppBranchID: "branch-1",
