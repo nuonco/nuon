@@ -383,6 +383,33 @@ export const JobConfiguration = () => (
   </SurfacesProvider>
 )
 
+export const WithLatestCommit = () => (
+  <SurfacesProvider>
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Configuration with latest commit</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Shows the latest commit for the component's most recent build (app) or
+          deployed build (install), using the app branches commit treatment.
+        </p>
+      </div>
+
+      <ComponentConfigCard
+        config={mockTerraformConfig}
+        latestCommit={{
+          status: 'active',
+          href: '#',
+          message: 'test: testing app branch changes',
+          author: 'Nat Hamilton',
+          avatarUrl: 'https://avatars.githubusercontent.com/u/1?v=4',
+          sha: '4e41797abc123',
+          createdAt: '2024-01-01T00:00:00Z',
+        }}
+      />
+    </div>
+  </SurfacesProvider>
+)
+
 export const AllConfigTypes = () => (
   <SurfacesProvider>
     <div className="space-y-6">

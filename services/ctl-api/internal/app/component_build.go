@@ -162,6 +162,9 @@ func (c *ComponentBuild) AfterQuery(tx *gorm.DB) error {
 
 	if c.AppBranchRun != nil {
 		c.AppBranchID = c.AppBranchRun.AppBranchID
+		if c.VCSConnectionCommit == nil && c.AppBranchRun.VCSConnectionCommit != nil {
+			c.VCSConnectionCommit = c.AppBranchRun.VCSConnectionCommit
+		}
 	}
 
 	if c.StatusV2.Status != "" {

@@ -46,7 +46,7 @@ export const BranchCard = ({ card }: { card: TBranchCardData }) => {
               {name}
             </Link>
             {managedBy ? (
-              <Badge size="sm" theme={managedBy === 'config' ? 'brand' : 'default'}>
+              <Badge size="sm" theme={managedBy === 'config' ? 'brand' : 'default'} variant="code">
                 {managedBy}
               </Badge>
             ) : null}
