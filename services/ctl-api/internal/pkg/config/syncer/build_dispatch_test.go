@@ -3,6 +3,8 @@ package syncer
 import (
 	"context"
 
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	testseedconfig "github.com/nuonco/nuon/services/ctl-api/tests/testseed/config"
@@ -13,22 +15,28 @@ import (
 func (s *SyncFieldsTestSuite) syncWithBuildDispatch(ctx context.Context, appID string, cfg *config.AppConfig) *app.AppConfig {
 	appCfg := s.deps.Seed.CreateBareAppConfig(ctx, s.T(), appID)
 
-	syncer := NewDBSyncer(
-		s.deps.DB,
-		s.deps.AppsHelpers,
-		s.deps.ComponentHelpers,
-		s.deps.ActionsHelpers,
-		s.deps.RunbooksHelpers,
-		s.deps.InstallHelpers,
-		s.deps.VCSHelpers,
-		s.deps.TFClient,
-		appID,
-		cfg,
-		appCfg.ID,
-		WithComponentBuildDispatch(),
-	)
-	s.Require().NoError(syncer.Sync(ctx), "sync should succeed")
-	s.scheduled = syncer.GetComponentsScheduled()
+	err := s.deps.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		syncer := NewDBSyncer(
+			tx,
+			s.deps.AppsHelpers,
+			s.deps.ComponentHelpers,
+			s.deps.ActionsHelpers,
+			s.deps.RunbooksHelpers,
+			s.deps.InstallHelpers,
+			s.deps.VCSHelpers,
+			s.deps.TFClient,
+			appID,
+			cfg,
+			appCfg.ID,
+			WithComponentBuildDispatch(),
+		)
+		if err := syncer.Sync(ctx); err != nil {
+			return err
+		}
+		s.scheduled = syncer.GetComponentsScheduled()
+		return nil
+	})
+	s.Require().NoError(err, "sync should succeed")
 
 	return appCfg
 }
