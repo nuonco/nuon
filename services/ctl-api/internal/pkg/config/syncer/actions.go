@@ -230,7 +230,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 
 	depIDs := []string{}
 	if len(action.Dependencies) > 0 {
-		depIDs, err = s.componentHelpers.GetComponentIDs(ctx, s.appID, action.Dependencies)
+		depIDs, err = s.componentHelpers.GetComponentIDsWithDB(ctx, s.db, s.appID, action.Dependencies)
 		if err != nil {
 			return sync.SyncInternalErr{
 				Description: fmt.Sprintf("unable to resolve dependencies for action %s", action.Name),
