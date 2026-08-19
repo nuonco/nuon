@@ -66,6 +66,14 @@ func (h *Helpers) GetConfigGraph(ctx context.Context, cfg *app.AppConfig) (graph
 	allCfgs := append(cfg.ComponentConfigConnections, missingComps...)
 	for _, ccc := range allCfgs {
 		for _, dep := range ccc.ComponentDependencyIDs {
+			// a dependency can name a component that is not part of this config version
+			if _, err := g.Vertex(dep); err != nil {
+				continue
+			}
+			if _, err := g.Vertex(ccc.ComponentID); err != nil {
+				continue
+			}
+
 			if err := g.AddEdge(dep, ccc.ComponentID,
 				graph.EdgeWeight(25),
 				graph.EdgeAttribute("color", "red"),
