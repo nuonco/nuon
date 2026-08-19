@@ -19,6 +19,11 @@ import (
 // swagger:model app.AppBranchInstallGroup
 type AppAppBranchInstallGroup struct {
 
+	// AllInstalls claims every install on the app that no other branch owns.
+	// A nil LabelSelector already means "use InstallIDs", so there is no
+	// selector shape that expresses "everything" — hence the explicit flag.
+	AllInstalls bool `json:"all_installs,omitempty"`
+
 	// app branch config id
 	AppBranchConfigID string `json:"app_branch_config_id,omitempty"`
 

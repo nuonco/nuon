@@ -23,7 +23,7 @@ func Resolve(ctx workflow.Context, installGroupID, appBranchID string) (*Resolve
 		return nil, fmt.Errorf("unable to get install group: %w", err)
 	}
 
-	if group.LabelSelector == nil {
+	if group.LabelSelector == nil && !group.AllInstalls {
 		logger.Info("resolved install group",
 			"install_group_id", group.ID,
 			"install_group_name", group.Name,
@@ -38,19 +38,26 @@ func Resolve(ctx workflow.Context, installGroupID, appBranchID string) (*Resolve
 	}
 
 	resolved, err := activities.AwaitResolveInstallGroupInstalls(ctx, &activities.ResolveInstallGroupInstallsInput{
-		AppID:    branch.AppID,
-		GroupID:  group.ID,
-		Selector: group.LabelSelector,
+		AppID:       branch.AppID,
+		GroupID:     group.ID,
+		Selector:    group.LabelSelector,
+		AllInstalls: group.AllInstalls,
+		AppBranchID: appBranchID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve install group labels: %w", err)
+	}
+
+	resolvedVia := "label_selector"
+	if group.AllInstalls {
+		resolvedVia = "all_installs"
 	}
 
 	logger.Info("resolved install group",
 		"install_group_id", group.ID,
 		"install_group_name", group.Name,
 		"install_count", len(resolved.InstallIDs),
-		"resolved_via", "label_selector",
+		"resolved_via", resolvedVia,
 	)
 
 	return &Resolved{InstallIDs: resolved.InstallIDs, GroupName: group.Name}, nil
