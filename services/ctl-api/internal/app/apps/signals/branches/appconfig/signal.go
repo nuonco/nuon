@@ -15,6 +15,12 @@ type Signal struct {
 	AppBranchID string `json:"app_branch_id" validate:"required"`
 	RunID       string `json:"run_id" validate:"required"`
 
+	// AppConfigID carries a config that was already compiled elsewhere (the CLI
+	// parses it locally and posts the intermediate config). When set, the step
+	// syncs it instead of cloning the branch's repo, so the branch needs no VCS
+	// config and the run needs no commit.
+	AppConfigID string `json:"app_config_id,omitempty"`
+
 	FlowID string `json:"flow_id,omitempty"`
 	StepID string `json:"step_id,omitempty"`
 }

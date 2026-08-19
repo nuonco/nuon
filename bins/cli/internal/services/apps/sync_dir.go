@@ -8,8 +8,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
-
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
@@ -44,6 +42,9 @@ type SyncOptions struct {
 	AppBranch bool
 	// Preview creates a plan-only run (no apply). Only used with Branch or AppBranch.
 	Preview bool
+	// AutoApprove skips the branch run's approval gate before each install group
+	// deploys. Without it the gate follows the targeted installs' approval option.
+	AutoApprove bool
 	// PrintJSON emits a machine-readable result on success (--output json/agent).
 	PrintJSON bool
 	// NoWait skips waiting for scheduled component builds to complete; the
@@ -139,40 +140,47 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 	}
 
 	var branchID string
-	if opts.Branch != "" {
+	switch {
+	case opts.Branch != "":
 		var branchErr error
 		branchID, branchErr = s.resolveAppBranchID(ctx, appID, opts.Branch)
 		if branchErr != nil {
 			return ui.PrintError(branchErr)
 		}
 		ui.PrintLn(fmt.Sprintf("targeting app branch %q", opts.Branch))
-	} else if opts.AppBranch {
+	case opts.AppBranch:
 		var branchErr error
 		branchID, branchErr = s.selectAppBranch(ctx, appID)
 		if branchErr != nil {
 			return ui.PrintError(branchErr)
 		}
+	default:
+		var branchErr error
+		branchID, branchErr = s.resolveDefaultBranchID(ctx, appID)
+		if branchErr != nil {
+			return ui.PrintError(branchErr)
+		}
 	}
 
-	appConfig, state, err := s.pushConfig(ctx, appID, version, cfg, opts, branchID)
+	appConfig, err := s.createConfig(ctx, appID, version, cfg, branchID, opts.Preview)
 	if err != nil {
 		return ui.PrintError(err)
 	}
 
-	// When targeting a branch, trigger a branch run with the synced app config
 	if branchID != "" {
-		run, triggerErr := s.api.TriggerAppBranchRun(ctx, appID, branchID, &models.ServiceTriggerAppBranchRunRequest{
-			AppConfigID: appConfig.ID,
-			PlanOnly:    opts.Preview,
-		})
-		if triggerErr != nil {
-			return ui.PrintError(triggerErr)
+		result, branchErr := s.syncViaBranchRun(ctx, appID, branchID, dir, appConfig, opts)
+		if branchErr != nil {
+			return ui.PrintError(branchRunSyncErr(branchErr, result))
 		}
-		ui.PrintSuccess(fmt.Sprintf("triggered app branch run %s", run.ID))
 		if opts.PrintJSON {
-			ui.PrintJSON(syncResult{AppID: appID, Dir: dir, BranchID: branchID, RunID: run.ID})
+			ui.PrintJSON(*result)
 		}
 		return nil
+	}
+
+	state, err := s.syncConfig(ctx, appID, appConfig, opts)
+	if err != nil {
+		return ui.PrintError(err)
 	}
 
 	ui.PrintSuccess("successfully synced " + dir)

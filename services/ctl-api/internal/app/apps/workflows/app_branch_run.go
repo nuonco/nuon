@@ -43,6 +43,7 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 
 	appConfigID := generics.FromPtrStr(flw.Metadata["app_config_id"])
 	skipBuilds := generics.FromPtrStr(flw.Metadata["skip_builds"]) == "true"
+	syncAppConfig := generics.FromPtrStr(flw.Metadata["sync_app_config"]) == "true"
 
 	// Read the run rather than the workflow metadata: only the VCS push path
 	// writes run_type into metadata, so a plan-only run triggered through the
@@ -68,7 +69,8 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		steps = append(steps, step)
 	}
 
-	if appConfigID == "" {
+	switch {
+	case appConfigID == "":
 		sg.nextGroup()
 		step, err := sg.appBranchSignalStep(ctx, appBranchID, "fetch commit", pgtype.Hstore{}, &fetchcommit.Signal{
 			RunID:       runID,
@@ -88,7 +90,29 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 			return nil, errors.Wrap(err, "unable to create app config step")
 		}
 		steps = append(steps, step)
-	} else {
+
+	case syncAppConfig:
+		// Config was compiled by the caller: nothing to fetch, but it still has
+		// to be synced into database records before the builds step can run.
+		sg.nextGroup()
+		step, err := sg.appBranchSignalStep(ctx, appBranchID, "fetch commit (skipped)", pgtype.Hstore{}, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create skipped fetch commit step")
+		}
+		steps = append(steps, step)
+
+		sg.nextGroup()
+		step, err = sg.appBranchSignalStep(ctx, appBranchID, "sync app config", pgtype.Hstore{}, &appconfig.Signal{
+			AppBranchID: appBranchID,
+			RunID:       runID,
+			AppConfigID: appConfigID,
+		}, WithSkippable(false))
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create sync app config step")
+		}
+		steps = append(steps, step)
+
+	default:
 		// Pre-existing app config: skip VCS fetch and config parse
 		sg.nextGroup()
 		step, err := sg.appBranchSignalStep(ctx, appBranchID, "fetch commit (skipped)", pgtype.Hstore{}, nil)

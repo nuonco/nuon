@@ -158,10 +158,14 @@ func (c *cli) appsCmd() *cobra.Command {
 	appsCmd.AddCommand(unsetCurrentAppCmd)
 
 	var (
-		syncCreate bool
-		syncForce  bool
-		syncAppID  string
-		syncNoWait bool
+		syncCreate      bool
+		syncForce       bool
+		syncAppID       string
+		syncBranch      string
+		syncAppBranch   bool
+		syncPreview     bool
+		syncAutoApprove bool
+		syncNoWait      bool
 	)
 	syncCmd := &cobra.Command{
 		Use:               "sync [dir]",
@@ -181,11 +185,15 @@ func (c *cli) appsCmd() *cobra.Command {
 			}
 
 			opts := apps.SyncOptions{
-				AppFlag:   syncAppID,
-				Force:     syncForce,
-				Create:    syncCreate,
-				PrintJSON: PrintJSON,
-				NoWait:    syncNoWait,
+				AppFlag:     syncAppID,
+				Force:       syncForce,
+				Create:      syncCreate,
+				Branch:      syncBranch,
+				AppBranch:   syncAppBranch,
+				Preview:     syncPreview,
+				AutoApprove: syncAutoApprove,
+				PrintJSON:   PrintJSON,
+				NoWait:      syncNoWait,
 			}
 			svc := c.apps
 			if syncCreate {
@@ -197,6 +205,10 @@ func (c *cli) appsCmd() *cobra.Command {
 	syncCmd.Flags().BoolVar(&syncCreate, "create", false, "Create the app if it doesn't exist")
 	syncCmd.Flags().BoolVar(&syncForce, "force", false, "Sync to the configured app even if the directory name does not match")
 	syncCmd.Flags().StringVarP(&syncAppID, "app-id", "a", "", "The ID or name of the app to sync this config with (defaults to the selected app)")
+	syncCmd.Flags().StringVar(&syncBranch, "branch", "", "Target a specific app branch for this sync")
+	syncCmd.Flags().BoolVar(&syncAppBranch, "app-branch", false, "Select an app branch interactively and trigger a branch run after sync")
+	syncCmd.Flags().BoolVar(&syncPreview, "preview", false, "Plan-only preview mode (no apply). Only used with --branch or --app-branch")
+	syncCmd.Flags().BoolVar(&syncAutoApprove, "auto-approve", false, "Skip the branch run's approval gate before each install group deploys")
 	syncCmd.Flags().BoolVar(&syncNoWait, "no-wait", false, "Do not wait for scheduled component builds to complete")
 	appsCmd.AddCommand(syncCmd)
 
