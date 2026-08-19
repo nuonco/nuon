@@ -9,9 +9,9 @@ import { Tooltip } from '@/components/common/Tooltip'
 import { Time } from '@/components/common/Time'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { VCSConnectionsStatusIndicator } from '@/components/vcs-connections/VCSConnectionsStatusIndicator'
-import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
+import { toSentenceCase } from '@/utils/string-utils'
 import { getStatusTheme } from '@/utils/status-utils'
-import type { TApp, TAppBranch, TAppConfig, TInstall, TInstallStack, TOrg, TRunnerHeartbeat, TWorkflow, TWorkflowStepApproval } from '@/types'
+import type { TApp, TAppBranch, TAppConfig, TInstall, TInstallStack, TOrg, TWorkflow, TWorkflowStepApproval } from '@/types'
 
 interface IOrgStatusBar {
   org: TOrg
@@ -20,10 +20,6 @@ interface IOrgStatusBar {
   latestConfig?: TAppConfig
   install?: TInstall
   stack?: TInstallStack
-  runnerConnected: boolean
-  runnerStatus: string
-  runnerHeartbeat?: TRunnerHeartbeat
-  runnerId?: string
   approvals: TWorkflowStepApproval[]
   activeWorkflows: TWorkflow[]
   approvalItems: TContextTooltipItem[]
@@ -37,17 +33,11 @@ export const OrgStatusBar = ({
   latestConfig,
   install,
   stack,
-  runnerConnected,
-  runnerStatus,
-  runnerHeartbeat,
-  runnerId,
   approvals,
   activeWorkflows,
   approvalItems,
   workflowItems,
 }: IOrgStatusBar) => {
-  const runner = runnerId ? { id: runnerId } : undefined
-
   return (
     <div className="hidden md:flex border-t w-full px-4 py-1.5 items-center flex-none bg-code z-[1] gap-3">
       <Text family="mono" variant="subtext" className="!flex items-center gap-1.5">
@@ -64,39 +54,6 @@ export const OrgStatusBar = ({
       </Text>
 
       <VCSConnectionsStatusIndicator />
-
-      {runner && (
-        <ContextTooltip
-          position="top"
-          title="Build runner"
-          items={[
-            {
-              href: `/${org.id}/runner`,
-              id: runner.id ?? 'runner',
-              title: runnerConnected ? 'Connected' : 'Not connected',
-              subtitle: runnerHeartbeat?.created_at ? (
-                <Time
-                  time={runnerHeartbeat.created_at}
-                  variant="label"
-                  theme="neutral"
-                />
-              ) : undefined,
-              leftContent: (
-                <Status
-                  status={runnerStatus}
-                  isWithoutText
-                  variant="timeline"
-                  iconSize={16}
-                />
-              ),
-            },
-          ]}
-        >
-          <Text theme={getStatusTheme(runnerStatus)}>
-            <Icon variant="HammerIcon" size={14} className="cursor-default" />
-          </Text>
-        </ContextTooltip>
-      )}
 
       <ContextTooltip
         position="top"
