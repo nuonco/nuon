@@ -39,24 +39,42 @@ func (a *Activities) CheckBuildNeeded(ctx context.Context, input *CheckBuildNeed
 		return &CheckBuildNeededOutput{NeedsBuild: true}, nil
 	}
 
-	var newConn app.ComponentConfigConnection
+	var newConfigConnection app.ComponentConfigConnection
 	err = a.db.WithContext(ctx).
 		Preload("ExternalImageComponentConfig").
 		Where(app.ComponentConfigConnection{
 			AppConfigID: input.NewAppConfigID,
 			ComponentID: input.ComponentID,
 		}).
-		First(&newConn).Error
+		First(&newConfigConnection).Error
 	if err != nil {
 		return &CheckBuildNeededOutput{NeedsBuild: true}, nil
 	}
 
-	if build.RequiresFreshBuild(&newConn) {
+	if build.RequiresFreshBuild(&newConfigConnection) {
+		return &CheckBuildNeededOutput{NeedsBuild: true}, nil
+	}
+
+	// The syncer records its decision on the new connection's latest build:
+	// an Active build was reused (skip), a queued build was pre-created for
+	// this sync and must be executed (adopted by queuebuild).
+	if newConfigConnection.LatestBuildID.Valid {
+		var pinned app.ComponentBuild
+		err = a.db.WithContext(ctx).
+			Select("id", "status").
+			Where(app.ComponentBuild{ID: newConfigConnection.LatestBuildID.String}).
+			First(&pinned).Error
+		if err == nil && pinned.Status == app.ComponentBuildStatusActive {
+			return &CheckBuildNeededOutput{
+				NeedsBuild:      false,
+				ExistingBuildID: pinned.ID,
+			}, nil
+		}
 		return &CheckBuildNeededOutput{NeedsBuild: true}, nil
 	}
 
 	// Compare checksums — if identical, the component config hasn't changed
-	if oldConn.Checksum != "" && newConn.Checksum != "" && oldConn.Checksum == newConn.Checksum {
+	if oldConn.Checksum != "" && newConfigConnection.Checksum != "" && oldConn.Checksum == newConfigConnection.Checksum {
 		// Find the latest successful build for the old config
 		var existingBuild app.ComponentBuild
 		err = a.db.WithContext(ctx).
