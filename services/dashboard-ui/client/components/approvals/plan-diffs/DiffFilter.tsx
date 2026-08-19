@@ -63,6 +63,8 @@ interface IDiffFilter {
   onSearchChange: (value: string) => void
   searchPlaceholder: string
   diffType?: 'terraform' | 'helm-k8s' | 'pulumi'
+  isAllExpanded?: boolean
+  onToggleExpandAll?: () => void
 }
 
 export function DiffFilter({
@@ -77,6 +79,8 @@ export function DiffFilter({
   onSearchChange,
   searchPlaceholder,
   diffType = 'terraform',
+  isAllExpanded,
+  onToggleExpandAll,
 }: IDiffFilter) {
   const getButtonText = (action: string) => {
     if (selectedActions.size === 1 && selectedActions.has(action)) {
@@ -105,10 +109,29 @@ export function DiffFilter({
         </Text>
       </div>
 
-      <Dropdown
+      <div className="ml-auto flex items-center gap-2">
+        {onToggleExpandAll && (
+          <Button
+            className="!p-1 flex items-center gap-1.5"
+            variant="ghost"
+            size="sm"
+            onClick={onToggleExpandAll}
+          >
+            {isAllExpanded ? 'Collapse all' : 'Expand all'}
+            <Icon
+              variant={
+                isAllExpanded
+                  ? 'ArrowsInLineVerticalIcon'
+                  : 'ArrowsOutLineVerticalIcon'
+              }
+              size="14"
+            />
+          </Button>
+        )}
+
+        <Dropdown
         buttonClassName="!p-1"
         buttonText={`Filter ${title} (${selectedActions.size})`}
-        className="ml-auto"
         icon={<Icon variant="FunnelIcon" size="14" />}
         id={`${title}-fitler`}
         alignment="right"
@@ -165,6 +188,7 @@ export function DiffFilter({
           </Button>
         </Menu>
       </Dropdown>
+      </div>
     </div>
   )
 }
