@@ -365,3 +365,48 @@ func TestUnmarshalTemplate_SymbolicInlineNestedResources(t *testing.T) {
 		t.Errorf("unexpected error message: %s", got)
 	}
 }
+
+func TestHasManagedIdentity_IgnoresExistingReference(t *testing.T) {
+	body := []byte(`{
+		"languageVersion": "2.0",
+		"resources": {
+			"sharedIdentity": {
+				"type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+				"apiVersion": "2023-01-31",
+				"name": "preExistingIdentity",
+				"existing": true
+			}
+		}
+	}`)
+
+	var tmpl armTemplateShape
+	if err := json.Unmarshal(body, &tmpl); err != nil {
+		t.Fatalf("failed to parse template: %v", err)
+	}
+
+	if tmpl.hasManagedIdentity() {
+		t.Error("an existing-resource reference is not a declared identity; gating on it forces the template to expose an identityPrincipalId output it does not own")
+	}
+}
+
+func TestHasManagedIdentity_DeclaredIdentity(t *testing.T) {
+	body := []byte(`{
+		"languageVersion": "2.0",
+		"resources": {
+			"identity": {
+				"type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+				"apiVersion": "2023-01-31",
+				"name": "myIdentity"
+			}
+		}
+	}`)
+
+	var tmpl armTemplateShape
+	if err := json.Unmarshal(body, &tmpl); err != nil {
+		t.Fatalf("failed to parse template: %v", err)
+	}
+
+	if !tmpl.hasManagedIdentity() {
+		t.Error("expected a declared managed identity to be detected")
+	}
+}

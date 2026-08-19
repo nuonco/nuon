@@ -24,6 +24,11 @@ type armTemplateResource struct {
 	SubscriptionId string                 `json:"subscriptionId,omitempty"`
 	Properties     *armResourceProperties `json:"properties,omitempty"`
 
+	// Existing marks a languageVersion 2.0 reference to a pre-existing resource.
+	// Such a resource is not declared by the template, so it must not count as
+	// one the parent template can read outputs off of.
+	Existing bool `json:"existing,omitempty"`
+
 	// symbolicName is the map key under languageVersion 2.0; empty under 1.0.
 	// In 2.0 dependsOn references these keys rather than resource names.
 	symbolicName string
@@ -92,6 +97,9 @@ type armTemplateShape struct {
 // Microsoft.ManagedIdentity/userAssignedIdentities resource.
 func (t *armTemplateShape) hasManagedIdentity() bool {
 	for _, r := range t.Resources {
+		if r.Existing {
+			continue
+		}
 		if r.Type == "Microsoft.ManagedIdentity/userAssignedIdentities" {
 			return true
 		}
