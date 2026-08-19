@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
@@ -40,6 +41,7 @@ export function PulumiDiff({
   plan: IPulumiPreviewResult | undefined
 }) {
   const resourceFilter = usePulumiPlanFilter(plan?.resource_changes || [])
+  const [allExpanded, setAllExpanded] = useState(true)
 
   if (!plan) {
     return <Banner theme="neutral">No Pulumi preview data available</Banner>
@@ -97,10 +99,13 @@ export function PulumiDiff({
               searchValue={resourceFilter.searchQuery}
               onSearchChange={resourceFilter.handleSearchChange}
               searchPlaceholder="Search by type, name, or URN"
+              isAllExpanded={allExpanded}
+              onToggleExpandAll={() => setAllExpanded((v) => !v)}
             />
 
             <PulumiResourceChangesList
               changes={resourceFilter.filteredItems}
+              isOpen={allExpanded}
             />
           </>
         ) : (
