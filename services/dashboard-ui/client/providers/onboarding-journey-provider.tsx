@@ -1,6 +1,7 @@
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useEffect, useRef } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getAccount } from '@/lib'
+import { capturePostHogEvent } from '@/lib/posthog'
 
 interface IOnboardingJourneyContext {
   isLoading: boolean
@@ -21,6 +22,24 @@ export function OnboardingJourneyProvider({ children }: { children: React.ReactN
 
   const journey = account?.user_journeys?.find((j) => j.name === 'evaluation')
   const orgId = account?.org_ids?.[0]
+
+  const appCreatedStep = journey?.steps?.find((s) => s.name === 'app_created')
+  const appCreatedFiredRef = useRef(false)
+  const appCreatedSeenIncompleteRef = useRef(false)
+
+  useEffect(() => {
+    if (!appCreatedStep || appCreatedFiredRef.current) return
+    if (!appCreatedStep.complete) {
+      appCreatedSeenIncompleteRef.current = true
+      return
+    }
+    if (!appCreatedSeenIncompleteRef.current) return
+    appCreatedFiredRef.current = true
+    capturePostHogEvent('app_created', {
+      org_id: orgId,
+      app_id: appCreatedStep.metadata?.app_id,
+    })
+  }, [appCreatedStep, orgId])
 
   const getStep = (stepName: string) =>
     journey?.steps?.find((s) => s.name === stepName)

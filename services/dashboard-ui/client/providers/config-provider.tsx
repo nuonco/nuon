@@ -13,6 +13,8 @@ export type TRuntimeConfig = {
   datadogApplicationKey?: string
   datadogTraceDebug?: boolean
   datadogApiUrl?: string
+  postHogApiKey?: string
+  postHogHost?: string
   version?: string
   gitRef?: string
   isByoc: boolean

@@ -24,6 +24,7 @@ func init() {
 	config.RegisterDefault("disable_metrics", true)
 	config.RegisterDefault("service_deployment", "local")
 	config.RegisterDefault("nuon_admin_dashboard_url", "http://localhost:8087")
+	config.RegisterDefault("posthog_host", "https://us.i.posthog.com")
 	// docker-compose's kafka-ui, which serves under the same /admin/kafka context
 	// path it does in the cluster
 	config.RegisterDefault("nuon_kafka_ui_url", "http://localhost:8092")
@@ -52,6 +53,8 @@ type Config struct {
 	DatadogApplicationKey string `config:"datadog_application_key"`
 	DatadogTraceDebug     bool   `config:"datadog_trace_debug"`
 	DatadogAPIUrl         string `config:"datadog_api_url"`
+	PostHogAPIKey         string `config:"posthog_api_key"`
+	PostHogHost           string `config:"posthog_host"`
 	DisableMetrics        bool   `config:"disable_metrics"`
 	ServiceDeployment     string `config:"service_deployment"`
 	IsBYOC                bool   `config:"nuon_byoc"`

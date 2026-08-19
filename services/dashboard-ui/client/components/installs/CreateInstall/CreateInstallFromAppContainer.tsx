@@ -20,6 +20,7 @@ import {
   createAppInstall,
   getAWSAccountConnections,
 } from '@/lib'
+import { capturePostHogEvent } from '@/lib/posthog'
 import type { TApp } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 import { BranchConnectionStep } from './BranchConnectionStep'
@@ -121,6 +122,11 @@ export const CreateInstallFromAppContainer = ({
       mutationFn: (body: ReturnType<typeof buildCreateInstallBody>) =>
         createAppInstall({ appId: app.id, body, orgId: org?.id || '' }),
       onSuccess: (result) => {
+        capturePostHogEvent('install_created', {
+          org_id: org?.id,
+          app_id: app.id,
+          install_id: result.data.id,
+        })
         addToast(
           <Toast heading="Install created" theme="success">
             <Text>

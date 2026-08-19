@@ -19,6 +19,7 @@ import { useSpotlight } from '@/hooks/use-spotlight'
 import { useHelp } from '@/hooks/use-help'
 import { useNavShortcuts } from '@/hooks/use-nav-shortcuts'
 import { VCSConnectionSuccess } from '@/components/vcs-connections/VCSConnectionSuccess'
+import { PostHogGroupOrg } from '@/lib/posthog'
 
 const SpotlightListener = () => {
   useSpotlight()
@@ -47,6 +48,7 @@ export const OrgLayout = () => {
                       <WorkflowApprovalsProvider>
                         <SurfacesProvider>
                           <SpotlightListener />
+                          <PostHogGroupOrg />
                           <VCSConnectionSuccess />
                           <MainLayout
                             versions={{

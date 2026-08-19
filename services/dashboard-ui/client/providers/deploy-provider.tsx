@@ -1,10 +1,12 @@
-import { createContext, useMemo, useCallback, type ReactNode } from 'react'
+import { createContext, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useSSEResourceQuery, isTerminalStatusV2 } from '@/hooks/use-sse-resource-query'
 import { useStatusToast } from '@/hooks/use-status-toast'
 import { getDeploy } from '@/lib'
+import { capturePostHogEvent } from '@/lib/posthog'
 import { createSSEQueryListener } from '@/lib/sse-listeners'
+import { getStatusTheme } from '@/utils/status-utils'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
 import type { TComponent, TDeploy, TWorkflow } from '@/types'
@@ -68,6 +70,28 @@ export function DeployProvider({
     label: deploy?.component_name,
     resourceType: 'deploy',
   })
+
+  const deployedFiredRef = useRef(false)
+  const deploySeenNonTerminalRef = useRef(false)
+
+  useEffect(() => {
+    const status = deploy?.status_v2?.status
+    if (!status || deployedFiredRef.current) return
+    const theme = getStatusTheme(status)
+    if (theme !== 'success' && theme !== 'error') {
+      deploySeenNonTerminalRef.current = true
+      return
+    }
+    if (!deploySeenNonTerminalRef.current) return
+    deployedFiredRef.current = true
+    if (theme !== 'success') return
+    capturePostHogEvent('install_deployed', {
+      org_id: org?.id,
+      install_id: installId,
+      deploy_id: deployId,
+      component_id: deploy?.component_id,
+    })
+  }, [deploy?.status_v2?.status, org?.id, installId, deployId, deploy?.component_id])
 
   if (error && !deploy) return <ProviderError error={error} />
   if (isLoading || !deploy) return <ProviderLoading />

@@ -42,6 +42,8 @@ type clientConfig struct {
 	DatadogApplicationKey string `json:"datadogApplicationKey,omitempty"`
 	DatadogTraceDebug     bool   `json:"datadogTraceDebug,omitempty"`
 	DatadogAPIUrl         string `json:"datadogApiUrl,omitempty"`
+	PostHogAPIKey         string `json:"postHogApiKey,omitempty"`
+	PostHogHost           string `json:"postHogHost,omitempty"`
 	Version               string `json:"version,omitempty"`
 	GitRef                string `json:"gitRef,omitempty"`
 	IsBYOC                bool   `json:"isByoc"`
@@ -62,6 +64,8 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		DatadogApplicationKey: cfg.DatadogApplicationKey,
 		DatadogTraceDebug:     cfg.DatadogTraceDebug,
 		DatadogAPIUrl:         cfg.DatadogAPIUrl,
+		PostHogAPIKey:         cfg.PostHogAPIKey,
+		PostHogHost:           cfg.PostHogHost,
 		Version:               cfg.Version,
 		GitRef:                cfg.GitRef,
 		IsBYOC:                cfg.IsBYOC,

@@ -13,6 +13,7 @@ import {
   createAppInstall,
   completeUserJourney,
 } from '@/lib'
+import { capturePostHogEvent } from '@/lib/posthog'
 import { useOnboardingJourney } from '@/hooks/use-onboarding-journey'
 import { useToast } from '@/hooks/use-toast'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
@@ -102,6 +103,11 @@ function CreateInstallStepContentContainer({
         orgId,
       }),
     onSuccess: async (result) => {
+      capturePostHogEvent('install_created', {
+        org_id: orgId,
+        app_id: app?.id,
+        install_id: result.data.id,
+      })
       await completeUserJourney({ journeyName: 'evaluation' })
       addToast(
         <Toast heading="Install created" theme="success">
