@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -26,12 +28,19 @@ func (s *Helpers) GetComponentByName(ctx context.Context, appID, name string) (*
 }
 
 func (s *Helpers) GetComponentIDs(ctx context.Context, appID string, comps []string) ([]string, error) {
+	return s.GetComponentIDsWithDB(ctx, s.db, appID, comps)
+}
+
+// GetComponentIDsWithDB is the transaction-aware form. Callers inside a
+// transaction must use it, or components created earlier in that transaction
+// resolve as "not created yet".
+func (s *Helpers) GetComponentIDsWithDB(ctx context.Context, db *gorm.DB, appID string, comps []string) ([]string, error) {
 	if len(comps) == 0 {
 		return []string{}, nil
 	}
 
 	var components []app.Component
-	res := s.db.WithContext(ctx).
+	res := db.WithContext(ctx).
 		Select("id").
 		Where("app_id = ?", appID).
 		Where("name IN ? OR id IN ?", comps, comps).

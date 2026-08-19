@@ -20,8 +20,24 @@ func (h *Helpers) CreateAppBranchConfig(
 	installGroups []app.AppBranchInstallGroup,
 	postDeployRunbookIDs *[]string,
 ) (*app.AppBranchConfig, error) {
+	return h.CreateAppBranchConfigWithDB(ctx, h.db, appBranchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups, postDeployRunbookIDs)
+}
+
+// CreateAppBranchConfigWithDB is the transaction-aware form. Callers inside a
+// transaction must use it: the branch this config points at is often created in
+// the same transaction, and h.db cannot see it, so the insert fails the
+// app_branch_id foreign key.
+func (h *Helpers) CreateAppBranchConfigWithDB(
+	ctx context.Context,
+	db *gorm.DB,
+	appBranchID string,
+	connectedGithubVCSConfig *app.ConnectedGithubVCSConfig,
+	publicGitVCSConfig *app.PublicGitVCSConfig,
+	installGroups []app.AppBranchInstallGroup,
+	postDeployRunbookIDs *[]string,
+) (*app.AppBranchConfig, error) {
 	if postDeployRunbookIDs != nil && len(*postDeployRunbookIDs) > 0 {
-		if err := h.validatePostDeployRunbooks(ctx, appBranchID, *postDeployRunbookIDs); err != nil {
+		if err := h.validatePostDeployRunbooks(ctx, db, appBranchID, *postDeployRunbookIDs); err != nil {
 			return nil, err
 		}
 	}
@@ -34,7 +50,7 @@ func (h *Helpers) CreateAppBranchConfig(
 	}
 
 	var previous app.AppBranchConfig
-	res := h.db.WithContext(ctx).
+	res := db.WithContext(ctx).
 		Where(app.AppBranchConfig{AppBranchID: appBranchID}).
 		Order("created_at DESC").
 		First(&previous)
@@ -57,7 +73,7 @@ func (h *Helpers) CreateAppBranchConfig(
 		config.PostDeployRunbookIDs = previous.PostDeployRunbookIDs
 	}
 
-	if err := h.db.WithContext(ctx).Create(&config).Error; err != nil {
+	if err := db.WithContext(ctx).Create(&config).Error; err != nil {
 		return nil, fmt.Errorf("unable to create app branch config: %w", err)
 	}
 
@@ -67,14 +83,14 @@ func (h *Helpers) CreateAppBranchConfig(
 // validatePostDeployRunbooks rejects runbook IDs that don't belong to the branch's
 // app. Every caller passes through here, so a bad ID fails at config time rather
 // than mid-rollout.
-func (h *Helpers) validatePostDeployRunbooks(ctx context.Context, appBranchID string, runbookIDs []string) error {
+func (h *Helpers) validatePostDeployRunbooks(ctx context.Context, db *gorm.DB, appBranchID string, runbookIDs []string) error {
 	var branch app.AppBranch
-	if err := h.db.WithContext(ctx).First(&branch, "id = ?", appBranchID).Error; err != nil {
+	if err := db.WithContext(ctx).First(&branch, "id = ?", appBranchID).Error; err != nil {
 		return fmt.Errorf("unable to find app branch: %w", err)
 	}
 
 	var found []app.Runbook
-	if err := h.db.WithContext(ctx).
+	if err := db.WithContext(ctx).
 		Where(app.Runbook{AppID: branch.AppID}).
 		Where("id IN ?", runbookIDs).
 		Find(&found).Error; err != nil {
