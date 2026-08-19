@@ -6,14 +6,20 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"gorm.io/gorm"
 )
 
 func (s *Helpers) CreateComponentBuild(ctx context.Context, cmpID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
-	return s.createComponentBuild(ctx, "", cmpID, useLatest, gitRef)
+	return s.createComponentBuild(ctx, s.db, "", cmpID, useLatest, gitRef)
 }
 
 func (s *Helpers) CreateComponentBuildWithID(ctx context.Context, buildID, cmpID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
-	return s.createComponentBuild(ctx, buildID, cmpID, useLatest, gitRef)
+	return s.createComponentBuild(ctx, s.db, buildID, cmpID, useLatest, gitRef)
+}
+
+// CreateComponentBuildInTx creates the build through the caller's transaction
+func (s *Helpers) CreateComponentBuildInTx(ctx context.Context, tx *gorm.DB, cmpID string, useLatest bool, gitRef *string) (*app.ComponentBuild, error) {
+	return s.createComponentBuild(ctx, tx, "", cmpID, useLatest, gitRef)
 }
 
 func DockerBuildUnsupported() stderr.ErrUser {
@@ -25,8 +31,8 @@ func DockerBuildUnsupported() stderr.ErrUser {
 	}
 }
 
-func (s *Helpers) createComponentBuild(ctx context.Context, buildID, cmpID string, _ bool, gitRef *string) (*app.ComponentBuild, error) {
-	cmp, err := s.GetComponent(ctx, cmpID)
+func (s *Helpers) createComponentBuild(ctx context.Context, db *gorm.DB, buildID, cmpID string, _ bool, gitRef *string) (*app.ComponentBuild, error) {
+	cmp, err := s.getComponent(ctx, db, cmpID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get component: %w", err)
 	}
@@ -53,13 +59,13 @@ func (s *Helpers) createComponentBuild(ctx context.Context, buildID, cmpID strin
 		GitRef:                      gitRef,
 		ComponentConfigConnectionID: cmp.LatestConfig.ID,
 	}
-	res := s.db.WithContext(ctx).
+	res := db.WithContext(ctx).
 		Create(&bld)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create build for component: %v", res.Error)
 	}
 
-	if err := s.db.WithContext(ctx).
+	if err := db.WithContext(ctx).
 		Model(&app.ComponentConfigConnection{}).
 		Where("id = ?", cmp.LatestConfig.ID).
 		Update("latest_build_id", bld.ID).Error; err != nil {
