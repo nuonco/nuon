@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router'
+import { Outlet, useParams } from 'react-router'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
@@ -11,8 +11,12 @@ import { useOrg } from '@/hooks/use-org'
 export const PoliciesLayout = () => {
   const { org } = useOrg()
   const { app } = useApp()
+  const { branchId } = useParams()
 
-  const basePath = `/${org?.id}/apps/${app?.id}/policies`
+  const appBase = branchId
+    ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
+    : `/${org?.id}/apps/${app?.id}`
+  const basePath = `${appBase}/policies`
 
   return (
     <PageSection>
@@ -22,7 +26,7 @@ export const PoliciesLayout = () => {
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
-          { path: `/${org?.id}/apps/${app?.id}/policies`, text: 'Policies' },
+          { path: basePath, text: 'Policies' },
         ]}
       />
       <HeadingGroup>
