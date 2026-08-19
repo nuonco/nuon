@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skipAdditionalChecks bool) (*app.AppConfig, error) {
@@ -80,11 +79,20 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 
 	if len(missingComponentIds) > 0 {
 		missingComponents := []app.ComponentConfigConnection{}
+		// a newer row's dependency ids can name components absent from this version
+		var boundedCfgIDs []string
+		res = h.db.WithContext(ctx).Raw(`
+			SELECT DISTINCT ON (component_id) id
+			FROM component_config_connections_view_v1
+			WHERE component_id IN ? AND app_config_version <= ?
+			ORDER BY component_id, app_config_version DESC`,
+			missingComponentIds, appCfg.Version,
+		).Scan(&boundedCfgIDs)
+		if res.Error != nil {
+			return nil, errors.Wrap(res.Error, "unable to resolve component configs at config version")
+		}
+
 		res = h.db.WithContext(ctx).
-			Scopes(
-				scopes.WithDisableViews,
-				scopes.WithOverrideTable("component_config_connections_latest_configs_view"),
-			).
 			// preload the component this belongs too
 			Preload("Component").
 
@@ -116,7 +124,7 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 			Preload("PulumiComponentConfig").
 			Preload("PulumiComponentConfig.PublicGitVCSConfig").
 			Preload("PulumiComponentConfig.ConnectedGithubVCSConfig").
-			Where("component_id IN ?", missingComponentIds).
+			Where("id IN ?", boundedCfgIDs).
 			Find(&missingComponents)
 		if res.Error != nil {
 			return nil, errors.Wrap(res.Error, "unable to get missing component configs")
