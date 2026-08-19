@@ -441,6 +441,12 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 		group := &groups[gi]
 
+		if stopped, err := s.stopIfRunnerDisabled(ctx, l, flw, groups, gi); err != nil {
+			return err
+		} else if stopped {
+			return flow.NewFlowStoppedErr("", "the install runner is disabled")
+		}
+
 		if s.Resident && !residentPending[group.GroupIdx] {
 			continue
 		}
@@ -975,4 +981,52 @@ func (s *Signal) checkGroupRetriesExhausted(ctx workflow.Context, group *app.Wor
 		}
 	}
 	return false
+}
+
+// runnerDisabledCheckVersion gates the pre-group runner check so in-flight
+// histories, which never scheduled the activity, still replay deterministically.
+const runnerDisabledCheckVersion = "execute-flow-runner-disabled-check-v1"
+
+// stopIfRunnerDisabled halts a workflow whose install runner was disabled after
+// it started. Creation already rejects these, so without this the workflow would
+// fail one runner-dependent group at a time and report each as its own error.
+func (s *Signal) stopIfRunnerDisabled(
+	ctx workflow.Context,
+	l *zap.Logger,
+	flw *app.Workflow,
+	groups []app.WorkflowStepGroup,
+	groupPosition int,
+) (bool, error) {
+	if workflow.GetVersion(ctx, runnerDisabledCheckVersion, workflow.DefaultVersion, 1) == workflow.DefaultVersion {
+		return false, nil
+	}
+
+	if flw.OwnerType != "installs" || !flw.Type.RequiresRunner() {
+		return false, nil
+	}
+
+	disabled, err := workflowactivities.AwaitCheckFlowRunnerDisabled(ctx, workflowactivities.CheckFlowRunnerDisabledRequest{
+		FlowID: s.WorkflowID,
+	})
+	if err != nil {
+		// A failed check must not take down a workflow that would otherwise run.
+		l.Warn("unable to check whether the install runner is disabled", zap.Error(err))
+		return false, nil
+	}
+	if !disabled {
+		return false, nil
+	}
+
+	l.Warn("install runner is disabled, stopping workflow",
+		zap.String("workflow_id", s.WorkflowID),
+		zap.Int("group_position", groupPosition))
+
+	s.markRemainingGroupStepsDiscarded(ctx, l, groups, groupPosition-1)
+	s.markRemainingStepsNotAttempted(ctx, l)
+
+	if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
+		l.Error("unable to update finished at", zap.Error(err))
+	}
+
+	return true, nil
 }
