@@ -45,12 +45,16 @@ function parsePolicyToTableData(
   policies: TAppPolicyConfig[],
   orgId: string,
   appId: string,
+  branchId?: string,
 ): TPolicyRow[] {
+  const basePath = branchId
+    ? `/${orgId}/apps/${appId}/branches/${branchId}`
+    : `/${orgId}/apps/${appId}`
   return policies.map((policy) => ({
     id: policy.id || '',
     name:
       policy.name || extractPolicyName(policy.contents || '', policy.engine || ''),
-    nameHref: `/${orgId}/apps/${appId}/policies/${policy.id}`,
+    nameHref: `${basePath}/policies/${policy.id}`,
     type: policy.type || '',
     engine: policy.engine || '',
     components: policy.components || [],
@@ -133,12 +137,17 @@ export const PoliciesTable = ({
   policies,
   orgId,
   appId,
+  branchId,
 }: {
   policies: TAppPolicyConfig[]
   orgId: string
   appId: string
+  branchId?: string
 }) => {
-  const data = parsePolicyToTableData(policies, orgId, appId)
+  const data = parsePolicyToTableData(policies, orgId, appId, branchId)
+  const basePath = branchId
+    ? `/${orgId}/apps/${appId}/branches/${branchId}`
+    : `/${orgId}/apps/${appId}`
 
   const columns: ColumnDef<TPolicyRow>[] = policiesTableColumns.map((col) => {
     if (col.id === 'actions') {
@@ -146,7 +155,7 @@ export const PoliciesTable = ({
         ...col,
         cell: (info) => (
           <Text>
-            <Link href={`/${orgId}/apps/${appId}/policies/${info.row.original.id}`}>
+            <Link href={`${basePath}/policies/${info.row.original.id}`}>
               View <Icon variant="CaretRightIcon" />
             </Link>
           </Text>

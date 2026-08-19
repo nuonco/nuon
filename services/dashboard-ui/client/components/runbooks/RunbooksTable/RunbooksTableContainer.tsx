@@ -9,8 +9,10 @@ const LIMIT = 20
 
 export const RunbooksTableContainer = ({
   filterIds,
+  branchId,
 }: {
   filterIds?: string[]
+  branchId?: string
 } = {}) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
@@ -38,7 +40,8 @@ export const RunbooksTableContainer = ({
         ),
         org?.id ?? '',
         app?.id ?? '',
-        labelColors
+        labelColors,
+        branchId
       )}
       isLoading={isLoading}
       pagination={{

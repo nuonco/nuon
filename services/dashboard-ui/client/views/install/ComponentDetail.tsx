@@ -116,6 +116,19 @@ export const InstallComponentDetail = () => {
     (b) => !!b.source_digest
   )
 
+  const deployCommit = latestDeploy?.component_build?.vcs_connection_commit
+  const latestCommit = deployCommit
+    ? {
+        status: latestDeploy?.status_v2?.status,
+        href: `/${org?.id}/installs/${install?.id}/components/${componentId}/deploys/${latestDeploy?.id}`,
+        message: deployCommit.message?.split('\n')[0],
+        author: deployCommit.author_name,
+        avatarUrl: deployCommit.author_avatar_url,
+        sha: deployCommit.sha,
+        createdAt: deployCommit.created_at,
+      }
+    : undefined
+
   return (
     <PageSection>
       <PageTitle
@@ -237,6 +250,7 @@ export const InstallComponentDetail = () => {
               <ComponentConfigCard
                 config={config}
                 latestBuild={latestResolvedBuild}
+                latestCommit={latestCommit}
                 headerActions={
                   appConfig && componentId && component?.name ? (
                     <ComponentDependencyGraphButton

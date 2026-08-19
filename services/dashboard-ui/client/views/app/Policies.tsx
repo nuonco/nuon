@@ -1,3 +1,4 @@
+import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { PoliciesTable, policiesTableColumns } from '@/components/policies/PoliciesTable'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
@@ -8,6 +9,7 @@ import { getAppPoliciesConfigs } from '@/lib'
 export const Policies = () => {
   const { org } = useOrg()
   const { app } = useApp()
+  const { branchId } = useParams()
 
   const { data: policiesConfigs, isLoading } = useQuery({
     placeholderData: keepPreviousData,
@@ -35,6 +37,7 @@ export const Policies = () => {
           policies={policies}
           orgId={org?.id}
           appId={app?.id}
+          branchId={branchId}
         />
       )}
     </div>
