@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -149,17 +149,17 @@ func (s *service) createAppPermissionsConfig(ctx context.Context, appID string, 
 		return nil, stderr.NewInvalidRequest(err)
 	}
 
-	res := s.db.WithContext(ctx).Create(obj)
-	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to create app permissions config")
-	}
-
-	tx := s.db.WithContext(ctx).Begin()
-	if err := s.installsHelpers.MigrateInstallRoles(ctx, tx, appID, *obj); err != nil {
-		tx.Rollback()
-		s.l.Warn("failed to migrate install roles", zap.Error(err))
-	} else {
-		tx.Commit()
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		res := s.db.WithContext(ctx).Create(obj)
+		if res.Error != nil {
+			return errors.Wrap(res.Error, "unable to create app permissions config")
+		}
+		if err := s.installsHelpers.MigrateInstallRoles(ctx, tx, appID, *obj); err != nil {
+			return errors.Wrap(err, "failed to migrate install roles")
+		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	return obj, nil

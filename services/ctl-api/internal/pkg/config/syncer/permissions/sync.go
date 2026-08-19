@@ -37,23 +37,24 @@ func Sync(ctx context.Context, db *gorm.DB, installHelpers *installhelpers.Helpe
 		}
 	}
 
-	if res := db.WithContext(ctx).Create(obj); res.Error != nil {
-		return sync.SyncInternalErr{
-			Description: "unable to create app permissions config",
-			Err:         res.Error,
-		}
-	}
-
 	// Repoint existing installs at the new role rows, or they keep resolving
 	// against the previous permissions config.
-	if err := db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		return installHelpers.MigrateInstallRoles(ctx, tx, appID, *obj)
-	}); err != nil {
-		return sync.SyncInternalErr{
-			Description: "unable to migrate install roles",
-			Err:         err,
+	err = db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if res := tx.WithContext(ctx).Create(obj); res.Error != nil {
+			return sync.SyncInternalErr{
+				Description: "unable to create app permissions config",
+				Err:         res.Error,
+			}
 		}
-	}
+		if err := installHelpers.MigrateInstallRoles(ctx, tx, appID, *obj); err != nil {
+			return sync.SyncInternalErr{
+				Description: "unable to create app permissions config",
+				Err:         err,
+			}
+		}
 
-	return nil
+		return nil
+	})
+
+	return err
 }
