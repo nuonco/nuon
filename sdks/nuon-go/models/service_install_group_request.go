@@ -19,6 +19,10 @@ import (
 // swagger:model service.InstallGroupRequest
 type ServiceInstallGroupRequest struct {
 
+	// AllInstalls targets every install on the app that no other branch owns.
+	// Mutually exclusive with InstallIDs and LabelSelector.
+	AllInstalls bool `json:"all_installs,omitempty"`
+
 	// install ids
 	InstallIds []string `json:"install_ids"`
 
