@@ -23,13 +23,13 @@ const (
 
 	defaultBranchRunPoll = time.Second * 5
 
-	appBranchSyncFeature    = "app-branch-sync"
-	defaultAppBranchName    = "sync-default"
-	defaultInstallGroupName = "all installs"
+	defaultAppBranchesFeature = "default-app-branches"
+	defaultAppBranchName      = "default"
+	defaultInstallGroupName   = "all installs"
 )
 
 // resolveDefaultBranchID returns the app's default branch when the org has
-// app-branch-sync enabled, creating it if this is the first sync, or "" to leave
+// default-app-branches enabled, creating it if this is the first sync, or "" to leave
 // the sync on the standalone path.
 //
 // The branch is created here rather than as a side effect of POST /configs so an
@@ -41,7 +41,7 @@ func (s *Service) resolveDefaultBranchID(ctx context.Context, appID string) (str
 	if err != nil {
 		return "", fmt.Errorf("unable to read org features: %w", err)
 	}
-	if !org.Features[appBranchSyncFeature] {
+	if !org.Features[defaultAppBranchesFeature] {
 		return "", nil
 	}
 
