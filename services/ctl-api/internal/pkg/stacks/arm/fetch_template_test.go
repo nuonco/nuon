@@ -2,6 +2,8 @@ package arm
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -408,5 +410,37 @@ func TestHasManagedIdentity_DeclaredIdentity(t *testing.T) {
 
 	if !tmpl.hasManagedIdentity() {
 		t.Error("expected a declared managed identity to be detected")
+	}
+}
+
+// testdata/vnet_languageversion_2.json is real `bicep build` output, not hand-written:
+// tool-generated ARM is what actually ships languageVersion 2.0, and it is what
+// regressed stack generation for an Azure install with a customer-supplied VNet.
+func TestParseGeneratedBicepTemplate(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "vnet_languageversion_2.json"))
+	if err != nil {
+		t.Fatalf("failed to read fixture: %v", err)
+	}
+
+	var tmpl armTemplateShape
+	if err := json.Unmarshal(body, &tmpl); err != nil {
+		t.Fatalf("expected generated 2.0 template to parse, got: %v", err)
+	}
+
+	if tmpl.LanguageVersion != "2.0" {
+		t.Fatalf("fixture is no longer a 2.0 template: got %q", tmpl.LanguageVersion)
+	}
+
+	if err := validateARMTemplate(&tmpl); err != nil {
+		t.Fatalf("expected generated template to validate, got: %v", err)
+	}
+
+	if !tmpl.hasManagedIdentity() {
+		t.Error("expected the declared user-assigned identity to be detected")
+	}
+
+	params, _ := extractARMParameters(&tmpl, ReservedParamNames)
+	if _, ok := params["vnetAddressPrefix"]; !ok {
+		t.Error("expected vnetAddressPrefix parameter to be extracted")
 	}
 }
