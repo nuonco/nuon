@@ -72,6 +72,16 @@ failures (provision, reprovision, and deprovision) up to the configured cap,
 so flaky infrastructure self-heals without a manual re-run. It matches the
 `max_auto_retries` field on [components](/concepts/components).
 
+## How is a sandbox provisioned?
+
+By default a sandbox run clones your sandbox repo at the moment it runs, so what gets applied is
+whatever is at the configured ref that day.
+
+[Sandbox builds](/guides/sandbox-builds) change that: Nuon packages the sandbox into an immutable OCI
+artifact, pinned to an app config version, and installs provision from the artifact instead of
+cloning Git. Reprovisions apply what the install was built with, and nothing in your customer's
+account needs to reach your VCS.
+
 ## Nuon Managed Sandboxes
 
 We maintain managed sandboxes for [AWS](/platform-support/aws),
