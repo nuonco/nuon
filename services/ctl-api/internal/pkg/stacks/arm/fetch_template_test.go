@@ -88,10 +88,8 @@ func TestValidateARMTemplate_InlineNestedSubscriptionDeployment(t *testing.T) {
 				Type: "Microsoft.Resources/deployments",
 				Name: "outerDeployment",
 				Properties: &armResourceProperties{
-					Template: &struct {
-						Resources []armTemplateResource `json:"resources,omitempty"`
-					}{
-						Resources: []armTemplateResource{
+					Template: &armInlineTemplate{
+						Resources: armResources{
 							{
 								Type:           "Microsoft.Resources/deployments",
 								Name:           "innerSubscriptionDeployment",
@@ -208,4 +206,162 @@ func searchString(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+func TestUnmarshalTemplate_LanguageVersion2SymbolicResources(t *testing.T) {
+	body := []byte(`{
+		"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+		"languageVersion": "2.0",
+		"contentVersion": "1.0.0.0",
+		"parameters": {
+			"vnetAddressPrefix": {
+				"type": "string",
+				"defaultValue": "10.0.0.0/16",
+				"metadata": {"description": "VNet CIDR"}
+			}
+		},
+		"resources": {
+			"virtualNetwork": {
+				"type": "Microsoft.Network/virtualNetworks",
+				"apiVersion": "2023-05-01",
+				"name": "[parameters('vnetName')]"
+			},
+			"identity": {
+				"type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+				"apiVersion": "2023-01-31",
+				"name": "myIdentity"
+			}
+		}
+	}`)
+
+	var tmpl armTemplateShape
+	if err := json.Unmarshal(body, &tmpl); err != nil {
+		t.Fatalf("expected languageVersion 2.0 template to parse, got: %v", err)
+	}
+
+	if tmpl.LanguageVersion != "2.0" {
+		t.Errorf("expected languageVersion 2.0, got %q", tmpl.LanguageVersion)
+	}
+	if len(tmpl.Resources) != 2 {
+		t.Fatalf("expected 2 resources, got %d", len(tmpl.Resources))
+	}
+	if _, ok := tmpl.Parameters["vnetAddressPrefix"]; !ok {
+		t.Error("expected vnetAddressPrefix parameter to be parsed")
+	}
+	if !tmpl.hasManagedIdentity() {
+		t.Error("expected hasManagedIdentity to detect the symbolic-name identity resource")
+	}
+
+	// Sorted by symbolic name, so identity precedes virtualNetwork.
+	if got := tmpl.Resources[0].symbolicName; got != "identity" {
+		t.Errorf("expected first resource symbolicName 'identity', got %q", got)
+	}
+}
+
+func TestUnmarshalTemplate_LanguageVersion1ArrayResources(t *testing.T) {
+	body := []byte(`{
+		"resources": [
+			{"type": "Microsoft.Network/virtualNetworks", "name": "myVnet"}
+		]
+	}`)
+
+	var tmpl armTemplateShape
+	if err := json.Unmarshal(body, &tmpl); err != nil {
+		t.Fatalf("expected array-form template to parse, got: %v", err)
+	}
+
+	if len(tmpl.Resources) != 1 {
+		t.Fatalf("expected 1 resource, got %d", len(tmpl.Resources))
+	}
+	if tmpl.Resources[0].symbolicName != "" {
+		t.Errorf("expected no symbolicName in array form, got %q", tmpl.Resources[0].symbolicName)
+	}
+}
+
+func TestValidateARMTemplate_SymbolicDependsOn(t *testing.T) {
+	body := []byte(`{
+		"languageVersion": "2.0",
+		"resources": {
+			"identity": {
+				"type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+				"name": "myIdentity"
+			},
+			"enableApis": {
+				"type": "Microsoft.Resources/deploymentScripts",
+				"name": "enableApis",
+				"dependsOn": ["identity"]
+			}
+		}
+	}`)
+
+	var tmpl armTemplateShape
+	if err := json.Unmarshal(body, &tmpl); err != nil {
+		t.Fatalf("failed to parse template: %v", err)
+	}
+
+	if err := validateARMTemplate(&tmpl); err != nil {
+		t.Fatalf("expected symbolic-name dependsOn to validate, got: %v", err)
+	}
+}
+
+func TestValidateARMTemplate_SymbolicDependsOnUnknown(t *testing.T) {
+	body := []byte(`{
+		"languageVersion": "2.0",
+		"resources": {
+			"enableApis": {
+				"type": "Microsoft.Resources/deploymentScripts",
+				"name": "enableApis",
+				"dependsOn": ["doesNotExist"]
+			}
+		}
+	}`)
+
+	var tmpl armTemplateShape
+	if err := json.Unmarshal(body, &tmpl); err != nil {
+		t.Fatalf("failed to parse template: %v", err)
+	}
+
+	err := validateARMTemplate(&tmpl)
+	if err == nil {
+		t.Fatal("expected validation error for unknown symbolic dependsOn reference")
+	}
+	if got := err.Error(); !contains(got, "doesNotExist") {
+		t.Errorf("unexpected error message: %s", got)
+	}
+}
+
+func TestUnmarshalTemplate_SymbolicInlineNestedResources(t *testing.T) {
+	body := []byte(`{
+		"languageVersion": "2.0",
+		"resources": {
+			"outer": {
+				"type": "Microsoft.Resources/deployments",
+				"name": "outer",
+				"properties": {
+					"template": {
+						"resources": {
+							"roleAssignment": {
+								"type": "Microsoft.Resources/deployments",
+								"name": "roleAssignment",
+								"subscriptionId": "[subscription().subscriptionId]"
+							}
+						}
+					}
+				}
+			}
+		}
+	}`)
+
+	var tmpl armTemplateShape
+	if err := json.Unmarshal(body, &tmpl); err != nil {
+		t.Fatalf("failed to parse template: %v", err)
+	}
+
+	err := validateARMTemplate(&tmpl)
+	if err == nil {
+		t.Fatal("expected validation error for subscription-level deployment in symbolic inline template")
+	}
+	if got := err.Error(); !contains(got, "roleAssignment") {
+		t.Errorf("unexpected error message: %s", got)
+	}
 }

@@ -1,9 +1,11 @@
 package arm
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"slices"
 	"strings"
@@ -21,24 +23,69 @@ type armTemplateResource struct {
 	DependsOn      json.RawMessage        `json:"dependsOn,omitempty"`
 	SubscriptionId string                 `json:"subscriptionId,omitempty"`
 	Properties     *armResourceProperties `json:"properties,omitempty"`
+
+	// symbolicName is the map key under languageVersion 2.0; empty under 1.0.
+	// In 2.0 dependsOn references these keys rather than resource names.
+	symbolicName string
+}
+
+// armResources accepts both resource declaration forms: the languageVersion 1.0
+// array and the 2.0 object keyed by symbolic name. Azure-authored templates
+// increasingly ship as 2.0, and a plain []armTemplateResource field fails the
+// whole unmarshal on them.
+type armResources []armTemplateResource
+
+func (r *armResources) UnmarshalJSON(data []byte) error {
+	trimmed := bytes.TrimSpace(data)
+	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
+		return nil
+	}
+
+	if trimmed[0] == '[' {
+		var arr []armTemplateResource
+		if err := json.Unmarshal(trimmed, &arr); err != nil {
+			return err
+		}
+		*r = arr
+		return nil
+	}
+
+	var obj map[string]armTemplateResource
+	if err := json.Unmarshal(trimmed, &obj); err != nil {
+		return err
+	}
+
+	// Sorted so validation errors are reported in a stable order.
+	out := make(armResources, 0, len(obj))
+	for _, key := range slices.Sorted(maps.Keys(obj)) {
+		res := obj[key]
+		res.symbolicName = key
+		out = append(out, res)
+	}
+	*r = out
+
+	return nil
 }
 
 type armResourceProperties struct {
-	Template *struct {
-		Resources []armTemplateResource `json:"resources,omitempty"`
-	} `json:"template,omitempty"`
+	Template *armInlineTemplate `json:"template,omitempty"`
+}
+
+type armInlineTemplate struct {
+	Resources armResources `json:"resources,omitempty"`
 }
 
 type armTemplateShape struct {
-	Parameters map[string]struct {
+	LanguageVersion string `json:"languageVersion,omitempty"`
+	Parameters      map[string]struct {
 		Type         string `json:"type"`
 		DefaultValue any    `json:"defaultValue,omitempty"`
 		Metadata     *struct {
 			Description string `json:"description,omitempty"`
 		} `json:"metadata,omitempty"`
 	} `json:"parameters"`
-	Resources []armTemplateResource `json:"resources"`
-	Outputs   map[string]struct{}   `json:"outputs"`
+	Resources armResources        `json:"resources"`
+	Outputs   map[string]struct{} `json:"outputs"`
 }
 
 // hasManagedIdentity returns true if the template declares a
@@ -119,13 +166,13 @@ func validateARMTemplate(tmpl *armTemplateShape) error {
 		if r.Name != "" {
 			resourceNames[r.Name] = true
 		}
+		if r.symbolicName != "" {
+			resourceNames[r.symbolicName] = true
+		}
 	}
 
 	for i, r := range tmpl.Resources {
-		resourceLabel := r.Name
-		if resourceLabel == "" {
-			resourceLabel = fmt.Sprintf("index %d", i)
-		}
+		label := resourceLabel(r, i)
 
 		// Subscription-level nested deployments are not supported inside linked
 		// deployments. ARM silently scopes them to resource-group level causing
@@ -135,14 +182,14 @@ func validateARMTemplate(tmpl *armTemplateShape) error {
 				"resource %q: subscription-level nested deployments (subscriptionId set) "+
 					"are not supported inside linked deployments; move the role assignment "+
 					"to the parent template or use a managed identity output pattern",
-				resourceLabel,
+				label,
 			))
 		}
 
 		// Validate dependsOn references point to resources declared in this template.
 		deps, err := parseDependsOn(r.DependsOn)
 		if err != nil {
-			errs = append(errs, fmt.Sprintf("resource %q: invalid dependsOn: %v", resourceLabel, err))
+			errs = append(errs, fmt.Sprintf("resource %q: invalid dependsOn: %v", label, err))
 			continue
 		}
 		for _, dep := range deps {
@@ -155,7 +202,7 @@ func validateARMTemplate(tmpl *armTemplateShape) error {
 			if !resourceNames[dep] {
 				errs = append(errs, fmt.Sprintf(
 					"resource %q: dependsOn references %q which is not defined in this template",
-					resourceLabel, dep,
+					label, dep,
 				))
 			}
 		}
@@ -167,14 +214,11 @@ func validateARMTemplate(tmpl *armTemplateShape) error {
 			r.Properties.Template != nil {
 			for j, nested := range r.Properties.Template.Resources {
 				if nested.Type == "Microsoft.Resources/deployments" && nested.SubscriptionId != "" {
-					nestedLabel := nested.Name
-					if nestedLabel == "" {
-						nestedLabel = fmt.Sprintf("index %d", j)
-					}
+					nestedLabel := resourceLabel(nested, j)
 					errs = append(errs, fmt.Sprintf(
 						"resource %q: inline template contains subscription-level nested deployment %q; "+
 							"this is not supported inside linked deployments",
-						resourceLabel, nestedLabel,
+						label, nestedLabel,
 					))
 				}
 			}
@@ -185,6 +229,19 @@ func validateARMTemplate(tmpl *armTemplateShape) error {
 		return fmt.Errorf("ARM template validation failed:\n  - %s", strings.Join(errs, "\n  - "))
 	}
 	return nil
+}
+
+// resourceLabel identifies a resource in validation messages, preferring its ARM
+// name, then its languageVersion 2.0 symbolic name, then its position.
+func resourceLabel(r armTemplateResource, i int) string {
+	if r.Name != "" {
+		return r.Name
+	}
+	if r.symbolicName != "" {
+		return r.symbolicName
+	}
+
+	return fmt.Sprintf("index %d", i)
 }
 
 // parseDependsOn extracts the dependency list from a raw JSON value.
