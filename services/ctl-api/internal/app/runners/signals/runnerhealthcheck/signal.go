@@ -91,6 +91,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	if runner.RunnerGroup.OwnerType == "installs" {
 		tags["install_id"] = runner.RunnerGroup.OwnerID
+		install, err := activities.LocalAwaitGetRunnerInstallByInstallID(ctx, runner.RunnerGroup.OwnerID)
+		if err != nil {
+			l.Warn("unable to add install name to runner health check metric", zap.Error(err))
+		} else {
+			tags["install_name"] = install.Name
+		}
 	}
 
 	if isSkippableStatus(runner.Status) {
