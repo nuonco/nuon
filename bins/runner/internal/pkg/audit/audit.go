@@ -37,8 +37,8 @@ const (
 )
 
 const (
-	AsyncRouteAddress = "127.0.0.1:4318"
-	SyncRouteAddress  = "127.0.0.1:4319"
+	AsyncRouteAddress = "127.0.0.1:14318"
+	SyncRouteAddress  = "127.0.0.1:14319"
 )
 
 var ErrUnavailable = errors.New("customer audit export is unavailable")

@@ -2,10 +2,12 @@ package registry
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
+	"net/http"
 
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 func (s *Registry) LifecycleHook() fx.Hook {
@@ -13,8 +15,11 @@ func (s *Registry) LifecycleHook() fx.Hook {
 		// start the background loop to update the settings
 		OnStart: func(ctx context.Context) error {
 			s.wg.Go(func() {
-				if err := s.ListenAndServe(); err != nil {
-					log.Fatal(err)
+				if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+					s.l.Error("embedded registry stopped unexpectedly", zap.Error(err))
+					if err := s.shutdown.Shutdown(fx.ExitCode(1)); err != nil {
+						s.l.Warn("unable to request runner shutdown", zap.Error(err))
+					}
 				}
 			})
 
