@@ -6221,7 +6221,7 @@ export interface components {
     /** @enum {string} */
     "app.RunnerProcessType": "mng" | "install" | "build" | "org" | "";
     /** @enum {string} */
-    "app.RunnerStatus": "error" | "active" | "pending" | "provisioning" | "deprovisioning" | "deprovisioned" | "reprovisioning" | "offline" | "awaiting-install-stack-run" | "unknown";
+    "app.RunnerStatus": "error" | "active" | "pending" | "provisioning" | "deprovisioning" | "deprovisioned" | "reprovisioning" | "offline" | "awaiting-install-stack-run" | "disabled" | "unknown";
     /** @enum {string} */
     "app.SandboxRunType": "provision" | "reprovision" | "deprovision";
     "app.SlackChannelSubscription": {

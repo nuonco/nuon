@@ -17,13 +17,15 @@ const (
 )
 
 // skippableRunnerStatuses mirrors the statuses the runner healthcheck never
-// acts on (provisioning lifecycle states).
+// acts on (provisioning lifecycle states, plus runners the install stack
+// disabled, which never report health by design).
 var skippableRunnerStatuses = []app.RunnerStatus{
 	app.RunnerStatusProvisioning,
 	app.RunnerStatusDeprovisioning,
 	app.RunnerStatusReprovisioning,
 	app.RunnerStatusDeprovisioned,
 	app.RunnerStatusPending,
+	app.RunnerStatusDisabled,
 }
 
 func isSkippableRunnerStatus(status app.RunnerStatus) bool {

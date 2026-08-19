@@ -25,6 +25,11 @@ const (
 	RunnerStatusOffline                 RunnerStatus = "offline"
 	RunnerStatusAwaitingInstallStackRun RunnerStatus = "awaiting-install-stack-run"
 
+	// RunnerStatusDisabled is set when the install stack was applied with
+	// runner_enabled = false. The runner does not exist, so it sends no
+	// heartbeats or health checks, but this is intentional and not an error.
+	RunnerStatusDisabled RunnerStatus = "disabled"
+
 	RunnerStatusUnknown RunnerStatus = "unknown"
 )
 
@@ -42,6 +47,8 @@ func (r RunnerStatus) Code() int {
 		return 200
 	case RunnerStatusProvisioning:
 		return 201
+	case RunnerStatusDisabled:
+		return 202
 
 		// 3xx statuses are for tear downs
 	case RunnerStatusDeprovisioning:
