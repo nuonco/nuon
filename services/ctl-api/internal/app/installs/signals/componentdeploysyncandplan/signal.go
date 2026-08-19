@@ -123,11 +123,13 @@ func (s *Signal) Clone(ctx workflow.Context, stepName string) ([]signal.CloneSte
 	return []signal.CloneStepDef{
 		{
 			Signal: &Signal{
-				InstallComponentID: s.InstallComponentID,
-				InstallID:          s.InstallID,
-				ComponentID:        s.ComponentID,
-				SandboxMode:        s.SandboxMode,
-				Role:               s.Role,
+				InstallComponentID:          s.InstallComponentID,
+				InstallID:                   s.InstallID,
+				ComponentID:                 s.ComponentID,
+				BuildID:                     s.BuildID,
+				ComponentConfigConnectionID: s.ComponentConfigConnectionID,
+				SandboxMode:                 s.SandboxMode,
+				Role:                        s.Role,
 			},
 			Name:          stepName,
 			ExecutionType: "approval",
@@ -201,6 +203,27 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
+// not every caller pins the connection on the signal, so fall back to the one
+// this install's app config resolves to rather than failing the step
+func (s *Signal) configConnectionID(ctx workflow.Context, install *app.Install) (string, error) {
+	if s.ComponentConfigConnectionID != "" {
+		return s.ComponentConfigConnectionID, nil
+	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to get app config")
+	}
+
+	for _, ccc := range appCfg.ComponentConfigConnections {
+		if ccc.ComponentID == s.ComponentID {
+			return ccc.ID, nil
+		}
+	}
+
+	return "", fmt.Errorf("no component config connection for component %s in app config %s", s.ComponentID, install.AppConfigID)
+}
+
 func (s *Signal) Execute(ctx workflow.Context) error {
 	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
 	if err != nil {
@@ -218,16 +241,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	} else {
 		buildID := s.BuildID
 		if buildID == "" {
-			if s.ComponentConfigConnectionID == "" {
-				return fmt.Errorf("unable to lookup build, component config connection id empty")
+			cccID, err := s.configConnectionID(ctx, install)
+			if err != nil {
+				return err
 			}
 
-			pinned, err := activities.AwaitGetComponentBuildForConfigConnectionByComponentConfigConnectionID(ctx, s.ComponentConfigConnectionID)
+			pinned, err := activities.AwaitGetComponentBuildForConfigConnectionByComponentConfigConnectionID(ctx, cccID)
 			if err != nil {
 				return fmt.Errorf("unable to get pinned component build: %w", err)
 			}
 			if pinned == nil {
-				return fmt.Errorf("no deployable build for component config connection %s", s.ComponentConfigConnectionID)
+				return fmt.Errorf("no deployable build for component config connection %s", cccID)
 			}
 			buildID = pinned.ID
 		}
