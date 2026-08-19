@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -16,7 +15,7 @@ type GetMostRecentHeartBeatRequest struct {
 }
 
 // @temporal-gen-v2 activity
-// @max-retries 1
+// @max-retries 5
 // @by-field RunnerID
 func (a *Activities) GetMostRecentHeartBeatRequest(ctx context.Context, req GetMostRecentHeartBeatRequest) (*app.RunnerHeartBeat, error) {
 	hb, err := a.getMostRecentHeartBeat(ctx, req.RunnerID, req.Process)
@@ -45,23 +44,31 @@ func (a *Activities) getMostRecentHeartBeat(ctx context.Context, runnerID string
 }
 
 func (a *Activities) queryHeartBeat(ctx context.Context, runnerID string, process app.RunnerProcessType) (*app.RunnerHeartBeat, error) {
-	var hb app.RunnerHeartBeat
+	var latest []*app.LatestRunnerHeartBeat
 	db := a.chDB.WithContext(ctx).
 		Where("runner_id = ?", runnerID)
 	if process != "" {
 		db = db.Where("process = ?", process)
 	}
-	res := db.
-		Order("created_at desc").
-		Limit(1).
-		First(&hb)
-	if res.Error != nil {
-		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
 
+	res := db.
+		Order("created_at_latest desc").
+		Limit(1).
+		Find(&latest)
+	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get heart beats")
 	}
+	if len(latest) == 0 {
+		return nil, nil
+	}
 
-	return &hb, nil
+	return &app.RunnerHeartBeat{
+		RunnerID:  latest[0].RunnerID,
+		ProcessID: latest[0].ProcessID,
+		Process:   latest[0].Process,
+		Version:   latest[0].Version,
+		AliveTime: latest[0].AliveTime,
+		CreatedAt: latest[0].CreatedAt,
+		StartedAt: latest[0].StartedAt,
+	}, nil
 }
