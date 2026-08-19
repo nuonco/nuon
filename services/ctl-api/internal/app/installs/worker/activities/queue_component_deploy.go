@@ -20,6 +20,10 @@ type CreateInstallDeployRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) CreateInstallDeploy(ctx context.Context, req CreateInstallDeployRequest) (*app.InstallDeploy, error) {
+	if err := a.v.Struct(req); err != nil {
+		return nil, fmt.Errorf("invalid request: %w", err)
+	}
+
 	// create deploy
 	install, err := a.getInstall(ctx, req.InstallID)
 	if err != nil {
