@@ -46,6 +46,12 @@ are the real ones you will see. Two of them behave specially:
 - **`plan install group: <name>`** and **`deploy install group: <name>`** are skippable, so you can let a rollout
   move past a group without deploying to it.
 
+<Note>
+  **`building components and sandbox`** builds your components on every run. It also builds the
+  sandbox into an artifact when [sandbox builds](/guides/sandbox-builds) are enabled for your org —
+  without that feature it builds components only.
+</Note>
+
 Groups run in the order you declare, and the approval in front of each group is what makes the rollout staged: group
 two does not start until you approve it.
 
