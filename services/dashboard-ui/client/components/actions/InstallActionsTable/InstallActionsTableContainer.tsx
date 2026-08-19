@@ -5,6 +5,7 @@ import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { SyncedFilterContainer } from '@/components/common/SyncedFilter'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useSyncedOnlyFilter } from '@/hooks/use-synced-only-filter'
 import { getInstallActionsLatestRuns, getActionLabelKeys } from '@/lib'
 import { TriggeredByFilter } from '../TriggeredByFilter'
 import {
@@ -28,7 +29,7 @@ export const InstallActionsTableContainer = ({
   const q = searchParams.get('q') || undefined
   const trigger_types = searchParams.get('trigger_types') || undefined
   const labels = searchParams.get('labels') || undefined
-  const syncedOnly = searchParams.get('synced_only') === 'true'
+  const { syncedOnly } = useSyncedOnlyFilter()
 
   const { data: result, isLoading } = useQuery({
     queryKey: ['install-actions', org?.id, install?.id, offset, q, trigger_types, labels],

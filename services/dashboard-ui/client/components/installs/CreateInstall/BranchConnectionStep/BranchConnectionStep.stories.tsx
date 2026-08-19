@@ -57,6 +57,20 @@ export const WithBranches = () => (
   </div>
 )
 
+export const AddedToLabelGroup = () => (
+  <div className="max-w-xl p-4">
+    <BranchConnectionStep
+      branches={mockBranches}
+      installId="inst-new"
+      installLabels={{ env: 'production' }}
+      orgId="org123"
+      appId="app123"
+      onDone={() => alert('done')}
+      onSkip={() => alert('skip')}
+    />
+  </div>
+)
+
 export const NoBranches = () => (
   <div className="max-w-xl p-4">
     <BranchConnectionStep

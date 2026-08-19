@@ -14,7 +14,7 @@ import { useOrg } from '@/hooks/use-org'
 import { getRunbook } from '@/lib'
 
 export const RunbookDetailLayout = () => {
-  const { runbookId } = useParams()
+  const { runbookId, branchId } = useParams()
   const { org } = useOrg()
   const { app } = useApp()
 
@@ -31,7 +31,10 @@ export const RunbookDetailLayout = () => {
     latestConfig?.steps?.slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)) ??
     []
 
-  const basePath = `/${org?.id}/apps/${app?.id}/runbooks/${runbookId}`
+  const appBase = branchId
+    ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
+    : `/${org?.id}/apps/${app?.id}`
+  const basePath = `${appBase}/runbooks/${runbookId}`
 
   return (
     <PageSection flush className="flex-1">
@@ -42,7 +45,7 @@ export const RunbookDetailLayout = () => {
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
           {
-            path: `/${org?.id}/apps/${app?.id}/runbooks`,
+            path: `${appBase}/runbooks`,
             text: 'Runbooks',
           },
           {

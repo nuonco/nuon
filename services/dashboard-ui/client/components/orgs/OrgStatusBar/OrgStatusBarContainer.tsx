@@ -4,7 +4,6 @@ import { type TContextTooltipItem } from '@/components/common/ContextTooltip'
 import { Status } from '@/components/common/Status'
 import { useActiveWorkflows } from '@/hooks/use-active-workflows'
 import { useOrg } from '@/hooks/use-org'
-import { useOrgStatusSSE } from '@/hooks/use-org-status-sse'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import {
   getApp,
@@ -12,17 +11,14 @@ import {
   getAppConfigs,
   getInstall,
   getInstallStack,
-  getRunnerLatestHeartbeat,
 } from '@/lib'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
-import { isRecentTimestamp } from '@/utils/time-utils'
 import { OrgStatusBar } from './OrgStatusBar'
 
 export const OrgStatusBarContainer = () => {
   const { org } = useOrg()
   const { approvals } = useWorkflowApprovals()
   const { activeWorkflows } = useActiveWorkflows()
-  const { sseConnected } = useOrgStatusSSE()
   const { appId, branchId, installId } = useParams()
 
   const { data: app } = useQuery({
@@ -62,20 +58,6 @@ export const OrgStatusBarContainer = () => {
     enabled: !!installId,
     refetchInterval: 30_000,
   })
-
-  const runner = org.runner_group?.runners?.[0]
-  const { data: heartbeats } = useQuery({
-    placeholderData: keepPreviousData,
-    queryKey: ['runner-heartbeat', org.id, runner?.id],
-    queryFn: () =>
-      getRunnerLatestHeartbeat({ runnerId: runner!.id!, orgId: org.id }),
-    refetchInterval: sseConnected ? false : 10_000,
-    enabled: !!runner?.id,
-  })
-  const runnerHeartbeat =
-    heartbeats?.install ?? heartbeats?.org ?? heartbeats?.build ?? undefined
-  const runnerConnected = isRecentTimestamp(runnerHeartbeat?.created_at)
-  const runnerStatus = runnerConnected ? 'connected' : 'not-connected'
 
   const workflowItems: TContextTooltipItem[] = activeWorkflows.map((workflow) => ({
     id: workflow.id ?? '',
@@ -123,10 +105,6 @@ export const OrgStatusBarContainer = () => {
       latestConfig={latestConfig}
       install={install}
       stack={stack}
-      runnerConnected={runnerConnected}
-      runnerStatus={runnerStatus}
-      runnerHeartbeat={runnerHeartbeat}
-      runnerId={runner?.id}
       approvals={approvals}
       activeWorkflows={activeWorkflows}
       approvalItems={approvalItems}

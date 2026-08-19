@@ -3,6 +3,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { SyncedFilterContainer } from '@/components/common/SyncedFilter'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useSyncedOnlyFilter } from '@/hooks/use-synced-only-filter'
 import { getInstallRunbooks } from '@/lib'
 import {
   InstallRunbooksTable,
@@ -23,7 +24,7 @@ export const InstallRunbooksTableContainer = ({
   const { install, labelColors } = useInstall()
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
-  const syncedOnly = searchParams.get('synced_only') === 'true'
+  const { syncedOnly } = useSyncedOnlyFilter()
 
   const { data: result, isLoading } = useQuery({
     queryKey: ['install-runbooks', org?.id, install?.id, offset, q],
