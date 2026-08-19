@@ -20,6 +20,10 @@ type ServiceTriggerAppBranchRunRequest struct {
 	// optional - use pre-existing app config (skips VCS fetch + config parse)
 	AppConfigID string `json:"app_config_id,omitempty"`
 
+	// AutoApprove skips the approval gate on the plan steps. Without it the
+	// approval option is derived from the installs the branch targets.
+	AutoApprove bool `json:"auto_approve,omitempty"`
+
 	// base branch
 	BaseBranch string `json:"base_branch,omitempty"`
 
@@ -41,6 +45,11 @@ type ServiceTriggerAppBranchRunRequest struct {
 
 	// skip builds step (e.g. rollback to existing config with existing builds)
 	SkipBuilds bool `json:"skip_builds,omitempty"`
+
+	// SyncAppConfig syncs AppConfigID inside the run rather than assuming it was
+	// already synced. Set by callers that compiled the config themselves, such
+	// as `nuon apps sync`.
+	SyncAppConfig bool `json:"sync_app_config,omitempty"`
 }
 
 // Validate validates this service trigger app branch run request
