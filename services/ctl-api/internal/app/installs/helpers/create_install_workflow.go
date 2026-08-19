@@ -55,7 +55,7 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	planOnly bool,
 	role string,
 ) (*app.Workflow, error) {
-	if workflowType.RequiresRunner() {
+	if workflowType.RequiresInstallRunner() {
 		disabled, err := s.IsRunnerDisabled(ctx, installID)
 		if err != nil {
 			return nil, err

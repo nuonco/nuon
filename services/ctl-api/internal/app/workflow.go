@@ -63,25 +63,19 @@ const (
 	WorkflowTypeRecoverHelmRelease WorkflowType = "recover_helm_release"
 )
 
-// RequiresRunner reports whether this workflow type dispatches runner jobs and
-// therefore cannot make progress while the install runner is disabled.
+// RequiresInstallRunner reports whether this workflow type dispatches jobs to
+// the install runner and therefore cannot make progress while that runner is
+// disabled. Callers must scope it to install-owned workflows: app-owned types
+// never reach it, and some of them (app config builds) use the org build
+// runner, which this says nothing about.
 //
-// The default is true: a new install workflow almost certainly needs the runner,
-// and defaulting to false would silently let it queue work that can never run.
-// WorkflowTypeReprovisionStack is deliberately exempt — applying the install
-// stack is the only way a customer flips runner_enabled back to true, so
-// blocking it would make disabling the runner a one-way door.
-func (i WorkflowType) RequiresRunner() bool {
-	switch i {
-	case WorkflowTypeReprovisionStack,
-		WorkflowTypeAppConfigBuild,
-		WorkflowTypeAppInstallSync,
-		WorkflowTypeAppBranchesRun,
-		WorkflowTypeAppBranchesConfigRepoUpdate,
-		WorkflowTypeAppBranchesComponentRepoUpdate:
-		return false
-	}
-	return true
+// The default is true: a new install workflow almost certainly needs the
+// runner, and defaulting to false would silently let it queue work that can
+// never run. WorkflowTypeReprovisionStack is deliberately exempt — applying the
+// install stack is the only way a customer flips runner_enabled back to true,
+// so blocking it would make disabling the runner a one-way door.
+func (i WorkflowType) RequiresInstallRunner() bool {
+	return i != WorkflowTypeReprovisionStack
 }
 
 type WorkflowMetadataKey string

@@ -1001,7 +1001,7 @@ func (s *Signal) stopIfRunnerDisabled(
 		return false, nil
 	}
 
-	if flw.OwnerType != "installs" || !flw.Type.RequiresRunner() {
+	if flw.OwnerType != "installs" || !flw.Type.RequiresInstallRunner() {
 		return false, nil
 	}
 
