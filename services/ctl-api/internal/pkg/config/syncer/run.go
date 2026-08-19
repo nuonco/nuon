@@ -16,10 +16,12 @@ import (
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	createdsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/created"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/triggers"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 )
@@ -141,7 +143,49 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 		return nil, markSyncFailed(ctx, deps.DB, &appConfig, err)
 	}
 
+	if err := provisionDeferredQueues(ctx, deps, &result); err != nil {
+		return nil, markSyncFailed(ctx, deps.DB, &appConfig, err)
+	}
+
 	return &result, nil
+}
+
+// Queue creation starts Temporal workflows, so the sync transaction defers it to
+// here. It lives in Run rather than in each caller so no caller can skip it.
+func provisionDeferredQueues(ctx context.Context, deps RunDeps, result *RunResult) error {
+	queueClient := deps.ComponentHelpers.QueueClient()
+
+	for _, componentID := range result.ComponentsCreated {
+		if _, err := deps.ComponentHelpers.EnsureComponentQueues(ctx, componentID); err != nil {
+			return fmt.Errorf("unable to create queues for component %s: %w", componentID, err)
+		}
+
+		q, err := queueClient.GetQueueByOwner(ctx, componentID, "components")
+		if err != nil {
+			return fmt.Errorf("unable to get queue for component %s: %w", componentID, err)
+		}
+
+		dedupeKey := fmt.Sprintf("component-created:%s", componentID)
+		if _, err := queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+			QueueID:   q.ID,
+			OwnerID:   componentID,
+			OwnerType: "components",
+			DedupeKey: &dedupeKey,
+			Signal: &createdsignal.Signal{
+				ComponentID: componentID,
+			},
+		}); err != nil {
+			return fmt.Errorf("unable to enqueue created signal for component %s: %w", componentID, err)
+		}
+	}
+
+	for _, branchID := range result.AppBranchesCreated {
+		if err := deps.AppsHelpers.EnsureAppBranchQueues(ctx, branchID); err != nil {
+			return fmt.Errorf("unable to create queues for app branch %s: %w", branchID, err)
+		}
+	}
+
+	return nil
 }
 
 func setStatus(ctx context.Context, db *gorm.DB, appConfig *app.AppConfig, status app.AppConfigStatus, description string) {
