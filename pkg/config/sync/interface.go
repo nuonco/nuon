@@ -54,6 +54,8 @@ type Syncer interface {
 
 	GetComponentsCreated() []string
 
+	GetAppBranchesCreated() []string
+
 	// OrphanedComponents returns a map of component names to IDs for components
 	// that existed in the previous config but are no longer in the current config.
 	//

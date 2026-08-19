@@ -53,6 +53,9 @@ type RunResult struct {
 
 	// Caller must provision these queues after Run returns; the sync is transactional.
 	ComponentsCreated []string
+
+	// Caller must provision these queues after Run returns; the sync is transactional.
+	AppBranchesCreated []string
 }
 
 // Run syncs an app config from its stored intermediate config, driving the
@@ -129,6 +132,7 @@ func Run(ctx context.Context, deps RunDeps, req RunRequest) (*RunResult, error) 
 			RunbookIDs:          s.GetRunbookStateIds(),
 			ComponentsScheduled: s.GetComponentsScheduled(),
 			ComponentsCreated:   s.GetComponentsCreated(),
+			AppBranchesCreated:  s.GetAppBranchesCreated(),
 		}
 
 		return nil

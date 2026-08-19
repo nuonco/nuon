@@ -115,6 +115,12 @@ func (a *Activities) applyAppConfig(ctx context.Context, req *ApplyAppConfigInpu
 		return nil, err
 	}
 
+	for _, branchID := range result.AppBranchesCreated {
+		if err := a.deps.AppsHelpers.EnsureAppBranchQueues(ctx, branchID); err != nil {
+			return nil, fmt.Errorf("unable to create queues for app branch %s: %w", branchID, err)
+		}
+	}
+
 	toBuild := make([]ComponentToBuild, 0, len(result.ComponentsScheduled))
 	for _, cmp := range result.ComponentsScheduled {
 		toBuild = append(toBuild, ComponentToBuild{

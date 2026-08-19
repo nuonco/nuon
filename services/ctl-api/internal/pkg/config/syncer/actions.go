@@ -35,7 +35,7 @@ func (s *syncer) ensureAction(ctx context.Context, action *config.ActionConfig) 
 		}
 	}
 
-	_, err = s.actionsHelpers.CreateAction(ctx, &actionshelpers.CreateActionParams{
+	_, err = s.actionsHelpers.CreateActionWithDB(ctx, s.db, &actionshelpers.CreateActionParams{
 		AppID:  s.appID,
 		OrgID:  s.orgID,
 		Name:   action.Name,

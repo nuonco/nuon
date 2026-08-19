@@ -44,6 +44,9 @@ type Result struct {
 	// Queue provisioning is deferred to the caller so no Temporal workflow starts pre-commit.
 	ComponentsCreated []string `json:"components_created,omitempty"`
 
+	// Queue provisioning is deferred to the caller so no Temporal workflow starts pre-commit.
+	AppBranchesCreated []string `json:"app_branches_created,omitempty"`
+
 	// Orphaned* map name to ID for resources dropped since the previous config.
 	OrphanedComponents map[string]string `json:"orphaned_components,omitempty"`
 	OrphanedActions    map[string]string `json:"orphaned_actions,omitempty"`

@@ -359,7 +359,7 @@ func (s *syncer) syncSteps() []syncStep {
 	steps = append(steps, syncStep{
 		Resource: "app-branches",
 		Method: func(ctx context.Context) error {
-			return branches.Sync(ctx, s.db, s.appsHelpers, s.cfg, s.appID)
+			return branches.Sync(ctx, s.db, s.appsHelpers, s.cfg, s.appID, s.state)
 		},
 	})
 
