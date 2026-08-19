@@ -15,7 +15,7 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 )
 
-func Sync(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, cfg *config.AppConfig, appID string) error {
+func Sync(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, cfg *config.AppConfig, appID string, state *sync.State) error {
 	branches := getAllBranches(cfg)
 	if len(branches) == 0 {
 		return nil
@@ -35,7 +35,7 @@ func Sync(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, cfg
 	}
 
 	for _, branchCfg := range branches {
-		if err := syncSingleBranch(ctx, db, appsHelper, branchCfg, existingByName, appID); err != nil {
+		if err := syncSingleBranch(ctx, db, appsHelper, branchCfg, existingByName, appID, state); err != nil {
 			return err
 		}
 	}
@@ -106,12 +106,12 @@ func Validate(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID str
 	return nil
 }
 
-func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, branchCfg *config.AppBranchConfig, existingByName map[string]*app.AppBranch, appID string) error {
+func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, branchCfg *config.AppBranchConfig, existingByName map[string]*app.AppBranch, appID string, state *sync.State) error {
 	existing, found := existingByName[branchCfg.Name]
 
 	var branchID string
 	if !found {
-		branch, err := appsHelper.CreateAppBranch(ctx, appID, branchCfg.Name, app.AppBranchManagedByConfig)
+		branch, err := appsHelper.CreateAppBranchWithDB(ctx, db, appID, branchCfg.Name, app.AppBranchManagedByConfig)
 		if err != nil {
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
 				return sync.SyncErr{
@@ -125,6 +125,12 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 			}
 		}
 		branchID = branch.ID
+		if state != nil {
+			if state.Result == nil {
+				state.Result = &sync.Result{}
+			}
+			state.Result.AppBranchesCreated = append(state.Result.AppBranchesCreated, branch.ID)
+		}
 		existingByName[branch.Name] = branch
 	} else {
 		branchID = existing.ID

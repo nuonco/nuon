@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/pkg/errors"
@@ -16,9 +18,16 @@ type CreateComponentParams struct {
 	Dependencies     []string
 	Labels           map[string]string
 	SkipDependencies bool
+
+	// Queue creation starts Temporal workflows, so a transactional caller must defer it.
+	SkipQueues bool
 }
 
 func (h *Helpers) CreateComponent(ctx context.Context, params *CreateComponentParams) (*app.Component, error) {
+	return h.CreateComponentWithDB(ctx, h.db, params)
+}
+
+func (h *Helpers) CreateComponentWithDB(ctx context.Context, db *gorm.DB, params *CreateComponentParams) (*app.Component, error) {
 	component := app.Component{
 		AppID:             params.AppID,
 		Name:              params.Name,
@@ -27,13 +36,15 @@ func (h *Helpers) CreateComponent(ctx context.Context, params *CreateComponentPa
 		Status:            "queued",
 		StatusDescription: "waiting for queue to provision component",
 	}
-	res := h.db.WithContext(ctx).Create(&component)
+	res := db.WithContext(ctx).Create(&component)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create component: %w", res.Error)
 	}
 
-	if _, err := h.EnsureComponentQueues(ctx, component.ID); err != nil {
-		return nil, fmt.Errorf("unable to create queues for component: %w", err)
+	if !params.SkipQueues {
+		if _, err := h.EnsureComponentQueues(ctx, component.ID); err != nil {
+			return nil, fmt.Errorf("unable to create queues for component: %w", err)
+		}
 	}
 
 	if !params.SkipDependencies {
