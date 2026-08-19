@@ -28,7 +28,8 @@ export function parseComponentToTableData(
   components: TComponent[],
   orgId: string,
   appId: string,
-  labelColors?: Record<string, string>
+  labelColors?: Record<string, string>,
+  branchId?: string
 ): TComponentRow[] {
   return components.map((component) => {
     return {
@@ -94,7 +95,9 @@ export function parseComponentToTableData(
           </span>
         )
       })(),
-      href: `/${orgId}/apps/${appId}/components/${component.id}`,
+      href: branchId
+        ? `/${orgId}/apps/${appId}/branches/${branchId}/components/${component.id}`
+        : `/${orgId}/apps/${appId}/components/${component.id}`,
     }
   })
 }

@@ -15,6 +15,7 @@ import type { TAppBranch, TAppBranchConfig } from '@/types'
 interface IBranchConnectionStep {
   branches: TAppBranch[]
   installId: string
+  installLabels?: Record<string, string>
   orgId: string
   appId: string
   onDone: () => void
@@ -72,6 +73,7 @@ const BranchGroupRow = ({
   groupIndex,
   config,
   installId,
+  installLabels,
   orgId,
   appId,
   branchId,
@@ -80,6 +82,7 @@ const BranchGroupRow = ({
   groupIndex: number
   config: TAppBranchConfig
   installId: string
+  installLabels?: Record<string, string>
   orgId: string
   appId: string
   branchId: string
@@ -89,7 +92,16 @@ const BranchGroupRow = ({
   const labelEntries = Object.entries(group.label_selector?.match_labels ?? {})
   const isLabels = labelEntries.length > 0
   const installIds = group.install_ids ?? []
-  const alreadyAdded = installIds.includes(installId)
+  const alreadyAddedById = installIds.includes(installId)
+  const alreadyAddedByLabels =
+    isLabels && labelEntries.every(([k, v]) => installLabels?.[k] === v)
+  const conflictsWithLabels =
+    isLabels &&
+    !alreadyAddedByLabels &&
+    labelEntries.some(
+      ([k, v]) => installLabels?.[k] !== undefined && installLabels[k] !== v
+    )
+  const alreadyAdded = isLabels ? alreadyAddedByLabels : alreadyAddedById
 
   const invalidateBranch = () => {
     queryClient.invalidateQueries({ queryKey: ['app-branch-with-config', orgId, appId, branchId] })
@@ -165,7 +177,16 @@ const BranchGroupRow = ({
           Added
         </span>
       ) : isLabels ? (
-        <Button variant="secondary" onClick={() => joinGroup()} disabled={isJoining}>
+        <Button
+          variant="secondary"
+          onClick={() => joinGroup()}
+          disabled={isJoining || conflictsWithLabels}
+          tooltipProps={
+            conflictsWithLabels
+              ? { tipContent: 'Conflicts with labels already applied to this install' }
+              : undefined
+          }
+        >
           {isJoining ? 'Adding...' : 'Join group'}
         </Button>
       ) : (
@@ -180,6 +201,7 @@ const BranchGroupRow = ({
 export const BranchConnectionStep = ({
   branches,
   installId,
+  installLabels,
   orgId,
   appId,
   onDone,
@@ -236,6 +258,7 @@ export const BranchConnectionStep = ({
                       groupIndex={idx}
                       config={latestConfig}
                       installId={installId}
+                      installLabels={installLabels}
                       orgId={orgId}
                       appId={appId}
                       branchId={branch.id || ''}

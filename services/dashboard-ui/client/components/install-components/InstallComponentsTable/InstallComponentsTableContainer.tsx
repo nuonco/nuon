@@ -6,6 +6,7 @@ import { ComponentTypeFilterDropdown } from '@/components/components/ComponentTy
 import { useInstall } from '@/hooks/use-install'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
+import { useSyncedOnlyFilter } from '@/hooks/use-synced-only-filter'
 import { getInstallComponents, getComponentLabelKeys } from '@/lib'
 import { parseComponentOverrideInput } from '@/utils/install-utils'
 import { InstallComponentsTable, parseInstallComponentSummaryToTableData } from './InstallComponentsTable'
@@ -26,7 +27,7 @@ export const InstallComponentsTableContainer = ({
   const q = searchParams.get('q') || undefined
   const types = searchParams.get('types') || undefined
   const labels = searchParams.get('labels') || undefined
-  const syncedOnly = searchParams.get('synced_only') === 'true'
+  const { syncedOnly } = useSyncedOnlyFilter()
 
   const { data: componentsResult, isLoading } = useQuery({
     queryKey: ['install-components', org?.id, install?.id, offset, q, types, labels],

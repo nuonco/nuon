@@ -22,10 +22,13 @@ export function parseRunbooksToTableData(
   runbooks: TRunbook[],
   orgId: string,
   appId: string,
-  labelColors?: Record<string, string>
+  labelColors?: Record<string, string>,
+  branchId?: string
 ): TRunbookRow[] {
   return runbooks.map((runbook) => {
-    const basePath = `/${orgId}/apps/${appId}`
+    const basePath = branchId
+      ? `/${orgId}/apps/${appId}/branches/${branchId}`
+      : `/${orgId}/apps/${appId}`
     return {
       runbookId: runbook.id,
       runbookName: runbook.name,

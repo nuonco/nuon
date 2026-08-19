@@ -30,6 +30,10 @@ var byocFaviconRewrites = map[string]string{
 	"icon-maskable-512.png": "icon-maskable-512-byoc.png",
 }
 
+var localFaviconRewrites = map[string]string{
+	"favicon.svg": "favicon-local.svg",
+}
+
 type clientConfig struct {
 	APIUrl                string `json:"apiUrl"`
 	TemporalUIUrl         string `json:"temporalUiUrl,omitempty"`
@@ -134,6 +138,8 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 		assetCacheControl = "no-cache, no-store, must-revalidate"
 	}
 
+	isLocalEnv := strings.Contains(h.cfg.AppUrl, "localhost") || strings.Contains(h.cfg.AppUrl, "127.0.0.1")
+
 	var distFileServer http.Handler
 	if hasDistDir {
 		distFileServer = http.FileServer(http.FS(distFS))
@@ -183,8 +189,14 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 
 		filePath := strings.TrimPrefix(c.Request.URL.Path, "/")
 
-		if h.cfg.IsBYOC && publicFS != nil {
-			if variant, ok := byocFaviconRewrites[filePath]; ok {
+		if publicFS != nil {
+			rewrites := map[string]string(nil)
+			if isLocalEnv {
+				rewrites = localFaviconRewrites
+			} else if h.cfg.IsBYOC {
+				rewrites = byocFaviconRewrites
+			}
+			if variant, ok := rewrites[filePath]; ok {
 				if _, err := fs.Stat(publicFS, variant); err == nil {
 					filePath = variant
 					c.Request.URL.Path = "/" + variant

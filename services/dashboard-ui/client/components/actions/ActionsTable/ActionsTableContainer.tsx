@@ -11,10 +11,12 @@ const LIMIT = 20
 
 export const ActionsTableContainer = ({
   filterIds,
+  branchId,
   pollInterval = 20000,
   shouldPoll = true,
 }: {
   filterIds?: string[]
+  branchId?: string
   pollInterval?: number
   shouldPoll?: boolean
 } = {}) => {
@@ -56,7 +58,8 @@ export const ActionsTableContainer = ({
         ),
         org.id,
         app.id,
-        labelColors
+        labelColors,
+        branchId
       )}
       isLoading={isLoading}
       filterActions={

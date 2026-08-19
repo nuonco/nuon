@@ -361,6 +361,13 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		"install_id": install.ID,
 	}))
 
+	if len(install.Labels) > 0 {
+		matches, _ := s.appsHelpers.FindBranchesMatchingLabels(ctx, install.AppID, install.Labels)
+		if len(matches) == 1 {
+			s.appsHelpers.SyncInstallBranchConnection(ctx, &install, matches[0].Branch.ID)
+		}
+	}
+
 	// Create all install queues (workflows, signals, actions, drift, etc.)
 	if err := s.EnsureInstallQueues(ctx, install.ID); err != nil {
 		return nil, fmt.Errorf("unable to create install queues: %w", err)
