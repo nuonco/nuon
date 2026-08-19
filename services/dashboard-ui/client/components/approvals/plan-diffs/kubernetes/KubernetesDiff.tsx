@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { CodeBlock } from '@/components/common/CodeBlock'
@@ -32,6 +32,8 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
     filterStats,
   } = useHelmK8sPlanFilter<TKubernetesPlanChange>(changes)
 
+  const [allExpanded, setAllExpanded] = useState(true)
+
   return (
     <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
       <div className="flex flex-col px-4 py-4 sm:px-6 border-b">
@@ -54,6 +56,8 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
         searchValue={searchQuery}
         onSearchChange={handleSearchChange}
         searchPlaceholder="Search by name, resource, type, or namespace"
+        isAllExpanded={allExpanded}
+        onToggleExpandAll={() => setAllExpanded((v) => !v)}
       />
 
       {errors.length > 0 && (
@@ -102,7 +106,7 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
               <Expand
                 key={idx}
                 id={`change-${idx}`}
-                isOpen
+                isOpen={allExpanded}
                 className={`border-l-4 ${borderColor}`}
                 headerClassName={`!px-4 sm:!px-6 ${bgColor}`}
                 heading={
