@@ -10,8 +10,9 @@ import (
 )
 
 // phoneHomeScript returns the deploymentScripts resource itself. At resource-group
-// scope getPhoneHomeResources emits exactly one resource; the wrapped
-// subscription-scope shape has its own tests.
+// scope getPhoneHomeResources emits exactly one resource unless phone home auth is
+// active, which adds the identity; the wrapped subscription-scope shape has its own
+// tests.
 func phoneHomeScript(t *testing.T, tmpl *Templates, inp *stacks.TemplateInput, customOutputs []customDeploymentOutputs) map[string]any {
 	t.Helper()
 	res := tmpl.getPhoneHomeResources(inp, customOutputs, nil, armScope{})

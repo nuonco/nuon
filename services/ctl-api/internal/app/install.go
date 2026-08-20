@@ -473,6 +473,17 @@ type CloudPlatformMetadata struct {
 	TargetSubscriptionID   string `json:"target_subscription_id,omitempty"`
 	ObservedSubscriptionID string `json:"observed_subscription_id,omitempty"`
 
+	// Tenant is not collected at install creation, so the first verified phone home
+	// pins it and later ones are checked against the pin. Until then a subscription
+	// match carries the binding on its own: a subscription belongs to exactly one
+	// tenant, and xms_mirid naming it is signed by that tenant.
+	TargetTenantID   string `json:"target_tenant_id,omitempty"`
+	ObservedTenantID string `json:"observed_tenant_id,omitempty"`
+
+	// Pinned the same way, so a leaked token cannot be presented by a second identity
+	// that happens to satisfy the subscription and name checks.
+	ObservedPhoneHomePrincipalID string `json:"observed_phone_home_principal_id,omitempty"`
+
 	TargetSource string `json:"target_source,omitempty"`
 }
 
