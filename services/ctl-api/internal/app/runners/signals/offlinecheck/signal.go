@@ -61,6 +61,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		app.RunnerStatusReprovisioning,
 		app.RunnerStatusDeprovisioned,
 		app.RunnerStatusOffline,
+		app.RunnerStatusDisabled,
 	})
 	if isNoop {
 		return nil
