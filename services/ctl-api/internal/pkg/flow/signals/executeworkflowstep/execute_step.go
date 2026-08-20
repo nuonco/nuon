@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -22,6 +23,13 @@ import (
 // its own state from the database.
 func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	defer func() { s.finished = true }()
+
+	if s.mw != nil && s.v != nil {
+		tmw, metricsErr := tmetrics.New(s.v, tmetrics.WithMetricsWriter(s.mw))
+		if metricsErr == nil {
+			s.tmw = tmw
+		}
+	}
 
 	start := workflow.Now(ctx)
 	var stepName, executionType string

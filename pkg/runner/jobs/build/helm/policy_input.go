@@ -3,13 +3,14 @@ package helm
 import (
 	"context"
 	"fmt"
+	"io"
 	"regexp"
 	"strings"
 
 	"go.uber.org/zap"
 	chart "helm.sh/helm/v4/pkg/chart/v2"
 	"helm.sh/helm/v4/pkg/chart/v2/loader"
-	"sigs.k8s.io/yaml"
+	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/pkg/errors"
 
@@ -72,17 +73,15 @@ func toPolicyAdmissionInputs(chart *chart.Chart, values map[string]interface{}) 
 		return nil, nil
 	}
 
-	docs := strings.Split(manifests, "---")
-	inputs := make([]AdmissionReviewInput, 0, len(docs))
-	for _, doc := range docs {
-		doc = strings.TrimSpace(doc)
-		if doc == "" {
-			continue
-		}
-
+	decoder := yaml.NewYAMLOrJSONDecoder(strings.NewReader(manifests), 4096)
+	inputs := make([]AdmissionReviewInput, 0)
+	for documentIndex := 1; ; documentIndex++ {
 		var obj map[string]interface{}
-		if err := yaml.Unmarshal([]byte(doc), &obj); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal helm manifest")
+		if err := decoder.Decode(&obj); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, errors.Wrapf(err, "failed to unmarshal helm manifest document %d", documentIndex)
 		}
 
 		if len(obj) == 0 {
