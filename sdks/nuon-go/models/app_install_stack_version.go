@@ -65,7 +65,24 @@ type AppInstallStackVersion struct {
 	// phone home url
 	PhoneHomeURL string `json:"phone_home_url,omitempty"`
 
-	// quick link url
+	// QuickLinkBucketKey is the Azure-only second S3 object behind QuickLinkURL: a
+	// wrapper template whose sole resource is a deployment stack pointing at
+	// AWSBucketKey's template. The portal cannot create a deployment stack
+	// directly, and the template cannot be inlined into the wrapper — see
+	// arm.QuickLinkWrapper. Empty on AWS, where the quick link addresses the
+	// template itself.
+	QuickLinkBucketKey string `json:"quick_link_bucket_key,omitempty"`
+
+	// QuickLinkUIDefBucketKey is the Azure-only createUiDefinition accompanying the
+	// wrapper. It constrains the portal's Basics step to the install's resource
+	// group and location, so that a reprovision updates the install's stack instead
+	// of silently creating a second one alongside it.
+	QuickLinkUIDefBucketKey string `json:"quick_link_ui_def_bucket_key,omitempty"`
+
+	// QuickLinkURL opens the cloud console pre-loaded with this version's stack:
+	// CloudFormation quick-create on AWS, the portal's Custom Deployment blade on
+	// Azure. Empty on GCP, and on any install whose template bucket is
+	// unconfigured.
 	QuickLinkURL string `json:"quick_link_url,omitempty"`
 
 	// runs

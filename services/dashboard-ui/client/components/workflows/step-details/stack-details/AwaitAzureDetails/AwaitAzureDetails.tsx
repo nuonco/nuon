@@ -4,16 +4,19 @@ import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
 import { Expand } from '@/components/common/Expand'
+import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
-import type { TAppSecretConfig } from '@/types'
+import type { TAppSecretConfig, TStackDeploymentScope } from '@/types'
 import { createFileDownload } from '@/utils/file-download'
 import type { IStackDetails } from '../types'
+import { DeployToAzureBadge } from './DeployToAzureBadge'
 
 interface IAwaitAzureDetails extends IStackDetails {
   installId: string
   azureLocation?: string
   secrets?: TAppSecretConfig[]
+  deploymentScope?: TStackDeploymentScope
 }
 
 const telemetryExportConfigFilename = 'telemetry-export-config.yaml'
@@ -35,6 +38,7 @@ export const AwaitAzureDetails = ({
   installId,
   azureLocation,
   secrets,
+  deploymentScope,
   loading,
 }: IAwaitAzureDetails) => {
   if (loading) {
@@ -68,6 +72,18 @@ export const AwaitAzureDetails = ({
       </>
     )
   }
+
+  // The portal link wraps template_url, but it is never rebuilt from it here:
+  // the renderer owns the encoding, and a version generated before the link
+  // existed has none to show.
+  //
+  // A resource-group-scoped root template cannot be deployed from the portal —
+  // the customer has to create the resource group first — so the button is
+  // shown for subscription scope only.
+  const quickLink =
+    deploymentScope === 'subscription'
+      ? stack?.versions?.at(0)?.quick_link_url
+      : undefined
 
   const vaultName = installId.slice(0, 24)
   const customerSecrets = secrets?.filter((s) => !s.auto_generate)
@@ -107,6 +123,26 @@ export const AwaitAzureDetails = ({
 
   return (
     <>
+      {quickLink && (
+        <Card>
+          <span className="flex justify-between items-center gap-4">
+            <Text variant="base" weight="strong">
+              Deploy the install stack in the Azure portal
+            </Text>
+            <a
+              href={quickLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Deploy to Azure (opens the Azure portal in a new tab)"
+              className="flex items-center gap-2 rounded focus:outline-1 focus:outline-current"
+            >
+              <DeployToAzureBadge />
+              <Icon variant="ArrowSquareOutIcon" size="14" />
+            </a>
+          </span>
+        </Card>
+      )}
+
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
           Provision the install stack using the Azure CLI
@@ -204,7 +240,7 @@ export const AwaitAzureDetails = ({
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
-          Deploy the install stack
+          Deploy the install stack using the Azure CLI
         </Text>
 
         <Card>
