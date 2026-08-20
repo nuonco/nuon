@@ -19,9 +19,10 @@ import (
 // @Summary				get all installs for an org
 // @Description.markdown	get_org_installs.md
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
-// @Param         q								 query	string	false	"search query to filter installs by name or ID"
+// @Param         q								 query	string	false	"search query to filter installs by name, ID, or branch name"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					runner_id				query	string	false	"filter by runner ID"
+// @Param					branch_status			query	string	false	"filter by branch assignment (assigned,none)"
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Tags					installs
@@ -46,8 +47,9 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	q := ctx.Query("q")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	runnerID := ctx.Query("runner_id")
+	branchStatus := ctx.Query("branch_status")
 
-	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID)
+	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID, branchStatus)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get installs for org %s: %w", org.ID, err))
 		return
@@ -56,7 +58,7 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, install)
 }
 
-func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID string) ([]app.Install, error) {
+func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID, branchStatus string) ([]app.Install, error) {
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -99,11 +101,22 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 			Where("runners.id = ?", runnerID)
 	}
 
+	branchCol := views.TableOrViewName(s.db, &app.Install{}, ".app_branch_id")
+
 	if q != "" {
 		nameCol := views.TableOrViewName(s.db, &app.Install{}, ".name")
 		idCol := views.TableOrViewName(s.db, &app.Install{}, ".id")
 		queryPattern := "%" + q + "%"
-		tx = tx.Where(nameCol+" ILIKE ? OR "+idCol+" ILIKE ?", queryPattern, queryPattern)
+		tx = tx.
+			Joins("LEFT JOIN app_branches ON app_branches.id = "+branchCol+" AND app_branches.deleted_at = 0").
+			Where(nameCol+" ILIKE ? OR "+idCol+" ILIKE ? OR app_branches.name ILIKE ?", queryPattern, queryPattern, queryPattern)
+	}
+
+	switch branchStatus {
+	case "assigned":
+		tx = tx.Where("(" + branchCol + " IS NOT NULL AND " + branchCol + " != '')")
+	case "none":
+		tx = tx.Where("(" + branchCol + " IS NULL OR " + branchCol + " = '')")
 	}
 	res := tx.Find(&installs)
 	if res.Error != nil {

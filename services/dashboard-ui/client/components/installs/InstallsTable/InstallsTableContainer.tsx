@@ -4,6 +4,7 @@ import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { useOrg } from '@/hooks/use-org'
 import { getInstalls, getInstallLabelKeys, getAppLabels, toLabelColorMap } from '@/lib'
 import { CreateInstallButton } from '../CreateInstall'
+import { InstallBranchFilter } from '../InstallBranchFilter'
 import { InstallsTable, parseInstallsToTableData } from './InstallsTable'
 
 const LIMIT = 20
@@ -20,7 +21,14 @@ export const InstallsTableContainer = ({
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['installs', org.id, offset, searchParams.get('q'), searchParams.get('labels')],
+    queryKey: [
+      'installs',
+      org.id,
+      offset,
+      searchParams.get('q'),
+      searchParams.get('labels'),
+      searchParams.get('branch_status'),
+    ],
     queryFn: () =>
       getInstalls({
         orgId: org.id,
@@ -28,6 +36,7 @@ export const InstallsTableContainer = ({
         limit: LIMIT,
         q: searchParams.get('q') || undefined,
         labels: searchParams.get('labels') || undefined,
+        branch_status: searchParams.get('branch_status') || undefined,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -60,6 +69,7 @@ export const InstallsTableContainer = ({
             queryKey={['install-label-keys', org.id]}
             queryFn={() => getInstallLabelKeys({ orgId: org.id })}
           />
+          <InstallBranchFilter />
           <CreateInstallButton
             className="!w-full !flex !justify-center md:!w-fit"
             variant="primary"

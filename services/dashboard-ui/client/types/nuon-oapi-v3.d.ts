@@ -19660,12 +19660,14 @@ export interface operations {
       query?: {
         /** @description offset of results to return */
         offset?: number;
-        /** @description search query to filter installs by name or ID */
+        /** @description search query to filter installs by name, ID, or branch name */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
         /** @description filter by runner ID */
         runner_id?: string;
+        /** @description filter by branch assignment (assigned,none) */
+        branch_status?: string;
         /** @description limit of results to return */
         limit?: number;
         /** @description page number of results to return */
