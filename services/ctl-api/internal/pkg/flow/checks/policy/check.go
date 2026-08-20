@@ -13,6 +13,7 @@ import (
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	policyhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/policyerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -25,8 +26,7 @@ const (
 	WarnViolationsKey  = "warn_violations"
 	PassedPolicyIDsKey = "passed_policy_ids"
 
-	policyEvaluationMetric     = "policy.evaluation"
-	policyCheckBehaviorVersion = "policy-check-fail-closed-metrics-v1"
+	policyEvaluationMetric = "policy.evaluation"
 )
 
 // Check implements directive.ApprovalCreateCheck for policy evaluation.
@@ -47,7 +47,6 @@ func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow) bool {
 }
 
 func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, error) {
-	version := workflow.GetVersion(ctx, policyCheckBehaviorVersion, workflow.DefaultVersion, 1)
 	l, _ := log.WorkflowLogger(ctx)
 
 	l.Debug("starting policy check",
@@ -58,23 +57,16 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 
 	violations, policyContext, outcome, policyErr := checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
 	if policyErr != nil {
-		if version == workflow.DefaultVersion {
-			l.Warn("failed to check policies",
-				zap.String("step_id", step.ID),
-				zap.Error(policyErr))
-		} else {
-			l.Error("failed to check policies",
-				zap.String("step_id", step.ID),
-				zap.Error(policyErr))
-			c.recordFailure(ctx, step, flw, policyErr)
-			return directive.Pass(), errors.Wrap(policyErr, "unable to check policies")
-		}
+		l.Error("failed to check policies; continuing with warning",
+			zap.String("step_id", step.ID),
+			zap.Error(policyErr))
+		c.recordFailure(ctx, step, flw, policyErr)
+		recordEvaluationCompositeError(ctx, l, step, policyErr)
+		return directive.Pass(), nil
 	}
 
 	if policyContext != nil {
-		if version != workflow.DefaultVersion {
-			c.recordSuccess(ctx, step, flw, outcome)
-		}
+		c.recordSuccess(ctx, step, flw, outcome)
 
 		policyInputCounts := make(map[string]int, len(policyContext.PolicyIDs))
 		for _, policyID := range policyContext.PolicyIDs {
@@ -234,19 +226,34 @@ func (c *Check) recordFailure(ctx workflow.Context, step *app.WorkflowStep, flw 
 		return
 	}
 
-	stage := "unknown"
-	var evaluationErr *policyEvaluationError
-	if errors.As(policyErr, &evaluationErr) {
-		stage = evaluationErr.stage
-	}
-
 	c.tmw.Incr(ctx, policyEvaluationMetric, metrics.ToTags(map[string]string{
 		"org_id":           flw.OrgID,
-		"stage":            stage,
+		"stage":            policyEvaluationErrorStage(policyErr),
 		"status":           "error",
 		"step_target_type": step.StepTargetType,
 		"workflow_type":    string(flw.Type),
 	})...)
+}
+
+func policyEvaluationErrorStage(policyErr error) string {
+	var evaluationErr *policyEvaluationError
+	if errors.As(policyErr, &evaluationErr) {
+		return evaluationErr.stage
+	}
+	return "unknown"
+}
+
+func recordEvaluationCompositeError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, policyErr error) {
+	if err := activities.AwaitRecordPolicyEvaluationCompositeError(ctx, activities.RecordPolicyEvaluationCompositeErrorRequest{
+		WorkflowStepID: step.ID,
+		StepTargetID:   step.StepTargetID,
+		StepTargetType: step.StepTargetType,
+		Stage:          policyerrors.EvaluationFailureStage(policyEvaluationErrorStage(policyErr)),
+	}); err != nil {
+		l.Warn("failed to record policy evaluation composite error",
+			zap.String("step_id", step.ID),
+			zap.Error(err))
+	}
 }
 
 func (c *Check) recordSuccess(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, outcome policyEvaluationOutcome) {
