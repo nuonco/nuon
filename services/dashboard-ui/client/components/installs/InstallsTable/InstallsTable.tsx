@@ -240,7 +240,7 @@ export const InstallsTable = ({
       }}
       filterActions={filterActions}
       pagination={pagination}
-      searchPlaceholder="Search by name or ID..."
+      searchPlaceholder="Search by name, branch or ID..."
     />
   )
 }
