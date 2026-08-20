@@ -5211,26 +5211,20 @@ export interface components {
       phone_home_id?: string;
       phone_home_url?: string;
       /**
-       * @description QuickLinkBucketKey is the Azure-only second S3 object behind QuickLinkURL: a
-       * wrapper template whose sole resource is a deployment stack pointing at
-       * AWSBucketKey's template. The portal cannot create a deployment stack
-       * directly, and the template cannot be inlined into the wrapper — see
-       * arm.QuickLinkWrapper. Empty on AWS, where the quick link addresses the
-       * template itself.
+       * @description QuickLinkBucketKey and QuickLinkUIDefBucketKey held the wrapper template and
+       * createUiDefinition that an earlier Azure quick link pointed at, so that the
+       * portal created a deployment stack rather than a plain deployment. Nothing
+       * writes them now: the quick link addresses the stack template directly on both
+       * platforms. Rows created while the wrapper shipped still carry their keys.
        */
       quick_link_bucket_key?: string;
-      /**
-       * @description QuickLinkUIDefBucketKey is the Azure-only createUiDefinition accompanying the
-       * wrapper. It constrains the portal's Basics step to the install's resource
-       * group and location, so that a reprovision updates the install's stack instead
-       * of silently creating a second one alongside it.
-       */
       quick_link_ui_def_bucket_key?: string;
       /**
        * @description QuickLinkURL opens the cloud console pre-loaded with this version's stack:
-       * CloudFormation quick-create on AWS, the portal's Custom Deployment blade on
-       * Azure. Empty on GCP, and on any install whose template bucket is
-       * unconfigured.
+       * CloudFormation quick-create on AWS, Deploy to Azure on Azure. Empty on GCP,
+       * on any install whose template bucket is unconfigured, and on an Azure install
+       * at resource group scope — the portal cannot create the resource group the
+       * root template needs, so there is no link to offer.
        */
       quick_link_url?: string;
       runs?: components["schemas"]["app.InstallStackVersionRun"][];
