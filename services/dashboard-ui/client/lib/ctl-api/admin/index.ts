@@ -5,105 +5,412 @@ type AdminMutation = {
   adminEmail: string
 }
 
-const adminHeaders = (adminEmail: string) => ({ 'X-Nuon-Admin-Email': adminEmail })
+const adminHeaders = (adminEmail: string) => ({
+  'X-Nuon-Admin-Email': adminEmail,
+})
 
 export const adminGetOrgRunner = ({ orgId }: { orgId: string }) =>
   api<TRunner>({ baseUrl: '/admin', path: `orgs/${orgId}/admin-get-runner` })
 
 export const adminGetInstallRunner = ({ installId }: { installId: string }) =>
-  api<TRunner>({ baseUrl: '/admin', path: `installs/${installId}/admin-get-runner` })
+  api<TRunner>({
+    baseUrl: '/admin',
+    path: `installs/${installId}/admin-get-runner`,
+  })
 
 export type TOrgFeatureInfo = { name: string; description: string }
 
 export const adminGetOrgFeaturesList = () =>
   api<TOrgFeatureInfo[]>({ baseUrl: '/admin', path: `orgs/admin-features` })
 
-export const adminAddSupportUsersToOrg = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-support-users` })
+export type TIdentityProvider = {
+  id: string
+  provider_type: string
+  name?: string
+  client_id: string
+  enabled: boolean
+  allow_all_users?: boolean
+  source: 'env' | 'database'
+}
 
-export const adminRemoveSupportUsersFromOrg = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-remove-support-users` })
+export const adminGetIdentityProviders = () =>
+  api<TIdentityProvider[]>({
+    baseUrl: '/admin',
+    path: `auth/identity-providers`,
+  })
 
-export const adminReprovisionOrg = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-reprovision` })
+export const adminSetIdentityProviderEnabled = ({
+  identityProviderId,
+  enabled,
+  adminEmail,
+}: { identityProviderId: string; enabled: boolean } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'PATCH',
+    body: { enabled },
+    headers: adminHeaders(adminEmail),
+    path: `auth/identity-providers/${identityProviderId}`,
+  })
 
-export const adminRestartOrg = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-restart` })
+export const adminAddSupportUsersToOrg = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-support-users`,
+  })
 
-export const adminRestartOrgRunners = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-restart-runners` })
+export const adminRemoveSupportUsersFromOrg = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-remove-support-users`,
+  })
 
-export const adminRestartOrgQueues = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-restart-queues` })
+export const adminReprovisionOrg = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-reprovision`,
+  })
 
-export const adminForceRestartOrgQueues = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<{ queue_signal_id: string; queue_id: string }>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-force-restart-queues` })
+export const adminRestartOrg = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-restart`,
+  })
 
-export const adminMigrateOrgQueues = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-migrate-queues` })
+export const adminRestartOrgRunners = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-restart-runners`,
+  })
 
-export const adminEnableOrgDebugMode = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-debug-mode` })
+export const adminRestartOrgQueues = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-restart-queues`,
+  })
 
-export const adminUpdateOrgFeatures = ({ orgId, features, adminEmail }: { orgId: string; features: Record<string, boolean> } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'PATCH', body: { features }, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-features` })
+export const adminForceRestartOrgQueues = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<{ queue_signal_id: string; queue_id: string }>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-force-restart-queues`,
+  })
 
-export const adminReprovisionApp = ({ appId, adminEmail }: { appId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `apps/${appId}/admin-reprovision` })
+export const adminMigrateOrgQueues = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-migrate-queues`,
+  })
 
-export const adminRestartApp = ({ appId, adminEmail }: { appId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `apps/${appId}/admin-restart` })
+export const adminEnableOrgDebugMode = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-debug-mode`,
+  })
 
-export const adminReprovisionInstall = ({ installId, adminEmail }: { installId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/admin-reprovision` })
+export const adminUpdateOrgFeatures = ({
+  orgId,
+  features,
+  adminEmail,
+}: { orgId: string; features: Record<string, boolean> } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'PATCH',
+    body: { features },
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-features`,
+  })
 
-export const adminReprovisionInstallRunner = ({ runnerId, adminEmail }: { runnerId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `runners/${runnerId}/reprovision` })
+export const adminReprovisionApp = ({
+  appId,
+  adminEmail,
+}: { appId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `apps/${appId}/admin-reprovision`,
+  })
 
-export const adminRestartInstall = ({ installId, adminEmail }: { installId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/admin-restart` })
+export const adminRestartApp = ({
+  appId,
+  adminEmail,
+}: { appId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `apps/${appId}/admin-restart`,
+  })
 
-export const adminRestartInstallQueues = ({ installId, adminEmail }: { installId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/admin-restart-queues` })
+export const adminReprovisionInstall = ({
+  installId,
+  adminEmail,
+}: { installId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `installs/${installId}/admin-reprovision`,
+  })
 
-export const adminTeardownInstallComponents = ({ installId, orgId }: { installId: string; orgId: string }) =>
-  api<void>({ method: 'POST', body: {}, orgId, path: `installs/${installId}/components/teardown-all` })
+export const adminReprovisionInstallRunner = ({
+  runnerId,
+  adminEmail,
+}: { runnerId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `runners/${runnerId}/reprovision`,
+  })
 
-export const adminUpdateInstallSandbox = ({ installId, adminEmail }: { installId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/admin-update-sandbox` })
+export const adminRestartInstall = ({
+  installId,
+  adminEmail,
+}: { installId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `installs/${installId}/admin-restart`,
+  })
 
-export const adminRestartRunner = ({ runnerId, adminEmail }: { runnerId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `runners/${runnerId}/restart` })
+export const adminRestartInstallQueues = ({
+  installId,
+  adminEmail,
+}: { installId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `installs/${installId}/admin-restart-queues`,
+  })
 
-export const adminGracefulRunnerShutdown = ({ runnerId, adminEmail }: { runnerId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `runners/${runnerId}/graceful-shutdown` })
+export const adminTeardownInstallComponents = ({
+  installId,
+  orgId,
+}: {
+  installId: string
+  orgId: string
+}) =>
+  api<void>({
+    method: 'POST',
+    body: {},
+    orgId,
+    path: `installs/${installId}/components/teardown-all`,
+  })
 
-export const adminForceRunnerShutdown = ({ runnerId, adminEmail }: { runnerId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `runners/${runnerId}/force-shutdown` })
+export const adminUpdateInstallSandbox = ({
+  installId,
+  adminEmail,
+}: { installId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `installs/${installId}/admin-update-sandbox`,
+  })
 
-export const adminInvalidateRunnerToken = ({ runnerId, adminEmail }: { runnerId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `runners/${runnerId}/invalidate-service-account-token` })
+export const adminRestartRunner = ({
+  runnerId,
+  adminEmail,
+}: { runnerId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `runners/${runnerId}/restart`,
+  })
 
-export const adminShutdownRunnerJob = ({ installId, adminEmail }: { installId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/runners/shutdown-job` })
+export const adminGracefulRunnerShutdown = ({
+  runnerId,
+  adminEmail,
+}: { runnerId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `runners/${runnerId}/graceful-shutdown`,
+  })
 
-export const adminGenerateInstallState = ({ installId, adminEmail }: { installId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/admin-generate-state` })
+export const adminForceRunnerShutdown = ({
+  runnerId,
+  adminEmail,
+}: { runnerId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `runners/${runnerId}/force-shutdown`,
+  })
 
-export const adminGenerateInstallStateV2 = ({ installId, adminEmail }: { installId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `installs/${installId}/admin-generate-state-v2` })
+export const adminInvalidateRunnerToken = ({
+  runnerId,
+  adminEmail,
+}: { runnerId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `runners/${runnerId}/invalidate-service-account-token`,
+  })
 
-export const adminDeprovisionOrg = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-deprovision` })
+export const adminShutdownRunnerJob = ({
+  installId,
+  adminEmail,
+}: { installId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `installs/${installId}/runners/shutdown-job`,
+  })
 
-export const adminForgetOrgInstalls = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-forget-installs` })
+export const adminGenerateInstallState = ({
+  installId,
+  adminEmail,
+}: { installId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `installs/${installId}/admin-generate-state`,
+  })
 
-export const adminForgetOrg = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-forget` })
+export const adminGenerateInstallStateV2 = ({
+  installId,
+  adminEmail,
+}: { installId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `installs/${installId}/admin-generate-state-v2`,
+  })
 
-export const adminGracefulShutdownOrgProcesses = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-graceful-shutdown-processes` })
+export const adminDeprovisionOrg = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-deprovision`,
+  })
 
-export const adminForceShutdownOrgProcesses = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-force-shutdown-processes` })
+export const adminForgetOrgInstalls = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-forget-installs`,
+  })
+
+export const adminForgetOrg = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-forget`,
+  })
+
+export const adminGracefulShutdownOrgProcesses = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-graceful-shutdown-processes`,
+  })
+
+export const adminForceShutdownOrgProcesses = ({
+  orgId,
+  adminEmail,
+}: { orgId: string } & AdminMutation) =>
+  api<void>({
+    baseUrl: '/admin',
+    method: 'POST',
+    body: {},
+    headers: adminHeaders(adminEmail),
+    path: `orgs/${orgId}/admin-force-shutdown-processes`,
+  })

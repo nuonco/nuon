@@ -23,21 +23,20 @@ var (
 	ErrEmailDomainNotAllowed = errors.New("email domain not allowed")
 )
 
-// getOrCreateAccountByIdentityStrict looks up an account by (provider_type, sub).
+// getOrCreateAccountByIdentityStrict looks up an account by (identity_provider_id, sub).
 // If found, returns the existing account.
 // If not found by sub, checks for an existing account by email or a pending OrgInvite.
 // Only creates a new account if there's an existing account (to link) or a pending invite.
 func (s *service) getOrCreateAccountByIdentityStrict(
 	ctx context.Context,
-	providerType app.ProviderType,
-	identityProviderID *string,
+	identityProvider *app.IdentityProvider,
 	userInfo *providers.UserInfo,
 ) (*app.Account, error) {
-	// 1. Look up existing account identity by (provider_type, sub)
+	// 1. Look up existing account identity by (identity_provider_id, sub)
 	var accountIdentity app.AccountIdentity
 	err := s.db.WithContext(ctx).
 		Preload("Account").
-		Where("provider_type = ? AND sub = ?", providerType, userInfo.Subject).
+		Where(&app.AccountIdentity{IdentityProviderID: identityProvider.ID, Sub: userInfo.Subject}).
 		First(&accountIdentity).Error
 
 	if err == nil {
@@ -73,7 +72,7 @@ func (s *service) getOrCreateAccountByIdentityStrict(
 
 		s.l.Debug("found existing account identity",
 			zap.String("account_id", accountIdentity.AccountID),
-			zap.String("provider_type", string(providerType)),
+			zap.String("provider_id", identityProvider.ID),
 			zap.String("sub", userInfo.Subject))
 		return accountIdentity.Account, nil
 	}
@@ -92,11 +91,11 @@ func (s *service) getOrCreateAccountByIdentityStrict(
 		// Found existing account by email - link the new identity to it
 		s.l.Info("linking new identity to existing account",
 			zap.String("account_id", existingAccount.ID),
-			zap.String("provider_type", string(providerType)),
+			zap.String("provider_id", identityProvider.ID),
 			zap.String("sub", userInfo.Subject),
 			zap.String("email", userInfo.Email))
 
-		return s.linkIdentityToAccount(ctx, &existingAccount, providerType, identityProviderID, userInfo)
+		return s.linkIdentityToAccount(ctx, &existingAccount, identityProvider, userInfo)
 	}
 
 	if err != gorm.ErrRecordNotFound {
@@ -113,7 +112,7 @@ func (s *service) getOrCreateAccountByIdentityStrict(
 		// No account and no invite - not authorized
 		s.l.Warn("authentication denied: no account or pending invite",
 			zap.String("email", userInfo.Email),
-			zap.String("provider_type", string(providerType)),
+			zap.String("provider_id", identityProvider.ID),
 			zap.String("sub", userInfo.Subject))
 		return nil, ErrAccountNotAuthorized
 	}
@@ -124,30 +123,29 @@ func (s *service) getOrCreateAccountByIdentityStrict(
 
 	// 4. Found pending invite - create account and identity
 	s.l.Info("creating account for invited user",
-		zap.String("provider_type", string(providerType)),
+		zap.String("provider_id", identityProvider.ID),
 		zap.String("sub", userInfo.Subject),
 		zap.String("email", userInfo.Email),
 		zap.String("invite_id", pendingInvite.ID),
 		zap.String("org_id", pendingInvite.OrgID))
 
-	return s.createAccountWithIdentity(ctx, providerType, identityProviderID, userInfo, true)
+	return s.createAccountWithIdentity(ctx, identityProvider, userInfo, true)
 }
 
-// getOrCreateAccountByIdentity looks up an account by (provider_type, sub).
+// getOrCreateAccountByIdentity looks up an account by (identity_provider_id, sub).
 // If found, returns the existing account.
 // If not found by sub, checks for an existing account by email.
 // If no existing account, creates a new account if the email domain is allowed.
 func (s *service) getOrCreateAccountByIdentity(
 	ctx context.Context,
-	providerType app.ProviderType,
-	identityProviderID *string,
+	identityProvider *app.IdentityProvider,
 	userInfo *providers.UserInfo,
 ) (*app.Account, error) {
-	// 1. Look up existing account identity by (provider_type, sub)
+	// 1. Look up existing account identity by (identity_provider_id, sub)
 	var accountIdentity app.AccountIdentity
 	err := s.db.WithContext(ctx).
 		Preload("Account").
-		Where("provider_type = ? AND sub = ?", providerType, userInfo.Subject).
+		Where(&app.AccountIdentity{IdentityProviderID: identityProvider.ID, Sub: userInfo.Subject}).
 		First(&accountIdentity).Error
 
 	if err == nil {
@@ -181,7 +179,7 @@ func (s *service) getOrCreateAccountByIdentity(
 
 		s.l.Debug("found existing account identity",
 			zap.String("account_id", accountIdentity.AccountID),
-			zap.String("provider_type", string(providerType)),
+			zap.String("provider_id", identityProvider.ID),
 			zap.String("sub", userInfo.Subject))
 		return accountIdentity.Account, nil
 	}
@@ -200,11 +198,11 @@ func (s *service) getOrCreateAccountByIdentity(
 		// Found existing account by email - link the new identity to it
 		s.l.Info("linking new identity to existing account",
 			zap.String("account_id", existingAccount.ID),
-			zap.String("provider_type", string(providerType)),
+			zap.String("provider_id", identityProvider.ID),
 			zap.String("sub", userInfo.Subject),
 			zap.String("email", userInfo.Email))
 
-		return s.linkIdentityToAccount(ctx, &existingAccount, providerType, identityProviderID, userInfo)
+		return s.linkIdentityToAccount(ctx, &existingAccount, identityProvider, userInfo)
 	}
 
 	if err != gorm.ErrRecordNotFound {
@@ -215,26 +213,25 @@ func (s *service) getOrCreateAccountByIdentity(
 	if !s.isEmailDomainAllowed(userInfo.Email) {
 		s.l.Warn("authentication denied: email domain not allowed",
 			zap.String("email", userInfo.Email),
-			zap.String("provider_type", string(providerType)),
+			zap.String("provider_id", identityProvider.ID),
 			zap.String("sub", userInfo.Subject))
 		return nil, ErrEmailDomainNotAllowed
 	}
 
 	// 4. Email domain is allowed - create account and identity
 	s.l.Info("creating account for user with allowed domain",
-		zap.String("provider_type", string(providerType)),
+		zap.String("provider_id", identityProvider.ID),
 		zap.String("sub", userInfo.Subject),
 		zap.String("email", userInfo.Email))
 
-	return s.createAccountWithIdentity(ctx, providerType, identityProviderID, userInfo, false)
+	return s.createAccountWithIdentity(ctx, identityProvider, userInfo, false)
 }
 
 // createAccountWithIdentity creates a new account and links it to the identity provider.
 // isInvitedUser indicates whether the user is signing up via an org invite (true) or self-signup (false).
 func (s *service) createAccountWithIdentity(
 	ctx context.Context,
-	providerType app.ProviderType,
-	identityProviderID *string,
+	identityProvider *app.IdentityProvider,
 	userInfo *providers.UserInfo,
 	isInvitedUser bool,
 ) (*app.Account, error) {
@@ -261,8 +258,8 @@ func (s *service) createAccountWithIdentity(
 	// Create the account identity
 	accountIdentity := &app.AccountIdentity{
 		AccountID:          acct.ID,
-		IdentityProviderID: identityProviderID,
-		ProviderType:       providerType,
+		IdentityProviderID: identityProvider.ID,
+		ProviderType:       identityProvider.ProviderType,
 		Sub:                userInfo.Subject,
 		Name:               userInfo.Name,
 		Picture:            userInfo.Picture,
@@ -275,7 +272,7 @@ func (s *service) createAccountWithIdentity(
 	s.l.Info("created new account with identity",
 		zap.String("account_id", acct.ID),
 		zap.String("identity_id", accountIdentity.ID),
-		zap.String("provider_type", string(providerType)),
+		zap.String("provider_id", identityProvider.ID),
 		zap.String("email", userInfo.Email))
 
 	return acct, nil
@@ -287,14 +284,13 @@ func (s *service) createAccountWithIdentity(
 func (s *service) linkIdentityToAccount(
 	ctx context.Context,
 	account *app.Account,
-	providerType app.ProviderType,
-	identityProviderID *string,
+	identityProvider *app.IdentityProvider,
 	userInfo *providers.UserInfo,
 ) (*app.Account, error) {
 	accountIdentity := &app.AccountIdentity{
 		AccountID:          account.ID,
-		IdentityProviderID: identityProviderID,
-		ProviderType:       providerType,
+		IdentityProviderID: identityProvider.ID,
+		ProviderType:       identityProvider.ProviderType,
 		Sub:                userInfo.Subject,
 		Name:               userInfo.Name,
 		Picture:            userInfo.Picture,
@@ -307,27 +303,8 @@ func (s *service) linkIdentityToAccount(
 	s.l.Info("linked identity to existing account",
 		zap.String("account_id", account.ID),
 		zap.String("identity_id", accountIdentity.ID),
-		zap.String("provider_type", string(providerType)),
+		zap.String("provider_id", identityProvider.ID),
 		zap.String("email", userInfo.Email))
 
 	return account, nil
-}
-
-// getAccountIdentityByProviderAndSub looks up an account identity by provider type and subject.
-func (s *service) getAccountIdentityByProviderAndSub(
-	ctx context.Context,
-	providerType app.ProviderType,
-	sub string,
-) (*app.AccountIdentity, error) {
-	var accountIdentity app.AccountIdentity
-	err := s.db.WithContext(ctx).
-		Preload("Account").
-		Where("provider_type = ? AND sub = ?", providerType, sub).
-		First(&accountIdentity).Error
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &accountIdentity, nil
 }

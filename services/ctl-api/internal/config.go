@@ -342,6 +342,7 @@ type Config struct {
 	NuonAuthClientSecret string `config:"nuon_auth_client_secret"`
 	NuonAuthIssuerURL    string `config:"nuon_auth_issuer_url"`
 	NuonAuthRedirectURL  string `config:"nuon_auth_redirect_url"`
+	NuonAuthProviderName string `config:"nuon_auth_provider_name"` // label shown on the sign-in page
 
 	// links
 	AppURL        string `config:"app_url" validate:"required"`
