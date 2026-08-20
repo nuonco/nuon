@@ -60,19 +60,21 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 
 		result, err := check.Run(ctx, step, flw)
 		if err != nil {
+			checkErr := errors.Wrapf(err, "%s check failed", check.Name())
 			if statusErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: step.ID,
 				Status: app.CompositeStatus{
 					Status: app.StatusError,
 					Metadata: map[string]any{
-						"reason": fmt.Sprintf("Step failed during %s.", check.Name()),
+						"check":  check.Name(),
+						"reason": checkErr.Error(),
 					},
-					StatusHumanDescription: "Step failed",
+					StatusHumanDescription: fmt.Sprintf("%s check failed", check.Name()),
 				},
 			}); statusErr != nil {
 				return errors.Wrap(statusErr, "unable to mark step as error")
 			}
-			return err
+			return checkErr
 		}
 
 		if result.Directive != directive.StepUnknown {
@@ -126,7 +128,7 @@ func (s *Signal) approvalCreateChecks(ctx workflow.Context, sig qsignal.Signal, 
 		// Empty install groups have nothing to approve; skip before the approval wait.
 		emptygroup.New(sig, setResultDirective),
 		noop.New(sig, checkCtx, orgAutoSkipNoop, setResultDirective),
-		policy.New(sig),
+		policy.New(sig, s.tmw),
 		autoapproval.New(stepSignal, setResultDirective),
 		planonly.New(s.OwnerID, checkCtx),
 	}
