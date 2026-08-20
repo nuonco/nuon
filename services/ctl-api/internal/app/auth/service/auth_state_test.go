@@ -197,7 +197,7 @@ func (s *AuthStateTestSuite) TestAuthState() {
 			},
 			expectedCode:   http.StatusBadRequest,
 			expectedError:  true,
-			errorSubstring: "no provider type in session",
+			errorSubstring: "no provider in session",
 		},
 		{
 			name:        "invalid provider in session",

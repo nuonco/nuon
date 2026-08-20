@@ -1,6 +1,7 @@
 import { AdminOrgSection } from '../sections/AdminOrgSection'
 import { AdminAppSection } from '../sections/AdminAppSection'
 import { AdminInstallSection } from '../sections/AdminInstallSection'
+import { AdminIdentityProvidersSectionContainer } from '../sections/AdminIdentityProvidersSection'
 import { DevOrgSection } from '../dev/sections/DevOrgSection'
 import { DevInstallSection } from '../dev/sections/DevInstallSection'
 
@@ -26,7 +27,10 @@ export const AdminControls = ({
   return (
     <div className="flex flex-col gap-8 h-full overflow-y-auto">
       {isNuonEmployee && <AdminOrgSection orgId={orgId} />}
-      {isNuonEmployee && appId && <AdminAppSection orgId={orgId} appId={appId} />}
+      {isNuonEmployee && <AdminIdentityProvidersSectionContainer />}
+      {isNuonEmployee && appId && (
+        <AdminAppSection orgId={orgId} appId={appId} />
+      )}
       {isNuonEmployee && installId && (
         <AdminInstallSection orgId={orgId} installId={installId} />
       )}

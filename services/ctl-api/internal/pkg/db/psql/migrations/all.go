@@ -188,5 +188,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "128-runner-job-available-tail-indexes",
 			Fn:   m.Migration128RunnerJobAvailableTailIndexes,
 		},
+		{
+			Name: "129-identity-providers-multi-per-type",
+			Fn:   m.Migration129IdentityProvidersMultiPerType,
+		},
 	}
 }
