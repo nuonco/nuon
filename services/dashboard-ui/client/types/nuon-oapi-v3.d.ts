@@ -1021,6 +1021,13 @@ export interface paths {
      */
     get: operations["ValidateToken"];
   };
+  "/v1/branches": {
+    /**
+     * get all app branches for an org
+     * @description Returns all app branches across every app in the current org.
+     */
+    get: operations["GetOrgBranches"];
+  };
   "/v1/builds": {
     /**
      * get builds for components
@@ -17797,6 +17804,60 @@ export interface operations {
     };
   };
   /**
+   * get all app branches for an org
+   * @description Returns all app branches across every app in the current org.
+   */
+  GetOrgBranches: {
+    parameters: {
+      query?: {
+        /** @description offset of branches to return */
+        offset?: number;
+        /** @description limit of branches to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranch"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get builds for components
    * @deprecated
    * @description Returns all builds for the provided component.
@@ -19660,12 +19721,14 @@ export interface operations {
       query?: {
         /** @description offset of results to return */
         offset?: number;
-        /** @description search query to filter installs by name or ID */
+        /** @description search query to filter installs by name, ID, or branch name */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
         /** @description filter by runner ID */
         runner_id?: string;
+        /** @description filter installs by branch name (comma-separated; use __none__ for installs with no branch) */
+        branches?: string;
         /** @description limit of results to return */
         limit?: number;
         /** @description page number of results to return */
