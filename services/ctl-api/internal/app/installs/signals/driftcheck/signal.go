@@ -55,6 +55,18 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
+	if disabled, err := activities.AwaitIsRunnerDisabled(ctx, activities.IsRunnerDisabledRequest{
+		InstallID: s.InstallID,
+	}); err != nil {
+		return fmt.Errorf("unable to check whether the install runner is disabled: %w", err)
+	} else if disabled.Disabled {
+		// Scheduled drift checks would otherwise pile up a graveyard of failed
+		// workflows for the whole time the runner stays disabled.
+		workflow.GetLogger(ctx).Info("install runner is disabled, skipping drift check",
+			"install_id", s.InstallID)
+		return nil
+	}
+
 	l := workflow.GetLogger(ctx)
 
 	// Resolve latest component build at execution time (not emitter creation time)

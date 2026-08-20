@@ -47,6 +47,10 @@ type AppAWSStackOutputs struct {
 	// region
 	Region string `json:"region,omitempty"`
 
+	// Nil when the stack predates the runner_enabled variable, which must read
+	// as enabled rather than disabled.
+	RunnerEnabled bool `json:"runner_enabled,omitempty"`
+
 	// runner iam role arn
 	RunnerIamRoleArn string `json:"runner_iam_role_arn,omitempty"`
 

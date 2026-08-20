@@ -147,6 +147,7 @@ const RUNNER_STATUS_TITLES: TTitleMap = {
   reprovisioning: 'Runner is reprovisioning',
   offline: 'Runner is offline',
   'awaiting-install-stack-run': 'Runner is awaiting install stack run',
+  disabled: 'Runner is disabled',
   unknown: 'Runner status is unknown',
 }
 

@@ -25,6 +25,11 @@ const (
 	RunnerStatusOffline                 RunnerStatus = "offline"
 	RunnerStatusAwaitingInstallStackRun RunnerStatus = "awaiting-install-stack-run"
 
+	// RunnerStatusDisabled is set when the install stack was applied with
+	// runner_enabled = false. The runner does not exist, so it sends no
+	// heartbeats or health checks, but this is intentional and not an error.
+	RunnerStatusDisabled RunnerStatus = "disabled"
+
 	RunnerStatusUnknown RunnerStatus = "unknown"
 )
 
@@ -42,6 +47,8 @@ func (r RunnerStatus) Code() int {
 		return 200
 	case RunnerStatusProvisioning:
 		return 201
+	case RunnerStatusDisabled:
+		return 202
 
 		// 3xx statuses are for tear downs
 	case RunnerStatusDeprovisioning:
@@ -147,6 +154,13 @@ func (r *Runner) BeforeCreate(tx *gorm.DB) error {
 const missingMngProcessWarning = "The management process is not running. Remote restart, upgrade, and shutdown are unavailable until it recovers."
 
 func (r *Runner) AfterQuery(tx *gorm.DB) error {
+	// A disabled runner has no processes at all, so the missing-management
+	// warning is expected rather than actionable. The UI surfaces the disabled
+	// state itself.
+	if r.Status == RunnerStatusDisabled {
+		return nil
+	}
+
 	if missing, ok := r.StatusV2.Metadata["missing_mng_process"].(bool); ok && missing {
 		r.Warnings = append(r.Warnings, missingMngProcessWarning)
 	}
