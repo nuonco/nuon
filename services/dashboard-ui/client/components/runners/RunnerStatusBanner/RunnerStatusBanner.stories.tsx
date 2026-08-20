@@ -16,3 +16,5 @@ export const Multiple = () => (
 )
 
 export const Empty = () => <RunnerStatusBanner warnings={[]} />
+
+export const Disabled = () => <RunnerStatusBanner status="disabled" />

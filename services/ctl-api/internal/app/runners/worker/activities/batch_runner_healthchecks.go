@@ -212,12 +212,24 @@ func (a *Activities) applyRunnerHealthDecision(ectx context.Context, r *app.Runn
 	}
 
 	if d.UpdateLegacy {
-		if err := a.UpdateStatus(ectx, UpdateStatusRequest{
-			RunnerID:          r.ID,
-			Status:            d.TargetStatus,
-			StatusDescription: d.Reason,
-		}); err != nil {
-			return fmt.Errorf("unable to update runner status: %w", err)
+		// Guarded write: the decision was computed from a read that may predate
+		// a reconcile marking this runner disabled. Overwriting that would pin
+		// an intentionally-disabled runner to offline, and since the skip
+		// conditions match on status it would never recover.
+		res := a.db.WithContext(ectx).
+			Model(&app.Runner{ID: r.ID}).
+			Where("status <> ?", app.RunnerStatusDisabled).
+			Updates(app.Runner{
+				Status:            d.TargetStatus,
+				StatusDescription: d.Reason,
+			})
+		if res.Error != nil {
+			return fmt.Errorf("unable to update runner status: %w", res.Error)
+		}
+		if res.RowsAffected < 1 {
+			// Runner went disabled under us; leave its status v2 alone too so
+			// the two columns cannot disagree.
+			return nil
 		}
 	}
 	if d.UpdateV2 {

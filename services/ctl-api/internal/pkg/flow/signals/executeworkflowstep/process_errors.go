@@ -31,6 +31,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 	// by retrying) forces the await-retry branch so we park for manual retry
 	// instead of burning auto-retries.
 	skipAutoRetry := false
+	terminal := false
 	if targetSupportsCompositeErrorHints(step.StepTargetType) {
 		if hintsResp, herr := activities.AwaitGetStepErrorHints(ctx, activities.GetStepErrorHintsRequest{
 			StepID: step.ID,
@@ -40,7 +41,28 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 				zap.Error(herr))
 		} else if hintsResp != nil {
 			skipAutoRetry = hintsResp.Hints.SkipAutoRetry()
+			terminal = hintsResp.Hints.Terminal()
 		}
+	}
+
+	// A terminal failure cannot succeed on any retry, so parking for a manual
+	// one would offer the user an action guaranteed to fail. Stop instead, and
+	// let the reason on the step explain why.
+	if terminal {
+		l.Warn("step failed terminally, not retrying",
+			zap.String("step_id", step.ID))
+
+		metadata := map[string]any{"terminal": true}
+		directive := DirectiveStop
+		if step.SkipOnFailure {
+			metadata["skipped_on_failure"] = true
+			directive = DirectiveContinue
+		}
+
+		if err := setResultDirective(ctx, step.ID, directive); err != nil {
+			return errors.Wrap(err, "unable to set result directive")
+		}
+		return s.markStepFailed(ctx, step, stepErr, metadata)
 	}
 
 	// Determine max retries from the signal, falling back to default.
