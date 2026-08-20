@@ -76,6 +76,51 @@ func TestStackConfig_Parse_UniqueIndices(t *testing.T) {
 	require.NoError(t, cfg.parse())
 }
 
+func TestStackConfig_Parse_DeploymentScope(t *testing.T) {
+	for name, tc := range map[string]struct {
+		cfg     StackConfig
+		wantErr string
+	}{
+		"azure subscription": {
+			cfg: StackConfig{Type: "azure-bicep", Name: "s", Description: "d", DeploymentScope: StackDeploymentScopeSubscription},
+		},
+		"azure resource group": {
+			cfg: StackConfig{Type: "azure-bicep", Name: "s", Description: "d", DeploymentScope: StackDeploymentScopeResourceGroup},
+		},
+		"azure unset": {
+			cfg: StackConfig{Type: "azure-bicep", Name: "s", Description: "d"},
+		},
+		"gcp unset": {
+			cfg: StackConfig{Type: "gcp-terraform", Name: "s", Description: "d"},
+		},
+		"aws subscription rejected": {
+			cfg: StackConfig{
+				Type:                    "aws-cloudformation",
+				Name:                    "s",
+				Description:             "d",
+				VPCNestedTemplateURL:    "https://s3.amazonaws.com/bucket/vpc.yaml",
+				RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
+				DeploymentScope:         StackDeploymentScopeSubscription,
+			},
+			wantErr: "only supported when type is azure-bicep",
+		},
+		"unknown scope rejected": {
+			cfg:     StackConfig{Type: "azure-bicep", Name: "s", Description: "d", DeploymentScope: "tenant"},
+			wantErr: `deployment_scope must be "resource_group" or "subscription"`,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			err := tc.cfg.parse()
+			if tc.wantErr != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantErr)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestStackConfig_Parse_AWSCloudFormation_MissingVPCTemplateURL(t *testing.T) {
 	cfg := &StackConfig{
 		Type:                    "aws-cloudformation",

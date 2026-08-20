@@ -24,7 +24,7 @@ func TestGetRunnerLinkedDeployment_CustomTemplateMissingIdentityParam(t *testing
 	inp.RunnerNestedStackTemplateURL = runnerTemplateServer(t, `{"parameters":{"nuonInstallID":{"type":"string"}},"resources":[]}`)
 
 	ids := []azureOperationIdentity{{roleName: "prov", suffix: "provision", kind: "provision"}}
-	_, _, err := tmpl.getRunnerLinkedDeployment(inp, ids)
+	_, _, err := tmpl.getRunnerLinkedDeployment(inp, ids, armScope{})
 	if err == nil {
 		t.Fatal("expected error for custom template without userAssignedIdentities param")
 	}
@@ -36,7 +36,7 @@ func TestGetRunnerLinkedDeployment_CustomTemplateAttachesIdentities(t *testing.T
 	inp.RunnerNestedStackTemplateURL = runnerTemplateServer(t, `{"parameters":{"nuonInstallID":{"type":"string"},"userAssignedIdentities":{"type":"object"}},"resources":[]}`)
 
 	ids := []azureOperationIdentity{{roleName: "prov", suffix: "provision", kind: "provision"}}
-	dep, _, err := tmpl.getRunnerLinkedDeployment(inp, ids)
+	dep, _, err := tmpl.getRunnerLinkedDeployment(inp, ids, armScope{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

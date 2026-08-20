@@ -20,6 +20,17 @@ const (
 	StackTypeGCP   StackType = "gcp-terraform"
 )
 
+// StackDeploymentScope is the ARM scope an Azure install stack's root template
+// deploys at. Empty is equivalent to StackDeploymentScopeResourceGroup — every
+// row written before this column existed is empty, so compare against
+// StackDeploymentScopeSubscription rather than testing for the RG value.
+type StackDeploymentScope string
+
+const (
+	StackDeploymentScopeResourceGroup StackDeploymentScope = config.StackDeploymentScopeResourceGroup
+	StackDeploymentScopeSubscription  StackDeploymentScope = config.StackDeploymentScopeSubscription
+)
+
 type AppStackConfig struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -39,6 +50,8 @@ type AppStackConfig struct {
 	Description             string    `json:"description,omitzero" features:"template" temporaljson:"description,omitzero,omitempty"`
 	RunnerNestedTemplateURL string    `json:"runner_nested_template_url,omitzero" temporaljson:"runner_nested_template_url,omitzero,omitempty" features:"template"`
 	VPCNestedTemplateURL    string    `json:"vpc_nested_template_url,omitzero" temporaljson:"vpc_nested_template_url,omitzero,omitempty" features:"template"`
+
+	DeploymentScope StackDeploymentScope `json:"deployment_scope,omitzero" temporaljson:"deployment_scope,omitzero,omitempty"`
 
 	CustomNestedStacks []config.CustomNestedStack `json:"custom_nested_stacks,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"custom_nested_stacks,omitzero,omitempty"`
 }
