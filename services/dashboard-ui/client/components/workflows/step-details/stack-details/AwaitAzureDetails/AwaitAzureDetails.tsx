@@ -4,7 +4,6 @@ import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
 import { Expand } from '@/components/common/Expand'
-import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import type { TAppSecretConfig, TStackDeploymentScope } from '@/types'
@@ -134,10 +133,9 @@ export const AwaitAzureDetails = ({
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Deploy to Azure (opens the Azure portal in a new tab)"
-              className="flex items-center gap-2 rounded focus:outline-1 focus:outline-current"
+              className="inline-flex rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
             >
               <DeployToAzureBadge />
-              <Icon variant="ArrowSquareOutIcon" size="14" />
             </a>
           </span>
         </Card>
