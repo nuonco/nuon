@@ -89,6 +89,10 @@ func (s *AccountIdentityTestSuite) seedOIDCProvider(ctx context.Context, name, i
 	}))
 	ip.Name = name
 	require.NoError(s.T(), s.service.DB.WithContext(ctx).Create(ip).Error)
+	// other suites in this package assert on the provider list, so don't leak an enabled provider
+	s.T().Cleanup(func() {
+		require.NoError(s.T(), s.service.DB.Unscoped().Delete(ip).Error)
+	})
 	return ip
 }
 

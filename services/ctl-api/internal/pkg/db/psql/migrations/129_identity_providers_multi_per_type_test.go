@@ -53,8 +53,12 @@ func (s *migration129TestSuite) TearDownSuite() {
 
 // restoreLegacySchema puts the two tables back the way they were before this migration so the
 // migration can be exercised against the state it will actually meet in a long-lived database.
+//
+// Existing rows have to go first: the legacy indexes forbid exactly the rows the post-migration
+// schema allows, so recreating them over another suite's data fails on a duplicate key.
 func (s *migration129TestSuite) restoreLegacySchema(ctx context.Context) {
 	require.NoError(s.T(), s.db.WithContext(ctx).Exec(`
+		DELETE FROM account_identities;
 		ALTER TABLE account_identities ALTER COLUMN identity_provider_id DROP NOT NULL;
 		DROP INDEX IF EXISTS idx_account_identity_account_idp;
 		DROP INDEX IF EXISTS idx_account_identity_idp_sub;
