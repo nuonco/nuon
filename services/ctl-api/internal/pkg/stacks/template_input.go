@@ -60,6 +60,12 @@ type TemplateInput struct {
 	// them.
 	PhoneHomeSecretARN    string
 	PhoneHomeSecretRegion string
+
+	// Azure-only: the managed identity the phone-home script authenticates as. A name,
+	// not a credential, so unlike the fields above it is safe in a template anyone can
+	// fetch. Empty whenever Azure phone-home auth is not active for the install, which
+	// is what leaves the script unauthenticated for stacks that predate it.
+	PhoneHomeIdentityName string
 }
 
 // PhoneHomeRoleName is the deterministic IAM role name for an install's phone-home
