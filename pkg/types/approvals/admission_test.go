@@ -143,6 +143,60 @@ spec:
 			},
 		},
 		{
+			name: "document separator inside a block scalar",
+			input: `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+data:
+  config: |-
+    first
+    ---
+    second
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service`,
+			expected: []AdmissionReviewInput{
+				{
+					Review: AdmissionReviewRequest{
+						Kind: AdmissionReviewKind{
+							Kind:    "ConfigMap",
+							Group:   "",
+							Version: "v1",
+						},
+						Object: map[string]interface{}{
+							"apiVersion": "v1",
+							"kind":       "ConfigMap",
+							"metadata": map[string]interface{}{
+								"name": "config",
+							},
+							"data": map[string]interface{}{
+								"config": "first\n---\nsecond",
+							},
+						},
+					},
+				},
+				{
+					Review: AdmissionReviewRequest{
+						Kind: AdmissionReviewKind{
+							Kind:    "Service",
+							Group:   "",
+							Version: "v1",
+						},
+						Object: map[string]interface{}{
+							"apiVersion": "v1",
+							"kind":       "Service",
+							"metadata": map[string]interface{}{
+								"name": "my-service",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "multi-document with empty documents",
 			input: `---
 apiVersion: v1

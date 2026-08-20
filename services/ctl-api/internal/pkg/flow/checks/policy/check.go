@@ -9,6 +9,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/metrics"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	policyhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
@@ -22,15 +24,19 @@ const (
 	DenyViolationsKey  = "deny_violations"
 	WarnViolationsKey  = "warn_violations"
 	PassedPolicyIDsKey = "passed_policy_ids"
+
+	policyEvaluationMetric     = "policy.evaluation"
+	policyCheckBehaviorVersion = "policy-check-fail-closed-metrics-v1"
 )
 
 // Check implements directive.ApprovalCreateCheck for policy evaluation.
 type Check struct {
 	sig signal.Signal
+	tmw tmetrics.Writer
 }
 
-func New(sig signal.Signal) directive.ApprovalCreateCheck {
-	return &Check{sig: sig}
+func New(sig signal.Signal, tmw tmetrics.Writer) directive.ApprovalCreateCheck {
+	return &Check{sig: sig, tmw: tmw}
 }
 
 func (c *Check) Name() string { return "policy" }
@@ -41,6 +47,7 @@ func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow) bool {
 }
 
 func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, error) {
+	version := workflow.GetVersion(ctx, policyCheckBehaviorVersion, workflow.DefaultVersion, 1)
 	l, _ := log.WorkflowLogger(ctx)
 
 	l.Debug("starting policy check",
@@ -49,14 +56,26 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		zap.String("step_target_type", step.StepTargetType),
 		zap.String("workflow_id", flw.ID))
 
-	violations, policyContext, policyErr := checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
+	violations, policyContext, outcome, policyErr := checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
 	if policyErr != nil {
-		l.Warn("failed to check policies",
-			zap.String("step_id", step.ID),
-			zap.Error(policyErr))
+		if version == workflow.DefaultVersion {
+			l.Warn("failed to check policies",
+				zap.String("step_id", step.ID),
+				zap.Error(policyErr))
+		} else {
+			l.Error("failed to check policies",
+				zap.String("step_id", step.ID),
+				zap.Error(policyErr))
+			c.recordFailure(ctx, step, flw, policyErr)
+			return directive.Pass(), errors.Wrap(policyErr, "unable to check policies")
+		}
 	}
 
 	if policyContext != nil {
+		if version != workflow.DefaultVersion {
+			c.recordSuccess(ctx, step, flw, outcome)
+		}
+
 		policyInputCounts := make(map[string]int, len(policyContext.PolicyIDs))
 		for _, policyID := range policyContext.PolicyIDs {
 			policyInputCounts[policyID] = policyContext.InputCount
@@ -122,17 +141,36 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	return directive.Pass(), nil
 }
 
-func checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([]activities.PolicyViolation, *policyhelpers.PolicyEvaluationContext, error) {
+type policyEvaluationOutcome string
+
+const (
+	policyEvaluationOutcomePass policyEvaluationOutcome = "pass"
+	policyEvaluationOutcomeWarn policyEvaluationOutcome = "warn"
+	policyEvaluationOutcomeDeny policyEvaluationOutcome = "deny"
+)
+
+type policyEvaluationError struct {
+	stage string
+	err   error
+}
+
+func (e *policyEvaluationError) Error() string { return e.err.Error() }
+func (e *policyEvaluationError) Unwrap() error { return e.err }
+
+func checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([]activities.PolicyViolation, *policyhelpers.PolicyEvaluationContext, policyEvaluationOutcome, error) {
 	prepResult, err := activities.AwaitPrepPolicyEvaluation(ctx, &activities.PrepPolicyEvaluationRequest{
 		StepTargetID:   stepTargetID,
 		StepTargetType: stepTargetType,
 	})
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to prepare policy evaluation")
+		return nil, nil, "", &policyEvaluationError{
+			stage: "preparation",
+			err:   errors.Wrap(err, "unable to prepare policy evaluation"),
+		}
 	}
 
 	if !prepResult.HasPolicies {
-		return nil, nil, nil
+		return nil, nil, "", nil
 	}
 
 	ao := workflow.ActivityOptions{
@@ -156,10 +194,21 @@ func checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([
 	}
 
 	var allViolations []activities.PolicyViolation
+	outcome := policyEvaluationOutcomePass
 	for _, fut := range futures {
 		var result activities.EvaluateSinglePolicyResult
 		if err := fut.Get(ctx, &result); err != nil {
-			return nil, nil, errors.Wrap(err, "policy evaluation failed")
+			return nil, nil, "", &policyEvaluationError{
+				stage: "evaluation",
+				err:   errors.Wrap(err, "policy evaluation failed"),
+			}
+		}
+		for _, violation := range result.Violations {
+			if violation.Severity == "deny" {
+				outcome = policyEvaluationOutcomeDeny
+			} else if outcome != policyEvaluationOutcomeDeny {
+				outcome = policyEvaluationOutcomeWarn
+			}
 		}
 		allViolations = append(allViolations, result.Violations...)
 	}
@@ -177,7 +226,41 @@ func checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([
 		AppName:          prepResult.AppName,
 		InstallName:      prepResult.InstallName,
 		ComponentName:    prepResult.ComponentName,
-	}, nil
+	}, outcome, nil
+}
+
+func (c *Check) recordFailure(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, policyErr error) {
+	if c.tmw == nil {
+		return
+	}
+
+	stage := "unknown"
+	var evaluationErr *policyEvaluationError
+	if errors.As(policyErr, &evaluationErr) {
+		stage = evaluationErr.stage
+	}
+
+	c.tmw.Incr(ctx, policyEvaluationMetric, metrics.ToTags(map[string]string{
+		"org_id":           flw.OrgID,
+		"stage":            stage,
+		"status":           "error",
+		"step_target_type": step.StepTargetType,
+		"workflow_type":    string(flw.Type),
+	})...)
+}
+
+func (c *Check) recordSuccess(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, outcome policyEvaluationOutcome) {
+	if c.tmw == nil {
+		return
+	}
+
+	tags := map[string]string{
+		"org_id":           flw.OrgID,
+		"status":           "success",
+		"step_target_type": step.StepTargetType,
+		"workflow_type":    string(flw.Type),
+	}
+	c.tmw.Incr(ctx, policyEvaluationMetric, metrics.ToTags(tags, "outcome", string(outcome))...)
 }
 
 func processPolicyViolations(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, violations []activities.PolicyViolation, passedPolicyIDs []string) error {

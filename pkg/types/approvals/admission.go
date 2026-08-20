@@ -1,10 +1,11 @@
 package plan
 
 import (
+	"io"
 	"strings"
 
 	"github.com/pkg/errors"
-	"sigs.k8s.io/yaml"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 // AdmissionReviewInput mimics Kubernetes AdmissionReview structure for OPA policy evaluation.
@@ -28,25 +29,22 @@ type AdmissionReviewKind struct {
 	Version string `json:"version,omitempty"`
 }
 
-// ParseMultiDocYAMLToAdmissionReviews parses a multi-document YAML string (separated by ---)
+// ParseMultiDocYAMLToAdmissionReviews parses a multi-document YAML stream
 // and converts each document into an AdmissionReviewInput structure suitable for OPA policy evaluation.
 func ParseMultiDocYAMLToAdmissionReviews(multiDocYAML string) ([]AdmissionReviewInput, error) {
 	if strings.TrimSpace(multiDocYAML) == "" {
 		return []AdmissionReviewInput{}, nil
 	}
 
-	docs := strings.Split(multiDocYAML, "---")
-	var results []AdmissionReviewInput
-
-	for _, doc := range docs {
-		doc = strings.TrimSpace(doc)
-		if doc == "" {
-			continue
-		}
-
+	decoder := yaml.NewYAMLOrJSONDecoder(strings.NewReader(multiDocYAML), 4096)
+	results := make([]AdmissionReviewInput, 0)
+	for documentIndex := 1; ; documentIndex++ {
 		var obj map[string]interface{}
-		if err := yaml.Unmarshal([]byte(doc), &obj); err != nil {
-			return nil, errors.Wrapf(err, "failed to unmarshal YAML document")
+		if err := decoder.Decode(&obj); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, errors.Wrapf(err, "failed to unmarshal YAML document %d", documentIndex)
 		}
 
 		if len(obj) == 0 {
