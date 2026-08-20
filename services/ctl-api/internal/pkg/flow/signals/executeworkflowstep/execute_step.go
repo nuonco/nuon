@@ -139,13 +139,18 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		l.Debug("step type non approval, step successful",
 			zap.String("step_id", step.ID),
 			zap.String("workflow_id", flw.ID))
-		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: step.ID,
-			Status: app.CompositeStatus{
-				Status: app.StatusSuccess,
-			},
-		}); err != nil {
-			return errors.Wrap(err, "unable to mark step as success")
+		// A signal that skipped its own work marks the step skipped before
+		// returning. Overwriting that with success would report work as done
+		// that never ran, so leave an already-skipped status alone.
+		if !isSkippedStatus(step.Status.Status) {
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: step.ID,
+				Status: app.CompositeStatus{
+					Status: app.StatusSuccess,
+				},
+			}); err != nil {
+				return errors.Wrap(err, "unable to mark step as success")
+			}
 		}
 
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -264,4 +269,10 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 
 	logger.Info("queue signal completed successfully", "step_name", step.Name)
 	return nil
+}
+
+// isSkippedStatus reports whether a step status represents work that was
+// deliberately not performed, which the success write must not clobber.
+func isSkippedStatus(status app.Status) bool {
+	return status == app.StatusAutoSkipped || status == app.StatusUserSkipped
 }
