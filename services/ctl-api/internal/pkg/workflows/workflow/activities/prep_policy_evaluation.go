@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
@@ -80,14 +81,12 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 
 	policiesConfig, err := a.appsHelpers.GetPoliciesConfigByAppConfigID(ctx, policyContext.AppConfigID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			l.Info("no policies config found")
+			return newNoPoliciesPrepResult(policyContext), nil
+		}
 		l.Error("unable to get policies config", zap.Error(err))
 		return nil, errors.Wrap(err, "unable to get policies config")
-	}
-
-	approvalPlan, err := a.getApprovalPlan(ctx, req.StepTargetID)
-	if err != nil {
-		l.Error("unable to get plan contents", zap.Error(err))
-		return nil, errors.Wrap(err, "unable to get plan contents")
 	}
 
 	applicablePolicies := a.filterApplicablePolicies(
@@ -101,22 +100,13 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 
 	if len(applicablePolicies) == 0 {
 		l.Info("no applicable policies found")
-		return &PrepPolicyEvaluationResult{
-			Policies:         []PolicyToEvaluate{},
-			HasPolicies:      false,
-			OrgID:            policyContext.OrgID,
-			AppID:            policyContext.AppID,
-			InstallID:        policyContext.InstallID,
-			InstallSandboxID: policyContext.InstallSandboxID,
-			ComponentID:      policyContext.ComponentID,
-			ComponentBuildID: policyContext.ComponentBuildID,
-			PolicyIDs:        []string{},
-			InputCount:       0,
-			OrgName:          policyContext.OrgName,
-			AppName:          policyContext.AppName,
-			InstallName:      policyContext.InstallName,
-			ComponentName:    policyContext.ComponentName,
-		}, nil
+		return newNoPoliciesPrepResult(policyContext), nil
+	}
+
+	approvalPlan, err := a.getApprovalPlan(ctx, req.StepTargetID)
+	if err != nil {
+		l.Error("unable to get plan contents", zap.Error(err))
+		return nil, errors.Wrap(err, "unable to get plan contents")
 	}
 
 	policyIDs := make([]string, 0, len(applicablePolicies))
@@ -154,6 +144,25 @@ func (a *Activities) PrepPolicyEvaluation(ctx context.Context, req *PrepPolicyEv
 		InstallName:      policyContext.InstallName,
 		ComponentName:    policyContext.ComponentName,
 	}, nil
+}
+
+func newNoPoliciesPrepResult(policyContext *policyContext) *PrepPolicyEvaluationResult {
+	return &PrepPolicyEvaluationResult{
+		Policies:         []PolicyToEvaluate{},
+		HasPolicies:      false,
+		OrgID:            policyContext.OrgID,
+		AppID:            policyContext.AppID,
+		InstallID:        policyContext.InstallID,
+		InstallSandboxID: policyContext.InstallSandboxID,
+		ComponentID:      policyContext.ComponentID,
+		ComponentBuildID: policyContext.ComponentBuildID,
+		PolicyIDs:        []string{},
+		InputCount:       0,
+		OrgName:          policyContext.OrgName,
+		AppName:          policyContext.AppName,
+		InstallName:      policyContext.InstallName,
+		ComponentName:    policyContext.ComponentName,
+	}
 }
 
 // policyContext is an alias for the shared PolicyEvaluationContext type.
