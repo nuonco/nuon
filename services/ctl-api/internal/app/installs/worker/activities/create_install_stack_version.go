@@ -13,25 +13,23 @@ import (
 )
 
 type CreateInstallStackVersionRequest struct {
-	InstallID      string `validate:"required"`
-	InstallStackID string `validate:"required"`
-	AppConfigID    string `validate:"required"`
-	Region         string `json:"region"`
-	StackName      string `json:"stack_name"`
-	Platform       string `json:"platform"`
-	PublicAPIURL   string `json:"public_api_url"`
+	InstallID       string `validate:"required"`
+	InstallStackID  string `validate:"required"`
+	AppConfigID     string `validate:"required"`
+	Region          string `json:"region"`
+	StackName       string `json:"stack_name"`
+	Platform        string `json:"platform"`
+	PublicAPIURL    string `json:"public_api_url"`
+	DeploymentScope string `json:"deployment_scope"`
 }
 
-// azurePortalCustomDeployBaseURL is the documented Deploy-to-Azure form, which
-// takes a createUiDefinition appended as /createUIDefinitionUri/<encoded>. The UI
-// definition is what constrains the Basics step: without it a customer picking a
-// resource group other than the one the install already deployed to silently
-// creates a second deployment stack rather than updating the install's.
+// azurePortalCustomDeployBaseURL is the documented Deploy-to-Azure form. The
+// encoded template URL is appended as the final path segment.
 //
 // Not Microsoft_Azure_CreateUIDef/CustomDeploymentBlade, which is undocumented and
-// accepts the same two URL segments while rendering none of the UI definition's
-// elements — it applies config.basics and drops basics/steps, so the form collapses
-// to subscription and region with no way to tell that anything was ignored.
+// accepts the same shape while rendering none of a createUiDefinition's elements —
+// it applies config.basics and drops basics/steps, so the form collapses to
+// subscription and region with no way to tell that anything was ignored.
 const azurePortalCustomDeployBaseURL = "https://portal.azure.com/#create/Microsoft.Template/uri/"
 
 // escapeDataString URL-encodes a value the way Azure documents for portal deep
@@ -51,33 +49,26 @@ func firstNonEmpty(vals ...string) string {
 }
 
 type templateLocations struct {
-	templateURL        string
-	quickLinkURL       string
-	quickLinkBucketKey string
-	quickLinkUIDefKey  string
+	templateURL  string
+	quickLinkURL string
 }
 
 // stackTemplateLocations derives the S3 URL of a stack version's template and the
-// console link that deploys it. The two platforms differ in what the link points
-// at: CloudFormation's quick-create takes the template itself, while the Azure
-// portal takes a wrapper template stored under its own key, so that the portal
-// creates a deployment stack rather than a bare deployment.
+// console link that deploys it. Both platforms point their link at the template
+// itself; they differ in when there is a link at all. CloudFormation's
+// quick-create always has one, while the Azure portal can only deploy a root
+// template that declares its own resource group — at resource group scope the
+// customer has to create the group first, so there is nothing to link to.
 func stackTemplateLocations(configuredBaseURL, bucketKey string, req *CreateInstallStackVersionRequest) templateLocations {
 	baseURL := strings.TrimSuffix(configuredBaseURL, "/")
 	loc := templateLocations{templateURL: fmt.Sprintf("%s/%s", baseURL, bucketKey)}
 
 	if req.Platform == string(app.AppRunnerTypeAzure) {
-		keyStem := strings.TrimSuffix(bucketKey, ".json")
-		loc.quickLinkBucketKey = keyStem + "-quicklink.json"
-		loc.quickLinkUIDefKey = keyStem + "-uidef.json"
+		if req.DeploymentScope != string(app.StackDeploymentScopeSubscription) {
+			return loc
+		}
 
-		wrapperURL := fmt.Sprintf("%s/%s", baseURL, loc.quickLinkBucketKey)
-		uiDefURL := fmt.Sprintf("%s/%s", baseURL, loc.quickLinkUIDefKey)
-		loc.quickLinkURL = fmt.Sprintf("%s%s/createUIDefinitionUri/%s",
-			azurePortalCustomDeployBaseURL,
-			escapeDataString(wrapperURL),
-			escapeDataString(uiDefURL),
-		)
+		loc.quickLinkURL = azurePortalCustomDeployBaseURL + escapeDataString(loc.templateURL)
 		return loc
 	}
 
@@ -135,8 +126,6 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 			loc := stackTemplateLocations(a.cfg.AWSCloudFormationStackTemplateBaseURL, obj.AWSBucketKey, req)
 			obj.TemplateURL = loc.templateURL
 			obj.QuickLinkURL = loc.quickLinkURL
-			obj.QuickLinkBucketKey = loc.quickLinkBucketKey
-			obj.QuickLinkUIDefBucketKey = loc.quickLinkUIDefKey
 		}
 	}
 

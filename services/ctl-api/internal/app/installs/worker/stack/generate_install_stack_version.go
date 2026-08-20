@@ -128,13 +128,14 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		region = install.GCPAccount.Region
 	}
 	stackVersion, err := activities.AwaitCreateInstallStackVersion(ctx, &activities.CreateInstallStackVersionRequest{
-		InstallID:      install.ID,
-		InstallStackID: stack.ID,
-		AppConfigID:    cfg.ID,
-		StackName:      cfg.StackConfig.Name,
-		Region:         region,
-		Platform:       string(cfg.RunnerConfig.Type),
-		PublicAPIURL:   cfg.RunnerConfig.PublicAPIURL,
+		InstallID:       install.ID,
+		InstallStackID:  stack.ID,
+		AppConfigID:     cfg.ID,
+		StackName:       cfg.StackConfig.Name,
+		Region:          region,
+		Platform:        string(cfg.RunnerConfig.Type),
+		PublicAPIURL:    cfg.RunnerConfig.PublicAPIURL,
+		DeploymentScope: string(cfg.StackConfig.DeploymentScope),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create cloudformation stack version")
