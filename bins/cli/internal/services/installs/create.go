@@ -23,7 +23,16 @@ const (
 	statusAccessError = "access_error"
 )
 
-func (s *Service) Create(ctx context.Context, appID, name, region, awsAccountID string, inputs, labelArgs []string, asJSON, noSelect, stackOnly bool) error {
+// TargetAccount is the cloud account an install is pinned to. Only the field matching the
+// app's cloud platform is used, and the API requires it once the org has phone-home auth
+// enabled.
+type TargetAccount struct {
+	AWSAccountID        string
+	AzureSubscriptionID string
+	GCPProjectID        string
+}
+
+func (s *Service) Create(ctx context.Context, appID, name, region string, target TargetAccount, inputs, labelArgs []string, asJSON, noSelect, stackOnly bool) error {
 	if appID == "" {
 		selectedID, err := appselector.App(ctx, s.cfg, s.api)
 		if err != nil {
@@ -78,7 +87,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region, awsAccountID 
 		inputsMap[kvT[0]] = kvT[1]
 	}
 
-	req, err := s.buildCreateInstallRequest(ctx, appID, name, region, awsAccountID, inputsMap, labelsMap)
+	req, err := s.buildCreateInstallRequest(ctx, appID, name, region, target, inputsMap, labelsMap)
 	if err != nil {
 		return ui.PrintError(err)
 	}
@@ -111,7 +120,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region, awsAccountID 
 	return nil
 }
 
-func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, region, awsAccountID string, inputs, labelsMap map[string]string) (*models.ServiceCreateInstallRequest, error) {
+func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, region string, target TargetAccount, inputs, labelsMap map[string]string) (*models.ServiceCreateInstallRequest, error) {
 	req := &models.ServiceCreateInstallRequest{
 		Name:   &name,
 		Inputs: s.inputsWithDefaults(ctx, appID, inputs),
@@ -120,20 +129,26 @@ func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, re
 
 	runnerCfg, err := s.api.GetAppRunnerLatestConfig(ctx, appID)
 	if err != nil || runnerCfg == nil {
-		req.AwsAccount = &models.HelpersCreateInstallAWSAccountParams{Region: region, AccountID: awsAccountID}
+		req.AwsAccount = &models.HelpersCreateInstallAWSAccountParams{Region: region, AccountID: target.AWSAccountID}
 		return req, nil
 	}
 
 	switch runnerCfg.CloudPlatform {
 	case models.AppCloudPlatformGcp:
-		req.GcpAccount = &models.HelpersCreateInstallGCPAccountParams{}
+		req.GcpAccount = &models.HelpersCreateInstallGCPAccountParams{
+			ProjectID: target.GCPProjectID,
+			Region:    region,
+		}
 	case models.AppCloudPlatformAzure:
-		req.AzureAccount = &models.HelpersCreateInstallAzureAccountParams{}
+		req.AzureAccount = &models.HelpersCreateInstallAzureAccountParams{
+			SubscriptionID: target.AzureSubscriptionID,
+			Location:       region,
+		}
 	default:
 		if region == "" {
 			return nil, fmt.Errorf("--region is required for AWS installs")
 		}
-		req.AwsAccount = &models.HelpersCreateInstallAWSAccountParams{Region: region, AccountID: awsAccountID}
+		req.AwsAccount = &models.HelpersCreateInstallAWSAccountParams{Region: region, AccountID: target.AWSAccountID}
 	}
 
 	return req, nil
