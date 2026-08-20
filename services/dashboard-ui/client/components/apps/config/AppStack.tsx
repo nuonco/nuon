@@ -1,48 +1,54 @@
-import { LabeledValue } from '@/components/common/LabeledValue'
+import { KeyValueList } from '@/components/common/KeyValueList'
 import { Link } from '@/components/common/Link'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Text } from '@/components/common/Text'
-import type { TAppConfig } from '@/types'
+import type { TAppConfig, TAppStackConfig, TKeyValue } from '@/types'
 
 export interface IAppStack {
   appConfig: TAppConfig
 }
 
+const scalarKeys = [
+  'type',
+  'name',
+  'description',
+  'vpc_nested_template_url',
+  'runner_nested_template_url',
+] as const satisfies readonly (keyof TAppStackConfig)[]
+
+// deployment_scope is omitted from the response whenever it is the default, and
+// is deliberately never normalized on write so that configs stored before the
+// field existed do not show a spurious diff on the next sync. Rendering the
+// absent case as an em dash would leave the scope unreadable for exactly the
+// configs where it is most often unstated.
+const defaultDeploymentScope = 'resource_group'
+
+const stackKeyValues = (stackConfig: TAppStackConfig): TKeyValue[] => {
+  const values: TKeyValue[] = scalarKeys.map((key) => ({
+    key,
+    value: stackConfig?.[key] ?? '',
+  }))
+
+  if (stackConfig?.type === 'azure-bicep') {
+    values.push({
+      key: 'deployment_scope',
+      value: stackConfig?.deployment_scope || defaultDeploymentScope,
+    })
+  }
+
+  return values
+}
+
 export const AppStack = ({ appConfig }: IAppStack) => {
   const stackConfig = appConfig?.stack
 
+  if (!stackConfig) {
+    return null
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex gap-6 items-start justify-start">
-        <LabeledValue label="Type">
-          <Text family="mono" variant="subtext">
-            {stackConfig?.type}
-          </Text>
-        </LabeledValue>
-        <LabeledValue label="Name">
-          <Text variant="subtext">{stackConfig?.name}</Text>
-        </LabeledValue>
-      </div>
-
-      {stackConfig?.runner_nested_template_url ? (
-        <LabeledValue label="Runner template URL">
-          <Text variant="subtext">
-            <Link href={stackConfig?.runner_nested_template_url} isExternal>
-              {stackConfig?.runner_nested_template_url}
-            </Link>
-          </Text>
-        </LabeledValue>
-      ) : null}
-
-      {stackConfig?.vpc_nested_template_url ? (
-        <LabeledValue label="VPC template URL">
-          <Text variant="subtext">
-            <Link href={stackConfig?.vpc_nested_template_url} isExternal>
-              {stackConfig?.vpc_nested_template_url}
-            </Link>
-          </Text>
-        </LabeledValue>
-      ) : null}
+      <KeyValueList values={stackKeyValues(stackConfig)} />
 
       {stackConfig?.custom_nested_stacks?.length ? (
         <div className="flex flex-col gap-2">
