@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	enumspb "go.temporal.io/api/enums/v1"
 
 	"go.temporal.io/api/workflowservice/v1"
@@ -13,6 +17,8 @@ import (
 
 	"github.com/pkg/errors"
 )
+
+var clientTracer = otel.Tracer("github.com/nuonco/nuon/pkg/temporal/client")
 
 func (t *temporal) GetNamespaceClient(namespace string) (tclient.Client, error) {
 	defaultClient, err := t.getClient()
@@ -37,12 +43,29 @@ func (t *temporal) ExecuteWorkflowInNamespace(ctx context.Context,
 	workflow interface{},
 	args ...interface{},
 ) (tclient.WorkflowRun, error) {
+	attrs := []attribute.KeyValue{attribute.String("temporal.namespace", namespace)}
+	if workflowType, ok := workflow.(string); ok {
+		attrs = append(attrs, attribute.String("temporal.workflow.type", workflowType))
+	}
+	ctx, span := clientTracer.Start(ctx, "temporal.workflow.start",
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(attrs...),
+	)
+	defer span.End()
+
 	client, err := t.GetNamespaceClient(namespace)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, errors.Wrap(err, "unable to get namespace client")
 	}
 
-	return client.ExecuteWorkflow(ctx, options, workflow, args...)
+	workflowRun, err := client.ExecuteWorkflow(ctx, options, workflow, args...)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	return workflowRun, err
 }
 
 func (t *temporal) GetWorkflowStatusInNamespace(ctx context.Context,
