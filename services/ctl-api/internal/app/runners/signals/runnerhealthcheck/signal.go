@@ -377,7 +377,8 @@ func isSkippableStatus(status app.RunnerStatus) bool {
 		app.RunnerStatusDeprovisioning,
 		app.RunnerStatusReprovisioning,
 		app.RunnerStatusDeprovisioned,
-		app.RunnerStatusPending:
+		app.RunnerStatusPending,
+		app.RunnerStatusDisabled:
 		return true
 	}
 	return false

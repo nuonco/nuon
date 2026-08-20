@@ -180,12 +180,23 @@ func runnerHealthCases() []runnerHealthCase {
 		},
 	}
 
+	// A disabled runner has no processes at all, which must not arm offline_ts
+	// or raise an unhealthy alert the way a genuinely silent runner does.
+	cases = append(cases, runnerHealthCase{
+		name:      "disabled install runner with no processes is skipped",
+		groupType: app.RunnerGroupTypeInstall,
+		status:    app.RunnerStatusDisabled, v2Status: app.RunnerStatusDisabled,
+		mngChecked: true,
+		want:       runnerHealthWant{result: "skipped"},
+	})
+
 	for _, status := range []app.RunnerStatus{
 		app.RunnerStatusProvisioning,
 		app.RunnerStatusDeprovisioning,
 		app.RunnerStatusReprovisioning,
 		app.RunnerStatusDeprovisioned,
 		app.RunnerStatusPending,
+		app.RunnerStatusDisabled,
 	} {
 		cases = append(cases, runnerHealthCase{
 			name:      "skippable status " + string(status),

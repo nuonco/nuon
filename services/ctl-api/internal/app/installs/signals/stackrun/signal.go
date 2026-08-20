@@ -387,6 +387,13 @@ func (s *Signal) processOutputs(ctx workflow.Context, install *app.Install, vers
 		l.Warn("unable to update install roles from stack outputs", zap.Error(err))
 	}
 
+	if err := activities.AwaitReconcileRunnerEnabled(ctx, &activities.ReconcileRunnerEnabled{
+		RunnerID: install.RunnerID,
+		Disabled: installStackOutputs.RunnerDisabled(),
+	}); err != nil {
+		return errors.Wrap(err, "unable to reconcile runner enabled status")
+	}
+
 	runnerIAMRoleARN := ""
 	if installStackOutputs.AWSStackOutputs != nil {
 		runnerIAMRoleARN = installStackOutputs.AWSStackOutputs.RunnerIAMRoleARN
