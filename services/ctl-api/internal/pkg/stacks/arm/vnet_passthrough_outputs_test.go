@@ -2,6 +2,7 @@ package arm
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -104,8 +105,11 @@ func TestPhoneHome_VNetPassthroughIsNamespaced(t *testing.T) {
 func TestPhoneHome_VNetPassthroughSurvivesSubscriptionWrapper(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
-	res := tmpl.getPhoneHomeResources(subscriptionTemplateInput(), nil,
-		[]string{"resourceGroupName"}, armScope{subscription: true})
+	inp := subscriptionTemplateInput()
+	scope := armScope{subscription: true}
+	res := tmpl.getPhoneHomeResources(inp, nil, []string{"resourceGroupName"}, scope)
+
+	want := fmt.Sprintf("reference('%s').outputs.resourceGroupName", scope.vnetDeploymentName(inp.Install.ID))
 
 	var found bool
 	for _, r := range res {
@@ -119,7 +123,7 @@ func TestPhoneHome_VNetPassthroughSurvivesSubscriptionWrapper(t *testing.T) {
 		}
 		if params, ok := props["parameters"].(map[string]any); ok {
 			if ev, ok := params["environmentVariables"].(map[string]any); ok {
-				if strings.Contains(toJSON(t, ev), "reference('vnetDeployment').outputs.resourceGroupName") {
+				if strings.Contains(toJSON(t, ev), want) {
 					found = true
 				}
 			}

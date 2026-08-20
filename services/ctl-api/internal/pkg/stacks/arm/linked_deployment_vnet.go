@@ -134,7 +134,7 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope arm
 	deployment := map[string]any{
 		"type":       "Microsoft.Resources/deployments",
 		"apiVersion": "2022-09-01",
-		"name":       "vnetDeployment",
+		"name":       scope.vnetDeploymentName(inp.Install.ID),
 		"properties": map[string]any{
 			"mode": "Incremental",
 			"templateLink": map[string]any{
@@ -173,7 +173,7 @@ func (t *Templates) getDefaultVNetDeployment(inp *stacks.TemplateInput, scope ar
 	deployment := map[string]any{
 		"type":       "Microsoft.Resources/deployments",
 		"apiVersion": "2022-09-01",
-		"name":       "vnetDeployment",
+		"name":       scope.vnetDeploymentName(inp.Install.ID),
 		"properties": map[string]any{
 			"mode": "Incremental",
 			"expressionEvaluationOptions": map[string]any{

@@ -168,7 +168,7 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResources(inp, customOutputs, vnetExtraOutputs, scope)...)
 
 	// Add standard outputs (VNet, subnets, key vault)
-	t.addStandardOutputs(tmpl, scope)
+	t.addStandardOutputs(tmpl, inp, scope)
 
 	return tmpl, nil
 }
@@ -229,15 +229,17 @@ func (t *Templates) appendRunnerGrants(tmpl *ARMTemplate, inp *stacks.TemplateIn
 	}
 }
 
-func (t *Templates) addStandardOutputs(tmpl *ARMTemplate, scope armScope) {
+func (t *Templates) addStandardOutputs(tmpl *ARMTemplate, inp *stacks.TemplateInput, scope armScope) {
+	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
+
 	// VNet outputs - reference linked deployment outputs
 	tmpl.Outputs["vnetId"] = ARMOutput{
 		Type:  "string",
-		Value: "[reference('vnetDeployment').outputs.vnetId.value]",
+		Value: fmt.Sprintf("[reference('%s').outputs.vnetId.value]", vnetDeployment),
 	}
 	tmpl.Outputs["vnetName"] = ARMOutput{
 		Type:  "string",
-		Value: "[reference('vnetDeployment').outputs.vnetName.value]",
+		Value: fmt.Sprintf("[reference('%s').outputs.vnetName.value]", vnetDeployment),
 	}
 	// Subnet outputs
 	for _, subnet := range []string{
@@ -251,7 +253,7 @@ func (t *Templates) addStandardOutputs(tmpl *ARMTemplate, scope armScope) {
 	} {
 		tmpl.Outputs[subnet] = ARMOutput{
 			Type:  "string",
-			Value: fmt.Sprintf("[reference('vnetDeployment').outputs.%s.value]", subnet),
+			Value: fmt.Sprintf("[reference('%s').outputs.%s.value]", vnetDeployment, subnet),
 		}
 	}
 	// Key Vault outputs

@@ -19,6 +19,10 @@ const (
 	// resource moves into at subscription scope.
 	phoneHomeDeploymentName = "phoneHomeDeployment"
 
+	// rgScopeVNetDeploymentName is the VNet nested deployment's name at resource-group
+	// scope, where it needs no install namespace — see armScope.vnetDeploymentName.
+	rgScopeVNetDeploymentName = "vnetDeployment"
+
 	// installRGVarName names the install's resource group in the root template. At
 	// subscription scope there is no ambient resource group, so every expression that
 	// used to resolve against one has to name it explicitly. At RG scope it is not
@@ -45,6 +49,26 @@ const (
 // the phone-home all still resolve against a group by this name.
 func installResourceGroupName(installID string) string {
 	return installID + "-rg"
+}
+
+// vnetDeploymentName is the nested deployment that provisions the install's VNet.
+// Every reference() and dependsOn that reads its outputs has to agree with this, so
+// it is the single source of truth for the name.
+//
+// A custom VNet template runs at subscription scope, and there a deployment record
+// is identified by name alone within the subscription — its location is immutable
+// once created. A constant name therefore collides between two installs in the same
+// subscription: the second fails with InvalidDeploymentLocation if it is in another
+// region, and silently updates the first install's record if it is not. Namespacing
+// by install ID gives each install its own.
+//
+// At resource-group scope the record lives in the install's own group, so the bare
+// name is already unique per install and stays as it was.
+func (s armScope) vnetDeploymentName(installID string) string {
+	if !s.subscription {
+		return rgScopeVNetDeploymentName
+	}
+	return installID + "-vnet-deployment"
 }
 
 // armScope is the ARM scope the root template renders at.

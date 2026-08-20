@@ -263,9 +263,11 @@ func TestBuiltInDeployments_TargetInstallRGAtSubscriptionScope(t *testing.T) {
 	}
 
 	// The runner's pre-existing VNet dependency has to survive the merge.
-	runner := tmpl.getDefaultRunnerDeployment(inp, nil, armScope{subscription: true})
-	if deps := runner["dependsOn"].([]string); !slices.Contains(deps, "vnetDeployment") {
-		t.Errorf("runner lost its vnetDeployment dependency: %v", deps)
+	scope := armScope{subscription: true}
+	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
+	runner := tmpl.getDefaultRunnerDeployment(inp, nil, scope)
+	if deps := runner["dependsOn"].([]string); !slices.Contains(deps, vnetDeployment) {
+		t.Errorf("runner lost its %s dependency: %v", vnetDeployment, deps)
 	}
 }
 

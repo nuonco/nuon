@@ -87,10 +87,12 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 	allParamNames := map[string]string{}
 	prevDeploymentName := ""
 
+	vnetDeployment := scopeFor(inp).vnetDeploymentName(inp.Install.ID)
+
 	// param name -> producing deployment; seeded with vnet outputs so they win over custom ones
 	wiredOutputs := map[string]string{}
 	for _, name := range vnetContractOutputs {
-		wiredOutputs[name] = "vnetDeployment"
+		wiredOutputs[name] = vnetDeployment
 	}
 
 	for i, stack := range sorted {
@@ -240,7 +242,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		if prevDeploymentName != "" {
 			dependsOn = append(dependsOn, prevDeploymentName)
 		} else {
-			dependsOn = append(dependsOn, "vnetDeployment")
+			dependsOn = append(dependsOn, vnetDeployment)
 			if !t.cfg.UseLocalRunners {
 				dependsOn = append(dependsOn, "runnerDeployment")
 			}

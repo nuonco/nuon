@@ -29,6 +29,20 @@ func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutpu
 
 	operationIDs := azureOperationIdentities(inp.AppCfg)
 
+	// The script reports the whole VNet contract, so most of the env vars below are
+	// reads off the VNet deployment. vnetOutOptional covers the outputs a custom VNet
+	// template is allowed to leave empty.
+	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
+	vnetOut := func(output string) string {
+		return fmt.Sprintf("[reference('%s').outputs.%s.value]", vnetDeployment, output)
+	}
+	vnetOutOptional := func(output string) string {
+		return fmt.Sprintf(
+			"[if(not(empty(reference('%[1]s').outputs.%[2]s.value)), reference('%[1]s').outputs.%[2]s.value, '')]",
+			vnetDeployment, output,
+		)
+	}
+
 	// Build per-secret env vars and payload fields dynamically.
 	var secretEnvVars []map[string]any
 	var secretPayloadFields []string
@@ -84,7 +98,7 @@ func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutpu
 		envName := "VNET_OUT_" + envToken(key)
 		vnetExtraEnvVars = append(vnetExtraEnvVars, map[string]any{
 			"name":  envName,
-			"value": fmt.Sprintf("[string(reference('vnetDeployment').outputs.%s.value)]", key),
+			"value": fmt.Sprintf("[string(reference('%s').outputs.%s.value)]", vnetDeployment, key),
 		})
 		payloadFields = append(payloadFields, fmt.Sprintf(`  "vnet_%s": "$%s"`, snakeCase(key), envName))
 	}
@@ -153,26 +167,26 @@ fi
 		{"name": "RESOURCE_GROUP_ID", "value": scope.rgIDExpr()},
 		{"name": "RESOURCE_GROUP_NAME", "value": scope.rgNameExpr()},
 		{"name": "RESOURCE_GROUP_LOCATION", "value": scope.locationExpr()},
-		{"name": "VNET_ID", "value": "[reference('vnetDeployment').outputs.vnetId.value]"},
-		{"name": "VNET_NAME", "value": "[reference('vnetDeployment').outputs.vnetName.value]"},
+		{"name": "VNET_ID", "value": vnetOut("vnetId")},
+		{"name": "VNET_NAME", "value": vnetOut("vnetName")},
 		{"name": "KEY_VAULT_ID", "value": scope.rgResourceIDExpr("Microsoft.KeyVault/vaults", scope.keyVaultNameInner())},
 		{"name": "KEY_VAULT_NAME", "value": "[" + scope.keyVaultNameInner() + "]"},
-		{"name": "PUBLIC_SUBNET_1_ID", "value": "[reference('vnetDeployment').outputs.publicSubnet1Id.value]"},
-		{"name": "PUBLIC_SUBNET_1_NAME", "value": "[reference('vnetDeployment').outputs.publicSubnet1Name.value]"},
-		{"name": "PUBLIC_SUBNET_2_ID", "value": "[if(not(empty(reference('vnetDeployment').outputs.publicSubnet2Id.value)), reference('vnetDeployment').outputs.publicSubnet2Id.value, '')]"},
-		{"name": "PUBLIC_SUBNET_2_NAME", "value": "[if(not(empty(reference('vnetDeployment').outputs.publicSubnet2Name.value)), reference('vnetDeployment').outputs.publicSubnet2Name.value, '')]"},
-		{"name": "PUBLIC_SUBNET_3_ID", "value": "[if(not(empty(reference('vnetDeployment').outputs.publicSubnet3Id.value)), reference('vnetDeployment').outputs.publicSubnet3Id.value, '')]"},
-		{"name": "PUBLIC_SUBNET_3_NAME", "value": "[if(not(empty(reference('vnetDeployment').outputs.publicSubnet3Name.value)), reference('vnetDeployment').outputs.publicSubnet3Name.value, '')]"},
-		{"name": "PRIVATE_SUBNET_1_ID", "value": "[reference('vnetDeployment').outputs.privateSubnet1Id.value]"},
-		{"name": "PRIVATE_SUBNET_1_NAME", "value": "[reference('vnetDeployment').outputs.privateSubnet1Name.value]"},
-		{"name": "PRIVATE_SUBNET_2_ID", "value": "[if(not(empty(reference('vnetDeployment').outputs.privateSubnet2Id.value)), reference('vnetDeployment').outputs.privateSubnet2Id.value, '')]"},
-		{"name": "PRIVATE_SUBNET_2_NAME", "value": "[if(not(empty(reference('vnetDeployment').outputs.privateSubnet2Name.value)), reference('vnetDeployment').outputs.privateSubnet2Name.value, '')]"},
-		{"name": "PRIVATE_SUBNET_3_ID", "value": "[if(not(empty(reference('vnetDeployment').outputs.privateSubnet3Id.value)), reference('vnetDeployment').outputs.privateSubnet3Id.value, '')]"},
-		{"name": "PRIVATE_SUBNET_3_NAME", "value": "[if(not(empty(reference('vnetDeployment').outputs.privateSubnet3Name.value)), reference('vnetDeployment').outputs.privateSubnet3Name.value, '')]"},
-		{"name": "PUBLIC_SUBNET_IDS_CSV", "value": "[reference('vnetDeployment').outputs.publicSubnetIds.value]"},
-		{"name": "PUBLIC_SUBNET_NAMES_CSV", "value": "[reference('vnetDeployment').outputs.publicSubnetNames.value]"},
-		{"name": "PRIVATE_SUBNET_IDS_CSV", "value": "[reference('vnetDeployment').outputs.privateSubnetIds.value]"},
-		{"name": "PRIVATE_SUBNET_NAMES_CSV", "value": "[reference('vnetDeployment').outputs.privateSubnetNames.value]"},
+		{"name": "PUBLIC_SUBNET_1_ID", "value": vnetOut("publicSubnet1Id")},
+		{"name": "PUBLIC_SUBNET_1_NAME", "value": vnetOut("publicSubnet1Name")},
+		{"name": "PUBLIC_SUBNET_2_ID", "value": vnetOutOptional("publicSubnet2Id")},
+		{"name": "PUBLIC_SUBNET_2_NAME", "value": vnetOutOptional("publicSubnet2Name")},
+		{"name": "PUBLIC_SUBNET_3_ID", "value": vnetOutOptional("publicSubnet3Id")},
+		{"name": "PUBLIC_SUBNET_3_NAME", "value": vnetOutOptional("publicSubnet3Name")},
+		{"name": "PRIVATE_SUBNET_1_ID", "value": vnetOut("privateSubnet1Id")},
+		{"name": "PRIVATE_SUBNET_1_NAME", "value": vnetOut("privateSubnet1Name")},
+		{"name": "PRIVATE_SUBNET_2_ID", "value": vnetOutOptional("privateSubnet2Id")},
+		{"name": "PRIVATE_SUBNET_2_NAME", "value": vnetOutOptional("privateSubnet2Name")},
+		{"name": "PRIVATE_SUBNET_3_ID", "value": vnetOutOptional("privateSubnet3Id")},
+		{"name": "PRIVATE_SUBNET_3_NAME", "value": vnetOutOptional("privateSubnet3Name")},
+		{"name": "PUBLIC_SUBNET_IDS_CSV", "value": vnetOut("publicSubnetIds")},
+		{"name": "PUBLIC_SUBNET_NAMES_CSV", "value": vnetOut("publicSubnetNames")},
+		{"name": "PRIVATE_SUBNET_IDS_CSV", "value": vnetOut("privateSubnetIds")},
+		{"name": "PRIVATE_SUBNET_NAMES_CSV", "value": vnetOut("privateSubnetNames")},
 	}...)
 	// The runner's system-assigned identity. Secret sync and image sync run as
 	// this identity rather than a per-operation one, so a sandbox has to be able
@@ -191,7 +205,7 @@ fi
 
 	// Depend on the identity role setup so a failed role deployment blocks the
 	// outputs rather than reporting half-configured identities.
-	dependsOn := []string{"vnetDeployment"}
+	dependsOn := []string{vnetDeployment}
 	for _, co := range customOutputs {
 		dependsOn = append(dependsOn, co.DeploymentName)
 	}
@@ -208,7 +222,7 @@ fi
 	//
 	// The environment variables stay evaluated at the *outer* scope and cross the
 	// boundary as a single array parameter. That is what makes this tractable: every
-	// reference('vnetDeployment') and identity lookup in there resolves in the root,
+	// VNet-output reference and identity lookup in there resolves in the root,
 	// where those deployments are declared, instead of needing ~25 individual
 	// parameters. It also means the scope-sensitive expressions among them —
 	// resourceGroup().id and friends — are correctly the subscription-scope forms.
