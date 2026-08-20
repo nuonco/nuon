@@ -10,6 +10,17 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
+func (c *client) GetOrgBranches(ctx context.Context) ([]*models.AppAppBranch, error) {
+	resp, err := c.genClient.Operations.GetOrgBranches(&operations.GetOrgBranchesParams{
+		Context: ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) GetAppBranches(ctx context.Context, appID string) ([]*models.AppAppBranch, error) {
 	resp, err := c.genClient.Operations.GetAppBranches(&operations.GetAppBranchesParams{
 		Context: ctx,

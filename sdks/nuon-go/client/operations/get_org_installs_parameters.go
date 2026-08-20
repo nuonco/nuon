@@ -62,6 +62,12 @@ GetOrgInstallsParams contains all the parameters to send to the API endpoint
 */
 type GetOrgInstallsParams struct {
 
+	/* Branches.
+
+	   filter installs by branch name (comma-separated; use __none__ for installs with no branch)
+	*/
+	Branches *string
+
 	/* Labels.
 
 	   label filter (key:value,key:value)
@@ -90,7 +96,7 @@ type GetOrgInstallsParams struct {
 
 	/* Q.
 
-	   search query to filter installs by name or ID
+	   search query to filter installs by name, ID, or branch name
 	*/
 	Q *string
 
@@ -170,6 +176,17 @@ func (o *GetOrgInstallsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithBranches adds the branches to the get org installs params
+func (o *GetOrgInstallsParams) WithBranches(branches *string) *GetOrgInstallsParams {
+	o.SetBranches(branches)
+	return o
+}
+
+// SetBranches adds the branches to the get org installs params
+func (o *GetOrgInstallsParams) SetBranches(branches *string) {
+	o.Branches = branches
+}
+
 // WithLabels adds the labels to the get org installs params
 func (o *GetOrgInstallsParams) WithLabels(labels *string) *GetOrgInstallsParams {
 	o.SetLabels(labels)
@@ -243,6 +260,23 @@ func (o *GetOrgInstallsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		return err
 	}
 	var res []error
+
+	if o.Branches != nil {
+
+		// query param branches
+		var qrBranches string
+
+		if o.Branches != nil {
+			qrBranches = *o.Branches
+		}
+		qBranches := qrBranches
+		if qBranches != "" {
+
+			if err := r.SetQueryParam("branches", qBranches); err != nil {
+				return err
+			}
+		}
+	}
 
 	if o.Labels != nil {
 
