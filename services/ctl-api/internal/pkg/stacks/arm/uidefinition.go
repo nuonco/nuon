@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
+	"unicode"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
@@ -107,33 +109,16 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 	}
 
 	for _, name := range sortedParamNames(wrapperParams) {
-		p := wrapperParams[name]
-		if p.DefaultValue != nil || name == "location" {
+		if name == "location" || name == "deployTimestamp" {
 			continue
 		}
 
-		element := map[string]any{
-			"name":    name,
-			"label":   name,
-			"toolTip": "",
-		}
-		if p.Metadata != nil && p.Metadata.Description != "" {
-			element["toolTip"] = p.Metadata.Description
-		}
-
-		if p.Type == "securestring" {
-			element["type"] = "Microsoft.Common.PasswordBox"
-			element["constraints"] = map[string]any{"required": true}
-			element["options"] = map[string]any{"hideConfirmation": true}
-			basics = append(basics, element)
-			outputs[name] = fmt.Sprintf("[basics('%s')]", name)
+		element, output, ok := basicsElement(name, wrapperParams[name])
+		if !ok {
 			continue
 		}
-
-		element["type"] = "Microsoft.Common.TextBox"
-		element["constraints"] = map[string]any{"required": true}
 		basics = append(basics, element)
-		outputs[name] = fmt.Sprintf("[basics('%s')]", name)
+		outputs[name] = output
 	}
 
 	uiDef := map[string]any{
@@ -176,4 +161,91 @@ func sortedParamNames(params map[string]ARMParameter) []string {
 	}
 	sort.Strings(names)
 	return names
+}
+
+// basicsElement renders one wrapper parameter as a field on the Basics step,
+// returning the element, the outputs expression that feeds its value back to the
+// wrapper, and whether the parameter is renderable at all.
+//
+// Every parameter gets a field, including those carrying a default — the default
+// becomes the field's initial value. Omitting defaulted parameters instead, as an
+// earlier version did, silently dropped the customer's only chance to change a
+// VNet address space or subnet CIDR, and left apps whose parameters all had
+// defaults with a Basics step showing nothing but subscription and region.
+//
+// Defaulted fields are still marked required, so a customer who clears one cannot
+// submit an empty string in place of the default.
+//
+// Object and array parameters have no sensible Basics element and are skipped, so
+// the wrapper's own default applies. Nothing currently reaches the root with those
+// types: a nested template's non-scalar default is either Nuon-managed or left
+// unhoisted.
+func basicsElement(name string, p ARMParameter) (map[string]any, string, bool) {
+	element := map[string]any{
+		"name":    name,
+		"label":   humanizeParamName(name),
+		"toolTip": "",
+	}
+	if p.Metadata != nil && p.Metadata.Description != "" {
+		element["toolTip"] = p.Metadata.Description
+	}
+
+	switch p.Type {
+	case "securestring":
+		element["type"] = "Microsoft.Common.PasswordBox"
+		element["constraints"] = map[string]any{"required": true}
+		element["options"] = map[string]any{"hideConfirmation": true}
+	case "bool":
+		element["type"] = "Microsoft.Common.CheckBox"
+		if def, ok := p.DefaultValue.(bool); ok && def {
+			element["defaultValue"] = true
+		}
+	case "int":
+		element["type"] = "Microsoft.Common.TextBox"
+		element["constraints"] = map[string]any{
+			"required":          true,
+			"regex":             "^-?[0-9]+$",
+			"validationMessage": "Enter a whole number.",
+		}
+		if p.DefaultValue != nil {
+			element["defaultValue"] = fmt.Sprintf("%v", p.DefaultValue)
+		}
+		// The portal hands back every TextBox value as a string, and ARM will not
+		// coerce one into an int parameter.
+		return element, fmt.Sprintf("[int(basics('%s'))]", name), true
+	case "string":
+		element["type"] = "Microsoft.Common.TextBox"
+		element["constraints"] = map[string]any{"required": true}
+		if def, ok := p.DefaultValue.(string); ok {
+			element["defaultValue"] = def
+		}
+	default:
+		return nil, "", false
+	}
+
+	return element, fmt.Sprintf("[basics('%s')]", name), true
+}
+
+// humanizeParamName turns a camelCase parameter name into the spaced, title-cased
+// label the portal generates itself when no UI definition is supplied —
+// "addressSpace" becomes "Address Space". Supplying a UI definition takes that
+// formatting over, so without this every field would be labelled with its raw
+// parameter name.
+func humanizeParamName(name string) string {
+	if name == "" {
+		return ""
+	}
+
+	var b strings.Builder
+	runes := []rune(name)
+	for i, r := range runes {
+		if i > 0 && unicode.IsUpper(r) && !unicode.IsUpper(runes[i-1]) {
+			b.WriteRune(' ')
+		}
+		if i == 0 {
+			r = unicode.ToUpper(r)
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
 }

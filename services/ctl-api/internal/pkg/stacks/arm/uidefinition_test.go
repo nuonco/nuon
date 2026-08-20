@@ -192,10 +192,12 @@ func TestQuickLinkUIDefinition_NoSubscriptionPinWhenUnknown(t *testing.T) {
 	}
 }
 
-// A parameter with no default has nowhere to get its value from, so it needs a
-// field on the Basics step and an entry in outputs. Secrets must not render as
-// plain text boxes.
-func TestQuickLinkUIDefinition_PromptsForParametersWithoutDefaults(t *testing.T) {
+// Every parameter the wrapper declares needs a field, whether or not it carries a
+// default — a defaulted parameter omitted here is one the customer can never
+// change, and an app whose parameters all have defaults gets a Basics step with
+// nothing on it but subscription and region. Secrets must not render as plain text
+// boxes.
+func TestQuickLinkUIDefinition_PromptsForEveryParameter(t *testing.T) {
 	inp := minimalTemplateInput()
 	inp.DeploymentScope = app.StackDeploymentScopeSubscription
 	inp.AppCfg.SecretsConfig.Secrets = []app.AppSecretConfig{
@@ -219,15 +221,18 @@ func TestQuickLinkUIDefinition_PromptsForParametersWithoutDefaults(t *testing.T)
 	}
 
 	for name, p := range wrapperParams {
-		if p.DefaultValue != nil || name == "location" {
+		// location comes from the Basics step's own region picker, and
+		// deployTimestamp defaults to [utcNow()], which only ARM can evaluate —
+		// as a field it would show the customer the literal expression.
+		if name == "location" || name == "deployTimestamp" {
 			if _, present := byName[name]; present {
-				t.Errorf("parameter %q has a default and should not be prompted for", name)
+				t.Errorf("Nuon-managed parameter %q is exposed as a field", name)
 			}
 			continue
 		}
 		el, present := byName[name]
 		if !present {
-			t.Errorf("parameter %q has no default and is not prompted for", name)
+			t.Errorf("parameter %q is not prompted for", name)
 			continue
 		}
 		if p.Type == "securestring" && el["type"] != "Microsoft.Common.PasswordBox" {
@@ -235,6 +240,57 @@ func TestQuickLinkUIDefinition_PromptsForParametersWithoutDefaults(t *testing.T)
 		}
 		if got, want := outputs[name], "[basics('"+name+"')]"; got != want {
 			t.Errorf("outputs[%q] = %v, want %v", name, got, want)
+		}
+	}
+}
+
+// The regression that prompted this: a custom VNet template hoists its CIDR
+// parameters into the root, all with defaults. Filtering defaulted parameters out
+// left the portal form empty while deploying the stack template directly showed
+// every one of them.
+func TestQuickLinkUIDefinition_PrefillsHoistedParametersWithTheirDefaults(t *testing.T) {
+	inp := vnetInputWithTemplate(t, app.StackDeploymentScopeSubscription, hoistFixture)
+
+	_, params := renderUIDef(t, inp)
+
+	byName := map[string]map[string]any{}
+	for _, b := range params["basics"].([]any) {
+		el := b.(map[string]any)
+		byName[el["name"].(string)] = el
+	}
+
+	addressSpace, present := byName["addressSpace"]
+	if !present {
+		t.Fatalf("hoisted parameter addressSpace is not prompted for; basics = %v", byName)
+	}
+	if got := addressSpace["defaultValue"]; got != "10.100.0.0/22" {
+		t.Errorf("addressSpace.defaultValue = %v, want the template's default", got)
+	}
+	// The portal spaces and title-cases parameter names itself when no UI
+	// definition is supplied; supplying one takes that over.
+	if got := addressSpace["label"]; got != "Address Space" {
+		t.Errorf("addressSpace.label = %v, want %q", got, "Address Space")
+	}
+	// Clearing a prefilled field must not submit an empty string over the default.
+	if got := addressSpace["constraints"].(map[string]any)["required"]; got != true {
+		t.Errorf("addressSpace.constraints.required = %v, want true", got)
+	}
+
+	if got := byName["peeringEnabled"]["type"]; got != "Microsoft.Common.CheckBox" {
+		t.Errorf("bool parameter rendered as %v, want a CheckBox", got)
+	}
+}
+
+func TestHumanizeParamName(t *testing.T) {
+	for _, tc := range []struct{ in, want string }{
+		{"addressSpace", "Address Space"},
+		{"vnetCIDR", "Vnet CIDR"},
+		{"secretTailscaleOauthClientId", "Secret Tailscale Oauth Client Id"},
+		{"location", "Location"},
+		{"", ""},
+	} {
+		if got := humanizeParamName(tc.in); got != tc.want {
+			t.Errorf("humanizeParamName(%q) = %q, want %q", tc.in, got, tc.want)
 		}
 	}
 }
