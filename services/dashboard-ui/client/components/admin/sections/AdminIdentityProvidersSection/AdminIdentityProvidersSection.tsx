@@ -4,6 +4,18 @@ import { Toggle } from '@/components/common/form/Toggle'
 import type { TIdentityProvider } from '@/lib'
 import { AdminSection } from '../../shared/AdminSection'
 
+// mirrors providerDisplayName on the sign-in page, so an unnamed provider reads the same in both
+const PROVIDER_TYPE_LABELS: Record<string, string> = {
+  google: 'Google',
+  github: 'GitHub',
+  oidc: 'Single Sign-On',
+}
+
+const displayName = (identityProvider: TIdentityProvider) =>
+  identityProvider.name ||
+  PROVIDER_TYPE_LABELS[identityProvider.provider_type] ||
+  identityProvider.provider_type
+
 export interface IAdminIdentityProvidersSection {
   identityProviders: TIdentityProvider[]
   isLoading: boolean
@@ -36,7 +48,7 @@ export const AdminIdentityProvidersSection = ({
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <Text variant="base" weight="strong">
-                {identityProvider.name || identityProvider.provider_type}
+                {displayName(identityProvider)}
               </Text>
               <Badge size="xs">{identityProvider.provider_type}</Badge>
               {identityProvider.source === 'env' && (
@@ -60,7 +72,7 @@ export const AdminIdentityProvidersSection = ({
               pendingId === identityProvider.id
             }
             onChange={(enabled) => onToggle(identityProvider, enabled)}
-            label={`Enable ${identityProvider.name || identityProvider.provider_type}`}
+            aria-label={`Enable ${displayName(identityProvider)}`}
           />
         </div>
       ))}
