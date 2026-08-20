@@ -267,7 +267,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		RunnerEnvVars:                stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, s.cfg.RunnerContainerImageTag),
 		PhoneHomeSecretARN:           phoneHome.SecretARN,
 		PhoneHomeSecretRegion:        phoneHome.SecretRegion,
-		PhoneHomeIdentityName:        phoneHome.IdentityName,
 	}
 
 	switch cfg.RunnerConfig.Type {

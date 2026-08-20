@@ -11,13 +11,11 @@ import (
 )
 
 type createInstallInput struct {
-	App                 string            `json:"app,omitempty" jsonschema:"app name or ID to create the install for; defaults to the currently selected app"`
-	Name                string            `json:"name" jsonschema:"name for the new install"`
-	Region              string            `json:"region,omitempty" jsonschema:"cloud region to provision in"`
-	AWSAccountID        string            `json:"aws_account_id,omitempty" jsonschema:"AWS account ID this install targets; required when phone home authentication is enabled for the org"`
-	AzureSubscriptionID string            `json:"azure_subscription_id,omitempty" jsonschema:"Azure subscription ID this install targets; required when phone home authentication is enabled for the org"`
-	GCPProjectID        string            `json:"gcp_project_id,omitempty" jsonschema:"GCP project ID this install targets; required when phone home authentication is enabled for the org"`
-	Inputs              map[string]string `json:"inputs,omitempty" jsonschema:"app input values"`
+	App          string            `json:"app,omitempty" jsonschema:"app name or ID to create the install for; defaults to the currently selected app"`
+	Name         string            `json:"name" jsonschema:"name for the new install"`
+	Region       string            `json:"region,omitempty" jsonschema:"cloud region to provision in"`
+	AWSAccountID string            `json:"aws_account_id,omitempty" jsonschema:"AWS account ID this install targets; required when phone home authentication is enabled for the org"`
+	Inputs       map[string]string `json:"inputs,omitempty" jsonschema:"app input values"`
 }
 
 type deployComponentInput struct {
@@ -35,28 +33,14 @@ func (s *Service) registerWriteTools(server *mcp.Server) {
 		if err != nil {
 			return nil, nil, err
 		}
-		req := &models.ServiceCreateInstallRequest{Name: &in.Name, Inputs: in.Inputs}
-		// Only one account block may be set, and sending the AWS one unconditionally made
-		// Azure and GCP apps impossible to install through this tool.
-		switch {
-		case in.AzureSubscriptionID != "":
-			req.AzureAccount = &models.HelpersCreateInstallAzureAccountParams{
-				SubscriptionID: in.AzureSubscriptionID,
-				Location:       in.Region,
-			}
-		case in.GCPProjectID != "":
-			req.GcpAccount = &models.HelpersCreateInstallGCPAccountParams{
-				ProjectID: in.GCPProjectID,
-				Region:    in.Region,
-			}
-		default:
-			req.AwsAccount = &models.HelpersCreateInstallAWSAccountParams{
+		install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
+			Name: &in.Name,
+			AwsAccount: &models.HelpersCreateInstallAWSAccountParams{
 				Region:    in.Region,
 				AccountID: in.AWSAccountID,
-			}
-		}
-
-		install, err := s.api.CreateInstall(ctx, appID, req)
+			},
+			Inputs: in.Inputs,
+		})
 		if err != nil {
 			return nil, nil, err
 		}
