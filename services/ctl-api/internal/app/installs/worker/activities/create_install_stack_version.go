@@ -22,13 +22,17 @@ type CreateInstallStackVersionRequest struct {
 	PublicAPIURL   string `json:"public_api_url"`
 }
 
-// azurePortalCustomDeployBaseURL is the portal's Custom Deployment blade, in the
-// form that takes a createUiDefinition alongside the template. The plain
-// `#create/Microsoft.Template/uri/<template>` form renders an uncontrolled
-// Basics step, where a customer picking a resource group other than
-// <install-id>-rg silently creates a second deployment stack rather than
-// updating the install's. The UI definition constrains that step.
-const azurePortalCustomDeployBaseURL = "https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/"
+// azurePortalCustomDeployBaseURL is the documented Deploy-to-Azure form, which
+// takes a createUiDefinition appended as /createUIDefinitionUri/<encoded>. The UI
+// definition is what constrains the Basics step: without it a customer picking a
+// resource group other than the one the install already deployed to silently
+// creates a second deployment stack rather than updating the install's.
+//
+// Not Microsoft_Azure_CreateUIDef/CustomDeploymentBlade, which is undocumented and
+// accepts the same two URL segments while rendering none of the UI definition's
+// elements — it applies config.basics and drops basics/steps, so the form collapses
+// to subscription and region with no way to tell that anything was ignored.
+const azurePortalCustomDeployBaseURL = "https://portal.azure.com/#create/Microsoft.Template/uri/"
 
 // escapeDataString URL-encodes a value the way Azure documents for portal deep
 // links ([uri]::EscapeDataString). url.PathEscape leaves ':' unescaped and

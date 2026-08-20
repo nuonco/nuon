@@ -18,7 +18,7 @@ const mockStackWithQuickLink = {
     {
       template_url: 'https://storage.azure.com/template.json',
       quick_link_url:
-        'https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/https%3A%2F%2Fstorage.azure.com%2Ftemplate-quicklink.json/createUIDefinitionUri/https%3A%2F%2Fstorage.azure.com%2Ftemplate-uidef.json',
+        'https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fstorage.azure.com%2Ftemplate-quicklink.json/createUIDefinitionUri/https%3A%2F%2Fstorage.azure.com%2Ftemplate-uidef.json',
     },
   ],
 } as any

@@ -36,9 +36,18 @@ func TestStackTemplateLocations_Azure(t *testing.T) {
 		t.Errorf("quickLinkURL = %q, want %q", loc.quickLinkURL, want)
 	}
 
+	// Pinned to the literal rather than the constant. Expressing this test only in
+	// terms of azurePortalCustomDeployBaseURL is what let the undocumented
+	// Microsoft_Azure_CreateUIDef/CustomDeploymentBlade route ship: that blade
+	// accepts the identical two segments and silently renders none of the UI
+	// definition's fields, so nothing failed until someone opened the link.
+	if !strings.HasPrefix(loc.quickLinkURL, "https://portal.azure.com/#create/Microsoft.Template/uri/") {
+		t.Errorf("quick link does not use the documented Deploy-to-Azure route: %q", loc.quickLinkURL)
+	}
+
 	// Both URLs sit in path segments, so their separators must be escaped. An
-	// unescaped one silently truncates the segment and the blade fails to load.
-	// The only slashes left after the blade prefix are the two bounding
+	// unescaped one silently truncates the segment and the deployment fails to
+	// load. The only slashes left after the prefix are the two bounding
 	// /createUIDefinitionUri/.
 	segments := strings.TrimPrefix(loc.quickLinkURL, azurePortalCustomDeployBaseURL)
 	if strings.Count(segments, "/") != 2 {
