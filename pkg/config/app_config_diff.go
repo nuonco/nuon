@@ -212,6 +212,7 @@ func diffStack(old, new *StackConfig) *diff.Diff {
 		diff.NewDiff(diff.WithKey("description"), diff.WithStringDiff(old.Description, new.Description)),
 		diff.NewDiff(diff.WithKey("vpc_nested_template_url"), diff.WithStringDiff(old.VPCNestedTemplateURL, new.VPCNestedTemplateURL)),
 		diff.NewDiff(diff.WithKey("runner_nested_template_url"), diff.WithStringDiff(old.RunnerNestedTemplateURL, new.RunnerNestedTemplateURL)),
+		diff.NewDiff(diff.WithKey("deployment_scope"), diff.WithStringDiff(old.DeploymentScope, new.DeploymentScope)),
 	}
 
 	// Custom nested stacks matched by name
