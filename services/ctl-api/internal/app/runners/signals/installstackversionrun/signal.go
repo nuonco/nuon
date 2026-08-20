@@ -58,6 +58,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
+	// A stack applied with runner_enabled = false provisions no runner, so it
+	// will never report health. Checking the run's outputs here rather than the
+	// runner's status is deliberate: this signal races
+	// update-install-stack-outputs off the same stack run, so the disabled
+	// status may not be written yet.
+	runnerDisabled, err := activities.AwaitGetStackRunRunnerDisabled(ctx, activities.GetStackRunRunnerDisabledRequest{
+		InstallStackVersionRunID: s.InstallStackVersionRunID,
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to determine whether stack run disabled the runner")
+	}
+	if runnerDisabled {
+		return nil
+	}
+
 	// Update runner status to Error state
 	// This indicates the install stack was run and is waiting for health check
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{

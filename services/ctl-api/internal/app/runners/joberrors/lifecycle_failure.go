@@ -15,6 +15,7 @@ const (
 	LifecycleFailureReasonExecutionTimeout  LifecycleFailureReason = "execution_timeout"
 	LifecycleFailureReasonAttemptsExhausted LifecycleFailureReason = "attempts_exhausted"
 	LifecycleFailureReasonResultMissing     LifecycleFailureReason = "execution_result_missing"
+	LifecycleFailureReasonRunnerDisabled    LifecycleFailureReason = "runner_disabled"
 )
 
 type LifecycleFailureError struct {
@@ -27,6 +28,8 @@ func (e *LifecycleFailureError) Error() string {
 	switch e.Reason {
 	case LifecycleFailureReasonNoActiveRunner:
 		return "No active runner was available for this job"
+	case LifecycleFailureReasonRunnerDisabled:
+		return "The install runner is disabled"
 	case LifecycleFailureReasonQueueTimeout:
 		return "Runner job expired in the queue"
 	case LifecycleFailureReasonRunnerUnhealthy:
@@ -50,6 +53,16 @@ func (*LifecycleFailureError) Type() compositeerrors.Type {
 	return LifecycleFailureErrorType
 }
 
+// Hints marks a disabled runner as terminal: nothing about the failure can
+// change until the customer re-applies their stack, so neither auto-retries nor
+// a manual retry can succeed.
+func (e *LifecycleFailureError) Hints() compositeerrors.Hints {
+	if e.Reason == LifecycleFailureReasonRunnerDisabled {
+		return compositeerrors.NewHints().WithTerminal()
+	}
+	return nil
+}
+
 func (*LifecycleFailureError) Severity() compositeerrors.Severity {
 	return compositeerrors.SeverityError
 }
@@ -66,6 +79,8 @@ func (e *LifecycleFailureError) details() (string, string) {
 	switch e.Reason {
 	case LifecycleFailureReasonNoActiveRunner:
 		return "The job could not start because its assigned runner had no active process.", "Check that the runner is online and healthy, then retry the operation."
+	case LifecycleFailureReasonRunnerDisabled:
+		return "The install runner is disabled, so no runner exists to pick up this job.", "Re-enable the runner in the install stack, then retry the operation."
 	case LifecycleFailureReasonQueueTimeout:
 		return "The job waited in the queue longer than its configured queue timeout.", "Check the runner's health and workload, then retry the operation."
 	case LifecycleFailureReasonRunnerUnhealthy:

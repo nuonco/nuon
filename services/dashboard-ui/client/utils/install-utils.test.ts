@@ -114,6 +114,9 @@ describe('install-utils', () => {
       expect(getInstallRunnerStatusTitle('deprovisioned')).toBe(
         'Runner is deprovisioned'
       )
+      expect(getInstallRunnerStatusTitle('disabled')).toBe(
+        'Runner is disabled'
+      )
       expect(getInstallRunnerStatusTitle('reprovisioning')).toBe(
         'Runner is reprovisioning'
       )

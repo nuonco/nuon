@@ -152,9 +152,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			l.Info("job was already cancelled, not attempting")
 			return nil
 		}
-		l.Warn("runner has no active process, not attempting")
-		s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusNotAttempted, "no active runner process available")
-		s.recordJobLifecycleCompositeError(ctx, s.JobID, joberrors.LifecycleFailureReasonNoActiveRunner)
+		// A disabled runner has no processes by design, so report that rather
+		// than the generic unhealthy-runner reason.
+		reason := joberrors.LifecycleFailureReasonNoActiveRunner
+		description := "no active runner process available"
+		if runner != nil && runner.Status == app.RunnerStatusDisabled {
+			reason = joberrors.LifecycleFailureReasonRunnerDisabled
+			description = "install runner is disabled"
+		}
+
+		l.Warn("runner has no active process, not attempting", zap.String("reason", string(reason)))
+		s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusNotAttempted, description)
+		s.recordJobLifecycleCompositeError(ctx, s.JobID, reason)
 		return errors.New("runner has no active process")
 	}
 
@@ -307,6 +316,15 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 				break
 			}
 			etags["runner_status"] = string(runnerStatus)
+
+			// A disabled runner will never become active on its own, so fail
+			// now instead of burning the available timeout waiting for it.
+			if runnerStatus == app.RunnerStatusDisabled {
+				l.Warn("runner is disabled, not waiting for it to become active")
+				s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusNotAttempted, "install runner is disabled")
+				tags["status"] = "runner_disabled"
+				return false, false, joberrors.LifecycleFailureReasonRunnerDisabled, nil
+			}
 
 			jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
 			if err != nil {
