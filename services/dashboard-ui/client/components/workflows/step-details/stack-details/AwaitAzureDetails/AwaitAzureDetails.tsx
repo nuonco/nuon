@@ -7,7 +7,7 @@ import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
-import type { TAppSecretConfig } from '@/types'
+import type { TAppSecretConfig, TStackDeploymentScope } from '@/types'
 import { createFileDownload } from '@/utils/file-download'
 import type { IStackDetails } from '../types'
 import { DeployToAzureBadge } from './DeployToAzureBadge'
@@ -16,6 +16,7 @@ interface IAwaitAzureDetails extends IStackDetails {
   installId: string
   azureLocation?: string
   secrets?: TAppSecretConfig[]
+  deploymentScope?: TStackDeploymentScope
 }
 
 const telemetryExportConfigFilename = 'telemetry-export-config.yaml'
@@ -37,6 +38,7 @@ export const AwaitAzureDetails = ({
   installId,
   azureLocation,
   secrets,
+  deploymentScope,
   loading,
 }: IAwaitAzureDetails) => {
   if (loading) {
@@ -71,10 +73,17 @@ export const AwaitAzureDetails = ({
     )
   }
 
-  // Not derived from template_url when absent: the quick link addresses a
-  // separate wrapper template, and stack versions generated before it existed
-  // have none to point at.
-  const quickLink = stack?.versions?.at(0)?.quick_link_url
+  // The portal link wraps template_url, but it is never rebuilt from it here:
+  // the renderer owns the encoding, and a version generated before the link
+  // existed has none to show.
+  //
+  // A resource-group-scoped root template cannot be deployed from the portal —
+  // the customer has to create the resource group first — so the button is
+  // shown for subscription scope only.
+  const quickLink =
+    deploymentScope === 'subscription'
+      ? stack?.versions?.at(0)?.quick_link_url
+      : undefined
 
   const vaultName = installId.slice(0, 24)
   const customerSecrets = secrets?.filter((s) => !s.auto_generate)

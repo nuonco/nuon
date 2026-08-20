@@ -56,6 +56,19 @@ export const WithQuickLink = () => (
       step={mockStep}
       installId="install-1"
       azureLocation="eastus"
+      deploymentScope="subscription"
+    />
+  </div>
+)
+
+export const QuickLinkHiddenAtResourceGroupScope = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitAzureDetails
+      stack={mockStackWithQuickLink}
+      step={mockStep}
+      installId="install-1"
+      azureLocation="eastus"
+      deploymentScope="resource_group"
     />
   </div>
 )
