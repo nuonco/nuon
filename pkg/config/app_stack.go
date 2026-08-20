@@ -82,6 +82,21 @@ func (c CustomNestedStack) GCPModuleName() string {
 	return name
 }
 
+// Deployment scopes for the generated Azure install stack root template.
+//
+// The empty string is equivalent to StackDeploymentScopeResourceGroup and is
+// deliberately never normalized on write: configs stored before this field
+// existed would otherwise show a spurious diff on the next sync.
+const (
+	// StackDeploymentScopeResourceGroup confines every resource to the install's
+	// own resource group. This is the default and the only behaviour before the
+	// field existed.
+	StackDeploymentScopeResourceGroup = "resource_group"
+	// StackDeploymentScopeSubscription deploys the root template at subscription
+	// scope, which is what lets nested stacks create their own resource groups.
+	StackDeploymentScopeSubscription = "subscription"
+)
+
 type StackConfig struct {
 	Type        string `mapstructure:"type" toml:"type"`
 	Name        string `mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
@@ -89,6 +104,8 @@ type StackConfig struct {
 
 	VPCNestedTemplateURL    string `mapstructure:"vpc_nested_template_url" toml:"vpc_nested_template_url" jsonschema:"required" features features:"template"`
 	RunnerNestedTemplateURL string `mapstructure:"runner_nested_template_url" toml:"runner_nested_template_url" jsonschema:"required" features features:"template"`
+
+	DeploymentScope string `mapstructure:"deployment_scope" toml:"deployment_scope,omitempty"`
 
 	CustomNestedStacks []CustomNestedStack `mapstructure:"custom_nested_stacks" toml:"custom_nested_stacks"`
 }
@@ -113,9 +130,31 @@ func (a StackConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("runner_nested_template_url").Short("runner nested template URL").
 		Long("URL to the CloudFormation nested template for the Nuon runner infrastructure").
 		Example("https://s3.amazonaws.com/bucket/runner-template.yaml").
+		Field("deployment_scope").Short("deployment scope").
+		Long("Scope the generated install stack root template deploys at. Only supported for 'azure-bicep'. Supported values: 'resource_group' (the default) confines every resource to the install's own resource group; 'subscription' deploys at subscription scope, which lets nested stack templates create their own resource groups — needed when an app splits networking, application and security resources across several groups.").
+		Example("subscription").
 		Field("custom_nested_stacks").Short("custom nested stacks").
 		Long("Custom CloudFormation nested stack templates to include. Each entry has a name, template_url, index, and optional parameters. The index field determines execution order (ascending). The parameters field maps CloudFormation parameter names to Nuon install input references using {{.nuon.install.inputs.<name>}} syntax. Remaining parameters are hoisted into a top-level group named after the stack. Executed after first-class nested stacks.").
 		Nullable()
+}
+
+// ValidateDeploymentScope checks a stack's deployment_scope against its type.
+// Shared by StackConfig.parse (the TOML path) and build.StackConfig (the API and
+// syncer paths) so every entry point rejects the same input.
+func ValidateDeploymentScope(scope, stackType string) error {
+	switch scope {
+	case "", StackDeploymentScopeResourceGroup:
+		return nil
+	case StackDeploymentScopeSubscription:
+		if stackType != "azure-bicep" {
+			msg := fmt.Sprintf("deployment_scope %q is only supported when type is azure-bicep, got %q", scope, stackType)
+			return ErrConfig{Description: msg, Err: fmt.Errorf("%s", msg)}
+		}
+		return nil
+	default:
+		msg := fmt.Sprintf("deployment_scope must be %q or %q, got %q", StackDeploymentScopeResourceGroup, StackDeploymentScopeSubscription, scope)
+		return ErrConfig{Description: msg, Err: fmt.Errorf("%s", msg)}
+	}
 }
 
 func ValidateTemplateURL(templateURL string, fieldName string) error {
@@ -251,6 +290,9 @@ func isS3URL(u *url.URL) bool {
 }
 
 func (a *StackConfig) parse() error {
+	if err := ValidateDeploymentScope(a.DeploymentScope, a.Type); err != nil {
+		return err
+	}
 	if a.Type == "aws-cloudformation" {
 		if a.VPCNestedTemplateURL == "" {
 			return ErrConfig{

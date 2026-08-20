@@ -35,6 +35,9 @@ type AppAppStackConfig struct {
 	// custom nested stacks
 	CustomNestedStacks []*ConfigCustomNestedStack `json:"custom_nested_stacks"`
 
+	// deployment scope
+	DeploymentScope AppStackDeploymentScope `json:"deployment_scope,omitempty"`
+
 	// description
 	Description string `json:"description,omitempty"`
 
@@ -65,6 +68,10 @@ func (m *AppAppStackConfig) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCustomNestedStacks(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateDeploymentScope(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -108,6 +115,27 @@ func (m *AppAppStackConfig) validateCustomNestedStacks(formats strfmt.Registry) 
 	return nil
 }
 
+func (m *AppAppStackConfig) validateDeploymentScope(formats strfmt.Registry) error {
+	if swag.IsZero(m.DeploymentScope) { // not required
+		return nil
+	}
+
+	if err := m.DeploymentScope.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("deployment_scope")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("deployment_scope")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
 func (m *AppAppStackConfig) validateType(formats strfmt.Registry) error {
 	if swag.IsZero(m.Type) { // not required
 		return nil
@@ -134,6 +162,10 @@ func (m *AppAppStackConfig) ContextValidate(ctx context.Context, formats strfmt.
 	var res []error
 
 	if err := m.contextValidateCustomNestedStacks(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateDeploymentScope(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -171,6 +203,28 @@ func (m *AppAppStackConfig) contextValidateCustomNestedStacks(ctx context.Contex
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppAppStackConfig) contextValidateDeploymentScope(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.DeploymentScope) { // not required
+		return nil
+	}
+
+	if err := m.DeploymentScope.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("deployment_scope")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("deployment_scope")
+		}
+
+		return err
 	}
 
 	return nil

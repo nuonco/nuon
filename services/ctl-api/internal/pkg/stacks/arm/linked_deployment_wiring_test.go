@@ -6,6 +6,7 @@ import (
 	"maps"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
@@ -320,7 +322,7 @@ func TestGetCustomLinkedDeployments_PrincipalIDOutput(t *testing.T) {
 		require.Len(t, identities, 1)
 		assert.Equal(t, "bauleiterIdentityPrincipalId", identities[0].PrincipalIDOutput)
 
-		role := tmpl.getCustomDeploymentRoleAssignment(identities[0])
+		role := tmpl.getCustomDeploymentRoleAssignment(identities[0], inp.Install.ID, armScope{})
 		params := role["properties"].(map[string]any)["parameters"].(map[string]any)
 		assert.Equal(t,
 			"[reference('Bauleiter').outputs.bauleiterIdentityPrincipalId.value]",
@@ -362,5 +364,120 @@ func TestGetCustomLinkedDeployments_PrincipalIDOutput(t *testing.T) {
 		_, _, identities, _, err := tmpl.getCustomLinkedDeployments(inp)
 		require.NoError(t, err)
 		assert.Empty(t, identities)
+	})
+}
+
+// Every nested deployment name that ends up at subscription scope has to be
+// namespaced by install: a subscription deployment record is keyed by name alone
+// and its location is immutable, so a shared name means two installs of one app
+// either overwrite each other's record or fail outright across regions.
+func TestCustomStackNames_NamespacedAtSubscriptionScope(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+
+	t.Run("stack deployment keeps its bare name at resource group scope", func(t *testing.T) {
+		inp := armWiringInput(t, wiringStack{name: "database"})
+
+		resources, _, _, outs, err := tmpl.getCustomLinkedDeployments(inp)
+		require.NoError(t, err)
+		require.Len(t, resources, 1)
+
+		assert.Equal(t, "Database", resources[0].(map[string]any)["name"])
+		// The customer's name still keys the phone-home payload either way.
+		assert.Equal(t, "database", outs[0].StackName)
+	})
+
+	t.Run("stack deployment is namespaced at subscription scope", func(t *testing.T) {
+		inp := armWiringInput(t, wiringStack{name: "database"})
+		inp.DeploymentScope = app.StackDeploymentScopeSubscription
+
+		resources, _, _, outs, err := tmpl.getCustomLinkedDeployments(inp)
+		require.NoError(t, err)
+		require.Len(t, resources, 1)
+
+		assert.Equal(t, inp.Install.ID+"-Database", resources[0].(map[string]any)["name"])
+		assert.Equal(t, "database", outs[0].StackName)
+	})
+
+	// The role is subscription-level at both scopes, so unlike the deployments above
+	// it cannot fall back to a bare name when the root is a resource group.
+	for _, tc := range []struct {
+		name  string
+		scope armScope
+	}{
+		{"resource group scope", armScope{}},
+		{"subscription scope", armScope{subscription: true}},
+	} {
+		t.Run("identity role is namespaced at "+tc.name, func(t *testing.T) {
+			inp := armWiringInput(t, wiringStack{
+				name:            "database",
+				managedIdentity: true,
+				outputs:         []string{"identityPrincipalId"},
+			})
+			if tc.scope.subscription {
+				inp.DeploymentScope = app.StackDeploymentScopeSubscription
+			}
+
+			_, _, identities, _, err := tmpl.getCustomLinkedDeployments(inp)
+			require.NoError(t, err)
+			require.Len(t, identities, 1)
+
+			role := tmpl.getCustomDeploymentRoleAssignment(identities[0], inp.Install.ID, tc.scope)
+			wantKey := inp.Install.ID + "-Database"
+
+			assert.Equal(t, wantKey+"-identity-role", role["name"])
+			assert.Equal(t, "[subscription().subscriptionId]", role["subscriptionId"])
+
+			params := role["properties"].(map[string]any)["parameters"].(map[string]any)
+			assert.Equal(t, wantKey, params["roleKey"].(map[string]any)["value"])
+		})
+	}
+}
+
+// Namespacing spends 27 of ARM's 64 characters before the customer's own name, so
+// the length has to be checked where it is derived. Left un-caught it surfaces at
+// deploy time as a validation error against a resource the customer never wrote.
+func TestCustomStackNames_LengthGuard(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+
+	t.Run("stack deployment name over the limit is rejected", func(t *testing.T) {
+		inp := armWiringInput(t, wiringStack{name: strings.Repeat("a", 40)})
+		inp.DeploymentScope = app.StackDeploymentScopeSubscription
+
+		_, _, _, _, err := tmpl.getCustomLinkedDeployments(inp)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "over ARM's limit of 64")
+		assert.Contains(t, err.Error(), "shorten the stack name by")
+	})
+
+	t.Run("identity role name over the limit is rejected even at resource group scope", func(t *testing.T) {
+		// Short enough that the stack's own deployment name fits at both scopes; only
+		// the role deployment, which is namespaced regardless, runs over.
+		name := strings.Repeat("b", 30)
+		inp := armWiringInput(t, wiringStack{
+			name:            name,
+			managedIdentity: true,
+			outputs:         []string{"identityPrincipalId"},
+		})
+
+		require.LessOrEqual(t, len(sanitizeDeploymentName(name)), maxARMDeploymentNameLen,
+			"the stack's own name must fit, or this asserts the wrong guard")
+
+		_, _, _, _, err := tmpl.getCustomLinkedDeployments(inp)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "declares a managed identity")
+		assert.Contains(t, err.Error(), "over ARM's limit of 64")
+	})
+
+	t.Run("a name that fits is accepted", func(t *testing.T) {
+		inp := armWiringInput(t, wiringStack{
+			name:            "database",
+			managedIdentity: true,
+			outputs:         []string{"identityPrincipalId"},
+		})
+		inp.DeploymentScope = app.StackDeploymentScopeSubscription
+
+		_, _, identities, _, err := tmpl.getCustomLinkedDeployments(inp)
+		require.NoError(t, err)
+		require.Len(t, identities, 1)
 	})
 }
