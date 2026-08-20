@@ -224,7 +224,6 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		RunnerEnvVars:                stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, w.cfg.RunnerContainerImageTag),
 		PhoneHomeSecretARN:           phoneHome.SecretARN,
 		PhoneHomeSecretRegion:        phoneHome.SecretRegion,
-		PhoneHomeIdentityName:        phoneHome.IdentityName,
 	}
 
 	switch cfg.RunnerConfig.Type {
