@@ -52,6 +52,11 @@ type InstallStackVersion struct {
 	// credential on its next run.
 	PhoneHomeTokenRevokedAt *time.Time `json:"-" temporaljson:"-"`
 
+	// Set means the template was rendered to authenticate, so an unauthenticated phone
+	// home is rejected rather than skipped. Empty versions predate enforcement on their
+	// cloud and are skipped, which is what lets this roll out per cloud.
+	PhoneHomeIdentityName string `json:"-" temporaljson:"-"`
+
 	// aws configuration parameters
 	AWSBucketName string `json:"aws_bucket_name,omitzero" temporaljson:"aws_bucket_name,omitzero,omitempty"`
 	AWSBucketKey  string `json:"aws_bucket_key,omitzero" temporaljson:"aws_bucket_key,omitzero,omitempty"`
