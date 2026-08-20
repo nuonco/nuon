@@ -135,6 +135,7 @@ export const CreateInstallFromAppContainer = ({
             </Text>
           </Toast>
         )
+        queryClient.invalidateQueries({ queryKey: ['installs'] })
         queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
         queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
         const suffix =
