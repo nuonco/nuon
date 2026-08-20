@@ -121,3 +121,29 @@ func TestProviderHint(t *testing.T) {
 	require.Empty(t, providerHint(&app.IdentityProvider{ProviderType: app.ProviderTypeGoogle}))
 	require.Empty(t, providerHint(&app.IdentityProvider{ProviderType: app.ProviderTypeOIDC}))
 }
+
+func TestAllowAllUsers(t *testing.T) {
+	enabled, disabled := true, false
+
+	testCases := []struct {
+		name     string
+		global   bool
+		provider *bool
+		expected bool
+	}{
+		{name: "unset inherits the deployment-wide flag", global: true, provider: nil, expected: true},
+		{name: "unset inherits a disabled deployment-wide flag", global: false, provider: nil, expected: false},
+		{name: "provider opens up a closed deployment", global: false, provider: &enabled, expected: true},
+		{name: "provider stays invite-only in an open deployment", global: true, provider: &disabled, expected: false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := oidcConfig()
+			cfg.NuonAuthAllowAllUsers = tc.global
+
+			allowed := testService(cfg).allowAllUsers(&app.IdentityProvider{AllowAllUsers: tc.provider})
+			require.Equal(t, tc.expected, allowed)
+		})
+	}
+}
