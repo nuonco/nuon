@@ -49,18 +49,30 @@ func (s *service) CreateRunnerProcess(ctx *gin.Context) {
 		return
 	}
 
-	process, err := s.createRunnerProcess(ctx, runnerID, req)
+	var process *app.RunnerProcess
+	err := traceRunnerRequestOperation(ctx, "runner.process.persist", func(ctx context.Context) error {
+		var err error
+		process, err = s.createRunnerProcess(ctx, runnerID, req)
+		return err
+	})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create runner process: %w", err))
 		return
 	}
 
-	if _, err := s.helpers.CreateProcessQueues(ctx, runnerID, process); err != nil {
+	err = traceRunnerRequestOperation(ctx, "runner.process.queues.initialize", func(ctx context.Context) error {
+		_, err := s.helpers.CreateProcessQueues(ctx, runnerID, process)
+		return err
+	})
+	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create process queues: %w", err))
 		return
 	}
 
+	_, telemetrySpan := runnerTracer.Start(
+		ctx.Request.Context(), "runner.process.telemetry.emit")
 	s.emitProcessStart(ctx, runnerID, process)
+	telemetrySpan.End()
 
 	ctx.JSON(http.StatusCreated, process)
 }
