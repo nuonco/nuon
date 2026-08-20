@@ -130,8 +130,15 @@ func (t *Templates) getPhoneHomeResources(inp *stacks.TemplateInput, customOutpu
 
 	payloadJSON := "{\n" + strings.Join(payloadFields, ",\n") + "\n}"
 
-	scriptContent := `#!/bin/bash
+	authPreamble := ""
+	authFlag := ""
+	if inp.PhoneHomeIdentityName != "" {
+		authPreamble = phoneHomeAuthScript
+		authFlag = "  -K \"$CURL_CONFIG\" \\\n"
+	}
 
+	scriptContent := `#!/bin/bash
+` + authPreamble + `
 PAYLOAD=$(cat << EOF
 ` + payloadJSON + `
 EOF
@@ -139,7 +146,7 @@ EOF
 
 curl -X POST \
   "` + phoneHomeURL + `" \
-  -H "Content-Type: application/json" \
+` + authFlag + `  -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d "$PAYLOAD" \
   --fail \
@@ -198,6 +205,12 @@ fi
 			"value": "[reference('runnerDeployment').outputs.vmssPrincipalId.value]",
 		})
 	}
+	if inp.PhoneHomeIdentityName != "" {
+		envVars = append(envVars, map[string]any{
+			"name":  "PHONE_HOME_IDENTITY_CLIENT_ID",
+			"value": phoneHomeIdentityClientID(inp.PhoneHomeIdentityName),
+		})
+	}
 	envVars = append(envVars, secretEnvVars...)
 	envVars = append(envVars, vnetExtraEnvVars...)
 	envVars = append(envVars, customEnvVars...)
@@ -248,9 +261,36 @@ fi
 		},
 	}
 
+	// deploymentScripts supports user-assigned identities only, so there is no
+	// system-assigned alternative. The identity travels with the script into whichever
+	// scope it lands in, so its resourceId always resolves where the script is declared.
+	var identity []any
+	identityID := ""
+	if inp.PhoneHomeIdentityName != "" {
+		identityID = phoneHomeIdentityResourceID(inp.PhoneHomeIdentityName)
+		script["identity"] = map[string]any{
+			"type": "UserAssigned",
+			"userAssignedIdentities": map[string]any{
+				identityID: map[string]any{},
+			},
+		}
+		identity = append(identity, getPhoneHomeIdentityResource(inp.PhoneHomeIdentityName, scope))
+	}
+
 	if !scope.subscription {
+		if identityID != "" {
+			dependsOn = append(dependsOn, identityID)
+		}
 		script["dependsOn"] = dependsOn
-		return []any{script}
+
+		return append(identity, script)
+	}
+
+	// A UAMI is not subscription-deployable, so it moves into the install resource
+	// group alongside the script. Only the identity dependency can be expressed
+	// inside; everything else is declared in the root and goes on the wrapper.
+	if identityID != "" {
+		script["dependsOn"] = []string{identityID}
 	}
 
 	resources := scope.wrapInInstallRG(phoneHomeDeploymentName, map[string]nestedParam{
@@ -259,7 +299,7 @@ fi
 		"commonTags":           {typ: "object", value: "[variables('commonTags')]"},
 		"deployTimestamp":      {typ: "string", value: "[parameters('deployTimestamp')]"},
 		"environmentVariables": {typ: "array", value: envVars},
-	}, []any{script}, nil)
+	}, append(identity, script), nil)
 
 	// Everything the script reports on has to exist first, and the script can no
 	// longer say so itself — inner evaluation hides the root.
