@@ -1,6 +1,9 @@
 package arm
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // getPhoneHomeIdentityResource creates the identity the phone-home script authenticates
 // as. Deliberately carries no role assignments: it never touches Azure, so a token minted
@@ -19,6 +22,27 @@ func phoneHomeIdentityResourceID(identityName string) string {
 	return fmt.Sprintf(
 		"[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', '%s')]", identityName)
 }
+
+// phoneHomeIdentityClientIDEnvVar is evaluated wherever the identity is declared.
+func phoneHomeIdentityClientIDEnvVar(identityName string) map[string]any {
+	return map[string]any{
+		"name":  phoneHomeIdentityClientIDEnvName,
+		"value": phoneHomeIdentityClientID(identityName),
+	}
+}
+
+// phoneHomeInnerEnvVarsExpr appends the identity's client ID to the environment array
+// the root passed in, resolving it inside the install resource group where the identity
+// actually exists.
+func phoneHomeInnerEnvVarsExpr(identityName string) string {
+	return fmt.Sprintf(
+		"[concat(parameters('environmentVariables'), createArray(createObject('name', '%s', 'value', %s)))]",
+		phoneHomeIdentityClientIDEnvName,
+		strings.TrimSuffix(strings.TrimPrefix(phoneHomeIdentityClientID(identityName), "["), "]"),
+	)
+}
+
+const phoneHomeIdentityClientIDEnvName = "PHONE_HOME_IDENTITY_CLIENT_ID"
 
 func phoneHomeIdentityClientID(identityName string) string {
 	return fmt.Sprintf(

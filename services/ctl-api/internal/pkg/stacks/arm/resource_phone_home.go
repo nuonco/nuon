@@ -205,12 +205,6 @@ fi
 			"value": "[reference('runnerDeployment').outputs.vmssPrincipalId.value]",
 		})
 	}
-	if inp.PhoneHomeIdentityName != "" {
-		envVars = append(envVars, map[string]any{
-			"name":  "PHONE_HOME_IDENTITY_CLIENT_ID",
-			"value": phoneHomeIdentityClientID(inp.PhoneHomeIdentityName),
-		})
-	}
 	envVars = append(envVars, secretEnvVars...)
 	envVars = append(envVars, vnetExtraEnvVars...)
 	envVars = append(envVars, customEnvVars...)
@@ -280,6 +274,8 @@ fi
 	if !scope.subscription {
 		if identityID != "" {
 			dependsOn = append(dependsOn, identityID)
+			script["properties"].(map[string]any)["environmentVariables"] =
+				append(envVars, phoneHomeIdentityClientIDEnvVar(inp.PhoneHomeIdentityName))
 		}
 		script["dependsOn"] = dependsOn
 
@@ -291,6 +287,10 @@ fi
 	// inside; everything else is declared in the root and goes on the wrapper.
 	if identityID != "" {
 		script["dependsOn"] = []string{identityID}
+		// The outer array cannot name the identity: it is created inside this wrapper,
+		// so resourceId() in the root resolves against no resource group at all.
+		script["properties"].(map[string]any)["environmentVariables"] =
+			phoneHomeInnerEnvVarsExpr(inp.PhoneHomeIdentityName)
 	}
 
 	resources := scope.wrapInInstallRG(phoneHomeDeploymentName, map[string]nestedParam{

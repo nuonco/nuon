@@ -1,6 +1,7 @@
 package arm
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -164,5 +165,33 @@ func TestGetPhoneHomeIdentityResource_HasNoRoleAssignments(t *testing.T) {
 	// A role-less identity is what makes a stolen token inert.
 	if _, ok := res["properties"]; ok {
 		t.Error("phone home identity should carry no properties, and no roles")
+	}
+}
+
+// At subscription scope the environment array is built in the root, but the identity is
+// created inside the install resource group. Resolving its client ID outside fails the
+// deployment with ResourceNotFound against a null resource group, so it has to be
+// appended within the wrapper.
+func TestGetPhoneHomeResources_SubscriptionScopeResolvesClientIDInside(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+	inp := subscriptionTemplateInput()
+	inp.PhoneHomeIdentityName = "inst123-phone-home"
+
+	res := tmpl.getPhoneHomeResources(inp, nil, nil, armScope{subscription: true})
+	encoded, err := json.Marshal(res)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rendered := string(encoded)
+
+	root, _, found := strings.Cut(rendered, `"template"`)
+	if !found {
+		t.Fatal("expected a nested wrapper template at subscription scope")
+	}
+	if strings.Contains(root, phoneHomeIdentityClientID("inst123-phone-home")) {
+		t.Error("client id resolved in the root, where the identity does not exist")
+	}
+	if !strings.Contains(rendered, "concat(parameters('environmentVariables')") {
+		t.Error("wrapper does not append the client id to the environment it was passed")
 	}
 }
