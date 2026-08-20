@@ -203,6 +203,70 @@ func TestStackConfigDoesNotMutateInputStatus(t *testing.T) {
 	assert.Empty(t, in.CustomNestedStacks[0].Status)
 }
 
+func TestStackConfigDeploymentScope(t *testing.T) {
+	for name, tc := range map[string]struct {
+		stackType string
+		scope     string
+		want      app.StackDeploymentScope
+		wantErr   string
+	}{
+		"azure subscription": {
+			stackType: string(app.StackTypeAzure),
+			scope:     config.StackDeploymentScopeSubscription,
+			want:      app.StackDeploymentScopeSubscription,
+		},
+		"azure explicit resource group": {
+			stackType: string(app.StackTypeAzure),
+			scope:     config.StackDeploymentScopeResourceGroup,
+			want:      app.StackDeploymentScopeResourceGroup,
+		},
+		// Empty must stay empty: normalizing it would make every config stored
+		// before this field existed diff on its next sync.
+		"unset stays unset": {
+			stackType: string(app.StackTypeAzure),
+			scope:     "",
+			want:      "",
+		},
+		"aws unset": {
+			stackType: string(app.StackTypeAWS),
+			scope:     "",
+			want:      "",
+		},
+		"aws subscription rejected": {
+			stackType: string(app.StackTypeAWS),
+			scope:     config.StackDeploymentScopeSubscription,
+			wantErr:   "only supported when type is azure-bicep",
+		},
+		"gcp subscription rejected": {
+			stackType: string(app.StackTypeGCP),
+			scope:     config.StackDeploymentScopeSubscription,
+			wantErr:   "only supported when type is azure-bicep",
+		},
+		"unknown scope rejected": {
+			stackType: string(app.StackTypeAzure),
+			scope:     "management_group",
+			wantErr:   `deployment_scope must be "resource_group" or "subscription"`,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			obj, err := StackConfig(&config.StackConfig{
+				Type:            tc.stackType,
+				Name:            "stack",
+				Description:     "stack",
+				DeploymentScope: tc.scope,
+			}, "app1", "cfg1")
+
+			if tc.wantErr != "" {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantErr)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.want, obj.DeploymentScope)
+		})
+	}
+}
+
 func TestStackConfigRejectsNestedStackWithoutContents(t *testing.T) {
 	_, err := StackConfig(&config.StackConfig{
 		Type:               string(app.StackTypeAWS),

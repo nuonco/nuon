@@ -28,6 +28,9 @@ type ServiceCreateAppStackConfigRequest struct {
 	// custom nested stacks
 	CustomNestedStacks []*ConfigCustomNestedStack `json:"custom_nested_stacks"`
 
+	// deployment scope
+	DeploymentScope string `json:"deployment_scope,omitempty"`
+
 	// description
 	// Required: true
 	Description *string `json:"description"`

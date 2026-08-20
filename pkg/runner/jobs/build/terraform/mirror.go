@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/product"
@@ -32,6 +33,11 @@ const (
 	// same install. Stored without a leading "v" to match the
 	// un-prefixed format of TerraformModuleComponentConfig.Version.
 	defaultMirrorTerraformVersion = "1.7.5"
+
+	// terraformInstallTimeout bounds the terraform CLI download. It replaces
+	// hc-install's 30s default, which is not enough for a ~30MB archive when
+	// several component builds download concurrently.
+	terraformInstallTimeout = 10 * time.Minute
 )
 
 type MirrorConfig struct {
@@ -541,10 +547,17 @@ func installTerraform(ctx context.Context, l *zap.Logger, ver string) (string, f
 		}
 	}
 
+	// hc-install defaults to a 30s budget covering index+signature+checksum
+	// fetches and the ~30MB archive download. Concurrent component builds
+	// share the runner's bandwidth and blow through that easily, and the
+	// timeout surfaces as a misleading "chmod .../terraform: no such file or
+	// directory" because hc-install's downloader clobbers the real error in
+	// a deferred named-return assignment.
 	installer := &releases.ExactVersion{
 		Product:    product.Terraform,
 		Version:    tfVersion,
 		InstallDir: installDir,
+		Timeout:    terraformInstallTimeout,
 	}
 
 	_, endInstall := op.Start(ctx, "terraform", "binary_install",
@@ -552,10 +565,18 @@ func installTerraform(ctx context.Context, l *zap.Logger, ver string) (string, f
 		attribute.String("install.dir", installDir),
 	)
 	execPath, err := installer.Install(ctx)
+	if err == nil {
+		if _, serr := os.Stat(execPath); serr != nil {
+			err = fmt.Errorf("terraform binary missing after install: %w", serr)
+		}
+	}
 	endInstall(err)
 	if err != nil {
 		cleanup()
-		return "", nil, fmt.Errorf("unable to install terraform %s: %w", ver, err)
+		if ctx.Err() != nil {
+			return "", nil, fmt.Errorf("unable to install terraform %s: %w (context: %w)", ver, err, ctx.Err())
+		}
+		return "", nil, fmt.Errorf("unable to install terraform %s (download may have timed out after %s): %w", ver, terraformInstallTimeout, err)
 	}
 
 	return execPath, cleanup, nil

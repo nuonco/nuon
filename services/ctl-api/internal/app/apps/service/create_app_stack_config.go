@@ -25,6 +25,8 @@ type CreateAppStackConfigRequest struct {
 	RunnerNestedTemplateURL string `json:"runner_nested_template_url"`
 	VPCNestedTemplateURL    string `json:"vpc_nested_template_url"`
 
+	DeploymentScope string `json:"deployment_scope"`
+
 	CustomNestedStacks []config.CustomNestedStack `json:"custom_nested_stacks"`
 
 	AppConfigID string `json:"app_config_id" validate:"required"`
@@ -44,6 +46,7 @@ func (c *CreateAppStackConfigRequest) toConfig() *config.StackConfig {
 		Description:             c.Description,
 		VPCNestedTemplateURL:    c.VPCNestedTemplateURL,
 		RunnerNestedTemplateURL: c.RunnerNestedTemplateURL,
+		DeploymentScope:         c.DeploymentScope,
 		CustomNestedStacks:      c.CustomNestedStacks,
 	}
 }

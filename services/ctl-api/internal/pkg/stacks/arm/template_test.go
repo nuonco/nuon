@@ -62,7 +62,7 @@ func TestGetAzureTemplate_WithSecrets(t *testing.T) {
 func TestDefaultVNet_NonPruningSubnetSemantics(t *testing.T) {
 	tmpl := &Templates{cfg: &internal.Config{}}
 
-	deployment := tmpl.getDefaultVNetDeployment(minimalTemplateInput())
+	deployment := tmpl.getDefaultVNetDeployment(minimalTemplateInput(), armScope{})
 
 	props, ok := deployment["properties"].(map[string]any)
 	if !ok {
