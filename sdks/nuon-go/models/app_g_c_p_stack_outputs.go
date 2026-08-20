@@ -53,6 +53,10 @@ type AppGCPStackOutputs struct {
 	// region
 	Region string `json:"region,omitempty"`
 
+	// Nil when the stack predates the runner_enabled variable, which must read
+	// as enabled rather than disabled.
+	RunnerEnabled bool `json:"runner_enabled,omitempty"`
+
 	// runner service account email
 	RunnerServiceAccountEmail string `json:"runner_service_account_email,omitempty"`
 

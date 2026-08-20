@@ -21,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/secretsmanager"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 type Params struct {
@@ -46,6 +47,7 @@ type Params struct {
 	AccountsHelpers   *account.Client
 	TClient           temporalclient.Client
 	SecretsService    secretsmanager.Service
+	StatusActivities  *statusactivities.Activities
 }
 
 type Activities struct {
@@ -69,6 +71,7 @@ type Activities struct {
 	accountsHelpers   *account.Client
 	tClient           temporalclient.Client
 	secretsSvc        secretsmanager.Service
+	statusActivities  *statusactivities.Activities
 }
 
 func New(params Params) *Activities {
@@ -93,5 +96,6 @@ func New(params Params) *Activities {
 		accountsHelpers:   params.AccountsHelpers,
 		tClient:           params.TClient,
 		secretsSvc:        params.SecretsService,
+		statusActivities:  params.StatusActivities,
 	}
 }
