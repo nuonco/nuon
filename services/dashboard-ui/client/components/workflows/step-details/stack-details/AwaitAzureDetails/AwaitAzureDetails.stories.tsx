@@ -85,6 +85,21 @@ export const WithApplicationSecrets = () => (
   </div>
 )
 
+// The stack declares the resource group, the Key Vault and the secrets itself,
+// so none of those prerequisites render and the deploy commands are sub-scoped.
+export const SubscriptionScopeHidesPrerequisites = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitAzureDetails
+      stack={mockStackWithQuickLink}
+      step={mockStep}
+      installId="install-1"
+      azureLocation="eastus"
+      secrets={mockSecrets}
+      deploymentScope="subscription"
+    />
+  </div>
+)
+
 export const Loading = () => (
   <div className="max-w-2xl p-4">
     <AwaitAzureDetails
