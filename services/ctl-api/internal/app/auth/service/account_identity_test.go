@@ -174,3 +174,50 @@ func (s *AccountIdentityTestSuite) TestSameSubFromTwoProvidersResolvesToDifferen
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), secondAcct.ID, resolved.ID)
 }
+
+// The point of the per-provider override: with a deployment-wide flag alone, a contractor IdP
+// could not be invite-only while the staff IdP allowed self-signup.
+func (s *AccountIdentityTestSuite) TestInviteOnlyProviderRejectsUnknownUsers() {
+	ctx := context.Background()
+	inviteOnly := false
+
+	provider := s.seedOIDCProvider(ctx, "invite-only", "https://invite-only.example.com")
+	provider.AllowAllUsers = &inviteOnly
+	require.NoError(s.T(), s.service.DB.WithContext(ctx).Save(provider).Error)
+
+	stranger := &providers.UserInfo{
+		Subject: "invite-only|stranger",
+		Email:   fmt.Sprintf("%s@test.nuon.co", domains.NewAccountID()),
+	}
+
+	_, err := s.service.AuthService.resolveAccount(ctx, provider, stranger)
+	require.ErrorIs(s.T(), err, ErrAccountNotAuthorized)
+
+	var count int64
+	require.NoError(s.T(), s.service.DB.WithContext(ctx).
+		Model(&app.Account{}).
+		Where(&app.Account{Email: stranger.Email}).
+		Count(&count).Error)
+	require.Zero(s.T(), count, "an invite-only provider must not create an account")
+}
+
+// The same stranger on a provider that inherits an open deployment does get an account, so the
+// rejection above is the override doing its job rather than something else failing.
+func (s *AccountIdentityTestSuite) TestOpenProviderAdmitsUnknownUsers() {
+	ctx := context.Background()
+	if !s.service.Cfg.NuonAuthAllowAllUsers {
+		s.T().Skip("deployment is invite-only; nothing to inherit")
+	}
+
+	provider := s.seedOIDCProvider(ctx, "open", "https://open.example.com")
+	require.Nil(s.T(), provider.AllowAllUsers, "should inherit the deployment-wide flag")
+
+	stranger := &providers.UserInfo{
+		Subject: "open|stranger",
+		Email:   fmt.Sprintf("%s@test.nuon.co", domains.NewAccountID()),
+	}
+
+	account, err := s.service.AuthService.resolveAccount(ctx, provider, stranger)
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), stranger.Email, account.Email)
+}
