@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -104,12 +105,7 @@ func (s *service) AuthState(c *gin.Context) {
 	}
 
 	// Look up or create account by (identity_provider_id, sub)
-	var account *app.Account
-	if s.allowAllUsers(identityProvider) {
-		account, err = s.getOrCreateAccountByIdentity(c.Request.Context(), identityProvider, userInfo)
-	} else {
-		account, err = s.getOrCreateAccountByIdentityStrict(c.Request.Context(), identityProvider, userInfo)
-	}
+	account, err := s.resolveAccount(c.Request.Context(), identityProvider, userInfo)
 	if err != nil {
 		if err == ErrAccountNotAuthorized {
 			s.l.Warn("authentication denied: no account or pending invite",
@@ -183,6 +179,19 @@ func (s *service) verifyUser(userInfo *providers.UserInfo) error {
 		return fmt.Errorf("user has no email or username")
 	}
 	return nil
+}
+
+// resolveAccount maps an authenticated IdP user onto a Nuon account, creating one if this
+// provider admits new users.
+func (s *service) resolveAccount(
+	ctx context.Context,
+	identityProvider *app.IdentityProvider,
+	userInfo *providers.UserInfo,
+) (*app.Account, error) {
+	if s.allowAllUsers(identityProvider) {
+		return s.getOrCreateAccountByIdentity(ctx, identityProvider, userInfo)
+	}
+	return s.getOrCreateAccountByIdentityStrict(ctx, identityProvider, userInfo)
 }
 
 // allowAllUsers reports whether this provider admits any user with an allowed email domain, or
