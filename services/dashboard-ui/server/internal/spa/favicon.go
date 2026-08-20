@@ -34,16 +34,10 @@ func generateBYOCFavicon(cfg *internal.Config, l *zap.Logger) []byte {
 		return nil
 	}
 
-	hasColor := false
-	background := byocDefaultBackground
-	if color != "" {
-		if hexColorPattern.MatchString(color) {
-			background = "#" + strings.TrimPrefix(color, "#")
-			hasColor = true
-		} else {
-			l.Warn("invalid NUON_BYOC_COLOR, falling back to default purple",
-				zap.String("color", cfg.BYOCColor))
-		}
+	background, hasColor := resolveBYOCBackground(color)
+	if color != "" && !hasColor {
+		l.Warn("invalid NUON_BYOC_COLOR, falling back to default purple",
+			zap.String("color", cfg.BYOCColor))
 	}
 
 	glyphs := ""
@@ -83,6 +77,14 @@ func generateBYOCFavicon(cfg *internal.Config, l *zap.Logger) []byte {
 		background, content)
 
 	return []byte(svg)
+}
+
+func resolveBYOCBackground(color string) (string, bool) {
+	c := strings.TrimSpace(color)
+	if c == "" || !hexColorPattern.MatchString(c) {
+		return byocDefaultBackground, false
+	}
+	return "#" + strings.TrimPrefix(c, "#"), true
 }
 
 func isValidIconText(s string) bool {

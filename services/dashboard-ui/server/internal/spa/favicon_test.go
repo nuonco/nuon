@@ -128,6 +128,33 @@ func TestGenerateBYOCFavicon_Background(t *testing.T) {
 	}
 }
 
+func TestBuildClientConfig_BYOCBadge(t *testing.T) {
+	cc := buildClientConfig(&internal.Config{IsBYOC: true, BYOCName: "acme", BYOCColor: "#F5D90A"})
+	if cc.BYOCName != "acme" || cc.BYOCColor != "#F5D90A" || cc.BYOCTextColor != "#000000" {
+		t.Errorf("expected badge fields with black text on light color, got %+v", cc)
+	}
+
+	cc = buildClientConfig(&internal.Config{IsBYOC: true, BYOCName: "acme"})
+	if cc.BYOCColor != "#662F9D" || cc.BYOCTextColor != "#FFFFFF" {
+		t.Errorf("expected purple badge with white text when no color set, got %+v", cc)
+	}
+
+	cc = buildClientConfig(&internal.Config{IsBYOC: true, BYOCName: "acme", BYOCColor: "nope"})
+	if cc.BYOCColor != "#662F9D" {
+		t.Errorf("expected purple badge for invalid color, got %+v", cc)
+	}
+
+	cc = buildClientConfig(&internal.Config{IsBYOC: true, BYOCColor: "#F5D90A"})
+	if cc.BYOCName != "" || cc.BYOCColor != "" || cc.BYOCTextColor != "" {
+		t.Errorf("expected no badge fields without a name, got %+v", cc)
+	}
+
+	cc = buildClientConfig(&internal.Config{BYOCName: "acme"})
+	if cc.BYOCName != "" {
+		t.Errorf("expected no badge fields when not BYOC, got %+v", cc)
+	}
+}
+
 func TestGenerateBYOCFavicon_ForegroundContrast(t *testing.T) {
 	svg := generate(t, internal.Config{IsBYOC: true, BYOCIconText: "Rt", BYOCColor: "#F5D90A"})
 	if !strings.Contains(svg, `fill="#000000"`) {

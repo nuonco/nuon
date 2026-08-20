@@ -3,6 +3,7 @@ import { useParams } from 'react-router'
 import { type TContextTooltipItem } from '@/components/common/ContextTooltip'
 import { Status } from '@/components/common/Status'
 import { useActiveWorkflows } from '@/hooks/use-active-workflows'
+import { useConfig } from '@/hooks/use-config'
 import { useOrg } from '@/hooks/use-org'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import {
@@ -17,6 +18,7 @@ import { OrgStatusBar } from './OrgStatusBar'
 
 export const OrgStatusBarContainer = () => {
   const { org } = useOrg()
+  const { byocName, byocColor, byocTextColor } = useConfig()
   const { approvals } = useWorkflowApprovals()
   const { activeWorkflows } = useActiveWorkflows()
   const { appId, branchId, installId } = useParams()
@@ -109,6 +111,9 @@ export const OrgStatusBarContainer = () => {
       activeWorkflows={activeWorkflows}
       approvalItems={approvalItems}
       workflowItems={workflowItems}
+      byocName={byocName}
+      byocColor={byocColor}
+      byocTextColor={byocTextColor}
     />
   )
 }
