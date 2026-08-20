@@ -536,8 +536,15 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 		if err != nil {
 			return false, "", err
 		}
+		// No beat in the lookback window means the runner is unhealthy, not that the
+		// read failed. Erroring surfaced an opaque SIGNAL_FAILED and burned the step's
+		// auto-retries without recording a reason.
 		if hb == nil {
-			return false, "", errors.New("no heart beats found")
+			l.Error("no heart beats found for runner during job")
+			s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "no runner heart beats found during job")
+			s.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusFailed)
+			tags["status"] = "runner_unhealthy"
+			return true, joberrors.LifecycleFailureReasonRunnerUnhealthy, nil
 		}
 
 		// if the runner is restarted, we want to add a buffer before canceling any jobs in flight

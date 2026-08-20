@@ -40,5 +40,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "09-install-component-resource-states-latest",
 			Fn:   m.Migration009InstallComponentResourceStatesLatest,
 		},
+		{
+			Name: "10-replicate-latest-runner-heart-beats",
+			Fn:   m.Migration010ReplicateLatestRunnerHeartBeats,
+		},
 	}
 }
