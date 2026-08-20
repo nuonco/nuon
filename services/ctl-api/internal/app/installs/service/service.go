@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workloadjwt"
 
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
@@ -69,6 +70,7 @@ type service struct {
 	flowsClient      *flowclient.Client
 	blobSvc          blobstore.Service
 	audit            *audit.Emitter
+	workloadJWT      *workloadjwt.Verifier
 }
 
 var _ api.Service = (*service)(nil)
@@ -403,6 +405,7 @@ func New(params Params) *service {
 		flowsClient:      params.FlowsClient,
 		blobSvc:          params.BlobService,
 		audit:            params.Audit,
+		workloadJWT:      workloadjwt.NewVerifier(),
 	}
 }
 

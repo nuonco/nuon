@@ -164,7 +164,7 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		}
 	}
 
-	// Phone home deployment script
+	// Phone home deployment script, and the identity it authenticates as
 	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResources(inp, customOutputs, vnetExtraOutputs, scope)...)
 
 	// Add standard outputs (VNet, subnets, key vault)
