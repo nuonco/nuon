@@ -544,6 +544,17 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 			s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "no runner heart beats found during job")
 			s.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusFailed)
 			tags["status"] = "runner_unhealthy"
+
+			maps.Copy(etags, tags)
+			s.mw.Event(ctx, &statsd.Event{
+				Title:          "No runner heart beats found during job",
+				Text:           "No runner heart beats were found within the lookback window during the job execution. The job will NOT be resumed if/when the runner recovers",
+				Tags:           metrics.ToTags(etags),
+				SourceTypeName: "nuon-jobsys",
+				Priority:       statsd.Normal,
+				AlertType:      statsd.Error,
+				AggregationKey: "runner-job-dropped",
+			})
 			return true, joberrors.LifecycleFailureReasonRunnerUnhealthy, nil
 		}
 
