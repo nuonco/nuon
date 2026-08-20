@@ -8,14 +8,14 @@ const branchNames = ['main', 'develop', 'staging', 'release']
 
 export const Default = () => (
   <InstallBranchFilter
-    queryKey={['install-branch-names', 'story']}
+    queryKey={['org-branch-names', 'story']}
     queryFn={() => Promise.resolve(branchNames)}
   />
 )
 
 export const NoBranches = () => (
   <InstallBranchFilter
-    queryKey={['install-branch-names', 'story-empty']}
+    queryKey={['org-branch-names', 'story-empty']}
     queryFn={() => Promise.resolve([])}
   />
 )

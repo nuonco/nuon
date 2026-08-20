@@ -1021,6 +1021,13 @@ export interface paths {
      */
     get: operations["ValidateToken"];
   };
+  "/v1/branches": {
+    /**
+     * get all app branches for an org
+     * @description Returns all app branches across every app in the current org.
+     */
+    get: operations["GetOrgBranches"];
+  };
   "/v1/builds": {
     /**
      * get builds for components
@@ -1327,13 +1334,6 @@ export interface paths {
      * @description Create a new install for an app.
      */
     post: operations["CreateInstallV2"];
-  };
-  "/v1/installs/branch-names": {
-    /**
-     * get distinct branch names across all installs for an org
-     * @description Returns all distinct app branch names assigned to installs in the current org.
-     */
-    get: operations["GetInstallBranchNames"];
   };
   "/v1/installs/health": {
     /**
@@ -17804,6 +17804,60 @@ export interface operations {
     };
   };
   /**
+   * get all app branches for an org
+   * @description Returns all app branches across every app in the current org.
+   */
+  GetOrgBranches: {
+    parameters: {
+      query?: {
+        /** @description offset of branches to return */
+        offset?: number;
+        /** @description limit of branches to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranch"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get builds for components
    * @deprecated
    * @description Returns all builds for the provided component.
@@ -19764,50 +19818,6 @@ export interface operations {
       };
       /** @description Conflict */
       409: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * get distinct branch names across all installs for an org
-   * @description Returns all distinct app branch names assigned to installs in the current org.
-   */
-  GetInstallBranchNames: {
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": string[];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

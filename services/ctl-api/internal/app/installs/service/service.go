@@ -79,7 +79,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// get all installs across orgs
 	ge.GET("/v1/installs", s.GetOrgInstalls)
 	ge.GET("/v1/installs/label-keys", s.GetInstallLabelKeys)
-	ge.GET("/v1/installs/branch-names", s.GetInstallBranchNames)
 	ge.GET("/v1/installs/health", s.GetInstallsHealth)
 	ge.POST("/v1/installs", s.CreateInstallV2)
 

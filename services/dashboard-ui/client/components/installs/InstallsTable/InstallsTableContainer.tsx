@@ -5,7 +5,7 @@ import { useOrg } from '@/hooks/use-org'
 import {
   getInstalls,
   getInstallLabelKeys,
-  getInstallBranchNames,
+  getBranches,
   getAppLabels,
   toLabelColorMap,
 } from '@/lib'
@@ -76,8 +76,11 @@ export const InstallsTableContainer = ({
             queryFn={() => getInstallLabelKeys({ orgId: org.id })}
           />
           <InstallBranchFilter
-            queryKey={['install-branch-names', org.id]}
-            queryFn={() => getInstallBranchNames({ orgId: org.id })}
+            queryKey={['org-branch-names', org.id]}
+            queryFn={async () => {
+              const { data } = await getBranches({ orgId: org.id, limit: 1000 })
+              return [...new Set(data.map((b) => b.name).filter(Boolean))].sort()
+            }}
           />
           <CreateInstallButton
             className="!w-full !flex !justify-center md:!w-fit"

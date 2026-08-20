@@ -59,6 +59,8 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
+	ge.GET("/v1/branches", s.GetOrgBranches)
+
 	// manage apps
 	apps := ge.Group("/v1/apps")
 	{

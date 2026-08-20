@@ -116,24 +116,6 @@ func (s *InstallsServiceTestSuite) TestGetOrgInstallsFiltersByBranchNames() {
 	assert.Len(s.T(), resp, 3)
 }
 
-func (s *InstallsServiceTestSuite) TestGetInstallBranchNames() {
-	onMain := s.createTestInstall()
-	s.createTestInstall()
-
-	main := &app.AppBranch{AppID: s.testApp.ID, OrgID: s.testOrg.ID, Name: "main"}
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(main).Error)
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
-		Model(&app.Install{}).Where(app.Install{ID: onMain.ID}).
-		Update("app_branch_id", main.ID).Error)
-
-	rr := s.makeRequest(http.MethodGet, "/v1/installs/branch-names", nil)
-	require.Equal(s.T(), http.StatusOK, rr.Code)
-
-	var names []string
-	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &names))
-	assert.Equal(s.T(), []string{"main"}, names)
-}
-
 func (s *InstallsServiceTestSuite) TestGetOrgInstallsResolvesCloudPlatform() {
 	for _, tc := range s.cloudPlatformResolutionTestCases() {
 		s.Run(tc.name, func() {
