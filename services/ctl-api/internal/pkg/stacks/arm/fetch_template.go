@@ -81,6 +81,7 @@ type armInlineTemplate struct {
 }
 
 type armTemplateShape struct {
+	Schema          string `json:"$schema"`
 	LanguageVersion string `json:"languageVersion,omitempty"`
 	Parameters      map[string]struct {
 		Type         string `json:"type"`

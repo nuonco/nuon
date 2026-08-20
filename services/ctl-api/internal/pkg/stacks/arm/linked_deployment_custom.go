@@ -26,6 +26,10 @@ func sanitizeDeploymentName(name string) string {
 // role assignment that the identity needs.
 type customDeploymentIdentity struct {
 	DeploymentName string
+	// SanitizedName is the stack's own name without the install namespace
+	// DeploymentName may carry. Role naming keys off this, so that it can be
+	// namespaced identically at both scopes — see getCustomDeploymentRoleAssignment.
+	SanitizedName string
 	// output holding the identity's principalId, resolved from the template
 	PrincipalIDOutput string
 }
@@ -87,21 +91,13 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 	allParamNames := map[string]string{}
 	prevDeploymentName := ""
 
+	scope := scopeFor(inp)
+	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
+
 	// param name -> producing deployment; seeded with vnet outputs so they win over custom ones
 	wiredOutputs := map[string]string{}
-	for _, name := range []string{
-		"vnetId", "vnetName",
-		"publicSubnet1Id", "publicSubnet1Name",
-		"publicSubnet2Id", "publicSubnet2Name",
-		"publicSubnet3Id", "publicSubnet3Name",
-		"privateSubnet1Id", "privateSubnet1Name",
-		"privateSubnet2Id", "privateSubnet2Name",
-		"privateSubnet3Id", "privateSubnet3Name",
-		"runnerSubnetId", "runnerSubnetName",
-		"publicSubnetIds", "publicSubnetNames",
-		"privateSubnetIds", "privateSubnetNames",
-	} {
-		wiredOutputs[name] = "vnetDeployment"
+	for _, name := range vnetContractOutputs {
+		wiredOutputs[name] = vnetDeployment
 	}
 
 	for i, stack := range sorted {
@@ -112,9 +108,18 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name)
 		}
 
-		deploymentName := sanitizeDeploymentName(stack.Name)
+		sanitizedName := sanitizeDeploymentName(stack.Name)
+		deploymentName := scope.customStackDeploymentName(inp.Install.ID, sanitizedName)
 		if deploymentName == "" {
 			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): name produces invalid deployment name", i, stack.Name)
+		}
+		// Caught here rather than at deploy time, where ARM reports an over-long
+		// name as a validation failure on a resource the customer never wrote.
+		if over := len(deploymentName) - maxARMDeploymentNameLen; over > 0 {
+			return nil, nil, nil, nil, fmt.Errorf(
+				"custom_nested_stacks[%d] (%s): deployment name %q is %d characters, %d over ARM's limit of %d; shorten the stack name by %d characters",
+				i, stack.Name, deploymentName, len(deploymentName), over, maxARMDeploymentNameLen, over,
+			)
 		}
 
 		// Resolve template URL (use uploaded S3 URL if contents were uploaded)
@@ -165,8 +170,20 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 				)
 			}
 
+			// The identity's role deployment carries a longer name than the stack's
+			// own, and is install-namespaced at both scopes, so it can exceed the
+			// limit even where deploymentName does not.
+			roleDeployment := customStackRoleDeploymentName(inp.Install.ID, sanitizedName)
+			if over := len(roleDeployment) - maxARMDeploymentNameLen; over > 0 {
+				return nil, nil, nil, nil, fmt.Errorf(
+					"custom_nested_stacks[%d] (%s): declares a managed identity, whose role deployment name %q is %d characters, %d over ARM's limit of %d; shorten the stack name by %d characters",
+					i, stack.Name, roleDeployment, len(roleDeployment), over, maxARMDeploymentNameLen, over,
+				)
+			}
+
 			identities = append(identities, customDeploymentIdentity{
 				DeploymentName:    deploymentName,
+				SanitizedName:     sanitizedName,
 				PrincipalIDOutput: principalIDOutput,
 			})
 		}
@@ -179,7 +196,10 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			"nuonInstallID": inp.Install.ID,
 			"nuonOrgID":     inp.Runner.OrgID,
 			"nuonAppID":     inp.Install.AppID,
-			"location":      "[parameters('location')]",
+			// Evaluated in the root, so it has to follow the root's declaration of the
+			// region — a parameter at resource-group scope, a variable at subscription
+			// scope where it is hidden from the portal's deployment form.
+			"location": scopeFor(inp).rootLocationRef(),
 		}
 		for paramName := range params {
 			if val, ok := nuonParams[paramName]; ok {
@@ -248,7 +268,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		if prevDeploymentName != "" {
 			dependsOn = append(dependsOn, prevDeploymentName)
 		} else {
-			dependsOn = append(dependsOn, "vnetDeployment")
+			dependsOn = append(dependsOn, vnetDeployment)
 			if !t.cfg.UseLocalRunners {
 				dependsOn = append(dependsOn, "runnerDeployment")
 			}

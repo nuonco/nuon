@@ -52,15 +52,24 @@ type InstallStackVersion struct {
 	// credential on its next run.
 	PhoneHomeTokenRevokedAt *time.Time `json:"-" temporaljson:"-"`
 
-	// Set means the template was rendered to authenticate, so an unauthenticated phone
-	// home is rejected rather than skipped. Empty versions predate enforcement on their
-	// cloud and are skipped, which is what lets this roll out per cloud.
-	PhoneHomeIdentityName string `json:"-" temporaljson:"-"`
-
 	// aws configuration parameters
 	AWSBucketName string `json:"aws_bucket_name,omitzero" temporaljson:"aws_bucket_name,omitzero,omitempty"`
 	AWSBucketKey  string `json:"aws_bucket_key,omitzero" temporaljson:"aws_bucket_key,omitzero,omitempty"`
-	QuickLinkURL  string `json:"quick_link_url,omitzero" temporaljson:"quick_link_url,omitzero,omitempty"`
+
+	// QuickLinkURL opens the cloud console pre-loaded with this version's stack:
+	// CloudFormation quick-create on AWS, Deploy to Azure on Azure. Empty on GCP,
+	// on any install whose template bucket is unconfigured, and on an Azure install
+	// at resource group scope — the portal cannot create the resource group the
+	// root template needs, so there is no link to offer.
+	QuickLinkURL string `json:"quick_link_url,omitzero" temporaljson:"quick_link_url,omitzero,omitempty"`
+
+	// QuickLinkBucketKey and QuickLinkUIDefBucketKey held the wrapper template and
+	// createUiDefinition that an earlier Azure quick link pointed at, so that the
+	// portal created a deployment stack rather than a plain deployment. Nothing
+	// writes them now: the quick link addresses the stack template directly on both
+	// platforms. Rows created while the wrapper shipped still carry their keys.
+	QuickLinkBucketKey      string `json:"quick_link_bucket_key,omitzero" temporaljson:"quick_link_bucket_key,omitzero,omitempty"`
+	QuickLinkUIDefBucketKey string `json:"quick_link_ui_def_bucket_key,omitzero" temporaljson:"quick_link_ui_def_bucket_key,omitzero,omitempty"`
 
 	// On AWS, the install workflow renders BOTH a CloudFormation template and
 	// a Terraform tfvars envelope. The CFN artifact lives in Contents/Checksum

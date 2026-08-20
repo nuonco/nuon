@@ -44,6 +44,14 @@ type TemplateInput struct {
 	VPCNestedStackTemplateURL    string
 	RunnerNestedStackTemplateURL string
 
+	// DeploymentScope is the ARM scope the Azure root template renders at, copied
+	// from the app's stack config by the caller so the renderer reads one struct.
+	// Empty means resource group, which is every install predating the field —
+	// compare against app.StackDeploymentScopeSubscription rather than testing for
+	// the resource-group value. Unvalidated because the AWS and GCP renderers share
+	// this struct and never set it.
+	DeploymentScope app.StackDeploymentScope
+
 	// Where the phone-home token map lives, for the Lambda to fetch at invocation
 	// time. Never the token itself: the rendered template is fetched
 	// unauthenticated from S3 via the quick-link, so it may only carry the secret's
@@ -52,12 +60,6 @@ type TemplateInput struct {
 	// them.
 	PhoneHomeSecretARN    string
 	PhoneHomeSecretRegion string
-
-	// Azure-only: the managed identity the phone-home script authenticates as. A name,
-	// not a credential, so unlike the fields above it is safe in a template anyone can
-	// fetch. Empty whenever Azure phone-home auth is not active for the install, which
-	// is what leaves the script unauthenticated for stacks that predate it.
-	PhoneHomeIdentityName string
 }
 
 // PhoneHomeRoleName is the deterministic IAM role name for an install's phone-home

@@ -165,13 +165,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		region = install.GCPAccount.Region
 	}
 	stackVersion, err := activities.AwaitCreateInstallStackVersion(ctx, &activities.CreateInstallStackVersionRequest{
-		InstallID:      install.ID,
-		InstallStackID: stack.ID,
-		AppConfigID:    cfg.ID,
-		StackName:      cfg.StackConfig.Name,
-		Region:         region,
-		Platform:       string(cfg.RunnerConfig.Type),
-		PublicAPIURL:   cfg.RunnerConfig.PublicAPIURL,
+		InstallID:       install.ID,
+		InstallStackID:  stack.ID,
+		AppConfigID:     cfg.ID,
+		StackName:       cfg.StackConfig.Name,
+		Region:          region,
+		Platform:        string(cfg.RunnerConfig.Type),
+		PublicAPIURL:    cfg.RunnerConfig.PublicAPIURL,
+		DeploymentScope: string(cfg.StackConfig.DeploymentScope),
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create cloudformation stack version")
@@ -255,6 +256,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Generate the stack template.
 	tmplByts := []byte{}
 	checksum := ""
+	quickLinkWrapperByts := []byte{}
+	quickLinkUIDefByts := []byte{}
 	inp := &stacks.TemplateInput{
 		Install:                      install,
 		CloudFormationStackVersion:   stackVersion,
@@ -267,7 +270,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		RunnerEnvVars:                stacks.FormatRunnerEnvVars(&cfg.RunnerConfig, s.cfg.RunnerContainerImageTag),
 		PhoneHomeSecretARN:           phoneHome.SecretARN,
 		PhoneHomeSecretRegion:        phoneHome.SecretRegion,
-		PhoneHomeIdentityName:        phoneHome.IdentityName,
 	}
 
 	switch cfg.RunnerConfig.Type {
@@ -337,6 +339,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 		inp.VPCNestedStackTemplateURL = cfg.StackConfig.VPCNestedTemplateURL
 		inp.RunnerNestedStackTemplateURL = cfg.StackConfig.RunnerNestedTemplateURL
+		inp.DeploymentScope = cfg.StackConfig.DeploymentScope
 
 		armResult, err := activities.AwaitRenderARMStackTemplate(ctx, &activities.RenderARMStackTemplateRequest{
 			Input: *inp,
@@ -346,6 +349,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 		tmplByts = armResult.RAWJson
 		checksum = armResult.Checksum
+		quickLinkWrapperByts = armResult.QuickLinkWrapperJSON
+		quickLinkUIDefByts = armResult.QuickLinkUIDefJSON
 	}
 
 	if s.cfg.AWSCloudFormationStackTemplateBucket == "" {
@@ -355,6 +360,27 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		Template:  tmplByts,
 	}); err != nil {
 		return errors.Wrap(err, "unable to upload cloudformation stack")
+	}
+
+	// Ordered after the stack template upload: the wrapper's templateLink points at
+	// it, so a customer who opens the quick link before the template lands would get
+	// a deployment stack that cannot resolve its own template.
+	if len(quickLinkWrapperByts) > 0 && stackVersion.QuickLinkBucketKey != "" {
+		if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
+			BucketKey: stackVersion.QuickLinkBucketKey,
+			Template:  quickLinkWrapperByts,
+		}); err != nil {
+			return errors.Wrap(err, "unable to upload quick link wrapper")
+		}
+	}
+
+	if len(quickLinkUIDefByts) > 0 && stackVersion.QuickLinkUIDefBucketKey != "" {
+		if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
+			BucketKey: stackVersion.QuickLinkUIDefBucketKey,
+			Template:  quickLinkUIDefByts,
+		}); err != nil {
+			return errors.Wrap(err, "unable to upload quick link UI definition")
+		}
 	}
 
 	if err := activities.AwaitSaveInstallStackVersionTemplate(ctx, &activities.SaveInstallStackVersionTemplateRequest{

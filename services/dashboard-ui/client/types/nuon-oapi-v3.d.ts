@@ -4041,6 +4041,7 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      deployment_scope?: components["schemas"]["app.StackDeploymentScope"];
       description?: string;
       id?: string;
       name?: string;
@@ -4081,6 +4082,20 @@ export interface components {
       custom_identity_client_ids?: {
         [key: string]: string;
       };
+      /**
+       * @description DeploymentLocation is where the subscription-scoped deployment record itself
+       * lives, which is not necessarily where the resources are: the portal prompts the
+       * customer for a Region, and a quick link cannot pre-set it.
+       *
+       * Worth recording because a subscription-scoped deployment record's location is
+       * immutable. Reusing the same stack name from a different region fails with
+       * InvalidDeploymentLocation, so a reprovision command has to offer the region the
+       * customer actually deployed to rather than the one Nuon assumed.
+       *
+       * Empty at resource-group scope, where the deployment record lives in the
+       * resource group and there is no such prompt.
+       */
+      deployment_location?: string;
       deprovision_identity_client_id?: string;
       install_inputs?: {
         [key: string]: string;
@@ -5195,6 +5210,28 @@ export interface components {
       org_id?: string;
       phone_home_id?: string;
       phone_home_url?: string;
+      /**
+       * @description QuickLinkBucketKey is the Azure-only second S3 object behind QuickLinkURL: a
+       * wrapper template whose sole resource is a deployment stack pointing at
+       * AWSBucketKey's template. The portal cannot create a deployment stack
+       * directly, and the template cannot be inlined into the wrapper — see
+       * arm.QuickLinkWrapper. Empty on AWS, where the quick link addresses the
+       * template itself.
+       */
+      quick_link_bucket_key?: string;
+      /**
+       * @description QuickLinkUIDefBucketKey is the Azure-only createUiDefinition accompanying the
+       * wrapper. It constrains the portal's Basics step to the install's resource
+       * group and location, so that a reprovision updates the install's stack instead
+       * of silently creating a second one alongside it.
+       */
+      quick_link_ui_def_bucket_key?: string;
+      /**
+       * @description QuickLinkURL opens the cloud console pre-loaded with this version's stack:
+       * CloudFormation quick-create on AWS, the portal's Custom Deployment blade on
+       * Azure. Empty on GCP, and on any install whose template bucket is
+       * unconfigured.
+       */
       quick_link_url?: string;
       runs?: components["schemas"]["app.InstallStackVersionRun"][];
       stack_name?: string;
@@ -6247,6 +6284,8 @@ export interface components {
     };
     /** @enum {string} */
     "app.SlackOrgLinkStatus": "verified" | "revoked";
+    /** @enum {string} */
+    "app.StackDeploymentScope": "resource_group" | "subscription";
     /** @enum {string} */
     "app.StackType": "aws-cloudformation" | "azure-bicep" | "gcp-terraform";
     "app.StackVersionRunInputDiff": {
@@ -7988,6 +8027,7 @@ export interface components {
     "service.CreateAppStackConfigRequest": {
       app_config_id: string;
       custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
+      deployment_scope?: string;
       description: string;
       name: string;
       runner_nested_template_url?: string;

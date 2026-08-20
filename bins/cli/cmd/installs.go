@@ -11,40 +11,38 @@ import (
 
 func (c *cli) installsCmd() *cobra.Command {
 	var (
-		id                  string
-		workflowID          string
-		actionWorkflowID    string
-		stepID              string
-		note                string
-		name                string
-		region              string
-		awsAccountID        string
-		azureSubscriptionID string
-		gcpProjectID        string
-		appID               string
-		deployID            string
-		runID               string
-		installCompID       string
-		componentID         string
-		roleName            string
-		inputs              []string
-		labelArgs           []string
-		noSelect            bool
-		deployDeps          bool
-		deployDependents    bool
-		deployDependencies  bool
-		stackOnly           bool
-		inputsOnly          bool
-		offset              int
-		limit               int
-		planOnly            bool
-		fileOrDir           string
-		confirm             bool
-		wait                bool
-		enable              bool
-		disable             bool
-		dryRun              bool
-		skipConfirm         bool
+		id                 string
+		workflowID         string
+		actionWorkflowID   string
+		stepID             string
+		note               string
+		name               string
+		region             string
+		awsAccountID       string
+		appID              string
+		deployID           string
+		runID              string
+		installCompID      string
+		componentID        string
+		roleName           string
+		inputs             []string
+		labelArgs          []string
+		noSelect           bool
+		deployDeps         bool
+		deployDependents   bool
+		deployDependencies bool
+		stackOnly          bool
+		inputsOnly         bool
+		offset             int
+		limit              int
+		planOnly           bool
+		fileOrDir          string
+		confirm            bool
+		wait               bool
+		enable             bool
+		disable            bool
+		dryRun             bool
+		skipConfirm        bool
 	)
 
 	installsCmds := &cobra.Command{
@@ -142,11 +140,7 @@ sandbox and components unprovisioned:
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
-			return svc.Create(cmd.Context(), appID, name, region, installs.TargetAccount{
-				AWSAccountID:        awsAccountID,
-				AzureSubscriptionID: azureSubscriptionID,
-				GCPProjectID:        gcpProjectID,
-			}, inputs, labelArgs, PrintJSON, noSelect, stackOnly)
+			return svc.Create(cmd.Context(), appID, name, region, awsAccountID, inputs, labelArgs, PrintJSON, noSelect, stackOnly)
 		}),
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
@@ -157,8 +151,6 @@ sandbox and components unprovisioned:
 	}
 	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in (required for AWS installs)")
 	createCmd.Flags().StringVar(&awsAccountID, "aws-account-id", "", "The AWS account ID this install targets (required when phone home authentication is enabled for your org; immutable after creation)")
-	createCmd.Flags().StringVar(&azureSubscriptionID, "azure-subscription-id", "", "The Azure subscription ID this install targets (required when phone home authentication is enabled for your org; immutable after creation)")
-	createCmd.Flags().StringVar(&gcpProjectID, "gcp-project-id", "", "The GCP project ID this install targets (required when phone home authentication is enabled for your org; immutable after creation)")
 	createCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
 	createCmd.Flags().StringSliceVar(&labelArgs, "label", []string{}, "Labels to set on the install (repeatable, format: key=value). Example: --label env=prod --label team=platform")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "Do not automatically set the created install as the current install")
@@ -958,17 +950,30 @@ reprovisioning the sandbox.`,
 	}
 	installsCmds.AddCommand(unsetCurrentInstallCmd)
 
+	var reprovisionStackOnly, reprovisionSkipComponents bool
 	reprovisionInstallCmd := &cobra.Command{
 		Use:   "reprovision",
 		Short: "Reprovision install",
-		Long:  "Reprovision an install sandbox",
+		Long: `Reprovision an install: the stack, then the sandbox, then all components.
+
+With --stack-only, only the stack is reprovisioned — the runner and its
+infrastructure are recreated and the sandbox is left alone. This is the same as
+` + "`nuon installs stacks reprovision`" + `.`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := c.installs
+			if reprovisionSkipComponents && !reprovisionStackOnly {
+				return ui.PrintError(&ui.CLIUserError{Msg: "--skip-components is only supported with --stack-only"})
+			}
+			if reprovisionStackOnly {
+				return svc.ReprovisionStack(cmd.Context(), id, reprovisionSkipComponents, PrintJSON)
+			}
 			return svc.Reprovision(cmd.Context(), id, PrintJSON)
 		}),
 	}
 	reprovisionInstallCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to use")
 	reprovisionInstallCmd.MarkFlagRequired("install-id")
+	reprovisionInstallCmd.Flags().BoolVar(&reprovisionStackOnly, "stack-only", false, "Only reprovision the install stack, leaving the sandbox untouched")
+	reprovisionInstallCmd.Flags().BoolVar(&reprovisionSkipComponents, "skip-components", false, "Skip deploying components after reprovisioning the stack (--stack-only only)")
 	installsCmds.AddCommand(reprovisionInstallCmd)
 
 	deprovisionInstallCmd := &cobra.Command{
