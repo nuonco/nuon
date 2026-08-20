@@ -24,6 +24,9 @@ interface IOrgStatusBar {
   activeWorkflows: TWorkflow[]
   approvalItems: TContextTooltipItem[]
   workflowItems: TContextTooltipItem[]
+  byocName?: string
+  byocColor?: string
+  byocTextColor?: string
 }
 
 export const OrgStatusBar = ({
@@ -37,6 +40,9 @@ export const OrgStatusBar = ({
   activeWorkflows,
   approvalItems,
   workflowItems,
+  byocName,
+  byocColor,
+  byocTextColor,
 }: IOrgStatusBar) => {
   return (
     <div className="hidden md:flex border-t w-full px-4 py-1.5 items-center flex-none bg-code z-[1] gap-3">
@@ -168,6 +174,15 @@ export const OrgStatusBar = ({
             tooltipPosition="top"
           />
         </>
+      )}
+
+      {byocName && (
+        <span
+          className="ml-auto max-w-56 truncate rounded px-2 py-px font-mono text-xs font-strong tracking-widest uppercase"
+          style={{ backgroundColor: byocColor, color: byocTextColor }}
+        >
+          {byocName}
+        </span>
       )}
     </div>
   )
