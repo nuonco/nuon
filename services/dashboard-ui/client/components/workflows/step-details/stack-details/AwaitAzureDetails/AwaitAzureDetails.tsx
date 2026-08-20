@@ -80,20 +80,38 @@ export const AwaitAzureDetails = ({
   // A resource-group-scoped root template cannot be deployed from the portal —
   // the customer has to create the resource group first — so the button is
   // shown for subscription scope only.
-  const quickLink =
-    deploymentScope === 'subscription'
-      ? stack?.versions?.at(0)?.quick_link_url
-      : undefined
+  // At subscription scope the root template declares the install resource group,
+  // the Key Vault and the customer's secrets itself — the secrets arrive as
+  // securestring parameters on the deployment form. Every prerequisite below
+  // therefore has no point at which the customer could carry it out: the group
+  // does not exist yet, so `az keyvault create` and `az keyvault secret set`
+  // would both fail.
+  const isSubscriptionScope = deploymentScope === 'subscription'
+
+  const quickLink = isSubscriptionScope
+    ? stack?.versions?.at(0)?.quick_link_url
+    : undefined
 
   const vaultName = installId.slice(0, 24)
   const customerSecrets = secrets?.filter((s) => !s.auto_generate)
-  const hasCustomerSecrets = (customerSecrets?.length ?? 0) > 0
+  const hasCustomerSecrets =
+    !isSubscriptionScope && (customerSecrets?.length ?? 0) > 0
   const requiredSecrets = customerSecrets?.filter(
     (s) => s.required || (!s.default && !s.required)
   )
   const overridableSecrets = customerSecrets?.filter(
     (s) => !s.required && !!s.default
   )
+  // A subscription-scoped root template cannot be deployed with the `group`
+  // commands: they target a resource group that the template itself declares.
+  const templateUrl = stack?.versions?.at(0)?.template_url
+  const whatIfCmd = isSubscriptionScope
+    ? `az deployment sub what-if --location ${azureLocation} --template-uri ${templateUrl}`
+    : `az deployment group what-if --resource-group ${installId}-rg --template-uri ${templateUrl}`
+  const deployCmd = isSubscriptionScope
+    ? `az stack sub create --name ${installId}-stack --location ${azureLocation} --template-uri ${templateUrl} --deny-settings-mode "denyDelete" --aou deleteAll`
+    : `az stack group create --name ${installId}-stack --resource-group ${installId}-rg --template-uri ${templateUrl} --deny-settings-mode "denyDelete" --aou deleteAll`
+
   const grantSecretsPermissionCmd = `az role assignment create --assignee "$(az ad signed-in-user show --query id -o tsv)" --role "Key Vault Secrets Officer" --scope "$(az keyvault show --name ${vaultName} --resource-group ${installId}-rg --query id -o tsv)"`
   const createTelemetryExportSecretCmd = `az keyvault secret set \\
   --vault-name "${vaultName}" \\
@@ -162,38 +180,42 @@ export const AwaitAzureDetails = ({
           <Code>az login</Code>
         </Card>
 
-        <Card>
-          <span className="flex justify-between items-center">
-            <Text>Create a resource group to deploy into</Text>
-            <ClickToCopyButton
-              className="w-fit self-end"
-              textToCopy={`az group create --name ${installId}-rg --location ${azureLocation}`}
-            />
-          </span>
-          <Code>{`
+        {!isSubscriptionScope && (
+          <Card>
+            <span className="flex justify-between items-center">
+              <Text>Create a resource group to deploy into</Text>
+              <ClickToCopyButton
+                className="w-fit self-end"
+                textToCopy={`az group create --name ${installId}-rg --location ${azureLocation}`}
+              />
+            </span>
+            <Code>{`
             az group create --name ${installId}-rg --location ${azureLocation}
           `}</Code>
-        </Card>
+          </Card>
+        )}
       </div>
 
-      <div className="flex flex-col gap-4">
-        <Text variant="base" weight="strong">
-          Create the Key Vault
-        </Text>
+      {!isSubscriptionScope && (
+        <div className="flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            Create the Key Vault
+          </Text>
 
-        <Card>
-          <span className="flex justify-between items-center">
-            <Text>Create a Key Vault in the resource group</Text>
-            <ClickToCopyButton
-              className="w-fit self-end"
-              textToCopy={`az keyvault create --name ${vaultName} --resource-group ${installId}-rg --location ${azureLocation} --enable-rbac-authorization`}
-            />
-          </span>
-          <Code>{`
+          <Card>
+            <span className="flex justify-between items-center">
+              <Text>Create a Key Vault in the resource group</Text>
+              <ClickToCopyButton
+                className="w-fit self-end"
+                textToCopy={`az keyvault create --name ${vaultName} --resource-group ${installId}-rg --location ${azureLocation} --enable-rbac-authorization`}
+              />
+            </span>
+            <Code>{`
             az keyvault create --name ${vaultName} --resource-group ${installId}-rg --location ${azureLocation} --enable-rbac-authorization
           `}</Code>
-        </Card>
-      </div>
+          </Card>
+        </div>
+      )}
 
       {hasCustomerSecrets && (
         <div className="flex flex-col gap-4">
@@ -248,25 +270,25 @@ export const AwaitAzureDetails = ({
             <Text>Preview changes (dry-run)</Text>
             <ClickToCopyButton
               className="w-fit self-end"
-              textToCopy={`az deployment group what-if --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url}`}
+              textToCopy={whatIfCmd}
             />
           </span>
-          <Code>{`
-            az deployment group what-if --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url}
-          `}</Code>
+          <Code>{whatIfCmd}</Code>
         </Card>
 
         <Card>
           <span className="flex justify-between items-center">
-            <Text>Deploy the stack to the resource group</Text>
+            <Text>
+              {isSubscriptionScope
+                ? 'Deploy the stack to the subscription'
+                : 'Deploy the stack to the resource group'}
+            </Text>
             <ClickToCopyButton
               className="w-fit self-end"
-              textToCopy={`az stack group create --name ${installId}-stack --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url} --deny-settings-mode "denyDelete" --aou deleteAll`}
+              textToCopy={deployCmd}
             />
           </span>
-          <Code>{`
-            az stack group create --name ${installId}-stack --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url} --deny-settings-mode "denyDelete" --aou deleteAll
-          `}</Code>
+          <Code>{deployCmd}</Code>
         </Card>
       </div>
 
