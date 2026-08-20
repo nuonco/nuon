@@ -78,7 +78,7 @@ export const InstallsTableContainer = ({
           <InstallBranchFilter
             queryKey={['org-branch-names', org.id]}
             queryFn={async () => {
-              const { data } = await getBranches({ orgId: org.id, limit: 1000 })
+              const { data } = await getBranches({ orgId: org.id, limit: 100 })
               return [...new Set(data.map((b) => b.name).filter(Boolean))].sort()
             }}
           />
