@@ -3583,6 +3583,12 @@ export interface components {
       workflows?: components["schemas"]["app.Workflow"][];
     };
     "app.AppBranchInstallGroup": {
+      /**
+       * @description AllInstalls claims every install on the app that no other branch owns.
+       * A nil LabelSelector already means "use InstallIDs", so there is no
+       * selector shape that expresses "everything" — hence the explicit flag.
+       */
+      all_installs?: boolean;
       app_branch_config_id?: string;
       created_at?: string;
       created_by_id?: string;
@@ -7665,6 +7671,7 @@ export interface components {
       required?: boolean;
     };
     "service.AuthMeIdentity": {
+      identity_provider_id?: string;
       name?: string;
       picture?: string;
       provider_type?: components["schemas"]["app.ProviderType"];
@@ -8590,6 +8597,11 @@ export interface components {
       uptime_percent?: number;
     };
     "service.InstallGroupRequest": {
+      /**
+       * @description AllInstalls targets every install on the app that no other branch owns.
+       * Mutually exclusive with InstallIDs and LabelSelector.
+       */
+      all_installs?: boolean;
       install_ids?: string[];
       /**
        * @description LabelSelector dynamically resolves installs at deploy time.
@@ -8906,6 +8918,11 @@ export interface components {
     "service.TriggerAppBranchRunRequest": {
       /** @description optional - use pre-existing app config (skips VCS fetch + config parse) */
       app_config_id?: string;
+      /**
+       * @description AutoApprove skips the approval gate on the plan steps. Without it the
+       * approval option is derived from the installs the branch targets.
+       */
+      auto_approve?: boolean;
       base_branch?: string;
       /** @description optional - use latest if not provided */
       config_id?: string;
@@ -8921,6 +8938,12 @@ export interface components {
       pr_number?: number;
       /** @description skip builds step (e.g. rollback to existing config with existing builds) */
       skip_builds?: boolean;
+      /**
+       * @description SyncAppConfig syncs AppConfigID inside the run rather than assuming it was
+       * already synced. Set by callers that compiled the config themselves, such
+       * as `nuon apps sync`.
+       */
+      sync_app_config?: boolean;
     };
     "service.TriggerInstallConfigSyncRequest": {
       install_name?: string;
@@ -26018,6 +26041,12 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

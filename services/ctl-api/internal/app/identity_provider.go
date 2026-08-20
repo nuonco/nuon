@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -22,19 +23,40 @@ const (
 	ProviderTypeGitHub ProviderType = "github"
 )
 
+// envIdentityProviderIDPrefix namespaces the synthetic ID of the provider configured through
+// environment variables, which has no identity_providers row. The type is part of the ID so that
+// identities created under a previous env provider stay distinguishable from the current one.
+const envIdentityProviderIDPrefix = "default-"
+
+// EnvIdentityProviderID is the identity_provider_id recorded against accounts that signed in
+// through the env-configured provider.
+func EnvIdentityProviderID(providerType ProviderType) string {
+	return envIdentityProviderIDPrefix + string(providerType)
+}
+
+// IsEnvIdentityProviderID reports whether an identity provider ID refers to the env-configured
+// provider rather than a database row.
+func IsEnvIdentityProviderID(id string) bool {
+	return strings.HasPrefix(id, envIdentityProviderIDPrefix)
+}
+
 type IdentityProvider struct {
 	ID        string                `gorm:"primarykey" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedAt time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt soft_delete.DeletedAt `json:"-" gorm:"index:idx_provider_type,unique" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	// OrgID can be nil for global providers available to all orgs in the deployment.
 	// If set, the provider is only available to users in that specific org.
-	OrgID *string `json:"org_id,omitempty" gorm:"index:idx_provider_type,unique" temporaljson:"org_id,omitzero,omitempty"`
+	OrgID *string `json:"org_id,omitempty" temporaljson:"org_id,omitzero,omitempty"`
 	Org   *Org    `faker:"-" json:"-" gorm:"constraint:OnDelete:SET NULL" temporaljson:"org,omitzero,omitempty"`
 
-	ProviderType ProviderType `json:"provider_type,omitzero" gorm:"not null,index:idx_provider_type,unique" temporaljson:"provider_type,omitzero,omitempty"`
+	ProviderType ProviderType `json:"provider_type,omitzero" gorm:"index" temporaljson:"provider_type,omitzero,omitempty"`
 	Enabled      bool         `json:"enabled" gorm:"default:false" temporaljson:"enabled,omitempty"`
+
+	// Name is an operator-supplied label shown on the sign-in page. Several providers can share
+	// a ProviderType, so this is what tells them apart to a human.
+	Name string `json:"name,omitempty" temporaljson:"name,omitzero,omitempty"`
 
 	// Config holds provider-specific configuration as JSON.
 	// The structure depends on ProviderType:

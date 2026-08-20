@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/auth/providers"
 )
 
@@ -24,22 +23,21 @@ func (s *service) Login(c *gin.Context) {
 	// Clear any existing auth cookie
 	s.clearCookie(c)
 
-	// Get the provider type from query params (required)
-	providerType := c.Query("provider")
-	if providerType == "" {
-		s.l.Warn("login attempt without provider type")
-		s.respondError(c, http.StatusBadRequest, fmt.Errorf("provider type is required"))
+	// Get the provider from query params (required)
+	providerRef := c.Query("provider")
+	if providerRef == "" {
+		s.l.Warn("login attempt without provider")
+		s.respondError(c, http.StatusBadRequest, fmt.Errorf("provider is required"))
 		return
 	}
 
-	// Look up the identity provider by type
-	identityProvider, err := s.getIdentityProviderByType(c.Request.Context(), app.ProviderType(providerType))
+	identityProvider, err := s.getIdentityProvider(c.Request.Context(), providerRef)
 	if err != nil {
 		s.l.Error("failed to get identity provider",
 			zap.String("service", "auth"),
-			zap.String("provider_type", providerType),
+			zap.String("provider", providerRef),
 			zap.Error(err))
-		s.respondError(c, http.StatusBadRequest, fmt.Errorf("invalid provider: %s", providerType))
+		s.respondError(c, http.StatusBadRequest, fmt.Errorf("invalid provider: %s", providerRef))
 		return
 	}
 
@@ -48,7 +46,7 @@ func (s *service) Login(c *gin.Context) {
 	if err != nil {
 		s.l.Error("failed to create provider",
 			zap.String("service", "auth"),
-			zap.String("provider_id", providerType),
+			zap.String("provider_id", identityProvider.ID),
 			zap.Error(err))
 		s.respondError(c, http.StatusInternalServerError, fmt.Errorf("failed to initialize provider"))
 		return
@@ -116,7 +114,7 @@ func (s *service) Login(c *gin.Context) {
 	// Create and save the session with provider ID
 	sessionData := &SessionData{
 		State:        state,
-		ProviderID:   providerType,
+		ProviderID:   identityProvider.ID,
 		RequestedURL: requestedURL,
 		FailCount:    failCount,
 	}
@@ -130,7 +128,7 @@ func (s *service) Login(c *gin.Context) {
 	s.l.Debug("login session state",
 		zap.String("service", "auth"),
 		zap.String("state", state),
-		zap.String("provider_id", providerType),
+		zap.String("provider_id", identityProvider.ID),
 		zap.String("requestedURL", requestedURL),
 		zap.Int("failCount", failCount))
 
@@ -139,7 +137,7 @@ func (s *service) Login(c *gin.Context) {
 	if err != nil {
 		s.l.Error("failed to build OAuth URL",
 			zap.String("service", "auth"),
-			zap.String("provider_id", providerType),
+			zap.String("provider_id", identityProvider.ID),
 			zap.Error(err))
 		s.respondError(c, http.StatusInternalServerError, fmt.Errorf("provider configuration error"))
 		return

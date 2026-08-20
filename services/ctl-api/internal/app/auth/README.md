@@ -48,13 +48,15 @@ There are two sources for configurations.
 
 #### Env Var Configs
 
-| Env var                 | Description                       |
-| ----------------------- | --------------------------------- |
-| nuon_auth_provider_type | one of 'oidc', 'google', 'github' |
-| nuon_auth_client_id     | Client ID                         |
-| nuon_auth_client_secret | Client Secret                     |
-| nuon_auth_issuer_url    | Issuer URL                        |
-| nuon_auth_redirect_url  | Redirect URL                      |
+| Env var                 | Description                                                          |
+| ----------------------- | -------------------------------------------------------------------- |
+| nuon_auth_provider_type | one of 'oidc', 'google', 'github'                                    |
+| nuon_auth_client_id     | Client ID                                                            |
+| nuon_auth_client_secret | Client Secret                                                        |
+| nuon_auth_issuer_url    | Issuer URL                                                           |
+| nuon_auth_redirect_url  | Redirect URL                                                         |
+| nuon_auth_provider_name | Optional label shown on the sign-in page. Defaults to a type-derived |
+|                         | name ('Single Sign-On', 'Google', 'GitHub').                         |
 
 #### Examples
 
@@ -95,6 +97,7 @@ may be added.
 ```json
 {
   "enabled": true,
+  "name": "Acme SSO",
   "provider_type": "oidc",
   "openid_config": {
     "client_id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
@@ -138,27 +141,36 @@ The default provider is required for startup. this default provider is composed 
 the env files.
 
 After startup, we load the rest of the providers with a helper called `getIdentityProviders`. This helper loads the
-default provider from the env and then loads any additional providers from the database. If a provider config is
-malformed, we omit it from the list and return only the valid providers. This should be avoided by validating provider
-configs otw in, though.
+default provider from the env and then loads any additional providers from the database, oldest first. That ordering is
+the sign-in page's button order, so the env provider is always the first button.
 
-Providers are identified by their ProviderType. This is used in the UI and in the urls to determine which provider to
-load and use.
+Providers are identified by their ID. The env provider has no database row, so it gets the synthetic ID
+`default-<provider_type>` (`app.EnvIdentityProviderID`); database providers use their row ID. `/login?provider=<id>`
+still accepts a bare provider type for links minted before providers became individually addressable, which resolves to
+the first enabled provider of that type.
 
 ### Provider Lookup
 
-| Function                                       | Purpose                                                         |
-| ---------------------------------------------- | --------------------------------------------------------------- |
-| `getProviderByType(ctx, app.ProviderType)`     | Main entry point - returns configured `Provider` by type enum   |
-| `getIdentityProviderByType(ctx, ProviderType)` | Looks up `IdentityProvider` by type (checks env first, then DB) |
-| `getDefaultIdentityProvider()`                 | Builds `IdentityProvider` from env vars only                    |
-| `createProviderFromIdentityProvider(ip)`       | Converts `IdentityProvider` model to `Provider` interface       |
+| Function                                       | Purpose                                                              |
+| ---------------------------------------------- | --------------------------------------------------------------------- |
+| `getIdentityProvider(ctx, ref)`                | Main entry point - resolves an ID, falling back to a bare type       |
+| `getIdentityProviderByType(ctx, ProviderType)` | Looks up the first `IdentityProvider` of a type (env first, then DB) |
+| `getDefaultIdentityProvider()`                 | Builds `IdentityProvider` from env vars only                         |
+| `createProviderFromIdentityProvider(ip)`       | Converts `IdentityProvider` model to `Provider` interface            |
 
 ### Uniqueness
 
-At the time of writing, only one of each type (google, github, oidc) provider can be provided. This limitation includes
-the provider configured via env vars. What this means is that if an oidc provider is configured for this service via env
-vars, only `google` or `github` oidc providers can be added via in-database configs.
+Any number of providers of a given type can be configured: one through env vars, the rest in the database. Two OIDC
+providers (say Auth0 for staff and Entra for contractors) is the case this exists for. Registering the same application
+twice - same type, client ID and, for OIDC, issuer - is rejected with a 409.
+
+Because several providers can share a type, `provider_type` no longer identifies a provider. `account_identities` is
+keyed on `(identity_provider_id, sub)` and `(account_id, identity_provider_id)` instead, and `identity_provider_id`
+carries the env sentinel for accounts that signed in through the env provider. It is deliberately not a foreign key:
+the env provider has no row, and `ON DELETE SET NULL` would collapse a deleted provider's identities onto each other.
+
+Give each provider a `name` when there is more than one. Without one, the sign-in page falls back to a type-derived
+label, and for OIDC it shows the issuer host underneath so two unnamed OIDC buttons are still distinguishable.
 
 ## Internals
 
@@ -218,7 +230,13 @@ future-looking feature leaving room for the concept of roles and org access.
 ### Changing a Provider of a Given Type
 
 Changing an env-var provider to a different provider of the same type is likely to cause issues. At this time, this is
-not explicitly supported. This applies to both, env-var based IdPs and in-database IdPs.
+not explicitly supported. This applies to both, env-var based IdPs and in-database IdPs. Adding a second provider
+instead of repointing the first one avoids this entirely.
+
+### Preflight
+
+`nctl` preflight validates the env-configured provider, including real OIDC discovery against the issuer. It cannot see
+database-configured providers at all.
 
 ## CLI Flow
 

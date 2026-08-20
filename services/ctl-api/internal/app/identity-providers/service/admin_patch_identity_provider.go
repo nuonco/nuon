@@ -16,7 +16,8 @@ import (
 
 // AdminPatchIdentityProviderRequest represents the request to update an identity provider.
 type AdminPatchIdentityProviderRequest struct {
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled *bool   `json:"enabled,omitempty"`
+	Name    *string `json:"name,omitempty"`
 
 	// Provider-specific config fields (only one should be set based on existing provider_type)
 	OpenIDConfig *providers.OpenIDConfig `json:"openid_config,omitempty"`
@@ -75,6 +76,10 @@ func (s *service) AdminPatchIdentityProvider(ctx *gin.Context) {
 	// Update enabled if provided
 	if req.Enabled != nil {
 		ip.Enabled = *req.Enabled
+	}
+
+	if req.Name != nil {
+		ip.Name = *req.Name
 	}
 
 	// Update config if provided (based on existing provider type)

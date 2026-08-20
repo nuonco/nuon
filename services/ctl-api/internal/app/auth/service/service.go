@@ -138,8 +138,8 @@ func New(params Params) (*service, error) {
 	// Load and validate the default identity provider from env vars at startup.
 	// This ensures the service won't start without valid provider configuration.
 	// The config is validated inside getDefaultIdentityProvider() via cfg.Validate().
-	// Providers are created dynamically at runtime via getProviderByType() or
-	// createProviderFromIdentityProvider() when handling requests.
+	// Providers are created dynamically at runtime via createProviderFromIdentityProvider()
+	// when handling requests.
 	defaultIP, err := s.getDefaultIdentityProvider()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load default identity provider: %w", err)

@@ -30,7 +30,7 @@
                     <div class="space-y-3">
                         {{ $redirectURL := .RedirectURL }}
                         {{ range .Providers }}
-                            <a href="/login?provider={{ .ProviderType }}{{ if $redirectURL }}&url={{ $redirectURL }}{{ end }}"
+                            <a href="/login?provider={{ .ID }}{{ if $redirectURL }}&url={{ $redirectURL }}{{ end }}"
                                class="flex items-center justify-center gap-3 w-full py-3 px-4 bg-white dark:bg-dark-grey-800 border border-cool-grey-300 dark:border-cool-grey-700 rounded-md hover:bg-cool-grey-50 dark:hover:bg-dark-grey-700 text-cool-grey-700 dark:text-cool-grey-50 font-semibold transition-colors">
                                 {{if eq .ProviderType "google"}}
                                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -43,8 +43,16 @@
                                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path fill-rule="evenodd" clip-rule="evenodd" d="M9 0C4.0275 0 0 4.13211 0 9.22838C0 13.3065 2.5785 16.7648 6.15375 17.9841C6.60375 18.0709 6.76875 17.7853 6.76875 17.5403C6.76875 17.3212 6.76125 16.7405 6.7575 15.9712C4.254 16.5277 3.726 14.7332 3.726 14.7332C3.3165 13.6681 2.72475 13.3832 2.72475 13.3832C1.9095 12.8111 2.78775 12.8229 2.78775 12.8229C3.6915 12.887 4.16625 13.7737 4.16625 13.7737C4.96875 15.1847 6.273 14.777 6.7875 14.5414C6.8685 13.9443 7.10025 13.5381 7.3575 13.3073C5.35875 13.0764 3.258 12.2829 3.258 8.74788C3.258 7.73938 3.60675 6.91612 4.18425 6.27152C4.083 6.03728 3.77925 5.0994 4.263 3.82846C4.263 3.82846 5.01675 3.58018 6.738 4.77462C7.458 4.56958 8.223 4.46794 8.988 4.46431C9.753 4.46794 10.518 4.56958 11.238 4.77462C12.948 3.58018 13.7017 3.82846 13.7017 3.82846C14.1855 5.0994 13.8818 6.03728 13.7917 6.27152C14.3655 6.91612 14.7142 7.73938 14.7142 8.74788C14.7142 12.2923 12.6105 13.0725 10.608 13.2995C10.923 13.5765 11.2155 14.1423 11.2155 15.0071C11.2155 16.242 11.205 17.2406 11.205 17.5403C11.205 17.7879 11.3625 18.0761 11.8207 17.9832C15.4162 16.7609 18 13.3049 18 9.22838C18 4.13211 13.9703 0 9 0Z" fill="#181717"/>
                                 </svg>
+                                {{else if eq .ProviderType "oidc"}}
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 0.75L2.25 3.75V8.25C2.25 12.4142 5.13 16.3084 9 17.25C12.87 16.3084 15.75 12.4142 15.75 8.25V3.75L9 0.75Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                                    <path d="M9 7.5C9.62132 7.5 10.125 8.00368 10.125 8.625C10.125 9.09 9.845 9.4875 9.4425 9.6585V11.25H8.5575V9.6585C8.155 9.4875 7.875 9.09 7.875 8.625C7.875 8.00368 8.37868 7.5 9 7.5Z" fill="currentColor"/>
+                                </svg>
                                 {{end}}
-                                Continue with {{ .Name }}
+                                <span class="flex flex-col items-center leading-tight">
+                                    <span>Continue with {{ .Name }}</span>
+                                    {{ if .Hint }}<span class="text-xs font-normal text-cool-grey-500 dark:text-cool-grey-400">{{ .Hint }}</span>{{ end }}
+                                </span>
                             </a>
                         {{ else }}
                             <p class="text-cool-grey-600 dark:text-cool-grey-400 text-center">No login providers configured.</p>

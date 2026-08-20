@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -18,6 +19,10 @@ import (
 type AdminCreateIdentityProviderRequest struct {
 	ProviderType string `json:"provider_type" validate:"required,oneof=oidc google github"`
 	Enabled      bool   `json:"enabled"`
+
+	// Name labels the provider on the sign-in page. Several providers can share a provider_type,
+	// so this is what tells them apart.
+	Name string `json:"name,omitempty"`
 
 	// Provider-specific config fields (only one should be set based on provider_type)
 	OpenIDConfig *providers.OpenIDConfig `json:"openid_config,omitempty"`
@@ -76,30 +81,10 @@ func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 
 	providerType := app.ProviderType(req.ProviderType)
 
-	// Check if this provider type conflicts with the default env var provider
-	if s.cfg.NuonAuthProviderType == req.ProviderType {
-		s.l.Warn("attempt to create provider with same type as default",
-			zap.String("provider_type", req.ProviderType))
-		ctx.Error(fmt.Errorf("provider type %s is already configured as the default provider via environment variables", req.ProviderType))
-		return
-	}
-
-	// Check if a provider of this type already exists in the database
-	var existing app.IdentityProvider
-	result := s.db.WithContext(ctx).
-		Where("provider_type = ? AND org_id IS NULL", providerType).
-		First(&existing)
-	if result.Error == nil {
-		s.l.Warn("provider type already exists",
-			zap.String("provider_type", req.ProviderType),
-			zap.String("existing_id", existing.ID))
-		ctx.Error(fmt.Errorf("a global identity provider of type %s already exists (id: %s)", req.ProviderType, existing.ID))
-		return
-	}
-
 	// Build the identity provider
 	ip := &app.IdentityProvider{
 		ProviderType: providerType,
+		Name:         req.Name,
 		Enabled:      req.Enabled,
 		// OrgID is intentionally left empty for global providers
 	}
@@ -125,6 +110,24 @@ func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 		return
 	}
 
+	// Several providers can now share a provider_type, so the only thing worth rejecting is the
+	// same application registered twice.
+	duplicate, err := s.findDuplicateProvider(ctx, ip)
+	if err != nil {
+		ctx.Error(fmt.Errorf("failed to check for duplicate identity provider: %w", err))
+		return
+	}
+	if duplicate != nil {
+		s.l.Warn("duplicate identity provider",
+			zap.String("provider_type", req.ProviderType),
+			zap.String("existing_id", duplicate.ID))
+		ctx.Error(stderr.ErrConflict{
+			Err:         fmt.Errorf("an identity provider with this client_id already exists (id: %s)", duplicate.ID),
+			Description: "identity provider already exists",
+		})
+		return
+	}
+
 	// Create the provider in the database
 	if err := s.db.WithContext(ctx).Create(ip).Error; err != nil {
 		s.l.Error("failed to create identity provider",
@@ -140,4 +143,57 @@ func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 		zap.Bool("enabled", ip.Enabled))
 
 	ctx.JSON(http.StatusCreated, ip)
+}
+
+// findDuplicateProvider reports an existing global provider registered against the same
+// application: same type, same client ID and, for OIDC, same issuer.
+func (s *service) findDuplicateProvider(ctx context.Context, ip *app.IdentityProvider) (*app.IdentityProvider, error) {
+	clientID, err := ip.GetClientID()
+	if err != nil {
+		return nil, err
+	}
+
+	var issuerURL string
+	if ip.ProviderType == app.ProviderTypeOIDC {
+		cfg, err := ip.GetOpenIDConfig()
+		if err != nil {
+			return nil, err
+		}
+		issuerURL = cfg.IssuerURL
+	}
+
+	if string(ip.ProviderType) == s.cfg.NuonAuthProviderType &&
+		clientID == s.cfg.NuonAuthClientID &&
+		(ip.ProviderType != app.ProviderTypeOIDC || issuerURL == s.cfg.NuonAuthIssuerURL) {
+		return &app.IdentityProvider{
+			ID:           app.EnvIdentityProviderID(ip.ProviderType),
+			ProviderType: ip.ProviderType,
+		}, nil
+	}
+
+	var existing []app.IdentityProvider
+	if err := s.db.WithContext(ctx).
+		Where(&app.IdentityProvider{ProviderType: ip.ProviderType}).
+		Where("org_id IS NULL").
+		Find(&existing).Error; err != nil {
+		return nil, err
+	}
+
+	for i := range existing {
+		existingClientID, err := existing[i].GetClientID()
+		if err != nil || existingClientID != clientID {
+			continue
+		}
+
+		if ip.ProviderType != app.ProviderTypeOIDC {
+			return &existing[i], nil
+		}
+
+		cfg, err := existing[i].GetOpenIDConfig()
+		if err == nil && cfg.IssuerURL == issuerURL {
+			return &existing[i], nil
+		}
+	}
+
+	return nil, nil
 }

@@ -55,19 +55,18 @@ func (s *service) AuthState(c *gin.Context) {
 		return
 	}
 
-	// Get the provider type from session
-	providerType := sessionData.ProviderID
-	if providerType == "" {
-		s.l.Error("no provider type in session")
-		s.respondError(c, http.StatusBadRequest, fmt.Errorf("no provider type in session"))
+	// Get the provider the flow was started with
+	providerID := sessionData.ProviderID
+	if providerID == "" {
+		s.l.Error("no provider in session")
+		s.respondError(c, http.StatusBadRequest, fmt.Errorf("no provider in session"))
 		return
 	}
 
-	// Look up and create the provider by type
-	identityProvider, err := s.getIdentityProviderByType(c.Request.Context(), app.ProviderType(providerType))
+	identityProvider, err := s.getIdentityProvider(c.Request.Context(), providerID)
 	if err != nil {
 		s.l.Error("failed to get identity provider",
-			zap.String("provider_type", providerType),
+			zap.String("provider_id", providerID),
 			zap.Error(err))
 		s.respondError(c, http.StatusBadRequest, fmt.Errorf("invalid provider"))
 		return
@@ -76,7 +75,7 @@ func (s *service) AuthState(c *gin.Context) {
 	provider, err := s.createProviderFromIdentityProvider(identityProvider)
 	if err != nil {
 		s.l.Error("failed to create provider",
-			zap.String("provider_type", providerType),
+			zap.String("provider_id", providerID),
 			zap.Error(err))
 		s.respondError(c, http.StatusInternalServerError, fmt.Errorf("failed to initialize provider"))
 		return
@@ -99,32 +98,22 @@ func (s *service) AuthState(c *gin.Context) {
 	if !s.isEmailDomainAllowed(userInfo.Email) {
 		s.l.Warn("authentication denied: email domain not allowed",
 			zap.String("email", userInfo.Email),
-			zap.String("provider_type", providerType))
+			zap.String("provider_id", providerID))
 		s.respondError(c, http.StatusForbidden, fmt.Errorf("access denied: your email domain is not authorized to use this service"))
 		return
 	}
 
-	// Look up or create account by (provider_type, sub)
+	// Look up or create account by (identity_provider_id, sub)
 	var account *app.Account
 	if s.cfg.NuonAuthAllowAllUsers {
-		account, err = s.getOrCreateAccountByIdentity(
-			c.Request.Context(),
-			identityProvider.ProviderType,
-			getIdentityProviderIDPtr(identityProvider),
-			userInfo,
-		)
+		account, err = s.getOrCreateAccountByIdentity(c.Request.Context(), identityProvider, userInfo)
 	} else {
-		account, err = s.getOrCreateAccountByIdentityStrict(
-			c.Request.Context(),
-			identityProvider.ProviderType,
-			getIdentityProviderIDPtr(identityProvider),
-			userInfo,
-		)
+		account, err = s.getOrCreateAccountByIdentityStrict(c.Request.Context(), identityProvider, userInfo)
 	}
 	if err != nil {
 		if err == ErrAccountNotAuthorized {
 			s.l.Warn("authentication denied: no account or pending invite",
-				zap.String("provider_type", providerType),
+				zap.String("provider_id", providerID),
 				zap.String("sub", userInfo.Subject),
 				zap.String("email", userInfo.Email))
 			s.respondError(c, http.StatusForbidden, fmt.Errorf("access denied: you must have an existing account or a pending invitation to sign in"))
@@ -132,14 +121,14 @@ func (s *service) AuthState(c *gin.Context) {
 		}
 		if err == ErrEmailDomainNotAllowed {
 			s.l.Warn("authentication denied: email domain not allowed",
-				zap.String("provider_type", providerType),
+				zap.String("provider_id", providerID),
 				zap.String("sub", userInfo.Subject),
 				zap.String("email", userInfo.Email))
 			s.respondError(c, http.StatusForbidden, fmt.Errorf("access denied: your email domain is not authorized to use this service"))
 			return
 		}
 		s.l.Error("failed to get or create account",
-			zap.String("provider_type", providerType),
+			zap.String("provider_id", providerID),
 			zap.String("sub", userInfo.Subject),
 			zap.Error(err))
 		s.respondError(c, http.StatusInternalServerError, fmt.Errorf("failed to process account: %w", err))
