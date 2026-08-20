@@ -83,6 +83,28 @@ spec: {}`)
 	}, second.Object)
 }
 
+func TestToPolicyAdmissionInputsPreservesDocumentSeparatorInBlockScalar(t *testing.T) {
+	ch := testChart(`apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+data:
+  config: |-
+    first
+    ---
+    second
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service`)
+
+	inputs, err := toPolicyAdmissionInputs(ch, nil)
+	require.NoError(t, err)
+	require.Len(t, inputs, 2)
+	require.Equal(t, "first\n---\nsecond", inputs[0].Review.Object["data"].(map[string]interface{})["config"])
+}
+
 func TestToPolicyAdmissionInputsSanitizesNuonValues(t *testing.T) {
 	ch := testChart(`apiVersion: v1
 kind: ConfigMap
