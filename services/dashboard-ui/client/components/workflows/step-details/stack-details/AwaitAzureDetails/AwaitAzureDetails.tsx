@@ -4,11 +4,13 @@ import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
 import { Expand } from '@/components/common/Expand'
+import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import type { TAppSecretConfig } from '@/types'
 import { createFileDownload } from '@/utils/file-download'
 import type { IStackDetails } from '../types'
+import { DeployToAzureBadge } from './DeployToAzureBadge'
 
 interface IAwaitAzureDetails extends IStackDetails {
   installId: string
@@ -69,6 +71,11 @@ export const AwaitAzureDetails = ({
     )
   }
 
+  // Not derived from template_url when absent: the quick link addresses a
+  // separate wrapper template, and stack versions generated before it existed
+  // have none to point at.
+  const quickLink = stack?.versions?.at(0)?.quick_link_url
+
   const vaultName = installId.slice(0, 24)
   const customerSecrets = secrets?.filter((s) => !s.auto_generate)
   const hasCustomerSecrets = (customerSecrets?.length ?? 0) > 0
@@ -107,6 +114,26 @@ export const AwaitAzureDetails = ({
 
   return (
     <>
+      {quickLink && (
+        <Card>
+          <span className="flex justify-between items-center gap-4">
+            <Text variant="base" weight="strong">
+              Deploy the install stack in the Azure portal
+            </Text>
+            <a
+              href={quickLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Deploy to Azure (opens the Azure portal in a new tab)"
+              className="flex items-center gap-2 rounded focus:outline-1 focus:outline-current"
+            >
+              <DeployToAzureBadge />
+              <Icon variant="ArrowSquareOutIcon" size="14" />
+            </a>
+          </span>
+        </Card>
+      )}
+
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
           Provision the install stack using the Azure CLI
@@ -204,7 +231,7 @@ export const AwaitAzureDetails = ({
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
-          Deploy the install stack
+          Deploy the install stack using the Azure CLI
         </Text>
 
         <Card>

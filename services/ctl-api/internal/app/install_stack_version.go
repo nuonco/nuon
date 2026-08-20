@@ -55,7 +55,26 @@ type InstallStackVersion struct {
 	// aws configuration parameters
 	AWSBucketName string `json:"aws_bucket_name,omitzero" temporaljson:"aws_bucket_name,omitzero,omitempty"`
 	AWSBucketKey  string `json:"aws_bucket_key,omitzero" temporaljson:"aws_bucket_key,omitzero,omitempty"`
-	QuickLinkURL  string `json:"quick_link_url,omitzero" temporaljson:"quick_link_url,omitzero,omitempty"`
+
+	// QuickLinkURL opens the cloud console pre-loaded with this version's stack:
+	// CloudFormation quick-create on AWS, the portal's Custom Deployment blade on
+	// Azure. Empty on GCP, and on any install whose template bucket is
+	// unconfigured.
+	QuickLinkURL string `json:"quick_link_url,omitzero" temporaljson:"quick_link_url,omitzero,omitempty"`
+
+	// QuickLinkBucketKey is the Azure-only second S3 object behind QuickLinkURL: a
+	// wrapper template whose sole resource is a deployment stack pointing at
+	// AWSBucketKey's template. The portal cannot create a deployment stack
+	// directly, and the template cannot be inlined into the wrapper — see
+	// arm.QuickLinkWrapper. Empty on AWS, where the quick link addresses the
+	// template itself.
+	QuickLinkBucketKey string `json:"quick_link_bucket_key,omitzero" temporaljson:"quick_link_bucket_key,omitzero,omitempty"`
+
+	// QuickLinkUIDefBucketKey is the Azure-only createUiDefinition accompanying the
+	// wrapper. It constrains the portal's Basics step to the install's resource
+	// group and location, so that a reprovision updates the install's stack instead
+	// of silently creating a second one alongside it.
+	QuickLinkUIDefBucketKey string `json:"quick_link_ui_def_bucket_key,omitzero" temporaljson:"quick_link_ui_def_bucket_key,omitzero,omitempty"`
 
 	// On AWS, the install workflow renders BOTH a CloudFormation template and
 	// a Terraform tfvars envelope. The CFN artifact lives in Contents/Checksum

@@ -23,6 +23,19 @@ type AppAzureStackOutputs struct {
 	// custom identity client ids
 	CustomIdentityClientIds map[string]string `json:"custom_identity_client_ids,omitempty"`
 
+	// DeploymentLocation is where the subscription-scoped deployment record itself
+	// lives, which is not necessarily where the resources are: the portal prompts the
+	// customer for a Region, and a quick link cannot pre-set it.
+	//
+	// Worth recording because a subscription-scoped deployment record's location is
+	// immutable. Reusing the same stack name from a different region fails with
+	// InvalidDeploymentLocation, so a reprovision command has to offer the region the
+	// customer actually deployed to rather than the one Nuon assumed.
+	//
+	// Empty at resource-group scope, where the deployment record lives in the
+	// resource group and there is no such prompt.
+	DeploymentLocation string `json:"deployment_location,omitempty"`
+
 	// deprovision identity client id
 	DeprovisionIdentityClientID string `json:"deprovision_identity_client_id,omitempty"`
 

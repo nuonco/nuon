@@ -13,6 +13,16 @@ const mockStack = {
   ],
 } as any
 
+const mockStackWithQuickLink = {
+  versions: [
+    {
+      template_url: 'https://storage.azure.com/template.json',
+      quick_link_url:
+        'https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/https%3A%2F%2Fstorage.azure.com%2Ftemplate-quicklink.json/createUIDefinitionUri/https%3A%2F%2Fstorage.azure.com%2Ftemplate-uidef.json',
+    },
+  ],
+} as any
+
 const mockStep = {
   id: 'step-1',
   status: { status: 'active' },
@@ -32,6 +42,17 @@ export const Default = () => (
   <div className="max-w-2xl p-4">
     <AwaitAzureDetails
       stack={mockStack}
+      step={mockStep}
+      installId="install-1"
+      azureLocation="eastus"
+    />
+  </div>
+)
+
+export const WithQuickLink = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitAzureDetails
+      stack={mockStackWithQuickLink}
       step={mockStep}
       installId="install-1"
       azureLocation="eastus"

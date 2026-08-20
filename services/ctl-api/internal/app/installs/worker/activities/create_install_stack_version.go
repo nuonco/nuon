@@ -3,6 +3,7 @@ package activities
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -21,6 +22,21 @@ type CreateInstallStackVersionRequest struct {
 	PublicAPIURL   string `json:"public_api_url"`
 }
 
+// azurePortalCustomDeployBaseURL is the portal's Custom Deployment blade, in the
+// form that takes a createUiDefinition alongside the template. The plain
+// `#create/Microsoft.Template/uri/<template>` form renders an uncontrolled
+// Basics step, where a customer picking a resource group other than
+// <install-id>-rg silently creates a second deployment stack rather than
+// updating the install's. The UI definition constrains that step.
+const azurePortalCustomDeployBaseURL = "https://portal.azure.com/#blade/Microsoft_Azure_CreateUIDef/CustomDeploymentBlade/uri/"
+
+// escapeDataString URL-encodes a value the way Azure documents for portal deep
+// links ([uri]::EscapeDataString). url.PathEscape leaves ':' unescaped and
+// url.QueryEscape renders ' ' as '+'; neither matches on its own.
+func escapeDataString(s string) string {
+	return strings.ReplaceAll(url.QueryEscape(s), "+", "%20")
+}
+
 func firstNonEmpty(vals ...string) string {
 	for _, v := range vals {
 		if v != "" {
@@ -28,6 +44,55 @@ func firstNonEmpty(vals ...string) string {
 		}
 	}
 	return ""
+}
+
+type templateLocations struct {
+	templateURL        string
+	quickLinkURL       string
+	quickLinkBucketKey string
+	quickLinkUIDefKey  string
+}
+
+// stackTemplateLocations derives the S3 URL of a stack version's template and the
+// console link that deploys it. The two platforms differ in what the link points
+// at: CloudFormation's quick-create takes the template itself, while the Azure
+// portal takes a wrapper template stored under its own key, so that the portal
+// creates a deployment stack rather than a bare deployment.
+func stackTemplateLocations(configuredBaseURL, bucketKey string, req *CreateInstallStackVersionRequest) templateLocations {
+	baseURL := strings.TrimSuffix(configuredBaseURL, "/")
+	loc := templateLocations{templateURL: fmt.Sprintf("%s/%s", baseURL, bucketKey)}
+
+	if req.Platform == string(app.AppRunnerTypeAzure) {
+		keyStem := strings.TrimSuffix(bucketKey, ".json")
+		loc.quickLinkBucketKey = keyStem + "-quicklink.json"
+		loc.quickLinkUIDefKey = keyStem + "-uidef.json"
+
+		wrapperURL := fmt.Sprintf("%s/%s", baseURL, loc.quickLinkBucketKey)
+		uiDefURL := fmt.Sprintf("%s/%s", baseURL, loc.quickLinkUIDefKey)
+		loc.quickLinkURL = fmt.Sprintf("%s%s/createUIDefinitionUri/%s",
+			azurePortalCustomDeployBaseURL,
+			escapeDataString(wrapperURL),
+			escapeDataString(uiDefURL),
+		)
+		return loc
+	}
+
+	// When the install pins a region we embed it in the quick-launch URL;
+	// otherwise emit a region-less variant that opens in whatever region the user
+	// currently has selected in the AWS console.
+	if req.Region != "" {
+		loc.quickLinkURL = fmt.Sprintf(
+			"https://%s.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/quickcreate?templateUrl=%s&stackName=%s",
+			req.Region, req.Region, loc.templateURL, req.StackName,
+		)
+		return loc
+	}
+
+	loc.quickLinkURL = fmt.Sprintf(
+		"https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?templateUrl=%s&stackName=%s",
+		loc.templateURL, req.StackName,
+	)
+	return loc
 }
 
 // @temporal-gen-v2 activity
@@ -56,30 +121,18 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 	// quick link) and — for AWS — a Terraform tfvars envelope stored on the
 	// row. The user picks one to apply during the await step.
 	if req.Platform != "gcp" {
-		bucketKey := fmt.Sprintf("templates/%s/%s.json", req.InstallID, id)
-		obj.AWSBucketKey = bucketKey
+		obj.AWSBucketKey = fmt.Sprintf("templates/%s/%s.json", req.InstallID, id)
 
-		// Only generate S3-based template URL and CloudFormation quick link when
-		// the template bucket is configured; otherwise the install is
-		// Terraform-only and no template is uploaded.
+		// Only generate S3-based template URL and quick link when the template
+		// bucket is configured; otherwise the install is Terraform-only and no
+		// template is uploaded.
 		if a.cfg.AWSCloudFormationStackTemplateBaseURL != "" && a.cfg.AWSCloudFormationStackTemplateBucket != "" {
-			templateURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(a.cfg.AWSCloudFormationStackTemplateBaseURL, "/"), bucketKey)
 			obj.AWSBucketName = a.cfg.AWSCloudFormationStackTemplateBucket
-			obj.TemplateURL = templateURL
-			// When the install pins a region we embed it in the quick-launch
-			// URL; otherwise emit a region-less variant that opens in whatever
-			// region the user currently has selected in the AWS console.
-			if req.Region != "" {
-				obj.QuickLinkURL = fmt.Sprintf(
-					"https://%s.console.aws.amazon.com/cloudformation/home?region=%s#/stacks/quickcreate?templateUrl=%s&stackName=%s",
-					req.Region, req.Region, templateURL, req.StackName,
-				)
-			} else {
-				obj.QuickLinkURL = fmt.Sprintf(
-					"https://console.aws.amazon.com/cloudformation/home#/stacks/quickcreate?templateUrl=%s&stackName=%s",
-					templateURL, req.StackName,
-				)
-			}
+			loc := stackTemplateLocations(a.cfg.AWSCloudFormationStackTemplateBaseURL, obj.AWSBucketKey, req)
+			obj.TemplateURL = loc.templateURL
+			obj.QuickLinkURL = loc.quickLinkURL
+			obj.QuickLinkBucketKey = loc.quickLinkBucketKey
+			obj.QuickLinkUIDefBucketKey = loc.quickLinkUIDefKey
 		}
 	}
 
