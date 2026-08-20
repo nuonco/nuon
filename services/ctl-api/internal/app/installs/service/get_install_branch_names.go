@@ -16,6 +16,11 @@ import (
 // @Produce				json
 // @Security				APIKey
 // @Security				OrgID
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}	string
 // @Router					/v1/installs/branch-names [GET]
 func (s *service) GetInstallBranchNames(ctx *gin.Context) {
