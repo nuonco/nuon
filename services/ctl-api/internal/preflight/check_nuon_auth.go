@@ -46,6 +46,7 @@ var nuonAuthCheck = Check{
 			{Name: "nuon_auth_client_id", Value: cfg.NuonAuthClientID, Required: true},
 			{Name: "nuon_auth_client_secret", Value: cfg.NuonAuthClientSecret, Required: true, Secret: true},
 			{Name: "nuon_auth_redirect_url", Value: cfg.NuonAuthRedirectURL, Required: true},
+			{Name: "nuon_auth_provider_name", Value: cfg.NuonAuthProviderName},
 			{Name: "nuon_auth_session_key", Value: cfg.NuonAuthSessionKey, Required: true, Secret: true},
 		}
 	},
