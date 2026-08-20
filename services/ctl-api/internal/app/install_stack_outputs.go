@@ -67,6 +67,10 @@ type AWSStackOutputs struct {
 	BreakGlassRoleARNs    map[string]string `json:"break_glass_role_arns,omitzero" mapstructure:"break_glass_role_arns" temporaljson:"break_glass_role_arns,omitzero,omitempty"`
 	CustomRoleARNs        map[string]string `json:"custom_role_arns,omitzero" mapstructure:"custom_role_arns" temporaljson:"custom_role_arns,omitzero,omitempty"`
 	InstallInputs         map[string]string `json:"install_inputs,omitzero" mapstructure:"install_inputs" temporaljson:"install_inputs,omitzero,omitempty"`
+
+	// Nil when the stack predates the runner_enabled variable, which must read
+	// as enabled rather than disabled.
+	RunnerEnabled *bool `json:"runner_enabled,omitempty" mapstructure:"runner_enabled" temporaljson:"runner_enabled,omitzero,omitempty"`
 }
 
 func (a *AWSStackOutputs) ProvisionRoleID() (string, error)   { return a.ProvisionIAMRoleARN, nil }
@@ -201,6 +205,10 @@ type GCPStackOutputs struct {
 	BreakGlassSAEmails        map[string]string `json:"break_glass_sa_emails,omitzero" mapstructure:"break_glass_sa_emails" temporaljson:"break_glass_sa_emails,omitzero,omitempty"`
 	CustomSAEmails            map[string]string `json:"custom_sa_emails,omitzero" mapstructure:"custom_sa_emails" temporaljson:"custom_sa_emails,omitzero,omitempty"`
 	InstallInputs             map[string]string `json:"install_inputs,omitzero" mapstructure:"install_inputs" temporaljson:"install_inputs,omitzero,omitempty"`
+
+	// Nil when the stack predates the runner_enabled variable, which must read
+	// as enabled rather than disabled.
+	RunnerEnabled *bool `json:"runner_enabled,omitempty" mapstructure:"runner_enabled" temporaljson:"runner_enabled,omitzero,omitempty"`
 }
 
 func (a *GCPStackOutputs) ProvisionRoleID() (string, error)   { return a.ProvisionSAEmail, nil }
@@ -233,6 +241,18 @@ func (a *GCPStackOutputs) BreakGlassRoles() (map[string]string, error) {
 
 func (a *GCPStackOutputs) InstallInputValues() (map[string]string, error) {
 	return a.InstallInputs, nil
+}
+
+// RunnerDisabled reports whether the stack was applied with runner_enabled =
+// false. Azure stacks have no such variable, so they are never disabled.
+func (a *InstallStackOutputs) RunnerDisabled() bool {
+	switch {
+	case a.AWSStackOutputs != nil && a.AWSStackOutputs.RunnerEnabled != nil:
+		return !*a.AWSStackOutputs.RunnerEnabled
+	case a.GCPStackOutputs != nil && a.GCPStackOutputs.RunnerEnabled != nil:
+		return !*a.GCPStackOutputs.RunnerEnabled
+	}
+	return false
 }
 
 func (a *InstallStackOutputs) Indexes(db *gorm.DB) []migrations.Index {
