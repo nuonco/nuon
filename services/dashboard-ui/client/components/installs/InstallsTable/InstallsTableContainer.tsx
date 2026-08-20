@@ -2,7 +2,13 @@ import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { useOrg } from '@/hooks/use-org'
-import { getInstalls, getInstallLabelKeys, getAppLabels, toLabelColorMap } from '@/lib'
+import {
+  getInstalls,
+  getInstallLabelKeys,
+  getInstallBranchNames,
+  getAppLabels,
+  toLabelColorMap,
+} from '@/lib'
 import { CreateInstallButton } from '../CreateInstall'
 import { InstallBranchFilter } from '../InstallBranchFilter'
 import { InstallsTable, parseInstallsToTableData } from './InstallsTable'
@@ -27,7 +33,7 @@ export const InstallsTableContainer = ({
       offset,
       searchParams.get('q'),
       searchParams.get('labels'),
-      searchParams.get('branch_status'),
+      searchParams.get('branches'),
     ],
     queryFn: () =>
       getInstalls({
@@ -36,7 +42,7 @@ export const InstallsTableContainer = ({
         limit: LIMIT,
         q: searchParams.get('q') || undefined,
         labels: searchParams.get('labels') || undefined,
-        branch_status: searchParams.get('branch_status') || undefined,
+        branches: searchParams.get('branches') || undefined,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -69,7 +75,10 @@ export const InstallsTableContainer = ({
             queryKey={['install-label-keys', org.id]}
             queryFn={() => getInstallLabelKeys({ orgId: org.id })}
           />
-          <InstallBranchFilter />
+          <InstallBranchFilter
+            queryKey={['install-branch-names', org.id]}
+            queryFn={() => getInstallBranchNames({ orgId: org.id })}
+          />
           <CreateInstallButton
             className="!w-full !flex !justify-center md:!w-fit"
             variant="primary"

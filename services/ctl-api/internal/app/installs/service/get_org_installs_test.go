@@ -70,39 +70,68 @@ func (s *InstallsServiceTestSuite) TestGetOrgInstallsSearchByBranchName() {
 	assert.Equal(s.T(), connected.ID, resp[0].ID)
 }
 
-func (s *InstallsServiceTestSuite) TestGetOrgInstallsFiltersByBranchStatus() {
-	connected := s.createTestInstall()
+func (s *InstallsServiceTestSuite) TestGetOrgInstallsFiltersByBranchNames() {
+	onMain := s.createTestInstall()
+	onRelease := s.createTestInstall()
 	unconnected := s.createTestInstall()
 
-	branch := &app.AppBranch{
-		AppID: s.testApp.ID,
-		OrgID: s.testOrg.ID,
-		Name:  "main",
-	}
-	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(branch).Error)
+	main := &app.AppBranch{AppID: s.testApp.ID, OrgID: s.testOrg.ID, Name: "main"}
+	release := &app.AppBranch{AppID: s.testApp.ID, OrgID: s.testOrg.ID, Name: "release"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(main).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(release).Error)
 	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
-		Model(&app.Install{}).
-		Where(app.Install{ID: connected.ID}).
-		Update("app_branch_id", branch.ID).Error)
+		Model(&app.Install{}).Where(app.Install{ID: onMain.ID}).
+		Update("app_branch_id", main.ID).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Model(&app.Install{}).Where(app.Install{ID: onRelease.ID}).
+		Update("app_branch_id", release.ID).Error)
 
 	var resp []app.Install
 
-	rr := s.makeRequest(http.MethodGet, "/v1/installs?branch_status=assigned", nil)
+	rr := s.makeRequest(http.MethodGet, "/v1/installs?branches=main", nil)
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	require.Len(s.T(), resp, 1)
-	assert.Equal(s.T(), connected.ID, resp[0].ID)
+	assert.Equal(s.T(), onMain.ID, resp[0].ID)
 
-	rr = s.makeRequest(http.MethodGet, "/v1/installs?branch_status=none", nil)
+	rr = s.makeRequest(http.MethodGet, "/v1/installs?branches=main,release", nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+	assert.Len(s.T(), resp, 2)
+
+	rr = s.makeRequest(http.MethodGet, "/v1/installs?branches=__none__", nil)
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	require.Len(s.T(), resp, 1)
 	assert.Equal(s.T(), unconnected.ID, resp[0].ID)
 
-	rr = s.makeRequest(http.MethodGet, "/v1/installs", nil)
+	rr = s.makeRequest(http.MethodGet, "/v1/installs?branches=main,__none__", nil)
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	assert.Len(s.T(), resp, 2)
+
+	rr = s.makeRequest(http.MethodGet, "/v1/installs", nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
+	assert.Len(s.T(), resp, 3)
+}
+
+func (s *InstallsServiceTestSuite) TestGetInstallBranchNames() {
+	onMain := s.createTestInstall()
+	s.createTestInstall()
+
+	main := &app.AppBranch{AppID: s.testApp.ID, OrgID: s.testOrg.ID, Name: "main"}
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).Create(main).Error)
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Model(&app.Install{}).Where(app.Install{ID: onMain.ID}).
+		Update("app_branch_id", main.ID).Error)
+
+	rr := s.makeRequest(http.MethodGet, "/v1/installs/branch-names", nil)
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+
+	var names []string
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &names))
+	assert.Equal(s.T(), []string{"main"}, names)
 }
 
 func (s *InstallsServiceTestSuite) TestGetOrgInstallsResolvesCloudPlatform() {

@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -22,7 +23,7 @@ import (
 // @Param         q								 query	string	false	"search query to filter installs by name, ID, or branch name"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					runner_id				query	string	false	"filter by runner ID"
-// @Param					branch_status			query	string	false	"filter by branch assignment (assigned,none)"
+// @Param					branches				query	string	false	"filter installs by branch name (comma-separated; use __none__ for installs with no branch)"
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Tags					installs
@@ -47,9 +48,9 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	q := ctx.Query("q")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	runnerID := ctx.Query("runner_id")
-	branchStatus := ctx.Query("branch_status")
+	branches := ctx.Query("branches")
 
-	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID, branchStatus)
+	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID, branches)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get installs for org %s: %w", org.ID, err))
 		return
@@ -58,7 +59,27 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, install)
 }
 
-func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID, branchStatus string) ([]app.Install, error) {
+const branchFilterNoneToken = "__none__"
+
+func parseBranchesFilter(raw string) (names []string, none bool) {
+	if raw == "" {
+		return nil, false
+	}
+	for _, part := range strings.Split(raw, ",") {
+		p := strings.TrimSpace(part)
+		switch {
+		case p == "":
+			continue
+		case p == branchFilterNoneToken:
+			none = true
+		default:
+			names = append(names, p)
+		}
+	}
+	return names, none
+}
+
+func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID, branches string) ([]app.Install, error) {
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -102,20 +123,25 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 	}
 
 	branchCol := views.TableOrViewName(s.db, &app.Install{}, ".app_branch_id")
+	branchNames, branchNone := parseBranchesFilter(branches)
+
+	if q != "" || len(branchNames) > 0 {
+		tx = tx.Joins("LEFT JOIN app_branches ON app_branches.id = " + branchCol + " AND app_branches.deleted_at = 0")
+	}
 
 	if q != "" {
 		nameCol := views.TableOrViewName(s.db, &app.Install{}, ".name")
 		idCol := views.TableOrViewName(s.db, &app.Install{}, ".id")
 		queryPattern := "%" + q + "%"
-		tx = tx.
-			Joins("LEFT JOIN app_branches ON app_branches.id = "+branchCol+" AND app_branches.deleted_at = 0").
-			Where(nameCol+" ILIKE ? OR "+idCol+" ILIKE ? OR app_branches.name ILIKE ?", queryPattern, queryPattern, queryPattern)
+		tx = tx.Where(nameCol+" ILIKE ? OR "+idCol+" ILIKE ? OR app_branches.name ILIKE ?", queryPattern, queryPattern, queryPattern)
 	}
 
-	switch branchStatus {
-	case "assigned":
-		tx = tx.Where("(" + branchCol + " IS NOT NULL AND " + branchCol + " != '')")
-	case "none":
+	switch {
+	case len(branchNames) > 0 && branchNone:
+		tx = tx.Where("(app_branches.name IN ? OR "+branchCol+" IS NULL OR "+branchCol+" = '')", branchNames)
+	case len(branchNames) > 0:
+		tx = tx.Where("app_branches.name IN ?", branchNames)
+	case branchNone:
 		tx = tx.Where("(" + branchCol + " IS NULL OR " + branchCol + " = '')")
 	}
 	res := tx.Find(&installs)

@@ -1328,6 +1328,13 @@ export interface paths {
      */
     post: operations["CreateInstallV2"];
   };
+  "/v1/installs/branch-names": {
+    /**
+     * get distinct branch names across all installs for an org
+     * @description Returns all distinct app branch names assigned to installs in the current org.
+     */
+    get: operations["GetInstallBranchNames"];
+  };
   "/v1/installs/health": {
     /**
      * fleet health summary
@@ -19666,8 +19673,8 @@ export interface operations {
         labels?: string;
         /** @description filter by runner ID */
         runner_id?: string;
-        /** @description filter by branch assignment (assigned,none) */
-        branch_status?: string;
+        /** @description filter installs by branch name (comma-separated; use __none__ for installs with no branch) */
+        branches?: string;
         /** @description limit of results to return */
         limit?: number;
         /** @description page number of results to return */
@@ -19765,6 +19772,20 @@ export interface operations {
       500: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get distinct branch names across all installs for an org
+   * @description Returns all distinct app branch names assigned to installs in the current org.
+   */
+  GetInstallBranchNames: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": string[];
         };
       };
     };

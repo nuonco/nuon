@@ -28,6 +28,7 @@ export * from './get-install-workflows'
 export * from './get-install-policy-reports'
 
 export * from './get-install-label-keys'
+export * from './get-install-branch-names'
 
 export * from './add-install-labels'
 export * from './remove-install-labels'

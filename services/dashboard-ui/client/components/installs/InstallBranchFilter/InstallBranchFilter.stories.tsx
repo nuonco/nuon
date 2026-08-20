@@ -4,4 +4,18 @@ export default {
 
 import { InstallBranchFilter } from './InstallBranchFilter'
 
-export const Default = () => <InstallBranchFilter />
+const branchNames = ['main', 'develop', 'staging', 'release']
+
+export const Default = () => (
+  <InstallBranchFilter
+    queryKey={['install-branch-names', 'story']}
+    queryFn={() => Promise.resolve(branchNames)}
+  />
+)
+
+export const NoBranches = () => (
+  <InstallBranchFilter
+    queryKey={['install-branch-names', 'story-empty']}
+    queryFn={() => Promise.resolve([])}
+  />
+)
