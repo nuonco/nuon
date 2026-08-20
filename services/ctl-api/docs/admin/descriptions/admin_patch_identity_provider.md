@@ -1,1 +1,1 @@
-Updates an existing identity provider. Can modify enabled status and provider-specific configuration.
+Updates an existing identity provider. Can modify the name, enabled status, and provider-specific configuration.

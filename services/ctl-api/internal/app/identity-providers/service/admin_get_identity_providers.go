@@ -10,13 +10,24 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
+const (
+	identityProviderSourceEnv      = "env"
+	identityProviderSourceDatabase = "database"
+)
+
 // AdminIdentityProviderSummary is a slim representation of an identity provider
 // exposing only the fields needed to determine whether a provider exists or is enabled.
 type AdminIdentityProviderSummary struct {
-	ID           string           `json:"id"`
-	ProviderType app.ProviderType `json:"provider_type"`
-	ClientID     string           `json:"client_id"`
-	Enabled      bool             `json:"enabled"`
+	ID            string           `json:"id"`
+	ProviderType  app.ProviderType `json:"provider_type"`
+	Name          string           `json:"name,omitempty"`
+	ClientID      string           `json:"client_id"`
+	Enabled       bool             `json:"enabled"`
+	AllowAllUsers *bool            `json:"allow_all_users,omitempty"`
+
+	// Source is "env" for the provider configured through environment variables, which has no
+	// row in identity_providers, and "database" for the rest.
+	Source string `json:"source"`
 }
 
 // @ID						AdminGetIdentityProviders
@@ -38,7 +49,11 @@ func (s *service) AdminGetIdentityProviders(ctx *gin.Context) {
 		return
 	}
 
-	summaries := make([]AdminIdentityProviderSummary, 0, len(ips))
+	summaries := make([]AdminIdentityProviderSummary, 0, len(ips)+1)
+	if envSummary := s.envIdentityProviderSummary(); envSummary != nil {
+		summaries = append(summaries, *envSummary)
+	}
+
 	for i := range ips {
 		clientID, err := ips[i].GetClientID()
 		if err != nil {
@@ -48,12 +63,34 @@ func (s *service) AdminGetIdentityProviders(ctx *gin.Context) {
 		}
 
 		summaries = append(summaries, AdminIdentityProviderSummary{
-			ID:           ips[i].ID,
-			ProviderType: ips[i].ProviderType,
-			ClientID:     clientID,
-			Enabled:      ips[i].Enabled,
+			ID:            ips[i].ID,
+			ProviderType:  ips[i].ProviderType,
+			Name:          ips[i].Name,
+			ClientID:      clientID,
+			Enabled:       ips[i].Enabled,
+			AllowAllUsers: ips[i].AllowAllUsers,
+			Source:        identityProviderSourceDatabase,
 		})
 	}
 
 	ctx.JSON(http.StatusOK, summaries)
+}
+
+// envIdentityProviderSummary reports the provider configured through environment variables. It has
+// no row in identity_providers, so without this the endpoint an operator uses to check what is
+// configured omits the provider that is always present.
+func (s *service) envIdentityProviderSummary() *AdminIdentityProviderSummary {
+	providerType := app.ProviderType(s.cfg.NuonAuthProviderType)
+	if providerType == "" {
+		return nil
+	}
+
+	return &AdminIdentityProviderSummary{
+		ID:           app.EnvIdentityProviderID(providerType),
+		ProviderType: providerType,
+		Name:         s.cfg.NuonAuthProviderName,
+		ClientID:     s.cfg.NuonAuthClientID,
+		Enabled:      true,
+		Source:       identityProviderSourceEnv,
+	}
 }

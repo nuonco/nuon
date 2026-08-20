@@ -7710,6 +7710,7 @@ export interface components {
       required?: boolean;
     };
     "service.AuthMeIdentity": {
+      identity_provider_id?: string;
       name?: string;
       picture?: string;
       provider_type?: components["schemas"]["app.ProviderType"];
