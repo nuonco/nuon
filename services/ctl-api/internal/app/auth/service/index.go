@@ -14,6 +14,7 @@ import (
 type ProviderOption struct {
 	ID           string
 	Name         string
+	Hint         string
 	ProviderType string
 }
 
@@ -54,6 +55,7 @@ func (s *service) Index(c *gin.Context) {
 		options = append(options, ProviderOption{
 			ID:           p.ID,
 			Name:         providerDisplayName(p),
+			Hint:         providerHint(p),
 			ProviderType: string(p.ProviderType),
 		})
 	}
@@ -69,6 +71,10 @@ func (s *service) Index(c *gin.Context) {
 
 // providerDisplayName returns a human-readable name for the provider.
 func providerDisplayName(p *app.IdentityProvider) string {
+	if p.Name != "" {
+		return p.Name
+	}
+
 	switch p.ProviderType {
 	case app.ProviderTypeGoogle:
 		return "Google"
@@ -79,4 +85,26 @@ func providerDisplayName(p *app.IdentityProvider) string {
 	default:
 		return string(p.ProviderType)
 	}
+}
+
+// providerHint returns the issuer host, so that two OIDC providers are distinguishable on the
+// sign-in page even when nobody has given them names. Google and GitHub are identified by their
+// brand icon instead. This runs unauthenticated, so a malformed issuer yields no hint rather than
+// an error.
+func providerHint(p *app.IdentityProvider) string {
+	if p.ProviderType != app.ProviderTypeOIDC {
+		return ""
+	}
+
+	cfg, err := p.GetOpenIDConfig()
+	if err != nil || cfg.IssuerURL == "" {
+		return ""
+	}
+
+	issuer, err := url.Parse(cfg.IssuerURL)
+	if err != nil {
+		return ""
+	}
+
+	return issuer.Host
 }

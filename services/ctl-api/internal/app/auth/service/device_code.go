@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -69,11 +70,7 @@ func (s *service) DeviceCodePage(c *gin.Context) {
 	if tokenValue == "" {
 		// User not logged in - redirect to login with return URL
 		// Must use full URL with protocol for proper redirect after authentication
-		returnURL := s.buildDeviceCodeURL(code)
-		loginURL := fmt.Sprintf("/login?provider=%s&url=%s",
-			s.cfg.NuonAuthProviderType,
-			url.QueryEscape(returnURL))
-		s.redirect302(c, loginURL)
+		s.redirect302(c, s.deviceCodeLoginURL(c.Request.Context(), code))
 		return
 	}
 
@@ -82,11 +79,7 @@ func (s *service) DeviceCodePage(c *gin.Context) {
 	if err != nil {
 		s.l.Warn("invalid token in device code flow", zap.Error(err))
 		s.clearCookie(c)
-		returnURL := s.buildDeviceCodeURL(code)
-		loginURL := fmt.Sprintf("/login?provider=%s&url=%s",
-			s.cfg.NuonAuthProviderType,
-			url.QueryEscape(returnURL))
-		s.redirect302(c, loginURL)
+		s.redirect302(c, s.deviceCodeLoginURL(c.Request.Context(), code))
 		return
 	}
 
@@ -284,4 +277,21 @@ func (s *service) DeviceCodeToken(c *gin.Context) {
 		"token_type":   "Bearer",
 		"email":        account.Email,
 	})
+}
+
+// deviceCodeLoginURL sends the user straight to the only provider when there is one, and to the
+// picker otherwise. Hardcoding the env provider here used to lock every CLI login onto it, leaving
+// users whose account lives on another provider unable to complete `nuon auth login`.
+func (s *service) deviceCodeLoginURL(ctx context.Context, code string) string {
+	returnURL := url.QueryEscape(s.buildDeviceCodeURL(code))
+
+	identityProviders, err := s.getIdentityProviders(ctx)
+	if err != nil || len(identityProviders) != 1 {
+		if err != nil {
+			s.l.Warn("failed to list identity providers for device code login", zap.Error(err))
+		}
+		return fmt.Sprintf("/?url=%s", returnURL)
+	}
+
+	return fmt.Sprintf("/login?provider=%s&url=%s", identityProviders[0].ID, returnURL)
 }
