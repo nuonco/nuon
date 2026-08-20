@@ -6,11 +6,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
-func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity) (map[string]any, map[string]ARMParameter, error) {
+func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity, scope armScope) (map[string]any, map[string]ARMParameter, error) {
 	templateURL := inp.RunnerNestedStackTemplateURL
 	if templateURL == "" {
-		return t.getDefaultRunnerDeployment(inp, operationIDs), nil, nil
+		return t.getDefaultRunnerDeployment(inp, operationIDs, scope), nil, nil
 	}
+
+	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
 
 	// Custom runner template — fetch and inspect declared parameters.
 	// Unlike the generic custom-nested-stack path we do NOT hoist arbitrary
@@ -28,7 +30,9 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 	// attachment map. Without it the identities would exist but never reach the
 	// instance, and the runner would fail with an opaque IMDS "Identity not
 	// found" at deploy time — so we reject that combination up front.
-	userAssigned, uamiDependsOn := operationIdentityAttachment(operationIDs)
+	// Read from the root: the map is a parameter value the outer scope evaluates
+	// before handing it to the custom template.
+	userAssigned, uamiDependsOn := operationIdentityAttachment(operationIDs, scope)
 	if len(userAssigned) > 0 {
 		if _, ok := armTmpl.Parameters["userAssignedIdentities"]; !ok {
 			return nil, nil, fmt.Errorf(
@@ -44,11 +48,11 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		"nuonInstallID":       inp.Install.ID,
 		"nuonOrgID":           inp.Runner.OrgID,
 		"nuonAppID":           inp.Install.AppID,
-		"location":            "[parameters('location')]",
+		"location":            scope.rootLocationRef(),
 		"runnerId":            inp.Runner.ID,
 		"runnerApiUrl":        t.runnerAPIURL(inp),
 		"runnerInitScriptUrl": inp.RunnerInitScriptURL,
-		"runnerSubnetId":      "[reference('vnetDeployment').outputs.runnerSubnetId.value]",
+		"runnerSubnetId":      fmt.Sprintf("[reference('%s').outputs.runnerSubnetId.value]", vnetDeployment),
 		"customData":          t.buildRunnerCustomData(inp),
 		"commonTags":          "[variables('commonTags')]",
 	}
@@ -67,7 +71,7 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		// know about, ARM will surface a clear deployment error.
 	}
 
-	dependsOn := append([]string{"vnetDeployment"}, uamiDependsOn...)
+	dependsOn := append([]string{vnetDeployment}, uamiDependsOn...)
 
 	deployment := map[string]any{
 		"type":       "Microsoft.Resources/deployments",
@@ -83,16 +87,24 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		},
 	}
 
+	// A custom runner template only ever creates a VMSS, so it stays RG-targeted
+	// even at subscription scope. That keeps the runnerSubnetId wiring and the
+	// userAssignedIdentities contract above untouched. A subscription-scoped runner
+	// template would be a separate opt-in.
+	scope.targetInstallRG(deployment)
+
 	// Nothing hoisted — runner params are never customer-facing.
 	return deployment, nil, nil
 }
 
-func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity) map[string]any {
+func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operationIDs []azureOperationIdentity, scope armScope) map[string]any {
 	customData := t.buildRunnerCustomData(inp)
 
+	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
+
 	// VMSS references the operation identities, so they must exist first.
-	dependsOn := []string{"vnetDeployment"}
-	if _, uamiDependsOn := operationIdentityAttachment(operationIDs); len(uamiDependsOn) > 0 {
+	dependsOn := []string{vnetDeployment}
+	if _, uamiDependsOn := operationIdentityAttachment(operationIDs, scope); len(uamiDependsOn) > 0 {
 		dependsOn = append(dependsOn, uamiDependsOn...)
 	}
 
@@ -107,9 +119,9 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 				"scope": "inner",
 			},
 			"parameters": map[string]any{
-				"nuonInstallID":  map[string]any{"value": "[parameters('nuonInstallID')]"},
-				"location":       map[string]any{"value": "[parameters('location')]"},
-				"runnerSubnetId": map[string]any{"value": "[reference('vnetDeployment').outputs.runnerSubnetId.value]"},
+				"nuonInstallID":  map[string]any{"value": scope.nuonIDRef("nuonInstallID")},
+				"location":       map[string]any{"value": scope.rootLocationRef()},
+				"runnerSubnetId": map[string]any{"value": fmt.Sprintf("[reference('%s').outputs.runnerSubnetId.value]", vnetDeployment)},
 				"customData":     map[string]any{"value": customData},
 				"commonTags":     map[string]any{"value": "[variables('commonTags')]"},
 			},
@@ -117,12 +129,16 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 		},
 	}
 
+	scope.targetInstallRG(deployment)
+
 	return deployment
 }
 
 func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdentity) map[string]any {
 	identity := map[string]any{"type": "SystemAssigned"}
-	if userAssigned, _ := operationIdentityAttachment(operationIDs); len(userAssigned) > 0 {
+	// The runner deployment is RG-targeted, so its inline template reads the
+	// identities at resource-group scope alongside them.
+	if userAssigned, _ := operationIdentityAttachment(operationIDs, armScope{}); len(userAssigned) > 0 {
 		identity = map[string]any{
 			"type":                   "SystemAssigned, UserAssigned",
 			"userAssignedIdentities": userAssigned,

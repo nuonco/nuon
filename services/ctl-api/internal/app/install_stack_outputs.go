@@ -109,6 +109,19 @@ type AzureStackOutputs struct {
 	SubscriptionID       string `cty:"subscription_id" json:"subscription_id" hcl:"subscription_id" temporaljson:"subscription_id,omitzero,omitempty" mapstructure:"subscription_id"`
 	SubscriptionTenantID string `cty:"subscription_tenant_id" json:"subscription_tenant_id" hcl:"subscription_tenant_id" temporaljson:"subscription_tenant_id,omitzero,omitempty" mapstructure:"subscription_tenant_id"`
 
+	// DeploymentLocation is where the subscription-scoped deployment record itself
+	// lives, which is not necessarily where the resources are: the portal prompts the
+	// customer for a Region, and a quick link cannot pre-set it.
+	//
+	// Worth recording because a subscription-scoped deployment record's location is
+	// immutable. Reusing the same stack name from a different region fails with
+	// InvalidDeploymentLocation, so a reprovision command has to offer the region the
+	// customer actually deployed to rather than the one Nuon assumed.
+	//
+	// Empty at resource-group scope, where the deployment record lives in the
+	// resource group and there is no such prompt.
+	DeploymentLocation string `json:"deployment_location,omitzero" mapstructure:"deployment_location" temporaljson:"deployment_location,omitzero,omitempty"`
+
 	NetworkID   string `json:"network_id,omitzero" mapstructure:"network_id" temporaljson:"network_id,omitzero,omitempty"`
 	NetworkName string `json:"network_name,omitzero" mapstructure:"network_name" temporaljson:"network_name,omitzero,omitempty"`
 

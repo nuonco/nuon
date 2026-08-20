@@ -16,5 +16,6 @@ title: 'Stack'
 | **`vpc_nested_template_url`**<br/>string | VPC nested template URL URL to the CloudFormation nested template for VPC resources | **✅ Required** | `"https://s3.amazonaws.com/bucket/vpc-template.yaml"` |
 | **`runner_nested_template_url`**<br/>string | runner nested template URL URL to the CloudFormation nested template for the Nuon runner infrastructure | **✅ Required** | `"https://s3.amazonaws.com/bucket/runner-template.yaml"` |
 | **`type`**<br/>string | stack type Type of infrastructure stack. Supported values: 'aws-cloudformation', 'azure-bicep' (Azure), 'gcp-terraform' (Google Cloud). | **Optional** | `"aws-cloudformation"`, `"azure-bicep"`, `"gcp-terraform"` |
+| **`deployment_scope`**<br/>string | deployment scope Scope the generated install stack root template deploys at. Only supported for 'azure-bicep'. Supported values: 'resource_group' (the default) confines every resource to the instal... | **Optional** | `"subscription"` |
 | **`custom_nested_stacks`**<br/>object | custom nested stacks Custom CloudFormation nested stack templates to include. Each entry has a name, template_url, index, and optional parameters. The index field determines execution order (ascend... | **Optional** | - |
 
