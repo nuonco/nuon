@@ -16,6 +16,9 @@ export type TRuntimeConfig = {
   version?: string
   gitRef?: string
   isByoc: boolean
+  byocName?: string
+  byocColor?: string
+  byocTextColor?: string
   onboardingV2?: boolean
   adminDashboardUrl?: string
   isDev?: boolean
