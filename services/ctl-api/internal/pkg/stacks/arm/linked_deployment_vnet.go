@@ -2,6 +2,9 @@ package arm
 
 import (
 	"fmt"
+	"slices"
+	"sort"
+	"strings"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
@@ -22,30 +25,83 @@ const defaultAzureVNetTemplateURL = "https://raw.githubusercontent.com/nuonco/sa
 // See https://techcommunity.microsoft.com/blog/azurenetworkingblog/azure-virtual-network-now-supports-updates-without-subnet-property/4067952
 const azureVNetAPIVersion = "2023-11-01"
 
-// vnetHoistAllowlist lists VNet template parameters that are intentionally
-// customer-configurable. Only these are surfaced in the parent template.
-var vnetHoistAllowlist = map[string]bool{
-	"vnetCIDR":           true,
-	"publicSubnet1CIDR":  true,
-	"publicSubnet2CIDR":  true,
-	"publicSubnet3CIDR":  true,
-	"runnerSubnetCIDR":   true,
-	"privateSubnet1CIDR": true,
-	"privateSubnet2CIDR": true,
-	"privateSubnet3CIDR": true,
+// vnetReservedParamNames are the parameter names Nuon supplies values for on a
+// custom VNet template. Everything else the template declares belongs to the
+// customer and is hoisted into the root — a VNet template is itself nested, so it
+// never gets a parameter file of its own and an un-hoisted parameter can only ever
+// take its declared default.
+var vnetReservedParamNames = append(slices.Clone(ReservedParamNames), "commonTags")
+
+// hoistableDefault reports whether a nested template's default value can be lifted
+// into the root as-is.
+//
+// An ARM expression default is the template author computing a value from its own
+// parameter scope — resourceGroupName defaulting to a uniqueString of
+// parameters('nuonInstallID'), say. Lifting that into the root silently re-binds
+// those references to whatever the root happens to declare, which at subscription
+// scope is nothing: nuonInstallID is a variable there, so the hoisted default fails
+// with "The template parameter 'nuonInstallID' is not found". Such a parameter is
+// left alone, taking the default the template computes for itself.
+func hoistableDefault(def any) bool {
+	s, ok := def.(string)
+	if !ok {
+		return true
+	}
+	return !strings.HasPrefix(s, "[")
 }
 
-func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput) (map[string]any, map[string]ARMParameter, error) {
+// vnetContractOutputs are the output names the root template and the phone-home
+// read off vnetDeployment. A custom VNet template has to emit every one of them;
+// see vnetPassthroughOutputs for what happens to the rest.
+var vnetContractOutputs = []string{
+	"vnetId", "vnetName",
+	"runnerSubnetId", "runnerSubnetName",
+	"publicSubnet1Id", "publicSubnet1Name",
+	"publicSubnet2Id", "publicSubnet2Name",
+	"publicSubnet3Id", "publicSubnet3Name",
+	"privateSubnet1Id", "privateSubnet1Name",
+	"privateSubnet2Id", "privateSubnet2Name",
+	"privateSubnet3Id", "privateSubnet3Name",
+	"publicSubnetIds", "publicSubnetNames",
+	"privateSubnetIds", "privateSubnetNames",
+}
+
+// vnetPassthroughOutputs returns the outputs a custom VNet template declares
+// beyond the fixed contract, sorted for a deterministic render.
+//
+// The contract's fixed slots cannot describe a network richer than one runner
+// subnet plus three public and three private subnets, and a VNet stack that
+// creates its own resource group has no other way to tell the sandbox which
+// group that is. Rather than discard those outputs, each is surfaced to the
+// sandbox as install_stack.outputs.vnet_<snake_case name>.
+func vnetPassthroughOutputs(declared map[string]struct{}) []string {
+	contract := make(map[string]bool, len(vnetContractOutputs))
+	for _, name := range vnetContractOutputs {
+		contract[name] = true
+	}
+
+	var extra []string
+	for name := range declared {
+		if !contract[name] {
+			extra = append(extra, name)
+		}
+	}
+	sort.Strings(extra)
+
+	return extra
+}
+
+func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope armScope) (map[string]any, map[string]ARMParameter, []string, error) {
 	templateURL := inp.VPCNestedStackTemplateURL
 	if templateURL == "" {
 		// No custom VNet template - build inline default VNet resources
-		return t.getDefaultVNetDeployment(inp), nil, nil
+		return t.getDefaultVNetDeployment(inp, scope), nil, nil, nil
 	}
 
 	// Custom VNet template — fetch and inspect declared parameters.
 	armTmpl, err := fetchARMTemplate(templateURL)
 	if err != nil {
-		return nil, nil, fmt.Errorf("VNet linked deployment: %w", err)
+		return nil, nil, nil, fmt.Errorf("VNet linked deployment: %w", err)
 	}
 
 	// Nuon-managed parameters: always baked, never customer-facing.
@@ -53,38 +109,32 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput) (map[stri
 		"nuonInstallID": inp.Install.ID,
 		"nuonOrgID":     inp.Runner.OrgID,
 		"nuonAppID":     inp.Install.AppID,
-		"location":      "[parameters('location')]",
+		"location":      scope.rootLocationRef(),
 		"commonTags":    "[variables('commonTags')]",
 	}
 
-	deploymentParams := map[string]any{}
-	hoistedParams := map[string]ARMParameter{}
+	declared, hoistedParams := extractARMParameters(armTmpl, vnetReservedParamNames)
 
-	for paramName, param := range armTmpl.Parameters {
-		if val, ok := managedParams[paramName]; ok {
+	deploymentParams := map[string]any{}
+	for paramName, val := range managedParams {
+		if declared[paramName] {
 			// Nuon-managed — bake the value directly.
 			deploymentParams[paramName] = map[string]any{"value": val}
-		} else if vnetHoistAllowlist[paramName] {
-			// Customer-configurable — hoist to parent template and reference.
-			deploymentParams[paramName] = map[string]any{"value": fmt.Sprintf("[parameters('%s')]", paramName)}
-			hp := ARMParameter{
-				Type:         param.Type,
-				DefaultValue: param.DefaultValue,
-			}
-			if param.Metadata != nil && param.Metadata.Description != "" {
-				hp.Metadata = &ARMParameterMetadata{
-					Description: param.Metadata.Description,
-				}
-			}
-			hoistedParams[paramName] = hp
 		}
-		// Everything else is left to the template's own defaults.
+	}
+	for paramName, param := range hoistedParams {
+		if !hoistableDefault(param.DefaultValue) {
+			delete(hoistedParams, paramName)
+			continue
+		}
+		// Customer-configurable — surfaced in the root and threaded back down.
+		deploymentParams[paramName] = map[string]any{"value": fmt.Sprintf("[parameters('%s')]", paramName)}
 	}
 
 	deployment := map[string]any{
 		"type":       "Microsoft.Resources/deployments",
 		"apiVersion": "2022-09-01",
-		"name":       "vnetDeployment",
+		"name":       scope.vnetDeploymentName(inp.Install.ID),
 		"properties": map[string]any{
 			"mode": "Incremental",
 			"templateLink": map[string]any{
@@ -94,12 +144,23 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput) (map[stri
 		},
 	}
 
-	return deployment, hoistedParams, nil
+	// A custom VNet template may be written at either scope, and guessing wrong is
+	// not a warning: ARM rejects the whole deployment with InvalidScope. Trust the
+	// template's own $schema. Subscription-scoped means it declares its own resource
+	// groups; resource-group-scoped means it expects to run inside the install's,
+	// like the built-in default below.
+	if isSubscriptionScopedTemplate(armTmpl) {
+		scope.targetSubscription(deployment)
+	} else {
+		scope.targetInstallRG(deployment)
+	}
+
+	return deployment, hoistedParams, vnetPassthroughOutputs(armTmpl.Outputs), nil
 }
 
-func (t *Templates) getDefaultVNetDeployment(inp *stacks.TemplateInput) map[string]any {
-	installID := "[parameters('nuonInstallID')]"
-	location := "[parameters('location')]"
+func (t *Templates) getDefaultVNetDeployment(inp *stacks.TemplateInput, scope armScope) map[string]any {
+	installID := scope.nuonIDRef("nuonInstallID")
+	location := scope.rootLocationRef()
 
 	defaultParams := map[string]any{
 		"vnetCIDR":           map[string]any{"value": "10.128.0.0/16"},
@@ -118,7 +179,7 @@ func (t *Templates) getDefaultVNetDeployment(inp *stacks.TemplateInput) map[stri
 	deployment := map[string]any{
 		"type":       "Microsoft.Resources/deployments",
 		"apiVersion": "2022-09-01",
-		"name":       "vnetDeployment",
+		"name":       scope.vnetDeploymentName(inp.Install.ID),
 		"properties": map[string]any{
 			"mode": "Incremental",
 			"expressionEvaluationOptions": map[string]any{
@@ -128,6 +189,8 @@ func (t *Templates) getDefaultVNetDeployment(inp *stacks.TemplateInput) map[stri
 			"template":   t.getDefaultVNetTemplate(),
 		},
 	}
+
+	scope.targetInstallRG(deployment)
 
 	return deployment
 }
