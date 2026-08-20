@@ -160,7 +160,7 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		// parent template because ARM does not support subscription-level
 		// nested deployments inside linked deployments.
 		for _, id := range customIdentities {
-			tmpl.Resources = append(tmpl.Resources, t.getCustomDeploymentRoleAssignment(id, scope))
+			tmpl.Resources = append(tmpl.Resources, t.getCustomDeploymentRoleAssignment(id, inp.Install.ID, scope))
 		}
 	}
 

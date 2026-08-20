@@ -26,6 +26,10 @@ func sanitizeDeploymentName(name string) string {
 // role assignment that the identity needs.
 type customDeploymentIdentity struct {
 	DeploymentName string
+	// SanitizedName is the stack's own name without the install namespace
+	// DeploymentName may carry. Role naming keys off this, so that it can be
+	// namespaced identically at both scopes — see getCustomDeploymentRoleAssignment.
+	SanitizedName string
 	// output holding the identity's principalId, resolved from the template
 	PrincipalIDOutput string
 }
@@ -87,7 +91,8 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 	allParamNames := map[string]string{}
 	prevDeploymentName := ""
 
-	vnetDeployment := scopeFor(inp).vnetDeploymentName(inp.Install.ID)
+	scope := scopeFor(inp)
+	vnetDeployment := scope.vnetDeploymentName(inp.Install.ID)
 
 	// param name -> producing deployment; seeded with vnet outputs so they win over custom ones
 	wiredOutputs := map[string]string{}
@@ -103,7 +108,8 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name)
 		}
 
-		deploymentName := sanitizeDeploymentName(stack.Name)
+		sanitizedName := sanitizeDeploymentName(stack.Name)
+		deploymentName := scope.customStackDeploymentName(inp.Install.ID, sanitizedName)
 		if deploymentName == "" {
 			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): name produces invalid deployment name", i, stack.Name)
 		}
@@ -158,6 +164,7 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 
 			identities = append(identities, customDeploymentIdentity{
 				DeploymentName:    deploymentName,
+				SanitizedName:     sanitizedName,
 				PrincipalIDOutput: principalIDOutput,
 			})
 		}

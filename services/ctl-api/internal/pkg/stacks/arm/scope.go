@@ -71,6 +71,23 @@ func (s armScope) vnetDeploymentName(installID string) string {
 	return installID + "-vnet-deployment"
 }
 
+// customStackDeploymentName is the ARM resource name of a custom nested stack's
+// deployment, namespaced for the same reason vnetDeploymentName is — these inherit
+// the root scope, so at subscription scope they too become subscription-level
+// records. The hazard is worse here: the name comes from app config, so two
+// installs of one app collide every time rather than only when they share a
+// subscription by accident.
+//
+// Only the resource name changes. The customer's stack name remains
+// customDeploymentOutputs.StackName, which is what keys the phone-home payload, so
+// the custom_nested_stacks.<name>.outputs.<key> shape is unaffected.
+func (s armScope) customStackDeploymentName(installID, sanitizedStackName string) string {
+	if !s.subscription {
+		return sanitizedStackName
+	}
+	return installID + "-" + sanitizedStackName
+}
+
 // armScope is the ARM scope the root template renders at.
 //
 // Every method returns exactly the string the renderer emitted before this type
