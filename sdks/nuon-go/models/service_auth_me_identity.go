@@ -19,6 +19,9 @@ import (
 // swagger:model service.AuthMeIdentity
 type ServiceAuthMeIdentity struct {
 
+	// identity provider id
+	IdentityProviderID string `json:"identity_provider_id,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 

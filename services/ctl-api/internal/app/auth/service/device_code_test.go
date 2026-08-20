@@ -215,16 +215,7 @@ func (s *DeviceCodePageTestSuite) TestDeviceCodePage() {
 			withToken:    false,
 			expectedCode: http.StatusFound,
 			validateFunc: func(rr *httptest.ResponseRecorder) {
-				location := rr.Header().Get("Location")
-				assert.Contains(s.T(), location, "/login", "should redirect to login")
-				assert.Contains(s.T(), location, "provider=", "should include provider param")
-				assert.Contains(s.T(), location, "url=", "should include return URL")
-
-				// Verify return URL contains the device code
-				parsedURL, err := url.Parse(location)
-				require.NoError(s.T(), err)
-				returnURL := parsedURL.Query().Get("url")
-				assert.Contains(s.T(), returnURL, "ABCD-1234", "return URL should contain device code")
+				s.assertDeviceCodeLoginRedirect(rr.Header().Get("Location"), "ABCD-1234")
 			},
 		},
 		{
@@ -291,8 +282,7 @@ func (s *DeviceCodePageTestSuite) TestDeviceCodePageWithExpiredToken() {
 
 	// Should redirect to login (expired token treated as no auth)
 	require.Equal(s.T(), http.StatusFound, rr.Code)
-	location := rr.Header().Get("Location")
-	assert.Contains(s.T(), location, "/login")
+	s.assertDeviceCodeLoginRedirect(rr.Header().Get("Location"), "ABCD-1234")
 }
 
 // ===========================
@@ -946,4 +936,25 @@ func (s *DeviceCodeTokenTestSuite) TestDeviceCodeTokenPollingBehavior() {
 
 func (s *DeviceCodeTokenTestSuite) unmarshalJSON(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
+}
+
+// assertDeviceCodeLoginRedirect checks the unauthenticated device-code redirect. Which shape is
+// correct depends on how many providers are enabled, and this database is shared with other
+// suites, so the expectation is derived rather than hardcoded: one provider goes straight to it,
+// more than one goes to the picker so the user can choose.
+func (s *DeviceCodePageTestSuite) assertDeviceCodeLoginRedirect(location, code string) {
+	identityProviders, err := s.service.AuthService.getIdentityProviders(context.Background())
+	require.NoError(s.T(), err)
+
+	if len(identityProviders) == 1 {
+		assert.Contains(s.T(), location, "/login", "a single provider should be linked directly")
+		assert.Contains(s.T(), location, "provider="+identityProviders[0].ID)
+	} else {
+		assert.Contains(s.T(), location, "/?url=", "several providers should land on the picker")
+		assert.NotContains(s.T(), location, "provider=")
+	}
+
+	parsedURL, err := url.Parse(location)
+	require.NoError(s.T(), err)
+	assert.Contains(s.T(), parsedURL.Query().Get("url"), code, "return URL should contain device code")
 }

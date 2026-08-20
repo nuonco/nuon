@@ -11,9 +11,10 @@ import (
 
 // AuthMeIdentity represents a filtered identity for the /auth/me response.
 type AuthMeIdentity struct {
-	ProviderType app.ProviderType `json:"provider_type"`
-	Name         string           `json:"name,omitempty"`
-	Picture      string           `json:"picture,omitempty"`
+	IdentityProviderID string           `json:"identity_provider_id,omitempty"`
+	ProviderType       app.ProviderType `json:"provider_type"`
+	Name               string           `json:"name,omitempty"`
+	Picture            string           `json:"picture,omitempty"`
 }
 
 // AuthMeResponse is the response for the /v1/auth/me endpoint.
@@ -49,9 +50,10 @@ func (s *service) GetAuthMe(ctx *gin.Context) {
 	filteredIdentities := make([]AuthMeIdentity, len(identities))
 	for i, identity := range identities {
 		filteredIdentities[i] = AuthMeIdentity{
-			ProviderType: identity.ProviderType,
-			Name:         identity.Name,
-			Picture:      identity.Picture,
+			IdentityProviderID: identity.IdentityProviderID,
+			ProviderType:       identity.ProviderType,
+			Name:               identity.Name,
+			Picture:            identity.Picture,
 		}
 	}
 

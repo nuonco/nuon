@@ -21,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/auth/providers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
@@ -150,7 +151,7 @@ func (s *LoginTestSuite) TestLogin() {
 			queryParams:    "",
 			expectedCode:   http.StatusBadRequest,
 			expectedError:  true,
-			errorSubstring: "provider type is required",
+			errorSubstring: "provider is required",
 		},
 		{
 			name:           "invalid provider type",
@@ -239,6 +240,52 @@ func (s *LoginTestSuite) TestLogin() {
 			}
 		})
 	}
+}
+
+// The env provider is addressable by its synthetic ID, and DB providers by their row ID, so that a
+// deployment with two providers of the same type can send a user to a specific one.
+func (s *LoginTestSuite) TestLoginByProviderID() {
+	envProviderID := app.EnvIdentityProviderID(app.ProviderType(s.configuredProvider()))
+
+	rr := s.makeRequest("GET", "/login?provider="+envProviderID)
+	require.Equal(s.T(), http.StatusFound, rr.Code)
+	assert.NotEmpty(s.T(), rr.Header().Get("Location"))
+
+	rr = s.makeRequest("GET", "/login?provider=idp_does_not_exist")
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
+}
+
+// Two OIDC providers can coexist, and each is reachable by its own ID.
+func (s *LoginTestSuite) TestLoginWithASecondProviderOfTheSameType() {
+	secondary := &app.IdentityProvider{
+		ID:           domains.NewIdentityProviderID(),
+		ProviderType: app.ProviderTypeOIDC,
+		Name:         "Secondary SSO",
+		Enabled:      true,
+	}
+	require.NoError(s.T(), secondary.SetOpenIDConfig(&providers.OpenIDConfig{
+		BaseConfig: providers.BaseConfig{
+			ClientID:     "secondary-client-id",
+			ClientSecret: "secondary-client-secret",
+			RedirectURL:  s.service.Cfg.NuonAuthRedirectURL,
+		},
+		IssuerURL: s.service.Cfg.NuonAuthIssuerURL,
+	}))
+	secondary.ProviderType = app.ProviderTypeOIDC
+	secondary.Name = "Secondary SSO"
+	require.NoError(s.T(), s.service.DB.Create(secondary).Error)
+	// other suites in this package assert on the provider list, so don't leak an enabled provider
+	defer func() {
+		require.NoError(s.T(), s.service.DB.Unscoped().Delete(secondary).Error)
+	}()
+
+	// the redirect itself needs live OIDC discovery against the issuer, which the dev-stack run
+	// covers; here the point is that both providers coexist and are separately addressable
+	rr := s.makeRequest("GET", "/")
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+	assert.Contains(s.T(), rr.Body.String(), "Secondary SSO",
+		"a named second provider must be distinguishable on the sign-in page")
+	assert.Contains(s.T(), rr.Body.String(), "provider="+secondary.ID)
 }
 
 func (s *LoginTestSuite) TestLoginClearsExistingCookie() {
