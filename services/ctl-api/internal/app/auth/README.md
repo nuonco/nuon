@@ -98,6 +98,7 @@ may be added.
 {
   "enabled": true,
   "name": "Acme SSO",
+  "allow_all_users": false,
   "provider_type": "oidc",
   "openid_config": {
     "client_id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
@@ -168,6 +169,14 @@ Because several providers can share a type, `provider_type` no longer identifies
 keyed on `(identity_provider_id, sub)` and `(account_id, identity_provider_id)` instead, and `identity_provider_id`
 carries the env sentinel for accounts that signed in through the env provider. It is deliberately not a foreign key:
 the env provider has no row, and `ON DELETE SET NULL` would collapse a deleted provider's identities onto each other.
+
+`nuon_auth_allow_all_users` is deployment-wide, which cannot express "staff IdP open to
+self-signup, contractor IdP invite-only". A provider may set `allow_all_users` to override it;
+leaving it unset keeps the deployment-wide behaviour.
+
+Creating or updating a DB-configured OIDC provider runs discovery against the issuer and rejects
+the request if it fails. Env providers get that check at boot; without this a typo in the issuer
+surfaced as a 500 on someone's first login rather than an error for the admin who typed it.
 
 Give each provider a `name` when there is more than one. Without one, the sign-in page falls back to a type-derived
 label, and for OIDC it shows the issuer host underneath so two unnamed OIDC buttons are still distinguishable.

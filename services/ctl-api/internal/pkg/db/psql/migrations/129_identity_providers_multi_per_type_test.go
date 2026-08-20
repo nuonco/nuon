@@ -33,11 +33,17 @@ func TestMigration129Suite(t *testing.T) {
 	suite.Run(t, new(migration129TestSuite))
 }
 
+// SetupSuite runs against a database of its own. This suite rebuilds pre-migration schema, which
+// means dropping indexes and rewriting whole tables - safe only when nothing else is using them,
+// and `go test ./...` runs package binaries concurrently against the shared test database.
 func (s *migration129TestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 
 	cfg, err := tests.LoadDBConfig()
 	require.NoError(s.T(), err)
+	cfg.DBName = cfg.DBName + "_mig129"
+	require.NoError(s.T(), tests.CreateAndMigrateDatabase(cfg))
+
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode)
 	s.db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -55,10 +61,11 @@ func (s *migration129TestSuite) TearDownSuite() {
 // migration can be exercised against the state it will actually meet in a long-lived database.
 //
 // Existing rows have to go first: the legacy indexes forbid exactly the rows the post-migration
-// schema allows, so recreating them over another suite's data fails on a duplicate key.
+// schema allows, so recreating them over rows left by an earlier test fails on a duplicate key.
 func (s *migration129TestSuite) restoreLegacySchema(ctx context.Context) {
 	require.NoError(s.T(), s.db.WithContext(ctx).Exec(`
 		DELETE FROM account_identities;
+		DELETE FROM identity_providers;
 		ALTER TABLE account_identities ALTER COLUMN identity_provider_id DROP NOT NULL;
 		DROP INDEX IF EXISTS idx_account_identity_account_idp;
 		DROP INDEX IF EXISTS idx_account_identity_idp_sub;

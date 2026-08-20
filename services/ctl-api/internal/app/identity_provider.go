@@ -58,6 +58,11 @@ type IdentityProvider struct {
 	// a ProviderType, so this is what tells them apart to a human.
 	Name string `json:"name,omitempty" temporaljson:"name,omitzero,omitempty"`
 
+	// AllowAllUsers overrides nuon_auth_allow_all_users for this provider. That setting is
+	// deployment-wide, which cannot express "staff IdP open to self-signup, contractor IdP
+	// invite-only". Nil keeps the deployment-wide behaviour.
+	AllowAllUsers *bool `json:"allow_all_users,omitempty" temporaljson:"allow_all_users,omitzero,omitempty"`
+
 	// Config holds provider-specific configuration as JSON.
 	// The structure depends on ProviderType:
 	// - oidc: providers.OpenIDConfig

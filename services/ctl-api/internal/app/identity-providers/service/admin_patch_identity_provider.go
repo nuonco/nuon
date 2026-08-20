@@ -16,8 +16,9 @@ import (
 
 // AdminPatchIdentityProviderRequest represents the request to update an identity provider.
 type AdminPatchIdentityProviderRequest struct {
-	Enabled *bool   `json:"enabled,omitempty"`
-	Name    *string `json:"name,omitempty"`
+	Enabled       *bool   `json:"enabled,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	AllowAllUsers *bool   `json:"allow_all_users,omitempty"`
 
 	// Provider-specific config fields (only one should be set based on existing provider_type)
 	OpenIDConfig *providers.OpenIDConfig `json:"openid_config,omitempty"`
@@ -82,6 +83,10 @@ func (s *service) AdminPatchIdentityProvider(ctx *gin.Context) {
 		ip.Name = *req.Name
 	}
 
+	if req.AllowAllUsers != nil {
+		ip.AllowAllUsers = req.AllowAllUsers
+	}
+
 	// Update config if provided (based on existing provider type)
 	var configErr error
 	switch ip.ProviderType {
@@ -107,6 +112,13 @@ func (s *service) AdminPatchIdentityProvider(ctx *gin.Context) {
 	if req.OpenIDConfig != nil || req.GoogleConfig != nil || req.GitHubConfig != nil {
 		if err := ip.ValidateConfig(); err != nil {
 			ctx.Error(fmt.Errorf("invalid provider config: %w", err))
+			return
+		}
+	}
+
+	if req.OpenIDConfig != nil {
+		if err := s.verifyProviderReachable(&ip); err != nil {
+			ctx.Error(stderr.ErrUser{Err: err, Description: "identity provider unreachable"})
 			return
 		}
 	}

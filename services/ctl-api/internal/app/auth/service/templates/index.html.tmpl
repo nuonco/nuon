@@ -27,11 +27,11 @@
                 {{ else }}
                     <h2 class="text-xl font-normal text-cool-grey-950 dark:text-cool-grey-50 mb-8">Sign in to your account</h2>
 
-                    <div class="space-y-3">
+                    <div class="divide-y divide-cool-grey-300 dark:divide-cool-grey-700 border border-cool-grey-300 dark:border-cool-grey-700 rounded-md">
                         {{ $redirectURL := .RedirectURL }}
                         {{ range .Providers }}
                             <a href="/login?provider={{ .ID }}{{ if $redirectURL }}&url={{ $redirectURL }}{{ end }}"
-                               class="flex items-center justify-center gap-3 w-full py-3 px-4 bg-white dark:bg-dark-grey-800 border border-cool-grey-300 dark:border-cool-grey-700 rounded-md hover:bg-cool-grey-50 dark:hover:bg-dark-grey-700 text-cool-grey-700 dark:text-cool-grey-50 font-semibold transition-colors">
+                               class="group relative flex items-center justify-center gap-3 w-full py-3 px-4 first:rounded-t-md last:rounded-b-md bg-white dark:bg-dark-grey-800 hover:bg-cool-grey-50 dark:hover:bg-dark-grey-700 text-cool-grey-700 dark:text-cool-grey-50 font-semibold transition-colors">
                                 {{if eq .ProviderType "google"}}
                                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M17.64 9.20443C17.64 8.56625 17.5827 7.95262 17.4764 7.36353H9V10.8449H13.8436C13.635 11.9699 13.0009 12.9231 12.0477 13.5613V15.8194H14.9564C16.6582 14.2526 17.64 11.9453 17.64 9.20443Z" fill="#4285F4"/>
@@ -49,13 +49,13 @@
                                     <path d="M9 7.5C9.62132 7.5 10.125 8.00368 10.125 8.625C10.125 9.09 9.845 9.4875 9.4425 9.6585V11.25H8.5575V9.6585C8.155 9.4875 7.875 9.09 7.875 8.625C7.875 8.00368 8.37868 7.5 9 7.5Z" fill="currentColor"/>
                                 </svg>
                                 {{end}}
-                                <span class="flex flex-col items-center leading-tight">
-                                    <span>Continue with {{ .Name }}</span>
-                                    {{ if .Hint }}<span class="text-xs font-normal text-cool-grey-500 dark:text-cool-grey-400">{{ .Hint }}</span>{{ end }}
-                                </span>
+                                Continue with {{ .Name }}
+                                {{ if .Hint }}
+                                <span class="pointer-events-none absolute left-full top-1/2 z-20 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded bg-cool-grey-900 px-2 py-1 text-xs font-normal text-white shadow-sm group-hover:block dark:bg-dark-grey-950">{{ .Hint }}</span>
+                                {{ end }}
                             </a>
                         {{ else }}
-                            <p class="text-cool-grey-600 dark:text-cool-grey-400 text-center">No login providers configured.</p>
+                            <p class="text-cool-grey-600 dark:text-cool-grey-400 text-center py-3">No login providers configured.</p>
                         {{ end }}
                     </div>
                 {{ end }}

@@ -24,6 +24,9 @@ type AdminCreateIdentityProviderRequest struct {
 	// so this is what tells them apart.
 	Name string `json:"name,omitempty"`
 
+	// AllowAllUsers overrides the deployment-wide nuon_auth_allow_all_users for this provider.
+	AllowAllUsers *bool `json:"allow_all_users,omitempty"`
+
 	// Provider-specific config fields (only one should be set based on provider_type)
 	OpenIDConfig *providers.OpenIDConfig `json:"openid_config,omitempty"`
 	GoogleConfig *providers.GoogleConfig `json:"google_config,omitempty"`
@@ -83,9 +86,10 @@ func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 
 	// Build the identity provider
 	ip := &app.IdentityProvider{
-		ProviderType: providerType,
-		Name:         req.Name,
-		Enabled:      req.Enabled,
+		ProviderType:  providerType,
+		Name:          req.Name,
+		AllowAllUsers: req.AllowAllUsers,
+		Enabled:       req.Enabled,
 		// OrgID is intentionally left empty for global providers
 	}
 
@@ -107,6 +111,11 @@ func (s *service) AdminCreateIdentityProvider(ctx *gin.Context) {
 	// Validate the config using the model's validation method
 	if err := ip.ValidateConfig(); err != nil {
 		ctx.Error(fmt.Errorf("invalid provider config: %w", err))
+		return
+	}
+
+	if err := s.verifyProviderReachable(ip); err != nil {
+		ctx.Error(stderr.ErrUser{Err: err, Description: "identity provider unreachable"})
 		return
 	}
 

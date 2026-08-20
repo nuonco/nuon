@@ -18,11 +18,12 @@ const (
 // AdminIdentityProviderSummary is a slim representation of an identity provider
 // exposing only the fields needed to determine whether a provider exists or is enabled.
 type AdminIdentityProviderSummary struct {
-	ID           string           `json:"id"`
-	ProviderType app.ProviderType `json:"provider_type"`
-	Name         string           `json:"name,omitempty"`
-	ClientID     string           `json:"client_id"`
-	Enabled      bool             `json:"enabled"`
+	ID            string           `json:"id"`
+	ProviderType  app.ProviderType `json:"provider_type"`
+	Name          string           `json:"name,omitempty"`
+	ClientID      string           `json:"client_id"`
+	Enabled       bool             `json:"enabled"`
+	AllowAllUsers *bool            `json:"allow_all_users,omitempty"`
 
 	// Source is "env" for the provider configured through environment variables, which has no
 	// row in identity_providers, and "database" for the rest.
@@ -62,12 +63,13 @@ func (s *service) AdminGetIdentityProviders(ctx *gin.Context) {
 		}
 
 		summaries = append(summaries, AdminIdentityProviderSummary{
-			ID:           ips[i].ID,
-			ProviderType: ips[i].ProviderType,
-			Name:         ips[i].Name,
-			ClientID:     clientID,
-			Enabled:      ips[i].Enabled,
-			Source:       identityProviderSourceDatabase,
+			ID:            ips[i].ID,
+			ProviderType:  ips[i].ProviderType,
+			Name:          ips[i].Name,
+			ClientID:      clientID,
+			Enabled:       ips[i].Enabled,
+			AllowAllUsers: ips[i].AllowAllUsers,
+			Source:        identityProviderSourceDatabase,
 		})
 	}
 

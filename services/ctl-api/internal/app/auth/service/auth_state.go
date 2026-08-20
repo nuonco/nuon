@@ -105,7 +105,7 @@ func (s *service) AuthState(c *gin.Context) {
 
 	// Look up or create account by (identity_provider_id, sub)
 	var account *app.Account
-	if s.cfg.NuonAuthAllowAllUsers {
+	if s.allowAllUsers(identityProvider) {
 		account, err = s.getOrCreateAccountByIdentity(c.Request.Context(), identityProvider, userInfo)
 	} else {
 		account, err = s.getOrCreateAccountByIdentityStrict(c.Request.Context(), identityProvider, userInfo)
@@ -183,4 +183,15 @@ func (s *service) verifyUser(userInfo *providers.UserInfo) error {
 		return fmt.Errorf("user has no email or username")
 	}
 	return nil
+}
+
+// allowAllUsers reports whether this provider admits any user with an allowed email domain, or
+// only users who already have an account or a pending invite. A provider may override the
+// deployment-wide nuon_auth_allow_all_users so that, for example, a contractor IdP stays
+// invite-only while the staff IdP allows self-signup.
+func (s *service) allowAllUsers(ip *app.IdentityProvider) bool {
+	if ip.AllowAllUsers != nil {
+		return *ip.AllowAllUsers
+	}
+	return s.cfg.NuonAuthAllowAllUsers
 }
