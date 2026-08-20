@@ -55,6 +55,9 @@ type Config struct {
 	DisableMetrics        bool   `config:"disable_metrics"`
 	ServiceDeployment     string `config:"service_deployment"`
 	IsBYOC                bool   `config:"nuon_byoc"`
+	BYOCName              string `config:"nuon_byoc_name"`
+	BYOCIconText          string `config:"nuon_byoc_icon_text"`
+	BYOCColor             string `config:"nuon_byoc_color"`
 	OnboardingV2          bool   `config:"nuon_onboarding_v2"`
 	AdminDashboardUrl     string `config:"nuon_admin_dashboard_url"`
 }

@@ -49,12 +49,15 @@ type clientConfig struct {
 	Version               string `json:"version,omitempty"`
 	GitRef                string `json:"gitRef,omitempty"`
 	IsBYOC                bool   `json:"isByoc"`
+	BYOCName              string `json:"byocName,omitempty"`
+	BYOCColor             string `json:"byocColor,omitempty"`
+	BYOCTextColor         string `json:"byocTextColor,omitempty"`
 	OnboardingV2          bool   `json:"onboardingV2,omitempty"`
 	AdminDashboardUrl     string `json:"adminDashboardUrl,omitempty"`
 }
 
 func buildClientConfig(cfg *internal.Config) clientConfig {
-	return clientConfig{
+	cc := clientConfig{
 		APIUrl:                cfg.APIUrl,
 		TemporalUIUrl:         cfg.TemporalUIUrl,
 		AuthServiceUrl:        cfg.AuthServiceUrl,
@@ -72,6 +75,17 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		OnboardingV2:          cfg.OnboardingV2,
 		AdminDashboardUrl:     cfg.AdminDashboardUrl,
 	}
+
+	if cfg.IsBYOC {
+		if name := strings.TrimSpace(cfg.BYOCName); name != "" {
+			background, _ := resolveBYOCBackground(cfg.BYOCColor)
+			cc.BYOCName = name
+			cc.BYOCColor = background
+			cc.BYOCTextColor = contrastingForeground(background)
+		}
+	}
+
+	return cc
 }
 
 type Handler struct {
@@ -172,6 +186,7 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 
 	publicFS := h.publicFS()
 	authHandler := authmw.New(h.cfg, h.l).Handler()
+	byocFavicon := generateBYOCFavicon(h.cfg, h.l)
 
 	e.NoRoute(func(c *gin.Context) {
 		if c.Request.Method != http.MethodGet {
@@ -184,6 +199,12 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 		}
 
 		filePath := strings.TrimPrefix(c.Request.URL.Path, "/")
+
+		if byocFavicon != nil && !isLocalEnv && filePath == "favicon.svg" {
+			c.Header("Cache-Control", "public, max-age=3600")
+			c.Data(http.StatusOK, "image/svg+xml", byocFavicon)
+			return
+		}
 
 		if publicFS != nil {
 			rewrites := map[string]string(nil)
