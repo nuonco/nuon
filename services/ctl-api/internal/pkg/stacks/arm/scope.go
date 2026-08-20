@@ -23,6 +23,11 @@ const (
 	// scope, where it needs no install namespace — see armScope.vnetDeploymentName.
 	rgScopeVNetDeploymentName = "vnetDeployment"
 
+	// maxARMDeploymentNameLen is ARM's cap on a deployment resource's name. Only the
+	// names derived from a customer-supplied stack name can reach it; everything else
+	// this package generates is a fixed suffix on the 26-character install ID.
+	maxARMDeploymentNameLen = 64
+
 	// installRGVarName names the install's resource group in the root template. At
 	// subscription scope there is no ambient resource group, so every expression that
 	// used to resolve against one has to name it explicitly. At RG scope it is not
@@ -86,6 +91,19 @@ func (s armScope) customStackDeploymentName(installID, sanitizedStackName string
 		return sanitizedStackName
 	}
 	return installID + "-" + sanitizedStackName
+}
+
+// customStackRoleKey seeds the role definition and assignment a custom stack's
+// managed identity needs. Unlike customStackDeploymentName it is namespaced at both
+// scopes — see getCustomDeploymentRoleAssignment for why.
+func customStackRoleKey(installID, sanitizedStackName string) string {
+	return installID + "-" + sanitizedStackName
+}
+
+// customStackRoleDeploymentName is the longest name derived from a stack's own, so
+// it is what bounds how long that name may be — see validateCustomStackNameLengths.
+func customStackRoleDeploymentName(installID, sanitizedStackName string) string {
+	return customStackRoleKey(installID, sanitizedStackName) + "-identity-role"
 }
 
 // armScope is the ARM scope the root template renders at.

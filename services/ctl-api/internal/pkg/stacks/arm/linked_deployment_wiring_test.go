@@ -6,6 +6,7 @@ import (
 	"maps"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -430,4 +431,53 @@ func TestCustomStackNames_NamespacedAtSubscriptionScope(t *testing.T) {
 			assert.Equal(t, wantKey, params["roleKey"].(map[string]any)["value"])
 		})
 	}
+}
+
+// Namespacing spends 27 of ARM's 64 characters before the customer's own name, so
+// the length has to be checked where it is derived. Left un-caught it surfaces at
+// deploy time as a validation error against a resource the customer never wrote.
+func TestCustomStackNames_LengthGuard(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+
+	t.Run("stack deployment name over the limit is rejected", func(t *testing.T) {
+		inp := armWiringInput(t, wiringStack{name: strings.Repeat("a", 40)})
+		inp.DeploymentScope = app.StackDeploymentScopeSubscription
+
+		_, _, _, _, err := tmpl.getCustomLinkedDeployments(inp)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "over ARM's limit of 64")
+		assert.Contains(t, err.Error(), "shorten the stack name by")
+	})
+
+	t.Run("identity role name over the limit is rejected even at resource group scope", func(t *testing.T) {
+		// Short enough that the stack's own deployment name fits at both scopes; only
+		// the role deployment, which is namespaced regardless, runs over.
+		name := strings.Repeat("b", 30)
+		inp := armWiringInput(t, wiringStack{
+			name:            name,
+			managedIdentity: true,
+			outputs:         []string{"identityPrincipalId"},
+		})
+
+		require.LessOrEqual(t, len(sanitizeDeploymentName(name)), maxARMDeploymentNameLen,
+			"the stack's own name must fit, or this asserts the wrong guard")
+
+		_, _, _, _, err := tmpl.getCustomLinkedDeployments(inp)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "declares a managed identity")
+		assert.Contains(t, err.Error(), "over ARM's limit of 64")
+	})
+
+	t.Run("a name that fits is accepted", func(t *testing.T) {
+		inp := armWiringInput(t, wiringStack{
+			name:            "database",
+			managedIdentity: true,
+			outputs:         []string{"identityPrincipalId"},
+		})
+		inp.DeploymentScope = app.StackDeploymentScopeSubscription
+
+		_, _, identities, _, err := tmpl.getCustomLinkedDeployments(inp)
+		require.NoError(t, err)
+		require.Len(t, identities, 1)
+	})
 }

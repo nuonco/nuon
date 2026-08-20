@@ -113,6 +113,14 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 		if deploymentName == "" {
 			return nil, nil, nil, nil, fmt.Errorf("custom_nested_stacks[%d] (%s): name produces invalid deployment name", i, stack.Name)
 		}
+		// Caught here rather than at deploy time, where ARM reports an over-long
+		// name as a validation failure on a resource the customer never wrote.
+		if over := len(deploymentName) - maxARMDeploymentNameLen; over > 0 {
+			return nil, nil, nil, nil, fmt.Errorf(
+				"custom_nested_stacks[%d] (%s): deployment name %q is %d characters, %d over ARM's limit of %d; shorten the stack name by %d characters",
+				i, stack.Name, deploymentName, len(deploymentName), over, maxARMDeploymentNameLen, over,
+			)
+		}
 
 		// Resolve template URL (use uploaded S3 URL if contents were uploaded)
 		templateURL := stack.TemplateURL
@@ -159,6 +167,17 @@ func (t *Templates) getCustomLinkedDeployments(inp *stacks.TemplateInput) ([]any
 				return nil, nil, nil, nil, fmt.Errorf(
 					"custom_nested_stacks[%d] (%s): declares a managed identity but no output named %q (found: %v); add one so the subscription-level role assignment can read its principalId",
 					i, stack.Name, "identityPrincipalId", outputKeys,
+				)
+			}
+
+			// The identity's role deployment carries a longer name than the stack's
+			// own, and is install-namespaced at both scopes, so it can exceed the
+			// limit even where deploymentName does not.
+			roleDeployment := customStackRoleDeploymentName(inp.Install.ID, sanitizedName)
+			if over := len(roleDeployment) - maxARMDeploymentNameLen; over > 0 {
+				return nil, nil, nil, nil, fmt.Errorf(
+					"custom_nested_stacks[%d] (%s): declares a managed identity, whose role deployment name %q is %d characters, %d over ARM's limit of %d; shorten the stack name by %d characters",
+					i, stack.Name, roleDeployment, len(roleDeployment), over, maxARMDeploymentNameLen, over,
 				)
 			}
 

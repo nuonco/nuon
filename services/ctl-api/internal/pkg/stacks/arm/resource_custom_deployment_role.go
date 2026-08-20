@@ -17,8 +17,8 @@ import "fmt"
 // deprovisioning either one strips the other's permission, and the deployment
 // records collide outright across regions with InvalidDeploymentLocation.
 func (t *Templates) getCustomDeploymentRoleAssignment(id customDeploymentIdentity, installID string, scope armScope) map[string]any {
-	roleKey := fmt.Sprintf("%s-%s", installID, id.SanitizedName)
-	deploymentName := fmt.Sprintf("%s-identity-role", roleKey)
+	roleKey := customStackRoleKey(installID, id.SanitizedName)
+	deploymentName := customStackRoleDeploymentName(installID, id.SanitizedName)
 
 	return map[string]any{
 		"type":           "Microsoft.Resources/deployments",
