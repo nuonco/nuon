@@ -84,15 +84,8 @@ func (t *Templates) getPhoneHomeResource(inp *stacks.TemplateInput, customOutput
 
 	payloadJSON := "{\n" + strings.Join(payloadFields, ",\n") + "\n}"
 
-	authPreamble := ""
-	authFlag := ""
-	if inp.PhoneHomeIdentityName != "" {
-		authPreamble = phoneHomeAuthScript
-		authFlag = "  -K \"$CURL_CONFIG\" \\\n"
-	}
-
 	scriptContent := `#!/bin/bash
-` + authPreamble + `
+
 PAYLOAD=$(cat << EOF
 ` + payloadJSON + `
 EOF
@@ -100,7 +93,7 @@ EOF
 
 curl -X POST \
   "` + phoneHomeURL + `" \
-` + authFlag + `  -H "Content-Type: application/json" \
+  -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d "$PAYLOAD" \
   --fail \
@@ -152,12 +145,6 @@ fi
 			"value": "[reference('runnerDeployment').outputs.vmssPrincipalId.value]",
 		})
 	}
-	if inp.PhoneHomeIdentityName != "" {
-		envVars = append(envVars, map[string]any{
-			"name":  "PHONE_HOME_IDENTITY_CLIENT_ID",
-			"value": phoneHomeIdentityClientID(inp.PhoneHomeIdentityName),
-		})
-	}
 	envVars = append(envVars, secretEnvVars...)
 	envVars = append(envVars, customEnvVars...)
 	envVars = append(envVars, identityEnvVars...)
@@ -165,9 +152,6 @@ fi
 	// Depend on the identity role setup so a failed role deployment blocks the
 	// outputs rather than reporting half-configured identities.
 	dependsOn := []string{"vnetDeployment"}
-	if inp.PhoneHomeIdentityName != "" {
-		dependsOn = append(dependsOn, phoneHomeIdentityResourceID(inp.PhoneHomeIdentityName))
-	}
 	for _, co := range customOutputs {
 		dependsOn = append(dependsOn, co.DeploymentName)
 	}
@@ -176,7 +160,7 @@ fi
 	}
 	dependsOn = append(dependsOn, operationIdentitySetupDependencies(operationIDs)...)
 
-	resource := map[string]any{
+	return map[string]any{
 		"type":       "Microsoft.Resources/deploymentScripts",
 		"apiVersion": "2023-08-01",
 		"name":       "[format('{0}-phone-home-script', parameters('nuonInstallID'))]",
@@ -193,17 +177,4 @@ fi
 			"scriptContent":        scriptContent,
 		},
 	}
-
-	// deploymentScripts supports user-assigned identities only, so there is no
-	// system-assigned alternative to fall back to.
-	if inp.PhoneHomeIdentityName != "" {
-		resource["identity"] = map[string]any{
-			"type": "UserAssigned",
-			"userAssignedIdentities": map[string]any{
-				phoneHomeIdentityResourceID(inp.PhoneHomeIdentityName): map[string]any{},
-			},
-		}
-	}
-
-	return resource
 }

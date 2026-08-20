@@ -87,10 +87,7 @@ func (s *service) authorizePhoneHome(
 			phoneHomeRejectRevokedVersion,
 			fmt.Errorf("phone home token for stack version %s was revoked", stackVersion.ID),
 		)
-	// A version carries whichever credential its cloud renders. Neither means it was
-	// rendered before enforcement reached that cloud, so it is skipped rather than
-	// rejected.
-	case stackVersion.PhoneHomeIdentityName == "" && stackVersion.PhoneHomeTokenID == "":
+	case stackVersion.PhoneHomeTokenID == "":
 		return phoneHomeAuthSkipped, nil
 	}
 
@@ -106,10 +103,6 @@ func (s *service) authorizePhoneHome(
 				Description: "this install stack version has expired and needs to be reprovisioned",
 			},
 		}
-	}
-
-	if stackVersion.PhoneHomeIdentityName != "" {
-		return s.authorizeAzurePhoneHome(ctx, install, stackVersion, authHeader)
 	}
 
 	raw := bearerToken(authHeader)
@@ -189,27 +182,15 @@ func bearerToken(header string) string {
 // install was created against the wrong account or a token escaped into a different
 // one, and neither should be allowed to overwrite stack outputs.
 func checkObservedCloudAccount(install *app.Install, props map[string]any) (string, error) {
-	for _, field := range []struct {
-		payloadKey string
-		expected   string
-	}{
-		{"account_id", install.ExpectedAccountID},
-		{"subscription_id", install.ExpectedSubscriptionID},
-		{"project_id", install.ExpectedProjectID},
-	} {
-		observed, _ := props[field.payloadKey].(string)
-		if observed == "" || field.expected == "" || strings.EqualFold(observed, field.expected) {
-			continue
-		}
-
-		return phoneHomeRejectAccountMismatch, rejectPhoneHome(
-			phoneHomeRejectAccountMismatch,
-			fmt.Errorf("payload %s %s does not match the account expected for this install",
-				field.payloadKey, observed),
-		)
+	observed, _ := props["account_id"].(string)
+	if observed == "" || install.ExpectedAccountID == "" || observed == install.ExpectedAccountID {
+		return phoneHomeAuthOK, nil
 	}
 
-	return phoneHomeAuthOK, nil
+	return phoneHomeRejectAccountMismatch, rejectPhoneHome(
+		phoneHomeRejectAccountMismatch,
+		fmt.Errorf("payload account %s does not match the account expected for this install", observed),
+	)
 }
 
 // recordPhoneHomeAuthResult stamps the install so the dashboard can say "stack outputs
