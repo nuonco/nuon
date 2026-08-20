@@ -144,10 +144,16 @@ func (t *Templates) getVNetLinkedDeployment(inp *stacks.TemplateInput, scope arm
 		},
 	}
 
-	// A custom VNet template runs at subscription scope so it can declare its own
-	// resource groups — that is the whole point of opting into subscription scope.
-	// The built-in default below does the opposite and stays in the install group.
-	scope.targetSubscription(deployment)
+	// A custom VNet template may be written at either scope, and guessing wrong is
+	// not a warning: ARM rejects the whole deployment with InvalidScope. Trust the
+	// template's own $schema. Subscription-scoped means it declares its own resource
+	// groups; resource-group-scoped means it expects to run inside the install's,
+	// like the built-in default below.
+	if isSubscriptionScopedTemplate(armTmpl) {
+		scope.targetSubscription(deployment)
+	} else {
+		scope.targetInstallRG(deployment)
+	}
 
 	return deployment, hoistedParams, vnetPassthroughOutputs(armTmpl.Outputs), nil
 }

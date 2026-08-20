@@ -2,6 +2,7 @@ package arm
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
@@ -386,4 +387,17 @@ func (s armScope) wrapInInstallRG(name string, params map[string]nestedParam, re
 			"template":   inner,
 		},
 	}}
+}
+
+// isSubscriptionScopedTemplate reports whether a linked template expects to be
+// deployed against a subscription rather than a resource group.
+//
+// ARM identifies a template's scope solely by its $schema, and treats an
+// unrecognised or missing one as resource-group scope — the safer default, since
+// a resource-group-scoped child run at subscription scope fails with InvalidScope.
+func isSubscriptionScopedTemplate(tmpl *armTemplateShape) bool {
+	if tmpl == nil {
+		return false
+	}
+	return strings.TrimSuffix(tmpl.Schema, "#") == strings.TrimSuffix(subscriptionTemplateSchema, "#")
 }
