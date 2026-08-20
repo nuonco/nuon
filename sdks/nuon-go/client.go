@@ -62,6 +62,7 @@ type Client interface {
 	DeleteApp(ctx context.Context, appID string) (bool, error)
 
 	// app branch methods
+	GetOrgBranches(ctx context.Context) ([]*models.AppAppBranch, error)
 	GetAppBranches(ctx context.Context, appID string) ([]*models.AppAppBranch, error)
 	GetAppBranch(ctx context.Context, appID, appBranchID string) (*models.AppAppBranch, error)
 	CreateAppBranch(ctx context.Context, appID string, req *models.ServiceCreateAppBranchRequest) (*models.AppAppBranch, error)

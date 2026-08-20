@@ -2,8 +2,15 @@ import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
 import { useOrg } from '@/hooks/use-org'
-import { getInstalls, getInstallLabelKeys, getAppLabels, toLabelColorMap } from '@/lib'
+import {
+  getInstalls,
+  getInstallLabelKeys,
+  getBranches,
+  getAppLabels,
+  toLabelColorMap,
+} from '@/lib'
 import { CreateInstallButton } from '../CreateInstall'
+import { InstallBranchFilter } from '../InstallBranchFilter'
 import { InstallsTable, parseInstallsToTableData } from './InstallsTable'
 
 const LIMIT = 20
@@ -20,7 +27,14 @@ export const InstallsTableContainer = ({
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['installs', org.id, offset, searchParams.get('q'), searchParams.get('labels')],
+    queryKey: [
+      'installs',
+      org.id,
+      offset,
+      searchParams.get('q'),
+      searchParams.get('labels'),
+      searchParams.get('branches'),
+    ],
     queryFn: () =>
       getInstalls({
         orgId: org.id,
@@ -28,6 +42,7 @@ export const InstallsTableContainer = ({
         limit: LIMIT,
         q: searchParams.get('q') || undefined,
         labels: searchParams.get('labels') || undefined,
+        branches: searchParams.get('branches') || undefined,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -59,6 +74,13 @@ export const InstallsTableContainer = ({
           <LabelFilterDropdown
             queryKey={['install-label-keys', org.id]}
             queryFn={() => getInstallLabelKeys({ orgId: org.id })}
+          />
+          <InstallBranchFilter
+            queryKey={['org-branch-names', org.id]}
+            queryFn={async () => {
+              const { data } = await getBranches({ orgId: org.id, limit: 100 })
+              return [...new Set(data.map((b) => b.name).filter(Boolean))].sort()
+            }}
           />
           <CreateInstallButton
             className="!w-full !flex !justify-center md:!w-fit"

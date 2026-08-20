@@ -481,3 +481,37 @@ func (s *GetAppBranchesTestSuite) TestLatestConfigAttachedPerBranch() {
 	require.Len(s.T(), foundB.Configs[0].InstallGroups, 1)
 	require.Equal(s.T(), groupB.ID, foundB.Configs[0].InstallGroups[0].ID)
 }
+
+func (s *GetAppBranchesTestSuite) TestGetOrgBranchesAcrossApps() {
+	branchA := s.createBranch("org-branch-a")
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(&app.AppBranch{}, "id = ?", branchA.ID)
+	})
+
+	otherApp := s.service.Seeder.CreateApp(s.ctx, s.T())
+	branchB := &app.AppBranch{
+		ID:          domains.NewAppBranchID(),
+		OrgID:       s.testOrg.ID,
+		AppID:       otherApp.ID,
+		CreatedByID: s.testAcc.ID,
+		Name:        "org-branch-b",
+		ManagedBy:   app.AppBranchManagedByManually,
+	}
+	require.NoError(s.T(), s.service.DB.WithContext(s.ctx).Create(branchB).Error)
+	s.T().Cleanup(func() {
+		s.service.DB.Unscoped().Delete(&app.AppBranch{}, "id = ?", branchB.ID)
+	})
+
+	rr := s.makeRequest(http.MethodGet, "/v1/branches")
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+
+	var branches []rawBranchResponse
+	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &branches))
+
+	byID := make(map[string]bool, len(branches))
+	for _, b := range branches {
+		byID[b.ID] = true
+	}
+	require.True(s.T(), byID[branchA.ID], "expected branch from app A")
+	require.True(s.T(), byID[branchB.ID], "expected branch from app B")
+}
