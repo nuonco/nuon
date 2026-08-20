@@ -3,11 +3,17 @@ package activities
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
+
+// runner_heart_beats is ordered by (runner_id, process_id, created_at), so a created_at floor
+// keeps this to a granule read instead of scanning every beat the runner has sent. Live runners
+// beat every few seconds, so anything older than this means the runner is gone, not quiet.
+const heartBeatLookback = time.Hour
 
 type GetMostRecentHeartBeatRequest struct {
 	RunnerID string                `validate:"required"`
@@ -44,31 +50,27 @@ func (a *Activities) getMostRecentHeartBeat(ctx context.Context, runnerID string
 }
 
 func (a *Activities) queryHeartBeat(ctx context.Context, runnerID string, process app.RunnerProcessType) (*app.RunnerHeartBeat, error) {
-	var latest []*app.LatestRunnerHeartBeat
+	var beats []*app.RunnerHeartBeat
 	db := a.chDB.WithContext(ctx).
-		Where("runner_id = ?", runnerID)
+		Where("runner_id = ?", runnerID).
+		Where("created_at > ?", time.Now().Add(-heartBeatLookback))
 	if process != "" {
 		db = db.Where("process = ?", process)
 	}
 
 	res := db.
-		Order("created_at_latest desc").
+		Order("created_at desc").
 		Limit(1).
-		Find(&latest)
+		Find(&beats)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get heart beats")
 	}
-	if len(latest) == 0 {
+	if len(beats) == 0 {
 		return nil, nil
 	}
 
-	return &app.RunnerHeartBeat{
-		RunnerID:  latest[0].RunnerID,
-		ProcessID: latest[0].ProcessID,
-		Process:   latest[0].Process,
-		Version:   latest[0].Version,
-		AliveTime: latest[0].AliveTime,
-		CreatedAt: latest[0].CreatedAt,
-		StartedAt: latest[0].CreatedAt.Add(-1 * latest[0].AliveTime),
-	}, nil
+	hb := beats[0]
+	hb.StartedAt = hb.CreatedAt.Add(-1 * hb.AliveTime)
+
+	return hb, nil
 }
