@@ -21,6 +21,9 @@ func StackConfig(stack *config.StackConfig, appID, appConfigID string) (*app.App
 	if err := validateNestedTemplateURL(stackType, stack.RunnerNestedTemplateURL, "runner_nested_template_url"); err != nil {
 		return nil, err
 	}
+	if err := config.ValidateDeploymentScope(stack.DeploymentScope, stack.Type); err != nil {
+		return nil, err
+	}
 
 	// Copy so marking the upload status pending does not mutate the caller's
 	// parsed config.
@@ -55,7 +58,10 @@ func StackConfig(stack *config.StackConfig, appID, appConfigID string) (*app.App
 		Description:             stack.Description,
 		VPCNestedTemplateURL:    stack.VPCNestedTemplateURL,
 		RunnerNestedTemplateURL: stack.RunnerNestedTemplateURL,
-		CustomNestedStacks:      customNestedStacks,
+		// Not normalized: empty means resource group, and rewriting it would make
+		// every pre-existing config diff on its next sync.
+		DeploymentScope:    app.StackDeploymentScope(stack.DeploymentScope),
+		CustomNestedStacks: customNestedStacks,
 	}, nil
 }
 

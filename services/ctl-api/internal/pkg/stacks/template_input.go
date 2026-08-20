@@ -44,6 +44,14 @@ type TemplateInput struct {
 	VPCNestedStackTemplateURL    string
 	RunnerNestedStackTemplateURL string
 
+	// DeploymentScope is the ARM scope the Azure root template renders at, copied
+	// from the app's stack config by the caller so the renderer reads one struct.
+	// Empty means resource group, which is every install predating the field —
+	// compare against app.StackDeploymentScopeSubscription rather than testing for
+	// the resource-group value. Unvalidated because the AWS and GCP renderers share
+	// this struct and never set it.
+	DeploymentScope app.StackDeploymentScope
+
 	// Where the phone-home token map lives, for the Lambda to fetch at invocation
 	// time. Never the token itself: the rendered template is fetched
 	// unauthenticated from S3 via the quick-link, so it may only carry the secret's
