@@ -3,10 +3,12 @@ package executeworkflowstep
 import (
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -100,7 +102,9 @@ type Signal struct {
 	approvalResponseID   string
 	approvalResponseType string
 
-	mw metrics.Writer
+	mw  metrics.Writer
+	v   *validator.Validate
+	tmw tmetrics.Writer
 }
 
 var (
@@ -115,6 +119,7 @@ var (
 
 func (s *Signal) WithParams(params *signal.Params) {
 	s.mw = params.MW
+	s.v = params.V
 }
 
 func (s *Signal) Timeout() time.Duration {
