@@ -172,6 +172,7 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 
 	publicFS := h.publicFS()
 	authHandler := authmw.New(h.cfg, h.l).Handler()
+	byocFavicon := generateBYOCFavicon(h.cfg, h.l)
 
 	e.NoRoute(func(c *gin.Context) {
 		if c.Request.Method != http.MethodGet {
@@ -184,6 +185,12 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 		}
 
 		filePath := strings.TrimPrefix(c.Request.URL.Path, "/")
+
+		if byocFavicon != nil && !isLocalEnv && filePath == "favicon.svg" {
+			c.Header("Cache-Control", "public, max-age=3600")
+			c.Data(http.StatusOK, "image/svg+xml", byocFavicon)
+			return
+		}
 
 		if publicFS != nil {
 			rewrites := map[string]string(nil)
