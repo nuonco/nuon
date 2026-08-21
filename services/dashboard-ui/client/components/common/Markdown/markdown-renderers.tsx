@@ -10,10 +10,12 @@ import { MarkdownTable } from './MarkdownTable'
 import type { MarkdownVariant } from './Markdown'
 
 const MermaidFlowGraph = lazy(() => import('../MermaidFlowGraph').then((m) => ({ default: m.MermaidFlowGraph })))
+const MermaidXYChart = lazy(() => import('../MermaidXYChart').then((m) => ({ default: m.MermaidXYChart })))
 
 const BLOCK_TAG_NAMES = new Set([...nuonTagNames, 'nuon-tabs-rendered', 'nuon-surface-rendered', 'nuon-table-rendered'])
 
 const isFlowchart = (code: string) => /^(?:graph|flowchart)\s+(?:TD|TB|LR|RL|BT)\s*$/im.test(code.trim().split('\n')[0])
+const isXYChart = (code: string) => /^xychart(?:-beta)?\s*(?:horizontal\s*)?$/i.test(code.trim().split('\n')[0] ?? '')
 
 function renderCodeBlock(language: string, codeString: string, compact = false) {
   if (compact) {
@@ -29,6 +31,13 @@ function renderCodeBlock(language: string, codeString: string, compact = false) 
       return (
         <Suspense fallback={<div className="w-full h-[44rem] my-4 border rounded-lg border-color animate-pulse" />}>
           <MermaidFlowGraph code={codeString} />
+        </Suspense>
+      )
+    }
+    if (isXYChart(codeString)) {
+      return (
+        <Suspense fallback={<div className="w-full h-[220px] my-4 border rounded-lg border-color animate-pulse" />}>
+          <MermaidXYChart code={codeString} />
         </Suspense>
       )
     }
