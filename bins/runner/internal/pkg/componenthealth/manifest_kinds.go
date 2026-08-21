@@ -33,6 +33,11 @@ type ManifestKindsProvider struct {
 	// objects carry neither nuon labels nor helm annotations, so this is the only
 	// record of who owns them — and it has to outlive the process.
 	objects map[string]string
+	// releases maps a helm release name to the terraform component that installed
+	// it. Same reasoning as objects: a chart installed by terraform matches no
+	// chart component and carries no nuon labels, so losing this makes every one
+	// of its workloads unowned and the component reads not-applicable forever.
+	releases map[string]string
 }
 
 type ManifestKindsProviderParams struct {
@@ -44,16 +49,17 @@ type ManifestKindsProviderParams struct {
 
 func NewManifestKindsProvider(params ManifestKindsProviderParams) *ManifestKindsProvider {
 	return &ManifestKindsProvider{
-		l:       params.L,
-		cluster: params.Cluster,
-		gvks:    map[string][]schema.GroupVersionKind{},
-		objects: map[string]string{},
+		l:        params.L,
+		cluster:  params.Cluster,
+		gvks:     map[string][]schema.GroupVersionKind{},
+		objects:  map[string]string{},
+		releases: map[string]string{},
 	}
 }
 
 // SetKinds records kinds a caller already resolved (terraform state), plus the
-// object keys that component owns.
-func (p *ManifestKindsProvider) SetKinds(componentID string, gvks []schema.GroupVersionKind, objectKeys []string) {
+// object keys and helm releases that component owns.
+func (p *ManifestKindsProvider) SetKinds(componentID string, gvks []schema.GroupVersionKind, objectKeys, releases []string) {
 	if componentID == "" {
 		return
 	}
@@ -72,8 +78,25 @@ func (p *ManifestKindsProvider) SetKinds(componentID string, gvks []schema.Group
 	for _, key := range objectKeys {
 		p.objects[key] = componentID
 	}
+	for release, owner := range p.releases {
+		if owner == componentID {
+			delete(p.releases, release)
+		}
+	}
+	for _, release := range releases {
+		p.releases[release] = componentID
+	}
 	p.mu.Unlock()
 	p.persist()
+}
+
+// ComponentForRelease returns the component whose terraform installed a helm
+// release, keyed by release name.
+func (p *ManifestKindsProvider) ComponentForRelease(release string) (string, bool) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	componentID, ok := p.releases[release]
+	return componentID, ok
 }
 
 // ComponentForObject returns the component that applied an object, keyed as
@@ -97,11 +120,19 @@ func (p *ManifestKindsProvider) Load() {
 
 	restored := map[string][]schema.GroupVersionKind{}
 	restoredObjects := map[string]string{}
+	restoredReleases := map[string]string{}
 	for _, entry := range p.cluster.ComponentKinds() {
 		if after, isObject := strings.CutPrefix(entry, objectEntryPrefix); isObject {
 			componentID, key, found := strings.Cut(after, "|")
 			if found && componentID != "" && key != "" {
 				restoredObjects[key] = componentID
+			}
+			continue
+		}
+		if after, isRelease := strings.CutPrefix(entry, releaseEntryPrefix); isRelease {
+			componentID, release, found := strings.Cut(after, "|")
+			if found && componentID != "" && release != "" {
+				restoredReleases[release] = componentID
 			}
 			continue
 		}
@@ -124,11 +155,19 @@ func (p *ManifestKindsProvider) Load() {
 			p.objects[key] = componentID
 		}
 	}
+	for release, componentID := range restoredReleases {
+		if _, live := p.releases[release]; !live {
+			p.releases[release] = componentID
+		}
+	}
 }
 
 // objectEntryPrefix marks a persisted entry as object ownership rather than a
 // kind, so both share one stored list.
 const objectEntryPrefix = "obj:"
+
+// releaseEntryPrefix marks a persisted entry as helm-release ownership.
+const releaseEntryPrefix = "rel:"
 
 // persist mirrors every recorded kind so a restart does not lose them. Encoded
 // flat as "componentID|group/version/Kind" to keep the stored shape a plain
@@ -157,6 +196,9 @@ func (p *ManifestKindsProvider) persist() {
 	}
 	for key, componentID := range p.objects {
 		out = append(out, objectEntryPrefix+componentID+"|"+key)
+	}
+	for release, componentID := range p.releases {
+		out = append(out, releaseEntryPrefix+componentID+"|"+release)
 	}
 	p.mu.RUnlock()
 
