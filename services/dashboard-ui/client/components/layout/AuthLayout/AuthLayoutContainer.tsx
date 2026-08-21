@@ -4,6 +4,8 @@ import { useConsent } from '@/hooks/use-consent'
 import { InitPylonChat } from '@/lib/pylon-chat'
 import { InitPostHog } from '@/lib/posthog-analytics'
 import { ConsentProvider } from '@/providers/consent-provider'
+import { ToastProvider } from '@/providers/toast-provider'
+import { ConsentToastContainer } from '@/components/consent/ConsentToast'
 import { AuthLayout } from './AuthLayout'
 
 const AnalyticsWithConsent = ({ apiKey }: { apiKey: string }) => {
@@ -29,6 +31,11 @@ export const AuthLayoutContainer = () => {
       )}
       {posthogKey && isAuthenticated && (
         <AnalyticsWithConsent apiKey={posthogKey} />
+      )}
+      {posthogKey && isAuthenticated && (
+        <ToastProvider>
+          <ConsentToastContainer />
+        </ToastProvider>
       )}
       <AuthLayout
         isLoading={isLoading}
