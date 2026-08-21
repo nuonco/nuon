@@ -111,3 +111,63 @@ func TestPersistDoesNotClobberOtherComponents(t *testing.T) {
 	assert.Len(t, store.ComponentKinds(), 2, "cmp-a's kind must survive cmp-b's deploy")
 	assert.Len(t, b.DiscoveredGVKs(), 2)
 }
+
+// A terraform module that installs a chart owns real workloads, but they carry
+// no nuon labels and match no chart component, so the release->component map is
+// the only record of who owns them. It used to live in memory only, so any
+// runner restart made every one of those workloads unowned and the component
+// reported "no observable runtime resources" until it was redeployed.
+func TestReleaseOwnershipSurvivesRestart(t *testing.T) {
+	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
+
+	first := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
+	first.SetKinds("cmp-datadog", nil, nil, []string{"datadog-agent"})
+
+	owner, ok := first.ComponentForRelease("datadog-agent")
+	assert.True(t, ok)
+	assert.Equal(t, "cmp-datadog", owner)
+
+	restarted := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
+	_, ok = restarted.ComponentForRelease("datadog-agent")
+	assert.False(t, ok, "nothing until it loads")
+
+	restarted.Load()
+	owner, ok = restarted.ComponentForRelease("datadog-agent")
+	assert.True(t, ok, "release ownership must outlive the process")
+	assert.Equal(t, "cmp-datadog", owner)
+}
+
+// Releases removed from the module stop being attributed to it.
+func TestReleaseOwnershipReplacedOnReapply(t *testing.T) {
+	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
+	p := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
+
+	p.SetKinds("cmp-a", nil, nil, []string{"gone", "kept"})
+	p.SetKinds("cmp-a", nil, nil, []string{"kept"})
+
+	_, ok := p.ComponentForRelease("gone")
+	assert.False(t, ok, "a release dropped from the module must not stay attributed")
+	owner, ok := p.ComponentForRelease("kept")
+	assert.True(t, ok)
+	assert.Equal(t, "cmp-a", owner)
+}
+
+// Kinds, objects and releases share one stored list; none may evict another.
+func TestReleaseOwnershipCoexistsWithKindsAndObjects(t *testing.T) {
+	store := &ClusterProvider{l: zap.NewNop(), sandboxReleases: map[string]struct{}{}}
+	p := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
+
+	p.Set("cmp-chart", nodePoolManifest)
+	p.SetKinds("cmp-tf", nil, []string{"ConfigMap//cm"}, []string{"rel"})
+
+	restarted := NewManifestKindsProvider(ManifestKindsProviderParams{L: zap.NewNop(), Cluster: store})
+	restarted.Load()
+
+	assert.Len(t, restarted.DiscoveredGVKs(), 3, "chart kinds survive")
+	obj, ok := restarted.ComponentForObject("ConfigMap//cm")
+	assert.True(t, ok)
+	assert.Equal(t, "cmp-tf", obj)
+	rel, ok := restarted.ComponentForRelease("rel")
+	assert.True(t, ok)
+	assert.Equal(t, "cmp-tf", rel)
+}
