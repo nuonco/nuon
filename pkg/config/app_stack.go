@@ -37,6 +37,12 @@ type CustomNestedStack struct {
 	Contents     string                  `mapstructure:"-" toml:"-" json:"contents,omitempty" jsonschema:"-" features:"get"`
 	ContentsHash string                  `mapstructure:"-" toml:"-" json:"contents_hash,omitempty" jsonschema:"-"`
 	Status       CustomNestedStackStatus `mapstructure:"-" toml:"-" json:"status,omitempty" jsonschema:"-"`
+	// TemplateSourceURL is the public URL of the uploaded template contents.
+	// TemplateURL is whatever the vendor wrote in their config — usually a path
+	// relative to the config dir — so it is not resolvable by anything that did
+	// not do the original parse. Set when the contents are uploaded; empty for
+	// configs synced before this field existed.
+	TemplateSourceURL string `mapstructure:"-" toml:"-" json:"template_source_url,omitempty" jsonschema:"-"`
 }
 
 func (a CustomNestedStack) JSONSchemaExtend(schema *jsonschema.Schema) {
