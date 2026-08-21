@@ -77,9 +77,7 @@ export const WorkflowChangeRow = ({
   const right = (
     <div className="flex items-center gap-4 shrink-0">
       <RowCounts summary={summary} />
-      <Badge theme={statusMeta.theme} size="sm">
-        {statusMeta.label}
-      </Badge>
+      <Badge {...statusMeta} size="sm" />
     </div>
   )
 
@@ -106,7 +104,7 @@ export const WorkflowChangeRow = ({
       )}
 
       {canExpand && isExpanded ? (
-        <div className="px-4 pb-4 pt-1 bg-cool-grey-50 dark:bg-dark-grey-900">
+        <div className="border-t px-4 py-4 bg-cool-grey-50 dark:bg-dark-grey-900">
           {renderDetail(summary)}
         </div>
       ) : null}

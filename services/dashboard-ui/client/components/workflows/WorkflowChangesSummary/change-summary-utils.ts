@@ -4,8 +4,8 @@ import type {
   TStepChangePlanType,
   TStepChangeStatus,
   TStepChangeSummary,
-  TTheme,
 } from '@/types'
+import { WORKFLOW_BADGE_MAP, type TBadgeCfg } from '@/utils/workflow-utils'
 
 export const PLAN_TYPE_META: Record<
   TStepChangePlanType,
@@ -19,16 +19,13 @@ export const PLAN_TYPE_META: Record<
   install_creation: { icon: 'CubeIcon', label: 'Install' },
 }
 
-export const STATUS_META: Record<
-  TStepChangeStatus,
-  { theme: TTheme; label: string }
-> = {
-  'pending-approval': { theme: 'info', label: 'Pending approval' },
-  approved: { theme: 'success', label: 'Approved' },
-  denied: { theme: 'warn', label: 'Denied' },
-  applied: { theme: 'success', label: 'Applied' },
-  generating: { theme: 'info', label: 'Generating' },
-  error: { theme: 'error', label: 'Error' },
+export const STATUS_META: Record<TStepChangeStatus, TBadgeCfg> = {
+  'pending-approval': WORKFLOW_BADGE_MAP['approval-awaiting'],
+  approved: WORKFLOW_BADGE_MAP['approved'],
+  denied: WORKFLOW_BADGE_MAP['approval-denied'],
+  applied: WORKFLOW_BADGE_MAP['success'],
+  generating: { children: 'Generating', theme: 'info' },
+  error: WORKFLOW_BADGE_MAP['error'],
 }
 
 export const emptyCounts = (): TStepChangeCounts => ({
