@@ -82,17 +82,12 @@ func (a *Activities) EnsureInstallStackServiceAccount(
 
 	resp := &EnsureInstallStackServiceAccountResponse{AccountID: acct.ID}
 
-	var live app.Token
-	res := a.db.WithContext(ctx).
-		Where(app.Token{AccountID: acct.ID}).
-		Where("expires_at > ?", time.Now()).
-		Order("created_at DESC").
-		First(&live)
-	if res.Error == nil {
-		return resp, nil
+	hasLive, err := hasLiveStackToken(ctx, a.db, acct.ID)
+	if err != nil {
+		return nil, err
 	}
-	if !errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		return nil, generics.TemporalGormError(res.Error, "unable to look up stack token: %w")
+	if hasLive {
+		return resp, nil
 	}
 
 	if _, err := a.acctClient.CreateToken(
@@ -103,4 +98,25 @@ func (a *Activities) EnsureInstallStackServiceAccount(
 	resp.TokenMinted = true
 
 	return resp, nil
+}
+
+// hasLiveStackToken reports whether an account still holds a usable token. This is
+// the whole mint decision, so every way a token can stop counting has to be handled
+// here: gorm's soft delete filters revoked rows out of the query, and the expiry
+// bound filters out ones that aged out. A false here re-mints.
+func hasLiveStackToken(ctx context.Context, db *gorm.DB, accountID string) (bool, error) {
+	var live app.Token
+	res := db.WithContext(ctx).
+		Where(app.Token{AccountID: accountID}).
+		Where("expires_at > ?", time.Now()).
+		Order("created_at DESC").
+		First(&live)
+	if res.Error == nil {
+		return true, nil
+	}
+	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+
+	return false, generics.TemporalGormError(res.Error, "unable to look up stack token: %w")
 }
