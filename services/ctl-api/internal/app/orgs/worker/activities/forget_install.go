@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"fmt"
 
 	"gorm.io/gorm/clause"
 
@@ -85,6 +86,23 @@ func (a *Activities) ForgetInstall(ctx context.Context, req ForgetInstallRequest
 			Where("id IN ?", runnerIDs).
 			Delete(&app.Runner{}); res.Error != nil {
 			return dbgenerics.TemporalGormError(res.Error, "unable to delete runners: %w")
+		}
+	}
+
+	// must run before the cascade delete below: the install stack's service account is
+	// tied to the stack only by the naming convention on Account.Subject, not by a
+	// foreign key, so clause.Associations will never reach it. Once the stack row is
+	// gone there is no supported way back to the ID needed to derive the account.
+	var stackIDs []string
+	if res := a.db.WithContext(ctx).
+		Model(&app.InstallStack{}).
+		Where(app.InstallStack{InstallID: req.InstallID}).
+		Pluck("id", &stackIDs); res.Error != nil {
+		return dbgenerics.TemporalGormError(res.Error, "unable to list install stacks: %w")
+	}
+	for _, stackID := range stackIDs {
+		if err := a.acctClient.DeleteServiceAccount(ctx, stackID); err != nil {
+			return fmt.Errorf("unable to delete stack service account: %w", err)
 		}
 	}
 
