@@ -11,7 +11,9 @@ import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
+import { getRunTitle } from '@/components/branches/shared/run-title'
 import { toSentenceCase } from '@/utils/string-utils'
+import { getWorkflowHref } from '@/utils/workflow-utils'
 import type { TWorkflowStepApproval } from '@/types'
 
 type WorkflowApprovalsContextValue = {
@@ -64,14 +66,20 @@ export function WorkflowApprovalsProvider({
       if (!seenIds.current.has(approval.id)) {
         seenIds.current.add(approval.id)
         const step = approval.workflow_step
-        const stepName = step?.name
-        const installName = step?.owner_id
-          ? activeWorkflows.find((w) => w.owner_id === step.owner_id)?.metadata
-              ?.owner_name
+        const workflow = step?.install_workflow_id
+          ? activeWorkflows.find((w) => w.id === step.install_workflow_id)
           : undefined
-        const heading = stepName ? toSentenceCase(stepName) : 'Approval required'
-        const workflowUrl =
-          step?.owner_id && step?.install_workflow_id
+        const isBranchRun = workflow?.owner_type === 'app_branches'
+        const stepName = step?.name
+        const installName = workflow?.metadata?.owner_name
+        const heading = isBranchRun
+          ? getRunTitle(workflow)
+          : stepName
+            ? toSentenceCase(stepName)
+            : 'Approval required'
+        const workflowUrl = workflow
+          ? getWorkflowHref(org.id, workflow)
+          : step?.owner_id && step?.install_workflow_id
             ? `/${org.id}/installs/${step.owner_id}/workflows/${step.install_workflow_id}`
             : null
         addToast(

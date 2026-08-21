@@ -60,7 +60,7 @@ func (s *service) getOrgPendingApprovals(ctx *gin.Context, orgID string) ([]app.
 			SELECT s.id
 			FROM install_workflow_steps s
 			JOIN install_workflows w ON w.id = s.install_workflow_id
-			JOIN installs iw ON iw.id = w.owner_id AND iw.deleted_at = 0
+			LEFT JOIN installs iw ON iw.id = w.owner_id AND w.owner_type = 'installs'
 			WHERE w.org_id = ?
 			  AND w.finished_at IS NULL
 			  AND w.deleted_at = 0
@@ -68,6 +68,7 @@ func (s *service) getOrgPendingApprovals(ctx *gin.Context, orgID string) ([]app.
 			  AND (w.status->>'status') NOT IN ('cancelled', 'error')
 			  AND s.deleted_at = 0
 			  AND (s.status->>'status') NOT IN ('auto-skipped', 'cancelled', 'error')
+			  AND (w.owner_type != 'installs' OR iw.deleted_at = 0)
 		))`, orgID).
 		Where("NOT EXISTS (SELECT 1 FROM install_workflow_step_approval_responses r WHERE r.install_workflow_step_approval_id = install_workflow_step_approvals.id AND r.deleted_at = 0)").
 		Preload("InstallWorkflowStep").

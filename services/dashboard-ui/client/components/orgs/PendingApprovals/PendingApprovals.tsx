@@ -3,8 +3,10 @@ import { Card } from '@/components/common/Card'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
+import { getRunTitle } from '@/components/branches/shared/run-title'
 import { getApprovalType } from '@/utils/approval-utils'
 import { toSentenceCase } from '@/utils/string-utils'
+import { getWorkflowHref } from '@/utils/workflow-utils'
 import type { TWorkflowStepApproval, TWorkflow } from '@/types'
 
 interface IPendingApprovals {
@@ -14,10 +16,8 @@ interface IPendingApprovals {
 }
 
 export const PendingApprovals = ({ orgId, approvals, activeWorkflows }: IPendingApprovals) => {
-  const ownerNames = new Map(
-    activeWorkflows
-      .filter((w) => w.owner_id && w.metadata?.owner_name)
-      .map((w) => [w.owner_id!, w.metadata!.owner_name!])
+  const workflowsById = new Map(
+    activeWorkflows.filter((w) => w.id).map((w) => [w.id!, w])
   )
 
   if (approvals.length === 0) return null
@@ -35,16 +35,21 @@ export const PendingApprovals = ({ orgId, approvals, activeWorkflows }: IPending
       <Card className="!p-0 !gap-0 overflow-hidden">
         {approvals.map((approval, i) => {
           const step = approval.workflow_step
-          const href =
-            step?.owner_id && step?.install_workflow_id
+          const workflow = step?.install_workflow_id
+            ? workflowsById.get(step.install_workflow_id)
+            : undefined
+          const isBranchRun = workflow?.owner_type === 'app_branches'
+          const href = workflow
+            ? getWorkflowHref(orgId, workflow)
+            : step?.owner_id && step?.install_workflow_id
               ? `/${orgId}/installs/${step.owner_id}/workflows/${step.install_workflow_id}`
               : undefined
-          const name = step?.name
-            ? toSentenceCase(step.name)
-            : 'Approval required'
-          const installName = step?.owner_id
-            ? ownerNames.get(step.owner_id)
-            : undefined
+          const name = isBranchRun
+            ? getRunTitle(workflow)
+            : step?.name
+              ? toSentenceCase(step.name)
+              : 'Approval required'
+          const installName = workflow?.metadata?.owner_name
 
           return (
             <div
