@@ -1,6 +1,8 @@
 // Package oidctoken discovers ambient OIDC ID tokens in automation
-// environments (CI) so the CLI can exchange them for Nuon API tokens without
-// any stored secrets.
+// environments (CI) so callers can exchange them for Nuon API tokens without
+// any stored secrets. Shared by the CLI and the stack SDK: it lives here, in
+// the dependency-free stack module, because the Terraform provider consumes
+// the SDK and cannot import the CLI's internal packages.
 package oidctoken
 
 import (
