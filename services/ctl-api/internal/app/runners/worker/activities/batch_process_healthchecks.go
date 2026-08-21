@@ -345,7 +345,7 @@ func (a *Activities) handleBatchProcessInactive(ectx context.Context, p *app.Run
 	a.l.Warn("process inactive - no heartbeat for 5 minutes, stopping queue",
 		zap.String("runner_id", p.RunnerID), zap.String("process_id", p.ID))
 
-	stopTags := metrics.ToTags(tags)
+	stopTags := metrics.ToTags(tags, "reason:offline")
 	a.mw.Incr("runner.process.stop", stopTags)
 	if p.StartedAt != nil {
 		a.mw.Timing("runner.process.latency", now.Sub(*p.StartedAt), stopTags)
