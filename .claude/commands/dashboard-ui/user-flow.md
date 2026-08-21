@@ -58,6 +58,12 @@ This skill enforces the two-component (Button + Modal) pattern using useSurfaces
    ```
    Skip the tooltip when the reason is obvious from context (label already changes for async ops, form errors are shown, a type-to-confirm input is right above). Copy follows `COPY_STYLE.md` (sentence case, fragment, no period).
 
+9. **(Optional) Add analytics tracking.** If this action is worth measuring, add a `trackEvent` call
+   to the mutation's `onSuccess` **and** `onError` — see `dashboard-ui:add-tracking`. Snake_case
+   event name, camelCase props (the adaptor snake_cases keys), and rely on the `org_id` / `app_id` /
+   `install_id` super properties instead of re-passing them. It's a silent no-op when analytics is
+   off, so no guard is needed.
+
 Canonical source: `client/components/approvals/ApprovePlan.tsx`
 
 ## Anti-Patterns
