@@ -78,3 +78,25 @@ func (s *InstallsServiceTestSuite) TestCreateApprovalResponseNotFound() {
 	rr := s.makeRequest(http.MethodPost, path, body)
 	assert.Equal(s.T(), http.StatusNotFound, rr.Code)
 }
+
+func (s *InstallsServiceTestSuite) TestCreateApprovalResponseRejectsApprovalFromAnotherStep() {
+	install := s.createTestInstall()
+	workflow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeReprovision)
+	requestedStep := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID)
+	approvalStep := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID)
+	approval := s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), approvalStep.ID, app.TerraformPlanApprovalType, "plan output")
+
+	body := CreateWorkflowStepApprovalResponseRequest{
+		ResponseType: app.WorkflowStepApprovalResponseTypeApprove,
+		Note:         "lgtm",
+	}
+	path := fmt.Sprintf("/v1/workflows/%s/steps/%s/approvals/%s/response", workflow.ID, requestedStep.ID, approval.ID)
+	rr := s.makeRequest(http.MethodPost, path, body)
+	require.Equal(s.T(), http.StatusNotFound, rr.Code, "body: %s", rr.Body.String())
+
+	var responseCount int64
+	require.NoError(s.T(), s.deps.DB.Model(&app.WorkflowStepApprovalResponse{}).
+		Where(app.WorkflowStepApprovalResponse{InstallWorkflowStepApprovalID: approval.ID}).
+		Count(&responseCount).Error)
+	assert.Zero(s.T(), responseCount)
+}

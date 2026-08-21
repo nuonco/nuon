@@ -92,7 +92,7 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 		return
 	}
 
-	approval, err := s.getWorkflowStepApproval(ctx, org.ID, approvalID)
+	approval, err := s.getWorkflowStepApproval(ctx, org.ID, stepID, approvalID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.Error(stderr.ErrNotFound{

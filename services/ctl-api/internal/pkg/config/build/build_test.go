@@ -281,7 +281,7 @@ func TestStackConfigRejectsNestedStackWithoutContents(t *testing.T) {
 func TestPoliciesConfigKeepsName(t *testing.T) {
 	obj, err := PoliciesConfig(PolicyInputsFromConfig(&config.PoliciesConfig{
 		Policies: []config.AppPolicy{
-			{Type: config.AppPolicyTypeSandbox, Name: "no-public-buckets", Contents: "package x"},
+			{Type: config.AppPolicyTypeSandbox, Engine: config.AppPolicyEngineOPA, Name: "no-public-buckets", Contents: "package nuon\ndeny := []"},
 		},
 	}), "app1", "cfg1")
 	require.NoError(t, err)
@@ -294,6 +294,17 @@ func TestPoliciesConfigRejectsUnknownType(t *testing.T) {
 	_, err := PoliciesConfig([]PolicyInput{{Type: "nope", Contents: "package x"}}, "app1", "cfg1")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid policy type")
+}
+
+func TestPoliciesConfigRejectsInvalidOPAPackage(t *testing.T) {
+	_, err := PoliciesConfig([]PolicyInput{{
+		Type:     config.AppPolicyTypeSandbox,
+		Engine:   config.AppPolicyEngineOPA,
+		Name:     "invalid-package",
+		Contents: "package other",
+	}}, "app1", "cfg1")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "must use package nuon")
 }
 
 func TestComponentConnectionKeepsToggles(t *testing.T) {
