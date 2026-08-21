@@ -3,14 +3,17 @@ import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
+import { useAuth } from '@/hooks/use-auth'
 import { useOrg } from '@/hooks/use-org'
 import { useRoleOptions } from '@/hooks/use-roles'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getOrgInvites, inviteUser, resendOrgInvite } from '@/lib'
+import { trackEvent } from '@/lib/posthog-analytics'
 import { InviteUserModal } from './InviteUser'
 
 const InviteUserModalContainer = (props: Record<string, any>) => {
+  const { user } = useAuth()
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
@@ -30,7 +33,13 @@ const InviteUserModalContainer = (props: Record<string, any>) => {
         body: { email, role_type: roleType },
         orgId: org.id,
       }),
-    onSuccess: (_data, { email }) => {
+    onSuccess: (_data, { email, roleType }) => {
+      trackEvent({
+        event: 'user_invite',
+        status: 'ok',
+        user,
+        props: { roleType },
+      })
       queryClient.invalidateQueries({ queryKey: ['org-invites', org?.id] })
       addToast(
         <Toast heading="Invitation sent" theme="success">
@@ -39,7 +48,13 @@ const InviteUserModalContainer = (props: Record<string, any>) => {
       )
       removeModal(props.modalId)
     },
-    onError: (_err, { email }) => {
+    onError: (err: any, { email, roleType }) => {
+      trackEvent({
+        event: 'user_invite',
+        status: 'error',
+        user,
+        props: { roleType, err: err?.error },
+      })
       addToast(
         <Toast heading="Invite failed" theme="error">
           <Text>There was an error inviting {email} to {org.name}.</Text>
