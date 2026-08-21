@@ -19,6 +19,7 @@ import { useSpotlight } from '@/hooks/use-spotlight'
 import { useHelp } from '@/hooks/use-help'
 import { useNavShortcuts } from '@/hooks/use-nav-shortcuts'
 import { VCSConnectionSuccess } from '@/components/vcs-connections/VCSConnectionSuccess'
+import { ConsentToastContainer } from '@/components/consent/ConsentToast'
 
 const SpotlightListener = () => {
   useSpotlight()
@@ -48,6 +49,7 @@ export const OrgLayout = () => {
                         <SurfacesProvider>
                           <SpotlightListener />
                           <VCSConnectionSuccess />
+                          <ConsentToastContainer />
                           <MainLayout
                             versions={{
                               api: {

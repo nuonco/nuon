@@ -12,7 +12,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { reprovisionSandbox } from '@/lib'
-import { trackEvent } from '@/lib/segment-analytics'
+import { trackEvent } from '@/lib/posthog-analytics'
 import { DriftScanSandboxModal } from './DriftScanSandbox'
 
 export const DriftScanSandboxModalContainer = ({
