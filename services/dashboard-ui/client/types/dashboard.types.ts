@@ -17,6 +17,40 @@ export type TAPIResponse<T> = {
 
 export type TFileResponse = { content: string; filename: string }
 
+export type TStepChangePlanType =
+  | 'terraform_plan'
+  | 'pulumi_plan'
+  | 'helm_approval'
+  | 'kubernetes_manifest_approval'
+  | 'app_branch_plan'
+  | 'install_creation'
+
+export type TStepChangeStatus =
+  | 'pending-approval'
+  | 'approved'
+  | 'denied'
+  | 'applied'
+  | 'generating'
+  | 'error'
+
+export type TStepChangeCounts = {
+  create: number
+  update: number
+  delete: number
+  replace: number
+  noop: number
+}
+
+export type TStepChangeSummary = {
+  stepId: string
+  stepName: string
+  componentName?: string
+  planType: TStepChangePlanType
+  status: TStepChangeStatus
+  counts: TStepChangeCounts
+  hasDetail: boolean
+}
+
 export type TPaginationPageData = {
   hasNext: string
   offset: string
