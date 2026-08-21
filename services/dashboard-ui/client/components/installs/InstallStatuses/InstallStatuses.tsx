@@ -372,7 +372,7 @@ export const InstallStatuses = ({
           subtitle:
             install?.composite_health_status_description ??
             toSentenceCase(healthStatus),
-          href: `/${install.org_id}/installs/${install.id}/components`,
+          href: `/${install.org_id}/installs/${install.id}/resources?health=${healthStatus}`,
           leftContent: (
             <Status
               status={healthStatus}
@@ -529,7 +529,7 @@ export const InstallStatuses = ({
             subtitle:
               install?.composite_health_status_description ??
               toSentenceCase(healthStatus),
-            href: `/${install.org_id}/installs/${install.id}/components`,
+            href: `/${install.org_id}/installs/${install.id}/resources?health=${healthStatus}`,
             leftContent: (
               <Status
                 status={healthStatus}

@@ -1,5 +1,6 @@
 import type React from 'react'
 import { Divider } from '@/components/common/Divider'
+import { Expand } from '@/components/common/Expand'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Duration } from '@/components/common/Duration'
@@ -17,6 +18,10 @@ import type {
   TInstallHealthTimelineComponent,
 } from '@/types'
 import { cn } from '@/utils/classnames'
+import {
+  bearsHealthVerdict,
+  compareHealthSeverityDesc,
+} from '@/utils/health-utils'
 import { kebabToWords, toSentenceCase } from '@/utils/string-utils'
 import { formatToRelativeDay } from '@/utils/timeline-utils'
 
@@ -148,6 +153,43 @@ function dayAriaLabel(day: THealthTimelineDay): string {
   }`
 }
 
+function ComponentHealthRows({
+  components,
+  componentBasePath,
+  className,
+}: {
+  components: TInstallHealthTimelineComponent[]
+  componentBasePath?: string
+  className?: string
+}) {
+  return (
+    <div className={cn('flex flex-col gap-2', className)}>
+      {components.map((component) => (
+        <div
+          key={component.install_component_id}
+          className="flex items-center justify-between gap-3"
+        >
+          {/* Component routes are keyed by component_id; linking with the
+              install-component id dead-ends on an empty page. */}
+          {componentBasePath && component.component_id ? (
+            <Link href={`${componentBasePath}/${component.component_id}`}>
+              {component.component_name || component.component_id}
+            </Link>
+          ) : (
+            <Text>{component.component_name || component.install_component_id}</Text>
+          )}
+          <div className="flex items-center gap-3 shrink-0">
+            <Status status={component.current_health || 'unknown'} variant="badge" />
+            <Text variant="subtext" theme="neutral" className="w-16 text-right">
+              {formatUptime(component.uptime_percent, component.observed_seconds)}
+            </Text>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export interface IHealthTimeline {
   className?: string
   headerAction?: React.ReactNode
@@ -196,13 +238,31 @@ export const HealthTimeline = ({
   const hasOverallData = (observedSeconds ?? 0) > 0
   const hasDaily = !!daily?.length
 
+  const ranked = [...(components ?? [])].sort(
+    (a, b) =>
+      compareHealthSeverityDesc(a.current_health, b.current_health) ||
+      (a.uptime_percent ?? 100) - (b.uptime_percent ?? 100) ||
+      (a.component_name || '').localeCompare(b.component_name || '')
+  )
+  const assessed = ranked.filter((component) =>
+    bearsHealthVerdict(component.current_health)
+  )
+  const unassessed = ranked.filter(
+    (component) => !bearsHealthVerdict(component.current_health)
+  )
+
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <HeadingGroup>
-          <Text variant="body" weight="strong">
-            {days}-day health
-          </Text>
+          <span className="flex items-center gap-2">
+            <Text variant="body" weight="strong">
+              {days}-day health
+            </Text>
+            {currentHealth ? (
+              <Status variant="badge" status={currentHealth} />
+            ) : null}
+          </span>
           <Text variant="subtext" theme="neutral">
             {hasOverallData
               ? `${formatUptime(uptimePercent, observedSeconds)} uptime over the last ${days} days`
@@ -219,17 +279,27 @@ export const HealthTimeline = ({
       ) : null}
 
       {hasDaily ? (
-        <HealthBars
-          animated
-          grow
-          barClassName="h-8 rounded-xs"
-          bars={daily!.map((day, idx) => ({
-            key: day?.date || idx,
-            colorClass: dayBarClass(day),
-            ariaLabel: dayAriaLabel(day),
-            tooltip: <DayTooltipContent day={day} />,
-          }))}
-        />
+        <div className="flex flex-col gap-1.5">
+          <HealthBars
+            animated
+            grow
+            barClassName="h-8 rounded-xs"
+            bars={daily!.map((day, idx) => ({
+              key: day?.date || idx,
+              colorClass: dayBarClass(day),
+              ariaLabel: dayAriaLabel(day),
+              tooltip: <DayTooltipContent day={day} />,
+            }))}
+          />
+          <div className="flex items-center justify-between">
+            <Text variant="label" theme="neutral">
+              {daily!.length} days ago
+            </Text>
+            <Text variant="label" theme="neutral">
+              Today
+            </Text>
+          </div>
+        </div>
       ) : (
         <EmptyState
           variant="history"
@@ -242,40 +312,32 @@ export const HealthTimeline = ({
       {components?.length ? (
         <>
           <Divider dividerWord="Components" />
-          <div className="flex flex-col gap-2">
-            {components.map((component) => (
-              <div
-                key={component.install_component_id}
-                className="flex items-center justify-between gap-3"
-              >
-                {/* Component routes are keyed by component_id; linking with the
-                    install-component id dead-ends on an empty page. */}
-                {componentBasePath && component.component_id ? (
-                  <Link href={`${componentBasePath}/${component.component_id}`}>
-                    {component.component_name || component.component_id}
-                  </Link>
-                ) : (
-                  <Text>{component.component_name || component.install_component_id}</Text>
-                )}
-                <div className="flex items-center gap-3 shrink-0">
-                  <Status
-                    status={component.current_health || 'unknown'}
-                    variant="badge"
-                  />
-                  <Text
-                    variant="subtext"
-                    theme="neutral"
-                    className="w-16 text-right"
-                  >
-                    {formatUptime(
-                      component.uptime_percent,
-                      component.observed_seconds
-                    )}
-                  </Text>
-                </div>
-              </div>
-            ))}
-          </div>
+          {assessed.length > 0 ? (
+            <ComponentHealthRows
+              components={assessed}
+              componentBasePath={componentBasePath}
+            />
+          ) : null}
+          {unassessed.length > 0 ? (
+            <Expand
+              id="health-timeline-unassessed-components"
+              isIconBeforeHeading
+              headerClassName="!px-0 !justify-start"
+              heading={
+                <Text variant="subtext" theme="neutral">
+                  {unassessed.length}{' '}
+                  {unassessed.length === 1 ? 'component' : 'components'} with no
+                  health signal
+                </Text>
+              }
+            >
+              <ComponentHealthRows
+                className="pt-2"
+                components={unassessed}
+                componentBasePath={componentBasePath}
+              />
+            </Expand>
+          ) : null}
         </>
       ) : null}
 
