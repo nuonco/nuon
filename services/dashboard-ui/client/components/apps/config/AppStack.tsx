@@ -2,6 +2,7 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Text } from '@/components/common/Text'
+import { CustomStackTemplateURL } from '@/components/stacks/CustomStackTemplateURL'
 import type { TAppConfig } from '@/types'
 
 export interface IAppStack {
@@ -50,28 +51,18 @@ export const AppStack = ({ appConfig }: IAppStack) => {
             Custom nested stacks
           </Text>
           <PropertyGrid
-            values={[...stackConfig.custom_nested_stacks]
-              .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
-              .map((s) => ({
-                index: s?.index,
-                name: s?.name,
-                template_url: s?.template_url,
-                contents_hash: s?.contents_hash,
-              }))}
+            values={[...stackConfig.custom_nested_stacks].sort(
+              (a, b) => (a.index ?? 0) - (b.index ?? 0)
+            )}
             columns={[
               { key: 'index', header: 'Index' },
               { key: 'name', header: 'Name' },
               {
                 key: 'template_url',
                 header: 'Template URL',
-                render: (value) =>
-                  value ? (
-                    <Text variant="subtext">
-                      <Link href={String(value)} isExternal>
-                        {String(value)}
-                      </Link>
-                    </Text>
-                  ) : null,
+                render: (_value, stack) => (
+                  <CustomStackTemplateURL stack={stack} />
+                ),
               },
               { key: 'contents_hash', header: 'Contents hash' },
             ]}
