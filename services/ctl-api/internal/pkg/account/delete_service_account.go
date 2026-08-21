@@ -16,11 +16,8 @@ import (
 // from delete workflows that retry, and an entity that never had a service account
 // must not block its own teardown.
 //
-// Role bindings are hard-deleted, matching authz.RemoveAccountOrgRoles. The account
-// and its tokens are soft-deleted, which is sufficient to kill authentication: the
-// auth middleware resolves a token to an account via FindAccount, and a soft-deleted
-// account is invisible to it. The unique index on accounts spans deleted_at, so the
-// service-account email is freed for reuse either way.
+// The unique index on accounts spans deleted_at, so the service-account email is
+// freed for reuse. See deleteAccountRecords for what gets removed and why.
 func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) error {
 	email := ServiceAccountEmail(svcAcctID)
 
@@ -40,24 +37,35 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) err
 	}
 
 	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// Hard delete: the many2many association declares OnDelete:CASCADE, but that
-		// is a foreign-key constraint and a soft delete never fires it.
-		if res := tx.Unscoped().
-			Where(app.AccountRole{AccountID: acct.ID}).
-			Delete(&app.AccountRole{}); res.Error != nil {
-			return errors.Wrap(res.Error, "unable to remove account roles")
-		}
-
-		if res := tx.
-			Where(app.Token{AccountID: acct.ID}).
-			Delete(&app.Token{}); res.Error != nil {
-			return errors.Wrap(res.Error, "unable to delete tokens")
-		}
-
-		if res := tx.Delete(&app.Account{ID: acct.ID}); res.Error != nil {
-			return errors.Wrap(res.Error, "unable to delete account")
-		}
-
-		return nil
+		return deleteAccountRecords(tx, acct.ID)
 	})
+}
+
+// deleteAccountRecords removes everything that makes an account usable as a
+// credential. Split out from DeleteServiceAccount so the record-level behaviour can
+// be tested without standing up the preloads FindAccount performs.
+//
+// Role bindings are hard-deleted because the many2many association declares
+// OnDelete:CASCADE, and that is a foreign-key constraint a soft delete never fires.
+// The tokens and the account are soft-deleted, which is enough to break
+// authentication: the middleware resolves a token through FindAccount, and that
+// cannot see a soft-deleted row.
+func deleteAccountRecords(tx *gorm.DB, accountID string) error {
+	if res := tx.Unscoped().
+		Where(app.AccountRole{AccountID: accountID}).
+		Delete(&app.AccountRole{}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to remove account roles")
+	}
+
+	if res := tx.
+		Where(app.Token{AccountID: accountID}).
+		Delete(&app.Token{}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to delete tokens")
+	}
+
+	if res := tx.Delete(&app.Account{ID: accountID}); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to delete account")
+	}
+
+	return nil
 }
