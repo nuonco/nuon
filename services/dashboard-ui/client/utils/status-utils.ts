@@ -137,6 +137,8 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   'No build': 'ClockCountdownIcon',
   deprovisioned: 'WarningIcon',
 
+  'not-applicable': 'MinusCircleIcon',
+
   'auto-skipped': 'MinusCircleIcon',
   'user-skipped': 'MinusCircleIcon',
   retried: 'RepeatIcon',

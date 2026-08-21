@@ -62,6 +62,7 @@ type Client interface {
 	DeleteApp(ctx context.Context, appID string) (bool, error)
 
 	// app branch methods
+	GetOrgBranches(ctx context.Context) ([]*models.AppAppBranch, error)
 	GetAppBranches(ctx context.Context, appID string) ([]*models.AppAppBranch, error)
 	GetAppBranch(ctx context.Context, appID, appBranchID string) (*models.AppAppBranch, error)
 	CreateAppBranch(ctx context.Context, appID string, req *models.ServiceCreateAppBranchRequest) (*models.AppAppBranch, error)
@@ -337,6 +338,7 @@ type Client interface {
 	GetInstallActionWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallActionWorkflow, bool, error)
 	GetInstallActionWorkflowRecentRuns(ctx context.Context, installID, actionWorkflowID string, query *models.GetPaginatedQuery) (*models.AppInstallActionWorkflow, bool, error)
 	CreateInstallActionWorkflowRun(ctx context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) error
+	CreateAdHocAction(ctx context.Context, installID string, req *models.ServiceCreateAdHocActionRequest) (*models.ServiceCreateAdHocActionResponse, error)
 	GetInstallActionWorkflowRun(ctx context.Context, installID, runID string) (*models.AppInstallActionWorkflowRun, error)
 	GetInstallActionWorkflowOutputs(ctx context.Context, installID, actionID string) (any, error)
 	GetActionWorkflowLatestConfig(ctx context.Context, actionWorkflowID string) (*models.AppActionWorkflowConfig, error)

@@ -47,4 +47,9 @@ type AWSOutputs struct {
 
 	// SecretARNs is keyed by `<name>_arn` to match the phone-home contract.
 	SecretARNs map[string]string
+
+	// RunnerEnabled is false when the stack was applied with the runner module
+	// skipped, which ctl-api reads to mark the runner disabled rather than
+	// treating its silence as a failure.
+	RunnerEnabled bool
 }

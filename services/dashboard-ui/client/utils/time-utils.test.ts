@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import { describe, expect, test, beforeAll, afterAll, spyOn } from 'bun:test'
-import { isRecentTimestamp } from './time-utils'
+import { isRecentTimestamp, latestTimestamp } from './time-utils'
 import { DateTime } from 'luxon'
 
 describe('time-utils', () => {
@@ -57,5 +57,21 @@ describe('time-utils', () => {
       const result = isRecentTimestamp('invalid-date')
       expect(typeof result).toBe('boolean')
     })
+  })
+})
+
+describe('latestTimestamp', () => {
+  test('returns the newest timestamp', () => {
+    const older = DateTime.now().minus({ hours: 2 }).toISO()!
+    const newer = DateTime.now().minus({ minutes: 5 }).toISO()!
+    expect(latestTimestamp([older, newer])).toBe(newer)
+    expect(latestTimestamp([newer, older])).toBe(newer)
+  })
+
+  test('ignores undefined entries and returns undefined when empty', () => {
+    const only = DateTime.now().toISO()!
+    expect(latestTimestamp([undefined, only, undefined])).toBe(only)
+    expect(latestTimestamp([])).toBeUndefined()
+    expect(latestTimestamp([undefined])).toBeUndefined()
   })
 })

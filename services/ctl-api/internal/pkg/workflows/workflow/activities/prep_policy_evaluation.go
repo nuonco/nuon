@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
+	pulumiworkspace "github.com/nuonco/nuon/pkg/pulumi/workspace"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	plan "github.com/nuonco/nuon/pkg/types/approvals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -209,6 +210,7 @@ func (a *Activities) resolveSandboxPolicyContext(ctx context.Context, sandboxRun
 	var sandboxRun app.InstallSandboxRun
 	res := a.db.WithContext(ctx).
 		Preload("Install.App.Org").
+		Preload("AppSandboxConfig").
 		First(&sandboxRun, "id = ?", sandboxRunID)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get sandbox run")
@@ -222,6 +224,7 @@ func (a *Activities) resolveSandboxPolicyContext(ctx context.Context, sandboxRun
 		InstallSandboxID: sandboxRun.InstallSandboxID,
 		ComponentType:    "",
 		ComponentName:    "",
+		SandboxType:      sandboxRun.AppSandboxConfig.Type,
 		IsSandbox:        true,
 		OrgName:          sandboxRun.Install.App.Org.Name,
 		AppName:          sandboxRun.Install.App.Name,
@@ -296,7 +299,9 @@ func componentTypeToPolicyType(ct app.ComponentType) config.AppPolicyType {
 
 func (a *Activities) preparePolicyInputs(planContentsJSON []byte, pctx *policyContext) ([][]byte, []string, error) {
 	switch {
-	case pctx.IsSandbox, pctx.ComponentType == app.ComponentTypeTerraformModule, pctx.ComponentType == app.ComponentTypePulumi:
+	case pctx.IsSandbox && pctx.SandboxType == config.AppSandboxTypePulumi, pctx.ComponentType == app.ComponentTypePulumi:
+		return a.preparePulumiPolicyInputs(planContentsJSON, pctx)
+	case pctx.IsSandbox, pctx.ComponentType == app.ComponentTypeTerraformModule:
 		return a.prepareTerraformPolicyInputs(planContentsJSON, pctx)
 	case pctx.ComponentType == app.ComponentTypeHelmChart:
 		return a.prepareHelmPolicyInputs(planContentsJSON)
@@ -305,6 +310,26 @@ func (a *Activities) preparePolicyInputs(planContentsJSON []byte, pctx *policyCo
 	default:
 		return nil, nil, fmt.Errorf("unsupported component type for policy input preparation: %s", pctx.ComponentType)
 	}
+}
+
+func (a *Activities) preparePulumiPolicyInputs(planContentsJSON []byte, pctx *policyContext) ([][]byte, []string, error) {
+	var preview pulumiworkspace.PreviewResult
+	if err := json.Unmarshal(planContentsJSON, &preview); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to parse pulumi preview")
+	}
+	if preview.ChangeSummary == nil {
+		return nil, nil, fmt.Errorf("pulumi preview is missing change_summary")
+	}
+
+	identity := "pulumi-plan"
+	if pctx.ComponentID != nil {
+		identity = fmt.Sprintf("component:%s", *pctx.ComponentID)
+		if pctx.ComponentName != "" {
+			identity = fmt.Sprintf("component:%s (%s)", *pctx.ComponentID, pctx.ComponentName)
+		}
+	}
+
+	return [][]byte{planContentsJSON}, []string{identity}, nil
 }
 
 func (a *Activities) prepareTerraformPolicyInputs(planContentsJSON []byte, pctx *policyContext) ([][]byte, []string, error) {
@@ -350,7 +375,7 @@ func (a *Activities) prepareKubernetesManifestPolicyInputs(planContentsJSON []by
 		return nil, nil, errors.Wrap(err, "failed to unmarshal kubernetes manifest plan contents")
 	}
 
-	return a.yamlToAdmissionReviewInputs(planContents.DryRunOutput, planOpToAdmissionOperation(string(planContents.Op)), planContentsJSON)
+	return a.yamlToAdmissionReviewInputs(planContents.DryRunOutput, planOpToAdmissionOperation(string(planContents.Op)))
 }
 
 func (a *Activities) prepareHelmPolicyInputs(planContentsJSON []byte) ([][]byte, []string, error) {
@@ -362,7 +387,7 @@ func (a *Activities) prepareHelmPolicyInputs(planContentsJSON []byte) ([][]byte,
 		return nil, nil, errors.Wrap(err, "failed to unmarshal helm plan contents")
 	}
 
-	return a.yamlToAdmissionReviewInputs(planContents.TemplateOutput, planOpToAdmissionOperation(planContents.Op), planContentsJSON)
+	return a.yamlToAdmissionReviewInputs(planContents.TemplateOutput, planOpToAdmissionOperation(planContents.Op))
 }
 
 // planOpToAdmissionOperation maps a helm/kubernetes plan op to the admission
@@ -380,14 +405,14 @@ func planOpToAdmissionOperation(op string) string {
 	}
 }
 
-func (a *Activities) yamlToAdmissionReviewInputs(yamlManifests string, operation string, fallback []byte) ([][]byte, []string, error) {
+func (a *Activities) yamlToAdmissionReviewInputs(yamlManifests string, operation string) ([][]byte, []string, error) {
 	admissionReviews, err := plan.ParseMultiDocYAMLToAdmissionReviews(yamlManifests)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to parse manifests to admission reviews")
 	}
 
 	if len(admissionReviews) == 0 {
-		return [][]byte{fallback}, []string{"unknown"}, nil
+		return nil, nil, fmt.Errorf("rendered plan contains no Kubernetes manifests for policy evaluation")
 	}
 
 	inputs := make([][]byte, len(admissionReviews))

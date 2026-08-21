@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.temporal.io/sdk/testsuite"
 	"go.uber.org/zap"
 )
 
@@ -94,6 +95,74 @@ deny contains msg if {
 
 	_, err := a.evaluateRule(ctx, l, invalidPolicy, input, "data.nuon.deny", "deny")
 	assert.Error(t, err, "expected error for invalid policy syntax")
+}
+
+func TestEvaluateSinglePolicyRejectsWrongPackage(t *testing.T) {
+	_, err := executeEvaluateSinglePolicy(t, &EvaluateSinglePolicyRequest{
+		PolicyID:  "policy-id",
+		Contents:  "package other\ndeny := []",
+		InputJSON: []byte("{}"),
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "must use package nuon")
+}
+
+func TestEvaluateSinglePolicyRejectsMissingDecisions(t *testing.T) {
+	_, err := executeEvaluateSinglePolicy(t, &EvaluateSinglePolicyRequest{
+		PolicyID:  "policy-id",
+		Contents:  "package nuon\nallow := true",
+		InputJSON: []byte("{}"),
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "must define at least one deny or warn rule")
+}
+
+func TestEvaluateSinglePolicyAllowsOneDecisionType(t *testing.T) {
+	result, err := executeEvaluateSinglePolicy(t, &EvaluateSinglePolicyRequest{
+		PolicyID:  "policy-id",
+		Contents:  "package nuon\ndeny := []",
+		InputJSON: []byte("{}"),
+	})
+	require.NoError(t, err)
+	assert.Empty(t, result.Violations)
+}
+
+func executeEvaluateSinglePolicy(t *testing.T, req *EvaluateSinglePolicyRequest) (*EvaluateSinglePolicyResult, error) {
+	t.Helper()
+
+	activities := &Activities{}
+	var suite testsuite.WorkflowTestSuite
+	env := suite.NewTestActivityEnvironment()
+	env.RegisterActivity(activities.EvaluateSinglePolicy)
+
+	encoded, err := env.ExecuteActivity(activities.EvaluateSinglePolicy, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var result EvaluateSinglePolicyResult
+	require.NoError(t, encoded.Get(&result))
+	return &result, nil
+}
+
+func TestEvaluateRuleRejectsInvalidOutput(t *testing.T) {
+	tests := map[string]string{
+		"scalar rule": `package nuon
+deny := true`,
+		"unsupported violation type": `package nuon
+deny contains 42 if { true }`,
+		"object without message": `package nuon
+deny contains {"reason": "blocked"} if { true }`,
+		"empty message": `package nuon
+deny contains "" if { true }`,
+	}
+
+	for name, policy := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := (&Activities{}).evaluateRule(context.Background(), zap.NewNop(), policy, map[string]interface{}{}, "data.nuon.deny", "deny")
+			require.Error(t, err)
+		})
+	}
 }
 
 func TestEvaluateRule_EmptyInput(t *testing.T) {

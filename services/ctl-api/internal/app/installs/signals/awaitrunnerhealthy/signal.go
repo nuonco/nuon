@@ -14,9 +14,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/poll"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 const SignalType signal.SignalType = "await-runner-healthy"
+
+// Existing await-runner-healthy histories already scheduled their poll
+// activities, so the disabled-runner short circuit must not apply on replay.
+const skipDisabledRunnerVersion = "await-runner-healthy-skip-disabled-runner-v1"
 
 type Signal struct {
 	InstallID      string `json:"install_id"`
@@ -74,6 +79,30 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	runner, err := activities.AwaitGetRunnerByID(ctx, install.RunnerID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner")
+	}
+
+	// A runner disabled by the install stack will never report a healthy
+	// process, so waiting out the poll window would stall the workflow for an
+	// hour and then fail it. Nothing downstream can run without a runner
+	// either, but that is the deploy steps' problem to report, not this
+	// step's.
+	skipDisabled := workflow.GetVersion(ctx, skipDisabledRunnerVersion, workflow.DefaultVersion, 1) != workflow.DefaultVersion
+	if skipDisabled && runner.Status == app.RunnerStatusDisabled {
+		if s.WorkflowStepID != "" {
+			// The step executor only preserves a status it recognises as a skip,
+			// so write auto-skipped here rather than letting it default to
+			// success for a wait that never happened.
+			if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: s.WorkflowStepID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusAutoSkipped,
+					StatusHumanDescription: "runner is disabled by the install stack",
+				},
+			}); err != nil {
+				return errors.Wrap(err, "unable to mark step auto-skipped for disabled runner")
+			}
+		}
+		return nil
 	}
 
 	// Determine the process type to poll based on runner group type

@@ -78,7 +78,37 @@ const mockComponents: TInstallHealthTimelineComponent[] = [
   },
 ]
 
+const mockNoSignalComponents: TInstallHealthTimelineComponent[] = [
+  {
+    install_component_id: 'icmp4',
+    component_name: 'networking',
+    current_health: 'not-applicable',
+    uptime_percent: 0,
+  },
+  {
+    install_component_id: 'icmp5',
+    component_name: 'secrets',
+    current_health: 'unknown',
+    uptime_percent: 0,
+  },
+  {
+    install_component_id: 'icmp6',
+    component_name: 'dns',
+    current_health: 'not-applicable',
+    uptime_percent: 0,
+  },
+]
+
 const mockTransitions: TInstallComponentHealthTransition[] = [
+  {
+    from_health: 'unhealthy',
+    to_health: 'healthy',
+    message: 'Pod api-7d9f8 recovered',
+    root_resource_kind: 'Deployment',
+    root_resource_namespace: 'default',
+    root_resource_name: 'api',
+    observed_at: DateTime.now().minus({ hours: 1 }).toISO()!,
+  },
   {
     from_health: 'healthy',
     to_health: 'unhealthy',
@@ -89,15 +119,6 @@ const mockTransitions: TInstallComponentHealthTransition[] = [
     correlated_deploy_id: 'dep_9f8a3c',
     diagnosis: 'Container was OOMKilled after hitting its memory limit.',
     observed_at: DateTime.now().minus({ hours: 3 }).toISO()!,
-  },
-  {
-    from_health: 'unhealthy',
-    to_health: 'healthy',
-    message: 'Pod api-7d9f8 recovered',
-    root_resource_kind: 'Deployment',
-    root_resource_namespace: 'default',
-    root_resource_name: 'api',
-    observed_at: DateTime.now().minus({ hours: 1 }).toISO()!,
   },
   {
     from_health: 'healthy',
@@ -116,6 +137,32 @@ export const InstallScope = () => (
     observedSeconds={90 * 86400}
     currentHealth="healthy"
     components={mockComponents}
+    componentBasePath="/org123/installs/inst123/components"
+  />
+)
+
+export const InstallScopeWithNoSignalComponents = () => (
+  <HealthTimeline
+    scope="install"
+    days={90}
+    daily={buildDaily(90)}
+    uptimePercent={99.42}
+    observedSeconds={90 * 86400}
+    currentHealth="healthy"
+    components={[...mockComponents, ...mockNoSignalComponents]}
+    componentBasePath="/org123/installs/inst123/components"
+  />
+)
+
+export const InstallScopeAllNoSignalComponents = () => (
+  <HealthTimeline
+    scope="install"
+    days={90}
+    daily={buildDaily(90)}
+    uptimePercent={99.42}
+    observedSeconds={90 * 86400}
+    currentHealth="unknown"
+    components={mockNoSignalComponents}
     componentBasePath="/org123/installs/inst123/components"
   />
 )

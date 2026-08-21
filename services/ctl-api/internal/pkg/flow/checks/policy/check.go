@@ -31,17 +31,21 @@ const (
 
 // Check implements directive.ApprovalCreateCheck for policy evaluation.
 type Check struct {
-	sig signal.Signal
-	tmw tmetrics.Writer
+	sig      signal.Signal
+	tmw      tmetrics.Writer
+	checkCtx *directive.CheckContext
 }
 
-func New(sig signal.Signal, tmw tmetrics.Writer) directive.ApprovalCreateCheck {
-	return &Check{sig: sig, tmw: tmw}
+func New(sig signal.Signal, tmw tmetrics.Writer, checkCtx *directive.CheckContext) directive.ApprovalCreateCheck {
+	return &Check{sig: sig, tmw: tmw, checkCtx: checkCtx}
 }
 
 func (c *Check) Name() string { return "policy" }
 
 func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow) bool {
+	if flw.PlanOnly || c.checkCtx.NoopPlan {
+		return false
+	}
 	pe, ok := c.sig.(signal.SignalWithPolicyEvaluation)
 	return ok && pe.RequiresPolicyEvaluation()
 }
@@ -65,46 +69,57 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		return directive.Pass(), nil
 	}
 
-	if policyContext != nil {
+	if policyContext == nil {
+		l.Debug("no policies apply to workflow step",
+			zap.String("step_id", step.ID),
+			zap.String("workflow_id", flw.ID))
+		return directive.Pass(), nil
+	}
+
+	policyInputCounts := make(map[string]int, len(policyContext.PolicyIDs))
+	for _, policyID := range policyContext.PolicyIDs {
+		policyInputCounts[policyID] = policyContext.InputCount
+	}
+	var validationID *string
+	if step.PolicyValidation != nil {
+		validationID = &step.PolicyValidation.ID
+	}
+	reportResult, reportErr := activities.AwaitPersistPolicyReport(ctx, &activities.PersistPolicyReportRequest{
+		OrgID:                          policyContext.OrgID,
+		AppID:                          policyContext.AppID,
+		InstallID:                      policyContext.InstallID,
+		InstallSandboxID:               policyContext.InstallSandboxID,
+		ComponentID:                    policyContext.ComponentID,
+		ComponentBuildID:               policyContext.ComponentBuildID,
+		WorkflowStepPolicyValidationID: validationID,
+		OwnerID:                        step.StepTargetID,
+		OwnerType:                      step.StepTargetType,
+		Violations:                     violations,
+		PolicyIDs:                      policyContext.PolicyIDs,
+		PolicyInputCounts:              policyInputCounts,
+		OrgName:                        policyContext.OrgName,
+		AppName:                        policyContext.AppName,
+		InstallName:                    policyContext.InstallName,
+		ComponentName:                  policyContext.ComponentName,
+	})
+	if reportErr != nil {
+		policyErr := &policyEvaluationError{
+			stage: string(policyerrors.EvaluationFailureStagePersistence),
+			err:   errors.Wrap(reportErr, "unable to persist policy report"),
+		}
+		l.Error("failed to persist policy report; continuing with warning", zap.Error(reportErr))
+		c.recordFailure(ctx, step, flw, policyErr)
+		recordEvaluationCompositeError(ctx, l, step, policyErr)
+	} else {
 		c.recordSuccess(ctx, step, flw, outcome)
+	}
 
-		policyInputCounts := make(map[string]int, len(policyContext.PolicyIDs))
-		for _, policyID := range policyContext.PolicyIDs {
-			policyInputCounts[policyID] = policyContext.InputCount
-		}
-		var validationID *string
-		if step.PolicyValidation != nil {
-			validationID = &step.PolicyValidation.ID
-		}
-		reportResult, err := activities.AwaitPersistPolicyReport(ctx, &activities.PersistPolicyReportRequest{
-			OrgID:                          policyContext.OrgID,
-			AppID:                          policyContext.AppID,
-			InstallID:                      policyContext.InstallID,
-			InstallSandboxID:               policyContext.InstallSandboxID,
-			ComponentID:                    policyContext.ComponentID,
-			ComponentBuildID:               policyContext.ComponentBuildID,
-			WorkflowStepPolicyValidationID: validationID,
-			OwnerID:                        step.StepTargetID,
-			OwnerType:                      step.StepTargetType,
-			Violations:                     violations,
-			PolicyIDs:                      policyContext.PolicyIDs,
-			PolicyInputCounts:              policyInputCounts,
-			OrgName:                        policyContext.OrgName,
-			AppName:                        policyContext.AppName,
-			InstallName:                    policyContext.InstallName,
-			ComponentName:                  policyContext.ComponentName,
-		})
-		if err != nil {
-			l.Warn("failed to persist policy report", zap.Error(err))
-		}
-
-		var passedPolicyIDs []string
-		if reportResult != nil {
-			passedPolicyIDs = reportResult.PassedPolicyIDs
-		}
-		if err := processPolicyViolations(ctx, l, step, flw, violations, passedPolicyIDs); err != nil {
-			return directive.Pass(), errors.Wrap(err, "unable to process check for policy violation")
-		}
+	var passedPolicyIDs []string
+	if reportResult != nil {
+		passedPolicyIDs = reportResult.PassedPolicyIDs
+	}
+	if err := processPolicyViolations(ctx, l, step, flw, violations, passedPolicyIDs); err != nil {
+		return directive.Pass(), errors.Wrap(err, "unable to process check for policy violation")
 	}
 
 	l.Debug("policy check completed successfully",
@@ -113,7 +128,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 
 	// If the signal opts into auto-approve on policies passing and there are
 	// no deny violations, short-circuit the pipeline with a continue directive.
-	if aa, ok := c.sig.(signal.SignalWithAutoApproveOnPoliciesPassing); ok && aa.AutoApproveOnPoliciesPassing(ctx) {
+	if aa, ok := c.sig.(signal.SignalWithAutoApproveOnPoliciesPassing); reportErr == nil && ok && aa.AutoApproveOnPoliciesPassing(ctx) {
 		l.Debug("auto-approving after policies passed",
 			zap.String("step_id", step.ID))
 		return directive.CheckResult{
