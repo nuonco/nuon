@@ -22,7 +22,7 @@ import (
 const stackTokenTimeout = time.Hour * 24 * 90
 
 type EnsureInstallStackServiceAccountRequest struct {
-	InstallID string `json:"install_id" validate:"required"`
+	InstallStackID string `json:"install_stack_id" validate:"required"`
 }
 
 type EnsureInstallStackServiceAccountResponse struct {
@@ -52,7 +52,7 @@ type EnsureInstallStackServiceAccountResponse struct {
 // strand such a stack with no credential and no way to notice.
 //
 // @temporal-gen-v2 activity
-// @by-field InstallID
+// @by-field InstallStackID
 // @start-to-close-timeout 2m
 func (a *Activities) EnsureInstallStackServiceAccount(
 	ctx context.Context, req *EnsureInstallStackServiceAccountRequest,
@@ -63,7 +63,7 @@ func (a *Activities) EnsureInstallStackServiceAccount(
 
 	var stack app.InstallStack
 	if res := a.db.WithContext(ctx).
-		Where(app.InstallStack{InstallID: req.InstallID}).
+		Where(app.InstallStack{ID: req.InstallStackID}).
 		First(&stack); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error, "unable to load install stack: %w")
 	}
