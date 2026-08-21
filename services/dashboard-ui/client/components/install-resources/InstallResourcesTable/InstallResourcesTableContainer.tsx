@@ -7,7 +7,10 @@ import { getInstallComponents, getInstallResources } from '@/lib'
 import {
   groupComponentResources,
   groupSandboxResources,
+  healthFacetCounts,
   InstallResourcesTable,
+  matchesHealthFilter,
+  matchesResourceSearch,
 } from './InstallResourcesTable'
 
 export const InstallResourcesTableContainer = ({
@@ -28,6 +31,7 @@ export const InstallResourcesTableContainer = ({
   const kind = searchParams.get('kind') ?? ''
   const namespace = searchParams.get('namespace') ?? ''
   const health = searchParams.get('health') ?? ''
+  const search = searchParams.get('q') ?? ''
 
   const setFilter = useCallback(
     (key: string) => (value: string) => {
@@ -107,15 +111,26 @@ export const InstallResourcesTableContainer = ({
     [allResources]
   )
 
-  const filteredResources = useMemo(
+  // The chips are facet counts for the health axis, so they stay stable while
+  // you toggle between them — only the other axes narrow them.
+  const scopedResources = useMemo(
     () =>
       allResources.filter((r) => {
         if (kind && r?.kind !== kind) return false
         if (namespace && r?.namespace !== namespace) return false
-        if (health && r?.health !== health) return false
-        return true
+        return matchesResourceSearch(r, search)
       }),
-    [allResources, kind, namespace, health]
+    [allResources, kind, namespace, search]
+  )
+
+  const healthCounts = useMemo(
+    () => healthFacetCounts(scopedResources),
+    [scopedResources]
+  )
+
+  const filteredResources = useMemo(
+    () => scopedResources.filter((r) => matchesHealthFilter(r, health)),
+    [scopedResources, health]
   )
 
   const componentGroups = useMemo(
@@ -131,10 +146,12 @@ export const InstallResourcesTableContainer = ({
     <InstallResourcesTable
       componentGroups={componentGroups}
       sandboxGroups={sandboxGroups}
+      healthCounts={healthCounts}
       isLoading={isLoading}
       kind={kind}
       namespace={namespace}
       health={health}
+      search={search}
       kindOptions={kindOptions}
       namespaceOptions={namespaceOptions}
       onKindChange={setFilter('kind')}
