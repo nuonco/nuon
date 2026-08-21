@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 )
 
@@ -31,6 +32,7 @@ type Params struct {
 	Cfg             *internal.Config
 	EndpointAudit   *api.EndpointAudit
 	InstallsHelpers *installshelpers.Helpers
+	AcctClient      *account.Client
 }
 
 type service struct {
@@ -41,6 +43,7 @@ type service struct {
 	l               *zap.Logger
 	cfg             *internal.Config
 	installsHelpers *installshelpers.Helpers
+	acctClient      *account.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -54,7 +57,14 @@ func (s *service) RegisterRunnerRoutes(ge *gin.Engine) error {
 	return nil
 }
 
-func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
+// The token read is on the public API, not the runner API: it is the dashboard that
+// displays it, and the customer applying the Terraform has no credential yet.
+func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
+	stacks := ge.Group("/v1/stacks/:install_id")
+	{
+		stacks.GET("/token", s.GetStackToken)
+	}
+
 	return nil
 }
 
@@ -85,5 +95,6 @@ func New(params Params) *service {
 		l:               params.L,
 		cfg:             params.Cfg,
 		installsHelpers: params.InstallsHelpers,
+		acctClient:      params.AcctClient,
 	}
 }
