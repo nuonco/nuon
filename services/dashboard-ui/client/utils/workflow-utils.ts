@@ -24,7 +24,7 @@ export function getWorkflowStepTitle(step?: TWorkflowStep): string {
   return toSentenceCase(step?.name)
 }
 
-const WORKFLOW_BADGE_MAP: Record<
+export const WORKFLOW_BADGE_MAP: Record<
   string,
   { children: string; theme?: TBadgeTheme }
 > = {
