@@ -31,17 +31,21 @@ const (
 
 // Check implements directive.ApprovalCreateCheck for policy evaluation.
 type Check struct {
-	sig signal.Signal
-	tmw tmetrics.Writer
+	sig      signal.Signal
+	tmw      tmetrics.Writer
+	checkCtx *directive.CheckContext
 }
 
-func New(sig signal.Signal, tmw tmetrics.Writer) directive.ApprovalCreateCheck {
-	return &Check{sig: sig, tmw: tmw}
+func New(sig signal.Signal, tmw tmetrics.Writer, checkCtx *directive.CheckContext) directive.ApprovalCreateCheck {
+	return &Check{sig: sig, tmw: tmw, checkCtx: checkCtx}
 }
 
 func (c *Check) Name() string { return "policy" }
 
 func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow) bool {
+	if flw.PlanOnly || c.checkCtx.NoopPlan {
+		return false
+	}
 	pe, ok := c.sig.(signal.SignalWithPolicyEvaluation)
 	return ok && pe.RequiresPolicyEvaluation()
 }
@@ -72,8 +76,6 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		return directive.Pass(), nil
 	}
 
-	c.recordSuccess(ctx, step, flw, outcome)
-
 	policyInputCounts := make(map[string]int, len(policyContext.PolicyIDs))
 	for _, policyID := range policyContext.PolicyIDs {
 		policyInputCounts[policyID] = policyContext.InputCount
@@ -82,7 +84,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	if step.PolicyValidation != nil {
 		validationID = &step.PolicyValidation.ID
 	}
-	reportResult, err := activities.AwaitPersistPolicyReport(ctx, &activities.PersistPolicyReportRequest{
+	reportResult, reportErr := activities.AwaitPersistPolicyReport(ctx, &activities.PersistPolicyReportRequest{
 		OrgID:                          policyContext.OrgID,
 		AppID:                          policyContext.AppID,
 		InstallID:                      policyContext.InstallID,
@@ -100,8 +102,16 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		InstallName:                    policyContext.InstallName,
 		ComponentName:                  policyContext.ComponentName,
 	})
-	if err != nil {
-		l.Warn("failed to persist policy report", zap.Error(err))
+	if reportErr != nil {
+		policyErr := &policyEvaluationError{
+			stage: string(policyerrors.EvaluationFailureStagePersistence),
+			err:   errors.Wrap(reportErr, "unable to persist policy report"),
+		}
+		l.Error("failed to persist policy report; continuing with warning", zap.Error(reportErr))
+		c.recordFailure(ctx, step, flw, policyErr)
+		recordEvaluationCompositeError(ctx, l, step, policyErr)
+	} else {
+		c.recordSuccess(ctx, step, flw, outcome)
 	}
 
 	var passedPolicyIDs []string
@@ -118,7 +128,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 
 	// If the signal opts into auto-approve on policies passing and there are
 	// no deny violations, short-circuit the pipeline with a continue directive.
-	if aa, ok := c.sig.(signal.SignalWithAutoApproveOnPoliciesPassing); ok && aa.AutoApproveOnPoliciesPassing(ctx) {
+	if aa, ok := c.sig.(signal.SignalWithAutoApproveOnPoliciesPassing); reportErr == nil && ok && aa.AutoApproveOnPoliciesPassing(ctx) {
 		l.Debug("auto-approving after policies passed",
 			zap.String("step_id", step.ID))
 		return directive.CheckResult{

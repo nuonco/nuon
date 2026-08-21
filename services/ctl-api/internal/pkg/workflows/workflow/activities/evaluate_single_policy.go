@@ -3,11 +3,13 @@ package activities
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/open-policy-agent/opa/v1/rego"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	configvalidate "github.com/nuonco/nuon/pkg/config/validate"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 )
 
@@ -33,6 +35,11 @@ func (a *Activities) EvaluateSinglePolicy(ctx context.Context, req *EvaluateSing
 	l = l.With(zap.String("policy_id", req.PolicyID))
 
 	l.Info("evaluating policy")
+
+	if err := configvalidate.ValidateOPAPolicy(req.Contents); err != nil {
+		l.Error("invalid OPA policy", zap.Error(err))
+		return nil, errors.Wrap(err, "invalid OPA policy")
+	}
 
 	var input any
 	if err := json.Unmarshal(req.InputJSON, &input); err != nil {
@@ -107,8 +114,7 @@ func (a *Activities) evaluateRule(
 		for _, expr := range result.Expressions {
 			ruleResults, ok := expr.Value.([]interface{})
 			if !ok {
-				l.Warn("expression value is not a slice, skipping", zap.String("query", queryStr))
-				continue
+				return nil, fmt.Errorf("OPA rule %s must return a set or array of violation messages, got %T", queryStr, expr.Value)
 			}
 			for _, item := range ruleResults {
 				violation := PolicyViolation{
@@ -119,14 +125,19 @@ func (a *Activities) evaluateRule(
 				case string:
 					violation.Message = v
 				case map[string]interface{}:
-					if msg, ok := v["msg"].(string); ok {
-						violation.Message = msg
+					msg, ok := v["msg"].(string)
+					if !ok {
+						return nil, fmt.Errorf("OPA rule %s returned an object without a string msg field", queryStr)
 					}
+					violation.Message = msg
+				default:
+					return nil, fmt.Errorf("OPA rule %s returned unsupported violation type %T", queryStr, item)
 				}
 
-				if violation.Message != "" {
-					violations = append(violations, violation)
+				if violation.Message == "" {
+					return nil, fmt.Errorf("OPA rule %s returned an empty violation message", queryStr)
 				}
+				violations = append(violations, violation)
 			}
 		}
 	}

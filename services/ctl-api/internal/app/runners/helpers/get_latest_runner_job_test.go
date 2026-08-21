@@ -184,6 +184,7 @@ func TestResolveJobCompositeError(t *testing.T) {
 	executionError := &compositeerrors.CompositeErrorData{Type: "terraform.error"}
 	lifecycleError := &compositeerrors.CompositeErrorData{Type: "runner.job_lifecycle_failure"}
 	cancellationError := &compositeerrors.CompositeErrorData{Type: joberrors.CancellationErrorType}
+	policyWarning := &compositeerrors.CompositeErrorData{Type: "policy.evaluation_failed", Severity: compositeerrors.SeverityWarning}
 
 	tests := map[string]struct {
 		job      app.RunnerJob
@@ -234,6 +235,13 @@ func TestResolveJobCompositeError(t *testing.T) {
 				Status:         app.RunnerJobStatusFinished,
 				CompositeError: lifecycleError,
 			},
+		},
+		"finished job exposes policy warning": {
+			job: app.RunnerJob{
+				Status:         app.RunnerJobStatusFinished,
+				CompositeError: policyWarning,
+			},
+			expected: policyWarning,
 		},
 		"finished job hides stale execution error": {
 			job: app.RunnerJob{
