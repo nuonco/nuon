@@ -2,6 +2,7 @@ package zapwriter
 
 import (
 	"io"
+	"sync"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -36,6 +37,9 @@ type zapWriter struct {
 
 	lineFormatter func(string) string
 	lineLeveler   func(string) zapcore.Level
+	lineBuffered  bool
+	buffer        []byte
+	mu            sync.Mutex
 }
 
 type optFn func(*zapWriter)
@@ -63,5 +67,11 @@ func WithLineFormatter(fn func(string) string) optFn {
 func WithLineLeveler(fn func(string) zapcore.Level) optFn {
 	return func(r *zapWriter) {
 		r.lineLeveler = fn
+	}
+}
+
+func WithLineBuffering() optFn {
+	return func(r *zapWriter) {
+		r.lineBuffered = true
 	}
 }
