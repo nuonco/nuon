@@ -25,11 +25,11 @@ func (s *AppConfigTypesTestSuite) TestCreateAppPoliciesConfig() {
 					AppConfigID: s.testAppConfig.ID,
 					Policies: []AppPolicyConfig{
 						{
-							Type:        config.AppPolicyTypeKubernetesCluster,
+							Type:        config.AppPolicyTypeSandbox,
 							Engine:      config.AppPolicyEngineOPA,
 							Name:        "test-policy",
 							Description: "Test policy description",
-							Contents:    "package test\n\ndefault allow = false",
+							Contents:    "package nuon\n\ndeny := []",
 						},
 					},
 				}

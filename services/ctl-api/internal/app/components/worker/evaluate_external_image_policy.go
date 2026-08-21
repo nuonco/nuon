@@ -9,8 +9,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/policyerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
@@ -148,14 +150,18 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 
 	// Collect all violations from parallel evaluations
 	var allViolations []sharedactivities.PolicyViolation
+	evaluationFailed := false
 	for _, fut := range futures {
 		var result sharedactivities.EvaluateSinglePolicyResult
 		if err := fut.Get(ctx, &result); err != nil {
-			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("policy evaluation failed", err))
-			w.updateJobStatusForPolicyFailure(ctx, buildJobID, "policy evaluation failed")
-			return fmt.Errorf("policy evaluation failed: %w", err)
+			l.Error("policy evaluation failed; continuing with warning", zap.Error(err))
+			evaluationFailed = true
+			continue
 		}
 		allViolations = append(allViolations, result.Violations...)
+	}
+	if evaluationFailed {
+		w.recordComponentPolicyEvaluationFailure(ctx, l, metadataJob.ID)
 	}
 
 	var denyViolations []sharedactivities.PolicyViolation
@@ -169,31 +175,33 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 		}
 	}
 
-	orgID, err := cctx.OrgIDFromContext(ctx)
-	if err != nil {
-		l.Warn("unable to get org id", zap.Error(err))
-	} else {
-		componentID := prepResult.ComponentID
-		policyInputCounts := make(map[string]int, len(prepResult.PolicyIDs))
-		for _, policyID := range prepResult.PolicyIDs {
-			policyInputCounts[policyID] = prepResult.InputCount
-		}
-		if _, err := sharedactivities.AwaitPersistPolicyReport(ctx, &sharedactivities.PersistPolicyReportRequest{
-			OrgID:             orgID,
-			AppID:             prepResult.AppID,
-			ComponentID:       &componentID,
-			InstallSandboxID:  nil,
-			OwnerID:           buildID,
-			OwnerType:         string(app.PolicyReportOwnerTypeComponentBuild),
-			RunnerJobID:       &buildJobID,
-			Violations:        allViolations,
-			PolicyIDs:         prepResult.PolicyIDs,
-			PolicyInputCounts: policyInputCounts,
-			OrgName:           prepResult.OrgName,
-			AppName:           prepResult.AppName,
-			ComponentName:     prepResult.ComponentName,
-		}); err != nil {
-			l.Warn("failed to persist policy report", zap.Error(err))
+	if !evaluationFailed {
+		orgID, err := cctx.OrgIDFromContext(ctx)
+		if err != nil {
+			l.Warn("unable to get org id", zap.Error(err))
+		} else {
+			componentID := prepResult.ComponentID
+			policyInputCounts := make(map[string]int, len(prepResult.PolicyIDs))
+			for _, policyID := range prepResult.PolicyIDs {
+				policyInputCounts[policyID] = prepResult.InputCount
+			}
+			if _, err := sharedactivities.AwaitPersistPolicyReport(ctx, &sharedactivities.PersistPolicyReportRequest{
+				OrgID:             orgID,
+				AppID:             prepResult.AppID,
+				ComponentID:       &componentID,
+				InstallSandboxID:  nil,
+				OwnerID:           buildID,
+				OwnerType:         string(app.PolicyReportOwnerTypeComponentBuild),
+				RunnerJobID:       &buildJobID,
+				Violations:        allViolations,
+				PolicyIDs:         prepResult.PolicyIDs,
+				PolicyInputCounts: policyInputCounts,
+				OrgName:           prepResult.OrgName,
+				AppName:           prepResult.AppName,
+				ComponentName:     prepResult.ComponentName,
+			}); err != nil {
+				l.Warn("failed to persist policy report", zap.Error(err))
+			}
 		}
 	}
 
@@ -218,6 +226,31 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 
 	l.Info("policy evaluation completed", zap.Int("warn_count", len(warnViolations)))
 	return nil
+}
+
+func (w *Workflows) recordComponentPolicyEvaluationFailure(ctx workflow.Context, l *zap.Logger, runnerJobID string) {
+	if err := sharedactivities.AwaitRecordPolicyEvaluationCompositeError(ctx, sharedactivities.RecordPolicyEvaluationCompositeErrorRequest{
+		RunnerJobID: runnerJobID,
+		Stage:       policyerrors.EvaluationFailureStageEvaluation,
+	}); err != nil {
+		l.Warn("failed to record policy evaluation composite error", zap.Error(err))
+	}
+
+	if w.mw == nil {
+		return
+	}
+	orgID, err := cctx.OrgIDFromContext(ctx)
+	if err != nil {
+		l.Warn("unable to get org id for policy evaluation metric", zap.Error(err))
+		return
+	}
+	w.mw.Incr(ctx, "policy.evaluation", metrics.ToTags(map[string]string{
+		"org_id":           orgID,
+		"stage":            "evaluation",
+		"status":           "error",
+		"step_target_type": "component_builds",
+		"workflow_type":    "component_build",
+	})...)
 }
 
 func (w *Workflows) updateJobStatusForPolicyFailure(ctx workflow.Context, jobID, description string) {
