@@ -34,6 +34,7 @@ const navGroups = [
     items: [
       { path: '/log-streams', label: 'Log streams' },
       { path: '/labels', label: 'Labels' },
+      { path: '/feature-flags', label: 'Feature flags' },
       { path: '/sandbox-mode', label: 'Sandbox mode' },
       { path: '/temporal-workers', label: 'Temporal workers' },
       { path: '/temporal-workflows', label: 'Temporal workflows' },
