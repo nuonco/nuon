@@ -3349,11 +3349,6 @@ export interface components {
       provision_iam_role_arn?: string;
       public_subnets?: string[];
       region?: string;
-      /**
-       * @description Nil when the stack predates the runner_enabled variable, which must read
-       * as enabled rather than disabled.
-       */
-      runner_enabled?: boolean;
       runner_iam_role_arn?: string;
       runner_subnet?: string;
       vpc_id?: string;
@@ -4460,11 +4455,6 @@ export interface components {
       provision_sa_email?: string;
       public_subnet_name?: string;
       region?: string;
-      /**
-       * @description Nil when the stack predates the runner_enabled variable, which must read
-       * as enabled rather than disabled.
-       */
-      runner_enabled?: boolean;
       runner_service_account_email?: string;
       runner_subnet_name?: string;
     };
@@ -6231,7 +6221,7 @@ export interface components {
     /** @enum {string} */
     "app.RunnerProcessType": "mng" | "install" | "build" | "org" | "";
     /** @enum {string} */
-    "app.RunnerStatus": "error" | "active" | "pending" | "provisioning" | "deprovisioning" | "deprovisioned" | "reprovisioning" | "offline" | "awaiting-install-stack-run" | "disabled" | "unknown";
+    "app.RunnerStatus": "error" | "active" | "pending" | "provisioning" | "deprovisioning" | "deprovisioned" | "reprovisioning" | "offline" | "awaiting-install-stack-run" | "unknown";
     /** @enum {string} */
     "app.SandboxRunType": "provision" | "reprovision" | "deprovision";
     "app.SlackChannelSubscription": {
