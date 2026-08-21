@@ -45,7 +45,7 @@ func (s *service) GetWorkflowStepApproval(ctx *gin.Context) {
 		return
 	}
 
-	approval, err := s.getWorkflowStepApproval(ctx, org.ID, approvalID)
+	approval, err := s.getWorkflowStepApproval(ctx, org.ID, stepID, approvalID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get workflow step approval"))
 		return
@@ -91,7 +91,7 @@ func (s *service) GetInstallWorkflowStepApproval(ctx *gin.Context) {
 		return
 	}
 
-	approval, err := s.getWorkflowStepApproval(ctx, org.ID, approvalID)
+	approval, err := s.getWorkflowStepApproval(ctx, org.ID, stepID, approvalID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get install workflow step approval"))
 		return
@@ -100,12 +100,16 @@ func (s *service) GetInstallWorkflowStepApproval(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, approval)
 }
 
-func (s *service) getWorkflowStepApproval(ctx *gin.Context, OrgID, approvalID string) (*app.WorkflowStepApproval, error) {
+func (s *service) getWorkflowStepApproval(ctx *gin.Context, orgID, stepID, approvalID string) (*app.WorkflowStepApproval, error) {
 	var approval app.WorkflowStepApproval
 	// No Omit("contents") here: GetWorkflowStepApprovalContents reads
 	// approval.Contents through this getter.
 	res := s.db.WithContext(ctx).
-		Where("id = ? AND org_id = ?", approvalID, OrgID).
+		Where(app.WorkflowStepApproval{
+			ID:                    approvalID,
+			OrgID:                 orgID,
+			InstallWorkflowStepID: stepID,
+		}).
 		Preload("InstallWorkflowStep").
 		Preload("Response").
 		First(&approval)

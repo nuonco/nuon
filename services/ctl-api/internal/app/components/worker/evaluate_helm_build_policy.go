@@ -118,40 +118,46 @@ func (w *Workflows) evaluateHelmBuildPolicy(ctx workflow.Context, buildID, build
 	}
 
 	var allViolations []sharedactivities.PolicyViolation
+	evaluationFailed := false
 	for _, fut := range futures {
 		var result sharedactivities.EvaluateSinglePolicyResult
 		if err := fut.Get(ctx, &result); err != nil {
-			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("policy evaluation failed", err))
-			w.updateJobStatusForPolicyFailure(ctx, buildJobID, "policy evaluation failed")
-			return fmt.Errorf("policy evaluation failed: %w", err)
+			l.Error("policy evaluation failed; continuing with warning", zap.Error(err))
+			evaluationFailed = true
+			continue
 		}
 		allViolations = append(allViolations, result.Violations...)
 	}
+	if evaluationFailed {
+		w.recordComponentPolicyEvaluationFailure(ctx, l, buildJobID)
+	}
 
-	orgID, err := cctx.OrgIDFromContext(ctx)
-	if err != nil {
-		l.Warn("unable to get org id", zap.Error(err))
-	} else {
-		policyInputCounts := make(map[string]int, len(policyIDs))
-		for _, policyID := range policyIDs {
-			policyInputCounts[policyID] = len(payload.PolicyInput)
-		}
-		componentID := build.ComponentConfigConnection.ComponentID
-		if _, err := sharedactivities.AwaitPersistPolicyReport(ctx, &sharedactivities.PersistPolicyReportRequest{
-			OrgID:             orgID,
-			AppID:             build.ComponentConfigConnection.Component.AppID,
-			ComponentID:       &componentID,
-			OwnerID:           buildID,
-			OwnerType:         string(app.PolicyReportOwnerTypeComponentBuild),
-			RunnerJobID:       &buildJobID,
-			Violations:        allViolations,
-			PolicyIDs:         policyIDs,
-			PolicyInputCounts: policyInputCounts,
-			OrgName:           build.ComponentConfigConnection.Component.App.Org.Name,
-			AppName:           build.ComponentConfigConnection.Component.App.Name,
-			ComponentName:     build.ComponentConfigConnection.Component.Name,
-		}); err != nil {
-			l.Warn("failed to persist policy report", zap.Error(err))
+	if !evaluationFailed {
+		orgID, err := cctx.OrgIDFromContext(ctx)
+		if err != nil {
+			l.Warn("unable to get org id", zap.Error(err))
+		} else {
+			policyInputCounts := make(map[string]int, len(policyIDs))
+			for _, policyID := range policyIDs {
+				policyInputCounts[policyID] = len(payload.PolicyInput)
+			}
+			componentID := build.ComponentConfigConnection.ComponentID
+			if _, err := sharedactivities.AwaitPersistPolicyReport(ctx, &sharedactivities.PersistPolicyReportRequest{
+				OrgID:             orgID,
+				AppID:             build.ComponentConfigConnection.Component.AppID,
+				ComponentID:       &componentID,
+				OwnerID:           buildID,
+				OwnerType:         string(app.PolicyReportOwnerTypeComponentBuild),
+				RunnerJobID:       &buildJobID,
+				Violations:        allViolations,
+				PolicyIDs:         policyIDs,
+				PolicyInputCounts: policyInputCounts,
+				OrgName:           build.ComponentConfigConnection.Component.App.Org.Name,
+				AppName:           build.ComponentConfigConnection.Component.App.Name,
+				ComponentName:     build.ComponentConfigConnection.Component.Name,
+			}); err != nil {
+				l.Warn("failed to persist policy report", zap.Error(err))
+			}
 		}
 	}
 
