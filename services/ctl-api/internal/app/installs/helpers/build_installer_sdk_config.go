@@ -1,4 +1,4 @@
-package service
+package helpers
 
 import (
 	"context"
@@ -14,14 +14,14 @@ import (
 // fetches when the app's RunnerConfig doesn't pin one.
 const defaultGCPRunnerInitScript = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/gcp/init.sh"
 
-// buildInstallerSDKConfig renders the full install-stack configuration for an
+// BuildInstallerSDKConfig renders the full install-stack configuration for an
 // install: runner details, operation-role permissions/policies, break-glass and
 // custom roles, install-input names, and secrets. It is the shared source of
 // truth for the read-only config endpoint the Terraform provider's nuon_stack
 // data source consumes.
-func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string) (*app.InstallerSDKConfig, error) {
+func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string) (*app.InstallerSDKConfig, error) {
 	var install app.Install
-	if res := s.db.WithContext(ctx).
+	if res := h.db.WithContext(ctx).
 		Preload("AWSAccount").
 		Preload("RunnerGroup.Runners").
 		Preload("RunnerGroup.Settings").
@@ -34,7 +34,7 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 	// older installs that pre-date the per-group field being populated.
 	runnerAPIURL := install.RunnerGroup.Settings.RunnerAPIURL
 	if runnerAPIURL == "" {
-		runnerAPIURL = s.cfg.RunnerAPIURL
+		runnerAPIURL = h.cfg.RunnerAPIURL
 	}
 	if install.RunnerID == "" {
 		return nil, fmt.Errorf("install %s has no runner — cannot build SDK config", installID)
@@ -45,7 +45,7 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 
 	// GetFullAppConfig preloads PermissionsConfig, BreakGlassConfig,
 	// InputConfig, SecretsConfig — same data the TF renderer walks.
-	appCfg, err := s.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, true)
+	appCfg, err := h.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, true)
 	if err != nil {
 		return nil, fmt.Errorf("load full app config: %w", err)
 	}
@@ -57,7 +57,7 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 	// contents before passing to the SDK. Without this, IAM rejects policy docs
 	// containing literal template syntax with "policy failed legacy parsing",
 	// and role names get created with literal `{{` characters.
-	installState, err := s.helpers.GetInstallState(ctx, installID, false, false)
+	installState, err := h.GetInstallState(ctx, installID, false, false)
 	if err != nil {
 		return nil, fmt.Errorf("get install state for template render: %w", err)
 	}
@@ -154,8 +154,8 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 		// falls back to account root, same as the TF module's
 		// `control_plane_assume` default.
 		var supportARNs []string
-		if s.cfg.RunnerDefaultSupportIAMRole != "" {
-			supportARNs = []string{s.cfg.RunnerDefaultSupportIAMRole}
+		if h.cfg.RunnerDefaultSupportIAMRole != "" {
+			supportARNs = []string{h.cfg.RunnerDefaultSupportIAMRole}
 		}
 
 		// Cluster name: the install input "cluster_name" if set, else the
@@ -196,7 +196,7 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 
 		// GCP provisions via the Terraform module, which authenticates the
 		// runner with a real API token (no IID-based auth like AWS).
-		token, err := s.runnersHelpers.CreateToken(ctx, install.RunnerID)
+		token, err := h.runnersHelpers.CreateToken(ctx, install.RunnerID)
 		if err != nil {
 			return nil, fmt.Errorf("create runner token: %w", err)
 		}
@@ -266,4 +266,31 @@ func gcpRolesToSDKMap(rs []gcpstacks.GCPRoleRaw, enabled bool) map[string]app.In
 		}
 	}
 	return out
+}
+
+// ApplyInstallInputValues fills in the install's latest stored values for the
+// customer-source inputs BuildInstallerSDKConfig already seeded (names with empty
+// values). Only existing keys are updated: vendor-source inputs are intentionally
+// excluded from install_inputs, matching the classic tfvars renderer.
+//
+// A missing inputs row is not an error — an install that has never had inputs set
+// simply keeps the seeded empty values.
+func (h *Helpers) ApplyInstallInputValues(ctx context.Context, cfg *app.InstallerSDKConfig, installID string) {
+	var ins app.InstallInputs
+	if err := h.db.WithContext(ctx).
+		Where(app.InstallInputs{InstallID: installID}).
+		Order("created_at DESC").
+		Limit(1).
+		First(&ins).Error; err != nil {
+		return
+	}
+
+	for k, v := range ins.Values {
+		if v == nil {
+			continue
+		}
+		if _, ok := cfg.InstallInputs[k]; ok {
+			cfg.InstallInputs[k] = *v
+		}
+	}
 }

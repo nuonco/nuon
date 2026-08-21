@@ -51,33 +51,14 @@ func (s *service) GetInstallStackVersionConfig(ctx *gin.Context) {
 	reqCtx := cctx.SetOrgIDContext(ctx.Request.Context(), stackVersion.OrgID)
 	reqCtx = cctx.SetAccountIDContext(reqCtx, stackVersion.CreatedByID)
 
-	cfg, err := s.buildInstallerSDKConfig(reqCtx, stackVersion.InstallID)
+	cfg, err := s.helpers.BuildInstallerSDKConfig(reqCtx, stackVersion.InstallID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("build installer sdk config: %w", err))
 		return
 	}
 	cfg.PhoneHomeURL = stackVersion.PhoneHomeURL
 
-	// Fill in the install's latest stored values for the customer-source inputs
-	// that buildInstallerSDKConfig already seeded (names with empty values). Only
-	// update existing keys — vendor-source inputs are intentionally excluded from
-	// install_inputs, matching the classic tfvars renderer. A missing inputs row
-	// is not an error.
-	var ins app.InstallInputs
-	if err := s.db.WithContext(reqCtx).
-		Where(app.InstallInputs{InstallID: stackVersion.InstallID}).
-		Order("created_at DESC").
-		Limit(1).
-		First(&ins).Error; err == nil {
-		for k, v := range ins.Values {
-			if v == nil {
-				continue
-			}
-			if _, ok := cfg.InstallInputs[k]; ok {
-				cfg.InstallInputs[k] = *v
-			}
-		}
-	}
+	s.helpers.ApplyInstallInputValues(reqCtx, cfg, stackVersion.InstallID)
 
 	ctx.JSON(http.StatusOK, installStackVersionConfigResponse{Config: cfg})
 }
