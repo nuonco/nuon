@@ -5,6 +5,7 @@ interface IChangeCountSummary {
   added?: number
   updated?: number
   removed?: number
+  replaced?: number
   emptyText?: string
   className?: string
 }
@@ -13,6 +14,7 @@ export const ChangeCountSummary = ({
   added = 0,
   updated = 0,
   removed = 0,
+  replaced = 0,
   emptyText = 'no changes',
   className,
 }: IChangeCountSummary) => {
@@ -20,6 +22,7 @@ export const ChangeCountSummary = ({
   if (added > 0) parts.push({ text: `+${added}`, theme: 'success' })
   if (updated > 0) parts.push({ text: `~${updated}`, theme: 'warn' })
   if (removed > 0) parts.push({ text: `-${removed}`, theme: 'error' })
+  if (replaced > 0) parts.push({ text: `±${replaced}`, theme: 'brand' })
 
   if (parts.length === 0) {
     return (
