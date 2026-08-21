@@ -5,6 +5,7 @@ export type TOrg = {
   name: string
   tags: string[] | null
   labels?: Record<string, string>
+  features?: Record<string, boolean>
   created_at: string
   updated_at: string
   app_count?: number
@@ -12,6 +13,17 @@ export type TOrg = {
   custom_cert?: boolean
   status?: string
   status_description?: string
+}
+
+export type TFeatureFlag = {
+  name: string
+  description: string
+  default: boolean
+  auto_enabled: boolean
+  effective_default: boolean
+  enabled_count: number
+  unset_count: number
+  drift_count: number
 }
 
 export type TUserJourneyStep = {
@@ -474,6 +486,7 @@ export type TLogStreamLogsResponse = {
 
 export type TOrgDetailResponse = {
   org: TOrg
+  stored_features: Record<string, boolean>
   installs: TInstall[]
   recent_app: TApp | null
   graph_dot: string
