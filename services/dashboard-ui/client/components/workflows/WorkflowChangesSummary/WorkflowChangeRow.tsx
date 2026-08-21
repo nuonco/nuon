@@ -36,6 +36,7 @@ const RowCounts = ({ summary }: { summary: TStepChangeSummary }) => {
       updated={summary.counts.update}
       removed={summary.counts.delete}
       replaced={summary.counts.replace}
+      emptyText="No changes"
     />
   )
 }

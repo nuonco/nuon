@@ -1,9 +1,9 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { EmptyState } from '@/components/common/EmptyState'
-import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { cn } from '@/utils/classnames'
 import type { TStepChangePlanType, TStepChangeSummary } from '@/types'
 import {
   PLAN_TYPE_META,
@@ -41,9 +41,8 @@ const ChangesHeader = ({
 
   if (changedSteps.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-2 py-8 text-center">
-        <Icon variant="CheckCircleIcon" size={32} className="text-green-600 dark:text-green-500" />
-        <Text variant="h3" weight="strong">
+      <div className="flex flex-col gap-1">
+        <Text variant="base" weight="strong">
           No changes
         </Text>
         <Text variant="subtext" theme="neutral">
@@ -89,6 +88,52 @@ const LoadingRow = ({ step }: { step: IWorkflowChangesSummaryLoadingStep }) => (
     </div>
   </div>
 )
+
+const NoopGroup = ({
+  summaries,
+  renderDetail,
+}: {
+  summaries: TStepChangeSummary[]
+  renderDetail: (summary: TStepChangeSummary) => ReactNode
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setIsExpanded((v) => !v)}
+        aria-expanded={isExpanded}
+        className={cn(
+          'flex items-center gap-3 px-4 py-3 w-full text-left outline-none transition-all',
+          'hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10'
+        )}
+      >
+        <Icon
+          variant={isExpanded ? 'CaretDownIcon' : 'CaretRightIcon'}
+          size={16}
+          className="shrink-0"
+        />
+        <Text variant="base" weight="strong" theme="neutral">
+          {summaries.length} {summaries.length === 1 ? 'step' : 'steps'} with no
+          changes
+        </Text>
+      </button>
+
+      {isExpanded ? (
+        <div className="border-t">
+          {summaries.map((summary) => (
+            <WorkflowChangeRow
+              key={summary.stepId}
+              summary={summary}
+              renderDetail={renderDetail}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 export const WorkflowChangesSummary = ({
   summaries,
@@ -139,28 +184,7 @@ export const WorkflowChangesSummary = ({
       ) : null}
 
       {noops.length > 0 ? (
-        <div className="border rounded-lg overflow-hidden">
-          <Expand
-            id="workflow-changes-noop-group"
-            isIconBeforeHeading
-            heading={
-              <Text variant="subtext" theme="neutral" weight="strong">
-                {noops.length} {noops.length === 1 ? 'step' : 'steps'} with no
-                changes
-              </Text>
-            }
-          >
-            <div className="border-t">
-              {noops.map((summary) => (
-                <WorkflowChangeRow
-                  key={summary.stepId}
-                  summary={summary}
-                  renderDetail={renderDetail}
-                />
-              ))}
-            </div>
-          </Expand>
-        </div>
+        <NoopGroup summaries={noops} renderDetail={renderDetail} />
       ) : null}
     </div>
   )
