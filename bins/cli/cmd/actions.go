@@ -1,7 +1,11 @@
 package cmd
 
 import (
+	"time"
+
 	"github.com/spf13/cobra"
+
+	"github.com/nuonco/nuon/bins/cli/internal/services/actions"
 )
 
 func (c *cli) actionsCmd() *cobra.Command {
@@ -99,6 +103,31 @@ func (c *cli) actionsCmd() *cobra.Command {
 	runCmd.MarkFlagRequired("action-workflow-id")
 	runCmd.Flags().StringVar(&roleName, "role-name", "", "IAM role name to use for action workflow")
 	actionsCmd.AddCommand(runCmd)
+
+	var adhocParams actions.AdHocParams
+	adhocCmd := &cobra.Command{
+		Use:         "adhoc",
+		Short:       "Run a one-time action on an install",
+		Args:        cobra.NoArgs,
+		Annotations: outputsAnnotation(OutputTable, OutputJSON, OutputAgent),
+		Example: `  nuon actions adhoc --command 'kubectl get pods'
+  nuon actions adhoc --script ./debug.sh --env-file .env --env DEBUG=true
+  nuon actions adhoc --command 'kubectl get pods' --wait`,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			return c.actions.CreateAdHocRun(cmd.Context(), adhocParams, PrintJSON)
+		}),
+	}
+	adhocCmd.Flags().StringVarP(&adhocParams.InstallID, "install-id", "i", "", "The ID or name of the install (defaults to the selected install)")
+	adhocCmd.Flags().StringVar(&adhocParams.Command, "command", "", "Single-line shell command to execute")
+	adhocCmd.Flags().StringVar(&adhocParams.ScriptPath, "script", "", "Path to a script to execute")
+	adhocCmd.Flags().StringArrayVar(&adhocParams.Env, "env", nil, "Environment variable as KEY=VALUE (repeatable)")
+	adhocCmd.Flags().StringVar(&adhocParams.EnvFile, "env-file", "", "Path to a dotenv-style environment file")
+	adhocCmd.Flags().DurationVar(&adhocParams.Timeout, "timeout", 5*time.Minute, "Execution timeout between 1s and 1h")
+	adhocCmd.Flags().StringVar(&adhocParams.Name, "name", "", "Display name for the action")
+	adhocCmd.Flags().StringVar(&adhocParams.Role, "role", "", "IAM role to use for the action")
+	adhocCmd.Flags().BoolVar(&adhocParams.EnableKubeConfig, "enable-kube-config", true, "Provide Kubernetes configuration to the action")
+	adhocCmd.Flags().BoolVar(&adhocParams.Wait, "wait", false, "Wait for completion and print raw action logs")
+	actionsCmd.AddCommand(adhocCmd)
 
 	return actionsCmd
 }
