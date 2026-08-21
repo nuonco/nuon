@@ -54,6 +54,8 @@ type clientConfig struct {
 	BYOCTextColor         string `json:"byocTextColor,omitempty"`
 	OnboardingV2          bool   `json:"onboardingV2,omitempty"`
 	AdminDashboardUrl     string `json:"adminDashboardUrl,omitempty"`
+	PostHogKey            string `json:"posthogKey,omitempty"`
+	PostHogHost           string `json:"posthogHost,omitempty"`
 }
 
 func buildClientConfig(cfg *internal.Config) clientConfig {
@@ -74,6 +76,11 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		IsBYOC:                cfg.IsBYOC,
 		OnboardingV2:          cfg.OnboardingV2,
 		AdminDashboardUrl:     cfg.AdminDashboardUrl,
+	}
+
+	if cfg.PostHogKey != "" && !cfg.IsBYOC {
+		cc.PostHogKey = cfg.PostHogKey
+		cc.PostHogHost = cfg.PostHogHost
 	}
 
 	if cfg.IsBYOC {

@@ -5,6 +5,7 @@ import { getOrg } from '@/lib/ctl-api/orgs'
 import { clearOrgSession, setOrgSession } from '@/lib/cookies'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
+import { PostHogOrgProperties } from '@/lib/posthog-analytics'
 import type { TAPIError, TOrg } from '@/types'
 
 type OrgContextValue = {
@@ -48,6 +49,7 @@ export function OrgProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <OrgContext.Provider value={{ org, refresh: refetch }}>
+      <PostHogOrgProperties />
       {children}
     </OrgContext.Provider>
   )

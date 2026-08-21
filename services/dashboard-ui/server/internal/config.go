@@ -24,6 +24,7 @@ func init() {
 	config.RegisterDefault("disable_metrics", true)
 	config.RegisterDefault("service_deployment", "local")
 	config.RegisterDefault("nuon_admin_dashboard_url", "http://localhost:8087")
+	config.RegisterDefault("posthog_host", "https://us.i.posthog.com")
 	// docker-compose's kafka-ui, which serves under the same /admin/kafka context
 	// path it does in the cluster
 	config.RegisterDefault("nuon_kafka_ui_url", "http://localhost:8092")
@@ -60,6 +61,8 @@ type Config struct {
 	BYOCColor             string `config:"nuon_byoc_color"`
 	OnboardingV2          bool   `config:"nuon_onboarding_v2"`
 	AdminDashboardUrl     string `config:"nuon_admin_dashboard_url"`
+	PostHogKey            string `config:"posthog_key"`
+	PostHogHost           string `config:"posthog_host"`
 }
 
 func NewConfig() (*Config, error) {

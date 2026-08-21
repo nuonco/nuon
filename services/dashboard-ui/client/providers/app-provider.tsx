@@ -7,6 +7,7 @@ import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
+import { PostHogAppProperties } from '@/lib/posthog-analytics'
 import type { TAPIError, TApp } from '@/types'
 
 type AppContextValue = {
@@ -63,6 +64,7 @@ export function AppProvider({
 
   return (
     <AppContext.Provider value={{ app, labelColors, refresh: refetch }}>
+      <PostHogAppProperties />
       {children}
     </AppContext.Provider>
   )
