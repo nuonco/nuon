@@ -10,7 +10,7 @@ import { useRunner } from '@/hooks/use-runner'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { updateRunner, updateMngRunner } from '@/lib'
-import { trackEvent } from '@/lib/segment-analytics'
+import { trackEvent } from '@/lib/posthog-analytics'
 import type { TRunnerSettings } from '@/types'
 import {
   UpdateRunnerModal as UpdateRunnerModalComponent,
