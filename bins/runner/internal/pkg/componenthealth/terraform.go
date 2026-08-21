@@ -116,7 +116,7 @@ func (p *TerraformProvider) Set(componentID string, state *tfjson.State) {
 	p.mu.Unlock()
 
 	if sink != nil {
-		sink.SetKinds(componentID, gvks, objects)
+		sink.SetKinds(componentID, gvks, objects, releases)
 	}
 }
 
@@ -220,14 +220,26 @@ func manifestFromBody(body string) (apiVersion, kind, namespace, name string) {
 }
 
 // ComponentForRelease returns the terraform component managing a helm release.
+//
+// Falls back to the persisted store: byRelease is only repopulated by an apply,
+// so after a restart the live map is empty and every workload of a
+// terraform-installed chart would be dropped as unowned — leaving the component
+// reporting nothing and reading not-applicable until someone redeployed it.
 func (p *TerraformProvider) ComponentForRelease(release string) (string, bool) {
 	if release == "" {
 		return "", false
 	}
 	p.mu.RLock()
-	defer p.mu.RUnlock()
 	componentID, ok := p.byRelease[release]
-	return componentID, ok
+	sink := p.kindsSink
+	p.mu.RUnlock()
+	if ok {
+		return componentID, true
+	}
+	if sink == nil {
+		return "", false
+	}
+	return sink.ComponentForRelease(release)
 }
 
 // terraformHelmReleases walks state for helm_release resources. A terraform
