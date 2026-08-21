@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { createOrg, getOrg } from '@/lib'
+import { trackEvent } from '@/lib/posthog-analytics'
+import { useAuth } from '@/hooks/use-auth'
 import { useOnboardingJourney } from '@/hooks/use-onboarding-journey'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TOrg } from '@/types'
@@ -12,6 +14,7 @@ export const CreateOrgStepContainer = ({
   setSharedData,
 }: IWizardStepComponentProps) => {
   const [createdOrg, setCreatedOrg] = useState<TOrg | null>(null)
+  const { user } = useAuth()
   const { isStepComplete, getStepMetadata } = useOnboardingJourney()
 
   const orgCreated = isStepComplete('org_created')
@@ -23,8 +26,22 @@ export const CreateOrgStepContainer = ({
     mutationFn: (name: string) =>
       createOrg({ body: { name, use_sandbox_mode: false, tags: ['Trial'] } }),
     onSuccess: (org) => {
+      trackEvent({
+        event: 'org_create',
+        status: 'ok',
+        user,
+        props: { orgId: org.id },
+      })
       setCreatedOrg(org)
       setSharedData('orgId', org.id)
+    },
+    onError: (err: any) => {
+      trackEvent({
+        event: 'org_create',
+        status: 'error',
+        user,
+        props: { err: err?.error },
+      })
     },
   })
 
