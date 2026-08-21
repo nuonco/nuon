@@ -169,6 +169,19 @@ func (c *client) CreateInstallActionWorkflowRun(ctx context.Context, installID s
 	return err
 }
 
+func (c *client) CreateAdHocAction(ctx context.Context, installID string, req *models.ServiceCreateAdHocActionRequest) (*models.ServiceCreateAdHocActionResponse, error) {
+	resp, err := c.genClient.Operations.CreateAdHocAction(&operations.CreateAdHocActionParams{
+		InstallID: installID,
+		Req:       req,
+		Context:   ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) GetInstallActionWorkflowRun(ctx context.Context, installID, runID string) (*models.AppInstallActionWorkflowRun, error) {
 	resp, err := c.genClient.Operations.GetInstallActionWorkflowRun(&operations.GetInstallActionWorkflowRunParams{
 		InstallID: installID,
