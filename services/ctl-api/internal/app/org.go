@@ -224,9 +224,37 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		o.Features = make(map[string]bool, 0)
 	}
 
-	// Set default feature flag values - most features enabled by default
-	// except install-break-glass and user-managed-features which remain disabled
-	defaultFeatures := map[OrgFeature]bool{
+	defaultFeatures := DefaultFeatures()
+
+	cfg := configFromContext(tx.Statement.Context)
+
+	if cfg != nil && cfg.AutoEnabledFeatures != "" {
+		for _, name := range strings.Split(cfg.AutoEnabledFeatures, ",") {
+			name = strings.TrimSpace(name)
+			if name != "" {
+				defaultFeatures[OrgFeature(name)] = true
+			}
+		}
+	}
+
+	for _, feature := range GetFeatures() {
+		if _, ok := o.Features[string(feature)]; !ok {
+			o.Features[string(feature)] = defaultFeatures[feature]
+		}
+	}
+
+	if o.ID == "" {
+		o.ID = domains.NewOrgID()
+	}
+
+	o.CreatedByID = createdByIDFromContext(tx.Statement.Context)
+	return nil
+}
+
+// DefaultFeatures returns the feature flag values applied to newly created
+// orgs, before the config-driven AutoEnabledFeatures overrides.
+func DefaultFeatures() map[OrgFeature]bool {
+	return map[OrgFeature]bool{
 		// Disabled by default
 		OrgFeatureInstallRename:           false,
 		OrgFeatureSupportRole:             false,
@@ -257,30 +285,6 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureAppBranches:   true,
 		OrgFeatureAppBranchesUI: true,
 	}
-
-	cfg := configFromContext(tx.Statement.Context)
-
-	if cfg != nil && cfg.AutoEnabledFeatures != "" {
-		for _, name := range strings.Split(cfg.AutoEnabledFeatures, ",") {
-			name = strings.TrimSpace(name)
-			if name != "" {
-				defaultFeatures[OrgFeature(name)] = true
-			}
-		}
-	}
-
-	for _, feature := range GetFeatures() {
-		if _, ok := o.Features[string(feature)]; !ok {
-			o.Features[string(feature)] = defaultFeatures[feature]
-		}
-	}
-
-	if o.ID == "" {
-		o.ID = domains.NewOrgID()
-	}
-
-	o.CreatedByID = createdByIDFromContext(tx.Statement.Context)
-	return nil
 }
 
 // active feature flags for an orgs
