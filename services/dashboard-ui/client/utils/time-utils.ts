@@ -14,6 +14,18 @@ export function isStaleObservation(
   return seconds > maxAgeSeconds
 }
 
+export function latestTimestamp(
+  timestamps: (string | undefined)[]
+): string | undefined {
+  return timestamps.reduce<string | undefined>((latest, timestamp) => {
+    if (!timestamp) return latest
+    if (!latest) return timestamp
+    return DateTime.fromISO(timestamp) > DateTime.fromISO(latest)
+      ? timestamp
+      : latest
+  }, undefined)
+}
+
 export function isRecentTimestamp(
   timestampStr: string | undefined,
   maxAgeSeconds = 60,
