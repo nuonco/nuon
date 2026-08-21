@@ -12,7 +12,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { reprovisionStack } from '@/lib'
-import { trackEvent } from '@/lib/segment-analytics'
+import { trackEvent } from '@/lib/posthog-analytics'
 import { ReprovisionStackModal } from './ReprovisionStack'
 
 export const ReprovisionStackModalContainer = ({

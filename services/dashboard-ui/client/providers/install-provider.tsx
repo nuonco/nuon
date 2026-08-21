@@ -7,6 +7,7 @@ import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
+import { PostHogInstallProperties } from '@/lib/posthog-analytics'
 import type { TAPIError, TInstall } from '@/types'
 
 type InstallContextValue = {
@@ -76,6 +77,7 @@ export function InstallProvider({
 
   return (
     <InstallContext.Provider value={{ install, labelColors, refresh: refetch }}>
+      <PostHogInstallProperties />
       {children}
     </InstallContext.Provider>
   )
