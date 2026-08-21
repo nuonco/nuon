@@ -24,7 +24,7 @@ type stackConfigResponse struct {
 // @Summary				get the SDK config for an install stack
 // @Description			Return the rendered install-stack configuration (runner, permissions, inputs, secrets) for an install, including the phone-home URL the stack reports completion to. Read-only and side-effect free. Authenticated: the caller's token identifies the stack's service account, or an OIDC-federated account with access to the org.
 // @Param					install_id	path	string	true	"install ID"
-// @Tags					stacks,stacks/runner
+// @Tags					stacks/runner
 // @Accept					json
 // @Produce				json
 // @Security				APIKey

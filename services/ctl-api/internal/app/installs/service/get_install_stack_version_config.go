@@ -24,7 +24,7 @@ type installStackVersionConfigResponse struct {
 // @Summary				get the SDK config for a stack version
 // @Description			return the rendered install-stack configuration (runner, permissions, inputs, secrets) for a stack version. Read-only and side-effect free. Public endpoint: the per-stack-version phone_home_id in the URL is the secret. Consumed by the Terraform provider's nuon_stack data source.
 // @Param					phone_home_id	path	string	true	"stack version phone-home ID (used as the URL secret)"
-// @Tags					stacks
+// @Tags					stacks/runner
 // @Accept					json
 // @Produce				json
 // @Failure				404	{object}	stderr.ErrResponse
