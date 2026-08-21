@@ -65,8 +65,8 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 	// output and hide the runner's own job-lifecycle logs (which share the
 	// same oteljob scope and Info severity).
 	outL := l.With(zap.String("nuon.command_output", "true"))
-	lOut := zapwriter.New(outL, zapcore.InfoLevel, "")
-	lErr := zapwriter.New(outL, zapcore.ErrorLevel, "")
+	lOut := zapwriter.NewWithOpts(outL, zapwriter.WithLogLevel(zapcore.InfoLevel), zapwriter.WithLineBuffering())
+	lErr := zapwriter.NewWithOpts(outL, zapwriter.WithLogLevel(zapcore.ErrorLevel), zapwriter.WithLineBuffering())
 
 	dirName := git.Dir(src)
 	cwd := h.state.workspace.AbsPath(dirName)
@@ -94,10 +94,13 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 	}
 
 	opCtx, end := op.Tool(ctx, "action", "command")
-	if err := cmdP.Exec(opCtx); err != nil {
-		end(err)
-		l.Error("error executing command "+err.Error(), zap.Error(err))
-		return fmt.Errorf("unable to execute command: %w", err)
+	execErr := cmdP.Exec(opCtx)
+	lOut.Flush()
+	lErr.Flush()
+	if execErr != nil {
+		end(execErr)
+		l.Error("error executing command "+execErr.Error(), zap.Error(execErr))
+		return fmt.Errorf("unable to execute command: %w", execErr)
 	}
 	end(nil)
 
