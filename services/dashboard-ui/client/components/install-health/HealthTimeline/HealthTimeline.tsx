@@ -322,6 +322,9 @@ export const HealthTimeline = ({
             <Expand
               id="health-timeline-unassessed-components"
               isIconBeforeHeading
+              // Most installs have no probed components at all; collapsing the
+              // only list there is would leave the card looking broken.
+              isOpen={assessed.length === 0}
               headerClassName="!px-0 !justify-start"
               heading={
                 <Text variant="subtext" theme="neutral">

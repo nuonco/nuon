@@ -61,6 +61,10 @@ export const HEALTH_SUMMARY_ORDER = [
 // tail is ever folded — see visibleRowCount.
 const GROUP_PREVIEW_ROWS = 8
 
+// Folding two rows behind a "show more" saves nothing and just adds a click;
+// real components cluster at either 1-3 rows or 10+.
+const MIN_FOLDED_ROWS = 3
+
 function healthFilterLabel(value: string): string {
   if (value === NO_SIGNAL_FILTER) return 'No signal'
   return toSentenceCase(kebabToWords(value))
@@ -545,7 +549,8 @@ const InstallResourceGroupTable = ({
   const rows = showAllRows ? group.rows : group.signalRows
   const previewCount = visibleRowCount(rows)
   const hiddenCount = Math.max(0, rows.length - previewCount)
-  const canFoldTail = !showAllRows && !forceExpanded && hiddenCount > 0
+  const canFoldTail =
+    !showAllRows && !forceExpanded && hiddenCount >= MIN_FOLDED_ROWS
   const visibleRows =
     canFoldTail && !isTailExpanded ? rows.slice(0, previewCount) : rows
 
