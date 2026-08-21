@@ -87,6 +87,7 @@ describe('status-utils', () => {
       expect(getStatusIconVariant('error')).toBe('XCircleIcon')
       expect(getStatusIconVariant('bad')).toBe('XCircleIcon')
       expect(getStatusIconVariant('unhealthy')).toBe('XCircleIcon')
+      expect(getStatusIconVariant('not-applicable')).toBe('MinusCircleIcon')
     })
 
     test('should return Warning for warning statuses', () => {
