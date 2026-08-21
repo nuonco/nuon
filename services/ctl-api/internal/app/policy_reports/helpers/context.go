@@ -27,5 +27,6 @@ type PolicyEvaluationContext struct {
 	// Fields used during policy preparation/resolution
 	AppConfigID   string
 	ComponentType app.ComponentType
+	SandboxType   string
 	IsSandbox     bool
 }
