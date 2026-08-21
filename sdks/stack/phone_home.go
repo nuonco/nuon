@@ -7,31 +7,36 @@ import (
 	"strings"
 )
 
-// PhoneHome sends install stack outputs to the control plane.
-// This will update the install state, and mark the stack operation as complete.
-func PhoneHome(ctx context.Context, runnerAPIURL, installID, phoneHomeID string, payload map[string]any) error {
-	if strings.TrimSpace(installID) == "" {
-		return fmt.Errorf("phone home: install_id is required")
+// PhoneHome sends install stack outputs to the control plane, marking the stack
+// operation complete and updating install state.
+//
+// phoneHomeURL comes from Config.PhoneHomeURL rather than being composed here. The
+// URL embeds a per-stack-version identifier the caller has no other way to know, and
+// routing it through the config response is what lets the Terraform module stop
+// taking that identifier as an input.
+func PhoneHome(ctx context.Context, opts Options, phoneHomeURL string, payload map[string]any) error {
+	if strings.TrimSpace(phoneHomeURL) == "" {
+		return fmt.Errorf("phone home: phone_home_url is required (read it from the stack config)")
 	}
-	if strings.TrimSpace(phoneHomeID) == "" {
-		return fmt.Errorf("phone home: phone_home_id is required")
-	}
-	client := newRunClient(runClientConfig{
-		RunnerAPIURL: runnerAPIURL,
-		PhoneHomeID:  phoneHomeID,
-	})
-	if err := client.phoneHome(ctx, installID, payload); err != nil {
+	if err := opts.validate(); err != nil {
 		return fmt.Errorf("phone home: %w", err)
 	}
-	return nil
-}
 
-func (c *runClient) phoneHome(ctx context.Context, installID string, payload map[string]any) error {
-	url := fmt.Sprintf(
-		"%s/v1/installs/%s/phone-home/%s",
-		strings.TrimSuffix(c.cfg.RunnerAPIURL, "/"),
-		installID,
-		c.cfg.PhoneHomeID,
-	)
-	return c.doWithRetry(ctx, http.MethodPost, url, payload, nil)
+	token, err := resolveToken(ctx, opts)
+	if err != nil {
+		return fmt.Errorf("phone home: %w", err)
+	}
+
+	client := newRunClient(runClientConfig{
+		RunnerAPIURL: opts.APIURL,
+		InstallID:    opts.InstallID,
+		APIToken:     token,
+		HTTPClient:   opts.HTTPClient,
+	})
+
+	if err := client.doWithRetry(ctx, http.MethodPost, phoneHomeURL, payload, nil); err != nil {
+		return fmt.Errorf("phone home: %w", err)
+	}
+
+	return nil
 }
