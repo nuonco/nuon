@@ -53,9 +53,6 @@ func (a *Activities) UploadCustomNestedStackTemplates(ctx context.Context, req *
 		s3Key := cloudformation.CustomNestedStackS3Key(stackConfig.OrgID, stackConfig.AppID, contentsHash, stack.TemplateURL)
 
 		if err := uploader.UploadBlob(ctx, []byte(stack.Contents), s3Key); err != nil {
-			// Persist the error status (and any earlier stacks' ContentsHash)
-			// before returning, or the DB keeps every stack at "pending" and the
-			// failure is indistinguishable from an upload that never ran.
 			stackConfig.CustomNestedStacks[i].Status = config.CustomNestedStackStatusError
 			if res := a.db.WithContext(ctx).
 				Model(&stackConfig).
