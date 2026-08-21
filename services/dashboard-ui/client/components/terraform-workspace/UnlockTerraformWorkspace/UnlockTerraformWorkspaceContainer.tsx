@@ -10,7 +10,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getTerraformWorkspaceLock, unlockTerraformWorkspace } from '@/lib'
-import { trackEvent } from '@/lib/segment-analytics'
+import { trackEvent } from '@/lib/posthog-analytics'
 import { UnlockTerraformWorkspaceModal } from './UnlockTerraformWorkspace'
 
 interface IUnlockTerraformWorkspace {
