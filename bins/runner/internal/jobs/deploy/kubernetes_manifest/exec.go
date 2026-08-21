@@ -371,6 +371,12 @@ func (h *handler) handleCreateTeardownPlan(
 
 	manifestPlan.ContentDiff = formattedDiffs
 
+	dryRunYAML, err := kubernetesResourcesToMultiDocYAML(currentResources)
+	if err != nil {
+		return fmt.Errorf("failed to generate dry run delete YAML output: %w", err)
+	}
+	manifestPlan.DryRunOutput = dryRunYAML
+
 	jsonBytes, err := json.MarshalIndent(map[string]interface{}{
 		"diff": formattedDiffs,
 	}, "", "  ")

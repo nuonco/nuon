@@ -13,6 +13,22 @@ func ValidatePolicies(a *config.AppConfig) error {
 	return ValidatePoliciesWithLogger(a, zap.NewNop())
 }
 
+func ValidateOPAPolicy(contents string) error {
+	module, err := ast.ParseModule("policy.rego", contents)
+	if err != nil {
+		return err
+	}
+	if module.Package.Path.String() != "data.nuon" {
+		return fmt.Errorf("OPA policy must use package nuon, got %s", module.Package.Path.String())
+	}
+	for _, rule := range module.Rules {
+		if rule.Head.Name == "deny" || rule.Head.Name == "warn" {
+			return nil
+		}
+	}
+	return fmt.Errorf("OPA policy must define at least one deny or warn rule")
+}
+
 func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {
 	if a.Policies == nil || len(a.Policies.Policies) < 1 {
 		l.Debug("no policies to validate")
@@ -29,7 +45,7 @@ func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {
 		)
 
 		if policy.Engine == config.AppPolicyEngineOPA {
-			if _, err := ast.ParseModule("policy.rego", policy.Contents); err != nil {
+			if err := ValidateOPAPolicy(policy.Contents); err != nil {
 				policyLogger.Error("invalid OPA rego policy", zap.Error(err))
 				return config.ErrConfig{
 					Description: fmt.Sprintf("policy %d (%s) was invalid rego", idx, policy.Type),

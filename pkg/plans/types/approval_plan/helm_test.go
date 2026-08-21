@@ -55,6 +55,11 @@ func TestHelmApprovalPlan_IsNoop(t *testing.T) {
 			planJSON: `{"helm_content_diff": [], "helm_release_status": ""}`,
 			want:     false,
 		},
+		{
+			name:     "uninstall with nothing to remove",
+			planJSON: `{"op": "uninstall", "helm_content_diff": []}`,
+			want:     true,
+		},
 	}
 
 	for _, tt := range tests {
