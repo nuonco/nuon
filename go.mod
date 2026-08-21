@@ -21,6 +21,7 @@ replace helm.sh/helm/v4 => helm.sh/helm/v4 v4.0.0-alpha.1
 replace (
 	github.com/nuonco/nuon/sdks/nuon-go => ./sdks/nuon-go
 	github.com/nuonco/nuon/sdks/nuon-runner-go => ./sdks/nuon-runner-go
+	github.com/nuonco/nuon/sdks/stack => ./sdks/stack
 )
 
 replace github.com/pelletier/go-toml/v2 v2.2.4 => github.com/someshkoli/go-toml/v2 v2.0.0-20260106110510-b42197d17bf7
@@ -70,7 +71,6 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/dustinkirkland/golang-petname v0.0.0-20191129215211-8e5a1ed0cff0
 	github.com/facebookgo/symwalk v0.0.0-20150726040526-42004b9f3222
-	github.com/felixge/fgprof v0.9.5
 	github.com/fidiego/systemctl v0.0.0-20250806220859-522199525cc8
 	github.com/getkin/kin-openapi v0.131.0
 	github.com/getsentry/sentry-go v0.28.1
@@ -107,6 +107,7 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.6.1
 	github.com/nuonco/gin-swagger v1.6.2
 	github.com/nuonco/nuon/sdks/nuon-runner-go v0.0.0-00010101000000-000000000000
+	github.com/nuonco/nuon/sdks/stack v0.0.0-00010101000000-000000000000
 	github.com/nuonco/sandboxes v1.34.0
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/open-policy-agent/opa v1.8.0
@@ -123,7 +124,7 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/stoewer/go-strcase v1.3.0
-	github.com/stretchr/testify v1.11.1
+	github.com/stretchr/testify v1.12.1
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/swag v1.16.6
 	github.com/theory/jsonpath v0.12.0
@@ -243,7 +244,6 @@ require (
 	github.com/gonvenience/idem v0.0.2 // indirect
 	github.com/google/go-tpm v0.9.5 // indirect
 	github.com/google/jsonschema-go v0.4.3 // indirect
-	github.com/google/pprof v0.0.0-20250630185457-6e76a2b096b5 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2 // indirect
 	github.com/grpc-ecosystem/grpc-opentracing v0.0.0-20180507213350-8e809c8a8645 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20250417193237-f615e6bd150b // indirect
@@ -324,7 +324,7 @@ require (
 	go.opentelemetry.io/collector/semconv v0.125.0 // indirect
 	go.uber.org/mock v0.5.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/exp/shiny v0.0.0-20250606033433-dcc06ee1d476 // indirect
 	golang.org/x/image v0.28.0 // indirect
 	golang.org/x/mobile v0.0.0-20250606033058-a2a15c67f36f // indirect
@@ -404,7 +404,7 @@ require (
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
-	github.com/googleapis/gax-go/v2 v2.14.1 // indirect
+	github.com/googleapis/gax-go/v2 v2.14.1
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.8 // indirect
 	github.com/hashicorp/go-safetemp v1.0.0 // indirect
@@ -476,11 +476,11 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.42.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.42.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.42.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.42.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.42.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.64.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdoutlog v0.18.0
 	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.42.0 // indirect
-	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.42.0 // indirect
+	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.42.0
 	go.opentelemetry.io/otel/log v0.18.0
 	go.opentelemetry.io/otel/metric v1.42.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.42.0 // indirect
@@ -644,7 +644,7 @@ require (
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/spf13/afero v1.15.0
 	github.com/spf13/cast v1.10.0 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
+	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tetratelabs/wazero v1.9.0
 	github.com/therootcompany/xz v1.0.1 // indirect

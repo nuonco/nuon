@@ -7,8 +7,8 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-go"
 
-	"github.com/nuonco/nuon/bins/cli/internal/oidctoken"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/sdks/stack/oidctoken"
 )
 
 func (c *cli) authCmd() *cobra.Command {
