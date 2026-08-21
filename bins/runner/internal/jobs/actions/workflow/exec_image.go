@@ -76,8 +76,8 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 	}
 
 	outL := l.With(zap.String("nuon.command_output", "true"))
-	lOut := zapwriter.New(outL, zapcore.InfoLevel, "")
-	lErr := zapwriter.New(outL, zapcore.ErrorLevel, "")
+	lOut := zapwriter.NewWithOpts(outL, zapwriter.WithLogLevel(zapcore.InfoLevel), zapwriter.WithLineBuffering())
+	lErr := zapwriter.NewWithOpts(outL, zapwriter.WithLogLevel(zapcore.ErrorLevel), zapwriter.WithLineBuffering())
 
 	spec := launcher.RunSpec{
 		Image:         image,
@@ -109,9 +109,12 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 	}
 
 	opCtx, end := op.Tool(ctx, "action", "image-command")
-	if err := h.launcher.Run(opCtx, spec); err != nil {
-		end(err)
-		return fmt.Errorf("unable to run action container: %w", err)
+	runErr := h.launcher.Run(opCtx, spec)
+	lOut.Flush()
+	lErr.Flush()
+	if runErr != nil {
+		end(runErr)
+		return fmt.Errorf("unable to run action container: %w", runErr)
 	}
 	end(nil)
 
