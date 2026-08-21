@@ -48,7 +48,7 @@ func (s *service) GetWorkflowStepApprovalContents(ctx *gin.Context) {
 		return
 	}
 
-	approval, err := s.getWorkflowStepApproval(ctx, org.ID, approvalID)
+	approval, err := s.getWorkflowStepApproval(ctx, org.ID, stepID, approvalID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get workflow step approval"))
 		return

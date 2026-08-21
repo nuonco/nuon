@@ -17,6 +17,9 @@ func NewHelmApprovalPlen(planJSON []byte) *HelmApprovalPlan {
 func (h *HelmApprovalPlan) IsNoop() (bool, error) {
 	result := gjson.GetBytes(h.PlanJSON, "helm_content_diff")
 	if !result.Exists() || result.IsArray() && len(result.Array()) == 0 {
+		if gjson.GetBytes(h.PlanJSON, "op").String() == "uninstall" {
+			return true, nil
+		}
 		return !h.releaseNeedsDeploy(), nil
 	}
 	return false, nil

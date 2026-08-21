@@ -128,9 +128,9 @@ func (s *Signal) approvalCreateChecks(ctx workflow.Context, sig qsignal.Signal, 
 		// Empty install groups have nothing to approve; skip before the approval wait.
 		emptygroup.New(sig, setResultDirective),
 		noop.New(sig, checkCtx, orgAutoSkipNoop, setResultDirective),
-		policy.New(sig, s.tmw),
-		autoapproval.New(stepSignal, setResultDirective),
 		planonly.New(s.OwnerID, checkCtx),
+		policy.New(sig, s.tmw, checkCtx),
+		autoapproval.New(stepSignal, setResultDirective),
 	}
 }
 

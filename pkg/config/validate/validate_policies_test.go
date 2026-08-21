@@ -5,7 +5,30 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestValidateOPAPolicy(t *testing.T) {
+	t.Run("accepts deny rule", func(t *testing.T) {
+		require.NoError(t, ValidateOPAPolicy("package nuon\ndeny := []"))
+	})
+
+	t.Run("accepts warn rule", func(t *testing.T) {
+		require.NoError(t, ValidateOPAPolicy("package nuon\nwarn := []"))
+	})
+
+	t.Run("rejects another package", func(t *testing.T) {
+		err := ValidateOPAPolicy("package other\ndeny := []")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must use package nuon")
+	})
+
+	t.Run("rejects policy without decisions", func(t *testing.T) {
+		err := ValidateOPAPolicy("package nuon\nallow := true")
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "must define at least one deny or warn rule")
+	})
+}
 
 func TestValidatePolicyType(t *testing.T) {
 	tests := map[string]struct {

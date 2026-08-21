@@ -88,6 +88,11 @@ func ResolveJobCompositeError(job *app.RunnerJob) *compositeerrors.CompositeErro
 			return job.Executions[0].Result.CompositeError
 		}
 		return job.CompositeError
+	case app.RunnerJobStatusFinished:
+		if job.CompositeError != nil && job.CompositeError.Severity == compositeerrors.SeverityWarning {
+			return job.CompositeError
+		}
+		return nil
 	default:
 		return nil
 	}
