@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import {
   getOrgDetail, addOrgLabels, removeOrgLabel, addSupportUsers, migrateOrgQueues,
@@ -9,6 +9,7 @@ import {
   forgetInstall, deprovisionInstall,
   getOrgWorkflows, terminateOrgWorkflows,
   getOrgQueueSignals, getOrgQueueSignalStats, deleteOrgQueueSignals,
+  getFeatureFlags,
 } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { Pagination } from '@/components/common/Pagination'
@@ -24,7 +25,7 @@ function getStatus(s: any): string {
   return String(s)
 }
 
-type Tab = 'overview' | 'queues' | 'cleanup'
+type Tab = 'overview' | 'features' | 'queues' | 'cleanup'
 
 export const OrgDetail = () => {
   const { id } = useParams<{ id: string }>()
@@ -135,7 +136,7 @@ export const OrgDetail = () => {
       {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-800">
         <nav className="flex gap-4">
-          {(['overview', 'queues', 'cleanup'] as Tab[]).map((tab) => (
+          {(['overview', 'features', 'queues', 'cleanup'] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setTab(tab)}
@@ -175,8 +176,98 @@ export const OrgDetail = () => {
           shutdownHintProcessesMutation={shutdownHintProcessesMutation}
         />
       )}
+      {activeTab === 'features' && (
+        <FeaturesTab storedFeatures={data?.stored_features || {}} highlightFlag={searchParams.get('flag') || ''} />
+      )}
       {activeTab === 'queues' && <QueuesTab orgId={id!} />}
       {activeTab === 'cleanup' && <CleanupTab orgId={id!} installs={installs} />}
+    </div>
+  )
+}
+
+// ---------- Features Tab ----------
+function FeaturesTab({
+  storedFeatures,
+  highlightFlag,
+}: {
+  storedFeatures: Record<string, boolean>
+  highlightFlag: string
+}) {
+  const { data } = useQuery({
+    queryKey: ['feature-flags'],
+    queryFn: getFeatureFlags,
+  })
+  const highlightRef = useRef<HTMLTableRowElement>(null)
+
+  useEffect(() => {
+    highlightRef.current?.scrollIntoView({ block: 'center' })
+  }, [highlightFlag, data])
+
+  const flags = data?.flags || []
+  const rows = flags.map((f) => {
+    const stored = storedFeatures[f.name]
+    const unset = stored === undefined
+    return { ...f, unset, enabled: unset ? f.effective_default : stored }
+  })
+
+  const enabledCount = rows.filter((r) => r.enabled).length
+
+  if (flags.length === 0) return <LoadingSpinner />
+
+  return (
+    <div className="mt-4">
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        {enabledCount} of {rows.length} flags enabled.{' '}
+        <Link to="/feature-flags" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
+          View rollout across all orgs
+        </Link>
+      </p>
+
+      <div className="mt-3 table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Flag</th>
+              <th className="w-24">State</th>
+              <th className="w-40">Default</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+            {rows.map((row) => (
+              <tr
+                key={row.name}
+                ref={row.name === highlightFlag ? highlightRef : undefined}
+                className={row.name === highlightFlag ? 'bg-primary-50 dark:bg-primary-900/20' : undefined}
+              >
+                <td>
+                  <div className="font-mono text-sm text-gray-900 dark:text-gray-100">{row.name}</div>
+                  {row.description && (
+                    <div className="mt-0.5 max-w-3xl text-xs text-gray-500 dark:text-gray-400">{row.description}</div>
+                  )}
+                </td>
+                <td>
+                  <span
+                    className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-mono ${
+                      row.enabled
+                        ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300'
+                        : 'bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                    }`}
+                  >
+                    {row.enabled ? 'on' : 'off'}
+                  </span>
+                </td>
+                <td className="text-xs text-gray-500 dark:text-gray-400">
+                  {row.effective_default ? 'on' : 'off'}
+                  {row.unset && <span className="ml-1 text-gray-400 dark:text-gray-500">(no stored value)</span>}
+                  {!row.unset && row.enabled !== row.effective_default && (
+                    <span className="ml-1 text-amber-600 dark:text-amber-400">(overridden)</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

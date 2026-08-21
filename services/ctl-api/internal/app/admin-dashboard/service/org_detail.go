@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -77,8 +78,14 @@ func (s *service) OrgDetail(c *gin.Context) {
 		}
 	}
 
+	storedFeatures, err := s.getStoredOrgFeatures(ctx, orgID)
+	if err != nil {
+		s.l.Warn("failed to fetch stored org features", zap.String("org_id", orgID), zap.Error(err))
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"org":                  org,
+		"stored_features":      storedFeatures,
 		"installs":             installs,
 		"recent_app":           recentApp,
 		"graph_dot":            graphDot,
@@ -86,6 +93,29 @@ func (s *service) OrgDetail(c *gin.Context) {
 		"page":                 page,
 		"installs_total_pages": installsTotalPages,
 	})
+}
+
+// getStoredOrgFeatures reads the features column without the model's AfterQuery
+// hook, which backfills absent flags as false and would hide which values the
+// org actually stores.
+func (s *service) getStoredOrgFeatures(ctx context.Context, orgID string) (map[string]bool, error) {
+	// Scan into *string, not []byte: database/sql treats a []byte destination as
+	// a slice of columns and fails to convert the jsonb value.
+	var raw *string
+	if err := s.readDB().WithContext(ctx).
+		Raw("SELECT features FROM orgs WHERE id = ?", orgID).
+		Scan(&raw).Error; err != nil {
+		return nil, fmt.Errorf("unable to read org features: %w", err)
+	}
+
+	stored := make(map[string]bool)
+	if raw == nil {
+		return stored, nil
+	}
+	if err := json.Unmarshal([]byte(*raw), &stored); err != nil {
+		return map[string]bool{}, nil
+	}
+	return stored, nil
 }
 
 func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
