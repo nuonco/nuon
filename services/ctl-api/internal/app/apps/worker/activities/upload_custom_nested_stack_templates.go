@@ -38,11 +38,21 @@ func (a *Activities) UploadCustomNestedStackTemplates(ctx context.Context, req *
 		return fmt.Errorf("unable to create s3 uploader: %w", err)
 	}
 
+	baseURL := a.cfg.AWSCloudFormationStackTemplateBaseURL
+	sourceURL := func(contentsHash, templateURL string) string {
+		if baseURL == "" {
+			return ""
+		}
+		return cloudformation.CustomNestedStackTemplateURL(baseURL, stackConfig.OrgID, stackConfig.AppID, contentsHash, templateURL)
+	}
+
 	for i, stack := range stackConfig.CustomNestedStacks {
-		// Already uploaded (ContentsHash set, Contents cleared) — nothing to do.
+		// Already uploaded (ContentsHash set, Contents cleared) — nothing to do
+		// beyond backfilling the source URL for configs synced before it existed.
 		if stack.Contents == "" {
 			if stack.ContentsHash != "" {
 				stackConfig.CustomNestedStacks[i].Status = config.CustomNestedStackStatusReady
+				stackConfig.CustomNestedStacks[i].TemplateSourceURL = sourceURL(stack.ContentsHash, stack.TemplateURL)
 			}
 			continue
 		}
@@ -60,6 +70,7 @@ func (a *Activities) UploadCustomNestedStackTemplates(ctx context.Context, req *
 		stackConfig.CustomNestedStacks[i].ContentsHash = contentsHash
 		stackConfig.CustomNestedStacks[i].Contents = ""
 		stackConfig.CustomNestedStacks[i].Status = config.CustomNestedStackStatusReady
+		stackConfig.CustomNestedStacks[i].TemplateSourceURL = sourceURL(contentsHash, stack.TemplateURL)
 	}
 
 	res = a.db.WithContext(ctx).
