@@ -15,7 +15,9 @@ import (
 // Returns the workflow and the step queue ID for enqueuing the execute-flow signal.
 func (e *FlowTestSuite) setupFlowTest(ctx context.Context, ownerID, ownerType string, steps []app.WorkflowStep) (*app.Workflow, string) {
 	stepQueue := e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-steps")
+	e.createTestQueue(ctx, ownerID, ownerType, "install-workflow-step-groups")
 	e.createTestQueue(ctx, ownerID, ownerType, "install-signals")
+	e.createTestQueue(ctx, ownerID, ownerType, "install-generate-steps")
 
 	flw := app.Workflow{
 		OwnerID:   ownerID,
@@ -36,11 +38,13 @@ func (e *FlowTestSuite) enqueueFlow(ctx context.Context, queueID string, flw *ap
 	resp, err := e.service.QueueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
 		QueueID: queueID,
 		Signal: &executeflow.Signal{
-			WorkflowID:          flw.ID,
-			StepQueueName:       "install-workflow-steps",
-			StepTargetQueueName: "install-signals",
-			OwnerID:             ownerID,
-			OwnerType:           ownerType,
+			WorkflowID:             flw.ID,
+			StepGroupQueueName:     "install-workflow-step-groups",
+			StepQueueName:          "install-workflow-steps",
+			StepTargetQueueName:    "install-signals",
+			GenerateStepsQueueName: "install-generate-steps",
+			OwnerID:                ownerID,
+			OwnerType:              ownerType,
 		},
 		// Set owner so the flow client can find this queue signal via
 		// findQueueSignalByOwner(workflowID, "install_workflows", ...).
