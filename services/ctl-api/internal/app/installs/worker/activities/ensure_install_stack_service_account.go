@@ -13,13 +13,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
-// stackTokenTimeout is the lifetime of an install stack's API token. Unlike the
-// phone-home token — which backs a Lambda that can be re-invoked years after the
-// stack was applied, and is therefore effectively permanent — this one is handed to
-// the customer to put in their Terraform configuration, so it gets the same 90 days
-// as a runner token. Rotation is not handled yet; an expired token needs a new one
-// minted out of band.
-const stackTokenTimeout = time.Hour * 24 * 90
+// stackTokenTimeout is the lifetime of an install stack's API token. Deliberately
+// short: unlike the phone-home token — which backs a Lambda that can be re-invoked
+// years after the stack was applied, and is therefore effectively permanent — this
+// one is handed to a customer to paste into a shell or a CI secret, where it is far
+// more exposed and far harder to account for.
+//
+// One day means a leaked token is worth little, and it pushes anything recurring
+// toward OIDC, which mints per-run credentials and stores nothing. The cost is that
+// a customer returning to re-apply needs a fresh token from the dashboard;
+// reconciliation mints one whenever no live token exists.
+const stackTokenTimeout = time.Hour * 24
 
 type EnsureInstallStackServiceAccountRequest struct {
 	InstallStackID string `json:"install_stack_id" validate:"required"`

@@ -673,10 +673,17 @@ module "aws_stack" {
             <Code variant="preformated">{authCmd}</Code>
           )}
         </Card>
+        {token?.expires_at ? (
+          <Text variant="subtext" theme="neutral">
+            This token expires {new Date(token.expires_at).toLocaleString()}.
+            Reload this page for a fresh one.
+          </Text>
+        ) : null}
         <Text variant="subtext" theme="neutral">
           In CI, prefer OIDC instead: grant{' '}
           <code>permissions: id-token: write</code>, set <code>org_id</code> on
-          the <code>stack</code> provider, and omit the token entirely.
+          the <code>stack</code> provider, and omit the token entirely. That
+          mints a credential per run, so nothing long-lived is stored.
         </Text>
       </div>
 
