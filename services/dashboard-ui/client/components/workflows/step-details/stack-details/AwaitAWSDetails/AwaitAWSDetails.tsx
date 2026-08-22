@@ -586,16 +586,9 @@ provider "aws" {
   region = "${region}"
 }
 
-# Declared so TF_VAR_nuon_api_token can supply it; keeps the token out of
-# this file and out of state as a plain value.
-variable "nuon_api_token" {
-  type      = string
-  sensitive = true
-}
-
-provider "stack" {
-  api_token = var.nuon_api_token
-}
+# Credentials are read from NUON_API_TOKEN (step 3), so no secret lives in
+# this file and none is passed through a Terraform variable.
+provider "stack" {}
 
 module "install_stack" {
   source  = "nuonco/stack/aws"
@@ -612,7 +605,7 @@ module "install_stack" {
   }
 }`
 
-  const authCmd = `export TF_VAR_nuon_api_token='${token?.api_token ?? '<api-token>'}'`
+  const authCmd = `export NUON_API_TOKEN='${token?.api_token ?? '<api-token>'}'`
   const applyCmd = `terraform init && terraform apply`
 
   return (
