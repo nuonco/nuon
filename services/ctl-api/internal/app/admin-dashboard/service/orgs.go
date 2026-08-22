@@ -21,9 +21,11 @@ func (s *service) Orgs(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")
 	label := c.Query("label")
+	feature := c.Query("feature")
+	featureState := c.Query("feature_state")
 	page := getPageFromQuery(c)
 
-	orgs, totalPages, err := s.getOrgs(ctx, search, label, page)
+	orgs, featureCounts, totalPages, err := s.getOrgs(ctx, search, label, feature, featureState, page)
 	if err != nil {
 		s.l.Error("failed to get orgs", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch organizations"})
@@ -36,18 +38,32 @@ func (s *service) Orgs(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"orgs":          orgs,
-		"label_options": labelOptions,
-		"page":          page,
-		"total_pages":   totalPages,
+		"orgs":            orgs,
+		"label_options":   labelOptions,
+		"feature_options": orgFeatureOptions(),
+		"feature_counts":  featureCounts,
+		"page":            page,
+		"total_pages":     totalPages,
 	})
 }
 
-func (s *service) getOrgs(ctx context.Context, search, label string, page int) ([]*app.Org, int, error) {
+// orgFeatureOptions lists the active flags newest-first, matching the feature
+// flags page ordering.
+func orgFeatureOptions() []app.OrgFeatureInfo {
+	features := app.GetFeaturesWithDescriptions()
+	opts := make([]app.OrgFeatureInfo, 0, len(features))
+	for i := len(features) - 1; i >= 0; i-- {
+		opts = append(opts, features[i])
+	}
+	return opts
+}
+
+func (s *service) getOrgs(ctx context.Context, search, label, feature, featureState string, page int) ([]*app.Org, map[string]int, int, error) {
 	type OrgWithCounts struct {
 		app.Org
-		AppCount     int `gorm:"column:app_count"`
-		InstallCount int `gorm:"column:install_count"`
+		AppCount            int `gorm:"column:app_count"`
+		InstallCount        int `gorm:"column:install_count"`
+		EnabledFeatureCount int `gorm:"column:enabled_feature_count"`
 	}
 
 	var orgsWithCounts []OrgWithCounts
@@ -72,8 +88,22 @@ func (s *service) getOrgs(ctx context.Context, search, label string, page int) (
 		}
 	}
 
+	if feature != "" {
+		// Orgs predating a flag have no stored value, so fall back to the
+		// default the same way a new org would resolve it.
+		fallback := "false"
+		if s.effectiveFeatureDefault(feature) {
+			fallback = "true"
+		}
+		want := "true"
+		if featureState == "disabled" {
+			want = "false"
+		}
+		query = query.Where("COALESCE(features->>?, ?) = ?", feature, fallback, want)
+	}
+
 	if err := query.Count(&totalCount).Error; err != nil {
-		return nil, 0, fmt.Errorf("unable to count orgs: %w", err)
+		return nil, nil, 0, fmt.Errorf("unable to count orgs: %w", err)
 	}
 
 	totalPages := int(math.Ceil(float64(totalCount) / float64(orgsPerPage)))
@@ -83,27 +113,34 @@ func (s *service) getOrgs(ctx context.Context, search, label string, page int) (
 
 	offset := (page - 1) * orgsPerPage
 
+	activeFlags, flagDefaults := s.featureDefaultsJSON()
+
 	res := query.
-		Select("orgs.*, " +
-			"(SELECT COUNT(*) FROM apps WHERE apps.org_id = orgs.id AND apps.deleted_at = 0) as app_count, " +
-			"(SELECT COUNT(*) FROM installs WHERE installs.org_id = orgs.id AND installs.deleted_at = 0) as install_count").
+		Select("orgs.*, "+
+			"(SELECT COUNT(*) FROM apps WHERE apps.org_id = orgs.id AND apps.deleted_at = 0) as app_count, "+
+			"(SELECT COUNT(*) FROM installs WHERE installs.org_id = orgs.id AND installs.deleted_at = 0) as install_count, "+
+			"(SELECT COUNT(*) FROM jsonb_array_elements_text(?::jsonb) AS f(name) "+
+			"WHERE COALESCE(orgs.features->>f.name, (?::jsonb)->>f.name) = 'true') as enabled_feature_count",
+			activeFlags, flagDefaults).
 		Order("created_at desc").
 		Limit(orgsPerPage).
 		Offset(offset).
 		Find(&orgsWithCounts)
 
 	if res.Error != nil {
-		return nil, 0, fmt.Errorf("unable to get orgs: %w", res.Error)
+		return nil, nil, 0, fmt.Errorf("unable to get orgs: %w", res.Error)
 	}
 
 	orgs := make([]*app.Org, len(orgsWithCounts))
+	featureCounts := make(map[string]int, len(orgsWithCounts))
 	for i := range orgsWithCounts {
 		orgsWithCounts[i].Org.AppCount = orgsWithCounts[i].AppCount
 		orgsWithCounts[i].Org.InstallCount = orgsWithCounts[i].InstallCount
 		orgs[i] = &orgsWithCounts[i].Org
+		featureCounts[orgsWithCounts[i].Org.ID] = orgsWithCounts[i].EnabledFeatureCount
 	}
 
-	return orgs, totalPages, nil
+	return orgs, featureCounts, totalPages, nil
 }
 
 type orgLabelOption struct {
