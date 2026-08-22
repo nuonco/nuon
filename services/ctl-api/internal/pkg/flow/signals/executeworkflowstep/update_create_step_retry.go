@@ -1,7 +1,10 @@
 package executeworkflowstep
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -27,7 +30,7 @@ func (s *Signal) createStepRetryHandler(ctx workflow.Context) (*CreateStepRetryR
 		return nil, errors.Wrap(err, "unable to get step")
 	}
 	if !step.Retryable {
-		return nil, errors.New("step is not retryable")
+		return nil, temporal.NewNonRetryableApplicationError("step is not retryable", "STEP_NOT_RETRYABLE", nil)
 	}
 
 	sig := stepSignal(step)
@@ -44,7 +47,11 @@ func (s *Signal) createStepRetryHandler(ctx workflow.Context) (*CreateStepRetryR
 	}
 
 	if retryIndex >= maxRetries {
-		return nil, errors.Errorf("max retries exhausted (%d/%d)", retryIndex, maxRetries)
+		return nil, temporal.NewNonRetryableApplicationError(
+			fmt.Sprintf("max retries exhausted (%d/%d)", retryIndex, maxRetries),
+			"MAX_RETRIES_EXHAUSTED",
+			nil,
+		)
 	}
 
 	// Determine the directive based on signal capabilities.
