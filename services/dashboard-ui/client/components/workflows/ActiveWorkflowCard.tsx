@@ -15,6 +15,7 @@ import {
   getWorkflowHref,
   getWorkflowPendingApprovals,
 } from '@/utils/workflow-utils'
+import { getRunTitle } from '@/components/branches/shared/run-title'
 import { CancelWorkflowButton } from './CancelWorkflow'
 
 export const ActiveWorkflowCard = ({
@@ -61,7 +62,7 @@ export const ActiveWorkflowCard = ({
               {ownerName} /
             </span>
           )}
-          {workflow.name}
+          {isAppBranchWorkflow ? getRunTitle(workflow) : workflow.name}
         </Text>
       </Link>
       {pendingApprovals > 0 &&

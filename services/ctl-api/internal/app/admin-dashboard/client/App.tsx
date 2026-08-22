@@ -25,6 +25,7 @@ import { InFlightSignals } from '@/views/in-flight-signals/InFlightSignals'
 import { SignalCatalog } from '@/views/signal-catalog/SignalCatalog'
 import { SignalCatalogDetail } from '@/views/signal-catalog/SignalCatalogDetail'
 import { Labels } from '@/views/labels/Labels'
+import { FeatureFlags } from '@/views/feature-flags/FeatureFlags'
 import { SandboxMode } from '@/views/sandbox-mode/SandboxMode'
 import { TemporalWorkers } from '@/views/temporal-workers/TemporalWorkers'
 import { TemporalWorkerDetail } from '@/views/temporal-workers/TemporalWorkerDetail'
@@ -72,6 +73,7 @@ const router = createBrowserRouter([
       { path: 'signal-catalog', element: <SignalCatalog /> },
       { path: 'signal-catalog/:signalType', element: <SignalCatalogDetail /> },
       { path: 'labels', element: <Labels /> },
+      { path: 'feature-flags', element: <FeatureFlags /> },
       { path: 'sandbox-mode', element: <SandboxMode /> },
       { path: 'temporal-workers', element: <TemporalWorkers /> },
       { path: 'temporal-workers/:namespace', element: <TemporalWorkerDetail /> },
