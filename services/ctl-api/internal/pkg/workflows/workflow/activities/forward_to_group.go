@@ -61,7 +61,9 @@ func (a *Activities) ForwardRetryStepToGroup(ctx context.Context, req ForwardRet
 
 	var resp ForwardRetryStepToGroupResponse
 	if err := handle.Get(ctx, &resp); err != nil {
-		return nil, fmt.Errorf("retry-step failed on group: %w", err)
+		// Keep a non-retryable update failure concrete; wrapping it makes the
+		// activity's top-level Temporal failure retryable again.
+		return nil, err
 	}
 	return &resp, nil
 }
