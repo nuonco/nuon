@@ -8,6 +8,7 @@ import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
+import { useStackToken } from '@/hooks/use-stack-token'
 import { createFileDownload } from '@/utils/file-download'
 import type { IStackDetails } from '../types'
 
@@ -75,6 +76,7 @@ function parseTfvars(contents: unknown): TfvarsEnvelope {
 
 export const AwaitAWSDetails = ({
   stack,
+  orgId,
   installId,
   installAwsRegion,
   tfProvider = false,
@@ -140,12 +142,24 @@ export const AwaitAWSDetails = ({
               <TerraformTab
                 inputsTfvars={tfvars.inputs}
                 installAwsRegion={installAwsRegion}
-                providerTfvars={tfvars.providerInputs}
-                tfProvider={tfProvider}
                 secretsTfvars={tfvars.secrets}
                 installId={installId}
               />
             ),
+            // Additive: the legacy terraform directions above are unchanged.
+            // Gated on the org feature until the module and provider releases
+            // it depends on are published.
+            ...(tfProvider
+              ? {
+                  tfmodule: (
+                    <TFModuleTab
+                      orgId={orgId}
+                      installId={installId}
+                      installAwsRegion={installAwsRegion}
+                    />
+                  ),
+                }
+              : {}),
           }}
         />
       ) : (
@@ -331,8 +345,6 @@ const CloudFormationTab = ({
 interface ITerraformTab {
   inputsTfvars: string
   installAwsRegion?: string
-  providerTfvars: string
-  tfProvider: boolean
   secretsTfvars: string
   installId?: string
 }
@@ -340,17 +352,12 @@ interface ITerraformTab {
 const TerraformTab = ({
   inputsTfvars,
   installAwsRegion,
-  providerTfvars,
-  tfProvider,
   secretsTfvars,
   installId,
 }: ITerraformTab) => {
-  const inputsFile = tfProvider ? providerTfvars : inputsTfvars
+  const inputsFile = inputsTfvars
 
-  const cloneCmd = tfProvider
-    ? `git clone -b ja/stack-sdk https://github.com/nuonco/install-stacks.git
-cd install-stacks/aws`
-    : `git clone https://github.com/nuonco/install-stacks.git
+  const cloneCmd = `git clone https://github.com/nuonco/install-stacks.git
 cd install-stacks/aws`
 
   const backendSnippet = `terraform {
@@ -365,17 +372,6 @@ cd install-stacks/aws`
 
   return (
     <div className="flex flex-col gap-4 pt-4">
-      {tfProvider ? (
-        <Text variant="subtext" theme="neutral">
-          This module reads its configuration from the Nuon API via the{' '}
-          <code>stack</code> Terraform provider, so the tfvars stay slim. The
-          provider isn&apos;t published to the Terraform registry yet — add a
-          dev override in <code>~/.terraformrc</code> pointing{' '}
-          <code>nuonco/stack</code> at your local build before running{' '}
-          <code>terraform init</code>.
-        </Text>
-      ) : null}
-
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
           1. Clone the install stack module
@@ -549,5 +545,138 @@ const AWSTelemetryExportInstructions = ({
         </Card>
       </div>
     </Expand>
+  )
+}
+
+interface ITFModuleTab {
+  orgId: string
+  installId?: string
+  installAwsRegion?: string
+}
+
+// Directions for the published nuonco/stack/aws module, which reads its whole
+// configuration from the API. Distinct from the TerraformTab above, which
+// clones install-stacks and is driven by generated tfvars.
+const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
+  const {
+    data: token,
+    isLoading,
+    isError,
+  } = useStackToken({
+    installId,
+    orgId,
+    enabled: true,
+  })
+
+  const region = installAwsRegion ?? '<your-install-region>'
+
+  const mainTf = `terraform {
+  required_providers {
+    aws   = { source = "hashicorp/aws", version = ">= 6.0" }
+    stack = { source = "nuonco/stack", version = ">= 0.4.0" }
+  }
+}
+
+provider "aws" {
+  region = "${region}"
+}
+
+provider "stack" {
+  api_token = var.nuon_api_token
+}
+
+module "install_stack" {
+  source  = "nuonco/stack/aws"
+  version = "~> 0.2"
+
+  install_id = "${installId ?? '<install-id>'}"
+}`
+
+  const backendSnippet = `terraform {
+  backend "s3" {
+    bucket = "<your-state-bucket>"
+    key    = "nuon/${installId}/terraform.tfstate"
+    region = "<your-state-bucket-region>"
+  }
+}`
+
+  const applyCmd = `export TF_VAR_nuon_api_token='${token?.api_token ?? '<api-token>'}'
+terraform init && terraform apply`
+
+  return (
+    <div className="flex flex-col gap-4 pt-4">
+      <Text variant="subtext" theme="neutral">
+        The <code>nuonco/stack/aws</code> module reads this install&apos;s
+        configuration from the Nuon API, so the only input is the install ID.
+        Everything else — runner details, IAM permissions, roles, inputs, and
+        secrets — comes from the control plane.
+      </Text>
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          1. Create your Terraform configuration
+        </Text>
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>
+              Save this as <code>main.tf</code>
+            </Text>
+            <ClickToCopyButton textToCopy={mainTf} />
+          </span>
+          <Code variant="preformated">{mainTf}</Code>
+        </Card>
+      </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          2. Configure remote state (recommended)
+        </Text>
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>
+              Create a <code>backend.tf</code> file to store Terraform state in
+              S3
+            </Text>
+            <ClickToCopyButton textToCopy={backendSnippet} />
+          </span>
+          <Code variant="preformated">{backendSnippet}</Code>
+        </Card>
+      </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          3. Authenticate and apply
+        </Text>
+        {isError ? (
+          <Text variant="subtext" theme="neutral">
+            No API token has been issued for this install stack yet. Reprovision
+            the install to mint one, then reload this page.
+          </Text>
+        ) : null}
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>
+              This token authorizes the module to read its configuration. Treat
+              it as a secret.
+            </Text>
+            {isLoading ? null : <ClickToCopyButton textToCopy={applyCmd} />}
+          </span>
+          {isLoading ? (
+            <Code loading />
+          ) : (
+            <Code variant="preformated">{applyCmd}</Code>
+          )}
+        </Card>
+        <Text variant="subtext" theme="neutral">
+          In CI, prefer OIDC instead: grant{' '}
+          <code>permissions: id-token: write</code>, set <code>org_id</code> on
+          the <code>stack</code> provider, and omit the token entirely.
+        </Text>
+      </div>
+    </div>
   )
 }

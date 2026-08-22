@@ -780,6 +780,7 @@ export type TInstallActionRunStep =
 export type TInstallAction = components['schemas']['app.InstallActionWorkflow']
 
 export type TReadme = components['schemas']['service.Readme']
+export type TStackToken = components['schemas']['service.StackTokenResponse']
 
 export type TWaitlist = components['schemas']['app.Waitlist']
 

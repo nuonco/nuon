@@ -2942,6 +2942,13 @@ export interface paths {
      */
     post: operations["CreateServiceAccountToken"];
   };
+  "/v1/stacks/{install_id}/token": {
+    /**
+     * get an install stack's API token
+     * @description Return the API token the install stack's Terraform module uses to authenticate against the runner API. Read-only: the token is minted during stack version generation and is not created or rotated by this endpoint.
+     */
+    get: operations["GetStackToken"];
+  };
   "/v1/terraform-backend": {
     /**
      * get current terraform
@@ -8950,6 +8957,11 @@ export interface components {
     "service.SkipWorkflowStepResponse": {
       skippable?: boolean;
       workflow_id?: string;
+    };
+    "service.StackTokenResponse": {
+      api_token?: string;
+      expires_at?: string;
+      id?: string;
     };
     "service.SyncSecretsRequest": {
       plan_only?: boolean;
@@ -30584,6 +30596,50 @@ export interface operations {
       400: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install stack's API token
+   * @description Return the API token the install stack's Terraform module uses to authenticate against the runner API. Read-only: the token is minted during stack version generation and is not created or rotated by this endpoint.
+   */
+  GetStackToken: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.StackTokenResponse"];
         };
       };
       /** @description Unauthorized */
