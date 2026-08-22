@@ -780,6 +780,8 @@ type ClientService interface {
 
 	GetSlackInstallURL(params *GetSlackInstallURLParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSlackInstallURLOK, error)
 
+	GetStackToken(params *GetStackTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetStackTokenOK, error)
+
 	GetTerraformCurrentStateData(params *GetTerraformCurrentStateDataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformCurrentStateDataOK, error)
 
 	GetTerraformStates(params *GetTerraformStatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformStatesOK, error)
@@ -16444,6 +16446,52 @@ func (a *Client) GetSlackInstallURL(params *GetSlackInstallURLParams, authInfo r
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetSlackInstallURL: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetStackToken gets an install stack s API token
+
+Return the API token the install stack's Terraform module uses to authenticate against the runner API. Read-only: the token is minted during stack version generation and is not created or rotated by this endpoint.
+*/
+func (a *Client) GetStackToken(params *GetStackTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetStackTokenOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetStackTokenParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetStackToken",
+		Method:             "GET",
+		PathPattern:        "/v1/stacks/{install_id}/token",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetStackTokenReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetStackTokenOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetStackToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
