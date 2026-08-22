@@ -67,7 +67,16 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	return nil
 }
 
+// The token exchange is also served on the runner API. Customer infrastructure —
+// an install stack applying Terraform from CI — reaches the runner API, not the
+// public one, and it needs somewhere to trade an OIDC token for a Nuon token
+// before it can authenticate anywhere. Same handler, and it is already in the
+// public endpoint list, so this exposes nothing new.
+//
+// Trust policies stay off the runner API: those are vendor administration.
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	api.POST("/v1/oidc/token", s.ExchangeOIDCToken)
+
 	return nil
 }
 
