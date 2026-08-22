@@ -586,6 +586,13 @@ provider "aws" {
   region = "${region}"
 }
 
+# Declared so TF_VAR_nuon_api_token can supply it; keeps the token out of
+# this file and out of state as a plain value.
+variable "nuon_api_token" {
+  type      = string
+  sensitive = true
+}
+
 provider "stack" {
   api_token = var.nuon_api_token
 }
