@@ -130,6 +130,10 @@ export const AwaitAWSDetails = ({
       {hasTerraform ? (
         <Tabs
           initActiveTab={version?.template_url ? 'cloudformation' : 'terraform'}
+          tabLabels={{
+            cloudformation: 'CloudFormation',
+            tfmodule: 'TF Module',
+          }}
           tabs={{
             cloudformation: (
               <CloudFormationTab
@@ -571,9 +575,10 @@ const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
   const region = installAwsRegion ?? '<your-install-region>'
 
   const mainTf = `terraform {
+  # Source mapping only — the module declares the version constraints.
   required_providers {
-    aws   = { source = "hashicorp/aws", version = ">= 6.0" }
-    stack = { source = "nuonco/stack", version = ">= 0.4.0" }
+    aws   = { source = "hashicorp/aws" }
+    stack = { source = "nuonco/stack" }
   }
 }
 
