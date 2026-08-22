@@ -605,8 +605,8 @@ module "install_stack" {
   }
 }`
 
-  const applyCmd = `export TF_VAR_nuon_api_token='${token?.api_token ?? '<api-token>'}'
-terraform init && terraform apply`
+  const authCmd = `export TF_VAR_nuon_api_token='${token?.api_token ?? '<api-token>'}'`
+  const applyCmd = `terraform init && terraform apply`
 
   return (
     <div className="flex flex-col gap-4 pt-4">
@@ -654,7 +654,7 @@ terraform init && terraform apply`
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
-          3. Authenticate and apply
+          3. Authenticate
         </Text>
         {isError ? (
           <Text variant="subtext" theme="neutral">
@@ -668,12 +668,12 @@ terraform init && terraform apply`
               This token authorizes the module to read its configuration. Treat
               it as a secret.
             </Text>
-            {isLoading ? null : <ClickToCopyButton textToCopy={applyCmd} />}
+            {isLoading ? null : <ClickToCopyButton textToCopy={authCmd} />}
           </span>
           {isLoading ? (
             <Code loading />
           ) : (
-            <Code variant="preformated">{applyCmd}</Code>
+            <Code variant="preformated">{authCmd}</Code>
           )}
         </Card>
         <Text variant="subtext" theme="neutral">
@@ -681,6 +681,21 @@ terraform init && terraform apply`
           <code>permissions: id-token: write</code>, set <code>org_id</code> on
           the <code>stack</code> provider, and omit the token entirely.
         </Text>
+      </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          4. Apply
+        </Text>
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>Initialize the module and create the stack</Text>
+            <ClickToCopyButton textToCopy={applyCmd} />
+          </span>
+          <Code variant="preformated">{applyCmd}</Code>
+        </Card>
       </div>
     </div>
   )
