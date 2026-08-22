@@ -83,6 +83,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		general.GET("/backfill-blobs", s.GetBackfillBlobsStatus)
 		general.POST("/verify-blobs", s.AdminVerifyBlobs)
 		general.GET("/verify-blobs", s.GetVerifyBlobsStatus)
+		general.POST("/backfill-default-app-branches", s.AdminBackfillDefaultAppBranches)
+		general.GET("/backfill-default-app-branches", s.GetBackfillDefaultAppBranchesStatus)
 
 		// temporal codec
 		general.POST("/temporal-codec/decode", s.TemporalCodecDecode)

@@ -11,6 +11,15 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
+const (
+	// DefaultAppBranchName is the branch `nuon apps sync` routes through when the org
+	// has default-app-branches on; the CLI holds the same value in sync_branch.go.
+	DefaultAppBranchName = "default"
+
+	// DefaultAppBranchInstallGroupName names that branch's single all-installs group.
+	DefaultAppBranchInstallGroupName = "all installs"
+)
+
 func (h *Helpers) CreateAppBranch(
 	ctx context.Context,
 	appID string,
