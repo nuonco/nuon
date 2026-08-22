@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/config"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/dir"
@@ -26,9 +25,10 @@ type GeneratorOptions struct {
 	ProcessImports bool
 }
 
-// Without @max-retries Temporal retries forever; without @schedule-to-close-timeout
-// nothing bounds that retry loop, so unannotated activities get a 24h total cap.
-const defaultScheduleToCloseTimeout = 24 * time.Hour
+// 870 is chosen so unannotated activities give up after ~24h: at Temporal's
+// default backoff (1s initial, 2.0 coefficient, 100s max interval) that many
+// attempts span roughly a day.
+const defaultMaxRetries = 870
 
 func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 	var body bytes.Buffer
@@ -57,7 +57,8 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 		if fn.Annotation.Type == "activity" {
 			hasActivity = true
 			if !fn.Annotation.ActivityOpts.RetryPolicy && fn.Annotation.ActivityOpts.ScheduleToCloseTimeout == 0 {
-				fn.Annotation.ActivityOpts.ScheduleToCloseTimeout = defaultScheduleToCloseTimeout
+				fn.Annotation.ActivityOpts.MaxRetries = defaultMaxRetries
+				fn.Annotation.ActivityOpts.RetryPolicy = true
 			}
 			if fn.Annotation.ActivityOpts.GenerateWrapper {
 				hasActivityWrapper = true
