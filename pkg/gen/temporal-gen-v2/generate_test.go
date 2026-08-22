@@ -56,10 +56,6 @@ func TestGenerateExamples(t *testing.T) {
 	assert.Contains(t, string(content), "func AwaitComplexActivity(")
 	assert.Contains(t, string(content), "THIS FILE IS GENERATED. DO NOT EDIT.")
 
-	// SimpleActivity has no @max-retries and no @schedule-to-close-timeout, so it
-	// gets the default max-attempts cap (no schedule-to-close: a per-execution
-	// timeout timer at a 24h horizon floods the temporal DB); ComplexActivity
-	// keeps its explicit 1h.
 	simpleAwait := string(content[strings.Index(string(content), "func AwaitSimpleActivity("):strings.Index(string(content), "func AwaitComplexActivity(")])
 	assert.Contains(t, simpleAwait, "MaximumAttempts: int32(870)")
 	assert.NotContains(t, simpleAwait, "options.ScheduleToCloseTimeout = time.Duration(")
