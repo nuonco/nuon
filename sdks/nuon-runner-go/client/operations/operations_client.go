@@ -140,6 +140,8 @@ type ClientService interface {
 
 	GetInstallComponenetLastActivePlan(params *GetInstallComponenetLastActivePlanParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallComponenetLastActivePlanOK, error)
 
+	GetInstallStackVersionConfig(params *GetInstallStackVersionConfigParams, opts ...ClientOption) (*GetInstallStackVersionConfigOK, error)
+
 	GetPulumiState(params *GetPulumiStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetPulumiStateOK, *GetPulumiStateNoContent, error)
 
 	GetRunner(params *GetRunnerParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerOK, error)
@@ -171,6 +173,8 @@ type ClientService interface {
 	GetRunnerPublicSettings(params *GetRunnerPublicSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerPublicSettingsOK, error)
 
 	GetRunnerSettings(params *GetRunnerSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerSettingsOK, error)
+
+	GetStackConfig(params *GetStackConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetStackConfigOK, error)
 
 	GetTerraformCurrentStateData(params *GetTerraformCurrentStateDataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformCurrentStateDataOK, error)
 
@@ -1144,6 +1148,51 @@ func (a *Client) GetInstallComponenetLastActivePlan(params *GetInstallComponenet
 }
 
 /*
+GetInstallStackVersionConfig gets the s d k config for a stack version
+
+return the rendered install-stack configuration (runner, permissions, inputs, secrets) for a stack version. Read-only and side-effect free. Public endpoint: the per-stack-version phone_home_id in the URL is the secret. Consumed by the Terraform provider's nuon_stack data source.
+*/
+func (a *Client) GetInstallStackVersionConfig(params *GetInstallStackVersionConfigParams, opts ...ClientOption) (*GetInstallStackVersionConfigOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallStackVersionConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallStackVersionConfig",
+		Method:             "GET",
+		PathPattern:        "/v1/stack-runs/{phone_home_id}/config",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallStackVersionConfigReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallStackVersionConfigOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallStackVersionConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetPulumiState gets current pulumi state
 
 Get the current pulumi state for a workspace. Returns raw state bytes or 204 if no state exists.
@@ -1871,6 +1920,52 @@ func (a *Client) GetRunnerSettings(params *GetRunnerSettingsParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetRunnerSettings: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetStackConfig gets the s d k config for an install stack
+
+Return the rendered install-stack configuration (runner, permissions, inputs, secrets) for an install, including the phone-home URL the stack reports completion to. Read-only and side-effect free. Authenticated: the caller's token identifies the stack's service account, or an OIDC-federated account with access to the org.
+*/
+func (a *Client) GetStackConfig(params *GetStackConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetStackConfigOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetStackConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetStackConfig",
+		Method:             "GET",
+		PathPattern:        "/v1/stacks/{install_id}/config",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetStackConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetStackConfigOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetStackConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

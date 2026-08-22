@@ -590,7 +590,7 @@ provider "aws" {
 # this file and none is passed through a Terraform variable.
 provider "stack" {}
 
-module "install_stack" {
+module "aws_stack" {
   source  = "nuonco/stack/aws"
   version = "~> 0.2"
 
