@@ -575,7 +575,6 @@ const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
   const region = installAwsRegion ?? '<your-install-region>'
 
   const mainTf = `terraform {
-  # Source mapping only — the module declares the version constraints.
   required_providers {
     aws   = { source = "hashicorp/aws" }
     stack = { source = "nuonco/stack" }
@@ -586,8 +585,6 @@ provider "aws" {
   region = "${region}"
 }
 
-# Credentials are read from NUON_API_TOKEN (step 3), so no secret lives in
-# this file and none is passed through a Terraform variable.
 provider "stack" {}
 
 module "aws_stack" {
