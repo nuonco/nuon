@@ -844,6 +844,7 @@ export interface TUpdateServiceAccountBody {
 
 export interface TCreateServiceAccountTokenBody {
   duration?: string
+  name?: string
   invalidate?: boolean
 }
 

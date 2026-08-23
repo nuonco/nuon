@@ -8479,6 +8479,12 @@ export interface components {
        */
       duration?: string;
       invalidate?: boolean;
+      /**
+       * @description Name labels the token wherever it is listed. Defaults to the service
+       * account's identity, which is the only thing distinguishing one of these from
+       * another when several exist.
+       */
+      name?: string;
     };
     "service.CreateServiceAccountTokenResponse": {
       token?: string;

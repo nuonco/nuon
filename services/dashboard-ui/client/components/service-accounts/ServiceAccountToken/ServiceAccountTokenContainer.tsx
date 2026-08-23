@@ -19,6 +19,9 @@ interface ICreateServiceAccountToken {
   accountId: string
   identity: string
   defaultDuration?: string
+  // Labels the token on the org's API tokens page. Worth setting whenever the
+  // account's identity is an opaque ID, as an install stack's is.
+  tokenName?: string
   onCreated?: () => void
 }
 
@@ -26,6 +29,7 @@ export const CreateServiceAccountTokenModalContainer = ({
   accountId,
   identity,
   defaultDuration,
+  tokenName,
   onCreated,
   ...props
 }: ICreateServiceAccountToken & Record<string, any>) => {
@@ -43,7 +47,11 @@ export const CreateServiceAccountTokenModalContainer = ({
       invalidate: boolean
     }) =>
       createServiceAccountToken({
-        body: { duration, invalidate },
+        body: {
+          duration,
+          invalidate,
+          ...(tokenName ? { name: tokenName } : {}),
+        },
         accountId,
         orgId: org.id,
       }),
