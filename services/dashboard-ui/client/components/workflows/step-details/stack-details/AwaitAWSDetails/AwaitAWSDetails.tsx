@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -9,7 +9,11 @@ import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
+import { ToggleButton } from '@/components/common/ToggleButton'
+import { CreateOIDCTrustPolicyButton } from '@/components/oidc-trust-policies'
+import { NUON_OIDC_AUDIENCE } from '@/components/oidc-trust-policies/OIDCTrustPolicyForm/schema'
 import { CreateServiceAccountTokenModalContainer } from '@/components/service-accounts/ServiceAccountToken'
+import { useOIDCTrustPolicies } from '@/hooks/use-oidc-trust-policies'
 import { useStackServiceAccount } from '@/hooks/use-stack-service-account'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { createFileDownload } from '@/utils/file-download'
@@ -567,6 +571,12 @@ interface ITFModuleTab {
 const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
   const queryClient = useQueryClient()
   const { addModal } = useSurfaces()
+  const [authMethod, setAuthMethod] = useState<'token' | 'oidc'>('token')
+  // Only fetched once the OIDC pane is opened: most customers use a static token
+  // and never need this list.
+  const { data: trustPolicies } = useOIDCTrustPolicies({
+    enabled: authMethod === 'oidc',
+  })
   const {
     data: serviceAccount,
     isLoading,
@@ -683,45 +693,36 @@ module "aws_stack" {
       <Divider />
 
       <div className="flex flex-col gap-4">
-        <Text variant="base" weight="strong">
-          3. Authenticate
-        </Text>
-        {isError ? (
-          <Text variant="subtext" theme="neutral">
-            This install stack has no service account yet. Reprovision the
-            install to create one, then reload this page.
+        <span className="flex justify-between items-center gap-4">
+          <Text variant="base" weight="strong">
+            3. Authenticate
           </Text>
-        ) : null}
-        <Card>
-          <span className="flex justify-between items-center">
-            <Text>
-              This token authorizes the module to read its configuration. Treat
-              it as a secret.
-            </Text>
-            <ClickToCopyButton textToCopy={authCmd} />
-          </span>
-          <Code variant="preformated">{authCmd}</Code>
-          {/* Nothing to offer until the service account resolves — when it never
-              does, the guidance above already explains why. */}
-          {isLoading || isError || !serviceAccount?.account_id ? null : (
-            <span className="flex justify-between items-center gap-4">
-              <Text variant="subtext" theme="neutral">
-                {liveUntil
-                  ? `A token is active until ${liveUntil}. Creating another does not revoke it unless you ask it to.`
-                  : 'No token yet. Create one to get its value — it is shown only once.'}
-              </Text>
-              <Button size="sm" variant="secondary" onClick={openCreateToken}>
-                Create token
-              </Button>
-            </span>
-          )}
-        </Card>
-        <Text variant="subtext" theme="neutral">
-          In CI, prefer OIDC instead: grant{' '}
-          <code>permissions: id-token: write</code>, set <code>org_id</code> on
-          the <code>stack</code> provider, and omit the token entirely. That
-          mints a credential per run, so nothing long-lived is stored.
-        </Text>
+          <ToggleButton<'token' | 'oidc'>
+            value={authMethod}
+            onChange={setAuthMethod}
+            options={[
+              { value: 'token', label: 'Static token' },
+              { value: 'oidc', label: 'OIDC' },
+            ]}
+          />
+        </span>
+        {authMethod === 'oidc' ? (
+          <OIDCAuthPane
+            installId={installId}
+            policyNames={(trustPolicies ?? [])
+              .map((policy) => policy.name ?? '')
+              .filter(Boolean)}
+          />
+        ) : (
+          <StaticTokenAuthPane
+            authCmd={authCmd}
+            isLoading={isLoading}
+            isError={isError}
+            liveUntil={liveUntil}
+            canCreate={!!serviceAccount?.account_id}
+            onCreateToken={openCreateToken}
+          />
+        )}
       </div>
 
       <Divider />
@@ -739,5 +740,125 @@ module "aws_stack" {
         </Card>
       </div>
     </div>
+  )
+}
+
+const StaticTokenAuthPane = ({
+  authCmd,
+  isLoading,
+  isError,
+  liveUntil,
+  canCreate,
+  onCreateToken,
+}: {
+  authCmd: string
+  isLoading: boolean
+  isError: boolean
+  liveUntil: string | null
+  canCreate: boolean
+  onCreateToken: () => void
+}) => {
+  return (
+    <>
+      {isError ? (
+        <Text variant="subtext" theme="neutral">
+          This install stack has no service account yet. Reprovision the install
+          to create one, then reload this page.
+        </Text>
+      ) : null}
+      <Card>
+        <span className="flex justify-between items-center">
+          <Text>
+            This token authorizes the module to read its configuration. Treat it
+            as a secret.
+          </Text>
+          <ClickToCopyButton textToCopy={authCmd} />
+        </span>
+        <Code variant="preformated">{authCmd}</Code>
+        {/* Nothing to offer until the service account resolves — when it never
+              does, the guidance above already explains why. */}
+        {isLoading || isError || !canCreate ? null : (
+          <span className="flex justify-between items-center gap-4">
+            <Text variant="subtext" theme="neutral">
+              {liveUntil
+                ? `A token is active until ${liveUntil}. Creating another does not revoke it unless you ask it to.`
+                : 'No token yet. Create one to get its value — it is shown only once.'}
+            </Text>
+            <Button size="sm" variant="secondary" onClick={onCreateToken}>
+              Create token
+            </Button>
+          </span>
+        )}
+      </Card>
+    </>
+  )
+}
+
+// The alternative to handing a customer a token at all: GitHub Actions mints an ID
+// token per run and the control plane trades it for a short-lived Nuon token, so
+// nothing long-lived is stored anywhere.
+const OIDCAuthPane = ({
+  installId,
+  policyNames,
+}: {
+  installId?: string
+  policyNames: string[]
+}) => {
+  const policyName = `stack-${installId ?? 'install'}`
+  const existing = policyNames.includes(policyName)
+
+  const workflowSnippet = `permissions:
+  id-token: write
+  contents: read
+
+env:
+  NUON_ORG_ID: \${{ vars.NUON_ORG_ID }}`
+
+  return (
+    <>
+      <Card>
+        <span className="flex justify-between items-center gap-4">
+          <Text>
+            A trust policy tells Nuon which repository and branch may exchange
+            an OIDC token for access to this org.
+          </Text>
+          <CreateOIDCTrustPolicyButton
+            variant="secondary"
+            size="sm"
+            lockPreset
+            repoSource="manual"
+            githubAudience={NUON_OIDC_AUDIENCE}
+            defaultRole="org_admin"
+            defaultName={policyName}
+            reservedNames={policyNames}
+          >
+            {existing ? 'Create another' : 'Create trust policy'}
+          </CreateOIDCTrustPolicyButton>
+        </span>
+        {existing ? (
+          <Text variant="subtext" theme="neutral">
+            A policy named <code>{policyName}</code> already exists. Check it
+            covers the repository and branch running this Terraform before
+            creating another.
+          </Text>
+        ) : null}
+      </Card>
+
+      <Card>
+        <span className="flex justify-between items-center">
+          <Text>
+            Add this to the workflow that applies the Terraform. No{' '}
+            <code>NUON_API_TOKEN</code>.
+          </Text>
+          <ClickToCopyButton textToCopy={workflowSnippet} />
+        </span>
+        <Code variant="preformated">{workflowSnippet}</Code>
+      </Card>
+
+      <Text variant="subtext" theme="neutral">
+        Without <code>id-token: write</code> the workflow cannot mint an ID
+        token and the provider falls back to looking for a static token.
+      </Text>
+    </>
   )
 }

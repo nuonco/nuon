@@ -9,6 +9,11 @@ export type OIDCPreset = 'github_actions' | 'custom'
 export const GITHUB_ACTIONS_ISSUER =
   'https://token.actions.githubusercontent.com'
 
+// The `aud` Nuon's own clients request on ambient ID tokens. Must stay identical to
+// stack.OIDCAudience in sdks/stack — the control plane compares the value literally,
+// so a policy created with anything else rejects tokens the stack SDK presents.
+export const NUON_OIDC_AUDIENCE = 'https://api.nuon.co'
+
 export const hasSubCondition = (claimConditions: ClaimCondition[]) =>
   claimConditions.some(
     (condition) => condition.key.trim() === 'sub' && condition.value.trim()

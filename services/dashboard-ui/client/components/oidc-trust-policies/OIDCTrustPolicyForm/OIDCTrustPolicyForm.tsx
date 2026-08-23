@@ -49,6 +49,8 @@ const buildDefaultValues = ({
   initialRepoDefaultBranch,
   githubAudience,
   reservedNames,
+  defaultRole,
+  defaultName,
 }: {
   mode: OIDCTrustPolicyMode
   policy?: TOIDCTrustPolicy
@@ -56,6 +58,8 @@ const buildDefaultValues = ({
   initialRepoDefaultBranch?: string
   githubAudience: string
   reservedNames?: string[]
+  defaultRole?: string
+  defaultName?: string
 }): OIDCFormValues => {
   if (mode === 'edit' && policy) {
     return {
@@ -71,12 +75,14 @@ const buildDefaultValues = ({
     }
   }
   return {
-    name: initialRepoFullName
-      ? defaultRepoPolicyName(initialRepoFullName, reservedNames)
-      : '',
+    name:
+      defaultName ??
+      (initialRepoFullName
+        ? defaultRepoPolicyName(initialRepoFullName, reservedNames)
+        : ''),
     issuerUrl: GITHUB_ACTIONS_ISSUER,
     audience: githubAudience,
-    role: 'org_read_only',
+    role: defaultRole ?? 'org_read_only',
     tokenDurationSeconds: '900',
     enabled: true,
     claimConditions: [
@@ -107,6 +113,9 @@ export const OIDCTrustPolicyFormModal = ({
   initialRepoDefaultBranch,
   lockPreset,
   reservedNames,
+  repoSource = 'connections',
+  defaultRole,
+  defaultName,
   ...props
 }: {
   mode: OIDCTrustPolicyMode
@@ -124,11 +133,20 @@ export const OIDCTrustPolicyFormModal = ({
   initialRepoDefaultBranch?: string
   lockPreset?: boolean
   reservedNames?: string[]
+  // 'connections' picks from the org's VCS-connected repos. 'manual' takes a typed
+  // owner/repo, for policies about a repository this org has no connection to — a
+  // customer's, in the install-stack flow.
+  repoSource?: 'connections' | 'manual'
+  defaultRole?: string
+  defaultName?: string
 } & Omit<IModal, 'onSubmit'>) => {
   const [preset, setPreset] = useState<OIDCPreset>('github_actions')
   const [repoFullName, setRepoFullName] = useState(initialRepoFullName ?? '')
   const [isNameDirty, setIsNameDirty] = useState(false)
   const [isSubDirty, setIsSubDirty] = useState(false)
+  const [manualBranch, setManualBranch] = useState(
+    initialRepoDefaultBranch ?? 'main'
+  )
 
   const schema = useMemo(
     () => buildOIDCSchema({ mode, reservedNames }),
@@ -144,6 +162,8 @@ export const OIDCTrustPolicyFormModal = ({
       initialRepoDefaultBranch,
       githubAudience,
       reservedNames,
+      defaultRole,
+      defaultName,
     }),
     validators: { onMount: validator, onChange: validator },
     onSubmit: ({ value }) =>
@@ -182,7 +202,7 @@ export const OIDCTrustPolicyFormModal = ({
       setRepoFullName('')
       form.setFieldValue('issuerUrl', '')
       form.setFieldValue('audience', '')
-      form.setFieldValue('role', 'org_read_only')
+      form.setFieldValue('role', defaultRole ?? 'org_read_only')
       form.setFieldValue('tokenDurationSeconds', '')
       form.setFieldValue('claimConditions', [{ key: 'sub', value: '' }])
       if (!isNameDirty) form.setFieldValue('name', '')
@@ -190,25 +210,30 @@ export const OIDCTrustPolicyFormModal = ({
     }
     form.setFieldValue('issuerUrl', GITHUB_ACTIONS_ISSUER)
     form.setFieldValue('audience', githubAudience)
-    form.setFieldValue('role', 'org_read_only')
+    form.setFieldValue('role', defaultRole ?? 'org_read_only')
     form.setFieldValue('tokenDurationSeconds', '900')
   }
 
-  const selectRepo = (nextRepoFullName: string) => {
+  // Shared by both repo modes: a picked repo and a typed one derive the policy name
+  // and the sub claim identically, and only the branch's provenance differs.
+  const applyRepo = (nextRepoFullName: string, branch?: string) => {
     setRepoFullName(nextRepoFullName)
-    const branch = repos.find(
-      (repo) => repo.full_name === nextRepoFullName
-    )?.default_branch
-    if (!isNameDirty) {
+    if (!isNameDirty && !defaultName) {
       form.setFieldValue(
         'name',
         defaultRepoPolicyName(nextRepoFullName, reservedNames)
       )
     }
-    if (!isSubDirty && branch) {
+    if (!isSubDirty && nextRepoFullName && branch) {
       setSubCondition(githubSubClaim(nextRepoFullName, branch))
     }
   }
+
+  const selectRepo = (nextRepoFullName: string) =>
+    applyRepo(
+      nextRepoFullName,
+      repos.find((repo) => repo.full_name === nextRepoFullName)?.default_branch
+    )
 
   return (
     <Modal
@@ -275,7 +300,38 @@ export const OIDCTrustPolicyFormModal = ({
         )}
 
         {isCreate && isGithub ? (
-          hasVCSConnections === false && !isLoadingRepos ? (
+          repoSource === 'manual' ? (
+            // No repo Select and no "connect a GitHub organization" prompt: the
+            // repository here belongs to whoever runs the workflow, not to this org,
+            // so listing this org's connected repos would offer the wrong ones and
+            // the prompt would be misleading advice.
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="policy-repo">Repository</Label>
+              <Input
+                id="policy-repo"
+                placeholder="acme/infra"
+                value={repoFullName}
+                onChange={(e) => applyRepo(e.target.value, manualBranch)}
+                disabled={isPending}
+              />
+              <Label htmlFor="policy-branch">Branch</Label>
+              <Input
+                id="policy-branch"
+                placeholder="main"
+                value={manualBranch}
+                onChange={(e) => {
+                  setManualBranch(e.target.value)
+                  applyRepo(repoFullName, e.target.value)
+                }}
+                disabled={isPending}
+              />
+              <Text variant="subtext" theme="neutral">
+                Sets the <code>sub</code> claim below. Edit that directly for
+                anything other than a branch — a tag, an environment, or a
+                wildcard across branches.
+              </Text>
+            </div>
+          ) : hasVCSConnections === false && !isLoadingRepos ? (
             <Banner theme="warn">
               Connect a GitHub organization to fill this in from one of your
               repositories.{' '}

@@ -22,6 +22,19 @@ const apiTokenEnvVar = "NUON_API_TOKEN"
 // org whose trust policies should be evaluated.
 const orgIDEnvVar = "NUON_ORG_ID"
 
+// OIDCAudience is the `aud` this SDK requests on ambient ID tokens, and therefore the
+// value a trust policy must record to accept them.
+//
+// Fixed rather than derived from APIURL. The audience is an identifier the control
+// plane compares literally, while APIURL varies by surface and deployment — the
+// runner API here, the public API in the dashboard that creates the policy,
+// localhost in development. Deriving it guaranteed the two ends would disagree, and
+// the failure is a bare 401 from the exchange with nothing pointing at the cause.
+//
+// Override with NUON_OIDC_AUDIENCE against a control plane that expects something
+// else; the trust policy has to be created with the same value either way.
+const OIDCAudience = "https://api.nuon.co"
+
 // resolveToken produces the bearer token for a request, following the same
 // precedence the CLI uses: an explicit token, then the environment, then an ambient
 // OIDC token exchanged for a short-lived Nuon token.
@@ -55,7 +68,7 @@ func resolveToken(ctx context.Context, opts Options) (string, error) {
 		return "", fmt.Errorf("an OIDC token is available but no org id is set: set org_id or %s", orgIDEnvVar)
 	}
 
-	jwt, source, ok, err := oidctoken.Detect(ctx, oidctoken.Audience("", opts.APIURL))
+	jwt, source, ok, err := oidctoken.Detect(ctx, oidctoken.Audience("", OIDCAudience))
 	if err != nil {
 		return "", fmt.Errorf("unable to get OIDC token from %s: %w", source, err)
 	}
