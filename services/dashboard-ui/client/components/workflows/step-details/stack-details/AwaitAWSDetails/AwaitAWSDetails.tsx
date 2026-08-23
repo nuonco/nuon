@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
@@ -8,7 +9,9 @@ import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
-import { useStackToken } from '@/hooks/use-stack-token'
+import { CreateServiceAccountTokenModalContainer } from '@/components/service-accounts/ServiceAccountToken'
+import { useStackServiceAccount } from '@/hooks/use-stack-service-account'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { createFileDownload } from '@/utils/file-download'
 import type { IStackDetails } from '../types'
 
@@ -562,15 +565,42 @@ interface ITFModuleTab {
 // configuration from the API. Distinct from the TerraformTab above, which
 // clones install-stacks and is driven by generated tfvars.
 const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
+  const queryClient = useQueryClient()
+  const { addModal } = useSurfaces()
   const {
-    data: token,
+    data: serviceAccount,
     isLoading,
     isError,
-  } = useStackToken({
+  } = useStackServiceAccount({
     installId,
     orgId,
     enabled: true,
   })
+
+  // Defaults to a day rather than the modal's usual year: this credential is
+  // pasted into a shell or a CI secret by hand, so it is more exposed and harder
+  // to account for than one held by a service. Every other duration is still
+  // selectable in the modal.
+  const openCreateToken = () =>
+    addModal(
+      <CreateServiceAccountTokenModalContainer
+        accountId={serviceAccount?.account_id ?? ''}
+        identity={serviceAccount?.email ?? 'this install stack'}
+        defaultDuration="24h"
+        onCreated={() =>
+          queryClient.invalidateQueries({
+            queryKey: ['stack-service-account', installId],
+          })
+        }
+      />
+    )
+
+  // has_live_token and expires_at are set together by the API, but deriving the
+  // label from the timestamp keeps this honest if only one of them arrives.
+  const liveUntil =
+    serviceAccount?.has_live_token && serviceAccount.expires_at
+      ? new Date(serviceAccount.expires_at).toLocaleString()
+      : null
 
   const region = installAwsRegion ?? '<your-install-region>'
 
@@ -602,7 +632,9 @@ module "aws_stack" {
   }
 }`
 
-  const authCmd = `export NUON_API_TOKEN='${token?.api_token ?? '<api-token>'}'`
+  // Always a placeholder. The token value is shown once, in the create modal, and
+  // is not readable afterwards.
+  const authCmd = `export NUON_API_TOKEN='<api-token>'`
   const applyCmd = `terraform init && terraform apply`
 
   return (
@@ -655,8 +687,8 @@ module "aws_stack" {
         </Text>
         {isError ? (
           <Text variant="subtext" theme="neutral">
-            No API token has been issued for this install stack yet. Reprovision
-            the install to mint one, then reload this page.
+            This install stack has no service account yet. Reprovision the
+            install to create one, then reload this page.
           </Text>
         ) : null}
         <Card>
@@ -665,20 +697,24 @@ module "aws_stack" {
               This token authorizes the module to read its configuration. Treat
               it as a secret.
             </Text>
-            {isLoading ? null : <ClickToCopyButton textToCopy={authCmd} />}
+            <ClickToCopyButton textToCopy={authCmd} />
           </span>
-          {isLoading ? (
-            <Code loading />
-          ) : (
-            <Code variant="preformated">{authCmd}</Code>
+          <Code variant="preformated">{authCmd}</Code>
+          {/* Nothing to offer until the service account resolves — when it never
+              does, the guidance above already explains why. */}
+          {isLoading || isError || !serviceAccount?.account_id ? null : (
+            <span className="flex justify-between items-center gap-4">
+              <Text variant="subtext" theme="neutral">
+                {liveUntil
+                  ? `A token is active until ${liveUntil}. Creating another does not revoke it unless you ask it to.`
+                  : 'No token yet. Create one to get its value — it is shown only once.'}
+              </Text>
+              <Button size="sm" variant="secondary" onClick={openCreateToken}>
+                Create token
+              </Button>
+            </span>
           )}
         </Card>
-        {token?.expires_at ? (
-          <Text variant="subtext" theme="neutral">
-            This token expires {new Date(token.expires_at).toLocaleString()}.
-            Reload this page for a fresh one.
-          </Text>
-        ) : null}
         <Text variant="subtext" theme="neutral">
           In CI, prefer OIDC instead: grant{' '}
           <code>permissions: id-token: write</code>, set <code>org_id</code> on

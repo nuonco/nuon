@@ -1,1 +1,1 @@
-export * from './get-stack-token'
+export * from './get-stack-service-account'

@@ -2942,12 +2942,12 @@ export interface paths {
      */
     post: operations["CreateServiceAccountToken"];
   };
-  "/v1/stacks/{install_id}/token": {
+  "/v1/stacks/{install_id}/service-account": {
     /**
-     * get an install stack's API token
-     * @description Return the API token the install stack's Terraform module uses to authenticate against the runner API. Read-only: the token is minted during stack version generation and is not created or rotated by this endpoint.
+     * get an install stack's service account
+     * @description Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
      */
-    get: operations["GetStackToken"];
+    get: operations["GetStackServiceAccount"];
   };
   "/v1/terraform-backend": {
     /**
@@ -8958,10 +8958,20 @@ export interface components {
       skippable?: boolean;
       workflow_id?: string;
     };
-    "service.StackTokenResponse": {
-      api_token?: string;
+    "service.StackServiceAccountResponse": {
+      account_id?: string;
+      email?: string;
+      /**
+       * @description ExpiresAt is the expiry of the longest-lived usable token, and is zero when
+       * HasLiveToken is false.
+       */
       expires_at?: string;
-      id?: string;
+      /**
+       * @description HasLiveToken is false both when no token was ever created and when every token
+       * issued has expired or been revoked — from the caller's side those are the same
+       * situation, and both are fixed the same way.
+       */
+      has_live_token?: boolean;
     };
     "service.SyncSecretsRequest": {
       plan_only?: boolean;
@@ -30625,10 +30635,10 @@ export interface operations {
     };
   };
   /**
-   * get an install stack's API token
-   * @description Return the API token the install stack's Terraform module uses to authenticate against the runner API. Read-only: the token is minted during stack version generation and is not created or rotated by this endpoint.
+   * get an install stack's service account
+   * @description Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
    */
-  GetStackToken: {
+  GetStackServiceAccount: {
     parameters: {
       path: {
         /** @description install ID */
@@ -30639,7 +30649,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": components["schemas"]["service.StackTokenResponse"];
+          "application/json": components["schemas"]["service.StackServiceAccountResponse"];
         };
       };
       /** @description Unauthorized */
