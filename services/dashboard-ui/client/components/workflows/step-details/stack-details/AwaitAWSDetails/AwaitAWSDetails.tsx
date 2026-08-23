@@ -829,19 +829,31 @@ env:
             A trust policy tells Nuon which repository and branch may exchange
             an OIDC token for access to this org.
           </Text>
-          <CreateOIDCTrustPolicyButton
-            variant="secondary"
-            size="sm"
-            lockPreset
-            repoSource="manual"
-            githubAudience={audience}
-            defaultRole="org_admin"
-            defaultName={policyName}
-            reservedNames={policyNames}
-          >
-            {existing ? 'Create another' : 'Create trust policy'}
-          </CreateOIDCTrustPolicyButton>
+          {/* Without an audience the policy would be created with a blank one and
+              reject every token, so this offers nothing rather than something
+              broken. */}
+          {audience ? (
+            <CreateOIDCTrustPolicyButton
+              variant="secondary"
+              size="sm"
+              lockPreset
+              repoSource="manual"
+              githubAudience={audience}
+              defaultRole="org_admin"
+              defaultName={policyName}
+              reservedNames={policyNames}
+            >
+              {existing ? 'Create another' : 'Create trust policy'}
+            </CreateOIDCTrustPolicyButton>
+          ) : null}
         </span>
+        {audience ? null : (
+          <Text variant="subtext" theme="neutral">
+            This control plane has not published its runner API URL, which the
+            policy needs as its audience. Set <code>NUON_RUNNER_API_URL</code>{' '}
+            on the dashboard and reload.
+          </Text>
+        )}
         {existing ? (
           <Text variant="subtext" theme="neutral">
             A policy named <code>{policyName}</code> already exists. Check it
