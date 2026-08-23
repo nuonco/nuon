@@ -19,21 +19,15 @@ type EnsureInstallStackServiceAccountResponse struct {
 // EnsureInstallStackServiceAccount reconciles the service account an install stack
 // authenticates as when it reads its own configuration from the runner API.
 //
-// It deliberately does not mint a token. The credential is created on demand from
-// the dashboard, by the same modal every other service account uses, because it is
-// handed to a person to paste into a shell or a CI secret — and a token nobody has
-// asked for yet is a credential sitting in the database with no owner watching it.
-// The cost is that a stack has no usable token until someone creates one; that is
-// the intended flow, and the OIDC path needs no token at all.
+// It mints no token: the credential is handed to a person to paste into a shell or
+// a CI secret, so it is created on demand from the dashboard. The OIDC path needs
+// none at all.
 //
-// The account is keyed on the InstallStack, not the InstallStackVersion. A stack
-// regenerates its version on every config change, and re-keying per version would
-// orphan the account — and any token issued against it — on every sync.
+// Keyed on the InstallStack, not the InstallStackVersion, which regenerates on every
+// config change and would orphan the account and its tokens on every sync.
 //
-// Convergent, not a create hook: desired state is derived from Postgres on every
-// call, so a provision, a reprovision, and a retry after a partial failure all reach
-// the same place. That matters most for stacks created before this account existed,
-// which pick one up on their next reconcile.
+// Convergent, so a provision, a reprovision, and a retry all reach the same place —
+// including stacks created before this account existed.
 //
 // @temporal-gen-v2 activity
 // @by-field InstallStackID
@@ -57,9 +51,8 @@ func (a *Activities) EnsureInstallStackServiceAccount(
 		return nil, fmt.Errorf("unable to ensure stack service account: %w", err)
 	}
 
-	// The stack reads install configuration and reports outputs back, which today has
-	// no narrower role than org admin. Re-applied on every call so a stack created
-	// before the role existed picks it up on its next reconcile.
+	// The stack reads install config and reports outputs back, which has no narrower
+	// role than org admin today. Re-applied every call so older stacks pick it up.
 	if err := a.authzClient.AddAccountOrgRole(ctx, app.RoleTypeOrgAdmin, stack.OrgID, acct.ID); err != nil {
 		return nil, fmt.Errorf("unable to grant stack service account org role: %w", err)
 	}

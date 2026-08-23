@@ -269,9 +269,8 @@ func (s *service) isOrgAdmin(acct *app.Account, orgID string) bool {
 }
 
 // dedicatedTokenSubjectPrefix marks a service account that exists only to hold one
-// static token. Deleting the token deletes the account, so the two have to be
-// distinguishable from service accounts that outlive any single credential — a
-// stack's, a runner's, or one a user made by hand.
+// static token. Deleting the token deletes the account, so these must be
+// distinguishable from service accounts that outlive any single credential.
 func dedicatedTokenSubjectPrefix(orgID string) string {
 	return fmt.Sprintf("%s-token-", orgID)
 }
@@ -311,11 +310,9 @@ func (s *service) deleteTokenServiceAccount(ctx context.Context, orgID, accountI
 		return nil
 	}
 
-	// Only accounts created to hold this one token. Service accounts that outlive
-	// their credentials — an install stack's, a runner's — also have tokens listed
-	// here, and revoking one of those must not take the identity with it: the stack
-	// would keep running with an account that no longer exists, and nothing would
-	// recreate it until the next reconcile.
+	// Only accounts created to hold this one token. Revoking a stack's or runner's
+	// token must not take the identity with it: the stack would keep running with an
+	// account that no longer exists until the next reconcile.
 	if !strings.HasPrefix(acct.Subject, dedicatedTokenSubjectPrefix(orgID)) {
 		return nil
 	}

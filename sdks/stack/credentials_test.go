@@ -10,9 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// clearAmbientCredentials removes every credential source the resolver consults, so a
-// test asserting a specific precedence step is not quietly satisfied by the
-// developer's shell or by CI already being inside GitHub Actions.
+// clearAmbientCredentials removes every source the resolver consults, so a precedence
+// assertion is not quietly satisfied by the developer's shell or by CI's own Actions.
 func clearAmbientCredentials(t *testing.T) {
 	t.Helper()
 
@@ -59,8 +58,7 @@ func TestResolveTokenPrecedence(t *testing.T) {
 		assert.Contains(t, err.Error(), "id-token: write")
 	})
 
-	// Checked before the ID token is fetched: the exchange cannot succeed without an
-	// org, and reporting it here says why rather than surfacing a generic auth failure.
+	// Reported before the token is fetched, so the cause is named rather than generic.
 	t.Run("an ambient OIDC token without an org id explains itself", func(t *testing.T) {
 		clearAmbientCredentials(t)
 		t.Setenv("NUON_OIDC_TOKEN", "a-jwt")
@@ -93,9 +91,8 @@ func TestResolveTokenExchangesOIDC(t *testing.T) {
 	assert.Equal(t, "org-1", gotBody.OrgID)
 }
 
-// A 200 that did not authenticate is not a usable credential. The control plane
-// returns a uniform failure for every auth-path rejection, so this has to be caught
-// on the response body rather than the status code.
+// The control plane returns a uniform failure for every auth-path rejection, so this
+// has to be caught on the response body rather than the status code.
 func TestResolveTokenRejectsUnauthenticatedExchange(t *testing.T) {
 	clearAmbientCredentials(t)
 	t.Setenv("NUON_OIDC_TOKEN", "a-jwt")
@@ -110,10 +107,9 @@ func TestResolveTokenRejectsUnauthenticatedExchange(t *testing.T) {
 	assert.Contains(t, err.Error(), "trust policies")
 }
 
-// The audience has to match the trust policy's, and the dashboard creates policies
-// with the public API URL while this SDK holds the runner API URL — so the value
-// comes from NUON_OIDC_AUDIENCE, which the dashboard's directions print. Asserted
-// through the real GitHub Actions path, the only caller that sends an audience.
+// The audience must match the trust policy's, which the dashboard may have created
+// with a different URL, so NUON_OIDC_AUDIENCE has to win. Asserted through the
+// GitHub Actions path, the only caller that sends an audience.
 func TestGitHubActionsAudienceFromEnv(t *testing.T) {
 	clearAmbientCredentials(t)
 

@@ -1,11 +1,8 @@
-// Package oidctoken discovers ambient OIDC ID tokens in automation
-// environments (CI) so callers can exchange them for Nuon API tokens without
-// any stored secrets.
+// Package oidctoken discovers ambient OIDC ID tokens in CI so callers can
+// exchange them for Nuon API tokens without storing a secret.
 //
-// It lives in sdks/auth, a module with no dependencies of its own, so every
-// Nuon SDK can share one implementation. Detection is the half that has to
-// behave identically everywhere; exchanging what it finds is transport-specific
-// and belongs to the calling SDK. See package auth.
+// It has no dependencies of its own so every Nuon SDK can share one
+// implementation. Exchanging what it finds is transport-specific; see package auth.
 package oidctoken
 
 import (
@@ -21,10 +18,9 @@ const (
 	audienceEnvVar  = "NUON_OIDC_AUDIENCE"
 )
 
-// Audience resolves the audience for ambient token requests: the explicit
-// value (flag), then NUON_OIDC_AUDIENCE, then the fallback — callers pass the
-// configured API URL so tokens are scoped to the target control plane by
-// default.
+// Audience resolves the audience for ambient token requests: explicit value,
+// then NUON_OIDC_AUDIENCE, then fallback. Callers pass their API URL, scoping
+// tokens to the target control plane.
 func Audience(explicit, fallback string) string {
 	if explicit != "" {
 		return explicit
@@ -35,18 +31,16 @@ func Audience(explicit, fallback string) string {
 	return fallback
 }
 
-// Available reports whether an ambient OIDC token source is present, without
-// fetching anything.
+// Available reports whether an ambient token source is present, without fetching.
 func Available() bool {
 	return os.Getenv(tokenEnvVar) != "" ||
 		os.Getenv(tokenFileEnvVar) != "" ||
 		githubActionsAvailable()
 }
 
-// Detect returns an ambient OIDC ID token and a human-readable source label.
-// Precedence: NUON_OIDC_TOKEN, NUON_OIDC_TOKEN_FILE, GitHub Actions ID token
-// endpoint. Returns ok=false when no source is configured; returns an error
-// only when a source is configured but fetching the token fails.
+// Detect returns an ambient OIDC ID token and a label for where it came from.
+// Precedence: NUON_OIDC_TOKEN, NUON_OIDC_TOKEN_FILE, GitHub Actions. ok=false
+// means no source was configured; an error means a configured source failed.
 func Detect(ctx context.Context, audience string) (token, source string, ok bool, err error) {
 	if raw := strings.TrimSpace(os.Getenv(tokenEnvVar)); raw != "" {
 		return raw, tokenEnvVar, true, nil

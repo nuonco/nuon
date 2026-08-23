@@ -13,17 +13,11 @@ import (
 	"github.com/nuonco/nuon/sdks/auth"
 )
 
-// resolveToken produces the bearer token for a request.
+// resolveToken produces the bearer token for a request. The precedence lives in
+// sdks/auth; this supplies only the transport-specific exchange.
 //
-// The precedence and its error messages live in sdks/auth so every Nuon SDK
-// behaves the same way; this only supplies the exchange, which is transport-
-// specific.
-//
-// The audience passed through is opts.APIURL — the runner API. It has to equal the
-// audience recorded on the trust policy, and a policy created for this SDK names the
-// runner API rather than the public one the CLI talks to. NUON_OIDC_AUDIENCE
-// overrides it; the dashboard's OIDC directions print the policy's audience for
-// exactly this reason.
+// The audience is opts.APIURL, the runner API, because that is what a trust policy
+// created for this SDK names — not the public API the CLI talks to.
 func resolveToken(ctx context.Context, opts Options) (string, error) {
 	return auth.Resolve(ctx, auth.Options{
 		APIToken: opts.APIToken,
@@ -87,8 +81,7 @@ func (e exchanger) ExchangeOIDCToken(ctx context.Context, orgID, jwt string) (st
 		return "", fmt.Errorf("decode exchange response: %w", err)
 	}
 	if !out.Authenticated || out.Token == "" {
-		// The control plane returns a deliberately uniform error for every auth
-		// failure, so there is nothing more specific to report here.
+		// The control plane returns a uniform error for every auth failure.
 		return "", fmt.Errorf("token exchange did not authenticate: check the org's OIDC trust policies")
 	}
 

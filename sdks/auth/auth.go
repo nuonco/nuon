@@ -1,15 +1,10 @@
-// Package auth resolves the credential a Nuon SDK presents on a request.
+// Package auth resolves the credential a Nuon SDK presents on a request: an
+// explicit token, then NUON_API_TOKEN, then an ambient OIDC token exchanged for
+// a short-lived one.
 //
-// The precedence — an explicit token, then NUON_API_TOKEN, then an ambient OIDC
-// token exchanged for a short-lived Nuon token — is the part that must not differ
-// between SDKs. A customer who sets NUON_API_TOKEN and gets one behavior from the
-// CLI and another from the stack SDK has found a bug, so the order and the error
-// messages live here rather than in each SDK.
-//
-// The exchange itself does not, because the two SDKs reach the same endpoint by
-// different routes: sdks/stack POSTs to the runner API directly, while nuon-go
-// calls it through generated go-swagger operations. That difference is the
-// Exchanger interface.
+// The precedence lives here so it cannot drift between SDKs. The exchange does
+// not: sdks/stack POSTs to the runner API directly while nuon-go goes through
+// generated operations, which is what Exchanger abstracts.
 package auth
 
 import (
@@ -21,46 +16,34 @@ import (
 	"github.com/nuonco/nuon/sdks/auth/oidctoken"
 )
 
-// APITokenEnvVar is the usual way to authenticate non-interactively without
-// writing a token into a config file.
+// APITokenEnvVar authenticates non-interactively, without a config file.
 const APITokenEnvVar = "NUON_API_TOKEN"
 
-// OrgIDEnvVar is consulted only on the OIDC path, where the exchange has to name
-// the org whose trust policies should be evaluated.
+// OrgIDEnvVar names the org whose trust policies the OIDC exchange evaluates.
 const OrgIDEnvVar = "NUON_ORG_ID"
 
-// Exchanger trades an OIDC ID token for a short-lived Nuon API token.
-//
-// Each SDK implements this over its own transport. Implementations are called
-// only when Resolve reaches the OIDC path, and only with a non-empty orgID and
-// jwt, so they need not re-check either.
+// Exchanger trades an OIDC ID token for a short-lived Nuon API token over the
+// SDK's own transport. Called only with a non-empty orgID and jwt.
 type Exchanger interface {
 	ExchangeOIDCToken(ctx context.Context, orgID, jwt string) (string, error)
 }
 
-// Options are the inputs to Resolve. Every field is optional except as noted;
-// the environment supplies the rest.
+// Options are the inputs to Resolve; the environment supplies what is unset.
 type Options struct {
-	// APIToken authenticates the caller directly and wins over everything else.
+	// APIToken wins over every other source.
 	APIToken string
 
 	// OrgID is required on the OIDC path only. Falls back to NUON_ORG_ID.
 	OrgID string
 
-	// Audience is the audience to request for an ambient OIDC token. It has to
-	// equal the audience recorded on the trust policy being matched, so there is
-	// deliberately no default: only the caller knows which host it authenticates
-	// against. NUON_OIDC_AUDIENCE overrides it.
-	//
-	// Getting this wrong is not a redirect or a retry — the control plane compares
-	// it literally and the exchange fails.
+	// Audience to request for an ambient OIDC token. The control plane compares
+	// it literally against the trust policy, so there is no default — only the
+	// caller knows which host it authenticates against. NUON_OIDC_AUDIENCE wins.
 	Audience string
 }
 
-// Resolve produces the bearer token for a request.
-//
-// ex is consulted only if there is no static token to use; passing nil is
-// therefore valid for a caller that supports static tokens alone.
+// Resolve produces the bearer token for a request. ex is consulted only on the
+// OIDC path, so nil is valid for a caller that supports static tokens alone.
 func Resolve(ctx context.Context, opts Options, ex Exchanger) (string, error) {
 	if t := strings.TrimSpace(opts.APIToken); t != "" {
 		return t, nil
@@ -86,8 +69,7 @@ func Resolve(ctx context.Context, opts Options, ex Exchanger) (string, error) {
 		orgID = strings.TrimSpace(os.Getenv(OrgIDEnvVar))
 	}
 	if orgID == "" {
-		// Checked before fetching the ID token rather than after: the exchange
-		// cannot succeed without an org, and failing here says why.
+		// Checked before fetching a token: the exchange cannot succeed without an org.
 		return "", fmt.Errorf("an OIDC token is available but no org id is set: set an org id or %s", OrgIDEnvVar)
 	}
 

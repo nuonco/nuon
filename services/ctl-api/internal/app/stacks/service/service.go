@@ -1,11 +1,9 @@
 // Package service serves the runner API's `stacks` namespace: the authenticated
 // endpoints an install stack uses to read its own configuration.
 //
-// Separate from the installs service, and from the older
-// /v1/stack-runs/{phone_home_id}/config endpoint it supersedes, because those routes
-// are public — the phone_home_id in the URL path is the only secret. Everything here
-// authenticates normally, so the stack's service-account token (or an OIDC-federated
-// token) identifies the caller and the standard org middleware scopes it.
+// Separate from the older /v1/stack-runs/{phone_home_id}/config it supersedes,
+// because that route is public — the phone_home_id in the path is the only secret.
+// Everything here authenticates normally and is scoped by the org middleware.
 package service
 
 import (
@@ -57,11 +55,9 @@ func (s *service) RegisterRunnerRoutes(ge *gin.Engine) error {
 	return nil
 }
 
-// The service account read is on the public API, not the runner API: it is the
-// dashboard that shows it, and the customer applying the Terraform has no credential
-// yet. Note there is no create route here — tokens are minted through the existing
-// POST /v1/service-accounts/{account_id}/tokens, which the stack's account satisfies
-// like any other.
+// On the public API, not the runner API: the dashboard shows this, and the customer
+// applying the Terraform has no credential yet. No create route — tokens are minted
+// through the existing POST /v1/service-accounts/{account_id}/tokens.
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	stacks := ge.Group("/v1/stacks/:install_id")
 	{

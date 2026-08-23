@@ -1,9 +1,8 @@
 // Integration tests: run with INTEGRATION=true against the migrated test database.
 //
-// In the external test package on purpose — the shared tests package imports
-// internal/pkg/account, so an in-package test here would be an import cycle. That
-// also means everything is exercised through the exported DeleteServiceAccount,
-// FindAccount lookup included, rather than through the unexported record helper.
+// External test package on purpose: the shared tests package imports
+// internal/pkg/account, so an in-package test would be an import cycle. Everything is
+// therefore exercised through the exported DeleteServiceAccount.
 package account_test
 
 import (
@@ -62,8 +61,7 @@ func (s *DeleteServiceAccountTestSuite) TearDownSuite() {
 }
 
 // seedRoleBinding attaches the account to a freshly created role. The role has to be
-// real: account_roles carries a foreign key to roles in Postgres, unlike the sqlite
-// version of this test, which could invent a role ID.
+// real: account_roles carries a foreign key to roles in Postgres.
 func (s *DeleteServiceAccountTestSuite) seedRoleBinding(ctx context.Context, acct *app.Account) {
 	t := s.T()
 	t.Helper()
@@ -77,9 +75,8 @@ func (s *DeleteServiceAccountTestSuite) seedRoleBinding(ctx context.Context, acc
 	require.NoError(t, s.deps.DB.WithContext(creatorCtx).Create(binding).Error)
 }
 
-// A leftover role binding or token is the whole reason this exists: the account is
-// tied to its stack only by a naming convention, so nothing else will ever collect
-// it, and what survives is an org-admin credential with no owner.
+// A leftover binding or token is the whole reason this exists: the account is tied to
+// its stack only by a naming convention, so what survives is an ownerless org admin.
 func (s *DeleteServiceAccountTestSuite) TestDeleteRemovesCredentialRecords() {
 	t := s.T()
 	ctx := context.Background()
@@ -99,15 +96,13 @@ func (s *DeleteServiceAccountTestSuite) TestDeleteRemovesCredentialRecords() {
 
 	require.NoError(t, s.deps.Client.DeleteServiceAccount(ctx, stackID))
 
-	// Role bindings are hard-deleted: the many2many declares OnDelete:CASCADE, which
-	// is a foreign-key constraint that a soft delete would never fire.
+	// Hard-deleted: OnDelete:CASCADE is a constraint a soft delete never fires.
 	var roleRows int64
 	require.NoError(t, s.deps.DB.Unscoped().Model(&app.AccountRole{}).
 		Where("account_id = ?", acct.ID).Count(&roleRows).Error)
 	assert.Zero(t, roleRows, "role bindings must be hard-deleted, not soft-deleted")
 
-	// Tokens and the account are soft-deleted, which is enough: the auth middleware
-	// resolves a token through FindAccount, and that cannot see a soft-deleted row.
+	// Soft-deleting these is enough: FindAccount cannot see a soft-deleted row.
 	var tokens []app.Token
 	require.NoError(t, s.deps.DB.Where("account_id = ?", acct.ID).Find(&tokens).Error)
 	assert.Empty(t, tokens, "tokens must be invisible to a normal query")
@@ -144,8 +139,7 @@ func (s *DeleteServiceAccountTestSuite) TestDeleteIsIdempotent() {
 }
 
 // FindAccount matches on email, subject, or ID, so a caller passing something
-// unexpected could otherwise reach a real user through a path meant for machine
-// identities.
+// unexpected could otherwise reach a real user.
 func (s *DeleteServiceAccountTestSuite) TestDeleteRejectsNonServiceAccount() {
 	t := s.T()
 	ctx := context.Background()

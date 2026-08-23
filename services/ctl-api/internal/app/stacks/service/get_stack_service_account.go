@@ -17,23 +17,20 @@ import (
 )
 
 // StackServiceAccountResponse identifies the service account an install stack
-// authenticates as, and reports whether it currently holds a usable token.
+// authenticates as, and whether it holds a usable token.
 //
-// No token value, ever. Tokens are created on demand through
-// POST /v1/service-accounts/{account_id}/tokens, which returns the value exactly
-// once. Returning it here as well would mean any dashboard load re-reveals a live
-// credential, and would make the "you won't be able to view it again" warning on
-// that flow false.
+// Never the token value: tokens are returned exactly once, by
+// POST /v1/service-accounts/{account_id}/tokens. Echoing one here would make that
+// flow's "you won't be able to view it again" warning false.
 type StackServiceAccountResponse struct {
 	AccountID string `json:"account_id,omitzero"`
 	Email     string `json:"email,omitzero"`
 
-	// HasLiveToken is false both when no token was ever created and when every token
-	// issued has expired or been revoked — from the caller's side those are the same
-	// situation, and both are fixed the same way.
+	// HasLiveToken is false whether no token was ever created or every one has
+	// expired or been revoked; the caller fixes both the same way.
 	HasLiveToken bool `json:"has_live_token"`
 
-	// ExpiresAt is the expiry of the longest-lived usable token, and is zero when
+	// ExpiresAt is the expiry of the longest-lived usable token; zero when
 	// HasLiveToken is false.
 	ExpiresAt time.Time `json:"expires_at,omitzero"`
 }
@@ -62,8 +59,8 @@ func (s *service) GetStackServiceAccount(ctx *gin.Context) {
 		return
 	}
 
-	// Scoped to the caller's org, and reported as not-found on a mismatch so this
-	// cannot be used to probe which install IDs exist elsewhere.
+	// Scoped to the caller's org, and not-found on a mismatch so this cannot probe
+	// which install IDs exist elsewhere.
 	var stack app.InstallStack
 	if res := s.db.WithContext(ctx).
 		Where(app.InstallStack{InstallID: installID, OrgID: orgID}).
@@ -105,13 +102,11 @@ func (s *service) GetStackServiceAccount(ctx *gin.Context) {
 }
 
 // liveStackTokenExpiry returns the expiry of the account's longest-lived usable
-// token, or the zero time if it has none. Every way a token can stop counting has to
-// be handled here: gorm's soft delete filters revoked rows out of the query, and the
-// expiry bound filters out ones that aged out.
+// token, or the zero time if it has none. Revoked rows are excluded by gorm's soft
+// delete, expired ones by the expiry bound.
 //
-// Ordered by expiry rather than by creation date because the newest token is not
-// necessarily the one that lasts longest — the create modal lets the caller pick a
-// duration, so a fresh 1-day token can be issued alongside an older 1-year one.
+// Ordered by expiry, not creation: the create modal lets the caller pick a duration,
+// so a fresh 1-day token can sit alongside an older 1-year one.
 func liveStackTokenExpiry(ctx context.Context, db *gorm.DB, accountID string) (time.Time, error) {
 	var live app.Token
 	res := db.WithContext(ctx).

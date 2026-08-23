@@ -10,10 +10,9 @@ import (
 // PhoneHome sends install stack outputs to the control plane, marking the stack
 // operation complete and updating install state.
 //
-// phoneHomeURL comes from Config.PhoneHomeURL rather than being composed here. The
-// URL embeds a per-stack-version identifier the caller has no other way to know, and
-// routing it through the config response is what lets the Terraform module stop
-// taking that identifier as an input.
+// phoneHomeURL comes from Config.PhoneHomeURL rather than being composed here: it
+// embeds a per-stack-version identifier, and routing it through the config response
+// is what lets the Terraform module stop taking that identifier as an input.
 func PhoneHome(ctx context.Context, opts Options, phoneHomeURL string, payload map[string]any) error {
 	if strings.TrimSpace(phoneHomeURL) == "" {
 		return fmt.Errorf("phone home: phone_home_url is required (read it from the stack config)")

@@ -157,9 +157,8 @@ export const AwaitAWSDetails = ({
                 installId={installId}
               />
             ),
-            // Additive: the legacy terraform directions above are unchanged.
-            // Gated on the org feature until the module and provider releases
-            // it depends on are published.
+            // Gated on the org feature until the module and provider releases it
+            // depends on are published.
             ...(tfProvider
               ? {
                   tfmodule: (
@@ -565,15 +564,14 @@ interface ITFModuleTab {
   installAwsRegion?: string
 }
 
-// Directions for the published nuonco/stack/aws module, which reads its whole
-// configuration from the API. Distinct from the TerraformTab above, which
-// clones install-stacks and is driven by generated tfvars.
+// Directions for the published nuonco/stack/aws module, which reads its whole config
+// from the API. Distinct from TerraformTab, which clones install-stacks and is driven
+// by generated tfvars.
 const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
   const queryClient = useQueryClient()
   const { addModal } = useSurfaces()
   const [authMethod, setAuthMethod] = useState<'token' | 'oidc'>('token')
-  // Only fetched once the OIDC pane is opened: most customers use a static token
-  // and never need this list.
+  // Only fetched once the OIDC pane is opened; most customers never need this list.
   const { data: trustPolicies } = useOIDCTrustPolicies({
     enabled: authMethod === 'oidc',
   })
@@ -587,10 +585,9 @@ const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
     enabled: true,
   })
 
-  // Defaults to a day rather than the modal's usual year: this credential is
-  // pasted into a shell or a CI secret by hand, so it is more exposed and harder
-  // to account for than one held by a service. Every other duration is still
-  // selectable in the modal.
+  // Defaults to a day rather than the modal's usual year: this credential is pasted
+  // in by hand, so it is more exposed than one held by a service. Every other
+  // duration is still selectable.
   const openCreateToken = () =>
     addModal(
       <CreateServiceAccountTokenModalContainer
@@ -606,8 +603,8 @@ const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
       />
     )
 
-  // has_live_token and expires_at are set together by the API, but deriving the
-  // label from the timestamp keeps this honest if only one of them arrives.
+  // Derived from the timestamp rather than has_live_token, so the label stays honest
+  // if only one of the two arrives.
   const liveUntil =
     serviceAccount?.has_live_token && serviceAccount.expires_at
       ? new Date(serviceAccount.expires_at).toLocaleString()
@@ -643,8 +640,7 @@ module "aws_stack" {
   }
 }`
 
-  // Always a placeholder. The token value is shown once, in the create modal, and
-  // is not readable afterwards.
+  // Always a placeholder: the token value is shown once, in the create modal.
   const authCmd = `export NUON_API_TOKEN='<api-token>'`
   const applyCmd = `terraform init && terraform apply`
 
@@ -775,8 +771,8 @@ const StaticTokenAuthPane = ({
           <ClickToCopyButton textToCopy={authCmd} />
         </span>
         <Code variant="preformated">{authCmd}</Code>
-        {/* Nothing to offer until the service account resolves — when it never
-              does, the guidance above already explains why. */}
+        {/* Nothing to offer until the service account resolves; the guidance above
+              already explains why it might not. */}
         {isLoading || isError || !canCreate ? null : (
           <span className="flex justify-between items-center gap-4">
             <Text variant="subtext" theme="neutral">
@@ -794,9 +790,8 @@ const StaticTokenAuthPane = ({
   )
 }
 
-// The alternative to handing a customer a token at all: GitHub Actions mints an ID
-// token per run and the control plane trades it for a short-lived Nuon token, so
-// nothing long-lived is stored anywhere.
+// The alternative to handing a customer a token at all: Actions mints an ID token per
+// run and the control plane trades it for a short-lived Nuon token.
 const OIDCAuthPane = ({
   installId,
   policyNames,
@@ -808,10 +803,9 @@ const OIDCAuthPane = ({
   const policyName = `stack-${installId ?? 'install'}`
   const existing = policyNames.includes(policyName)
 
-  // The runner API, not the public one the OIDC settings page prefills: the stack
-  // SDK requests its ID token with the URL it talks to, and the control plane
-  // compares the audience literally. Prefilling the policy with this means the two
-  // agree without the customer configuring an audience anywhere.
+  // The runner API, not the public one the OIDC settings page prefills: the SDK
+  // requests its ID token with the URL it talks to and the control plane compares the
+  // audience literally, so prefilling this means the two agree with no extra config.
   const audience = config.runnerApiUrl ?? ''
 
   const workflowSnippet = `permissions:

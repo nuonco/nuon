@@ -7,18 +7,14 @@ import (
 	"strings"
 )
 
-// Options configures a call against the runner API's stacks namespace.
-//
-// APIURL and InstallID are the only required fields. Credentials are resolved in the
-// same order the Nuon CLI uses — an explicit APIToken, then NUON_API_TOKEN, then an
-// ambient OIDC token exchanged for a short-lived one — so a customer applying from
-// CI never has to hold a long-lived secret.
+// Options configures a call against the runner API's stacks namespace. Only APIURL
+// and InstallID are required; credentials fall back to NUON_API_TOKEN and then an
+// ambient OIDC token, as in every Nuon SDK. See sdks/auth.
 type Options struct {
 	// APIURL is the runner API base URL, e.g. https://runner.nuon.co.
 	APIURL string
 
-	// InstallID identifies the install whose stack config is being read. Not a
-	// secret: authentication is what authorizes the read.
+	// InstallID identifies the install. Not a secret; authentication authorizes the read.
 	InstallID string
 
 	// APIToken authenticates the caller. Optional; see Options for the fallbacks.
@@ -44,9 +40,8 @@ func (o Options) validate() error {
 
 // FetchConfig reads the rendered install-stack config for an install.
 //
-// The returned Config carries PhoneHomeURL, so a caller that later reports outputs
-// does not need to know the phone-home ID: it arrives over this authenticated
-// channel instead of being rendered into the customer's Terraform variables.
+// The returned Config carries PhoneHomeURL, so a caller reporting outputs later does
+// not need that ID rendered into the customer's Terraform variables.
 func FetchConfig(ctx context.Context, opts Options) (*Config, error) {
 	if err := opts.validate(); err != nil {
 		return nil, err

@@ -10,14 +10,11 @@ import (
 )
 
 // DeleteServiceAccount removes a service account and everything that makes it usable
-// as a credential: its role bindings, its tokens, and the account row itself.
+// as a credential: role bindings, tokens, and the account row.
 //
-// Idempotent by design. A missing account is success, not an error — callers run this
-// from delete workflows that retry, and an entity that never had a service account
-// must not block its own teardown.
-//
-// The unique index on accounts spans deleted_at, so the service-account email is
-// freed for reuse. See deleteAccountRecords for what gets removed and why.
+// A missing account is success: callers run this from delete workflows that retry,
+// and an entity that never had a service account must not block its own teardown.
+// The unique index on accounts spans deleted_at, so the email is freed for reuse.
 func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) error {
 	email := ServiceAccountEmail(svcAcctID)
 
@@ -29,9 +26,8 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) err
 		return errors.Wrap(err, "unable to look up service account")
 	}
 
-	// Guard against deleting a human account through a path meant for machine
-	// identities. FindAccount matches on email, subject, or ID, so a caller passing
-	// something unexpected could otherwise reach a real user.
+	// FindAccount matches on email, subject, or ID, so a caller passing something
+	// unexpected could otherwise reach a real user.
 	if acct.AccountType != app.AccountTypeService {
 		return errors.Errorf("account %s is not a service account", acct.ID)
 	}
@@ -41,14 +37,12 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) err
 	})
 }
 
-// deleteAccountRecords removes everything that makes an account usable as a
-// credential.
+// deleteAccountRecords removes everything that makes an account usable as a credential.
 //
-// Role bindings are hard-deleted because the many2many association declares
-// OnDelete:CASCADE, and that is a foreign-key constraint a soft delete never fires.
-// The tokens and the account are soft-deleted, which is enough to break
-// authentication: the middleware resolves a token through FindAccount, and that
-// cannot see a soft-deleted row.
+// Role bindings are hard-deleted: the many2many declares OnDelete:CASCADE, a
+// foreign-key constraint a soft delete never fires. Soft-deleting the tokens and the
+// account is enough to break auth, since the middleware resolves tokens through
+// FindAccount, which cannot see soft-deleted rows.
 func deleteAccountRecords(tx *gorm.DB, accountID string) error {
 	if res := tx.Unscoped().
 		Where(app.AccountRole{AccountID: accountID}).

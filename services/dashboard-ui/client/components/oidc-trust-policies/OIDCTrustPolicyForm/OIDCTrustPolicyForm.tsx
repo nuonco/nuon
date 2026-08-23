@@ -133,9 +133,8 @@ export const OIDCTrustPolicyFormModal = ({
   initialRepoDefaultBranch?: string
   lockPreset?: boolean
   reservedNames?: string[]
-  // 'connections' picks from the org's VCS-connected repos. 'manual' takes a typed
-  // owner/repo, for policies about a repository this org has no connection to — a
-  // customer's, in the install-stack flow.
+  // 'manual' takes a typed owner/repo, for policies about a repository this org has
+  // no connection to — a customer's, in the install-stack flow.
   repoSource?: 'connections' | 'manual'
   defaultRole?: string
   defaultName?: string
@@ -215,7 +214,7 @@ export const OIDCTrustPolicyFormModal = ({
   }
 
   // Shared by both repo modes: a picked repo and a typed one derive the policy name
-  // and the sub claim identically, and only the branch's provenance differs.
+  // and the sub claim identically.
   const applyRepo = (nextRepoFullName: string, branch?: string) => {
     setRepoFullName(nextRepoFullName)
     if (!isNameDirty && !defaultName) {
@@ -301,10 +300,9 @@ export const OIDCTrustPolicyFormModal = ({
 
         {isCreate && isGithub ? (
           repoSource === 'manual' ? (
-            // No repo Select and no "connect a GitHub organization" prompt: the
-            // repository here belongs to whoever runs the workflow, not to this org,
-            // so listing this org's connected repos would offer the wrong ones and
-            // the prompt would be misleading advice.
+            // No repo Select and no "connect a GitHub organization" prompt: this
+            // repository belongs to whoever runs the workflow, not to this org, so
+            // both would point at the wrong thing.
             <div className="flex flex-col gap-2">
               <Label htmlFor="policy-repo">Repository</Label>
               <Input

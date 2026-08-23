@@ -9,9 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// clearAmbientCredentials removes every credential source Resolve consults, so a test
-// asserting a specific precedence step is not quietly satisfied by the developer's
-// shell or by CI already being inside GitHub Actions.
+// clearAmbientCredentials removes every source Resolve consults, so a precedence
+// assertion is not quietly satisfied by the developer's shell or by CI's own Actions.
 func clearAmbientCredentials(t *testing.T) {
 	t.Helper()
 
@@ -65,8 +64,8 @@ func TestResolvePrecedence(t *testing.T) {
 		assert.Equal(t, "from-env", got)
 	})
 
-	// Surrounding whitespace comes from shell quoting accidents and CI secret
-	// interpolation, and an untrimmed token fails as an opaque 401.
+	// Whitespace comes from quoting accidents and CI secret interpolation, and an
+	// untrimmed token fails as an opaque 401.
 	t.Run("a whitespace-only token is treated as absent", func(t *testing.T) {
 		clearAmbientCredentials(t)
 		t.Setenv("NUON_API_TOKEN", "   ")
@@ -89,8 +88,7 @@ func TestResolvePrecedence(t *testing.T) {
 }
 
 func TestResolveOIDCPath(t *testing.T) {
-	// Checked before the ID token is fetched: the exchange cannot succeed without an
-	// org, and reporting it here says why rather than surfacing a generic auth failure.
+	// Reported before the token is fetched, so the cause is named rather than generic.
 	t.Run("an ambient OIDC token without an org id explains itself", func(t *testing.T) {
 		clearAmbientCredentials(t)
 		t.Setenv("NUON_OIDC_TOKEN", "a-jwt")

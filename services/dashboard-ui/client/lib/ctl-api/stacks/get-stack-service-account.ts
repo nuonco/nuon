@@ -1,10 +1,9 @@
 import { api } from '@/lib/api'
 import type { TStackServiceAccount } from '@/types'
 
-// Identifies the service account an install stack's Terraform module
-// authenticates as, and reports whether it still holds a usable token. Never
-// returns a token value — tokens are created through
-// createServiceAccountToken, which returns the value exactly once.
+// Identifies the service account an install stack authenticates as, and whether it
+// holds a usable token. Never the token value: createServiceAccountToken returns
+// that exactly once.
 export const getStackServiceAccount = ({
   installId,
   orgId,

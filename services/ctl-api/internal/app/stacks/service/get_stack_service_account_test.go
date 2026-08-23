@@ -60,9 +60,8 @@ func (s *StackTokenExpiryTestSuite) revoke(tok *app.Token) {
 }
 
 // liveStackTokenExpiry drives what the TF Module tab tells the customer: whether they
-// still have a working credential, and when it dies. A wrong answer here either tells
-// someone their stack is authenticated when it is not, or prompts them to mint a
-// duplicate token they did not need.
+// still hold a working credential, and when it dies. Getting it wrong either claims a
+// stack is authenticated when it is not, or prompts a duplicate token.
 //
 // Each case seeds its own account, so the shared database isolates by account ID.
 func (s *StackTokenExpiryTestSuite) TestLiveStackTokenExpiry() {
@@ -117,10 +116,9 @@ func (s *StackTokenExpiryTestSuite) TestLiveStackTokenExpiry() {
 		assert.True(t, expiry.IsZero())
 	})
 
-	// The reason this orders by expiry and not by created_at. The create modal lets
-	// the caller pick a duration, so the newest token can be the shortest-lived one;
-	// reporting its expiry would warn a customer holding a year-long credential that
-	// they expire tomorrow.
+	// Why this orders by expiry, not created_at: the newest token can be the
+	// shortest-lived, and reporting its expiry would warn a customer holding a
+	// year-long credential that they expire tomorrow.
 	s.Run("reports the longest-lived token, not the newest", func() {
 		acct := s.deps.Seeder.CreateAccount(ctx, t)
 		s.deps.Seeder.CreateToken(ctx, t, acct, farFuture)

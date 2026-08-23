@@ -38,10 +38,9 @@ type configResponse struct {
 	Config *Config `json:"config"`
 }
 
-// fetchConfig reads the rendered install-stack config for an install.
-//
-// Keyed on the install ID rather than a phone_home_id: the caller is authenticated
-// now, so the identifier in the path is just an identifier and no longer the secret.
+// fetchConfig reads the rendered install-stack config for an install. Keyed on the
+// install ID rather than a phone_home_id: the caller is authenticated now, so the
+// path identifier is no longer the secret.
 func (c *runClient) fetchConfig(ctx context.Context) (*Config, error) {
 	url := fmt.Sprintf(
 		"%s/v1/stacks/%s/config",
@@ -109,8 +108,7 @@ func (c *runClient) doWithRetry(ctx context.Context, method, url string, body, o
 			}
 			return nil
 		}
-		// 4xx is returned immediately: a rejected credential will be rejected
-		// identically on every retry, and retrying only delays the error.
+		// A rejected credential will be rejected identically on every retry.
 		if resp.StatusCode >= 400 && resp.StatusCode < 500 {
 			return fmt.Errorf("runner api %d: %s", resp.StatusCode, string(respBody))
 		}

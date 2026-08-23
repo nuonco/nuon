@@ -13,9 +13,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// stackConfigResponse carries the rendered install-stack config. The shape matches
-// the older /v1/stack-runs/{phone_home_id}/config response so the stack SDK can move
-// across without a decoder change.
+// stackConfigResponse matches the older /v1/stack-runs/{phone_home_id}/config
+// response, so the stack SDK can move across without a decoder change.
 type stackConfigResponse struct {
 	Config *app.InstallerSDKConfig `json:"config"`
 }
@@ -44,12 +43,9 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Scoped by org rather than by a token-to-stack binding: the stack's service
-	// account is an org admin, so a token that can read this install can already read
-	// the org through the public API. A narrower check here would be theatre.
-	//
-	// Reported as not-found rather than forbidden, so a caller cannot use this
-	// endpoint to discover which install IDs exist in other orgs.
+	// Scoped by org, not by a token-to-stack binding: the stack's service account is
+	// an org admin, so any token that can read this install can already read the org.
+	// Not-found rather than forbidden, so this cannot probe install IDs in other orgs.
 	var install app.Install
 	if res := s.db.WithContext(ctx).
 		Where(app.Install{ID: installID, OrgID: orgID}).
@@ -62,10 +58,8 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 		return
 	}
 
-	// BuildInstallerSDKConfig's helper chain reads org and account from the context,
-	// and gin's context does not carry them into ctx.Request.Context(). Both come from
-	// the authenticated caller here, rather than being synthesized from the loaded row
-	// the way the older public endpoint has to.
+	// BuildInstallerSDKConfig reads org and account from the context, and gin does not
+	// carry them into ctx.Request.Context().
 	acct, err := cctx.AccountFromGinContext(ctx)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to resolve account from request: %w", err))
@@ -80,13 +74,10 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 		return
 	}
 
-	// The phone-home URL embeds the stack version's phone_home_id. Serving it here is
-	// what lets the module stop taking that ID as an input: it arrives over an
-	// authenticated channel instead of being rendered into the customer's tfvars.
-	//
-	// Latest version, because that is the one the customer is applying. A stack with
-	// no version yet is not an error — the module reads its config before the version
-	// exists on a first apply, and phones home once it does.
+	// Serving the phone-home URL here is what lets the module stop taking
+	// phone_home_id as an input. Latest version, because that is the one being
+	// applied; no version yet is not an error, since the module reads its config
+	// before the version exists on a first apply.
 	var version app.InstallStackVersion
 	if res := s.db.WithContext(ctx).
 		Where(app.InstallStackVersion{InstallID: install.ID}).

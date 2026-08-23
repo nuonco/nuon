@@ -72,14 +72,10 @@ const (
 	// step in the dashboard, letting customers provision the Terraform
 	// install stack through Spacelift instead of running Terraform locally.
 	OrgFeatureSpaceliftInstallStacks OrgFeature = "spacelift-install-stacks"
-	// OrgFeatureStackTFProvider adds a "TF Module" tab to the install stack
-	// "await" step, with directions for the published nuonco/stack/aws module.
-	// That module reads its configuration from the API via the stack provider's
-	// stack_config data source and authenticates with the stack's API token, so
-	// the only input is the install ID.
-	//
-	// Additive: the existing CloudFormation and Terraform tabs are untouched.
-	// AWS only for now — the Azure and GCP modules do not exist yet.
+	// OrgFeatureStackTFProvider adds a "TF Module" tab to the install stack "await"
+	// step, with directions for the published nuonco/stack/aws module. That module
+	// reads its config through the stack provider and authenticates with the stack's
+	// token, so the only input is the install ID. Additive, and AWS only for now.
 	OrgFeatureStackTFProvider       OrgFeature = "stack-tf-provider"
 	OrgFeatureAWSAccountConnections OrgFeature = "aws-account-connections"
 	// OrgFeatureComponentHealth enables the live component resource explorer:
