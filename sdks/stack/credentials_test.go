@@ -109,3 +109,64 @@ func TestResolveTokenRejectsUnauthenticatedExchange(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "trust policies")
 }
+
+// The audience must not track APIURL. A trust policy records one literal string, and
+// the dashboard that creates it talks to the public API while this SDK talks to the
+// runner API — so deriving the audience from the URL in hand made the two ends
+// disagree and the exchange fail with a bare 401. Asserted through the real GitHub
+// Actions path, because that is the only caller that sends an audience anywhere.
+func TestGitHubActionsAudienceIsNotDerivedFromAPIURL(t *testing.T) {
+	clearAmbientCredentials(t)
+
+	var gotAudience string
+	actions := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAudience = r.URL.Query().Get("audience")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"value":"a-jwt"}`))
+	}))
+	defer actions.Close()
+
+	exchange := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(exchangeResponse{Authenticated: true, Token: "exchanged"})
+	}))
+	defer exchange.Close()
+
+	t.Setenv("ACTIONS_ID_TOKEN_REQUEST_URL", actions.URL)
+	t.Setenv("ACTIONS_ID_TOKEN_REQUEST_TOKEN", "actions-token")
+
+	// APIURL is deliberately something no policy would ever name.
+	got, err := resolveToken(t.Context(), Options{APIURL: exchange.URL, OrgID: "org-1"})
+	require.NoError(t, err)
+	assert.Equal(t, "exchanged", got)
+	assert.Equal(t, OIDCAudience, gotAudience)
+	assert.NotEqual(t, exchange.URL, gotAudience)
+}
+
+// NUON_OIDC_AUDIENCE is the escape hatch for a control plane that expects a different
+// value, so it has to win over the constant.
+func TestGitHubActionsAudienceEnvOverride(t *testing.T) {
+	clearAmbientCredentials(t)
+
+	var gotAudience string
+	actions := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAudience = r.URL.Query().Get("audience")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"value":"a-jwt"}`))
+	}))
+	defer actions.Close()
+
+	exchange := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(exchangeResponse{Authenticated: true, Token: "exchanged"})
+	}))
+	defer exchange.Close()
+
+	t.Setenv("ACTIONS_ID_TOKEN_REQUEST_URL", actions.URL)
+	t.Setenv("ACTIONS_ID_TOKEN_REQUEST_TOKEN", "actions-token")
+	t.Setenv("NUON_OIDC_AUDIENCE", "https://api.nuon-stage.co")
+
+	_, err := resolveToken(t.Context(), Options{APIURL: exchange.URL, OrgID: "org-1"})
+	require.NoError(t, err)
+	assert.Equal(t, "https://api.nuon-stage.co", gotAudience)
+}
