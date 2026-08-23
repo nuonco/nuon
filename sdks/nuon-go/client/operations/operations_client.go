@@ -780,7 +780,7 @@ type ClientService interface {
 
 	GetSlackInstallURL(params *GetSlackInstallURLParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSlackInstallURLOK, error)
 
-	GetStackToken(params *GetStackTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetStackTokenOK, error)
+	GetStackServiceAccount(params *GetStackServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetStackServiceAccountOK, error)
 
 	GetTerraformCurrentStateData(params *GetTerraformCurrentStateDataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformCurrentStateDataOK, error)
 
@@ -16450,24 +16450,24 @@ func (a *Client) GetSlackInstallURL(params *GetSlackInstallURLParams, authInfo r
 }
 
 /*
-GetStackToken gets an install stack s API token
+GetStackServiceAccount gets an install stack s service account
 
-Return the API token the install stack's Terraform module uses to authenticate against the runner API. Read-only: the token is minted during stack version generation and is not created or rotated by this endpoint.
+Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
 */
-func (a *Client) GetStackToken(params *GetStackTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetStackTokenOK, error) {
+func (a *Client) GetStackServiceAccount(params *GetStackServiceAccountParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetStackServiceAccountOK, error) {
 	// NOTE: parameters are not validated before sending
 	if params == nil {
-		params = NewGetStackTokenParams()
+		params = NewGetStackServiceAccountParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "GetStackToken",
+		ID:                 "GetStackServiceAccount",
 		Method:             "GET",
-		PathPattern:        "/v1/stacks/{install_id}/token",
+		PathPattern:        "/v1/stacks/{install_id}/service-account",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &GetStackTokenReader{formats: a.formats},
+		Reader:             &GetStackServiceAccountReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -16481,7 +16481,7 @@ func (a *Client) GetStackToken(params *GetStackTokenParams, authInfo runtime.Cli
 	}
 
 	// only one success response has to be checked
-	success, ok := result.(*GetStackTokenOK)
+	success, ok := result.(*GetStackServiceAccountOK)
 	if ok {
 		return success, nil
 	}
@@ -16491,7 +16491,7 @@ func (a *Client) GetStackToken(params *GetStackTokenParams, authInfo runtime.Cli
 	// no default response is defined.
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for GetStackToken: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	msg := fmt.Sprintf("unexpected success response for GetStackServiceAccount: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

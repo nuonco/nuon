@@ -57,6 +57,12 @@ func assertNotFound(t *testing.T, ctx *gin.Context, description string) {
 	var nfErr stderr.ErrNotFound
 	require.ErrorAs(t, ctx.Errors[0].Err, &nfErr)
 	assert.Equal(t, description, nfErr.Description)
+
+	// The stderr handler serializes Err into the response body, so it must carry
+	// nothing beyond the description: a denial reason there would confirm the
+	// resource exists.
+	assert.Equal(t, description, nfErr.Error(),
+		"client-visible error must not leak the denial reason")
 }
 
 func assertAllowed(t *testing.T, ctx *gin.Context) {

@@ -3,9 +3,11 @@
 package require
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
@@ -39,8 +41,17 @@ func Route(kind permissions.ResourceKind, verb permissions.Permission, paramName
 	description := noun(kind) + " not found"
 
 	return func(ctx *gin.Context) {
+		// The response carries only the generic description: the stderr handler
+		// serializes Err into the body, and a denial reason there ("is not
+		// authorized") would tell the caller the resource exists, defeating the
+		// not-found posture. The reason goes to the request log instead — 404s
+		// are otherwise never logged server-side.
 		notFound := func(err error) {
-			ctx.Error(stderr.ErrNotFound{Err: err, Description: description})
+			cctx.GetLogger(ctx, zap.NewNop()).Info("route authorization denied",
+				zap.String("route", ctx.FullPath()),
+				zap.Error(err),
+			)
+			ctx.Error(stderr.ErrNotFound{Err: errors.New(description), Description: description})
 			ctx.Abort()
 		}
 
