@@ -11,8 +11,8 @@ import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { ToggleButton } from '@/components/common/ToggleButton'
 import { CreateOIDCTrustPolicyButton } from '@/components/oidc-trust-policies'
-import { NUON_OIDC_AUDIENCE } from '@/components/oidc-trust-policies/OIDCTrustPolicyForm/schema'
 import { CreateServiceAccountTokenModalContainer } from '@/components/service-accounts/ServiceAccountToken'
+import { useConfig } from '@/hooks/use-config'
 import { useOIDCTrustPolicies } from '@/hooks/use-oidc-trust-policies'
 import { useStackServiceAccount } from '@/hooks/use-stack-service-account'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -804,15 +804,22 @@ const OIDCAuthPane = ({
   installId?: string
   policyNames: string[]
 }) => {
+  const config = useConfig()
   const policyName = `stack-${installId ?? 'install'}`
   const existing = policyNames.includes(policyName)
+
+  // The audience the trust policy is created with — config.apiUrl, the same value
+  // the OIDC settings page prefills. It has to be passed to the workflow because
+  // this SDK talks to the runner API and so cannot derive it.
+  const audience = config.apiUrl ?? ''
 
   const workflowSnippet = `permissions:
   id-token: write
   contents: read
 
 env:
-  NUON_ORG_ID: \${{ vars.NUON_ORG_ID }}`
+  NUON_ORG_ID: \${{ vars.NUON_ORG_ID }}
+  NUON_OIDC_AUDIENCE: ${audience}`
 
   return (
     <>
@@ -827,7 +834,6 @@ env:
             size="sm"
             lockPreset
             repoSource="manual"
-            githubAudience={NUON_OIDC_AUDIENCE}
             defaultRole="org_admin"
             defaultName={policyName}
             reservedNames={policyNames}
@@ -857,7 +863,9 @@ env:
 
       <Text variant="subtext" theme="neutral">
         Without <code>id-token: write</code> the workflow cannot mint an ID
-        token and the provider falls back to looking for a static token.
+        token and the provider falls back to looking for a static token.{' '}
+        <code>NUON_OIDC_AUDIENCE</code> must match the policy&apos;s audience
+        exactly, or the exchange is rejected.
       </Text>
     </>
   )
