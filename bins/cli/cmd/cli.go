@@ -15,6 +15,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/oidctoken"
 	"github.com/nuonco/nuon/bins/cli/internal/services/actions"
 	"github.com/nuonco/nuon/bins/cli/internal/services/apps"
 	"github.com/nuonco/nuon/bins/cli/internal/services/auth"
@@ -32,7 +33,6 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/services/variables"
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
-	"github.com/nuonco/nuon/sdks/stack/oidctoken"
 )
 
 type cli struct {

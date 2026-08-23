@@ -39,7 +39,6 @@ COPY --link tools.go go.mod go.sum ./
 # Copy in-tree SDK go.mod files (required for go.mod replace directives during dependency resolution).
 COPY --link sdks/nuon-go/go.mod sdks/nuon-go/go.sum ./sdks/nuon-go/
 COPY --link sdks/nuon-runner-go/go.mod sdks/nuon-runner-go/go.sum ./sdks/nuon-runner-go/
-COPY --link sdks/stack/go.mod sdks/stack/go.sum ./sdks/stack/
 
 # Download all dependencies into the module cache.
 RUN go mod download
@@ -70,7 +69,6 @@ COPY --from=deps /src/tools.go /src/go.mod /src/go.sum /src/
 # Copy in-tree SDK go.mod/go.sum (required for go.mod replace directives)
 COPY --from=deps /src/sdks/nuon-go/go.mod /src/sdks/nuon-go/go.sum /src/sdks/nuon-go/
 COPY --from=deps /src/sdks/nuon-runner-go/go.mod /src/sdks/nuon-runner-go/go.sum /src/sdks/nuon-runner-go/
-COPY --from=deps /src/sdks/stack/go.mod /src/sdks/stack/go.sum /src/sdks/stack/
 
 # Bake downloaded modules into the image.
 COPY --from=deps /go/pkg/mod /go/pkg/mod
