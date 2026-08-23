@@ -80,14 +80,6 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		AdminDashboardUrl:     cfg.AdminDashboardUrl,
 	}
 
-	// Mirrors the stack provider's own default, so the audience shown to a customer
-	// and the audience their Terraform requests agree without either being
-	// configured. A BYOC control plane runs its own runner API, so there is no
-	// correct guess there and the value must be set explicitly.
-	if cc.RunnerAPIUrl == "" && !cfg.IsBYOC {
-		cc.RunnerAPIUrl = "https://runner.nuon.co"
-	}
-
 	if cfg.PostHogKey != "" && !cfg.IsBYOC {
 		cc.PostHogKey = cfg.PostHogKey
 		cc.PostHogHost = cfg.PostHogHost
