@@ -1,3 +1,4 @@
+// Integration tests: run with INTEGRATION=true against the migrated test database.
 package service
 
 import (
@@ -7,105 +8,111 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/driver/sqlite"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxtest"
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
+	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
 
-func stackTokenTestDB(t *testing.T) *gorm.DB {
-	t.Helper()
+type stackTokenExpiryDeps struct {
+	fx.In
 
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	require.NoError(t, err)
-
-	// Written out rather than AutoMigrated: Token carries a Postgres-only
-	// char_length check constraint that sqlite cannot create.
-	require.NoError(t, db.Exec(`
-		CREATE TABLE tokens (
-			id TEXT PRIMARY KEY,
-			created_by_id TEXT,
-			created_at DATETIME,
-			updated_at DATETIME,
-			deleted_at INTEGER DEFAULT 0,
-			account_id TEXT,
-			org_id TEXT,
-			name TEXT,
-			role TEXT,
-			token TEXT,
-			token_type TEXT,
-			expires_at DATETIME,
-			issued_at DATETIME,
-			issuer TEXT
-		)`).Error)
-
-	return db
+	DB     *gorm.DB `name:"psql"`
+	Seeder *testseed.Seeder
 }
 
-func insertStackToken(t *testing.T, db *gorm.DB, id, accountID string, expiresAt time.Time, deleted bool) {
-	t.Helper()
+type StackTokenExpiryTestSuite struct {
+	tests.BaseDBTestSuite
 
-	var deletedAt int64
-	if deleted {
-		deletedAt = time.Now().Unix()
-	}
+	fxApp *fxtest.App
+	deps  stackTokenExpiryDeps
+}
 
-	// Created via Exec because Token.BeforeCreate unconditionally overwrites ID.
-	require.NoError(t, db.Exec(
-		`INSERT INTO tokens (id, account_id, token, expires_at, issued_at, created_at, issuer, deleted_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		id, accountID, "tok-"+id, expiresAt, time.Now(), time.Now(), "nuon", deletedAt,
-	).Error)
+func TestStackTokenExpirySuite(t *testing.T) {
+	tests.SkipIfNotIntegration(t)
+	suite.Run(t, new(StackTokenExpiryTestSuite))
+}
+
+func (s *StackTokenExpiryTestSuite) SetupSuite() {
+	s.BaseDBTestSuite.SetupSuite()
+
+	options := append(
+		tests.CtlApiFXOptions(s.T()),
+		fx.Populate(&s.deps),
+	)
+	s.fxApp = fxtest.New(s.T(), options...)
+	s.fxApp.RequireStart()
+	s.SetDB(s.deps.DB)
+}
+
+func (s *StackTokenExpiryTestSuite) TearDownSuite() {
+	s.fxApp.RequireStop()
+}
+
+// revoke soft-deletes a token the way production revocation does, rather than
+// inserting a pre-cooked deleted row.
+func (s *StackTokenExpiryTestSuite) revoke(tok *app.Token) {
+	require.NoError(s.T(), s.deps.DB.Delete(tok).Error)
 }
 
 // liveStackTokenExpiry drives what the TF Module tab tells the customer: whether they
 // still have a working credential, and when it dies. A wrong answer here either tells
 // someone their stack is authenticated when it is not, or prompts them to mint a
 // duplicate token they did not need.
-func TestLiveStackTokenExpiry(t *testing.T) {
+//
+// Each case seeds its own account, so the shared database isolates by account ID.
+func (s *StackTokenExpiryTestSuite) TestLiveStackTokenExpiry() {
+	t := s.T()
 	ctx := context.Background()
 	future := time.Now().Add(24 * time.Hour).UTC().Truncate(time.Second)
 	farFuture := time.Now().Add(365 * 24 * time.Hour).UTC().Truncate(time.Second)
 	past := time.Now().Add(-24 * time.Hour)
 
-	t.Run("no token at all", func(t *testing.T) {
-		db := stackTokenTestDB(t)
+	s.Run("no token at all", func() {
+		acct := s.deps.Seeder.CreateAccount(ctx, t)
 
-		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
+		expiry, err := liveStackTokenExpiry(ctx, s.deps.DB, acct.ID)
 		require.NoError(t, err)
 		assert.True(t, expiry.IsZero(), "no token means no expiry to report")
 	})
 
-	t.Run("live token reports its expiry", func(t *testing.T) {
-		db := stackTokenTestDB(t)
-		insertStackToken(t, db, "tok-live", "acct-1", future, false)
+	s.Run("live token reports its expiry", func() {
+		acct := s.deps.Seeder.CreateAccount(ctx, t)
+		s.deps.Seeder.CreateToken(ctx, t, acct, future)
 
-		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
+		expiry, err := liveStackTokenExpiry(ctx, s.deps.DB, acct.ID)
 		require.NoError(t, err)
 		assert.WithinDuration(t, future, expiry, time.Second)
 	})
 
-	t.Run("expired token", func(t *testing.T) {
-		db := stackTokenTestDB(t)
-		insertStackToken(t, db, "tok-old", "acct-1", past, false)
+	s.Run("expired token", func() {
+		acct := s.deps.Seeder.CreateAccount(ctx, t)
+		s.deps.Seeder.CreateToken(ctx, t, acct, past)
 
-		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
+		expiry, err := liveStackTokenExpiry(ctx, s.deps.DB, acct.ID)
 		require.NoError(t, err)
 		assert.True(t, expiry.IsZero(), "an expired token is not a credential")
 	})
 
-	t.Run("revoked token", func(t *testing.T) {
-		db := stackTokenTestDB(t)
-		insertStackToken(t, db, "tok-gone", "acct-1", future, true)
+	s.Run("revoked token", func() {
+		acct := s.deps.Seeder.CreateAccount(ctx, t)
+		s.revoke(s.deps.Seeder.CreateToken(ctx, t, acct, future))
 
-		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
+		expiry, err := liveStackTokenExpiry(ctx, s.deps.DB, acct.ID)
 		require.NoError(t, err)
 		assert.True(t, expiry.IsZero(), "a soft-deleted token must be filtered out by gorm")
 	})
 
-	t.Run("another account's token does not count", func(t *testing.T) {
-		db := stackTokenTestDB(t)
-		insertStackToken(t, db, "tok-other", "acct-2", future, false)
+	s.Run("another account's token does not count", func() {
+		acct := s.deps.Seeder.CreateAccount(ctx, t)
+		other := s.deps.Seeder.CreateAccount(ctx, t)
+		s.deps.Seeder.CreateToken(ctx, t, other, future)
 
-		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
+		expiry, err := liveStackTokenExpiry(ctx, s.deps.DB, acct.ID)
 		require.NoError(t, err)
 		assert.True(t, expiry.IsZero())
 	})
@@ -114,22 +121,22 @@ func TestLiveStackTokenExpiry(t *testing.T) {
 	// the caller pick a duration, so the newest token can be the shortest-lived one;
 	// reporting its expiry would warn a customer holding a year-long credential that
 	// they expire tomorrow.
-	t.Run("reports the longest-lived token, not the newest", func(t *testing.T) {
-		db := stackTokenTestDB(t)
-		insertStackToken(t, db, "tok-year", "acct-1", farFuture, false)
-		insertStackToken(t, db, "tok-day", "acct-1", future, false)
+	s.Run("reports the longest-lived token, not the newest", func() {
+		acct := s.deps.Seeder.CreateAccount(ctx, t)
+		s.deps.Seeder.CreateToken(ctx, t, acct, farFuture)
+		s.deps.Seeder.CreateToken(ctx, t, acct, future)
 
-		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
+		expiry, err := liveStackTokenExpiry(ctx, s.deps.DB, acct.ID)
 		require.NoError(t, err)
 		assert.WithinDuration(t, farFuture, expiry, time.Second)
 	})
 
-	t.Run("expired and revoked tokens together report nothing live", func(t *testing.T) {
-		db := stackTokenTestDB(t)
-		insertStackToken(t, db, "tok-old", "acct-1", past, false)
-		insertStackToken(t, db, "tok-gone", "acct-1", future, true)
+	s.Run("expired and revoked tokens together report nothing live", func() {
+		acct := s.deps.Seeder.CreateAccount(ctx, t)
+		s.deps.Seeder.CreateToken(ctx, t, acct, past)
+		s.revoke(s.deps.Seeder.CreateToken(ctx, t, acct, future))
 
-		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
+		expiry, err := liveStackTokenExpiry(ctx, s.deps.DB, acct.ID)
 		require.NoError(t, err)
 		assert.True(t, expiry.IsZero())
 	})

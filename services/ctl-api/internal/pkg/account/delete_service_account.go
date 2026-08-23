@@ -42,8 +42,7 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) err
 }
 
 // deleteAccountRecords removes everything that makes an account usable as a
-// credential. Split out from DeleteServiceAccount so the record-level behaviour can
-// be tested without standing up the preloads FindAccount performs.
+// credential.
 //
 // Role bindings are hard-deleted because the many2many association declares
 // OnDelete:CASCADE, and that is a foreign-key constraint a soft delete never fires.

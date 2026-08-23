@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -28,6 +29,19 @@ func BuildAccount() *app.Account {
 // CreateAccount builds and persists an account to the database.
 func (s *Seeder) CreateAccount(ctx context.Context, t *testing.T) *app.Account {
 	acct := BuildAccount()
+	res := s.db.WithContext(ctx).Create(acct)
+	require.NoError(t, res.Error)
+	return acct
+}
+
+// CreateServiceAccount builds and persists a service account for the given entity
+// ID, following the account.ServiceAccountEmail naming convention that ties a
+// service account to the entity it authenticates.
+func (s *Seeder) CreateServiceAccount(ctx context.Context, t *testing.T, svcAcctID string) *app.Account {
+	acct := BuildAccount()
+	acct.Subject = svcAcctID
+	acct.Email = account.ServiceAccountEmail(svcAcctID)
+	acct.AccountType = app.AccountTypeService
 	res := s.db.WithContext(ctx).Create(acct)
 	require.NoError(t, res.Error)
 	return acct
