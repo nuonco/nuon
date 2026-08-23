@@ -75,6 +75,61 @@ func (s *DeleteServiceAccountTestSuite) seedRoleBinding(ctx context.Context, acc
 	require.NoError(t, s.deps.DB.WithContext(creatorCtx).Create(binding).Error)
 }
 
+// seedStackRole gives the account the install-scoped role a real stack service
+// account holds, so the delete can be checked against the row it must reap.
+func (s *DeleteServiceAccountTestSuite) seedStackRole(ctx context.Context, orgID string, acct *app.Account) *app.Role {
+	t := s.T()
+	t.Helper()
+
+	creatorCtx, _ := s.deps.Seeder.EnsureAccount(ctx, t)
+	role := &app.Role{
+		OrgID:    generics.NewNullString(orgID),
+		RoleType: app.RoleTypeStack,
+		Policies: []app.Policy{{OrgID: generics.NewNullString(orgID), Name: app.PolicyNameStack}},
+	}
+	require.NoError(t, s.deps.DB.WithContext(creatorCtx).Create(role).Error)
+
+	binding := &app.AccountRole{OrgID: generics.NewNullString(orgID), AccountID: acct.ID, RoleID: role.ID}
+	require.NoError(t, s.deps.DB.WithContext(creatorCtx).Create(binding).Error)
+
+	return role
+}
+
+// The role is per-account garbage once the account is gone, and a soft delete
+// would keep the unique policy-per-role index occupied against a re-create.
+func (s *DeleteServiceAccountTestSuite) TestDeleteReapsStackRoles() {
+	t := s.T()
+	ctx := context.Background()
+
+	org := s.deps.Seeder.CreateOrg(ctx, t)
+
+	stackID := generics.GetFakeObj[string]()
+	acct := s.deps.Seeder.CreateServiceAccount(ctx, t, stackID)
+	role := s.seedStackRole(ctx, org.ID, acct)
+
+	// A managed org role bound to the same account must survive the reap.
+	s.seedRoleBinding(ctx, acct)
+
+	otherAcct := s.deps.Seeder.CreateServiceAccount(ctx, t, generics.GetFakeObj[string]())
+	otherRole := s.seedStackRole(ctx, org.ID, otherAcct)
+
+	require.NoError(t, s.deps.Client.DeleteServiceAccount(ctx, stackID))
+
+	var roles int64
+	require.NoError(t, s.deps.DB.Unscoped().Model(&app.Role{}).
+		Where("id = ?", role.ID).Count(&roles).Error)
+	assert.Zero(t, roles, "the stack role must be hard-deleted")
+
+	var policies int64
+	require.NoError(t, s.deps.DB.Unscoped().Model(&app.Policy{}).
+		Where("role_id = ?", role.ID).Count(&policies).Error)
+	assert.Zero(t, policies, "the stack role's policy must be hard-deleted")
+
+	require.NoError(t, s.deps.DB.Unscoped().Model(&app.Role{}).
+		Where("id = ?", otherRole.ID).Count(&roles).Error)
+	assert.EqualValues(t, 1, roles, "another account's stack role must survive")
+}
+
 // A leftover binding or token is the whole reason this exists: the account is tied to
 // its stack only by a naming convention, so what survives is an ownerless org admin.
 func (s *DeleteServiceAccountTestSuite) TestDeleteRemovesCredentialRecords() {

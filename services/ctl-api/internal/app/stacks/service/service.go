@@ -18,6 +18,8 @@ import (
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/require"
 )
 
 type Params struct {
@@ -47,7 +49,8 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterRunnerRoutes(ge *gin.Engine) error {
-	stacks := ge.Group("/v1/stacks/:install_id")
+	stacks := ge.Group("/v1/stacks/:install_id",
+		require.Route(permissions.KindStack, permissions.PermissionRead, "install_id"))
 	{
 		stacks.GET("/config", s.GetStackConfig)
 	}

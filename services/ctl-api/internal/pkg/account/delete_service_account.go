@@ -7,10 +7,12 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 )
 
 // DeleteServiceAccount removes a service account and everything that makes it usable
-// as a credential: role bindings, tokens, and the account row.
+// as a credential: role bindings, its per-install stack roles, tokens, and the
+// account row.
 //
 // A missing account is success: callers run this from delete workflows that retry,
 // and an entity that never had a service account must not block its own teardown.
@@ -33,6 +35,11 @@ func (c *Client) DeleteServiceAccount(ctx context.Context, svcAcctID string) err
 	}
 
 	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Before deleteAccountRecords: the bindings are how the roles are found.
+		if err := authz.DeleteStackInstallRoles(tx, acct.ID); err != nil {
+			return err
+		}
+
 		return deleteAccountRecords(tx, acct.ID)
 	})
 }

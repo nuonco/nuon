@@ -43,9 +43,9 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Scoped by org, not by a token-to-stack binding: the stack's service account is
-	// an org admin, so any token that can read this install can already read the org.
-	// Not-found rather than forbidden, so this cannot probe install IDs in other orgs.
+	// requireStackAccess has already checked this install; the org scope here is
+	// defense in depth. Not-found rather than forbidden, so this cannot probe
+	// install IDs in other orgs.
 	var install app.Install
 	if res := s.db.WithContext(ctx).
 		Where(app.Install{ID: installID, OrgID: orgID}).
