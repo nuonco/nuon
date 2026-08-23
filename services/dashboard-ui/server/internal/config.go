@@ -44,6 +44,10 @@ type Config struct {
 	// RunnerAPIUrl is the runner API, which install stacks authenticate against.
 	// Distinct from APIUrl: it is a different host, and a stack's OIDC trust policy
 	// has to name it as the audience.
+	//
+	// No default. Every deployment runs its runner API somewhere different, and a
+	// guess that is nearly right produces a trust policy that rejects every token
+	// with no indication why — worse than the UI declining to offer one.
 	RunnerAPIUrl          string `config:"nuon_runner_api_url"`
 	AdminAPIUrl           string `config:"nuon_admin_api_url"`
 	TemporalUIUrl         string `config:"nuon_temporal_ui_url"`
