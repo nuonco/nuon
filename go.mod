@@ -21,7 +21,6 @@ replace helm.sh/helm/v4 => helm.sh/helm/v4 v4.0.0-alpha.1
 replace (
 	github.com/nuonco/nuon/sdks/nuon-go => ./sdks/nuon-go
 	github.com/nuonco/nuon/sdks/nuon-runner-go => ./sdks/nuon-runner-go
-	github.com/nuonco/nuon/sdks/stack => ./sdks/stack
 )
 
 replace github.com/pelletier/go-toml/v2 v2.2.4 => github.com/someshkoli/go-toml/v2 v2.0.0-20260106110510-b42197d17bf7
@@ -108,7 +107,6 @@ require (
 	github.com/modelcontextprotocol/go-sdk v1.6.1
 	github.com/nuonco/gin-swagger v1.6.2
 	github.com/nuonco/nuon/sdks/nuon-runner-go v0.0.0-00010101000000-000000000000
-	github.com/nuonco/nuon/sdks/stack v0.0.0-00010101000000-000000000000
 	github.com/nuonco/sandboxes v1.34.0
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/open-policy-agent/opa v1.8.0
