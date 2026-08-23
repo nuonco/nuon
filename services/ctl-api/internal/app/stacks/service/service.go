@@ -57,12 +57,15 @@ func (s *service) RegisterRunnerRoutes(ge *gin.Engine) error {
 	return nil
 }
 
-// The token read is on the public API, not the runner API: it is the dashboard that
-// displays it, and the customer applying the Terraform has no credential yet.
+// The service account read is on the public API, not the runner API: it is the
+// dashboard that shows it, and the customer applying the Terraform has no credential
+// yet. Note there is no create route here — tokens are minted through the existing
+// POST /v1/service-accounts/{account_id}/tokens, which the stack's account satisfies
+// like any other.
 func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	stacks := ge.Group("/v1/stacks/:install_id")
 	{
-		stacks.GET("/token", s.GetStackToken)
+		stacks.GET("/service-account", s.GetStackServiceAccount)
 	}
 
 	return nil

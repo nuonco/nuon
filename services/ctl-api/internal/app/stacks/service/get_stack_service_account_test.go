@@ -1,4 +1,4 @@
-package activities
+package service
 
 import (
 	"context"
@@ -56,69 +56,81 @@ func insertStackToken(t *testing.T, db *gorm.DB, id, accountID string, expiresAt
 	).Error)
 }
 
-// hasLiveStackToken is the entire mint decision. A false re-mints, so a wrong answer
-// either strands a stack without a credential or issues a second one on every
-// reconcile — and the customer's Terraform holds whichever came first.
-func TestHasLiveStackToken(t *testing.T) {
+// liveStackTokenExpiry drives what the TF Module tab tells the customer: whether they
+// still have a working credential, and when it dies. A wrong answer here either tells
+// someone their stack is authenticated when it is not, or prompts them to mint a
+// duplicate token they did not need.
+func TestLiveStackTokenExpiry(t *testing.T) {
 	ctx := context.Background()
-	future := time.Now().Add(24 * time.Hour)
+	future := time.Now().Add(24 * time.Hour).UTC().Truncate(time.Second)
+	farFuture := time.Now().Add(365 * 24 * time.Hour).UTC().Truncate(time.Second)
 	past := time.Now().Add(-24 * time.Hour)
 
 	t.Run("no token at all", func(t *testing.T) {
 		db := stackTokenTestDB(t)
 
-		live, err := hasLiveStackToken(ctx, db, "acct-1")
+		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
 		require.NoError(t, err)
-		assert.False(t, live, "a stack with no token must mint one")
+		assert.True(t, expiry.IsZero(), "no token means no expiry to report")
 	})
 
-	t.Run("live token", func(t *testing.T) {
+	t.Run("live token reports its expiry", func(t *testing.T) {
 		db := stackTokenTestDB(t)
 		insertStackToken(t, db, "tok-live", "acct-1", future, false)
 
-		live, err := hasLiveStackToken(ctx, db, "acct-1")
+		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
 		require.NoError(t, err)
-		assert.True(t, live, "an unexpired token must not be re-minted")
+		assert.WithinDuration(t, future, expiry, time.Second)
 	})
 
 	t.Run("expired token", func(t *testing.T) {
 		db := stackTokenTestDB(t)
 		insertStackToken(t, db, "tok-old", "acct-1", past, false)
 
-		live, err := hasLiveStackToken(ctx, db, "acct-1")
+		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
 		require.NoError(t, err)
-		assert.False(t, live, "an expired token is not a credential")
+		assert.True(t, expiry.IsZero(), "an expired token is not a credential")
 	})
 
 	t.Run("revoked token", func(t *testing.T) {
 		db := stackTokenTestDB(t)
 		insertStackToken(t, db, "tok-gone", "acct-1", future, true)
 
-		live, err := hasLiveStackToken(ctx, db, "acct-1")
+		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
 		require.NoError(t, err)
-		assert.False(t, live, "a soft-deleted token must be filtered out by gorm")
+		assert.True(t, expiry.IsZero(), "a soft-deleted token must be filtered out by gorm")
 	})
 
 	t.Run("another account's token does not count", func(t *testing.T) {
 		db := stackTokenTestDB(t)
 		insertStackToken(t, db, "tok-other", "acct-2", future, false)
 
-		live, err := hasLiveStackToken(ctx, db, "acct-1")
+		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
 		require.NoError(t, err)
-		assert.False(t, live)
+		assert.True(t, expiry.IsZero())
 	})
 
-	// The partial-failure case that motivated keying on the token rather than on the
-	// account: minting failed after the account was created, so the account exists
-	// and the token does not. Keying on account existence would skip the retry and
-	// strand the stack permanently.
-	t.Run("expired and revoked tokens together still re-mint", func(t *testing.T) {
+	// The reason this orders by expiry and not by created_at. The create modal lets
+	// the caller pick a duration, so the newest token can be the shortest-lived one;
+	// reporting its expiry would warn a customer holding a year-long credential that
+	// they expire tomorrow.
+	t.Run("reports the longest-lived token, not the newest", func(t *testing.T) {
+		db := stackTokenTestDB(t)
+		insertStackToken(t, db, "tok-year", "acct-1", farFuture, false)
+		insertStackToken(t, db, "tok-day", "acct-1", future, false)
+
+		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
+		require.NoError(t, err)
+		assert.WithinDuration(t, farFuture, expiry, time.Second)
+	})
+
+	t.Run("expired and revoked tokens together report nothing live", func(t *testing.T) {
 		db := stackTokenTestDB(t)
 		insertStackToken(t, db, "tok-old", "acct-1", past, false)
 		insertStackToken(t, db, "tok-gone", "acct-1", future, true)
 
-		live, err := hasLiveStackToken(ctx, db, "acct-1")
+		expiry, err := liveStackTokenExpiry(ctx, db, "acct-1")
 		require.NoError(t, err)
-		assert.False(t, live)
+		assert.True(t, expiry.IsZero())
 	})
 }
