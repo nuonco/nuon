@@ -7,73 +7,34 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
-	"github.com/nuonco/nuon/sdks/stack/oidctoken"
+	"github.com/nuonco/nuon/sdks/auth"
 )
 
-// apiTokenEnvVar mirrors the CLI: a token in the environment is the usual way to
-// run non-interactively without writing it into a config file.
-const apiTokenEnvVar = "NUON_API_TOKEN"
-
-// orgIDEnvVar is only consulted on the OIDC path, where the exchange has to name the
-// org whose trust policies should be evaluated.
-const orgIDEnvVar = "NUON_ORG_ID"
-
-// resolveToken produces the bearer token for a request, following the same
-// precedence the CLI uses: an explicit token, then the environment, then an ambient
-// OIDC token exchanged for a short-lived Nuon token.
+// resolveToken produces the bearer token for a request.
 //
-// The OIDC path exists so a customer applying the module from CI never has to store
-// a long-lived credential: GitHub Actions mints an ID token per run, and the control
-// plane trades it for a Nuon token if it satisfies one of the org's trust policies.
+// The precedence and its error messages live in sdks/auth so every Nuon SDK
+// behaves the same way; this only supplies the exchange, which is transport-
+// specific.
+//
+// The audience passed through is opts.APIURL — the runner API. It has to equal the
+// audience recorded on the trust policy, and a policy created for this SDK names the
+// runner API rather than the public one the CLI talks to. NUON_OIDC_AUDIENCE
+// overrides it; the dashboard's OIDC directions print the policy's audience for
+// exactly this reason.
 func resolveToken(ctx context.Context, opts Options) (string, error) {
-	if t := strings.TrimSpace(opts.APIToken); t != "" {
-		return t, nil
-	}
-	if t := strings.TrimSpace(os.Getenv(apiTokenEnvVar)); t != "" {
-		return t, nil
-	}
+	return auth.Resolve(ctx, auth.Options{
+		APIToken: opts.APIToken,
+		OrgID:    opts.OrgID,
+		Audience: opts.APIURL,
+	}, exchanger{opts: opts})
+}
 
-	if !oidctoken.Available() {
-		return "", fmt.Errorf(
-			"no credentials: set api_token, %s, or run somewhere an OIDC token is available "+
-				"(GitHub Actions with `permissions: id-token: write`, %s, or %s)",
-			apiTokenEnvVar, "NUON_OIDC_TOKEN", "NUON_OIDC_TOKEN_FILE",
-		)
-	}
-
-	orgID := strings.TrimSpace(opts.OrgID)
-	if orgID == "" {
-		orgID = strings.TrimSpace(os.Getenv(orgIDEnvVar))
-	}
-	if orgID == "" {
-		// Checked before fetching the ID token rather than after: the exchange
-		// cannot succeed without an org, and failing here says why.
-		return "", fmt.Errorf("an OIDC token is available but no org id is set: set org_id or %s", orgIDEnvVar)
-	}
-
-	// The audience has to equal the one recorded on the trust policy. The dashboard
-	// creates policies with the public API URL — the same value the CLI sends — but
-	// this SDK's APIURL is the runner API, a different host, so it cannot derive the
-	// right value on its own. NUON_OIDC_AUDIENCE carries it; the dashboard's OIDC
-	// directions print the policy's audience for exactly this reason.
-	jwt, source, ok, err := oidctoken.Detect(ctx, oidctoken.Audience("", opts.APIURL))
-	if err != nil {
-		return "", fmt.Errorf("unable to get OIDC token from %s: %w", source, err)
-	}
-	if !ok {
-		return "", fmt.Errorf("no OIDC token found")
-	}
-
-	token, err := exchangeOIDCToken(ctx, opts, orgID, jwt)
-	if err != nil {
-		return "", fmt.Errorf("exchange OIDC token (from %s): %w", source, err)
-	}
-
-	return token, nil
+// exchanger implements auth.Exchanger against the runner API.
+type exchanger struct {
+	opts Options
 }
 
 type exchangeRequest struct {
@@ -86,11 +47,13 @@ type exchangeResponse struct {
 	Token         string `json:"token,omitempty"`
 }
 
-// exchangeOIDCToken trades an OIDC ID token for a short-lived Nuon API token.
+// ExchangeOIDCToken trades an OIDC ID token for a short-lived Nuon API token.
 //
 // Deliberately not routed through runClient: that client attaches a bearer token,
 // and this is the call made precisely because there isn't one yet.
-func exchangeOIDCToken(ctx context.Context, opts Options, orgID, jwt string) (string, error) {
+func (e exchanger) ExchangeOIDCToken(ctx context.Context, orgID, jwt string) (string, error) {
+	opts := e.opts
+
 	body, err := json.Marshal(exchangeRequest{OrgID: orgID, Token: jwt})
 	if err != nil {
 		return "", fmt.Errorf("marshal exchange request: %w", err)

@@ -1,8 +1,11 @@
 // Package oidctoken discovers ambient OIDC ID tokens in automation
 // environments (CI) so callers can exchange them for Nuon API tokens without
-// any stored secrets. Shared by the CLI and the stack SDK: it lives here, in
-// the dependency-free stack module, because the Terraform provider consumes
-// the SDK and cannot import the CLI's internal packages.
+// any stored secrets.
+//
+// It lives in sdks/auth, a module with no dependencies of its own, so every
+// Nuon SDK can share one implementation. Detection is the half that has to
+// behave identically everywhere; exchanging what it finds is transport-specific
+// and belongs to the calling SDK. See package auth.
 package oidctoken
 
 import (
