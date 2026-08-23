@@ -36,6 +36,7 @@ var localFaviconRewrites = map[string]string{
 
 type clientConfig struct {
 	APIUrl                string `json:"apiUrl"`
+	RunnerAPIUrl          string `json:"runnerApiUrl,omitempty"`
 	TemporalUIUrl         string `json:"temporalUiUrl,omitempty"`
 	AuthServiceUrl        string `json:"authServiceUrl,omitempty"`
 	AppUrl                string `json:"appUrl"`
@@ -61,6 +62,7 @@ type clientConfig struct {
 func buildClientConfig(cfg *internal.Config) clientConfig {
 	cc := clientConfig{
 		APIUrl:                cfg.APIUrl,
+		RunnerAPIUrl:          cfg.RunnerAPIUrl,
 		TemporalUIUrl:         cfg.TemporalUIUrl,
 		AuthServiceUrl:        cfg.AuthServiceUrl,
 		AppUrl:                cfg.AppUrl,
@@ -76,6 +78,14 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		IsBYOC:                cfg.IsBYOC,
 		OnboardingV2:          cfg.OnboardingV2,
 		AdminDashboardUrl:     cfg.AdminDashboardUrl,
+	}
+
+	// Mirrors the stack provider's own default, so the audience shown to a customer
+	// and the audience their Terraform requests agree without either being
+	// configured. A BYOC control plane runs its own runner API, so there is no
+	// correct guess there and the value must be set explicitly.
+	if cc.RunnerAPIUrl == "" && !cfg.IsBYOC {
+		cc.RunnerAPIUrl = "https://runner.nuon.co"
 	}
 
 	if cfg.PostHogKey != "" && !cfg.IsBYOC {

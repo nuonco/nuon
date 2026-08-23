@@ -40,7 +40,11 @@ type Config struct {
 	DistDir     string   `config:"dist_dir"`
 	PublicDir   string   `config:"public_dir"`
 
-	APIUrl                string `config:"nuon_api_url"`
+	APIUrl string `config:"nuon_api_url"`
+	// RunnerAPIUrl is the runner API, which install stacks authenticate against.
+	// Distinct from APIUrl: it is a different host, and a stack's OIDC trust policy
+	// has to name it as the audience.
+	RunnerAPIUrl          string `config:"nuon_runner_api_url"`
 	AdminAPIUrl           string `config:"nuon_admin_api_url"`
 	TemporalUIUrl         string `config:"nuon_temporal_ui_url"`
 	KafkaUIUrl            string `config:"nuon_kafka_ui_url"`
