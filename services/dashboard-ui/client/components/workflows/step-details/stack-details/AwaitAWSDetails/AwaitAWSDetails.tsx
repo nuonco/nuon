@@ -808,18 +808,18 @@ const OIDCAuthPane = ({
   const policyName = `stack-${installId ?? 'install'}`
   const existing = policyNames.includes(policyName)
 
-  // The audience the trust policy is created with — config.apiUrl, the same value
-  // the OIDC settings page prefills. It has to be passed to the workflow because
-  // this SDK talks to the runner API and so cannot derive it.
-  const audience = config.apiUrl ?? ''
+  // The runner API, not the public one the OIDC settings page prefills: the stack
+  // SDK requests its ID token with the URL it talks to, and the control plane
+  // compares the audience literally. Prefilling the policy with this means the two
+  // agree without the customer configuring an audience anywhere.
+  const audience = config.runnerApiUrl ?? ''
 
   const workflowSnippet = `permissions:
   id-token: write
   contents: read
 
 env:
-  NUON_ORG_ID: \${{ vars.NUON_ORG_ID }}
-  NUON_OIDC_AUDIENCE: ${audience}`
+  NUON_ORG_ID: \${{ vars.NUON_ORG_ID }}`
 
   return (
     <>
@@ -834,6 +834,7 @@ env:
             size="sm"
             lockPreset
             repoSource="manual"
+            githubAudience={audience}
             defaultRole="org_admin"
             defaultName={policyName}
             reservedNames={policyNames}
@@ -863,9 +864,9 @@ env:
 
       <Text variant="subtext" theme="neutral">
         Without <code>id-token: write</code> the workflow cannot mint an ID
-        token and the provider falls back to looking for a static token.{' '}
-        <code>NUON_OIDC_AUDIENCE</code> must match the policy&apos;s audience
-        exactly, or the exchange is rejected.
+        token and the provider falls back to looking for a static token. If the
+        workflow points the provider at a different API URL, the policy&apos;s
+        audience has to match it.
       </Text>
     </>
   )
