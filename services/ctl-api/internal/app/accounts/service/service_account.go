@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -433,6 +434,11 @@ type CreateServiceAccountTokenRequest struct {
 	// Duration defaults to one year.
 	Duration string `json:"duration" default:"8760h"`
 
+	// Name labels the token wherever it is listed. Defaults to the service
+	// account's identity, which is the only thing distinguishing one of these from
+	// another when several exist.
+	Name string `json:"name"`
+
 	Invalidate bool `json:"invalidate"`
 }
 
@@ -504,7 +510,26 @@ func (s *service) CreateServiceAccountToken(ctx *gin.Context) {
 		}
 	}
 
-	token, err := s.acctClient.CreateToken(ctx, acct.Email, dur)
+	caller, err := cctx.AccountFromGinContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		name = acct.Email
+	}
+
+	// createStaticToken rather than acctClient.CreateToken. Both mint a working
+	// credential, but only this one stamps org_id, name, role, and token_type=static
+	// — the four columns ListStaticTokens filters and displays on. Tokens made the
+	// other way were invisible on the org's API tokens page and so could never be
+	// found or revoked there, which is how a human-created credential should never
+	// behave. acctClient.CreateToken stays as it is for its ~20 machine-internal
+	// callers (runner, log stream, phone home); those deliberately do not belong on
+	// a page for tokens a person manages.
+	token, err := s.createStaticToken(ctx, acct, org.ID, caller.ID, name, orgRoleType(acct, org.ID), dur)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create token: %w", err))
 		return
@@ -513,4 +538,18 @@ func (s *service) CreateServiceAccountToken(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, CreateServiceAccountTokenResponse{
 		Token: token.Token,
 	})
+}
+
+// orgRoleType reports the role an account holds in the given org, for the token's
+// Role column. That column is display only — authorization resolves through the
+// account's roles, never through the token row — so failing to find one costs a
+// label in a table, not access.
+func orgRoleType(acct *app.Account, orgID string) app.RoleType {
+	for _, role := range acct.Roles {
+		if role.OrgID.ValueString() == orgID {
+			return role.RoleType
+		}
+	}
+
+	return ""
 }

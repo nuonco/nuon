@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -267,8 +268,16 @@ func (s *service) isOrgAdmin(acct *app.Account, orgID string) bool {
 	return false
 }
 
+// dedicatedTokenSubjectPrefix marks a service account that exists only to hold one
+// static token. Deleting the token deletes the account, so the two have to be
+// distinguishable from service accounts that outlive any single credential — a
+// stack's, a runner's, or one a user made by hand.
+func dedicatedTokenSubjectPrefix(orgID string) string {
+	return fmt.Sprintf("%s-token-", orgID)
+}
+
 func (s *service) createTokenServiceAccount(ctx context.Context, orgID string, roleType app.RoleType) (*app.Account, error) {
-	name := fmt.Sprintf("%s-token-%s", orgID, domains.NewAccountID())
+	name := dedicatedTokenSubjectPrefix(orgID) + domains.NewAccountID()
 	email := account.ServiceAccountEmail(name)
 
 	newAcct := app.Account{
@@ -299,6 +308,15 @@ func (s *service) deleteTokenServiceAccount(ctx context.Context, orgID, accountI
 
 	// never remove roles from or delete a personal token's real user account
 	if acct.AccountType != app.AccountTypeService {
+		return nil
+	}
+
+	// Only accounts created to hold this one token. Service accounts that outlive
+	// their credentials — an install stack's, a runner's — also have tokens listed
+	// here, and revoking one of those must not take the identity with it: the stack
+	// would keep running with an account that no longer exists, and nothing would
+	// recreate it until the next reconcile.
+	if !strings.HasPrefix(acct.Subject, dedicatedTokenSubjectPrefix(orgID)) {
 		return nil
 	}
 

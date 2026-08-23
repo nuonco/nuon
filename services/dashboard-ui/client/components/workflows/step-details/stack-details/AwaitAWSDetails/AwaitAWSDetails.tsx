@@ -587,6 +587,7 @@ const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
         accountId={serviceAccount?.account_id ?? ''}
         identity={serviceAccount?.email ?? 'this install stack'}
         defaultDuration="24h"
+        tokenName={`stack-${installId}`}
         onCreated={() =>
           queryClient.invalidateQueries({
             queryKey: ['stack-service-account', installId],
