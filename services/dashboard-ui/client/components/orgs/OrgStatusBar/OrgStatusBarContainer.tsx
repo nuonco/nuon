@@ -13,7 +13,8 @@ import {
   getInstall,
   getInstallStack,
 } from '@/lib'
-import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
+import { getWorkflowStepTitle } from '@/utils/workflow-utils'
 import { OrgStatusBar } from './OrgStatusBar'
 
 export const OrgStatusBarContainer = () => {
@@ -63,7 +64,7 @@ export const OrgStatusBarContainer = () => {
 
   const workflowItems: TContextTooltipItem[] = activeWorkflows.map((workflow) => ({
     id: workflow.id ?? '',
-    title: workflow.name || toSentenceCase(snakeToWords(workflow.type)),
+    title: workflow.name || humanize(workflow.type),
     subtitle: workflow.metadata?.owner_name || workflow.status?.status || undefined,
     href: workflow.owner_id
       ? `/${org.id}/installs/${workflow.owner_id}/workflows/${workflow.id}`
@@ -93,7 +94,7 @@ export const OrgStatusBarContainer = () => {
     const installName = step?.owner_id ? ownerNames.get(step.owner_id) : undefined
     return {
       id: approval.id ?? '',
-      title: step?.name ? toSentenceCase(step.name) : 'Approval required',
+      title: step?.name ? getWorkflowStepTitle(step) : 'Approval required',
       subtitle: installName || approval.type || undefined,
       href,
     }

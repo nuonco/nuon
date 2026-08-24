@@ -10,7 +10,7 @@ import {
   getApprovalType,
   getApprovalResponseType,
 } from '@/utils/approval-utils'
-import { toSentenceCase } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 import { ApprovePlanButton } from './ApprovePlan'
 import { DenyPlanButton } from './DenyPlan'
 import { RetryPlanButton } from './RetryPlan'
@@ -140,15 +140,15 @@ const ApprovedPlanBanner = ({ step }: IApprovalBanner) => {
               ? `Plan was ${responseType}`
               : optimistic
                 ? 'Response submitted'
-                : toSentenceCase(step?.status?.status)}
+                : humanize(step?.status?.status)}
           </Text>
           <Text variant="subtext" theme="neutral">
             {responseType
               ? `This ${getApprovalType(step?.approval?.type)} plan was ${responseType}.`
               : optimistic
                 ? 'Waiting for the workflow to process your response.'
-                : toSentenceCase(step?.status?.status_human_description) ||
-                  toSentenceCase(step?.status?.metadata?.reason as string)}
+                : step?.status?.status_human_description ||
+                  (step?.status?.metadata?.reason as string)}
           </Text>
         </div>
       </div>

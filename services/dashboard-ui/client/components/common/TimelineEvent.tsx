@@ -1,6 +1,6 @@
 import React from 'react'
 import { cn } from '@/utils/classnames'
-import { toSentenceCase } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 import { Badge, type IBadge } from './Badge'
 import { Status, type TStatusType } from './Status'
 import { Text } from './Text'
@@ -49,7 +49,7 @@ export const TimelineEvent = ({
         tipContentClassName="flex"
         tipContent={
           <Text variant="subtext" family="mono">
-            {toSentenceCase(status)}
+            {humanize(status)}
           </Text>
         }
         position="right"

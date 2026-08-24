@@ -4,7 +4,7 @@ import { Duration } from '@/components/common/Duration'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { hydrateActionRunSteps, sortByIdx } from '@/utils/action-utils'
-import { toSentenceCase } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 import type { IStandardActionSteps } from './types'
 
 export const StandardActionSteps = ({
@@ -50,7 +50,7 @@ export const StandardActionSteps = ({
         >
           <span className="flex items-center gap-2">
             <Status status={actionStep.status} isWithoutText />
-            <Text>{toSentenceCase(actionStep?.name)}</Text>
+            <Text>{actionStep?.name}</Text>
           </span>
 
           <Text
@@ -58,7 +58,7 @@ export const StandardActionSteps = ({
             variant="subtext"
             theme="neutral"
           >
-            {toSentenceCase(actionStep.status)}{' '}
+            {humanize(actionStep.status)}{' '}
             {actionStep?.execution_duration > 1000000 ? (
               <>
                 in{' '}

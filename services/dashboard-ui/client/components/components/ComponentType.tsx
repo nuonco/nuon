@@ -76,6 +76,9 @@ const COMPONENT_TYPE_CONFIG: Record<
   },
 } as const
 
+export const componentTypeName = (type: TComponentType): string =>
+  (COMPONENT_TYPE_CONFIG[type] || COMPONENT_TYPE_CONFIG.unknown).name
+
 export const ComponentType = ({
   colorVariant = 'mono',
   type: configType,

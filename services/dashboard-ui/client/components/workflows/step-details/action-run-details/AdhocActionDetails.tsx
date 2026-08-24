@@ -7,7 +7,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { InstallActionRunOutputs } from '@/components/actions/InstallActionRunOutputs'
 import { InstallActionRunProvider } from '@/providers/install-action-run-provider'
-import { toSentenceCase } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 import type { IAdhocActionDetails } from './types'
 
 export const AdhocActionDetails = ({ actionRun }: IAdhocActionDetails) => {
@@ -30,7 +30,7 @@ export const AdhocActionDetails = ({ actionRun }: IAdhocActionDetails) => {
               variant="subtext"
               theme="neutral"
             >
-              {toSentenceCase(firstStep?.status)}{' '}
+              {humanize(firstStep?.status)}{' '}
               {(firstStep?.execution_duration ?? 0) > 1000000 ? (
                 <>
                   in{' '}
