@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -13,8 +14,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-// stackConfigResponse matches the older /v1/stack-runs/{phone_home_id}/config
-// response, so the stack SDK can move across without a decoder change.
+// stackConfigResponse keeps the response shape of the removed
+// /v1/stack-runs/{phone_home_id}/config endpoint, which the stack SDK's
+// decoder was built against.
 type stackConfigResponse struct {
 	Config *app.InstallerSDKConfig `json:"config"`
 }
@@ -74,20 +76,11 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Serving the phone-home URL here is what lets the module stop taking
-	// phone_home_id as an input. Latest version, because that is the one being
-	// applied; no version yet is not an error, since the module reads its config
-	// before the version exists on a first apply.
-	var version app.InstallStackVersion
-	if res := s.db.WithContext(ctx).
-		Where(app.InstallStackVersion{InstallID: install.ID}).
-		Order("created_at DESC").
-		First(&version); res.Error == nil {
-		cfg.PhoneHomeURL = version.PhoneHomeURL
-	} else if !errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		ctx.Error(fmt.Errorf("load install stack version: %w", res.Error))
-		return
-	}
+	// The authenticated report route, not the per-stack-version capability URL: the
+	// stack SDK already holds a token, and this URL carries no secret. CloudFormation
+	// and ARM installs keep the legacy phone_home_id URL on the stack version itself.
+	cfg.PhoneHomeURL = fmt.Sprintf("%s/v1/stacks/%s/phone-home",
+		strings.TrimSuffix(cfg.RunnerAPIURL, "/"), install.ID)
 
 	s.installsHelpers.ApplyInstallInputValues(reqCtx, cfg, install.ID)
 

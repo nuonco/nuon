@@ -8,6 +8,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -96,8 +97,43 @@ func (s *EnsureStackInstallRoleTestSuite) TestEnsureIsConvergent() {
 	set := permissions.Set(permissions.NewSet())
 	require.NoError(t, set.Add(roles[0].Policies[0].Permissions))
 	require.NoError(t, set.CanPerform(permissions.StackObject(org.ID, installID), permissions.PermissionRead))
+	require.NoError(t, set.CanPerform(permissions.StackObject(org.ID, installID), permissions.PermissionCreate))
 	require.Error(t, set.CanPerform(org.ID, permissions.PermissionRead), "the grant must not widen to the org")
 
 	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, org.ID, installID, acct.ID))
 	assert.Len(t, s.rolesFor(acct.ID), 1, "a second call must not create a second role")
+}
+
+// Roles created before the phone-home route existed hold `read`, which cannot report.
+// The ensure activity re-runs on every provision, so it is the upgrade path.
+func (s *EnsureStackInstallRoleTestSuite) TestEnsureUpgradesReadToAll() {
+	t := s.T()
+	ctx := context.Background()
+
+	org := s.deps.Seeder.CreateOrg(ctx, t)
+	acct := s.deps.Seeder.CreateServiceAccount(ctx, t, generics.GetFakeObj[string]())
+	installID := generics.GetFakeObj[string]()
+
+	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, org.ID, installID, acct.ID))
+
+	// Rewind to the old grant in place, the way an existing row looks.
+	roles := s.rolesFor(acct.ID)
+	require.Len(t, roles, 1)
+	require.NoError(t, s.deps.DB.
+		Model(&app.Policy{}).
+		Where("id = ?", roles[0].Policies[0].ID).
+		Update("permissions", pgtype.Hstore(map[string]*string{
+			permissions.StackObject(org.ID, installID): permissions.PermissionRead.ToStrPtr(),
+		})).Error)
+
+	require.NoError(t, s.deps.Client.EnsureStackInstallRole(ctx, org.ID, installID, acct.ID))
+
+	roles = s.rolesFor(acct.ID)
+	require.Len(t, roles, 1, "converging must not create a second role")
+	require.Len(t, roles[0].Policies, 1)
+
+	set := permissions.Set(permissions.NewSet())
+	require.NoError(t, set.Add(roles[0].Policies[0].Permissions))
+	require.NoError(t, set.CanPerform(permissions.StackObject(org.ID, installID), permissions.PermissionCreate))
+	require.Error(t, set.CanPerform(org.ID, permissions.PermissionRead), "converging must not widen to the org")
 }

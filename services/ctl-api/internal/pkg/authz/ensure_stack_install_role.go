@@ -15,7 +15,11 @@ import (
 )
 
 // stackInstallRole is the unmanaged, contextless role an install stack's service
-// account holds: read on its own install's stack endpoints and nothing else.
+// account holds: every stack operation on its own install and nothing else.
+//
+// The grant is `all` rather than a verb list because the key is already scoped to a
+// single install's stack namespace — "perform stack operations on that install" —
+// and the stack both reads its config and reports its outputs.
 func stackInstallRole(orgID, installID string) *app.Role {
 	return &app.Role{
 		OrgID:       generics.NewNullString(orgID),
@@ -28,7 +32,7 @@ func stackInstallRole(orgID, installID string) *app.Role {
 				OrgID: generics.NewNullString(orgID),
 				Name:  app.PolicyNameStack,
 				Permissions: pgtype.Hstore(map[string]*string{
-					permissions.StackObject(orgID, installID): permissions.PermissionRead.ToStrPtr(),
+					permissions.StackObject(orgID, installID): permissions.PermissionAll.ToStrPtr(),
 				}),
 			},
 		},
@@ -57,13 +61,29 @@ func (h *Client) EnsureStackInstallRole(ctx context.Context, orgID, installID, a
 	}
 
 	want := permissions.StackObject(orgID, installID)
+	wantVerb := string(permissions.PermissionAll)
 	for _, role := range existing {
 		if len(role.Policies) != 1 {
 			continue
 		}
-		if _, ok := role.Policies[0].Permissions[want]; ok {
-			return nil
+		verb, ok := role.Policies[0].Permissions[want]
+		if !ok {
+			continue
 		}
+		// Roles provisioned before the grant widened still hold the old verb. The
+		// activity re-runs on every provision, so converging here is the upgrade path.
+		if verb == nil || *verb != wantVerb {
+			if res := h.db.WithContext(ctx).
+				Model(&app.Policy{}).
+				Where("id = ?", role.Policies[0].ID).
+				Update("permissions", pgtype.Hstore(map[string]*string{
+					want: permissions.PermissionAll.ToStrPtr(),
+				})); res.Error != nil {
+				return errors.Wrap(res.Error, "unable to converge stack install role policy")
+			}
+		}
+
+		return nil
 	}
 
 	role := stackInstallRole(orgID, installID)

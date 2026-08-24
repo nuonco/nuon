@@ -28,13 +28,17 @@ func TestStackInstallRole(t *testing.T) {
 	require.Len(t, role.Policies, 1, "policies carry a unique index on role_id")
 	require.Len(t, role.Policies[0].Permissions, 1)
 	assert.Equal(t, app.PolicyNameStack, role.Policies[0].Name)
+	assert.Equal(t, permissions.PermissionAll.ToStrPtr(),
+		role.Policies[0].Permissions[permissions.StackObject(orgID, installID)])
 
 	set := permissions.Set(permissions.NewSet())
 	require.NoError(t, set.Add(role.Policies[0].Permissions))
 
-	// Reads its own install and nothing more: not another install, not the org.
+	// Every verb on its own install and nothing more: not another install, not the
+	// org. Create is what the phone-home route declares.
 	require.NoError(t, set.CanPerform(permissions.StackObject(orgID, installID), permissions.PermissionRead))
-	require.Error(t, set.CanPerform(permissions.StackObject(orgID, installID), permissions.PermissionCreate))
+	require.NoError(t, set.CanPerform(permissions.StackObject(orgID, installID), permissions.PermissionCreate))
 	require.Error(t, set.CanPerform(permissions.StackObject(orgID, "install_two"), permissions.PermissionRead))
+	require.Error(t, set.CanPerform(permissions.StackObject(orgID, "install_two"), permissions.PermissionCreate))
 	require.Error(t, set.CanPerform(orgID, permissions.PermissionRead))
 }

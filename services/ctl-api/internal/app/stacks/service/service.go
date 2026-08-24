@@ -1,9 +1,9 @@
 // Package service serves the runner API's `stacks` namespace: the authenticated
 // endpoints an install stack uses to read its own configuration.
 //
-// Separate from the older /v1/stack-runs/{phone_home_id}/config it supersedes,
-// because that route is public — the phone_home_id in the path is the only secret.
-// Everything here authenticates normally and is scoped by the org middleware.
+// Replaces the removed public /v1/stack-runs/{phone_home_id}/config route,
+// where the phone_home_id in the path was the only secret. Everything here
+// authenticates normally and is scoped to the install by require.Route.
 package service
 
 import (
@@ -49,10 +49,17 @@ type service struct {
 var _ api.Service = (*service)(nil)
 
 func (s *service) RegisterRunnerRoutes(ge *gin.Engine) error {
-	stacks := ge.Group("/v1/stacks/:install_id",
-		require.Route(permissions.KindStack, permissions.PermissionRead, "install_id"))
+	// Per-route rather than per-group: reporting is a write, and require.Route's
+	// declared verb is authoritative. A `permissions.PermissionAll` grant — what a
+	// stack service account holds — satisfies both.
+	stacks := ge.Group("/v1/stacks/:install_id")
 	{
-		stacks.GET("/config", s.GetStackConfig)
+		stacks.GET("/config",
+			require.Route(permissions.KindStack, permissions.PermissionRead, "install_id"),
+			s.GetStackConfig)
+		stacks.POST("/phone-home",
+			require.Route(permissions.KindStack, permissions.PermissionCreate, "install_id"),
+			s.PostStackPhoneHome)
 	}
 
 	return nil
