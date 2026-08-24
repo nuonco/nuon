@@ -11,7 +11,6 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig'
 import type { TActionConfigTriggerType, TInstallAction } from '@/types'
-import { toSentenceCase } from '@/utils/string-utils'
 import { ActionTriggerType } from '../ActionTriggerType'
 
 export type InstallActionRow = {
@@ -65,9 +64,7 @@ export function parseInstallActionsLatestRunsToTableData(
           statusProps={{ status: recentRun?.status_v2?.status }}
           tooltipProps={{
             position: 'top',
-            tipContent: toSentenceCase(
-              recentRun?.status_v2?.status_human_description
-            ),
+            tipContent: recentRun?.status_v2?.status_human_description,
           }}
         />
       ) : (

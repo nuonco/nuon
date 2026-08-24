@@ -9,7 +9,7 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { retryWorkflowStep } from '@/lib'
 import type { TAPIError, TWorkflowStep } from '@/types'
-import { toSentenceCase } from '@/utils/string-utils'
+import { getWorkflowStepTitle } from '@/utils/workflow-utils'
 import { RetryStepModal } from './RetryStep'
 
 interface IRetryStep {
@@ -40,7 +40,7 @@ export const RetryStepModalContainer = ({
     onSuccess: () => {
       addToast(
         <Toast heading="Step retry initiated" theme="success">
-          <Text>{toSentenceCase(step.name)} is being retried.</Text>
+          <Text>{getWorkflowStepTitle(step)} is being retried.</Text>
         </Toast>
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })

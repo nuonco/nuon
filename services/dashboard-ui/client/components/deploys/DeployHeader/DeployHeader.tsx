@@ -13,7 +13,6 @@ import { Time } from '@/components/common/Time'
 import { ComponentType } from '@/components/components/ComponentType'
 import { ComponentConfigContextTooltip } from '@/components/components/ComponentConfigContextTooltip'
 import type { TComponent, TDeploy, TInstall, TWorkflow } from '@/types'
-import { toSentenceCase } from '@/utils/string-utils'
 import { DeploySwitcher } from '@/components/deploys/DeploySwitcher'
 import { OCIArtifactCard } from '@/components/deploys/OCIArtifactCard'
 import { ManagementDropdown } from '@/components/deploys/management/ManagementDropdown'
@@ -99,7 +98,7 @@ export const DeployHeader = ({
               tipContentClassName: 'w-fit',
               tipContent: (
                 <Text nowrap variant="subtext">
-                  {toSentenceCase(deploy?.status_v2?.status_human_description)}
+                  {deploy?.status_v2?.status_human_description}
                 </Text>
               ),
               position: 'bottom',

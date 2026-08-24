@@ -4,7 +4,7 @@ import { Link } from '@/components/common/Link'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import type { TSandboxRun } from '@/types'
-import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 
 interface ISandboxRunsTimeline {
   runs: TSandboxRun[]
@@ -35,7 +35,7 @@ export const SandboxRunsTimeline = ({
                 <Link
                   href={`/${orgId}/installs/${installId}/sandbox/runs/${run?.id}`}
                 >
-                  {toSentenceCase(snakeToWords(run?.run_type))}
+                  {humanize(run?.run_type)}
                 </Link>
                 {run?.status_v2?.status === 'drifted' ? (
                   <Badge variant="code" size="sm">
