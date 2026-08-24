@@ -1,0 +1,56 @@
+---
+title: 041 - Token-authenticated Terraform stack module
+description: Provision AWS install stacks from the public nuonco/stack/aws Terraform module with an API token or OIDC — no tfvars files to hand off.
+boost: 0.3
+---
+
+_August 24, 2026_
+
+## Token-authenticated Terraform stack module
+
+Provisioning an AWS install stack with Terraform no longer involves downloading `inputs.auto.tfvars` and
+`secrets.auto.tfvars` from the dashboard and sending them to your customer. Instead, your customer writes a small
+`main.tf` using the published [`nuonco/stack/aws`](https://registry.terraform.io/modules/nuonco/stack/aws/latest)
+module and applies it with three things: the install ID, credentials for the Nuon API, and values for the app's
+customer-facing inputs and secrets.
+
+```hcl
+provider "stack" {}
+
+module "aws_stack" {
+  source  = "nuonco/stack/aws"
+  version = "~> 0.2"
+
+  install_id = "<install-id>"
+
+  inputs = {
+    instance_type = "t3a.medium"
+  }
+
+  secrets = {
+    api_key = { value = var.api_key }
+  }
+}
+```
+
+Everything else — runner configuration, IAM permissions and roles, current input values, secret metadata, and the
+phone-home URL — is read from the control plane at plan time by the `nuonco/stack` provider's `stack_config` data
+source. The config endpoint is authenticated and serves only customer-facing inputs and secrets; vendor-facing
+values never reach your customer's Terraform.
+
+- **Authentication.** Create an install-scoped API token from the **await install stack** step's TF Module tab
+  (set it as `NUON_API_TOKEN`), or skip stored tokens entirely in CI: set `org_id` on the provider and it exchanges
+  the workflow's ambient OIDC token for a short-lived one.
+- **Input values via `inputs`.** The module's `inputs` map layers over the control plane's current values, and the
+  effective merged values phone home to become the install's current inputs — editing the map and re-applying is
+  how a customer changes an input.
+- **Secrets via `TF_VAR_*`.** Customer secrets are declared as sensitive root-level variables and supplied as
+  environment variables — never written to `.tf` files — so CI systems can inject them as masked secrets.
+  Auto-generated secrets are minted by the stack itself.
+- **Plan-time validation.** An `inputs` key the app does not declare as a customer-facing input — a typo or a
+  removed input — fails the plan with an error listing the declared inputs, instead of being silently dropped.
+
+The dashboard's **TF Module** tab on the await install stack step generates the full `main.tf` for each install,
+with the app's customer-facing inputs and secrets prefilled. See the new
+[Provision Stacks with the Terraform Module](/guides/provision-stacks-with-terraform-module) guide for the
+end-to-end flow, day-2 update recipes, and troubleshooting.

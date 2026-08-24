@@ -1,0 +1,329 @@
+---
+title: 'Provision Stacks with the Terraform Module'
+description: 'Provision AWS install stacks with the nuonco/stack Terraform module and a token-authenticated provider.'
+icon: 'terminal'
+boost: 10
+keywords: ['terraform', 'terraform module', 'install-stacks', 'install stack', 'stack', 'terraform apply', 'nuonco/stack', 'stack provider', 'api token', 'oidc', 'aws', 'backend', 'remote state', 'inputs', 'secrets']
+---
+
+{/* TODO: confirm module version pin before release */}
+
+Nuon publishes the [`nuonco/stack/aws`](https://registry.terraform.io/modules/nuonco/stack/aws/latest) module to the
+public Terraform Registry. Your customer writes a small `main.tf`, authenticates the
+[`nuonco/stack`](https://registry.terraform.io/providers/nuonco/stack/latest) provider, and applies — no files to
+download from the dashboard, no tfvars to hand off.
+
+<Note>
+  This is the recommended way to provision install stacks with Terraform on AWS. The legacy flow, based on generated
+  `inputs.auto.tfvars` and `secrets.auto.tfvars` files, is described in
+  [Provision Stacks with Terraform](/guides/provision-stacks-with-terraform).
+</Note>
+
+## How it works
+
+Your customer needs exactly three things:
+
+1. **The install ID.** It identifies which install's configuration to fetch — it is not a credential.
+2. **Credentials for the Nuon API.** Either an install-scoped API token (set `api_token` on the `stack` provider, or
+   export `NUON_API_TOKEN`), or, in CI, an ambient OIDC token the provider exchanges for a short-lived one (set
+   `org_id` on the provider).
+3. **Values for the app's customer-facing inputs and secrets.**
+
+Everything else — runner configuration, IAM permissions and operation roles, the phone-home URL, current input
+values, and secret metadata — is read from the Nuon control plane at plan time by the provider's `stack_config` data
+source, keyed by the install ID. The control plane is the single source of truth, and the config endpoint only serves
+**customer-facing** inputs and secrets: vendor-facing values never reach your customer's Terraform.
+
+Two mechanics are worth understanding up front:
+
+- **Inputs merge, the caller wins.** The module's `inputs` map is layered over the control plane's current values.
+  After a successful apply, the stack phones home the effective merged values, and Nuon persists them as the
+  install's current inputs. Removing a key from `inputs` does not unset the value — the next apply falls back to
+  whatever the control plane holds.
+- **Unknown input names fail the plan.** A key in `inputs` that the app does not declare as a customer-facing input —
+  a typo, a vendor-facing name, or an input you have since removed — fails at plan time with a precondition error,
+  rather than being silently dropped.
+
+## Prerequisites
+
+Your customer will need:
+
+- The [Terraform](https://developer.hashicorp.com/terraform/install) CLI (>= 1.5), locally or in their automation
+  platform.
+- AWS credentials for the target account, so Terraform can provision resources.
+- Outbound network access to the Terraform Registry (to install the module and the `nuonco/stack` provider) and to
+  the Nuon API (so the provider can fetch the stack configuration at plan time).
+
+## Provision an install
+
+The first three steps are yours; the rest are your customer's.
+
+<Steps>
+  <Step title="Vendor: define customer-facing inputs and secrets">
+    In your app config, mark the inputs your customer should set with `user_configurable = true`, and declare the
+    secrets they should provide. Secrets with `auto_generate = true` are minted by the stack itself and need nothing
+    from the customer.
+
+    <CodeGroup>
+    ```toml inputs/compute/instance_type.toml
+    name              = "instance_type"
+    display_name      = "Node Instance Size"
+    description       = "EC2 instance type for EKS worker nodes"
+    group             = "compute"
+    default           = "t3a.medium"
+    type              = "string"
+    required          = false
+    user_configurable = true
+    ```
+
+    ```toml secrets.toml
+    [[secret]]
+    name          = "api_key"
+    display_name  = "API Key"
+    description   = "Key for external API access"
+    auto_generate = false
+
+    [[secret]]
+    name          = "db_password"
+    display_name  = "Database Password"
+    description   = "Password for the app database"
+    auto_generate = true
+    ```
+    </CodeGroup>
+
+    See [Configuring Inputs & Secrets](/guides/configuring-inputs-and-secrets) for the full reference.
+  </Step>
+  <Step title="Vendor: create the install">
+    Create an install as you usually would. The provision workflow pauses at the **await install stack** step, and
+    the step's **TF Module** tab shows a ready-to-copy `main.tf` tailored to this install — install ID, AWS region,
+    and the app's customer-facing inputs and secrets already filled in.
+  </Step>
+  <Step title="Vendor: set up authentication">
+    The `stack` provider needs credentials to read the install's configuration. There are two options, matching the
+    toggle on the TF Module tab:
+
+    **Install-scoped API token.** On the TF Module tab, create a token for the install's stack service account. The
+    value is shown once — send it to your customer alongside the `main.tf` snippet, through a secure channel. The
+    token is scoped to this install; the default duration is 24 hours (other durations are selectable), and it can
+    be recreated at any time.
+
+    **OIDC (recommended for CI).** If your customer applies the stack from CI, no long-lived token needs to exist at
+    all. Create an OIDC trust policy from the TF Module tab naming the repository and branch that may exchange an
+    OIDC token, and have the workflow set `org_id` on the provider (or `NUON_ORG_ID`). See
+    [Running in CI](#running-in-ci) below.
+  </Step>
+  <Step title="Customer: write main.tf and apply">
+    Save the configuration from the TF Module tab as `main.tf`. It looks like this:
+
+    ```hcl main.tf
+    terraform {
+      required_providers {
+        aws   = { source = "hashicorp/aws" }
+        stack = { source = "nuonco/stack" }
+      }
+    }
+
+    provider "aws" {
+      region = "us-west-2"
+    }
+
+    provider "stack" {}
+
+    module "aws_stack" {
+      source  = "nuonco/stack/aws"
+      version = "~> 0.2"
+
+      install_id = "<install-id>"
+
+      inputs = {
+        instance_type = "t3a.medium"
+      }
+
+      secrets = {
+        api_key = { value = var.api_key }
+      }
+    }
+
+    variable "api_key" {
+      type        = string
+      sensitive   = true
+      description = "Key for external API access"
+    }
+    ```
+
+    Secret values are supplied through `TF_VAR_*` environment variables — never written to `.tf` files or disk:
+
+    ```bash
+    export NUON_API_TOKEN='<api-token>'
+    export TF_VAR_api_key='<api-key-value>'
+    terraform init && terraform apply
+    ```
+
+    We recommend configuring a [remote backend](https://developer.hashicorp.com/terraform/language/settings/backends/configuration)
+    (for example S3) so the stack's state survives the machine it was applied from, but it is not required to get
+    started.
+  </Step>
+  <Step title="Runner connects">
+    The apply provisions the VPC, IAM roles, secrets, and the runner, and the stack phones its outputs home. Once
+    the runner connects, the **await install stack** step completes and the provision workflow continues.
+  </Step>
+</Steps>
+
+## Updating the stack
+
+Day-2 changes are ordinary Terraform edits followed by `terraform apply`. Because the control plane is the source of
+truth for everything but the three things the customer supplies, most vendor-side changes require no Terraform edits
+at all.
+
+### Change an input value
+
+Your customer edits the `inputs` map and re-applies. The merged values phone home and become the install's current
+inputs, triggering redeployment of dependent components.
+
+```hcl
+  # before
+  inputs = {
+    instance_type = "t3a.medium"
+  }
+
+  # after
+  inputs = {
+    instance_type = "t3a.large"
+  }
+```
+
+Removing a key from `inputs` falls back to the control plane's current value on the next apply — it does not unset
+the input.
+
+### Vendor adds a new input
+
+When you add a customer-facing input to the app config — or make an existing vendor-side input customer-facing, say
+letting customers pick the `domain` DNS records are created under — your customer just re-applies: the `stack_config`
+data source picks up the new input and its current value automatically. They only edit `main.tf` if they want to
+override it:
+
+```hcl
+  # before
+  inputs = {
+    instance_type = "t3a.large"
+  }
+
+  # after — override the new input's value
+  inputs = {
+    instance_type = "t3a.large"
+    domain        = "acme-corp.example.com"
+  }
+```
+
+If the new input is `required` and has no default, make sure your customer sets it before their next apply.
+
+### Vendor adds or removes a customer secret
+
+**Adding a secret** means three edits on the customer side — a `variable` block, a `secrets` entry, and a `TF_VAR`
+export:
+
+```hcl
+  # add a root-level variable block
+  variable "smtp_password" {
+    type      = string
+    sensitive = true
+  }
+
+  # and an entry in the module's secrets map
+  secrets = {
+    api_key       = { value = var.api_key }
+    smtp_password = { value = var.smtp_password }
+  }
+```
+
+```bash
+export TF_VAR_smtp_password='<smtp-password-value>'
+terraform apply
+```
+
+**Removing a secret** is the reverse: delete the `variable` block, the `secrets` entry, and the export. The next
+apply removes the corresponding AWS Secrets Manager secret from the customer's account.
+
+Auto-generated secrets like `db_password` never appear in the customer's Terraform at all — adding or removing one
+in the app config takes effect on the customer's next apply with no edits on their side.
+
+### Vendor removes an input
+
+If you remove an input (or make it vendor-facing again) while your customer's `inputs` map still names it, their
+next plan fails with:
+
+```
+Error: Resource precondition failed
+
+var.inputs contains keys the app does not declare as customer-facing inputs:
+domain. Declared inputs: instance_type.
+```
+
+The fix is to delete the stale key from `inputs` and re-plan. This is deliberate: a silently-dropped key would look
+like a successful apply while the value never lands.
+
+### Upgrade the module version
+
+Pin the module with a pessimistic constraint, and bump it deliberately:
+
+```hcl
+  # before
+  version = "~> 0.2"
+
+  # after
+  version = "~> 0.3"
+```
+
+```bash
+terraform init -upgrade && terraform plan
+```
+
+Review the plan, then apply. Module releases are tagged on every merge to `main`, with the semver bump derived from
+conventional commit messages (`feat:` → minor, `fix:` → patch, breaking changes → major), so new versions appear on
+the registry frequently.
+
+## Running in CI
+
+The module is a good fit for pipelines — GitHub Actions, Atlantis, or any runner with Terraform:
+
+- **Authenticate with OIDC instead of a stored token.** Set `org_id` on the `stack` provider (or `NUON_ORG_ID` in
+  the environment) and grant the workflow an ID token; the provider exchanges the ambient OIDC token for a
+  short-lived Nuon token. In GitHub Actions:
+
+  ```yaml
+  permissions:
+    id-token: write
+    contents: read
+
+  env:
+    NUON_ORG_ID: ${{ vars.NUON_ORG_ID }}
+  ```
+
+  A trust policy (created from the TF Module tab or the org settings page) names the repository and branch allowed
+  to perform the exchange. Without `id-token: write`, the provider falls back to looking for a static token.
+
+- **Inject secret values as masked `TF_VAR_*` environment variables** from the CI system's secret store. They never
+  touch the repository, and CI masking keeps them out of logs. Note that Terraform still records secret values in
+  its state file, which is one more reason to use an access-controlled remote backend.
+
+- **Use a remote backend** so state is shared across runs and access to it (including the secret values it contains)
+  is controlled. See the
+  [Terraform backend docs](https://developer.hashicorp.com/terraform/language/settings/backends/configuration).
+
+## Troubleshooting
+
+**"install not found" (404) at plan time.** The API conceals resources the caller cannot access, so a missing,
+expired, or wrong-scope token produces the same 404 as a genuinely wrong install ID. Check, in order: the install ID
+is correct; `NUON_API_TOKEN` (or the provider's `api_token`) is set and unexpired; the token was created for *this*
+install. For OIDC, check the trust policy covers the repository and branch running the workflow and that its
+audience matches the API URL the provider talks to.
+
+**Plan fails with "var.inputs contains keys the app does not declare as customer-facing inputs".** A key in the
+`inputs` map is not a customer-facing input of the app — a typo, a vendor-facing input name, or an input the vendor
+has removed. The error lists the declared inputs; remove or rename the offending key.
+
+**Warning: AWS provider region does not match the install's region.** The module compares the AWS provider's region
+against the region Nuon has recorded for the install and warns at plan time if they differ. This is a `check` block —
+it warns without blocking the apply — because an operator may override the region on purpose. If the mismatch is not
+intentional, point the `aws` provider at the region named in the warning: resources would otherwise be created in one
+region while the stack's outputs reference another.

@@ -178,6 +178,7 @@
               "guides/runner-kill-switch",
               "guides/custom-domains",
               "guides/provision-stacks-with-cloudformation",
+              "guides/provision-stacks-with-terraform-module",
               "guides/provision-stacks-with-terraform",
               "guides/provision-stacks-with-spacelift"
             ]
@@ -308,6 +309,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/041-terraform-stack-module",
           "updates/040-app-branches",
           "updates/039-oidc-federation",
           "updates/038-spacelift-and-cli-automation",
