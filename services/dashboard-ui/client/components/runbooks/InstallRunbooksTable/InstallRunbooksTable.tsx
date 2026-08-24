@@ -24,6 +24,7 @@ export type TInstallRunbookRow = {
   href: string
   latestRunHref: string | null
   installRunbook: TInstallRunbook
+  runAction?: ReactNode
   removed?: boolean
 }
 
@@ -177,6 +178,8 @@ const columns: ColumnDef<TInstallRunbookRow>[] = [
               Run runbook
               <Icon variant="PlayIcon" />
             </Button>
+          ) : info.row.original.runAction ? (
+            info.row.original.runAction
           ) : (
             <RunRunbookButton
               installRunbook={info.row.original.installRunbook}
