@@ -1,4 +1,5 @@
 import { useMemo, memo } from 'react'
+import { useSearchParams } from 'react-router'
 import { type Node, type NodeProps } from '@xyflow/react'
 
 import { EmptyState } from '@/components/common/EmptyState'
@@ -13,22 +14,46 @@ import { groupAccent, type GraphAccent } from '../graph/accents'
 import { GraphCanvas } from '../graph/GraphCanvas'
 import { GroupNodeCard, NODE_WIDTH, NODE_WIDTH_COMPACT } from '../graph/GroupNodeCard'
 import { layoutSequential, sequentialEdges } from '../graph/layout'
+import { DeploymentPlanGroupPanel } from './DeploymentPlanGroupPanel'
+
+const MAX_VISIBLE_INSTALLS = 3
+
+export interface PlanGroupInstall {
+  id: string
+  name: string
+  labels?: Record<string, string>
+}
 
 interface GroupNodeData {
   groupName: string
   accent: GraphAccent
-  installs: { id: string; name: string }[]
+  installs: PlanGroupInstall[]
   labelEntries: [string, string][]
   maxParallel: number
   useForPreviews: boolean
   compact: boolean
   orgId: string
+  panelKey: string
   [key: string]: unknown
 }
 
 const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
-  const { accent, installs, compact, orgId } = data
-  const visible = compact ? installs.slice(0, 3) : installs
+  const { accent, installs, compact, orgId, panelKey } = data
+  const [, setSearchParams] = useSearchParams()
+  const maxVisible = compact ? 3 : MAX_VISIBLE_INSTALLS
+  const visible = installs.slice(0, maxVisible)
+  const hidden = installs.length - visible.length
+
+  const openDetails = () => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('panel', panelKey)
+        return next
+      },
+      { replace: false }
+    )
+  }
 
   return (
     <GroupNodeCard
@@ -71,28 +96,51 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
           No matching installs
         </span>
       ) : (
-        visible.map((inst) => (
-          <div key={inst.id} className="flex items-center gap-1.5 min-w-0">
-            <Icon
-              variant="CubeIcon"
-              size={compact ? 10 : 12}
-              className="shrink-0 text-cool-grey-400 dark:text-cool-grey-500"
-            />
-            <Link
-              href={`/${orgId}/installs/${inst.id}`}
-              className={cn(
-                'nodrag w-auto min-w-0 flex-1 truncate',
-                compact ? 'text-[9px]' : 'text-xs'
-              )}
-              title={inst.name}
-            >
-              {inst.name}
-            </Link>
-          </div>
-        ))
+        <>
+          {visible.map((inst) => (
+            <div key={inst.id} className="flex items-center gap-1.5 min-w-0">
+              <Icon
+                variant="CubeIcon"
+                size={compact ? 10 : 12}
+                className="shrink-0 text-cool-grey-400 dark:text-cool-grey-500"
+              />
+              <Link
+                href={`/${orgId}/installs/${inst.id}`}
+                className={cn(
+                  'nodrag w-auto min-w-0 flex-1 truncate',
+                  compact ? 'text-[9px]' : 'text-xs'
+                )}
+                title={inst.name}
+              >
+                {inst.name}
+              </Link>
+            </div>
+          ))}
+          {hidden > 0 &&
+            (compact ? (
+              <span className="text-[9px] text-cool-grey-500">+{hidden} more</span>
+            ) : (
+              <button
+                type="button"
+                onClick={openDetails}
+                className="nodrag self-start text-[11px] text-cool-grey-500 hover:text-cool-grey-700 dark:hover:text-cool-grey-300"
+              >
+                +{hidden} installs
+              </button>
+            ))}
+        </>
       )}
-      {compact && installs.length > 3 && (
-        <span className="text-[9px] text-cool-grey-500">+{installs.length - 3} more</span>
+
+      {!compact && installs.length > 0 && (
+        <DeploymentPlanGroupPanel
+          panelKey={panelKey}
+          groupName={data.groupName}
+          installs={installs}
+          orgId={orgId}
+          maxParallel={data.maxParallel}
+          useForPreviews={data.useForPreviews}
+          labelEntries={data.labelEntries}
+        />
       )}
     </GroupNodeCard>
   )
@@ -117,18 +165,21 @@ export const DeploymentPlanGraph = ({ config, installsById, orgId, compact = fal
 
     const built: Node<GroupNodeData>[] = groups.map((group, idx) => {
       const labelEntries = Object.entries(group.label_selector?.match_labels ?? {})
-      const installs =
+      const installs: PlanGroupInstall[] =
         labelEntries.length > 0
           ? Object.values(installsById)
               .filter((i) => matchesSelector(i.labels, group.label_selector))
-              .map((i) => ({ id: i.id, name: i.name ?? i.id }))
+              .map((i) => ({ id: i.id, name: i.name ?? i.id, labels: i.labels }))
           : (group.install_ids ?? []).map((id) => ({
               id,
               name: installsById[id]?.name ?? id,
+              labels: installsById[id]?.labels,
             }))
 
+      const groupId = group.id || `group-${idx}`
+
       return {
-        id: group.id || `group-${idx}`,
+        id: groupId,
         type: 'groupNode' as const,
         position: { x: 0, y: 0 },
         data: {
@@ -140,19 +191,27 @@ export const DeploymentPlanGraph = ({ config, installsById, orgId, compact = fal
           useForPreviews: group.use_for_previews ?? false,
           compact,
           orgId,
+          panelKey: `install-group-plan:${groupId}`,
         },
       }
     })
 
     return layoutSequential(built, sequentialEdges(built.map((n) => n.id)), {
       nodeWidth: compact ? NODE_WIDTH_COMPACT : NODE_WIDTH,
-      minHeight: compact ? 50 : 100,
-      baseHeight: compact ? 36 : 60,
+      minHeight: compact ? 50 : 110,
+      baseHeight: compact ? 36 : 64,
       rowHeight: compact ? 14 : 24,
       rowCount: (n) => {
         const d = n.data as GroupNodeData
-        const rows = compact ? Math.min(d.installs.length, 4) : d.installs.length
-        return rows + (d.labelEntries.length > 0 ? 1 : 0)
+        const labelRow = d.labelEntries.length > 0 ? 1 : 0
+        if (compact) {
+          return Math.min(d.installs.length, 4) + labelRow
+        }
+        const installRows =
+          Math.min(d.installs.length, MAX_VISIBLE_INSTALLS) +
+          (d.installs.length > MAX_VISIBLE_INSTALLS ? 1 : 0)
+        const viewDetailsRow = d.installs.length > 0 ? 1 : 0
+        return installRows + viewDetailsRow + labelRow
       },
       ranksep: compact ? 40 : 80,
       nodesep: compact ? 20 : 40,
@@ -172,5 +231,17 @@ export const DeploymentPlanGraph = ({ config, installsById, orgId, compact = fal
     )
   }
 
-  return <GraphCanvas nodes={nodes} edges={edges} nodeTypes={nodeTypes} height={height} compact={compact} />
+  const canvasHeight = compact ? height : Math.max(height, 280)
+
+  return (
+    <GraphCanvas
+      nodes={nodes}
+      edges={edges}
+      nodeTypes={nodeTypes}
+      height={canvasHeight}
+      compact={compact}
+      maxZoom={compact ? undefined : 1}
+      fitPadding={compact ? undefined : 0.12}
+    />
+  )
 }
