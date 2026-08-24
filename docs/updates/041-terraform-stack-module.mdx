@@ -1,6 +1,6 @@
 ---
 title: 041 - Token-authenticated Terraform stack module
-description: Provision AWS install stacks from the public nuonco/stack/aws Terraform module with an API token or OIDC — no tfvars files to hand off.
+description: Provision AWS install stacks from the public nuonco/stack/aws Terraform module with an API token — no tfvars files to hand off.
 boost: 0.3
 ---
 
@@ -28,7 +28,7 @@ module "aws_stack" {
   }
 
   secrets = {
-    api_key = { value = var.api_key }
+    license_key = { value = var.license_key }
   }
 }
 ```
@@ -38,9 +38,8 @@ phone-home URL — is read from the control plane at plan time by the `nuonco/st
 source. The config endpoint is authenticated and serves only customer-facing inputs and secrets; vendor-facing
 values never reach your customer's Terraform.
 
-- **Authentication.** Create an install-scoped API token from the **await install stack** step's TF Module tab
-  (set it as `NUON_API_TOKEN`), or skip stored tokens entirely in CI: set `org_id` on the provider and it exchanges
-  the workflow's ambient OIDC token for a short-lived one.
+- **Authentication.** Create an install-scoped API token from the **Await install stack** step's TF Module tab
+  and set it as `NUON_API_TOKEN`. The token only grants access to this install's stack configuration.
 - **Input values via `inputs`.** The module's `inputs` map layers over the control plane's current values, and the
   effective merged values phone home to become the install's current inputs — editing the map and re-applying is
   how a customer changes an input.
@@ -50,7 +49,7 @@ values never reach your customer's Terraform.
 - **Plan-time validation.** An `inputs` key the app does not declare as a customer-facing input — a typo or a
   removed input — fails the plan with an error listing the declared inputs, instead of being silently dropped.
 
-The dashboard's **TF Module** tab on the await install stack step generates the full `main.tf` for each install,
+The dashboard's **TF Module** tab on the **Await install stack** step generates the full `main.tf` for each install,
 with the app's customer-facing inputs and secrets prefilled. See the new
-[Provision Stacks with the Terraform Module](/guides/provision-stacks-with-terraform-module) guide for the
+[Provision Stacks with a Terraform Module](/guides/provision-stacks-with-terraform-module) guide for the
 end-to-end flow, day-2 update recipes, and troubleshooting.
