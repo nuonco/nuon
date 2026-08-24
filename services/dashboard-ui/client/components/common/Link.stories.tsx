@@ -6,290 +6,120 @@ import { Link } from './Link'
 import { Icon } from './Icon'
 import { Text } from './Text'
 
-export const Variants = () => (
-  <div className="space-y-6">
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold">Link Variants</h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        The{' '}
-        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
-          variant
-        </code>{' '}
-        prop controls the visual styling and behavior of links. Each variant is
-        optimized for specific use cases and contexts within the application.
-      </p>
-    </div>
-
-    <div className="space-y-4">
-      <h4 className="text-sm font-medium">All Link Variants</h4>
-      <div className="space-y-3 p-4 border rounded-lg">
-        <Link href="#" variant="default">
-          Default link variant
-        </Link>
-        <Link href="#" variant="ghost">
-          Ghost link variant
-        </Link>
-        <Link href="#" variant="nav">
-          Nav link variant
-        </Link>
-        <Link href="#" variant="breadcrumb">
-          Breadcrumb link variant
-        </Link>
-      </div>
-    </div>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mt-6">
-      <div>
-        <strong>default:</strong> Standard link styling with primary colors and
-        hover effects
-      </div>
-      <div>
-        <strong>ghost:</strong> Subtle button-like styling with background hover
-        effects
-      </div>
-      <div>
-        <strong>nav:</strong> Navigation link styling optimized for sidebars and
-        menus
-      </div>
-      <div>
-        <strong>breadcrumb:</strong> Minimal styling for breadcrumb navigation
-        chains
-      </div>
+export const EntityLink = () => (
+  <div className="flex flex-col gap-4">
+    <Text variant="subtext">
+      Entity link: the resource's own name is the link text. No verb, no icon —
+      the name navigates.
+    </Text>
+    <div className="flex flex-col gap-3 p-4 border rounded-lg">
+      <Link href="#">acme-payments</Link>
+      <Link href="#" className="font-mono">
+        <Icon variant="GitBranchIcon" size="1em" />
+        main
+      </Link>
     </div>
   </div>
 )
 
-export const States = () => (
-  <div className="space-y-6">
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold">Link States</h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Links support active states using the{' '}
-        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
-          isActive
-        </code>{' '}
-        prop. Active states are particularly important for navigation links to
-        show the current page or section.
-      </p>
-    </div>
-
-    <div className="space-y-4">
-      <h4 className="text-sm font-medium">Navigation Links</h4>
-      <div className="space-y-2 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-        <Link href="#" variant="nav">
-          Dashboard
-        </Link>
-        <Link href="#" variant="nav" isActive>
-          Applications (Active)
-        </Link>
-        <Link href="#" variant="nav">
-          Settings
-        </Link>
-      </div>
-    </div>
-
-    <div className="space-y-4">
-      <h4 className="text-sm font-medium">Breadcrumb Links</h4>
-      <div className="flex items-center gap-2 p-4 border rounded-lg">
-        <Link href="#" variant="breadcrumb">
-          Home
-        </Link>
-        <span className="text-gray-400">/</span>
-        <Link href="#" variant="breadcrumb">
-          Projects
-        </Link>
-        <span className="text-gray-400">/</span>
-        <Link href="#" variant="breadcrumb" isActive>
-          My App
-        </Link>
-      </div>
+export const ViewLink = () => (
+  <div className="flex flex-col gap-4">
+    <Text variant="subtext">
+      View link: a standalone "go see more" link. Sentence case, no icon. Wrap in
+      a subtext Text so it inherits a small size.
+    </Text>
+    <div className="flex flex-col gap-3 p-4 border rounded-lg">
+      <Text variant="subtext">
+        <Link href="#">View plan</Link>
+      </Text>
+      <Text variant="subtext">
+        <Link href="#">View all runs</Link>
+      </Text>
+      <Text variant="subtext">
+        <Link href="#">View details</Link>
+      </Text>
     </div>
   </div>
 )
 
-export const ExternalLinks = () => (
-  <div className="space-y-6">
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold">External Links</h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Use the{' '}
-        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
-          isExternal
-        </code>{' '}
-        prop for links that navigate to external websites. External links
-        automatically include proper security attributes and open in a new tab.
-      </p>
-    </div>
-
-    <div className="space-y-4">
-      <h4 className="text-sm font-medium">External Link Examples</h4>
-      <div className="space-y-3 p-4 border rounded-lg">
+export const ExternalLink = () => (
+  <div className="flex flex-col gap-4">
+    <Text variant="subtext">
+      External link: anything leaving the app. Set <code>isExternal</code> — the
+      new-tab icon renders automatically, sized to the surrounding text. Never
+      hand-place the icon.
+    </Text>
+    <div className="flex flex-col gap-3 p-4 border rounded-lg">
+      <Link href="https://docs.nuon.co" isExternal>
+        View documentation
+      </Link>
+      <Link href="https://github.com/acme/payments" isExternal className="font-mono">
+        <Icon variant="GitHub" size="1em" />
+        acme/payments
+      </Link>
+      <Text>
+        Read more in the{' '}
         <Link href="https://docs.nuon.co" isExternal>
-          <Icon variant="ArrowSquareOutIcon" size="16" />
-          Documentation
+          docs
         </Link>
-        <Link href="https://github.com/nuonplatform" isExternal variant="ghost">
-          <Icon variant="GithubLogoIcon" size="16" />
-          GitHub Repository
-        </Link>
+        .
+      </Text>
+    </div>
+  </div>
+)
+
+export const InlineLink = () => (
+  <div className="flex flex-col gap-4">
+    <Text variant="subtext">
+      Inline links inherit the surrounding text size and color — never set their
+      own size.
+    </Text>
+    <div className="p-4 border rounded-lg">
+      <Text>
+        Welcome to the platform. Check out the{' '}
+        <Link href="/docs">documentation</Link> to get started, or browse the{' '}
+        <Link href="/examples">examples</Link>. For help, see the{' '}
         <Link href="https://nuon.co/support" isExternal>
-          Support Center
-          <Icon variant="ArrowSquareOutIcon" size="16" />
+          support center
         </Link>
-      </div>
-    </div>
-
-    <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
-      <strong>External Link Features:</strong>
-      <ul className="mt-2 space-y-1 list-disc list-inside">
-        <li>Automatically adds target="_blank" for new tab opening</li>
-        <li>Includes rel="noopener noreferrer" for security</li>
-        <li>Works with all link variants and styling options</li>
-        <li>Consider adding visual indicators (icons) for clarity</li>
-      </ul>
+        .
+      </Text>
     </div>
   </div>
 )
 
-export const WithIcons = () => (
-  <div className="space-y-6">
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold">Links with Icons</h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Links automatically detect and properly space icon components. Icons can
-        be placed before or after the link text to enhance meaning and visual
-        appeal.
-      </p>
+export const NavAndBreadcrumb = () => (
+  <div className="flex flex-col gap-6">
+    <Text variant="subtext">
+      Nav-chrome variants (out of scope for the content-link taxonomy) — sidebar
+      nav links and breadcrumbs.
+    </Text>
+    <div className="flex flex-col gap-2 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+      <Link href="#" variant="nav">
+        <Icon variant="SquaresFourIcon" size="18" />
+        Dashboard
+      </Link>
+      <Link href="#" variant="nav" isActive>
+        <Icon variant="StackIcon" size="18" />
+        Applications
+      </Link>
+      <Link href="#" variant="nav">
+        <Icon variant="GearIcon" size="18" />
+        Settings
+      </Link>
     </div>
-
-    <div className="space-y-4">
-      <h4 className="text-sm font-medium">Icon Positioning</h4>
-      <div className="space-y-3 p-4 border rounded-lg">
-        <Link href="#" variant="default">
-          <Icon variant="HouseIcon" size="16" />
-          Home Page
-        </Link>
-        <Link href="#" variant="ghost">
-          <Icon variant="GearIcon" size="16" />
-          Settings
-        </Link>
-        <Link href="#" variant="nav">
-          <Icon variant="ChartBarIcon" size="16" />
-          Analytics Dashboard
-        </Link>
-        <Link href="#" variant="default">
-          View Profile
-          <Icon variant="ArrowRightIcon" size="16" />
-        </Link>
-      </div>
-    </div>
-
-    <div className="space-y-4">
-      <h4 className="text-sm font-medium">Navigation with Icons</h4>
-      <div className="space-y-2 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-        <Link href="#" variant="nav">
-          <Icon variant="SquaresFourIcon" size="18" />
-          Dashboard
-        </Link>
-        <Link href="#" variant="nav" isActive>
-          <Icon variant="StackIcon" size="18" />
-          Applications
-        </Link>
-        <Link href="#" variant="nav">
-          <Icon variant="UsersIcon" size="18" />
-          Team
-        </Link>
-        <Link href="#" variant="nav">
-          <Icon variant="GearIcon" size="18" />
-          Settings
-        </Link>
-      </div>
-    </div>
-
-    <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
-      <strong>Icon Guidelines:</strong>
-      <ul className="mt-2 space-y-1 list-disc list-inside">
-        <li>Use 16px icons for default and ghost variants</li>
-        <li>Use 18px icons for nav variants to maintain visual balance</li>
-        <li>Place functional icons before text, directional icons after</li>
-        <li>Ensure icons are semantically meaningful to the link purpose</li>
-      </ul>
-    </div>
-  </div>
-)
-
-export const UsagePatterns = () => (
-  <div className="space-y-6">
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold">Common Usage Patterns</h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        Links are used throughout the application in various contexts. Here are
-        common patterns and recommended approaches for different scenarios.
-      </p>
-    </div>
-
-    <div className="space-y-4">
-      <h4 className="text-sm font-medium">Inline Text Links</h4>
-      <div className="p-4 border rounded-lg">
-        <Text>
-          Welcome to the platform! Check out our{' '}
-          <Link href="/docs">documentation</Link> to get started, or visit the{' '}
-          <Link href="/examples">examples page</Link> for inspiration. For
-          additional help, see our{' '}
-          <Link href="https://nuon.co/support" isExternal>
-            support center
-          </Link>
-          .
-        </Text>
-      </div>
-    </div>
-
-    <div className="space-y-4">
-      <h4 className="text-sm font-medium">Action Links</h4>
-      <div className="flex flex-wrap gap-3 p-4 border rounded-lg">
-        <Link href="/create" variant="ghost">
-          <Icon variant="PlusIcon" size="16" />
-          Create New
-        </Link>
-        <Link href="/import" variant="ghost">
-          <Icon variant="UploadIcon" size="16" />
-          Import Data
-        </Link>
-        <Link href="/export" variant="ghost">
-          <Icon variant="DownloadIcon" size="16" />
-          Export
-        </Link>
-      </div>
-    </div>
-
-    <div className="space-y-4">
-      <h4 className="text-sm font-medium">Breadcrumb Navigation</h4>
-      <div className="flex items-center gap-2 p-4 border rounded-lg">
-        <Link href="/org" variant="breadcrumb">
-          Organization
-        </Link>
-        <Icon variant="CaretRightIcon" size="12" className="text-gray-400" />
-        <Link href="/org/apps" variant="breadcrumb">
-          Applications
-        </Link>
-        <Icon variant="CaretRightIcon" size="12" className="text-gray-400" />
-        <Link href="/org/apps/my-app" variant="breadcrumb" isActive>
-          My Application
-        </Link>
-      </div>
-    </div>
-
-    <div className="text-sm text-gray-600 dark:text-gray-400 mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-md">
-      <strong>Best Practices:</strong>
-      <ul className="mt-2 space-y-1 list-disc list-inside">
-        <li>Use default variant for inline text links</li>
-        <li>Use ghost variant for action-oriented links</li>
-        <li>Use nav variant for navigation menus and sidebars</li>
-        <li>Use breadcrumb variant for navigation breadcrumbs</li>
-        <li>
-          Always provide meaningful link text that describes the destination
-        </li>
-      </ul>
+    <div className="flex items-center gap-2 p-4 border rounded-lg">
+      <Link href="#" variant="breadcrumb">
+        Organization
+      </Link>
+      <Icon variant="CaretRightIcon" size="12" className="text-gray-400" />
+      <Link href="#" variant="breadcrumb">
+        Applications
+      </Link>
+      <Icon variant="CaretRightIcon" size="12" className="text-gray-400" />
+      <Link href="#" variant="breadcrumb" isActive>
+        acme-payments
+      </Link>
     </div>
   </div>
 )

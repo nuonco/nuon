@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link as RouterLink } from 'react-router'
 import { cn } from '@/utils/classnames'
+import { Icon } from './Icon'
 
 export type TLinkVariant = 'default' | 'ghost' | 'nav' | 'breadcrumb'
 
@@ -91,13 +92,14 @@ export const Link = ({
     </a>
   ) : isExternal ? (
     <a
-      className={classes}
+      className={cn(classes, 'inline-flex')}
       href={href as string}
       target="_blank"
       rel="noopener noreferrer"
       {...props}
     >
       {children}
+      <Icon variant="ArrowSquareOutIcon" size="1em" />
     </a>
   ) : (
     <RouterLink className={classes} to={href ?? ''} {...(props as any)}>
