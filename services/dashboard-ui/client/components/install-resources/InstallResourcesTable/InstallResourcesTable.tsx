@@ -31,7 +31,7 @@ import {
   isFailingHealth,
   worstHealth,
 } from '@/utils/health-utils'
-import { kebabToWords, toSentenceCase } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 import { isStaleObservation, latestTimestamp } from '@/utils/time-utils'
 
 // Synthetic filter value covering everything that carries no verdict, so the
@@ -67,7 +67,7 @@ const MIN_FOLDED_ROWS = 3
 
 function healthFilterLabel(value: string): string {
   if (value === NO_SIGNAL_FILTER) return 'No signal'
-  return toSentenceCase(kebabToWords(value))
+  return humanize(value)
 }
 
 // Cloud identity rows (aws/gcp/azure) never bear a verdict — mirrors the

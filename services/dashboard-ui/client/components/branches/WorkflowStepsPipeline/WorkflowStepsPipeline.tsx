@@ -5,7 +5,7 @@ import { Loading } from '@/components/common/Loading'
 import { Text } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
 import type { TInstallWorkflowStep } from '@/types'
-import { toSentenceCase } from '@/utils/string-utils'
+import { getWorkflowStepTitle } from '@/utils/workflow-utils'
 import { stepStatusCategory, type TStepStatusCategory } from '../shared/step-status'
 
 interface IWorkflowStepsPipeline {
@@ -213,7 +213,7 @@ export const WorkflowStepsPipeline = ({
                     weight="strong"
                     className="text-center leading-tight max-w-[160px] text-cool-grey-900 dark:text-cool-grey-100"
                   >
-                    {toSentenceCase(step.name || 'Unknown')}
+                    {getWorkflowStepTitle(step) || 'Unknown'}
                   </Text>
 
                   {step.execution_time ? (

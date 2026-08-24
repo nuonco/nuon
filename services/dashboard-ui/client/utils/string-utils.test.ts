@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import {
   toSentenceCase,
-  toTitleCase,
+  humanize,
   getInitials,
   kebabToWords,
   snakeToWords,
@@ -14,6 +14,43 @@ import {
 } from './string-utils'
 
 describe('string-utils', () => {
+  describe('humanize', () => {
+    test('sentence-cases snake_case vocabulary', () => {
+      expect(humanize('access_error')).toBe('Access error')
+    })
+
+    test('sentence-cases kebab-case vocabulary', () => {
+      expect(humanize('not-connected')).toBe('Not connected')
+      expect(humanize('in-progress')).toBe('In progress')
+    })
+
+    test('preserves acronyms anywhere in the string', () => {
+      expect(humanize('aws')).toBe('AWS')
+      expect(humanize('oidc_config')).toBe('OIDC config')
+      expect(humanize('aws_permission_error')).toBe('AWS permission error')
+      expect(humanize('install_id')).toBe('Install ID')
+      expect(humanize('aws-eks')).toBe('AWS EKS')
+    })
+
+    test('normalizes acronym casing to canonical form', () => {
+      expect(humanize('K8S')).toBe('K8s')
+      expect(humanize('k8s')).toBe('K8s')
+    })
+
+    test('lowercases non-acronym words after the first', () => {
+      expect(humanize('Access_Error')).toBe('Access error')
+    })
+
+    test('trims and collapses whitespace', () => {
+      expect(humanize('  access   error  ')).toBe('Access error')
+    })
+
+    test('handles empty string', () => {
+      expect(humanize('')).toBe('')
+      expect(humanize()).toBe('')
+    })
+  })
+
   describe('toSentenceCase', () => {
     test('should capitalize first letter', () => {
       expect(toSentenceCase('hello world')).toBe('Hello world')
@@ -26,20 +63,6 @@ describe('string-utils', () => {
 
     test('should lowercase remaining letters', () => {
       expect(toSentenceCase('HELLO WORLD')).toBe('Hello world')
-    })
-  })
-
-  describe('toTitleCase', () => {
-    test('should convert to title case', () => {
-      expect(toTitleCase('hello world')).toBe('Hello World')
-    })
-
-    test('should handle dashes and underscores', () => {
-      expect(toTitleCase('hello-world_foo')).toBe('Hello World Foo')
-    })
-
-    test('should handle empty string', () => {
-      expect(toTitleCase('')).toBe('')
     })
   })
 

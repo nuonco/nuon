@@ -9,7 +9,7 @@ import type {
   TWorkflowQueuePosition,
 } from '@/lib/ctl-api/workflows/get-workflow-queue-position'
 import { getStatusTheme } from '@/utils/status-utils'
-import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
+import { snakeToWords, humanize } from '@/utils/string-utils'
 import type { TWorkflow } from '@/types'
 import { Link } from '@/components/common/Link'
 
@@ -38,15 +38,15 @@ export const WorkflowStatusSection = ({
           weight="stronger"
           className="inline-flex gap-2 max-w-[600px]"
           theme={getStatusTheme(workflow.status.status) as any}
-          title={toSentenceCase(
-            workflow.status.status_human_description || workflow.status.status
-          )}
+          title={
+            workflow.status.status_human_description ||
+            humanize(workflow.status.status)
+          }
         >
           <Status status={workflow.status.status} variant="timeline" />
           <span className="truncate">
-            {toSentenceCase(
-              workflow.status.status_human_description || workflow.status.status
-            )}
+            {workflow.status.status_human_description ||
+              humanize(workflow.status.status)}
           </span>
         </Text>
 

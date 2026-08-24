@@ -8,7 +8,9 @@ export type TBadgeCfg = {
   theme?: TBadgeTheme
 }
 
-export function getWorkflowStepTitle(step?: TWorkflowStep): string {
+export function getWorkflowStepTitle(
+  step?: { name?: string; links?: { event_wait?: unknown } | null } | null
+): string {
   if (step?.links?.event_wait) {
     const normalizedName = step?.name?.replace(/[-_]+/g, ' ').trim() ?? ''
     const waitForPrefix = /^wait\s+for(?:\s+|$)/i
