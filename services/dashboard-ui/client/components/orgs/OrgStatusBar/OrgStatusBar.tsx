@@ -9,7 +9,7 @@ import { Tooltip } from '@/components/common/Tooltip'
 import { Time } from '@/components/common/Time'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { VCSConnectionsStatusIndicator } from '@/components/vcs-connections/VCSConnectionsStatusIndicator'
-import { toSentenceCase } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 import { getStatusTheme } from '@/utils/status-utils'
 import type { TApp, TAppBranch, TAppConfig, TInstall, TInstallStack, TOrg, TWorkflow, TWorkflowStepApproval } from '@/types'
 
@@ -127,7 +127,7 @@ export const OrgStatusBar = ({
               items={[
                 {
                   id: latestConfig.id ?? 'config',
-                  title: toSentenceCase(latestConfig.status ?? ''),
+                  title: humanize(latestConfig.status ?? ''),
                   subtitle: latestConfig.created_at ? (
                     <Time
                       time={latestConfig.created_at}

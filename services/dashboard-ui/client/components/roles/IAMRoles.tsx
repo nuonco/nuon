@@ -20,6 +20,7 @@ import type {
 } from '@/lib/ctl-api/installs/get-install-app-permissions-config'
 import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-roles'
 import { decodeAsString } from '@/utils/data-utils'
+import { humanize } from '@/utils/string-utils'
 
 export const IAMRoleBoundaryExpand = ({
   permissionsBoundary,
@@ -311,8 +312,8 @@ export const IAMRoles = ({ appConfig }: { appConfig: TAppConfig }) => {
               </LabeledValue>
               <LabeledValue label="Name">{role?.name}</LabeledValue>
               <LabeledValue label="Type">
-                <Badge variant="code" size="sm">
-                  {role?.type}
+                <Badge size="sm">
+                  {humanize(role?.type)}
                 </Badge>
               </LabeledValue>
             </div>
@@ -356,8 +357,8 @@ export const InstallIAMRoles = ({
                 </LabeledValue>
                 <LabeledValue label="Name">{role.name}</LabeledValue>
                 <LabeledValue label="Type">
-                  <Badge variant="code" size="sm">
-                    {role.type}
+                  <Badge size="sm">
+                    {humanize(role.type)}
                   </Badge>
                 </LabeledValue>
                 <LabeledValue label="Status">

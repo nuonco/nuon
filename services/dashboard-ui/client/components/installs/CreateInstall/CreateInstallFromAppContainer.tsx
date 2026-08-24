@@ -23,7 +23,6 @@ import {
   getAWSAccountConnections,
 } from '@/lib'
 import type { TApp } from '@/types'
-import { toSentenceCase } from '@/utils/string-utils'
 import { BranchConnectionStep } from './BranchConnectionStep'
 import {
   CreateInstallFormFields,
@@ -267,11 +266,10 @@ export const CreateInstallFromAppContainer = ({
           submitError={
             submitError
               ? ({
-                  error: toSentenceCase(
+                  error:
                     (submitError as any).error ||
-                      (submitError as any).description ||
-                      'Unable to create install.'
-                  ),
+                    (submitError as any).description ||
+                    'Unable to create install.',
                 } as any)
               : null
           }

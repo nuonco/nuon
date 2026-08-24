@@ -4,7 +4,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
-import { toSentenceCase } from '@/utils/string-utils'
+import { getWorkflowStepTitle } from '@/utils/workflow-utils'
 
 interface IApproveAllModal extends Omit<IModal, 'onSubmit'> {
   pendingSteps: { id: string; name: string }[]
@@ -57,8 +57,8 @@ export const ApproveAllModal = ({
         </Text>
         <div className="flex flex-wrap gap-2">
           {pendingSteps.map((s) => (
-            <Badge variant="code" key={s.id} size="sm">
-              {toSentenceCase(s.name)}
+            <Badge key={s.id} size="sm">
+              {getWorkflowStepTitle(s)}
             </Badge>
           ))}
         </div>

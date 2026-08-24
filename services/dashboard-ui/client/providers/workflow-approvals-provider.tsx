@@ -12,8 +12,7 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { getRunTitle } from '@/components/branches/shared/run-title'
-import { toSentenceCase } from '@/utils/string-utils'
-import { getWorkflowHref } from '@/utils/workflow-utils'
+import { getWorkflowHref, getWorkflowStepTitle } from '@/utils/workflow-utils'
 import type { TWorkflowStepApproval } from '@/types'
 
 type WorkflowApprovalsContextValue = {
@@ -75,7 +74,7 @@ export function WorkflowApprovalsProvider({
         const heading = isBranchRun
           ? getRunTitle(workflow)
           : stepName
-            ? toSentenceCase(stepName)
+            ? getWorkflowStepTitle(step)
             : 'Approval required'
         const workflowUrl = workflow
           ? getWorkflowHref(org.id, workflow)

@@ -18,6 +18,7 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { getInstallRoleUsages } from '@/lib'
 import type { TInstallRoleUsage } from '@/types'
 import { IAMRolePoliciesCard, IAMRoleBoundaryExpand } from './IAMRoles'
+import { humanize } from '@/utils/string-utils'
 import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-roles'
 
 const USAGE_LIMIT = 10
@@ -173,8 +174,8 @@ export const InstallRoleDetail = ({
           </LabeledValue>
           <LabeledValue label="Name">{role.name}</LabeledValue>
           <LabeledValue label="Type">
-            <Badge variant="code" size="sm">
-              {role.type}
+            <Badge size="sm">
+              {humanize(role.type)}
             </Badge>
           </LabeledValue>
           <LabeledValue label="Status">

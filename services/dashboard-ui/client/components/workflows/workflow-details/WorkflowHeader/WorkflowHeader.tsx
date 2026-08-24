@@ -4,7 +4,7 @@ import { Badge } from '@/components/common/Badge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 import { WorkflowActionButtons } from '../WorkflowActionButtons'
 import type { TWorkflow, TInstall } from '@/types'
 
@@ -35,7 +35,7 @@ export const WorkflowHeader = ({ workflow, install }: IWorkflowHeader) => {
             {workflow?.type === 'action_workflow_run' &&
             workflow?.metadata?.adhoc_action
               ? `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
-              : workflow.name || toSentenceCase(snakeToWords(workflow.type))}
+              : workflow.name || humanize(workflow.type)}
 
             {hasDrift ? (
               <Badge variant="code" theme="warn" size="sm">
