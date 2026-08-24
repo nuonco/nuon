@@ -22,7 +22,7 @@ import {
   bearsHealthVerdict,
   compareHealthSeverityDesc,
 } from '@/utils/health-utils'
-import { kebabToWords, toSentenceCase } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 import { formatToRelativeDay } from '@/utils/timeline-utils'
 
 const BAR_NEUTRAL_CLASS = 'bg-cool-grey-200 dark:bg-dark-grey-700'
@@ -54,7 +54,7 @@ function dayDowntimePercent(day: THealthTimelineDay): number {
 }
 
 function formatHealth(health?: string): string {
-  return toSentenceCase(kebabToWords(health || 'unknown'))
+  return humanize(health || 'unknown')
 }
 
 // A component nobody observed has 0% uptime arithmetically, which reads as

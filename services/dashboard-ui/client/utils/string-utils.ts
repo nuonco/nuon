@@ -1,13 +1,44 @@
 export const toSentenceCase = (str: string = ''): string =>
   str.length ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : ''
 
-export const toTitleCase = (str: string = ''): string =>
-  str
-    .replace(/[-_]/g, ' ')
-    .toLowerCase()
-    .replace(/\b(\w)/g, (char) => char.toUpperCase())
-    .replace(/\s+/g, ' ')
+const ACRONYMS: Record<string, string> = {
+  aws: 'AWS',
+  gcp: 'GCP',
+  gke: 'GKE',
+  vcs: 'VCS',
+  oidc: 'OIDC',
+  api: 'API',
+  id: 'ID',
+  iam: 'IAM',
+  k8s: 'K8s',
+  oci: 'OCI',
+  ecr: 'ECR',
+  eks: 'EKS',
+  ecs: 'ECS',
+  acr: 'ACR',
+  aks: 'AKS',
+  tls: 'TLS',
+  dns: 'DNS',
+  url: 'URL',
+}
+
+export const humanize = (str: string = ''): string => {
+  const words = str
     .trim()
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+
+  return words
+    .map((word, i) => {
+      const acronym = ACRONYMS[word.toLowerCase()]
+      if (acronym) return acronym
+      const lower = word.toLowerCase()
+      return i === 0 ? lower.charAt(0).toUpperCase() + lower.slice(1) : lower
+    })
+    .join(' ')
+}
 
 export const getInitials = (str: string = ''): string => {
   if (!str) return ''

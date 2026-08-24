@@ -6,11 +6,11 @@ import { ContextTooltip } from '@/components/common/ContextTooltip'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { ComponentType } from '@/components/components/ComponentType'
+import { ComponentType, componentTypeName } from '@/components/components/ComponentType'
 import type { TIconVariant } from '@/components/common/Icon'
 import type { TComponentType } from '@/types'
 import { cn } from '@/utils/classnames'
-import { toSentenceCase } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 import type { TRoleInfo } from './diagram-layout'
 
 const CONTAINER_STYLES: Record<number, string> = {
@@ -84,16 +84,6 @@ export const SectionLabelNode = memo(({ data }: NodeProps) => (
 
 SectionLabelNode.displayName = 'SectionLabelNode'
 
-const COMPONENT_TYPE_LABELS: Record<string, string> = {
-  helm_chart: 'Helm chart',
-  terraform_module: 'Terraform module',
-  kubernetes_manifest: 'Kubernetes manifest',
-  docker_build: 'Docker build',
-  external_image: 'External image',
-  job: 'Job',
-  pulumi: 'Pulumi',
-}
-
 export const ComponentCardNode = memo(({ data }: NodeProps) => {
   const status = data.status as string
   const isDrifted = data.isDrifted as boolean
@@ -115,7 +105,7 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
           id: 'status',
           title: 'Status',
           subtitle:
-            (data.statusDescription as string) || toSentenceCase(status),
+            (data.statusDescription as string) || humanize(status),
           leftContent: (
             <Status
               status={status}
@@ -133,7 +123,7 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
                 subtitle: (
                   <span className="flex items-center gap-1">
                     <Text variant="label" theme="neutral">
-                      {toSentenceCase(data.latestDeployStatus as string)}
+                      {humanize(data.latestDeployStatus as string)}
                     </Text>
                     {latestDeployAt && (
                       <>
@@ -174,7 +164,7 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
         {
           id: 'view',
           title: 'View details',
-          subtitle: COMPONENT_TYPE_LABELS[componentType] || 'Component',
+          subtitle: componentTypeName(componentType),
           href,
           leftContent: (
             <ComponentType
@@ -202,7 +192,7 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
       ]}
     >
       <div
-        aria-label={`${name} — ${COMPONENT_TYPE_LABELS[componentType] || 'Component'}`}
+        aria-label={`${name} — ${componentTypeName(componentType)}`}
         className={cn(
           'rounded-lg border bg-white dark:bg-dark-grey-900 px-3 py-2 flex items-center gap-2 transition-shadow hover:shadow-sm overflow-hidden',
           isDrifted && '!border-orange-400 dark:!border-orange-500/40'
@@ -224,7 +214,7 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
             {name}
           </span>
           <span className="text-[11px] leading-[16px] text-cool-grey-600 dark:text-white/70 overflow-hidden text-ellipsis whitespace-nowrap block">
-            {COMPONENT_TYPE_LABELS[componentType] || 'Component'}
+            {componentTypeName(componentType)}
           </span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">

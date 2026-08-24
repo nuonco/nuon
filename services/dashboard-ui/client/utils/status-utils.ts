@@ -22,13 +22,11 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   error: 'error',
   bad: 'error',
   'access-error': 'error',
-  access_error: 'error',
   'timed-out': 'error',
   unhealthy: 'error',
-  'not connected': 'error',
   'not-connected': 'error',
   suspended: 'error',
-  policy_failed: 'error',
+  'policy-failed': 'error',
   'failed-pending-retry': 'error',
 
   'approval-denied': 'warn',
@@ -70,8 +68,8 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   inactive: 'neutral',
   disabled: 'neutral',
   pending: 'neutral',
-  'Not deployed': 'neutral',
-  'No build': 'neutral',
+  'not-deployed': 'neutral',
+  'no-build': 'neutral',
   'not-attempted': 'neutral',
   deprovisioned: 'warn',
   skeleton: 'neutral',
@@ -94,13 +92,11 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   error: 'XCircleIcon',
   bad: 'XCircleIcon',
   'access-error': 'XCircleIcon',
-  access_error: 'XCircleIcon',
   'timed-out': 'XCircleIcon',
   unknown: 'XCircleIcon',
   unhealthy: 'XCircleIcon',
-  'not connected': 'XCircleIcon',
   'not-connected': 'XCircleIcon',
-  policy_failed: 'XCircleIcon',
+  'policy-failed': 'XCircleIcon',
   'failed-pending-retry': 'XCircleIcon',
 
   'approval-denied': 'WarningIcon',
@@ -133,8 +129,8 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   disabled: 'ProhibitIcon',
   pending: 'ClockCountdownIcon',
   offline: 'ClockCountdownIcon',
-  'Not deployed': 'ClockCountdownIcon',
-  'No build': 'ClockCountdownIcon',
+  'not-deployed': 'ClockCountdownIcon',
+  'no-build': 'ClockCountdownIcon',
   deprovisioned: 'WarningIcon',
 
   'not-applicable': 'MinusCircleIcon',
@@ -150,12 +146,15 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   skeleton: 'none' as TIconVariant,
 }
 
+const normalizeStatusKey = (status: string): string =>
+  status.toLowerCase().replace(/[\s_]+/g, '-')
+
 export function getStatusTheme(status: string): TStatusTheme {
-  return STATUS_THEME_MAP[status] ?? 'neutral'
+  return STATUS_THEME_MAP[normalizeStatusKey(status)] ?? 'neutral'
 }
 
 export function getStatusIconVariant(status: string): TIconVariant {
-  return STATUS_ICON_MAP[status] ?? 'ClockCountdownIcon'
+  return STATUS_ICON_MAP[normalizeStatusKey(status)] ?? 'ClockCountdownIcon'
 }
 
 const THEME_PRIORITY: TStatusTheme[] = [

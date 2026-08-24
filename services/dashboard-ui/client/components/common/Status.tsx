@@ -2,7 +2,7 @@ import type { HTMLAttributes } from 'react'
 import { Icon } from '@/components/common/Icon'
 import type { TTheme } from '@/types'
 import { cn } from '@/utils/classnames'
-import { kebabToWords, toSentenceCase } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 import { getStatusTheme, getStatusIconVariant } from '@/utils/status-utils'
 import { SKELETON_CLASSES } from './Skeleton'
 import { Text } from './Text'
@@ -151,8 +151,8 @@ export const Status = ({
       {isWithoutText ? null : (
         <span className={statusTextClass}>
           {typeof children === 'string'
-            ? toSentenceCase(kebabToWords(children))
-            : children || toSentenceCase(kebabToWords(status || 'unknown'))}
+            ? humanize(children)
+            : children || humanize(status || 'unknown')}
         </span>
       )}
     </span>

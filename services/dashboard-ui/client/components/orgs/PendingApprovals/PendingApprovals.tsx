@@ -5,8 +5,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { getRunTitle } from '@/components/branches/shared/run-title'
 import { getApprovalType } from '@/utils/approval-utils'
-import { toSentenceCase } from '@/utils/string-utils'
-import { getWorkflowHref } from '@/utils/workflow-utils'
+import { getWorkflowHref, getWorkflowStepTitle } from '@/utils/workflow-utils'
 import type { TWorkflowStepApproval, TWorkflow } from '@/types'
 
 interface IPendingApprovals {
@@ -47,7 +46,7 @@ export const PendingApprovals = ({ orgId, approvals, activeWorkflows }: IPending
           const name = isBranchRun
             ? getRunTitle(workflow)
             : step?.name
-              ? toSentenceCase(step.name)
+              ? getWorkflowStepTitle(step)
               : 'Approval required'
           const installName = workflow?.metadata?.owner_name
 

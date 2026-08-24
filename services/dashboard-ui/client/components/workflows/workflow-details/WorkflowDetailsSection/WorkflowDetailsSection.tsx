@@ -9,7 +9,7 @@ import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Modal } from '@/components/surfaces/Modal'
-import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 import { getInputDisplayName } from '@/utils/install-utils'
 import type { TWorkflow, TInstall } from '@/types'
 import { WorkflowMetadata } from '../WorkflowMetadata'
@@ -108,7 +108,7 @@ export const WorkflowDetailsSection = ({
             )}
 
             <LabeledValue label="Trigger">
-              {toSentenceCase(snakeToWords(workflow.type))}
+              {humanize(workflow.type)}
             </LabeledValue>
 
             <div className="ml-auto">

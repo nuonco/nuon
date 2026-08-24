@@ -56,13 +56,37 @@ Rules:
 - Prefer these over native elements. Native `<button>`, ad-hoc `<input>`, or a bespoke table is a
   smell unless the design system genuinely lacks the primitive.
 - Use semantic helpers for data: `Time` for timestamps (never manual date formatting), `Duration`,
-  `ID`/`Hash`/`ClickToCopy` for identifiers, `Status`/`Badge` for state, `Code`/`JSONViewer` for
-  payloads, `LabeledValue`/`PropertyGrid`/`KeyValueList` for key→value display.
+  `ID`/`Hash`/`ClickToCopy` for identifiers, `Status`/`Badge` for state, `LabelBadge` for resource
+  labels (never a raw `Badge` over a `labels` map), `Code`/`JSONViewer` for payloads,
+  `LabeledValue`/`PropertyGrid`/`KeyValueList` for key→value display.
 - Anything using `Modal`/`Panel`/`Toast` (or `useSurfaces`) must be mounted under `SurfacesProvider`
   — including Ladle stories, or it throws. In stories, use the `ModalStory`/`PanelStory` helpers
   from `components/__stories__/helpers.tsx`.
 - Code conventions for these components (container/component split, stories format, icon imports,
   date handling) live in [AGENTS.md](./AGENTS.md) — follow it rather than restating rules here.
+
+### Rendered-string taxonomy (casing, font, chip)
+
+Every string rendered in the UI is exactly one of three classes; the class fixes its casing, font,
+and (when it's a chip) its component. Classify with the tests, then apply the treatment. Full
+decision record: [UXDR 019](./.planning/ux/019-uxdr-rendered-string-taxonomy.md).
+
+| Class | Test | Casing & font | Component |
+|-------|------|---------------|-----------|
+| **Identifier** — user-typed or external-system-defined (names, IDs, k8s kinds, terraform/cloud resource types, image tags, paths, versions, label keys/values) | Could a user need to copy this exact string into a terminal, config, or search? | Verbatim, never re-cased, **mono** | `ID`, `Code`, `Badge variant="code"`, `LabelBadge`, `Text family="mono"` |
+| **API vocabulary** — enums our platform defines (statuses, trigger/workflow/plan/step types, ops) | Is the full value set enumerable from our Go code? | `humanize()` (snake/kebab → words → sentence case, acronyms preserved), **sans** | `Status` (lifecycle) or `Badge` default variant (static classification) |
+| **UI copy** — written by us | Neither of the above | [COPY_STYLE.md](./COPY_STYLE.md) | any |
+
+- **`humanize()` (`utils/string-utils.ts`) is the only place vocabulary gets cased** — never
+  `toSentenceCase`/`toTitleCase`/hand-rolled re-casing at a call site. `Status` humanizes for you.
+- **Chip pick:** value changes on its own while you watch (lifecycle) → `Status`; static
+  classification (type/kind/count/version) → `Badge` (`variant="code"` iff the content is an
+  identifier, default sans variant iff vocabulary); user-defined key:value label → `LabelBadge`.
+- **mono ⇔ identifier.** Nothing else is mono; no identifier is sans.
+- **Never re-case a string that contains a user identifier** (e.g. a step name like `Sync and plan
+  some-name`) — render it verbatim. **Free-text API sentences** (`status_human_description` and
+  friends) are server-authored copy → render verbatim; quality issues are fixed at the Go source,
+  never client-side.
 
 ---
 
@@ -151,6 +175,12 @@ These are the specific inconsistencies that make the UI look "off". Treat each a
    Every other action, including the CTA in an empty state, is `secondary`/`ghost`. This holds even
    when the page's primary button is disabled — a disabled primary still counts, so don't add a
    second primary elsewhere to compensate. If two actions feel equally important, one of them isn't.
+9. **No ad-hoc string casing.** Rendering a raw API enum (`{role.type}`, `{step.type}`) or
+   re-casing vocabulary at a call site (`toSentenceCase`/`toTitleCase`/hand-rolled) is a slop —
+   route vocabulary through `humanize()`, and see §1's rendered-string taxonomy. A new
+   `Record<string, string>` display map whose entries just equal `humanize(key)` is dead weight.
+   A `Badge` rendering a lifecycle status (use `Status`), a mono/`variant="code"` chip over
+   vocabulary, or a sans chip over an identifier are all mis-classifications.
 
 ---
 

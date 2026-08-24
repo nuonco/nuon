@@ -4,7 +4,7 @@ import {
 } from '@/components/common/ContextTooltip'
 import { Status } from '@/components/common/Status'
 import type { TComponent, TInstallComponent } from '@/types'
-import { toSentenceCase } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 
 export function getContextTooltipItemsFromComponents(
   components: TComponent[],
@@ -22,7 +22,7 @@ export function getContextTooltipItemsFromComponents(
       />
     ),
     title: comp?.name,
-    subtitle: toSentenceCase(comp?.status),
+    subtitle: humanize(comp?.status),
   }))
 }
 
@@ -47,14 +47,14 @@ function getComponentSubtitle(
   status: string | undefined,
   lifecycleStatus?: string
 ): string {
-  if (!status) return toSentenceCase(status)
+  if (!status) return humanize(status)
   if (lifecycleStatus === 'deprovisioned') {
-    return DEPROVISIONED_COMPONENT_SUBTITLES[status] ?? toSentenceCase(status)
+    return DEPROVISIONED_COMPONENT_SUBTITLES[status] ?? humanize(status)
   }
   if (lifecycleStatus === 'deprovisioning') {
-    return DEPROVISIONING_COMPONENT_SUBTITLES[status] ?? toSentenceCase(status)
+    return DEPROVISIONING_COMPONENT_SUBTITLES[status] ?? humanize(status)
   }
-  return toSentenceCase(status)
+  return humanize(status)
 }
 
 export function getContextTooltipItemsFromInstallComponents(

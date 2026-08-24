@@ -6,6 +6,7 @@ import { Code } from '@/components/common/Code'
 import { Duration } from '@/components/common/Duration'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { ActionStep } from '@/components/actions/ActionStep'
@@ -22,7 +23,7 @@ import { sortByIdx } from '@/utils/action-utils'
 export const ActionDetail = () => {
   const { actionId, branchId } = useParams()
   const { org } = useOrg()
-  const { app } = useApp()
+  const { app, labelColors } = useApp()
   const appBase = branchId
     ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
     : `/${org?.id}/apps/${app?.id}`
@@ -66,9 +67,7 @@ export const ActionDetail = () => {
               {Object.keys(action.labels)
                 .sort()
                 .map((k) => (
-                  <Badge key={k} variant="code" size="sm" theme="neutral">
-                    {k}: {action.labels[k]}
-                  </Badge>
+                  <LabelBadge key={k} labelKey={k} labelValue={action.labels[k]} size="sm" customColor={labelColors?.[k]} />
                 ))}
             </span>
           ) : null}
