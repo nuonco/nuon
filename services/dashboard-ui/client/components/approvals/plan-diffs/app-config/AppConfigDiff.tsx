@@ -13,6 +13,7 @@ import { diffLines } from '@/utils/code-utils'
 import { cn } from '@/utils/classnames'
 import { scrollElementIntoView } from '@/utils/scroll'
 import type { TConfigDiffFocus } from '../config-diff-focus'
+import { humanize } from '@/utils/string-utils'
 
 const SECTION_CONFIG: Record<string, { displayName: string; icon: TIconVariant; grouped: boolean }> = {
   components: { displayName: 'Components', icon: 'CubeIcon', grouped: true },
@@ -387,7 +388,7 @@ const FileDiffRow = ({
           </Text>
           <div className="flex items-center pr-4 self-center">
             <Badge theme={OP_BADGE_THEME[file.op] || 'neutral'} size="sm">
-              {file.op}
+              {humanize(file.op)}
             </Badge>
           </div>
         </div>
@@ -460,7 +461,7 @@ const EntityRow = ({
         </div>
         <div className="flex items-center pr-4 self-center">
           <Badge theme={OP_BADGE_THEME[entity.op] || 'neutral'} size="sm">
-            {entity.op}
+            {humanize(entity.op)}
           </Badge>
         </div>
       </div>
@@ -503,7 +504,7 @@ const FieldRow = ({ field, sectionKey, idx }: { field: DiffFieldEntry; sectionKe
         <Text variant="subtext" theme="neutral" family="mono">{field.diff}</Text>
       </div>
       <Badge theme={OP_BADGE_THEME[field.op as AppConfigOp] || 'neutral'} size="sm">
-        {field.op}
+        {humanize(field.op)}
       </Badge>
     </div>
   )

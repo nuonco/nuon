@@ -20,7 +20,7 @@ import { cn } from '@/utils/classnames'
 import { Time } from '@/components/common/Time'
 import { getInstallStatusTitle } from '@/utils/install-utils'
 import { getStatusTheme, getWorstStatusTheme } from '@/utils/status-utils'
-import { toSentenceCase } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 
 export interface IInstallStatuses
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
@@ -257,7 +257,7 @@ export const InstallStatuses = ({
         {
           href: `/${install.org_id}/installs/${install.id}/runner`,
           id: install?.runner_id,
-          title: `${install.runner_type === 'aws' ? 'AWS' : toSentenceCase(install?.runner_type)} runner`,
+          title: `${humanize(install?.runner_type)} runner`,
           subtitle: getInstallStatusTitle(
             'runner_status',
             install?.runner_status,
@@ -298,7 +298,7 @@ export const InstallStatuses = ({
         {
           href: sandboxHref,
           id: install?.install_sandbox_runs?.at(0)?.id,
-          title: toSentenceCase(install?.install_sandbox_runs?.at(0)?.run_type),
+          title: humanize(install?.install_sandbox_runs?.at(0)?.run_type),
           subtitle: sandboxSubtitle,
           leftContent: (
             <Status
@@ -371,7 +371,7 @@ export const InstallStatuses = ({
           title: 'Component health',
           subtitle:
             install?.composite_health_status_description ??
-            toSentenceCase(healthStatus),
+            humanize(healthStatus),
           href: `/${install.org_id}/installs/${install.id}/resources?health=${healthStatus}`,
           leftContent: (
             <Status
@@ -404,7 +404,7 @@ export const InstallStatuses = ({
         {
           href: `/${install.org_id}/installs/${install.id}/stacks`,
           id: latestStackVersion?.id ?? 'stack',
-          title: toSentenceCase(stackStatus),
+          title: humanize(stackStatus),
           subtitle: latestStackVersion?.created_at ? (
             <Time
               time={latestStackVersion.created_at}
@@ -462,7 +462,7 @@ export const InstallStatuses = ({
           {
             id: 'stack',
             title: 'Stack',
-            subtitle: toSentenceCase(stackStatus),
+            subtitle: humanize(stackStatus),
             href: `/${install.org_id}/installs/${install.id}/stacks`,
             leftContent: (
               <Status
@@ -528,7 +528,7 @@ export const InstallStatuses = ({
             title: 'Component health',
             subtitle:
               install?.composite_health_status_description ??
-              toSentenceCase(healthStatus),
+              humanize(healthStatus),
             href: `/${install.org_id}/installs/${install.id}/resources?health=${healthStatus}`,
             leftContent: (
               <Status

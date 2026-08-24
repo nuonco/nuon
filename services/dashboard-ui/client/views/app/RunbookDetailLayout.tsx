@@ -2,6 +2,7 @@ import { Outlet, useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
@@ -16,7 +17,7 @@ import { getRunbook } from '@/lib'
 export const RunbookDetailLayout = () => {
   const { runbookId, branchId } = useParams()
   const { org } = useOrg()
-  const { app } = useApp()
+  const { app, labelColors } = useApp()
 
   const { data: runbook, isLoading } = useQuery({
     placeholderData: keepPreviousData,
@@ -75,9 +76,7 @@ export const RunbookDetailLayout = () => {
                     {Object.keys(runbook.labels)
                       .sort()
                       .map((k) => (
-                        <Badge key={k} variant="code" size="sm" theme="neutral">
-                          {k}: {runbook.labels[k]}
-                        </Badge>
+                        <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" customColor={labelColors?.[k]} />
                       ))}
                   </span>
                 ) : null}

@@ -9,6 +9,7 @@
 // Drift surfaces only through the dedicated drift_detected event class, gated
 // by the per-resource drift_detected toggle (see RESOURCES_WITH_DRIFT_DETECTED).
 
+import { humanize } from '@/utils/string-utils'
 import type { ResourceKind } from './types'
 
 export const SUB_OPS: Record<ResourceKind, string[]> = {
@@ -29,19 +30,9 @@ export const RESOURCES_WITH_DRIFT_DETECTED: ReadonlySet<ResourceKind> =
   new Set<ResourceKind>(['components', 'sandboxes'])
 
 const SUB_OP_LABELS: Record<string, string> = {
-  provision: 'Provision',
-  deprovision: 'Deprovision',
-  reprovision: 'Reprovision',
-  deploy: 'Deploy',
-  teardown: 'Teardown',
   inputs: 'Input updates',
   secrets: 'Secret syncs',
-  inactive: 'Inactive',
-  unhealthy: 'Unhealthy',
-  run: 'Run',
-  version_active: 'Version active',
 }
 
 export const labelForSubOp = (op: string): string =>
-  SUB_OP_LABELS[op] ??
-  op.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase())
+  SUB_OP_LABELS[op] ?? humanize(op)

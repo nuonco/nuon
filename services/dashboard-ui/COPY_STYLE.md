@@ -40,6 +40,12 @@ Rules that apply to all UI copy, regardless of surface.
 
 **Exceptions:** Proper nouns (AWS, Nuon, Terraform, GitHub, Slack) and acronyms (API, CLI, VCS, URL).
 
+**Scope:** this guide owns UI copy we write (class 3). Strings that come from the API — enum
+vocabulary (statuses, types, ops) and identifiers (names, IDs, k8s kinds) — are governed by the
+rendered-string taxonomy in [DESIGN.md §1](./DESIGN.md), not here. Vocabulary is cased by
+`humanize()` (sentence case, acronyms preserved); identifiers render verbatim and mono. Never
+re-case an API string by hand at a call site.
+
 ## Pronouns & possessives
 
 **Use "your" sparingly — only for account-level possessions.** "Your org", "your team", "your account" are fine. For resources (installs, components, webhooks, runners), use the entity name or "this [thing]".

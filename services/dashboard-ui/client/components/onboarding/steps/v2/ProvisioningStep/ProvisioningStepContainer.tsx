@@ -10,7 +10,6 @@ import { completeDeployStep, getApp, getCurrentOnboarding, getInstall, getInstal
 import { isRecentTimestamp } from '@/utils/time-utils'
 import { getStatusTheme } from '@/utils/status-utils'
 import { cn } from '@/utils/classnames'
-import { toSentenceCase } from '@/utils/string-utils'
 import type { TOnboarding, TWorkflow, TWorkflowStep } from '@/types'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 
@@ -197,7 +196,7 @@ function useProvisioningRows(steps: TWorkflowStep[]): IRow[] {
       const errorInfo = status === 'error' ? getErrorInfo(compSteps) : {}
       rows.push({
         id: `component-${compName}`,
-        label: toTitleCase(compName),
+        label: compName,
         description: apiDesc || fallback[status],
         errorDescription: errorInfo.description,
         errorStepId: errorInfo.stepId,
@@ -209,12 +208,6 @@ function useProvisioningRows(steps: TWorkflowStep[]): IRow[] {
 
     return rows
   }, [steps])
-}
-
-function toTitleCase(str: string): string {
-  return str
-    .replace(/[-_]/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 const AVG_SECONDS_PER_STEP = 90
@@ -568,7 +561,7 @@ export const ProvisioningStepContainer = ({
   return (
     <div className="flex flex-col gap-8">
       {isError && workflow?.status?.status_human_description && (
-        <Banner theme="error">{toSentenceCase(workflow.status.status_human_description)}</Banner>
+        <Banner theme="error">{workflow.status.status_human_description}</Banner>
       )}
 
       <Card className="!gap-0 !p-4">

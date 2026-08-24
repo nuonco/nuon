@@ -14,7 +14,7 @@ import type {
   TRunnerHealthCheck,
   TRunnerSettings,
 } from '@/types'
-import { toSentenceCase } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 
 function healthCheckColorClass(hc: TRunnerHealthCheck): string {
   if (hc?.status_code === 0) return 'bg-green-500'
@@ -120,7 +120,7 @@ export const ProcessCard = ({
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
             <Text variant="base" weight="strong">
-              {toSentenceCase(process.type || 'unknown')} process
+              {humanize(process.type || 'unknown')} process
             </Text>
             <Status status={process.composite_status?.status} variant="badge" />
             {process.labels?.map((label) => (
