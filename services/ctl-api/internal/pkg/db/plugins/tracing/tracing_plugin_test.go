@@ -159,6 +159,68 @@ func TestPreloadQueriesBecomeChildSpans(t *testing.T) {
 	require.Equal(t, int64(1), attrMap(root)["nuon.db.preload_count"].AsInt64())
 }
 
+func TestStatementSpanExcludesPreloads(t *testing.T) {
+	db, recorder := setupTest(t)
+
+	require.NoError(t, db.Create(&testAuthor{
+		Name:  "amy",
+		Books: []testBook{{Title: "one"}, {Title: "two"}},
+	}).Error)
+
+	var operation, statement, preload sdktrace.ReadOnlySpan
+	var authors []testAuthor
+	require.NoError(t, db.Preload("Books").Find(&authors).Error)
+
+	for _, s := range recorder.Ended() {
+		table := attrMap(s)["db.sql.table"].AsString()
+		switch {
+		case s.Name() == "gorm.query" && table == "test_authors" && !s.Parent().IsValid():
+			operation = s
+		case s.Name() == "gorm.query.statement" && table == "test_authors":
+			statement = s
+		case s.Name() == "gorm.query" && table == "test_books":
+			preload = s
+		}
+	}
+	require.NotNil(t, operation, "operation span not found")
+	require.NotNil(t, statement, "statement span not found")
+	require.NotNil(t, preload, "preload span not found")
+
+	require.Equal(t, operation.SpanContext().SpanID(), statement.Parent().SpanID())
+	require.Equal(t, operation.SpanContext().TraceID(), statement.SpanContext().TraceID())
+
+	// The statement span must close before the preload runs, and the operation span after it:
+	// that difference is what separates statement_latency from gorm_operation_latency.
+	require.False(t, statement.EndTime().After(preload.StartTime()))
+	require.False(t, operation.EndTime().Before(preload.EndTime()))
+
+	attrs := attrMap(statement)
+	require.Equal(t, "postgresql.statement", attrs["operation.name"].AsString())
+	require.Equal(t, "query test_authors", attrs["resource.name"].AsString())
+	require.Contains(t, attrs["db.statement"].AsString(), "SELECT")
+	require.NotContains(t, attrs["db.statement"].AsString(), "amy")
+}
+
+func TestStatementSpanEmittedForEachOperation(t *testing.T) {
+	db, recorder := setupTest(t)
+
+	author := testAuthor{Name: "amy"}
+	require.NoError(t, db.Create(&author).Error)
+	require.NoError(t, db.Model(&author).Update("name", "amy2").Error)
+	require.NoError(t, db.Delete(&author).Error)
+
+	got := map[string]bool{}
+	for _, s := range recorder.Ended() {
+		if attrMap(s)["operation.name"].AsString() == "postgresql.statement" {
+			got[attrMap(s)["db.operation"].AsString()] = true
+		}
+	}
+
+	for _, op := range []string{"create", "update", "delete"} {
+		require.True(t, got[op], "no statement span for %s", op)
+	}
+}
+
 func TestErrorsAreRecorded(t *testing.T) {
 	db, recorder := setupTest(t)
 

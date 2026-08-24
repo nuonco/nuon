@@ -263,6 +263,11 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		}
 	}
 
+	if err := s.helpers.ClaimSelectorInstallsFromWeakOwners(ctx, appID, appBranchID, labelSelectors); err != nil {
+		ctx.Error(fmt.Errorf("unable to claim installs from weak owners: %w", err))
+		return
+	}
+
 	if err := s.helpers.ReconcileRemovedBranchInstalls(ctx, appBranchID, explicitInstallIDs, labelSelectors); err != nil {
 		ctx.Error(fmt.Errorf("unable to reconcile removed branch installs: %w", err))
 		return

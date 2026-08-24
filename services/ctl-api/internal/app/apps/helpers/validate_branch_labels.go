@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -17,6 +18,97 @@ type BranchForLabels struct {
 	Group  *app.AppBranchInstallGroup
 }
 
+// LatestConfigInstallGroups returns the install groups on a branch's newest
+// config, or nothing when the branch has no config yet.
+func (h *Helpers) LatestConfigInstallGroups(ctx context.Context, branchID string) ([]app.AppBranchInstallGroup, error) {
+	var latestConfig app.AppBranchConfig
+	if err := h.db.WithContext(ctx).
+		Where(app.AppBranchConfig{AppBranchID: branchID}).
+		Order("created_at DESC").
+		First(&latestConfig).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("unable to get latest config for branch %s: %w", branchID, err)
+	}
+
+	var groups []app.AppBranchInstallGroup
+	if err := h.db.WithContext(ctx).
+		Where(app.AppBranchInstallGroup{AppBranchConfigID: latestConfig.ID}).
+		Find(&groups).Error; err != nil {
+		return nil, fmt.Errorf("unable to get install groups for config %s: %w", latestConfig.ID, err)
+	}
+
+	return groups, nil
+}
+
+// InstallOwnedByOtherBranch reports whether an install is held by a branch other
+// than claimingBranchID with a claim strong enough to refuse a handover.
+//
+// A branch that picked the install up through an all-installs group is a weak
+// owner: it claimed whatever was unclaimed rather than this install in
+// particular, so a selector or an explicit ID naming the install takes it over.
+// Run-time resolution already works this way, since ResolveAllInstallsForBranch
+// drops installs another branch's selector matches.
+func (h *Helpers) InstallOwnedByOtherBranch(ctx context.Context, install *app.Install, claimingBranchID string) (bool, error) {
+	return h.installOwnedByOtherBranch(ctx, install, claimingBranchID, newOwnerGroupCache())
+}
+
+// ownerGroupCache keeps a caller that walks many installs from re-reading the
+// same owning branch's config for each one.
+type ownerGroupCache map[string][]app.AppBranchInstallGroup
+
+func newOwnerGroupCache() ownerGroupCache {
+	return ownerGroupCache{}
+}
+
+func (h *Helpers) installOwnedByOtherBranch(
+	ctx context.Context,
+	install *app.Install,
+	claimingBranchID string,
+	cache ownerGroupCache,
+) (bool, error) {
+	ownerID := install.AppBranchID.String
+	if !install.AppBranchID.Valid || ownerID == "" || ownerID == claimingBranchID {
+		return false, nil
+	}
+
+	groups, ok := cache[ownerID]
+	if !ok {
+		loaded, err := h.LatestConfigInstallGroups(ctx, ownerID)
+		if err != nil {
+			return false, err
+		}
+		groups = loaded
+		cache[ownerID] = groups
+	}
+
+	return !claimIsAllInstallsOnly(groups, install), nil
+}
+
+// claimIsAllInstallsOnly reports whether the owning branch holds the install
+// only because one of its groups takes everything unclaimed. An owner with no
+// all-installs group holds it for some reason this cannot see, so it keeps it.
+func claimIsAllInstallsOnly(groups []app.AppBranchInstallGroup, install *app.Install) bool {
+	allInstalls := false
+	for i := range groups {
+		group := &groups[i]
+		for _, id := range group.InstallIDs {
+			if id == install.ID {
+				return false
+			}
+		}
+		if group.LabelSelector != nil && group.LabelSelector.Matches(install.Labels) {
+			return false
+		}
+		if group.AllInstalls {
+			allInstalls = true
+		}
+	}
+
+	return allInstalls
+}
+
 // FindBranchesMatchingLabels returns all app branches whose latest config
 // has an install group with a label selector that matches the given labels.
 func (h *Helpers) FindBranchesMatchingLabels(ctx context.Context, appID string, lbls labels.Labels) ([]BranchForLabels, error) {
@@ -30,22 +122,9 @@ func (h *Helpers) FindBranchesMatchingLabels(ctx context.Context, appID string, 
 	var results []BranchForLabels
 	for i := range branches {
 		branch := &branches[i]
-		var latestConfig app.AppBranchConfig
-		if err := h.db.WithContext(ctx).
-			Where(app.AppBranchConfig{AppBranchID: branch.ID}).
-			Order("created_at DESC").
-			First(&latestConfig).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
-				continue
-			}
-			return nil, fmt.Errorf("unable to get latest config for branch %s: %w", branch.ID, err)
-		}
-
-		var groups []app.AppBranchInstallGroup
-		if err := h.db.WithContext(ctx).
-			Where(app.AppBranchInstallGroup{AppBranchConfigID: latestConfig.ID}).
-			Find(&groups).Error; err != nil {
-			return nil, fmt.Errorf("unable to get install groups for config %s: %w", latestConfig.ID, err)
+		groups, err := h.LatestConfigInstallGroups(ctx, branch.ID)
+		if err != nil {
+			return nil, err
 		}
 
 		for j := range groups {
@@ -72,7 +151,11 @@ func (h *Helpers) ValidateInstallBranchExclusivity(ctx context.Context, install 
 	}
 
 	for _, m := range matches {
-		if install.AppBranchID.Valid && install.AppBranchID.String != m.Branch.ID {
+		owned, err := h.InstallOwnedByOtherBranch(ctx, install, m.Branch.ID)
+		if err != nil {
+			return err
+		}
+		if owned {
 			return stderr.ErrUser{
 				Err: fmt.Errorf(
 					"install %s is on branch %q but labels also match branch %q",
@@ -273,8 +356,14 @@ func (h *Helpers) ValidateInstallIDsNotOnOtherBranch(ctx context.Context, branch
 		return fmt.Errorf("unable to get installs: %w", err)
 	}
 
-	for _, install := range installs {
-		if install.AppBranchID.Valid && install.AppBranchID.String != branchID {
+	cache := newOwnerGroupCache()
+	for i := range installs {
+		install := &installs[i]
+		owned, err := h.installOwnedByOtherBranch(ctx, install, branchID, cache)
+		if err != nil {
+			return err
+		}
+		if owned {
 			return stderr.ErrUser{
 				Err: fmt.Errorf(
 					"install %q (%s) is already on branch %s",
@@ -292,9 +381,48 @@ func (h *Helpers) ValidateInstallIDsNotOnOtherBranch(ctx context.Context, branch
 	return nil
 }
 
+// ClaimSelectorInstallsFromWeakOwners re-points installs a new config's
+// selectors match away from a branch that only held them through an
+// all-installs group. Without it the handover the validator now allows would
+// leave the install still recorded on the branch that let it go.
+func (h *Helpers) ClaimSelectorInstallsFromWeakOwners(ctx context.Context, appID, branchID string, selectors []*labels.Selector) error {
+	if len(selectors) == 0 {
+		return nil
+	}
+
+	var installs []app.Install
+	if err := h.db.WithContext(ctx).
+		Where(app.Install{AppID: appID}).
+		Where("app_branch_id IS NOT NULL AND app_branch_id != ?", branchID).
+		Find(&installs).Error; err != nil {
+		return fmt.Errorf("unable to get installs: %w", err)
+	}
+
+	cache := newOwnerGroupCache()
+	for i := range installs {
+		install := &installs[i]
+		if !matchesAny(selectors, install.Labels) {
+			continue
+		}
+
+		owned, err := h.installOwnedByOtherBranch(ctx, install, branchID, cache)
+		if err != nil {
+			return err
+		}
+		if owned {
+			continue
+		}
+
+		h.SyncInstallBranchConnection(ctx, install, branchID)
+	}
+
+	return nil
+}
+
 // ValidateBranchConfigInstallsNotOnOtherBranch resolves installs from
 // label selectors and checks none are already assigned to a different branch.
 func (h *Helpers) ValidateBranchConfigInstallsNotOnOtherBranch(ctx context.Context, appID, branchID string, selectors []*labels.Selector) error {
+	cache := newOwnerGroupCache()
 	for _, sel := range selectors {
 		if sel == nil {
 			continue
@@ -307,11 +435,16 @@ func (h *Helpers) ValidateBranchConfigInstallsNotOnOtherBranch(ctx context.Conte
 			return fmt.Errorf("unable to get installs: %w", err)
 		}
 
-		for _, install := range installs {
+		for i := range installs {
+			install := &installs[i]
 			if !sel.Matches(install.Labels) {
 				continue
 			}
-			if install.AppBranchID.Valid && install.AppBranchID.String != branchID {
+			owned, err := h.installOwnedByOtherBranch(ctx, install, branchID, cache)
+			if err != nil {
+				return err
+			}
+			if owned {
 				return stderr.ErrUser{
 					Err: fmt.Errorf(
 						"install %q (%s) is already on branch %s",

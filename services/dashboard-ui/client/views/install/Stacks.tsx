@@ -8,6 +8,7 @@ import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { EditStackOverridesButton } from '@/components/installs/management/EditStackOverrides'
+import { CustomStackTemplateURL } from '@/components/stacks/CustomStackTemplateURL'
 import { InstallStackVersionCards } from '@/components/stacks/InstallStackVersionCards'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { PageSection } from '@/components/layout/PageSection'
@@ -262,14 +263,9 @@ export const Stacks = () => {
                     {
                       key: 'template_url',
                       header: 'Template URL',
-                      render: (value) =>
-                        value ? (
-                          <Text variant="subtext">
-                            <Link href={String(value)} isExternal>
-                              {String(value)}
-                            </Link>
-                          </Text>
-                        ) : null,
+                      render: (_value, stack) => (
+                        <CustomStackTemplateURL stack={stack} />
+                      ),
                     },
                     {
                       key: 'parameters',

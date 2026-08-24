@@ -94,6 +94,12 @@ sign-off (allowlist: `DeploymentPlanEditor`). Anything else with inputs → TanS
 
 11. Always spread `{...props}` onto `<Modal>` (see `dashboard-ui:user-flow`).
 
+12. **(Optional) Add analytics tracking.** If the submit is worth measuring, add a `trackEvent` call
+    to the container's mutation `onSuccess` **and** `onError` — see `dashboard-ui:add-tracking`.
+    Snake_case event name, camelCase props (the adaptor snake_cases keys), rely on the `org_id` /
+    `app_id` / `install_id` super properties. Tracking lives in the container alongside the mutation,
+    never in the form component, and no-ops silently when analytics is off.
+
 ## Anti-Patterns
 
 - **No** `useState`-per-field, `new FormData(...)`, or `forwardRef` + `requestSubmit` — TanStack Form

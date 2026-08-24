@@ -11,7 +11,7 @@ import { useRunner } from '@/hooks/use-runner'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { shutdownRunnerInstance } from '@/lib'
-import { trackEvent } from '@/lib/segment-analytics'
+import { trackEvent } from '@/lib/posthog-analytics'
 import { ShutdownInstanceModal } from './ShutdownInstance'
 
 export const ShutdownInstanceButton = ({ ...props }: IButtonAsButton) => {
