@@ -231,7 +231,7 @@ func (s *Signal) handleInactive(ctx workflow.Context, tmw tmetrics.Writer, l *za
 		return errors.Wrap(err, "unable to update process status to inactive")
 	}
 
-	stopTags := metrics.ToTags(tags)
+	stopTags := metrics.ToTags(tags, "reason:offline")
 	tmw.Incr(ctx, "runner.process.stop", stopTags...)
 	if process.StartedAt != nil {
 		tmw.Timing(ctx, "runner.process.latency", workflow.Now(ctx).Sub(*process.StartedAt), stopTags...)
