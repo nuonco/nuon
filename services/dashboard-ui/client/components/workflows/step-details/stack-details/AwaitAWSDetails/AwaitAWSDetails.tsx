@@ -636,6 +636,10 @@ const buildSecretExports = (secrets: Array<{ name?: string }>): string =>
     )
     .join('\n')
 
+// OIDC auth is hidden until the experience is polished and fully tested; flip
+// this to restore the Static token / OIDC toggle.
+const OIDC_AUTH_ENABLED = false
+
 // Directions for the published nuonco/stack/aws module, which reads its whole config
 // from the API. Distinct from TerraformTab, which clones install-stacks and is driven
 // by generated tfvars.
@@ -645,7 +649,7 @@ const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
   const [authMethod, setAuthMethod] = useState<'token' | 'oidc'>('token')
   // Only fetched once the OIDC pane is opened; most customers never need this list.
   const { data: trustPolicies } = useOIDCTrustPolicies({
-    enabled: authMethod === 'oidc',
+    enabled: OIDC_AUTH_ENABLED && authMethod === 'oidc',
   })
   const {
     data: serviceAccount,
@@ -740,14 +744,14 @@ provider "aws" {
   region = "${region}"
 }
 
-provider "stack" {}${secretVariablesBlock}
+provider "stack" {}
 
 module "aws_stack" {
   source  = "nuonco/stack/aws"
   version = "~> 0.2"
 
   install_id = "${installId ?? '<install-id>'}"${inputsBlock}${secretsBlock}
-}`
+}${secretVariablesBlock}`
 
   // Always a placeholder: the token value is shown once, in the create modal.
   const authCmd = `export NUON_API_TOKEN='<api-token>'`
@@ -755,16 +759,6 @@ module "aws_stack" {
 
   return (
     <div className="flex flex-col gap-4 pt-4">
-      <Text variant="subtext" theme="neutral">
-        The <code>nuonco/stack/aws</code> module reads this install&apos;s
-        configuration from the Nuon API. You supply the install ID plus the
-        app&apos;s customer-facing inputs, and the secret values as{' '}
-        <code>TF_VAR_*</code> environment variables; everything else — runner
-        details, IAM permissions, and roles — comes from the control plane.
-        Values you set here override the control plane&apos;s, and unrecognized
-        names fail the plan.
-      </Text>
-
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
           1. Create your Terraform configuration
@@ -779,23 +773,13 @@ module "aws_stack" {
           <Code variant="preformated">{mainTf}</Code>
         </Card>
         {secretExports ? (
-          <>
-            <Card>
-              <span className="flex justify-between items-center">
-                <Text>
-                  Export the app&apos;s secret values. Terraform reads each{' '}
-                  <code>TF_VAR_*</code> variable at plan time.
-                </Text>
-                <ClickToCopyButton textToCopy={secretExports} />
-              </span>
-              <Code variant="preformated">{secretExports}</Code>
-            </Card>
-            <Text variant="subtext" theme="neutral">
-              Secret values are supplied through <code>TF_VAR_*</code>{' '}
-              environment variables and are never written to disk, so CI systems
-              can inject them as masked secrets.
-            </Text>
-          </>
+          <Card>
+            <span className="flex justify-between items-center">
+              <Text>Export the app&apos;s secret values.</Text>
+              <ClickToCopyButton textToCopy={secretExports} />
+            </span>
+            <Code variant="preformated">{secretExports}</Code>
+          </Card>
         ) : null}
       </div>
 
@@ -806,16 +790,18 @@ module "aws_stack" {
           <Text variant="base" weight="strong">
             2. Authenticate
           </Text>
-          <ToggleButton<'token' | 'oidc'>
-            value={authMethod}
-            onChange={setAuthMethod}
-            options={[
-              { value: 'token', label: 'Static token' },
-              { value: 'oidc', label: 'OIDC' },
-            ]}
-          />
+          {OIDC_AUTH_ENABLED ? (
+            <ToggleButton<'token' | 'oidc'>
+              value={authMethod}
+              onChange={setAuthMethod}
+              options={[
+                { value: 'token', label: 'Static token' },
+                { value: 'oidc', label: 'OIDC' },
+              ]}
+            />
+          ) : null}
         </span>
-        {authMethod === 'oidc' ? (
+        {OIDC_AUTH_ENABLED && authMethod === 'oidc' ? (
           <OIDCAuthPane
             installId={installId}
             policyNames={(trustPolicies ?? [])
@@ -983,9 +969,7 @@ env:
 
       <Text variant="subtext" theme="neutral">
         Without <code>id-token: write</code> the workflow cannot mint an ID
-        token and the provider falls back to looking for a static token. If the
-        workflow points the provider at a different API URL, the policy&apos;s
-        audience has to match it.
+        token and the provider falls back to looking for a static token.
       </Text>
     </>
   )
