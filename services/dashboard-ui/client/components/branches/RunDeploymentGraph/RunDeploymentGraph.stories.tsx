@@ -28,8 +28,8 @@ const mockRuns: any[] = [
     completed_installs: 2,
     total_installs: 2,
     installs: [
-      { install_id: 'inst-001', status: 'success' },
-      { install_id: 'inst-002', status: 'success' },
+      { install_id: 'inst-001', workflow_id: 'inw-001', status: 'success' },
+      { install_id: 'inst-002', workflow_id: 'inw-002', status: 'success' },
     ],
   },
   {
@@ -41,9 +41,9 @@ const mockRuns: any[] = [
     completed_installs: 1,
     total_installs: 3,
     installs: [
-      { install_id: 'inst-003', status: 'success' },
-      { install_id: 'inst-004', status: 'in-progress' },
-      { install_id: 'inst-005', status: 'pending' },
+      { install_id: 'inst-003', workflow_id: 'inw-003', status: 'success' },
+      { install_id: 'inst-004', workflow_id: 'inw-004', status: 'in-progress' },
+      { install_id: 'inst-005', workflow_id: 'inw-005', status: 'pending' },
     ],
   },
 ]
@@ -69,7 +69,7 @@ const failedRuns: any[] = [
     status: { status: 'error' },
     completed_installs: 0,
     total_installs: 1,
-    installs: [{ install_id: 'inst-006', status: 'error' }],
+    installs: [{ install_id: 'inst-006', workflow_id: 'inw-006', status: 'error' }],
   },
 ]
 
@@ -91,6 +91,7 @@ const postDeployRunbookRuns: any[] = [
     installs: [
       {
         install_id: 'inst-007',
+        workflow_id: 'inw-007',
         status: 'success',
         phase: 'runbook',
         runbooks: [
@@ -100,6 +101,7 @@ const postDeployRunbookRuns: any[] = [
       },
       {
         install_id: 'inst-008',
+        workflow_id: 'inw-008',
         status: 'error',
         phase: 'runbook',
         runbooks: [
@@ -120,5 +122,98 @@ export const WithPostDeployRunbooks = () => (
 export const Empty = () => (
   <div className="p-4">
     <RunDeploymentGraph installGroupRuns={[]} orgId="org-demo" />
+  </div>
+)
+
+const REGION_SUFFIXES = [
+  'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'eu-west-1', 'eu-west-2',
+  'eu-central-1', 'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1',
+  'ca-central-1', 'sa-east-1', 'af-south-1', 'me-south-1',
+]
+
+const RUNBOOK_NAMES = ['db-migrate', 'smoke-test', 'cache-warm', 'notify-slack']
+
+function buildLargeRun(
+  specs: { name: string; count: number; completed: number; status: string; runbooks?: number }[]
+) {
+  const installsById: Record<string, any> = {}
+  const runs: any[] = specs.map((spec, gi) => {
+    const installs = Array.from({ length: spec.count }, (_, i) => {
+      const id = `inst-g${gi}-${i}`
+      const region = REGION_SUFFIXES[i % REGION_SUFFIXES.length]
+      installsById[id] = {
+        id,
+        name: `acme-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${region}-${String(i + 1).padStart(2, '0')}`,
+      }
+      let status = 'pending'
+      if (i < spec.completed) status = 'success'
+      else if (i === spec.completed && spec.status === 'in-progress') status = 'in-progress'
+      else if (i === spec.completed && spec.status === 'error') status = 'error'
+      const runbooks =
+        spec.runbooks && status !== 'pending'
+          ? Array.from({ length: spec.runbooks }, (_, r) => ({
+              runbook_id: `rb-g${gi}-${i}-${r}`,
+              runbook_name: RUNBOOK_NAMES[r % RUNBOOK_NAMES.length],
+              status:
+                status === 'success'
+                  ? 'success'
+                  : r < spec.runbooks! - 1
+                    ? 'success'
+                    : status,
+            }))
+          : []
+      return {
+        install_id: id,
+        workflow_id: `inw-g${gi}-${i}`,
+        status,
+        phase: runbooks.length ? 'runbook' : undefined,
+        runbooks,
+      }
+    })
+    return {
+      id: `igr-${gi}`,
+      install_group_id: `group-${gi}`,
+      install_group_name: spec.name,
+      install_group: { label_selector: { match_labels: { group: spec.name.toLowerCase().replace(/\s+/g, '-') } } },
+      status: { status: spec.status },
+      completed_installs: spec.completed,
+      total_installs: spec.count,
+      installs,
+    }
+  })
+  return { runs, installsById }
+}
+
+const largeRun = buildLargeRun([
+  { name: 'Canary', count: 4, completed: 4, status: 'success' },
+  { name: 'Production US', count: 30, completed: 12, status: 'in-progress' },
+  { name: 'Production EU', count: 18, completed: 0, status: 'pending' },
+  { name: 'Staging', count: 9, completed: 5, status: 'error' },
+])
+
+export const ManyGroupsLargeInstallCounts = () => (
+  <div className="p-4">
+    <RunDeploymentGraph
+      installGroupRuns={largeRun.runs}
+      installsById={largeRun.installsById}
+      orgId="org-demo"
+    />
+  </div>
+)
+
+const largeRunWithRunbooks = buildLargeRun([
+  { name: 'Canary', count: 4, completed: 4, status: 'success', runbooks: 2 },
+  { name: 'Production US', count: 30, completed: 12, status: 'in-progress', runbooks: 3 },
+  { name: 'Production EU', count: 18, completed: 0, status: 'pending', runbooks: 2 },
+  { name: 'Staging', count: 9, completed: 5, status: 'error', runbooks: 4 },
+])
+
+export const ManyGroupsLargeInstallCountsWithRunbooks = () => (
+  <div className="p-4">
+    <RunDeploymentGraph
+      installGroupRuns={largeRunWithRunbooks.runs}
+      installsById={largeRunWithRunbooks.installsById}
+      orgId="org-demo"
+    />
   </div>
 )
