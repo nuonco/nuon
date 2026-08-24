@@ -5648,7 +5648,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -5852,7 +5852,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -8480,9 +8480,8 @@ export interface components {
       duration?: string;
       invalidate?: boolean;
       /**
-       * @description Name labels the token wherever it is listed. Defaults to the service
-       * account's identity, which is the only thing distinguishing one of these from
-       * another when several exist.
+       * @description Name labels the token wherever it is listed. Defaults to the service account's
+       * identity, the only thing distinguishing several of these.
        */
       name?: string;
     };
@@ -8968,14 +8967,13 @@ export interface components {
       account_id?: string;
       email?: string;
       /**
-       * @description ExpiresAt is the expiry of the longest-lived usable token, and is zero when
+       * @description ExpiresAt is the expiry of the longest-lived usable token; zero when
        * HasLiveToken is false.
        */
       expires_at?: string;
       /**
-       * @description HasLiveToken is false both when no token was ever created and when every token
-       * issued has expired or been revoked — from the caller's side those are the same
-       * situation, and both are fixed the same way.
+       * @description HasLiveToken is false whether no token was ever created or every one has
+       * expired or been revoked; the caller fixes both the same way.
        */
       has_live_token?: boolean;
     };

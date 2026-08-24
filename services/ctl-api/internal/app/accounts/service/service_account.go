@@ -115,16 +115,23 @@ func (s *service) getOrgServiceAccount(ctx context.Context, orgID, accountID str
 // account_roles org index. Joining accounts to account_roles in the list query
 // instead lets the planner walk the whole accounts table in email order to
 // satisfy the ORDER BY and LIMIT, which took tens of seconds on a cold cache.
-func (s *service) orgServiceAccountIDs(ctx context.Context, orgID string, includeRunners bool) ([]string, error) {
+func (s *service) orgServiceAccountIDs(ctx context.Context, orgID string, includeRunners, includeStacks bool) ([]string, error) {
 	tx := s.db.WithContext(ctx).
 		Model(&app.AccountRole{}).
 		Joins("JOIN accounts ON accounts.id = account_roles.account_id AND accounts.deleted_at = 0 AND accounts.account_type = ?", app.AccountTypeService).
 		Where(app.AccountRole{OrgID: generics.NewNullString(orgID)})
 
+	excludedRoleTypes := []app.RoleType{}
 	if !includeRunners {
+		excludedRoleTypes = append(excludedRoleTypes, app.RoleTypeRunner)
+	}
+	if !includeStacks {
+		excludedRoleTypes = append(excludedRoleTypes, app.RoleTypeStack)
+	}
+	if len(excludedRoleTypes) > 0 {
 		tx = tx.
 			Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0").
-			Where("roles.role_type != ?", app.RoleTypeRunner)
+			Where("roles.role_type NOT IN ?", excludedRoleTypes)
 	}
 
 	accountIDs := []string{}
@@ -142,6 +149,7 @@ func (s *service) orgServiceAccountIDs(ctx context.Context, orgID string, includ
 // @Param					limit			query	int		false	"limit of results to return"	Default(10)
 // @Param					page			query	int		false	"page number of results to return"	Default(0)
 // @Param					include_runners	query	bool	false	"include service accounts with the runner role (excluded by default)"
+// @Param					include_stacks	query	bool	false	"include service accounts with the stack role (excluded by default)"
 // @Tags					accounts
 // @Accept					json
 // @Produce				json
@@ -160,8 +168,9 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 	}
 
 	includeRunners := ctx.Query("include_runners") == "true"
+	includeStacks := ctx.Query("include_stacks") == "true"
 
-	accountIDs, err := s.orgServiceAccountIDs(ctx, org.ID, includeRunners)
+	accountIDs, err := s.orgServiceAccountIDs(ctx, org.ID, includeRunners, includeStacks)
 	if err != nil {
 		ctx.Error(err)
 		return
