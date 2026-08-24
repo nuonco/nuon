@@ -21,6 +21,8 @@ type AdminCleanupOrphanedRequest struct {
 type AdminCleanupOrphanedResponse struct {
 	OrgsProcessed     int `json:"orgs_processed"`
 	InstallsProcessed int `json:"installs_processed"`
+	AppsProcessed     int `json:"apps_processed"`
+	VCSConnsProcessed int `json:"vcs_conns_processed"`
 	QueuesDeleted     int `json:"queues_deleted"`
 	EmittersDeleted   int `json:"emitters_deleted"`
 	SignalsCancelled  int `json:"signals_cancelled"`
@@ -28,11 +30,12 @@ type AdminCleanupOrphanedResponse struct {
 }
 
 // @ID						AdminCleanupOrphanedQueues
-// @Summary				Delete queues and emitters orphaned by forgotten installs and deleted orgs
-// @Description			Iterates soft-deleted orgs and forgotten installs, and for each one (in its own
-// @Description			transaction) cancels pending signals on its live queues, deletes the queues'
-// @Description			emitters, and soft-deletes the queues. Install cleanup also covers queues owned by
-// @Description			runners in the install's runner groups.
+// @Summary				Delete queues and emitters orphaned by forgotten installs and deleted orgs and apps
+// @Description			Iterates soft-deleted orgs, forgotten installs, deleted apps (including apps of
+// @Description			deleted orgs), and deleted VCS connections, and for each one (in its own transaction)
+// @Description			cancels pending signals on its live queues, deletes the queues' emitters, and
+// @Description			soft-deletes the queues. Install cleanup also covers queues owned by runners in the
+// @Description			install's runner groups.
 // @Param					req	body	AdminCleanupOrphanedRequest	true	"Input"
 // @Tags					queues/admin
 // @Security				AdminEmail
@@ -63,6 +66,16 @@ func (s *service) AdminCleanupOrphanedQueues(ctx *gin.Context) {
 		Where("deleted_at != 0").
 		Pluck("id", &forgottenInstallIDs); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to list forgotten installs: %w", res.Error))
+		return
+	}
+
+	var deletedAppIDs []string
+	if res := db.Unscoped().Model(&app.App{}).
+		Where("deleted_at != 0").
+		Or("org_id IN (?)", db.Session(&gorm.Session{NewDB: true}).Unscoped().
+			Model(&app.Org{}).Select("id").Where("deleted_at != 0")).
+		Pluck("id", &deletedAppIDs); res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to list deleted apps: %w", res.Error))
 		return
 	}
 
@@ -147,10 +160,66 @@ func (s *service) AdminCleanupOrphanedQueues(ctx *gin.Context) {
 		resp.InstallsProcessed++
 	}
 
+	var deletedVCSConnIDs []string
+	if res := db.Unscoped().Model(&app.VCSConnection{}).
+		Where("deleted_at != 0").
+		Pluck("id", &deletedVCSConnIDs); res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to list deleted vcs connections: %w", res.Error))
+		return
+	}
+
+	vcsConnTable := plugins.TableName(db, app.VCSConnection{})
+
+	for _, vcsConnID := range deletedVCSConnIDs {
+		var queueIDs []string
+		if res := db.Model(&app.Queue{}).
+			Where(app.Queue{OwnerID: vcsConnID, OwnerType: vcsConnTable}).
+			Pluck("id", &queueIDs); res.Error != nil {
+			s.l.Warn("unable to list vcs connection queues", zap.String("vcs_connection_id", vcsConnID), zap.Error(res.Error))
+			resp.Failed++
+			continue
+		}
+		if len(queueIDs) == 0 {
+			continue
+		}
+
+		if err := s.cleanupQueues(ctx, queueIDs, req.DryRun, &resp); err != nil {
+			s.l.Warn("unable to clean up vcs connection queues", zap.String("vcs_connection_id", vcsConnID), zap.Error(err))
+			resp.Failed++
+			continue
+		}
+		resp.VCSConnsProcessed++
+	}
+
+	appTable := plugins.TableName(db, app.App{})
+
+	for _, appID := range deletedAppIDs {
+		var queueIDs []string
+		if res := db.Model(&app.Queue{}).
+			Where(app.Queue{OwnerID: appID, OwnerType: appTable}).
+			Pluck("id", &queueIDs); res.Error != nil {
+			s.l.Warn("unable to list app queues", zap.String("app_id", appID), zap.Error(res.Error))
+			resp.Failed++
+			continue
+		}
+		if len(queueIDs) == 0 {
+			continue
+		}
+
+		if err := s.cleanupQueues(ctx, queueIDs, req.DryRun, &resp); err != nil {
+			s.l.Warn("unable to clean up app queues", zap.String("app_id", appID), zap.Error(err))
+			resp.Failed++
+			continue
+		}
+		resp.AppsProcessed++
+	}
+
 	s.l.Info("orphaned queue cleanup complete",
 		zap.Bool("dry_run", req.DryRun),
 		zap.Int("orgs_processed", resp.OrgsProcessed),
 		zap.Int("installs_processed", resp.InstallsProcessed),
+		zap.Int("apps_processed", resp.AppsProcessed),
+		zap.Int("vcs_conns_processed", resp.VCSConnsProcessed),
 		zap.Int("queues_deleted", resp.QueuesDeleted),
 		zap.Int("emitters_deleted", resp.EmittersDeleted),
 		zap.Int("signals_cancelled", resp.SignalsCancelled),
