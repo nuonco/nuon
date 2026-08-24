@@ -4,6 +4,7 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { IAMRolePoliciesCard, IAMRoleBoundaryExpand } from './IAMRoles'
+import { humanize } from '@/utils/string-utils'
 
 type TAppRole = {
   id?: string
@@ -40,8 +41,8 @@ export const AppRoleDetail = ({ role }: { role: TAppRole }) => {
           </LabeledValue>
           <LabeledValue label="Name">{role?.name}</LabeledValue>
           <LabeledValue label="Type">
-            <Badge variant="code" size="sm">
-              {role?.type}
+            <Badge size="sm">
+              {humanize(role?.type)}
             </Badge>
           </LabeledValue>
         </div>

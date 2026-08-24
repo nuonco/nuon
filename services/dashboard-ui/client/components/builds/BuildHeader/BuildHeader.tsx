@@ -25,7 +25,6 @@ import { useToast } from '@/hooks/use-toast'
 import { cancelComponentBuild } from '@/lib'
 import type { TApp, TAPIError, TBuild, TComponent } from '@/types'
 import { isImageBuild } from '@/utils/image-ref'
-import { toSentenceCase } from '@/utils/string-utils'
 
 interface IBuildHeader {
   component: TComponent
@@ -88,7 +87,7 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
               tipContentClassName: 'w-fit',
               tipContent: (
                 <Text nowrap variant="subtext">
-                  {toSentenceCase(build?.status_v2?.status_human_description)}
+                  {build?.status_v2?.status_human_description}
                 </Text>
               ),
               position: 'bottom',

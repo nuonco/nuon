@@ -88,6 +88,16 @@ For visual decisions (tokens, spacing, borders, dark mode), follow `services/das
 
 For `Tabs`: keys are rendered via `toSentenceCase(camelToWords(key))` which lowercases everything after the first character — always write keys all-lowercase (`'create your own app'`, not `'Create Your Own App'`).
 
+## Rendered strings (casing, font, chip)
+
+Every string you render is exactly one of three classes; the class fixes its casing, font, and (as a chip) its component. Classify with these tests, then apply the treatment. Full record: `DESIGN.md` §1 / UXDR 019.
+
+1. **Identifier** — *Could a user copy this exact string into a terminal, config, or search?* (names, IDs, k8s kinds, terraform/cloud resource types, image tags, paths, versions, label keys/values) → **verbatim, never re-cased, mono** (`ID`, `Code`, `Badge variant="code"`, `LabelBadge`, `Text family="mono"`).
+2. **API vocabulary** — *Is the full value set enumerable from our Go code?* (statuses, trigger/workflow/plan/step types, ops) → **`humanize()` from `@/utils/string-utils` (sentence case, acronyms preserved), sans**. `Status` humanizes for you; never re-case vocabulary by hand at a call site.
+3. **UI copy** — neither of the above → `COPY_STYLE.md`.
+
+**Chip pick:** value changes on its own while you watch (lifecycle) → `Status`; static classification (type/kind/count/version) → `Badge` (`variant="code"` iff identifier content, default sans variant iff vocabulary); user key:value label → `LabelBadge`. **mono ⇔ identifier.** Never `humanize()` a string that contains a user identifier (mixed strings, e.g. a step name) or a free-text API sentence (`status_human_description`) — render those verbatim.
+
 ## Icons
 
 Use the `Icon` component from `@/components/common/Icon` for ALL icons. Always use the `Icon` suffix for variant names (e.g., `HouseIcon` not `House`).
@@ -134,3 +144,5 @@ The `Button` owns its tooltip via `tooltipProps` (`Omit<ITooltip, 'children'>`).
 - **Do not** use `StoryObj` or `render:` in stories — Ladle v5 requires plain function exports
 - **Do not** import icons directly from `@phosphor-icons/react` — always use the `Icon` component
 - **Do not** hand-build a `*Skeleton` component — use the primitive `loading` prop, `<Table isLoading>`, or a spinner for unknown shape
+- **Do not** render a raw API enum (`{role.type}`, `{step.type}`) or re-case vocabulary at a call site (`toSentenceCase`/`toTitleCase`/hand-rolled) — route vocabulary through `humanize()`, render identifiers verbatim + mono (see "Rendered strings")
+- **Do not** add a `Record<string, string>` display map whose entries just equal `humanize(key)`, put a lifecycle status in a `Badge` (use `Status`), or make a chip mono for vocabulary / sans for an identifier

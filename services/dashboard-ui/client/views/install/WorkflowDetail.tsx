@@ -9,7 +9,7 @@ import { WorkflowProvider } from '@/providers/workflow-provider'
 import { useWorkflow } from '@/hooks/use-workflow'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { snakeToWords, toSentenceCase } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 
 export const WorkflowDetail = () => {
   const { workflowId } = useParams()
@@ -28,7 +28,7 @@ const WorkflowDetailContent = () => {
   const { workflow } = useWorkflow()
 
   const workflowName =
-    workflow?.name || toSentenceCase(snakeToWords(workflow?.type)) || 'Workflow'
+    workflow?.name || humanize(workflow?.type) || 'Workflow'
 
   return (
     <PageSection className="!gap-2">

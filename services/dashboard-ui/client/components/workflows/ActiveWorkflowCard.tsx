@@ -10,7 +10,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import type { TInstall, TWorkflow } from '@/types'
 import { cn } from '@/utils/classnames'
-import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
+import { humanize } from '@/utils/string-utils'
 import {
   getWorkflowHref,
   getWorkflowPendingApprovals,
@@ -166,7 +166,7 @@ export const ActiveWorkflowCard = ({
             </LabeledValue>
             <LabeledValue label="Type" className="flex-1">
               <Text variant="subtext" className="truncate">
-                {toSentenceCase(snakeToWords(workflow.type))}
+                {humanize(workflow.type)}
               </Text>
             </LabeledValue>
             <CancelWorkflowButton workflow={workflow} size="sm">
