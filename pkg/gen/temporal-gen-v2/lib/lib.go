@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/dir"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/file"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/generator"
+	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/labels"
 )
 
 // Options configures a code generation run.
@@ -41,6 +42,30 @@ type Options struct {
 
 	// OnPackage is called before processing each package. May be nil.
 	OnPackage func(pkgName string)
+
+	// ConfigPath points at an explicit temporal-gen.yaml. When empty, the
+	// config is discovered by walking up from Dir to the module root.
+	ConfigPath string
+
+	// NoConfig skips config discovery entirely, so no label defaults apply.
+	NoConfig bool
+}
+
+// ResolveConfig loads the label config for a run: an explicit ConfigPath if
+// given, otherwise whatever discovery finds walking up from Dir. Returns
+// (nil, nil) when there is no config, which is the normal no-labels case.
+func ResolveConfig(opts Options) (*labels.Config, error) {
+	if opts.NoConfig {
+		return nil, nil
+	}
+	if opts.ConfigPath != "" {
+		return labels.Load(opts.ConfigPath)
+	}
+	targetDir := opts.Dir
+	if targetDir == "" {
+		targetDir = "."
+	}
+	return labels.Discover(targetDir)
 }
 
 // Generate runs temporal code generation with the provided options.
@@ -55,6 +80,16 @@ func Generate(ctx context.Context, opts Options) error {
 	parallelism := opts.Parallelism
 	if parallelism <= 0 {
 		parallelism = runtime.NumCPU()
+	}
+
+	// Resolved once per run rather than per package, so which config applies
+	// is deterministic and independent of package traversal order.
+	labelCfg, err := ResolveConfig(opts)
+	if err != nil {
+		return err
+	}
+	if labelCfg != nil {
+		fmt.Printf("using label config %s\n", labelCfg.Path())
 	}
 
 	if opts.Cleanup {
@@ -84,7 +119,7 @@ func Generate(ctx context.Context, opts Options) error {
 				if opts.OnPackage != nil {
 					opts.OnPackage(pkg.Pkg.Name)
 				}
-				return processPackage(egCtx, pkg, opts.Validate, genOpts)
+				return processPackage(egCtx, pkg, opts.Validate, genOpts, labelCfg)
 			})
 		}
 
@@ -158,7 +193,7 @@ func removeIfGenerated(path string) error {
 	return nil
 }
 
-func processPackage(ctx context.Context, pkg *dir.Package, strict bool, opts generator.GeneratorOptions) error {
+func processPackage(ctx context.Context, pkg *dir.Package, strict bool, opts generator.GeneratorOptions, cfg *labels.Config) error {
 	for i, syntax := range pkg.Pkg.Syntax {
 		path := pkg.Pkg.GoFiles[i]
 
@@ -166,7 +201,7 @@ func processPackage(ctx context.Context, pkg *dir.Package, strict bool, opts gen
 			continue
 		}
 
-		f, err := file.ProcessFile(pkg, syntax, path, strict)
+		f, err := file.ProcessFile(pkg, syntax, path, strict, cfg)
 		if err != nil {
 			return fmt.Errorf("failed to process file %s: %w", path, err)
 		}

@@ -140,6 +140,7 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 				Params:        params,
 				Receiver:      receiver,
 				ByFieldType:   byFieldType,
+				Labels:        fn.Annotation.Labels,
 			}
 			code, err = GenerateActivity(data)
 
@@ -174,6 +175,7 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 				OutputType:   outputType,
 				Options:      fn.Annotation.WorkflowOpts,
 				Receiver:     receiver,
+				Labels:       fn.Annotation.Labels,
 			}
 			code, err = GenerateWorkflow(data)
 		} else if fn.Annotation.Type == "query" {

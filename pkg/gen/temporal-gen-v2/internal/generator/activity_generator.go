@@ -10,6 +10,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/labels"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/parser"
 )
 
@@ -32,6 +33,9 @@ type ActivityData struct {
 	Params        []Param
 	Receiver      string
 	ByFieldType   string
+	// Labels names the labels whose defaults were folded into Options, purely
+	// so generated code documents where its values came from.
+	Labels []labels.Pair
 }
 
 func GenerateActivity(data ActivityData) ([]byte, error) {

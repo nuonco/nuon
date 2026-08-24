@@ -5,6 +5,7 @@ import (
 	"go/ast"
 
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/dir"
+	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/labels"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/parser"
 )
 
@@ -22,8 +23,9 @@ type Function struct {
 	Annotation *parser.Annotation
 }
 
-// ProcessFile scans a file for annotations and returns a File struct if any are found
-func ProcessFile(pkg *dir.Package, file *ast.File, path string, strict bool) (*File, error) {
+// ProcessFile scans a file for annotations and returns a File struct if any are found.
+// cfg supplies label defaults and may be nil when no temporal-gen.yaml is in use.
+func ProcessFile(pkg *dir.Package, file *ast.File, path string, strict bool, cfg *labels.Config) (*File, error) {
 	var functions []*Function
 	var parseErr error
 
@@ -44,7 +46,7 @@ func ProcessFile(pkg *dir.Package, file *ast.File, path string, strict bool) (*F
 		}
 
 		// Parse annotations
-		annotation, err := parser.Parse(comments)
+		annotation, err := parser.ParseWithLabels(comments, cfg)
 		if err != nil {
 			if strict {
 				parseErr = fmt.Errorf("error parsing annotations in function %s: %w", fn.Name.Name, err)

@@ -1,0 +1,7 @@
+version: 1
+labels:
+  tier:
+    values:
+      critical:
+        activity:
+          max-retries: 2

@@ -23,6 +23,8 @@ func newGenerateCmd() *cobra.Command {
 	generateCmd.Flags().BoolVarP(&recursiveFlag, "recursive", "r", false, "Recursively process subdirectories")
 	generateCmd.Flags().BoolVar(&importsFlag, "imports", false, "Process imports using golang.org/x/tools/imports library")
 	generateCmd.Flags().IntVarP(&parallelismFlag, "parallelism", "p", runtime.NumCPU(), "Number of packages to process concurrently per dependency level")
+	generateCmd.Flags().StringVar(&configFlag, "config", "", "Path to temporal-gen.yaml (default: discovered by walking up from [dir])")
+	generateCmd.Flags().BoolVar(&noConfigFlag, "no-config", false, "Skip label config discovery entirely")
 	return generateCmd
 }
 
@@ -40,6 +42,8 @@ func runGen(cmd *cobra.Command, args []string) error {
 		Validate:    validateFlag,
 		Imports:     importsFlag,
 		Parallelism: parallelismFlag,
+		ConfigPath:  configFlag,
+		NoConfig:    noConfigFlag,
 		OnPackage: func(name string) {
 			fmt.Printf("  processing %s\n", name)
 		},

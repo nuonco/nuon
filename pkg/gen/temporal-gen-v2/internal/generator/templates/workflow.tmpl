@@ -1,4 +1,5 @@
-// Exec{{.Name}} executes the {{.Name}} workflow and returns the future
+{{if .Labels}}// labels: {{range $i, $l := .Labels}}{{if $i}}, {{end}}{{$l}}{{end}}
+{{end}}// Exec{{.Name}} executes the {{.Name}} workflow and returns the future
 func Exec{{.Name}}(ctx workflow.Context, input {{.InputType}}, opts ...*workflow.ChildWorkflowOptions) (workflow.ChildWorkflowFuture, error) {
 	cwo := workflow.ChildWorkflowOptions{
 		{{- if .Options.TaskQueue}}

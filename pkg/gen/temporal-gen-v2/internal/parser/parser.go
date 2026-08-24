@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/config"
+	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/labels"
 )
 
 type ActivityOptions struct {
@@ -52,6 +53,7 @@ type UpdateOptions struct {
 
 type Annotation struct {
 	Type         string
+	Labels       []labels.Pair
 	ActivityOpts *ActivityOptions
 	WorkflowOpts *WorkflowOptions
 	QueryOpts    *QueryOptions
@@ -80,8 +82,61 @@ func (a *Annotation) Validate() error {
 	return nil
 }
 
-// Parse checks if a comment group contains the generator annotation
+// Parse checks if a comment group contains the generator annotation.
+//
+// It applies no label defaults; use ParseWithLabels when a temporal-gen.yaml
+// is in play.
 func Parse(comments []string) (*Annotation, error) {
+	return ParseWithLabels(comments, nil)
+}
+
+// ParseWithLabels parses a comment group and folds in the defaults implied by
+// any `@label <key> <value>` pairs set on the function.
+//
+// Label attributes are lowered into synthetic annotation lines that are parsed
+// *ahead* of the function's own comments. Since parseLines is last-write-wins,
+// that yields the precedence chain defaults -> labels (in source order) ->
+// explicit annotations without a second assignment code path.
+func ParseWithLabels(comments []string, cfg *labels.Config) (*Annotation, error) {
+	annotation, err := parseLines(comments)
+	if err != nil || annotation == nil {
+		return nil, err
+	}
+
+	if len(annotation.Labels) > 0 || cfg != nil {
+		pairs := annotation.Labels
+
+		lines, err := cfg.AnnotationLines(annotation.Type, pairs)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(lines) > 0 {
+			merged := make([]string, 0, len(lines)+len(comments)+1)
+			// Re-state the marker so the synthetic lines land inside an
+			// annotated block. The duplicate marker in `comments` is a no-op:
+			// parseLines only honours the first one.
+			merged = append(merged, "// @"+config.AnnotationPrefix+" "+annotation.Type)
+			merged = append(merged, lines...)
+			merged = append(merged, comments...)
+
+			annotation, err = parseLines(merged)
+			if err != nil {
+				return nil, err
+			}
+			annotation.Labels = pairs
+		}
+	}
+
+	if err := annotation.Validate(); err != nil {
+		return nil, err
+	}
+	return annotation, nil
+}
+
+// parseLines walks annotation comment lines in order, assigning as it goes.
+// Later lines overwrite earlier ones. It does not run Validate.
+func parseLines(comments []string) (*Annotation, error) {
 	var annotation *Annotation
 
 	for _, comment := range comments {
@@ -128,6 +183,15 @@ func Parse(comments []string) (*Annotation, error) {
 		// Handle arguments
 		switch parts[0] {
 		// Common Arguments
+		case "@label":
+			if len(parts) < 3 {
+				return nil, fmt.Errorf("missing key and value for @label (usage: @label key value)")
+			}
+			annotation.Labels = append(annotation.Labels, labels.Pair{
+				Key:   strings.Trim(parts[1], "\""),
+				Value: strings.Trim(strings.Join(parts[2:], " "), "\""),
+			})
+
 		case "@id":
 			if len(parts) < 2 {
 				return nil, fmt.Errorf("missing value for @id")
@@ -422,12 +486,6 @@ func Parse(comments []string) (*Annotation, error) {
 			// If it starts with @, assumes it's a directive. If we don't recognize it, error out.
 			// We only error if it's inside a block we are parsing (annotation != nil)
 			return nil, fmt.Errorf("unknown annotation argument: %s", parts[0])
-		}
-	}
-
-	if annotation != nil {
-		if err := annotation.Validate(); err != nil {
-			return nil, err
 		}
 	}
 
