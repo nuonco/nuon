@@ -37,6 +37,13 @@ type ConfigCustomNestedStack struct {
 	// status
 	Status ConfigCustomNestedStackStatus `json:"status,omitempty"`
 
+	// TemplateSourceURL is the public URL of the uploaded template contents.
+	// TemplateURL is whatever the vendor wrote in their config — usually a path
+	// relative to the config dir — so it is not resolvable by anything that did
+	// not do the original parse. Set when the contents are uploaded; empty for
+	// configs synced before this field existed.
+	TemplateSourceURL string `json:"template_source_url,omitempty"`
+
 	// template url
 	TemplateURL string `json:"template_url,omitempty"`
 }
