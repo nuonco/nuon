@@ -1,5 +1,5 @@
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -62,15 +62,9 @@ export const Webhooks = () => {
               . When a signing secret is set, requests are signed with
               HMAC-SHA256 and the hex-encoded signature is sent in the{' '}
               <span className="font-mono">X-Nuon-Signature</span> header.{' '}
-              <a
-                href="https://docs.nuon.co/webhooks"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="text-primary-600 dark:text-primary-400 hover:underline inline-flex items-center gap-1"
-              >
+              <Link href="https://docs.nuon.co/webhooks" isExternal>
                 Read the docs
-                <Icon variant="ArrowSquareOutIcon" size={14} />
-              </a>
+              </Link>
             </Text>
             <SamplePayload />
           </div>

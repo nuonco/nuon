@@ -1,6 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
@@ -156,7 +155,7 @@ export const PoliciesTable = ({
         cell: (info) => (
           <Text>
             <Link href={`${basePath}/policies/${info.row.original.id}`}>
-              View <Icon variant="CaretRightIcon" />
+              View
             </Link>
           </Text>
         ),

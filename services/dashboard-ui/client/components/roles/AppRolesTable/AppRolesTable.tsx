@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
-import { Icon } from '@/components/common/Icon'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -101,7 +100,7 @@ export const AppRolesTable = ({
               className: panelLinkClass,
               children: (
                 <span className="flex items-center gap-1.5">
-                  View <Icon variant="CaretRightIcon" />
+                  View
                 </span>
               ),
             }}

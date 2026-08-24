@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { type IPagination } from '@/components/common/Pagination'
 import { Status } from '@/components/common/Status'
@@ -111,7 +110,7 @@ export const InstallRolesTable = ({
               className: panelLinkClass,
               children: (
                 <span className="flex items-center gap-1.5">
-                  View <Icon variant="CaretRightIcon" />
+                  View
                 </span>
               ),
             }}

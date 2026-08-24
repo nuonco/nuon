@@ -55,8 +55,7 @@ export const IAMRoleBoundaryExpand = ({
             href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html?icmpid=docs_iam_console"
             isExternal
           >
-            Learn more about permission boundaries{' '}
-            <Icon variant="ArrowSquareOutIcon" />
+            Learn more about permission boundaries
           </Link>
         </Text>
       )}

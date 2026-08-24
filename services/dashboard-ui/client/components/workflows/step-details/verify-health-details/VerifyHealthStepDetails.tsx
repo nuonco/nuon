@@ -3,7 +3,6 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig/RemovedFromAppConfig'
 import { Badge } from '@/components/common/Badge'
 import { Tooltip } from '@/components/common/Tooltip'
-import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
@@ -121,7 +120,7 @@ export const VerifyHealthStepDetails = ({
           {orgId && componentId ? (
             <Text variant="subtext">
               <Link href={`/${orgId}/installs/${step?.owner_id}/components/${componentId}`}>
-                View component <Icon variant="CaretRightIcon" />
+                View component
               </Link>
             </Text>
           ) : null}

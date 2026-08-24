@@ -162,11 +162,6 @@ export const PolicyDetail = () => {
                     >
                       <Icon variant="CardsIcon" size={14} />
                       <Text variant="body">{comp}</Text>
-                      <Icon
-                        variant="ArrowSquareOutIcon"
-                        size={12}
-                        className="ml-auto text-grey-400"
-                      />
                     </Link>
                   ) : (
                     <div

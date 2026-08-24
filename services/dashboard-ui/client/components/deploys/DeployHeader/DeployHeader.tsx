@@ -3,7 +3,6 @@ import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { CommitDetails } from '@/components/common/CommitDetails'
 import { Duration } from '@/components/common/Duration'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
@@ -171,7 +170,6 @@ export const DeployHeader = ({
           href={`/${install?.org_id}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
         >
           View workflow
-          <Icon variant="CaretRightIcon" />
         </Button>
       ) : null}
 

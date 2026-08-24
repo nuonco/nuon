@@ -110,7 +110,7 @@ const columns: ColumnDef<TRunbookRow>[] = [
     cell: (info) => (
       <Text>
         <Link className="text-left" href={info.getValue() as string}>
-          View <Icon variant="CaretRightIcon" />
+          View
         </Link>
       </Text>
     ),

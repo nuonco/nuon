@@ -99,7 +99,9 @@ export const Link = ({
       {...props}
     >
       {children}
-      <Icon variant="ArrowSquareOutIcon" size="1em" />
+      {props.target !== '_self' && (
+        <Icon variant="ArrowSquareOutIcon" size="1em" />
+      )}
     </a>
   ) : (
     <RouterLink className={classes} to={href ?? ''} {...(props as any)}>

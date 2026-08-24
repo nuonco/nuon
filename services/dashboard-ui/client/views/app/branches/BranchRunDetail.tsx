@@ -179,7 +179,6 @@ const BranchRunDetailContent = () => {
                     <Link href={githubUrl} isExternal className="text-xs">
                       <Icon variant="GitHub" size={14} />
                       View in GitHub
-                      <Icon variant="ArrowSquareOutIcon" size={12} />
                     </Link>
                   )}
                 </div>

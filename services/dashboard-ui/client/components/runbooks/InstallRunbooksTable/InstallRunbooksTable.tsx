@@ -188,12 +188,10 @@ const columns: ColumnDef<TInstallRunbookRow>[] = [
           {info.row.original.latestRunHref ? (
             <Button href={info.row.original.latestRunHref} isMenuButton>
               Latest run
-              <Icon variant="CaretRightIcon" />
             </Button>
           ) : null}
           <Button href={info.row.original.href} isMenuButton>
             View details
-            <Icon variant="CaretRightIcon" />
           </Button>
         </Menu>
       </Dropdown>

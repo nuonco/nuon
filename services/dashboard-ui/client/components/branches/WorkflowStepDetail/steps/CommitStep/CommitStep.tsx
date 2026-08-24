@@ -72,9 +72,7 @@ export const CommitStep = ({ metadata }: ICommitStep) => {
               isExternal
               aria-label="View commit"
               className="text-cool-grey-400 hover:text-cool-grey-600 dark:text-cool-grey-500 dark:hover:text-cool-grey-300"
-            >
-              <Icon variant="ArrowSquareOutIcon" size={14} />
-            </Link>
+            />
           )}
         </div>
       </div>

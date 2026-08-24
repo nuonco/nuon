@@ -151,7 +151,7 @@ const columns: ColumnDef<TComponentRow>[] = [
     cell: (info) => (
       <Text>
         <Link className="text-left" href={info.getValue() as string}>
-          View <Icon variant="CaretRightIcon" />
+          View
         </Link>
       </Text>
     ),

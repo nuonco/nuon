@@ -1,5 +1,4 @@
 import { CloudPlatform } from '@/components/common/CloudPlatform'
-import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
@@ -71,7 +70,6 @@ export const InstallRunbooksRow = ({
             {runbook.workflowHref && (
               <Link href={runbook.workflowHref} className="text-sm shrink-0">
                 View run
-                <Icon variant="ArrowRightIcon" size={14} />
               </Link>
             )}
           </div>

@@ -140,7 +140,6 @@ export const SandboxHeader = ({
           href={`/${orgId}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
         >
           View workflow
-          <Icon variant="CaretRightIcon" />
         </Button>
       ) : null}
     </header>
@@ -238,7 +237,6 @@ const LegacySandboxHeader = ({
             href={`/${orgId}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
           >
             View workflow
-            <Icon variant="CaretRightIcon" />
           </Button>
         ) : (
           <div />

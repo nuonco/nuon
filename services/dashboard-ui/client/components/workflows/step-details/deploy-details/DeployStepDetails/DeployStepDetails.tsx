@@ -52,7 +52,7 @@ export const DeployStepDetails = ({
                 <Link
                   href={`/${orgId}/installs/${step?.owner_id}/components/${deploy.component_id}`}
                 >
-                  View component <Icon variant="CaretRightIcon" />
+                  View component
                 </Link>
               </Text>
             ) : null}
@@ -62,7 +62,7 @@ export const DeployStepDetails = ({
                 <Link
                   href={`/${orgId}/installs/${step?.owner_id}/components/${deploy.component_id}/deploys/${deploy.id}`}
                 >
-                  View deploy logs <Icon variant="CaretRightIcon" />
+                  View deploy logs
                 </Link>
               </Text>
             ) : null}

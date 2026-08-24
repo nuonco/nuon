@@ -40,7 +40,7 @@ export const RunnerCard = ({
           </Text>
         </div>
         <Link href={href} className="text-sm flex items-center gap-1">
-          Details <Icon variant="CaretRightIcon" />
+          Details
         </Link>
       </div>
 

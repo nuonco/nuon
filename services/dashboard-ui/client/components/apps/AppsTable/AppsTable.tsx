@@ -74,7 +74,6 @@ const columns: ColumnDef<TAppRow>[] = [
         <Text>
           <Link href={info.row.original.sandboxHref} isExternal>
             {info.getValue() as string}
-            <Icon variant="ArrowSquareOutIcon" />
           </Link>
         </Text>
       ) : (
@@ -102,7 +101,7 @@ const columns: ColumnDef<TAppRow>[] = [
     cell: (info) => (
       <Text>
         <Link className="text-left" href={info.getValue() as string}>
-          View <Icon variant="CaretRightIcon" />
+          View
         </Link>
       </Text>
     ),

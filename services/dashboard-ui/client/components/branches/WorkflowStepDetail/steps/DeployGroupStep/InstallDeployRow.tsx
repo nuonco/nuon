@@ -1,6 +1,5 @@
 import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { CloudRegion } from '@/components/common/CloudRegion'
-import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
@@ -61,7 +60,6 @@ export const InstallDeployRow = ({ installId, install, deployStatus, workflowHre
       {workflowHref && (
         <Link href={workflowHref} className="text-sm shrink-0">
           View workflow
-          <Icon variant="ArrowRightIcon" size={14} />
         </Link>
       )}
     </div>

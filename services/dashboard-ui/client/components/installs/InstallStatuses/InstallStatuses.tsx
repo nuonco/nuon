@@ -133,7 +133,7 @@ function getTooltip({
       <Text variant="subtext">{description}</Text>
       <Text className="mt-2" variant="subtext">
         <Link className="flex items-center" href={viewHref}>
-          View {viewLabel} <Icon variant="CaretRightIcon" />
+          View {viewLabel}
         </Link>
       </Text>
     </div>

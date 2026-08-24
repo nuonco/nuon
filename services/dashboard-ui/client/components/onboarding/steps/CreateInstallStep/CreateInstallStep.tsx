@@ -1,4 +1,3 @@
-import { Icon } from '@/components/common/Icon'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -53,7 +52,7 @@ export const CompletedInstallCard = ({
 
       <Text variant="subtext">
         <Link href={`/${orgId}/installs/${installId}`}>
-          View install <Icon variant="CaretRightIcon" />
+          View install
         </Link>
       </Text>
     </Card>

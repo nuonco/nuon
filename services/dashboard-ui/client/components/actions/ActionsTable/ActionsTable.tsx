@@ -122,7 +122,7 @@ const columns: ColumnDef<TActionRow>[] = [
     cell: (info) => (
       <Text>
         <Link className="text-left" href={info.getValue() as string}>
-          View <Icon variant="CaretRightIcon" />
+          View
         </Link>
       </Text>
     ),
@@ -154,7 +154,7 @@ export const ActionsTable = ({
         emptyTitle: 'No actions yet',
         action: (
           <Link href="https://docs.nuon.co/concepts/actions" isExternal>
-            Learn more <Icon size="14" variant="ArrowSquareOutIcon" />
+            Learn more
           </Link>
         ),
       }}

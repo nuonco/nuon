@@ -134,7 +134,6 @@ const QueueItem = ({
             href={workflowLink}
             className="text-xs hover:underline flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity"
           >
-            <Icon variant="ArrowSquareOutIcon" size="14" />
             <span>View</span>
           </Link>
         )}
