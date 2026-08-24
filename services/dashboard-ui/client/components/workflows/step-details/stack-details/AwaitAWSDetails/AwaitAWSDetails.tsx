@@ -565,71 +565,76 @@ interface ITFModuleTab {
   installAwsRegion?: string
 }
 
-// The module's `inputs` and `secrets` maps only accept keys the app declares, so the
-// snippet lists exactly the customer-facing ones. Everything else is read from the
-// control plane and must not appear here.
-const hclComment = (
-  description: string | undefined,
-  markers: string[]
-): string => {
-  const parts = [description?.trim(), ...markers].filter(Boolean)
-  return parts.length ? ` # ${parts.join(' ')}` : ''
-}
-
 const padTo = (name: string, width: number) => name.padEnd(width, ' ')
 
-// `inputs = { ... }`, indented for the module block. Empty when the app declares no
-// customer inputs — the module treats an omitted map as "use control-plane values".
+// `inputs = { ... }`, indented for the module block. The module's `inputs` and
+// `secrets` maps only accept keys the app declares, so the snippet lists exactly the
+// customer-facing ones. Empty when the app declares no customer inputs — the module
+// treats an omitted map as "use control-plane values".
 const buildInputsBlock = (
-  inputs: Array<{
-    name?: string
-    description?: string
-    default?: string
-    required?: boolean
-    sensitive?: boolean
-  }>
+  inputs: Array<{ name?: string; default?: string }>
 ): string => {
   if (inputs.length === 0) return ''
 
   const nameWidth = Math.max(
     ...inputs.map((input) => (input.name ?? '').length)
   )
-  // Assignments are padded to a common width so the trailing comments line up the
-  // way `terraform fmt` would leave them.
-  const assignments = inputs.map(
+  const lines = inputs.map(
     (input) =>
       `    ${padTo(input.name ?? '', nameWidth)} = "${input.default ?? ''}"`
   )
-  const valueWidth = Math.max(...assignments.map((line) => line.length))
-  const lines = inputs.map((input, i) => {
-    const markers = [
-      input.required ? '(required)' : '',
-      input.sensitive ? '(sensitive)' : '',
-    ].filter(Boolean)
-    const comment = hclComment(input.description, markers)
-    return comment
-      ? `${padTo(assignments[i], valueWidth)}${comment}`
-      : assignments[i]
-  })
 
-  return `\n\n  # Customer-facing inputs. Values set here win over the control plane.\n  inputs = {\n${lines.join('\n')}\n  }`
+  return `\n\n  inputs = {\n${lines.join('\n')}\n  }`
 }
 
 // `secrets = { ... }`. Auto-generated secrets are minted by the stack itself, so only
-// the customer-supplied ones belong in the snippet.
-const buildSecretsBlock = (
-  secrets: Array<{ name?: string; description?: string; required?: boolean }>
-): string => {
+// the customer-supplied ones belong in the snippet. Values come from the root-level
+// `variable` blocks, which Terraform populates from `TF_VAR_*`.
+const buildSecretsBlock = (secrets: Array<{ name?: string }>): string => {
   if (secrets.length === 0) return ''
 
   const width = Math.max(...secrets.map((secret) => (secret.name ?? '').length))
-  const lines = secrets.map((secret) => {
-    const markers = secret.required ? ['(required)'] : []
-    return `    ${padTo(secret.name ?? '', width)} = { value = "" }${hclComment(secret.description, markers)}`
+  const lines = secrets.map(
+    (secret) =>
+      `    ${padTo(secret.name ?? '', width)} = { value = var.${secret.name ?? ''} }`
+  )
+
+  return `\n\n  secrets = {\n${lines.join('\n')}\n  }`
+}
+
+// Root-level `variable` blocks for each customer secret. Terraform fills them from
+// `TF_VAR_<name>`, so no real value is ever written to main.tf.
+const buildSecretVariablesBlock = (
+  secrets: Array<{ name?: string; description?: string }>
+): string => {
+  if (secrets.length === 0) return ''
+
+  const blocks = secrets.map((secret) => {
+    const description = secret.description?.trim()
+    // Widths match what `terraform fmt` would produce for the attributes present.
+    const width = description ? 'description'.length : 'sensitive'.length
+    const attrs = [
+      `  ${padTo('type', width)} = string`,
+      `  ${padTo('sensitive', width)} = true`,
+      ...(description
+        ? [`  ${padTo('description', width)} = "${description}"`]
+        : []),
+    ]
+    return `variable "${secret.name ?? ''}" {\n${attrs.join('\n')}\n}`
   })
 
-  return `\n\n  # Secret values you supply. Keep real values out of main.tf.\n  secrets = {\n${lines.join('\n')}\n  }`
+  return `\n\n${blocks.join('\n\n')}`
 }
+
+// `export TF_VAR_<name>='<placeholder>'` lines, shown alongside both auth methods
+// since secrets are needed regardless of how the module authenticates.
+const buildSecretExports = (secrets: Array<{ name?: string }>): string =>
+  secrets
+    .map(
+      (secret) =>
+        `export TF_VAR_${secret.name ?? ''}='<${(secret.name ?? '').replace(/_/g, '-')}-value>'`
+    )
+    .join('\n')
 
 // Directions for the published nuonco/stack/aws module, which reads its whole config
 // from the API. Distinct from TerraformTab, which clones install-stacks and is driven
@@ -715,6 +720,14 @@ const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
     () => buildSecretsBlock(customerSecrets),
     [customerSecrets]
   )
+  const secretVariablesBlock = useMemo(
+    () => buildSecretVariablesBlock(customerSecrets),
+    [customerSecrets]
+  )
+  const secretExports = useMemo(
+    () => buildSecretExports(customerSecrets),
+    [customerSecrets]
+  )
 
   const mainTf = `terraform {
   required_providers {
@@ -727,21 +740,13 @@ provider "aws" {
   region = "${region}"
 }
 
-provider "stack" {}
+provider "stack" {}${secretVariablesBlock}
 
 module "aws_stack" {
   source  = "nuonco/stack/aws"
   version = "~> 0.2"
 
   install_id = "${installId ?? '<install-id>'}"${inputsBlock}${secretsBlock}
-}`
-
-  const backendSnippet = `terraform {
-  backend "s3" {
-    bucket = "<your-state-bucket>"
-    key    = "nuon/${installId}/terraform.tfstate"
-    region = "<your-state-bucket-region>"
-  }
 }`
 
   // Always a placeholder: the token value is shown once, in the create modal.
@@ -753,7 +758,8 @@ module "aws_stack" {
       <Text variant="subtext" theme="neutral">
         The <code>nuonco/stack/aws</code> module reads this install&apos;s
         configuration from the Nuon API. You supply the install ID plus the
-        app&apos;s customer-facing inputs and secrets; everything else — runner
+        app&apos;s customer-facing inputs, and the secret values as{' '}
+        <code>TF_VAR_*</code> environment variables; everything else — runner
         details, IAM permissions, and roles — comes from the control plane.
         Values you set here override the control plane&apos;s, and unrecognized
         names fail the plan.
@@ -772,32 +778,25 @@ module "aws_stack" {
           </span>
           <Code variant="preformated">{mainTf}</Code>
         </Card>
-        {secretsBlock ? (
-          <Text variant="subtext" theme="neutral">
-            The snippet leaves secret values blank so it runs as-is. Rather than
-            committing real values to <code>main.tf</code>, pass them from a{' '}
-            <code>secrets.auto.tfvars</code> file or with <code>-var</code> at
-            apply time.
-          </Text>
-        ) : null}
-      </div>
-
-      <Divider />
-
-      <div className="flex flex-col gap-4">
-        <Text variant="base" weight="strong">
-          2. Configure remote state (recommended)
-        </Text>
-        <Card>
-          <span className="flex justify-between items-center">
-            <Text>
-              Create a <code>backend.tf</code> file to store Terraform state in
-              S3
+        {secretExports ? (
+          <>
+            <Card>
+              <span className="flex justify-between items-center">
+                <Text>
+                  Export the app&apos;s secret values. Terraform reads each{' '}
+                  <code>TF_VAR_*</code> variable at plan time.
+                </Text>
+                <ClickToCopyButton textToCopy={secretExports} />
+              </span>
+              <Code variant="preformated">{secretExports}</Code>
+            </Card>
+            <Text variant="subtext" theme="neutral">
+              Secret values are supplied through <code>TF_VAR_*</code>{' '}
+              environment variables and are never written to disk, so CI systems
+              can inject them as masked secrets.
             </Text>
-            <ClickToCopyButton textToCopy={backendSnippet} />
-          </span>
-          <Code variant="preformated">{backendSnippet}</Code>
-        </Card>
+          </>
+        ) : null}
       </div>
 
       <Divider />
@@ -805,7 +804,7 @@ module "aws_stack" {
       <div className="flex flex-col gap-4">
         <span className="flex justify-between items-center gap-4">
           <Text variant="base" weight="strong">
-            3. Authenticate
+            2. Authenticate
           </Text>
           <ToggleButton<'token' | 'oidc'>
             value={authMethod}
@@ -839,7 +838,7 @@ module "aws_stack" {
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
-          4. Apply
+          3. Apply
         </Text>
         <Card>
           <span className="flex justify-between items-center">
