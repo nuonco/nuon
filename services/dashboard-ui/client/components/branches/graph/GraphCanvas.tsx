@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { memo, useEffect, useMemo } from 'react'
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -43,12 +43,25 @@ interface IGraphCanvas {
   nodeTypes: NodeTypes
   height: number
   compact?: boolean
+  maxZoom?: number
+  fitPadding?: number
 }
 
-const GraphCanvasInner = ({ nodes: initialNodes, edges: initialEdges, nodeTypes, height, compact }: IGraphCanvas) => {
+const GraphCanvasInner = ({
+  nodes: initialNodes,
+  edges: initialEdges,
+  nodeTypes,
+  height,
+  compact,
+  maxZoom,
+  fitPadding,
+}: IGraphCanvas) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const { fitView } = useReactFlow()
+
+  const resolvedMaxZoom = maxZoom ?? (compact ? 1 : 1.5)
+  const resolvedPadding = fitPadding ?? (compact ? 0.15 : 0.25)
 
   useEffect(() => {
     setNodes(initialNodes)
@@ -57,9 +70,9 @@ const GraphCanvasInner = ({ nodes: initialNodes, edges: initialEdges, nodeTypes,
 
   const nodeSignature = initialNodes.map((n) => n.id).join('|')
   useEffect(() => {
-    const raf = requestAnimationFrame(() => fitView({ padding: compact ? 0.15 : 0.25 }))
+    const raf = requestAnimationFrame(() => fitView({ padding: resolvedPadding }))
     return () => cancelAnimationFrame(raf)
-  }, [nodeSignature, fitView, compact])
+  }, [nodeSignature, fitView, resolvedPadding])
 
   const memoizedNodeTypes = useMemo(() => nodeTypes, [nodeTypes])
 
@@ -75,9 +88,9 @@ const GraphCanvasInner = ({ nodes: initialNodes, edges: initialEdges, nodeTypes,
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         fitView
-        fitViewOptions={{ padding: compact ? 0.15 : 0.25 }}
+        fitViewOptions={{ padding: resolvedPadding }}
         minZoom={compact ? 0.6 : 0.5}
-        maxZoom={compact ? 1 : 1.5}
+        maxZoom={resolvedMaxZoom}
         nodesConnectable={false}
         proOptions={{ hideAttribution: true }}
       >
@@ -87,8 +100,10 @@ const GraphCanvasInner = ({ nodes: initialNodes, edges: initialEdges, nodeTypes,
   )
 }
 
-export const GraphCanvas = (props: IGraphCanvas) => (
+export const GraphCanvas = memo((props: IGraphCanvas) => (
   <ReactFlowProvider>
     <GraphCanvasInner {...props} />
   </ReactFlowProvider>
-)
+))
+
+GraphCanvas.displayName = 'GraphCanvas'
