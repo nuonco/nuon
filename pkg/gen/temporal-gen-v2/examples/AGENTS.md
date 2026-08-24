@@ -46,6 +46,8 @@ Demonstrates `@label <key> <value>`, which pulls default options from a
 set of defaults instead of repeating annotations on every function.
 
 Labels are key/value pairs, mirroring the existing `@memo key value` form.
+**Labels apply to activities only** — `@label` on a workflow, query, signal or
+update is an error.
 
 *   [Config](file://./temporal-gen.yaml)
 *   [Source](file://./labels.go)
@@ -63,38 +65,33 @@ each value implies:
 ```yaml
 version: 1
 
-# applied to every annotated function, ahead of any label
+# applied to every annotated activity, ahead of any label
 defaults:
-  activity:
-    start-to-close-timeout: 1m
+  start-to-close-timeout: 1m
 
 labels:
   access:
     description: how the activity reaches its data
     values:
-      read-only:
-        activity:
-          start-to-close-timeout: 30s
-          max-retries: 3
+      db-only:
+        description: read-only database access
+        start-to-close-timeout: 30s
+        max-retries: 3
       bulk:
-        activity:
-          start-to-close-timeout: 1h
-          heartbeat-timeout: 1m
+        start-to-close-timeout: 1h
+        heartbeat-timeout: 1m
 
   tier:
     values:
-      critical:           # carries both blocks
-        activity:
-          max-retries: 870
-        workflow:
-          execution-timeout: 24h
-          memo:
-            tier: critical
+      critical:
+        max-retries: 870
+      best-effort:
+        max-retries: 3
 ```
 
 ```go
 // @temporal-gen-v2 activity
-// @label access read-only
+// @label access db-only
 // @label tier critical
 // @start-to-close-timeout 10s   // explicit annotation wins over the label
 func GetOrg(ctx context.Context, id string) (*app.Org, error)
@@ -106,19 +103,17 @@ fails loudly rather than silently doing nothing.
 
 ### Defining label attributes
 
-Attribute keys **are** the annotation names with the leading `@` stripped, so
-there is only one vocabulary. Allowed keys:
-
-| scope | keys |
-|---|---|
-| `activity` | `task-queue`, `schedule-to-close-timeout`, `schedule-to-start-timeout`, `start-to-close-timeout`, `heartbeat-timeout`, `wait-for-cancellation`, `disable-eager-execution`, `max-retries`, `retry-policy-max-attempts` |
-| `workflow` | `task-queue` (emitted as `@workflow-task-queue`), `execution-timeout`, `task-timeout`, `wait-for-cancellation`, `memo` |
+Attribute names **are** the annotation names with the leading `@` stripped, so
+there is only one vocabulary. Allowed: `task-queue`,
+`schedule-to-close-timeout`, `schedule-to-start-timeout`,
+`start-to-close-timeout`, `heartbeat-timeout`, `wait-for-cancellation`,
+`disable-eager-execution`, `max-retries`, `retry-policy-max-attempts`.
 
 Structural annotations (`@as-wrapper`, `@by-field`, `@local`, `@namespace`,
-`@options-callback`, `@id-template`, ...) are deliberately **not** settable from
-a label: they describe an individual function rather than a class of them. They
-are also one-way — the annotation language has no "off" form for a boolean, so
-a function could never opt back out of a label that set `@as-wrapper`.
+`@options-callback`, ...) are deliberately **not** settable from a label: they
+describe an individual function rather than a class of them. They are also
+one-way — the annotation language has no "off" form for a boolean, so a
+function could never opt back out of a label that set `@as-wrapper`.
 
 ### Precedence
 
@@ -126,21 +121,15 @@ Lowest to highest:
 
 1. `defaults:` block
 2. labels, in the order they appear in the source (later wins)
-3. explicit `@annotations` on the function
-4. call-site `opts` passed to `Await.../Exec...`
+3. explicit `@annotations` on the activity
+4. call-site `opts` passed to `Await...`
 
 Distinct label keys usually set disjoint attributes and simply compose; source
-order only matters when two keys set the same attribute. `memo` maps merge
-key-by-key rather than replacing wholesale. The position of a `@label` line
-relative to other annotations does not matter — label defaults are always
-applied before a function's own annotations.
+order only matters when two keys set the same attribute. The position of a
+`@label` line relative to other annotations does not matter — label defaults
+are always applied before an activity's own annotations.
 
-A label value that has no block for the annotated kind contributes nothing,
-which is what lets one value serve both activities and workflows. Note the flip
-side: `@label access read-only` on a *workflow*, where that value is
-activity-only, silently applies nothing.
-
-Applied labels are recorded as a `// labels: access=read-only, tier=critical`
+Applied labels are recorded as a `// labels: access=bulk, tier=critical`
 comment on the generated wrapper so a config change shows up legibly in the
 diff.
 

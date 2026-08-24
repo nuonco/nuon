@@ -93,20 +93,25 @@ func Parse(comments []string) (*Annotation, error) {
 // ParseWithLabels parses a comment group and folds in the defaults implied by
 // any `@label <key> <value>` pairs set on the function.
 //
-// Label attributes are lowered into synthetic annotation lines that are parsed
-// *ahead* of the function's own comments. Since parseLines is last-write-wins,
-// that yields the precedence chain defaults -> labels (in source order) ->
-// explicit annotations without a second assignment code path.
+// Labels apply to activities only. Label attributes are lowered into synthetic
+// annotation lines that are parsed *ahead* of the function's own comments.
+// Since parseLines is last-write-wins, that yields the precedence chain
+// defaults -> labels (in source order) -> explicit annotations without a
+// second assignment code path.
 func ParseWithLabels(comments []string, cfg *labels.Config) (*Annotation, error) {
 	annotation, err := parseLines(comments)
 	if err != nil || annotation == nil {
 		return nil, err
 	}
 
-	if len(annotation.Labels) > 0 || cfg != nil {
+	if len(annotation.Labels) > 0 && annotation.Type != "activity" {
+		return nil, fmt.Errorf("@label is only supported on activities, found on %s", annotation.Type)
+	}
+
+	if annotation.Type == "activity" && (len(annotation.Labels) > 0 || cfg != nil) {
 		pairs := annotation.Labels
 
-		lines, err := cfg.AnnotationLines(annotation.Type, pairs)
+		lines, err := cfg.AnnotationLines(pairs)
 		if err != nil {
 			return nil, err
 		}

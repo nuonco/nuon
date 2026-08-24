@@ -3,51 +3,40 @@
 # Discovered by walking up from the directory being generated, stopping at the
 # module root. Override with --config, or disable with --no-config.
 #
-# Labels are key/value pairs set on a function with `@label <key> <value>`.
+# Labels are key/value pairs set on an *activity* with `@label <key> <value>`.
 # This file declares which keys exist, which values each key permits, and the
-# default options each value implies.
+# default options each value implies. Labels do not apply to workflows.
 #
-# Attribute keys are the annotation names with the leading "@" stripped, so
+# Attribute names are the annotation names with the leading "@" stripped, so
 # there is one vocabulary. Precedence, lowest to highest:
 #
-#   defaults -> labels (in source order) -> @annotations on the function ->
-#   call-site opts passed to Await.../Exec...
+#   defaults -> labels (in source order) -> @annotations on the activity ->
+#   call-site opts passed to Await...
 
 version: 1
 
-# Applied to every annotated function, ahead of any label.
+# Applied to every annotated activity, ahead of any label.
 defaults:
-  activity:
-    start-to-close-timeout: 1m
+  start-to-close-timeout: 1m
 
 labels:
   access:
     description: how the activity reaches its data
     values:
-      read-only:
+      db-only:
         description: read-only database access; fail fast, retry a few times
-        activity:
-          start-to-close-timeout: 30s
-          max-retries: 3
+        start-to-close-timeout: 30s
+        max-retries: 3
       bulk:
         description: streams, polls, or does bulk work
-        activity:
-          start-to-close-timeout: 1h
-          schedule-to-close-timeout: 6h
-          heartbeat-timeout: 1m
+        start-to-close-timeout: 1h
+        schedule-to-close-timeout: 6h
+        heartbeat-timeout: 1m
 
   tier:
     description: how badly we need this to complete
     values:
       critical:
-        # Carries both blocks: applied to an activity only the activity block
-        # takes effect, applied to a workflow only the workflow block.
-        activity:
-          max-retries: 870
-        workflow:
-          execution-timeout: 24h
-          memo:
-            tier: critical
+        max-retries: 870
       best-effort:
-        activity:
-          max-retries: 3
+        max-retries: 3

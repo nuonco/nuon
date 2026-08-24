@@ -105,7 +105,7 @@ func TestGenerateLabels(t *testing.T) {
 	unlabeled := funcBody(t, content, "func AwaitUnlabeledActivity(")
 	assert.Contains(t, unlabeled, "options.StartToCloseTimeout = time.Duration(60000000000)")
 
-	// access=read-only: 30s / 3 attempts override the 1m default.
+	// access=db-only: 30s / 3 attempts override the 1m default.
 	single := funcBody(t, content, "func AwaitSingleLabelActivity(")
 	assert.Contains(t, single, "options.StartToCloseTimeout = time.Duration(30000000000)")
 	assert.Contains(t, single, "MaximumAttempts: int32(3)")
@@ -123,10 +123,9 @@ func TestGenerateLabels(t *testing.T) {
 	assert.Contains(t, overridden, "options.StartToCloseTimeout = time.Duration(10000000000)")
 	assert.Contains(t, overridden, "MaximumAttempts: int32(3)")
 
-	// A label value carrying both blocks contributes only the matching one.
-	crossWorkflow := funcBody(t, content, "func ExecLabeledWorkflow(")
-	assert.Contains(t, crossWorkflow, "WorkflowExecutionTimeout: time.Duration(86400000000000)")
-	assert.Contains(t, crossWorkflow, `"tier": "critical"`)
+	// Two keys touching the same attribute: tier is listed second and wins.
+	conflicting := funcBody(t, content, "func AwaitConflictingLabelActivity(")
+	assert.Contains(t, conflicting, "MaximumAttempts: int32(870)")
 
 	// Applied labels are recorded in the generated doc comment.
 	assert.Contains(t, content, "// labels: access=bulk, tier=critical")
@@ -142,6 +141,18 @@ func TestGenerateUnknownLabelFails(t *testing.T) {
 	err := rootCmd.Execute()
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `unknown label key "does-not-exist"`)
+}
+
+func TestGenerateLabelOnWorkflowFails(t *testing.T) {
+	root := repoRoot(t)
+	wfDir := filepath.Join(root, "testdata", "workflowlabel")
+	cleanupGenFiles(t, wfDir)
+
+	rootCmd := cmd.NewRootCmd()
+	rootCmd.SetArgs([]string{"generate", "--validate", wfDir})
+	err := rootCmd.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "@label is only supported on activities")
 }
 
 // A config below the module root must not leak into sibling trees: the deps

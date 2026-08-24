@@ -1,14 +1,15 @@
 // Package labels loads the temporal-gen.yaml config file, which declares label
-// keys, their permitted values, and the default option attributes each value
-// implies for activities and workflows.
+// keys, their permitted values, and the default activity options each value
+// implies.
 //
-// Labels are key/value pairs set on a function with `@label <key> <value>`,
-// mirroring the existing `@memo <key> <value>` form. A label's attributes are
-// lowered back into synthetic annotation comment lines (see AnnotationLines)
-// and fed through the normal annotation parser. That way there is exactly one
-// code path turning "@start-to-close-timeout 30s" into a field assignment, and
-// label defaults get last-write-wins precedence for free by being emitted
-// ahead of a function's own annotations.
+// Labels are key/value pairs set on an activity with `@label <key> <value>`,
+// mirroring the existing `@memo <key> <value>` form. Labels apply to
+// activities only. A label's attributes are lowered back into synthetic
+// annotation comment lines (see AnnotationLines) and fed through the normal
+// annotation parser. That way there is exactly one code path turning
+// "@start-to-close-timeout 30s" into a field assignment, and label defaults get
+// last-write-wins precedence for free by being emitted ahead of a function's
+// own annotations.
 package labels
 
 import (
@@ -33,7 +34,7 @@ var FileNames = []string{"temporal-gen.yaml", "temporal-gen.yml"}
 
 var nameRe = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]*$`)
 
-// Pair is a single `@label <key> <value>` set on a function.
+// Pair is a single `@label <key> <value>` set on an activity.
 type Pair struct {
 	Key   string
 	Value string
@@ -62,20 +63,14 @@ type Value struct {
 	Attrs       `yaml:",inline"`
 }
 
-// Attrs holds the per-kind default blocks.
-type Attrs struct {
-	Activity *ActivityAttrs `yaml:"activity"`
-	Workflow *WorkflowAttrs `yaml:"workflow"`
-}
-
-// ActivityAttrs is the allowlist of activity annotations settable from a label.
+// Attrs is the allowlist of activity annotations settable from a label.
 //
 // Structural annotations (@as-wrapper, @by-field, @local, @namespace,
 // @options-callback, ...) are deliberately absent: they describe an individual
 // function, not a class of them. Booleans are also one-way in the annotation
 // language (there is no "off" form), so a label that could set @as-wrapper
 // could never be opted out of by a function.
-type ActivityAttrs struct {
+type Attrs struct {
 	TaskQueue              string    `yaml:"task-queue"`
 	ScheduleToCloseTimeout *duration `yaml:"schedule-to-close-timeout"`
 	ScheduleToStartTimeout *duration `yaml:"schedule-to-start-timeout"`
@@ -85,15 +80,6 @@ type ActivityAttrs struct {
 	DisableEagerExecution  *bool     `yaml:"disable-eager-execution"`
 	MaxRetries             *int      `yaml:"max-retries"`
 	RetryPolicyMaxAttempts *int      `yaml:"retry-policy-max-attempts"`
-}
-
-// WorkflowAttrs is the allowlist of workflow annotations settable from a label.
-type WorkflowAttrs struct {
-	TaskQueue           string            `yaml:"task-queue"`
-	ExecutionTimeout    *duration         `yaml:"execution-timeout"`
-	TaskTimeout         *duration         `yaml:"task-timeout"`
-	WaitForCancellation *bool             `yaml:"wait-for-cancellation"`
-	Memo                map[string]string `yaml:"memo"`
 }
 
 // duration is a time.Duration written in YAML as a Go duration string ("30s",
@@ -197,7 +183,7 @@ func (c *Config) Validate() error {
 	}
 
 	if c.Defaults != nil && c.Defaults.empty() {
-		return fmt.Errorf("%s: `defaults` defines no activity or workflow attributes", where)
+		return fmt.Errorf("%s: `defaults` sets no attributes", where)
 	}
 
 	for _, key := range c.Keys() {
@@ -214,7 +200,7 @@ func (c *Config) Validate() error {
 				return fmt.Errorf("%s: invalid value %q for label key %q (must match %s)", where, value, key, nameRe)
 			}
 			if v == nil || v.empty() {
-				return fmt.Errorf("%s: label %s=%s defines no activity or workflow attributes", where, key, value)
+				return fmt.Errorf("%s: label %s=%s sets no attributes", where, key, value)
 			}
 		}
 	}
@@ -248,14 +234,12 @@ func (c *Config) Values(key string) []string {
 	return values
 }
 
-// AnnotationLines lowers the defaults block plus each label pair into
-// annotation comment lines for the given kind ("activity" or "workflow").
+// AnnotationLines lowers the defaults block plus each label pair into activity
+// annotation comment lines.
 //
 // Lines are emitted defaults-first, then pairs in the order the caller listed
-// them (source order), so a later @label overrides an earlier one. A label
-// whose value carries no block for kind contributes nothing: that is what lets
-// one label serve both activities and workflows.
-func (c *Config) AnnotationLines(kind string, pairs []Pair) ([]string, error) {
+// them (source order), so a later @label overrides an earlier one.
+func (c *Config) AnnotationLines(pairs []Pair) ([]string, error) {
 	if c == nil {
 		if len(pairs) > 0 {
 			return nil, fmt.Errorf("@label %s used but no %s was found", pairs[0], FileNames[0])
@@ -264,11 +248,7 @@ func (c *Config) AnnotationLines(kind string, pairs []Pair) ([]string, error) {
 	}
 
 	seen := make(map[string]string, len(pairs))
-	var lines []string
-
-	if c.Defaults != nil {
-		lines = append(lines, c.Defaults.lines(kind)...)
-	}
+	lines := c.Defaults.lines()
 
 	for _, p := range pairs {
 		if prev, ok := seen[p.Key]; ok {
@@ -284,7 +264,7 @@ func (c *Config) AnnotationLines(kind string, pairs []Pair) ([]string, error) {
 		if !ok {
 			return nil, fmt.Errorf("unknown value %q for label key %q (declared in %s: %s)", p.Value, p.Key, c.path, joinOrNone(c.Values(p.Key)))
 		}
-		lines = append(lines, v.lines(kind)...)
+		lines = append(lines, v.lines()...)
 	}
 
 	return lines, nil
@@ -297,26 +277,9 @@ func joinOrNone(s []string) string {
 	return strings.Join(s, ", ")
 }
 
-func (a *Attrs) empty() bool {
-	return a == nil || (a.Activity == nil && a.Workflow == nil)
-}
+func (a *Attrs) empty() bool { return len(a.lines()) == 0 }
 
-func (a *Attrs) lines(kind string) []string {
-	if a == nil {
-		return nil
-	}
-	switch kind {
-	case "activity":
-		return a.Activity.lines()
-	case "workflow":
-		return a.Workflow.lines()
-	default:
-		// Queries, signals and updates have no configurable options today.
-		return nil
-	}
-}
-
-func (a *ActivityAttrs) lines() []string {
+func (a *Attrs) lines() []string {
 	if a == nil {
 		return nil
 	}
@@ -351,43 +314,6 @@ func (a *ActivityAttrs) lines() []string {
 	}
 	if a.RetryPolicyMaxAttempts != nil {
 		add("retry-policy-max-attempts", strconv.Itoa(*a.RetryPolicyMaxAttempts))
-	}
-
-	return out
-}
-
-func (w *WorkflowAttrs) lines() []string {
-	if w == nil {
-		return nil
-	}
-	var out []string
-	add := func(name, value string) {
-		out = append(out, "// @"+name+" "+value)
-	}
-
-	if w.TaskQueue != "" {
-		// Workflows read their task queue from @workflow-task-queue; plain
-		// @task-queue is activity-only in the parser.
-		add("workflow-task-queue", w.TaskQueue)
-	}
-	if w.ExecutionTimeout != nil {
-		add("execution-timeout", w.ExecutionTimeout.raw)
-	}
-	if w.TaskTimeout != nil {
-		add("task-timeout", w.TaskTimeout.raw)
-	}
-	if w.WaitForCancellation != nil {
-		add("wait-for-cancellation", strconv.FormatBool(*w.WaitForCancellation))
-	}
-
-	// Sorted so generated output is deterministic across runs.
-	keys := make([]string, 0, len(w.Memo))
-	for k := range w.Memo {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		add("memo", k+" "+w.Memo[k])
 	}
 
 	return out

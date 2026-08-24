@@ -19,28 +19,20 @@ func testConfig(t *testing.T) *labels.Config {
 	require.NoError(t, os.WriteFile(path, []byte(`
 version: 1
 defaults:
-  activity:
-    start-to-close-timeout: 1m
+  start-to-close-timeout: 1m
 labels:
   access:
     values:
-      read-only:
-        activity:
-          start-to-close-timeout: 30s
-          max-retries: 3
+      db-only:
+        start-to-close-timeout: 30s
+        max-retries: 3
       bulk:
-        activity:
-          start-to-close-timeout: 1h
-          heartbeat-timeout: 1m
+        start-to-close-timeout: 1h
+        heartbeat-timeout: 1m
   tier:
     values:
       critical:
-        activity:
-          max-retries: 870
-        workflow:
-          execution-timeout: 24h
-          memo:
-            tier: critical
+        max-retries: 870
 `), 0o644))
 
 	cfg, err := labels.Load(path)
@@ -61,12 +53,12 @@ func TestParseWithLabels(t *testing.T) {
 	})
 
 	t.Run("label overrides defaults", func(t *testing.T) {
-		a, err := ParseWithLabels([]string{marker("activity"), "// @label access read-only"}, cfg)
+		a, err := ParseWithLabels([]string{marker("activity"), "// @label access db-only"}, cfg)
 		require.NoError(t, err)
 		assert.Equal(t, 30*time.Second, a.ActivityOpts.StartToCloseTimeout)
 		assert.Equal(t, 3, a.ActivityOpts.MaxRetries)
 		assert.True(t, a.ActivityOpts.RetryPolicy)
-		assert.Equal(t, []labels.Pair{{Key: "access", Value: "read-only"}}, a.Labels)
+		assert.Equal(t, []labels.Pair{{Key: "access", Value: "db-only"}}, a.Labels)
 	})
 
 	t.Run("distinct keys both contribute", func(t *testing.T) {
@@ -84,7 +76,7 @@ func TestParseWithLabels(t *testing.T) {
 	t.Run("explicit annotation beats label", func(t *testing.T) {
 		a, err := ParseWithLabels([]string{
 			marker("activity"),
-			"// @label access read-only",
+			"// @label access db-only",
 			"// @start-to-close-timeout 10s",
 		}, cfg)
 		require.NoError(t, err)
@@ -97,34 +89,33 @@ func TestParseWithLabels(t *testing.T) {
 		a, err := ParseWithLabels([]string{
 			marker("activity"),
 			"// @start-to-close-timeout 10s",
-			"// @label access read-only",
+			"// @label access db-only",
 		}, cfg)
 		require.NoError(t, err)
 		assert.Equal(t, 10*time.Second, a.ActivityOpts.StartToCloseTimeout)
 	})
 
-	t.Run("value carrying both blocks applies activity block only", func(t *testing.T) {
-		a, err := ParseWithLabels([]string{marker("activity"), "// @label tier critical"}, cfg)
+	t.Run("later key wins when two keys touch the same attribute", func(t *testing.T) {
+		a, err := ParseWithLabels([]string{
+			marker("activity"),
+			"// @label access db-only",
+			"// @label tier critical",
+		}, cfg)
 		require.NoError(t, err)
 		assert.Equal(t, 870, a.ActivityOpts.MaxRetries)
 	})
 
-	t.Run("value carrying both blocks applies workflow block only", func(t *testing.T) {
-		a, err := ParseWithLabels([]string{marker("workflow"), "// @label tier critical"}, cfg)
-		require.NoError(t, err)
-		assert.Equal(t, 24*time.Hour, a.WorkflowOpts.ExecutionTimeout)
-		assert.Equal(t, map[string]string{"tier": "critical"}, a.WorkflowOpts.Memo)
+	t.Run("label on a workflow errors", func(t *testing.T) {
+		_, err := ParseWithLabels([]string{marker("workflow"), "// @label tier critical"}, cfg)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "@label is only supported on activities, found on workflow")
 	})
 
-	t.Run("label memo merges with explicit memo", func(t *testing.T) {
-		a, err := ParseWithLabels([]string{
-			marker("workflow"),
-			"// @label tier critical",
-			"// @memo owner platform",
-			"// @memo tier overridden",
-		}, cfg)
+	t.Run("workflow without labels is unaffected", func(t *testing.T) {
+		a, err := ParseWithLabels([]string{marker("workflow")}, cfg)
 		require.NoError(t, err)
-		assert.Equal(t, map[string]string{"tier": "overridden", "owner": "platform"}, a.WorkflowOpts.Memo)
+		// the activity-only defaults block must not leak onto workflows
+		assert.Zero(t, a.WorkflowOpts.ExecutionTimeout)
 	})
 
 	t.Run("unknown key errors", func(t *testing.T) {
@@ -142,7 +133,7 @@ func TestParseWithLabels(t *testing.T) {
 	t.Run("duplicate key errors", func(t *testing.T) {
 		_, err := ParseWithLabels([]string{
 			marker("activity"),
-			"// @label access read-only",
+			"// @label access db-only",
 			"// @label access bulk",
 		}, cfg)
 		require.Error(t, err)
@@ -150,7 +141,7 @@ func TestParseWithLabels(t *testing.T) {
 	})
 
 	t.Run("labels without a config errors", func(t *testing.T) {
-		_, err := ParseWithLabels([]string{marker("activity"), "// @label access read-only"}, nil)
+		_, err := ParseWithLabels([]string{marker("activity"), "// @label access db-only"}, nil)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "no temporal-gen.yaml was found")
 	})

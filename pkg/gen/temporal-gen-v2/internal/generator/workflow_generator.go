@@ -8,7 +8,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/labels"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/parser"
 )
 
@@ -22,9 +21,6 @@ type WorkflowData struct {
 	OutputType   string
 	Options      *parser.WorkflowOptions
 	Receiver     string
-	// Labels names the labels whose defaults were folded into Options, purely
-	// so generated code documents where its values came from.
-	Labels []labels.Pair
 }
 
 func GenerateWorkflow(data WorkflowData) ([]byte, error) {
