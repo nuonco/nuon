@@ -17,9 +17,13 @@ func (m model) openInBrowser() {
 	if m.workflow != nil && m.workflow.OwnerType == "app_branches" {
 		appID := m.workflow.Metadata["app_id"]
 		branchID := m.workflow.OwnerID
-		runID := m.workflow.Metadata["run_id"]
-		if appID != "" && branchID != "" && runID != "" {
-			url = fmt.Sprintf("%s/%s/apps/%s/branches/%s/runs/%s", dashboardURL, m.cfg.OrgID, appID, branchID, runID)
+		// the dashboard's branch run route is keyed on the workflow ID, not the app branch run ID
+		workflowID := m.workflow.ID
+		if workflowID == "" {
+			workflowID = m.workflowID
+		}
+		if appID != "" && branchID != "" && workflowID != "" {
+			url = fmt.Sprintf("%s/%s/apps/%s/branches/%s/runs/%s", dashboardURL, m.cfg.OrgID, appID, branchID, workflowID)
 		}
 	}
 
