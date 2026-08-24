@@ -213,16 +213,31 @@ Removing a secret is the reverse: delete the `variable` block, the `secrets` ent
 
 Operation-role permissions, break-glass roles, and custom roles are read from the control plane, and are pulled in
 automatically by the next `terraform plan`. Whether a break-glass or custom role is enabled is also served by the
-control plane, but your customer can override it with the module's `roles` map, keyed by role name:
+control plane, but your customer can override it with the module's `roles` map:
 
 ```hcl
   roles = {
-    break_glass_admin = false // [!code ++]
+    "app-break-glass" = true // [!code ++]
   }
 ```
 
 An entry set here wins over the control plane in both directions, so your customer can turn a role off or switch one
-on ahead of the next apply. A `roles` key naming a role the app does not declare fails the plan.
+on ahead of the next apply. Keys are role names — either the full served name or the name without its leading
+`<install-id>-` prefix. A `roles` key naming a role the app does not declare fails the plan, with an error listing
+the valid keys.
+
+The `roles` map also accepts three reserved keys — `provision`, `maintenance`, and `deprovision` — to disable an
+operation role:
+
+```hcl
+  roles = {
+    deprovision = false // [!code ++]
+  }
+```
+
+This is useful for keeping teardown permissions off until your customer intends to decommission the install.
+Disabling `provision` or `maintenance` prevents Nuon from performing those operations until the role is re-enabled
+and applied.
 
 #### Vendor removes an input
 
