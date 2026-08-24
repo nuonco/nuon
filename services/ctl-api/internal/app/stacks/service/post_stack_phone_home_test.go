@@ -19,6 +19,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -236,4 +237,186 @@ func (s *StackPhoneHomeTestSuite) TestRejectsBadRequestType() {
 		s.post(install.ID, map[string]any{"request_type": 7}).Code)
 	assert.Equal(t, http.StatusBadRequest,
 		s.post(install.ID, map[string]any{}).Code)
+}
+
+// customerInput adds a customer-source app input to the install's pinned input
+// config. The seeder's stock input is vendor-source, which the stack may not set.
+func (s *StackPhoneHomeTestSuite) customerInput(name string) *app.AppInput {
+	t := s.T()
+
+	var inputCfg app.AppInputConfig
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).
+		Where("app_config_id = ?", s.appCfg.ID).First(&inputCfg).Error)
+
+	var group app.AppInputGroup
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).
+		Where("app_input_config_id = ?", inputCfg.ID).First(&group).Error)
+
+	in := &app.AppInput{
+		AppInputConfigID: inputCfg.ID,
+		AppInputGroupID:  group.ID,
+		Name:             name,
+		Description:      name,
+		Type:             app.AppInputTypeString,
+		Source:           app.AppInputSourceCustomer,
+	}
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).Create(in).Error)
+	return in
+}
+
+func (s *StackPhoneHomeTestSuite) installInputRows(installID string) []app.InstallInputs {
+	var rows []app.InstallInputs
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Where("install_id = ?", installID).
+		Order("created_at ASC").
+		Find(&rows).Error)
+	return rows
+}
+
+// The customer's tfvars is a way to set input values: the stack reports what it
+// resolved, and the merge preserves the values it did not report.
+func (s *StackPhoneHomeTestSuite) TestInputsCreateNewCurrentRowWithMergedValues() {
+	t := s.T()
+
+	install := s.seedInstall(s.testOrg.ID)
+	s.seedQueue(install.ID)
+	version := s.deps.Seeder.CreateInstallStackVersion(s.ctx, t, install.ID, install.InstallStack.ID, s.appCfg.ID)
+
+	s.customerInput("domain")
+	s.customerInput("bucket")
+
+	var inputCfg app.AppInputConfig
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).
+		Where("app_config_id = ?", s.appCfg.ID).First(&inputCfg).Error)
+	s.deps.Seeder.CreateInstallInputs(s.ctx, t, install.ID, inputCfg.ID, map[string]*string{
+		"domain": generics.ToPtr("old.example.com"),
+		"bucket": generics.ToPtr("keep-me"),
+	})
+
+	rr := s.post(install.ID, map[string]any{
+		"request_type": installshelpers.PhoneHomeRequestTypeCreate,
+		"runner_role":  "arn:aws:iam::000000000000:role/runner",
+		"inputs":       map[string]any{"domain": "new.example.com"},
+	})
+	require.Equal(t, http.StatusCreated, rr.Code, "body: %s", rr.Body.String())
+
+	rows := s.installInputRows(install.ID)
+	require.Len(t, rows, 2, "the report must append a revision, not mutate the current one")
+	current := rows[1]
+	require.NotNil(t, current.Values["domain"])
+	assert.Equal(t, "new.example.com", *current.Values["domain"])
+	require.NotNil(t, current.Values["bucket"])
+	assert.Equal(t, "keep-me", *current.Values["bucket"], "unreported inputs carry over")
+
+	// inputs is a report of inputs, not a stack output — it must not land on the run.
+	var runs []app.InstallStackVersionRun
+	require.NoError(t, s.deps.DB.
+		Where("install_stack_version_id = ?", version.ID).Find(&runs).Error)
+	require.Len(t, runs, 1)
+	assert.NotContains(t, runs[0].Data, "inputs")
+	require.NotNil(t, runs[0].Data["runner_role"])
+}
+
+// An install that has never had inputs set gets its first row from the report.
+func (s *StackPhoneHomeTestSuite) TestInputsCreateFirstRowWhenNoneExist() {
+	t := s.T()
+
+	install := s.seedInstall(s.testOrg.ID)
+	s.seedQueue(install.ID)
+	s.deps.Seeder.CreateInstallStackVersion(s.ctx, t, install.ID, install.InstallStack.ID, s.appCfg.ID)
+	s.customerInput("domain")
+
+	rr := s.post(install.ID, map[string]any{
+		"request_type": installshelpers.PhoneHomeRequestTypeCreate,
+		"inputs":       map[string]any{"domain": "example.com"},
+	})
+	require.Equal(t, http.StatusCreated, rr.Code, "body: %s", rr.Body.String())
+
+	rows := s.installInputRows(install.ID)
+	require.Len(t, rows, 1)
+	require.NotNil(t, rows[0].Values["domain"])
+	assert.Equal(t, "example.com", *rows[0].Values["domain"])
+}
+
+// A re-apply reporting the values the install already has must not churn a revision.
+func (s *StackPhoneHomeTestSuite) TestInputsUnchangedWritesNoRow() {
+	t := s.T()
+
+	install := s.seedInstall(s.testOrg.ID)
+	s.seedQueue(install.ID)
+	s.deps.Seeder.CreateInstallStackVersion(s.ctx, t, install.ID, install.InstallStack.ID, s.appCfg.ID)
+	s.customerInput("domain")
+
+	var inputCfg app.AppInputConfig
+	require.NoError(t, s.deps.DB.WithContext(s.ctx).
+		Where("app_config_id = ?", s.appCfg.ID).First(&inputCfg).Error)
+	s.deps.Seeder.CreateInstallInputs(s.ctx, t, install.ID, inputCfg.ID, map[string]*string{
+		"domain": generics.ToPtr("example.com"),
+	})
+
+	rr := s.post(install.ID, map[string]any{
+		"request_type": installshelpers.PhoneHomeRequestTypeCreate,
+		"inputs":       map[string]any{"domain": "example.com"},
+	})
+	require.Equal(t, http.StatusCreated, rr.Code, "body: %s", rr.Body.String())
+
+	assert.Len(t, s.installInputRows(install.ID), 1)
+}
+
+// A report without inputs is the common case and must leave the inputs untouched.
+func (s *StackPhoneHomeTestSuite) TestWithoutInputsWritesNoRow() {
+	t := s.T()
+
+	install := s.seedInstall(s.testOrg.ID)
+	s.seedQueue(install.ID)
+	s.deps.Seeder.CreateInstallStackVersion(s.ctx, t, install.ID, install.InstallStack.ID, s.appCfg.ID)
+
+	rr := s.post(install.ID, map[string]any{
+		"request_type": installshelpers.PhoneHomeRequestTypeCreate,
+	})
+	require.Equal(t, http.StatusCreated, rr.Code, "body: %s", rr.Body.String())
+
+	assert.Empty(t, s.installInputRows(install.ID))
+}
+
+// Only customer-source inputs are the stack's to set. An undeclared name, or a
+// vendor-source one, is named back so the module author can fix their tfvars.
+func (s *StackPhoneHomeTestSuite) TestUnknownInputIsBadRequest() {
+	t := s.T()
+
+	install := s.seedInstall(s.testOrg.ID)
+	s.seedQueue(install.ID)
+	s.deps.Seeder.CreateInstallStackVersion(s.ctx, t, install.ID, install.InstallStack.ID, s.appCfg.ID)
+	s.customerInput("domain")
+
+	rr := s.post(install.ID, map[string]any{
+		"request_type": installshelpers.PhoneHomeRequestTypeCreate,
+		"inputs":       map[string]any{"domain": "example.com", "nope": "x"},
+	})
+	require.Equal(t, http.StatusBadRequest, rr.Code, "body: %s", rr.Body.String())
+	assert.Contains(t, rr.Body.String(), "nope")
+	assert.Empty(t, s.installInputRows(install.ID), "a rejected report must persist nothing")
+
+	// "region" is the seeder's vendor-source input: declared, but not the stack's.
+	rr = s.post(install.ID, map[string]any{
+		"request_type": installshelpers.PhoneHomeRequestTypeCreate,
+		"inputs":       map[string]any{"region": "us-west-2"},
+	})
+	require.Equal(t, http.StatusBadRequest, rr.Code, "body: %s", rr.Body.String())
+	assert.Contains(t, rr.Body.String(), "region")
+}
+
+func (s *StackPhoneHomeTestSuite) TestRejectsNonStringInputs() {
+	t := s.T()
+
+	install := s.seedInstall(s.testOrg.ID)
+
+	assert.Equal(t, http.StatusBadRequest, s.post(install.ID, map[string]any{
+		"request_type": installshelpers.PhoneHomeRequestTypeCreate,
+		"inputs":       "domain=example.com",
+	}).Code)
+	assert.Equal(t, http.StatusBadRequest, s.post(install.ID, map[string]any{
+		"request_type": installshelpers.PhoneHomeRequestTypeCreate,
+		"inputs":       map[string]any{"domain": 7},
+	}).Code)
 }

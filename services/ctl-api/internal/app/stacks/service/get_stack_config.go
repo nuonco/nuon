@@ -82,7 +82,5 @@ func (s *service) GetStackConfig(ctx *gin.Context) {
 	cfg.PhoneHomeURL = fmt.Sprintf("%s/v1/stacks/%s/phone-home",
 		strings.TrimSuffix(cfg.RunnerAPIURL, "/"), install.ID)
 
-	s.installsHelpers.ApplyInstallInputValues(reqCtx, cfg, install.ID)
-
 	ctx.JSON(http.StatusOK, stackConfigResponse{Config: cfg})
 }

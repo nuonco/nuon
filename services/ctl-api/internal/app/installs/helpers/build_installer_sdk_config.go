@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	awsstacks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/aws"
 	gcpstacks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcp"
 )
@@ -16,13 +19,18 @@ const defaultGCPRunnerInitScript = "https://raw.githubusercontent.com/nuonco/run
 
 // BuildInstallerSDKConfig renders the full install-stack configuration for an
 // install: runner details, operation-role permissions/policies, break-glass and
-// custom roles, install-input names, and secrets. It is the shared source of
+// custom roles, install-input values, and secrets. It is the shared source of
 // truth for the read-only config endpoint the Terraform provider's nuon_stack
 // data source consumes.
 func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string) (*app.InstallerSDKConfig, error) {
 	var install app.Install
 	if res := h.db.WithContext(ctx).
 		Preload("AWSAccount").
+		// Newest row only: AfterQuery promotes it to CurrentInstallInputs, which the
+		// customer-input values and the cluster_name resolution below both read.
+		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
+			return db.Order(views.TableOrViewName(db, &app.InstallInputs{}, ".created_at DESC")).Limit(1)
+		}).
 		Preload("RunnerGroup.Runners").
 		Preload("RunnerGroup.Settings").
 		Where("id = ?", installID).
@@ -75,11 +83,19 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		return nil, fmt.Errorf("render secrets config: %w", err)
 	}
 
-	// Customer install inputs — names only. Values come from the per-install
-	// inputs table at apply time, mirroring the TF tfvars contract which also
-	// writes `"name" = ""` and lets the runner read values at runtime.
+	// Customer install inputs, with real values: this read is authenticated, so it
+	// serves the install's current value for each customer-source input, falling
+	// back to the app input's default. A tfvars override in the customer's module
+	// still wins client-side — the module reports what it resolved back through
+	// phone home, which persists it as the install's inputs.
+	var currentInputs map[string]*string
+	if install.CurrentInstallInputs != nil {
+		currentInputs = install.CurrentInstallInputs.Values
+	}
+
 	var installInputs map[string]string
 	var requiredInputs []string
+	var sensitiveInputs []string
 	for _, in := range appCfg.InputConfig.AppInputs {
 		if in.Source != app.AppInputSourceCustomer {
 			continue
@@ -87,12 +103,28 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		if installInputs == nil {
 			installInputs = map[string]string{}
 		}
-		installInputs[in.Name] = ""
+
+		value := in.Default
+		if v, ok := currentInputs[in.Name]; ok && v != nil && *v != "" {
+			value = *v
+		}
+		installInputs[in.Name] = value
+
 		if in.Required {
 			requiredInputs = append(requiredInputs, in.Name)
 		}
+		// install_inputs is a released map[string]string and carries no per-key
+		// metadata, so sensitivity travels as a sibling name list — the same shape
+		// required_inputs already uses. The provider marks these values sensitive.
+		if in.Sensitive {
+			sensitiveInputs = append(sensitiveInputs, in.Name)
+		}
 	}
 
+	// Secrets are split on the one customer/vendor axis the secrets model has:
+	// auto-generated secrets are the stack's to mint, the rest are the customer's to
+	// supply. Vendor-owned secret values live on the org-level AppSecret model, which
+	// this config never reads.
 	var autoGen []string
 	var secrets map[string]app.InstallerSDKSecret
 	for _, sec := range appCfg.SecretsConfig.Secrets {
@@ -118,6 +150,7 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		RunnerAPIURL:        runnerAPIURL,
 		InstallInputs:       installInputs,
 		RequiredInputs:      requiredInputs,
+		SensitiveInputs:     sensitiveInputs,
 		AutoGenerateSecrets: autoGen,
 		Secrets:             secrets,
 	}
@@ -266,31 +299,4 @@ func gcpRolesToSDKMap(rs []gcpstacks.GCPRoleRaw, enabled bool) map[string]app.In
 		}
 	}
 	return out
-}
-
-// ApplyInstallInputValues fills in the install's latest stored values for the
-// customer-source inputs BuildInstallerSDKConfig already seeded (names with empty
-// values). Only existing keys are updated: vendor-source inputs are intentionally
-// excluded from install_inputs, matching the classic tfvars renderer.
-//
-// A missing inputs row is not an error — an install that has never had inputs set
-// simply keeps the seeded empty values.
-func (h *Helpers) ApplyInstallInputValues(ctx context.Context, cfg *app.InstallerSDKConfig, installID string) {
-	var ins app.InstallInputs
-	if err := h.db.WithContext(ctx).
-		Where(app.InstallInputs{InstallID: installID}).
-		Order("created_at DESC").
-		Limit(1).
-		First(&ins).Error; err != nil {
-		return
-	}
-
-	for k, v := range ins.Values {
-		if v == nil {
-			continue
-		}
-		if _, ok := cfg.InstallInputs[k]; ok {
-			cfg.InstallInputs[k] = *v
-		}
-	}
 }

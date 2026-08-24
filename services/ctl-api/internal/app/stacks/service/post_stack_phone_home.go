@@ -19,9 +19,44 @@ import (
 // a `request_type` naming the lifecycle event. Same shape as the legacy route's body.
 type StackPhoneHomeRequest = installshelpers.StackPhoneHomeRequest
 
+// stackPhoneHomeInputsKey is the optional body key carrying the install-input values
+// the stack resolved. It is a report of inputs, not a stack output, so it is stripped
+// from the payload before the run is recorded.
+const stackPhoneHomeInputsKey = "inputs"
+
+// extractStackPhoneHomeInputs pulls the optional `inputs` object off the body and
+// removes it. Absent is fine; present-but-not-an-object-of-strings is a user error,
+// because silently dropping a malformed inputs report would strand the customer's
+// tfvars values with a 201.
+func extractStackPhoneHomeInputs(req StackPhoneHomeRequest) (map[string]string, error) {
+	raw, ok := req[stackPhoneHomeInputsKey]
+	if !ok {
+		return nil, nil
+	}
+	delete(req, stackPhoneHomeInputsKey)
+
+	if raw == nil {
+		return nil, nil
+	}
+	obj, ok := raw.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("inputs must be an object of strings")
+	}
+
+	inputs := make(map[string]string, len(obj))
+	for name, v := range obj {
+		str, ok := v.(string)
+		if !ok {
+			return nil, fmt.Errorf("input %q must be a string", name)
+		}
+		inputs[name] = str
+	}
+	return inputs, nil
+}
+
 // @ID						PostStackPhoneHome
 // @Summary				phone home for an install stack
-// @Description			Report an install stack's outputs for the install's latest stack version. Authenticated replacement for the public capability-URL route: the caller's token identifies the stack's service account, so no phone_home_id appears in the path.
+// @Description			Report an install stack's outputs for the install's latest stack version. Authenticated replacement for the public capability-URL route: the caller's token identifies the stack's service account, so no phone_home_id appears in the path. An optional `inputs` object of string values reports the install-input values the stack resolved; every key must be a customer-source app input, and the merged result becomes the install's current inputs.
 // @Param					install_id	path	string				true	"install ID"
 // @Param					req			body	StackPhoneHomeRequest	true	"Input"
 // @Tags					stacks/runner
@@ -47,6 +82,12 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 
 	var req StackPhoneHomeRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
+		return
+	}
+
+	inputs, err := extractStackPhoneHomeInputs(req)
+	if err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
@@ -95,6 +136,22 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 			return
 		}
 		ctx.Error(fmt.Errorf("load install stack version: %w", res.Error))
+		return
+	}
+
+	// Inputs before the run is recorded: a rejected inputs report must not leave a
+	// recorded run claiming values that were never persisted. Org and account come
+	// from gin's context, which ctx.Request.Context() does not carry, and the
+	// InstallInputs create hooks read both.
+	acct, err := cctx.AccountFromGinContext(ctx)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to resolve account from request: %w", err))
+		return
+	}
+	inputsCtx := cctx.SetOrgIDContext(ctx.Request.Context(), orgID)
+	inputsCtx = cctx.SetAccountIDContext(inputsCtx, acct.ID)
+	if _, err := s.installsHelpers.SetInstallInputsFromStack(inputsCtx, &install, inputs); err != nil {
+		ctx.Error(err)
 		return
 	}
 
