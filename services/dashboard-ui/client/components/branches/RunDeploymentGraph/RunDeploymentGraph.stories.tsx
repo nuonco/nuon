@@ -28,8 +28,8 @@ const mockRuns: any[] = [
     completed_installs: 2,
     total_installs: 2,
     installs: [
-      { install_id: 'inst-001', status: 'success' },
-      { install_id: 'inst-002', status: 'success' },
+      { install_id: 'inst-001', workflow_id: 'inw-001', status: 'success' },
+      { install_id: 'inst-002', workflow_id: 'inw-002', status: 'success' },
     ],
   },
   {
@@ -41,9 +41,9 @@ const mockRuns: any[] = [
     completed_installs: 1,
     total_installs: 3,
     installs: [
-      { install_id: 'inst-003', status: 'success' },
-      { install_id: 'inst-004', status: 'in-progress' },
-      { install_id: 'inst-005', status: 'pending' },
+      { install_id: 'inst-003', workflow_id: 'inw-003', status: 'success' },
+      { install_id: 'inst-004', workflow_id: 'inw-004', status: 'in-progress' },
+      { install_id: 'inst-005', workflow_id: 'inw-005', status: 'pending' },
     ],
   },
 ]
@@ -69,7 +69,7 @@ const failedRuns: any[] = [
     status: { status: 'error' },
     completed_installs: 0,
     total_installs: 1,
-    installs: [{ install_id: 'inst-006', status: 'error' }],
+    installs: [{ install_id: 'inst-006', workflow_id: 'inw-006', status: 'error' }],
   },
 ]
 
@@ -91,6 +91,7 @@ const postDeployRunbookRuns: any[] = [
     installs: [
       {
         install_id: 'inst-007',
+        workflow_id: 'inw-007',
         status: 'success',
         phase: 'runbook',
         runbooks: [
@@ -100,6 +101,7 @@ const postDeployRunbookRuns: any[] = [
       },
       {
         install_id: 'inst-008',
+        workflow_id: 'inw-008',
         status: 'error',
         phase: 'runbook',
         runbooks: [
@@ -160,7 +162,13 @@ function buildLargeRun(
                     : status,
             }))
           : []
-      return { install_id: id, status, phase: runbooks.length ? 'runbook' : undefined, runbooks }
+      return {
+        install_id: id,
+        workflow_id: `inw-g${gi}-${i}`,
+        status,
+        phase: runbooks.length ? 'runbook' : undefined,
+        runbooks,
+      }
     })
     return {
       id: `igr-${gi}`,

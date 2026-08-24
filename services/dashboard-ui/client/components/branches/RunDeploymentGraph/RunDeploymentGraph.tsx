@@ -1,11 +1,10 @@
 import { useMemo, memo } from 'react'
+import { useSearchParams } from 'react-router'
 import { type Node, type NodeProps } from '@xyflow/react'
 
-import { Button } from '@/components/common/Button'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Link } from '@/components/common/Link'
-import { useSurfaces } from '@/hooks/use-surfaces'
 import { cn } from '@/utils/classnames'
 import type { TInstall, TInstallGroupRun } from '@/types'
 
@@ -38,6 +37,7 @@ function distinctRunbookNames(installs: GroupRunInstall[]): string[] {
 
 interface GroupRunNodeData {
   groupName: string
+  status?: string
   accent: GraphAccent
   installs: GroupRunInstall[]
   runbookNames: string[]
@@ -45,24 +45,26 @@ interface GroupRunNodeData {
   completedInstalls: number
   totalInstalls: number
   orgId: string
+  panelKey: string
   [key: string]: unknown
 }
 
 const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
-  const { accent, installs, runbookNames, labelEntries, orgId } = data
-  const { addPanel } = useSurfaces()
+  const { accent, installs, runbookNames, labelEntries, orgId, panelKey } = data
+  const [, setSearchParams] = useSearchParams()
   const visible = installs.slice(0, MAX_VISIBLE_INSTALLS)
   const hidden = installs.length - visible.length
   const visibleRunbooks = runbookNames.slice(0, MAX_VISIBLE_RUNBOOKS)
   const hiddenRunbooks = runbookNames.length - visibleRunbooks.length
 
   const openDetails = () => {
-    addPanel(
-      <GroupRunDetailPanel
-        groupName={data.groupName}
-        installs={installs}
-        orgId={orgId}
-      />
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.set('panel', panelKey)
+        return next
+      },
+      { replace: false }
     )
   }
 
@@ -119,7 +121,7 @@ const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
       )}
 
       {runbookNames.length > 0 && (
-        <div className="mt-1 flex flex-col gap-1 border-t border-cool-grey-200 pt-2 dark:border-dark-grey-700">
+        <div className="mt-1 flex flex-col gap-1 border-t pt-2">
           <span className="text-[10px] font-strong uppercase tracking-wide text-cool-grey-500 dark:text-cool-grey-500">
             Runbooks
           </span>
@@ -141,14 +143,15 @@ const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
       )}
 
       {installs.length > 0 && (
-        <Button
-          variant="secondary"
-          size="sm"
-          className="nodrag mt-2 w-full justify-center"
-          onClick={openDetails}
-        >
-          View details
-        </Button>
+        <GroupRunDetailPanel
+          panelKey={panelKey}
+          groupName={data.groupName}
+          status={data.status}
+          completedInstalls={data.completedInstalls}
+          totalInstalls={data.totalInstalls}
+          installs={installs}
+          orgId={orgId}
+        />
       )}
     </GroupNodeCard>
   )
@@ -192,12 +195,15 @@ export const RunDeploymentGraph = ({
         groupRun.install_group?.label_selector?.match_labels ?? {}
       )
 
+      const groupRunId = groupRun.id ?? `group-${groupRun.install_group_id}`
+
       return {
-        id: groupRun.id ?? `group-${groupRun.install_group_id}`,
+        id: groupRunId,
         type: 'groupRunNode' as const,
         position: { x: 0, y: 0 },
         data: {
           groupName: groupRun.install_group_name || 'install group',
+          status: groupRun.status?.status,
           accent: statusAccent(groupRun.status?.status),
           installs,
           runbookNames,
@@ -205,6 +211,7 @@ export const RunDeploymentGraph = ({
           completedInstalls: groupRun.completed_installs ?? 0,
           totalInstalls: groupRun.total_installs ?? installs.length,
           orgId,
+          panelKey: `install-group-run:${groupRunId}`,
         },
       }
     })
