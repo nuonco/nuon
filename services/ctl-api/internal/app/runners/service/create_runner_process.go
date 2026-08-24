@@ -100,10 +100,10 @@ func (s *service) emitProcessStart(ctx *gin.Context, runnerID string, process *a
 	tagMap["org_name"] = runner.Org.Name
 	tagMap["runner_id"] = runnerID
 	tagMap["runner_type"] = string(runner.RunnerGroup.Type)
-	tagMap["process_id"] = process.ID
 	tagMap["process_type"] = string(process.Type)
 	tagMap["install_id"] = installID
 	tagMap["install_name"] = installName
+	tagMap["runner_version"] = process.Version
 
 	s.mw.Incr("runner.process.start", metrics.ToTags(tagMap))
 
