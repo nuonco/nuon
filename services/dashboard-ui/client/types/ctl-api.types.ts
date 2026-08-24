@@ -908,6 +908,8 @@ export type TInstallStackVersionRun =
 export type TInstallStackOutputs =
   components['schemas']['app.InstallStackOutputs']
 export type TAppStackConfig = components['schemas']['app.AppStackConfig']
+export type TCustomNestedStack =
+  components['schemas']['config.CustomNestedStack']
 export type TStackType = components['schemas']['app.StackType']
 export type TStackDeploymentScope =
   components['schemas']['app.StackDeploymentScope']

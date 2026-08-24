@@ -53,7 +53,9 @@ func (a *Activities) ForwardCreateStepRetry(ctx context.Context, req ForwardCrea
 	}
 	var result stepRetryResult
 	if err := rawResp.Get(ctx, &result); err != nil {
-		return nil, fmt.Errorf("create-step-retry update failed for step %s: %w", req.StepID, err)
+		// Keep a non-retryable update failure concrete; wrapping it makes the
+		// activity's top-level Temporal failure retryable again.
+		return nil, err
 	}
 
 	return &ForwardCreateStepRetryResponse{

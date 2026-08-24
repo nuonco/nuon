@@ -54,6 +54,28 @@ func TestExecuteRecordsNoActiveRunnerCompositeError(t *testing.T) {
 	env.AssertExpectations(t)
 }
 
+func TestExecuteRecordsRunnerDisabledCompositeError(t *testing.T) {
+	env := newProcessJobTestEnvironment()
+	env.RegisterActivityWithOptions((&runneractivities.Activities{}).RecordJobLifecycleCompositeError,
+		activity.RegisterOptions{Name: "RecordJobLifecycleCompositeError"})
+	env.OnActivity((*runneractivities.Activities).GetRunnerJobForExecution, mock.Anything, mock.Anything, mock.Anything).
+		Return(&runneractivities.GetRunnerJobForExecutionResponse{
+			Runner: &app.Runner{ID: "runner-1", Status: app.RunnerStatusDisabled},
+			Job:    &app.RunnerJob{ID: "job-1", Status: app.RunnerJobStatusQueued},
+		}, nil).Once()
+	env.OnActivity((*runneractivities.Activities).UpdateJobStatus, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).Once()
+	env.OnActivity((*statusactivities.Activities).UpdateRunnerJobStatusV2, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil).Once()
+	env.OnActivity("RecordJobLifecycleCompositeError", mock.Anything,
+		mock.MatchedBy(func(req runneractivities.RecordJobLifecycleCompositeErrorRequest) bool {
+			return req.JobID == "job-1" && req.Reason == joberrors.LifecycleFailureReasonRunnerDisabled
+		})).Return(nil).Once()
+
+	require.ErrorContains(t, executeProcessJobSignal(t, env), "runner has no active process")
+	env.AssertExpectations(t)
+}
+
 func TestExecuteDoesNotRecordLifecycleErrorForCancelledJob(t *testing.T) {
 	env := newProcessJobTestEnvironment()
 	env.OnActivity((*runneractivities.Activities).GetRunnerJobForExecution, mock.Anything, mock.Anything, mock.Anything).

@@ -226,6 +226,9 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/labels", s.LabelsPage)
 		api.GET("/labels/table", s.LabelsTable)
 
+		// Feature flags
+		api.GET("/feature-flags", s.FeatureFlags)
+
 		// Global installs
 		api.GET("/installs", s.Installs)
 		api.GET("/installs/table", s.InstallsTableGlobal)

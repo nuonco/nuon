@@ -10,9 +10,11 @@ import {
   buildCreateInstallBody,
   normalizeInstallPlatform,
 } from '@/components/installs/forms/InstallForm'
+import { useAuth } from '@/hooks/use-auth'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { trackEvent } from '@/lib/posthog-analytics'
 import {
   getAppConfigs,
   getAppConfig,
@@ -52,6 +54,7 @@ export const CreateInstallFromAppContainer = ({
   modalId,
 }: ICreateInstallFromAppContainer) => {
   const { org } = useOrg()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
@@ -121,6 +124,15 @@ export const CreateInstallFromAppContainer = ({
       mutationFn: (body: ReturnType<typeof buildCreateInstallBody>) =>
         createAppInstall({ appId: app.id, body, orgId: org?.id || '' }),
       onSuccess: (result) => {
+        trackEvent({
+          event: 'install_create',
+          status: 'ok',
+          user,
+          props: {
+            appId: app.id,
+            installId: result.data.id,
+          },
+        })
         addToast(
           <Toast heading="Install created" theme="success">
             <Text>
@@ -129,6 +141,7 @@ export const CreateInstallFromAppContainer = ({
             </Text>
           </Toast>
         )
+        queryClient.invalidateQueries({ queryKey: ['installs'] })
         queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
         queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
         const suffix =
@@ -137,6 +150,17 @@ export const CreateInstallFromAppContainer = ({
           id: result.data.id,
           workflowId: result.data.workflow_id,
           suffix,
+        })
+      },
+      onError: (err: any) => {
+        trackEvent({
+          event: 'install_create',
+          status: 'error',
+          user,
+          props: {
+            appId: app.id,
+            err: err?.error,
+          },
         })
       },
     })

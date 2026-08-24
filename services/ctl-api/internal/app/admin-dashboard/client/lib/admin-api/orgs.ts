@@ -1,10 +1,18 @@
 import { api } from '@/lib/api'
 import type { TOrg, TOrgDetailResponse } from '@/types/admin.types'
 
-export const getOrgs = (params: { search?: string; label?: string; page?: number }) =>
+export const getOrgs = (params: {
+  search?: string
+  label?: string
+  feature?: string
+  feature_state?: string
+  page?: number
+}) =>
   api<{
     orgs: TOrg[]
     label_options: { key: string; values: string[] }[]
+    feature_options: { name: string; description: string }[]
+    feature_counts: Record<string, number>
     page: number
     total_pages: number
   }>({ path: 'orgs', params })

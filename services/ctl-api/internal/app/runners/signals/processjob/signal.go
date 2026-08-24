@@ -152,9 +152,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			l.Info("job was already cancelled, not attempting")
 			return nil
 		}
-		l.Warn("runner has no active process, not attempting")
-		s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusNotAttempted, "no active runner process available")
-		s.recordJobLifecycleCompositeError(ctx, s.JobID, joberrors.LifecycleFailureReasonNoActiveRunner)
+		// A disabled runner has no processes by design, so report that rather
+		// than the generic unhealthy-runner reason.
+		reason := joberrors.LifecycleFailureReasonNoActiveRunner
+		description := "no active runner process available"
+		if runner != nil && runner.Status == app.RunnerStatusDisabled {
+			reason = joberrors.LifecycleFailureReasonRunnerDisabled
+			description = "install runner is disabled"
+		}
+
+		l.Warn("runner has no active process, not attempting", zap.String("reason", string(reason)))
+		s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusNotAttempted, description)
+		s.recordJobLifecycleCompositeError(ctx, s.JobID, reason)
 		return errors.New("runner has no active process")
 	}
 
@@ -307,6 +316,15 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 				break
 			}
 			etags["runner_status"] = string(runnerStatus)
+
+			// A disabled runner will never become active on its own, so fail
+			// now instead of burning the available timeout waiting for it.
+			if runnerStatus == app.RunnerStatusDisabled {
+				l.Warn("runner is disabled, not waiting for it to become active")
+				s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusNotAttempted, "install runner is disabled")
+				tags["status"] = "runner_disabled"
+				return false, false, joberrors.LifecycleFailureReasonRunnerDisabled, nil
+			}
 
 			jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
 			if err != nil {
@@ -536,8 +554,26 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 		if err != nil {
 			return false, "", err
 		}
+		// No beat in the lookback window means the runner is unhealthy, not that the
+		// read failed. Erroring surfaced an opaque SIGNAL_FAILED and burned the step's
+		// auto-retries without recording a reason.
 		if hb == nil {
-			return false, "", errors.New("no heart beats found")
+			l.Error("no heart beats found for runner during job")
+			s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusFailed, "no runner heart beats found during job")
+			s.updateJobExecutionStatus(ctx, jobExecution.ID, app.RunnerJobExecutionStatusFailed)
+			tags["status"] = "runner_unhealthy"
+
+			maps.Copy(etags, tags)
+			s.mw.Event(ctx, &statsd.Event{
+				Title:          "No runner heart beats found during job",
+				Text:           "No runner heart beats were found within the lookback window during the job execution. The job will NOT be resumed if/when the runner recovers",
+				Tags:           metrics.ToTags(etags),
+				SourceTypeName: "nuon-jobsys",
+				Priority:       statsd.Normal,
+				AlertType:      statsd.Error,
+				AggregationKey: "runner-job-dropped",
+			})
+			return true, joberrors.LifecycleFailureReasonRunnerUnhealthy, nil
 		}
 
 		// if the runner is restarted, we want to add a buffer before canceling any jobs in flight

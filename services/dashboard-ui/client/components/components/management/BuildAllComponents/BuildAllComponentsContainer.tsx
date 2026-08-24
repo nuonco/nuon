@@ -11,7 +11,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { buildComponents } from '@/lib'
-import { trackEvent } from '@/lib/segment-analytics'
+import { trackEvent } from '@/lib/posthog-analytics'
 import { BuildAllComponentsButton as BuildAllComponentsButtonComponent, BuildAllComponentsModal } from './BuildAllComponents'
 
 export const BuildAllComponentsButtonContainer = ({ onClick: _onClick, ...props }: IButtonAsButton) => {

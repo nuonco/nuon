@@ -12,9 +12,11 @@ func (s *service) OrgsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")
 	label := c.Query("label")
+	feature := c.Query("feature")
+	featureState := c.Query("feature_state")
 	page := getPageFromQuery(c)
 
-	orgs, totalPages, err := s.getOrgs(ctx, search, label, page)
+	orgs, featureCounts, totalPages, err := s.getOrgs(ctx, search, label, feature, featureState, page)
 	if err != nil {
 		s.l.Error("failed to get orgs for table", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch organizations"})
@@ -22,8 +24,9 @@ func (s *service) OrgsTable(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"orgs":        orgs,
-		"page":        page,
-		"total_pages": totalPages,
+		"orgs":           orgs,
+		"feature_counts": featureCounts,
+		"page":           page,
+		"total_pages":    totalPages,
 	})
 }
