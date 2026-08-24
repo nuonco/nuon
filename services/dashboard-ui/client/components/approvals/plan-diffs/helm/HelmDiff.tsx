@@ -14,6 +14,7 @@ import {
   getHelmActionBorderColor,
 } from '../diff-style-utils'
 import { HelmDiffSummary } from './HelmDiffSummary'
+import { humanize } from '@/utils/string-utils'
 import { DiffFilter } from '../DiffFilter'
 
 export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
@@ -38,7 +39,7 @@ export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
           Helm changes
         </Text>
         <Text variant="subtext" theme="neutral">
-          Operation: {plan.op}
+          Operation: {humanize(plan.op)}
         </Text>
       </div>
 

@@ -1,6 +1,7 @@
 import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
@@ -32,7 +33,7 @@ import {
 export const ComponentDetail = () => {
   const { componentId, branchId } = useParams()
   const { org } = useOrg()
-  const { app } = useApp()
+  const { app, labelColors } = useApp()
   const { addPanel } = useSurfaces()
 
   const { data: component, isLoading: isLoadingComponent } = useQuery({
@@ -175,9 +176,7 @@ export const ComponentDetail = () => {
                 {Object.keys(component.labels)
                   .sort()
                   .map((k) => (
-                    <Badge key={k} variant="code" size="sm" theme="neutral">
-                      {k}: {component.labels[k]}
-                    </Badge>
+                    <LabelBadge key={k} labelKey={k} labelValue={component.labels[k]} size="sm" customColor={labelColors?.[k]} />
                   ))}
               </span>
             ) : null}

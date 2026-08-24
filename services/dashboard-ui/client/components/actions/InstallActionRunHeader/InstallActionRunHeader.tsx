@@ -13,7 +13,6 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TActionConfigTriggerType, TInstallActionRun, TWorkflow, TWorkflowStep } from '@/types'
 import { cn } from '@/utils/classnames'
-import { toSentenceCase } from '@/utils/string-utils'
 
 interface IInstallActionRunHeader {
   actionId: string
@@ -103,9 +102,7 @@ export const InstallActionRunHeader = ({
               status: installActionRun?.status_v2?.status,
             }}
             tooltipProps={{
-              tipContent: toSentenceCase(
-                installActionRun?.status_v2?.status_human_description
-              ),
+              tipContent: installActionRun?.status_v2?.status_human_description,
             }}
           />
 
