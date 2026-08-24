@@ -13,6 +13,7 @@ import { ToggleButton } from '@/components/common/ToggleButton'
 import { CreateOIDCTrustPolicyButton } from '@/components/oidc-trust-policies'
 import { CreateServiceAccountTokenModalContainer } from '@/components/service-accounts/ServiceAccountToken'
 import { useConfig } from '@/hooks/use-config'
+import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOIDCTrustPolicies } from '@/hooks/use-oidc-trust-policies'
 import { useStackServiceAccount } from '@/hooks/use-stack-service-account'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -564,6 +565,72 @@ interface ITFModuleTab {
   installAwsRegion?: string
 }
 
+// The module's `inputs` and `secrets` maps only accept keys the app declares, so the
+// snippet lists exactly the customer-facing ones. Everything else is read from the
+// control plane and must not appear here.
+const hclComment = (
+  description: string | undefined,
+  markers: string[]
+): string => {
+  const parts = [description?.trim(), ...markers].filter(Boolean)
+  return parts.length ? ` # ${parts.join(' ')}` : ''
+}
+
+const padTo = (name: string, width: number) => name.padEnd(width, ' ')
+
+// `inputs = { ... }`, indented for the module block. Empty when the app declares no
+// customer inputs — the module treats an omitted map as "use control-plane values".
+const buildInputsBlock = (
+  inputs: Array<{
+    name?: string
+    description?: string
+    default?: string
+    required?: boolean
+    sensitive?: boolean
+  }>
+): string => {
+  if (inputs.length === 0) return ''
+
+  const nameWidth = Math.max(
+    ...inputs.map((input) => (input.name ?? '').length)
+  )
+  // Assignments are padded to a common width so the trailing comments line up the
+  // way `terraform fmt` would leave them.
+  const assignments = inputs.map(
+    (input) =>
+      `    ${padTo(input.name ?? '', nameWidth)} = "${input.default ?? ''}"`
+  )
+  const valueWidth = Math.max(...assignments.map((line) => line.length))
+  const lines = inputs.map((input, i) => {
+    const markers = [
+      input.required ? '(required)' : '',
+      input.sensitive ? '(sensitive)' : '',
+    ].filter(Boolean)
+    const comment = hclComment(input.description, markers)
+    return comment
+      ? `${padTo(assignments[i], valueWidth)}${comment}`
+      : assignments[i]
+  })
+
+  return `\n\n  # Customer-facing inputs. Values set here win over the control plane.\n  inputs = {\n${lines.join('\n')}\n  }`
+}
+
+// `secrets = { ... }`. Auto-generated secrets are minted by the stack itself, so only
+// the customer-supplied ones belong in the snippet.
+const buildSecretsBlock = (
+  secrets: Array<{ name?: string; description?: string; required?: boolean }>
+): string => {
+  if (secrets.length === 0) return ''
+
+  const width = Math.max(...secrets.map((secret) => (secret.name ?? '').length))
+  const lines = secrets.map((secret) => {
+    const markers = secret.required ? ['(required)'] : []
+    return `    ${padTo(secret.name ?? '', width)} = { value = "" }${hclComment(secret.description, markers)}`
+  })
+
+  return `\n\n  # Secret values you supply. Keep real values out of main.tf.\n  secrets = {\n${lines.join('\n')}\n  }`
+}
+
 // Directions for the published nuonco/stack/aws module, which reads its whole config
 // from the API. Distinct from TerraformTab, which clones install-stacks and is driven
 // by generated tfvars.
@@ -612,6 +679,43 @@ const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
 
   const region = installAwsRegion ?? '<your-install-region>'
 
+  // While the app config is still resolving, the snippet renders without the inputs
+  // and secrets blocks rather than blocking the rest of the directions.
+  const { appConfig } = useInstallAppConfig()
+
+  const customerInputs = useMemo(() => {
+    const declared = appConfig?.input?.inputs ?? []
+    const grouped = (appConfig?.input?.input_groups ?? []).flatMap(
+      (group) => group.app_inputs ?? []
+    )
+    const seen = new Set<string>()
+    return [...declared, ...grouped].filter((input) => {
+      if (!input.name || input.source !== 'customer') return false
+      if (seen.has(input.name)) return false
+      seen.add(input.name)
+      return true
+    })
+  }, [appConfig?.input?.inputs, appConfig?.input?.input_groups])
+
+  // Secrets carry no vendor/customer flag: everything not auto-generated is the
+  // customer's to provide.
+  const customerSecrets = useMemo(
+    () =>
+      (appConfig?.secrets?.secrets ?? []).filter(
+        (secret) => !!secret.name && !secret.auto_generate
+      ),
+    [appConfig?.secrets?.secrets]
+  )
+
+  const inputsBlock = useMemo(
+    () => buildInputsBlock(customerInputs),
+    [customerInputs]
+  )
+  const secretsBlock = useMemo(
+    () => buildSecretsBlock(customerSecrets),
+    [customerSecrets]
+  )
+
   const mainTf = `terraform {
   required_providers {
     aws   = { source = "hashicorp/aws" }
@@ -629,7 +733,7 @@ module "aws_stack" {
   source  = "nuonco/stack/aws"
   version = "~> 0.2"
 
-  install_id = "${installId ?? '<install-id>'}"
+  install_id = "${installId ?? '<install-id>'}"${inputsBlock}${secretsBlock}
 }`
 
   const backendSnippet = `terraform {
@@ -648,9 +752,11 @@ module "aws_stack" {
     <div className="flex flex-col gap-4 pt-4">
       <Text variant="subtext" theme="neutral">
         The <code>nuonco/stack/aws</code> module reads this install&apos;s
-        configuration from the Nuon API, so the only input is the install ID.
-        Everything else — runner details, IAM permissions, roles, inputs, and
-        secrets — comes from the control plane.
+        configuration from the Nuon API. You supply the install ID plus the
+        app&apos;s customer-facing inputs and secrets; everything else — runner
+        details, IAM permissions, and roles — comes from the control plane.
+        Values you set here override the control plane&apos;s, and unrecognized
+        names fail the plan.
       </Text>
 
       <div className="flex flex-col gap-4">
@@ -666,6 +772,14 @@ module "aws_stack" {
           </span>
           <Code variant="preformated">{mainTf}</Code>
         </Card>
+        {secretsBlock ? (
+          <Text variant="subtext" theme="neutral">
+            The snippet leaves secret values blank so it runs as-is. Rather than
+            committing real values to <code>main.tf</code>, pass them from a{' '}
+            <code>secrets.auto.tfvars</code> file or with <code>-var</code> at
+            apply time.
+          </Text>
+        ) : null}
       </div>
 
       <Divider />
