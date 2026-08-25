@@ -108,3 +108,22 @@ func TestDescriptionOmitsCountWhenAlone(t *testing.T) {
 	rep.ResourceCounts = map[string]int{"progressing": 3}
 	assert.NotContains(t, componentHealthDescription(app.InstallComponentHealthStatusProgressing, rep, now), "more affected")
 }
+
+// A gate-refused deploy is applied and live, so anything asking "what plan is
+// running" must still count it; only "did it succeed" must not.
+func TestAppliedDeployStatusesIncludeHealthFailed(t *testing.T) {
+	statuses := app.AppliedDeployStatuses()
+
+	assert.Contains(t, statuses, app.InstallDeployStatusActive)
+	assert.Contains(t, statuses, app.InstallDeployStatusHealthFailed)
+	assert.NotContains(t, statuses, app.InstallDeployStatusError,
+		"an errored deploy never applied, so its plan is not live")
+}
+
+// The component must read as failing when its deploy was refused.
+func TestHealthFailedDeployMapsToComponentError(t *testing.T) {
+	assert.Equal(t, app.InstallComponentStatusError,
+		app.DeployStatusToComponentStatus(app.InstallDeployStatusHealthFailed))
+	assert.Equal(t, app.InstallComponentStatusActive,
+		app.DeployStatusToComponentStatus(app.InstallDeployStatusActive))
+}
