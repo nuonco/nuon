@@ -1,42 +1,37 @@
-# temporal-gen-v2 label config.
+# temporal-gen-v2 tag config.
 #
 # Discovered by walking up from the directory being generated, stopping at the
-# module root. Override with --config, or disable with --no-config.
+# module root. Override with --config, or disable with --no-config. Library
+# callers can declare the same vocabulary in Go instead, via Options.Tags.
 #
-# Labels are key/value pairs set on an *activity* with `@label <key> <value>`.
-# This file declares which keys exist, which values each key permits, and the
-# default options each value implies. Labels do not apply to workflows.
+# Tags are names set on an *activity* with `@tag <name>`. This file declares
+# which tags exist and the default options each one implies. Tags do not apply
+# to workflows.
 #
 # Attribute names are the annotation names with the leading "@" stripped, so
 # there is one vocabulary. Precedence, lowest to highest:
 #
-#   defaults -> labels (in source order) -> @annotations on the activity ->
+#   defaults -> tags (in source order) -> @annotations on the activity ->
 #   call-site opts passed to Await...
 
 version: 1
 
-# Applied to every annotated activity, ahead of any label.
+# Applied to every annotated activity, ahead of any tag.
 defaults:
   start-to-close-timeout: 1m
 
-labels:
-  access:
-    description: how the activity reaches its data
-    values:
-      db-only:
-        description: read-only database access; fail fast, retry a few times
-        start-to-close-timeout: 30s
-        max-retries: 3
-      bulk:
-        description: streams, polls, or does bulk work
-        start-to-close-timeout: 1h
-        schedule-to-close-timeout: 6h
-        heartbeat-timeout: 1m
+tags:
+  db-read:
+    start-to-close-timeout: 30s
+    max-retries: 3
 
-  tier:
-    description: how badly we need this to complete
-    values:
-      critical:
-        max-retries: 870
-      best-effort:
-        max-retries: 3
+  bulk:
+    start-to-close-timeout: 1h
+    schedule-to-close-timeout: 6h
+    heartbeat-timeout: 1m
+
+  critical:
+    max-retries: 870
+
+  best-effort:
+    max-retries: 3

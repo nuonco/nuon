@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/config"
-	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/labels"
+	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/tags"
 )
 
 type ActivityOptions struct {
@@ -53,7 +53,7 @@ type UpdateOptions struct {
 
 type Annotation struct {
 	Type         string
-	Labels       []labels.Pair
+	Tags         []string
 	ActivityOpts *ActivityOptions
 	WorkflowOpts *WorkflowOptions
 	QueryOpts    *QueryOptions
@@ -82,38 +82,56 @@ func (a *Annotation) Validate() error {
 	return nil
 }
 
-// Parse checks if a comment group contains the generator annotation.
+// TagError marks a failure to resolve the tags on a function: an unknown or
+// duplicated tag, a `@tag` with no config to resolve it against, or a `@tag` on
+// something other than an activity.
 //
-// It applies no label defaults; use ParseWithLabels when a temporal-gen.yaml
-// is in play.
-func Parse(comments []string) (*Annotation, error) {
-	return ParseWithLabels(comments, nil)
+// It is distinguished from other parse errors because it is never recoverable:
+// non-strict runs downgrade parse failures to a warning and skip the function,
+// which for a mistyped tag would silently drop a wrapper the caller expects to
+// exist. See file.ProcessFile.
+type TagError struct {
+	Err error
 }
 
-// ParseWithLabels parses a comment group and folds in the defaults implied by
-// any `@label <key> <value>` pairs set on the function.
+func (e *TagError) Error() string { return e.Err.Error() }
+func (e *TagError) Unwrap() error { return e.Err }
+
+func tagErrorf(format string, args ...any) error {
+	return &TagError{Err: fmt.Errorf(format, args...)}
+}
+
+// Parse checks if a comment group contains the generator annotation.
 //
-// Labels apply to activities only. Label attributes are lowered into synthetic
+// It applies no tag defaults; use ParseWithTags when a tag config is in play.
+func Parse(comments []string) (*Annotation, error) {
+	return ParseWithTags(comments, nil)
+}
+
+// ParseWithTags parses a comment group and folds in the defaults implied by
+// any `@tag <name>` set on the function.
+//
+// Tags apply to activities only. Tag attributes are lowered into synthetic
 // annotation lines that are parsed *ahead* of the function's own comments.
 // Since parseLines is last-write-wins, that yields the precedence chain
-// defaults -> labels (in source order) -> explicit annotations without a
+// defaults -> tags (in source order) -> explicit annotations without a
 // second assignment code path.
-func ParseWithLabels(comments []string, cfg *labels.Config) (*Annotation, error) {
+func ParseWithTags(comments []string, cfg *tags.Config) (*Annotation, error) {
 	annotation, err := parseLines(comments)
 	if err != nil || annotation == nil {
 		return nil, err
 	}
 
-	if len(annotation.Labels) > 0 && annotation.Type != "activity" {
-		return nil, fmt.Errorf("@label is only supported on activities, found on %s", annotation.Type)
+	if len(annotation.Tags) > 0 && annotation.Type != "activity" {
+		return nil, tagErrorf("@tag is only supported on activities, found on %s", annotation.Type)
 	}
 
-	if annotation.Type == "activity" && (len(annotation.Labels) > 0 || cfg != nil) {
-		pairs := annotation.Labels
+	if annotation.Type == "activity" && (len(annotation.Tags) > 0 || cfg != nil) {
+		names := annotation.Tags
 
-		lines, err := cfg.AnnotationLines(pairs)
+		lines, err := cfg.AnnotationLines(names)
 		if err != nil {
-			return nil, err
+			return nil, &TagError{Err: err}
 		}
 
 		if len(lines) > 0 {
@@ -129,7 +147,7 @@ func ParseWithLabels(comments []string, cfg *labels.Config) (*Annotation, error)
 			if err != nil {
 				return nil, err
 			}
-			annotation.Labels = pairs
+			annotation.Tags = names
 		}
 	}
 
@@ -188,14 +206,11 @@ func parseLines(comments []string) (*Annotation, error) {
 		// Handle arguments
 		switch parts[0] {
 		// Common Arguments
-		case "@label":
-			if len(parts) < 3 {
-				return nil, fmt.Errorf("missing key and value for @label (usage: @label key value)")
+		case "@tag":
+			if len(parts) < 2 {
+				return nil, tagErrorf("missing name for @tag (usage: @tag name)")
 			}
-			annotation.Labels = append(annotation.Labels, labels.Pair{
-				Key:   strings.Trim(parts[1], "\""),
-				Value: strings.Trim(strings.Join(parts[2:], " "), "\""),
-			})
+			annotation.Tags = append(annotation.Tags, strings.Trim(parts[1], "\""))
 
 		case "@id":
 			if len(parts) < 2 {

@@ -24,7 +24,7 @@ func newGenerateCmd() *cobra.Command {
 	generateCmd.Flags().BoolVar(&importsFlag, "imports", false, "Process imports using golang.org/x/tools/imports library")
 	generateCmd.Flags().IntVarP(&parallelismFlag, "parallelism", "p", runtime.NumCPU(), "Number of packages to process concurrently per dependency level")
 	generateCmd.Flags().StringVar(&configFlag, "config", "", "Path to temporal-gen.yaml (default: discovered by walking up from [dir])")
-	generateCmd.Flags().BoolVar(&noConfigFlag, "no-config", false, "Skip label config discovery entirely")
+	generateCmd.Flags().BoolVar(&noConfigFlag, "no-config", false, "Skip tag config discovery entirely")
 	return generateCmd
 }
 

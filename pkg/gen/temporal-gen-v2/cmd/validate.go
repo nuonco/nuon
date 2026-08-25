@@ -24,7 +24,7 @@ func newValidateCmd() *cobra.Command {
 	}
 	validateCmd.Flags().BoolVarP(&recursiveFlag, "recursive", "r", false, "Recursively process subdirectories")
 	validateCmd.Flags().StringVar(&configFlag, "config", "", "Path to temporal-gen.yaml (default: discovered by walking up from [dir])")
-	validateCmd.Flags().BoolVar(&noConfigFlag, "no-config", false, "Skip label config discovery entirely")
+	validateCmd.Flags().BoolVar(&noConfigFlag, "no-config", false, "Skip tag config discovery entirely")
 	return validateCmd
 }
 
@@ -47,9 +47,9 @@ func runValidate(targetDir string, recursive bool) error {
 		}
 	}
 
-	// Load the label config up front so a malformed temporal-gen.yaml fails
-	// validation even when nothing references @labels yet.
-	labelCfg, err := temporalgen.ResolveConfig(temporalgen.Options{
+	// Load the tag config up front so a malformed temporal-gen.yaml fails
+	// validation even when nothing references @tag yet.
+	tagCfg, err := temporalgen.ResolveConfig(temporalgen.Options{
 		Dir:        targetDir,
 		ConfigPath: configFlag,
 		NoConfig:   noConfigFlag,
@@ -57,8 +57,8 @@ func runValidate(targetDir string, recursive bool) error {
 	if err != nil {
 		return err
 	}
-	if labelCfg != nil {
-		fmt.Printf("using label config %s\n", labelCfg.Path())
+	if tagCfg != nil {
+		fmt.Printf("using tag config %s\n", tagCfg.Path())
 	}
 
 	fmt.Printf("Validating %s annotations in %s...\n", config.AnnotationPrefix, loadDir)
@@ -78,7 +78,7 @@ func runValidate(targetDir string, recursive bool) error {
 				continue
 			}
 
-			if _, err := file.ProcessFile(pkg, syntax, path, true, labelCfg); err != nil {
+			if _, err := file.ProcessFile(pkg, syntax, path, true, tagCfg); err != nil {
 				fmt.Fprintf(os.Stderr, "Validation error in %s: %v\n", path, err)
 				hasError = true
 			}

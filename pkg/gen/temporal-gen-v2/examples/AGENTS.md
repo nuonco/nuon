@@ -39,69 +39,80 @@ Demonstrates Client-side generation for `@query` and `@update`.
     *   Supports `UpdateWithStart` via options.
 *   **Signals**: (Not shown in file yet, but supported) Generates client methods for sending Signals, including `SignalWithStart`.
 
-## Labels (`labels.go`)
+## Tags (`tags.go`)
 
-Demonstrates `@label <key> <value>`, which pulls default options from a
-`temporal-gen.yaml` config file so a broad class of activities can share one
-set of defaults instead of repeating annotations on every function.
+Demonstrates `@tag <name>`, which pulls default options from a tag config so a
+broad class of activities can share one set of defaults instead of repeating
+annotations on every function.
 
-Labels are key/value pairs, mirroring the existing `@memo key value` form.
-**Labels apply to activities only** — `@label` on a workflow, query, signal or
-update is an error.
+A tag is a single name — there is no value. **Tags apply to activities only** —
+`@tag` on a workflow, query, signal or update is an error.
 
 *   [Config](file://./temporal-gen.yaml)
-*   [Source](file://./labels.go)
-*   [Generated](file://./labels_gen.go)
+*   [Source](file://./tags.go)
+*   [Generated](file://./tags_gen.go)
 
-### Defining labels
+### Defining tags
 
-The config is discovered by walking **up** from the directory being generated,
-stopping at the module root (the directory holding `go.mod`). Override it with
-`--config <path>`, or turn it off with `--no-config`.
+The vocabulary comes from one of two places:
 
-It declares which keys exist, which values each key permits, and the defaults
-each value implies:
+**A `temporal-gen.yaml` file**, discovered by walking **up** from the directory
+being generated, stopping at the module root (the directory holding `go.mod`).
+Override it with `--config <path>`, or turn it off with `--no-config`.
 
 ```yaml
 version: 1
 
-# applied to every annotated activity, ahead of any label
+# applied to every annotated activity, ahead of any tag
 defaults:
   start-to-close-timeout: 1m
 
-labels:
-  access:
-    description: how the activity reaches its data
-    values:
-      db-only:
-        description: read-only database access
-        start-to-close-timeout: 30s
-        max-retries: 3
-      bulk:
-        start-to-close-timeout: 1h
-        heartbeat-timeout: 1m
-
-  tier:
-    values:
-      critical:
-        max-retries: 870
-      best-effort:
-        max-retries: 3
+tags:
+  db-read:
+    start-to-close-timeout: 30s
+    max-retries: 3
+  bulk:
+    start-to-close-timeout: 1h
+    heartbeat-timeout: 1m
+  critical:
+    max-retries: 870
+  best-effort:
+    max-retries: 3
 ```
+
+**Or in Go**, for callers that invoke the generator as a library (see
+`services/ctl-api/cmd/gen`). When `Options.Tags` is set it is the *whole*
+vocabulary — file discovery and `--config` are skipped, so there is only ever
+one source of truth for what a tag means:
+
+```go
+temporalgen.Generate(ctx, temporalgen.Options{
+	Dir: ".",
+	Tags: &tags.Config{
+		Defaults: &tags.Attrs{StartToCloseTimeout: "1m"},
+		Tags: map[string]*tags.Attrs{
+			"db-read": {StartToCloseTimeout: "30s", MaxRetries: generics.ToPtr(3)},
+		},
+	},
+})
+```
+
+Either way, usage looks the same:
 
 ```go
 // @temporal-gen-v2 activity
-// @label access db-only
-// @label tier critical
-// @start-to-close-timeout 10s   // explicit annotation wins over the label
+// @tag db-read
+// @tag critical
+// @start-to-close-timeout 10s   // explicit annotation wins over the tag
 func GetOrg(ctx context.Context, id string) (*app.Org, error)
 ```
 
-Both the key and the value must be declared in the config. Unknown keys,
-unknown values, and setting the same key twice are all hard errors, so a typo
-fails loudly rather than silently doing nothing.
+Every tag must be declared. An unknown tag, the same tag twice, a `@tag` with no
+config to resolve it against, and `@tag` on a workflow are all hard errors —
+**including without `--validate`**, since the non-strict path would otherwise
+warn and silently skip the activity, dropping a wrapper you expected to exist.
 
-### Defining label attributes
+### Defining tag attributes
 
 Attribute names **are** the annotation names with the leading `@` stripped, so
 there is only one vocabulary. Allowed: `task-queue`,
@@ -110,28 +121,27 @@ there is only one vocabulary. Allowed: `task-queue`,
 `disable-eager-execution`, `max-retries`, `retry-policy-max-attempts`.
 
 Structural annotations (`@as-wrapper`, `@by-field`, `@local`, `@namespace`,
-`@options-callback`, ...) are deliberately **not** settable from a label: they
+`@options-callback`, ...) are deliberately **not** settable from a tag: they
 describe an individual function rather than a class of them. They are also
 one-way — the annotation language has no "off" form for a boolean, so a
-function could never opt back out of a label that set `@as-wrapper`.
+function could never opt back out of a tag that set `@as-wrapper`.
 
 ### Precedence
 
 Lowest to highest:
 
 1. `defaults:` block
-2. labels, in the order they appear in the source (later wins)
+2. tags, in the order they appear in the source (later wins)
 3. explicit `@annotations` on the activity
 4. call-site `opts` passed to `Await...`
 
-Distinct label keys usually set disjoint attributes and simply compose; source
-order only matters when two keys set the same attribute. The position of a
-`@label` line relative to other annotations does not matter — label defaults
-are always applied before an activity's own annotations.
+Tags usually set disjoint attributes and simply compose; source order only
+matters when two tags set the same attribute. The position of a `@tag` line
+relative to other annotations does not matter — tag defaults are always applied
+before an activity's own annotations.
 
-Applied labels are recorded as a `// labels: access=bulk, tier=critical`
-comment on the generated wrapper so a config change shows up legibly in the
-diff.
+Applied tags are recorded as a `// tags: bulk, critical` comment on the
+generated wrapper so a config change shows up legibly in the diff.
 
 ## Generated Code Structure
 

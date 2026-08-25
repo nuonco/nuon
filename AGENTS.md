@@ -173,8 +173,9 @@ go generate ./...
 
 - After adding/modifying Go struct types (especially in `/internal/app/`)
 - After adding `@temporal-gen` annotations to functions
-- After editing a `temporal-gen.yaml` label config (see
-  `pkg/gen/temporal-gen-v2/examples/AGENTS.md`) — label defaults are baked into
+- After editing the `@tag` config — either a `temporal-gen.yaml` or the in-code
+  `Options.Tags` in `services/ctl-api/cmd/gen` (see
+  `pkg/gen/temporal-gen-v2/examples/AGENTS.md`) — tag defaults are baked into
   the generated wrappers, so a config change is inert until you regenerate
 - After changing API endpoint definitions with swagger annotations
 - When you see compilation errors about missing generated files

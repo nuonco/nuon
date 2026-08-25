@@ -1,4 +1,4 @@
-package labels
+package tags
 
 import (
 	"os"
@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 func writeConfig(t *testing.T, dir, body string) string {
@@ -20,20 +22,15 @@ const validConfig = `
 version: 1
 defaults:
   start-to-close-timeout: 1m
-labels:
-  access:
-    description: how the activity reaches its data
-    values:
-      db-only:
-        start-to-close-timeout: 30s
-        max-retries: 3
-      bulk:
-        start-to-close-timeout: 1h
-        heartbeat-timeout: 1m
-  tier:
-    values:
-      critical:
-        max-retries: 870
+tags:
+  db-only:
+    start-to-close-timeout: 30s
+    max-retries: 3
+  bulk:
+    start-to-close-timeout: 1h
+    heartbeat-timeout: 1m
+  critical:
+    max-retries: 870
 `
 
 func TestLoadValid(t *testing.T) {
@@ -44,8 +41,7 @@ func TestLoadValid(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
 	assert.Equal(t, path, cfg.Path())
-	assert.Equal(t, []string{"access", "tier"}, cfg.Keys())
-	assert.Equal(t, []string{"bulk", "db-only"}, cfg.Values("access"))
+	assert.Equal(t, []string{"bulk", "critical", "db-only"}, cfg.Names())
 }
 
 func TestLoadRejectsUnknownAttribute(t *testing.T) {
@@ -54,11 +50,9 @@ func TestLoadRejectsUnknownAttribute(t *testing.T) {
 	// silently ignored.
 	path := writeConfig(t, dir, `
 version: 1
-labels:
-  access:
-    values:
-      oops:
-        start-to-close: 30s
+tags:
+  oops:
+    start-to-close: 30s
 `)
 
 	_, err := Load(path)
@@ -68,14 +62,12 @@ labels:
 
 func TestLoadRejectsStructuralAttribute(t *testing.T) {
 	dir := t.TempDir()
-	// @as-wrapper is deliberately not settable from a label.
+	// @as-wrapper is deliberately not settable from a tag.
 	path := writeConfig(t, dir, `
 version: 1
-labels:
-  access:
-    values:
-      oops:
-        as-wrapper: true
+tags:
+  oops:
+    as-wrapper: true
 `)
 
 	_, err := Load(path)
@@ -87,11 +79,9 @@ func TestLoadRejectsBadDuration(t *testing.T) {
 	dir := t.TempDir()
 	path := writeConfig(t, dir, `
 version: 1
-labels:
-  access:
-    values:
-      oops:
-        start-to-close-timeout: 30 seconds
+tags:
+  oops:
+    start-to-close-timeout: 30 seconds
 `)
 
 	_, err := Load(path)
@@ -99,44 +89,54 @@ labels:
 	assert.Contains(t, err.Error(), "invalid duration")
 }
 
-const minimalLabel = "labels:\n  tier:\n    values:\n      critical:\n        max-retries: 1\n"
+const minimalTag = "tags:\n  critical:\n    max-retries: 1\n"
 
 func TestValidateVersion(t *testing.T) {
 	dir := t.TempDir()
 
-	_, err := Load(writeConfig(t, dir, minimalLabel))
+	_, err := Load(writeConfig(t, dir, minimalTag))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "`version` is required")
 
-	_, err = Load(writeConfig(t, dir, "version: 99\n"+minimalLabel))
+	_, err = Load(writeConfig(t, dir, "version: 99\n"+minimalTag))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unsupported version 99")
 }
 
-func TestValidateRejectsKeyWithNoValues(t *testing.T) {
-	dir := t.TempDir()
-	_, err := Load(writeConfig(t, dir, "version: 1\nlabels:\n  tier:\n    description: nothing here\n"))
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), `label key "tier" declares no values`)
+// A config built in code does not have to restate the version.
+func TestValidateInCodeVersionOptional(t *testing.T) {
+	cfg := &Config{Tags: map[string]*Attrs{"critical": {MaxRetries: generics.ToPtr(870)}}}
+	require.NoError(t, cfg.Validate())
+	assert.Equal(t, SupportedVersion, cfg.Version)
 }
 
-func TestValidateRejectsEmptyValue(t *testing.T) {
-	dir := t.TempDir()
-	_, err := Load(writeConfig(t, dir, "version: 1\nlabels:\n  tier:\n    values:\n      hollow:\n        description: nothing\n"))
+func TestValidateInCodeErrorsSayCode(t *testing.T) {
+	cfg := &Config{Tags: map[string]*Attrs{"hollow": {}}}
+	err := cfg.Validate()
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "label tier=hollow sets no attributes")
+	assert.Contains(t, err.Error(), `code: tag "hollow" sets no attributes`)
+}
+
+func TestValidateInCodeRejectsBadDuration(t *testing.T) {
+	cfg := &Config{Tags: map[string]*Attrs{"slow": {StartToCloseTimeout: "30 seconds"}}}
+	err := cfg.Validate()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid duration")
+}
+
+func TestValidateRejectsEmptyTag(t *testing.T) {
+	dir := t.TempDir()
+	_, err := Load(writeConfig(t, dir, "version: 1\ntags:\n  hollow:\n"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `tag "hollow" sets no attributes`)
 }
 
 func TestValidateRejectsBadNames(t *testing.T) {
 	dir := t.TempDir()
 
-	_, err := Load(writeConfig(t, dir, "version: 1\nlabels:\n  Tier_Name:\n    values:\n      a:\n        max-retries: 1\n"))
+	_, err := Load(writeConfig(t, dir, "version: 1\ntags:\n  Db_Only:\n    max-retries: 1\n"))
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid label key")
-
-	_, err = Load(writeConfig(t, dir, "version: 1\nlabels:\n  tier:\n    values:\n      Critical:\n        max-retries: 1\n"))
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), `invalid value "Critical" for label key "tier"`)
+	assert.Contains(t, err.Error(), `invalid tag "Db_Only"`)
 }
 
 func TestAnnotationLines(t *testing.T) {
@@ -144,8 +144,8 @@ func TestAnnotationLines(t *testing.T) {
 	cfg, err := Load(writeConfig(t, dir, validConfig))
 	require.NoError(t, err)
 
-	// defaults first, then pairs in source order.
-	lines, err := cfg.AnnotationLines([]Pair{{"access", "bulk"}, {"tier", "critical"}})
+	// defaults first, then tags in source order.
+	lines, err := cfg.AnnotationLines([]string{"bulk", "critical"})
 	require.NoError(t, err)
 	assert.Equal(t, []string{
 		"// @start-to-close-timeout 1m",
@@ -159,49 +159,45 @@ func TestAnnotationLinesTaskQueue(t *testing.T) {
 	dir := t.TempDir()
 	cfg, err := Load(writeConfig(t, dir, `
 version: 1
-labels:
-  queue:
-    values:
-      mine:
-        task-queue: my-queue
+tags:
+  mine:
+    task-queue: my-queue
 `))
 	require.NoError(t, err)
 
-	lines, err := cfg.AnnotationLines([]Pair{{"queue", "mine"}})
+	lines, err := cfg.AnnotationLines([]string{"mine"})
 	require.NoError(t, err)
 	assert.Equal(t, []string{"// @task-queue my-queue"}, lines)
 }
 
-func TestAnnotationLinesUnknownKey(t *testing.T) {
+func TestAnnotationLinesUnknownTag(t *testing.T) {
 	dir := t.TempDir()
 	cfg, err := Load(writeConfig(t, dir, validConfig))
 	require.NoError(t, err)
 
-	_, err = cfg.AnnotationLines([]Pair{{"nope", "x"}})
+	_, err = cfg.AnnotationLines([]string{"nope"})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), `unknown label key "nope"`)
-	assert.Contains(t, err.Error(), "access, tier")
+	assert.Contains(t, err.Error(), `unknown tag "nope"`)
+	assert.Contains(t, err.Error(), "bulk, critical, db-only")
 }
 
-func TestAnnotationLinesUnknownValue(t *testing.T) {
-	dir := t.TempDir()
-	cfg, err := Load(writeConfig(t, dir, validConfig))
-	require.NoError(t, err)
+func TestAnnotationLinesUnknownTagInCodeConfig(t *testing.T) {
+	cfg := &Config{Tags: map[string]*Attrs{"critical": {MaxRetries: generics.ToPtr(870)}}}
+	require.NoError(t, cfg.Validate())
 
-	_, err = cfg.AnnotationLines([]Pair{{"access", "sideways"}})
+	_, err := cfg.AnnotationLines([]string{"nope"})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), `unknown value "sideways" for label key "access"`)
-	assert.Contains(t, err.Error(), "bulk, db-only")
+	assert.Contains(t, err.Error(), `unknown tag "nope" (declared in code: critical)`)
 }
 
-func TestAnnotationLinesRejectsDuplicateKey(t *testing.T) {
+func TestAnnotationLinesRejectsDuplicateTag(t *testing.T) {
 	dir := t.TempDir()
 	cfg, err := Load(writeConfig(t, dir, validConfig))
 	require.NoError(t, err)
 
-	_, err = cfg.AnnotationLines([]Pair{{"access", "db-only"}, {"access", "bulk"}})
+	_, err = cfg.AnnotationLines([]string{"bulk", "bulk"})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), `label key "access" set twice`)
+	assert.Contains(t, err.Error(), `tag "bulk" set twice`)
 }
 
 func TestAnnotationLinesNilConfig(t *testing.T) {
@@ -211,9 +207,9 @@ func TestAnnotationLinesNilConfig(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, lines)
 
-	_, err = cfg.AnnotationLines([]Pair{{"access", "db-only"}})
+	_, err = cfg.AnnotationLines([]string{"db-only"})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "no temporal-gen.yaml was found")
+	assert.Contains(t, err.Error(), "no tag config was found")
 }
 
 func TestDiscoverWalksUp(t *testing.T) {
@@ -237,12 +233,12 @@ func TestDiscoverPrefersNearest(t *testing.T) {
 
 	nested := filepath.Join(root, "a")
 	require.NoError(t, os.MkdirAll(nested, 0o755))
-	writeConfig(t, nested, "version: 1\n"+minimalLabel)
+	writeConfig(t, nested, "version: 1\n"+minimalTag)
 
 	cfg, err := Discover(nested)
 	require.NoError(t, err)
 	require.NotNil(t, cfg)
-	assert.Equal(t, []string{"tier"}, cfg.Keys())
+	assert.Equal(t, []string{"critical"}, cfg.Names())
 }
 
 func TestDiscoverStopsAtModuleRoot(t *testing.T) {

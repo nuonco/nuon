@@ -1,12 +1,13 @@
 package file
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/dir"
-	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/labels"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/parser"
+	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/tags"
 )
 
 // File represents a single file that may contain generated code
@@ -24,8 +25,8 @@ type Function struct {
 }
 
 // ProcessFile scans a file for annotations and returns a File struct if any are found.
-// cfg supplies label defaults and may be nil when no temporal-gen.yaml is in use.
-func ProcessFile(pkg *dir.Package, file *ast.File, path string, strict bool, cfg *labels.Config) (*File, error) {
+// cfg supplies tag defaults and may be nil when no tag config is in use.
+func ProcessFile(pkg *dir.Package, file *ast.File, path string, strict bool, cfg *tags.Config) (*File, error) {
 	var functions []*Function
 	var parseErr error
 
@@ -46,9 +47,13 @@ func ProcessFile(pkg *dir.Package, file *ast.File, path string, strict bool, cfg
 		}
 
 		// Parse annotations
-		annotation, err := parser.ParseWithLabels(comments, cfg)
+		annotation, err := parser.ParseWithTags(comments, cfg)
 		if err != nil {
-			if strict {
+			// A tag that cannot be resolved is fatal even when not strict:
+			// downgrading it to a warning would skip the function and silently
+			// drop a wrapper the caller expects to exist.
+			var tagErr *parser.TagError
+			if strict || errors.As(err, &tagErr) {
 				parseErr = fmt.Errorf("error parsing annotations in function %s: %w", fn.Name.Name, err)
 				return false
 			}
