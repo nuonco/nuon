@@ -1069,6 +1069,20 @@ Feature flags are defined in `internal/app/org.go`. When adding a new feature fl
 3. Add a description in `GetFeatureDescriptions()`
 4. Set the default value in the `BeforeCreate` hook
 
+## MCP Server (stateless)
+
+ctl-api hosts a Streamable HTTP MCP server (`api-mcp` / `MCPHTTPPort`, default `8088`) with
+`StreamableHTTPOptions.Stateless: true`. Per-request `mcp.Server` instances share a process-lifetime
+`SchemaCache`. Domain services optionally implement `api.MCPService.RegisterMCPTools`.
+
+**Same as a stateful MCP server:** `mcp.AddTool` registration, handler signatures, Bearer auth,
+`WRITE OPERATION:` + write-scope checks, org via `X-Nuon-Org-ID` / `select_org` / single-org auto-select.
+
+**Different:** no durable `Mcp-Session-Id`; POST-only; no server-initiated client RPCs. Org sticky
+selection is an in-process map keyed by token ID — prefer the org header for multi-replica.
+
+Adding a tool: see `.agents/skills/mcp-api-tool/SKILL.md`.
+
 ## Logging Conventions
 
 **Never use `fmt.Println` for logging.** See [conventions/logging.md](/conventions/logging.md) for full guidelines.
