@@ -1,8 +1,3 @@
 {
-  "mcpServers": {
-    "nuon": {
-      "command": "nuon",
-      "args": ["mcp"]
-    }
-  }
+  "mcpServers": {}
 }

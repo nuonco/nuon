@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Nuon MCP Server &amp; Auth — Summary</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1c2230;
+    --border: #2a3038;
+    --text: #e6edf3;
+    --muted: #9aa7b4;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --amber: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 48px 24px 96px; }
+  header.title { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 8px; }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); font-size: 15px; }
+  h2 {
+    font-size: 22px; margin: 48px 0 12px; padding-top: 12px;
+    letter-spacing: -0.01em; scroll-margin-top: 24px;
+  }
+  h3 { font-size: 17px; margin: 28px 0 8px; color: var(--text); }
+  p { margin: 10px 0; }
+  code {
+    font-family: var(--mono); font-size: 0.86em;
+    background: var(--panel-2); padding: 2px 6px; border-radius: 5px;
+    border: 1px solid var(--border); color: #cdd9e5;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px 22px; margin: 16px 0;
+  }
+  .diagram {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px; margin: 16px 0; overflow-x: auto;
+  }
+  .diagram .mermaid { text-align: center; }
+  .tag {
+    display: inline-block; font-family: var(--mono); font-size: 12px;
+    padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--panel-2); color: var(--muted); margin-right: 6px;
+  }
+  .tag.green { color: var(--green); border-color: #1f4028; background: #0f2417; }
+  .tag.amber { color: var(--amber); border-color: #4a3a10; background: #221a06; }
+  .tag.red   { color: var(--red);   border-color: #4a1f1f; background: #250f0f; }
+  .tag.blue  { color: var(--accent);border-color: #1c3a5e; background: #0d1f33; }
+  .tag.purple{ color: var(--purple);border-color: #3a2a5e; background: #1a1030; }
+  ul, ol { margin: 10px 0; padding-left: 22px; }
+  li { margin: 6px 0; }
+  .callout {
+    border-left: 3px solid var(--accent); background: var(--panel-2);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0;
+  }
+  .callout.warn { border-left-color: var(--amber); }
+  .callout.good { border-left-color: var(--green); }
+  .callout.bad  { border-left-color: var(--red); }
+  .callout .lbl { font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); display:block; margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14.5px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.03em; }
+  td code { font-size: 0.82em; }
+  nav.toc {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 20px; margin: 24px 0 8px;
+  }
+  nav.toc ol { margin: 4px 0; }
+  nav.toc a { color: var(--text); }
+  .filepath { font-family: var(--mono); font-size: 0.82em; color: var(--muted); }
+  .divider { height: 1px; background: var(--border); border: 0; margin: 40px 0; }
+  footer { color: var(--muted); font-size: 13px; margin-top: 48px; border-top: 1px solid var(--border); padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="title">
+  <h1>Nuon MCP Server &amp; Auth</h1>
+  <div class="sub">Context summary — MCP server startup fix, how humans authenticate to ctl-api today, and a design for OAuth-based MCP auth that needs no CLI. Branch <code>jm/mcp-server</code>.</div>
+</header>
+
+<nav class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#overview">Overview &amp; the /livez fix</a></li>
+    <li><a href="#mcp-current">Current MCP server auth (bearer + org header)</a></li>
+    <li><a href="#human-a">Human auth — Path A: upstream OIDC JWT (dashboard)</a></li>
+    <li><a href="#human-b">Human auth — Path B: opaque token (CLI / static tokens)</a></li>
+    <li><a href="#tokens">Token issuance &amp; storage</a></li>
+    <li><a href="#oauth">Proposed: OAuth for MCP (no CLI)</a></li>
+    <li><a href="#decisions">Key design decisions</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================= -->
+<h2 id="overview">1. Overview &amp; the <code>/livez</code> fix</h2>
+
+<p>The <code>jm/mcp-server</code> branch adds a <strong>streamable-HTTP MCP server hosted inside <code>ctl-api</code></strong>, listening on port <code>8088</code> at <code>/mcp</code>. It is a fifth HTTP server alongside public (8081), internal (8082), runner (8083), and auth (8084).</p>
+
+<div class="callout bad">
+  <span class="lbl">Bug found &amp; fixed</span>
+  The dev orchestrator health-checks <code>http://localhost:8088/livez</code>, but the MCP server built a bare <code>http.Server</code> whose handler was <em>only</em> the MCP protocol handler — it never served <code>/livez</code>. So the probe never returned 200 and <code>ctl-api</code> sat in <strong>"Starting"</strong> forever, even though the MCP server was actually listening.
+</div>
+
+<div class="callout good">
+  <span class="lbl">Fix</span>
+  Put an <code>http.ServeMux</code> in front: <code>/livez</code> and <code>/readyz</code> return 200, and <code>/</code> remains the catch-all for the MCP handler (so <code>/mcp</code> still routes through unchanged).
+  <div class="filepath">services/ctl-api/internal/app/mcp/server/server.go</div>
+</div>
+
+<p>Every other ctl-api server registers <code>/livez</code>, <code>/readyz</code>, <code>/version</code> via the shared <code>health.Service</code> (<span class="filepath">internal/health/health.go</span>); the MCP server bypassed that machinery entirely.</p>
+
+<!-- ============================================================= -->
+<h2 id="mcp-current">2. Current MCP server auth</h2>
+
+<p>The MCP server authenticates with <strong>two HTTP headers</strong> on each request and is a pure <em>token consumer</em> — it never issues or persists tokens.</p>
+
+<div class="panel">
+  <span class="tag blue">Header</span><code>Authorization: Bearer &lt;token&gt;</code> — must match a non-expired row in the <code>tokens</code> table<br/>
+  <span class="tag blue">Header</span><code>X-Nuon-Org-ID: &lt;org_id&gt;</code> — must be an org the token's account can access
+  <div class="filepath" style="margin-top:8px">services/ctl-api/internal/app/mcp/server/auth.go</div>
+</div>
+
+<div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant A as Agent (Claude Code)
+    participant M as MCP server (:8088/mcp)
+    participant DB as Postgres (tokens, accounts)
+
+    A->>M: MCP request + Bearer token + X-Nuon-Org-ID
+    M->>DB: SELECT * FROM tokens WHERE token = ?
+    DB-->>M: token row (or not found)
+    alt token missing / expired
+        M-->>A: auth error (no server)
+    else valid
+        M->>DB: load account + roles/orgs
+        M->>M: check org_id ∈ account.OrgIDs
+        M->>M: cache {OrgID, AccountID} in memory<br/>keyed by Mcp-Session-Id (NOT the token)
+        M-->>A: MCP tools (whoami, list_apps, ...)
+    end
+</pre>
+</div>
+
+<div class="callout">
+  <span class="lbl">Never persists tokens</span>
+  <code>auth.go</code> only <strong>reads</strong> the <code>tokens</code> table. The only in-memory state is a session map holding <code>{OrgID, AccountID}</code> — <em>not</em> the token. The only MCP tool DB writes are approve/reject step records. So the MCP surface can never create or store a credential.
+</div>
+
+<!-- ============================================================= -->
+<h2 id="human-a">3. Human auth — Path A: upstream OIDC JWT (dashboard)</h2>
+
+<p>Humans using the dashboard authenticate via an <strong>OAuth/OIDC flow against a configured upstream IdP</strong>. The resulting JWT is validated cryptographically on every ctl-api call (issuer, expiry, JWKS signature, <code>email</code> claim) using <code>github.com/auth0/go-jwt-middleware</code>. New accounts are auto-provisioned; the validated JWT is cached in the <code>tokens</code> table as <code>TokenTypeAuth0</code>.</p>
+<p class="filepath">services/ctl-api/internal/middlewares/auth/account_token.go — saveAccountToken()</p>
+
+<div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant U as User (browser)
+    participant D as dashboard-ui
+    participant IdP as Upstream IdP (OIDC)
+    participant API as ctl-api public (:8081)
+    participant DB as Postgres
+
+    U->>D: open dashboard
+    D->>IdP: OAuth/OIDC login (redirect)
+    U->>IdP: authenticate
+    IdP-->>D: JWT (access token, email claim)
+    D->>API: request + Bearer JWT + X-Nuon-Org-ID
+    API->>IdP: validate JWT via JWKS (signature/iss/exp)
+    API->>DB: FindAccount(email) — create if new
+    API->>DB: upsert tokens row (TokenTypeAuth0)
+    API-->>D: response
+    Note over API,DB: subsequent calls can hit the cached<br/>opaque row (Path B) or re-validate the JWT
+</pre>
+</div>
+
+<!-- ============================================================= -->
+<h2 id="human-b">4. Human auth — Path B: opaque token (CLI / static tokens)</h2>
+
+<p>API tokens are opaque strings looked up directly in the <code>tokens</code> table — no cryptographic validation, just a DB match + expiry check. This covers <code>nuon auth login</code> (device-flow) tokens, <strong>static service-account tokens</strong>, and Nuon Auth session cookies. <strong>This is the same mechanism the MCP server uses today.</strong></p>
+<p class="filepath">internal/middlewares/auth/account_token.go — fetchAccountToken()</p>
+
+<div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant C as CLI / App
+    participant API as ctl-api public (:8081)
+    participant DB as Postgres
+
+    Note over C: token obtained earlier<br/>(device flow or static-token endpoint)
+    C->>API: request + Bearer opaque-token + X-Nuon-Org-ID
+    API->>DB: SELECT * FROM tokens WHERE token = ?
+    DB-->>API: token row
+    API->>API: check expiry + org access
+    API-->>C: response
+</pre>
+</div>
+
+<div class="callout">
+  <span class="lbl">The middleware tries both</span>
+  On each request ctl-api attempts the opaque lookup (Path B) first, then falls back to JWT validation (Path A).
+</div>
+
+<!-- ============================================================= -->
+<h2 id="tokens">5. Token issuance &amp; storage</h2>
+
+<p>The branch added endpoints to mint a <strong>service account + static token</strong> for an app to call ctl-api. Each static token gets its own dedicated <code>AccountTypeService</code> account, scoped to one org, with a role (<code>org_read_only</code> default, or <code>org_support</code> / <code>org_admin</code>).</p>
+<p class="filepath">services/ctl-api/internal/app/accounts/service/static_token.go</p>
+
+<div class="diagram">
+<pre class="mermaid">
+flowchart LR
+    R["POST /v1/account/static-token<br/>(org admin)"] --> SA["create dedicated<br/>service account"]
+    SA --> RB["assign org role<br/>(read_only / support / admin)"]
+    RB --> T["mint random token<br/>NewUserTokenID()"]
+    T --> ST["store in tokens table"]
+    T --> RESP["return api_token once<br/>in response"]
+    RESP --> APP["app stores &amp; sends<br/>as Bearer"]
+    style RESP fill:#0f2417,stroke:#1f4028
+    style ST fill:#221a06,stroke:#4a3a10
+</pre>
+</div>
+
+<table>
+  <tr><th>Location</th><th>Plaintext today?</th><th>Avoidable?</th></tr>
+  <tr><td>DB <code>tokens.token</code></td><td><span class="tag red">yes</span></td><td>Yes — hash-at-rest (store <code>sha256</code>/HMAC, hash-and-compare on auth). No API change.</td></tr>
+  <tr><td>Response (once)</td><td><span class="tag amber">yes, TLS</span></td><td>Unavoidable for bearer — holder must receive it once.</td></tr>
+  <tr><td>App / client</td><td><span class="tag amber">yes</span></td><td>Only by dropping bearer for asymmetric keys or OIDC workload identity.</td></tr>
+</table>
+
+<!-- ============================================================= -->
+<h2 id="oauth">6. Proposed: OAuth for MCP (no CLI)</h2>
+
+<p>Goal: a user adds only a URL (<code>https://ctl.nuon.co/mcp</code>) in <em>any</em> agent and authenticates in the browser — no CLI install, no manual token handling. This makes the MCP server an OAuth 2.0 <strong>Resource Server</strong> and uses <strong>Nuon Auth as the Authorization Server</strong> (reusing existing upstream-IdP federation for the human login step).</p>
+
+<div class="diagram">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant A as Agent (any MCP client)
+    participant M as MCP server (Resource Server)
+    participant AS as Nuon Auth (Authorization Server)
+    participant IdP as Upstream IdP
+    participant U as User (browser)
+
+    A->>M: MCP request (no token)
+    M-->>A: 401 + WWW-Authenticate<br/>(resource metadata URL)
+    A->>M: GET /.well-known/oauth-protected-resource
+    M-->>A: { authorization_server: Nuon Auth, resource }
+    A->>AS: GET /.well-known/oauth-authorization-server
+    AS-->>A: { authorize, token, registration endpoints }
+    A->>AS: POST /register (Dynamic Client Registration)
+    AS-->>A: client_id
+    A->>AS: /authorize (PKCE + resource indicator)
+    AS->>IdP: federate human login
+    U->>IdP: authenticate
+    IdP-->>AS: identity
+    AS-->>A: authorization code
+    A->>AS: POST /token (code + PKCE verifier)
+    AS-->>A: access token (+ refresh)
+    A->>M: MCP request + Bearer access token
+    M->>M: validate token (audience-bound), resolve account + org
+    M-->>A: MCP tools
+</pre>
+</div>
+
+<h3>What to build</h3>
+<table>
+  <tr><th>Component</th><th>Add</th></tr>
+  <tr><td>MCP server<br/><span class="filepath">app/mcp/server/</span></td><td>Serve <code>/.well-known/oauth-protected-resource</code> (RFC 9728); return <code>401</code> + <code>WWW-Authenticate</code> on missing/invalid token; validate OAuth access tokens; resolve account + org.</td></tr>
+  <tr><td>Nuon Auth<br/><span class="filepath">app/auth/service/</span></td><td><code>/authorize</code> (PKCE + resource indicator), <code>/token</code> (code + refresh), <code>/register</code> (DCR); serve <code>/.well-known/oauth-authorization-server</code> (RFC 8414); reuse upstream federation; issue account+org+scope-bound tokens.</td></tr>
+</table>
+
+<h3>Does it mirror human auth?</h3>
+<div class="callout good">
+  <span class="lbl">Mostly yes</span>
+  The <strong>token-validation half mirrors the dashboard flow (Path A) exactly</strong> — same "OAuth against an IdP → validate token per request" model, and it can reuse <code>saveAccountToken</code>. Two pieces are genuinely new for MCP:
+  <ul style="margin-top:8px">
+    <li><strong>Dynamic Client Registration</strong> — humans use pre-registered clients (dashboard, CLI); agents must self-register.</li>
+    <li><strong>Discovery + <code>WWW-Authenticate</code></strong> — an agent bootstraps from just a URL; a human "knows" to open the dashboard.</li>
+  </ul>
+  And <strong>org selection</strong> is the one place human auth relies on a mechanism (the <code>X-Nuon-Org-ID</code> header) that has no MCP equivalent.
+</div>
+
+<!-- ============================================================= -->
+<h2 id="decisions">7. Key design decisions</h2>
+
+<table>
+  <tr><th>Decision</th><th>Recommendation</th><th>Why</th></tr>
+  <tr>
+    <td><span class="tag purple">Org selection</span></td>
+    <td>Per-org resource URLs: <code>/mcp/{org_id}</code></td>
+    <td>Org rides in the OAuth resource indicator (RFC 8707); token is audience-bound to one org. No header needed.</td>
+  </tr>
+  <tr>
+    <td><span class="tag purple">Token format</span></td>
+    <td>Opaque (DB lookup), hashed at rest</td>
+    <td>Matches existing model, instantly revocable, no JWKS needed. JWTs save a lookup but can't be cheaply revoked.</td>
+  </tr>
+  <tr>
+    <td><span class="tag purple">Client registration</span></td>
+    <td>Dynamic Client Registration (RFC 7591), rate-limited</td>
+    <td>Required for "any agent, no manual setup." Guard redirect URIs / rate-limit to avoid abuse.</td>
+  </tr>
+  <tr>
+    <td><span class="tag purple">Scopes</span></td>
+    <td>Map to roles (<code>org_read_only</code>, <code>org_admin</code>)</td>
+    <td>Gate which MCP tools are exposed (read tools vs. <code>create_install</code> / <code>deploy_component</code>).</td>
+  </tr>
+  <tr>
+    <td><span class="tag purple">AS choice</span></td>
+    <td>Nuon Auth as AS (vs. upstream IdP directly)</td>
+    <td>Upstream IdP may not support DCR + PKCE public clients + audience binding. Nuon Auth already issues tokens; wrap it in an OAuth AS interface.</td>
+  </tr>
+</table>
+
+<div class="callout warn">
+  <span class="lbl">Open question</span>
+  Whether you can point MCP resource metadata <em>directly</em> at the upstream IdP (max reuse, min code) or must insert Nuon Auth as the AS depends on what the configured upstream IdP supports (DCR, PKCE public clients, audience-bound tokens). Confirm the IdP's capabilities before committing to a path.
+</div>
+
+<footer>
+  Generated summary of the working session on branch <code>jm/mcp-server</code>. Diagrams render via Mermaid (CDN). Key files referenced:
+  <code>app/mcp/server/{server,auth}.go</code>,
+  <code>middlewares/auth/account_token.go</code>,
+  <code>app/auth/service/token.go</code>,
+  <code>app/accounts/service/static_token.go</code>.
+</footer>
+
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "dark",
+    themeVariables: {
+      background: "#161b22",
+      primaryColor: "#1c2230",
+      primaryBorderColor: "#2a3038",
+      primaryTextColor: "#e6edf3",
+      lineColor: "#58a6ff",
+      actorBkg: "#1c2230",
+      actorBorder: "#58a6ff",
+      actorTextColor: "#e6edf3",
+      signalColor: "#9aa7b4",
+      signalTextColor: "#cdd9e5",
+      noteBkgColor: "#221a06",
+      noteBorderColor: "#4a3a10",
+      noteTextColor: "#e6edf3"
+    },
+    sequence: { useMaxWidth: true, wrap: true }
+  });
+</script>
+</body>
+</html>
