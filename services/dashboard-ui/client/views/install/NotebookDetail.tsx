@@ -47,7 +47,7 @@ export const NotebookDetail = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`${notebook?.name ?? 'Notebook'} | ${install?.name}`} />
+      <PageTitle segments={[notebook?.name ?? 'Notebook', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

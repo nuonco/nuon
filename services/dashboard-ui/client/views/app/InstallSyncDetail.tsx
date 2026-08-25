@@ -68,7 +68,7 @@ export const InstallSyncDetail = () => {
 
   return (
     <PageSection className="max-w-full">
-      <PageTitle title={`Install sync | ${app?.name}`} />
+      <PageTitle segments={['Install sync', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

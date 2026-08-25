@@ -73,7 +73,7 @@ export const ActionDetail = () => {
   return (
     <PageSection flush className="flex-1">
       <PageTitle
-        title={`${action?.action_workflow?.name ?? 'Action'} | ${install?.name}`}
+        segments={[action?.action_workflow?.name ?? 'Action', install?.name]}
       />
       <Breadcrumbs
         breadcrumbs={[

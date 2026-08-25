@@ -13,7 +13,7 @@ export const BuildRunner = () => {
 
   return (
     <PageLayout className="pb-6">
-      <PageTitle title={`Builds | ${org?.name}`} />
+      <PageTitle title="Builds" />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org.id}`, text: org?.name },

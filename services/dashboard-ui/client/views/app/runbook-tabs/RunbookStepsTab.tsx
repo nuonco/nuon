@@ -1,4 +1,5 @@
 import { useOutletContext, useParams } from 'react-router'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { Text } from '@/components/common/Text'
 import { RunbookStep } from '@/components/runbooks/RunbookStep'
 import { useApp } from '@/hooks/use-app'
@@ -20,20 +21,23 @@ export const RunbookStepsTab = () => {
       ?.slice()
       .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)) ?? []
 
-  if (!steps.length) {
-    return <Text theme="neutral">No steps configured.</Text>
-  }
-
   return (
-    <div className="grid grid-cols-1 gap-4">
-      {steps.map((step, i) => (
-        <RunbookStep
-          key={step.id ?? i}
-          index={i}
-          step={step}
-          actionBasePath={actionBasePath}
-        />
-      ))}
-    </div>
+    <>
+      <PageTitle segments={[`${runbook?.name ?? 'Runbook'} steps`, app?.name]} />
+      {!steps.length ? (
+        <Text theme="neutral">No steps configured.</Text>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {steps.map((step, i) => (
+            <RunbookStep
+              key={step.id ?? i}
+              index={i}
+              step={step}
+              actionBasePath={actionBasePath}
+            />
+          ))}
+        </div>
+      )}
+    </>
   )
 }

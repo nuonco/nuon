@@ -47,6 +47,7 @@ This skill enforces correct route registration, layout-aware provider usage, and
    ```tsx
    export const MyPage = () => (
      <PageLayout>
+       <PageTitle title="My page" />
        <PageHeader>
          <PageHeadingGroup title="My page" />
        </PageHeader>
@@ -61,28 +62,68 @@ This skill enforces correct route registration, layout-aware provider usage, and
 
    **Child page inside App/Install layout** (just content, no PageLayout):
    ```tsx
-   export const MyChildPage = () => (
-     <PageSection>
-       {/* content */}
-     </PageSection>
-   )
+   export const MyChildPage = () => {
+     const { install } = useInstall()
+     return (
+       <PageSection>
+         <PageTitle segments={['My page', install?.name]} />
+         {/* content */}
+       </PageSection>
+     )
+   }
    ```
 
    **Detail page with flush header** (inside App/Install layout):
    ```tsx
-   export const MyDetailPage = () => (
-     <>
-       <PageSection flush>
-         <MyHeader />
-       </PageSection>
-       <PageSection>
-         {/* content */}
-       </PageSection>
-     </>
-   )
+   export const MyDetailPage = () => {
+     const { install } = useInstall()
+     return (
+       <>
+         <PageTitle segments={[resource?.name, install?.name]} />
+         <PageSection flush>
+           <MyHeader />
+         </PageSection>
+         <PageSection>
+           {/* content */}
+         </PageSection>
+       </>
+     )
+   }
    ```
 
    Scrolling, BackToTop, and SubNav sticky are all handled automatically by PageLayout — do not add them manually.
+
+## Page title (required, UXDR 018)
+
+**Every routed view sets its own `document.title`. Layouts NEVER set it — the leaf view that renders the page owns its title.** (This is why tab pages under a shared layout each set their own; the layout does not.)
+
+The provider appends `| Nuon`, so a view supplies at most two segments, **most specific first**:
+
+`{specific} | {owning entity}` →  `"Deploy logs | acme-install"`, `"Components | acme-app"`
+
+- **`{specific}`** — sentence-case page name for section pages (`'Components'`, `'API tokens'`); the entity's own name for detail pages (`resource?.name`); for a **tab page**, fold the parent context in: `'Deploy logs'`, `'Sandbox run plan'`, `` `${runbook?.name} steps` ``.
+- **`{owning entity}`** — the install or app name from `useInstall()` / `useApp()`. **Org-level pages have NO owner segment** (the org name is never a title segment) — pass a single element: `<PageTitle title="Webhooks" />`.
+- Unset segments are dropped automatically — pass `install?.name` (not a guarded string); it's omitted while loading, never rendered as `"undefined"`.
+
+**Always `<PageTitle>`, rendered as the first element the view returns.** It's headless (returns `null`), so it only needs to be in the rendered output.
+
+For views with **early returns** (loading/empty/error branches, common in tab panels), wrap the body in a **fragment** so the title renders on every branch — never bury `<PageTitle>` in only the happy-path return, or the title goes stale on the loading/empty branches:
+
+```tsx
+// Section / detail view
+<PageTitle segments={['Components', install?.name]} />
+
+// Tab panel with early returns — fragment so the title always renders
+export const DeployPlanTab = () => {
+  const { install } = useInstall()
+  return (
+    <>
+      <PageTitle segments={['Deploy plan', install?.name]} />
+      {isLoading ? <Skeleton /> : !plan ? <EmptyState … /> : <Plan … />}
+    </>
+  )
+}
+```
 
 ## Redirects
 
@@ -113,3 +154,5 @@ A page's loading state is the page itself with `loading` primitives inside — b
 - **Do not** add `isScrollable`, `CONTAINER_ID`, or `<BackToTop />` to view files — PageLayout handles scrolling and back-to-top automatically
 - **Do not** use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead
 - **Do not** hand-build a page-skeleton block or full-page spinner — render chrome real and drive regions off `loading` primitives
+- **Do not** set the title on a layout/`Outlet` wrapper, and **do not** ship a routed view without a title — the leaf view owns `document.title`; a missing one leaves the title stale from the previous page
+- **Do not** put the org name in a title segment, and **do not** interpolate `${x?.name}` into a `title` string (prints `"undefined"`) — use `segments`, which drops unset values

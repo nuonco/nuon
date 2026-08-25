@@ -13,7 +13,7 @@ export const Components = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Components | ${app?.name}`} />
+      <PageTitle segments={['Components', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
