@@ -69,3 +69,26 @@ func deleteAccountRecords(tx *gorm.DB, accountID string) error {
 
 	return nil
 }
+
+// DeleteInstallStackServiceAccounts removes the stack service accounts for every
+// install stack belonging to an install. Every install-delete path must call this
+// before deleting the install row: the service account is tied to the stack only by
+// the naming convention on Account.Subject, not by a foreign key, so association
+// cascades never reach it — and once the stack rows are gone there is no supported
+// way back to the IDs needed to derive the accounts. Idempotent, like
+// DeleteServiceAccount.
+func (c *Client) DeleteInstallStackServiceAccounts(ctx context.Context, installID string) error {
+	var stackIDs []string
+	if res := c.db.WithContext(ctx).
+		Model(&app.InstallStack{}).
+		Where(app.InstallStack{InstallID: installID}).
+		Pluck("id", &stackIDs); res.Error != nil {
+		return errors.Wrap(res.Error, "unable to list install stacks")
+	}
+	for _, stackID := range stackIDs {
+		if err := c.DeleteServiceAccount(ctx, stackID); err != nil {
+			return errors.Wrapf(err, "unable to delete stack service account for stack %s", stackID)
+		}
+	}
+	return nil
+}
