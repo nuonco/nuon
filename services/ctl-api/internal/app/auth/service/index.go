@@ -77,9 +77,8 @@ func (s *service) Index(c *gin.Context) {
 	c.HTML(http.StatusOK, template, data)
 }
 
-// useNuonBrandedLogin decides whether to render the Nuon-branded sign-in page. It must stay
-// false for BYOC vendor deployments, whose app_url is their own domain — only Nuon's cloud
-// (app.nuon.co) or an explicit nuon_branded_login opt-in (stage, local preview) enables it.
+// BYOC vendor deployments must never render this page. Their app_url is their own domain, so
+// only app.nuon.co or an explicit nuon_branded_login opt-in turns it on.
 func useNuonBrandedLogin(flagEnabled bool, appURL string) bool {
 	if flagEnabled {
 		return true

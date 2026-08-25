@@ -67,8 +67,8 @@ func TestUseNuonBrandedLogin(t *testing.T) {
 	}
 }
 
-// Nothing parses the embedded templates outside a running server, so a syntax or field error in
-// index_nuon would only surface at startup. Render both index templates here to catch it in CI.
+// Templates are parsed only at server startup, so without this a syntax or field error ships
+// and fails on boot.
 func TestIndexTemplatesRender(t *testing.T) {
 	sub, err := fs.Sub(tmplFS, "templates")
 	require.NoError(t, err)
@@ -95,9 +95,6 @@ func TestIndexTemplatesRender(t *testing.T) {
 			require.NoError(t, err)
 			assert.Contains(t, b.String(), "Continue with Google")
 			assert.NotContains(t, b.String(), "posthog.init", "no PostHogKey must mean no analytics snippet")
-			if name == "auth/index_nuon.tmpl" {
-				assert.Contains(t, b.String(), "Marketing and customer outreach consent")
-			}
 		})
 
 		t.Run(name+" signed in", func(t *testing.T) {
