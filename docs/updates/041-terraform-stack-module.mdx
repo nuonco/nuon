@@ -6,13 +6,22 @@ boost: 0.3
 
 _August 24, 2026_
 
-## Token-authenticated Terraform stack module
+## Terraform stack modules
 
-Provisioning an AWS install stack with Terraform no longer involves downloading `inputs.auto.tfvars` and
-`secrets.auto.tfvars` from the dashboard and sending them to your customer. Instead, your customer writes a small
-`main.tf` using the published [`nuonco/stack/aws`](https://registry.terraform.io/modules/nuonco/stack/aws/latest)
-module and applies it with three things: the install ID, credentials for the Nuon API, and values for the app's
-customer-facing inputs and secrets.
+<Note>This feature is behind a feature flag. Reach out to our team if you would like it enabled for your organization.</Note>
+
+Terraform has proven to be a powerful way to manage an install stack, but we felt the experience could be improved upon.
+There were 3 key areas we wanted to improve on:
+
+- Obviate the need for your customer to manage a large, complex `tfvars` file.
+- Stop relying on the phone home ID to secure the phone home request.
+- Make it easier for your customer to apply updates.
+
+To that end, we are publishing new stack modules to the Terraform registry.
+These modules read the stack config directly from the control plane, so your customer no longer needs to paste in a `tfvars` file.
+Each stack is given a service account that can authenticate using a token.
+The `phone_home_id` no longer needs to be updated on every reprovision.
+Additionally, your customer can more easily control versioning via semver.
 
 ```hcl
 provider "stack" {}
@@ -33,23 +42,10 @@ module "aws_stack" {
 }
 ```
 
-Everything else — runner configuration, IAM permissions and roles, current input values, secret metadata, and the
-phone-home URL — is read from the control plane at plan time by the `nuonco/stack` provider's `stack_config` data
-source. The config endpoint is authenticated and serves only customer-facing inputs and secrets; vendor-facing
-values never reach your customer's Terraform.
+Once installed, your customers simply need to run `terraform apply` to install a new version of the stack.
+If new inputs or secrets are required, an actionable terraform error will be displayed.
 
-- **Authentication.** Create an install-scoped API token from the **Await install stack** step's TF Module tab
-  and set it as `NUON_API_TOKEN`. The token only grants access to this install's stack configuration.
-- **Input values via `inputs`.** The module's `inputs` map layers over the control plane's current values, and the
-  effective merged values phone home to become the install's current inputs — editing the map and re-applying is
-  how a customer changes an input.
-- **Secrets via `TF_VAR_*`.** Customer secrets are declared as sensitive root-level variables and supplied as
-  environment variables — never written to `.tf` files — so CI systems can inject them as masked secrets.
-  Auto-generated secrets are minted by the stack itself.
-- **Plan-time validation.** An `inputs` key the app does not declare as a customer-facing input — a typo or a
-  removed input — fails the plan with an error listing the declared inputs, instead of being silently dropped.
+```sh
+```
 
-The dashboard's **TF Module** tab on the **Await install stack** step generates the full `main.tf` for each install,
-with the app's customer-facing inputs and secrets prefilled. See the new
-[Provision Stacks with a Terraform Module](/guides/provision-stacks-with-terraform-module) guide for the
-end-to-end flow, day-2 update recipes, and troubleshooting.
+If the stack module itself needs to be upgraded, your customer can run `terraform init -upgrade` and re-apply the stack.
