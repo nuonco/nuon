@@ -31,7 +31,7 @@ export const Branches = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Branches | ${app?.name}`} />
+      <PageTitle segments={['Branches', app?.name]} />
       <Breadcrumbs breadcrumbs={breadcrumbs} />
       <div className="flex items-center justify-between">
         <HeadingGroup>

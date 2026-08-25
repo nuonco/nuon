@@ -52,7 +52,7 @@ export const Workflows = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Workflows | ${install?.name}`} />
+      <PageTitle segments={['Workflows', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

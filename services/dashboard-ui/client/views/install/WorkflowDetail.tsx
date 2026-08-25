@@ -32,7 +32,7 @@ const WorkflowDetailContent = () => {
 
   return (
     <PageSection className="!gap-2">
-      <PageTitle title={`${workflowName} | ${install?.name}`} />
+      <PageTitle segments={[workflowName, install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

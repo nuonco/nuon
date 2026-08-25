@@ -128,7 +128,7 @@ export const Dashboard = () => {
 
   return (
     <PageLayout>
-      <PageTitle title={`Dashboard | ${org?.name}`} />
+      <PageTitle title="Dashboard" />
       <Breadcrumbs breadcrumbs={[{ path: `/${org?.id}`, text: org?.name }]} />
       <PageHeader className="border-b">
         <HeadingGroup>

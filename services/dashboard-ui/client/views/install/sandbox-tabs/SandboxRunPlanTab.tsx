@@ -5,6 +5,8 @@ import { PulumiDiff } from '@/components/approvals/plan-diffs/pulumi/PulumiDiff'
 import { TerraformDiff } from '@/components/approvals/plan-diffs/terraform/TerraformDiff'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Skeleton } from '@/components/common/Skeleton'
+import { PageTitle } from '@/components/navigation/PageTitle'
+import { useInstall } from '@/hooks/use-install'
 import { useSandboxRun } from '@/hooks/use-sandbox-run'
 import { useOrg } from '@/hooks/use-org'
 import { getRunnerJobPlan } from '@/lib'
@@ -52,10 +54,12 @@ const SandboxRunPlanFallback = () => {
 
 export const SandboxRunPlanTab = () => {
   const { step } = useOutletContext<TSandboxRunOutletContext>()
+  const { install } = useInstall()
 
-  if (step?.approval) {
-    return <Plan step={step} />
-  }
-
-  return <SandboxRunPlanFallback />
+  return (
+    <>
+      <PageTitle segments={['Sandbox run plan', install?.name]} />
+      {step?.approval ? <Plan step={step} /> : <SandboxRunPlanFallback />}
+    </>
+  )
 }

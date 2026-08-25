@@ -70,7 +70,7 @@ export const PolicyDetail = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`${policy?.name ?? 'Policy'} | ${app?.name}`} />
+      <PageTitle segments={[policy?.name ?? 'Policy', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

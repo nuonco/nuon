@@ -75,7 +75,7 @@ export const Stacks = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Stacks | ${install?.name}`} />
+      <PageTitle segments={['Stacks', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

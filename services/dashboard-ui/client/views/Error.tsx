@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Button } from '@/components/common/Button'
+import { PageTitle } from '@/components/navigation/PageTitle'
 
 const messages: Record<string, { title: string; message: string }> = {
   'orgs-failed': {
@@ -26,6 +27,7 @@ export const Error = () => {
 
   return (
     <div className="flex flex-col flex-1 items-center justify-center h-full">
+      <PageTitle title={title} />
       <EmptyState
         variant="404"
         emptyTitle={title}
