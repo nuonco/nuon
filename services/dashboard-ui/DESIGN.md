@@ -272,6 +272,29 @@ problem internally: with `tooltipProps` + `disabled` it renders `aria-disabled` 
 - **Nudge** (a controlled tooltip opened by app state, not hover) uses `useNudge(trigger)` +
   `tooltipProps={{ isOpen, disableHover: true, tipContent }}` — don't re-implement the timer.
 
+### Labeled-data components (`LabeledValue` / `KeyValueList` / `PropertyGrid`)
+
+Which component renders labeled data is fixed by who names the fields and the shape of each datum.
+Classify with the tests, then apply the treatment. Full decision record:
+[UXDR 022](./.planning/ux/022-uxdr-labeled-data-components.md).
+
+| Component | Test | Data shape |
+|-----------|------|------------|
+| **`LabeledValue`** (composed into a metadata block) | Did we write the label in the code? | Author-designed field set — labels are UI copy (`Status`, `Created`, `Cluster IP`). Sentence case. |
+| **`KeyValueList`** | Is this a key → value mapping from the API/user? | Semantically a map — each key's value IS the datum (outputs, env vars, tags, rendered TF/Helm/K8s values, log attributes). Keys/values are identifiers: mono, verbatim, **never re-cased**. |
+| **`PropertyGrid`** | Records with author-named columns, not a mapping? | Array of records whose columns we name (`{name, default, required}`, `{field, type, description}`). Field count is irrelevant — a two-field record is still a record; what disqualifies `KeyValueList` is that the second field isn't "the value of" the first. |
+
+- **`PropertyGrid` vs `Table` boundary:** `PropertyGrid` is static, descriptive records embedded
+  in a detail context. The moment the surface needs pagination, search, sorting, row actions, or
+  row drill-down, it is a `Table` (see below). A `PropertyGrid` carrying any of those is a violation.
+- **Header/label casing:** `LabeledValue` labels and explicit `PropertyGrid` headers are UI copy →
+  sentence case. `PropertyGrid`'s auto-derived headers route through `humanize()` (never
+  hand-rolled title casing). `KeyValueList` keys are never re-cased.
+- **Review smells:** a hand-rolled label/value `Text` stack (`flex flex-col` with a neutral
+  subtext label above a value → use `LabeledValue`); a 2-column `PropertyGrid` (it's a map →
+  `KeyValueList`, or author-labeled metadata → `LabeledValue` block); a `PropertyGrid` with row
+  actions/pagination (→ `Table`); re-cased `KeyValueList` keys.
+
 ### Tables
 Prefer the Stratus `Table`. If you must hand-roll (e.g. inside a modal), mirror its styling:
 - Header row on the secondary surface: `bg-cool-grey-100 dark:bg-dark-grey-700`.
