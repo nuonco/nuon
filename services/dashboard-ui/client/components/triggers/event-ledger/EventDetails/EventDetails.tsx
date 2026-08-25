@@ -300,7 +300,7 @@ const WaiterMatch = ({
       ) : null}
       {workflowHref ? (
         <Link href={workflowHref}>
-          View resumed workflow step <Icon variant="CaretRightIcon" />
+          View resumed workflow step
         </Link>
       ) : null}
     </Card>

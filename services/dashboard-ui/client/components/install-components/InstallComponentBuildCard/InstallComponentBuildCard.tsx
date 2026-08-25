@@ -58,6 +58,7 @@ export const InstallComponentBuildCard = ({
         <Text weight="strong">
           <Link
             href={`/${orgId}/apps/${installAppId}/configs/${installAppConfigId}/components/${build?.component_id}/builds/${build.id}`}
+            variant="inline"
           >
             Component build <Icon variant="QuestionIcon" />
           </Link>

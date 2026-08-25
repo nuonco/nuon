@@ -194,12 +194,8 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
           </div>
         ) : null}
         {actionBasePath && step.action_workflow_id ? (
-          <Link
-            className="text-sm"
-            href={`${actionBasePath}/actions/${step.action_workflow_id}`}
-          >
+          <Link href={`${actionBasePath}/actions/${step.action_workflow_id}`}>
             View action
-            <Icon variant="CaretRightIcon" />
           </Link>
         ) : null}
       </div>

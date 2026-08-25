@@ -1,6 +1,5 @@
 import { forwardRef } from 'react'
 import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
@@ -49,9 +48,9 @@ export const ConsentToast = forwardRef<HTMLDivElement, IConsentToast>(
         <Link
           href="https://www.nuon.co/privacy"
           isExternal
-          className="text-xs inline-flex items-center gap-1"
+          className="inline-flex items-center gap-1"
         >
-          Privacy policy <Icon variant="ArrowSquareOutIcon" size="14" />
+          Privacy policy
         </Link>
       </Toast>
     )

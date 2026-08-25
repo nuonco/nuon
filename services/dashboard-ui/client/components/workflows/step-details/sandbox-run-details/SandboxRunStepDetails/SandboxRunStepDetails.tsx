@@ -34,21 +34,17 @@ export const SandboxRunStepDetails = ({
         </Text>
 
         {step?.owner_id ? (
-          <Text variant="subtext">
-            <Link href={`/${orgId}/installs/${step.owner_id}/sandbox`}>
-              View sandbox <Icon variant="CaretRightIcon" />
-            </Link>
-          </Text>
+          <Link href={`/${orgId}/installs/${step.owner_id}/sandbox`}>
+            View sandbox
+          </Link>
         ) : null}
 
         {step?.owner_id && step?.step_target_id ? (
-          <Text variant="subtext">
-            <Link
-              href={`/${orgId}/installs/${step.owner_id}/sandbox/runs/${step.step_target_id}`}
-            >
-              View run logs <Icon variant="CaretRightIcon" />
-            </Link>
-          </Text>
+          <Link
+            href={`/${orgId}/installs/${step.owner_id}/sandbox/runs/${step.step_target_id}`}
+          >
+            View run logs
+          </Link>
         ) : null}
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 items-center">

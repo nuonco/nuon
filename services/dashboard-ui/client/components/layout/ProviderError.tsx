@@ -1,6 +1,5 @@
 import { EmptyState } from '@/components/common/EmptyState'
 import { Link } from '@/components/common/Link'
-import { Text } from '@/components/common/Text'
 import type { TAPIError } from '@/types'
 
 export const ProviderError = ({ error }: { error: TAPIError }) => {
@@ -16,11 +15,9 @@ export const ProviderError = ({ error }: { error: TAPIError }) => {
             : (error.error ?? 'An unexpected error occurred.')
         }
         action={
-          <Text variant="subtext">
-            <Link href="/" isATag>
-              Back to home
-            </Link>
-          </Text>
+          <Link href="/" isATag>
+            Back to home
+          </Link>
         }
       />
     </div>
