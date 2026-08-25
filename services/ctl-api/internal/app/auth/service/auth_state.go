@@ -169,9 +169,10 @@ func (s *service) AuthState(c *gin.Context) {
 	s.redirect302(c, "/success")
 }
 
-// recordMarketingConsent persists an opted-in consent checkbox onto the account. It is set-only
-// (an unchecked box on a later login is not a revocation) and never fails the login — losing a
-// consent bit is acceptable, losing a sign-in is not.
+// recordMarketingConsent persists an opted-in consent checkbox onto the account, then
+// best-effort upserts the member into the Mailchimp audience. It is set-only (an unchecked box
+// on a later login is not a revocation) and never fails the login — losing a consent bit or a
+// Mailchimp sync is acceptable, losing a sign-in is not.
 func (s *service) recordMarketingConsent(ctx context.Context, sessionData *SessionData, account *app.Account) {
 	if !sessionData.MarketingConsent || account.MarketingConsent {
 		return
@@ -189,6 +190,12 @@ func (s *service) recordMarketingConsent(ctx context.Context, sessionData *Sessi
 	}
 
 	s.l.Info("recorded marketing consent", zap.String("account_id", account.ID))
+
+	if err := s.mailchimp.UpsertListMember(ctx, account.Email); err != nil {
+		s.l.Warn("failed to upsert mailchimp audience member",
+			zap.String("account_id", account.ID),
+			zap.Error(err))
+	}
 }
 
 // verifyUser checks if the user is authorized to access the system.

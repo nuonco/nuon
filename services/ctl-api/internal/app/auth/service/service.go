@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/mailchimp"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -41,6 +42,7 @@ type Params struct {
 	MW         metrics.Writer
 	L          *zap.Logger
 	AcctClient *account.Client
+	Mailchimp  mailchimp.Client
 }
 
 type service struct {
@@ -50,6 +52,7 @@ type service struct {
 	mw         metrics.Writer
 	cfg        *internal.Config
 	acctClient *account.Client
+	mailchimp  mailchimp.Client
 
 	domain         string   // domain the service is served at
 	allowedDomains []string // email domains that are allowed to use this service for auth
@@ -118,6 +121,7 @@ func New(params Params) (*service, error) {
 		db:          params.DB,
 		mw:          params.MW,
 		acctClient:  params.AcctClient,
+		mailchimp:   params.Mailchimp,
 		stopCleanup: make(chan struct{}),
 	}
 

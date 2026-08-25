@@ -28,6 +28,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	pkglog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/mailchimp"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -142,6 +143,7 @@ var InfrastructureModule = fx.Module("infrastructure",
 
 	// Core services
 	fx.Provide(loops.New),
+	fx.Provide(mailchimp.New),
 	fx.Provide(salesforce.New),
 	fx.Provide(github.New),
 	fx.Provide(metrics.New),
