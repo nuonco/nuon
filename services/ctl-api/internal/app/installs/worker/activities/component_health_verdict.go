@@ -99,10 +99,8 @@ func nextComponentHealthVerdict(current app.InstallComponentHealthStatus, report
 	sevCurrent := componentHealthSeverity[current]
 	sevDegraded := componentHealthSeverity[app.InstallComponentHealthStatusDegraded]
 
-	// Adopting a first observation immediately is right for a good verdict, but
-	// a bad one still has to earn it: a component fresh from a deploy has no
-	// baseline, so claiming bad on one report made every transient the runner
-	// happened to catch first an outage. Fast to good, slow to bad.
+	// Fast to good, slow to bad: a component fresh from a deploy has no baseline,
+	// and claiming bad on its first report made every transient an outage.
 	hasBaseline := current != app.InstallComponentHealthStatusUnset &&
 		current != app.InstallComponentHealthStatusNotApplicable &&
 		current != app.InstallComponentHealthStatusUnknown

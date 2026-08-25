@@ -24,10 +24,8 @@ func fakeDyn(objs ...runtime.Object) *dynamicfake.FakeDynamicClient {
 	return dynamicfake.NewSimpleDynamicClientWithCustomListKinds(scheme, gvrToKind, objs...)
 }
 
-// The regression this guards: ReplicaSets are no longer listed, so an
-// ImagePullBackOff on a pod must still reach its Deployment via on-demand GETs.
-// Without hydration the walk stops at the unlisted ReplicaSet and the rollout
-// reads as benign "progressing" for progressDeadlineSeconds (10m).
+// ReplicaSets are not listed, so without hydration the walk stops at the
+// unlisted ReplicaSet and the rollout reads as benign progressing for 10m.
 func TestHydrateFailedPodOwnersReachesDeployment(t *testing.T) {
 	e := &Engine{l: zap.NewNop()}
 

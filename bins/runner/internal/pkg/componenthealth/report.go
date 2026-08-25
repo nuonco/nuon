@@ -286,10 +286,8 @@ func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) []schema.G
 // maxOwnerHops bounds the ownerReferences walk so a cyclic chain cannot spin.
 const maxOwnerHops = 4
 
-// hydrateFailedPodOwners GETs the owner chain of each pod whose own status
-// reports it failing, so byKey can resolve it. Normally nothing is fetched:
-// healthy installs have no failing pods, which is the point of doing this on
-// demand instead of listing every ReplicaSet in the cluster once a minute.
+// Fetched on demand rather than listing every ReplicaSet each cycle: a healthy
+// install has no failing pods and so costs no GETs.
 func (e *Engine) hydrateFailedPodOwners(
 	ctx context.Context,
 	dynClient dynamic.Interface,
@@ -326,9 +324,8 @@ func (e *Engine) hydrateFailedPodOwners(
 	}
 }
 
-// liftPodHealthToOwners maps a controller to the failure of the first of its
-// pods that reports one, so an ImagePullBackOff surfaces immediately instead of
-// waiting out the Deployment's progressDeadlineSeconds.
+// Surfaces an ImagePullBackOff immediately instead of waiting out the
+// Deployment's progressDeadlineSeconds.
 func liftPodHealthToOwners(failed []podFailure, byKey map[string]*unstructured.Unstructured) map[string]string {
 	lifted := map[string]string{}
 	for _, f := range failed {
@@ -350,12 +347,9 @@ type podFailure struct {
 	message string
 }
 
-// failedPods returns the pods whose own status reports them failing, sorted so
-// that which pod explains a shared owner is deterministic rather than a product
-// of map iteration order.
-//
-// Only a pod its own status calls degraded qualifies: one still starting up is
-// progressing, and lifting that would degrade every rollout the moment it began.
+// Only degraded qualifies: a starting pod is progressing, and lifting that would
+// degrade every rollout. Sorted so a shared owner's explanation cannot churn
+// with map iteration order.
 func failedPods(byKey map[string]*unstructured.Unstructured) []podFailure {
 	var out []podFailure
 	for key, u := range byKey {
@@ -367,6 +361,9 @@ func failedPods(byKey map[string]*unstructured.Unstructured) []podFailure {
 			continue
 		}
 		if message == "" {
+			message = podFailureReason(u)
+		}
+		if message == "" {
 			message = "pod " + u.GetName() + " is not healthy"
 		}
 		out = append(out, podFailure{key: key, message: message})
@@ -375,10 +372,22 @@ func failedPods(byKey map[string]*unstructured.Unstructured) []podFailure {
 	return out
 }
 
-// terminalPodPhase reports a pod that has finished and been replaced.
-// Kubernetes keeps failed pods until the GC threshold is hit, so an evicted one
-// lingers for hours — lifting it would hold a controller degraded long after
-// its replacement came up healthy.
+// Upstream reports a restarting pod with whatever status.message holds, which is
+// usually empty, so the container status is the only place the reason exists.
+func podFailureReason(u *unstructured.Unstructured) string {
+	for _, c := range containerDiagnosis(u) {
+		for _, field := range []string{"waiting_reason", "last_termination_reason"} {
+			if reason, ok := c[field].(string); ok && reason != "" {
+				name, _ := c["name"].(string)
+				return "container " + name + ": " + reason
+			}
+		}
+	}
+	return ""
+}
+
+// Failed pods linger until the GC threshold, so an evicted one would outlive the
+// replacement that already came up healthy.
 func terminalPodPhase(u *unstructured.Unstructured) bool {
 	phase, _, _ := unstructured.NestedString(u.Object, "status", "phase")
 	return phase == "Failed" || phase == "Succeeded"
@@ -469,20 +478,15 @@ func resourceModel(
 ) *models.ServiceComponentHealthResource {
 	health, message, native := assessResource(u)
 
-	// A pod's failure is its controller's failure: helm annotates only what it
-	// renders, so pods carry no ownership labels and are never attributed to a
-	// component on their own.
+	// Helm annotates only what it renders, so a pod carries no ownership labels
+	// and its controller is the only thing that reaches a verdict.
 	if liftedFailure != "" && (health == healthHealthy || health == healthProgressing) {
 		health = healthDegraded
 		message = liftedFailure
 	}
 
-	// An event never decides the verdict. Events are edge-triggered and have no
-	// "all clear", so consulting one forces us to invent an expiry, and any
-	// expiry is a fabricated claim about how long the fault lasted — a single
-	// transient event pinned components degraded for exactly 15m + 2 reports
-	// however fast the resource recovered. An event only explains a resource
-	// that its own status already reports as failing.
+	// Evidence, never verdict: an event is edge-triggered with no "all clear", so
+	// letting one decide health forces an invented expiry.
 	if health == healthHealthy {
 		warn = nil
 	} else if warn != nil && message == "" {

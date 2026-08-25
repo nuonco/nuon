@@ -1,0 +1,618 @@
+{
+  "Deployment/health-demo/bad-image": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "generation": 1,
+      "name": "bad-image",
+      "namespace": "health-demo"
+    },
+    "spec": {
+      "replicas": 1
+    },
+    "status": {
+      "conditions": [
+        {
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "lastUpdateTime": "2026-08-25T12:43:26Z",
+          "message": "Deployment does not have minimum availability.",
+          "reason": "MinimumReplicasUnavailable",
+          "status": "False",
+          "type": "Available"
+        },
+        {
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "lastUpdateTime": "2026-08-25T12:43:26Z",
+          "message": "ReplicaSet \"bad-image-7b84f6f4f6\" is progressing.",
+          "reason": "ReplicaSetUpdated",
+          "status": "True",
+          "type": "Progressing"
+        }
+      ],
+      "observedGeneration": 1,
+      "replicas": 1,
+      "terminatingReplicas": 0,
+      "unavailableReplicas": 1,
+      "updatedReplicas": 1
+    }
+  },
+  "Deployment/health-demo/crashloop": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "generation": 1,
+      "name": "crashloop",
+      "namespace": "health-demo"
+    },
+    "spec": {
+      "replicas": 1
+    },
+    "status": {
+      "conditions": [
+        {
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "lastUpdateTime": "2026-08-25T12:43:36Z",
+          "message": "ReplicaSet \"crashloop-56759cc757\" has successfully progressed.",
+          "reason": "NewReplicaSetAvailable",
+          "status": "True",
+          "type": "Progressing"
+        },
+        {
+          "lastTransitionTime": "2026-08-25T12:44:17Z",
+          "lastUpdateTime": "2026-08-25T12:44:17Z",
+          "message": "Deployment does not have minimum availability.",
+          "reason": "MinimumReplicasUnavailable",
+          "status": "False",
+          "type": "Available"
+        }
+      ],
+      "observedGeneration": 1,
+      "replicas": 1,
+      "terminatingReplicas": 0,
+      "unavailableReplicas": 1,
+      "updatedReplicas": 1
+    }
+  },
+  "Deployment/health-demo/healthy-api": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "generation": 1,
+      "name": "healthy-api",
+      "namespace": "health-demo"
+    },
+    "spec": {
+      "replicas": 1
+    },
+    "status": {
+      "availableReplicas": 1,
+      "conditions": [
+        {
+          "lastTransitionTime": "2026-08-25T12:43:29Z",
+          "lastUpdateTime": "2026-08-25T12:43:29Z",
+          "message": "Deployment has minimum availability.",
+          "reason": "MinimumReplicasAvailable",
+          "status": "True",
+          "type": "Available"
+        },
+        {
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "lastUpdateTime": "2026-08-25T12:43:29Z",
+          "message": "ReplicaSet \"healthy-api-6799649d5f\" has successfully progressed.",
+          "reason": "NewReplicaSetAvailable",
+          "status": "True",
+          "type": "Progressing"
+        }
+      ],
+      "observedGeneration": 1,
+      "readyReplicas": 1,
+      "replicas": 1,
+      "terminatingReplicas": 0,
+      "updatedReplicas": 1
+    }
+  },
+  "Deployment/health-quota/quota-blocked": {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+      "generation": 1,
+      "name": "quota-blocked",
+      "namespace": "health-quota"
+    },
+    "spec": {
+      "replicas": 1
+    },
+    "status": {
+      "conditions": [
+        {
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "lastUpdateTime": "2026-08-25T12:43:26Z",
+          "message": "Created new replica set \"quota-blocked-65df857ff4\"",
+          "reason": "NewReplicaSetCreated",
+          "status": "True",
+          "type": "Progressing"
+        },
+        {
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "lastUpdateTime": "2026-08-25T12:43:26Z",
+          "message": "Deployment does not have minimum availability.",
+          "reason": "MinimumReplicasUnavailable",
+          "status": "False",
+          "type": "Available"
+        },
+        {
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "lastUpdateTime": "2026-08-25T12:43:26Z",
+          "message": "pods \"quota-blocked-65df857ff4-zvk8c\" is forbidden: exceeded quota: no-pods, requested: pods=1, used: pods=0, limited: pods=0",
+          "reason": "FailedCreate",
+          "status": "True",
+          "type": "ReplicaFailure"
+        }
+      ],
+      "observedGeneration": 1,
+      "terminatingReplicas": 0,
+      "unavailableReplicas": 1
+    }
+  },
+  "HorizontalPodAutoscaler/health-demo/healthy-api": {
+    "apiVersion": "autoscaling/v2",
+    "kind": "HorizontalPodAutoscaler",
+    "metadata": {
+      "name": "healthy-api",
+      "namespace": "health-demo"
+    },
+    "spec": {
+      "maxReplicas": 3,
+      "minReplicas": 1
+    },
+    "status": {
+      "conditions": [
+        {
+          "lastTransitionTime": "2026-08-25T12:43:41Z",
+          "message": "the HPA controller was able to get the target's current scale",
+          "reason": "SucceededGetScale",
+          "status": "True",
+          "type": "AbleToScale"
+        },
+        {
+          "lastTransitionTime": "2026-08-25T12:43:41Z",
+          "message": "the HPA was unable to compute the replica count: failed to get cpu utilization: unable to get metrics for resource cpu: unable to fetch metrics from resource metrics API: the server could not find the requested resource (get pods.metrics.k8s.io)",
+          "reason": "FailedGetResourceMetric",
+          "status": "False",
+          "type": "ScalingActive"
+        }
+      ],
+      "currentMetrics": [
+        {
+          "type": ""
+        }
+      ],
+      "currentReplicas": 1,
+      "desiredReplicas": 0
+    }
+  },
+  "Pod/health-demo/bad-image-7b84f6f4f6-cnrj9": {
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+      "generation": 1,
+      "name": "bad-image-7b84f6f4f6-cnrj9",
+      "namespace": "health-demo",
+      "ownerReferences": [
+        {
+          "apiVersion": "apps/v1",
+          "blockOwnerDeletion": true,
+          "controller": true,
+          "kind": "ReplicaSet",
+          "name": "bad-image-7b84f6f4f6",
+          "uid": "35774b52-9723-4c11-bdf1-fc13c603f658"
+        }
+      ]
+    },
+    "spec": {
+      "restartPolicy": "Always"
+    },
+    "status": {
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:43:27Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "message": "containers with unready status: [app]",
+          "observedGeneration": 1,
+          "reason": "ContainersNotReady",
+          "status": "False",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "message": "containers with unready status: [app]",
+          "observedGeneration": 1,
+          "reason": "ContainersNotReady",
+          "status": "False",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containerStatuses": [
+        {
+          "image": "traefik/whoami:does-not-exist-tag",
+          "imageID": "",
+          "lastState": {},
+          "name": "app",
+          "ready": false,
+          "restartCount": 0,
+          "started": false,
+          "state": {
+            "waiting": {
+              "message": "Back-off pulling image \"traefik/whoami:does-not-exist-tag\": ErrImagePull: rpc error: code = NotFound desc = failed to pull and unpack image \"docker.io/traefik/whoami:does-not-exist-tag\": failed to resolve reference \"docker.io/traefik/whoami:does-not-exist-tag\": docker.io/traefik/whoami:does-not-exist-tag: not found",
+              "reason": "ImagePullBackOff"
+            }
+          },
+          "volumeMounts": [
+            {
+              "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+              "name": "kube-api-access-ght47",
+              "readOnly": true,
+              "recursiveReadOnly": "Disabled"
+            }
+          ]
+        }
+      ],
+      "hostIP": "192.168.117.2",
+      "hostIPs": [
+        {
+          "ip": "192.168.117.2"
+        }
+      ],
+      "observedGeneration": 1,
+      "phase": "Pending",
+      "podIP": "10.244.0.6",
+      "podIPs": [
+        {
+          "ip": "10.244.0.6"
+        }
+      ],
+      "qosClass": "BestEffort",
+      "resources": {},
+      "startTime": "2026-08-25T12:43:26Z"
+    }
+  },
+  "Pod/health-demo/crashloop-56759cc757-wskzd": {
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+      "generation": 1,
+      "name": "crashloop-56759cc757-wskzd",
+      "namespace": "health-demo",
+      "ownerReferences": [
+        {
+          "apiVersion": "apps/v1",
+          "blockOwnerDeletion": true,
+          "controller": true,
+          "kind": "ReplicaSet",
+          "name": "crashloop-56759cc757",
+          "uid": "44695c5e-9aa0-4df5-8334-e1aaf2d2f5ad"
+        }
+      ]
+    },
+    "spec": {
+      "restartPolicy": "Always"
+    },
+    "status": {
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:43:27Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:44:17Z",
+          "message": "containers with unready status: [app]",
+          "observedGeneration": 1,
+          "reason": "ContainersNotReady",
+          "status": "False",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:44:17Z",
+          "message": "containers with unready status: [app]",
+          "observedGeneration": 1,
+          "reason": "ContainersNotReady",
+          "status": "False",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containerStatuses": [
+        {
+          "containerID": "containerd://29945c754147c7326a822773923529b8ca693cf406473204b647fef2894cb276",
+          "image": "docker.io/library/busybox:1.36",
+          "imageID": "docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662",
+          "lastState": {
+            "terminated": {
+              "containerID": "containerd://9f7c02179e7ca95c0da3399603d8aa9be13ac4219270ad542be0661f4b3b82e0",
+              "exitCode": 1,
+              "finishedAt": "2026-08-25T12:43:52Z",
+              "reason": "Error",
+              "startedAt": "2026-08-25T12:43:52Z"
+            }
+          },
+          "name": "app",
+          "ready": false,
+          "resources": {},
+          "restartCount": 3,
+          "started": false,
+          "state": {
+            "terminated": {
+              "containerID": "containerd://29945c754147c7326a822773923529b8ca693cf406473204b647fef2894cb276",
+              "exitCode": 1,
+              "finishedAt": "2026-08-25T12:44:15Z",
+              "reason": "Error",
+              "startedAt": "2026-08-25T12:44:15Z"
+            }
+          },
+          "user": {
+            "linux": {
+              "gid": 0,
+              "supplementalGroups": [
+                0,
+                10
+              ],
+              "uid": 0
+            }
+          },
+          "volumeMounts": [
+            {
+              "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+              "name": "kube-api-access-x5c47",
+              "readOnly": true,
+              "recursiveReadOnly": "Disabled"
+            }
+          ]
+        }
+      ],
+      "hostIP": "192.168.117.2",
+      "hostIPs": [
+        {
+          "ip": "192.168.117.2"
+        }
+      ],
+      "observedGeneration": 1,
+      "phase": "Running",
+      "podIP": "10.244.0.7",
+      "podIPs": [
+        {
+          "ip": "10.244.0.7"
+        }
+      ],
+      "qosClass": "BestEffort",
+      "resources": {},
+      "startTime": "2026-08-25T12:43:26Z"
+    }
+  },
+  "Pod/health-demo/healthy-api-6799649d5f-97trm": {
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+      "generation": 1,
+      "name": "healthy-api-6799649d5f-97trm",
+      "namespace": "health-demo",
+      "ownerReferences": [
+        {
+          "apiVersion": "apps/v1",
+          "blockOwnerDeletion": true,
+          "controller": true,
+          "kind": "ReplicaSet",
+          "name": "healthy-api-6799649d5f",
+          "uid": "39237401-907c-420c-ba7d-1373892578bd"
+        }
+      ]
+    },
+    "spec": {
+      "restartPolicy": "Always"
+    },
+    "status": {
+      "allocatedResources": {
+        "cpu": "10m",
+        "memory": "16Mi"
+      },
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:43:27Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:43:29Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:43:29Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-08-25T12:43:26Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containerStatuses": [
+        {
+          "allocatedResources": {
+            "cpu": "10m",
+            "memory": "16Mi"
+          },
+          "containerID": "containerd://f11d3ec9b1dde8e1f153b2b7eb553d77c2afbc3bbd98373ae06028b6a0233d20",
+          "image": "registry.k8s.io/pause:3.9",
+          "imageID": "registry.k8s.io/pause@sha256:7031c1b283388d2c2e09b57badb803c05ebed362dc88d84b480cc47f72a21097",
+          "lastState": {},
+          "name": "app",
+          "ready": true,
+          "resources": {
+            "requests": {
+              "cpu": "10m",
+              "memory": "16Mi"
+            }
+          },
+          "restartCount": 0,
+          "started": true,
+          "state": {
+            "running": {
+              "startedAt": "2026-08-25T12:43:29Z"
+            }
+          },
+          "user": {
+            "linux": {
+              "gid": 0,
+              "supplementalGroups": [
+                0
+              ],
+              "uid": 65535
+            }
+          },
+          "volumeMounts": [
+            {
+              "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+              "name": "kube-api-access-q7dcw",
+              "readOnly": true,
+              "recursiveReadOnly": "Disabled"
+            }
+          ]
+        }
+      ],
+      "hostIP": "192.168.117.2",
+      "hostIPs": [
+        {
+          "ip": "192.168.117.2"
+        }
+      ],
+      "observedGeneration": 1,
+      "phase": "Running",
+      "podIP": "10.244.0.5",
+      "podIPs": [
+        {
+          "ip": "10.244.0.5"
+        }
+      ],
+      "qosClass": "Burstable",
+      "resources": {
+        "requests": {
+          "cpu": "10m",
+          "memory": "16Mi"
+        }
+      },
+      "startTime": "2026-08-25T12:43:26Z"
+    }
+  },
+  "ReplicaSet/health-demo/bad-image-7b84f6f4f6": {
+    "apiVersion": "apps/v1",
+    "kind": "ReplicaSet",
+    "metadata": {
+      "generation": 1,
+      "name": "bad-image-7b84f6f4f6",
+      "namespace": "health-demo",
+      "ownerReferences": [
+        {
+          "apiVersion": "apps/v1",
+          "blockOwnerDeletion": true,
+          "controller": true,
+          "kind": "Deployment",
+          "name": "bad-image",
+          "uid": "eb50dac7-4603-4d24-aaed-5ba5367645c2"
+        }
+      ]
+    },
+    "spec": {
+      "replicas": 1
+    },
+    "status": {
+      "fullyLabeledReplicas": 1,
+      "observedGeneration": 1,
+      "replicas": 1,
+      "terminatingReplicas": 0
+    }
+  },
+  "ReplicaSet/health-demo/crashloop-56759cc757": {
+    "apiVersion": "apps/v1",
+    "kind": "ReplicaSet",
+    "metadata": {
+      "generation": 1,
+      "name": "crashloop-56759cc757",
+      "namespace": "health-demo",
+      "ownerReferences": [
+        {
+          "apiVersion": "apps/v1",
+          "blockOwnerDeletion": true,
+          "controller": true,
+          "kind": "Deployment",
+          "name": "crashloop",
+          "uid": "2da1c781-cba0-47e1-96eb-840340f56b2b"
+        }
+      ]
+    },
+    "spec": {
+      "replicas": 1
+    },
+    "status": {
+      "fullyLabeledReplicas": 1,
+      "observedGeneration": 1,
+      "replicas": 1,
+      "terminatingReplicas": 0
+    }
+  }
+}

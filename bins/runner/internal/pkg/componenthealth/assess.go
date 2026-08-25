@@ -53,34 +53,26 @@ func assessResource(obj *unstructured.Unstructured) (health, message, nativeStat
 	return health, msg, string(hs.Status)
 }
 
-// conditionFailure finds a current failure the object names in its own
-// conditions. Every per-kind check upstream reads a narrow slice of status and
-// treats it as the whole truth: the Deployment check consults only
-// Progressing/ProgressDeadlineExceeded and never ReplicaFailure, and the HPA
-// check returns on the first condition that matches anything, so
-// AbleToScale=True masked ScalingActive=False/FailedGetResourceMetric. Both
-// reported healthy while the object said otherwise, which is what pushed the
-// only usable signal into Warning events.
-//
-// Reading every condition instead keeps the verdict a pure function of one read
-// of status, so it needs no expiry and clears the moment the controller does.
+// conditionFailure reads every condition, because each upstream per-kind check
+// reads only a slice of status: the HPA check returns on the first condition
+// matched, the Deployment check never looks at ReplicaFailure.
 func conditionFailure(obj *unstructured.Unstructured) (reason, message string, found bool) {
 	conds, ok, err := unstructured.NestedSlice(obj.Object, "status", "conditions")
 	if err != nil || !ok {
 		return "", "", false
 	}
 
+	gen := obj.GetGeneration()
 	for _, c := range conds {
 		cond, ok := c.(map[string]any)
 		if !ok {
 			continue
 		}
 		condReason, _ := cond["reason"].(string)
-		if !failureReason(condReason) {
+		if !failureReason(condReason) || staleCondition(cond, gen) {
 			continue
 		}
-		// A ready-style condition that currently reads True is asserting health;
-		// a failure reason left behind on it describes something already over.
+		// A reason left behind on a now-True ready condition is already over.
 		condType, _ := cond["type"].(string)
 		condStatus, _ := cond["status"].(string)
 		if condStatus == "True" && isReadyConditionType(condType) {
@@ -96,11 +88,8 @@ func conditionFailure(obj *unstructured.Unstructured) (reason, message string, f
 	return "", "", false
 }
 
-// failureReason reports whether a condition reason names a failure rather than a
-// state. Polarity cannot be read from status: ReplicaFailure=True and
-// ScalingActive=False both mean broken, so the reason is the only consistent
-// signal. Follows the same naming idiom the vendored pod check already trusts
-// for container waiting reasons.
+// Polarity cannot come from status: ReplicaFailure=True and ScalingActive=False
+// both mean broken, so the reason is the only consistent signal.
 func failureReason(reason string) bool {
 	switch {
 	case reason == "":
@@ -121,6 +110,9 @@ func failureReason(reason string) bool {
 // a load balancer address reported "progressing" and nothing else for 15 hours,
 // while the reason sat in the status it had already read.
 func explainVerdict(obj *unstructured.Unstructured, status gitopshealth.HealthStatusCode) string {
+	if obj.GetKind() == "Pod" && status != gitopshealth.HealthStatusHealthy {
+		return podFailureReason(obj)
+	}
 	if status != gitopshealth.HealthStatusProgressing {
 		return ""
 	}
@@ -143,11 +135,33 @@ func hasLoadBalancerAddress(obj *unstructured.Unstructured) bool {
 	return err == nil && found && len(addrs) > 0
 }
 
-// staleGeneration reports a controller that has not yet processed the object's
-// current spec, so its conditions describe the previous one. kstatus treats
-// this as in-progress by definition; without it a fresh spec is graded against
-// stale conditions. Only claimed when the controller has demonstrably written a
-// generation and it is behind, so kinds that never set the field are unaffected.
+// staleCondition applies the freshness rule the API conventions define for
+// metav1.Condition: a condition set against an older generation is out of date
+// with respect to the current spec, whatever the object-level field says.
+func staleCondition(cond map[string]any, gen int64) bool {
+	if gen == 0 {
+		return false
+	}
+	observed, ok := nestedNumber(cond, "observedGeneration")
+	if !ok || observed <= 0 {
+		return false
+	}
+	return observed < gen
+}
+
+// Conditions decoded from JSON arrive as int64 or float64 depending on the path.
+func nestedNumber(m map[string]any, key string) (int64, bool) {
+	switch v := m[key].(type) {
+	case int64:
+		return v, true
+	case float64:
+		return int64(v), true
+	}
+	return 0, false
+}
+
+// staleGeneration means the conditions describe an older spec. Only claimed when
+// the controller has written a generation, so kinds that never set it are exempt.
 func staleGeneration(obj *unstructured.Unstructured) bool {
 	gen := obj.GetGeneration()
 	if gen == 0 || obj.GetDeletionTimestamp() != nil {
@@ -198,10 +212,14 @@ func assessByConditions(obj *unstructured.Unstructured) (health, message, native
 		}
 	}
 
+	gen := obj.GetGeneration()
 	for _, want := range readyConditionTypes {
 		cond, ok := byType[want]
 		if !ok {
 			continue
+		}
+		if staleCondition(cond, gen) {
+			return healthProgressing, "waiting for the controller to observe the current spec", ""
 		}
 		status, _ := cond["status"].(string)
 		msg, _ := cond["message"].(string)

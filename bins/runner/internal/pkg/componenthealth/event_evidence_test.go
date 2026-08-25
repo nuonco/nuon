@@ -22,16 +22,9 @@ func issuer(readyStatus, transitionedAt string) *unstructured.Unstructured {
 
 var issuerGVR = schema.GroupVersionResource{Group: "cert-manager.io", Version: "v1", Resource: "issuers"}
 
-// The invariant this package exists to hold: a Warning event may explain a
-// verdict but can never set one.
-//
-// Events are edge-triggered and have no "all clear", so any code that lets one
-// decide health must invent an expiry, and every expiry is a fabricated claim
-// about how long the fault lasted. That is how a one-minute HPA metrics gap
-// pinned a component degraded for exactly 15m + 2 reports.
-//
-// Feeding the same object every shape of event history and asserting one
-// verdict is what mechanically forbids reintroducing it.
+// The invariant: an event may explain a verdict, never set one. Any code that
+// lets one decide health has to invent an expiry, which is how a one-minute
+// metrics gap pinned a component degraded for 15m + 2 reports.
 func TestEventNeverChangesVerdict(t *testing.T) {
 	t.Parallel()
 
@@ -71,8 +64,7 @@ func TestEventNeverChangesVerdict(t *testing.T) {
 	}
 }
 
-// A healthy resource must carry no trace of an event: that is the whole failure
-// mode — a recovered object rendered with a stale message pasted over it.
+// The failure mode was a recovered object rendered with a stale message over it.
 func TestHealthyResourceDiscardsEvent(t *testing.T) {
 	t.Parallel()
 
@@ -84,9 +76,7 @@ func TestHealthyResourceDiscardsEvent(t *testing.T) {
 	assert.NotContains(t, res.Details, "ErrGetKeyPair")
 }
 
-// The diagnostic value of events is kept: a resource its own status reports as
-// failing still gets the event, which is usually the only place the cause is
-// written down.
+// An event is often the only place the cause is written down.
 func TestFailingResourceKeepsEventAsEvidence(t *testing.T) {
 	t.Parallel()
 
@@ -97,8 +87,7 @@ func TestFailingResourceKeepsEventAsEvidence(t *testing.T) {
 	assert.Contains(t, res.Details, "ErrGetKeyPair", "the cause must still reach the detail view")
 }
 
-// An event fills the headline only when status left it blank, so it can add to
-// what the object says but never contradict it.
+// An event may add to what the object says, never contradict it.
 func TestEventDoesNotOverwriteStatusMessage(t *testing.T) {
 	t.Parallel()
 
@@ -113,7 +102,7 @@ func TestEventDoesNotOverwriteStatusMessage(t *testing.T) {
 	assert.Equal(t, "the CA is unreachable", res.Message)
 }
 
-// A controller has not necessarily read the spec it is being graded against.
+// A controller has not necessarily read the spec it is graded against.
 func TestStaleGenerationReadsProgressing(t *testing.T) {
 	t.Parallel()
 
@@ -130,8 +119,7 @@ func TestStaleGenerationReadsProgressing(t *testing.T) {
 	assert.Equal(t, healthHealthy, health)
 }
 
-// Most kinds never write observedGeneration; claiming they are all mid-rollout
-// forever would take every CRD permanently progressing.
+// Most kinds never write observedGeneration.
 func TestMissingObservedGenerationIsNotStale(t *testing.T) {
 	t.Parallel()
 

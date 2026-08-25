@@ -28,10 +28,8 @@ func hpaObj(name string, conds ...map[string]any) *unstructured.Unstructured {
 	}}
 }
 
-// The bug that started this: Kubernetes orders AbleToScale ahead of
-// ScalingActive and the upstream check returns on the first condition that
-// matches anything, so a metrics failure was unreadable from status and only
-// reachable through a Warning event.
+// Kubernetes orders AbleToScale ahead of ScalingActive, and upstream returns on
+// the first condition matched.
 func TestHPAMetricFailureIsReadFromStatus(t *testing.T) {
 	t.Parallel()
 
@@ -57,7 +55,7 @@ func TestHPAHealthyWhenScalingActive(t *testing.T) {
 	assert.Equal(t, healthHealthy, health)
 }
 
-// ScalingDisabled is what a target scaled to zero looks like, not a failure.
+// A target scaled to zero, not a failure.
 func TestHPAScalingDisabledIsNotAFailure(t *testing.T) {
 	t.Parallel()
 
@@ -91,9 +89,8 @@ func deploymentWithConditions(replicas int64, conds ...map[string]any) *unstruct
 	}}
 }
 
-// Not an HPA problem: the upstream Deployment check consults only the
-// Progressing condition, so a Deployment that cannot create pods reads healthy
-// whenever the replica counts happen to line up.
+// Not an HPA problem: upstream reads only Progressing here, so a Deployment that
+// cannot create pods reads healthy whenever replica counts line up.
 func TestDeploymentReplicaFailureIsRead(t *testing.T) {
 	t.Parallel()
 
@@ -119,8 +116,7 @@ func TestHealthyDeploymentStaysHealthy(t *testing.T) {
 	assert.Equal(t, healthHealthy, health)
 }
 
-// A failure reason left behind on a ready-style condition that now reads True
-// describes something already over.
+// A reason left behind on a now-True ready condition is already over.
 func TestRecoveredReadyConditionIsNotAFailure(t *testing.T) {
 	t.Parallel()
 
@@ -146,4 +142,41 @@ func TestFailureReasonNaming(t *testing.T) {
 	for _, reason := range []string{"", "ReadyForNewScale", "ScalingDisabled", "MinimumReplicasAvailable", "NewReplicaSetAvailable", "TooManyReplicas"} {
 		assert.False(t, failureReason(reason), reason)
 	}
+}
+
+// The API conventions define a condition set against an older generation as out
+// of date, so it must not produce a verdict either way.
+func TestStaleConditionIsIgnored(t *testing.T) {
+	t.Parallel()
+
+	obj := deploymentWithConditions(2,
+		hpaCond("Available", "True", "MinimumReplicasAvailable", "Deployment has minimum availability."),
+		hpaCond("ReplicaFailure", "True", "FailedCreate", "exceeded quota"),
+	)
+	obj.SetGeneration(9)
+	// Object-level generation must match, or the whole object reads progressing
+	// and the per-condition rule is never reached.
+	_ = unstructured.SetNestedField(obj.Object, int64(9), "status", "observedGeneration")
+	conds, _, _ := unstructured.NestedSlice(obj.Object, "status", "conditions")
+	conds[1].(map[string]any)["observedGeneration"] = int64(8)
+	_ = unstructured.SetNestedSlice(obj.Object, conds, "status", "conditions")
+
+	health, _, _ := assessResource(obj)
+	assert.Equal(t, healthHealthy, health, "a failure from generation 8 says nothing about generation 9")
+
+	conds, _, _ = unstructured.NestedSlice(obj.Object, "status", "conditions")
+	conds[1].(map[string]any)["observedGeneration"] = int64(9)
+	_ = unstructured.SetNestedSlice(obj.Object, conds, "status", "conditions")
+
+	health, _, _ = assessResource(obj)
+	assert.Equal(t, healthDegraded, health)
+}
+
+// A condition without the field is the common case and must stay trusted.
+func TestConditionWithoutObservedGenerationIsTrusted(t *testing.T) {
+	t.Parallel()
+
+	assert.False(t, staleCondition(map[string]any{"reason": "FailedCreate"}, 12))
+	assert.False(t, staleCondition(map[string]any{"observedGeneration": int64(0)}, 12))
+	assert.True(t, staleCondition(map[string]any{"observedGeneration": float64(9)}, 12))
 }

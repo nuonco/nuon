@@ -46,8 +46,7 @@ func TestNextComponentHealthVerdict(t *testing.T) {
 		{"not-applicable flips immediately once observed", notApplicable, healthReports(now, progressing), progressing},
 		{"unknown adopts a good report immediately", unknown, healthReports(now, healthy), healthy},
 
-		// A component fresh from a deploy has no baseline. Adopting one bad
-		// report made every transient the runner caught first an outage.
+		// A component fresh from a deploy has no baseline.
 		{"bootstrap does not claim bad on one report", notApplicable, healthReports(now, degraded), notApplicable},
 		{"bootstrap does not claim bad on two reports", notApplicable, healthReports(now, degraded, degraded), notApplicable},
 		{"bootstrap claims bad once earned", notApplicable, healthReports(now, degraded, degraded, degraded), degraded},
