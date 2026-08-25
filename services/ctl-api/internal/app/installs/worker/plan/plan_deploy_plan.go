@@ -82,9 +82,9 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 	// immutable identity of the artifact.
 	//
 	// For non-image builds and image builds without SourceDigest, the sync
-	// plan still tags the install-registry copy with the install-deploy ID,
-	// so we fall back to that here.
-	srcTag := deploy.ID
+	// plan tags the install-registry copy with installRegistryTag, so we read
+	// it back under the same tag.
+	srcTag := installRegistryTag(deploy)
 	srcDigest := ""
 	if build.SourceDigest != "" {
 		srcTag = build.SourceDigest
