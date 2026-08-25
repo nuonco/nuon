@@ -145,6 +145,72 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 	return cfg, nil
 }
 
+// installRegistryLoginServer returns the login server of the install's own
+// registry, or "" when the sandbox emits no registry outputs. Best-effort by
+// design: it is used to decide whether an image ref already points at the
+// install registry, and an install whose sandbox has no registry is a perfectly
+// valid host for an action that pulls a public image.
+func installRegistryLoginServer(stateData map[string]interface{}, stack *app.InstallStack) string {
+	var tmpl string
+	switch {
+	case stack.InstallStackOutputs.AWSStackOutputs != nil:
+		tmpl = "{{.nuon.sandbox.outputs.ecr.registry_url}}"
+	case stack.InstallStackOutputs.AzureStackOutputs != nil:
+		tmpl = "{{.nuon.sandbox.outputs.acr.login_server}}"
+	case stack.InstallStackOutputs.GCPStackOutputs != nil:
+		tmpl = "{{.nuon.sandbox.outputs.gar.registry_url}}"
+	default:
+		return ""
+	}
+
+	loginServer, err := render.RenderV2(tmpl, stateData)
+	if err != nil {
+		return ""
+	}
+
+	return strings.TrimPrefix(strings.TrimSpace(loginServer), "https://")
+}
+
+// getInstallRegistryPullConfig builds the registry config for pulling an image
+// that already lives in the install's registry, so the runner authenticates
+// with the install's cloud credentials rather than attempting an anonymous
+// pull. Unlike getInstallRegistryRepositoryConfig this is not tied to a
+// component deploy: the repository comes from the ref the caller resolved.
+func getInstallRegistryPullConfig(
+	repository string,
+	loginServer string,
+	stack *app.InstallStack,
+	cloudAuth *CloudAuth,
+) *configs.OCIRegistryRepository {
+	cfg := &configs.OCIRegistryRepository{
+		Plugin:      "oci",
+		Repository:  repository,
+		LoginServer: loginServer,
+	}
+
+	switch {
+	case stack.InstallStackOutputs.AWSStackOutputs != nil:
+		cfg.RegistryType = configs.OCIRegistryTypeECR
+		cfg.Region = stack.InstallStackOutputs.AWSStackOutputs.Region
+		cfg.ECRAuth = cloudAuth.AWS
+	case stack.InstallStackOutputs.AzureStackOutputs != nil:
+		cfg.RegistryType = configs.OCIRegistryTypeACR
+		cfg.ACRAuth = &azurecredentials.Config{
+			UseDefault: true,
+		}
+	case stack.InstallStackOutputs.GCPStackOutputs != nil:
+		cfg.RegistryType = configs.OCIRegistryTypeGAR
+		cfg.Region = stack.InstallStackOutputs.GCPStackOutputs.Region
+		if cloudAuth.GCP != nil {
+			cfg.ServiceAccountEmail = cloudAuth.GCP.ImpersonateServiceAccount
+		}
+	default:
+		return nil
+	}
+
+	return cfg
+}
+
 // imageNameSegment reduces a component name to a docker image path segment /
 // tag prefix: lowercase, every run of non-alphanumerics (including "_")
 // collapsed to a single "-", no leading or trailing separator.
