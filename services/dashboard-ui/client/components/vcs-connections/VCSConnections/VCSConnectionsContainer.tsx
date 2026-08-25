@@ -1,6 +1,4 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
 import { checkVCSConnectionStatus } from '@/lib/ctl-api/vcs-connections'
@@ -35,14 +33,6 @@ const VCSConnectionWithStatus = ({
         isLoadingStatus={isLoading}
         href={connectionHref}
       />
-      <Button
-        href={connectionHref}
-        variant="icon"
-        size="sm"
-        className="self-end"
-      >
-        <Icon variant="ArrowRightIcon" size={16} />
-      </Button>
     </Text>
   )
 }
