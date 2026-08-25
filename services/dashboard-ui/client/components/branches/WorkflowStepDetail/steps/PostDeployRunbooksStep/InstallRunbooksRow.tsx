@@ -30,9 +30,9 @@ export const InstallRunbooksRow = ({
     <div className="flex flex-col">
       <div className="flex items-center gap-3 px-4 py-3">
         {installHref ? (
-          <Link href={installHref} className="text-sm font-strong truncate">
-            {install?.name || installId}
-          </Link>
+          <Text variant="body" weight="strong" nowrap className="truncate">
+            <Link href={installHref}>{install?.name || installId}</Link>
+          </Text>
         ) : (
           <Text variant="body" weight="strong" nowrap className="block truncate">
             {install?.name || installId}

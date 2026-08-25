@@ -111,9 +111,11 @@ const InstallUpdatesList = ({
             <div className="flex items-center gap-2 min-w-0">
               <Icon variant="CloudIcon" size={12} className="shrink-0 text-cool-grey-400" />
               {update.install_id ? (
-                <Link href={`/${orgId}/installs/${update.install_id}`} className="text-xs truncate">
-                  {update.install_id}
-                </Link>
+                <Text variant="subtext" className="truncate">
+                  <Link href={`/${orgId}/installs/${update.install_id}`}>
+                    {update.install_id}
+                  </Link>
+                </Text>
               ) : (
                 <Text variant="subtext" theme="neutral">Unknown</Text>
               )}
@@ -121,12 +123,13 @@ const InstallUpdatesList = ({
             <div className="flex items-center gap-2 shrink-0">
               <Status status={update.status?.status || 'unknown'} />
               {update.workflow_id && (
-                <Link
-                  href={`/${orgId}/installs/${update.install_id}/workflows/${update.workflow_id}`}
-                  className="text-[11px]"
-                >
-                  Workflow
-                </Link>
+                <Text variant="subtext" className="shrink-0">
+                  <Link
+                    href={`/${orgId}/installs/${update.install_id}/workflows/${update.workflow_id}`}
+                  >
+                    View workflow
+                  </Link>
+                </Text>
               )}
             </div>
           </div>

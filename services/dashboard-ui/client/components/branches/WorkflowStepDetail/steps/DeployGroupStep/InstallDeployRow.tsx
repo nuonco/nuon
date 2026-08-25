@@ -23,9 +23,9 @@ export const InstallDeployRow = ({ installId, install, deployStatus, workflowHre
     <div className="flex items-center gap-3 px-4 py-3">
       <div className="flex items-center gap-5 min-w-0">
         {installHref ? (
-          <Link href={installHref} className="text-sm font-strong truncate">
-            {install?.name || installId}
-          </Link>
+          <Text variant="body" weight="strong" nowrap className="truncate">
+            <Link href={installHref}>{install?.name || installId}</Link>
+          </Text>
         ) : (
           <Text variant="body" weight="strong" nowrap className="block truncate">
             {install?.name || installId}
