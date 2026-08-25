@@ -164,6 +164,13 @@ func (t *Templates) getAzureTemplate(inp *stacks.TemplateInput) (*ARMTemplate, e
 		}
 	}
 
+	// Customer-supplied app inputs. Declared after every other parameter source has
+	// written so a name that collides with one of theirs is an error rather than a
+	// silent overwrite.
+	if err := addCustomerInputParameters(tmpl, inp); err != nil {
+		return nil, err
+	}
+
 	// Phone home deployment script, and the identity it authenticates as
 	tmpl.Resources = append(tmpl.Resources, t.getPhoneHomeResources(inp, customOutputs, vnetExtraOutputs, scope)...)
 
