@@ -503,7 +503,7 @@ func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[s
 			continue
 		}
 
-		if !knownSeen[key] || componentHealthSeverity[health] > componentHealthSeverity[rep.Health] {
+		if !knownSeen[key] || betterRoot(rep, health, r.Kind, r.Namespace, r.Name) {
 			knownSeen[key] = true
 			rep.Health = health
 			rep.RootKind = r.Kind
@@ -803,6 +803,7 @@ func (a *Activities) resourceDiagnoses(ctx context.Context, orgID, installID str
 		Scopes(scopes.WithOverrideTable(app.InstallComponentResourceStatesLatestView)).
 		Select("install_component_id", "kind", "namespace", "name", "details").
 		Where(app.InstallComponentResourceState{OrgID: orgID, InstallID: installID}).
+		Where(app.LatestReportOnlySQL(), app.LatestReportOnlyArgs(orgID, installID)...).
 		Where("install_component_id IN ?", installComponentIDs).
 		Where("health != ?", string(app.InstallComponentHealthStatusHealthy)).
 		Find(&rows).Error; err != nil {

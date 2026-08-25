@@ -2,6 +2,7 @@ package componenthealth
 
 import (
 	"encoding/json"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -37,11 +38,108 @@ func assessResource(obj *unstructured.Unstructured) (health, message, nativeStat
 		// follow, then admit the resource has no signal.
 		return assessByConditions(obj)
 	}
+
+	health = mapHealth(hs.Status)
+	if health == healthHealthy || health == healthProgressing {
+		if reason, msg, ok := initContainerFailure(obj); ok {
+			return healthDegraded, msg, reason
+		}
+		if !staleGeneration(obj) {
+			if reason, msg, ok := conditionFailure(obj); ok {
+				return healthDegraded, msg, reason
+			}
+		}
+	}
+
 	msg := hs.Message
 	if msg == "" {
 		msg = explainVerdict(obj, hs.Status)
 	}
-	return mapHealth(hs.Status), msg, string(hs.Status)
+	return health, msg, string(hs.Status)
+}
+
+// initContainerFailure scans init containers, which the upstream pod check
+// skips: it reads containerStatuses only, so an init container stuck on
+// ImagePullBackOff left the pod merely Pending with the reason sitting in status.
+func initContainerFailure(obj *unstructured.Unstructured) (reason, message string, found bool) {
+	if obj.GetKind() != "Pod" {
+		return "", "", false
+	}
+	statuses, ok, err := unstructured.NestedSlice(obj.Object, "status", "initContainerStatuses")
+	if err != nil || !ok {
+		return "", "", false
+	}
+	for _, raw := range statuses {
+		cs, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		waitReason, _, _ := unstructured.NestedString(cs, "state", "waiting", "reason")
+		if !failureReason(waitReason) {
+			continue
+		}
+		name, _ := cs["name"].(string)
+		message, _, _ := unstructured.NestedString(cs, "state", "waiting", "message")
+		if message == "" {
+			message = "init container " + name + ": " + waitReason
+		}
+		return "init/" + waitReason, message, true
+	}
+	return "", "", false
+}
+
+// conditionFailure reads every condition, because each upstream per-kind check
+// reads only a slice of status: the HPA check returns on the first condition
+// matched, the Deployment check never looks at ReplicaFailure.
+func conditionFailure(obj *unstructured.Unstructured) (reason, message string, found bool) {
+	conds, ok, err := unstructured.NestedSlice(obj.Object, "status", "conditions")
+	if err != nil || !ok {
+		return "", "", false
+	}
+
+	gen := obj.GetGeneration()
+	for _, c := range conds {
+		cond, ok := c.(map[string]any)
+		if !ok {
+			continue
+		}
+		condReason, _ := cond["reason"].(string)
+		if !failureReason(condReason) || staleCondition(cond, gen) {
+			continue
+		}
+		// A reason left behind on a now-True ready condition is already over.
+		condType, _ := cond["type"].(string)
+		condStatus, _ := cond["status"].(string)
+		if condStatus == "True" && isReadyConditionType(condType) {
+			continue
+		}
+
+		condMessage, _ := cond["message"].(string)
+		if condMessage == "" {
+			condMessage = condReason
+		}
+		return condType + "=" + condStatus + "/" + condReason, condMessage, true
+	}
+	return "", "", false
+}
+
+// Polarity cannot come from status: ReplicaFailure=True and ScalingActive=False
+// both mean broken, so the reason is the only consistent signal.
+func failureReason(reason string) bool {
+	switch {
+	case reason == "":
+		return false
+	case reason == "Unschedulable":
+		return true
+	case strings.HasPrefix(reason, "Failed"),
+		strings.HasPrefix(reason, "Err"),
+		strings.HasPrefix(reason, "Invalid"),
+		strings.HasSuffix(reason, "Failed"),
+		strings.HasSuffix(reason, "Error"),
+		strings.HasSuffix(reason, "BackOff"):
+		return true
+	}
+	return false
 }
 
 // explainVerdict fills in a message the library leaves blank. A verdict with no
@@ -49,6 +147,9 @@ func assessResource(obj *unstructured.Unstructured) (health, message, nativeStat
 // a load balancer address reported "progressing" and nothing else for 15 hours,
 // while the reason sat in the status it had already read.
 func explainVerdict(obj *unstructured.Unstructured, status gitopshealth.HealthStatusCode) string {
+	if obj.GetKind() == "Pod" && status != gitopshealth.HealthStatusHealthy {
+		return podFailureReason(obj)
+	}
 	if status != gitopshealth.HealthStatusProgressing {
 		return ""
 	}
@@ -71,6 +172,45 @@ func hasLoadBalancerAddress(obj *unstructured.Unstructured) bool {
 	return err == nil && found && len(addrs) > 0
 }
 
+// staleCondition applies the freshness rule the API conventions define for
+// metav1.Condition: a condition set against an older generation is out of date
+// with respect to the current spec, whatever the object-level field says.
+func staleCondition(cond map[string]any, gen int64) bool {
+	if gen == 0 {
+		return false
+	}
+	observed, ok := nestedNumber(cond, "observedGeneration")
+	if !ok || observed <= 0 {
+		return false
+	}
+	return observed < gen
+}
+
+// Conditions decoded from JSON arrive as int64 or float64 depending on the path.
+func nestedNumber(m map[string]any, key string) (int64, bool) {
+	switch v := m[key].(type) {
+	case int64:
+		return v, true
+	case float64:
+		return int64(v), true
+	}
+	return 0, false
+}
+
+// staleGeneration means the conditions describe an older spec. Only claimed when
+// the controller has written a generation, so kinds that never set it are exempt.
+func staleGeneration(obj *unstructured.Unstructured) bool {
+	gen := obj.GetGeneration()
+	if gen == 0 || obj.GetDeletionTimestamp() != nil {
+		return false
+	}
+	observed, found, err := unstructured.NestedInt64(obj.Object, "status", "observedGeneration")
+	if err != nil || !found || observed <= 0 {
+		return false
+	}
+	return observed < gen
+}
+
 // readyConditionTypes are the condition types controllers conventionally use to
 // mean "this object is serving". Ordered by preference.
 var readyConditionTypes = []string{"Ready", "Available", "Established", "Synced"}
@@ -89,6 +229,10 @@ func isReadyConditionType(t string) bool {
 // progressing. An object with no such condition is not-applicable: we read it
 // successfully and it has nothing to say about its own health.
 func assessByConditions(obj *unstructured.Unstructured) (health, message, nativeStatus string) {
+	if staleGeneration(obj) {
+		return healthProgressing, "waiting for the controller to observe the current spec", ""
+	}
+
 	conds, ok, err := unstructured.NestedSlice(obj.Object, "status", "conditions")
 	if err != nil || !ok || len(conds) == 0 {
 		return healthNotApplicable, "", ""
@@ -105,10 +249,14 @@ func assessByConditions(obj *unstructured.Unstructured) (health, message, native
 		}
 	}
 
+	gen := obj.GetGeneration()
 	for _, want := range readyConditionTypes {
 		cond, ok := byType[want]
 		if !ok {
 			continue
+		}
+		if staleCondition(cond, gen) {
+			return healthProgressing, "waiting for the controller to observe the current spec", ""
 		}
 		status, _ := cond["status"].(string)
 		msg, _ := cond["message"].(string)
