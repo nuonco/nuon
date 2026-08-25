@@ -44,6 +44,10 @@ func GetRoleForDeploy(
 
 	roleSelection, err := SelectRole(selectionCtx, l)
 	if err != nil {
+		if selectionCtx.RuntimeRole != "" {
+			return nil, "", fmt.Errorf("unable to use requested role %q: %w", selectionCtx.RuntimeRole, err)
+		}
+
 		var selErr *SelectionError
 		var failedTrace []app.InstallRoleSelectionRecord
 		if errors.As(err, &selErr) {
@@ -112,6 +116,10 @@ func GetRoleForSandbox(
 
 	roleSelection, err := SelectRole(selectionCtx, l)
 	if err != nil {
+		if selectionCtx.RuntimeRole != "" {
+			return nil, "", fmt.Errorf("unable to use requested role %q: %w", selectionCtx.RuntimeRole, err)
+		}
+
 		var selErr *SelectionError
 		var failedTrace []app.InstallRoleSelectionRecord
 		if errors.As(err, &selErr) {
@@ -179,6 +187,10 @@ func GetRoleForAction(
 
 	roleSelection, err := SelectRole(selectionCtx, l)
 	if err != nil {
+		if selectionCtx.RuntimeRole != "" {
+			return nil, "", fmt.Errorf("unable to use requested role %q: %w", selectionCtx.RuntimeRole, err)
+		}
+
 		var selErr *SelectionError
 		var failedTrace []app.InstallRoleSelectionRecord
 		if errors.As(err, &selErr) {
