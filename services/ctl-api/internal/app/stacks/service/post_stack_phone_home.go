@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/stackrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
 // StackPhoneHomeRequest is the body of a stack phone home: the stack's outputs plus
@@ -150,7 +151,8 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 	}
 	inputsCtx := cctx.SetOrgIDContext(ctx.Request.Context(), orgID)
 	inputsCtx = cctx.SetAccountIDContext(inputsCtx, acct.ID)
-	if _, err := s.installsHelpers.SetInstallInputsFromStack(inputsCtx, &install, inputs); err != nil {
+	_, inputWorkflow, err := s.installsHelpers.SetInstallInputsFromStack(inputsCtx, &install, inputs)
+	if err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -172,6 +174,18 @@ func (s *service) PostStackPhoneHome(ctx *gin.Context) {
 		}); err != nil {
 		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 		return
+	}
+
+	// Changed inputs redeploy dependent components, exactly as a dashboard/API input
+	// update would: the workflow was created above, this makes it run.
+	if inputWorkflow != nil {
+		if err := s.installsHelpers.EnqueueInstallSignal(reqCtx, install.ID,
+			installshelpers.InstallWorkflowsQueueName, &executeflow.Signal{
+				WorkflowID: inputWorkflow.ID,
+			}); err != nil {
+			ctx.Error(fmt.Errorf("enqueue input update workflow signal: %w", err))
+			return
+		}
 	}
 
 	ctx.JSON(http.StatusCreated, app.EmptyResponse{})
