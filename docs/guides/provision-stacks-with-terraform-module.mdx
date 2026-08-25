@@ -118,8 +118,13 @@ The rest of the process is completed by your customer, using the information you
     ```
   </Step>
   <Step title="Configure the secret values">
-    Nuon credentials and app secret values are supplied using environment variables, so that they are not written to disk or saved in Terraform state.
+    Nuon credentials and app secret values are supplied using environment variables, so they are never written to Terraform files or committed to version control.
     Ideally, these should be saved by your customer in their CI's secret store.
+
+    <Warning>
+      Like any Terraform-managed secret, app secret values are stored in Terraform state once applied.
+      Your customer's state backend must be encrypted and access-controlled.
+    </Warning>
 
     ```bash
     export NUON_API_TOKEN='<api-token>'
