@@ -89,8 +89,9 @@ func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("true").
 		Example("false").
 		Field("image").Short("container image the action's steps run inside").
-		Long("Optional container image (e.g. ghcr.io/acme/kubernetes-tools:v1) supplying the tools the action needs. When set, Nuon mirrors the image into the install registry and runs each step's inline_contents inside the image via the mounted actions-supervisor. All steps must use inline_contents when an image is set. Only supported on VM-based runners").
+		Long("Optional container image supplying the tools the action needs. Each step's inline_contents runs inside it via the mounted actions-supervisor, and all steps must use inline_contents when an image is set. A public ref (e.g. ghcr.io/acme/kubernetes-tools:v1) is mirrored into the install registry first. Templating the digest-pinned image.ref output of a container_image component instead pulls it straight from the install's own registry, which allows a private image and skips the mirror. Only supported on VM-based runners").
 		Example("ghcr.io/acme/kubernetes-tools:v1").
+		Example("{{.nuon.components.runbook-tools.outputs.image.ref}}").
 		Field("kubernetes_context").Short("kubernetes context this action targets").
 		Long("Name of a top-level kubernetes_context binding to target when this action runs. When set, the action's runner receives the cluster connection details from that context's source component. Empty falls back to the implicit sandbox default. Only takes effect when enable_kube_config is true").
 		Example("compute").
