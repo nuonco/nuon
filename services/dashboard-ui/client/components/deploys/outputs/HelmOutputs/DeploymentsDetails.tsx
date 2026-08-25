@@ -4,6 +4,7 @@ import { KeyValueList } from '@/components/common/KeyValueList'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 
 export const DeploymentsDetails = ({
   deployments,
@@ -163,32 +164,22 @@ const DeploymentDetails = ({ deployment }) => {
       <div className="flex flex-col gap-2">
         <Text weight="strong">Metadata</Text>
 
-        <KeyValueList
-          values={[
-            {
-              key: 'Created',
-              value: new Date(
-                deployment.metadata.creationTimestamp
-              ).toLocaleString(),
-              type: 'string',
-            },
-            {
-              key: 'Generation',
-              value: String(deployment.metadata.generation),
-              type: 'number',
-            },
-            {
-              key: 'Resource Version',
-              value: deployment.metadata.resourceVersion,
-              type: 'string',
-            },
-            {
-              key: 'UID',
-              value: deployment.metadata.uid,
-              type: 'string',
-            },
-          ]}
-        />
+        <div className="flex flex-wrap items-start gap-x-16 gap-y-4">
+          <LabeledValue label="Created">
+            <Time
+              variant="subtext"
+              time={deployment.metadata.creationTimestamp}
+              format="short-datetime"
+            />
+          </LabeledValue>
+          <LabeledValue label="Generation">
+            {String(deployment.metadata.generation)}
+          </LabeledValue>
+          <LabeledValue label="Resource version">
+            {deployment.metadata.resourceVersion}
+          </LabeledValue>
+          <LabeledValue label="UID">{deployment.metadata.uid}</LabeledValue>
+        </div>
       </div>
     </div>
   )
