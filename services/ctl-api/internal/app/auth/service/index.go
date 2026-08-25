@@ -61,17 +61,20 @@ func (s *service) Index(c *gin.Context) {
 	}
 
 	template := "auth/index.tmpl"
-	if useNuonBrandedLogin(s.cfg.NuonBrandedLogin, s.cfg.AppURL) {
-		template = "auth/index_nuon.tmpl"
-	}
-
-	c.HTML(http.StatusOK, template, gin.H{
+	data := gin.H{
 		"IsAuthenticated": isAuthenticated,
 		"Email":           email,
 		"Providers":       options,
 		"RedirectURL":     redirectURLEncoded,
 		"DashboardURL":    s.cfg.AppURL,
-	})
+	}
+	if useNuonBrandedLogin(s.cfg.NuonBrandedLogin, s.cfg.AppURL) {
+		template = "auth/index_nuon.tmpl"
+		data["PostHogKey"] = s.cfg.PostHogKey
+		data["PostHogHost"] = s.cfg.PostHogHost
+	}
+
+	c.HTML(http.StatusOK, template, data)
 }
 
 // useNuonBrandedLogin decides whether to render the Nuon-branded sign-in page. It must stay

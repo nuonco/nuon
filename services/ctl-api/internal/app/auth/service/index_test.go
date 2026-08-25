@@ -94,6 +94,7 @@ func TestIndexTemplatesRender(t *testing.T) {
 			})
 			require.NoError(t, err)
 			assert.Contains(t, b.String(), "Continue with Google")
+			assert.NotContains(t, b.String(), "posthog.init", "no PostHogKey must mean no analytics snippet")
 			if name == "auth/index_nuon.tmpl" {
 				assert.Contains(t, b.String(), "Marketing and customer outreach consent")
 			}
@@ -112,4 +113,20 @@ func TestIndexTemplatesRender(t *testing.T) {
 			assert.Contains(t, b.String(), "user@example.com")
 		})
 	}
+
+	t.Run("auth/index_nuon.tmpl posthog snippet", func(t *testing.T) {
+		var b strings.Builder
+		err := tmpl.ExecuteTemplate(&b, "auth/index_nuon.tmpl", map[string]any{
+			"IsAuthenticated": false,
+			"Email":           "",
+			"Providers":       providers,
+			"RedirectURL":     "",
+			"DashboardURL":    "https://app.nuon.co",
+			"PostHogKey":      "test-project-key",
+			"PostHogHost":     "https://us.i.posthog.com",
+		})
+		require.NoError(t, err)
+		assert.Contains(t, b.String(), "posthog.init('test-project-key'")
+		assert.Contains(t, b.String(), "us.i.posthog.com")
+	})
 }
