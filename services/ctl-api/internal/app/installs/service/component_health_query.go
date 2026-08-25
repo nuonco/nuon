@@ -137,6 +137,7 @@ func (s *service) nonHealthyResources(ctx context.Context, orgID, installID, ins
 			InstallID:          installID,
 			InstallComponentID: installComponentID,
 		}).
+		Where(app.LatestReportOnlySQL(), app.LatestReportOnlyArgs(orgID, installID)...).
 		Where("health != ?", string(app.InstallComponentHealthStatusHealthy)).
 		Order("kind, namespace, name").
 		Find(&resources).Error; err != nil {
