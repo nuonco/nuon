@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -39,6 +40,15 @@ func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON
 	installID, err := lookup.InstallID(ctx, s.api, params.InstallID)
 	if err != nil {
 		return view.Error(err)
+	}
+	if params.Role != "" {
+		roles, err := s.api.GetAvailableRoles(ctx, installID)
+		if err != nil {
+			return view.Error(fmt.Errorf("get available roles: %w", err))
+		}
+		if err := validateRole(params.Role, roles); err != nil {
+			return view.Error(err)
+		}
 	}
 
 	inlineContents, err := readAdHocInput(params.Command, params.ScriptPath)
@@ -111,6 +121,24 @@ func (s *Service) CreateAdHocRun(ctx context.Context, params AdHocParams, asJSON
 	})
 
 	return nil
+}
+
+func validateRole(requested string, roles []*models.ServiceAvailableRole) error {
+	available := make([]string, 0, len(roles))
+	for _, role := range roles {
+		if role.Name == requested {
+			return nil
+		}
+		if role.Name != "" {
+			available = append(available, role.Name)
+		}
+	}
+
+	sort.Strings(available)
+	if len(available) == 0 {
+		return fmt.Errorf("role %q is not available; this install has no available roles", requested)
+	}
+	return fmt.Errorf("role %q is not available; available roles: %s", requested, strings.Join(available, ", "))
 }
 
 func (s *Service) waitForAdHocRun(ctx context.Context, installID, runID string, writer io.Writer) (*models.AppInstallActionWorkflowRun, error) {

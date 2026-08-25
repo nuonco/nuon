@@ -22,6 +22,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 		expectedOperation  app.OperationType
 		expectedRoleSource operationroles.RoleSelectionSource
 		expectedRoleName   string
+		expectedError      string
 		description        string
 	}{
 		// No operation rules anywhere, runs as always, no change in operation
@@ -312,15 +313,13 @@ func TestGetRoleForDeploy(t *testing.T) {
 			description:        "Should fallback to default when matrix role is missing from stack outputs",
 		},
 		{
-			name:               "runtime_role_missing_fallback_to_default",
-			installDeployType:  app.InstallDeployTypeApply,
-			installDeployRole:  "MissingRuntimeRole", // This role won't be in stack outputs
-			componentRoles:     map[app.OperationType]string{},
-			matrixRules:        nil,
-			expectedOperation:  app.OperationDeploy,
-			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
-			expectedRoleName:   "MaintenanceRole",
-			description:        "Should fallback to default when runtime role is missing from stack outputs",
+			name:              "runtime_role_missing_returns_error",
+			installDeployType: app.InstallDeployTypeApply,
+			installDeployRole: "MissingRuntimeRole", // This role won't be in stack outputs
+			componentRoles:    map[app.OperationType]string{},
+			matrixRules:       nil,
+			expectedError:     `unable to use requested role "MissingRuntimeRole"`,
+			description:       "Should reject a runtime role missing from stack outputs",
 		},
 		{
 			name:              "matrix_role_missing_teardown_fallback",
@@ -434,6 +433,12 @@ func TestGetRoleForDeploy(t *testing.T) {
 				nil,
 			)
 
+			if tt.expectedError != "" {
+				require.ErrorContains(t, err, tt.expectedError)
+				require.Nil(t, roleSelection)
+				require.Empty(t, operation)
+				return
+			}
 			require.NoError(t, err, "getRoleForDeploy should not return error for test: %s", tt.description)
 			assert.Equal(t, tt.expectedOperation, operation, "Operation type mismatch: %s", tt.description)
 			assert.Equal(t, tt.expectedRoleSource, roleSelection.Source, "Role source mismatch: %s", tt.description)
