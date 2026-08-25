@@ -8,7 +8,6 @@ import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { PageTitle } from '@/components/navigation/PageTitle'
 import { TabNav } from '@/components/navigation/TabNav'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
@@ -39,7 +38,6 @@ export const RunbookDetailLayout = () => {
 
   return (
     <PageSection flush className="flex-1">
-      <PageTitle title={`${runbook?.name ?? 'Runbook'} | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

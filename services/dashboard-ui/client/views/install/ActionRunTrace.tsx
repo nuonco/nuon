@@ -9,7 +9,7 @@ export const ActionRunTracePage = () => {
 
   return (
     <>
-      <PageTitle title={`Trace | ${install?.name}`} />
+      <PageTitle segments={['Trace', install?.name]} />
       <TracePanel logStream={installActionRun?.log_stream} />
     </>
   )

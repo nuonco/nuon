@@ -8,7 +8,7 @@ export const InstallBranches = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`App branches | ${install?.name}`} />
+      <PageTitle segments={['App branches', install?.name]} />
       <InstallBranchesSection install={install} />
     </PageSection>
   )

@@ -6,6 +6,7 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 import { APIHealthProvider } from '@/providers/api-health-provider'
 import { AuthProvider } from '@/providers/auth-provider'
 import { ConfigProvider } from '@/providers/config-provider'
+import { PageTitleProvider } from '@/providers/page-title-provider'
 import { Error } from '@/views/Error'
 import { NotFound } from '@/views/NotFound'
 import { RouteError } from '@/views/RouteError'
@@ -61,7 +62,9 @@ export const App = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <APIHealthProvider shouldPoll>
-            <RouterProvider router={router} />
+            <PageTitleProvider>
+              <RouterProvider router={router} />
+            </PageTitleProvider>
           </APIHealthProvider>
         </AuthProvider>
         <ReactQueryDevtools />

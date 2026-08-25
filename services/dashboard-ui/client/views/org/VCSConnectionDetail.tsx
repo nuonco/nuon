@@ -45,7 +45,7 @@ export const VCSConnectionDetail = () => {
 
   return (
     <>
-      <PageTitle title={`${accountName} connection | ${org?.name}`} />
+      <PageTitle title={`${accountName} connection`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

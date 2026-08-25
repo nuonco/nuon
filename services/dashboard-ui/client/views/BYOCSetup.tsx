@@ -8,6 +8,7 @@ import { Logo } from '@/components/common/Logo'
 import { Status } from '@/components/common/Status'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useConfig } from '@/hooks/use-config'
 import { getOrgs } from '@/lib'
 
@@ -47,6 +48,7 @@ export function BYOCSetup() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
+      <PageTitle title="Get started" />
       <div className="flex justify-between w-full px-6 pt-4 pb-4 border-b">
         <Logo />
         <Button variant="ghost" href="https://docs.nuon.co" size="sm">

@@ -5,7 +5,6 @@ import { CompositeError } from '@/components/common/CompositeError'
 import { DeployHeader } from '@/components/deploys/DeployHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { PageTitle } from '@/components/navigation/PageTitle'
 import { TabNav } from '@/components/navigation/TabNav'
 import { DeployProvider } from '@/providers/deploy-provider'
 import { useDeploy } from '@/hooks/use-deploy'
@@ -114,7 +113,6 @@ const DeployLayoutInner = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Deploy | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

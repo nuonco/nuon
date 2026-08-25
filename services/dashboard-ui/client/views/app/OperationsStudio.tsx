@@ -26,7 +26,7 @@ export function OperationsStudio() {
 
   return (
     <PageSection>
-      <PageTitle title={`Runbook studio | ${app?.name}`} />
+      <PageTitle segments={['Runbook studio', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

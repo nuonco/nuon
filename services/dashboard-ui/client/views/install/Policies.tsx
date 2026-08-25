@@ -62,7 +62,7 @@ export const Policies = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Policies | ${install?.name}`} />
+      <PageTitle segments={['Policies', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
