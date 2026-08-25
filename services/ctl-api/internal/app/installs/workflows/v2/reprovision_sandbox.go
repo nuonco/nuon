@@ -41,7 +41,7 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 
 	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
 
-	sandboxReprovisionSteps, err := getSandboxReprovisionSteps(ctx, dg, install)
+	sandboxReprovisionSteps, err := getSandboxReprovisionSteps(ctx, dg, install, true)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,10 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 	return sg.Result(steps), nil
 }
 
-func getSandboxReprovisionSteps(ctx workflow.Context, dg *genCtx, install *app.Install) ([]*app.WorkflowStep, error) {
+// gateRunnerHealthy is false when the caller's preceding phase already waited on
+// the install's runner, where a second wait immediately after can only
+// re-confirm the same result.
+func getSandboxReprovisionSteps(ctx workflow.Context, dg *genCtx, install *app.Install, gateRunnerHealthy bool) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
 	dg.sg.nextGroupEager() // generate install state
@@ -68,13 +71,15 @@ func getSandboxReprovisionSteps(ctx workflow.Context, dg *genCtx, install *app.I
 		steps = append(steps, step)
 	}
 
-	step, err := dg.sg.installSignalStep(ctx, dg.installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: dg.installID,
-	}, dg.flw.PlanOnly)
-	if err != nil {
-		return nil, err
+	if gateRunnerHealthy {
+		step, err := dg.sg.installSignalStep(ctx, dg.installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+			InstallID: dg.installID,
+		}, dg.flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
 	}
-	steps = append(steps, step)
 
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreReprovisionSandbox)
 	if err != nil {
@@ -88,7 +93,7 @@ func getSandboxReprovisionSteps(ctx workflow.Context, dg *genCtx, install *app.I
 	}
 
 	dg.sg.nextGroup() // sandbox plan + apply
-	step, err = dg.sg.installSignalStep(ctx, dg.installID, "reprovision sandbox plan", pgtype.Hstore{}, &reprovisionsandboxplan.Signal{
+	step, err := dg.sg.installSignalStep(ctx, dg.installID, "reprovision sandbox plan", pgtype.Hstore{}, &reprovisionsandboxplan.Signal{
 		InstallSandboxID: sandbox.ID,
 		InstallID:        dg.installID,
 		Role:             dg.flw.Role,
