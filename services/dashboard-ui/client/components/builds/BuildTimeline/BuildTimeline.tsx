@@ -39,6 +39,7 @@ export const BuildTimeline = ({
               <span className="flex items-center gap-2">
                 <Link
                   href={`/${orgId}/apps/${appId}/components/${componentId}/builds/${build.id}`}
+                  variant="inline"
                 >
                   {componentName} build
                 </Link>

@@ -574,6 +574,25 @@ For composite statuses or custom display:
 
 Use an em dash `—` to join status with qualifier, not a hyphen.
 
+## Links
+
+Link copy depends on the link's class (see [DESIGN.md](./DESIGN.md) §5 "Links" for the full
+taxonomy — copy, icon, and size).
+
+- **Entity link** — the resource's own name is the link text. No verb. (`acme-payments`, a commit
+  SHA, `main`.)
+- **View link** — a standalone link to more detail. Use `View {resource}`:
+
+```
+"View plan"      "View logs"       "View build"     "View workflow"
+"View run"       "View component"  "View install"   "View all runs"
+```
+
+  Use `View details` only when there's no better noun. Never "See", "Open", or "Go to" — always
+  "View". Sentence case: "View details", never "View Details".
+- **External link** — text follows the content (a name, or a `View {resource}` phrase); the
+  new-tab icon renders automatically from `isExternal`, never typed at the call site.
+
 ## Navigation & tabs
 
 Tab labels and nav items use sentence case, one or two words maximum.

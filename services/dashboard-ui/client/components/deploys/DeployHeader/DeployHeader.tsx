@@ -3,7 +3,6 @@ import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { CommitDetails } from '@/components/common/CommitDetails'
 import { Duration } from '@/components/common/Duration'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
@@ -60,6 +59,7 @@ export const DeployHeader = ({
               <ID>
                 <Link
                   href={`/${install?.org_id}/apps/${install?.app_id}/components/${deploy?.component_id}/builds/${deploy?.build_id}`}
+                  variant="inline"
                 >
                   {deploy?.build_id}
                 </Link>
@@ -112,11 +112,9 @@ export const DeployHeader = ({
             />
           </LabeledValue>
           <LabeledValue label="Install">
-            <Text variant="subtext">
-              <Link href={`/${install?.org_id}/installs/${install?.id}`}>
-                {install?.name}
-              </Link>
-            </Text>
+            <Link href={`/${install?.org_id}/installs/${install?.id}`}>
+              {install?.name}
+            </Link>
           </LabeledValue>
           <LabeledValue label="Config">
             <ComponentConfigContextTooltip
@@ -124,13 +122,11 @@ export const DeployHeader = ({
               configId={deploy?.component_build?.component_config_connection_id}
               appId={component?.app_id}
             >
-              <Text variant="subtext">
-                <Link
-                  href={`/${install?.org_id}/installs/${install?.id}/components/${component?.id}`}
-                >
-                  {component?.name}
-                </Link>
-              </Text>
+              <Link
+                href={`/${install?.org_id}/installs/${install?.id}/components/${component?.id}`}
+              >
+                {component?.name}
+              </Link>
             </ComponentConfigContextTooltip>
           </LabeledValue>
           {deploy?.component_build?.vcs_connection_commit ? (
@@ -157,7 +153,7 @@ export const DeployHeader = ({
           {deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name ? (
             <LabeledValue label="Execution role">
               <Text variant="subtext" family="mono" className="text-xs">
-                <Link href={`/${install?.org_id}/installs/${install?.id}/roles?panel=${deploy.runner_jobs.at(0).install_role_usage.install_role_id}`}>
+                <Link href={`/${install?.org_id}/installs/${install?.id}/roles?panel=${deploy.runner_jobs.at(0).install_role_usage.install_role_id}`} variant="inline">
                   {deploy.runner_jobs.at(0).install_role_usage.role_name}
                 </Link>
               </Text>
@@ -171,7 +167,6 @@ export const DeployHeader = ({
           href={`/${install?.org_id}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
         >
           View workflow
-          <Icon variant="CaretRightIcon" />
         </Button>
       ) : null}
 

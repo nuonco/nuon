@@ -1,5 +1,6 @@
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
+import { Link } from '@/components/common/Link'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -29,19 +30,13 @@ export const GitHubAccountSection = ({
 
         <LabeledValue label="Install ID">
           {vcs_connection?.github_install_id ? (
-            <a
+            <Link
               href={`https://github.com/organizations/${vcs_connection.github_account_name}/settings/installations/${vcs_connection.github_install_id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 hover:underline"
+              isExternal
+              className="hover:underline"
             >
               <ID theme="default">{vcs_connection.github_install_id}</ID>
-              <Icon
-                variant="ArrowSquareOutIcon"
-                size={12}
-                className="text-cool-grey-400"
-              />
-            </a>
+            </Link>
           ) : (
             <ID theme="default">—</ID>
           )}

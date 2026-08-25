@@ -58,6 +58,7 @@ export const DeployTimeline = ({
               <span className="flex items-center gap-2">
                 <Link
                   href={`/${orgId}/installs/${installId}/components/${componentId}/deploys/${deploy.id}`}
+                  variant="inline"
                 >
                   {componentName}{' '}
                   {deploy?.install_deploy_type === 'teardown'
