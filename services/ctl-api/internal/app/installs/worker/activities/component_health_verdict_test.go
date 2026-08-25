@@ -43,8 +43,16 @@ func TestNextComponentHealthVerdict(t *testing.T) {
 		{"stale reports mean unknown", healthy, healthReports(now.Add(-6*time.Minute), unhealthy), unknown},
 		{"a single delayed report does not trip unknown", healthy, healthReports(now.Add(-4*time.Minute), healthy), healthy},
 		{"first fresh report sets baseline immediately", unset, healthReports(now, healthy), healthy},
-		{"unknown recovers immediately on fresh report", unknown, healthReports(now, degraded), degraded},
 		{"not-applicable flips immediately once observed", notApplicable, healthReports(now, progressing), progressing},
+		{"unknown adopts a good report immediately", unknown, healthReports(now, healthy), healthy},
+
+		// A component fresh from a deploy has no baseline. Adopting one bad
+		// report made every transient the runner caught first an outage.
+		{"bootstrap does not claim bad on one report", notApplicable, healthReports(now, degraded), notApplicable},
+		{"bootstrap does not claim bad on two reports", notApplicable, healthReports(now, degraded, degraded), notApplicable},
+		{"bootstrap claims bad once earned", notApplicable, healthReports(now, degraded, degraded, degraded), degraded},
+		{"unset does not claim bad on one report", unset, healthReports(now, unhealthy), unset},
+		{"unknown does not claim bad on one report", unknown, healthReports(now, degraded), unknown},
 
 		{"one bad report holds healthy", healthy, healthReports(now, unhealthy, healthy, healthy), healthy},
 		{"two bad reports still hold healthy", healthy, healthReports(now, unhealthy, unhealthy, healthy), healthy},

@@ -2,6 +2,7 @@ package componenthealth
 
 import (
 	"encoding/json"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -37,11 +38,82 @@ func assessResource(obj *unstructured.Unstructured) (health, message, nativeStat
 		// follow, then admit the resource has no signal.
 		return assessByConditions(obj)
 	}
+
+	health = mapHealth(hs.Status)
+	if (health == healthHealthy || health == healthProgressing) && !staleGeneration(obj) {
+		if reason, msg, ok := conditionFailure(obj); ok {
+			return healthDegraded, msg, reason
+		}
+	}
+
 	msg := hs.Message
 	if msg == "" {
 		msg = explainVerdict(obj, hs.Status)
 	}
-	return mapHealth(hs.Status), msg, string(hs.Status)
+	return health, msg, string(hs.Status)
+}
+
+// conditionFailure finds a current failure the object names in its own
+// conditions. Every per-kind check upstream reads a narrow slice of status and
+// treats it as the whole truth: the Deployment check consults only
+// Progressing/ProgressDeadlineExceeded and never ReplicaFailure, and the HPA
+// check returns on the first condition that matches anything, so
+// AbleToScale=True masked ScalingActive=False/FailedGetResourceMetric. Both
+// reported healthy while the object said otherwise, which is what pushed the
+// only usable signal into Warning events.
+//
+// Reading every condition instead keeps the verdict a pure function of one read
+// of status, so it needs no expiry and clears the moment the controller does.
+func conditionFailure(obj *unstructured.Unstructured) (reason, message string, found bool) {
+	conds, ok, err := unstructured.NestedSlice(obj.Object, "status", "conditions")
+	if err != nil || !ok {
+		return "", "", false
+	}
+
+	for _, c := range conds {
+		cond, ok := c.(map[string]any)
+		if !ok {
+			continue
+		}
+		condReason, _ := cond["reason"].(string)
+		if !failureReason(condReason) {
+			continue
+		}
+		// A ready-style condition that currently reads True is asserting health;
+		// a failure reason left behind on it describes something already over.
+		condType, _ := cond["type"].(string)
+		condStatus, _ := cond["status"].(string)
+		if condStatus == "True" && isReadyConditionType(condType) {
+			continue
+		}
+
+		condMessage, _ := cond["message"].(string)
+		if condMessage == "" {
+			condMessage = condReason
+		}
+		return condType + "=" + condStatus + "/" + condReason, condMessage, true
+	}
+	return "", "", false
+}
+
+// failureReason reports whether a condition reason names a failure rather than a
+// state. Polarity cannot be read from status: ReplicaFailure=True and
+// ScalingActive=False both mean broken, so the reason is the only consistent
+// signal. Follows the same naming idiom the vendored pod check already trusts
+// for container waiting reasons.
+func failureReason(reason string) bool {
+	switch {
+	case reason == "":
+		return false
+	case strings.HasPrefix(reason, "Failed"),
+		strings.HasPrefix(reason, "Err"),
+		strings.HasPrefix(reason, "Invalid"),
+		strings.HasSuffix(reason, "Failed"),
+		strings.HasSuffix(reason, "Error"),
+		strings.HasSuffix(reason, "BackOff"):
+		return true
+	}
+	return false
 }
 
 // explainVerdict fills in a message the library leaves blank. A verdict with no
@@ -71,6 +143,23 @@ func hasLoadBalancerAddress(obj *unstructured.Unstructured) bool {
 	return err == nil && found && len(addrs) > 0
 }
 
+// staleGeneration reports a controller that has not yet processed the object's
+// current spec, so its conditions describe the previous one. kstatus treats
+// this as in-progress by definition; without it a fresh spec is graded against
+// stale conditions. Only claimed when the controller has demonstrably written a
+// generation and it is behind, so kinds that never set the field are unaffected.
+func staleGeneration(obj *unstructured.Unstructured) bool {
+	gen := obj.GetGeneration()
+	if gen == 0 || obj.GetDeletionTimestamp() != nil {
+		return false
+	}
+	observed, found, err := unstructured.NestedInt64(obj.Object, "status", "observedGeneration")
+	if err != nil || !found || observed <= 0 {
+		return false
+	}
+	return observed < gen
+}
+
 // readyConditionTypes are the condition types controllers conventionally use to
 // mean "this object is serving". Ordered by preference.
 var readyConditionTypes = []string{"Ready", "Available", "Established", "Synced"}
@@ -89,6 +178,10 @@ func isReadyConditionType(t string) bool {
 // progressing. An object with no such condition is not-applicable: we read it
 // successfully and it has nothing to say about its own health.
 func assessByConditions(obj *unstructured.Unstructured) (health, message, nativeStatus string) {
+	if staleGeneration(obj) {
+		return healthProgressing, "waiting for the controller to observe the current spec", ""
+	}
+
 	conds, ok, err := unstructured.NestedSlice(obj.Object, "status", "conditions")
 	if err != nil || !ok || len(conds) == 0 {
 		return healthNotApplicable, "", ""
