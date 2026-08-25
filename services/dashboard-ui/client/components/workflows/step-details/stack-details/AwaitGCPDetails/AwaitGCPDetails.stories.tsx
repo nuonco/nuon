@@ -139,6 +139,7 @@ export const Default = () => (
     <AwaitGCPDetails
       stack={mockStack}
       step={mockStep}
+      orgId="org-1"
       installId="install-1"
       gcpProjectId="my-gcp-project"
       spaceliftEnabled
@@ -148,7 +149,12 @@ export const Default = () => (
 
 export const SpaceliftDisabled = () => (
   <div className="max-w-2xl p-4">
-    <AwaitGCPDetails stack={mockStack} step={mockStep} installId="install-1" />
+    <AwaitGCPDetails
+      stack={mockStack}
+      step={mockStep}
+      orgId="org-1"
+      installId="install-1"
+    />
   </div>
 )
 
@@ -157,6 +163,7 @@ export const LegacyContents = () => (
     <AwaitGCPDetails
       stack={mockLegacyStack}
       step={mockStep}
+      orgId="org-1"
       installId="install-1"
     />
   </div>
@@ -167,8 +174,23 @@ export const Loading = () => (
     <AwaitGCPDetails
       stack={mockStack}
       step={mockStep}
+      orgId="org-1"
       installId="install-1"
       loading
+    />
+  </div>
+)
+
+export const TerraformProvider = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitGCPDetails
+      stack={mockStack}
+      step={mockStep}
+      orgId="org-1"
+      installId="install-1"
+      gcpProjectId="my-gcp-project"
+      gcpRegion="us-central1"
+      tfProvider
     />
   </div>
 )

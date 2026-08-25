@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
@@ -9,15 +8,9 @@ import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
-import { ToggleButton } from '@/components/common/ToggleButton'
-import { CreateOIDCTrustPolicyButton } from '@/components/oidc-trust-policies'
-import { CreateServiceAccountTokenModalContainer } from '@/components/service-accounts/ServiceAccountToken'
-import { useConfig } from '@/hooks/use-config'
-import { useInstallAppConfig } from '@/hooks/use-install-app-config'
-import { useOIDCTrustPolicies } from '@/hooks/use-oidc-trust-policies'
-import { useStackServiceAccount } from '@/hooks/use-stack-service-account'
-import { useSurfaces } from '@/hooks/use-surfaces'
 import { createFileDownload } from '@/utils/file-download'
+import { TFModuleTab } from '../tf-module'
+import type { IMainTfParts } from '../tf-module'
 import type { IStackDetails } from '../types'
 
 interface IAwaitAWSDetails extends IStackDetails {
@@ -163,7 +156,7 @@ export const AwaitAWSDetails = ({
             ...(tfProvider
               ? {
                   tfmodule: (
-                    <TFModuleTab
+                    <AWSTFModuleTab
                       orgId={orgId}
                       installId={installId}
                       installAwsRegion={installAwsRegion}
@@ -559,181 +552,27 @@ const AWSTelemetryExportInstructions = ({
   )
 }
 
-interface ITFModuleTab {
+interface IAWSTFModuleTab {
   orgId: string
   installId?: string
   installAwsRegion?: string
 }
 
-const padTo = (name: string, width: number) => name.padEnd(width, ' ')
-
-// `inputs = { ... }`, indented for the module block. The module's `inputs` and
-// `secrets` maps only accept keys the app declares, so the snippet lists exactly the
-// customer-facing ones. Empty when the app declares no customer inputs — the module
-// treats an omitted map as "use control-plane values".
-const buildInputsBlock = (
-  inputs: Array<{ name?: string; default?: string }>
-): string => {
-  if (inputs.length === 0) return ''
-
-  const nameWidth = Math.max(
-    ...inputs.map((input) => (input.name ?? '').length)
-  )
-  const lines = inputs.map(
-    (input) =>
-      `    ${padTo(input.name ?? '', nameWidth)} = "${input.default ?? ''}"`
-  )
-
-  return `\n\n  inputs = {\n${lines.join('\n')}\n  }`
-}
-
-// `secrets = { ... }`. Auto-generated secrets are minted by the stack itself, so only
-// the customer-supplied ones belong in the snippet. Values come from the root-level
-// `variable` blocks, which Terraform populates from `TF_VAR_*`.
-const buildSecretsBlock = (secrets: Array<{ name?: string }>): string => {
-  if (secrets.length === 0) return ''
-
-  const width = Math.max(...secrets.map((secret) => (secret.name ?? '').length))
-  const lines = secrets.map(
-    (secret) =>
-      `    ${padTo(secret.name ?? '', width)} = { value = var.${secret.name ?? ''} }`
-  )
-
-  return `\n\n  secrets = {\n${lines.join('\n')}\n  }`
-}
-
-// Root-level `variable` blocks for each customer secret. Terraform fills them from
-// `TF_VAR_<name>`, so no real value is ever written to main.tf.
-const buildSecretVariablesBlock = (
-  secrets: Array<{ name?: string; description?: string }>
-): string => {
-  if (secrets.length === 0) return ''
-
-  const blocks = secrets.map((secret) => {
-    const description = secret.description?.trim()
-    // Widths match what `terraform fmt` would produce for the attributes present.
-    const width = description ? 'description'.length : 'sensitive'.length
-    const attrs = [
-      `  ${padTo('type', width)} = string`,
-      `  ${padTo('sensitive', width)} = true`,
-      ...(description
-        ? [`  ${padTo('description', width)} = "${description}"`]
-        : []),
-    ]
-    return `variable "${secret.name ?? ''}" {\n${attrs.join('\n')}\n}`
-  })
-
-  return `\n\n${blocks.join('\n\n')}`
-}
-
-// `export TF_VAR_<name>='<placeholder>'` lines, shown alongside both auth methods
-// since secrets are needed regardless of how the module authenticates.
-const buildSecretExports = (secrets: Array<{ name?: string }>): string =>
-  secrets
-    .map(
-      (secret) =>
-        `export TF_VAR_${secret.name ?? ''}='<${(secret.name ?? '').replace(/_/g, '-')}-value>'`
-    )
-    .join('\n')
-
-// OIDC auth is hidden until the experience is polished and fully tested; flip
-// this to restore the Static token / OIDC toggle.
-const OIDC_AUTH_ENABLED = false
-
-// Directions for the published nuonco/stack/aws module, which reads its whole config
-// from the API. Distinct from TerraformTab, which clones install-stacks and is driven
-// by generated tfvars.
-const TFModuleTab = ({ orgId, installId, installAwsRegion }: ITFModuleTab) => {
-  const queryClient = useQueryClient()
-  const { addModal } = useSurfaces()
-  const [authMethod, setAuthMethod] = useState<'token' | 'oidc'>('token')
-  // Only fetched once the OIDC pane is opened; most customers never need this list.
-  const { data: trustPolicies } = useOIDCTrustPolicies({
-    enabled: OIDC_AUTH_ENABLED && authMethod === 'oidc',
-  })
-  const {
-    data: serviceAccount,
-    isLoading,
-    isError,
-  } = useStackServiceAccount({
-    installId,
-    orgId,
-    enabled: true,
-  })
-
-  // Defaults to a day rather than the modal's usual year: this credential is pasted
-  // in by hand, so it is more exposed than one held by a service. Every other
-  // duration is still selectable.
-  const openCreateToken = () =>
-    addModal(
-      <CreateServiceAccountTokenModalContainer
-        accountId={serviceAccount?.account_id ?? ''}
-        identity={serviceAccount?.email ?? 'this install stack'}
-        defaultDuration="24h"
-        tokenName={`stack-${installId}`}
-        onCreated={() =>
-          queryClient.invalidateQueries({
-            queryKey: ['stack-service-account', installId],
-          })
-        }
-      />
-    )
-
-  // Derived from the timestamp rather than has_live_token, so the label stays honest
-  // if only one of the two arrives.
-  const liveUntil =
-    serviceAccount?.has_live_token && serviceAccount.expires_at
-      ? new Date(serviceAccount.expires_at).toLocaleString()
-      : null
-
+// The AWS half of the TF Module tab: which providers to require, and the module
+// source. Everything else — auth, inputs, secrets, the step layout — is shared.
+const AWSTFModuleTab = ({
+  orgId,
+  installId,
+  installAwsRegion,
+}: IAWSTFModuleTab) => {
   const region = installAwsRegion ?? '<your-install-region>'
 
-  // While the app config is still resolving, the snippet renders without the inputs
-  // and secrets blocks rather than blocking the rest of the directions.
-  const { appConfig } = useInstallAppConfig()
-
-  const customerInputs = useMemo(() => {
-    const declared = appConfig?.input?.inputs ?? []
-    const grouped = (appConfig?.input?.input_groups ?? []).flatMap(
-      (group) => group.app_inputs ?? []
-    )
-    const seen = new Set<string>()
-    return [...declared, ...grouped].filter((input) => {
-      if (!input.name || input.source !== 'customer') return false
-      if (seen.has(input.name)) return false
-      seen.add(input.name)
-      return true
-    })
-  }, [appConfig?.input?.inputs, appConfig?.input?.input_groups])
-
-  // Secrets carry no vendor/customer flag: everything not auto-generated is the
-  // customer's to provide.
-  const customerSecrets = useMemo(
-    () =>
-      (appConfig?.secrets?.secrets ?? []).filter(
-        (secret) => !!secret.name && !secret.auto_generate
-      ),
-    [appConfig?.secrets?.secrets]
-  )
-
-  const inputsBlock = useMemo(
-    () => buildInputsBlock(customerInputs),
-    [customerInputs]
-  )
-  const secretsBlock = useMemo(
-    () => buildSecretsBlock(customerSecrets),
-    [customerSecrets]
-  )
-  const secretVariablesBlock = useMemo(
-    () => buildSecretVariablesBlock(customerSecrets),
-    [customerSecrets]
-  )
-  const secretExports = useMemo(
-    () => buildSecretExports(customerSecrets),
-    [customerSecrets]
-  )
-
-  const mainTf = `terraform {
+  const buildMainTf = ({
+    installId: id,
+    inputsBlock,
+    secretsBlock,
+    secretVariablesBlock,
+  }: IMainTfParts) => `terraform {
   required_providers {
     aws   = { source = "hashicorp/aws" }
     stack = { source = "nuonco/stack" }
@@ -750,227 +589,14 @@ module "aws_stack" {
   source  = "nuonco/stack/aws"
   version = "~> 0.2"
 
-  install_id = "${installId ?? '<install-id>'}"${inputsBlock}${secretsBlock}
+  install_id = "${id}"${inputsBlock}${secretsBlock}
 }${secretVariablesBlock}`
 
-  // Always a placeholder: the token value is shown once, in the create modal.
-  const authCmd = `export NUON_API_TOKEN='<api-token>'`
-  const applyCmd = `terraform init && terraform apply`
-
   return (
-    <div className="flex flex-col gap-4 pt-4">
-      <div className="flex flex-col gap-4">
-        <Text variant="base" weight="strong">
-          1. Create your Terraform configuration
-        </Text>
-        <Card>
-          <span className="flex justify-between items-center">
-            <Text>
-              Save this as <code>main.tf</code>
-            </Text>
-            <ClickToCopyButton textToCopy={mainTf} />
-          </span>
-          <Code variant="preformated">{mainTf}</Code>
-        </Card>
-        {secretExports ? (
-          <Card>
-            <span className="flex justify-between items-center">
-              <Text>Export the app&apos;s secret values.</Text>
-              <ClickToCopyButton textToCopy={secretExports} />
-            </span>
-            <Code variant="preformated">{secretExports}</Code>
-          </Card>
-        ) : null}
-      </div>
-
-      <Divider />
-
-      <div className="flex flex-col gap-4">
-        <span className="flex justify-between items-center gap-4">
-          <Text variant="base" weight="strong">
-            2. Authenticate
-          </Text>
-          {OIDC_AUTH_ENABLED ? (
-            <ToggleButton<'token' | 'oidc'>
-              value={authMethod}
-              onChange={setAuthMethod}
-              options={[
-                { value: 'token', label: 'Static token' },
-                { value: 'oidc', label: 'OIDC' },
-              ]}
-            />
-          ) : null}
-        </span>
-        {OIDC_AUTH_ENABLED && authMethod === 'oidc' ? (
-          <OIDCAuthPane
-            installId={installId}
-            policyNames={(trustPolicies ?? [])
-              .map((policy) => policy.name ?? '')
-              .filter(Boolean)}
-          />
-        ) : (
-          <StaticTokenAuthPane
-            authCmd={authCmd}
-            isLoading={isLoading}
-            isError={isError}
-            liveUntil={liveUntil}
-            canCreate={!!serviceAccount?.account_id}
-            onCreateToken={openCreateToken}
-          />
-        )}
-      </div>
-
-      <Divider />
-
-      <div className="flex flex-col gap-4">
-        <Text variant="base" weight="strong">
-          3. Apply
-        </Text>
-        <Card>
-          <span className="flex justify-between items-center">
-            <Text>Initialize the module and create the stack</Text>
-            <ClickToCopyButton textToCopy={applyCmd} />
-          </span>
-          <Code variant="preformated">{applyCmd}</Code>
-        </Card>
-      </div>
-    </div>
-  )
-}
-
-const StaticTokenAuthPane = ({
-  authCmd,
-  isLoading,
-  isError,
-  liveUntil,
-  canCreate,
-  onCreateToken,
-}: {
-  authCmd: string
-  isLoading: boolean
-  isError: boolean
-  liveUntil: string | null
-  canCreate: boolean
-  onCreateToken: () => void
-}) => {
-  return (
-    <>
-      {isError ? (
-        <Text variant="subtext" theme="neutral">
-          This install stack has no service account yet. Reprovision the install
-          to create one, then reload this page.
-        </Text>
-      ) : null}
-      <Card>
-        <span className="flex justify-between items-center">
-          <Text>
-            This token authorizes the module to read its configuration. Treat it
-            as a secret.
-          </Text>
-          <ClickToCopyButton textToCopy={authCmd} />
-        </span>
-        <Code variant="preformated">{authCmd}</Code>
-        {/* Nothing to offer until the service account resolves; the guidance above
-              already explains why it might not. */}
-        {isLoading || isError || !canCreate ? null : (
-          <span className="flex justify-between items-center gap-4">
-            <Text variant="subtext" theme="neutral">
-              {liveUntil
-                ? `A token is active until ${liveUntil}. Creating another does not revoke it unless you ask it to.`
-                : 'No token yet. Create one to get its value — it is shown only once.'}
-            </Text>
-            <Button size="sm" variant="secondary" onClick={onCreateToken}>
-              Create token
-            </Button>
-          </span>
-        )}
-      </Card>
-    </>
-  )
-}
-
-// The alternative to handing a customer a token at all: Actions mints an ID token per
-// run and the control plane trades it for a short-lived Nuon token.
-const OIDCAuthPane = ({
-  installId,
-  policyNames,
-}: {
-  installId?: string
-  policyNames: string[]
-}) => {
-  const config = useConfig()
-  const policyName = `stack-${installId ?? 'install'}`
-  const existing = policyNames.includes(policyName)
-
-  // The runner API, not the public one the OIDC settings page prefills: the SDK
-  // requests its ID token with the URL it talks to and the control plane compares the
-  // audience literally, so prefilling this means the two agree with no extra config.
-  const audience = config.runnerApiUrl ?? ''
-
-  const workflowSnippet = `permissions:
-  id-token: write
-  contents: read
-
-env:
-  NUON_ORG_ID: \${{ vars.NUON_ORG_ID }}`
-
-  return (
-    <>
-      <Card>
-        <span className="flex justify-between items-center gap-4">
-          <Text>
-            A trust policy tells Nuon which repository and branch may exchange
-            an OIDC token for access to this org.
-          </Text>
-          {/* Without an audience the policy would be created with a blank one and
-              reject every token, so this offers nothing rather than something
-              broken. */}
-          {audience ? (
-            <CreateOIDCTrustPolicyButton
-              variant="secondary"
-              size="sm"
-              lockPreset
-              repoSource="manual"
-              githubAudience={audience}
-              defaultRole="org_admin"
-              defaultName={policyName}
-              reservedNames={policyNames}
-            >
-              {existing ? 'Create another' : 'Create trust policy'}
-            </CreateOIDCTrustPolicyButton>
-          ) : null}
-        </span>
-        {audience ? null : (
-          <Text variant="subtext" theme="neutral">
-            This control plane has not published its runner API URL, which the
-            policy needs as its audience. Set <code>NUON_RUNNER_API_URL</code>{' '}
-            on the dashboard and reload.
-          </Text>
-        )}
-        {existing ? (
-          <Text variant="subtext" theme="neutral">
-            A policy named <code>{policyName}</code> already exists. Check it
-            covers the repository and branch running this Terraform before
-            creating another.
-          </Text>
-        ) : null}
-      </Card>
-
-      <Card>
-        <span className="flex justify-between items-center">
-          <Text>
-            Add this to the workflow that applies the Terraform. No{' '}
-            <code>NUON_API_TOKEN</code>.
-          </Text>
-          <ClickToCopyButton textToCopy={workflowSnippet} />
-        </span>
-        <Code variant="preformated">{workflowSnippet}</Code>
-      </Card>
-
-      <Text variant="subtext" theme="neutral">
-        Without <code>id-token: write</code> the workflow cannot mint an ID
-        token and the provider falls back to looking for a static token.
-      </Text>
-    </>
+    <TFModuleTab
+      orgId={orgId}
+      installId={installId}
+      buildMainTf={buildMainTf}
+    />
   )
 }
