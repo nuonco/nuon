@@ -135,8 +135,6 @@ func (s *service) AuthState(c *gin.Context) {
 		zap.String("account_id", account.ID),
 		zap.String("email", account.Email))
 
-	s.recordMarketingConsent(c.Request.Context(), sessionData, account)
-
 	// Verify/authorize the user against allowed domains, whitelists, etc.
 	if err := s.verifyUser(userInfo); err != nil {
 		s.l.Warn("user not authorized", zap.Error(err))
@@ -167,28 +165,6 @@ func (s *service) AuthState(c *gin.Context) {
 
 	// No requested URL - redirect to success page
 	s.redirect302(c, "/success")
-}
-
-// recordMarketingConsent persists an opted-in consent checkbox onto the account. It is set-only
-// (an unchecked box on a later login is not a revocation) and never fails the login — losing a
-// consent bit is acceptable, losing a sign-in is not.
-func (s *service) recordMarketingConsent(ctx context.Context, sessionData *SessionData, account *app.Account) {
-	if !sessionData.MarketingConsent || account.MarketingConsent {
-		return
-	}
-
-	res := s.db.WithContext(ctx).
-		Model(&app.Account{}).
-		Where(app.Account{ID: account.ID}).
-		Update("marketing_consent", true)
-	if res.Error != nil {
-		s.l.Warn("failed to record marketing consent",
-			zap.String("account_id", account.ID),
-			zap.Error(res.Error))
-		return
-	}
-
-	s.l.Info("recorded marketing consent", zap.String("account_id", account.ID))
 }
 
 // verifyUser checks if the user is authorized to access the system.
