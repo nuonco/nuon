@@ -103,7 +103,7 @@ const BranchTemplate = () => {
 
   return (
     <>
-      <PageTitle title={`${branch.name} | ${app.name}`} />
+      <PageTitle segments={[branch?.name, app?.name]} />
       {!isDetailRoute ? (
         <PageHeader>
           <div className="flex flex-col gap-4 w-full">

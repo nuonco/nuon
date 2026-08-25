@@ -39,7 +39,7 @@ export const RunbookDetailLayout = () => {
 
   return (
     <PageSection flush className="flex-1">
-      <PageTitle title={`${runbook?.name ?? 'Runbook'} | ${app?.name}`} />
+      <PageTitle segments={[runbook?.name ?? 'Runbook', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

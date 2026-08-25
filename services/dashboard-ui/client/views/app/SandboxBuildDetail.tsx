@@ -130,7 +130,7 @@ export const SandboxBuildDetail = () => {
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      <PageTitle title={`Sandbox Build | ${app?.name}`} />
+      <PageTitle segments={['Sandbox build', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

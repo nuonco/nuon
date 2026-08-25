@@ -13,7 +13,7 @@ export const ProcessSystemLogs = () => {
 
   return (
     <PageSection flush>
-      <PageTitle title={`System logs | ${install?.name}`} />
+      <PageTitle segments={['System logs', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

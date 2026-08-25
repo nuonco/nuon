@@ -67,7 +67,7 @@ const SandboxRunLayoutInner = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Sandbox run | ${install?.name}`} />
+      <PageTitle segments={['Sandbox run', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

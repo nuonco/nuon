@@ -114,7 +114,7 @@ const DeployLayoutInner = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Deploy | ${install?.name}`} />
+      <PageTitle segments={['Deploy', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

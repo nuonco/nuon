@@ -20,7 +20,7 @@ export const PoliciesLayout = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Policies | ${app?.name}`} />
+      <PageTitle segments={['Policies', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

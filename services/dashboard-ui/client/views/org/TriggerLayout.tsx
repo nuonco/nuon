@@ -26,7 +26,7 @@ export const TriggerLayout = () => {
   const base = `/${org?.id}/settings/triggers/${triggerId}`
   return (
     <>
-      <PageTitle title={`${trigger?.name || 'Trigger'} | ${org?.name}`} />
+      <PageTitle title={trigger?.name || 'Trigger'} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

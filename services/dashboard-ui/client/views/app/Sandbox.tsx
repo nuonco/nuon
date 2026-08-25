@@ -36,7 +36,7 @@ export const Sandbox = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Sandbox | ${app?.name}`} />
+      <PageTitle segments={['Sandbox', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

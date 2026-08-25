@@ -36,7 +36,7 @@ export const Readme = () => {
 
   return (
     <PageSection className="!pb-6">
-      <PageTitle title={`README | ${app?.name}`} />
+      <PageTitle segments={['README', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

@@ -75,7 +75,7 @@ export const InstallConfigs = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Configs | ${install?.name}`} />
+      <PageTitle segments={['Configs', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

@@ -42,7 +42,7 @@ export const Slack = () => {
 
   return (
     <>
-      <PageTitle title={`Slack | ${org?.name}`} />
+      <PageTitle title="Slack" />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org.id}`, text: org?.name },
