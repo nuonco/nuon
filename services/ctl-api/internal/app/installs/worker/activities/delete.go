@@ -39,6 +39,12 @@ func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 			Delete(&app.QueueSignal{}); res.Error != nil {
 			return dbgenerics.TemporalGormError(res.Error, "unable to delete queue signals: %w")
 		}
+
+	// Stack service accounts are only reachable by naming convention while the
+	// stack rows still exist; see DeleteInstallStackServiceAccounts.
+	if err := a.acctClient.DeleteInstallStackServiceAccounts(ctx, req.InstallID); err != nil {
+		return err
+
 	}
 
 	res := a.db.WithContext(ctx).

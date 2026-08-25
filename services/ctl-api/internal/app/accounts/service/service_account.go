@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -114,16 +115,23 @@ func (s *service) getOrgServiceAccount(ctx context.Context, orgID, accountID str
 // account_roles org index. Joining accounts to account_roles in the list query
 // instead lets the planner walk the whole accounts table in email order to
 // satisfy the ORDER BY and LIMIT, which took tens of seconds on a cold cache.
-func (s *service) orgServiceAccountIDs(ctx context.Context, orgID string, includeRunners bool) ([]string, error) {
+func (s *service) orgServiceAccountIDs(ctx context.Context, orgID string, includeRunners, includeStacks bool) ([]string, error) {
 	tx := s.db.WithContext(ctx).
 		Model(&app.AccountRole{}).
 		Joins("JOIN accounts ON accounts.id = account_roles.account_id AND accounts.deleted_at = 0 AND accounts.account_type = ?", app.AccountTypeService).
 		Where(app.AccountRole{OrgID: generics.NewNullString(orgID)})
 
+	excludedRoleTypes := []app.RoleType{}
 	if !includeRunners {
+		excludedRoleTypes = append(excludedRoleTypes, app.RoleTypeRunner)
+	}
+	if !includeStacks {
+		excludedRoleTypes = append(excludedRoleTypes, app.RoleTypeStack)
+	}
+	if len(excludedRoleTypes) > 0 {
 		tx = tx.
 			Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0").
-			Where("roles.role_type != ?", app.RoleTypeRunner)
+			Where("roles.role_type NOT IN ?", excludedRoleTypes)
 	}
 
 	accountIDs := []string{}
@@ -141,6 +149,7 @@ func (s *service) orgServiceAccountIDs(ctx context.Context, orgID string, includ
 // @Param					limit			query	int		false	"limit of results to return"	Default(10)
 // @Param					page			query	int		false	"page number of results to return"	Default(0)
 // @Param					include_runners	query	bool	false	"include service accounts with the runner role (excluded by default)"
+// @Param					include_stacks	query	bool	false	"include service accounts with the stack role (excluded by default)"
 // @Tags					accounts
 // @Accept					json
 // @Produce				json
@@ -159,8 +168,9 @@ func (s *service) ListServiceAccounts(ctx *gin.Context) {
 	}
 
 	includeRunners := ctx.Query("include_runners") == "true"
+	includeStacks := ctx.Query("include_stacks") == "true"
 
-	accountIDs, err := s.orgServiceAccountIDs(ctx, org.ID, includeRunners)
+	accountIDs, err := s.orgServiceAccountIDs(ctx, org.ID, includeRunners, includeStacks)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -433,6 +443,10 @@ type CreateServiceAccountTokenRequest struct {
 	// Duration defaults to one year.
 	Duration string `json:"duration" default:"8760h"`
 
+	// Name labels the token wherever it is listed. Defaults to the service account's
+	// identity, the only thing distinguishing several of these.
+	Name string `json:"name"`
+
 	Invalidate bool `json:"invalidate"`
 }
 
@@ -504,7 +518,23 @@ func (s *service) CreateServiceAccountToken(ctx *gin.Context) {
 		}
 	}
 
-	token, err := s.acctClient.CreateToken(ctx, acct.Email, dur)
+	caller, err := cctx.AccountFromGinContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		name = acct.Email
+	}
+
+	// createStaticToken rather than acctClient.CreateToken: only this one stamps
+	// org_id, name, role, and token_type=static, the columns ListStaticTokens filters
+	// and displays on. Tokens made the other way never appear on the org's API tokens
+	// page, so they cannot be revoked there. CreateToken stays for its machine-internal
+	// callers, which do not belong on a page for tokens a person manages.
+	token, err := s.createStaticToken(ctx, acct, org.ID, caller.ID, name, orgRoleType(acct, org.ID), dur)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create token: %w", err))
 		return
@@ -513,4 +543,17 @@ func (s *service) CreateServiceAccountToken(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, CreateServiceAccountTokenResponse{
 		Token: token.Token,
 	})
+}
+
+// orgRoleType reports the role an account holds in an org, for the token's Role
+// column. Display only — authorization resolves through the account's roles — so
+// failing to find one costs a label, not access.
+func orgRoleType(acct *app.Account, orgID string) app.RoleType {
+	for _, role := range acct.Roles {
+		if role.OrgID.ValueString() == orgID {
+			return role.RoleType
+		}
+	}
+
+	return ""
 }

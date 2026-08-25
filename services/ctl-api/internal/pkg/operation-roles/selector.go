@@ -454,6 +454,13 @@ func getRoleMap(appCfg *app.AppConfig, stackOutputs app.StackOutput, installStat
 		if err != nil {
 			return nil, fmt.Errorf("unable to fetch role ID for %q: %w", r.name, err)
 		}
+		// An empty ID means the stack did not create the role — disabled in the
+		// customer's module, or granted no policies. Leaving it out lets
+		// resolveRoleARN return its "please enable it in install stack" error
+		// instead of handing an empty ARN to cloud auth.
+		if roleID == "" {
+			continue
+		}
 		availableRoles[rendered] = roleID
 	}
 
