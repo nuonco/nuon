@@ -99,11 +99,9 @@ export const WorkflowDetailsSection = ({
 
             {install && (
               <LabeledValue label="App">
-                <Text variant="subtext">
-                  <Link href={`/${orgId}/apps/${install.app_id}`}>
-                    {install?.app?.name}
-                  </Link>
-                </Text>
+                <Link href={`/${orgId}/apps/${install.app_id}`}>
+                  {install?.app?.name}
+                </Link>
               </LabeledValue>
             )}
 

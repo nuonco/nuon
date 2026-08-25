@@ -146,7 +146,7 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body">
-          <Link href={info.row.original.nameHref}>
+          <Link href={info.row.original.nameHref} variant="inline">
             {info.getValue() as string}
           </Link>
         </Text>

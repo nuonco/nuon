@@ -158,15 +158,10 @@ export const PolicyDetail = () => {
                     <Link
                       key={comp}
                       href={`${appBase}/components/${componentId}`}
-                      className="flex items-center gap-2 rounded px-3 py-2 text-sm border border-cool-grey-200 dark:border-dark-grey-600 hover:bg-grey-50 dark:hover:bg-dark-grey-800 transition-colors"
+                      className="flex items-center gap-2 rounded px-3 py-2 border border-cool-grey-200 dark:border-dark-grey-600 hover:bg-grey-50 dark:hover:bg-dark-grey-800 transition-colors"
                     >
                       <Icon variant="CardsIcon" size={14} />
                       <Text variant="body">{comp}</Text>
-                      <Icon
-                        variant="ArrowSquareOutIcon"
-                        size={12}
-                        className="ml-auto text-grey-400"
-                      />
                     </Link>
                   ) : (
                     <div

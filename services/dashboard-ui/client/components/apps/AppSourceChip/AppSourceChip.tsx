@@ -22,7 +22,8 @@ export const AppSourceChip = ({
         <Link
           href={repoHref}
           isExternal
-          className="text-sm truncate max-w-72"
+          textVariant="body"
+          className="truncate max-w-72"
         >
           {repo}
         </Link>

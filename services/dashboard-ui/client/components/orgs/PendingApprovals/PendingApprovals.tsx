@@ -60,7 +60,8 @@ export const PendingApprovals = ({ orgId, approvals, activeWorkflows }: IPending
                 {href ? (
                   <Link
                     href={href}
-                    className="truncate text-sm font-strong flex items-center gap-2"
+                    textVariant="body"
+                    className="truncate font-strong flex items-center gap-2"
                   >
                     {installName && (
                       <>

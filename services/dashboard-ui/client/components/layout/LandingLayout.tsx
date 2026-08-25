@@ -72,28 +72,32 @@ export const LandingLayout = ({ children }: { children: ReactNode }) => {
                 </Text>
                 <div className="flex flex-col gap-4">
                   <Link
-                    className="text-sm !text-cool-grey-50 hover:text-cool-grey-100 hover:underline"
+                    className="!text-cool-grey-50 hover:text-cool-grey-100 hover:underline"
+                    textVariant="body"
                     target="_blank"
                     href="https://nuon.co/about"
                   >
                     About
                   </Link>
                   <Link
-                    className="text-sm !text-cool-grey-50 hover:text-cool-grey-100 hover:underline"
+                    className="!text-cool-grey-50 hover:text-cool-grey-100 hover:underline"
+                    textVariant="body"
                     target="_blank"
                     href="https://docs.nuon.co/pricing"
                   >
                     Pricing
                   </Link>
                   <Link
-                    className="text-sm !text-cool-grey-50 hover:text-cool-grey-100 hover:underline"
+                    className="!text-cool-grey-50 hover:text-cool-grey-100 hover:underline"
+                    textVariant="body"
                     target="_blank"
                     href="https://docs.nuon.co/get-started/introduction"
                   >
                     Docs
                   </Link>
                   <Link
-                    className="text-sm !text-cool-grey-50 hover:text-cool-grey-100 hover:underline"
+                    className="!text-cool-grey-50 hover:text-cool-grey-100 hover:underline"
+                    textVariant="body"
                     target="_blank"
                     href="https://nuon.co/blog"
                   >
@@ -107,7 +111,8 @@ export const LandingLayout = ({ children }: { children: ReactNode }) => {
                 </Text>
                 <div className="flex flex-col gap-4">
                   <Link
-                    className="text-sm !text-cool-grey-50 hover:text-cool-grey-100 hover:underline"
+                    className="!text-cool-grey-50 hover:text-cool-grey-100 hover:underline"
+                    textVariant="body"
                     target="_blank"
                     href="https://nuon.co/terms"
                   >

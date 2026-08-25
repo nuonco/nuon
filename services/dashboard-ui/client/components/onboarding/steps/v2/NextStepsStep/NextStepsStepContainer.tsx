@@ -139,11 +139,9 @@ function StepRow({ step }: { step: INextStep }) {
         <Text variant="base" weight="strong">{step.title}</Text>
         <Text variant="body" theme="neutral">{step.description}</Text>
       </div>
-      <Text variant="subtext" className="shrink-0 ml-4">
-        <Link href={step.href} isExternal>
-          Learn more <Icon variant="ArrowSquareOutIcon" size={12} />
-        </Link>
-      </Text>
+      <Link href={step.href} isExternal className="shrink-0 ml-4">
+        Learn more
+      </Link>
     </Card>
   )
 }

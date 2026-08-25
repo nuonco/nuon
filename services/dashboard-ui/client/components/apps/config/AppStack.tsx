@@ -27,21 +27,17 @@ export const AppStack = ({ appConfig }: IAppStack) => {
 
       {stackConfig?.runner_nested_template_url ? (
         <LabeledValue label="Runner template URL">
-          <Text variant="subtext">
-            <Link href={stackConfig?.runner_nested_template_url} isExternal>
-              {stackConfig?.runner_nested_template_url}
-            </Link>
-          </Text>
+          <Link href={stackConfig?.runner_nested_template_url} isExternal>
+            {stackConfig?.runner_nested_template_url}
+          </Link>
         </LabeledValue>
       ) : null}
 
       {stackConfig?.vpc_nested_template_url ? (
         <LabeledValue label="VPC template URL">
-          <Text variant="subtext">
-            <Link href={stackConfig?.vpc_nested_template_url} isExternal>
-              {stackConfig?.vpc_nested_template_url}
-            </Link>
-          </Text>
+          <Link href={stackConfig?.vpc_nested_template_url} isExternal>
+            {stackConfig?.vpc_nested_template_url}
+          </Link>
         </LabeledValue>
       ) : null}
 

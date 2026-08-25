@@ -45,7 +45,7 @@ export const ComponentDependencies = ({
       <div className="flex items-center gap-2 flex-wrap">
         {visible.map((comp) => (
           <Badge key={comp.id} variant="code">
-            <Link href={`${basePath}/${comp.id}`}>
+            <Link href={`${basePath}/${comp.id}`} variant="inline">
               {comp.name}
             </Link>
           </Badge>
