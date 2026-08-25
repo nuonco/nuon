@@ -211,6 +211,13 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		return errors.Wrap(err, "unable to ensure install phone home secret")
 	}
 
+	// The Terraform module authenticates to the runner API with this token, so it has
+	// to exist before the directions are rendered for the customer. Convergent: a
+	// second call for a stack that already holds a live token is a no-op.
+	if _, err := activities.AwaitEnsureInstallStackServiceAccountByInstallStackID(ctx, stack.ID); err != nil {
+		return errors.Wrap(err, "unable to ensure install stack service account")
+	}
+
 	tmplByts := []byte{}
 	checksum := ""
 	inp := &stacks.TemplateInput{
