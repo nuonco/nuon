@@ -22,6 +22,7 @@ const (
 	TokenTypeCanary      TokenType = "canary"
 	TokenTypeNuon        TokenType = "nuon"
 	TokenTypeFederated   TokenType = "federated"
+	TokenTypeOAuth       TokenType = "oauth"
 )
 
 type Token struct {

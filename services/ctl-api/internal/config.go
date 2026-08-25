@@ -22,6 +22,7 @@ func init() {
 	config.RegisterDefault("auth_http_port", "8084")
 	config.RegisterDefault("admin_dashboard_http_port", "8087")
 	config.RegisterDefault("slack_http_port", "8089")
+	config.RegisterDefault("mcp_http_port", "8088")
 	// Slack secrets: dev-only insecure defaults so the slack-libs FX module
 	// (statejwt.New) and signing.Middleware construction don't fail boot
 	// when no SLACK_* env is set. Prod overrides via env. Same pattern as
@@ -185,6 +186,11 @@ func init() {
 	config.RegisterDefault("nuon_auth_token_ttl", 24*60)
 	config.RegisterDefault("nuon_auth_allowed_domains", []string{}) // defaults to an empty list so the empty string doesn't raise errors
 
+	// OAuth 2.0 authorization server (used by MCP clients)
+	config.RegisterDefault("oauth_dcr_enabled", true)           // allow dynamic client registration (RFC 7591)
+	config.RegisterDefault("oauth_access_token_ttl", 60)        // minutes
+	config.RegisterDefault("oauth_refresh_token_ttl", 30*24*60) // minutes (30 days)
+
 	// Blob storage configuration
 	config.RegisterDefault("blob_storage_bucket", "nuon-dev")
 	config.RegisterDefault("blob_storage_region", "us-west-2")
@@ -222,6 +228,7 @@ type Config struct {
 	AdminDashboardHTTPPort string `config:"admin_dashboard_http_port" validate:"required"`
 	AdminDashboardDistDir  string `config:"admin_dashboard_dist_dir"`
 	SlackHTTPPort          string `config:"slack_http_port" validate:"required"`
+	MCPHTTPPort            string `config:"mcp_http_port"`
 
 	WorkerHealthcheckPort    string `config:"worker_healthcheck_port"`
 	WorkerHealthcheckEnabled bool   `config:"worker_healthcheck_enabled"`
@@ -338,6 +345,11 @@ type Config struct {
 	// OIDC workload identity federation
 	OIDCFederationEnabled              bool `config:"oidc_federation_enabled"`                // enables the /v1/oidc token exchange and trust policy endpoints (default off)
 	OIDCFederationAllowInsecureIssuers bool `config:"oidc_federation_allow_insecure_issuers"` // allow http:// issuer URLs in trust policies (local dev only)
+
+	// OAuth 2.0 authorization server (MCP clients)
+	OAuthDCREnabled      bool `config:"oauth_dcr_enabled"`
+	OAuthAccessTokenTTL  int  `config:"oauth_access_token_ttl"`  // minutes
+	OAuthRefreshTokenTTL int  `config:"oauth_refresh_token_ttl"` // minutes
 
 	// Nuon Auth: Default Provider ConfigS
 	NuonAuthProviderType string `config:"nuon_auth_provider_type"` // NOTE: becomes required after auth is in GA
