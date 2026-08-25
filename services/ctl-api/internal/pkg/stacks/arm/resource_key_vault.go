@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"unicode"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
@@ -24,19 +23,10 @@ func azureKeyVaultSecretName(name string) string {
 	return strings.ReplaceAll(name, "_", "-")
 }
 
-// azureSecretParamName turns an app-config secret name into an ARM parameter name.
-// The portal derives its form label from the parameter name, so this is camelCased
-// rather than carrying the config's underscores through: db_password reads as
-// "Secret Db Password".
+// azureSecretParamName turns an app-config secret name into an ARM parameter name:
+// db_password reads as "Secret Db Password" on the portal's deployment form.
 func azureSecretParamName(name string) string {
-	out := "secret"
-	for _, part := range strings.FieldsFunc(name, func(r rune) bool {
-		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
-	}) {
-		r := []rune(part)
-		out += strings.ToUpper(string(r[0])) + string(r[1:])
-	}
-	return out
+	return camelParamName("secret", name)
 }
 
 type azureSecret struct {

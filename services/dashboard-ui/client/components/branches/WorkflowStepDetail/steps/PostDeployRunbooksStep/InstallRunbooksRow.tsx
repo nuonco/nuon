@@ -1,5 +1,4 @@
 import { CloudPlatform } from '@/components/common/CloudPlatform'
-import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
@@ -31,9 +30,9 @@ export const InstallRunbooksRow = ({
     <div className="flex flex-col">
       <div className="flex items-center gap-3 px-4 py-3">
         {installHref ? (
-          <Link href={installHref} className="text-sm font-strong truncate">
-            {install?.name || installId}
-          </Link>
+          <Text variant="body" weight="strong" nowrap className="truncate">
+            <Link href={installHref} variant="inline">{install?.name || installId}</Link>
+          </Text>
         ) : (
           <Text variant="body" weight="strong" nowrap className="block truncate">
             {install?.name || installId}
@@ -69,10 +68,7 @@ export const InstallRunbooksRow = ({
             <Status status={runbook.status || 'pending'} variant="badge" className="shrink-0" />
 
             {runbook.workflowHref && (
-              <Link href={runbook.workflowHref} className="text-sm shrink-0">
-                View run
-                <Icon variant="ArrowRightIcon" size={14} />
-              </Link>
+              <Link href={runbook.workflowHref} className="shrink-0">View run</Link>
             )}
           </div>
         ))}

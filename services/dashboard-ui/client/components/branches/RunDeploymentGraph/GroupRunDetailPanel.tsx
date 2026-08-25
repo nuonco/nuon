@@ -3,7 +3,6 @@ import { memo, useMemo, useState } from 'react'
 import { Panel } from '@/components/surfaces/Panel'
 import { Card } from '@/components/common/Card'
 import { ID } from '@/components/common/ID'
-import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Status } from '@/components/common/Status'
@@ -83,7 +82,6 @@ const GroupRunDetailContent = memo(({
                   className="flex w-fit items-center gap-1"
                 >
                   View workflow
-                  <Icon variant="ArrowRightIcon" size={14} />
                 </Link>
               )}
 

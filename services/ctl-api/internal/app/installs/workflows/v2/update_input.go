@@ -130,7 +130,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	// If sandbox needs reprovision, add sandbox reprovision steps before component deploys
 	if sandboxNeedsReprovision {
-		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install)
+		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install, true)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get sandbox reprovision steps")
 		}

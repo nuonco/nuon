@@ -113,7 +113,7 @@ export const RepositoriesSection = ({
                     family="mono"
                     weight="strong"
                   >
-                    <Link href={repo.html_url} isExternal>
+                    <Link href={repo.html_url} isExternal variant="inline">
                       {repo.full_name}
                     </Link>
 

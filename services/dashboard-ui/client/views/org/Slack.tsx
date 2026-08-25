@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Icon } from '@/components/common/Icon'
+import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -42,7 +42,7 @@ export const Slack = () => {
 
   return (
     <>
-      <PageTitle title={`Slack | ${org?.name}`} />
+      <PageTitle title="Slack" />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org.id}`, text: org?.name },
@@ -96,15 +96,9 @@ export const Slack = () => {
                 /nuon subscribe org=&lt;org-id&gt;
               </span>
               .{' '}
-              <a
-                href="https://docs.nuon.co/integrations/slack"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="text-primary-600 dark:text-primary-400 hover:underline inline-flex items-center gap-1"
-              >
+              <Link href="https://docs.nuon.co/integrations/slack" isExternal variant="inline">
                 Read the docs
-                <Icon variant="ArrowSquareOutIcon" size={14} />
-              </a>
+              </Link>
             </Text>
           </div>
         </PageSection>

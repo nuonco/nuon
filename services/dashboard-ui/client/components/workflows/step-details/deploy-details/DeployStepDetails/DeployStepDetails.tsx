@@ -48,23 +48,19 @@ export const DeployStepDetails = ({
               {deploy?.component_name} deployment
             </Text>
             {deploy?.component_id ? (
-              <Text variant="subtext">
-                <Link
-                  href={`/${orgId}/installs/${step?.owner_id}/components/${deploy.component_id}`}
-                >
-                  View component <Icon variant="CaretRightIcon" />
-                </Link>
-              </Text>
+              <Link
+                href={`/${orgId}/installs/${step?.owner_id}/components/${deploy.component_id}`}
+              >
+                View component
+              </Link>
             ) : null}
 
             {deploy?.component_id && deploy?.id ? (
-              <Text variant="subtext">
-                <Link
-                  href={`/${orgId}/installs/${step?.owner_id}/components/${deploy.component_id}/deploys/${deploy.id}`}
-                >
-                  View deploy logs <Icon variant="CaretRightIcon" />
-                </Link>
-              </Text>
+              <Link
+                href={`/${orgId}/installs/${step?.owner_id}/components/${deploy.component_id}/deploys/${deploy.id}`}
+              >
+                View deploy logs
+              </Link>
             ) : null}
           </>
         )}

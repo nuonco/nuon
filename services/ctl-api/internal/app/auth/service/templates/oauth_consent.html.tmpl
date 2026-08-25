@@ -1,0 +1,62 @@
+{{ define "auth/oauth_consent.tmpl" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {{template "head.tmpl"}}
+    <title>Authorize MCP Access | Nuon</title>
+</head>
+<body class="min-h-screen bg-gray-100 relative" style="background-image: url('https://nuon.co/Rightsideimage.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+    <div class="absolute inset-0 bg-cool-grey-100 opacity-50 dark:bg-dark-grey-950 dark:opacity-75"></div>
+    <main class="min-h-screen flex items-center justify-center p-4 relative z-10">
+        <div class="w-full max-w-md">
+            <div class="mb-8 -mt-24">
+                {{template "logo.tmpl"}}
+            </div>
+            <div class="bg-white dark:bg-dark-grey-900 rounded-lg shadow-sm p-8">
+                <h2 class="text-xl font-normal text-cool-grey-950 dark:text-cool-grey-50 mb-2">Authorize MCP Access</h2>
+                <p class="text-sm text-cool-grey-600 dark:text-cool-grey-400 mb-6">
+                    An MCP client is requesting access to your Nuon account. Choose the level of access to grant.
+                </p>
+
+                <div class="bg-cool-grey-50 dark:bg-dark-grey-800 rounded-md p-4 mb-6">
+                    <p class="text-sm text-cool-grey-700 dark:text-cool-grey-300">
+                        <span class="font-semibold">Signed in as:</span><br>
+                        {{ .Email }}
+                    </p>
+                </div>
+
+                <form action="/oauth/consent" method="POST">
+                    <input type="hidden" name="rid" value="{{ .RequestID }}">
+
+                    <div class="space-y-3 mb-6">
+                        <label class="flex items-start gap-3 p-4 border border-cool-grey-300 dark:border-cool-grey-700 rounded-md cursor-pointer hover:bg-cool-grey-50 dark:hover:bg-dark-grey-800">
+                            <input type="radio" name="scope" value="{{ .ReadOnlyScope }}" class="mt-1" {{ if not .DefaultAdmin }}checked{{ end }}>
+                            <span>
+                                <span class="block text-sm font-semibold text-cool-grey-950 dark:text-cool-grey-50">Read only</span>
+                                <span class="block text-xs text-cool-grey-500 dark:text-cool-grey-400">View apps, installs, and components. Cannot make changes.</span>
+                            </span>
+                        </label>
+                        <label class="flex items-start gap-3 p-4 border border-cool-grey-300 dark:border-cool-grey-700 rounded-md cursor-pointer hover:bg-cool-grey-50 dark:hover:bg-dark-grey-800">
+                            <input type="radio" name="scope" value="{{ .AdminScope }}" class="mt-1" {{ if .DefaultAdmin }}checked{{ end }}>
+                            <span>
+                                <span class="block text-sm font-semibold text-cool-grey-950 dark:text-cool-grey-50">Admin</span>
+                                <span class="block text-xs text-cool-grey-500 dark:text-cool-grey-400">Full access, including approving and deploying changes.</span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="space-y-3">
+                        <button type="submit" class="flex items-center justify-center w-full py-3 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold transition-colors">
+                            Authorize
+                        </button>
+                        <a href="/" class="flex items-center justify-center w-full py-3 px-4 bg-white dark:bg-dark-grey-800 border border-cool-grey-300 dark:border-cool-grey-700 rounded-md hover:bg-cool-grey-50 dark:hover:bg-dark-grey-700 text-cool-grey-700 dark:text-cool-grey-50 font-semibold transition-colors">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
+{{ end }}

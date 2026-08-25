@@ -3,6 +3,7 @@ package arm
 import (
 	"fmt"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
@@ -55,6 +56,7 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput, operati
 		"runnerSubnetId":      fmt.Sprintf("[reference('%s').outputs.runnerSubnetId.value]", vnetDeployment),
 		"customData":          t.buildRunnerCustomData(inp),
 		"commonTags":          "[variables('commonTags')]",
+		"runnerVmSize":        runnerVMSize(inp),
 	}
 
 	if len(userAssigned) > 0 {
@@ -125,7 +127,7 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 				"customData":     map[string]any{"value": customData},
 				"commonTags":     map[string]any{"value": "[variables('commonTags')]"},
 			},
-			"template": t.getDefaultRunnerTemplate(operationIDs),
+			"template": t.getDefaultRunnerTemplate(operationIDs, runnerVMSize(inp)),
 		},
 	}
 
@@ -134,7 +136,16 @@ func (t *Templates) getDefaultRunnerDeployment(inp *stacks.TemplateInput, operat
 	return deployment
 }
 
-func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdentity) map[string]any {
+// Settings.AWSInstanceType is not consulted: the generators resolve the platform default into it
+// before rendering, so it can never express "unset" — and on Azure it holds an AWS-shaped value.
+func runnerVMSize(inp *stacks.TemplateInput) string {
+	if inp.ConfiguredRunnerInstanceType != "" {
+		return inp.ConfiguredRunnerInstanceType
+	}
+	return app.DefaultAzureInstanceType
+}
+
+func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdentity, vmSize string) map[string]any {
 	identity := map[string]any{"type": "SystemAssigned"}
 	// The runner deployment is RG-targeted, so its inline template reads the
 	// identities at resource-group scope alongside them.
@@ -163,7 +174,7 @@ func (t *Templates) getDefaultRunnerTemplate(operationIDs []azureOperationIdenti
 				"location":   "[parameters('location')]",
 				"tags":       "[parameters('commonTags')]",
 				"sku": map[string]any{
-					"name":     "Standard_D2s_v3",
+					"name":     vmSize,
 					"tier":     "Standard",
 					"capacity": 1,
 				},

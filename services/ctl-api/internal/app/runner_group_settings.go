@@ -20,9 +20,11 @@ import (
 
 // Default runner machine/instance types per cloud platform.
 const (
-	DefaultAWSInstanceType   = "t3.medium"
-	DefaultGCPInstanceType   = "e2-medium"
-	DefaultAzureInstanceType = "Standard_B2s"
+	DefaultAWSInstanceType = "t3.medium"
+	DefaultGCPInstanceType = "e2-medium"
+	// Dsv5 is Microsoft's named replacement for the Dsv3 the install stack used to hardcode; v6
+	// needs NVMe/MANA-capable images and has patchier regional capacity.
+	DefaultAzureInstanceType = "Standard_D2s_v5"
 )
 
 // DefaultInstanceTypeForPlatform returns the default runner machine/instance type for a cloud platform.

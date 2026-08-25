@@ -36,7 +36,7 @@ export const Versions = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Versions | ${install?.name}`} />
+      <PageTitle segments={['Versions', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -62,7 +62,6 @@ export const Versions = () => {
             </Badge>
             <Link
               href={`/${org?.id}/apps/${install?.app_id}/branches/${install?.app_branch_id}`}
-              className="text-xs"
             >
               View branch
             </Link>
@@ -177,7 +176,6 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
           {version.app_branch_run?.workflow_id && version.app_branch_run?.app_branch?.id && org?.id && (
             <Link
               href={`/${org.id}/apps/${install?.app_id}/branches/${version.app_branch_run?.app_branch?.id}/runs/${version.app_branch_run.workflow_id}`}
-              className="text-xs"
             >
               View branch run
             </Link>
@@ -185,7 +183,6 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
           {version.workflow_id && org?.id && install?.id && (
             <Link
               href={`/${org.id}/installs/${install.id}/workflows/${version.workflow_id}`}
-              className="text-xs"
             >
               View workflow
             </Link>

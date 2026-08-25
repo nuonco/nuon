@@ -28,6 +28,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   suspended: 'error',
   'policy-failed': 'error',
   'failed-pending-retry': 'error',
+  'health-failed': 'error',
 
   'approval-denied': 'warn',
   'approval-awaiting': 'warn',
@@ -98,6 +99,7 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   'not-connected': 'XCircleIcon',
   'policy-failed': 'XCircleIcon',
   'failed-pending-retry': 'XCircleIcon',
+  'health-failed': 'XCircleIcon',
 
   'approval-denied': 'WarningIcon',
   'approval-awaiting': 'WarningIcon',

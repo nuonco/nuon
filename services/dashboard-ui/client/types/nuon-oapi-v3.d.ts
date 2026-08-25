@@ -6423,7 +6423,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.TokenType": "auth" | "auth0" | "admin" | "static" | "integration" | "canary" | "nuon" | "federated";
+    "app.TokenType": "auth" | "auth0" | "admin" | "static" | "integration" | "canary" | "nuon" | "federated" | "oauth";
     "app.TriggerFilter": {
       from?: string;
       op?: components["schemas"]["app.TriggerFilterType"];
@@ -30333,6 +30333,8 @@ export interface operations {
         page?: number;
         /** @description include service accounts with the runner role (excluded by default) */
         include_runners?: boolean;
+        /** @description include service accounts with the stack role (excluded by default) */
+        include_stacks?: boolean;
       };
     };
     responses: {

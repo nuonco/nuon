@@ -138,7 +138,7 @@ export const CurrentInputs = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Current inputs | ${install?.name}`} />
+      <PageTitle segments={['Current inputs', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

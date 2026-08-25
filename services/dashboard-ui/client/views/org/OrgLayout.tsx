@@ -6,7 +6,6 @@ import { getSidebarOpen } from '@/lib/cookies'
 import { getAPIVersion } from '@/lib'
 import { APIHealthProvider } from '@/providers/api-health-provider'
 import { BreadcrumbProvider } from '@/providers/breadcrumb-provider'
-import { PageTitleProvider } from '@/providers/page-title-provider'
 import { NotificationProvider } from '@/providers/notification-provider'
 import { OrgProvider } from '@/providers/org-provider'
 import { OrgStatusSSEProvider } from '@/providers/org-status-sse-provider'
@@ -39,36 +38,34 @@ export const OrgLayout = () => {
       <APIHealthProvider shouldPoll>
         <OrgProvider>
           <BreadcrumbProvider>
-            <PageTitleProvider>
-              <SidebarProvider initIsSidebarOpen={getSidebarOpen()}>
-                <ToastProvider>
-                  <OrgStatusSSEProvider>
-                    <ActiveWorkflowsProvider>
-                      <WorkflowApprovalsProvider>
-                        <SurfacesProvider>
-                          <SpotlightListener />
-                          <VCSConnectionSuccess />
-                          <MainLayout
-                            versions={{
-                              api: {
-                                git_ref: versions?.api?.git_ref ?? '',
-                                version: versions?.api?.version ?? '',
-                              },
-                              ui: {
-                                version: versions?.ui?.version ?? '',
-                              },
-                            }}
-                          >
-                            <Outlet />
-                            <OrgStatusBar />
-                          </MainLayout>
-                        </SurfacesProvider>
-                      </WorkflowApprovalsProvider>
-                    </ActiveWorkflowsProvider>
-                  </OrgStatusSSEProvider>
-                </ToastProvider>
-              </SidebarProvider>
-            </PageTitleProvider>
+            <SidebarProvider initIsSidebarOpen={getSidebarOpen()}>
+              <ToastProvider>
+                <OrgStatusSSEProvider>
+                  <ActiveWorkflowsProvider>
+                    <WorkflowApprovalsProvider>
+                      <SurfacesProvider>
+                        <SpotlightListener />
+                        <VCSConnectionSuccess />
+                        <MainLayout
+                          versions={{
+                            api: {
+                              git_ref: versions?.api?.git_ref ?? '',
+                              version: versions?.api?.version ?? '',
+                            },
+                            ui: {
+                              version: versions?.ui?.version ?? '',
+                            },
+                          }}
+                        >
+                          <Outlet />
+                          <OrgStatusBar />
+                        </MainLayout>
+                      </SurfacesProvider>
+                    </WorkflowApprovalsProvider>
+                  </ActiveWorkflowsProvider>
+                </OrgStatusSSEProvider>
+              </ToastProvider>
+            </SidebarProvider>
           </BreadcrumbProvider>
         </OrgProvider>
       </APIHealthProvider>

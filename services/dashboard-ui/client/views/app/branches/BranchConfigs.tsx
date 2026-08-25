@@ -26,7 +26,9 @@ const BranchConfigsContent = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Configs | ${branch?.name ?? 'Branch'} | ${app?.name}`} />
+      <PageTitle
+        segments={[branch?.name ? `${branch.name} configs` : 'Configs', app?.name]}
+      />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

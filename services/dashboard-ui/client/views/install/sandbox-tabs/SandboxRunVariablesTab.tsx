@@ -4,6 +4,8 @@ import { TerraformRenderedVariablesFiles } from '@/components/deploys/TerraformR
 import { EmptyState } from '@/components/common/EmptyState'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { PageTitle } from '@/components/navigation/PageTitle'
+import { useInstall } from '@/hooks/use-install'
 import { useSandboxRun } from '@/hooks/use-sandbox-run'
 import { useOrg } from '@/hooks/use-org'
 import { getRunnerJobPlan } from '@/lib'
@@ -11,6 +13,7 @@ import { getRunnerJobPlan } from '@/lib'
 export const SandboxRunVariablesTab = () => {
   const { sandboxRun } = useSandboxRun()
   const { org } = useOrg()
+  const { install } = useInstall()
 
   const planJob = sandboxRun?.runner_jobs?.find(
     (j) => j.operation === 'create-apply-plan'
@@ -26,8 +29,6 @@ export const SandboxRunVariablesTab = () => {
     enabled: !!org?.id && !!planJob?.id,
   })
 
-  if (isLoading) return <Skeleton height="200px" width="100%" />
-
   const vars = compositePlan?.sandbox_run_plan?.vars
   const varsFiles = compositePlan?.sandbox_run_plan?.vars_files as
     | string[]
@@ -36,30 +37,33 @@ export const SandboxRunVariablesTab = () => {
   const hasVars = !!vars && Object.keys(vars).length > 0
   const hasVarsFiles = !!varsFiles && varsFiles.length > 0
 
-  if (!hasVars && !hasVarsFiles) {
-    return (
-      <EmptyState
-        variant="table"
-        emptyTitle="No variables"
-        emptyMessage="No Terraform variables available for this sandbox run."
-      />
-    )
-  }
-
   return (
-    <div className="flex flex-col gap-6">
-      {hasVars && (
-        <div className="flex flex-col gap-2">
-          <Text weight="strong">Variables</Text>
-          <TerraformRenderedVariables values={vars} />
+    <>
+      <PageTitle segments={['Sandbox run variables', install?.name]} />
+      {isLoading ? (
+        <Skeleton height="200px" width="100%" />
+      ) : !hasVars && !hasVarsFiles ? (
+        <EmptyState
+          variant="table"
+          emptyTitle="No variables"
+          emptyMessage="No Terraform variables available for this sandbox run."
+        />
+      ) : (
+        <div className="flex flex-col gap-6">
+          {hasVars && (
+            <div className="flex flex-col gap-2">
+              <Text weight="strong">Variables</Text>
+              <TerraformRenderedVariables values={vars} />
+            </div>
+          )}
+          {hasVarsFiles && (
+            <div className="flex flex-col gap-2">
+              <Text weight="strong">Variable files</Text>
+              <TerraformRenderedVariablesFiles files={varsFiles} />
+            </div>
+          )}
         </div>
       )}
-      {hasVarsFiles && (
-        <div className="flex flex-col gap-2">
-          <Text weight="strong">Variable files</Text>
-          <TerraformRenderedVariablesFiles files={varsFiles} />
-        </div>
-      )}
-    </div>
+    </>
   )
 }

@@ -94,9 +94,7 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
             }}
           />
           <LabeledValue label="App">
-            <Text variant="subtext">
-              <Link href={`/${app?.org_id}/apps/${app?.id}`}>{app?.name}</Link>
-            </Text>
+            <Link href={`/${app?.org_id}/apps/${app?.id}`}>{app?.name}</Link>
           </LabeledValue>
           <LabeledValue label="Config">
             <ComponentConfigContextTooltip
@@ -104,13 +102,11 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
               configId={build?.component_config_connection?.id}
               appId={component?.app_id}
             >
-              <Text variant="subtext">
-                <Link
-                  href={`/${app.org_id}/apps/${app.id}/components/${build?.component_id}`}
-                >
-                  {component?.name}
-                </Link>
-              </Text>
+              <Link
+                href={`/${app.org_id}/apps/${app.id}/components/${build?.component_id}`}
+              >
+                {component?.name}
+              </Link>
             </ComponentConfigContextTooltip>
           </LabeledValue>
           {build?.vcs_connection_commit ? (
@@ -124,6 +120,7 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
                 <Icon variant="GitBranchIcon" size={14} />
                 <Link
                   href={`/${app?.org_id}/apps/${app?.id}/branches/${build.app_branch_id}/runs/${build.app_branch_run_id}`}
+                  variant="inline"
                 >
                   View run
                 </Link>

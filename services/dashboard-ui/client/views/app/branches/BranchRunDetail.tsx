@@ -105,7 +105,7 @@ const BranchRunDetailContent = () => {
   return (
     <ConfigDiffFocusContext.Provider value={{ requestFocus: requestConfigFocus }}>
       <PageSection className="max-w-full">
-        <PageTitle title={`${runTitle} | ${app?.name}`} />
+        <PageTitle segments={[runTitle, app?.name]} />
         <Breadcrumbs
           breadcrumbs={[
             { path: `/${org?.id}`, text: org?.name },
@@ -176,10 +176,9 @@ const BranchRunDetailContent = () => {
                     <Text variant="base" weight="strong">Source</Text>
                   </div>
                   {githubUrl && (
-                    <Link href={githubUrl} isExternal className="text-xs">
+                    <Link href={githubUrl} isExternal>
                       <Icon variant="GitHub" size={14} />
                       View in GitHub
-                      <Icon variant="ArrowSquareOutIcon" size={12} />
                     </Link>
                   )}
                 </div>

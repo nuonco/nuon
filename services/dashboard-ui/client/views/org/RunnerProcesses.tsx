@@ -17,7 +17,7 @@ export const RunnerProcesses = () => {
   if (!runnerId) {
     return (
       <PageLayout>
-        <PageTitle title={`Runner processes | ${org?.name}`} />
+        <PageTitle title="Runner processes" />
         <Breadcrumbs
           breadcrumbs={[
             { path: `/${org.id}`, text: org?.name },
@@ -40,7 +40,7 @@ export const RunnerProcesses = () => {
   return (
     <RunnerProvider runnerId={runnerId} shouldPoll>
       <PageLayout className="pb-6">
-        <PageTitle title={`Runner processes | ${org?.name}`} />
+        <PageTitle title="Runner processes" />
         <Breadcrumbs
           breadcrumbs={[
             { path: `/${org.id}`, text: org?.name },

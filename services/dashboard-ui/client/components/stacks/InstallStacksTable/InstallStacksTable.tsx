@@ -50,11 +50,9 @@ const columns: ColumnDef<TInstallStackRow>[] = [
     accessorKey: 'appConfigId',
     header: 'App version',
     cell: (info) => (
-      <Text variant="subtext">
-        <Link href={info?.row?.original?.appStackConfigHref}>
-          {info.getValue<string>()}
-        </Link>
-      </Text>
+      <Link href={info?.row?.original?.appStackConfigHref}>
+        {info.getValue<string>()}
+      </Link>
     ),
   },
   {

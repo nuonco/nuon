@@ -7,7 +7,6 @@ import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Icon } from '@/components/common/Icon'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Status } from '@/components/common/Status'
 import { Table } from '@/components/common/Table'
@@ -149,7 +148,7 @@ export const InstallRoleDetail = ({
                 navigate(href)
               }}
             >
-              View workflow <Icon variant="CaretRightIcon" size="16" />
+              View workflow
             </Button>
           )
         },

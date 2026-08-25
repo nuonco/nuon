@@ -76,7 +76,7 @@ export const InstallSyncs = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Install syncs | ${app?.name}`} />
+      <PageTitle segments={['Install syncs', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -228,11 +228,8 @@ const SyncCard = ({ sync }: { sync: TAppInstallConfigSync }) => {
               label="View signal"
             />
           )}
-          <Link
-            href={`/${org?.id}/apps/${app?.id}/install-syncs/${sync.id}`}
-            className="text-xs"
-          >
-            View
+          <Link href={`/${org?.id}/apps/${app?.id}/install-syncs/${sync.id}`}>
+            View sync
           </Link>
         </div>
       </div>

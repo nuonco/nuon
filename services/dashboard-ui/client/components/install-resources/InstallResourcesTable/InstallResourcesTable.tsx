@@ -585,9 +585,10 @@ const InstallResourceGroupTable = ({
             </Badge>
           </Tooltip>
         ) : null}
-        {/* The component's own verdict lives on the components tab and is
-            debounced; what the header shows is the live roll-up of the rows
-            below, with a count once something is actually failing. */}
+        {/* Everything in this section is live, matching the filter chips and the
+            rows. The debounced verdict is the badge in the 90-day card above —
+            keeping the two time bases apart is what stops them reading as a
+            contradiction. */}
         {group.fullyStale ? (
           <Tooltip
             position="top"
@@ -620,9 +621,9 @@ const InstallResourceGroupTable = ({
             position="top"
             tipContent={
               <Text variant="subtext">
-                Live resources currently degraded or unhealthy in this group —
-                not the component's health verdict, which is debounced and can
-                lag the rows below.
+                Live resources currently degraded or unhealthy in this group.
+                The component's health verdict is the badge in the 90-day card
+                above: it is debounced, so it can lag these rows.
               </Text>
             }
           >
