@@ -503,7 +503,7 @@ func collapseComponentHealthRows(rows []app.InstallComponentResourceState) map[s
 			continue
 		}
 
-		if !knownSeen[key] || componentHealthSeverity[health] > componentHealthSeverity[rep.Health] {
+		if !knownSeen[key] || betterRoot(rep, health, r.Kind, r.Namespace, r.Name) {
 			knownSeen[key] = true
 			rep.Health = health
 			rep.RootKind = r.Kind

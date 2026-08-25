@@ -135,6 +135,57 @@ func nextComponentHealthVerdict(current app.InstallComponentHealthStatus, report
 	return target
 }
 
+// rootKindRank orders equally-severe resources by how useful naming them is. A
+// pod's name changes on every rollout, so its controller is both what the user
+// declared and what they can act on.
+func rootKindRank(kind string) int {
+	switch kind {
+	case "Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob":
+		return 0
+	case "ReplicaSet":
+		return 2
+	case "Pod":
+		return 3
+	}
+	return 1
+}
+
+// betterRoot is a total order, so the same observations always name the same
+// resource. ClickHouse returns no defined row order without ORDER BY, so the
+// named cause could flip between equally-broken resources with nothing in the
+// cluster having changed.
+func betterRoot(cur *componentHealthReport, health app.InstallComponentHealthStatus, kind, namespace, name string) bool {
+	if s, c := componentHealthSeverity[health], componentHealthSeverity[cur.Health]; s != c {
+		return s > c
+	}
+	if r, c := rootKindRank(kind), rootKindRank(cur.RootKind); r != c {
+		return r < c
+	}
+	if kind != cur.RootKind {
+		return kind < cur.RootKind
+	}
+	if namespace != cur.RootNamespace {
+		return namespace < cur.RootNamespace
+	}
+	return name < cur.RootName
+}
+
+// otherAffected counts resources at least as bad as the verdict besides the one
+// named, so one message cannot read as one failure.
+func otherAffected(rep *componentHealthReport, health app.InstallComponentHealthStatus) int {
+	sev := componentHealthSeverity[health]
+	if sev < componentHealthSeverity[app.InstallComponentHealthStatusDegraded] {
+		return 0
+	}
+	n := 0
+	for h, c := range rep.ResourceCounts {
+		if componentHealthSeverity[app.InstallComponentHealthStatus(h)] >= sev {
+			n += c
+		}
+	}
+	return n - 1
+}
+
 func componentHealthDescription(verdict app.InstallComponentHealthStatus, latest *componentHealthReport, now time.Time) string {
 	switch verdict {
 	case app.InstallComponentHealthStatusNotApplicable:
@@ -184,8 +235,12 @@ func rootResourceDescription(latest *componentHealthReport, health app.InstallCo
 	if latest.RootNamespace != "" {
 		root = latest.RootKind + " " + latest.RootNamespace + "/" + latest.RootName
 	}
+	desc := root + " is " + string(health)
 	if latest.Message != "" {
-		return root + ": " + latest.Message
+		desc = root + ": " + latest.Message
 	}
-	return root + " is " + string(health)
+	if others := otherAffected(latest, health); others > 0 {
+		desc += fmt.Sprintf(" (+%d more affected)", others)
+	}
+	return desc
 }
