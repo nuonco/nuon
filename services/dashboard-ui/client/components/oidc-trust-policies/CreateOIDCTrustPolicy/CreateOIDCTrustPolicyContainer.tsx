@@ -14,10 +14,23 @@ import { createCurrentOrgOIDCTrustPolicy } from '@/lib'
 import { OIDCTrustPolicyFormModal } from '@/components/oidc-trust-policies/OIDCTrustPolicyForm'
 import type { OIDCFormValues } from '@/components/oidc-trust-policies/OIDCTrustPolicyForm/schema'
 
-const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
+const CreateOIDCTrustPolicyModalContainer = ({
+  githubAudience,
+  repoSource,
+  ...props
+}: {
+  githubAudience?: string
+  repoSource?: 'connections' | 'manual'
+} & Record<string, any>) => {
   const { org } = useOrg()
   const config = useConfig()
-  const { repos, isLoading: isLoadingRepos, hasConnections } = useVCSRepos()
+  // Skipped entirely in manual mode: the repos belong to whoever runs the
+  // workflow, so this org's connections are not the right list to fetch.
+  const {
+    repos,
+    isLoading: isLoadingRepos,
+    hasConnections,
+  } = useVCSRepos({ enabled: repoSource !== 'manual' })
   const { roleOptions } = useRoleOptions('oidc_trust_policy')
   const queryClient = useQueryClient()
   const { removeModal } = useSurfaces()
@@ -70,7 +83,8 @@ const CreateOIDCTrustPolicyModalContainer = (props: Record<string, any>) => {
       isLoadingRepos={isLoadingRepos}
       hasVCSConnections={hasConnections}
       vcsConnectionsHref={`/${org.id}/settings/vcs`}
-      githubAudience={config.apiUrl ?? ''}
+      githubAudience={githubAudience ?? config.apiUrl ?? ''}
+      repoSource={repoSource}
       roleOptions={roleOptions}
       {...props}
     />
@@ -82,6 +96,10 @@ export const CreateOIDCTrustPolicyButton = ({
   initialRepoDefaultBranch,
   lockPreset,
   reservedNames,
+  repoSource,
+  githubAudience,
+  defaultRole,
+  defaultName,
   children,
   variant = 'primary',
   ...props
@@ -90,6 +108,10 @@ export const CreateOIDCTrustPolicyButton = ({
   initialRepoDefaultBranch?: string
   lockPreset?: boolean
   reservedNames?: string[]
+  repoSource?: 'connections' | 'manual'
+  githubAudience?: string
+  defaultRole?: string
+  defaultName?: string
   children?: ReactNode
 }) => {
   const { addModal } = useSurfaces()
@@ -99,6 +121,10 @@ export const CreateOIDCTrustPolicyButton = ({
       initialRepoDefaultBranch={initialRepoDefaultBranch}
       lockPreset={lockPreset}
       reservedNames={reservedNames}
+      repoSource={repoSource}
+      githubAudience={githubAudience}
+      defaultRole={defaultRole}
+      defaultName={defaultName}
     />
   )
 
