@@ -27,6 +27,7 @@ func TestGetRoleForAction(t *testing.T) {
 		expectedOperation  app.OperationType
 		expectedRoleSource operationroles.RoleSelectionSource
 		expectedRoleName   string
+		expectedError      string
 		description        string
 	}{
 		// No operation rules
@@ -310,17 +311,15 @@ func TestGetRoleForAction(t *testing.T) {
 			description:        "Should fallback to default when matrix role is missing from stack outputs",
 		},
 		{
-			name:               "runtime_role_missing_fallback_to_default",
-			actionName:         "deploy-action",
-			actionConfigRole:   "",
-			breakGlassRoleARN:  "",
-			runtimeRole:        "MissingRuntimeRole", // Not in stack outputs
-			matrixRules:        nil,
-			useAzure:           false,
-			expectedOperation:  app.OperationTrigger,
-			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
-			expectedRoleName:   "MaintenanceRole",
-			description:        "Should fallback to default when runtime role is missing from stack outputs",
+			name:              "runtime_role_missing_returns_error",
+			actionName:        "deploy-action",
+			actionConfigRole:  "",
+			breakGlassRoleARN: "",
+			runtimeRole:       "MissingRuntimeRole", // Not in stack outputs
+			matrixRules:       nil,
+			useAzure:          false,
+			expectedError:     `unable to use requested role "MissingRuntimeRole"`,
+			description:       "Should reject a runtime role missing from stack outputs",
 		},
 		{
 			name:               "break_glass_role_missing_fallback_to_default",
@@ -451,6 +450,12 @@ func TestGetRoleForAction(t *testing.T) {
 				nil,
 			)
 
+			if tt.expectedError != "" {
+				require.ErrorContains(t, err, tt.expectedError)
+				require.Nil(t, roleSelection)
+				require.Empty(t, operation)
+				return
+			}
 			require.NoError(t, err, "getRoleForAction should not return error for test: %s", tt.description)
 			assert.Equal(t, tt.expectedOperation, operation, "Operation type mismatch: %s", tt.description)
 			assert.Equal(t, tt.expectedRoleSource, roleSelection.Source, "Role source mismatch: %s", tt.description)
