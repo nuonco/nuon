@@ -79,7 +79,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	}
 
 	sg.nextGroupEager()
-	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+	step, err := sg.installSignalStep(ctx, installID, runnerHealthyStepName, pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)
 	if err != nil {
@@ -111,7 +111,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		}
 
 		dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
-		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install)
+		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install, sandboxNeedsRunnerHealthyGate(diff))
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to generate sandbox reprovision steps")
 		}
@@ -147,6 +147,15 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	steps = append(steps, deploySteps...)
 
 	return sg.Result(steps), nil
+}
+
+// sandboxNeedsRunnerHealthyGate reports whether the sandbox reprovision phase has
+// to wait on the runner again. This flow already waited before the stack steps,
+// and only those steps can roll the runner out from under the sandbox — without
+// them a second wait can only re-confirm the first, and rendered as a duplicate
+// "runner healthy" step.
+func sandboxNeedsRunnerHealthyGate(diff *app.InstallConfigDiff) bool {
+	return diff != nil && diff.StackChanged
 }
 
 func filterComponentsByDiff(componentIDs []string, newAppCfg *app.AppConfig, diff *app.InstallConfigDiff) []string {
