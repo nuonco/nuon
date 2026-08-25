@@ -3,12 +3,14 @@ package componenthealth
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/sourcegraph/conc"
 	"go.uber.org/zap"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -171,7 +173,7 @@ func (e *Engine) collectCluster(
 		for i := range list.Items {
 			u := &list.Items[i]
 			objects = append(objects, listedObject{gvr: gvr, u: u})
-			byKey[resourceKey(u.GetKind(), u.GetNamespace(), u.GetName())] = u
+			byKey[resourceRefForObject(u).key()] = u
 		}
 	}
 
@@ -189,7 +191,7 @@ func (e *Engine) collectCluster(
 	// short and an ImagePullBackOff reads as benign progressing for 10m.
 	e.hydrateWarningOwners(ctx, dynClient, warnings, byKey)
 
-	liftPodWarningsToOwners(warnings, byKey)
+	attributeWarningsToOwners(warnings, byKey)
 
 	for _, obj := range objects {
 		gvr, u := obj.gvr, obj.u
@@ -205,7 +207,7 @@ func (e *Engine) collectCluster(
 		}
 
 		var warn *warningEvent
-		if w, ok := warnings[resourceKey(u.GetKind(), u.GetNamespace(), u.GetName())]; ok {
+		if w, ok := warnings[resourceRefForObject(u).key()]; ok && warningTargetsObject(w, u) {
 			warn = &w
 		}
 		res := resourceModel(gvr, u, warn)
@@ -283,10 +285,10 @@ func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) []schema.G
 // maxOwnerHops bounds the ownerReferences walk so a cyclic chain cannot spin.
 const maxOwnerHops = 4
 
-// hydrateWarningOwners GETs the owner chain of each unready pod that carries a
-// warning, so byKey can resolve it. Normally nothing is fetched: healthy
-// installs have no warning pods, which is the point of doing this on demand
-// instead of listing every ReplicaSet in the cluster once a minute.
+const maxWarningHydrationGets = 100
+
+// hydrateWarningOwners GETs an attributable warning's source and owner chain so
+// byKey can resolve it without adding high-volume child kinds to every list.
 func (e *Engine) hydrateWarningOwners(
 	ctx context.Context,
 	dynClient dynamic.Interface,
@@ -297,88 +299,187 @@ func (e *Engine) hydrateWarningOwners(
 		return
 	}
 
-	for key := range warnings {
-		u, ok := byKey[key]
-		if !ok || u.GetKind() != "Pod" || podReady(u) {
+	ordered := make([]warningEvent, 0, len(warnings))
+	for _, warn := range warnings {
+		ordered = append(ordered, warn)
+	}
+	sort.Slice(ordered, func(i, j int) bool {
+		if ordered[i].at.Equal(ordered[j].at) {
+			return ordered[i].source.key() < ordered[j].source.key()
+		}
+		return ordered[i].at.After(ordered[j].at)
+	})
+
+	gets := 0
+	limitReached := false
+	for _, warn := range ordered {
+		if !warningMayPropagate(warn) {
+			continue
+		}
+		cur, ok := byKey[warn.source.key()]
+		if !ok {
+			if !warningSourceNeedsHydration(warn.source) {
+				continue
+			}
+			if gets == maxWarningHydrationGets {
+				limitReached = true
+				break
+			}
+			gets++
+			var err error
+			cur, err = getResource(ctx, dynClient, warn.source)
+			if err != nil {
+				if !apierrors.IsNotFound(err) {
+					e.l.Warn("unable to fetch warning source",
+						zap.String("kind", warn.source.Kind),
+						zap.String("name", warn.source.Name),
+						zap.Error(err))
+				}
+				continue
+			}
+			byKey[resourceRefForObject(cur).key()] = cur
+		}
+		if !warn.source.matches(cur) || !warningPropagates(cur, warn) {
 			continue
 		}
 
-		cur := u
 		for hop := 0; hop < maxOwnerHops; hop++ {
-			ref := metav1.GetControllerOf(cur)
-			if ref == nil {
+			ownerRef := resourceRefForOwner(metav1.GetControllerOf(cur), cur.GetNamespace())
+			if !ownerRef.valid() {
 				break
 			}
-			ownerKey := resourceKey(ref.Kind, cur.GetNamespace(), ref.Name)
+			ownerKey := ownerRef.key()
 			if next, ok := byKey[ownerKey]; ok {
+				if !ownerRef.matches(next) {
+					break
+				}
 				cur = next
 				continue
 			}
-			gvr, ok := ownerGVRs[ref.Kind]
-			if !ok {
+			if _, ok := resourceGVR(ownerRef); !ok {
 				break
 			}
-			owner, err := dynClient.Resource(gvr).
-				Namespace(cur.GetNamespace()).
-				Get(ctx, ref.Name, metav1.GetOptions{})
+			if gets == maxWarningHydrationGets {
+				limitReached = true
+				break
+			}
+			gets++
+			owner, err := getResource(ctx, dynClient, ownerRef)
 			if err != nil {
-				e.l.Warn("unable to fetch owner for warning pod",
-					zap.String("kind", ref.Kind), zap.String("name", ref.Name), zap.Error(err))
+				if !apierrors.IsNotFound(err) {
+					e.l.Warn("unable to fetch owner for warning source",
+						zap.String("kind", ownerRef.Kind), zap.String("name", ownerRef.Name), zap.Error(err))
+				}
+				break
+			}
+			if !ownerRef.matches(owner) {
 				break
 			}
 			byKey[ownerKey] = owner
 			cur = owner
 		}
 	}
+	if limitReached {
+		e.l.Warn("component health warning hydration reached its request limit",
+			zap.Int("limit", maxWarningHydrationGets))
+	}
 }
 
-// liftPodWarningsToOwners copies an unready pod's warning onto its controller:
-// helm annotates only what it renders, so ImagePullBackOff otherwise reads as
-// benign "progressing" for progressDeadlineSeconds (10m by default).
-func liftPodWarningsToOwners(warnings map[string]warningEvent, byKey map[string]*unstructured.Unstructured) {
+func getResource(
+	ctx context.Context,
+	dynClient dynamic.Interface,
+	ref resourceRef,
+) (*unstructured.Unstructured, error) {
+	gvr, ok := resourceGVR(ref)
+	if !ok {
+		return nil, fmt.Errorf("unable to resolve %s %s", ref.Kind, ref.APIVersion)
+	}
+	resource := dynClient.Resource(gvr)
+	if ref.Namespace == "" {
+		return resource.Get(ctx, ref.Name, metav1.GetOptions{})
+	}
+	return resource.Namespace(ref.Namespace).Get(ctx, ref.Name, metav1.GetOptions{})
+}
+
+func resourceGVR(ref resourceRef) (schema.GroupVersionResource, bool) {
+	gv, err := schema.ParseGroupVersion(ref.APIVersion)
+	if err != nil {
+		return schema.GroupVersionResource{}, false
+	}
+	gvk := gv.WithKind(ref.Kind)
+	gvr, ok := ownerGVRs[gvk]
+	return gvr, ok
+}
+
+func warningSourceNeedsHydration(ref resourceRef) bool {
+	return ref.APIVersion == "apps/v1" && ref.Kind == "ReplicaSet"
+}
+
+func warningMayPropagate(warn warningEvent) bool {
+	return warn.source.Kind == "Pod" || warn.reason == "FailedCreate"
+}
+
+func warningPropagates(source *unstructured.Unstructured, warn warningEvent) bool {
+	if warn.reason == "FailedCreate" {
+		return true
+	}
+	return source.GetKind() == "Pod" && !podReady(source)
+}
+
+func attributeWarningsToOwners(warnings map[string]warningEvent, byKey map[string]*unstructured.Unstructured) {
 	if len(warnings) == 0 {
 		return
 	}
 
 	lifted := map[string]warningEvent{}
-	for key, warn := range warnings {
-		u, ok := byKey[key]
-		if !ok || u.GetKind() != "Pod" || podReady(u) {
+	for _, warn := range warnings {
+		u, ok := byKey[warn.source.key()]
+		if !ok || !warn.source.matches(u) || !warningPropagates(u, warn) {
 			continue
 		}
-		owner := topOwner(u, byKey)
-		if owner == nil {
+		path := ownerPath(u, byKey)
+		if len(path) < 2 {
 			continue
 		}
-		lifted[resourceKey(owner.GetKind(), owner.GetNamespace(), owner.GetName())] = warn
+		warn.ownerPath = path
+		targetKey := path[len(path)-1].key()
+		if current, exists := lifted[targetKey]; !exists || warn.at.After(current.at) {
+			lifted[targetKey] = warn
+		}
 	}
 
 	for key, warn := range lifted {
-		if _, seen := warnings[key]; !seen {
-			warnings[key] = warn
+		if current, seen := warnings[key]; seen && current.source.matches(byKey[key]) {
+			continue
 		}
+		warnings[key] = warn
 	}
 }
 
-// topOwner returns the furthest controller ancestor present in the listed
-// objects, or nil when the object has no owner in the set.
-func topOwner(u *unstructured.Unstructured, byKey map[string]*unstructured.Unstructured) *unstructured.Unstructured {
+func ownerPath(u *unstructured.Unstructured, byKey map[string]*unstructured.Unstructured) []resourceRef {
 	cur := u
+	path := []resourceRef{resourceRefForObject(cur)}
 	for hop := 0; hop < maxOwnerHops; hop++ {
-		ref := metav1.GetControllerOf(cur)
-		if ref == nil {
+		ownerRef := resourceRefForOwner(metav1.GetControllerOf(cur), cur.GetNamespace())
+		if !ownerRef.valid() {
 			break
 		}
-		next, ok := byKey[resourceKey(ref.Kind, cur.GetNamespace(), ref.Name)]
-		if !ok || next == cur {
+		next, ok := byKey[ownerRef.key()]
+		if !ok || next == cur || !ownerRef.matches(next) {
 			break
 		}
 		cur = next
+		path = append(path, resourceRefForObject(cur))
 	}
-	if cur == u {
-		return nil
+	return path
+}
+
+func warningTargetsObject(warn warningEvent, u *unstructured.Unstructured) bool {
+	target := warn.source
+	if len(warn.ownerPath) > 0 {
+		target = warn.ownerPath[len(warn.ownerPath)-1]
 	}
-	return cur
+	return target.matches(u)
 }
 
 func podReady(u *unstructured.Unstructured) bool {

@@ -1,6 +1,8 @@
 package componenthealth
 
 import (
+	"time"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -18,9 +20,23 @@ func resourceDiagnosis(u *unstructured.Unstructured, health string, warn *warnin
 	diagnosis := map[string]any{}
 
 	if warn != nil {
-		diagnosis["event"] = map[string]any{
+		event := map[string]any{
 			"reason":  warn.reason,
 			"message": warn.message,
+		}
+		if !warn.at.IsZero() {
+			event["observed_at"] = warn.at.UTC().Format(time.RFC3339)
+		}
+		diagnosis["event"] = event
+		if warn.source.valid() {
+			diagnosis["source"] = warn.source.details()
+		}
+		if len(warn.ownerPath) > 1 {
+			path := make([]map[string]any, 0, len(warn.ownerPath))
+			for _, ref := range warn.ownerPath {
+				path = append(path, ref.details())
+			}
+			diagnosis["owner_path"] = path
 		}
 	}
 

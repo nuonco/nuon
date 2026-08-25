@@ -19,8 +19,10 @@ var eventsGVR = schema.GroupVersionResource{Group: "", Version: "v1", Resource: 
 const eventWarningWindow = 15 * time.Minute
 
 type warningEvent struct {
-	reason  string
-	message string
+	reason    string
+	message   string
+	source    resourceRef
+	ownerPath []resourceRef
 	// at is when the event last fired, so a resource that has since recovered is
 	// not held down by it.
 	at time.Time
@@ -37,15 +39,10 @@ func (e *Engine) latestWarnings(ctx context.Context, dynClient dynamic.Interface
 	}
 
 	cutoff := time.Now().Add(-eventWarningWindow)
-	type latest struct {
-		ts      time.Time
-		reason  string
-		message string
-	}
-	byObject := map[string]latest{}
+	byObject := map[string]warningEvent{}
 	for i := range list.Items {
 		u := &list.Items[i]
-		key, ok := eventObjectKey(u)
+		source, ok := eventObjectRef(u)
 		if !ok {
 			continue
 		}
@@ -53,33 +50,37 @@ func (e *Engine) latestWarnings(ctx context.Context, dynClient dynamic.Interface
 		if ts.Before(cutoff) {
 			continue
 		}
-		if cur, seen := byObject[key]; seen && !ts.After(cur.ts) {
+		key := source.key()
+		if cur, seen := byObject[key]; seen && !ts.After(cur.at) {
 			continue
 		}
 		reason, _, _ := unstructured.NestedString(u.Object, "reason")
 		message, _, _ := unstructured.NestedString(u.Object, "message")
-		byObject[key] = latest{ts: ts, reason: reason, message: message}
+		byObject[key] = warningEvent{reason: reason, message: message, source: source, at: ts}
 	}
-
-	out := make(map[string]warningEvent, len(byObject))
-	for key, l := range byObject {
-		out[key] = warningEvent{reason: l.reason, message: l.message, at: l.ts}
-	}
-	return out
+	return byObject
 }
 
-func eventObjectKey(u *unstructured.Unstructured) (string, bool) {
+func eventObjectRef(u *unstructured.Unstructured) (resourceRef, bool) {
 	involved, ok, _ := unstructured.NestedMap(u.Object, "involvedObject")
 	if !ok {
-		return "", false
+		return resourceRef{}, false
 	}
+	apiVersion, _ := involved["apiVersion"].(string)
 	kind, _ := involved["kind"].(string)
 	namespace, _ := involved["namespace"].(string)
 	name, _ := involved["name"].(string)
+	uid, _ := involved["uid"].(string)
 	if kind == "" || name == "" {
-		return "", false
+		return resourceRef{}, false
 	}
-	return resourceKey(kind, namespace, name), true
+	return resourceRef{
+		APIVersion: apiVersion,
+		Kind:       kind,
+		Namespace:  namespace,
+		Name:       name,
+		UID:        uid,
+	}, true
 }
 
 func resourceKey(kind, namespace, name string) string {
