@@ -19,18 +19,9 @@ export const OperationRolesList = ({
     )
   }
 
-  const operationLabels: Record<string, string> = {
-    provision: 'Provision',
-    deprovision: 'Deprovision',
-    deploy: 'Deploy',
-    teardown: 'Teardown',
-    reprovision: 'Reprovision',
-    trigger: 'Trigger',
-  }
-
   const keyValuePairs: TKeyValue[] = Object.entries(operationRoles).map(
     ([operation, role]) => ({
-      key: operationLabels[operation] || operation,
+      key: operation,
       value: role,
       type: 'string',
     })
