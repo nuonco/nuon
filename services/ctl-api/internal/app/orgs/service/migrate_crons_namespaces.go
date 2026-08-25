@@ -22,7 +22,7 @@ type MigrateCronsNamespacesRequest struct {
 // @Description			Toggle the cron-namespace-isolation feature for the org and migrate its runner-healthcheck and install cron queues into (enabled) or out of (disabled) the dedicated cron Temporal namespaces.
 // @Param					org_id	path	string							true	"org ID"
 // @Param					payload	body	MigrateCronsNamespacesRequest	true	"enabled"
-// @Tags					orgs/admin
+// @Tags					queues/admin
 // @Security				AdminEmail
 // @Accept					json
 // @Produce				json
