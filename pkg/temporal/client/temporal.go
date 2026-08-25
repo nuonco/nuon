@@ -9,7 +9,9 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/uber-go/tally/v4"
 	tclient "go.temporal.io/sdk/client"
+	temporalotel "go.temporal.io/sdk/contrib/opentelemetry"
 	converter "go.temporal.io/sdk/converter"
+	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 )
@@ -23,14 +25,15 @@ type ContextKey struct{}
 type temporal struct {
 	v *validator.Validate
 
-	Addr        string `validate:"required"`
-	Namespace   string
-	Logger      *zap.Logger `validate:"required"`
-	LazyLoad    bool
-	Converter   converter.DataConverter
-	TallyCloser io.Closer
-	tallyScope  tally.Scope
-	propagators []workflow.ContextPropagator
+	Addr         string `validate:"required"`
+	Namespace    string
+	Logger       *zap.Logger `validate:"required"`
+	LazyLoad     bool
+	Converter    converter.DataConverter
+	TallyCloser  io.Closer
+	tallyScope   tally.Scope
+	propagators  []workflow.ContextPropagator
+	interceptors []interceptor.ClientInterceptor
 
 	clientOnce sync.Once
 	clientErr  error
@@ -59,6 +62,16 @@ func New(v *validator.Validate, opts ...temporalOption) (*temporal, error) {
 	if err := v.Struct(tmp); err != nil {
 		return nil, fmt.Errorf("unable to validate temporal: %w", err)
 	}
+
+	tracingInterceptor, err := temporalotel.NewTracingInterceptor(temporalotel.TracerOptions{
+		DisableSignalTracing: true,
+		DisableQueryTracing:  true,
+		DisableUpdateTracing: true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create temporal tracing interceptor: %w", err)
+	}
+	tmp.interceptors = []interceptor.ClientInterceptor{tracingInterceptor}
 
 	if !tmp.LazyLoad {
 		if _, err := tmp.getClient(); err != nil {

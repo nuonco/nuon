@@ -38,6 +38,7 @@ func TestNew(t *testing.T) {
 				assert.Equal(t, tClient.Addr, address)
 				assert.Equal(t, tClient.Namespace, namespace)
 				assert.Equal(t, tClient.Logger, logger)
+				assert.Len(t, tClient.getOpts().Interceptors, 1)
 			},
 		},
 		"sets lazy load": {
