@@ -10,7 +10,6 @@ export const AwaitStackDetailsContainer = (props: IStackDetails) => {
     <AwaitStackDetails
       runnerType={install?.app_runner_config?.app_runner_type}
       spaceliftEnabled={!!org?.features?.['spacelift-install-stacks']}
-      tfProvider={!!org?.features?.['stack-tf-provider']}
       {...props}
     />
   )

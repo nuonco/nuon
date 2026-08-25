@@ -17,14 +17,12 @@ import type { IStackDetails } from '../types'
 interface IAwaitStackDetails extends IStackDetails {
   runnerType?: string
   spaceliftEnabled?: boolean
-  tfProvider?: boolean
 }
 
 export const AwaitStackDetails = ({
   stack,
   runnerType,
   spaceliftEnabled,
-  tfProvider,
   loading,
   ...props
 }: IAwaitStackDetails) => {
@@ -40,7 +38,6 @@ export const AwaitStackDetails = ({
       stack={stack}
       loading={loading}
       spaceliftEnabled={spaceliftEnabled}
-      tfProvider={tfProvider}
       {...props}
     />
   ) : (
@@ -50,7 +47,13 @@ export const AwaitStackDetails = ({
   return (
     <div className="flex flex-col gap-6">
       <Card>
-        <Text>{loading ? 'Install stack' : stack?.versions?.at(0)?.composite_status?.status === 'active' ? 'Install stack up and running' : 'Install stack is waiting to run'}</Text>
+        <Text>
+          {loading
+            ? 'Install stack'
+            : stack?.versions?.at(0)?.composite_status?.status === 'active'
+              ? 'Install stack up and running'
+              : 'Install stack is waiting to run'}
+        </Text>
 
         <div className="grid grid-cols-4">
           {loading ? (

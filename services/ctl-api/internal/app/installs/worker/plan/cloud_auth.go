@@ -55,7 +55,18 @@ func getCloudAuth(
 			azureAuth.UseDefault = true
 		}
 	case stackOutputs.GCPStackOutputs != nil:
-		// gcp uses default instance auth, no config needed
+		// An empty impersonation target silently falls back to the runner's
+		// ambient identity. That is correct only for legacy stacks that predate
+		// per-operation service accounts (no SA emails at all); on a stack that
+		// does manage them, an empty selection means the role is disabled or
+		// grants nothing, and running with ambient permissions instead would be
+		// wrong. Mirrors the Azure legacy fallback above.
+		gcpOut := stackOutputs.GCPStackOutputs
+		stackManagesSAs := gcpOut.ProvisionSAEmail != "" || gcpOut.MaintenanceSAEmail != "" || gcpOut.DeprovisionSAEmail != ""
+		if roleSelection.RoleARN == "" && stackManagesSAs {
+			return nil, fmt.Errorf("unable to build cloud auth, missing role identifier")
+		}
+
 		gcpAuth = &gcpcredentials.Config{
 			ProjectID:                 stackOutputs.GCPStackOutputs.ProjectID,
 			Region:                    stackOutputs.GCPStackOutputs.Region,

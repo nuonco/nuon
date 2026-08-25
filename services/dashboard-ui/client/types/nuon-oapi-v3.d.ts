@@ -2942,6 +2942,13 @@ export interface paths {
      */
     post: operations["CreateServiceAccountToken"];
   };
+  "/v1/stacks/{install_id}/service-account": {
+    /**
+     * get an install stack's service account
+     * @description Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
+     */
+    get: operations["GetStackServiceAccount"];
+  };
   "/v1/terraform-backend": {
     /**
      * get current terraform
@@ -5641,7 +5648,7 @@ export interface components {
       type?: string;
     };
     /** @enum {string} */
-    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer";
+    "app.PolicyName": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted_installer" | "stack";
     "app.PolicyReport": {
       /** @description Denormalized context for filtering */
       app_id?: string;
@@ -5845,7 +5852,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer";
+    "app.RoleType": "org_admin" | "org_support" | "org_read_only" | "org_builder" | "installer" | "runner" | "hosted-installer" | "stack";
     "app.Runbook": {
       app_id?: string;
       config_count?: number;
@@ -8472,6 +8479,11 @@ export interface components {
        */
       duration?: string;
       invalidate?: boolean;
+      /**
+       * @description Name labels the token wherever it is listed. Defaults to the service account's
+       * identity, the only thing distinguishing several of these.
+       */
+      name?: string;
     };
     "service.CreateServiceAccountTokenResponse": {
       token?: string;
@@ -8950,6 +8962,20 @@ export interface components {
     "service.SkipWorkflowStepResponse": {
       skippable?: boolean;
       workflow_id?: string;
+    };
+    "service.StackServiceAccountResponse": {
+      account_id?: string;
+      email?: string;
+      /**
+       * @description ExpiresAt is the expiry of the longest-lived usable token; zero when
+       * HasLiveToken is false.
+       */
+      expires_at?: string;
+      /**
+       * @description HasLiveToken is false whether no token was ever created or every one has
+       * expired or been revoked; the caller fixes both the same way.
+       */
+      has_live_token?: boolean;
     };
     "service.SyncSecretsRequest": {
       plan_only?: boolean;
@@ -30584,6 +30610,50 @@ export interface operations {
       400: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get an install stack's service account
+   * @description Return the service account an install stack's Terraform module authenticates as, and whether it holds a usable API token. Never returns a token value: create one with POST /v1/service-accounts/{account_id}/tokens, which returns it once.
+   */
+  GetStackServiceAccount: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.StackServiceAccountResponse"];
         };
       };
       /** @description Unauthorized */

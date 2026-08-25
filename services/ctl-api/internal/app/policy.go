@@ -28,6 +28,7 @@ const (
 
 	// policy names for service accounts
 	PolicyNameHostedInstaller PolicyName = "hosted_installer"
+	PolicyNameStack           PolicyName = "stack"
 )
 
 type Policy struct {
