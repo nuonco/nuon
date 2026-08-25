@@ -1,0 +1,363 @@
+{{ define "auth/index_nuon.tmpl" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="https://nuon.co/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Sign in | Nuon</title>
+<style>
+  :root {
+    --ink: #020708;
+    --surface-dark: #0A0A0A;
+    --text-on-dark: #F5F7F8;
+    --text-secondary-dark: rgba(245, 247, 248, 0.64);
+    --text-tertiary-dark: rgba(245, 247, 248, 0.44);
+    --hairline-dark: rgba(255, 255, 255, 0.10);
+    --focus-ring: rgba(76, 201, 240, 0.40);
+    --radius-btn: 6px;
+    --radius-panel: 16px;
+    --track-normal: -0.2px;
+    --track-tight: -0.65px;
+    --ease: cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    letter-spacing: var(--track-normal);
+    background: var(--ink);
+    color: var(--text-on-dark);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  .rail {
+    width: 464px;
+    flex: none;
+    background: var(--surface-dark);
+    border-right: 1px solid var(--hairline-dark);
+    display: flex;
+    flex-direction: column;
+    padding: 40px 48px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .rail::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent 42%);
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent 42%);
+    pointer-events: none;
+  }
+
+  .rail-header { position: relative; }
+
+  .rail-form {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 340px;
+    width: 100%;
+    margin: 0 auto;
+    padding-bottom: 8vh;
+  }
+
+  .logo { display: inline-block; color: var(--text-on-dark); }
+  .logo svg { display: block; }
+
+  h1 {
+    font-size: 24px;
+    line-height: 30px;
+    font-weight: 600;
+    letter-spacing: var(--track-tight);
+    margin-bottom: 8px;
+  }
+
+  .sub {
+    font-size: 14px;
+    line-height: 21px;
+    color: var(--text-secondary-dark);
+    margin-bottom: 32px;
+  }
+
+  .providers { display: flex; flex-direction: column; gap: 10px; }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 16px;
+    border-radius: var(--radius-btn);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 21px;
+    font-weight: 500;
+    letter-spacing: var(--track-normal);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 140ms var(--ease), color 140ms var(--ease);
+  }
+  .btn:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
+
+  .btn-primary { background: #FFFFFF; color: #1D1D1D; border: none; }
+  .btn-primary:hover { background: #E9EDF0; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary-dark);
+    border: 1px solid var(--hairline-dark);
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.05); color: var(--text-on-dark); }
+
+  .btn-hint {
+    font-size: 12px;
+    line-height: 17px;
+    font-weight: 400;
+    color: var(--text-tertiary-dark);
+  }
+
+  .signed-in-email {
+    font-size: 14px;
+    line-height: 21px;
+    color: var(--text-secondary-dark);
+    margin-bottom: 24px;
+    overflow-wrap: anywhere;
+  }
+
+  .empty-providers {
+    font-size: 14px;
+    line-height: 21px;
+    color: var(--text-tertiary-dark);
+    text-align: center;
+    padding: 12px 0;
+    border: 1px solid var(--hairline-dark);
+    border-radius: var(--radius-btn);
+  }
+
+  .terms {
+    margin-top: 24px;
+    font-size: 12px;
+    line-height: 17px;
+    color: var(--text-tertiary-dark);
+  }
+  .terms a { color: var(--text-secondary-dark); text-decoration: none; }
+  .terms a:hover { text-decoration: underline; }
+
+  .rail-footer {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 340px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .btn-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: var(--radius-btn);
+    background: transparent;
+    color: var(--text-secondary-dark);
+    font-size: 13px;
+    line-height: 19px;
+    font-weight: 500;
+    letter-spacing: var(--track-normal);
+    text-decoration: none;
+    border: 1px solid var(--hairline-dark);
+    transition: background 140ms var(--ease), color 140ms var(--ease);
+  }
+  .btn-footer:hover { background: rgba(255,255,255,0.05); color: var(--text-on-dark); }
+  .btn-footer:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
+
+  .panel {
+    flex: 1;
+    position: relative;
+    background: url('https://nuon.co/Rightsideimage.jpg') center / cover no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 64px;
+    min-width: 0;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to right, rgba(2,7,8,0.28), transparent 22%),
+      linear-gradient(to top, rgba(2,7,8,0.18), transparent 36%);
+    pointer-events: none;
+  }
+
+  .proof {
+    position: relative;
+    max-width: 620px;
+    width: 100%;
+    background: rgba(2, 7, 8, 0.68);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-panel);
+    padding: 44px 48px 40px;
+    transform: translateY(-4vh);
+  }
+
+  .proof-logos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 44px;
+    margin-bottom: 36px;
+    opacity: 0.85;
+  }
+  .proof-logos img { width: auto; max-width: 128px; object-fit: contain; }
+  .proof-logos img.logo-retool { height: 17px; }
+  .proof-logos img.logo-restate { height: 21px; }
+  .proof-logos img.logo-answerlayer { height: 17px; }
+
+  blockquote {
+    font-size: 24px;
+    line-height: 1.45;
+    letter-spacing: -0.5px;
+    font-weight: 400;
+    text-align: center;
+    color: var(--text-on-dark);
+    text-wrap: balance;
+  }
+
+  .attribution {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 32px;
+  }
+  .attribution img {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    object-fit: cover;
+  }
+  .attribution .name { font-size: 14px; line-height: 20px; font-weight: 500; }
+  .attribution .title { font-size: 12px; line-height: 17px; color: var(--text-secondary-dark); }
+
+  @media (max-width: 980px) {
+    .layout { flex-direction: column; }
+    .rail {
+      width: 100%;
+      min-height: 100vh;
+      border-right: none;
+      border-bottom: 1px solid var(--hairline-dark);
+    }
+    .rail-form { padding-bottom: 0; }
+    .panel { min-height: 72vh; padding: 40px 24px; }
+    .proof { padding: 32px 28px; transform: none; }
+    blockquote { font-size: 20px; }
+    .proof-logos { gap: 28px; flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="rail">
+    <div class="rail-header">
+      <a class="logo" href="https://nuon.co" aria-label="Nuon">
+        <svg width="96" height="40" viewBox="0 0 77 32" fill="none" xmlns="http://www.w3.org/2000/svg"><g fill="currentColor"><path d="M16.9922 0L10.8687 3.53672V9.26271L5.91167 6.3983H5.90884L0 9.81073V28.5876L5.90602 32H5.90884L12.2498 28.3362V22.8616L16.9922 25.5989L23.1157 22.0621V3.53672L16.9922 0ZM1.384 10.6102L5.90602 8H5.90884L10.8658 10.8616V20.4633L1.384 14.9887V10.6102ZM10.8658 27.5367L5.90602 30.3983L1.384 27.7881V16.5876L10.8658 22.0621V27.5367ZM21.7317 21.2599L16.9922 23.9972L12.2527 21.2627V11.661L21.7345 17.1356V21.2599H21.7317ZM21.7317 15.5367L12.2498 10.0621V4.33616L16.9922 1.59887L21.7317 4.33616V15.5367Z"/><path d="M40.8237 19.172V25.6127H38.0444V19.8274C38.0444 18.1324 37.2535 17.4093 35.8978 17.4093C34.4742 17.4093 33.4574 18.2454 33.4574 20.5053V25.6127H30.7007V15.172H33.4348V16.7539H33.48C34.1805 15.5562 35.3554 14.833 36.892 14.833C39.1516 14.833 40.8237 16.0985 40.8237 19.172Z"/><path d="M42.623 21.5674V15.1719H45.4701V21.0702C45.4701 22.6973 46.2384 23.3979 47.436 23.3979C48.8143 23.3979 49.7408 22.4939 49.7408 20.1888V15.1719H52.5201V25.6126H49.786V24.008H49.7408C49.1081 25.138 48.1139 25.9515 46.487 25.9515C44.3629 25.9515 42.623 24.6634 42.623 21.5674Z"/><path d="M65.49 20.3923C65.49 23.6692 63.0271 25.9517 59.7055 25.9517C56.3839 25.9517 53.9209 23.6692 53.9209 20.3923C53.9209 17.1155 56.3839 14.833 59.7055 14.833C63.0271 14.833 65.49 17.1155 65.49 20.3923ZM56.768 20.3923C56.768 22.1776 58.0108 23.3302 59.7055 23.3302C61.4002 23.3302 62.6203 22.1776 62.6203 20.3923C62.6203 18.607 61.4002 17.4545 59.7055 17.4545C58.0108 17.4545 56.768 18.607 56.768 20.3923Z"/><path d="M76.9999 19.172V25.6127H74.2206V19.8274C74.2206 18.1324 73.4298 17.4093 72.074 17.4093C70.6505 17.4093 69.6337 18.2454 69.6337 20.5053V25.6127H66.877V15.172H69.6111V16.7539H69.6563C70.3567 15.5562 71.5317 14.833 73.0682 14.833C75.3278 14.833 76.9999 16.0985 76.9999 19.172Z"/></g></svg>
+      </a>
+    </div>
+
+    <div class="rail-form">
+      {{ if .IsAuthenticated }}
+        <h1>Signed in</h1>
+        <p class="signed-in-email">{{ .Email }}</p>
+        <div class="providers">
+          <a class="btn btn-primary" href="{{ .DashboardURL }}">Go to dashboard</a>
+          <a class="btn btn-ghost" href="/logout">Sign out</a>
+        </div>
+      {{ else }}
+        <h1>Sign in to Nuon</h1>
+        <p class="sub">Deploy your software into your customers' cloud.</p>
+
+        <div class="providers">
+          {{ $redirectURL := .RedirectURL }}
+          {{ range $i, $p := .Providers }}
+            <a class="btn {{ if eq $i 0 }}btn-primary{{ else }}btn-ghost{{ end }}"
+               href="/login?provider={{ $p.ID }}{{ if $redirectURL }}&url={{ $redirectURL }}{{ end }}">
+              {{ if eq $p.ProviderType "google" }}
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17.64 9.20443C17.64 8.56625 17.5827 7.95262 17.4764 7.36353H9V10.8449H13.8436C13.635 11.9699 13.0009 12.9231 12.0477 13.5613V15.8194H14.9564C16.6582 14.2526 17.64 11.9453 17.64 9.20443Z" fill="#4285F4"/>
+                <path d="M8.99976 18C11.4298 18 13.467 17.1941 14.9561 15.8195L12.0475 13.5613C11.2416 14.1013 10.2107 14.4204 8.99976 14.4204C6.65567 14.4204 4.67158 12.8372 3.96385 10.71H0.957031V13.0418C2.43794 15.9831 5.48158 18 8.99976 18Z" fill="#34A853"/>
+                <path d="M3.96409 10.7098C3.78409 10.1698 3.68182 9.59301 3.68182 8.99983C3.68182 8.40665 3.78409 7.82983 3.96409 7.28983V4.95801H0.957273C0.347727 6.17301 0 7.54756 0 8.99983C0 10.4521 0.347727 11.8266 0.957273 13.0416L3.96409 10.7098Z" fill="#FBBC05"/>
+                <path d="M8.99976 3.57955C10.3211 3.57955 11.5075 4.03364 12.4402 4.92545L15.0216 2.34409C13.4629 0.891818 11.4257 0 8.99976 0C5.48158 0 2.43794 2.01682 0.957031 4.95818L3.96385 7.29C4.67158 5.16273 6.65567 3.57955 8.99976 3.57955Z" fill="#EA4335"/>
+              </svg>
+              {{ else if eq $p.ProviderType "github" }}
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M9 0C4.0275 0 0 4.13211 0 9.22838C0 13.3065 2.5785 16.7648 6.15375 17.9841C6.60375 18.0709 6.76875 17.7853 6.76875 17.5403C6.76875 17.3212 6.76125 16.7405 6.7575 15.9712C4.254 16.5277 3.726 14.7332 3.726 14.7332C3.3165 13.6681 2.72475 13.3832 2.72475 13.3832C1.9095 12.8111 2.78775 12.8229 2.78775 12.8229C3.6915 12.887 4.16625 13.7737 4.16625 13.7737C4.96875 15.1847 6.273 14.777 6.7875 14.5414C6.8685 13.9443 7.10025 13.5381 7.3575 13.3073C5.35875 13.0764 3.258 12.2829 3.258 8.74788C3.258 7.73938 3.60675 6.91612 4.18425 6.27152C4.083 6.03728 3.77925 5.0994 4.263 3.82846C4.263 3.82846 5.01675 3.58018 6.738 4.77462C7.458 4.56958 8.223 4.46794 8.988 4.46431C9.753 4.46794 10.518 4.56958 11.238 4.77462C12.948 3.58018 13.7017 3.82846 13.7017 3.82846C14.1855 5.0994 13.8818 6.03728 13.7917 6.27152C14.3655 6.91612 14.7142 7.73938 14.7142 8.74788C14.7142 12.2923 12.6105 13.0725 10.608 13.2995C10.923 13.5765 11.2155 14.1423 11.2155 15.0071C11.2155 16.242 11.205 17.2406 11.205 17.5403C11.205 17.7879 11.3625 18.0761 11.8207 17.9832C15.4162 16.7609 18 13.3049 18 9.22838C18 4.13211 13.9703 0 9 0Z" fill="currentColor"/>
+              </svg>
+              {{ else if eq $p.ProviderType "oidc" }}
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 0.75L2.25 3.75V8.25C2.25 12.4142 5.13 16.3084 9 17.25C12.87 16.3084 15.75 12.4142 15.75 8.25V3.75L9 0.75Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M9 7.5C9.62132 7.5 10.125 8.00368 10.125 8.625C10.125 9.09 9.845 9.4875 9.4425 9.6585V11.25H8.5575V9.6585C8.155 9.4875 7.875 9.09 7.875 8.625C7.875 8.00368 8.37868 7.5 9 7.5Z" fill="currentColor"/>
+              </svg>
+              {{ end }}
+              Continue with {{ $p.Name }}
+              {{ if $p.Hint }}<span class="btn-hint">{{ $p.Hint }}</span>{{ end }}
+            </a>
+          {{ else }}
+            <p class="empty-providers">No login providers configured.</p>
+          {{ end }}
+        </div>
+
+        <p class="terms">By continuing you agree to the <a href="https://nuon.co/terms">terms of service</a> and <a href="https://nuon.co/privacy">privacy policy</a>.</p>
+      {{ end }}
+    </div>
+
+    <footer class="rail-footer">
+      <a class="btn-footer" href="https://docs.nuon.co" target="_blank" rel="noopener">Docs</a>
+      <a class="btn-footer" href="https://join.slack.com/t/nuon-byoc/shared_invite/zt-3ntp580br-O3Hel163PyBvv9SmwrzT3Q" target="_blank" rel="noopener">Join Slack for help with BYOC</a>
+    </footer>
+  </aside>
+
+  <section class="panel">
+    <figure class="proof">
+      <div class="proof-logos">
+        <img class="logo-retool" src="https://nuon.co/logos/customers/retool-dark.svg" alt="Retool">
+        <img class="logo-restate" src="https://nuon.co/logos/customers/restate-dark.svg" alt="Restate">
+        <img class="logo-answerlayer" src="https://nuon.co/logos/customers/answerlayer-dark.svg" alt="AnswerLayer">
+      </div>
+      <blockquote>&ldquo;Winning compliance-heavy enterprises and then actually getting them to production is a herculean task. Nuon makes it easy.&rdquo;</blockquote>
+      <figcaption class="attribution">
+        <img src="https://nuon.co/logos/customers/josh-harris.jpeg" alt="Josh Harris">
+        <div>
+          <div class="name">Josh Harris</div>
+          <div class="title">Co-founder &amp; CEO, AnswerLayer</div>
+        </div>
+      </figcaption>
+    </figure>
+  </section>
+
+</div>
+</body>
+</html>
+{{ end }}

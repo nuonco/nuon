@@ -343,6 +343,9 @@ type Config struct {
 	NuonAuthIssuerURL    string `config:"nuon_auth_issuer_url"`
 	NuonAuthRedirectURL  string `config:"nuon_auth_redirect_url"`
 	NuonAuthProviderName string `config:"nuon_auth_provider_name"` // label shown on the sign-in page
+	// The Nuon-branded sign-in page also auto-enables when app_url is app.nuon.co; BYOC vendor
+	// deployments must never get it, so it is off unless one of those two conditions holds.
+	NuonBrandedLogin bool `config:"nuon_branded_login"`
 
 	// links
 	AppURL        string `config:"app_url" validate:"required"`

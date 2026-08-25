@@ -60,13 +60,34 @@ func (s *service) Index(c *gin.Context) {
 		})
 	}
 
-	c.HTML(http.StatusOK, "auth/index.tmpl", gin.H{
+	template := "auth/index.tmpl"
+	if useNuonBrandedLogin(s.cfg.NuonBrandedLogin, s.cfg.AppURL) {
+		template = "auth/index_nuon.tmpl"
+	}
+
+	c.HTML(http.StatusOK, template, gin.H{
 		"IsAuthenticated": isAuthenticated,
 		"Email":           email,
 		"Providers":       options,
 		"RedirectURL":     redirectURLEncoded,
 		"DashboardURL":    s.cfg.AppURL,
 	})
+}
+
+// useNuonBrandedLogin decides whether to render the Nuon-branded sign-in page. It must stay
+// false for BYOC vendor deployments, whose app_url is their own domain — only Nuon's cloud
+// (app.nuon.co) or an explicit nuon_branded_login opt-in (stage, local preview) enables it.
+func useNuonBrandedLogin(flagEnabled bool, appURL string) bool {
+	if flagEnabled {
+		return true
+	}
+
+	u, err := url.Parse(appURL)
+	if err != nil {
+		return false
+	}
+
+	return u.Hostname() == "app.nuon.co"
 }
 
 // providerDisplayName returns a human-readable name for the provider.
