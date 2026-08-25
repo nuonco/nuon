@@ -47,6 +47,7 @@ export const SandboxBuildTimeline = ({
               <span className="flex items-center gap-2">
                 <Link
                   href={`/${orgId}/apps/${appId}/sandbox/builds/${build.id}`}
+                  variant="inline"
                 >
                   Sandbox build
                 </Link>

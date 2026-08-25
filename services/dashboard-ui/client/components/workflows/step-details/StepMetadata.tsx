@@ -122,7 +122,6 @@ export const StepMetadata = ({ step }: IStepDetails) => {
       </Expand>
 
       <Link
-        className="text-xs"
         href={`/${org?.id}/installs/${install?.id}/workflows`}
       >
         View workflows

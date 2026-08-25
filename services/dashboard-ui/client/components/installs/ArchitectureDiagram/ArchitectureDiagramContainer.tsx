@@ -136,11 +136,9 @@ const InstallDetailsTab = () => {
       )}
 
       <LabeledValue label="App">
-        <Text variant="subtext">
-          <Link href={`/${org?.id}/apps/${install.app_id}`}>
-            {install.app?.name || install.app_id}
-          </Link>
-        </Text>
+        <Link href={`/${org?.id}/apps/${install.app_id}`}>
+          {install.app?.name || install.app_id}
+        </Link>
       </LabeledValue>
 
       {isManagedByConfig && (

@@ -1,6 +1,5 @@
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
-import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import {
@@ -31,11 +30,9 @@ export const RunnerStepDetails = ({
           Install runner
         </Text>
 
-        <Text variant="subtext">
-          <Link href={`/${orgId}/installs/${step?.owner_id}/runner`}>
-            View runner <Icon variant="CaretRightIcon" />
-          </Link>
-        </Text>
+        <Link href={`/${orgId}/installs/${step?.owner_id}/runner`}>
+          View runner
+        </Link>
       </div>
 
       {processesLoading ? (

@@ -26,7 +26,6 @@ const QuickManagementMenu = ({ orgId, installId }: IQuickManagementMenu) => {
     <Menu>
       <Button href={`/${orgId}/installs/${installId}`}>
         View details
-        <Icon variant="CaretRightIcon" />
       </Button>
       <hr />
       <Text variant="label" theme="neutral">

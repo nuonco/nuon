@@ -34,7 +34,7 @@ const FAMILY_CLASSES: Record<TTextFamily, string> = {
   mono: 'font-mono',
 }
 
-const VARIANT_CLASSES: Record<TTextVariant, string> = {
+export const TEXT_VARIANT_CLASSES: Record<TTextVariant, string> = {
   h1: 'text-[34px] leading-10 tracking-[-0.8px]',
   h2: 'text-2xl leading-[30px] tracking-[-0.8px]',
   h3: 'text-lg leading-[27px] tracking-[-0.2px]',
@@ -97,7 +97,7 @@ export const Text = ({
         className={cn(
           'inline-block align-middle',
           FAMILY_CLASSES[family],
-          VARIANT_CLASSES[variant],
+          TEXT_VARIANT_CLASSES[variant],
           SKELETON_CLASSES,
           className
         )}
@@ -135,7 +135,7 @@ export const Text = ({
       className={cn(
         display,
         FAMILY_CLASSES[family],
-        VARIANT_CLASSES[variant],
+        TEXT_VARIANT_CLASSES[variant],
         WEIGHT_CLASSES[weight],
         THEME_CLASSES[theme],
         extraTracking,
