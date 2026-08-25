@@ -26,6 +26,7 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 	var install app.Install
 	if res := h.db.WithContext(ctx).
 		Preload("AWSAccount").
+		Preload("GCPAccount").
 		// Newest row only: AfterQuery promotes it to CurrentInstallInputs, which the
 		// customer-input values and the cluster_name resolution below both read.
 		Preload("InstallInputs", func(db *gorm.DB) *gorm.DB {
@@ -223,9 +224,16 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 		}
 
 	case app.AppRunnerTypeGCP:
-		// NOTE: project + region are NOT known server-side — the customer
-		// supplies them at provision time via the CLI. ctl-api only provides the
-		// Nuon-generated inputs.
+		// The GCP target, from the install's GCPAccount. Not required, unlike the
+		// AWS region above: a GCP install can be created without one, and the
+		// first provision records it via the UpdateGCPAccountRegion activity. So
+		// this serves what is known and leaves the rest empty for the module to
+		// take from its own project_id/region variables.
+		var gcpProjectID, gcpRegion string
+		if install.GCPAccount != nil {
+			gcpProjectID = install.GCPAccount.ProjectID
+			gcpRegion = install.GCPAccount.Region
+		}
 
 		// GCP provisions via the Terraform module, which authenticates the
 		// runner with a real API token (no IID-based auth like AWS).
@@ -244,6 +252,9 @@ func (h *Helpers) BuildInstallerSDKConfig(ctx context.Context, installID string)
 
 		cfg.Cloud = "gcp"
 		cfg.GCP = &app.InstallerSDKGCPConfig{
+			ProjectID: gcpProjectID,
+			Region:    gcpRegion,
+
 			RunnerInitScriptURL: initScriptURL,
 			RunnerAPIToken:      token.Token,
 			RunnerMachineType:   instanceType,
