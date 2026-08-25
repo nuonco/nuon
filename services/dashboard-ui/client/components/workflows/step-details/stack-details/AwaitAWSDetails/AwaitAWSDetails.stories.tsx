@@ -3,6 +3,49 @@ export default {
 }
 
 import { AwaitAWSDetails } from './AwaitAWSDetails'
+import { InstallAppConfigContext } from '@/providers/install-app-config-provider'
+
+// The TF Module tab reads customer-facing inputs/secrets through
+// useInstallAppConfig, which throws outside its provider. Feed the context
+// directly rather than mounting the real provider, which needs org/install
+// contexts of its own.
+const mockAppConfig = {
+  input: {
+    inputs: [
+      {
+        name: 'domain',
+        source: 'customer',
+        default: 'nuon.run',
+        description: 'Root domain for the install',
+      },
+      {
+        name: 'sub_domain',
+        source: 'customer',
+        default: 'api',
+        required: true,
+        description: 'Subdomain for the API',
+      },
+      { name: 'region', source: 'vendor', default: 'us-east-1' },
+    ],
+  },
+  secrets: {
+    secrets: [
+      {
+        name: 'stripe_key',
+        required: true,
+        description: 'Your Stripe API key',
+      },
+      { name: 'jwt_signing_key', auto_generate: true },
+    ],
+  },
+} as any
+
+const appConfigContext = {
+  appConfig: mockAppConfig,
+  isLoading: false,
+  error: null,
+  refresh: () => {},
+}
 
 const mockStack = {
   versions: [
@@ -127,15 +170,17 @@ export const NoTemplateBucket = () => (
 )
 
 export const TerraformProvider = () => (
-  <div className="max-w-2xl p-4">
-    <AwaitAWSDetails
-      stack={mockStackWithBoth}
-      step={mockStep}
-      orgId="org-1"
-      installId="install-1"
-      tfProvider
-    />
-  </div>
+  <InstallAppConfigContext.Provider value={appConfigContext}>
+    <div className="max-w-2xl p-4">
+      <AwaitAWSDetails
+        stack={mockStackWithBoth}
+        step={mockStep}
+        orgId="org-1"
+        installId="install-1"
+        tfProvider
+      />
+    </div>
+  </InstallAppConfigContext.Provider>
 )
 
 export const LegacyContents = () => (
