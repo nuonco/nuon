@@ -256,22 +256,18 @@ const InstallTemplate = () => {
                   )}
                   {install?.app_branch && (
                     <LabeledValue label="Branch">
-                      <Text variant="subtext">
-                        <Link href={`/${org?.id}/apps/${install?.app_id}/branches/${install?.app_branch?.id}`}>
-                          <span className="flex items-center gap-1">
-                            <Icon variant="GitBranchIcon" size={14} />
-                            {install.app_branch.name}
-                          </span>
-                        </Link>
-                      </Text>
+                      <Link href={`/${org?.id}/apps/${install?.app_id}/branches/${install?.app_branch?.id}`}>
+                        <span className="flex items-center gap-1">
+                          <Icon variant="GitBranchIcon" size={14} />
+                          {install.app_branch.name}
+                        </span>
+                      </Link>
                     </LabeledValue>
                   )}
                   <LabeledValue label="App">
-                    <Text variant="subtext">
-                      <Link href={`/${org.id}/apps/${install.app_id}`}>
-                        {install?.app?.name}
-                      </Link>
-                    </Text>
+                    <Link href={`/${org.id}/apps/${install.app_id}`}>
+                      {install?.app?.name}
+                    </Link>
                   </LabeledValue>
                   <InstallStatusesContainer collapsible />
                 </div>

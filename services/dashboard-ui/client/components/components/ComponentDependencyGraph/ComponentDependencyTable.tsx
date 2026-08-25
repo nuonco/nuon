@@ -96,6 +96,7 @@ export const ComponentDependencyTable = ({
               <Link
                 href={`${basePath}/${row.original.id}`}
                 onClick={onNavigate}
+                variant="inline"
               >
                 {row.original.name}
               </Link>

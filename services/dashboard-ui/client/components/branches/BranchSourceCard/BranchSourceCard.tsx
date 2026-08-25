@@ -55,7 +55,7 @@ export const BranchSourceCard = ({ config, latestRun }: IBranchSourceCard) => {
           </Text>
         </div>
         {repoHref ? (
-          <Link href={repoHref} isExternal className="text-sm">
+          <Link href={repoHref} isExternal>
             View on GitHub
           </Link>
         ) : null}

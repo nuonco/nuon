@@ -105,7 +105,6 @@ export const InstallResourceDetailPanelButton = ({
       {...props}
     >
       Details
-      <Icon variant="CaretRightIcon" />
     </Button>
   )
 }

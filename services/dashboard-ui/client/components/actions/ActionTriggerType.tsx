@@ -89,7 +89,7 @@ export const ActionTriggerType = ({
         {label}:
         <Text variant="subtext" family="mono" className="truncate min-w-0">
           {componentPath ? (
-            <Link href={componentPath}>{componentName}</Link>
+            <Link href={componentPath} variant="inline">{componentName}</Link>
           ) : (
             componentName
           )}

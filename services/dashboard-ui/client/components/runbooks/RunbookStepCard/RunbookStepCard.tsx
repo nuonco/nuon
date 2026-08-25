@@ -4,7 +4,6 @@ import { Card } from '@/components/common/Card'
 import { Code } from '@/components/common/Code'
 import { CompositeError } from '@/components/common/CompositeError'
 import { Expand } from '@/components/common/Expand'
-import { Icon } from '@/components/common/Icon'
 import { JSONViewer } from '@/components/common/JSONViewer'
 import { KeyValueList } from '@/components/common/KeyValueList'
 import { Link } from '@/components/common/Link'
@@ -115,7 +114,7 @@ export const RunbookStepCard = ({
         </div>
         <Link href={`${workflowUrl}?panel=${step.id}`}>
           <Text variant="subtext" className="!inline-flex gap-1 items-center">
-            View workflow <Icon size="12" variant="CaretRightIcon" />
+            View workflow
           </Text>
         </Link>
       </div>
@@ -230,7 +229,6 @@ export const RunbookStepCard = ({
               {eventWait?.matched_event_type
                 ? ` · ${eventWait.matched_event_type}`
                 : ''}
-              <Icon variant="CaretRightIcon" />
             </Link>
           ) : null}
         </div>

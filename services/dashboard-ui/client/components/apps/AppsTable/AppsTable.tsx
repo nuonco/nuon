@@ -47,7 +47,7 @@ const columns: ColumnDef<TAppRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body">
-          <Link href={info.row.original.nameHref}>
+          <Link href={info.row.original.nameHref} variant="inline">
             {info.getValue() as string}
           </Link>
         </Text>
@@ -72,9 +72,8 @@ const columns: ColumnDef<TAppRow>[] = [
     cell: (info) =>
       info.row.original.sandboxHref ? (
         <Text>
-          <Link href={info.row.original.sandboxHref} isExternal>
+          <Link href={info.row.original.sandboxHref} isExternal variant="inline">
             {info.getValue() as string}
-            <Icon variant="ArrowSquareOutIcon" />
           </Link>
         </Text>
       ) : (
@@ -101,8 +100,8 @@ const columns: ColumnDef<TAppRow>[] = [
     header: '',
     cell: (info) => (
       <Text>
-        <Link className="text-left" href={info.getValue() as string}>
-          View <Icon variant="CaretRightIcon" />
+        <Link className="text-left" href={info.getValue() as string} variant="inline">
+          View app
         </Link>
       </Text>
     ),

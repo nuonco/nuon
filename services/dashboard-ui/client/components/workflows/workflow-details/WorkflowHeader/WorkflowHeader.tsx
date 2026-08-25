@@ -26,7 +26,7 @@ export const WorkflowHeader = ({ workflow, install }: IWorkflowHeader) => {
       <div className="flex flex-col gap-4">
         <Link
           href={`/${orgId}/installs/${installId}/workflows`}
-          className="flex items-center gap-1.5 w-fit text-base leading-6 tracking-[-0.2px] font-strong text-primary-600 dark:text-primary-500 hover:text-primary-800 hover:dark:text-primary-400 focus:text-primary-800 focus:dark:text-primary-400 active:text-primary-900 active:dark:text-primary-600 focus-visible:rounded"
+          className="flex items-center gap-1.5 w-fit leading-6 tracking-[-0.2px] font-strong text-primary-600 dark:text-primary-500 hover:text-primary-800 hover:dark:text-primary-400 focus:text-primary-800 focus:dark:text-primary-400 active:text-primary-900 active:dark:text-primary-600 focus-visible:rounded"
         >
           <Icon variant="CaretLeftIcon" weight="bold" /> All workflows
         </Link>

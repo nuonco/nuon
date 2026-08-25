@@ -1,7 +1,6 @@
 import { isRouteErrorResponse, useRouteError } from 'react-router'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Link } from '@/components/common/Link'
-import { Text } from '@/components/common/Text'
 
 export const RouteError = () => {
   const error = useRouteError()
@@ -18,11 +17,9 @@ export const RouteError = () => {
             : 'An unexpected error occurred. Try again.'
         }
         action={
-          <Text variant="subtext">
-            <Link href="/" isATag>
-              Back to home
-            </Link>
-          </Text>
+          <Link href="/" isATag>
+            Back to home
+          </Link>
         }
       />
     </div>
