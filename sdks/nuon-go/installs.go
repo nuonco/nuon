@@ -68,6 +68,18 @@ func (c *client) GetInstall(ctx context.Context, installID string) (*models.AppI
 	return resp.Payload, nil
 }
 
+func (c *client) GetAvailableRoles(ctx context.Context, installID string) ([]*models.ServiceAvailableRole, error) {
+	resp, err := c.genClient.Operations.GetAvailableRoles(&operations.GetAvailableRolesParams{
+		InstallID: installID,
+		Context:   ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload.Roles, nil
+}
+
 func (c *client) UpdateInstall(ctx context.Context, installID string, req *models.ServiceUpdateInstallRequest) (*models.AppInstall, error) {
 	resp, err := c.genClient.Operations.UpdateInstall(&operations.UpdateInstallParams{
 		Req:       req,
