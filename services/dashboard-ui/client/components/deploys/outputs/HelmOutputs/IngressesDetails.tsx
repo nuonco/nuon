@@ -5,6 +5,7 @@ import { Expand } from '@/components/common/Expand'
 import { KeyValueList } from '@/components/common/KeyValueList'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 
 export const IngressesDetails = ({ ingresses }) => {
   const hasIngresses = Object.keys(ingresses).length > 0
@@ -243,28 +244,22 @@ const IngressDetails = ({ ingress }) => {
 
       <div className="flex flex-col gap-2">
         <Text weight="strong">Metadata</Text>
-        <KeyValueList
-          values={[
-            {
-              key: 'Created',
-              value: new Date(
-                ingress.metadata.creationTimestamp
-              ).toLocaleString(),
-              type: 'string',
-            },
-            {
-              key: 'Generation',
-              value: String(ingress.metadata.generation),
-              type: 'number',
-            },
-            {
-              key: 'Resource Version',
-              value: ingress.metadata.resourceVersion,
-              type: 'string',
-            },
-            { key: 'UID', value: ingress.metadata.uid, type: 'string' },
-          ]}
-        />
+        <div className="flex flex-wrap items-start gap-x-16 gap-y-4">
+          <LabeledValue label="Created">
+            <Time
+              variant="subtext"
+              time={ingress.metadata.creationTimestamp}
+              format="short-datetime"
+            />
+          </LabeledValue>
+          <LabeledValue label="Generation">
+            {String(ingress.metadata.generation)}
+          </LabeledValue>
+          <LabeledValue label="Resource version">
+            {ingress.metadata.resourceVersion}
+          </LabeledValue>
+          <LabeledValue label="UID">{ingress.metadata.uid}</LabeledValue>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2">
