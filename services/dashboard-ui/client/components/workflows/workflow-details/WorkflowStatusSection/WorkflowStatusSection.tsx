@@ -134,7 +134,7 @@ const QueueItem = ({
             href={workflowLink}
             className="text-xs hover:underline flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity"
           >
-            <span>View</span>
+            <span>View workflow</span>
           </Link>
         )}
         {onCancel && (

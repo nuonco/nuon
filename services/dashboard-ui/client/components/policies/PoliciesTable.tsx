@@ -155,7 +155,7 @@ export const PoliciesTable = ({
         cell: (info) => (
           <Text>
             <Link href={`${basePath}/policies/${info.row.original.id}`}>
-              View
+              View policy
             </Link>
           </Text>
         ),

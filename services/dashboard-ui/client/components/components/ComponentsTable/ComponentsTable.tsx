@@ -151,7 +151,7 @@ const columns: ColumnDef<TComponentRow>[] = [
     cell: (info) => (
       <Text>
         <Link className="text-left" href={info.getValue() as string}>
-          View
+          View component
         </Link>
       </Text>
     ),

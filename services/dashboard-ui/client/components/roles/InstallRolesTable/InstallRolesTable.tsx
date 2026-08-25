@@ -110,7 +110,7 @@ export const InstallRolesTable = ({
               className: panelLinkClass,
               children: (
                 <span className="flex items-center gap-1.5">
-                  View
+                  View role
                 </span>
               ),
             }}

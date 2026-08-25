@@ -232,7 +232,7 @@ const SyncCard = ({ sync }: { sync: TAppInstallConfigSync }) => {
             href={`/${org?.id}/apps/${app?.id}/install-syncs/${sync.id}`}
             className="text-xs"
           >
-            View
+            View sync
           </Link>
         </div>
       </div>

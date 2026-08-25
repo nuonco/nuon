@@ -120,7 +120,7 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => (
       <Text>
         <Link className="text-left" href={info.getValue() as string}>
-          View
+          View install
         </Link>
       </Text>
     ),

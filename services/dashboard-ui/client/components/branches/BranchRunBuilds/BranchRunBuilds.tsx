@@ -87,7 +87,7 @@ export const BranchRunBuilds = ({ builds, orgId, appId }: IBranchRunBuilds) => {
                 />
                 {buildUrl && (
                   <Link href={buildUrl} className="text-xs">
-                    View
+                    View build
                   </Link>
                 )}
               </div>

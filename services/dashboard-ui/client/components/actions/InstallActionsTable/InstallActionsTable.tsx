@@ -150,7 +150,7 @@ const columns: ColumnDef<InstallActionRow>[] = [
     cell: (info) => (
       <Text>
         <Link className="text-left" href={info.getValue() as string}>
-          View
+          View action
         </Link>
       </Text>
     ),

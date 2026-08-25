@@ -101,7 +101,7 @@ const columns: ColumnDef<TAppRow>[] = [
     cell: (info) => (
       <Text>
         <Link className="text-left" href={info.getValue() as string}>
-          View
+          View app
         </Link>
       </Text>
     ),
