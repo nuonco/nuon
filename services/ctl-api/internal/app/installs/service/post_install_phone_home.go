@@ -11,13 +11,11 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/stackrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type InstallPhoneHomeRequest map[string]any
@@ -194,40 +192,14 @@ func (s *service) getPhoneHomeTarget(
 	return &stackVersion, &install, nil
 }
 
+// The persistence half lives in installs/helpers so the authenticated stack
+// phone-home route applies reports identically.
 func (s *service) updateInstallPhoneHome(ctx context.Context, stackVersion *app.InstallStackVersion, requestType string, req *InstallPhoneHomeRequest) error {
 	installID := stackVersion.InstallID
 
-	data, err := pkggenerics.ToMapstructureWithJSONTag(req)
+	run, err := s.helpers.RecordStackPhoneHome(ctx, stackVersion, *req)
 	if err != nil {
-		return errors.Wrap(err, "unable to convert to mapstructure")
-	}
-
-	updatedStack := app.InstallStackVersion{
-		ID: stackVersion.ID,
-	}
-	res := s.db.WithContext(ctx).
-		Model(&updatedStack).
-		Updates(app.InstallStackVersion{
-			Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
-			Runs: []app.InstallStackVersionRun{
-				{
-					Data: generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data))),
-				},
-			},
-		})
-	if res.Error != nil {
-		return errors.Wrap(res.Error, "unable to update stack version")
-	}
-
-	run := app.InstallStackVersionRun{
-		OrgID:                 stackVersion.OrgID,
-		CreatedByID:           stackVersion.CreatedByID,
-		InstallStackVersionID: stackVersion.ID,
-		Data:                  generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data))),
-	}
-	if res = s.db.WithContext(ctx).
-		Create(&run); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to create install stack version run")
+		return err
 	}
 
 	ctx = cctx.SetOrgIDContext(ctx, stackVersion.OrgID)

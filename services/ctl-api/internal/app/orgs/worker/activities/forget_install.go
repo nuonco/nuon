@@ -88,6 +88,11 @@ func (a *Activities) ForgetInstall(ctx context.Context, req ForgetInstallRequest
 		}
 	}
 
+	// must run before the cascade delete below; see the helper's doc comment.
+	if err := a.acctClient.DeleteInstallStackServiceAccounts(ctx, req.InstallID); err != nil {
+		return err
+	}
+
 	res := a.db.WithContext(ctx).
 		Select(clause.Associations).
 		Delete(&app.Install{

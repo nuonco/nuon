@@ -31,11 +31,6 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"POST", "/v1/event-ingress/:ingress_key"}:                     {},
 	{"POST", "/v1/installs/:install_id/phone-home/:phone_home_id"}: {},
 
-	// stack-run config: read-only, side-effect free. The per-stack-version
-	// phone_home_id in the URL is the secret. Consumed by the Terraform
-	// provider's nuon_stack data source.
-	{"GET", "/v1/stack-runs/:phone_home_id/config"}: {},
-
 	// oidc workload identity federation: trust is established by verifying
 	// the presented OIDC token against org trust policies
 	{"POST", "/v1/oidc/token"}: {},
