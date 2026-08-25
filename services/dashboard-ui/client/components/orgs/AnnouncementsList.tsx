@@ -1,5 +1,4 @@
 import { AnnouncementCard, type IAnnouncement } from './AnnouncementCard'
-import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 
@@ -24,12 +23,9 @@ export const AnnouncementsList = ({ announcements, disableDismissMemory = false 
           disableDismissMemory={disableDismissMemory}
         />
       ))}
-      <Text variant="body">
-        <Link href="https://docs.nuon.co/updates/updates" isExternal>
-          View changelog
-          <Icon variant="ArrowSquareOutIcon" size={14} />
-        </Link>
-      </Text>
+      <Link href="https://docs.nuon.co/updates/updates" isExternal>
+        View changelog
+      </Link>
     </div>
   )
 }

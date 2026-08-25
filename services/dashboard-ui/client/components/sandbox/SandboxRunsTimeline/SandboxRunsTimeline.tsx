@@ -34,6 +34,7 @@ export const SandboxRunsTimeline = ({
               <span className="flex items-center gap-2">
                 <Link
                   href={`/${orgId}/installs/${installId}/sandbox/runs/${run?.id}`}
+                  variant="inline"
                 >
                   {humanize(run?.run_type)}
                 </Link>

@@ -86,9 +86,8 @@ export const AnnouncementCard = ({
             {announcement.date}
           </Text>
           <Text variant="base" weight="strong">
-            <Link href={announcement.ctaUrl} isExternal className="!text-inherit hover:!text-primary-600 dark:hover:!text-primary-400">
+            <Link href={announcement.ctaUrl} isExternal variant="inline" className="!text-inherit hover:!text-primary-600 dark:hover:!text-primary-400">
               {announcement.title}
-              <Icon variant="ArrowSquareOutIcon" size={14} />
             </Link>
           </Text>
         </div>

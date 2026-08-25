@@ -106,10 +106,7 @@ const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
               />
               <Link
                 href={`/${orgId}/installs/${inst.id}`}
-                className={cn(
-                  'nodrag w-auto min-w-0 flex-1 truncate',
-                  compact ? 'text-[9px]' : 'text-xs'
-                )}
+                className="nodrag w-auto min-w-0 flex-1 truncate"
                 title={inst.name}
               >
                 {inst.name}

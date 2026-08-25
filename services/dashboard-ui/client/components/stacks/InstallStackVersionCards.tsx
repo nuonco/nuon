@@ -182,7 +182,7 @@ const StackVersionCard = ({
           </span>
           <span className="flex items-center gap-3">
             <Text variant="subtext" theme="neutral">
-              <Link href={`/${orgId}/apps/${appId}`}>
+              <Link href={`/${orgId}/apps/${appId}`} variant="inline">
                 {version?.app_config_id}
               </Link>
             </Text>

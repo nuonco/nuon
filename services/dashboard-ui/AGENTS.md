@@ -612,26 +612,45 @@ A dev-mode console warning will tell you when a variant is missing from the map.
 
 ### Links & Navigation
 
-**Never import `Link` from `react-router` directly.** Use the common components instead:
+**Never import `Link` from `react-router` directly.** Use `Link` from `@/components/common/Link`
+(uses `href`, not `to`).
 
-- For inline text links: `Link` from `@/components/common/Link` (uses `href`, not `to`)
-- For navigation buttons (icon buttons, ghost nav actions): `Button` with `href` and `variant="ghost"`
+Every content link is one of three classes — see **[DESIGN.md](./DESIGN.md) §5 "Links"** and
+**[COPY_STYLE.md](./COPY_STYLE.md#links)** for the full taxonomy:
+
+- **Entity link** — the resource's name is the link text; the name navigates. No verb, no icon.
+- **View link** — a standalone `View {resource}` link. The default `Link` self-sizes at
+  subtext — no wrapper needed; use `textVariant` to size explicitly.
+- **External link** — set `isExternal`; the new-tab icon renders automatically (never hand-place
+  `ArrowSquareOutIcon`).
+
+**Sizing is component-owned:** the default `Link` renders at subtext on its own (`textVariant`
+to override); `variant="inline"` inherits the surrounding text — use it for links inside
+sentences, table cells, and other sized contexts. Never size a `Link` with a text-size class or
+a `Text` wrapper. Links never carry a trailing `CaretRightIcon`/`ArrowRightIcon` or a manual
+external icon. **Row navigation is the entity link — not** an icon-only
+`<Button href><Icon/></Button>` (deprecated; icon-only buttons are for non-nav chrome only).
 
 ```tsx
-// ✅ Correct — text link
+// ✅ Entity link in a sized context (table cell, sentence) — inherits via inline
 import { Link } from '@/components/common/Link'
-<Link href={`/${org.id}/connections/vcs/${id}`}>View</Link>
+<Link href={`/${org.id}/connections/vcs/${id}`} variant="inline">{connection.name}</Link>
 
-// ✅ Correct — nav button
-import { Button } from '@/components/common/Button'
-<Button href={`/${org.id}/connections/vcs/${id}`} variant="ghost" size="xs">
-  <Icon variant="ArrowRightIcon" size={16} />
-</Button>
+// ✅ View link — standalone, self-sizes at subtext (no wrapper)
+<Link href={`/${org.id}/connections/vcs/${id}`}>View connection</Link>
 
-// ❌ Wrong
+// ✅ External — isExternal renders the new-tab icon
+<Link href="https://docs.nuon.co" isExternal>View docs</Link>
+
+// ❌ Wrong — react-router import, sizing wrapper/class, icon-only nav button
 import { Link } from 'react-router'
-<Link to={`/${org.id}/connections/vcs/${id}`}>View</Link>
+<Text variant="subtext"><Link href="...">View connection</Link></Text>
+<Link href="..." className="text-xs">View connection</Link>
+<Button href={`/${org.id}/...`} variant="ghost"><Icon variant="ArrowRightIcon" /></Button>
 ```
+
+Markdown is the exception: the `Markdown` renderers emit plain styled `<a>` tags
+(`markdownAnchorClassName`), never the React `Link` — don't swap components into markdown.
 
 ### Button tooltips (disabled reasons & nudges)
 
