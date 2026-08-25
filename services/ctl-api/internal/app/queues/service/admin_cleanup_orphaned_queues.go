@@ -19,23 +19,30 @@ type AdminCleanupOrphanedRequest struct {
 }
 
 type AdminCleanupOrphanedResponse struct {
-	OrgsProcessed     int `json:"orgs_processed"`
-	InstallsProcessed int `json:"installs_processed"`
-	AppsProcessed     int `json:"apps_processed"`
-	VCSConnsProcessed int `json:"vcs_conns_processed"`
-	QueuesDeleted     int `json:"queues_deleted"`
-	EmittersDeleted   int `json:"emitters_deleted"`
-	SignalsCancelled  int `json:"signals_cancelled"`
-	Failed            int `json:"failed"`
+	OrgsProcessed        int `json:"orgs_processed"`
+	InstallsProcessed    int `json:"installs_processed"`
+	AppsProcessed        int `json:"apps_processed"`
+	VCSConnsProcessed    int `json:"vcs_conns_processed"`
+	RunnersProcessed     int `json:"runners_processed"`
+	QueuesDeleted        int `json:"queues_deleted"`
+	EmittersDeleted      int `json:"emitters_deleted"`
+	StrayEmittersDeleted int `json:"stray_emitters_deleted"`
+	SignalsCancelled     int `json:"signals_cancelled"`
+	Failed               int `json:"failed"`
+}
+
+type orphanedQueueRow struct {
+	ID      string
+	OwnerID string
 }
 
 // @ID						AdminCleanupOrphanedQueues
-// @Summary				Delete queues and emitters orphaned by forgotten installs and deleted orgs and apps
-// @Description			Iterates soft-deleted orgs, forgotten installs, deleted apps (including apps of
-// @Description			deleted orgs), and deleted VCS connections, and for each one (in its own transaction)
-// @Description			cancels pending signals on its live queues, deletes the queues' emitters, and
-// @Description			soft-deletes the queues. Install cleanup also covers queues owned by runners in the
-// @Description			install's runner groups.
+// @Summary				Delete queues and emitters orphaned by deleted orgs, installs, apps, and vcs connections
+// @Description			Finds live queues whose org or owner (install, app, vcs connection, runner, or the
+// @Description			runner's install) is soft- or hard-deleted, then per owning entity (in its own
+// @Description			transaction) cancels pending signals, deletes the queues' emitters, and soft-deletes
+// @Description			the queues. Also soft-deletes stray live emitters whose queue is already deleted or
+// @Description			missing. Discovery is set-based so only entities with live queues are visited.
 // @Param					req	body	AdminCleanupOrphanedRequest	true	"Input"
 // @Tags					queues/admin
 // @Security				AdminEmail
@@ -53,165 +60,100 @@ func (s *service) AdminCleanupOrphanedQueues(ctx *gin.Context) {
 
 	db := s.db.WithContext(ctx)
 
-	var deletedOrgIDs []string
-	if res := db.Unscoped().Model(&app.Org{}).
-		Where("deleted_at != 0").
-		Pluck("id", &deletedOrgIDs); res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to list deleted orgs: %w", res.Error))
-		return
-	}
+	installTable := plugins.TableName(db, app.Install{})
+	appTable := plugins.TableName(db, app.App{})
+	vcsConnTable := plugins.TableName(db, app.VCSConnection{})
+	runnerTable := plugins.TableName(db, app.Runner{})
 
-	var forgottenInstallIDs []string
-	if res := db.Unscoped().Model(&app.Install{}).
-		Where("deleted_at != 0").
-		Pluck("id", &forgottenInstallIDs); res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to list forgotten installs: %w", res.Error))
-		return
-	}
-
-	var deletedAppIDs []string
-	if res := db.Unscoped().Model(&app.App{}).
-		Where("deleted_at != 0").
-		Or("org_id IN (?)", db.Session(&gorm.Session{NewDB: true}).Unscoped().
-			Model(&app.Org{}).Select("id").Where("deleted_at != 0")).
-		Pluck("id", &deletedAppIDs); res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to list deleted apps: %w", res.Error))
-		return
+	type sweep struct {
+		name    string
+		counter *int
+		query   string
+		args    []any
 	}
 
 	var resp AdminCleanupOrphanedResponse
 
-	for _, orgID := range deletedOrgIDs {
-		var queueIDs []string
-		if res := db.Model(&app.Queue{}).
-			Where(app.Queue{OrgID: &orgID}).
-			Pluck("id", &queueIDs); res.Error != nil {
-			s.l.Warn("unable to list deleted-org queues", zap.String("org_id", orgID), zap.Error(res.Error))
-			resp.Failed++
-			continue
-		}
-		if len(queueIDs) == 0 {
-			continue
-		}
-
-		if err := s.cleanupQueues(ctx, queueIDs, req.DryRun, &resp); err != nil {
-			s.l.Warn("unable to clean up deleted-org queues", zap.String("org_id", orgID), zap.Error(err))
-			resp.Failed++
-			continue
-		}
-		resp.OrgsProcessed++
+	sweeps := []sweep{
+		{
+			name:    "org",
+			counter: &resp.OrgsProcessed,
+			query: `SELECT q.id AS id, q.org_id AS owner_id FROM queues q
+				LEFT JOIN orgs o ON o.id = q.org_id
+				WHERE q.deleted_at = 0 AND (o.id IS NULL OR o.deleted_at != 0)`,
+		},
+		{
+			name:    "install",
+			counter: &resp.InstallsProcessed,
+			query: `SELECT q.id AS id, q.owner_id AS owner_id FROM queues q
+				LEFT JOIN installs i ON i.id = q.owner_id
+				WHERE q.deleted_at = 0 AND q.owner_type = ? AND (i.id IS NULL OR i.deleted_at != 0)`,
+			args: []any{installTable},
+		},
+		{
+			name:    "app",
+			counter: &resp.AppsProcessed,
+			query: `SELECT q.id AS id, q.owner_id AS owner_id FROM queues q
+				LEFT JOIN apps a ON a.id = q.owner_id
+				WHERE q.deleted_at = 0 AND q.owner_type = ? AND (a.id IS NULL OR a.deleted_at != 0)`,
+			args: []any{appTable},
+		},
+		{
+			name:    "vcs_connection",
+			counter: &resp.VCSConnsProcessed,
+			query: `SELECT q.id AS id, q.owner_id AS owner_id FROM queues q
+				LEFT JOIN vcs_connections v ON v.id = q.owner_id
+				WHERE q.deleted_at = 0 AND q.owner_type = ? AND (v.id IS NULL OR v.deleted_at != 0)`,
+			args: []any{vcsConnTable},
+		},
+		{
+			name:    "runner",
+			counter: &resp.RunnersProcessed,
+			query: `SELECT q.id AS id, q.owner_id AS owner_id FROM queues q
+				LEFT JOIN runners r ON r.id = q.owner_id
+				LEFT JOIN runner_groups rg ON rg.id = r.runner_group_id
+				LEFT JOIN installs i ON rg.owner_type = ? AND i.id = rg.owner_id
+				WHERE q.deleted_at = 0 AND q.owner_type = ?
+				AND (r.id IS NULL OR r.deleted_at != 0
+					OR (rg.owner_type = ? AND (i.id IS NULL OR i.deleted_at != 0)))`,
+			args: []any{installTable, runnerTable, installTable},
+		},
 	}
 
-	installTable := plugins.TableName(db, app.Install{})
-	runnerTable := plugins.TableName(db, app.Runner{})
-
-	for _, installID := range forgottenInstallIDs {
-		var queueIDs []string
-		if res := db.Model(&app.Queue{}).
-			Where(app.Queue{OwnerID: installID, OwnerType: installTable}).
-			Pluck("id", &queueIDs); res.Error != nil {
-			s.l.Warn("unable to list install queues", zap.String("install_id", installID), zap.Error(res.Error))
-			resp.Failed++
-			continue
+	seenQueues := make(map[string]struct{})
+	for _, sw := range sweeps {
+		var rows []orphanedQueueRow
+		if res := db.Raw(sw.query, sw.args...).Scan(&rows); res.Error != nil {
+			ctx.Error(fmt.Errorf("unable to find orphaned %s queues: %w", sw.name, res.Error))
+			return
 		}
 
-		var runnerGroupIDs []string
-		if res := db.Unscoped().Model(&app.RunnerGroup{}).
-			Where(app.RunnerGroup{OwnerID: installID, OwnerType: installTable}).
-			Pluck("id", &runnerGroupIDs); res.Error != nil {
-			s.l.Warn("unable to list install runner groups", zap.String("install_id", installID), zap.Error(res.Error))
-			resp.Failed++
-			continue
+		byOwner := make(map[string][]string)
+		for _, row := range rows {
+			if _, ok := seenQueues[row.ID]; ok {
+				continue
+			}
+			seenQueues[row.ID] = struct{}{}
+			byOwner[row.OwnerID] = append(byOwner[row.OwnerID], row.ID)
 		}
 
-		if len(runnerGroupIDs) > 0 {
-			var runnerIDs []string
-			if res := db.Unscoped().Model(&app.Runner{}).
-				Where("runner_group_id IN ?", runnerGroupIDs).
-				Pluck("id", &runnerIDs); res.Error != nil {
-				s.l.Warn("unable to list install runners", zap.String("install_id", installID), zap.Error(res.Error))
+		for ownerID, queueIDs := range byOwner {
+			if err := s.cleanupQueues(ctx, queueIDs, req.DryRun, &resp); err != nil {
+				s.l.Warn("unable to clean up orphaned queues",
+					zap.String("sweep", sw.name),
+					zap.String("owner_id", ownerID),
+					zap.Error(err),
+				)
 				resp.Failed++
 				continue
 			}
-
-			if len(runnerIDs) > 0 {
-				var runnerQueueIDs []string
-				if res := db.Model(&app.Queue{}).
-					Where(app.Queue{OwnerType: runnerTable}).
-					Where("owner_id IN ?", runnerIDs).
-					Pluck("id", &runnerQueueIDs); res.Error != nil {
-					s.l.Warn("unable to list runner queues", zap.String("install_id", installID), zap.Error(res.Error))
-					resp.Failed++
-					continue
-				}
-				queueIDs = append(queueIDs, runnerQueueIDs...)
-			}
+			*sw.counter++
 		}
-
-		if len(queueIDs) == 0 {
-			continue
-		}
-
-		if err := s.cleanupQueues(ctx, queueIDs, req.DryRun, &resp); err != nil {
-			s.l.Warn("unable to clean up install queues", zap.String("install_id", installID), zap.Error(err))
-			resp.Failed++
-			continue
-		}
-		resp.InstallsProcessed++
 	}
 
-	var deletedVCSConnIDs []string
-	if res := db.Unscoped().Model(&app.VCSConnection{}).
-		Where("deleted_at != 0").
-		Pluck("id", &deletedVCSConnIDs); res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to list deleted vcs connections: %w", res.Error))
+	if err := s.cleanupStrayEmitters(ctx, req.DryRun, &resp); err != nil {
+		ctx.Error(err)
 		return
-	}
-
-	vcsConnTable := plugins.TableName(db, app.VCSConnection{})
-
-	for _, vcsConnID := range deletedVCSConnIDs {
-		var queueIDs []string
-		if res := db.Model(&app.Queue{}).
-			Where(app.Queue{OwnerID: vcsConnID, OwnerType: vcsConnTable}).
-			Pluck("id", &queueIDs); res.Error != nil {
-			s.l.Warn("unable to list vcs connection queues", zap.String("vcs_connection_id", vcsConnID), zap.Error(res.Error))
-			resp.Failed++
-			continue
-		}
-		if len(queueIDs) == 0 {
-			continue
-		}
-
-		if err := s.cleanupQueues(ctx, queueIDs, req.DryRun, &resp); err != nil {
-			s.l.Warn("unable to clean up vcs connection queues", zap.String("vcs_connection_id", vcsConnID), zap.Error(err))
-			resp.Failed++
-			continue
-		}
-		resp.VCSConnsProcessed++
-	}
-
-	appTable := plugins.TableName(db, app.App{})
-
-	for _, appID := range deletedAppIDs {
-		var queueIDs []string
-		if res := db.Model(&app.Queue{}).
-			Where(app.Queue{OwnerID: appID, OwnerType: appTable}).
-			Pluck("id", &queueIDs); res.Error != nil {
-			s.l.Warn("unable to list app queues", zap.String("app_id", appID), zap.Error(res.Error))
-			resp.Failed++
-			continue
-		}
-		if len(queueIDs) == 0 {
-			continue
-		}
-
-		if err := s.cleanupQueues(ctx, queueIDs, req.DryRun, &resp); err != nil {
-			s.l.Warn("unable to clean up app queues", zap.String("app_id", appID), zap.Error(err))
-			resp.Failed++
-			continue
-		}
-		resp.AppsProcessed++
 	}
 
 	s.l.Info("orphaned queue cleanup complete",
@@ -220,8 +162,10 @@ func (s *service) AdminCleanupOrphanedQueues(ctx *gin.Context) {
 		zap.Int("installs_processed", resp.InstallsProcessed),
 		zap.Int("apps_processed", resp.AppsProcessed),
 		zap.Int("vcs_conns_processed", resp.VCSConnsProcessed),
+		zap.Int("runners_processed", resp.RunnersProcessed),
 		zap.Int("queues_deleted", resp.QueuesDeleted),
 		zap.Int("emitters_deleted", resp.EmittersDeleted),
+		zap.Int("stray_emitters_deleted", resp.StrayEmittersDeleted),
 		zap.Int("signals_cancelled", resp.SignalsCancelled),
 		zap.Int("failed", resp.Failed),
 	)
@@ -230,18 +174,12 @@ func (s *service) AdminCleanupOrphanedQueues(ctx *gin.Context) {
 }
 
 func (s *service) cleanupQueues(ctx *gin.Context, queueIDs []string, dryRun bool, resp *AdminCleanupOrphanedResponse) error {
-	var signals []app.QueueSignal
+	var pending []app.QueueSignal
 	if res := s.db.WithContext(ctx).
 		Where("queue_id IN ?", queueIDs).
-		Find(&signals); res.Error != nil {
-		return fmt.Errorf("unable to list queue signals: %w", res.Error)
-	}
-
-	pending := make([]app.QueueSignal, 0, len(signals))
-	for _, qs := range signals {
-		if !isTerminalSignalStatus(qs.Status.Status) {
-			pending = append(pending, qs)
-		}
+		Where("(status->>'status' IS NULL OR status->>'status' NOT IN ?)", terminalSignalStatuses()).
+		Find(&pending); res.Error != nil {
+		return fmt.Errorf("unable to list pending queue signals: %w", res.Error)
 	}
 
 	var emitterCount int64
@@ -294,10 +232,39 @@ func (s *service) cleanupQueues(ctx *gin.Context, queueIDs []string, dryRun bool
 	return nil
 }
 
-func isTerminalSignalStatus(s app.Status) bool {
-	switch s {
-	case app.StatusSuccess, app.StatusCancelled, app.StatusDiscarded, app.StatusError:
-		return true
+// emitters left live on queues that were already deleted (or whose row is gone)
+// are never reachable through the owner sweeps, so they get their own pass
+func (s *service) cleanupStrayEmitters(ctx *gin.Context, dryRun bool, resp *AdminCleanupOrphanedResponse) error {
+	var emitterIDs []string
+	if res := s.db.WithContext(ctx).Raw(`SELECT e.id FROM queue_emitters e
+		LEFT JOIN queues q ON q.id = e.queue_id
+		WHERE e.deleted_at = 0 AND (q.id IS NULL OR q.deleted_at != 0)`).
+		Scan(&emitterIDs); res.Error != nil {
+		return fmt.Errorf("unable to find stray emitters: %w", res.Error)
 	}
-	return false
+	if len(emitterIDs) == 0 {
+		return nil
+	}
+
+	if dryRun {
+		resp.StrayEmittersDeleted = len(emitterIDs)
+		return nil
+	}
+
+	if res := s.db.WithContext(ctx).
+		Where("id IN ?", emitterIDs).
+		Delete(&app.QueueEmitter{}); res.Error != nil {
+		return fmt.Errorf("unable to delete stray emitters: %w", res.Error)
+	}
+	resp.StrayEmittersDeleted = len(emitterIDs)
+	return nil
+}
+
+func terminalSignalStatuses() []string {
+	return []string{
+		string(app.StatusSuccess),
+		string(app.StatusCancelled),
+		string(app.StatusDiscarded),
+		string(app.StatusError),
+	}
 }
