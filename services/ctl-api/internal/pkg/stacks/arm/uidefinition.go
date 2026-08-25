@@ -108,12 +108,13 @@ func (t *Templates) QuickLinkUIDefinition(inp *stacks.TemplateInput) ([]byte, st
 		outputs["location"] = "[location()]"
 	}
 
+	inputLabels := azureInputLabels(inp)
 	for _, name := range sortedParamNames(wrapperParams) {
 		if name == "location" || name == "deployTimestamp" {
 			continue
 		}
 
-		element, output, ok := basicsElement(name, wrapperParams[name])
+		element, output, ok := basicsElement(name, wrapperParams[name], inputLabels[name])
 		if !ok {
 			continue
 		}
@@ -173,17 +174,26 @@ func sortedParamNames(params map[string]ARMParameter) []string {
 // VNet address space or subnet CIDR, and left apps whose parameters all had
 // defaults with a Basics step showing nothing but subscription and region.
 //
-// Defaulted fields are still marked required, so a customer who clears one cannot
-// submit an empty string in place of the default.
+// A field carrying a non-empty default is still marked required, so a customer who
+// clears one cannot submit an empty string in place of the default. A default that
+// is itself empty is the one case where blank is a legitimate answer — an optional
+// app input the vendor declared no default for — so requiring it there would leave
+// the form unsubmittable.
+//
+// label overrides the name-derived one, for parameters whose config carries a
+// display name of its own. Empty falls back to the derived label.
 //
 // Object and array parameters have no sensible Basics element and are skipped, so
 // the wrapper's own default applies. Nothing currently reaches the root with those
 // types: a nested template's non-scalar default is either Nuon-managed or left
 // unhoisted.
-func basicsElement(name string, p ARMParameter) (map[string]any, string, bool) {
+func basicsElement(name string, p ARMParameter, label string) (map[string]any, string, bool) {
+	if label == "" {
+		label = humanizeParamName(name)
+	}
 	element := map[string]any{
 		"name":    name,
-		"label":   humanizeParamName(name),
+		"label":   label,
 		"toolTip": "",
 	}
 	if p.Metadata != nil && p.Metadata.Description != "" {
@@ -215,8 +225,9 @@ func basicsElement(name string, p ARMParameter) (map[string]any, string, bool) {
 		return element, fmt.Sprintf("[int(basics('%s'))]", name), true
 	case "string":
 		element["type"] = "Microsoft.Common.TextBox"
-		element["constraints"] = map[string]any{"required": true}
-		if def, ok := p.DefaultValue.(string); ok {
+		def, hasDefault := p.DefaultValue.(string)
+		element["constraints"] = map[string]any{"required": !hasDefault || def != ""}
+		if hasDefault {
 			element["defaultValue"] = def
 		}
 	default:
