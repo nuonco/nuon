@@ -144,6 +144,8 @@ export type TInstallResourceGroup = {
   fullyStale: boolean
   lastReportedAt?: string
   downstreamOf?: string
+  verdict?: string
+  verdictMessage?: string
 }
 
 function toInstallResourceRow(resource: TInstallResource): TInstallResourceRow {
@@ -266,13 +268,32 @@ export function isSandboxResource(resource: TInstallResource): boolean {
 export function groupComponentResources(
   resources: TInstallResource[],
   componentNames: Record<string, string>,
-  downstreamOf: Record<string, string> = {}
+  downstreamOf: Record<string, string> = {},
+  verdicts: Record<string, { health: string; message: string }> = {}
 ): TInstallResourceGroup[] {
   return buildInstallResourceGroups(
     resources.filter((resource) => !isSandboxResource(resource)),
     (resource) => resource.install_component_id || 'unknown',
     (key) => componentNames[key] || key
-  ).map((group) => ({ ...group, downstreamOf: downstreamOf[group.key] }))
+  )
+    .map((group) => ({
+      ...group,
+      downstreamOf: downstreamOf[group.key],
+      verdict: verdicts[group.key]?.health,
+      verdictMessage: verdicts[group.key]?.message,
+    }))
+    .sort(
+      (a, b) =>
+        groupTier(b) - groupTier(a) ||
+        compareHealthSeverityDesc(groupHealth(a), groupHealth(b)) ||
+        a.heading.localeCompare(b.heading)
+    )
+}
+
+// The verdict is the component's health; worst is only a fallback for a group
+// the server has no verdict for, such as a sandbox release.
+export function groupHealth(group: TInstallResourceGroup): string {
+  return group.verdict || group.worst
 }
 
 export function groupSandboxResources(
@@ -585,9 +606,22 @@ const InstallResourceGroupTable = ({
             </Badge>
           </Tooltip>
         ) : null}
-        {/* The component's own verdict lives on the components tab and is
-            debounced; what the header shows is the live roll-up of the rows
-            below, with a count once something is actually failing. */}
+        {/* Verdict first, live roll-up second. Showing only the roll-up meant
+            this page could contradict the alert and the uptime timeline, with
+            nothing on screen to reconcile them. */}
+        <Tooltip
+          position="top"
+          tipContent={
+            <Text variant="subtext">
+              {group.verdictMessage ? `${group.verdictMessage}. ` : ''}
+              This is the component's health verdict — debounced, and the same
+              value that drives alerts, the uptime timeline and deploy gates.
+              The rows below are live observations and can move before it does.
+            </Text>
+          }
+        >
+          <Status variant="badge" status={groupHealth(group)} />
+        </Tooltip>
         {group.fullyStale ? (
           <Tooltip
             position="top"
@@ -630,10 +664,9 @@ const InstallResourceGroupTable = ({
               {group.failing} of {group.live} failing
             </Badge>
           </Tooltip>
-        ) : (
-          <Status variant="badge" status={group.worst} />
-        )}
+        ) : null}
       </div>
+
 
       {rows.length > 0 ? table : null}
 
