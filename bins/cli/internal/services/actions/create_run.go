@@ -9,6 +9,19 @@ import (
 )
 
 func (s *Service) CreateRun(ctx context.Context, installID, actionWorkflowID string, roleName string, asJSON bool) error {
+	if roleName != "" {
+		roles, err := s.api.GetAvailableRoles(ctx, installID)
+		if err != nil {
+			err = fmt.Errorf("get available roles: %w", err)
+			ui.PrintError(err)
+			return err
+		}
+		if err := validateRole(roleName, roles); err != nil {
+			ui.PrintError(err)
+			return err
+		}
+	}
+
 	awc, err := s.api.GetActionWorkflowLatestConfig(ctx, actionWorkflowID)
 	if err != nil {
 		ui.PrintError(fmt.Errorf("error getting action workflow config: %w", err))
