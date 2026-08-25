@@ -58,9 +58,10 @@ func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("URL to the Python source for the install stack's phone-home Lambda, fetched when the stack template is rendered and embedded inline. Leave unset to use the pinned default. Set this to move a single app onto a different script version without affecting other apps.").
 		Example("https://raw.githubusercontent.com/nuonco/runner/refs/tags/aws-v0.1.4/scripts/aws/phonehome.py").
 		Field("instance_type").Short("machine/instance type for the install runner").
-		Long("Cloud machine/instance type used for the install runner host. Cloud-specific value mapped per runner_type (e.g. an EC2 instance type for aws). Defaults to the platform default when unset").
+		Long("Cloud machine/instance type used for the install runner host. Cloud-specific value mapped per runner_type (an EC2 instance type for aws, a machine type for gcp, a VM size for azure). Defaults to the platform default when unset").
 		Example("t3a.medium").
-		Example("t3.large").
+		Example("e2-medium").
+		Example("Standard_D2s_v5").
 		Field("runner_api_url").Short("custom runner API endpoint").
 		Long("Set this to proxy all runner API calls (heartbeats, job polling, logs) through your own domain instead of Nuon's.").
 		Example("https://runner-api.example.com").
