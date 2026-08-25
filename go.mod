@@ -152,6 +152,7 @@ require (
 	go.opentelemetry.io/otel/sdk/log v0.18.0
 	go.temporal.io/api v1.62.7
 	go.temporal.io/sdk v1.42.0
+	go.temporal.io/sdk/contrib/opentelemetry v0.7.0
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.27.1
 	golang.design/x/clipboard v0.7.1
