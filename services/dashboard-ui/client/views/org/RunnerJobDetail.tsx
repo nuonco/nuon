@@ -16,7 +16,7 @@ const RunnerJobDetailContent = () => {
 
   return (
     <PageLayout className="pb-6">
-      <PageTitle title={`Job | ${org?.name}`} />
+      <PageTitle title="Job" />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

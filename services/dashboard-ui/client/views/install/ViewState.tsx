@@ -35,7 +35,7 @@ export const ViewState = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`State | ${install?.name}`} />
+      <PageTitle segments={['State', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

@@ -19,7 +19,7 @@ export const Webhooks = () => {
 
   return (
     <>
-      <PageTitle title={`Webhooks | ${org?.name}`} />
+      <PageTitle title="Webhooks" />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org.id}`, text: org?.name },

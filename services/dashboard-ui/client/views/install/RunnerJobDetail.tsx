@@ -17,7 +17,7 @@ const RunnerJobDetailContent = () => {
 
   return (
     <PageSection flush>
-      <PageTitle title={`Job | ${install?.name}`} />
+      <PageTitle segments={['Job', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

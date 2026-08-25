@@ -101,7 +101,7 @@ export const BuildDetail = () => {
 
   return (
     <div className="flex flex-col flex-1">
-      <PageTitle title={`Build | ${app?.name}`} />
+      <PageTitle segments={['Build', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

@@ -14,7 +14,7 @@ export const Installs = () => {
 
   return (
     <PageLayout className="pb-6">
-      <PageTitle title={`Installs | ${org?.name}`} />
+      <PageTitle title="Installs" />
       <Breadcrumbs
         breadcrumbs={[
           {
