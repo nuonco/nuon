@@ -15,7 +15,7 @@ export const ActionRunLogsPage = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageTitle title={`Logs | ${install?.name}`} />
+      <PageTitle segments={['Logs', install?.name]} />
       {logStream ? (
         <LogStreamProvider logStreamId={logStream.id}>
           <LogViewerProvider>

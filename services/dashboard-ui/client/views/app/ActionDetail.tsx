@@ -41,7 +41,7 @@ export const ActionDetail = () => {
 
   return (
     <PageSection flush>
-      <PageTitle title={`${action?.name ?? 'Action'} | ${app?.name}`} />
+      <PageTitle segments={[action?.name ?? 'Action', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

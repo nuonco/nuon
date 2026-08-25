@@ -13,7 +13,7 @@ export const Roles = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Roles | ${app?.name}`} />
+      <PageTitle segments={['Roles', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

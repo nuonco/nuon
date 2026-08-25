@@ -105,7 +105,7 @@ const BranchRunDetailContent = () => {
   return (
     <ConfigDiffFocusContext.Provider value={{ requestFocus: requestConfigFocus }}>
       <PageSection className="max-w-full">
-        <PageTitle title={`${runTitle} | ${app?.name}`} />
+        <PageTitle segments={[runTitle, app?.name]} />
         <Breadcrumbs
           breadcrumbs={[
             { path: `/${org?.id}`, text: org?.name },

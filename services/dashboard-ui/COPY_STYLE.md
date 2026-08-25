@@ -500,6 +500,22 @@ description: "View past and active workflows for this install."
 
 **Don't** start descriptions with "This page..." or "Here you can...". Start with a verb.
 
+## Page titles (`document.title`)
+
+Every routed page sets a browser-tab title of `{specific} | {owning entity}` — at most two segments before the brand (`PageTitleProvider` appends `| Nuon`), most specific first. See DESIGN.md / the `dashboard-ui:view` skill for the mechanism; this is the copy rule.
+
+- **`{specific}`** — sentence-case section name (`Components`, `API tokens`); the entity's own name for detail pages (`acme-app`); for a tab, fold the parent in (`Deploy logs`, `prod configs`, `my-runbook steps`).
+- **`{owning entity}`** — the install or app name. **The org name is never a title segment** — org-level pages are just `{specific} | Nuon`.
+
+```
+Components | acme-app | Nuon          // section page under an app
+Deploy logs | acme-install | Nuon     // tab page, parent folded into specific
+Webhooks | Nuon                       // org-level page, no owner segment
+Page not found | Nuon                 // top-level page
+```
+
+Same casing rules as everywhere: sentence case, proper nouns excepted. A segment that hasn't loaded is omitted, never rendered as "undefined".
+
 ## Form labels & help text
 
 ### Labels
