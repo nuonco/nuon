@@ -90,7 +90,8 @@ func (s *service) getInstallResources(ctx context.Context, orgID, installID stri
 		Where(app.InstallComponentResourceState{
 			OrgID:     orgID,
 			InstallID: installID,
-		})
+		}).
+		Where(app.LatestReportOnlySQL(), app.LatestReportOnlyArgs(orgID, installID)...)
 
 	if f.InstallComponentID != "" {
 		q = q.Where(app.InstallComponentResourceState{InstallComponentID: f.InstallComponentID})

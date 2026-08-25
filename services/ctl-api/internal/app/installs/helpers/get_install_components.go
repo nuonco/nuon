@@ -18,9 +18,7 @@ func (h *Helpers) GetInstallComponents(ctx context.Context, installID string) ([
 		}).
 		Preload("InstallComponents.InstallDeploys", func(db *gorm.DB) *gorm.DB {
 			return db.
-				Where(app.InstallDeploy{
-					Status: app.InstallDeployStatusActive,
-				})
+				Where("status IN ?", app.AppliedDeployStatuses())
 			// Scopes(scopes.WithOverrideTable("install_deploys_latest_view_v1"))
 		}).
 		Preload("InstallComponents.Component").
