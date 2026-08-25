@@ -6,7 +6,11 @@ import { Divider } from '@/components/common/Divider'
 import { Expand } from '@/components/common/Expand'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
-import type { TAppSecretConfig, TStackDeploymentScope } from '@/types'
+import type {
+  TAppInput,
+  TAppSecretConfig,
+  TStackDeploymentScope,
+} from '@/types'
 import { createFileDownload } from '@/utils/file-download'
 import type { IStackDetails } from '../types'
 import { DeployToAzureBadge } from './DeployToAzureBadge'
@@ -15,8 +19,21 @@ interface IAwaitAzureDetails extends IStackDetails {
   installId: string
   azureLocation?: string
   secrets?: TAppSecretConfig[]
+  inputs?: TAppInput[]
+  // Presence only, never the value: sensitive inputs come back redacted, and the
+  // value is not needed to know the template already carries a default for one.
+  setInputNames?: Set<string>
   deploymentScope?: TStackDeploymentScope
 }
+
+// Mirrors azureInputParamName in ctl-api's ARM renderer, which owns the mapping. The
+// template declares only the names it derives, so one built any other way is rejected
+// at deploy time as an undeclared parameter.
+const azureInputParamName = (name: string) =>
+  'input' +
+  (name.match(/[A-Za-z0-9]+/g) ?? [])
+    .map((part) => part[0].toUpperCase() + part.slice(1))
+    .join('')
 
 const telemetryExportConfigFilename = 'telemetry-export-config.yaml'
 const telemetryExportConfig = `version: v1
@@ -37,6 +54,8 @@ export const AwaitAzureDetails = ({
   installId,
   azureLocation,
   secrets,
+  inputs,
+  setInputNames,
   deploymentScope,
   loading,
 }: IAwaitAzureDetails) => {
@@ -83,6 +102,45 @@ export const AwaitAzureDetails = ({
     deploymentScope === 'subscription'
       ? stack?.versions?.at(0)?.quick_link_url
       : undefined
+
+  const customerInputs = (inputs ?? []).filter(
+    (input) => !!input.name && input.source === 'customer'
+  )
+  // An input the template already carries a default for needs no --parameters entry,
+  // and passing one would replace the install's current value with a placeholder.
+  const unsetInputs = customerInputs.filter(
+    (input) => !input.default && !setInputNames?.has(input.name!)
+  )
+  const requiredInputs = unsetInputs.filter((input) => input.required)
+  const overridableInputs = customerInputs.filter(
+    (input) => !requiredInputs.includes(input)
+  )
+  const inputParamFlag = (input: TAppInput) =>
+    `${azureInputParamName(input.name!)}="<value>"`
+  const requiredParamsFlag = requiredInputs.length
+    ? ` --parameters ${requiredInputs.map(inputParamFlag).join(' ')}`
+    : ''
+
+  const renderInputCard = (input: TAppInput) => {
+    const flag = `--parameters ${inputParamFlag(input)}`
+    return (
+      <Card key={input.name}>
+        <span className="flex justify-between items-center">
+          <Text>
+            {input.display_name || input.name}
+            {requiredInputs.includes(input) && (
+              <span className="text-red-500 ml-1">*</span>
+            )}
+          </Text>
+          <ClickToCopyButton className="w-fit self-end" textToCopy={flag} />
+        </span>
+        {input.description && (
+          <Text variant="subtext">{input.description}</Text>
+        )}
+        <Code>{flag}</Code>
+      </Card>
+    )
+  }
 
   const vaultName = installId.slice(0, 24)
   const customerSecrets = secrets?.filter((s) => !s.auto_generate)
@@ -235,6 +293,40 @@ export const AwaitAzureDetails = ({
         </div>
       )}
 
+      {customerInputs.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            Set the app&apos;s inputs
+          </Text>
+          <Text variant="subtext">
+            These reach the stack as template parameters, and the values you
+            deploy with become the install&apos;s inputs. The portal asks for
+            them on its deployment form; on the CLI they are{' '}
+            <code>--parameters</code> arguments on the deploy command below.
+          </Text>
+
+          {requiredInputs.map(renderInputCard)}
+          {overridableInputs.length > 0 && (
+            <Expand
+              id="overridable-inputs"
+              heading={
+                <Text variant="subtext">
+                  Optional overrides ({overridableInputs.length})
+                </Text>
+              }
+            >
+              <div className="flex flex-col gap-4 p-2">
+                <Text variant="subtext">
+                  These already have a value. Pass one only to change it —
+                  omitting it keeps what the install has.
+                </Text>
+                {overridableInputs.map(renderInputCard)}
+              </div>
+            </Expand>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
           Deploy the install stack using the Azure CLI
@@ -245,11 +337,11 @@ export const AwaitAzureDetails = ({
             <Text>Preview changes (dry-run)</Text>
             <ClickToCopyButton
               className="w-fit self-end"
-              textToCopy={`az deployment group what-if --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url}`}
+              textToCopy={`az deployment group what-if --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url}${requiredParamsFlag}`}
             />
           </span>
           <Code>{`
-            az deployment group what-if --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url}
+            az deployment group what-if --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url}${requiredParamsFlag}
           `}</Code>
         </Card>
 
@@ -258,11 +350,11 @@ export const AwaitAzureDetails = ({
             <Text>Deploy the stack to the resource group</Text>
             <ClickToCopyButton
               className="w-fit self-end"
-              textToCopy={`az stack group create --name ${installId}-stack --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url} --deny-settings-mode "denyDelete" --aou deleteAll`}
+              textToCopy={`az stack group create --name ${installId}-stack --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url} --deny-settings-mode "denyDelete" --aou deleteAll${requiredParamsFlag}`}
             />
           </span>
           <Code>{`
-            az stack group create --name ${installId}-stack --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url} --deny-settings-mode "denyDelete" --aou deleteAll
+            az stack group create --name ${installId}-stack --resource-group ${installId}-rg --template-uri ${stack?.versions?.at(0)?.template_url} --deny-settings-mode "denyDelete" --aou deleteAll${requiredParamsFlag}
           `}</Code>
         </Card>
       </div>
