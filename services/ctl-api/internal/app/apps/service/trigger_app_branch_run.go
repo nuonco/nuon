@@ -186,6 +186,13 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		}
 	}
 
+	// fetchcommit only honours HeadSHA on a git-preview run.
+	// PlanOnly: a head SHA without --preview must not apply a PR's config to installs.
+	runType := app.AppBranchRunTypeManual
+	if req.PlanOnly && (req.PRNumber != nil || req.HeadSHA != "") {
+		runType = app.AppBranchRunTypeGitPreview
+	}
+
 	triggerResp, err := s.helpers.TriggerAppBranchRun(ctx, &helpers.TriggerAppBranchRunRequest{
 		Run: helpers.CreateAppBranchRunRequest{
 			AppBranchID:       appBranchID,
@@ -193,6 +200,7 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 			AppConfigID:       req.AppConfigID,
 			Force:             req.Force,
 			PlanOnly:          req.PlanOnly,
+			RunType:           runType,
 			EventType:         "manual",
 			PRNumber:          req.PRNumber,
 			HeadSHA:           req.HeadSHA,
