@@ -2,9 +2,9 @@ import React, { lazy, Suspense } from 'react'
 import { cn } from '@/utils/classnames'
 import { CodeBlock } from '../CodeBlock'
 import { JSONViewer } from '../JSONViewer'
-import { Link } from '../Link'
 import { buildNuonComponents, nuonTagNames, type MarkdownMode } from './nuon-components'
 import { makeSearchConfig } from './markdown-table'
+import { markdownAnchorClassName } from './markdown-styles'
 import { htmlTableToExtracted } from './markdown-html-table'
 import { MarkdownTable } from './MarkdownTable'
 import type { MarkdownVariant } from './Markdown'
@@ -100,13 +100,16 @@ export function getMarkdownComponents(mode: MarkdownMode, variant: MarkdownVaria
     a({ href, children, ...props }: any) {
       const isExternal = href && !href.startsWith('#') && !href.startsWith('/')
       return (
-        <Link
+        <a
           href={href}
-          isExternal={isExternal}
+          className={markdownAnchorClassName}
+          {...(isExternal
+            ? { target: '_blank', rel: 'noopener noreferrer' }
+            : {})}
           {...props}
         >
           {children}
-        </Link>
+        </a>
       )
     },
 

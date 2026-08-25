@@ -1,7 +1,6 @@
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import type { TWorkflowStep } from '@/types'
 import { getPolicyViolationCounts, getStepBanner } from '@/utils/workflow-utils'
@@ -65,7 +64,7 @@ export const StepBanner = ({
             <div className="flex items-end gap-4">
               {onViewDetails ? (
                 <Button variant="ghost" size="md" onClick={onViewDetails}>
-                  View details <Icon variant="CaretRightIcon" />
+                  View details
                 </Button>
               ) : null}
               {bannerCfg.theme === 'error' ? (

@@ -130,13 +130,9 @@ const QueueItem = ({
 
       <div className="flex items-center gap-2 shrink-0">
         {workflowLink && (
-          <Link
-            href={workflowLink}
-            className="text-xs hover:underline flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity"
-          >
-            <Icon variant="ArrowSquareOutIcon" size="14" />
-            <span>View</span>
-          </Link>
+          <Text variant="subtext" className="opacity-60 hover:opacity-100 transition-opacity">
+            <Link href={workflowLink} variant="inline">View workflow</Link>
+          </Text>
         )}
         {onCancel && (
           <button

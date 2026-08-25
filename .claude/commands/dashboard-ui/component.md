@@ -108,6 +108,16 @@ If you need a Phosphor icon that isn't already available, add it to `client/comp
 
 Never import directly from `@phosphor-icons/react`, `lucide-react`, or `heroicons` in component files.
 
+## Links
+
+Import `Link` from `@/components/common/Link` (never from `react-router`; it uses `href`, not `to`). Every content link is one of three classes (full taxonomy in `DESIGN.md` §5 "Links" / `COPY_STYLE.md#links`):
+
+- **Entity link** — the resource's own name is the link text; the name navigates. No verb, no icon. In a sized context (table cell, sentence), use `variant="inline"` so it inherits.
+- **View link** — a standalone `View {resource}` link (`View plan`, `View logs`, `View all runs`; `View details` only when no better noun). The default `Link` self-sizes at subtext — no wrapper; `textVariant` to size explicitly.
+- **External link** — set `isExternal`; the new-tab icon renders automatically. Never hand-place `ArrowSquareOutIcon`.
+
+**Sizing is component-owned:** default `Link` = subtext (`textVariant` to override); `variant="inline"` = inherit surrounding text. Never size a `Link` with a text-size class or a `Text` wrapper. A `Link` never carries a trailing `CaretRightIcon`/`ArrowRightIcon` or a manual external icon. **Row navigation is the entity link, not an icon-only `<Button href><Icon/></Button>`** (deprecated — icon-only buttons are for non-nav chrome like modal/panel close only). Leading *content* icons (a `GitBranchIcon` before a branch name) are fine. Markdown renderers emit plain styled `<a>` tags, never the React `Link`.
+
 ## Button tooltips (disabled reasons & nudges)
 
 The `Button` owns its tooltip via `tooltipProps` (`Omit<ITooltip, 'children'>`). **Never hand-wrap `<Tooltip>` around a `Button`, and never put `title=` on a button.** With `disabled` + `tooltipProps`, Button renders `aria-disabled` (not native `disabled`, which swallows pointer events) so the reason shows on hover and keyboard focus.
@@ -143,6 +153,8 @@ The `Button` owns its tooltip via `tooltipProps` (`Omit<ITooltip, 'children'>`).
 - **Do not** skip the `.stories.tsx` file — every component directory must have one
 - **Do not** use `StoryObj` or `render:` in stories — Ladle v5 requires plain function exports
 - **Do not** import icons directly from `@phosphor-icons/react` — always use the `Icon` component
+- **Do not** put a text-size class, a sizing `Text` wrapper, a trailing `CaretRightIcon`/`ArrowRightIcon`, or a manual `ArrowSquareOutIcon` on a `Link` — the default self-sizes at subtext (`textVariant` to override), `variant="inline"` inherits in sized contexts, and external links get their new-tab icon from `isExternal`
+- **Do not** use an icon-only `<Button href><Icon/></Button>` for row navigation (the entity link — the resource name — is the navigation), or a non-"View" link verb ("See"/"Open"/"Go to" all become "View")
 - **Do not** hand-build a `*Skeleton` component — use the primitive `loading` prop, `<Table isLoading>`, or a spinner for unknown shape
 - **Do not** render a raw API enum (`{role.type}`, `{step.type}`) or re-case vocabulary at a call site (`toSentenceCase`/`toTitleCase`/hand-rolled) — route vocabulary through `humanize()`, render identifiers verbatim + mono (see "Rendered strings")
 - **Do not** add a `Record<string, string>` display map whose entries just equal `humanize(key)`, put a lifecycle status in a `Badge` (use `Status`), or make a chip mono for vocabulary / sans for an identifier

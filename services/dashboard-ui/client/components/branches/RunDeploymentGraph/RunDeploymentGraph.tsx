@@ -101,7 +101,7 @@ const GroupRunNode = memo(({ data }: NodeProps<Node<GroupRunNodeData>>) => {
                     ? `/${orgId}/installs/${inst.id}/workflows/${inst.workflowId}`
                     : `/${orgId}/installs/${inst.id}`
                 }
-                className="nodrag w-auto min-w-0 flex-1 truncate text-xs"
+                className="nodrag w-auto min-w-0 flex-1 truncate"
                 title={inst.name}
               >
                 {inst.name}

@@ -22,7 +22,7 @@ export const CustomStackTemplateURL = ({
   return (
     <Text variant="subtext">
       {href ? (
-        <Link href={href} isExternal>
+        <Link href={href} isExternal variant="inline">
           {templateURL}
         </Link>
       ) : (

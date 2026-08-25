@@ -3,7 +3,6 @@ import { memo, useMemo, useState } from 'react'
 import { Panel } from '@/components/surfaces/Panel'
 import { Card } from '@/components/common/Card'
 import { ID } from '@/components/common/ID'
-import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
 import { SearchInput } from '@/components/common/SearchInput'
@@ -107,7 +106,6 @@ const DeploymentPlanGroupContent = memo(({
                   className="flex w-fit items-center gap-1"
                 >
                   View install
-                  <Icon variant="ArrowRightIcon" size={14} />
                 </Link>
               </Card>
             )
