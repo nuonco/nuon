@@ -803,6 +803,7 @@ func (a *Activities) resourceDiagnoses(ctx context.Context, orgID, installID str
 		Scopes(scopes.WithOverrideTable(app.InstallComponentResourceStatesLatestView)).
 		Select("install_component_id", "kind", "namespace", "name", "details").
 		Where(app.InstallComponentResourceState{OrgID: orgID, InstallID: installID}).
+		Where(app.LatestReportOnlySQL(), app.LatestReportOnlyArgs(orgID, installID)...).
 		Where("install_component_id IN ?", installComponentIDs).
 		Where("health != ?", string(app.InstallComponentHealthStatusHealthy)).
 		Find(&rows).Error; err != nil {

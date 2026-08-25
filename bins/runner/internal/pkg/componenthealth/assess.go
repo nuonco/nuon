@@ -40,9 +40,14 @@ func assessResource(obj *unstructured.Unstructured) (health, message, nativeStat
 	}
 
 	health = mapHealth(hs.Status)
-	if (health == healthHealthy || health == healthProgressing) && !staleGeneration(obj) {
-		if reason, msg, ok := conditionFailure(obj); ok {
+	if health == healthHealthy || health == healthProgressing {
+		if reason, msg, ok := initContainerFailure(obj); ok {
 			return healthDegraded, msg, reason
+		}
+		if !staleGeneration(obj) {
+			if reason, msg, ok := conditionFailure(obj); ok {
+				return healthDegraded, msg, reason
+			}
 		}
 	}
 
@@ -51,6 +56,36 @@ func assessResource(obj *unstructured.Unstructured) (health, message, nativeStat
 		msg = explainVerdict(obj, hs.Status)
 	}
 	return health, msg, string(hs.Status)
+}
+
+// initContainerFailure scans init containers, which the upstream pod check
+// skips: it reads containerStatuses only, so an init container stuck on
+// ImagePullBackOff left the pod merely Pending with the reason sitting in status.
+func initContainerFailure(obj *unstructured.Unstructured) (reason, message string, found bool) {
+	if obj.GetKind() != "Pod" {
+		return "", "", false
+	}
+	statuses, ok, err := unstructured.NestedSlice(obj.Object, "status", "initContainerStatuses")
+	if err != nil || !ok {
+		return "", "", false
+	}
+	for _, raw := range statuses {
+		cs, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		waitReason, _, _ := unstructured.NestedString(cs, "state", "waiting", "reason")
+		if !failureReason(waitReason) {
+			continue
+		}
+		name, _ := cs["name"].(string)
+		message, _, _ := unstructured.NestedString(cs, "state", "waiting", "message")
+		if message == "" {
+			message = "init container " + name + ": " + waitReason
+		}
+		return "init/" + waitReason, message, true
+	}
+	return "", "", false
 }
 
 // conditionFailure reads every condition, because each upstream per-kind check
@@ -94,6 +129,8 @@ func failureReason(reason string) bool {
 	switch {
 	case reason == "":
 		return false
+	case reason == "Unschedulable":
+		return true
 	case strings.HasPrefix(reason, "Failed"),
 		strings.HasPrefix(reason, "Err"),
 		strings.HasPrefix(reason, "Invalid"),

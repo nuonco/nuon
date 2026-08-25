@@ -180,3 +180,53 @@ func TestConditionWithoutObservedGenerationIsTrusted(t *testing.T) {
 	assert.False(t, staleCondition(map[string]any{"observedGeneration": int64(0)}, 12))
 	assert.True(t, staleCondition(map[string]any{"observedGeneration": float64(9)}, 12))
 }
+
+// Upstream reads containerStatuses only, so an init container stuck pulling an
+// image left the pod merely Pending.
+func TestInitContainerFailureIsRead(t *testing.T) {
+	t.Parallel()
+
+	obj := &unstructured.Unstructured{Object: map[string]any{
+		"apiVersion": "v1",
+		"kind":       "Pod",
+		"metadata":   map[string]any{"name": "p", "namespace": "matrix"},
+		"spec":       map[string]any{"restartPolicy": "Always"},
+		"status": map[string]any{
+			"phase": "Pending",
+			"initContainerStatuses": []any{map[string]any{
+				"name":  "init",
+				"state": map[string]any{"waiting": map[string]any{"reason": "ImagePullBackOff", "message": "cannot pull init image"}},
+			}},
+			"containerStatuses": []any{map[string]any{
+				"name":  "c",
+				"state": map[string]any{"waiting": map[string]any{"reason": "PodInitializing"}},
+			}},
+		},
+	}}
+
+	health, message, native := assessResource(obj)
+	assert.Equal(t, healthDegraded, health)
+	assert.Contains(t, message, "cannot pull init image")
+	assert.Equal(t, "init/ImagePullBackOff", native)
+}
+
+// A pod the scheduler cannot place says so in status; Unschedulable matches none
+// of the failure naming patterns.
+func TestUnschedulablePodIsRead(t *testing.T) {
+	t.Parallel()
+
+	obj := &unstructured.Unstructured{Object: map[string]any{
+		"apiVersion": "v1",
+		"kind":       "Pod",
+		"metadata":   map[string]any{"name": "p", "namespace": "matrix"},
+		"spec":       map[string]any{"restartPolicy": "Always"},
+		"status": map[string]any{
+			"phase":      "Pending",
+			"conditions": []any{hpaCond("PodScheduled", "False", "Unschedulable", "0/1 nodes are available")},
+		},
+	}}
+
+	health, message, _ := assessResource(obj)
+	assert.Equal(t, healthDegraded, health)
+	assert.Contains(t, message, "nodes are available")
+}

@@ -109,3 +109,36 @@ func (i *InstallComponentResourceState) Views(db *gorm.DB) []migrations.View {
 		},
 	}
 }
+
+// InstallComponentResourceProviderCustom marks a pushed check rather than an
+// observation the runner made of the cluster.
+const InstallComponentResourceProviderCustom = "custom"
+
+// LatestReportOnlySQL restricts the latest-state view to resources a report
+// group's most recent report still contained.
+//
+// Deletion is not representable in an append-only log: a removed resource stops
+// being reported, and the view keeps its final row forever, so a deleted pod
+// read degraded permanently. One report stamps every row it carries with a
+// single observed_at, so anything behind a group's newest row is gone.
+//
+// Written as a predicate rather than applied to the result set because callers
+// also filter on health, and a filtered set has no reliable newest row. Pushed
+// checks are exempt: they arrive on their own cadence and expire by their TTL.
+func LatestReportOnlySQL() string {
+	return "(provider = ? OR (install_component_id, source, owner_name, observed_at) IN (" +
+		"SELECT install_component_id, source, owner_name, max(observed_at) FROM " +
+		InstallComponentResourceStatesLatestView +
+		" WHERE org_id = ? AND install_id = ? AND provider != ?" +
+		" GROUP BY install_component_id, source, owner_name))"
+}
+
+// LatestReportOnlyArgs are the bind values for LatestReportOnlySQL.
+func LatestReportOnlyArgs(orgID, installID string) []any {
+	return []any{
+		InstallComponentResourceProviderCustom,
+		orgID,
+		installID,
+		InstallComponentResourceProviderCustom,
+	}
+}
