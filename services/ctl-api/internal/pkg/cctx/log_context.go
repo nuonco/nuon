@@ -1,6 +1,8 @@
 package cctx
 
 import (
+	"context"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -14,6 +16,10 @@ func SetWorkflowLoggerContext(ctx workflow.Context, fields []zap.Field) workflow
 
 func SetAPILoggerFields(ctx *gin.Context, fields []zap.Field) {
 	ctx.Set(keys.LoggerFieldsCtxKey, fields)
+}
+
+func SetLoggerFields(ctx context.Context, fields []zap.Field) context.Context {
+	return context.WithValue(ctx, keys.LoggerFieldsCtxKey, fields)
 }
 
 func GetLogger(ctx ValueContext, l *zap.Logger) *zap.Logger {
