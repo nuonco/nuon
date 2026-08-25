@@ -176,7 +176,7 @@ func init() {
 
 	config.RegisterDefault("internal_email_domains", []string{})
 
-	// Same default host as dashboard-ui's BFF; analytics stay off until posthog_key is set.
+	// Matches the default in dashboard-ui's BFF.
 	config.RegisterDefault("posthog_host", "https://us.i.posthog.com")
 
 	// Nuon Auth Service Configs
@@ -358,12 +358,9 @@ type Config struct {
 	NuonAuthIssuerURL    string `config:"nuon_auth_issuer_url"`
 	NuonAuthRedirectURL  string `config:"nuon_auth_redirect_url"`
 	NuonAuthProviderName string `config:"nuon_auth_provider_name"` // label shown on the sign-in page
-	// The Nuon-branded sign-in page also auto-enables when app_url is app.nuon.co; BYOC vendor
-	// deployments must never get it, so it is off unless one of those two conditions holds.
-	NuonBrandedLogin bool `config:"nuon_branded_login"`
+	NuonBrandedLogin     bool   `config:"nuon_branded_login"`
 
-	// PostHog analytics for the Nuon-branded sign-in page. Only the branded template renders
-	// the snippet, so BYOC vendor deployments never load it even if these are set.
+	// Only the branded template renders the snippet, so BYOC deployments never load it even if set.
 	PostHogKey  string `config:"posthog_key"`
 	PostHogHost string `config:"posthog_host"`
 
