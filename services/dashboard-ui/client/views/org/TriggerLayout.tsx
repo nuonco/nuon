@@ -9,7 +9,6 @@ import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { PageTitle } from '@/components/navigation/PageTitle'
 import { TabNav } from '@/components/navigation/TabNav'
 import { useOrg } from '@/hooks/use-org'
 import { getTrigger } from '@/lib'
@@ -26,7 +25,6 @@ export const TriggerLayout = () => {
   const base = `/${org?.id}/settings/triggers/${triggerId}`
   return (
     <>
-      <PageTitle title={`${trigger?.name || 'Trigger'} | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

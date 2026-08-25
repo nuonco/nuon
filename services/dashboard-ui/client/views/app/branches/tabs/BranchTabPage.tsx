@@ -32,7 +32,9 @@ export const BranchTabPage = ({
 
   return (
     <PageSection>
-      <PageTitle title={`${tab} | ${branch?.name} | ${app?.name}`} />
+      <PageTitle
+        segments={[branch?.name ? `${branch.name} ${tab.toLowerCase()}` : tab, app?.name]}
+      />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

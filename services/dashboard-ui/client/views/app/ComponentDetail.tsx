@@ -130,7 +130,7 @@ export const ComponentDetail = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`${component?.name ?? 'Component'} | ${app?.name}`} />
+      <PageTitle segments={[component?.name ?? 'Component', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

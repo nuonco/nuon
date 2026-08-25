@@ -130,7 +130,7 @@ export const Runner = () => {
   if (!install?.runner_id) {
     return (
       <PageSection>
-        <PageTitle title={`Install runner | ${install?.name}`} />
+        <PageTitle segments={['Install runner', install?.name]} />
         <Breadcrumbs
           breadcrumbs={[
             { path: `/${org?.id}`, text: org?.name },
@@ -157,7 +157,7 @@ export const Runner = () => {
   return (
     <RunnerProvider runnerId={install.runner_id} shouldPoll>
       <SurfacesProvider>
-        <PageTitle title={`Install runner | ${install?.name}`} />
+        <PageTitle segments={['Install runner', install?.name]} />
         <Breadcrumbs
           breadcrumbs={[
             { path: `/${org?.id}`, text: org?.name },

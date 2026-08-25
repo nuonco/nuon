@@ -76,7 +76,7 @@ export const InstallSyncs = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Install syncs | ${app?.name}`} />
+      <PageTitle segments={['Install syncs', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

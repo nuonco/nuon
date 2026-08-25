@@ -13,7 +13,7 @@ export const Runbooks = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Runbooks | ${install?.name}`} />
+      <PageTitle segments={['Runbooks', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

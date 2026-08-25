@@ -15,7 +15,7 @@ export const ApiTokens = () => {
 
   return (
     <>
-      <PageTitle title={`API tokens | ${org?.name}`} />
+      <PageTitle title="API tokens" />
       <Breadcrumbs
         breadcrumbs={[
           {
