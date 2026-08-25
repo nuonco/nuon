@@ -11,7 +11,7 @@ export const Triggers = () => {
   const { org } = useOrg()
   return (
     <>
-      <PageTitle title={`Triggers | ${org?.name}`} />
+      <PageTitle title="Triggers" />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

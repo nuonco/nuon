@@ -42,7 +42,7 @@ export const Overview = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Configuration | ${app?.name}`} />
+      <PageTitle segments={['Configuration', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

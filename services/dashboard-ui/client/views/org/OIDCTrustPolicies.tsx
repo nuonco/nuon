@@ -24,7 +24,7 @@ export const OIDCTrustPolicies = () => {
 
   return (
     <>
-      <PageTitle title={`OIDC federation | ${org?.name}`} />
+      <PageTitle title="OIDC federation" />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org.id}`, text: org?.name },

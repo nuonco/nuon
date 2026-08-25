@@ -86,7 +86,7 @@ const BranchDetailContent = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`${branch.name} | ${app.name}`} />
+      <PageTitle segments={[branch?.name, app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org.id}`, text: org.name },
