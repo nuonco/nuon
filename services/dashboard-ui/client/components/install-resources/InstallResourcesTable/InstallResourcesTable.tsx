@@ -144,8 +144,6 @@ export type TInstallResourceGroup = {
   fullyStale: boolean
   lastReportedAt?: string
   downstreamOf?: string
-  verdict?: string
-  verdictMessage?: string
 }
 
 function toInstallResourceRow(resource: TInstallResource): TInstallResourceRow {
@@ -268,32 +266,13 @@ export function isSandboxResource(resource: TInstallResource): boolean {
 export function groupComponentResources(
   resources: TInstallResource[],
   componentNames: Record<string, string>,
-  downstreamOf: Record<string, string> = {},
-  verdicts: Record<string, { health: string; message: string }> = {}
+  downstreamOf: Record<string, string> = {}
 ): TInstallResourceGroup[] {
   return buildInstallResourceGroups(
     resources.filter((resource) => !isSandboxResource(resource)),
     (resource) => resource.install_component_id || 'unknown',
     (key) => componentNames[key] || key
-  )
-    .map((group) => ({
-      ...group,
-      downstreamOf: downstreamOf[group.key],
-      verdict: verdicts[group.key]?.health,
-      verdictMessage: verdicts[group.key]?.message,
-    }))
-    .sort(
-      (a, b) =>
-        groupTier(b) - groupTier(a) ||
-        compareHealthSeverityDesc(groupHealth(a), groupHealth(b)) ||
-        a.heading.localeCompare(b.heading)
-    )
-}
-
-// The verdict is the component's health; worst is only a fallback for a group
-// the server has no verdict for, such as a sandbox release.
-export function groupHealth(group: TInstallResourceGroup): string {
-  return group.verdict || group.worst
+  ).map((group) => ({ ...group, downstreamOf: downstreamOf[group.key] }))
 }
 
 export function groupSandboxResources(
@@ -606,22 +585,10 @@ const InstallResourceGroupTable = ({
             </Badge>
           </Tooltip>
         ) : null}
-        {/* Verdict first, live roll-up second. Showing only the roll-up meant
-            this page could contradict the alert and the uptime timeline, with
-            nothing on screen to reconcile them. */}
-        <Tooltip
-          position="top"
-          tipContent={
-            <Text variant="subtext">
-              {group.verdictMessage ? `${group.verdictMessage}. ` : ''}
-              This is the component's health verdict — debounced, and the same
-              value that drives alerts, the uptime timeline and deploy gates.
-              The rows below are live observations and can move before it does.
-            </Text>
-          }
-        >
-          <Status variant="badge" status={groupHealth(group)} />
-        </Tooltip>
+        {/* Everything in this section is live, matching the filter chips and the
+            rows. The debounced verdict is the badge in the 90-day card above —
+            keeping the two time bases apart is what stops them reading as a
+            contradiction. */}
         {group.fullyStale ? (
           <Tooltip
             position="top"
@@ -654,9 +621,9 @@ const InstallResourceGroupTable = ({
             position="top"
             tipContent={
               <Text variant="subtext">
-                Live resources currently degraded or unhealthy in this group —
-                not the component's health verdict, which is debounced and can
-                lag the rows below.
+                Live resources currently degraded or unhealthy in this group.
+                The component's health verdict is the badge in the 90-day card
+                above: it is debounced, so it can lag these rows.
               </Text>
             }
           >
@@ -664,9 +631,10 @@ const InstallResourceGroupTable = ({
               {group.failing} of {group.live} failing
             </Badge>
           </Tooltip>
-        ) : null}
+        ) : (
+          <Status variant="badge" status={group.worst} />
+        )}
       </div>
-
 
       {rows.length > 0 ? table : null}
 

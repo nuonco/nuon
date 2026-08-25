@@ -92,22 +92,6 @@ export const InstallResourcesTableContainer = ({
     return map
   }, [componentsResult])
 
-  // The server's debounced verdict, which is also what alerts, the 90-day bars
-  // and the deploy gates read. A client-side rollup of the rows below would
-  // disagree with all three the moment one resource blipped.
-  const verdicts = useMemo(() => {
-    const map: Record<string, { health: string; message: string }> = {}
-    componentsResult?.data?.forEach((component) => {
-      if (component?.id && component?.health_status) {
-        map[component.id] = {
-          health: component.health_status,
-          message: component.health_status_description || '',
-        }
-      }
-    })
-    return map
-  }, [componentsResult])
-
   const allResources = resources ?? []
 
   const kindOptions = useMemo(
@@ -150,14 +134,8 @@ export const InstallResourcesTableContainer = ({
   )
 
   const componentGroups = useMemo(
-    () =>
-      groupComponentResources(
-        filteredResources,
-        componentNames,
-        downstreamOf,
-        verdicts
-      ),
-    [filteredResources, componentNames, downstreamOf, verdicts]
+    () => groupComponentResources(filteredResources, componentNames, downstreamOf),
+    [filteredResources, componentNames, downstreamOf]
   )
   const sandboxGroups = useMemo(
     () => groupSandboxResources(filteredResources),

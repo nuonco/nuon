@@ -7,7 +7,6 @@ import {
   healthFacetCounts,
   matchesHealthFilter,
   matchesResourceSearch,
-  groupHealth,
   NO_SIGNAL_FILTER,
   visibleRowCount,
 } from './InstallResourcesTable'
@@ -235,61 +234,21 @@ describe('visibleRowCount', () => {
   })
 })
 
-describe('component verdict drives the group badge', () => {
-  const resources = [
-    resource({ install_component_id: 'a', name: 'a-blip', health: 'degraded' }),
-    resource({ install_component_id: 'a', name: 'a-ok', health: 'healthy' }),
-  ]
-
-  // A single degraded observation used to flip this page's badge instantly,
-  // contradicting the alert and the uptime timeline, which both wait for the
-  // server's debounce.
-  test('a debounced healthy verdict outranks a degraded row', () => {
-    const [group] = groupComponentResources(resources, { a: 'alpha' }, {}, {
-      a: { health: 'healthy', message: 'all 2 resources healthy' },
-    })
+describe('group badge is the live roll-up', () => {
+  // The debounced verdict is rendered by the 90-day card above this section;
+  // mixing it into a heading whose chips and rows are live read as a
+  // contradiction. Keeping this live is deliberate.
+  test('a single degraded row shows immediately, undebounced', () => {
+    const [group] = groupComponentResources(
+      [
+        resource({ install_component_id: 'a', name: 'a-blip', health: 'degraded' }),
+        resource({ install_component_id: 'a', name: 'a-ok', health: 'healthy' }),
+      ],
+      { a: 'alpha' }
+    )
 
     expect(group.worst).toBe('degraded')
-    expect(groupHealth(group)).toBe('healthy')
-    expect(group.verdictMessage).toBe('all 2 resources healthy')
-  })
-
-  test('the verdict is shown even when it is worse than every row', () => {
-    const [group] = groupComponentResources(
-      [resource({ install_component_id: 'a', name: 'a-ok', health: 'healthy' })],
-      { a: 'alpha' },
-      {},
-      { a: { health: 'degraded', message: 'Deployment a/x: boom (+2 more affected)' } }
-    )
-
-    expect(groupHealth(group)).toBe('degraded')
-    expect(group.verdictMessage).toContain('+2 more affected')
-  })
-
-  // Sandbox releases have no install component, so they keep the roll-up.
-  test('falls back to the row roll-up with no verdict', () => {
-    const [group] = groupComponentResources(resources, { a: 'alpha' })
-
-    expect(groupHealth(group)).toBe('degraded')
-    expect(group.verdictMessage).toBeUndefined()
-  })
-
-  // A group with live failing rows still outranks one without, by design; the
-  // verdict decides the order among groups in the same tier.
-  test('verdict decides the order within a tier', () => {
-    const groups = groupComponentResources(
-      [
-        resource({ install_component_id: 'a', name: 'a-ok', health: 'healthy' }),
-        resource({ install_component_id: 'b', name: 'b-ok', health: 'healthy' }),
-      ],
-      { a: 'alpha', b: 'bravo' },
-      {},
-      {
-        a: { health: 'healthy', message: 'all 1 resources healthy' },
-        b: { health: 'degraded', message: 'Deployment b/x: boom' },
-      }
-    )
-
-    expect(groups.map((g) => g.heading)).toEqual(['bravo', 'alpha'])
+    expect(group.failing).toBe(1)
+    expect(group.live).toBe(2)
   })
 })
