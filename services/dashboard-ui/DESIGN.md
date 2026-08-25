@@ -181,6 +181,10 @@ These are the specific inconsistencies that make the UI look "off". Treat each a
    `Record<string, string>` display map whose entries just equal `humanize(key)` is dead weight.
    A `Badge` rendering a lifecycle status (use `Status`), a mono/`variant="code"` chip over
    vocabulary, or a sans chip over an identifier are all mis-classifications.
+10. **No link slop.** A trailing `CaretRightIcon`/`ArrowRightIcon` on a link, a hand-placed
+    `ArrowSquareOutIcon` next to an external link (the icon is component-owned via `isExternal`),
+    a text-size class on a `Link`, a non-"View" link verb ("See"/"Open"/"Go to"), or an
+    icon-only `<Button href><Icon/></Button>` used as row navigation are all slop. See §5 "Links".
 
 ---
 
@@ -311,8 +315,35 @@ const orgConfirmText = org?.name || orgId
 <AdminActionCard inputText={orgConfirmText} … />
 ```
 
-### Links — internal first
-Prefer in-app navigation; only fall back to external URLs. Drive `isExternal` off the internal href:
+### Links — the taxonomy (copy, icon, size)
+Every content link is exactly one of three classes; the class fixes copy, icon, and size.
+**Destination decides first: anything leaving the app is an external link, whatever its text.**
+(Nav-chrome — sidebar/MainNav, SubNav, breadcrumbs, tabs — is out of scope; it lives under the
+`Link` `nav`/`breadcrumb` variants.)
+
+- **Entity link** (internal): the resource's own name IS the link text (table cells, inline
+  refs). No verb, no icon; the name navigates. The name renders verbatim per §1's
+  rendered-string taxonomy.
+- **View link** (internal): a standalone "go see more" link. Copy is `View {resource}`
+  ("View plan", "View logs"), `View all {resources}` for lists, or `View details` only when no
+  better noun exists. Sentence case; no other verbs ("See"/"Open"/"Go to" all become "View").
+- **External link**: anything leaving the app (docs, cloud consoles, GitHub). Always `isExternal`.
+
+**Icons:**
+- Internal links carry **no link-affordance icon** — a trailing `CaretRightIcon`/`ArrowRightIcon`
+  on a link is slop; the copy already says what happens. Leading *content* icons (a
+  `GitBranchIcon` before a branch name) stay legal — they describe the resource, not the click.
+- The external new-tab icon is **component-owned**: `Link` renders it automatically when
+  `isExternal` (and `target` isn't `_self`). Never hand-place `ArrowSquareOutIcon` next to a
+  link. `AdminDashboardLink`/`TemporalLink` inherit this.
+- **No icon-only link/nav buttons.** `<Button href><Icon .../></Button>` is deprecated — row
+  navigation is the entity link. Icon-only buttons are legal only for non-nav chrome
+  (modal/panel close, dismiss).
+
+**Size: links never set their own size.** Inline links inherit the surrounding text; standalone
+view links wrap in `<Text variant="subtext">`. Any text-size class on a `Link` is slop.
+
+Prefer in-app navigation; drive `isExternal` off the internal href when a link may be either:
 ```tsx
 <Link href={href ?? `https://github.com/${name}`} isExternal={!href}>…</Link>
 ```
