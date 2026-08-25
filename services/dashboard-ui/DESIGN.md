@@ -340,13 +340,20 @@ Every content link is exactly one of three classes; the class fixes copy, icon, 
   navigation is the entity link. Icon-only buttons are legal only for non-nav chrome
   (modal/panel close, dismiss).
 
-**Size: links never set their own size.** Inline links inherit the surrounding text; standalone
-view links wrap in `<Text variant="subtext">`. Any text-size class on a `Link` is slop.
+**Size is component-owned.** The default `Link` self-sizes at subtext (`textVariant` to size
+explicitly, e.g. `textVariant="body"`); `variant="inline"` inherits the surrounding text — use
+it for links inside sentences, table cells, and other sized contexts. Sizing a `Link` with a
+text-size class or a `Text` wrapper is slop.
 
 Prefer in-app navigation; drive `isExternal` off the internal href when a link may be either:
 ```tsx
 <Link href={href ?? `https://github.com/${name}`} isExternal={!href}>…</Link>
 ```
+
+Markdown is the exception: the `Markdown` renderers emit plain styled `<a>` tags
+(`markdownAnchorClassName` in `markdown-styles.ts`), never the React `Link` — markdown links
+inherit prose sizing natively and get no auto icon. Don't swap React components into markdown
+renderers.
 
 ### Resizable split panel
 `flex` layout, width via a CSS var; draggable `role="separator"` with `tabIndex={0}`,
