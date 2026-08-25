@@ -1,9 +1,9 @@
 import { Card } from '@/components/common/Card'
 import { Expand } from '@/components/common/Expand'
-import { KeyValueList } from '@/components/common/KeyValueList'
+import { LabeledValue } from '@/components/common/LabeledValue'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
-import { objectToKeyValueArray } from '@/utils/data-utils'
+import { Time } from '@/components/common/Time'
 
 export const ServicesDetails = ({
   services,
@@ -78,18 +78,28 @@ const ServiceDetails = ({ service }) => {
       <div className="flex flex-col gap-2">
         <Text weight="strong">Metadata</Text>
 
-        <KeyValueList
-          values={objectToKeyValueArray({
-            Created: new Date(
-              service.metadata.creationTimestamp
-            ).toLocaleString(),
-            UID: service.metadata.uid,
-            'Resource Version': service.metadata.resourceVersion,
-            Type: service.spec?.type || 'Unknown',
-            'Cluster IP': service.spec?.clusterIP || 'None',
-            'Session Affinity': service.spec?.sessionAffinity || 'None',
-          })}
-        />
+        <div className="flex flex-wrap items-start gap-x-16 gap-y-4">
+          <LabeledValue label="Created">
+            <Time
+              variant="subtext"
+              time={service.metadata.creationTimestamp}
+              format="short-datetime"
+            />
+          </LabeledValue>
+          <LabeledValue label="UID">{service.metadata.uid}</LabeledValue>
+          <LabeledValue label="Resource version">
+            {service.metadata.resourceVersion}
+          </LabeledValue>
+          <LabeledValue label="Type">
+            {service.spec?.type || 'Unknown'}
+          </LabeledValue>
+          <LabeledValue label="Cluster IP">
+            {service.spec?.clusterIP || 'None'}
+          </LabeledValue>
+          <LabeledValue label="Session affinity">
+            {service.spec?.sessionAffinity || 'None'}
+          </LabeledValue>
+        </div>
       </div>
     </div>
   )

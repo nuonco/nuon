@@ -6,6 +6,7 @@ import { CompositeError } from '@/components/common/CompositeError'
 import { Expand } from '@/components/common/Expand'
 import { JSONViewer } from '@/components/common/JSONViewer'
 import { KeyValueList } from '@/components/common/KeyValueList'
+import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Stack } from '@/components/common/Stack'
@@ -168,45 +169,29 @@ export const RunbookStepCard = ({
             </Status>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-1">
-              <Text variant="subtext" theme="neutral">
-                Trigger
-              </Text>
-              <Text variant="subtext">
-                {eventWait?.trigger_name || eventWait?.trigger_id || 'Unknown'}
-              </Text>
-            </div>
-            <div className="flex flex-col gap-1">
-              <Text variant="subtext" theme="neutral">
-                Event types
-              </Text>
-              <Text variant="subtext">
-                {eventWait?.event_types?.join(', ') || 'All event types'}
-              </Text>
-            </div>
+            <LabeledValue label="Trigger">
+              {eventWait?.trigger_name || eventWait?.trigger_id || 'Unknown'}
+            </LabeledValue>
+            <LabeledValue label="Event types">
+              {eventWait?.event_types?.join(', ') || 'All event types'}
+            </LabeledValue>
             {eventWait?.activated_at ? (
-              <div className="flex flex-col gap-1">
-                <Text variant="subtext" theme="neutral">
-                  Activated
-                </Text>
+              <LabeledValue label="Activated">
                 <Time
                   time={eventWait.activated_at}
                   format="long-datetime"
                   variant="subtext"
                 />
-              </div>
+              </LabeledValue>
             ) : null}
             {eventWait?.matched_at ? (
-              <div className="flex flex-col gap-1">
-                <Text variant="subtext" theme="neutral">
-                  Matched
-                </Text>
+              <LabeledValue label="Matched">
                 <Time
                   time={eventWait.matched_at}
                   format="long-datetime"
                   variant="subtext"
                 />
-              </div>
+              </LabeledValue>
             ) : null}
           </div>
           {eventWait?.filters?.length ? (

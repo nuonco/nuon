@@ -1,5 +1,6 @@
 import React from 'react'
 import { cn } from '@/utils/classnames'
+import { humanize } from '@/utils/string-utils'
 import { EmptyState, type IEmptyState } from './EmptyState/EmptyState'
 import { Skeleton } from './Skeleton'
 import { Text } from './Text'
@@ -46,12 +47,7 @@ export const PropertyGrid = <T extends Record<string, any>>({
     const firstItem = values[0]
     return Object.keys(firstItem).map((key) => ({
       key: key as keyof T,
-      header:
-        key.charAt(0).toUpperCase() +
-        key
-          .slice(1)
-          .replace(/([A-Z])/g, ' $1')
-          .trim(),
+      header: humanize(key),
     }))
   }, [values, columns])
 
