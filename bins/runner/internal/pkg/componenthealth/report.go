@@ -3,6 +3,7 @@ package componenthealth
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -187,9 +188,10 @@ func (e *Engine) collectCluster(
 	// The owner chain is walked through byKey, so intermediate owners that are
 	// not listed have to be fetched before lifting — otherwise the walk stops
 	// short and an ImagePullBackOff reads as benign progressing for 10m.
-	e.hydrateWarningOwners(ctx, dynClient, warnings, byKey)
+	failed := failedPods(byKey)
+	e.hydrateFailedPodOwners(ctx, dynClient, failed, byKey)
 
-	liftPodWarningsToOwners(warnings, byKey)
+	lifted := liftPodHealthToOwners(failed, byKey)
 
 	for _, obj := range objects {
 		gvr, u := obj.gvr, obj.u
@@ -204,11 +206,12 @@ func (e *Engine) collectCluster(
 			continue
 		}
 
+		key := resourceKey(u.GetKind(), u.GetNamespace(), u.GetName())
 		var warn *warningEvent
-		if w, ok := warnings[resourceKey(u.GetKind(), u.GetNamespace(), u.GetName())]; ok {
+		if w, ok := warnings[key]; ok {
 			warn = &w
 		}
-		res := resourceModel(gvr, u, warn)
+		res := resourceModel(gvr, u, warn, lifted[key])
 
 		if isComponent {
 			grouped[componentID] = append(grouped[componentID], res)
@@ -283,27 +286,16 @@ func (e *Engine) watchList(ctx context.Context, restCfg *rest.Config) []schema.G
 // maxOwnerHops bounds the ownerReferences walk so a cyclic chain cannot spin.
 const maxOwnerHops = 4
 
-// hydrateWarningOwners GETs the owner chain of each unready pod that carries a
-// warning, so byKey can resolve it. Normally nothing is fetched: healthy
-// installs have no warning pods, which is the point of doing this on demand
-// instead of listing every ReplicaSet in the cluster once a minute.
-func (e *Engine) hydrateWarningOwners(
+// Fetched on demand rather than listing every ReplicaSet each cycle: a healthy
+// install has no failing pods and so costs no GETs.
+func (e *Engine) hydrateFailedPodOwners(
 	ctx context.Context,
 	dynClient dynamic.Interface,
-	warnings map[string]warningEvent,
+	failed []podFailure,
 	byKey map[string]*unstructured.Unstructured,
 ) {
-	if len(warnings) == 0 {
-		return
-	}
-
-	for key := range warnings {
-		u, ok := byKey[key]
-		if !ok || u.GetKind() != "Pod" || podReady(u) {
-			continue
-		}
-
-		cur := u
+	for _, f := range failed {
+		cur := byKey[f.key]
 		for hop := 0; hop < maxOwnerHops; hop++ {
 			ref := metav1.GetControllerOf(cur)
 			if ref == nil {
@@ -322,7 +314,7 @@ func (e *Engine) hydrateWarningOwners(
 				Namespace(cur.GetNamespace()).
 				Get(ctx, ref.Name, metav1.GetOptions{})
 			if err != nil {
-				e.l.Warn("unable to fetch owner for warning pod",
+				e.l.Warn("unable to fetch owner for failed pod",
 					zap.String("kind", ref.Kind), zap.String("name", ref.Name), zap.Error(err))
 				break
 			}
@@ -332,32 +324,73 @@ func (e *Engine) hydrateWarningOwners(
 	}
 }
 
-// liftPodWarningsToOwners copies an unready pod's warning onto its controller:
-// helm annotates only what it renders, so ImagePullBackOff otherwise reads as
-// benign "progressing" for progressDeadlineSeconds (10m by default).
-func liftPodWarningsToOwners(warnings map[string]warningEvent, byKey map[string]*unstructured.Unstructured) {
-	if len(warnings) == 0 {
-		return
-	}
-
-	lifted := map[string]warningEvent{}
-	for key, warn := range warnings {
-		u, ok := byKey[key]
-		if !ok || u.GetKind() != "Pod" || podReady(u) {
-			continue
-		}
-		owner := topOwner(u, byKey)
+// Surfaces an ImagePullBackOff immediately instead of waiting out the
+// Deployment's progressDeadlineSeconds.
+func liftPodHealthToOwners(failed []podFailure, byKey map[string]*unstructured.Unstructured) map[string]string {
+	lifted := map[string]string{}
+	for _, f := range failed {
+		owner := topOwner(byKey[f.key], byKey)
 		if owner == nil {
 			continue
 		}
-		lifted[resourceKey(owner.GetKind(), owner.GetNamespace(), owner.GetName())] = warn
+		ownerKey := resourceKey(owner.GetKind(), owner.GetNamespace(), owner.GetName())
+		if _, seen := lifted[ownerKey]; seen {
+			continue
+		}
+		lifted[ownerKey] = f.message
 	}
+	return lifted
+}
 
-	for key, warn := range lifted {
-		if _, seen := warnings[key]; !seen {
-			warnings[key] = warn
+type podFailure struct {
+	key     string
+	message string
+}
+
+// Only degraded qualifies: a starting pod is progressing, and lifting that would
+// degrade every rollout. Sorted so a shared owner's explanation cannot churn
+// with map iteration order.
+func failedPods(byKey map[string]*unstructured.Unstructured) []podFailure {
+	var out []podFailure
+	for key, u := range byKey {
+		if u.GetKind() != "Pod" || terminalPodPhase(u) {
+			continue
+		}
+		health, message, _ := assessResource(u)
+		if health != healthDegraded {
+			continue
+		}
+		if message == "" {
+			message = podFailureReason(u)
+		}
+		if message == "" {
+			message = "pod " + u.GetName() + " is not healthy"
+		}
+		out = append(out, podFailure{key: key, message: message})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].key < out[j].key })
+	return out
+}
+
+// Upstream reports a restarting pod with whatever status.message holds, which is
+// usually empty, so the container status is the only place the reason exists.
+func podFailureReason(u *unstructured.Unstructured) string {
+	for _, c := range containerDiagnosis(u) {
+		for _, field := range []string{"waiting_reason", "last_termination_reason"} {
+			if reason, ok := c[field].(string); ok && reason != "" {
+				name, _ := c["name"].(string)
+				return "container " + name + ": " + reason
+			}
 		}
 	}
+	return ""
+}
+
+// Failed pods linger until the GC threshold, so an evicted one would outlive the
+// replacement that already came up healthy.
+func terminalPodPhase(u *unstructured.Unstructured) bool {
+	phase, _, _ := unstructured.NestedString(u.Object, "status", "phase")
+	return phase == "Failed" || phase == "Succeeded"
 }
 
 // topOwner returns the furthest controller ancestor present in the listed
@@ -379,23 +412,6 @@ func topOwner(u *unstructured.Unstructured, byKey map[string]*unstructured.Unstr
 		return nil
 	}
 	return cur
-}
-
-func podReady(u *unstructured.Unstructured) bool {
-	conds, ok, _ := unstructured.NestedSlice(u.Object, "status", "conditions")
-	if !ok {
-		return false
-	}
-	for _, c := range conds {
-		cond, ok := c.(map[string]any)
-		if !ok {
-			continue
-		}
-		if cond["type"] == "Ready" {
-			return cond["status"] == "True"
-		}
-	}
-	return false
 }
 
 // collectTerraform adds identity-only rows from the state this process last
@@ -454,23 +470,27 @@ func (e *Engine) collectProbes(ctx context.Context, grouped map[string][]*models
 	}
 }
 
-func resourceModel(gvr schema.GroupVersionResource, u *unstructured.Unstructured, warn *warningEvent) *models.ServiceComponentHealthResource {
+func resourceModel(
+	gvr schema.GroupVersionResource,
+	u *unstructured.Unstructured,
+	warn *warningEvent,
+	liftedFailure string,
+) *models.ServiceComponentHealthResource {
 	health, message, native := assessResource(u)
 
-	// A current Warning event means the resource is failing even when its own
-	// status looks benign (an Ingress stuck Progressing on a listener error).
-	//
-	// Unless the resource has since said otherwise: kubernetes keeps events for
-	// about an hour, so an event older than the object's latest condition
-	// transition describes a problem that is already over. Honouring it anyway
-	// pins a recovered resource to degraded until the event expires.
-	if warn != nil && !supersededByStatus(u, warn) {
-		if health == healthHealthy || health == healthProgressing {
-			health = healthDegraded
-		}
-		message = warn.reason + ": " + warn.message
-	} else {
+	// Helm annotates only what it renders, so a pod carries no ownership labels
+	// and its controller is the only thing that reaches a verdict.
+	if liftedFailure != "" && (health == healthHealthy || health == healthProgressing) {
+		health = healthDegraded
+		message = liftedFailure
+	}
+
+	// Evidence, never verdict: an event is edge-triggered with no "all clear", so
+	// letting one decide health forces an invented expiry.
+	if health == healthHealthy {
 		warn = nil
+	} else if warn != nil && message == "" {
+		message = warn.reason + ": " + warn.message
 	}
 
 	return &models.ServiceComponentHealthResource{
@@ -484,41 +504,6 @@ func resourceModel(gvr schema.GroupVersionResource, u *unstructured.Unstructured
 		NativeStatus: native,
 		Details:      resourceDetails(u, resourceDiagnosis(u, health, warn)),
 	}
-}
-
-// supersededByStatus reports whether the object transitioned after the warning
-// fired, which means its own status is the newer evidence.
-func supersededByStatus(u *unstructured.Unstructured, warn *warningEvent) bool {
-	if warn == nil || warn.at.IsZero() {
-		return false
-	}
-
-	conds, ok, err := unstructured.NestedSlice(u.Object, "status", "conditions")
-	if err != nil || !ok {
-		return false
-	}
-	for _, c := range conds {
-		cond, ok := c.(map[string]any)
-		if !ok {
-			continue
-		}
-		// Only a condition that now reads healthy can retire a warning.
-		if status, _ := cond["status"].(string); status != "True" {
-			continue
-		}
-		if t, _ := cond["type"].(string); !isReadyConditionType(t) {
-			continue
-		}
-		raw, _ := cond["lastTransitionTime"].(string)
-		at, err := time.Parse(time.RFC3339, raw)
-		if err != nil {
-			continue
-		}
-		if at.After(warn.at) {
-			return true
-		}
-	}
-	return false
 }
 
 // componentFor attributes a live object to an install component: manifests by the

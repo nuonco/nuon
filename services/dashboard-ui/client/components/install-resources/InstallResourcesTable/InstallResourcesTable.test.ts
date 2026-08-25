@@ -233,3 +233,22 @@ describe('visibleRowCount', () => {
     expect(hidden.every((row) => row.health === 'healthy')).toBe(true)
   })
 })
+
+describe('group badge is the live roll-up', () => {
+  // The debounced verdict is rendered by the 90-day card above this section;
+  // mixing it into a heading whose chips and rows are live read as a
+  // contradiction. Keeping this live is deliberate.
+  test('a single degraded row shows immediately, undebounced', () => {
+    const [group] = groupComponentResources(
+      [
+        resource({ install_component_id: 'a', name: 'a-blip', health: 'degraded' }),
+        resource({ install_component_id: 'a', name: 'a-ok', health: 'healthy' }),
+      ],
+      { a: 'alpha' }
+    )
+
+    expect(group.worst).toBe('degraded')
+    expect(group.failing).toBe(1)
+    expect(group.live).toBe(2)
+  })
+})
