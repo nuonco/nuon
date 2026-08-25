@@ -20,6 +20,10 @@ type mcpCancelWorkflowInput struct {
 }
 
 func (s *service) mcpCancelWorkflow(ctx context.Context, _ *mcp.CallToolRequest, in mcpCancelWorkflowInput) (*mcp.CallToolResult, any, error) {
+	if err := requireWriteScope(ctx); err != nil {
+		return nil, nil, err
+	}
+
 	orgID := keys.OrgIDFromContext(ctx)
 
 	var wf app.Workflow

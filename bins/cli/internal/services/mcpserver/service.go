@@ -37,7 +37,12 @@ func (s *Service) Run(ctx context.Context) error {
 }
 
 func (s *Service) mcpEndpoint() string {
-	switch s.cfg.APIURL {
+	return EndpointFromAPIURL(s.cfg.APIURL)
+}
+
+// EndpointFromAPIURL returns the control-plane MCP HTTP URL for a given API URL.
+func EndpointFromAPIURL(apiURL string) string {
+	switch apiURL {
 	case "https://api.nuon.co":
 		return "https://ctl.nuon.co/mcp"
 	default:

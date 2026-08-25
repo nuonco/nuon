@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+
+	"github.com/nuonco/nuon/bins/cli/internal/services/mcpserver"
 )
 
 func (c *cli) mcpSetupCmd() *cobra.Command {
@@ -58,12 +60,7 @@ Supported platforms:
 }
 
 func defaultMCPURL(apiURL string) string {
-	switch apiURL {
-	case "https://api.nuon.co":
-		return "https://ctl.nuon.co/mcp"
-	default:
-		return "http://localhost:8088/mcp"
-	}
+	return mcpserver.EndpointFromAPIURL(apiURL)
 }
 
 type mcpClientConfig struct {

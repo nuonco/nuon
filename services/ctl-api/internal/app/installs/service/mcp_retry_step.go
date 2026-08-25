@@ -18,6 +18,10 @@ type mcpRetryStepInput struct {
 }
 
 func (s *service) mcpRetryStep(ctx context.Context, _ *mcp.CallToolRequest, in mcpRetryStepInput) (*mcp.CallToolResult, any, error) {
+	if err := requireWriteScope(ctx); err != nil {
+		return nil, nil, err
+	}
+
 	orgID := keys.OrgIDFromContext(ctx)
 
 	var workflow app.Workflow
