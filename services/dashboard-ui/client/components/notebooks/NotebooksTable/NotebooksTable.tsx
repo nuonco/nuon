@@ -51,7 +51,7 @@ const columns: ColumnDef<TNotebookRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body">
-          <Link href={info.row.original.href}>
+          <Link href={info.row.original.href} variant="inline">
             {info.getValue() as string}
           </Link>
         </Text>

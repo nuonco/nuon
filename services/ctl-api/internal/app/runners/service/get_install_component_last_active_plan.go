@@ -72,7 +72,7 @@ func (s *service) getInstallComponent(ctx context.Context, installID, componentI
 	res := s.db.WithContext(ctx).
 		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
 			return db.
-				Where("status = ?", app.InstallDeployStatusActive).
+				Where("status IN ?", app.AppliedDeployStatuses()).
 				Order("install_deploys.created_at DESC").
 				Limit(2) // we only need the latest two deploys to get the previous config
 		}).

@@ -1,5 +1,4 @@
 import { Banner } from '@/components/common/Banner'
-import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import type { TBannerTheme } from '@/components/common/Banner'
@@ -52,9 +51,9 @@ export const DeprovisionBanner = ({
         {workflowId && (
           <Link
             href={`/${orgId}/installs/${install.id}/workflows/${workflowId}`}
-            className="flex items-center gap-1 text-sm shrink-0"
+            className="shrink-0"
           >
-            View workflow <Icon variant="ArrowRightIcon" size={14} />
+            View workflow
           </Link>
         )}
       </div>

@@ -92,32 +92,32 @@ export const UserDropdown = ({
         )}
         {!hideOrgSettings && isAdmin && adminDashboardUrl && (
           <Link href="/admin/dashboard" isExternal>
-            Admin dashboard <Icon variant="ArrowSquareOutIcon" />
+            Admin dashboard
           </Link>
         )}
         {!hideOrgSettings && isAdmin && (
           <Link href="/admin/swagger" isExternal>
-            Admin API <Icon variant="ArrowSquareOutIcon" />
+            Admin API
           </Link>
         )}
         {!hideOrgSettings && isAdmin && (
           <Link href="/admin/temporal" isExternal>
-            Temporal dashboard <Icon variant="ArrowSquareOutIcon" />
+            Temporal dashboard
           </Link>
         )}
         {!hideOrgSettings && isAdmin && (
           <Link href="/admin/kafka" isExternal>
-            Kafka UI <Icon variant="ArrowSquareOutIcon" />
+            Kafka UI
           </Link>
         )}
         {!hideOrgSettings && isAdmin && (
           <Link href="/public/swagger" isExternal>
-            Public API <Icon variant="ArrowSquareOutIcon" />
+            Public API
           </Link>
         )}
         {!hideOrgSettings && isAdmin && (
           <Link href={`${apiUrl}/httpbin`} isExternal>
-            HTTPBin <Icon variant="ArrowSquareOutIcon" />
+            HTTPBin
           </Link>
         )}
         {!hideOrgSettings && isAdmin && <hr />}

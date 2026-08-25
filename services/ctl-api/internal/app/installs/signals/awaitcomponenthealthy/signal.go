@@ -244,6 +244,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		},
 	})
 
+	gateErr := s.gateResult(pollErr, window, sawData, awaitingProbes, failMsg, lastReport)
+	s.recordDeployOutcome(ctx, l, installComponent.ComponentID, gateErr)
+	return gateErr
+}
+
+// gateResult turns the poll outcome into the user-facing error, or nil on pass.
+func (s *Signal) gateResult(
+	pollErr error,
+	window time.Duration,
+	sawData bool,
+	awaitingProbes []string,
+	failMsg string,
+	lastReport *activities.GateHealthReport,
+) error {
 	if pollErr == nil {
 		return nil
 	}
@@ -263,6 +277,44 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.New(failMsg)
 	}
 	return pollErr
+}
+
+// recordDeployOutcome stops the apply step's "active/finished" being the last
+// word on a deploy the gate refused. Resolved here rather than passed in: the
+// gate step is built at plan time, before the deploy row exists.
+func (s *Signal) recordDeployOutcome(ctx workflow.Context, l *zap.Logger, componentID string, gateErr error) {
+	deploy, err := activities.AwaitGetLatestDeploy(ctx, activities.GetLatestDeployRequest{
+		InstallID:   s.InstallID,
+		ComponentID: componentID,
+	})
+	if err != nil || deploy == nil || deploy.ID == "" {
+		l.Warn("unable to resolve deploy for health gate outcome", zap.Error(err))
+		return
+	}
+
+	// status_v2 reuses StatusError because app.Status is an enumerated schema and
+	// old SDKs reject unknown values; install_deploys.status is free-form.
+	status, statusV2, message := app.InstallDeployStatusActive, app.Status(app.InstallDeployStatusActive), "health verified"
+	if gateErr != nil {
+		status, statusV2, message = app.InstallDeployStatusHealthFailed, app.StatusError, gateErr.Error()
+	}
+
+	if err := activities.AwaitUpdateDeployStatus(ctx, activities.UpdateDeployStatusRequest{
+		DeployID:          deploy.ID,
+		Status:            status,
+		StatusDescription: message,
+	}); err != nil {
+		l.Warn("unable to record health gate outcome on deploy",
+			zap.String("deploy_id", deploy.ID), zap.Error(err))
+	}
+	if err := statusactivities.AwaitUpdateDeployStatusV2(ctx, statusactivities.UpdateDeployStatusV2Request{
+		DeployID:          deploy.ID,
+		Status:            statusV2,
+		StatusDescription: message,
+	}); err != nil {
+		l.Warn("unable to record health gate outcome on deploy status_v2",
+			zap.String("deploy_id", deploy.ID), zap.Error(err))
+	}
 }
 
 func isWatchableComponentType(t app.ComponentType) bool {

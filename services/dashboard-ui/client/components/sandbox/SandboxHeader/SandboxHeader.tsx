@@ -105,28 +105,24 @@ export const SandboxHeader = ({
             />
           </LabeledValue>
           <LabeledValue label="Install">
-            <Text variant="subtext">
-              <Link href={`/${orgId}/installs/${install?.id}`}>
-                {install?.name}
-              </Link>
-            </Text>
+            <Link href={`/${orgId}/installs/${install?.id}`}>
+              {install?.name}
+            </Link>
           </LabeledValue>
           <LabeledValue label="Config">
             <SandboxConfigContextTooltip
               appConfigId={install?.app_config_id}
               appId={install?.app_id}
             >
-              <Text variant="subtext">
-                <Link href={`/${orgId}/apps/${install?.app_id}`}>
-                  {install?.app?.name} sandbox
-                </Link>
-              </Text>
+              <Link href={`/${orgId}/apps/${install?.app_id}`}>
+                {install?.app?.name} sandbox
+              </Link>
             </SandboxConfigContextTooltip>
           </LabeledValue>
           {sandboxRun?.runner_jobs?.at(0)?.install_role_usage?.role_name ? (
             <LabeledValue label="Execution role">
               <Text variant="subtext" family="mono" className="text-xs">
-                <Link href={`/${orgId}/installs/${install?.id}/roles?panel=${sandboxRun.runner_jobs.at(0).install_role_usage.install_role_id}`}>
+                <Link href={`/${orgId}/installs/${install?.id}/roles?panel=${sandboxRun.runner_jobs.at(0).install_role_usage.install_role_id}`} variant="inline">
                   {sandboxRun.runner_jobs.at(0).install_role_usage.role_name}
                 </Link>
               </Text>
@@ -140,7 +136,6 @@ export const SandboxHeader = ({
           href={`/${orgId}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
         >
           View workflow
-          <Icon variant="CaretRightIcon" />
         </Button>
       ) : null}
     </header>
@@ -177,22 +172,18 @@ const LegacySandboxHeader = ({
             }}
           />
           <LabeledValue label="Install">
-            <Text variant="subtext">
-              <Link href={`/${orgId}/installs/${install?.id}`}>
-                {install?.name}
-              </Link>
-            </Text>
+            <Link href={`/${orgId}/installs/${install?.id}`}>
+              {install?.name}
+            </Link>
           </LabeledValue>
           <LabeledValue label="Config">
             <SandboxConfigContextTooltip
               appConfigId={install?.app_config_id}
               appId={install?.app_id}
             >
-              <Text variant="subtext">
-                <Link href={`/${orgId}/apps/${install?.app_id}`}>
-                  {install?.app?.name} sandbox
-                </Link>
-              </Text>
+              <Link href={`/${orgId}/apps/${install?.app_id}`}>
+                {install?.app?.name} sandbox
+              </Link>
             </SandboxConfigContextTooltip>
           </LabeledValue>
         </div>
@@ -238,7 +229,6 @@ const LegacySandboxHeader = ({
             href={`/${orgId}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
           >
             View workflow
-            <Icon variant="CaretRightIcon" />
           </Button>
         ) : (
           <div />

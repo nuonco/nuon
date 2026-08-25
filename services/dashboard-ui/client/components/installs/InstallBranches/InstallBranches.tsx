@@ -111,7 +111,7 @@ const InstallUpdatesList = ({
             <div className="flex items-center gap-2 min-w-0">
               <Icon variant="CloudIcon" size={12} className="shrink-0 text-cool-grey-400" />
               {update.install_id ? (
-                <Link href={`/${orgId}/installs/${update.install_id}`} className="text-xs truncate">
+                <Link href={`/${orgId}/installs/${update.install_id}`} className="truncate">
                   {update.install_id}
                 </Link>
               ) : (
@@ -123,9 +123,9 @@ const InstallUpdatesList = ({
               {update.workflow_id && (
                 <Link
                   href={`/${orgId}/installs/${update.install_id}/workflows/${update.workflow_id}`}
-                  className="text-[11px]"
+                  className="shrink-0"
                 >
-                  Workflow
+                  View workflow
                 </Link>
               )}
             </div>
@@ -166,7 +166,6 @@ const ConfigVersionSummary = ({
         {branchId && branchRunWorkflowId && (
           <Link
             href={`/${orgId}/apps/${appId}/branches/${branchId}/runs/${branchRunWorkflowId}`}
-            className="text-[11px]"
           >
             View run
           </Link>
@@ -174,7 +173,6 @@ const ConfigVersionSummary = ({
         {version.workflow_id && (
           <Link
             href={`/${orgId}/installs/${installId}/workflows/${version.workflow_id}`}
-            className="text-[11px]"
           >
             Workflow
           </Link>
@@ -238,7 +236,7 @@ const BranchCard = ({
               )}
               <Link
                 href={`/${orgId}/apps/${appId}/branches/${branchId}/runs/${latestRun.id}`}
-                className="text-xs shrink-0"
+                className="shrink-0"
               >
                 View run
               </Link>

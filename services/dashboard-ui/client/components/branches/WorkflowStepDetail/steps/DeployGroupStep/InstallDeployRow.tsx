@@ -1,6 +1,5 @@
 import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { CloudRegion } from '@/components/common/CloudRegion'
-import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
@@ -24,9 +23,9 @@ export const InstallDeployRow = ({ installId, install, deployStatus, workflowHre
     <div className="flex items-center gap-3 px-4 py-3">
       <div className="flex items-center gap-5 min-w-0">
         {installHref ? (
-          <Link href={installHref} className="text-sm font-strong truncate">
-            {install?.name || installId}
-          </Link>
+          <Text variant="body" weight="strong" nowrap className="truncate">
+            <Link href={installHref} variant="inline">{install?.name || installId}</Link>
+          </Text>
         ) : (
           <Text variant="body" weight="strong" nowrap className="block truncate">
             {install?.name || installId}
@@ -59,10 +58,7 @@ export const InstallDeployRow = ({ installId, install, deployStatus, workflowHre
       <Status status={deployStatus || 'pending'} variant="badge" className="shrink-0" />
 
       {workflowHref && (
-        <Link href={workflowHref} className="text-sm shrink-0">
-          View workflow
-          <Icon variant="ArrowRightIcon" size={14} />
-        </Link>
+        <Link href={workflowHref} className="shrink-0">View workflow</Link>
       )}
     </div>
   )

@@ -40,6 +40,7 @@ export const BranchRunCommit = ({
             <Link
               href={href}
               isExternal={isExternal}
+              variant="inline"
               className="block truncate !w-full"
             >
               {message || 'View run'}

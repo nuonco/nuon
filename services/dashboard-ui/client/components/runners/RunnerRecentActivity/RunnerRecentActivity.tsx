@@ -62,7 +62,7 @@ export const RunnerRecentActivity = ({
             </>
           ) : (
             <>
-              <Link href={resolvedHref}>{getJobName(job)}</Link>{' '}
+              <Link href={resolvedHref} variant="inline">{getJobName(job)}</Link>{' '}
               {getJobExecutionStatus(job)}
             </>
           )
