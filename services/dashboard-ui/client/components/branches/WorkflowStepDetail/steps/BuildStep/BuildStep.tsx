@@ -120,9 +120,9 @@ export const BuildRowDetail = ({
               )}
             </div>
             {buildHref && (
-              <Link href={buildHref} className="text-sm shrink-0">
-                View build
-              </Link>
+              <Text variant="subtext" className="shrink-0">
+                <Link href={buildHref}>View build</Link>
+              </Text>
             )}
           </div>
         </div>

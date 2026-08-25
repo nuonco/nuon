@@ -176,10 +176,12 @@ const BranchRunDetailContent = () => {
                     <Text variant="base" weight="strong">Source</Text>
                   </div>
                   {githubUrl && (
-                    <Link href={githubUrl} isExternal className="text-xs">
-                      <Icon variant="GitHub" size={14} />
-                      View in GitHub
-                    </Link>
+                    <Text variant="subtext">
+                      <Link href={githubUrl} isExternal>
+                        <Icon variant="GitHub" size={14} />
+                        View in GitHub
+                      </Link>
+                    </Text>
                   )}
                 </div>
 

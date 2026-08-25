@@ -58,9 +58,9 @@ export const InstallDeployRow = ({ installId, install, deployStatus, workflowHre
       <Status status={deployStatus || 'pending'} variant="badge" className="shrink-0" />
 
       {workflowHref && (
-        <Link href={workflowHref} className="text-sm shrink-0">
-          View workflow
-        </Link>
+        <Text variant="subtext" className="shrink-0">
+          <Link href={workflowHref}>View workflow</Link>
+        </Text>
       )}
     </div>
   )

@@ -49,12 +49,13 @@ export const DeprovisionBanner = ({
           )}
         </div>
         {workflowId && (
-          <Link
-            href={`/${orgId}/installs/${install.id}/workflows/${workflowId}`}
-            className="flex items-center gap-1 text-sm shrink-0"
-          >
-            View workflow
-          </Link>
+          <Text variant="subtext" className="shrink-0">
+            <Link
+              href={`/${orgId}/installs/${install.id}/workflows/${workflowId}`}
+            >
+              View workflow
+            </Link>
+          </Text>
         )}
       </div>
     </Banner>

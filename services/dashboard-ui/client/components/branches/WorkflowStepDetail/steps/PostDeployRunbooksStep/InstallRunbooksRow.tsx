@@ -68,9 +68,9 @@ export const InstallRunbooksRow = ({
             <Status status={runbook.status || 'pending'} variant="badge" className="shrink-0" />
 
             {runbook.workflowHref && (
-              <Link href={runbook.workflowHref} className="text-sm shrink-0">
-                View run
-              </Link>
+              <Text variant="subtext" className="shrink-0">
+                <Link href={runbook.workflowHref}>View run</Link>
+              </Text>
             )}
           </div>
         ))}

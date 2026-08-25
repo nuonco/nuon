@@ -39,9 +39,9 @@ export const RunnerCard = ({
             {runner?.display_name || runner.id}
           </Text>
         </div>
-        <Link href={href} className="text-sm flex items-center gap-1">
-          View runner
-        </Link>
+        <Text variant="subtext">
+          <Link href={href}>View runner</Link>
+        </Text>
       </div>
 
       <Expand
