@@ -98,6 +98,16 @@ Every string you render is exactly one of three classes; the class fixes its cas
 
 **Chip pick:** value changes on its own while you watch (lifecycle) → `Status`; static classification (type/kind/count/version) → `Badge` (`variant="code"` iff identifier content, default sans variant iff vocabulary); user key:value label → `LabelBadge`. **mono ⇔ identifier.** Never `humanize()` a string that contains a user identifier (mixed strings, e.g. a step name) or a free-text API sentence (`status_human_description`) — render those verbatim.
 
+## Labeled data (`LabeledValue` / `KeyValueList` / `PropertyGrid`)
+
+Which component renders labeled data is fixed by who names the fields and each datum's shape. Classify with these tests. Full record: `DESIGN.md` §5 / UXDR 022.
+
+1. **`LabeledValue`** (composed into a metadata block) — *Did we write the label in the code?* Author-designed field set; labels are UI copy (`Status`, `Created`, `Cluster IP`), sentence case.
+2. **`KeyValueList`** — *Is this a key → value mapping from the API/user?* Semantically a map (outputs, env vars, tags, rendered TF/Helm/K8s values, log attributes). Keys/values are identifiers: mono, verbatim, **never re-cased**.
+3. **`PropertyGrid`** — *Records with author-named columns, not a mapping?* Array of records whose columns we name (`{name, default, required}`). Field count is irrelevant; what disqualifies `KeyValueList` is that the second field isn't "the value of" the first.
+
+**`PropertyGrid` vs `Table`:** static descriptive records in a detail context → `PropertyGrid`; the moment it needs pagination, search, sort, row actions, or row drill-down → `Table`. Auto-derived `PropertyGrid` headers route through `humanize()` (never hand-rolled title casing).
+
 ## Icons
 
 Use the `Icon` component from `@/components/common/Icon` for ALL icons. Always use the `Icon` suffix for variant names (e.g., `HouseIcon` not `House`).
@@ -158,3 +168,5 @@ The `Button` owns its tooltip via `tooltipProps` (`Omit<ITooltip, 'children'>`).
 - **Do not** hand-build a `*Skeleton` component — use the primitive `loading` prop, `<Table isLoading>`, or a spinner for unknown shape
 - **Do not** render a raw API enum (`{role.type}`, `{step.type}`) or re-case vocabulary at a call site (`toSentenceCase`/`toTitleCase`/hand-rolled) — route vocabulary through `humanize()`, render identifiers verbatim + mono (see "Rendered strings")
 - **Do not** add a `Record<string, string>` display map whose entries just equal `humanize(key)`, put a lifecycle status in a `Badge` (use `Status`), or make a chip mono for vocabulary / sans for an identifier
+- **Do not** hand-roll a label/value `Text` stack (`flex flex-col` with a neutral subtext label above a value) — use `LabeledValue`; nor a 2-column `PropertyGrid` (it's a map → `KeyValueList`, or author-labeled metadata → `LabeledValue` block)
+- **Do not** re-case `KeyValueList` keys, or give a `PropertyGrid` row actions/pagination/search/sort (that's a `Table`) — see "Labeled data"
