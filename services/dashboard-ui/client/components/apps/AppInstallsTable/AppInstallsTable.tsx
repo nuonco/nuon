@@ -37,6 +37,7 @@ export function parseInstallsToTableData(
         <Icon variant="GitBranchIcon" size={14} />
         <Link
           href={`/${orgId}/apps/${appId ?? install.app_id}/branches/${install.app_branch.id}`}
+          variant="inline"
         >
           {install.app_branch.name}
         </Link>
@@ -81,7 +82,7 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body">
-          <Link href={info.row.original.nameHref}>
+          <Link href={info.row.original.nameHref} variant="inline">
             {info.getValue() as string}
           </Link>
         </Text>
@@ -119,7 +120,7 @@ const columns: ColumnDef<InstallRow>[] = [
     header: '',
     cell: (info) => (
       <Text>
-        <Link className="text-left" href={info.getValue() as string}>
+        <Link className="text-left" href={info.getValue() as string} variant="inline">
           View install
         </Link>
       </Text>

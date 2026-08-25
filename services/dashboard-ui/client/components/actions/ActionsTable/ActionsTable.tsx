@@ -91,7 +91,7 @@ const columns: ColumnDef<TActionRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body">
-          <Link href={info.row.original.href}>{info.getValue() as string}</Link>
+          <Link href={info.row.original.href} variant="inline">{info.getValue() as string}</Link>
         </Text>
         <ID>{info.row.original.actionId as string}</ID>
       </span>
@@ -121,7 +121,7 @@ const columns: ColumnDef<TActionRow>[] = [
     header: '',
     cell: (info) => (
       <Text>
-        <Link className="text-left" href={info.getValue() as string}>
+        <Link className="text-left" href={info.getValue() as string} variant="inline">
           View action
         </Link>
       </Text>

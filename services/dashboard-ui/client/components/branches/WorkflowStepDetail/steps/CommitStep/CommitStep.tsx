@@ -45,7 +45,7 @@ export const CommitStep = ({ metadata }: ICommitStep) => {
               <>
                 {' ('}
                 {prUrl ? (
-                  <Link href={prUrl} isExternal className="font-semibold">#{prNumber}</Link>
+                  <Link href={prUrl} isExternal className="font-semibold" variant="inline">#{prNumber}</Link>
                 ) : (
                   <span className="text-cool-grey-500 dark:text-cool-grey-400">#{prNumber}</span>
                 )}

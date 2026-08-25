@@ -283,6 +283,7 @@ export const AwaitAzureDetails = ({
             <Link
               href="https://docs.nuon.co/guides/export-runner-audit-logs"
               isExternal
+              variant="inline"
             >
               telemetry export reference
             </Link>{' '}

@@ -54,11 +54,9 @@ export const AppRunner = ({ appConfig }: IAppRunner) => {
 
         {runnerConfig?.init_script ? (
           <LabeledValue label="Init script">
-            <Text variant="subtext">
-              <Link href={runnerConfig?.init_script} isExternal>
-                View script
-              </Link>
-            </Text>
+            <Link href={runnerConfig?.init_script} isExternal>
+              View script
+            </Link>
           </LabeledValue>
         ) : null}
 
@@ -81,11 +79,9 @@ export const AppRunner = ({ appConfig }: IAppRunner) => {
               </span>
             }
           >
-            <Text variant="subtext">
-              <Link href={phoneHomeUrl} isExternal>
-                View script
-              </Link>
-            </Text>
+            <Link href={phoneHomeUrl} isExternal>
+              View script
+            </Link>
           </LabeledValue>
         ) : null}
       </div>

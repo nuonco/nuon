@@ -48,7 +48,7 @@ export const ConsentToast = forwardRef<HTMLDivElement, IConsentToast>(
         <Link
           href="https://www.nuon.co/privacy"
           isExternal
-          className="text-xs inline-flex items-center gap-1"
+          className="inline-flex items-center gap-1"
         >
           Privacy policy
         </Link>

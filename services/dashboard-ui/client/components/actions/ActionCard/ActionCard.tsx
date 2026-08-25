@@ -54,7 +54,7 @@ export const ActionCard = ({
     <div className="flex w-fit items-center gap-3 rounded-lg border px-3 py-2.5">
       {name && (
         <Text variant="body" className="font-strong">
-          {canRun && href ? <Link href={href}>{name}</Link> : name}
+          {canRun && href ? <Link href={href} variant="inline">{name}</Link> : name}
         </Text>
       )}
       {hasRun && triggerType && <ActionTriggerType triggerType={triggerType} size="sm" />}

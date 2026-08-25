@@ -23,11 +23,9 @@ export const AnnouncementsList = ({ announcements, disableDismissMemory = false 
           disableDismissMemory={disableDismissMemory}
         />
       ))}
-      <Text variant="body">
-        <Link href="https://docs.nuon.co/updates/updates" isExternal>
-          View changelog
-        </Link>
-      </Text>
+      <Link href="https://docs.nuon.co/updates/updates" isExternal>
+        View changelog
+      </Link>
     </div>
   )
 }

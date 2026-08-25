@@ -69,7 +69,7 @@ export const policiesTableColumns: ColumnDef<TPolicyRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body">
-          <Link href={info.row.original.nameHref}>
+          <Link href={info.row.original.nameHref} variant="inline">
             {info.getValue() as string}
           </Link>
         </Text>
@@ -154,7 +154,7 @@ export const PoliciesTable = ({
         ...col,
         cell: (info) => (
           <Text>
-            <Link href={`${basePath}/policies/${info.row.original.id}`}>
+            <Link href={`${basePath}/policies/${info.row.original.id}`} variant="inline">
               View policy
             </Link>
           </Text>

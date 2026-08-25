@@ -118,11 +118,9 @@ export const VerifyHealthStepDetails = ({
             Health checks
           </Text>
           {orgId && componentId ? (
-            <Text variant="subtext">
-              <Link href={`/${orgId}/installs/${step?.owner_id}/components/${componentId}`}>
-                View component
-              </Link>
-            </Text>
+            <Link href={`/${orgId}/installs/${step?.owner_id}/components/${componentId}`}>
+              View component
+            </Link>
           ) : null}
           {finished && checks.length > 0 ? (
             <Tooltip

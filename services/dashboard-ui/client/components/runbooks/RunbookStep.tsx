@@ -194,11 +194,9 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
           </div>
         ) : null}
         {actionBasePath && step.action_workflow_id ? (
-          <Text variant="subtext">
-            <Link href={`${actionBasePath}/actions/${step.action_workflow_id}`}>
-              View action
-            </Link>
-          </Text>
+          <Link href={`${actionBasePath}/actions/${step.action_workflow_id}`}>
+            View action
+          </Link>
         ) : null}
       </div>
     </Expand>

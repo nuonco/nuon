@@ -16,7 +16,7 @@ export const AdminDashboardLink = ({
   const href = `/admin/dashboard${path}`
 
   return (
-    <Link className="text-xs" href={href} isExternal>
+    <Link href={href} isExternal>
       admin
     </Link>
   )

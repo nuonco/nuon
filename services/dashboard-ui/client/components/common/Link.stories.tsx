@@ -10,7 +10,8 @@ export const EntityLink = () => (
   <div className="flex flex-col gap-4">
     <Text variant="subtext">
       Entity link: the resource's own name is the link text. No verb, no icon —
-      the name navigates.
+      the name navigates. Inside a sized context (table cell, sentence), use
+      variant="inline" so it inherits.
     </Text>
     <div className="flex flex-col gap-3 p-4 border rounded-lg">
       <Link href="#">acme-payments</Link>
@@ -18,6 +19,9 @@ export const EntityLink = () => (
         <Icon variant="GitBranchIcon" size="1em" />
         main
       </Link>
+      <Text variant="body">
+        In a body-sized row: <Link href="#" variant="inline">acme-payments</Link>
+      </Text>
     </div>
   </div>
 )
@@ -25,19 +29,17 @@ export const EntityLink = () => (
 export const ViewLink = () => (
   <div className="flex flex-col gap-4">
     <Text variant="subtext">
-      View link: a standalone "go see more" link. Sentence case, no icon. Wrap in
-      a subtext Text so it inherits a small size.
+      View link: a standalone "go see more" link. Sentence case, no icon. The
+      default Link renders at subtext size on its own — no Text wrapper needed;
+      use textVariant to explicitly size up.
     </Text>
     <div className="flex flex-col gap-3 p-4 border rounded-lg">
-      <Text variant="subtext">
-        <Link href="#">View plan</Link>
-      </Text>
-      <Text variant="subtext">
-        <Link href="#">View all runs</Link>
-      </Text>
-      <Text variant="subtext">
-        <Link href="#">View details</Link>
-      </Text>
+      <Link href="#">View plan</Link>
+      <Link href="#">View all runs</Link>
+      <Link href="#">View details</Link>
+      <Link href="#" textVariant="base">
+        View details (textVariant="base")
+      </Link>
     </div>
   </div>
 )
@@ -71,15 +73,15 @@ export const ExternalLink = () => (
 export const InlineLink = () => (
   <div className="flex flex-col gap-4">
     <Text variant="subtext">
-      Inline links inherit the surrounding text size and color — never set their
-      own size.
+      variant="inline" inherits the surrounding text size — for links inside
+      sentences, table cells, and other sized contexts.
     </Text>
     <div className="p-4 border rounded-lg">
       <Text>
         Welcome to the platform. Check out the{' '}
-        <Link href="/docs">documentation</Link> to get started, or browse the{' '}
-        <Link href="/examples">examples</Link>. For help, see the{' '}
-        <Link href="https://nuon.co/support" isExternal>
+        <Link href="/docs" variant="inline">documentation</Link> to get started, or browse the{' '}
+        <Link href="/examples" variant="inline">examples</Link>. For help, see the{' '}
+        <Link href="https://nuon.co/support" isExternal variant="inline">
           support center
         </Link>
         .

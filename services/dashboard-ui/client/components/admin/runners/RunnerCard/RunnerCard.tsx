@@ -39,9 +39,7 @@ export const RunnerCard = ({
             {runner?.display_name || runner.id}
           </Text>
         </div>
-        <Text variant="subtext">
-          <Link href={href}>View runner</Link>
-        </Text>
+        <Link href={href}>View runner</Link>
       </div>
 
       <Expand

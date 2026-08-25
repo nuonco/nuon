@@ -62,7 +62,7 @@ export const Webhooks = () => {
               . When a signing secret is set, requests are signed with
               HMAC-SHA256 and the hex-encoded signature is sent in the{' '}
               <span className="font-mono">X-Nuon-Signature</span> header.{' '}
-              <Link href="https://docs.nuon.co/webhooks" isExternal>
+              <Link href="https://docs.nuon.co/webhooks" isExternal variant="inline">
                 Read the docs
               </Link>
             </Text>

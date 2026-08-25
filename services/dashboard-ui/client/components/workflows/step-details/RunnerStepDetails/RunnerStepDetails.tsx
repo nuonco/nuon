@@ -30,11 +30,9 @@ export const RunnerStepDetails = ({
           Install runner
         </Text>
 
-        <Text variant="subtext">
-          <Link href={`/${orgId}/installs/${step?.owner_id}/runner`}>
-            View runner
-          </Link>
-        </Text>
+        <Link href={`/${orgId}/installs/${step?.owner_id}/runner`}>
+          View runner
+        </Link>
       </div>
 
       {processesLoading ? (

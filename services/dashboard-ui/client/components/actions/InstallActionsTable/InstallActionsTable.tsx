@@ -105,7 +105,7 @@ const columns: ColumnDef<InstallActionRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body" flex className="items-center gap-2">
-          <Link href={info.row.original.href}>{info.getValue() as string}</Link>
+          <Link href={info.row.original.href} variant="inline">{info.getValue() as string}</Link>
           {info.row.original.removed ? (
             <RemovedFromAppConfigBadge kind="action" />
           ) : null}
@@ -149,7 +149,7 @@ const columns: ColumnDef<InstallActionRow>[] = [
     header: '',
     cell: (info) => (
       <Text>
-        <Link className="text-left" href={info.getValue() as string}>
+        <Link className="text-left" href={info.getValue() as string} variant="inline">
           View action
         </Link>
       </Text>

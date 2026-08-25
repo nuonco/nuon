@@ -2,26 +2,31 @@ import React from 'react'
 import { Link as RouterLink } from 'react-router'
 import { cn } from '@/utils/classnames'
 import { Icon } from './Icon'
+import { TEXT_VARIANT_CLASSES, type TTextVariant } from './Text'
 
-export type TLinkVariant = 'default' | 'ghost' | 'nav' | 'breadcrumb'
+export type TLinkVariant = 'default' | 'inline' | 'ghost' | 'nav' | 'breadcrumb'
 
 export interface ILink extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   isActive?: boolean
   isATag?: boolean
   isExternal?: boolean
   variant?: TLinkVariant
+  textVariant?: TTextVariant
   href?: string
 }
 
+const LINK_COLOR_CLASSES = [
+  'text-primary-600 dark:text-primary-500',
+  'hover:text-primary-800 hover:dark:text-primary-400',
+  'focus:text-primary-800 focus:dark:text-primary-400',
+  'active:text-primary-900 active:dark:text-primary-600',
+  'focus-visible:rounded',
+  'focus-visible:px-0.5',
+].join(' ')
+
 const VARIANT_CLASSES: Record<TLinkVariant, string> = {
-  default: [
-    'text-primary-600 dark:text-primary-500',
-    'hover:text-primary-800 hover:dark:text-primary-400',
-    'focus:text-primary-800 focus:dark:text-primary-400',
-    'active:text-primary-900 active:dark:text-primary-600',
-    'focus-visible:rounded',
-    'focus-visible:px-0.5',
-  ].join(' '),
+  default: LINK_COLOR_CLASSES,
+  inline: LINK_COLOR_CLASSES,
   ghost: [
     'px-3 py-1 border-none rounded-md bg-inherit align-middle font-strong tracking-tight',
     'hover:bg-cool-grey-50 hover:dark:bg-white/10',
@@ -54,6 +59,7 @@ export const Link = ({
   isActive = false,
   isExternal = false,
   variant = 'default',
+  textVariant = 'subtext',
   ...props
 }: ILink) => {
   const baseClasses = [
@@ -64,9 +70,13 @@ export const Link = ({
     'focus-visible:outline-1',
     'focus-visible:outline-offset-0',
     'focus-visible:outline-primary-400/80',
-    'text-inherit font-inherit text-[inherit] leading-[inherit] tracking-[inherit]',
     'has-[svg]:flex has-[svg]:items-center has-[svg]:gap-1.5',
   ].join(' ')
+
+  const sizingClass =
+    variant === 'default'
+      ? TEXT_VARIANT_CLASSES[textVariant]
+      : 'text-inherit font-inherit text-[inherit] leading-[inherit] tracking-[inherit]'
 
   const variantStateClass =
     variant === 'nav'
@@ -81,6 +91,7 @@ export const Link = ({
 
   const classes = cn(
     baseClasses,
+    sizingClass,
     VARIANT_CLASSES[variant],
     variantStateClass,
     className

@@ -131,11 +131,9 @@ function getTooltip({
         {title}
       </Text>
       <Text variant="subtext">{description}</Text>
-      <Text className="mt-2" variant="subtext">
-        <Link className="flex items-center" href={viewHref}>
-          View {viewLabel}
-        </Link>
-      </Text>
+      <Link className="mt-2 flex items-center" href={viewHref}>
+        View {viewLabel}
+      </Link>
     </div>
   )
 }

@@ -113,7 +113,7 @@ const columns: ColumnDef<TInstallRunbookRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body" flex className="items-center gap-2">
-          <Link href={info.row.original.href}>{info.getValue() as string}</Link>
+          <Link href={info.row.original.href} variant="inline">{info.getValue() as string}</Link>
           {info.row.original.removed ? (
             <RemovedFromAppConfigBadge kind="runbook" />
           ) : null}

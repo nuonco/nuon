@@ -38,24 +38,20 @@ export const ActionRunHeader = ({
           </Text>
 
           {step?.owner_id && actionRun?.config?.action_workflow_id ? (
-            <Text variant="subtext">
-              <Link
-                href={`/${orgId}/installs/${step.owner_id}/actions/${actionRun.config.action_workflow_id}`}
-              >
-                View action
-              </Link>
-            </Text>
+            <Link
+              href={`/${orgId}/installs/${step.owner_id}/actions/${actionRun.config.action_workflow_id}`}
+            >
+              View action
+            </Link>
           ) : null}
           {step?.owner_id &&
           actionRun?.config?.action_workflow_id &&
           actionRun?.id ? (
-            <Text variant="subtext">
-              <Link
-                href={`/${orgId}/installs/${step.owner_id}/actions/${actionRun.config.action_workflow_id}/runs/${actionRun.id}`}
-              >
-                View run details
-              </Link>
-            </Text>
+            <Link
+              href={`/${orgId}/installs/${step.owner_id}/actions/${actionRun.config.action_workflow_id}/runs/${actionRun.id}`}
+            >
+              View run details
+            </Link>
           ) : null}
         </>
       )}

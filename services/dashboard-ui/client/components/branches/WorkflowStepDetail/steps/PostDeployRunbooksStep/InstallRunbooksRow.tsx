@@ -31,7 +31,7 @@ export const InstallRunbooksRow = ({
       <div className="flex items-center gap-3 px-4 py-3">
         {installHref ? (
           <Text variant="body" weight="strong" nowrap className="truncate">
-            <Link href={installHref}>{install?.name || installId}</Link>
+            <Link href={installHref} variant="inline">{install?.name || installId}</Link>
           </Text>
         ) : (
           <Text variant="body" weight="strong" nowrap className="block truncate">
@@ -68,9 +68,7 @@ export const InstallRunbooksRow = ({
             <Status status={runbook.status || 'pending'} variant="badge" className="shrink-0" />
 
             {runbook.workflowHref && (
-              <Text variant="subtext" className="shrink-0">
-                <Link href={runbook.workflowHref}>View run</Link>
-              </Text>
+              <Link href={runbook.workflowHref} className="shrink-0">View run</Link>
             )}
           </div>
         ))}

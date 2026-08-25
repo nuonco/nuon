@@ -6,7 +6,7 @@ import type { PluggableList } from 'unified'
 import { cn } from '@/utils/classnames'
 import { Table } from '../Table'
 import { SearchInput } from '../SearchInput'
-import { Link } from '../Link'
+import { markdownAnchorClassName } from './markdown-styles'
 import type { ExtractedTable, TableAlign, TableCell } from './markdown-table'
 
 type Row = { __i: number }
@@ -18,9 +18,16 @@ const INLINE_COMPONENTS = {
   a: ({ href, children, ...props }: any) => {
     const isExternal = href && !href.startsWith('#') && !href.startsWith('/')
     return (
-      <Link href={href} isExternal={isExternal} {...props}>
+      <a
+        href={href}
+        className={markdownAnchorClassName}
+        {...(isExternal
+          ? { target: '_blank', rel: 'noopener noreferrer' }
+          : {})}
+        {...props}
+      >
         {children}
-      </Link>
+      </a>
     )
   },
   code: ({ className, children, ...props }: any) => (

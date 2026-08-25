@@ -21,7 +21,7 @@ export const TemporalLink = ({
     `/admin/temporal/namespaces/${namespace}/workflows/event-loop-${eventLoopId}`
 
   return (
-    <Link className="text-xs" href={resolvedHref} isExternal>
+    <Link href={resolvedHref} isExternal>
       admin
     </Link>
   )

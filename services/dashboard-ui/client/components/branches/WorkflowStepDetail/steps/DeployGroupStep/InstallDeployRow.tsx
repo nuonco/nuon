@@ -24,7 +24,7 @@ export const InstallDeployRow = ({ installId, install, deployStatus, workflowHre
       <div className="flex items-center gap-5 min-w-0">
         {installHref ? (
           <Text variant="body" weight="strong" nowrap className="truncate">
-            <Link href={installHref}>{install?.name || installId}</Link>
+            <Link href={installHref} variant="inline">{install?.name || installId}</Link>
           </Text>
         ) : (
           <Text variant="body" weight="strong" nowrap className="block truncate">
@@ -58,9 +58,7 @@ export const InstallDeployRow = ({ installId, install, deployStatus, workflowHre
       <Status status={deployStatus || 'pending'} variant="badge" className="shrink-0" />
 
       {workflowHref && (
-        <Text variant="subtext" className="shrink-0">
-          <Link href={workflowHref}>View workflow</Link>
-        </Text>
+        <Link href={workflowHref} className="shrink-0">View workflow</Link>
       )}
     </div>
   )

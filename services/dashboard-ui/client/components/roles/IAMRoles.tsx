@@ -53,6 +53,7 @@ export const IAMRoleBoundaryExpand = ({
             className="!inline-flex"
             href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html?icmpid=docs_iam_console"
             isExternal
+            variant="inline"
           >
             Learn more about permission boundaries
           </Link>
