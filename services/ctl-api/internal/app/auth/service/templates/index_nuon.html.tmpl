@@ -132,6 +132,64 @@
     color: var(--text-tertiary-dark);
   }
 
+  .consent {
+    display: flex;
+    gap: 10px;
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--hairline-dark);
+  }
+
+  .consent input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    transition: background 120ms var(--ease), border-color 120ms var(--ease);
+  }
+  .consent input[type="checkbox"]:hover { border-color: rgba(255,255,255,0.48); }
+  .consent input[type="checkbox"]:checked {
+    background: #4CC9F0;
+    border-color: #4CC9F0;
+  }
+  .consent input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 4.5px;
+    top: 1.5px;
+    width: 4px;
+    height: 8px;
+    border: solid #041E28;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .consent input[type="checkbox"]:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--focus-ring); }
+
+  .consent-text { cursor: pointer; user-select: none; }
+
+  .consent-label {
+    font-size: 13px;
+    line-height: 19px;
+    font-weight: 500;
+    color: var(--text-on-dark);
+  }
+
+  .consent-fine {
+    display: block;
+    margin-top: 3px;
+    font-size: 12px;
+    line-height: 17px;
+    font-weight: 400;
+    color: var(--text-tertiary-dark);
+  }
+
   .signed-in-email {
     font-size: 14px;
     line-height: 21px;
@@ -302,7 +360,7 @@
         <div class="providers">
           {{ $redirectURL := .RedirectURL }}
           {{ range $i, $p := .Providers }}
-            <a class="btn {{ if eq $i 0 }}btn-primary{{ else }}btn-ghost{{ end }}"
+            <a class="btn {{ if eq $i 0 }}btn-primary{{ else }}btn-ghost{{ end }}" data-login-link
                href="/login?provider={{ $p.ID }}{{ if $redirectURL }}&url={{ $redirectURL }}{{ end }}">
               {{ if eq $p.ProviderType "google" }}
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -327,6 +385,14 @@
           {{ else }}
             <p class="empty-providers">No login providers configured.</p>
           {{ end }}
+        </div>
+
+        <div class="consent">
+          <input type="checkbox" id="marketing-consent" name="marketing-consent">
+          <label class="consent-text" for="marketing-consent">
+            <span class="consent-label">Marketing and customer outreach consent</span>
+            <span class="consent-fine">Occasional release notes and engineering write-ups, written by the team. Unsubscribe anytime.</span>
+          </label>
         </div>
 
         <p class="terms">By continuing you agree to the <a href="https://nuon.co/terms">terms of service</a> and <a href="https://nuon.co/privacy">privacy policy</a>.</p>
@@ -358,6 +424,23 @@
   </section>
 
 </div>
+<script>
+  (function () {
+    var box = document.getElementById('marketing-consent');
+    if (!box) return;
+    box.addEventListener('change', function () {
+      document.querySelectorAll('a[data-login-link]').forEach(function (a) {
+        var url = new URL(a.href, window.location.origin);
+        if (box.checked) {
+          url.searchParams.set('marketing_consent', 'true');
+        } else {
+          url.searchParams.delete('marketing_consent');
+        }
+        a.href = url.toString();
+      });
+    });
+  })();
+</script>
 </body>
 </html>
 {{ end }}
