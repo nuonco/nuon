@@ -19,7 +19,13 @@ Start here:
   nuon agents context   Print markdown orientation (auth, selection, how to use MCP)
   nuon agents mcp       Run a local stdio MCP proxy that injects your API token and org ID
 
-Preferred MCP client config (Claude Code / Cursor):
+Register with Claude Code:
+
+  claude mcp add nuon -- nuon agents mcp
+  # writes:
+  claude mcp add nuon -- nuon agents mcp --allow-writes
+
+Or add to .mcp.json / Cursor:
 
   {"mcpServers": {"nuon": {"command": "nuon", "args": ["agents", "mcp"]}}}
 
@@ -72,7 +78,13 @@ Injects Authorization (Bearer) and X-Nuon-Org-ID from ~/.nuon on every
 upstream request. Read-only by default; pass --allow-writes to also
 expose mutating tools (descriptions prefixed with "WRITE OPERATION:").
 
-Example Claude Code config (.mcp.json):
+Example — register with Claude Code:
+
+  claude mcp add nuon -- nuon agents mcp
+  # writes:
+  claude mcp add nuon -- nuon agents mcp --allow-writes
+
+Or add to .mcp.json:
 
   {"mcpServers": {"nuon": {"command": "nuon", "args": ["agents", "mcp"]}}}`,
 		PersistentPreRunE: c.persistentPreRunE,
@@ -135,7 +147,9 @@ func (c *cli) agentsContextMarkdown() string {
 	b.WriteString("### Preferred: local stdio proxy\n\n")
 	b.WriteString("Runs on the user's machine, injects token + org ID, forwards tools to the control plane:\n\n")
 	b.WriteString("```bash\nnuon agents mcp\n# writes:\nnuon agents mcp --allow-writes\n```\n\n")
-	b.WriteString("MCP client config:\n\n")
+	b.WriteString("Register with Claude Code:\n\n")
+	b.WriteString("```bash\nclaude mcp add nuon -- nuon agents mcp\n# writes:\nclaude mcp add nuon -- nuon agents mcp --allow-writes\n```\n\n")
+	b.WriteString("Or MCP client config (.mcp.json):\n\n")
 	b.WriteString("```json\n{\"mcpServers\": {\"nuon\": {\"command\": \"nuon\", \"args\": [\"agents\", \"mcp\"]}}}\n```\n\n")
 	b.WriteString("### Direct: control-plane HTTP MCP\n\n")
 	b.WriteString(fmt.Sprintf("Point an MCP HTTP client at `%s` with:\n\n", mcpURL))

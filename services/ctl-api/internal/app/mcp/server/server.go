@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -17,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
@@ -225,14 +227,25 @@ func (s *Server) evictStaleOrgSelections() {
 	s.mu.Unlock()
 }
 
+const traceIDHeaderKey = "X-Nuon-Trace-ID"
+
 func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		traceID := r.Header.Get(traceIDHeaderKey)
+		if traceID == "" {
+			traceID = uuid.Must(uuid.NewV7()).String()
+		}
+		ctx = cctx.SetTraceIDContext(ctx, traceID)
+		ctx = cctx.SetLoggerFields(ctx, []zap.Field{zap.Bool("mcp", true)})
+		l := cctx.GetLogger(ctx, s.l)
+
 		// Every request must carry a valid access token. A token failure returns
 		// 401 + WWW-Authenticate so the client can discover the authorization
 		// server and start the OAuth flow.
 		acct, tok, err := s.authenticateToken(r)
 		if err != nil {
-			s.l.Warn("MCP auth failed", zap.Error(err))
+			l.Warn("MCP auth failed", zap.Error(err))
 			s.writeUnauthorized(w, r)
 			return
 		}
@@ -240,7 +253,7 @@ func (s *Server) authContextMiddleware(next http.Handler) http.Handler {
 		orgID := s.resolveOrg(acct, tok.ID, r.Header.Get("X-Nuon-Org-ID"))
 		s.touchOrgSelection(tok.ID)
 
-		ctx := withMCPAuth(r.Context(), orgID, acct.ID)
+		ctx = withMCPAuth(ctx, orgID, acct.ID)
 		ctx = keys.WithTokenRole(ctx, tok.Role)
 		// Let the select_org tool change the active org for this token.
 		ctx = keys.WithOrgSelector(ctx, func(newOrgID string) {

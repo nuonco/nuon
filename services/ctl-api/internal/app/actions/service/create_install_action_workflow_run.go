@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
@@ -35,11 +36,6 @@ import (
 // @Router					/v1/installs/{install_id}/action-workflows/runs [post]
 func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
-	install, err := s.getInstall(ctx, installID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get install: %w", err))
-		return
-	}
 
 	var req CreateInstallActionWorkflowRunRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -52,10 +48,30 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		return
 	}
 
+	result, err := s.createInstallActionWorkflowRun(ctx, installID, req)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: result.WorkflowID})
+}
+
+type createInstallActionWorkflowRunResult struct {
+	WorkflowID             string
+	ActionWorkflowID       string
+	ActionWorkflowConfigID string
+}
+
+func (s *service) createInstallActionWorkflowRun(ctx context.Context, installID string, req CreateInstallActionWorkflowRunRequest) (*createInstallActionWorkflowRunResult, error) {
+	install, err := s.getInstall(ctx, installID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get install: %w", err)
+	}
+
 	awc, err := s.actionsHelpers.GetActionWorkflowConfigByID(ctx, req.ActionWorkFlowConfigID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get action workflow config: %w", err))
-		return
+		return nil, fmt.Errorf("unable to get action workflow config: %w", err)
 	}
 
 	// Callers pass whichever config they last read, usually the app's newest rather
@@ -63,27 +79,24 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	if awc.AppConfigID != install.AppConfigID {
 		pinned, err := s.actionsHelpers.GetActionWorkflowConfig(ctx, awc.ActionWorkflowID, install.AppConfigID)
 		if err != nil {
-			ctx.Error(stderr.ErrUser{
+			return nil, stderr.ErrUser{
 				Err:         fmt.Errorf("action is not in the install's app config version: %w", err),
 				Description: "this action is not in the install's app config version",
-			})
-			return
+			}
 		}
 		awc = pinned
 	}
 
 	if !awc.WorkflowConfigCanTriggerManually() {
-		ctx.Error(stderr.ErrUser{
+		return nil, stderr.ErrUser{
 			Err:         fmt.Errorf("manual trigger is not allowed"),
 			Description: "please update action config to allow manual triggering",
-		})
-		return
+		}
 	}
 
 	installActionWorkflow, err := s.getInstallActionWorkflow(ctx, installID, awc.ActionWorkflowID)
 	if err != nil {
-		ctx.Error(errors.Wrap(err, "unable to get install action workflow"))
-		return
+		return nil, errors.Wrap(err, "unable to get install action workflow")
 	}
 
 	prependRunEnvVars := PrependRunEnvPrefix(req.RunEnvVars)
@@ -92,14 +105,16 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 	workflowMetadata["install_action_workflow_id"] = installActionWorkflow.ID
 	workflowMetadata["install_action_workflow_name"] = installActionWorkflow.ActionWorkflow.Name
 
-	account, err := cctx.AccountFromContext(ctx)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get account from context: %w", err))
-		return
+	accountID := keys.CreatedByIDFromContext(ctx)
+	if accountID == "" {
+		account, err := cctx.AccountFromContext(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get account from context: %w", err)
+		}
+		accountID = account.ID
 	}
-	workflowMetadata["triggerred_by_id"] = account.ID
+	workflowMetadata["triggerred_by_id"] = accountID
 
-	// Merge the prepended run env vars into workflow metadata
 	for k, v := range prependRunEnvVars {
 		workflowMetadata[k] = v
 	}
@@ -112,23 +127,24 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		req.Role,
 	)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
 	}
 
 	queueID, err := s.getInstallActionWorkflowsQueueID(ctx, installActionWorkflow.InstallID)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
 	}
 	if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
 		WorkflowID: workflow.ID,
 	}, workflow.ID, "install_workflows"); err != nil {
-		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-		return
+		return nil, fmt.Errorf("enqueue signal: %w", err)
 	}
 
-	ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
+	return &createInstallActionWorkflowRunResult{
+		WorkflowID:             workflow.ID,
+		ActionWorkflowID:       awc.ActionWorkflowID,
+		ActionWorkflowConfigID: awc.ID,
+	}, nil
 }
 
 // PrependRunEnvPrefix modifies the keys in the provided RunEnvVars map
