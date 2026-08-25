@@ -3,6 +3,7 @@ package actionworkflowrun
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/distribution/reference"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -312,12 +313,20 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string
 		return errors.Wrap(err, "unable to create plan")
 	}
 
-	// image-backed actions: mirror the app image into the install registry
-	// and verify the runner can host the container before dispatching.
+	// image-backed actions: verify the org and runner can host the container
+	// before dispatching. A plan that already carries a digest resolved the
+	// image inside the install's own registry, so there is nothing to mirror.
 	if planResponse.Plan.SourceImage != "" {
-		if err := s.mirrorActionImage(ctx, run, ls.ID, planResponse.Plan); err != nil {
+		if err := s.checkImageActionSupported(ctx, run); err != nil {
 			s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, err.Error())
 			return errors.Wrap(err, "unable to prepare image-backed action")
+		}
+
+		if planResponse.Plan.ImageDigestRef == "" {
+			if err := s.mirrorActionImage(ctx, run, ls.ID, planResponse.Plan); err != nil {
+				s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, err.Error())
+				return errors.Wrap(err, "unable to prepare image-backed action")
+			}
 		}
 	}
 
@@ -424,14 +433,10 @@ func (s *Signal) recordPreparationCompositeError(ctx workflow.Context, runID str
 	}
 }
 
-// mirrorActionImage mirrors an image-backed action's app-authored image into
-// the install registry via an oci-sync job, after confirming the org has the
-// feature enabled and the install's runner platform is supported. It pins the
-// plan to the mirrored digest; any error here prevents the action job from
-// being dispatched at all.
-func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionWorkflowRun, logStreamID string, awPlan *plantypes.ActionWorkflowRunPlan) error {
-	l := workflow.GetLogger(ctx)
-
+// checkImageActionSupported gates image-backed actions on the org feature and
+// the install's runner platform. It runs for every image-backed action,
+// including ones that skip mirroring, so neither path can bypass the gate.
+func (s *Signal) checkImageActionSupported(ctx workflow.Context, run *app.InstallActionWorkflowRun) error {
 	enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureImageBackedActions))
 	if err != nil {
 		return errors.Wrap(err, "unable to check image-backed-actions feature")
@@ -444,6 +449,15 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 	if !supportedImageActionPlatform(platform) {
 		return fmt.Errorf("image-backed actions are only supported on AWS runners; runner platform %q is not supported", platform)
 	}
+
+	return nil
+}
+
+// mirrorActionImage mirrors an image-backed action's app-authored image into
+// the install registry via an oci-sync job. It pins the plan to the mirrored
+// digest; any error here prevents the action job from being dispatched at all.
+func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionWorkflowRun, logStreamID string, awPlan *plantypes.ActionWorkflowRunPlan) error {
+	l := workflow.GetLogger(ctx)
 
 	src, srcTag, err := parseActionImageSource(awPlan.SourceImage)
 	if err != nil {
@@ -473,8 +487,18 @@ func (s *Signal) mirrorActionImage(ctx workflow.Context, run *app.InstallActionW
 		Dst:    awPlan.ImageRegistry,
 		DstTag: awPlan.ImageTag,
 	}
+	// A sandboxed sync job reports whatever the plan carries, so it has to carry
+	// a digest-pinned ref: resolveMirroredDigestRef fails closed on a missing or
+	// unpinned one, which would make every image-backed action fail in sandbox
+	// mode rather than exercise the path.
 	if awPlan.SandboxMode != nil {
-		syncPlan.SandboxMode = &plantypes.SandboxMode{Enabled: true}
+		syncPlan.SandboxMode = &plantypes.SandboxMode{
+			Enabled: true,
+			Outputs: plantypes.FakeOCISyncOutputs(
+				strings.TrimSuffix(awPlan.ImageRegistry.LoginServer+"/"+awPlan.ImageRegistry.Repository, "/"),
+				awPlan.ImageTag,
+			),
+		}
 	}
 
 	syncPlanJSON, err := json.Marshal(syncPlan)
