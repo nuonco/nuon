@@ -122,3 +122,12 @@ describe('status-utils', () => {
     })
   })
 })
+
+describe('health-failed deploy status', () => {
+  // Applied but refused by the health gate: it must read as a failure, not as
+  // the neutral fallback an unmapped status gets.
+  test('renders as an error', () => {
+    expect(getStatusTheme('health-failed')).toBe('error')
+    expect(getStatusIconVariant('health-failed')).toBe('XCircleIcon')
+  })
+})
