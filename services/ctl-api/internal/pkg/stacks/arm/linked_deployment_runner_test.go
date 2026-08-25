@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 func runnerTemplateServer(t *testing.T, body string) string {
@@ -47,5 +48,51 @@ func TestGetRunnerLinkedDeployment_CustomTemplateAttachesIdentities(t *testing.T
 	deps := dep["dependsOn"].([]string)
 	if len(deps) < 2 {
 		t.Errorf("expected identity dependsOn appended, got %v", deps)
+	}
+}
+
+func runnerVMSSSKUName(t *testing.T, dep map[string]any) string {
+	t.Helper()
+	tmpl := dep["properties"].(map[string]any)["template"].(map[string]any)
+	vmss := tmpl["resources"].([]any)[0].(map[string]any)
+	return vmss["sku"].(map[string]any)["name"].(string)
+}
+
+func TestGetDefaultRunnerDeployment_VMSizeDefaultsToPlatformDefault(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+	inp := minimalTemplateInput()
+	inp.Settings.AWSInstanceType = "t3.medium"
+
+	dep := tmpl.getDefaultRunnerDeployment(inp, nil, armScope{})
+	if got := runnerVMSSSKUName(t, dep); got != app.DefaultAzureInstanceType {
+		t.Errorf("expected sku %q, got %q", app.DefaultAzureInstanceType, got)
+	}
+}
+
+func TestGetDefaultRunnerDeployment_VMSizeFromRunnerConfig(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+	inp := minimalTemplateInput()
+	inp.ConfiguredRunnerInstanceType = "Standard_D4s_v3"
+
+	dep := tmpl.getDefaultRunnerDeployment(inp, nil, armScope{})
+	if got := runnerVMSSSKUName(t, dep); got != "Standard_D4s_v3" {
+		t.Errorf("expected sku Standard_D4s_v3, got %q", got)
+	}
+}
+
+func TestGetRunnerLinkedDeployment_CustomTemplateReceivesVMSize(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+	inp := minimalTemplateInput()
+	inp.ConfiguredRunnerInstanceType = "Standard_D4s_v3"
+	inp.RunnerNestedStackTemplateURL = runnerTemplateServer(t, `{"parameters":{"runnerVmSize":{"type":"string"}},"resources":[]}`)
+
+	dep, _, err := tmpl.getRunnerLinkedDeployment(inp, nil, armScope{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	params := dep["properties"].(map[string]any)["parameters"].(map[string]any)
+	got := params["runnerVmSize"].(map[string]any)["value"]
+	if got != "Standard_D4s_v3" {
+		t.Errorf("expected runnerVmSize Standard_D4s_v3, got %v", got)
 	}
 }
