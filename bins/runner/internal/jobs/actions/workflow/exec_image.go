@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/launcher"
 	"github.com/nuonco/nuon/pkg/actions/supervisor"
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/runner/oci"
 	"github.com/nuonco/nuon/pkg/runner/op"
 	"github.com/nuonco/nuon/pkg/zapwriter"
 
@@ -70,7 +71,7 @@ func (h *handler) execCommandInContainer(ctx context.Context, l *zap.Logger, cfg
 	env = generics.MergeMap(env, envVars)
 	env = generics.MergeMap(env, h.state.plan.OverrideEnvVars)
 
-	image, _, _, err := h.actionImageRef()
+	image, err := h.actionImageRef()
 	if err != nil {
 		return err
 	}
@@ -129,7 +130,12 @@ func (h *handler) prepareActionImage(ctx context.Context, l *zap.Logger, leaseID
 		return errors.New("image-backed action received by a runner without a container launcher")
 	}
 
-	image, username, password, err := h.actionImageRef()
+	image, err := h.actionImageRef()
+	if err != nil {
+		return err
+	}
+
+	username, password, err := h.actionImagePullAuth(ctx)
 	if err != nil {
 		return err
 	}
@@ -155,32 +161,51 @@ func (h *handler) releaseActionImage(leaseID string) {
 	h.launcher.Release(leaseID)
 }
 
-// actionImageRef resolves the image ref and pull credentials for the launcher.
-// Production requires the digest-pinned ref that ctl-api resolved from the
-// mirror job, so a step can only ever run the exact manifest Nuon mirrored.
-// There is deliberately no mutable-tag fallback: without a digest we fail
-// rather than run whatever the tag happens to point at now. The dev-only
-// real-docker path pulls the app-authored source image directly.
-func (h *handler) actionImageRef() (image, username, password string, err error) {
+// actionImageRef resolves the image ref the launcher runs. Production requires
+// the digest-pinned ref that ctl-api resolved, so a step can only ever run the
+// exact manifest Nuon resolved. There is deliberately no mutable-tag fallback:
+// without a digest we fail rather than run whatever the tag happens to point at
+// now. The dev-only real-docker path pulls the app-authored source image
+// directly.
+func (h *handler) actionImageRef() (string, error) {
 	plan := h.state.plan
 
 	if h.pullSourceImageDirectly() {
-		return plan.SourceImage, "", "", nil
+		return plan.SourceImage, nil
+	}
+
+	if plan.ImageDigestRef == "" {
+		return "", errors.New("image-backed action plan is not pinned to an image digest")
+	}
+
+	return plan.ImageDigestRef, nil
+}
+
+// actionImagePullAuth resolves registry credentials for the pull. It goes
+// through the registry package rather than reading OCIAuth off the plan: a
+// mirrored image lands in the org registry, which uses static credentials, but
+// a component-backed image is pulled straight from the install's own ECR, ACR,
+// or GAR, which mint a token per pull.
+func (h *handler) actionImagePullAuth(ctx context.Context) (username, password string, err error) {
+	plan := h.state.plan
+
+	if h.pullSourceImageDirectly() {
+		return "", "", nil
 	}
 
 	if plan.ImageRegistry == nil {
-		return "", "", "", errors.New("image-backed action plan has no install image registry")
-	}
-	if plan.ImageDigestRef == "" {
-		return "", "", "", errors.New("image-backed action plan is not pinned to a mirrored image digest")
+		return "", "", errors.New("image-backed action plan has no image registry")
 	}
 
-	if plan.ImageRegistry.OCIAuth != nil {
-		username = plan.ImageRegistry.OCIAuth.Username
-		password = plan.ImageRegistry.OCIAuth.Password
+	accessInfo, err := oci.FetchAccessInfo(ctx, plan.ImageRegistry)
+	if err != nil {
+		return "", "", errors.Wrap(err, "unable to get registry credentials for the action image")
+	}
+	if accessInfo.Auth == nil {
+		return "", "", nil
 	}
 
-	return plan.ImageDigestRef, username, password, nil
+	return accessInfo.Auth.Username, accessInfo.Auth.Password, nil
 }
 
 // randContainerSuffix returns a short random suffix so concurrent executions of
@@ -198,8 +223,18 @@ func randContainerSuffix() string {
 // pullSourceImageDirectly reports whether the dev-only real-docker path is
 // active, in which case the launcher pulls the app-authored source image
 // directly (ctl-api can't know a local registry address) instead of the
-// install-registry mirror.
+// mirror.
+//
+// It deliberately does not apply to an image that already resolved to the
+// install's own registry, which is the case when the plan pins the source ref
+// itself. That ref is never publicly pullable, so taking the shortcut would
+// skip credential resolution and 401 rather than fall back to anything.
 func (h *handler) pullSourceImageDirectly() bool {
+	plan := h.state.plan
+	if plan.ImageDigestRef != "" && plan.ImageDigestRef == plan.SourceImage {
+		return false
+	}
+
 	return os.Getenv("NUON_DEV_REAL_IMAGE_ACTIONS") == "true" &&
 		strings.EqualFold(os.Getenv("ENV"), "development")
 }
