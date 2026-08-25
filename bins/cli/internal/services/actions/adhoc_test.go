@@ -21,6 +21,7 @@ type adHocAPI struct {
 	nuon.Client
 	installID     string
 	request       *models.ServiceCreateAdHocActionRequest
+	roles         []*models.ServiceAvailableRole
 	runs          []*models.AppInstallActionWorkflowRun
 	runIndex      int
 	logPages      []adHocLogPage
@@ -38,6 +39,10 @@ type adHocLogPage struct {
 func (a *adHocAPI) GetInstall(_ context.Context, installID string) (*models.AppInstall, error) {
 	a.installID = installID
 	return &models.AppInstall{ID: "inst_resolved"}, nil
+}
+
+func (a *adHocAPI) GetAvailableRoles(_ context.Context, _ string) ([]*models.ServiceAvailableRole, error) {
+	return a.roles, nil
 }
 
 func (a *adHocAPI) CreateAdHocAction(_ context.Context, installID string, req *models.ServiceCreateAdHocActionRequest) (*models.ServiceCreateAdHocActionResponse, error) {
@@ -83,7 +88,7 @@ func TestCreateAdHocRunUsesSelectedInstallAndBuildsRequest(t *testing.T) {
 	v := viper.New()
 	v.Set("install_id", "selected-install")
 	cfg := &config.Config{Viper: v}
-	api := &adHocAPI{}
+	api := &adHocAPI{roles: []*models.ServiceAvailableRole{{Name: "maintenance"}}}
 	service := New(validator.New(), api, cfg)
 
 	err := service.CreateAdHocRun(context.Background(), AdHocParams{
@@ -104,6 +109,24 @@ func TestCreateAdHocRunUsesSelectedInstallAndBuildsRequest(t *testing.T) {
 	require.Equal(t, "maintenance", api.request.Role)
 	require.NotNil(t, api.request.EnableKubeConfig)
 	require.False(t, *api.request.EnableKubeConfig)
+}
+
+func TestCreateAdHocRunRejectsUnknownRole(t *testing.T) {
+	api := &adHocAPI{roles: []*models.ServiceAvailableRole{
+		{Name: "install-provision"},
+		{Name: "install-maintenance"},
+	}}
+	service := New(validator.New(), api, &config.Config{Viper: viper.New()})
+
+	err := service.CreateAdHocRun(context.Background(), AdHocParams{
+		InstallID: "inst_123",
+		Command:   "echo hello",
+		Timeout:   time.Minute,
+		Role:      "provision",
+	}, false)
+
+	require.EqualError(t, err, `role "provision" is not available; available roles: install-maintenance, install-provision`)
+	require.Nil(t, api.request)
 }
 
 func TestParseAdHocEnvMergesFileAndFlags(t *testing.T) {

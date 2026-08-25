@@ -86,6 +86,7 @@ func TestGetRoleForSandbox(t *testing.T) {
 		expectedOperation  app.OperationType
 		expectedRoleSource operationroles.RoleSelectionSource
 		expectedRoleName   string
+		expectedError      string
 		description        string
 	}{
 		{
@@ -479,26 +480,22 @@ func TestGetRoleForSandbox(t *testing.T) {
 			description:        "Should fallback to default when matrix role is missing from stack outputs",
 		},
 		{
-			name:               "runtime_role_missing_fallback_provision",
+			name:               "runtime_role_missing_provision_returns_error",
 			sandboxRunType:     app.SandboxRunTypeProvision,
 			sandboxRuntimeRole: "MissingRuntimeRole", // Not in stack outputs
 			sandboxEntityRoles: pgtype.Hstore{},
 			matrixRules:        nil,
-			expectedOperation:  app.OperationProvision,
-			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
-			expectedRoleName:   "ProvisionRole",
-			description:        "Should fallback to default when runtime role is missing from stack outputs",
+			expectedError:      `unable to use requested role "MissingRuntimeRole"`,
+			description:        "Should reject a runtime role missing from stack outputs",
 		},
 		{
-			name:               "runtime_role_missing_fallback_deprovision",
+			name:               "runtime_role_missing_deprovision_returns_error",
 			sandboxRunType:     app.SandboxRunTypeDeprovision,
 			sandboxRuntimeRole: "MissingRuntimeRole", // Not in stack outputs
 			sandboxEntityRoles: pgtype.Hstore{},
 			matrixRules:        nil,
-			expectedOperation:  app.OperationDeprovision,
-			expectedRoleSource: operationroles.RoleSelectionSourceDefault,
-			expectedRoleName:   "DeprovisionRole",
-			description:        "Should fallback to default deprovision when runtime role is missing",
+			expectedError:      `unable to use requested role "MissingRuntimeRole"`,
+			description:        "Should reject a runtime role missing from stack outputs",
 		},
 	}
 
@@ -583,6 +580,12 @@ func TestGetRoleForSandbox(t *testing.T) {
 				installState,
 			)
 
+			if tt.expectedError != "" {
+				require.ErrorContains(t, err, tt.expectedError)
+				require.Nil(t, roleSelection)
+				require.Empty(t, operation)
+				return
+			}
 			require.NoError(t, err, "getRoleForSandbox should not return error for test: %s", tt.description)
 			assert.Equal(t, tt.expectedOperation, operation, "Operation type mismatch: %s", tt.description)
 			assert.Equal(t, tt.expectedRoleSource, roleSelection.Source, "Role source mismatch: %s", tt.description)
