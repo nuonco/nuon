@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/distribution/reference"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -140,14 +141,9 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 			return nil, nil, errors.Wrap(err, "unable to render action image")
 		}
 
-		imageRegistry, err := p.getOrgRegistryRepositoryConfig(ctx, run.InstallID, runID)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "unable to get registry for action image")
+		if err := p.setActionImagePlan(ctx, plan, sourceImage, runID, stack, stateMap, cloudAuth); err != nil {
+			return nil, nil, err
 		}
-
-		plan.SourceImage = sourceImage
-		plan.ImageRegistry = imageRegistry
-		plan.ImageTag = actionImageTag(sourceImage, runID)
 	}
 
 	if slimInstall.SandboxMode.Bool {
@@ -161,6 +157,76 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 
 	l.Info("successfully created plan")
 	return plan, roleSelection, nil
+}
+
+// setActionImagePlan decides how the runner gets the action's image. An image
+// that already lives in the install's own registry (a container_image
+// component's output, reached through templating) is pulled directly with the
+// install's cloud credentials. Everything else is treated as a public ref and
+// mirrored into the org registry first.
+func (p *Planner) setActionImagePlan(
+	ctx workflow.Context,
+	plan *plantypes.ActionWorkflowRunPlan,
+	sourceImage string,
+	runID string,
+	stack *app.InstallStack,
+	stateMap map[string]interface{},
+	cloudAuth *CloudAuth,
+) error {
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return err
+	}
+
+	plan.SourceImage = sourceImage
+
+	named, err := reference.ParseDockerRef(sourceImage)
+	if err != nil {
+		return fmt.Errorf("invalid action image reference %q: %w", sourceImage, err)
+	}
+
+	loginServer := installRegistryLoginServer(stateMap, stack)
+	if loginServer != "" && reference.Domain(named) == loginServer {
+		// Mirroring exists to move an app-authored image somewhere the runner
+		// can reach. This one is already there, so a copy would be pure waste.
+		digested, ok := named.(reference.Digested)
+		if !ok {
+			return fmt.Errorf(
+				"action image %q resolves to the install registry but is not digest-pinned; reference the component's image.ref output rather than repository and tag",
+				sourceImage,
+			)
+		}
+
+		registryCfg := getInstallRegistryPullConfig(
+			reference.TrimNamed(named).String(),
+			loginServer,
+			stack,
+			cloudAuth,
+		)
+		if registryCfg == nil {
+			return fmt.Errorf("unable to build install registry config for action image %q", sourceImage)
+		}
+
+		plan.ImageRegistry = registryCfg
+		plan.ImageDigestRef = sourceImage
+
+		l.Info("action image resolved to the install registry, skipping mirror",
+			zap.String("action.image", sourceImage),
+			zap.String("image.digest", digested.Digest().String()),
+		)
+
+		return nil
+	}
+
+	imageRegistry, err := p.getOrgRegistryRepositoryConfig(ctx, plan.InstallID, runID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get registry for action image")
+	}
+
+	plan.ImageRegistry = imageRegistry
+	plan.ImageTag = actionImageTag(sourceImage, runID)
+
+	return nil
 }
 
 // actionImageTag derives the install-registry destination tag for a mirrored
