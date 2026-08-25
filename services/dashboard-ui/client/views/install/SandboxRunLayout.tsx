@@ -5,7 +5,6 @@ import { CompositeError } from '@/components/common/CompositeError'
 import { SandboxHeader } from '@/components/sandbox/SandboxHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { PageTitle } from '@/components/navigation/PageTitle'
 import { TabNav } from '@/components/navigation/TabNav'
 import { SandboxRunProvider } from '@/providers/sandbox-run-provider'
 import { useSandboxRun } from '@/hooks/use-sandbox-run'
@@ -67,7 +66,6 @@ const SandboxRunLayoutInner = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Sandbox run | ${install?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

@@ -14,7 +14,7 @@ export const Apps = () => {
 
   return (
     <PageLayout>
-      <PageTitle title={`Apps | ${org?.name}`} />
+      <PageTitle title="Apps" />
       <Breadcrumbs
         breadcrumbs={[
           {
