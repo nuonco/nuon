@@ -64,10 +64,9 @@ func (s *service) DeleteConnection(ctx *gin.Context) {
 		}
 	}
 
-	// Stop all queues owned by this VCS connection
 	for _, q := range vcsConn.Queues {
-		if err := s.helpers.StopConnectionQueue(ctx, q.ID); err != nil {
-			s.l.Warn("unable to stop vcs connection queue",
+		if err := s.helpers.TerminateConnectionQueue(ctx, q.ID); err != nil {
+			s.l.Warn("unable to terminate vcs connection queue",
 				zap.String("vcs_connection_id", vcsConn.ID),
 				zap.String("queue_id", q.ID),
 				zap.Error(err),
