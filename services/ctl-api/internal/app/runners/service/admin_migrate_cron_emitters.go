@@ -35,7 +35,7 @@ type AdminMigrateCronEmittersResponse struct {
 // @Description			canonical schedules . Install emitters (action crons, drift)
 // @Description			are migrated by enqueueing an appconfig-updated reconcile per install.
 // @Param					req	body	AdminMigrateCronEmittersRequest	true	"Input"
-// @Tags					runners/admin
+// @Tags					queues/admin
 // @Security				AdminEmail
 // @Accept					json
 // @Produce				json
