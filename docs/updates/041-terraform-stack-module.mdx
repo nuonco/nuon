@@ -44,8 +44,41 @@ module "aws_stack" {
 
 Once installed, your customers simply need to run `terraform apply` to install a new version of the stack.
 If new inputs or secrets are required, an actionable terraform error will be displayed.
+For example, if a new app version requires `a_new_input`, the customer will see this error until they set it.
 
 ```sh
+╷
+│ Error: Resource precondition failed
+│
+│   on .terraform/modules/aws_stack/phone_home.tf line 100, in resource "stack_phone_home" "this":
+│  100:       condition     = length(local.missing_required_inputs) == 0
+│     ├────────────────
+│     │ local.missing_required_inputs is tuple with 1 element
+│
+│ the app requires a value for these inputs: a_new_input.
+╵
 ```
 
-If the stack module itself needs to be upgraded, your customer can run `terraform init -upgrade` and re-apply the stack.
+To manage updates to the stack module itself, recommend setting a semver constraint on the minor version.
+That way your customer only needs to run `terraform init -upgrade` to receive patch updates.
+Minor and major versions can be received by updating the module version.
+
+```hcl
+module "aws_stack" {
+  source  = "nuonco/stack/aws"
+  version = "~> 0.2" // [!code --]
+  version = "~> 0.3" // [!code ++]
+
+  install_id = "<install-id>"
+
+  inputs = {
+    instance_type = "t3a.medium"
+  }
+
+  secrets = {
+    license_key = { value = var.license_key }
+  }
+}
+```
+
+For more details, see the [Provision Stack with a Terraform Module](/guides/provision-stacks-with-terraform-module) guide.
