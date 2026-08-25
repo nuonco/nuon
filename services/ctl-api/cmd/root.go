@@ -17,6 +17,7 @@ func Execute() {
 	c.registerAuthAPI()
 	c.registerAdminDashboardAPI()
 	c.registerSlackAPI()
+	c.registerMCPAPI()
 	c.registerWorker()
 	c.registerConsumer()
 	c.registerStartup()
