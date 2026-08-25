@@ -8,6 +8,7 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { ServiceAccountsTable } from '@/components/service-accounts/ServiceAccountsTable'
 import { CreateServiceAccountButton } from '@/components/service-accounts/CreateServiceAccount'
 import { ShowRunnerAccountsContainer as ShowRunnerAccounts } from '@/components/service-accounts/filters/ShowRunnerAccounts'
+import { ShowStackAccountsContainer as ShowStackAccounts } from '@/components/service-accounts/filters/ShowStackAccounts'
 
 import { useOrg } from '@/hooks/use-org'
 
@@ -38,15 +39,14 @@ export const ServiceAccounts = () => {
           <Text variant="h3" weight="stronger" level={1}>
             Service accounts
           </Text>
-          <Text theme="neutral">
-            Manage machine users.
-          </Text>
+          <Text theme="neutral">Manage machine users.</Text>
         </HeadingGroup>
         <CreateServiceAccountButton variant="primary" />
       </PageHeader>
       <PageContent>
         <PageSection>
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end gap-4">
+            <ShowStackAccounts />
             <ShowRunnerAccounts />
           </div>
           <ServiceAccountsTable shouldPoll />

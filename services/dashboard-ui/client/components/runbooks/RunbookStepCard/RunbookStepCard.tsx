@@ -14,7 +14,6 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TCompositeError, TInstallActionRun, TWorkflowStep } from '@/types'
-import { toSentenceCase } from '@/utils/string-utils'
 
 type TStatusHistoryEntry = NonNullable<
   NonNullable<TWorkflowStep['status']>['history']
@@ -111,7 +110,7 @@ export const RunbookStepCard = ({
         <div className="flex items-center gap-3">
           <Text variant="body" className="!inline-flex gap-2">
             {stepStatus ? <Status status={stepStatus} isWithoutText /> : null}
-            {toSentenceCase(step.name)}
+            {step.name}
           </Text>
         </div>
         <Link href={`${workflowUrl}?panel=${step.id}`}>

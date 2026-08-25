@@ -9,7 +9,7 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { skipWorkflowStep } from '@/lib'
 import type { TAPIError, TWorkflowStep } from '@/types'
-import { toSentenceCase } from '@/utils/string-utils'
+import { getWorkflowStepTitle } from '@/utils/workflow-utils'
 import { SkipStepModal } from './SkipStep'
 
 interface ISkipStep {
@@ -40,7 +40,7 @@ export const SkipStepModalContainer = ({
       addToast(
         <Toast heading="Step skipped" theme="success">
           <Text>
-            {toSentenceCase(step.name)} was skipped. The workflow will continue
+            {getWorkflowStepTitle(step)} was skipped. The workflow will continue
             with the remaining steps.
           </Text>
         </Toast>

@@ -26,7 +26,6 @@ import {
   createAppInstall,
   getAWSAccountConnections,
 } from '@/lib'
-import { toSentenceCase } from '@/utils/string-utils'
 import { CreateInstallButton as CreateInstallButtonComponent } from './CreateInstall'
 
 const noop = () => {}
@@ -183,11 +182,10 @@ const CreateInstallModalContainer = ({ ...props }: IModal) => {
           submitError={
             submitError
               ? ({
-                  error: toSentenceCase(
+                  error:
                     (submitError as any).error ||
-                      (submitError as any).description ||
-                      'Unable to create install.'
-                  ),
+                    (submitError as any).description ||
+                    'Unable to create install.',
                 } as any)
               : null
           }

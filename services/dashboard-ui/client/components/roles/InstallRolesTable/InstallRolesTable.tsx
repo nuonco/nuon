@@ -11,6 +11,7 @@ import { Time } from '@/components/common/Time'
 import { Panel } from '@/components/surfaces/Panel'
 import { InstallRoleDetail } from '../InstallRoleDetail'
 import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-roles'
+import { humanize } from '@/utils/string-utils'
 
 const panelLinkClass =
   '!p-0 !h-auto !border-none !rounded-none !bg-transparent hover:!bg-transparent active:!bg-transparent focus:!shadow-none text-primary-600 dark:text-primary-500 hover:text-primary-800 hover:dark:text-primary-400 active:text-primary-900 active:dark:text-primary-600'
@@ -66,8 +67,8 @@ export const InstallRolesTable = ({
         accessorKey: 'app_role_config.type',
         header: 'Type',
         cell: ({ row }) => (
-          <Badge variant="code" theme="neutral">
-            {row.original.app_role_config?.type}
+          <Badge theme="neutral">
+            {humanize(row.original.app_role_config?.type)}
           </Badge>
         ),
       },

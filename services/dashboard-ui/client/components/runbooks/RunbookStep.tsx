@@ -9,6 +9,7 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import type { TRunbookStep } from '@/lib/ctl-api/apps/runbooks/get-runbooks'
 import { objectToKeyValueArray } from '@/utils/data-utils'
+import { humanize } from '@/utils/string-utils'
 
 export interface IRunbookStep {
   index: number
@@ -38,8 +39,8 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
           <Text weight="strong">
             {index + 1}. {step.name}
           </Text>
-          <Badge variant="code" size="sm" theme="neutral">
-            {step.type}
+          <Badge size="sm" theme="neutral">
+            {humanize(step.type)}
           </Badge>
         </span>
       }

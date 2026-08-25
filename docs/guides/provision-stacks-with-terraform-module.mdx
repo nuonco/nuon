@@ -1,0 +1,257 @@
+---
+title: 'Provision Stacks with a Terraform Module'
+description: 'Use the nuon stack provider to provision a stack using a module'
+icon: 'terminal'
+boost: 10
+keywords: ['terraform', 'terraform module', 'terraform provider', 'provider', 'install-stacks', 'install stack', 'stack', 'terraform apply', 'nuonco/stack', 'stack provider', 'api token', 'backend', 'remote state', 'inputs', 'secrets']
+---
+
+{/* TODO: confirm module version pin before release */}
+
+For customers that prefer to manage their stacks using Terraform, we publish [modules for each platform Nuon supports](https://registry.terraform.io/search/modules?namespace=nuonco&q=stack).
+
+<Note>
+  This is the recommended way to provision install stacks using Terraform.
+  The legacy flow, based on generated `inputs.auto.tfvars` and `secrets.auto.tfvars` files, is described in [Provision Stacks with Terraform](/guides/provision-stacks-with-terraform).
+</Note>
+
+## How it works
+
+When creating an install, you will be presented with a "TF Module" option for provisioning the stack.
+This will provide Terraform code your customer can use to import the stack module and authenticate with your Nuon control plane to fetch configuration data.
+
+## Prerequisites
+
+In order to use a Terraform module, your customer will need the following.
+
+- A Terraform project, with their own state backend configured.
+- A secret store.
+- Credentials for the cloud account they want to provision the stack in.
+- Outbound network access to the Terraform Registry from their CI (to install the module and the `nuonco/stack` provider).
+- Outbound network access to the Nuon runner API from their CI (so the provider can fetch the stack configuration at plan time).
+
+## Provision a new install stack
+
+Create a new install, and retrieve the Terraform code and Nuon credentials from the "Await install stack" step of the provision workflow.
+You will need to share these with your customer.
+
+<Steps>
+  <Step title="Define customer-facing inputs and secrets">
+    In your app config, configure the inputs and secrets your customer needs to provide.
+
+    <CodeGroup>
+    ```toml inputs.toml {8}
+    name              = "instance_type"
+    display_name      = "Node Instance Size"
+    description       = "EC2 instance type for EKS worker nodes"
+    group             = "compute"
+    default           = "t3a.medium"
+    type              = "string"
+    required          = false
+    user_configurable = true
+    ```
+
+    ```toml secrets.toml {5}
+    [[secret]]
+    name          = "license_key"
+    display_name  = "License Key"
+    description   = "License key enabling access"
+    required      = true
+    ```
+    </CodeGroup>
+
+    See [Configuring Inputs & Secrets](/guides/configuring-inputs-and-secrets) for more details.
+  </Step>
+  <Step title="Create the install stack">
+    Create an install and wait for the **Await install stack** step.
+    The **TF Module** tab will display Terraform code tailored to this install, interpolating the install ID, region, and the customer-facing inputs and secrets.
+
+    A [Service Account](/concepts/service-accounts#stack-service-accounts) has been created and assigned the "Stack" role.
+    This is the identity the Stack SDK will use to perform stack operations for this install.
+  </Step>
+  <Step title="Create auth credentials">
+    The `stack` provider needs credentials to read the install's configuration.
+    Create a static token, and share it with your customer through a secure channel.
+  </Step>
+</Steps>
+
+The rest of the process is completed by your customer, using the information you provide to them.
+
+<Steps>
+  <Step title="Import the stack module">
+    Your customer must import the module using the Terraform snippet you saved from the provision workflow.
+
+    ```hcl main.tf
+    terraform {
+      required_providers {
+        aws   = { source = "hashicorp/aws" }
+        stack = { source = "nuonco/stack" }
+      }
+    }
+
+    provider "aws" {
+      region = "us-west-2"
+    }
+
+    provider "stack" {}
+
+    module "aws_stack" {
+      source  = "nuonco/stack/aws"
+      version = "~> 0.2"
+
+      install_id = "<install-id>"
+
+      inputs = {
+        instance_type = "t3a.medium"
+      }
+
+      secrets = {
+        license_key = { value = var.license_key }
+      }
+    }
+
+    variable "license_key" {
+      type        = string
+      sensitive   = true
+      description = "License key that activates the product."
+    }
+    ```
+  </Step>
+  <Step title="Configure the secret values">
+    Nuon credentials and app secret values are supplied using environment variables, so they are never written to Terraform files or committed to version control.
+    Ideally, these should be saved by your customer in their CI's secret store.
+
+    <Warning>
+      Like any Terraform-managed secret, app secret values are stored in Terraform state once applied.
+      Your customer's state backend must be encrypted and access-controlled.
+    </Warning>
+
+    ```bash
+    export NUON_API_TOKEN='<api-token>'
+    export TF_VAR_license_key='<license-key-value>'
+    ```
+  </Step>
+  <Step title="Init and apply">
+    Your customer can simply init and apply the Terraform.
+    If any inputs are missing or invalid, there will be a Terraform validation error.
+
+    ```bash
+    terraform init && terraform apply
+    ```
+  </Step>
+</Steps>
+
+## Updating the stack
+
+There are two kinds of stack updates your customer may need to apply.
+
+- A **new version of the stack** — updates to the inputs, secrets, roles, or permissions in the app config.
+- A **new version of the Terraform module** — updates to the stack module itself, such as fixes or changes to the
+  network topology or runner VM.
+
+The two are independent of each other. A new stack version doesn't require a module upgrade, and vice versa.
+
+### Updating to a new stack version
+
+Stack version updates are ordinary Terraform edits followed by `terraform apply`.
+
+#### Change an input value
+
+Your customer edits the `inputs` map and re-applies. The merged values phone home and become the install's current
+inputs, triggering redeployment of dependent components.
+
+```hcl
+  inputs = {
+    instance_type = "t3a.medium" // [!code --]
+    instance_type = "t3a.large" // [!code ++]
+  }
+```
+
+Removing a key from `inputs` falls back to the control plane's current value on the next apply. It does not unset
+the input.
+
+#### Vendor adds a new input
+
+When you add a customer-facing input to the app config, or make an existing vendor-side input customer-facing,
+your customer can add the input to the inputs map and re-apply.
+
+```hcl
+  inputs = {
+    instance_type = "t3a.large"
+    domain        = "acme-corp.example.com" // [!code ++]
+  }
+```
+
+If the new input is `required` and has no default, the apply will fail, and your customer will be shown an error
+message telling them to provide the input value.
+
+#### Vendor adds or removes a customer secret
+
+If you add a new secret, your customer should store the value in a secret store, and pass it to Terraform as a `TF_VAR_` environment variable.
+
+```hcl
+module "aws_stack" {
+  source  = "nuonco/stack/aws"
+  version = "~> 0.2"
+
+  // other module config...
+
+  secrets = {
+    license_key   = { value = var.license_key }
+    smtp_password = { value = var.smtp_password } // [!code ++]
+  }
+}
+
+variable "smtp_password" { // [!code ++]
+  type      = string // [!code ++]
+  sensitive = true // [!code ++]
+} // [!code ++]
+```
+
+```bash
+export TF_VAR_smtp_password='<smtp-password-value>'
+```
+
+Removing a secret is the reverse: delete the `variable` block, the `secrets` entry, and the export.
+
+#### Vendor changes roles or permissions
+
+Operation-role permissions, break-glass roles, and custom roles are read from the control plane, and are pulled in
+automatically by the next `terraform plan`. Whether a break-glass or custom role is enabled is also served by the
+control plane, but your customer can override it with the module's `roles` map:
+
+```hcl
+  roles = {
+    "app-break-glass" = true // [!code ++]
+  }
+```
+
+An entry set here wins over the control plane in both directions, so your customer can turn a role off or switch one
+on ahead of the next apply. Keys are role names — either the full served name or the name without its leading
+`<install-id>-` prefix. A `roles` key naming a role the app does not declare fails the plan, with an error listing
+the valid keys.
+
+The `roles` map also accepts three reserved keys — `provision`, `maintenance`, and `deprovision` — to disable an
+operation role:
+
+```hcl
+  roles = {
+    deprovision = false // [!code ++]
+  }
+```
+
+This is useful for keeping teardown permissions off until your customer intends to decommission the install.
+Disabling `provision` or `maintenance` prevents Nuon from performing those operations until the role is re-enabled
+and applied.
+
+#### Vendor removes an input
+
+If you remove an input (or make it vendor-facing again) while your customer's `inputs` map still names it, their
+next plan will fail with an error message telling them to remove it.
+
+### Upgrading the module version
+
+To upgrade the Terraform module itself, your customer will update the version pin, run `terraform init -upgrade`, then `terraform apply`.
+
+To avoid your customer having to upgrade too frequently, we recommend using a minor version constraint instead of pinning to a specific version.
+For example, with `version = "~> 0.2"`, running `terraform init -upgrade` will automatically pick up new patch versions.

@@ -134,3 +134,65 @@ export const Empty = () => (
     />
   </div>
 )
+
+const REGION_SUFFIXES = [
+  'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'eu-west-1', 'eu-west-2',
+  'eu-central-1', 'ap-south-1', 'ap-southeast-1', 'ap-southeast-2', 'ap-northeast-1',
+  'ca-central-1', 'sa-east-1', 'af-south-1', 'me-south-1',
+]
+
+function buildLargePlan(
+  specs: { name: string; count: number; maxParallel?: number; useForPreviews?: boolean }[]
+) {
+  const installsById: Record<string, any> = {}
+  const install_groups = specs.map((spec, gi) => {
+    const install_ids: string[] = []
+    for (let i = 0; i < spec.count; i++) {
+      const id = `inst-g${gi}-${i}`
+      const region = REGION_SUFFIXES[i % REGION_SUFFIXES.length]
+      installsById[id] = {
+        id,
+        name: `acme-${spec.name.toLowerCase().replace(/\s+/g, '-')}-${region}-${String(i + 1).padStart(2, '0')}`,
+        labels: {},
+      }
+      install_ids.push(id)
+    }
+    return {
+      id: `group-${gi}`,
+      name: spec.name,
+      order: gi,
+      install_ids,
+      max_parallel: spec.maxParallel ?? 1,
+      use_for_previews: spec.useForPreviews ?? false,
+    }
+  })
+  return { config: { install_groups } as any, installsById }
+}
+
+const largePlan = buildLargePlan([
+  { name: 'Canary', count: 4, useForPreviews: true },
+  { name: 'Production US', count: 30, maxParallel: 4 },
+  { name: 'Production EU', count: 18, maxParallel: 3 },
+  { name: 'Staging', count: 9, maxParallel: 2 },
+])
+
+export const ManyGroupsLargeInstallCounts = () => (
+  <div className="p-4">
+    <DeploymentPlanGraph
+      config={largePlan.config}
+      installsById={largePlan.installsById}
+      orgId="org123"
+    />
+  </div>
+)
+
+export const ManyGroupsLargeInstallCountsCompact = () => (
+  <div className="p-4">
+    <DeploymentPlanGraph
+      config={largePlan.config}
+      installsById={largePlan.installsById}
+      orgId="org123"
+      compact
+    />
+  </div>
+)
