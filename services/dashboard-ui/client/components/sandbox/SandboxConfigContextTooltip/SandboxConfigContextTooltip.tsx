@@ -191,9 +191,7 @@ export const SandboxConfigContextTooltip = ({
     >
       {children || (
         <Text weight="strong" flex className="gap-1">
-          <Link
-            href={`/${orgId}/apps/${appId}`}
-          >
+          <Link href={`/${orgId}/apps/${appId}`} variant="inline">
             Sandbox configuration
           </Link>
           <Icon variant="QuestionIcon" />

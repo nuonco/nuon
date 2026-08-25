@@ -1,6 +1,5 @@
 import { EmptyState } from '@/components/common/EmptyState'
 import { Link } from '@/components/common/Link'
-import { Text } from '@/components/common/Text'
 
 export const NotFound = () => {
   return (
@@ -10,11 +9,9 @@ export const NotFound = () => {
         emptyTitle="Page not found"
         emptyMessage="The page you're looking for doesn't exist or has been moved."
         action={
-          <Text variant="subtext">
-            <Link href="/" isATag>
-              Back to home
-            </Link>
-          </Text>
+          <Link href="/" isATag>
+            Back to home
+          </Link>
         }
       />
     </div>

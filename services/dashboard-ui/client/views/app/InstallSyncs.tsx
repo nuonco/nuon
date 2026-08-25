@@ -228,11 +228,8 @@ const SyncCard = ({ sync }: { sync: TAppInstallConfigSync }) => {
               label="View signal"
             />
           )}
-          <Link
-            href={`/${org?.id}/apps/${app?.id}/install-syncs/${sync.id}`}
-            className="text-xs"
-          >
-            View
+          <Link href={`/${org?.id}/apps/${app?.id}/install-syncs/${sync.id}`}>
+            View sync
           </Link>
         </div>
       </div>

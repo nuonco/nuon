@@ -3,7 +3,6 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
-import { Icon } from '@/components/common/Icon'
 import type { IPanel } from '@/components/surfaces/Panel'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
@@ -216,7 +215,7 @@ const StepPanelButton = ({
       size="sm"
       onClick={handleAddPanel}
     >
-      View details <Icon variant="CaretRightIcon" />
+      View details
     </Button>
   )
 }

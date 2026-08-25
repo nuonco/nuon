@@ -217,11 +217,9 @@ export const Stacks = () => {
                     </span>
                   }
                 >
-                  <Text variant="subtext">
-                    <Link href={effectiveRunnerURL} isExternal>
-                      {effectiveRunnerURL}
-                    </Link>
-                  </Text>
+                  <Link href={effectiveRunnerURL} isExternal>
+                    {effectiveRunnerURL}
+                  </Link>
                 </LabeledValue>
               ) : null}
               {effectiveVpcURL ? (
@@ -240,11 +238,9 @@ export const Stacks = () => {
                     </span>
                   }
                 >
-                  <Text variant="subtext">
-                    <Link href={effectiveVpcURL} isExternal>
-                      {effectiveVpcURL}
-                    </Link>
-                  </Text>
+                  <Link href={effectiveVpcURL} isExternal>
+                    {effectiveVpcURL}
+                  </Link>
                 </LabeledValue>
               ) : null}
             </div>

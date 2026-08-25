@@ -1,5 +1,4 @@
 import { Badge } from '@/components/common/Badge'
-import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
@@ -54,9 +53,9 @@ export const IAMRoleBoundaryExpand = ({
             className="!inline-flex"
             href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html?icmpid=docs_iam_console"
             isExternal
+            variant="inline"
           >
-            Learn more about permission boundaries{' '}
-            <Icon variant="ArrowSquareOutIcon" />
+            Learn more about permission boundaries
           </Link>
         </Text>
       )}
@@ -118,13 +117,12 @@ export const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
                 AWS managed
               </Text>
 
-              <Button
-                className="!p-1"
+              <Link
                 href={`https://docs.aws.amazon.com/aws-managed-policy/latest/reference/${policy?.managed_policy_name}.html`}
-                size="sm"
+                isExternal
               >
-                <Icon variant="ArrowSquareOutIcon" />
-              </Button>
+                View docs
+              </Link>
             </>
           ) : null}
           {policy?.contents ? (
@@ -176,13 +174,12 @@ export const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
                 GCP predefined
               </Text>
 
-              <Button
-                className="!p-1"
+              <Link
                 href="https://cloud.google.com/iam/docs/understanding-roles"
-                size="sm"
+                isExternal
               >
-                <Icon variant="ArrowSquareOutIcon" />
-              </Button>
+                View docs
+              </Link>
             </>
           ) : null}
           {policy?.gcp_permissions?.length ? (
@@ -234,13 +231,12 @@ export const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
                 Azure built-in
               </Text>
 
-              <Button
-                className="!p-1"
+              <Link
                 href="https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles"
-                size="sm"
+                isExternal
               >
-                <Icon variant="ArrowSquareOutIcon" />
-              </Button>
+                View docs
+              </Link>
             </>
           ) : null}
           {policy?.azure_actions?.length ? (

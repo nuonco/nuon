@@ -5,7 +5,6 @@ import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Duration } from '@/components/common/Duration'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -141,7 +140,6 @@ export const InstallActionRunHeader = ({
           href={`${basePath}/workflows/${workflow.id}?panel=${step?.id}`}
         >
           View workflow
-          <Icon variant="CaretRightIcon" />
         </Button>
       ) : null}
     </header>

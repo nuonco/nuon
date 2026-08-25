@@ -1,4 +1,3 @@
-import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import type { IActionRunHeader } from '../types'
@@ -39,24 +38,20 @@ export const ActionRunHeader = ({
           </Text>
 
           {step?.owner_id && actionRun?.config?.action_workflow_id ? (
-            <Text variant="subtext">
-              <Link
-                href={`/${orgId}/installs/${step.owner_id}/actions/${actionRun.config.action_workflow_id}`}
-              >
-                View action <Icon variant="CaretRightIcon" />
-              </Link>
-            </Text>
+            <Link
+              href={`/${orgId}/installs/${step.owner_id}/actions/${actionRun.config.action_workflow_id}`}
+            >
+              View action
+            </Link>
           ) : null}
           {step?.owner_id &&
           actionRun?.config?.action_workflow_id &&
           actionRun?.id ? (
-            <Text variant="subtext">
-              <Link
-                href={`/${orgId}/installs/${step.owner_id}/actions/${actionRun.config.action_workflow_id}/runs/${actionRun.id}`}
-              >
-                View run details <Icon variant="CaretRightIcon" />
-              </Link>
-            </Text>
+            <Link
+              href={`/${orgId}/installs/${step.owner_id}/actions/${actionRun.config.action_workflow_id}/runs/${actionRun.id}`}
+            >
+              View run details
+            </Link>
           ) : null}
         </>
       )}
