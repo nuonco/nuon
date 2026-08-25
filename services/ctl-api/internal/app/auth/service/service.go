@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -33,6 +34,7 @@ var tmplFS embed.FS
 type Params struct {
 	fx.In
 
+	LC         fx.Lifecycle
 	V          *validator.Validate
 	Cfg        *internal.Config
 	DB         *gorm.DB `name:"psql"`
@@ -51,6 +53,8 @@ type service struct {
 
 	domain         string   // domain the service is served at
 	allowedDomains []string // email domains that are allowed to use this service for auth
+
+	stopCleanup chan struct{}
 }
 
 var _ api.Service = (*service)(nil)
@@ -91,6 +95,14 @@ func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
 	api.POST("/device/code/approve", s.DeviceCodeApprove)
 	api.GET("/device/token", s.DeviceCodeToken)
 
+	// OAuth 2.0 authorization server (authorization-code + PKCE + DCR) for MCP clients
+	api.GET("/.well-known/oauth-authorization-server", s.OAuthAuthorizationServerMetadata)
+	api.POST("/oauth/register", s.OAuthRegister)
+	api.GET("/oauth/authorize", s.OAuthAuthorize)
+	api.GET("/oauth/finish", s.OAuthFinish)
+	api.POST("/oauth/consent", s.OAuthConsent)
+	api.POST("/oauth/token", s.OAuthToken)
+
 	return nil
 }
 
@@ -100,12 +112,13 @@ func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 
 func New(params Params) (*service, error) {
 	s := &service{
-		cfg:        params.Cfg,
-		l:          params.L,
-		v:          params.V,
-		db:         params.DB,
-		mw:         params.MW,
-		acctClient: params.AcctClient,
+		cfg:         params.Cfg,
+		l:           params.L,
+		v:           params.V,
+		db:          params.DB,
+		mw:          params.MW,
+		acctClient:  params.AcctClient,
+		stopCleanup: make(chan struct{}),
 	}
 
 	// Validate required configs
@@ -151,6 +164,17 @@ func New(params Params) (*service, error) {
 	s.l.Info("auth service initialized",
 		zap.String("provider_type", string(defaultIP.ProviderType)),
 		zap.String("provider_id", defaultIP.ID))
+
+	params.LC.Append(fx.Hook{
+		OnStart: func(context.Context) error {
+			go s.runOAuthCleanup()
+			return nil
+		},
+		OnStop: func(context.Context) error {
+			close(s.stopCleanup)
+			return nil
+		},
+	})
 
 	return s, nil
 }
