@@ -12,7 +12,6 @@ import { RunRunbookButton } from '@/components/runbooks/RunRunbook'
 import { RemovedFromAppConfigBanner } from '@/components/installs/RemovedFromAppConfig'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { PageTitle } from '@/components/navigation/PageTitle'
 import { TabNav } from '@/components/navigation/TabNav'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -69,7 +68,6 @@ export const RunbookDetailLayout = () => {
 
   return (
     <PageSection flush className="flex-1">
-      <PageTitle segments={[runbook?.name ?? 'Runbook', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },

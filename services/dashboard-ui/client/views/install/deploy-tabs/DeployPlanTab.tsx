@@ -7,7 +7,9 @@ import { PulumiDiff } from '@/components/approvals/plan-diffs/pulumi/PulumiDiff'
 import { TerraformDiff } from '@/components/approvals/plan-diffs/terraform/TerraformDiff'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Skeleton } from '@/components/common/Skeleton'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { useDeploy } from '@/hooks/use-deploy'
+import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getRunnerJobPlan } from '@/lib'
 import type { TComponentType } from '@/types'
@@ -75,10 +77,16 @@ const DeployPlanFallback = ({ componentType }: { componentType: TComponentType }
 
 export const DeployPlanTab = () => {
   const { step, component } = useOutletContext<TDeployOutletContext>()
+  const { install } = useInstall()
 
-  if (step?.approval) {
-    return <Plan step={step} />
-  }
-
-  return <DeployPlanFallback componentType={component.type!} />
+  return (
+    <>
+      <PageTitle segments={['Deploy plan', install?.name]} />
+      {step?.approval ? (
+        <Plan step={step} />
+      ) : (
+        <DeployPlanFallback componentType={component.type!} />
+      )}
+    </>
+  )
 }

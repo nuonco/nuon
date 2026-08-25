@@ -1,14 +1,16 @@
 import { useEffect } from 'react'
 import { usePageTitle } from '@/hooks/use-page-title'
 
-export const composeTitle = (segments: (string | undefined | null | false)[]): string =>
+type Segment = string | undefined | null | false
+
+export const composeTitle = (segments: Segment[]): string =>
   segments
     .filter((s): s is string => typeof s === 'string' && s.length > 0)
     .join(' | ')
 
 type IPageTitle =
   | { title: string; segments?: never }
-  | { segments: (string | undefined | null | false)[]; title?: never }
+  | { segments: Segment[]; title?: never }
 
 export const PageTitle = ({ title, segments }: IPageTitle) => {
   const { updateTitle } = usePageTitle()
@@ -16,5 +18,5 @@ export const PageTitle = ({ title, segments }: IPageTitle) => {
   useEffect(() => {
     updateTitle(resolved)
   }, [resolved])
-  return <></>
+  return null
 }

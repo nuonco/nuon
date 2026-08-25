@@ -7,7 +7,6 @@ import { Time } from '@/components/common/Time'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { PageTitle } from '@/components/navigation/PageTitle'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
@@ -103,7 +102,6 @@ const BranchTemplate = () => {
 
   return (
     <>
-      <PageTitle segments={[branch?.name, app?.name]} />
       {!isDetailRoute ? (
         <PageHeader>
           <div className="flex flex-col gap-4 w-full">

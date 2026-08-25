@@ -238,6 +238,36 @@ import { redirect, type RouteObject } from 'react-router'
 
 See `client/views/install/routes.tsx` for more examples.
 
+## Page Titles (`document.title`, UXDR 018)
+
+**Every routed view sets its own title. Layouts NEVER set it — the leaf view that renders the page owns `document.title`.** `PageTitleProvider` (mounted once at the app root) appends `| Nuon`, so a view supplies at most two segments, **most specific first**: `{specific} | {owning entity}`.
+
+- **`{specific}`** — sentence-case section name (`'Components'`, `'API tokens'`); the entity's own name for detail pages (`resource?.name`); for a **tab page**, fold the parent context in (`'Deploy logs'`, `` `${runbook?.name} steps` ``).
+- **`{owning entity}`** — the install or app name from `useInstall()` / `useApp()`. **Org-level pages have NO owner segment** — the org name is never a title segment (`<PageTitle title="Webhooks" />`).
+- Unset segments are dropped automatically — pass `install?.name`, never a guarded string or `${x?.name}` interpolation (which prints `"undefined"`).
+
+Render `<PageTitle>` as the **first element** the view returns:
+
+```tsx
+// Section / detail view
+<PageTitle title="Components" />
+<PageTitle segments={['Components', install?.name]} />
+
+// Views with early returns (loading/empty/error — common in tab panels):
+// wrap the body in a fragment so the title renders on every branch.
+export const DeployPlanTab = () => {
+  const { install } = useInstall()
+  return (
+    <>
+      <PageTitle segments={['Deploy plan', install?.name]} />
+      {isLoading ? <Skeleton /> : <Plan … />}
+    </>
+  )
+}
+```
+
+`PageTitle` lives in `client/components/navigation/PageTitle.tsx`. A `<PageTitle>` buried in only the happy-path return of an early-returning view is a bug — the title goes stale on the other branches; wrap in a fragment so it always renders. The `dashboard-ui:view` skill covers this for new views.
+
 ## API Integration (`client/lib/api.ts`)
 
 ### Return Type Behavior
