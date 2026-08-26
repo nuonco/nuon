@@ -6,6 +6,8 @@ boost: 10
 keywords: ['terraform', 'terraform module', 'terraform provider', 'provider', 'install-stacks', 'install stack', 'stack', 'terraform apply', 'nuonco/stack', 'stack provider', 'api token', 'backend', 'remote state', 'inputs', 'secrets']
 ---
 
+{/* TODO: confirm module version pin before release */}
+
 For customers that prefer to manage their stacks using Terraform, we publish [modules for each platform Nuon supports](https://registry.terraform.io/search/modules?namespace=nuonco&q=stack).
 
 <Note>
@@ -95,7 +97,7 @@ The rest of the process is completed by your customer, using the information you
 
     module "aws_stack" {
       source  = "nuonco/stack/aws"
-      version = "~> 1.0"
+      version = "~> 0.2"
 
       install_id = "<install-id>"
 
@@ -190,7 +192,7 @@ If you add a new secret, your customer should store the value in a secret store,
 ```hcl
 module "aws_stack" {
   source  = "nuonco/stack/aws"
-  version = "~> 1.0"
+  version = "~> 0.2"
 
   // other module config...
 
@@ -252,4 +254,4 @@ next plan will fail with an error message telling them to remove it.
 To upgrade the Terraform module itself, your customer will update the version pin, run `terraform init -upgrade`, then `terraform apply`.
 
 To avoid your customer having to upgrade too frequently, we recommend using a minor version constraint instead of pinning to a specific version.
-For example, with `version = "~> 1.0"`, running `terraform init -upgrade` will automatically pick up new minor and patch releases within the 1.x series.
+For example, with `version = "~> 0.2"`, running `terraform init -upgrade` will automatically pick up new patch versions.

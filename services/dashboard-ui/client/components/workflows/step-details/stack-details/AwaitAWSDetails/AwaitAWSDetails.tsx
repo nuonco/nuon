@@ -748,7 +748,7 @@ provider "stack" {}
 
 module "aws_stack" {
   source  = "nuonco/stack/aws"
-  version = "~> 1.0"
+  version = "~> 0.2"
 
   install_id = "${installId ?? '<install-id>'}"${inputsBlock}${secretsBlock}
 }${secretVariablesBlock}`
