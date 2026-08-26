@@ -86,7 +86,6 @@ export const InstallComponentsTableContainer = ({
   }))
 
   const configConnections = configResult?.component_config_connections
-  const componentToggles = install?.install_config?.component_toggles
 
   const installValues = install?.install_inputs?.at(0)?.values
   const overriddenComponentNames = new Set<string>()
@@ -110,7 +109,6 @@ export const InstallComponentsTableContainer = ({
     org?.id ?? '',
     install?.id ?? '',
     configConnections,
-    componentToggles,
     labelColors,
     overriddenComponentNames,
     true
@@ -121,7 +119,6 @@ export const InstallComponentsTableContainer = ({
     org?.id ?? '',
     install?.id ?? '',
     configConnections,
-    componentToggles,
     labelColors,
     overriddenComponentNames
   )
