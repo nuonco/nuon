@@ -32,6 +32,9 @@ type ActivityData struct {
 	Params        []Param
 	Receiver      string
 	ByFieldType   string
+	// Tags names the tags whose defaults were folded into Options, purely so
+	// generated code documents where its values came from.
+	Tags []string
 }
 
 func GenerateActivity(data ActivityData) ([]byte, error) {
