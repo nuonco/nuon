@@ -70,12 +70,6 @@ func (a *Activities) ForgetInstall(ctx context.Context, req ForgetInstallRequest
 			Delete(&app.QueueEmitter{}); res.Error != nil {
 			return dbgenerics.TemporalGormError(res.Error, "unable to delete queue emitters: %w")
 		}
-
-		if res := a.db.WithContext(ctx).
-			Where("queue_id IN ?", allQueueIDs).
-			Delete(&app.QueueSignal{}); res.Error != nil {
-			return dbgenerics.TemporalGormError(res.Error, "unable to delete queue signals: %w")
-		}
 	}
 
 	if len(runnerQueueIDs) > 0 {
@@ -92,6 +86,11 @@ func (a *Activities) ForgetInstall(ctx context.Context, req ForgetInstallRequest
 			Delete(&app.Runner{}); res.Error != nil {
 			return dbgenerics.TemporalGormError(res.Error, "unable to delete runners: %w")
 		}
+	}
+
+	// must run before the cascade delete below; see the helper's doc comment.
+	if err := a.acctClient.DeleteInstallStackServiceAccounts(ctx, req.InstallID); err != nil {
+		return err
 	}
 
 	res := a.db.WithContext(ctx).

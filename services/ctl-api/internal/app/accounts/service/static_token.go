@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -267,8 +268,14 @@ func (s *service) isOrgAdmin(acct *app.Account, orgID string) bool {
 	return false
 }
 
+// dedicatedTokenSubjectPrefix marks an account that exists only to hold one static
+// token, so deleting the token deletes the account.
+func dedicatedTokenSubjectPrefix(orgID string) string {
+	return fmt.Sprintf("%s-token-", orgID)
+}
+
 func (s *service) createTokenServiceAccount(ctx context.Context, orgID string, roleType app.RoleType) (*app.Account, error) {
-	name := fmt.Sprintf("%s-token-%s", orgID, domains.NewAccountID())
+	name := dedicatedTokenSubjectPrefix(orgID) + domains.NewAccountID()
 	email := account.ServiceAccountEmail(name)
 
 	newAcct := app.Account{
@@ -299,6 +306,12 @@ func (s *service) deleteTokenServiceAccount(ctx context.Context, orgID, accountI
 
 	// never remove roles from or delete a personal token's real user account
 	if acct.AccountType != app.AccountTypeService {
+		return nil
+	}
+
+	// Only accounts created to hold this one token: revoking a stack's or runner's token
+	// must not take the identity with it.
+	if !strings.HasPrefix(acct.Subject, dedicatedTokenSubjectPrefix(orgID)) {
 		return nil
 	}
 
