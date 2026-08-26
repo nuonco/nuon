@@ -4,9 +4,9 @@ import { BuildSandboxButton } from '@/components/sandbox/management/BuildSandbox
 import { SandboxBuildTimeline } from '@/components/sandbox/builds/SandboxBuildTimeline'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -46,17 +46,11 @@ export const Sandbox = () => {
         ]}
       />
 
-      <div className="flex items-start justify-between">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Sandbox
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            Test builds in an isolated environment before deploying to installs.
-          </Text>
-        </HeadingGroup>
-        <BuildSandboxButton />
-      </div>
+      <SectionHeader
+        title="Sandbox"
+        description="Test builds in an isolated environment before deploying to installs."
+        actions={<BuildSandboxButton />}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">
         <div className="md:col-span-8 flex flex-col gap-6">

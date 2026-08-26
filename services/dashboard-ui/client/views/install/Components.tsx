@@ -1,8 +1,7 @@
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
 import { InstallComponentsTable } from '@/components/install-components/InstallComponentsTable'
 import { ManageAllDropdown } from '@/components/install-components/management/ManageAllDropdown'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
@@ -26,19 +25,11 @@ export const Components = () => {
           },
         ]}
       />
-      <div className="flex items-start justify-between gap-4">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Install components
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            View and manage all components for this install.
-          </Text>
-        </HeadingGroup>
-        <div className="shrink-0">
-          <ManageAllDropdown />
-        </div>
-      </div>
+      <SectionHeader
+        title="Install components"
+        description="View and manage all components for this install."
+        actions={<ManageAllDropdown />}
+      />
 
       <InstallComponentsTable shouldPoll />
     </PageSection>
