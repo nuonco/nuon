@@ -15,7 +15,7 @@ const RunnerJobDetailContent = () => {
   const { job } = useRunnerJob()
 
   return (
-    <PageLayout className="pb-6">
+    <PageLayout>
       <PageTitle title="Job" />
       <Breadcrumbs
         breadcrumbs={[

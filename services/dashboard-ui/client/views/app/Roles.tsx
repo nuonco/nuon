@@ -1,6 +1,4 @@
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
-import { PageSection } from '@/components/layout/PageSection'
+import { ListPage } from '@/components/layout/ListPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { AppRolesTable } from '@/components/roles/AppRolesTable'
@@ -12,7 +10,7 @@ export const Roles = () => {
   const { app } = useApp()
 
   return (
-    <PageSection>
+    <>
       <PageTitle segments={['Roles', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
@@ -22,16 +20,12 @@ export const Roles = () => {
           { path: `/${org?.id}/apps/${app?.id}/roles`, text: 'Roles' },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          App roles
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          View the IAM roles that your app uses to access customer cloud resources.
-        </Text>
-      </HeadingGroup>
-
-      <AppRolesTable />
-    </PageSection>
+      <ListPage
+        title="App roles"
+        description="View the IAM roles that your app uses to access customer cloud resources."
+      >
+        <AppRolesTable />
+      </ListPage>
+    </>
   )
 }

@@ -1,6 +1,5 @@
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { CreateNotebookButton } from '@/components/notebooks/CreateNotebook'
@@ -26,17 +25,11 @@ export const Notebooks = () => {
           },
         ]}
       />
-      <div className="flex items-start justify-between gap-4">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Notebooks
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            Run commands on the runner for this install.
-          </Text>
-        </HeadingGroup>
-        <CreateNotebookButton />
-      </div>
+      <SectionHeader
+        title="Notebooks"
+        description="Run commands on the runner for this install."
+        actions={<CreateNotebookButton />}
+      />
       <NotebooksTable />
     </PageSection>
   )
