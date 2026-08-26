@@ -1,6 +1,4 @@
-import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
-import { Card } from '@/components/common/Card'
 import { CommitDetails } from '@/components/common/CommitDetails'
 import { Duration } from '@/components/common/Duration'
 import { ID } from '@/components/common/ID'
@@ -11,6 +9,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { ComponentType } from '@/components/components/ComponentType'
 import { ComponentConfigContextTooltip } from '@/components/components/ComponentConfigContextTooltip'
+import { DetailHeader } from '@/components/layout/DetailHeader'
 import type { TComponent, TDeploy, TInstall, TWorkflow } from '@/types'
 import { DeploySwitcher } from '@/components/deploys/DeploySwitcher'
 import { OCIArtifactCard } from '@/components/deploys/OCIArtifactCard'
@@ -33,48 +32,43 @@ export const DeployHeader = ({
   deploy,
   install,
 }: IDeployHeader) => {
+  const executionRole = deploy?.runner_jobs?.at(0)?.install_role_usage
+
   return (
-    <header className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-4 justify-between w-full">
-        <div className="flex flex-col gap-1">
-          <BackLink className="mb-4" />
-          <span className="flex items-center gap-2">
-            <ComponentType type={component?.type} displayVariant="icon-only" />
-            <Text variant="base" weight="strong">
-              {deploy?.component_name}{' '}
-              {deploy?.install_deploy_type === 'teardown'
-                ? 'teardown'
-                : 'deploy'}
-            </Text>
-          </span>
-          <span className="flex items-center gap-4">
-            <ID>{deploy?.id}</ID>
-            <Text
-              className="!flex gap-2"
-              variant="subtext"
-              theme="neutral"
-              family="mono"
-            >
-              Build:
-              <ID>
-                <Link
-                  href={`/${install?.org_id}/apps/${install?.app_id}/components/${deploy?.component_id}/builds/${deploy?.build_id}`}
-                  variant="inline"
-                >
-                  {deploy?.build_id}
-                </Link>
-              </ID>
-            </Text>
-          </span>
+    <DetailHeader
+      icon={<ComponentType type={component?.type} displayVariant="icon-only" />}
+      title={`${deploy?.component_name} ${
+        deploy?.install_deploy_type === 'teardown' ? 'teardown' : 'deploy'
+      }`}
+      id={deploy?.id}
+      identity={
+        <>
+          <Text
+            className="!flex gap-2"
+            variant="subtext"
+            theme="neutral"
+            family="mono"
+          >
+            Build:
+            <ID>
+              <Link
+                href={`/${install?.org_id}/apps/${install?.app_id}/components/${deploy?.component_id}/builds/${deploy?.build_id}`}
+                variant="inline"
+              >
+                {deploy?.build_id}
+              </Link>
+            </ID>
+          </Text>
           <Time
             time={deploy?.created_at}
             format="relative"
             variant="subtext"
             theme="info"
           />
-        </div>
-
-        <div className="flex items-center gap-4">
+        </>
+      }
+      actions={
+        <>
           <DeploySwitcher
             componentId={deploy?.component_id}
             deployId={deploy?.id}
@@ -84,11 +78,10 @@ export const DeployHeader = ({
             currentBuildId={deploy?.build_id}
             workflow={workflow}
           />
-        </div>
-      </div>
-
-      <Card>
-        <div className="flex flex-wrap gap-x-8 gap-y-4 items-start">
+        </>
+      }
+      metadata={
+        <>
           <LabeledStatus
             label="Status"
             statusProps={{
@@ -150,18 +143,21 @@ export const DeployHeader = ({
               </OCIArtifactCard>
             </LabeledValue>
           ) : null}
-          {deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name ? (
+          {executionRole?.role_name ? (
             <LabeledValue label="Execution role">
               <Text variant="subtext" family="mono" className="text-xs">
-                <Link href={`/${install?.org_id}/installs/${install?.id}/roles?panel=${deploy.runner_jobs.at(0).install_role_usage.install_role_id}`} variant="inline">
-                  {deploy.runner_jobs.at(0).install_role_usage.role_name}
+                <Link
+                  href={`/${install?.org_id}/installs/${install?.id}/roles?panel=${executionRole.install_role_id}`}
+                  variant="inline"
+                >
+                  {executionRole.role_name}
                 </Link>
               </Text>
             </LabeledValue>
           ) : null}
-        </div>
-      </Card>
-
+        </>
+      }
+    >
       {deploy?.install_workflow_id ? (
         <Button
           href={`/${install?.org_id}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
@@ -171,6 +167,6 @@ export const DeployHeader = ({
       ) : null}
 
       {children}
-    </header>
+    </DetailHeader>
   )
 }

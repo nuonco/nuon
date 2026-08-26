@@ -3,9 +3,8 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { CompositeError } from '@/components/common/CompositeError'
 import { DeployHeader } from '@/components/deploys/DeployHeader'
-import { PageSection } from '@/components/layout/PageSection'
+import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { TabNav } from '@/components/navigation/TabNav'
 import { DeployProvider } from '@/providers/deploy-provider'
 import { useDeploy } from '@/hooks/use-deploy'
 import { useInstall } from '@/hooks/use-install'
@@ -112,7 +111,7 @@ const DeployLayoutInner = () => {
   }
 
   return (
-    <PageSection>
+    <>
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -130,19 +129,29 @@ const DeployLayoutInner = () => {
         ]}
       />
 
-      <DeployHeader component={component} workflow={workflow} stepId={step?.id} />
-
-      {deploy?.composite_error ? (
-        <CompositeError error={deploy.composite_error} />
-      ) : null}
-
-      {pendingApproval && !isAutoApprove ? (
-        <ApprovalBanner step={step} />
-      ) : null}
-
-      <TabNav basePath={basePath} tabs={tabs} />
-      <Outlet context={{ component, workflow, step }} />
-    </PageSection>
+      <DetailPage
+        header={
+          <DeployHeader
+            component={component}
+            workflow={workflow}
+            stepId={step?.id}
+          />
+        }
+        banners={
+          <>
+            {deploy?.composite_error ? (
+              <CompositeError error={deploy.composite_error} />
+            ) : null}
+            {pendingApproval && !isAutoApprove ? (
+              <ApprovalBanner step={step} />
+            ) : null}
+          </>
+        }
+        tabNav={{ basePath, tabs }}
+      >
+        <Outlet context={{ component, workflow, step }} />
+      </DetailPage>
+    </>
   )
 }
 

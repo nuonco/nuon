@@ -71,6 +71,7 @@ export const WorkflowTimeline = ({
         const workflowTitle = (
           <span className="flex items-center gap-4 mb-1">
             <Link
+              variant="inline"
               className="inline-flex gap-2 items-center"
               href={
                 getWorkflowHref

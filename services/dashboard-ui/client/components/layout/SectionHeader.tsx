@@ -10,6 +10,8 @@ export interface ISectionHeader {
   actions?: ReactNode
   className?: string
   description?: ReactNode
+  loading?: boolean
+  loadingWidth?: number
   status?: ReactNode
   title: ReactNode
   variant?: TSectionHeaderVariant
@@ -29,6 +31,8 @@ export const SectionHeader = ({
   actions,
   className,
   description,
+  loading,
+  loadingWidth,
   status,
   title,
   variant = 'section',
@@ -37,7 +41,13 @@ export const SectionHeader = ({
     <>
       <HeadingGroup className="gap-1.5 min-w-0">
         <div className="flex flex-wrap items-center gap-2 min-w-0">
-          <Text {...TITLE_PROPS[variant]}>{title}</Text>
+          <Text
+            {...TITLE_PROPS[variant]}
+            loading={loading}
+            loadingWidth={loadingWidth}
+          >
+            {title}
+          </Text>
           {status}
         </div>
         {description ? (
