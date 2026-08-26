@@ -22,8 +22,7 @@ const awaitWorkflowStepTimeout = 60 * time.Second
 // @Tags					installs
 // @Accept					json
 // @Produce					json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Failure					400	{object}	stderr.ErrResponse
 // @Failure					401	{object}	stderr.ErrResponse
 // @Failure					404	{object}	stderr.ErrResponse

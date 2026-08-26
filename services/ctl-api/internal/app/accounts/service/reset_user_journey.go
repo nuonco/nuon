@@ -17,8 +17,7 @@ import (
 // @Tags					accounts
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					journey_name	path		string								true	"Journey name"
 // @Failure				400				{object}	stderr.ErrResponse
 // @Failure				401				{object}	stderr.ErrResponse

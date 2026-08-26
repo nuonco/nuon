@@ -35,10 +35,14 @@ type CreateNotebookRequest struct {
 // @Tags			notebooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string					true	"install ID"
 // @Param			req			body	CreateNotebookRequest	true	"Input"
+// @Failure		400	{object}	stderr.ErrResponse
+// @Failure		401	{object}	stderr.ErrResponse
+// @Failure		403	{object}	stderr.ErrResponse
+// @Failure		404	{object}	stderr.ErrResponse
+// @Failure		500	{object}	stderr.ErrResponse
 // @Success		201			{object}	app.Notebook
 // @Router			/v1/installs/{install_id}/notebooks [post]
 func (s *service) CreateNotebook(ctx *gin.Context) {
@@ -117,12 +121,16 @@ func (s *service) startNotebookWorkflow(ctx context.Context, nb *app.Notebook) e
 // @Tags			notebooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string	true	"install ID"
 // @Param			offset		query	int		false	"offset"	Default(0)
 // @Param			limit		query	int		false	"limit"		Default(10)
 // @Param			q			query	string	false	"search by name or ID"
+// @Failure		400	{object}	stderr.ErrResponse
+// @Failure		401	{object}	stderr.ErrResponse
+// @Failure		403	{object}	stderr.ErrResponse
+// @Failure		404	{object}	stderr.ErrResponse
+// @Failure		500	{object}	stderr.ErrResponse
 // @Success		200			{array}	app.Notebook
 // @Router			/v1/installs/{install_id}/notebooks [get]
 func (s *service) GetNotebooks(ctx *gin.Context) {
@@ -165,10 +173,14 @@ func (s *service) GetNotebooks(ctx *gin.Context) {
 // @Tags			notebooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string	true	"install ID"
 // @Param			notebook_id	path	string	true	"notebook ID"
+// @Failure		400	{object}	stderr.ErrResponse
+// @Failure		401	{object}	stderr.ErrResponse
+// @Failure		403	{object}	stderr.ErrResponse
+// @Failure		404	{object}	stderr.ErrResponse
+// @Failure		500	{object}	stderr.ErrResponse
 // @Success		200			{object}	app.Notebook
 // @Router			/v1/installs/{install_id}/notebooks/{notebook_id} [get]
 func (s *service) GetNotebook(ctx *gin.Context) {
@@ -206,11 +218,15 @@ type UpdateNotebookRequest struct {
 // @Tags			notebooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string					true	"install ID"
 // @Param			notebook_id	path	string					true	"notebook ID"
 // @Param			req			body	UpdateNotebookRequest	true	"Input"
+// @Failure		400	{object}	stderr.ErrResponse
+// @Failure		401	{object}	stderr.ErrResponse
+// @Failure		403	{object}	stderr.ErrResponse
+// @Failure		404	{object}	stderr.ErrResponse
+// @Failure		500	{object}	stderr.ErrResponse
 // @Success		200			{object}	app.Notebook
 // @Router			/v1/installs/{install_id}/notebooks/{notebook_id} [patch]
 func (s *service) UpdateNotebook(ctx *gin.Context) {
@@ -261,10 +277,14 @@ func (s *service) UpdateNotebook(ctx *gin.Context) {
 // @Tags			notebooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string	true	"install ID"
 // @Param			notebook_id	path	string	true	"notebook ID"
+// @Failure		400	{object}	stderr.ErrResponse
+// @Failure		401	{object}	stderr.ErrResponse
+// @Failure		403	{object}	stderr.ErrResponse
+// @Failure		404	{object}	stderr.ErrResponse
+// @Failure		500	{object}	stderr.ErrResponse
 // @Success		204
 // @Router			/v1/installs/{install_id}/notebooks/{notebook_id} [delete]
 func (s *service) DeleteNotebook(ctx *gin.Context) {

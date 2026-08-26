@@ -57,8 +57,7 @@ type UpdateCurrentOrgWebhookRequest struct {
 // @Tags                                        orgs
 // @Accept                                      json
 // @Produce                             json
-// @Security                            APIKey
-// @Security                            OrgID
+// @Security                            APIKey && OrgID
 // @Success                             200     {array}         CurrentOrgWebhookResponse
 // @Failure                             400     {object}        stderr.ErrResponse
 // @Failure                             401     {object}        stderr.ErrResponse
@@ -86,8 +85,7 @@ func (s *service) GetCurrentOrgWebhooks(ctx *gin.Context) {
 // @Tags                                        orgs
 // @Accept                                      json
 // @Produce                             json
-// @Security                            APIKey
-// @Security                            OrgID
+// @Security                            APIKey && OrgID
 // @Param                                       req             body            CreateCurrentOrgWebhookRequest        true    "Input"
 // @Success                             201             {object}        CurrentOrgWebhookResponse
 // @Failure                             400             {object}        stderr.ErrResponse
@@ -140,8 +138,7 @@ func (s *service) CreateCurrentOrgWebhook(ctx *gin.Context) {
 // @Tags                                        orgs
 // @Accept                                      json
 // @Produce                             json
-// @Security                            APIKey
-// @Security                            OrgID
+// @Security                            APIKey && OrgID
 // @Param                                       webhook_id      path            string                                              true    "webhook ID"
 // @Param                                       req                     body            UpdateCurrentOrgWebhookRequest      true    "Input"
 // @Success                             200             {object}        CurrentOrgWebhookResponse
@@ -259,8 +256,7 @@ func isUniqueViolation(err error) bool {
 // @Tags                                        orgs
 // @Accept                                      json
 // @Produce                             json
-// @Security                            APIKey
-// @Security                            OrgID
+// @Security                            APIKey && OrgID
 // @Param                                       webhook_id      path            string  true    "webhook ID"
 // @Success                             204
 // @Failure                             400             {object}        stderr.ErrResponse

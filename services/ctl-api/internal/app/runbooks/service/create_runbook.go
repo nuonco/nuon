@@ -22,8 +22,7 @@ type CreateRunbookRequest struct {
 // @Tags			runbooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			app_id	path		string				true	"app ID"
 // @Param			req		body		CreateRunbookRequest	true	"Input"
 // @Success		201		{object}	app.Runbook

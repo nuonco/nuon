@@ -36,8 +36,7 @@ func appConfigRunbookFilter(syncedOnly bool) string {
 // @Tags			runbooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string	true	"install ID"
 // @Param			offset		query	int		false	"offset"	Default(0)
 // @Param			limit		query	int		false	"limit"		Default(10)

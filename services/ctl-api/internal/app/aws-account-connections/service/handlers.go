@@ -87,8 +87,7 @@ func (s *service) requireManagementRole() error {
 // @Tags aws-account-connections
 // @Accept json
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param req body CreateRequest true "Input"
 // @Success 201 {object} ConnectionResponse
 // @Router /v1/aws-account-connections [post]
@@ -131,8 +130,7 @@ func (s *service) Create(ctx *gin.Context) {
 // @Summary list AWS account connections
 // @Tags aws-account-connections
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Success 200 {array} ConnectionResponse
 // @Router /v1/aws-account-connections [get]
 func (s *service) List(ctx *gin.Context) {
@@ -157,8 +155,7 @@ func (s *service) List(ctx *gin.Context) {
 // @Summary get an AWS account connection
 // @Tags aws-account-connections
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param connection_id path string true "connection ID"
 // @Success 200 {object} ConnectionResponse
 // @Router /v1/aws-account-connections/{connection_id} [get]
@@ -185,8 +182,7 @@ func (s *service) Get(ctx *gin.Context) {
 // @Tags aws-account-connections
 // @Accept json
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param connection_id path string true "connection ID"
 // @Param req body PatchRequest true "Input"
 // @Success 200 {object} ConnectionResponse
@@ -258,8 +254,7 @@ func (s *service) Patch(ctx *gin.Context) {
 // @ID DeleteAWSAccountConnection
 // @Summary delete an AWS account connection
 // @Tags aws-account-connections
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param connection_id path string true "connection ID"
 // @Success 204
 // @Router /v1/aws-account-connections/{connection_id} [delete]
@@ -304,8 +299,7 @@ func (s *service) Delete(ctx *gin.Context) {
 // @Summary verify an AWS account connection
 // @Tags aws-account-connections
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param connection_id path string true "connection ID"
 // @Success 200 {object} ConnectionResponse
 // @Router /v1/aws-account-connections/{connection_id}/verify [post]

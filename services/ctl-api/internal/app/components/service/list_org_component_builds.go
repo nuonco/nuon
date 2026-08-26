@@ -45,8 +45,7 @@ type OrgComponentBuildHistoryResponse struct {
 // @Summary list component build history for the current organization
 // @Tags components
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param limit query int false "limit of builds to return" Default(10)
 // @Param cursor query string false "opaque component build history cursor"
 // @Success 200 {object} OrgComponentBuildHistoryResponse

@@ -30,8 +30,7 @@ type GetInstallURLResponse struct {
 // @Tags					slack
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					org_id	path	string	true	"Org ID"
 // @Success				200	{object}	GetInstallURLResponse
 // @Failure				400	{object}	stderr.ErrResponse

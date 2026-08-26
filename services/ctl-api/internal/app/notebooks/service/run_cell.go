@@ -24,12 +24,16 @@ type RunCellRequest struct {
 // @Tags			notebooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string			true	"install ID"
 // @Param			notebook_id	path	string			true	"notebook ID"
 // @Param			cell_id		path	string			true	"cell ID"
 // @Param			req			body	RunCellRequest	false	"Input"
+// @Failure		400	{object}	stderr.ErrResponse
+// @Failure		401	{object}	stderr.ErrResponse
+// @Failure		403	{object}	stderr.ErrResponse
+// @Failure		404	{object}	stderr.ErrResponse
+// @Failure		500	{object}	stderr.ErrResponse
 // @Success		202			{object}	app.NotebookCellRun
 // @Router			/v1/installs/{install_id}/notebooks/{notebook_id}/cells/{cell_id}/runs [post]
 func (s *service) RunCell(ctx *gin.Context) {

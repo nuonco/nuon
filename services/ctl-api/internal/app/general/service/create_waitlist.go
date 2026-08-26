@@ -33,6 +33,11 @@ func (c *WaitlistRequest) Validate(v *validator.Validate) error {
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.Waitlist
 // @Router					/v1/general/waitlist [POST]
 func (s *service) CreateWaitlist(ctx *gin.Context) {

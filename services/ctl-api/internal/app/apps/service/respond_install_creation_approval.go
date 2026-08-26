@@ -25,8 +25,7 @@ type RespondInstallCreationApprovalRequest struct {
 // @Tags					apps
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					app_id			path	string										true	"app ID"
 // @Param					sync_id			path	string										true	"sync ID"
 // @Param					approval_id		path	string										true	"approval ID"

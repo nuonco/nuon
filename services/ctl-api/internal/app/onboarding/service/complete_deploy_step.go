@@ -15,8 +15,7 @@ import (
 // @Description			Advances the onboarding past the deploy monitoring to get started
 // @Tags					onboarding
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Success				200	{object}	app.Onboarding
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse

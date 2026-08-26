@@ -52,8 +52,7 @@ type AppConfigTemplate struct {
 // @Tags					apps
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					app_id	path		string					true	"app ID"
 // @Param					type	query		AppConfigTemplateType	true	"app template type"
 // @Failure				400		{object}	stderr.ErrResponse

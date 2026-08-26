@@ -88,8 +88,7 @@ func (c *CreateAppSandboxConfigRequest) buildInput(appID string) build.SandboxIn
 // @Param					req	body	CreateAppSandboxConfigRequest	true	"Input"
 // @Produce				json
 // @Param					app_id	path	string	true	"app ID"
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
@@ -128,8 +127,7 @@ func (s *service) CreateAppSandboxConfigV2(ctx *gin.Context) {
 // @Param					req	body	CreateAppSandboxConfigRequest	true	"Input"
 // @Produce				json
 // @Param					app_id	path	string	true	"app ID"
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Deprecated    true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse

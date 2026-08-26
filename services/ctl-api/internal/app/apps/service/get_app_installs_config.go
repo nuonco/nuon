@@ -15,8 +15,7 @@ import (
 // @Description			Returns the latest installs config (git source for install config files).
 // @Tags					apps
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					app_id	path	string	true	"app ID"
 // @Success				200	{object}	app.AppInstallsConfig
 // @Failure				400	{object}	stderr.ErrResponse

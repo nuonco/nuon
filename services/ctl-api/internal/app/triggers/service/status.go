@@ -371,8 +371,7 @@ func eventCursorExpression(cursor *eventListCursor, order string) clause.Express
 // @Summary Get a trigger event and its dispatches
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param event_id path string true "Event ID"
 // @Success 200 {object} eventResponse
 // @Router /v1/triggers/events/{event_id} [get]
@@ -474,8 +473,7 @@ func (s *service) eventWaiterMatches(ctx *gin.Context, orgID string, event *app.
 // @Summary Get the raw request body for a trigger event
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param event_id path string true "Event ID"
 // @Success 200 {object} eventRawResponse
 // @Router /v1/triggers/events/{event_id}/raw [get]
@@ -502,8 +500,7 @@ func (s *service) GetEventRaw(ctx *gin.Context) {
 // @Summary Replay a trigger event
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param event_id path string true "Event ID"
 // @Success 202 {object} replayResponse
 // @Router /v1/triggers/events/{event_id}/replay [post]
@@ -573,8 +570,7 @@ func eventReplayable(status app.EventRoutingStatus) bool {
 // @Summary List trigger event dispatches
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param limit query int false "Maximum dispatches to return (max 100)"
 // @Param event_id query string false "Event ID"
 // @Param cursor query string false "Opaque pagination cursor"
@@ -630,8 +626,7 @@ func (s *service) ListDispatches(ctx *gin.Context) {
 // @Summary Get a trigger event dispatch
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param dispatch_id path string true "Dispatch ID"
 // @Success 200 {object} app.EventDispatch
 // @Router /v1/triggers/dispatches/{dispatch_id} [get]
@@ -658,8 +653,7 @@ func (s *service) GetDispatch(ctx *gin.Context) {
 // @Summary Retry a trigger event dispatch
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param dispatch_id path string true "Dispatch ID"
 // @Success 202 {object} retryResponse
 // @Failure 409 {object} map[string]string

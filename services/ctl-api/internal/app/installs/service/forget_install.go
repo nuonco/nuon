@@ -19,8 +19,7 @@ type ForgetInstallRequest struct{}
 // @Param					install_id	path	string					true	"install ID"
 // @Param					req			body	ForgetInstallRequest	true	"Input"
 // @Tags					installs
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Accept					json
 // @Produce				json
 // @Failure				400	{object}	stderr.ErrResponse

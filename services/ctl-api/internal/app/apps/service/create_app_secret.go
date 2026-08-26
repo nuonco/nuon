@@ -33,8 +33,7 @@ func (c *CreateAppSecretRequest) Validate(v *validator.Validate) error {
 // @Param					req		body	CreateAppSecretRequest	true	"Input"
 // @Param					app_id	path	string					true	"app ID"
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
@@ -73,8 +72,7 @@ func (s *service) CreateAppSecretV2(ctx *gin.Context) {
 //		@Param					req		body	CreateAppSecretRequest	true	"Input"
 //		@Param					app_id	path	string					true	"app ID"
 //		@Produce				json
-//		@Security				APIKey
-//		@Security				OrgID
+//		@Security				APIKey && OrgID
 //	 @Deprecated     true
 //		@Failure				400	{object}	stderr.ErrResponse
 //		@Failure				401	{object}	stderr.ErrResponse

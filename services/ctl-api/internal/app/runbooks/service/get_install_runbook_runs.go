@@ -17,8 +17,7 @@ import (
 // @Tags			runbooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string	true	"install ID"
 // @Param			runbook_id	query	string	false	"filter by runbook ID or name"
 // @Param			offset		query	int		false	"offset"	Default(0)
@@ -76,8 +75,7 @@ func (s *service) GetInstallRunbookRuns(ctx *gin.Context) {
 // @Tags			runbooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string	true	"install ID"
 // @Param			run_id		path	string	true	"run ID"
 // @Success		200			{object}	app.InstallRunbookRun

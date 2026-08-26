@@ -52,11 +52,15 @@ func (r *CreateCellRequest) validate(v *validator.Validate) error {
 // @Tags			notebooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string				true	"install ID"
 // @Param			notebook_id	path	string				true	"notebook ID"
 // @Param			req			body	CreateCellRequest	true	"Input"
+// @Failure		400	{object}	stderr.ErrResponse
+// @Failure		401	{object}	stderr.ErrResponse
+// @Failure		403	{object}	stderr.ErrResponse
+// @Failure		404	{object}	stderr.ErrResponse
+// @Failure		500	{object}	stderr.ErrResponse
 // @Success		201			{object}	app.NotebookCell
 // @Router			/v1/installs/{install_id}/notebooks/{notebook_id}/cells [post]
 func (s *service) CreateCell(ctx *gin.Context) {
@@ -130,12 +134,16 @@ type UpdateCellRequest struct {
 // @Tags			notebooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string				true	"install ID"
 // @Param			notebook_id	path	string				true	"notebook ID"
 // @Param			cell_id		path	string				true	"cell ID"
 // @Param			req			body	UpdateCellRequest	true	"Input"
+// @Failure		400	{object}	stderr.ErrResponse
+// @Failure		401	{object}	stderr.ErrResponse
+// @Failure		403	{object}	stderr.ErrResponse
+// @Failure		404	{object}	stderr.ErrResponse
+// @Failure		500	{object}	stderr.ErrResponse
 // @Success		200			{object}	app.NotebookCell
 // @Router			/v1/installs/{install_id}/notebooks/{notebook_id}/cells/{cell_id} [patch]
 func (s *service) UpdateCell(ctx *gin.Context) {
@@ -201,11 +209,15 @@ func (s *service) UpdateCell(ctx *gin.Context) {
 // @Tags			notebooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string	true	"install ID"
 // @Param			notebook_id	path	string	true	"notebook ID"
 // @Param			cell_id		path	string	true	"cell ID"
+// @Failure		400	{object}	stderr.ErrResponse
+// @Failure		401	{object}	stderr.ErrResponse
+// @Failure		403	{object}	stderr.ErrResponse
+// @Failure		404	{object}	stderr.ErrResponse
+// @Failure		500	{object}	stderr.ErrResponse
 // @Success		204
 // @Router			/v1/installs/{install_id}/notebooks/{notebook_id}/cells/{cell_id} [delete]
 func (s *service) DeleteCell(ctx *gin.Context) {
@@ -239,11 +251,15 @@ type ReorderCellsRequest struct {
 // @Tags			notebooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string				true	"install ID"
 // @Param			notebook_id	path	string				true	"notebook ID"
 // @Param			req			body	ReorderCellsRequest	true	"Input"
+// @Failure		400	{object}	stderr.ErrResponse
+// @Failure		401	{object}	stderr.ErrResponse
+// @Failure		403	{object}	stderr.ErrResponse
+// @Failure		404	{object}	stderr.ErrResponse
+// @Failure		500	{object}	stderr.ErrResponse
 // @Success		200			{object}	app.Notebook
 // @Router			/v1/installs/{install_id}/notebooks/{notebook_id}/cells/reorder [put]
 func (s *service) ReorderCells(ctx *gin.Context) {

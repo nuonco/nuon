@@ -29,8 +29,7 @@ func (r *UpdateOrgFeaturesRequest) Validate(v *validator.Validate) error {
 // @Summary				update org features (requires user-managed-features flag)
 // @Description.markdown	update_org_features.md
 // @Tags					orgs
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Accept					json
 // @Param					req	body	UpdateOrgFeaturesRequest	true	"Input"
 // @Produce				json

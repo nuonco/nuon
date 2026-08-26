@@ -20,8 +20,7 @@ type CreateTerraformWorkspaceRequest struct {
 // @Tags					runners
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Deprecated				true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
@@ -57,8 +56,7 @@ func (s *service) CreateTerraformWorkspace(ctx *gin.Context) {
 // @Tags					runners,runners/runner
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

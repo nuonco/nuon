@@ -24,8 +24,7 @@ const (
 // @Tags				queues
 // @Accept				json
 // @Produce			json
-// @Security			APIKey
-// @Security			OrgID
+// @Security			APIKey && OrgID
 // @Param				queue_id	path		string	true	"Queue ID"
 // @Param				signal_id	path		string	true	"Signal ID"
 // @Param				timeout		query		int		false	"Timeout in seconds (default 30, max 120)"

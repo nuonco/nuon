@@ -16,8 +16,7 @@ import (
 // @Tags			runbooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			app_id		path	string	true	"app ID"
 // @Param			runbook_id	path	string	true	"runbook ID"
 // @Success		200			{object}	app.Runbook

@@ -15,8 +15,7 @@ import (
 // @Description			Returns a single app install config sync record with child install config syncs.
 // @Tags					apps
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					app_id		path	string	true	"app ID"
 // @Param					sync_id		path	string	true	"sync ID"
 // @Success				200	{object}	app.AppInstallConfigSync

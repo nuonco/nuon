@@ -33,8 +33,7 @@ func (c *UpdateAppBranchRequest) Validate(v *validator.Validate) error {
 // @Param					app_id			path	string					true	"app ID"
 // @Param					app_branch_id	path	string					true	"app branch ID"
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

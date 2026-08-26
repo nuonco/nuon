@@ -61,6 +61,11 @@ type slashResponse struct {
 //	@Param					user_id			formData	string	true	"Slack user ID who invoked the command"
 //	@Param					command			formData	string	true	"The slash command itself (e.g. /nuon)"
 //	@Param					text			formData	string	false	"Subcommand text"
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
 //	@Success				200	{object}	slashResponse
 //	@Router					/slack/commands/nuon [POST]
 func (s *service) SlackSlashCommand(ctx *gin.Context) {

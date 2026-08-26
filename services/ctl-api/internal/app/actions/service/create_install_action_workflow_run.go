@@ -23,8 +23,7 @@ import (
 // @Param					install_id	path	string									true	"install ID"
 // @Param					req			body	CreateInstallActionWorkflowRunRequest	true	"Input"
 // @Produce					json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Deprecated 				true
 // @Failure					400	{object}	stderr.ErrResponse
 // @Failure					401	{object}	stderr.ErrResponse

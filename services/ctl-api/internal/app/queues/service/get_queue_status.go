@@ -18,8 +18,7 @@ import (
 // @Tags				queues
 // @Accept				json
 // @Produce			json
-// @Security			APIKey
-// @Security			OrgID
+// @Security			APIKey && OrgID
 // @Param				queue_id	path		string	true	"Queue ID"
 // @Success			200			{object}	queue.StatusResponse
 // @Failure			404			{object}	stderr.ErrResponse

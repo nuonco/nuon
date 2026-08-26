@@ -29,8 +29,7 @@ import (
 // @Accept					json
 // @Param					req	body	CreateActionWorkflowConfigRequest	true	"Input"
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
@@ -234,8 +233,7 @@ func (c *CreateActionWorkflowConfigRequest) Validate(v *validator.Validate) erro
 // @Accept					json
 // @Param					req	body	CreateActionWorkflowConfigRequest	true	"Input"
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Deprecated  			true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse

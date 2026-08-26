@@ -16,8 +16,7 @@ import (
 // @Tags					installs
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					install_id	path		string	true	"install ID"
 // @Failure				400			{object}	stderr.ErrResponse
 // @Failure				401			{object}	stderr.ErrResponse

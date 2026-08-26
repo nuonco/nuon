@@ -58,8 +58,7 @@ func (s *service) readTrigger(ctx *gin.Context) (*app.Trigger, bool) {
 // @Summary List events observed from an trigger
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param trigger_id path string true "Trigger ID"
 // @Param event_type query string false "Exact event type"
 // @Param outcome query string false "Event outcome: ok, ignored, rejected, processing, or failed"
@@ -102,8 +101,7 @@ func (s *service) ListTriggerEvents(ctx *gin.Context) {
 // @Summary List observed event types for an trigger
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param trigger_id path string true "Trigger ID"
 // @Success 200 {array} eventTypeFacet
 // @Router /v1/triggers/{trigger_id}/event-types [get]
@@ -160,8 +158,7 @@ func (s *service) triggerRuleResponse(ctx *gin.Context, rule app.TriggerRule) (t
 // @Summary List active rules for an trigger
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param trigger_id path string true "Trigger ID"
 // @Success 200 {array} triggerRuleResponse
 // @Router /v1/triggers/{trigger_id}/rules [get]
@@ -195,8 +192,7 @@ func (s *service) ListTriggerRules(ctx *gin.Context) {
 // @Summary Get an active rule for an trigger
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param trigger_id path string true "Trigger ID"
 // @Param rule_id path string true "Rule ID"
 // @Success 200 {object} triggerRuleResponse

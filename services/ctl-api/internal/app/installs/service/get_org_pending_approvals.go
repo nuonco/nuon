@@ -17,8 +17,7 @@ import (
 // @Tags								installs
 // @Accept								json
 // @Produce								json
-// @Security							APIKey
-// @Security							OrgID
+// @Security							APIKey && OrgID
 // @Param								offset	query	int	false	"offset of results to return"	Default(0)
 // @Param								limit	query	int	false	"limit of results to return"	Default(10)
 // @Param								page	query	int	false	"page number of results to return"	Default(0)

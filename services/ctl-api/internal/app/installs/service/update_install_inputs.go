@@ -45,8 +45,7 @@ func (c *UpdateInstallInputsRequest) Validate(v *validator.Validate) error {
 // @Param					req	body	UpdateInstallInputsRequest	true	"Input"
 // @Produce				json
 // @Param					install_id	path	string	true	"install ID"
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

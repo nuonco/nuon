@@ -33,8 +33,7 @@ type ListChannelsResponse struct {
 // @Tags					slack
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					org_id			path	string	true	"Org ID"
 // @Param					installation_id	path	string	true	"Slack installation ID"
 // @Param					cursor			query	string	false	"Slack cursor for pagination"

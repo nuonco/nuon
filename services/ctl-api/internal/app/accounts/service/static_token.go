@@ -80,10 +80,14 @@ func parseTokenDuration(raw string) (time.Duration, error) {
 // @Description			Creates a long-lived static API token. By default (token_identity "service_account") each token gets its own dedicated service account and only grants access to the current org; the role param controls the token's permissions (any role assignable to API tokens; see GET /v1/roles?context=api_token) and defaults to org_read_only. With token_identity "personal" the token is issued against your own account instead: it uses your account's existing roles, is not limited to the current org, and the role param must be empty.
 // @Param					req	body	CreateStaticTokenRequest	true	"Input"
 // @Tags					accounts
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Accept					json
 // @Produce				json
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	StaticTokenResponse
 // @Router					/v1/account/static-token [POST]
 func (s *service) CreateStaticToken(ctx *gin.Context) {
@@ -160,9 +164,13 @@ func (s *service) resolveTokenAccount(ctx *gin.Context, orgID string, caller *ap
 // @Summary				list your org's static API tokens
 // @Description			Lists the static API tokens for your current org. Token secrets are never returned.
 // @Tags					accounts
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Produce				json
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}	app.Token
 // @Router					/v1/account/static-tokens [GET]
 func (s *service) ListStaticTokens(ctx *gin.Context) {
@@ -193,9 +201,13 @@ func (s *service) ListStaticTokens(ctx *gin.Context) {
 // @Description			Deletes a static API token belonging to your current org. For service account tokens, the dedicated service account is deleted as well; for personal tokens, only the token is deleted and your account is untouched. Once deleted, the token can no longer be used to access the API.
 // @Param					token_id	path	string	true	"token ID"
 // @Tags					accounts
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Produce				json
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
 // @Success				204
 // @Router					/v1/account/static-tokens/{token_id} [DELETE]
 func (s *service) DeleteStaticToken(ctx *gin.Context) {

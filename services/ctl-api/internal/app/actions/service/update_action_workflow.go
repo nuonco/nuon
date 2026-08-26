@@ -35,8 +35,7 @@ func (c *UpdateActionRequest) Validate(v *validator.Validate) error {
 // @Accept					json
 // @Param					req	body	UpdateActionWorkflowRequest	true	"Input"
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Deprecated  			true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
@@ -98,8 +97,7 @@ func (c *UpdateActionWorkflowRequest) Validate(v *validator.Validate) error {
 // @Accept					json
 // @Param					req	body	UpdateActionWorkflowRequest	true	"Input"
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Deprecated  			true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse

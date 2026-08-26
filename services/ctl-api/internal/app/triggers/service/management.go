@@ -111,8 +111,7 @@ func (s *service) scrubInactiveTriggerSecrets(ctx context.Context, db *gorm.DB, 
 // @Tags triggers
 // @Accept json
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param request body createTriggerRequest true "Trigger"
 // @Success 201 {object} credentialResponse
 // @Router /v1/triggers [post]
@@ -335,8 +334,7 @@ func validateEventFieldSelector(selector app.EventFieldSelector) error {
 // @Summary List triggers
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Success 200 {array} triggerResponse
 // @Router /v1/triggers [get]
 func (s *service) ListTriggers(ctx *gin.Context) {
@@ -380,8 +378,7 @@ func (s *service) ListTriggers(ctx *gin.Context) {
 // @Summary Get an trigger
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param trigger_id path string true "Trigger ID"
 // @Success 200 {object} triggerResponse
 // @Router /v1/triggers/{trigger_id} [get]
@@ -397,8 +394,7 @@ func (s *service) GetTrigger(ctx *gin.Context) {
 // @Description Uses PATCH so retrieving the sensitive ingress URL requires update permission instead of read permission.
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param trigger_id path string true "Trigger ID"
 // @Success 200 {object} triggerIngressURLResponse
 // @Router /v1/triggers/{trigger_id}/ingress-url [patch]
@@ -414,8 +410,7 @@ func (s *service) GetTriggerIngressURL(ctx *gin.Context) {
 // @Summary Replace an trigger ingress URL
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param trigger_id path string true "Trigger ID"
 // @Success 200 {object} credentialResponse
 // @Router /v1/triggers/{trigger_id}/rotate-ingress-url [post]
@@ -440,8 +435,7 @@ func (s *service) RotateIngressURL(ctx *gin.Context) {
 // @ID DeleteTrigger
 // @Summary Delete an trigger
 // @Tags triggers
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param trigger_id path string true "Trigger ID"
 // @Param force query bool false "Delete a trigger referenced by rules"
 // @Success 204
@@ -511,8 +505,7 @@ func (s *service) managementTrigger(ctx *gin.Context) (*app.Trigger, bool) {
 // @Summary Rotate an trigger secret
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param trigger_id path string true "Trigger ID"
 // @Success 201 {object} credentialResponse
 // @Router /v1/triggers/{trigger_id}/rotate-secret [post]
@@ -589,8 +582,7 @@ func (s *service) setTriggerStatus(ctx *gin.Context, status app.TriggerStatus) {
 // @Summary Enable an trigger
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param trigger_id path string true "Trigger ID"
 // @Success 200 {object} app.Trigger
 // @Router /v1/triggers/{trigger_id}/enable [post]
@@ -602,8 +594,7 @@ func (s *service) EnableTrigger(ctx *gin.Context) {
 // @Summary Disable an trigger
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param trigger_id path string true "Trigger ID"
 // @Success 200 {object} app.Trigger
 // @Router /v1/triggers/{trigger_id}/disable [post]
@@ -615,8 +606,7 @@ func (s *service) DisableTrigger(ctx *gin.Context) {
 // @Summary Revoke an trigger secret
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param trigger_id path string true "Trigger ID"
 // @Param secret_id path string true "Trigger secret ID"
 // @Success 200 {object} revokeTriggerSecretResponse
@@ -654,8 +644,7 @@ func secretIsRevealable(secret *app.TriggerSecret, now time.Time) bool {
 // @Description Uses PATCH so retrieving the sensitive secret value requires update permission instead of read permission.
 // @Tags triggers
 // @Produce json
-// @Security APIKey
-// @Security OrgID
+// @Security APIKey && OrgID
 // @Param trigger_id path string true "Trigger ID"
 // @Param secret_id path string true "Trigger secret ID"
 // @Success 200 {object} revealTriggerSecretResponse

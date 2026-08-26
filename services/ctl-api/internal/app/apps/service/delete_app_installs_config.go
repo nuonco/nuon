@@ -15,8 +15,7 @@ import (
 // @Description			Soft-deletes an installs config record. The next latest record becomes active.
 // @Tags					apps
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					app_id		path	string	true	"app ID"
 // @Param					config_id	path	string	true	"config ID"
 // @Success				200	{object}	map[string]string

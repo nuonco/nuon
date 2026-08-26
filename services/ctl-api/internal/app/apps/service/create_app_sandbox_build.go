@@ -17,8 +17,7 @@ import (
 // @Accept    json
 // @Produce   json
 // @Param     app_id  path  string  true  "app ID"
-// @Security  APIKey
-// @Security  OrgID
+// @Security  APIKey && OrgID
 // @Failure   400  {object}  stderr.ErrResponse
 // @Failure   401  {object}  stderr.ErrResponse
 // @Failure   404  {object}  stderr.ErrResponse

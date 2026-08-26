@@ -17,8 +17,7 @@ import (
 // @Tags					slack
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					org_id	path	string	true	"Org ID"
 // @Success				200	{array}		app.SlackChannelSubscription
 // @Failure				400	{object}	stderr.ErrResponse

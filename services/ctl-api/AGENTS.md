@@ -224,11 +224,14 @@ When adding new API endpoints, follow this process to ensure proper documentatio
    //	@Tags					service_name
    //	@Accept					json
    //	@Produce				json
-   //	@Security				APIKey
-   //	@Security				OrgID
+   //	@Security				APIKey && OrgID
    //	@Param					param_name	path/query/body	type	required	"Description"
    //	@Success				200		{object}	ResponseType
    //	@Failure				400		{object}	stderr.ErrResponse
+   //	@Failure				401		{object}	stderr.ErrResponse
+   //	@Failure				403		{object}	stderr.ErrResponse
+   //	@Failure				404		{object}	stderr.ErrResponse
+   //	@Failure				500		{object}	stderr.ErrResponse
    //	@Router					/v1/your/endpoint [METHOD]
    ```
 
@@ -238,9 +241,16 @@ When adding new API endpoints, follow this process to ensure proper documentatio
    api.METHOD("/v1/your/endpoint", s.YourEndpointHandler)
    ```
 
-3. **Documentation is auto-generated** - No manual regeneration needed:
-   - The service automatically generates swagger docs on startup
-   - Manual regeneration can cause issues and is not required
+3. **Regenerate the spec** after changing annotations:
+
+   ```bash
+   cd services/ctl-api
+   go run ./cmd/gen --targets public,public-v3
+   ```
+
+   The running service serves the pre-built spec embedded in the gitignored
+   `docs/*/docs.go` files — it does NOT regenerate anything at startup, so a
+   stale `docs.go` means a stale spec.
 
 #### Swagger Documentation Issues
 
@@ -256,15 +266,17 @@ When adding new API endpoints, follow this process to ensure proper documentatio
 
 1. Check if referenced markdown files exist in `docs/public/descriptions/`
 2. Create any missing `.md` files (they can be empty initially)
-3. Restart the service - documentation will auto-generate
+3. Re-run `go run ./cmd/gen --targets public,public-v3` from `services/ctl-api`
 
 **Important Notes**:
 
 - Generated files (`swagger.json`, `swagger.yaml`, `docs.go`) are **not tracked in git**
 - Only markdown description files in `docs/public/descriptions/` are version controlled
-- **DO NOT manually regenerate documentation** - the service handles this automatically
-- The service auto-generates swagger docs on startup from code annotations
-- Manual regeneration with `go run cmd/gen/main.go` can cause issues and should be avoided
+- The published spec updates only when a new ctl-api container is deployed (the
+  Docker build runs `go generate`); there is no committed spec artifact to diff in review
+- `@Security APIKey && OrgID` must be a single line — two separate `@Security`
+  lines document OR semantics ("either header works"), which is wrong for
+  org-scoped endpoints that require both
 
 ### API Endpoints
 

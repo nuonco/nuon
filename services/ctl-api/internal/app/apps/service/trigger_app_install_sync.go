@@ -18,8 +18,7 @@ import (
 // @Description			Triggers a sync of all install configs for the app from the configured git source.
 // @Tags					apps
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					app_id	path	string	true	"app ID"
 // @Success				202	{object}	app.AppInstallConfigSync
 // @Failure				400	{object}	stderr.ErrResponse

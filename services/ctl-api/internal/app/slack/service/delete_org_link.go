@@ -20,8 +20,7 @@ import (
 // @Tags					slack
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					org_id	path	string	true	"Org ID"
 // @Param					link_id	path	string	true	"Slack org link ID"
 // @Success				204

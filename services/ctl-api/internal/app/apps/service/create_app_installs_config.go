@@ -25,8 +25,7 @@ type CreateAppInstallsConfigRequest struct {
 // @Tags					apps
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					app_id	path	string							true	"app ID"
 // @Param					req		body	CreateAppInstallsConfigRequest	true	"Input"
 // @Success				201	{object}	app.AppInstallsConfig

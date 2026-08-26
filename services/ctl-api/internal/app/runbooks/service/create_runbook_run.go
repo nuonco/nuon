@@ -29,8 +29,7 @@ type CreateRunbookRunStepSelection struct {
 // @Tags			runbooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			install_id	path	string	true	"install ID"
 // @Param			runbook_id	path	string	true	"runbook ID or name"
 // @Param			req			body	CreateRunbookRunRequest	false	"Input"

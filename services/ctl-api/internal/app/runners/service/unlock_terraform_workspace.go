@@ -17,8 +17,7 @@ import (
 // @Tags					runners,runners/runner
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					body body interface{} true "terraform workspace unlock "
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse

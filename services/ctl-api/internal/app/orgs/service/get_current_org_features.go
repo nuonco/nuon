@@ -12,10 +12,14 @@ import (
 // @Summary				get current org's feature flags
 // @Description.markdown	get_current_org_features.md
 // @Tags					orgs
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Accept					json
 // @Produce				json
+// @Failure				400	{object}	stderr.ErrResponse
+// @Failure				401	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
+// @Failure				404	{object}	stderr.ErrResponse
+// @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	map[string]bool
 // @Router					/v1/orgs/current/features  [GET]
 func (s *service) GetCurrentOrgFeatures(ctx *gin.Context) {

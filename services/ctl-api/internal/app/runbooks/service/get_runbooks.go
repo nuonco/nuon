@@ -20,8 +20,7 @@ import (
 // @Tags			runbooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			app_id	path	string	true	"app ID"
 // @Param			q		query	string	false	"search query to filter runbooks by name or ID"
 // @Param			offset	query	int		false	"offset"	Default(0)

@@ -329,7 +329,8 @@ receiver.
 ### API Development
 
 - Use proper Swagger annotations for all HTTP endpoints
-- Include both `@Security APIKey` and `@Security OrgID` for authenticated endpoints
+- Use a single `@Security APIKey && OrgID` line for org-scoped endpoints (two separate `@Security` lines document
+  OR semantics, which is wrong), and declare the standard `@Failure 400/401/403/404/500 {object} stderr.ErrResponse` set
 - Follow the established route patterns in each service
 
 ## Notes for Claude

@@ -83,6 +83,11 @@ type slackInteractionPayload struct {
 //	@Accept					x-www-form-urlencoded
 //	@Produce				json
 //	@Param					payload	formData	string	true	"JSON-encoded interaction payload"
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
 //	@Success				200
 //	@Router					/slack/interactions [POST]
 func (s *service) SlackInteractions(ctx *gin.Context) {

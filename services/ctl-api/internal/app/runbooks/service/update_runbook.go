@@ -22,8 +22,7 @@ type UpdateRunbookRequest struct {
 // @Tags			runbooks
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			app_id		path	string					true	"app ID"
 // @Param			runbook_id	path	string					true	"runbook ID"
 // @Param			req			body	UpdateRunbookRequest	true	"Input"

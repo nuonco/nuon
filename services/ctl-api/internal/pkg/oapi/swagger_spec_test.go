@@ -85,9 +85,16 @@ type PathItem struct {
 
 // Operation represents an HTTP operation (GET, POST, etc.)
 type Operation struct {
-	OperationID string      `json:"operationId"`
-	Summary     string      `json:"summary"`
-	Parameters  []Parameter `json:"parameters,omitempty"`
+	OperationID string                `json:"operationId"`
+	Summary     string                `json:"summary"`
+	Parameters  []Parameter           `json:"parameters,omitempty"`
+	Security    []map[string][]string `json:"security,omitempty"`
+	Responses   map[string]Response   `json:"responses,omitempty"`
+}
+
+// Response represents a response object in an operation
+type Response struct {
+	Schema json.RawMessage `json:"schema,omitempty"`
 }
 
 // Parameter represents a parameter in an operation
@@ -475,5 +482,106 @@ func TestSwaggerSpecsExist(t *testing.T) {
 			require.NoError(t, err, "Swagger spec file does not exist: %s. Run 'go generate' to create it.", absPath)
 			require.False(t, info.IsDir(), "Expected file but found directory: %s", absPath)
 		})
+	}
+}
+
+// TestSwaggerPublicSpecAgentReadiness validates the public spec against what
+// API consumers (including AI agents) need to construct correct requests from
+// the spec alone:
+//  1. A host, so request URLs can be built without out-of-band knowledge.
+//  2. Every operation documents at least one 4xx/5xx response with a schema.
+//  3. Operations using both APIKey and OrgID declare them inside a single
+//     security requirement (AND semantics). Two separate requirements document
+//     "either header works", which is wrong for org-scoped endpoints — in
+//     annotations that means one `@Security APIKey && OrgID` line, never two
+//     `@Security` lines.
+func TestSwaggerPublicSpecAgentReadiness(t *testing.T) {
+	var spec struct {
+		Host  string              `json:"host"`
+		Paths map[string]PathItem `json:"paths"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(public.SwaggerInfo.ReadDoc()), &spec))
+	assert.Equal(t, "api.nuon.co", spec.Host, "public spec must declare @host so agents can build request URLs")
+
+	// Deliberately unauthenticated endpoints: inbound webhooks, OAuth/OIDC
+	// exchanges, and public config lookups. Additions here should be rare and
+	// intentional.
+	publicOps := map[string]bool{
+		"CreateVCSConnectionCallback": true,
+		"ExchangeOIDCToken":           true,
+		"GetCLIConfig":                true,
+		"GetCloudPlatformRegions":     true,
+		"GetConfigSchema":             true,
+		"GetConfigSchemaByType":       true,
+		"SlackEvents":                 true,
+		"SlackInteractions":           true,
+		"SlackOAuthCallback":          true,
+		"SlackSlashCommand":           true,
+		"WriteVCSEvent":               true,
+		"WriteWebhookEvent":           true,
+	}
+	// Browser-facing endpoints whose error responses are HTML pages, not JSON.
+	htmlErrorOps := map[string]bool{
+		"SlackOAuthCallback": true,
+	}
+
+	var violations []string
+	for path, pathItem := range spec.Paths {
+		for method, op := range map[string]*Operation{
+			"GET":    pathItem.Get,
+			"POST":   pathItem.Post,
+			"PUT":    pathItem.Put,
+			"PATCH":  pathItem.Patch,
+			"DELETE": pathItem.Delete,
+		} {
+			if op == nil {
+				continue
+			}
+			name := fmt.Sprintf("%s %s (%s)", method, path, op.OperationID)
+
+			if !htmlErrorOps[op.OperationID] {
+				hasErrSchema := false
+				for code, resp := range op.Responses {
+					if code != "" && (code[0] == '4' || code[0] == '5') && len(resp.Schema) > 0 {
+						hasErrSchema = true
+					}
+				}
+				if !hasErrSchema {
+					violations = append(violations,
+						name+" documents no 4xx/5xx response with a schema (add the standard `@Failure ... {object} stderr.ErrResponse` block)")
+				}
+			}
+
+			if publicOps[op.OperationID] {
+				continue
+			}
+			if len(op.Security) == 0 {
+				violations = append(violations,
+					name+" declares no @Security (add `@Security APIKey && OrgID`, or add it to the public-endpoint allowlist if it is intentionally unauthenticated)")
+				continue
+			}
+
+			usesAPIKey, usesOrgID, combined := false, false, false
+			for _, req := range op.Security {
+				_, hasAPIKey := req["APIKey"]
+				_, hasOrgID := req["OrgID"]
+				usesAPIKey = usesAPIKey || hasAPIKey
+				usesOrgID = usesOrgID || hasOrgID
+				combined = combined || (hasAPIKey && hasOrgID)
+			}
+			if usesAPIKey && usesOrgID && !combined {
+				violations = append(violations,
+					name+" declares APIKey and OrgID as separate security requirements (OR semantics); use a single `@Security APIKey && OrgID` line")
+			}
+		}
+	}
+
+	if len(violations) > 0 {
+		sort.Strings(violations)
+		errorMsg := fmt.Sprintf("Found %d agent-readiness violation(s) in the public spec:\n", len(violations))
+		for _, v := range violations {
+			errorMsg += fmt.Sprintf("  - %s\n", v)
+		}
+		assert.Fail(t, errorMsg)
 	}
 }

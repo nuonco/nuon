@@ -107,8 +107,7 @@ func (s *service) validateIssuerURL(raw string) error {
 // @Description			Creates an OIDC workload identity trust policy for your current org. OIDC tokens matching the policy's issuer, audience, and claim conditions can be exchanged for short-lived Nuon API tokens. Each policy gets a dedicated service account with the configured role.
 // @Param					req	body	CreateOIDCTrustPolicyRequest	true	"Input"
 // @Tags					oidc_federation
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Accept					json
 // @Produce				json
 // @Success				201	{object}	app.OIDCTrustPolicy
@@ -191,8 +190,7 @@ func (s *service) CreateOIDCTrustPolicy(ctx *gin.Context) {
 // @Summary				list your org's OIDC trust policies
 // @Description			Lists the OIDC workload identity trust policies for your current org.
 // @Tags					oidc_federation
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Produce				json
 // @Success				200	{array}	app.OIDCTrustPolicy
 // @Failure				403	{object}	stderr.ErrResponse
@@ -222,8 +220,7 @@ func (s *service) ListOIDCTrustPolicies(ctx *gin.Context) {
 // @Description			Returns an OIDC workload identity trust policy belonging to your current org.
 // @Param					policy_id	path	string	true	"policy ID"
 // @Tags					oidc_federation
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Produce				json
 // @Success				200	{object}	app.OIDCTrustPolicy
 // @Failure				403	{object}	stderr.ErrResponse
@@ -251,8 +248,7 @@ func (s *service) GetOIDCTrustPolicy(ctx *gin.Context) {
 // @Param					policy_id	path	string							true	"policy ID"
 // @Param					req			body	UpdateOIDCTrustPolicyRequest	true	"Input"
 // @Tags					oidc_federation
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Accept					json
 // @Produce				json
 // @Success				200	{object}	app.OIDCTrustPolicy
@@ -338,8 +334,7 @@ func (s *service) UpdateOIDCTrustPolicy(ctx *gin.Context) {
 // @Description			Deletes an OIDC workload identity trust policy belonging to your current org, along with its dedicated service account. Tokens already issued under the policy stop working immediately.
 // @Param					policy_id	path	string	true	"policy ID"
 // @Tags					oidc_federation
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Produce				json
 // @Success				204
 // @Failure				403	{object}	stderr.ErrResponse

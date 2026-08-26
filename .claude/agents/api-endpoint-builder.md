@@ -60,15 +60,17 @@ Every endpoint MUST include comprehensive Swagger annotations:
 // @Produce json
 // @Param request body SandboxRequest true "Sandbox configuration"
 // @Success 201 {object} SandboxResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 401 {object} ErrorResponse
-// @Security APIKey
-// @Security OrgID
+// @Failure 400 {object} stderr.ErrResponse
+// @Failure 401 {object} stderr.ErrResponse
+// @Failure 403 {object} stderr.ErrResponse
+// @Failure 404 {object} stderr.ErrResponse
+// @Failure 500 {object} stderr.ErrResponse
+// @Security APIKey && OrgID
 // @Router /v1/sandboxes [post]
 ```
 
 **Authentication Requirements:**
-- Include both `@Security APIKey` and `@Security OrgID` for authenticated endpoints
+- Include a single `@Security APIKey && OrgID` line for authenticated endpoints (separate lines mean OR, not AND)
 - Use account context from middleware: `cctx.GetAccountContext(ctx)`
 - Validate organization access through account's `OrgIDs` slice
 - Set account context before operations: `ctx = cctx.SetAccountContext(ctx, account)`

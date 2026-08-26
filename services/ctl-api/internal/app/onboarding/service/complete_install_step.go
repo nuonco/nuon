@@ -43,8 +43,7 @@ type CompleteInstallStepRequest struct {
 // @Tags					onboarding
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					req	body	CompleteInstallStepRequest	true	"Input"
 // @Success				200	{object}	app.Onboarding
 // @Failure				400	{object}	stderr.ErrResponse

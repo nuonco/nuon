@@ -27,8 +27,7 @@ type CompleteYourStackStepRequest struct {
 // @Tags					onboarding
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					req	body	CompleteYourStackStepRequest	true	"Input"
 // @Success				200	{object}	app.Onboarding
 // @Failure				400	{object}	stderr.ErrResponse

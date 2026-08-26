@@ -13,6 +13,7 @@ import (
 //	@description				API for managing nuon apps, components, installs, and actions.
 //	@contact.name				Nuon Support
 //	@contact.email				support@nuon.co
+//	@host						api.nuon.co
 //	@BasePath					/
 //	@schemes					https
 //

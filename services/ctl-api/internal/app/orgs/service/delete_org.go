@@ -18,8 +18,7 @@ import (
 // @Description.markdown	delete_org.md
 // @Tags					orgs
 // @Accept					json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Produce				json
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse

@@ -99,8 +99,7 @@ func (c AppSecretConfig) getKubernetesSyncTargets(appID string) []app.AppSecretK
 // @Param					req	body	CreateAppSecretsConfigRequest	true	"Input"
 // @Produce				json
 // @Param					app_id	path	string	true	"app ID"
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse

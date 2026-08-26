@@ -17,8 +17,7 @@ import (
 // @Tags				queues
 // @Accept				json
 // @Produce			json
-// @Security			APIKey
-// @Security			OrgID
+// @Security			APIKey && OrgID
 // @Param				queue_id	path		string	true	"Queue ID"
 // @Param				owner_id	query		string	false	"Filter by owner ID"
 // @Param				owner_type	query		string	false	"Filter by owner type (e.g., app_branches)"

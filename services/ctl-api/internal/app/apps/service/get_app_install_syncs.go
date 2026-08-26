@@ -15,8 +15,7 @@ import (
 // @Description			Returns a list of app install config sync records for the given app.
 // @Tags					apps
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					app_id	path	string	true	"app ID"
 // @Success				200	{array}		app.AppInstallConfigSync
 // @Failure				400	{object}	stderr.ErrResponse

@@ -16,8 +16,7 @@ import (
 // @Tags				queues
 // @Accept				json
 // @Produce			json
-// @Security			APIKey
-// @Security			OrgID
+// @Security			APIKey && OrgID
 // @Param				queue_id	path		string	true	"Queue ID"
 // @Param				signal_id	path		string	true	"Signal ID"
 // @Success			200			{object}	app.QueueSignal

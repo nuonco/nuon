@@ -57,8 +57,7 @@ func (r *CreateChannelSubscriptionRequest) Validate(v *validator.Validate) error
 // @Tags					slack
 // @Accept					json
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					org_id	path	string								true	"Org ID"
 // @Param					req		body	CreateChannelSubscriptionRequest	true	"Input"
 // @Success				201	{object}	app.SlackChannelSubscription

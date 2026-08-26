@@ -21,8 +21,7 @@ type ListQueuesRequest struct {
 // @Tags			queues
 // @Accept			json
 // @Produce		json
-// @Security		APIKey
-// @Security		OrgID
+// @Security		APIKey && OrgID
 // @Param			owner_id	query		string	false	"Filter by owner ID"
 // @Param			owner_type	query		string	false	"Filter by owner type (e.g., 'app_branches')"
 // @Param			limit		query		int		false	"Limit results"	default(50)

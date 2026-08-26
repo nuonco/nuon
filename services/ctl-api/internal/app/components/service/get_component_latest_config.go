@@ -16,8 +16,7 @@ import (
 // @Param					app_id			path	string	true	"app ID"
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					components
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
@@ -62,8 +61,7 @@ func (s *service) GetAppComponentLatestConfig(ctx *gin.Context) {
 // @Description.markdown	get_component_latest_config.md
 // @Param					component_id	path	string	true	"component ID"
 // @Tags					components
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Deprecated    true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse

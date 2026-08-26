@@ -97,6 +97,11 @@ type slackChallengeResponse struct {
 //	@Accept					json
 //	@Produce				json
 //	@Param					body	body	object	true	"Slack event envelope"
+//	@Failure				400	{object}	stderr.ErrResponse
+//	@Failure				401	{object}	stderr.ErrResponse
+//	@Failure				403	{object}	stderr.ErrResponse
+//	@Failure				404	{object}	stderr.ErrResponse
+//	@Failure				500	{object}	stderr.ErrResponse
 //	@Success				200	{object}	slackChallengeResponse	"For url_verification: returns challenge. Otherwise empty body."
 //	@Router					/slack/events [POST]
 func (s *service) SlackEvents(ctx *gin.Context) {

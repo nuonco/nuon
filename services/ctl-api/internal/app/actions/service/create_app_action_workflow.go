@@ -26,8 +26,7 @@ type CreateAppActionRequest struct {
 // @Accept					json
 // @Param					req	body	CreateAppActionRequest	true	"Input"
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Deprecated  			true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
@@ -90,8 +89,7 @@ func (c *CreateAppActionWorkflowRequest) Validate(v *validator.Validate) error {
 // @Accept					json
 // @Param					req	body	CreateAppActionWorkflowRequest	true	"Input"
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Deprecated  			true
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse

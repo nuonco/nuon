@@ -14,8 +14,7 @@ import (
 // @Tags					runners/runner
 // @Accept					json
 // @Produce				octet-stream
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
@@ -54,8 +53,7 @@ func (s *service) GetPulumiState(ctx *gin.Context) {
 // @Tags					runners/runner
 // @Accept					octet-stream
 // @Produce				json
-// @Security				APIKey
-// @Security				OrgID
+// @Security				APIKey && OrgID
 // @Param					workspace_id	path	string	true	"workspace ID"
 // @Param					job_id			query	string	false	"runner job ID"
 // @Failure				400	{object}	stderr.ErrResponse

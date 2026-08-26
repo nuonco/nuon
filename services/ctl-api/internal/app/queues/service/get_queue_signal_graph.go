@@ -17,8 +17,7 @@ import (
 // @Tags				queues
 // @Accept				json
 // @Produce			json
-// @Security			APIKey
-// @Security			OrgID
+// @Security			APIKey && OrgID
 // @Param				queue_id	path		string	true	"Queue ID"
 // @Param				signal_id	path		string	true	"Signal ID"
 // @Param				depth		query		int		false	"Max recursion depth (default 1, max 10)"

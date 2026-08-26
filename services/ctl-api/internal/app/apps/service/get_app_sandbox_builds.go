@@ -19,8 +19,7 @@ import (
 // @Param     app_id  path   string  true   "app ID"
 // @Param     offset  query  int     false  "offset of results to return"  Default(0)
 // @Param     limit   query  int     false  "limit of results to return"   Default(10)
-// @Security  APIKey
-// @Security  OrgID
+// @Security  APIKey && OrgID
 // @Failure   400  {object}  stderr.ErrResponse
 // @Failure   401  {object}  stderr.ErrResponse
 // @Failure   404  {object}  stderr.ErrResponse
