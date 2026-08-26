@@ -1,7 +1,6 @@
 import { Outlet, useParams } from 'react-router'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { TabNav } from '@/components/navigation/TabNav'
 import { useApp } from '@/hooks/use-app'
@@ -27,14 +26,10 @@ export const PoliciesLayout = () => {
           { path: basePath, text: 'Policies' },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          App policies
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          Define validation rules that run against builds and deploys.
-        </Text>
-      </HeadingGroup>
+      <SectionHeader
+        title="App policies"
+        description="Define validation rules that run against builds and deploys."
+      />
       <TabNav
         basePath={basePath}
         tabs={[

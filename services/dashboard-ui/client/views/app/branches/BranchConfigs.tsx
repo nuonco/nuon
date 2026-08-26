@@ -1,7 +1,7 @@
 import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -39,12 +39,10 @@ const BranchConfigsContent = () => {
           { path: `/${org?.id}/apps/${app?.id}/branches/${branchId}/configs`, text: 'Configs' },
         ]}
       />
-      <Text variant="h3" weight="strong">
-        Branch configs
-      </Text>
-      <Text variant="body">
-        {configs?.length || 0} config{configs?.length !== 1 ? 's' : ''} found
-      </Text>
+      <SectionHeader
+        title="Branch configs"
+        description={`${configs?.length || 0} config${configs?.length !== 1 ? 's' : ''} found`}
+      />
     </PageSection>
   )
 }
