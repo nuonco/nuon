@@ -142,32 +142,52 @@ MainLayout (flex row: sidebar + content)
 
 ### Building Pages
 
-**Org-level page** (top-level route like Apps, Installs, Team):
+**Never hand-assemble a shell or a heading row.** `ListPage` and `SectionHeader` own both (UXDR 020) — see [DESIGN.md](./DESIGN.md) §5 "Page shells & headers" for the full rule.
+
+**Org-level list page** (top-level route like Apps, Installs, Team) — `variant="page"` owns the `PageLayout`:
 ```tsx
 export const MyPage = () => (
-  <PageLayout>
-    <PageHeader>
-      <PageHeadingGroup title="My page" />
-    </PageHeader>
-    <PageContent>
-      <PageSection>
-        {/* content */}
-      </PageSection>
-    </PageContent>
-  </PageLayout>
+  <>
+    <PageTitle title="My page" />
+    <Breadcrumbs breadcrumbs={[...]} />
+    <ListPage
+      variant="page"
+      title="My page"
+      description="What this page is for."
+      createAction={<CreateThingButton variant="primary" />}
+    >
+      <ThingsTable shouldPoll />
+    </ListPage>
+  </>
 )
 ```
 
-**Child page inside App/Install layout** (rendered via `<Outlet />`):
+**Child list page inside App/Install/Settings layout** (rendered via `<Outlet />`) — default `variant="section"`, renders a bare `PageSection`:
 ```tsx
 export const MyChildPage = () => (
+  <>
+    <PageTitle segments={['My page', app?.name]} />
+    <Breadcrumbs breadcrumbs={[...]} />
+    <ListPage title="My page" description="What this page is for.">
+      <ThingsTable />
+    </ListPage>
+  </>
+)
+```
+
+**Non-list section page** (document, config page, tab layout) — `SectionHeader` inside a `PageSection`:
+```tsx
+export const MyConfigPage = () => (
   <PageSection>
-    {/* content — that's it */}
+    <PageTitle segments={['Configuration', app?.name]} />
+    <Breadcrumbs breadcrumbs={[...]} />
+    <SectionHeader title="Configuration" description="What this page shows." actions={<EditButton />} />
+    {/* content */}
   </PageSection>
 )
 ```
 
-**Detail page with flush header**:
+**Detail page with flush header** — identity headers (resource ID, label badges, timestamps, `BackLink`, metadata column) do NOT use `SectionHeader`; their scaffold comes with the UXDR-2 run-template migration:
 ```tsx
 export const DeployDetail = () => (
   <>
@@ -181,6 +201,8 @@ export const DeployDetail = () => (
 )
 ```
 
+`PageTitle` and `Breadcrumbs` are headless setters — render them as siblings before the scaffold, not inside it.
+
 ### Layout Components
 
 | Component | Purpose | Key Props |
@@ -188,7 +210,9 @@ export const DeployDetail = () => (
 | `PageLayout` | Top-level page wrapper. Renders topbar, scroll container, and BackToTop automatically. | `variant` (`dashboard-page` / `single-page`), `hideBreadcrumbs` |
 | `PageContent` | Sets flex direction for content area. | `variant` (`column` default, `row` for SubNav layouts) |
 | `PageSection` | Content block with standard padding/gap. | `flush` (removes padding/gap for full-bleed content) |
-| `PageHeader` | Page heading area above content. | Standard div props |
+| `PageHeader` | Page heading area above content. Rendered for you by `SectionHeader variant="page"`. | Standard div props |
+| `SectionHeader` | The only sanctioned heading row: heading group left, actions right. | `title`, `description`, `status`, `actions`, `variant` (`section` default / `page`) |
+| `ListPage` | List-archetype scaffold: `SectionHeader` + create action + body. Owns the shell per variant. | `title`, `description`, `status`, `actions`, `createAction`, `variant` |
 | `SubNav` | Secondary navigation sidebar. Sticky on desktop, horizontal scroll on mobile. | `basePath`, `links` |
 
 ### What You Get For Free
@@ -204,6 +228,11 @@ export const DeployDetail = () => (
 - Create `CONTAINER_ID` constants or pass `id` props to scroll containers
 - Import or render `<BackToTop />` in view files — PageLayout handles it
 - Use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead. (This rule is PageSection-specific: `Card` has no padding prop, so overriding it with paired values like `!p-4 !gap-4` is fine — always change padding and gap together so the spacing rhythm stays consistent.)
+- Hand-assemble a heading row (`PageHeader` + `HeadingGroup` + an actions `div`, or a bare heading `Text`) — use `SectionHeader`/`ListPage`
+- Render `PageLayout` from a view mounted via a parent layout's `Outlet` — that's the `section` variant's job
+- Put metadata (IDs, timestamps, badges, grids) in a second header column — it's content below the heading row
+- Leave a create button in the table's `filterActions` or only in the empty state — it belongs in `ListPage`'s `createAction`
+- Add a page-level search or pagination control — `Table`/`Timeline` own those
 
 ### Mobile Sidebar
 

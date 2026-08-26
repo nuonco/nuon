@@ -9,13 +9,12 @@ import {
   type IActivity,
 } from '@/components/orgs/RecentActivities'
 import { StatsGrid } from '@/components/orgs/StatsGrid'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageGrid } from '@/components/layout/PageGrid'
-import { PageHeader } from '@/components/layout/PageHeader'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { ActiveWorkflows } from '@/components/workflows/ActiveWorkflows'
@@ -130,16 +129,11 @@ export const Dashboard = () => {
     <PageLayout>
       <PageTitle title="Dashboard" />
       <Breadcrumbs breadcrumbs={[{ path: `/${org?.id}`, text: org?.name }]} />
-      <PageHeader className="border-b">
-        <HeadingGroup>
-          <Text variant="h3" weight="stronger" level={1} className="mb-4">
-            Welcome to {org?.name}!
-          </Text>
-          <Text theme="neutral">
-            Manage your applications and deployed installs.
-          </Text>
-        </HeadingGroup>
-      </PageHeader>
+      <SectionHeader
+        variant="page"
+        title={`Welcome to ${org?.name}`}
+        description="Manage your applications and deployed installs."
+      />
       {org?.sandbox_mode && !sandboxBannerDismissed && (
         <div className="px-6 pt-6">
           <Banner

@@ -272,6 +272,56 @@ problem internally: with `tooltipProps` + `disabled` it renders `aria-disabled` 
 - **Nudge** (a controlled tooltip opened by app state, not hover) uses `useNudge(trigger)` +
   `tooltipProps={{ isOpen, disableHover: true, tipContent }}` — don't re-implement the timer.
 
+### Page shells & headers (`ListPage` / `SectionHeader`)
+
+Never hand-assemble a page shell or a heading row. Two scaffolds own it. Full decision record:
+[UXDR 020](./.planning/ux/020-uxdr-page-shell-scaffolds.md).
+
+| Scaffold | Use for | Renders |
+|----------|---------|---------|
+| **`SectionHeader`** | The one sanctioned heading row: `{ title, description?, status?, actions? }` | `variant="page"` → the row inside a `PageHeader` (h1, `h3` type scale). `variant="section"` (default) → the same row as a plain flex row (h2, `base` scale) at the top of a `PageSection`. |
+| **`ListPage`** | A page or section listing one resource | `SectionHeader` + `createAction` slot + body. `variant="page"` owns `PageLayout → PageContent → PageSection`; `variant="section"` renders a bare `PageSection`. |
+
+- **Shell ownership:** mounted via a parent layout's `Outlet` → `variant="section"`, never a
+  `PageLayout`. Top of a route tree → `variant="page"`. The scaffold does this for you; no hybrids.
+- **Two slots only.** Heading group left, actions right. Metadata (IDs, timestamps, badges, grids)
+  is content **below** the row — never a second header column.
+- **Create button:** a page listing a UI-creatable resource gets exactly one create button, in
+  `createAction` (primary, verb + object). The empty state may repeat it; the header button never
+  disappears once the list has items. System-created resources (builds, workflows, runner jobs) get
+  none. Non-create header actions go in `actions`.
+- **No search/filter/pagination slot** — `Table` and `Timeline` own those internally (`enableSearch`
+  defaults on; pass `pagination` and `filterActions` to the table, not the page).
+- Non-list section pages (documents, config pages, tab layouts) use `SectionHeader` inside their
+  existing `PageSection` — `ListPage` is for the list archetype.
+- **Identity headers are out of scope** for these scaffolds: a header carrying a resource ID, label
+  badges, timestamps, a `BackLink`, or a metadata column belongs to a detail/run page and gets its
+  scaffold from the UXDR-2 run-template migration. Don't force one into `SectionHeader`.
+- **Review smells:** a hand-rolled `PageHeader` + `HeadingGroup` + actions `div`; a raw
+  `HeadingGroup` as a page or section heading; a heading `Text` with no `HeadingGroup`; an Outlet
+  child rendering `PageLayout`; a create button living in the table's `filterActions` or only in
+  the empty state.
+
+```tsx
+// Top-of-tree list page
+<ListPage variant="page" title="Installs" description="View and manage all deployed installs here."
+  createAction={<CreateInstallButton variant="primary" />}>
+  <InstallsTable shouldPoll />
+</ListPage>
+
+// Outlet child list page (app/install SubNav children, settings children)
+<ListPage title="App actions" description="Configure and run day-2 operations on your installs.">
+  <ActionsTable />
+</ListPage>
+
+// Non-list section page
+<PageSection>
+  <SectionHeader title="Install state" description="Raw state data for this install."
+    actions={<DownloadStateButton />} />
+  <JSONViewer data={state} />
+</PageSection>
+```
+
 ### Labeled-data components (`LabeledValue` / `KeyValueList` / `PropertyGrid`)
 
 Which component renders labeled data is fixed by who names the fields and the shape of each datum.
