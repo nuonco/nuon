@@ -1,0 +1,83 @@
+---
+title: 043 - Container actions and Azure install parity
+description: Ship a tooling image with an action, and give Azure customers the same one-click install AWS customers already get.
+boost: 0.3
+---
+
+_August 26, 2026_
+
+## Container actions
+
+<Note>Container actions are behind the `image-backed-actions` org feature flag, off by default, and require an AWS
+install runner. Reach out to our team if you would like it enabled for your organization.</Note>
+
+An action can declare a container image its steps run inside, so the tools a step needs ship with the action
+instead of being installed on the runner at the top of every run, inside your customer's network.
+
+```toml actions/db_migrate.toml
+# action
+name    = "db_migrate"
+timeout = "10m"
+image   = "ghcr.io/acme/migrate-tools:v1.4.0"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name            = "migrate"
+inline_contents = """
+#!/usr/bin/env sh
+migrate -database "$DATABASE_URL" -path /migrations up
+"""
+```
+
+For a private image, point `image` at a [container image component](/guides/container-image-components) and Nuon
+mirrors it into the install registry:
+
+```toml
+image = "{{.nuon.components.runbook_tools.outputs.image.ref}}"
+```
+
+Images are pinned by digest, not tag. Every step in a container action must use `inline_contents`. See the
+[Container actions](/guides/container-actions) guide.
+
+## Azure installs
+
+Azure has lagged AWS on the install itself. This release closes most of that gap.
+
+- **Deploy to Azure links collect your inputs.** Customer-facing app inputs render as ARM template parameters, and
+  default to the install's current value so a reprovision does not revert something set in the dashboard. This is
+  the Azure equivalent of the CloudFormation quick link.
+- **Stacks can deploy at subscription scope.** Set `deployment_scope = "subscription"` on the stack. Azure stacks
+  were previously resource-group scoped, so network, application, and security resources could not be split across
+  groups.
+- **The phone home authenticates with a managed identity token** rather than a shared value.
+- **`runner.instance_type` is honored.** The ARM stack hardcoded the VMSS SKU, so the field was silently ignored on
+  Azure while AWS and GCP applied it. The platform default moves to `Standard_D2s_v5`.
+- **AKS clusters using Azure RBAC can grant the runner access.** The runner's identity principal ID is now a stack
+  output. Previously, with local accounts disabled, secret sync failed with `namespaces is forbidden`.
+
+<Warning>
+  Existing Azure installs with no `instance_type` set move from Dsv3 to Dsv5 on their next reprovision. Azure vCPU
+  quota is per-family, so a subscription with headroom in Dsv3 but none in Dsv5 needs a quota increase or
+  `instance_type` pinned in `runner.toml`.
+</Warning>
+
+## Access and identity
+
+Follow-ons to [OIDC federation](/updates/039-oidc-federation):
+
+- A GitHub Actions preset on the trust policy modal lists every repo across your VCS connections and fills in the
+  issuer, audience, and `sub` claim.
+- An org can run more than one identity provider of the same type, each labeled on the sign-in page.
+- API tokens can be tied to your own account and carry your roles, alongside the existing service-account tokens.
+
+## Also improved
+
+- `nuon actions adhoc` runs a one-time action against an install.
+- Error reporting covers the whole run chain, not just component deploys: runner jobs, action preparation, runbook
+  steps, and sandbox builds surface a specific reason, including failures outside a job's own execution such as an
+  offline runner.
+- Helm releases stuck mid-operation are recovered automatically.
+- Install labels can be generated from Nuon templates.
+- Plans wrap long lines, and installs can be filtered by branch.

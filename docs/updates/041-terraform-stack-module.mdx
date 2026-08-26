@@ -1,0 +1,52 @@
+---
+title: 041 - Terraform stack modules
+description: Hand your customers a versioned Terraform module and an install ID instead of a tfvars file.
+boost: 0.3
+---
+
+_August 24, 2026_
+
+## Terraform stack modules
+
+<Note>This feature is behind a feature flag. Reach out to our team if you would like it enabled for your organization.</Note>
+
+Install stacks can be provisioned from a versioned Terraform module on the public registry, using an install ID and
+an API token instead of a generated `tfvars` file. The module reads the stack config from the control plane, and
+each stack gets its own service account, so the phone home ID no longer has to be rotated on every reprovision.
+
+```hcl
+provider "stack" {}
+
+module "aws_stack" {
+  source  = "nuonco/stack/aws"
+  version = "~> 1.0"
+
+  install_id = "<install-id>"
+
+  inputs = {
+    instance_type = "t3a.medium"
+  }
+
+  secrets = {
+    license_key = { value = var.license_key }
+  }
+}
+```
+
+When a new app version requires an input they have not set, the plan fails.
+
+```sh
+╷
+│ Error: Resource precondition failed
+│
+│   on .terraform/modules/aws_stack/phone_home.tf line 100, in resource "stack_phone_home" "this":
+│  100:       condition     = length(local.missing_required_inputs) == 0
+│     ├────────────────
+│     │ local.missing_required_inputs is tuple with 1 element
+│
+│ the app requires a value for these inputs: a_new_input.
+╵
+```
+
+The modules are published to the Terraform registry. See the
+[Provision Stack with a Terraform Module](/guides/provision-stacks-with-terraform-module) guide.
