@@ -48,3 +48,22 @@ export const Loading = () => (
     pagination={{ hasNext: false, offset: 0, limit: 20 }}
   />
 )
+
+export const AppScope = () => (
+  <InstallsTable
+    data={mockRows}
+    isLoading={false}
+    scope="app"
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)
+
+export const BranchScope = () => (
+  <InstallsTable
+    data={mockRows}
+    isLoading={false}
+    scope="branch"
+    emptyTitle="No installs in this deployment plan"
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)
