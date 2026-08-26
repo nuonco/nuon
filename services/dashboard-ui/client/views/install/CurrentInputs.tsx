@@ -3,13 +3,13 @@ import { Banner } from '@/components/common/Banner'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { EditInputsButton } from '@/components/installs/management/EditInputs'
@@ -162,19 +162,11 @@ export const CurrentInputs = () => {
         </Banner>
       )}
 
-      <div className="flex items-start justify-between gap-4">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Current inputs
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            The current input values for this install.
-          </Text>
-        </HeadingGroup>
-        <div className="shrink-0">
-          <EditInputsButton variant="secondary" />
-        </div>
-      </div>
+      <SectionHeader
+        title="Current inputs"
+        description="The current input values for this install."
+        actions={<EditInputsButton variant="secondary" />}
+      />
 
       {phoneHomeAuthEnabled && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

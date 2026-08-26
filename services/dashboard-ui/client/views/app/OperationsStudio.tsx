@@ -1,9 +1,8 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 
-import { Text } from '@/components/common/Text'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { OperationsStudio as OperationsStudioFeature } from '@/components/studio/OperationsStudio'
@@ -39,16 +38,10 @@ export function OperationsStudio() {
           },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="h3" weight="strong">
-          Runbook studio
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          Write markdown around executable steps, preview the operator-facing
-          document with live install state, then copy the generated files into
-          your app config.
-        </Text>
-      </HeadingGroup>
+      <SectionHeader
+        title="Runbook studio"
+        description="Write markdown around executable steps, preview the operator-facing document with live install state, then copy the generated files into your app config."
+      />
       <OperationsStudioFeature />
     </PageSection>
   )
