@@ -191,6 +191,7 @@
               "guides/rollback-install-config",
               "guides/actions",
               "guides/adhoc-actions",
+              "guides/container-actions",
               "guides/runbooks",
               "guides/configuring-policies",
               "guides/operation-roles",
