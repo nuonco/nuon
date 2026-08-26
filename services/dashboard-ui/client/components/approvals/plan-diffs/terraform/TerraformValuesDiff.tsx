@@ -3,6 +3,7 @@ import type { TTerraformOutputChange } from '@/types'
 import { cn } from '@/utils/classnames'
 import { deepEqual, isComplex, isStringJson } from '@/utils/terraform-utils'
 import { DiffLineExpandButton } from '../DiffLineExpandModal'
+import { useWrapLines } from '../wrap-lines-context'
 import { TreeDiffValue } from './TreeDiffValue'
 
 type TTerraformValues = Pick<
@@ -45,6 +46,10 @@ export const TerraformValuesDiff = ({
   values: TTerraformValues
 }) => {
   const valuesDiff = mapBeforeAfterToKeyValues(values)
+  const wrapLines = useWrapLines()
+  const lineClass = wrapLines
+    ? 'flex whitespace-pre-wrap break-all'
+    : 'flex whitespace-pre'
 
   const formatValue = (val: any) => {
     if (val === null || typeof val === 'undefined') return 'null'
@@ -55,7 +60,7 @@ export const TerraformValuesDiff = ({
 
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
-      <div className="min-w-fit">
+      <div className={cn(wrapLines ? 'pr-4' : 'min-w-fit')}>
       {valuesDiff.length ? (
         valuesDiff.map((value, idx) => {
           const prefix = getDiffPrefix(values.action, value.changed)
@@ -69,7 +74,7 @@ export const TerraformValuesDiff = ({
           if (hasComplexValue) {
             return (
               <div key={value.key + idx}>
-                <div className={cn('flex whitespace-pre', prefix.style)}>
+                <div className={cn(lineClass, prefix.style)}>
                   <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
                     {prefix.char}
                   </span>
@@ -90,19 +95,24 @@ export const TerraformValuesDiff = ({
 
           return (
             <div
-              className={cn('flex whitespace-pre', prefix.style)}
+              className={cn(lineClass, prefix.style)}
               key={value.key + idx}
             >
               <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
                 {prefix.char}
               </span>
-              <span>
+              <span className="min-w-0">
                 <span className="font-semibold">{value.key}:</span>
                 {value.changed ? (
                   <>
                     {'  '}
                     <span
-                      className="text-red-800 dark:text-red-400 line-through opacity-70 inline-block max-w-[300px] truncate align-bottom"
+                      className={cn(
+                        'text-red-800 dark:text-red-400 line-through opacity-70',
+                        wrapLines
+                          ? 'break-all'
+                          : 'inline-block max-w-[300px] truncate align-bottom'
+                      )}
                       title={formattedBefore}
                     >
                       {formattedBefore}
@@ -110,7 +120,9 @@ export const TerraformValuesDiff = ({
                     <span className="opacity-50">{' -> '}</span>
                     <span
                       className={cn(
-                        'inline-block max-w-[300px] truncate align-bottom',
+                        wrapLines
+                          ? 'break-all'
+                          : 'inline-block max-w-[300px] truncate align-bottom',
                         {
                           'italic opacity-60':
                             isKnownAfterApply(formattedAfter),
@@ -134,7 +146,9 @@ export const TerraformValuesDiff = ({
                     {'  '}
                     <span
                       className={cn(
-                        'inline-block max-w-[500px] truncate align-bottom',
+                        wrapLines
+                          ? 'break-all'
+                          : 'inline-block max-w-[500px] truncate align-bottom',
                         {
                           'italic opacity-60':
                             isKnownAfterApply(formattedAfter),
