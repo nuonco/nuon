@@ -110,6 +110,43 @@ func TestResolveRoleARN(t *testing.T) {
 			expectError:  false,
 		},
 		{
+			name:     "legacy Azure stack uses ambient identity",
+			roleName: "maintenance",
+			appCfg: &app.AppConfig{
+				PermissionsConfig: app.AppPermissionsConfig{
+					ProvisionRole:   app.AppAWSIAMRoleConfig{Name: "provision"},
+					MaintenanceRole: app.AppAWSIAMRoleConfig{Name: "maintenance"},
+					DeprovisionRole: app.AppAWSIAMRoleConfig{Name: "deprovision"},
+				},
+			},
+			stackOutputs: &app.InstallStackOutputs{
+				AzureStackOutputs: &app.AzureStackOutputs{},
+			},
+			installState: installState,
+			expectedARN:  "",
+			expectError:  false,
+		},
+		{
+			name:     "modern Azure stack rejects missing maintenance identity",
+			roleName: "maintenance",
+			appCfg: &app.AppConfig{
+				PermissionsConfig: app.AppPermissionsConfig{
+					ProvisionRole:   app.AppAWSIAMRoleConfig{Name: "provision"},
+					MaintenanceRole: app.AppAWSIAMRoleConfig{Name: "maintenance"},
+					DeprovisionRole: app.AppAWSIAMRoleConfig{Name: "deprovision"},
+				},
+			},
+			stackOutputs: &app.InstallStackOutputs{
+				AzureStackOutputs: &app.AzureStackOutputs{
+					ProvisionIdentityClientID: "provision-client-id",
+				},
+			},
+			installState:  installState,
+			expectedARN:   "",
+			expectError:   true,
+			errorContains: "role maintenance not found in install stack outputs",
+		},
+		{
 			name:     "role found in deprovision role",
 			roleName: "deprovision",
 			appCfg: &app.AppConfig{

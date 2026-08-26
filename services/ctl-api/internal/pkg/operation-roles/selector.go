@@ -444,6 +444,7 @@ func getRoleMap(appCfg *app.AppConfig, stackOutputs app.StackOutput, installStat
 		{appCfg.PermissionsConfig.DeprovisionRole.Name, stackOutputs.DeprovisionRoleID},
 		{appCfg.PermissionsConfig.MaintenanceRole.Name, stackOutputs.MaintenanceRoleID},
 	}
+	allowEmptyStandardRoleIDs := isLegacyAzureStack(stackOutputs)
 
 	for _, r := range standardRoles {
 		rendered, err := render.RenderV2(r.name, stateMap)
@@ -454,15 +455,27 @@ func getRoleMap(appCfg *app.AppConfig, stackOutputs app.StackOutput, installStat
 		if err != nil {
 			return nil, fmt.Errorf("unable to fetch role ID for %q: %w", r.name, err)
 		}
-		// An empty ID means the stack did not create the role — disabled in the
-		// customer's module, or granted no policies. Leaving it out lets
-		// resolveRoleARN return its "please enable it in install stack" error
-		// instead of handing an empty ARN to cloud auth.
-		if roleID == "" {
+		// Modern stacks use an empty ID when the role is disabled or grants no
+		// policies. Legacy Azure stacks predate per-operation identities and use
+		// an empty standard-role ID to select the runner's ambient identity.
+		if roleID == "" && !allowEmptyStandardRoleIDs {
 			continue
 		}
 		availableRoles[rendered] = roleID
 	}
 
 	return availableRoles, nil
+}
+
+func isLegacyAzureStack(stackOutputs app.StackOutput) bool {
+	azureOutputs, ok := stackOutputs.(*app.AzureStackOutputs)
+	if !ok {
+		return false
+	}
+
+	return azureOutputs.ProvisionIdentityClientID == "" &&
+		azureOutputs.MaintenanceIdentityClientID == "" &&
+		azureOutputs.DeprovisionIdentityClientID == "" &&
+		len(azureOutputs.CustomIdentityClientIDs) == 0 &&
+		len(azureOutputs.BreakGlassIdentityClientIDs) == 0
 }
