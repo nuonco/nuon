@@ -1,9 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { ID } from '@/components/common/ID'
-import { Text } from '@/components/common/Text'
 import {
   ProcessCard,
   ProcessCardComponent,
@@ -11,7 +8,9 @@ import {
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
 import { RunnerStatusBanner } from '@/components/runners/RunnerStatusBanner'
 import { ManagementDropdownContainer } from '@/components/runners/management/ManagementDropdown'
+import { DetailHeader } from '@/components/layout/DetailHeader'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { RunnerProvider } from '@/providers/runner-provider'
@@ -56,23 +55,20 @@ const RunnerContent = ({
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Install runner
-          </Text>
-          <ID>{runnerId}</ID>
-        </HeadingGroup>
-        {settings && (
-          <ManagementDropdownContainer isInstallRunner settings={settings} />
-        )}
-      </div>
+      <DetailHeader
+        backLink={false}
+        title="Install runner"
+        id={runnerId}
+        actions={
+          settings ? (
+            <ManagementDropdownContainer isInstallRunner settings={settings} />
+          ) : null
+        }
+      />
 
       <RunnerStatusBanner />
 
-      <Text variant="base" weight="strong">
-        Processes
-      </Text>
+      <SectionHeader title="Processes" />
 
       {processesLoading ? (
         <div className="@container">
@@ -112,9 +108,7 @@ const RunnerContent = ({
         </div>
       )}
 
-      <Text variant="base" weight="strong">
-        Recent jobs
-      </Text>
+      <SectionHeader title="Recent jobs" />
       <RunnerRecentActivity
         shouldPoll
         jobDetailBasePath={`/${org?.id}/installs/${installId}/runner`}
