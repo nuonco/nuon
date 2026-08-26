@@ -2,6 +2,7 @@ export default {
   title: 'Runbooks/RunbooksTable',
 }
 
+import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
 import { RunbooksTable, type TRunbookRow } from './RunbooksTable'
 
@@ -38,6 +39,32 @@ export const Loading = () => (
   <RunbooksTable
     data={[]}
     isLoading
+    pagination={{ hasNext: false, offset: 0, limit: 20 }}
+  />
+)
+
+export const InstallScope = () => (
+  <RunbooksTable
+    scope="install"
+    data={mockRows.map((row) => ({
+      ...row,
+      lastRun: (
+        <Text variant="subtext" theme="neutral">
+          2 hours ago
+        </Text>
+      ),
+      actions: <Button variant="ghost">Manage</Button>,
+    }))}
+    isLoading={false}
+    pagination={{ hasNext: true, offset: 0, limit: 20 }}
+  />
+)
+
+export const InstallScopeRemoved = () => (
+  <RunbooksTable
+    scope="install"
+    data={mockRows.map((row, i) => ({ ...row, removed: i === 0 }))}
+    isLoading={false}
     pagination={{ hasNext: false, offset: 0, limit: 20 }}
   />
 )

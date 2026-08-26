@@ -10,6 +10,8 @@ export interface ISectionHeader {
   actions?: ReactNode
   className?: string
   description?: ReactNode
+  loading?: boolean
+  loadingWidth?: number
   status?: ReactNode
   title: ReactNode
   variant?: TSectionHeaderVariant
@@ -25,19 +27,31 @@ const DESCRIPTION_VARIANT = {
   section: 'subtext',
 } as const
 
-export const SectionHeader = ({
+export const SectionHeaderRow = ({
   actions,
   className,
   description,
+  loading,
+  loadingWidth,
   status,
   title,
   variant = 'section',
-}: ISectionHeader) => {
-  const content = (
-    <>
+}: ISectionHeader) => (
+  <div
+    className={cn(
+      'flex flex-wrap gap-3 w-full items-start justify-between',
+      className
+    )}
+  >
       <HeadingGroup className="gap-1.5 min-w-0">
         <div className="flex flex-wrap items-center gap-2 min-w-0">
-          <Text {...TITLE_PROPS[variant]}>{title}</Text>
+          <Text
+            {...TITLE_PROPS[variant]}
+            loading={loading}
+            loadingWidth={loadingWidth}
+          >
+            {title}
+          </Text>
           {status}
         </div>
         {description ? (
@@ -46,26 +60,20 @@ export const SectionHeader = ({
           </Text>
         ) : null}
       </HeadingGroup>
-      {actions ? (
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          {actions}
-        </div>
-      ) : null}
-    </>
-  )
+    {actions ? (
+      <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>
+    ) : null}
+  </div>
+)
 
-  if (variant === 'page') {
-    return <PageHeader className={className}>{content}</PageHeader>
+export const SectionHeader = ({ className, ...props }: ISectionHeader) => {
+  if (props.variant === 'page') {
+    return (
+      <PageHeader className={className}>
+        <SectionHeaderRow {...props} />
+      </PageHeader>
+    )
   }
 
-  return (
-    <div
-      className={cn(
-        'flex flex-wrap gap-3 w-full items-start justify-between',
-        className
-      )}
-    >
-      {content}
-    </div>
-  )
+  return <SectionHeaderRow className={className} {...props} />
 }

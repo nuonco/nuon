@@ -2,11 +2,7 @@ import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
-import { BackLink } from '@/components/common/BackLink'
-import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
-import { Icon } from '@/components/common/Icon'
-import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { BuildTimeline } from '@/components/builds/BuildTimeline'
 import { ComponentConfigCard } from '@/components/components/ComponentConfigCard'
@@ -14,14 +10,16 @@ import { ComponentDependencies } from '@/components/components/ComponentDependen
 import { ComponentDependencyGraphButton } from '@/components/components/ComponentDependencyGraph'
 import { ComponentType } from '@/components/components/ComponentType'
 import { BuildComponentButton } from '@/components/components/management/BuildComponent'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { PageSection } from '@/components/layout/PageSection'
+import { DetailHeader } from '@/components/layout/DetailHeader'
+import { DetailPage } from '@/components/layout/DetailPage'
+import {
+  HistoryPanelButton,
+  HistoryRail,
+} from '@/components/layout/HistoryRail'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { Panel } from '@/components/surfaces/Panel'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
-import { useSurfaces } from '@/hooks/use-surfaces'
 import {
   getAppConfig,
   getAppConfigs,
@@ -34,7 +32,6 @@ export const ComponentDetail = () => {
   const { componentId, branchId } = useParams()
   const { org } = useOrg()
   const { app, labelColors } = useApp()
-  const { addPanel } = useSurfaces()
 
   const { data: component, isLoading: isLoadingComponent } = useQuery({
     placeholderData: keepPreviousData,
@@ -87,10 +84,11 @@ export const ComponentDetail = () => {
     (c) => c.component_id === componentId
   )
 
-  const dependentIds = appConfig?.component_config_connections
-    ?.filter((c) => c.component_dependency_ids?.includes(componentId!))
-    .map((c) => c.component_id!)
-    .filter(Boolean) ?? []
+  const dependentIds =
+    appConfig?.component_config_connections
+      ?.filter((c) => c.component_dependency_ids?.includes(componentId!))
+      .map((c) => c.component_id!)
+      .filter(Boolean) ?? []
 
   const { data: latestBuilds } = useQuery({
     placeholderData: keepPreviousData,
@@ -104,18 +102,17 @@ export const ComponentDetail = () => {
       }),
     enabled: !!org?.id && !!componentId,
   })
-  const latestResolvedBuild = latestBuilds?.data?.find(
-    (b) => !!b.source_digest
-  )
+  const latestResolvedBuild = latestBuilds?.data?.find((b) => !!b.source_digest)
 
   const latestBuildWithCommit = latestBuilds?.data?.find(
     (b) =>
       !!b.vcs_connection_commit && (!branchId || b.app_branch_id === branchId)
   )
   const buildCommit = latestBuildWithCommit?.vcs_connection_commit
-  const componentBasePath = branchId
-    ? `/${org?.id}/apps/${app?.id}/branches/${branchId}/components/${componentId}`
-    : `/${org?.id}/apps/${app?.id}/components/${componentId}`
+  const appBase = branchId
+    ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
+    : `/${org?.id}/apps/${app?.id}`
+  const componentBasePath = `${appBase}/components/${componentId}`
   const latestCommit = buildCommit
     ? {
         status: latestBuildWithCommit?.status_v2?.status,
@@ -128,8 +125,17 @@ export const ComponentDetail = () => {
       }
     : undefined
 
+  const labelKeys = Object.keys(component?.labels ?? {}).sort()
+  const history = (
+    <BuildTimeline
+      componentId={componentId!}
+      componentName={component?.name ?? ''}
+      shouldPoll
+    />
+  )
+
   return (
-    <PageSection>
+    <>
       <PageTitle segments={[component?.name ?? 'Component', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
@@ -137,146 +143,135 @@ export const ComponentDetail = () => {
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
           {
-            path: `/${org?.id}/apps/${app?.id}/components`,
+            path: `${appBase}/components`,
             text: 'Components',
           },
           {
-            path: `/${org?.id}/apps/${app?.id}/components/${componentId}`,
+            path: componentBasePath,
             text: component?.name,
           },
         ]}
       />
 
-      <div className="@container flex flex-col flex-auto gap-6">
-        <div className="flex items-start justify-between">
-          <HeadingGroup>
-            <BackLink className="mb-6" />
-            <span className="flex items-center gap-2">
+      <DetailPage
+        header={
+          <DetailHeader
+            icon={
               <ComponentType
                 type={component?.type}
                 displayVariant="icon-only"
                 colorVariant="color"
                 iconSize="24"
               />
-              <Text variant="base" weight="strong">
-                {component?.name}
-              </Text>
-              {config?.toggleable ? (
+            }
+            title={component?.name}
+            loading={isLoadingComponent}
+            loadingWidth={20}
+            status={
+              config?.toggleable ? (
                 <>
-                  <Badge size="sm" theme="info">Toggleable</Badge>
-                  <Badge size="sm" theme={config?.default_enabled ? 'success' : 'neutral'}>
+                  <Badge size="sm" theme="info">
+                    Toggleable
+                  </Badge>
+                  <Badge
+                    size="sm"
+                    theme={config?.default_enabled ? 'success' : 'neutral'}
+                  >
                     {config?.default_enabled ? 'Default: on' : 'Default: off'}
                   </Badge>
                 </>
-              ) : null}
-            </span>
-            {component?.id ? <ID>{component.id}</ID> : null}
-            {component?.labels && Object.keys(component.labels).length > 0 ? (
-              <span className="flex flex-wrap gap-1 mt-1">
-                {Object.keys(component.labels)
-                  .sort()
-                  .map((k) => (
-                    <LabelBadge key={k} labelKey={k} labelValue={component.labels[k]} size="sm" customColor={labelColors?.[k]} />
-                  ))}
-              </span>
-            ) : null}
-          </HeadingGroup>
-
-          <div className="flex items-center gap-2">
-            <div className="@5xl:hidden">
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  addPanel(
-                    <Panel heading="Build history">
-                      <BuildTimeline
-                        componentId={componentId!}
-                        componentName={component?.name ?? ''}
-                        shouldPoll
-                      />
-                    </Panel>
-                  )
-                }
-              >
-                <Icon variant="ClockCounterClockwiseIcon" size={16} />
-                Build history
-              </Button>
-            </div>
-            {component ? (
-              <BuildComponentButton component={component} variant="primary" />
-            ) : null}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 @5xl:grid-cols-12 gap-6">
-          <div className="@5xl:col-span-8 flex flex-col gap-6">
-            {isLoadingConfig ? (
-              <ComponentConfigCard loading />
-            ) : config ? (
-              <ComponentConfigCard
-                config={config}
-                latestBuild={latestResolvedBuild}
-                latestCommit={latestCommit}
-                headerActions={
-                  appConfig && componentId && component?.name ? (
-                    <ComponentDependencyGraphButton
-                      componentId={componentId}
-                      componentName={component.name}
-                      componentType={component.type}
-                      appConfig={appConfig}
-                      basePath={`/${org?.id}/apps/${app?.id}/components`}
+              ) : null
+            }
+            id={component?.id}
+            identity={
+              labelKeys.length ? (
+                <span className="flex flex-wrap gap-1">
+                  {labelKeys.map((k) => (
+                    <LabelBadge
+                      key={k}
+                      labelKey={k}
+                      labelValue={component?.labels?.[k]}
                       size="sm"
+                      customColor={labelColors?.[k]}
                     />
-                  ) : null
-                }
-                footer={
-                  (config.component_dependency_ids?.length || dependentIds.length > 0) ? (
-                    <>
-                      {config.component_dependency_ids?.length ? (
-                        <div className="flex flex-col gap-2">
-                          <Text variant="body" weight="strong" level={5}>Dependencies</Text>
-                          <ComponentDependencies
-                            deps={config.component_dependency_ids}
-                            variant="inline"
-                          />
-                        </div>
-                      ) : null}
-                      {dependentIds.length > 0 ? (
-                        <div className="flex flex-col gap-2">
-                          <Text variant="body" weight="strong" level={5}>Dependents</Text>
-                          <ComponentDependencies
-                            deps={dependentIds}
-                            variant="inline"
-                            tooltipTitle="More dependents"
-                          />
-                        </div>
-                      ) : null}
-                    </>
-                  ) : undefined
-                }
-              />
-            ) : (
-              <EmptyState
-                variant="table"
-                emptyTitle="No configuration"
-                emptyMessage="This component has no configuration yet."
-              />
-            )}
-          </div>
-
-          <div className="hidden @5xl:flex flex-col @5xl:col-span-4 gap-4">
-            <Text variant="base" weight="strong">
-              Build history
-            </Text>
-            <BuildTimeline
-              componentId={componentId!}
-              componentName={component?.name ?? ''}
-              shouldPoll
+                  ))}
+                </span>
+              ) : null
+            }
+            actions={
+              <>
+                <HistoryPanelButton title="Build history" history={history} />
+                {component ? (
+                  <BuildComponentButton
+                    component={component}
+                    variant="primary"
+                  />
+                ) : null}
+              </>
+            }
+          />
+        }
+      >
+        <HistoryRail title="Build history" history={history}>
+          {isLoadingConfig ? (
+            <ComponentConfigCard loading />
+          ) : config ? (
+            <ComponentConfigCard
+              config={config}
+              latestBuild={latestResolvedBuild}
+              latestCommit={latestCommit}
+              headerActions={
+                appConfig && componentId && component?.name ? (
+                  <ComponentDependencyGraphButton
+                    componentId={componentId}
+                    componentName={component.name}
+                    componentType={component.type}
+                    appConfig={appConfig}
+                    basePath={`/${org?.id}/apps/${app?.id}/components`}
+                    size="sm"
+                  />
+                ) : null
+              }
+              footer={
+                config.component_dependency_ids?.length ||
+                dependentIds.length > 0 ? (
+                  <>
+                    {config.component_dependency_ids?.length ? (
+                      <div className="flex flex-col gap-2">
+                        <Text variant="body" weight="strong" level={5}>
+                          Dependencies
+                        </Text>
+                        <ComponentDependencies
+                          deps={config.component_dependency_ids}
+                          variant="inline"
+                        />
+                      </div>
+                    ) : null}
+                    {dependentIds.length > 0 ? (
+                      <div className="flex flex-col gap-2">
+                        <Text variant="body" weight="strong" level={5}>
+                          Dependents
+                        </Text>
+                        <ComponentDependencies
+                          deps={dependentIds}
+                          variant="inline"
+                          tooltipTitle="More dependents"
+                        />
+                      </div>
+                    ) : null}
+                  </>
+                ) : undefined
+              }
             />
-          </div>
-        </div>
-      </div>
-
-    </PageSection>
+          ) : (
+            <EmptyState
+              variant="table"
+              emptyTitle="No configuration"
+              emptyMessage="This component has no configuration yet."
+            />
+          )}
+        </HistoryRail>
+      </DetailPage>
+    </>
   )
 }

@@ -2,9 +2,8 @@ import { Outlet, useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { InstallActionRunHeader } from '@/components/actions/InstallActionRunHeader'
 import { CompositeError } from '@/components/common/CompositeError'
-import { PageSection } from '@/components/layout/PageSection'
+import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { TabNav } from '@/components/navigation/TabNav'
 import { useInstallActionRun } from '@/hooks/use-install-action-run'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -44,7 +43,7 @@ const ActionRunLayoutInner = () => {
   const actionName = action?.action_workflow?.name
 
   return (
-    <PageSection>
+    <>
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -66,27 +65,34 @@ const ActionRunLayoutInner = () => {
           },
         ]}
       />
-      <InstallActionRunHeader
-        action={action}
-        actionId={actionId!}
-        actionName={actionName ?? ''}
-        workflow={workflow}
-      />
-      {installActionRun?.composite_error ? (
-        <CompositeError error={installActionRun.composite_error} />
-      ) : null}
-      <TabNav
-        basePath={basePath}
-        tabs={[
-          { path: '/', text: 'Summary' },
-          { path: '/logs', text: 'Logs' },
-          ...(org?.features?.['trace-view']
-            ? [{ path: '/trace', text: 'Trace' }]
-            : []),
-        ]}
-      />
-      <Outlet />
-    </PageSection>
+      <DetailPage
+        header={
+          <InstallActionRunHeader
+            action={action}
+            actionId={actionId!}
+            actionName={actionName ?? ''}
+            workflow={workflow}
+          />
+        }
+        banners={
+          installActionRun?.composite_error ? (
+            <CompositeError error={installActionRun.composite_error} />
+          ) : null
+        }
+        tabNav={{
+          basePath,
+          tabs: [
+            { path: '/', text: 'Summary' },
+            { path: '/logs', text: 'Logs' },
+            ...(org?.features?.['trace-view']
+              ? [{ path: '/trace', text: 'Trace' }]
+              : []),
+          ],
+        }}
+      >
+        <Outlet />
+      </DetailPage>
+    </>
   )
 }
 

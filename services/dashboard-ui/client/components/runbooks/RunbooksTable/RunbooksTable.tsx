@@ -7,7 +7,10 @@ import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { RemovedFromAppConfigBadge } from '@/components/installs/RemovedFromAppConfig'
 import type { TRunbook } from '@/lib/ctl-api/apps/runbooks'
+
+export type TRunbooksTableScope = 'app' | 'install'
 
 export type TRunbookRow = {
   runbookId: string
@@ -16,6 +19,9 @@ export type TRunbookRow = {
   labels: ReactNode
   lastUpdated: ReactNode
   href: string
+  lastRun?: ReactNode
+  actions?: ReactNode
+  removed?: boolean
 }
 
 export function parseRunbooksToTableData(
@@ -76,8 +82,13 @@ const columns: ColumnDef<TRunbookRow>[] = [
     header: 'Runbook',
     cell: (info) => (
       <span>
-        <Text variant="body">
-          <Link href={info.row.original.href} variant="inline">{info.getValue() as string}</Link>
+        <Text variant="body" flex className="items-center gap-2">
+          <Link href={info.row.original.href} variant="inline">
+            {info.getValue() as string}
+          </Link>
+          {info.row.original.removed ? (
+            <RemovedFromAppConfigBadge kind="runbook" />
+          ) : null}
         </Text>
         <ID>{info.row.original.runbookId}</ID>
       </span>
@@ -102,36 +113,46 @@ const columns: ColumnDef<TRunbookRow>[] = [
     cell: (info) => info.getValue() as ReactNode,
     enableSorting: false,
   },
-  {
-    enableSorting: false,
-    accessorKey: 'href',
-    id: 'action',
-    header: '',
-    cell: (info) => (
-      <Text>
-        <Link className="text-left" href={info.getValue() as string} variant="inline">
-          View runbook
-        </Link>
-      </Text>
-    ),
-  },
 ]
+
+const lastRunColumn: ColumnDef<TRunbookRow> = {
+  accessorKey: 'lastRun',
+  header: 'Last run',
+  cell: (info) => info.getValue() as ReactNode,
+  enableSorting: false,
+}
+
+const actionsColumn: ColumnDef<TRunbookRow> = {
+  enableSorting: false,
+  accessorKey: 'actions',
+  id: 'action',
+  header: '',
+  cell: (info) => info.getValue() as ReactNode,
+}
 
 interface IRunbooksTable {
   data: TRunbookRow[]
+  filterActions?: ReactNode
   isLoading: boolean
   pagination: { hasNext?: boolean; offset: number; limit: number }
+  scope?: TRunbooksTableScope
 }
 
 export const RunbooksTable = ({
   data,
+  filterActions,
   isLoading,
   pagination,
+  scope = 'app',
 }: IRunbooksTable) => {
+  const scopedColumns =
+    scope === 'install' ? [...columns, lastRunColumn, actionsColumn] : columns
+
   return (
     <Table<TRunbookRow>
-      columns={columns}
+      columns={scopedColumns}
       data={data}
+      filterActions={filterActions}
       isLoading={isLoading}
       emptyStateProps={{
         variant: 'actions',

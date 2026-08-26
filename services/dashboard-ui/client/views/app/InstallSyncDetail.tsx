@@ -1,6 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Navigate, useParams } from 'react-router'
-import { BackLink } from '@/components/common/BackLink'
 import { Text } from '@/components/common/Text'
 import { InstallSyncDetail as InstallSyncDetailContent } from '@/components/installs/InstallSyncDetail'
 import { PageSection } from '@/components/layout/PageSection'
@@ -58,8 +57,6 @@ export const InstallSyncDetail = () => {
           },
         ]}
       />
-
-      <BackLink />
 
       <InstallSyncDetailContent
         sync={sync}

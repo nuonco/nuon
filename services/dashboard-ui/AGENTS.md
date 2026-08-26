@@ -142,7 +142,9 @@ MainLayout (flex row: sidebar + content)
 
 ### Building Pages
 
-**Never hand-assemble a shell or a heading row.** `ListPage` and `SectionHeader` own both (UXDR 020) — see [DESIGN.md](./DESIGN.md) §5 "Page shells & headers" for the full rule.
+**Never hand-assemble a shell or a heading row.** `ListPage`/`SectionHeader` (list & section pages) and `DetailPage`/`DetailHeader` (detail, run and document pages) own both — see [DESIGN.md](./DESIGN.md) §5 "Page shells & headers" for the full rule.
+
+**`SectionHeader` or `DetailHeader`?** Does the header identify a resource — an ID, `BackLink`, label badges, a status chip, timestamps, or a metadata block? Then it is an identity header → `DetailHeader`. A heading that just names what you are looking at ("Components", "Install state") → `SectionHeader`.
 
 **Org-level list page** (top-level route like Apps, Installs, Team) — `variant="page"` owns the `PageLayout`:
 ```tsx
@@ -187,19 +189,50 @@ export const MyConfigPage = () => (
 )
 ```
 
-**Detail page with flush header** — identity headers (resource ID, label badges, timestamps, `BackLink`, metadata column) do NOT use `SectionHeader`; their scaffold comes with the UXDR-2 run-template migration:
+**Run page** (deploy, build, sandbox run, action run) — `DetailPage` + a `DetailHeader`-based header component + routed `TabNav`. Landing tab is always Summary (`RunSummary`), then Logs · Trace · component-type tabs:
 ```tsx
-export const DeployDetail = () => (
+export const DeployLayout = () => (
   <>
-    <PageSection flush>
-      <DeployHeader />
-    </PageSection>
-    <PageSection>
-      <Logs />
-    </PageSection>
+    <Breadcrumbs breadcrumbs={[...]} />
+    <DetailPage
+      header={<DeployHeader component={component} workflow={workflow} stepId={step?.id} />}
+      banners={deploy?.composite_error ? <CompositeError error={deploy.composite_error} /> : null}
+      tabNav={{ basePath, tabs }}
+    >
+      <Outlet context={{ component, workflow, step }} />
+    </DetailPage>
   </>
 )
 ```
+
+**Entity page** (a configured thing: component, action, sandbox) — `DetailPage` + `HistoryRail`; the small-screen `HistoryPanelButton` goes in the header's `actions`. It graduates to routed `TabNav` once the page gains a third independent concern:
+```tsx
+export const Sandbox = () => {
+  const history = <SandboxRunsTimeline shouldPoll />
+  return (
+    <>
+      <PageTitle segments={['Sandbox', install?.name]} />
+      <Breadcrumbs breadcrumbs={[...]} />
+      <DetailPage
+        header={
+          <DetailHeader
+            backLink={false}
+            title="Sandbox details"
+            id={install?.sandbox?.id}
+            actions={<><HistoryPanelButton title="Sandbox history" history={history} /><ManagementDropdown /></>}
+          />
+        }
+      >
+        <HistoryRail title="Sandbox history" history={history}>
+          <SandboxConfigCard config={sandboxConfig} />
+        </HistoryRail>
+      </DetailPage>
+    </>
+  )
+}
+```
+
+**Metadata always goes in `DetailHeader`'s `metadata` slot** — it renders a `Card` of `LabeledValue`/`LabeledStatus` below the heading row. No inline top-right metadata block, no count threshold.
 
 `PageTitle` and `Breadcrumbs` are headless setters — render them as siblings before the scaffold, not inside it.
 
@@ -214,6 +247,9 @@ export const DeployDetail = () => (
 | `SectionHeader` | The only sanctioned heading row: heading group left, actions right. | `title`, `description`, `status`, `actions`, `variant` (`section` default / `page`) |
 | `ListPage` | List-archetype scaffold: `SectionHeader` + create action + body. Owns the shell per variant. | `title`, `description`, `status`, `actions`, `createAction`, `variant` |
 | `SubNav` | Secondary navigation sidebar. Sticky on desktop, horizontal scroll on mobile. | `basePath`, `links` |
+| `DetailHeader` | A resource's identity header: BackLink + heading row + ID/identity line + metadata `Card`. | `title`, `id`, `identity`, `icon`, `status`, `actions`, `metadata`, `backLink`, `loading`, `variant` |
+| `DetailPage` | Detail/run/document scaffold: header + banners + optional routed `TabNav` + body. | `header`, `banners`, `tabNav`, `variant` |
+| `HistoryRail` / `HistoryPanelButton` | Entity page's history rail (`@5xl` column) and its narrow-width panel trigger. | `title`, `history`, `children` |
 
 ### What You Get For Free
 
@@ -229,6 +265,9 @@ export const DeployDetail = () => (
 - Import or render `<BackToTop />` in view files — PageLayout handles it
 - Use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead. (This rule is PageSection-specific: `Card` has no padding prop, so overriding it with paired values like `!p-4 !gap-4` is fine — always change padding and gap together so the spacing rhythm stays consistent.)
 - Hand-assemble a heading row (`PageHeader` + `HeadingGroup` + an actions `div`, or a bare heading `Text`) — use `SectionHeader`/`ListPage`
+- Hand-roll a detail page's identity header (`BackLink` + heading `Text` + `<ID>`) — use `DetailHeader`
+- Hand-roll a history rail (`@container` + `grid-cols-12` + a `@5xl:hidden` panel button) — use `HistoryRail` + `HistoryPanelButton`
+- Use unrouted `Tabs` for page structure on a detail page — detail-page tabs are always routed `TabNav`
 - Render `PageLayout` from a view mounted via a parent layout's `Outlet` — that's the `section` variant's job
 - Put metadata (IDs, timestamps, badges, grids) in a second header column — it's content below the heading row
 - Leave a create button in the table's `filterActions` or only in the empty state — it belongs in `ListPage`'s `createAction`

@@ -1,13 +1,11 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router'
 import { Icon } from '@/components/common/Icon'
-import { Skeleton } from '@/components/common/Skeleton'
-import { Status } from '@/components/common/Status'
-import { Text } from '@/components/common/Text'
+import { LabeledStatus } from '@/components/common/LabeledStatus'
+import { LabeledValue } from '@/components/common/LabeledValue'
 import { Time } from '@/components/common/Time'
-import { PageContent } from '@/components/layout/PageContent'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { PageSection } from '@/components/layout/PageSection'
+import { DetailHeader } from '@/components/layout/DetailHeader'
+import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { ConnectGithubButton } from '@/components/vcs-connections/ConnectGithub'
@@ -57,54 +55,48 @@ export const VCSConnectionDetail = () => {
           },
         ]}
       />
-      <PageHeader className="flex items-start justify-between">
-        <div className="flex flex-col gap-2">
-          <Text
-            variant="h3"
-            weight="stronger"
-            level={1}
-            className="!flex gap-2 items-center"
-          >
-            <Icon variant="GitHub" size="24" />
-            {accountName} connection
-          </Text>
-          {isLoadingStatus ? (
-            <div className="flex items-center gap-2">
-              <Skeleton height="24px" width="65px" />
-              <Skeleton height="17px" width="160px" />
-            </div>
-          ) : status ? (
-            <div className="flex items-center gap-2">
-              <Status status={status.status} variant="badge" />
-              <Text variant="subtext" theme="neutral">
-                Last checked{' '}
-                <Time
-                  time={status?.checked_at}
-                  format="relative"
-                  variant="subtext"
-                  shouldTick
+      <DetailPage
+        header={
+          <DetailHeader
+            backLink={false}
+            icon={<Icon variant="GitHub" size="24" />}
+            title={`${accountName} connection`}
+            id={connectionId}
+            actions={
+              <>
+                <ConnectGithubButton size="md">
+                  Add connection
+                </ConnectGithubButton>
+                {vcs_connection && (
+                  <RemoveConnectionButton
+                    vcs_connection={vcs_connection}
+                    onRemoveSuccess={() => navigate(`/${org?.id}/settings/vcs`)}
+                  />
+                )}
+              </>
+            }
+            metadata={
+              <>
+                <LabeledStatus
+                  label="Status"
+                  loading={isLoadingStatus}
+                  statusProps={{ status: status?.status }}
                 />
-              </Text>
-            </div>
-          ) : null}
-        </div>
-        <div className="flex items-center gap-2">
-          <ConnectGithubButton size="md">Add connection</ConnectGithubButton>
-          {vcs_connection && (
-            <RemoveConnectionButton
-              vcs_connection={vcs_connection}
-              onRemoveSuccess={() => navigate(`/${org?.id}/settings/vcs`)}
-            />
-          )}
-        </div>
-      </PageHeader>
-      <PageContent>
-        <PageSection>
-          {vcs_connection && (
-            <ConnectionDetail vcs_connection={vcs_connection} />
-          )}
-        </PageSection>
-      </PageContent>
+                <LabeledValue label="Last checked" loading={isLoadingStatus}>
+                  <Time
+                    time={status?.checked_at}
+                    format="relative"
+                    variant="subtext"
+                    shouldTick
+                  />
+                </LabeledValue>
+              </>
+            }
+          />
+        }
+      >
+        {vcs_connection && <ConnectionDetail vcs_connection={vcs_connection} />}
+      </DetailPage>
     </>
   )
 }

@@ -52,10 +52,7 @@ export const RecentActivities = ({
           title={
             <span className="flex items-center gap-2">
               {activity.href ? (
-                <Link
-                  href={activity.href}
-                  className="text-primary-600 dark:text-primary-400"
-                >
+                <Link href={activity.href} variant="inline">
                   {activity.installName}
                 </Link>
               ) : (
