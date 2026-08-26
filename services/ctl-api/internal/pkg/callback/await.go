@@ -22,12 +22,17 @@ const (
 	// state generation, lightweight queue signals.
 	ShortTimeout = 30 * time.Minute
 
+	// MaxWaitCeiling bounds every long-lived wait (parked retries, approvals,
+	// fallback callback waits) so an abandoned workflow closes instead of
+	// holding its Temporal workflows open indefinitely.
+	MaxWaitCeiling = 3 * 24 * time.Hour
+
 	// HumanGatedTimeout is for operations that require human interaction:
 	// approval workflows, user-initiated stack runs.
-	HumanGatedTimeout = 180 * 24 * time.Hour
+	HumanGatedTimeout = MaxWaitCeiling
 
 	// FallbackAwaitTimeout caps a wait that has no configured timeout.
-	FallbackAwaitTimeout = 30 * 24 * time.Hour
+	FallbackAwaitTimeout = MaxWaitCeiling
 )
 
 // Result is the payload sent by the handler on completion.

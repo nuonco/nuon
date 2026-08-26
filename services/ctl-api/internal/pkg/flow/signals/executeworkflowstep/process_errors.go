@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -179,8 +180,28 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		// stays blocked naturally. When the retry update arrives (flow → group → step),
 		// s.retried is set and we unblock. The createStepRetryHandler writes the
 		// terminal directive (retry or retry-group) before setting s.retried.
-		if err := workflow.Await(ctx, func() bool { return s.retried || s.canceled || s.skipped }); err != nil {
+		// The ceiling stops abandoned parks from holding Temporal workflows
+		// open forever.
+		parked, err := workflow.AwaitWithTimeout(ctx, callback.MaxWaitCeiling, func() bool {
+			return s.retried || s.canceled || s.skipped
+		})
+		if err != nil {
 			return err
+		}
+		if !parked {
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: step.ID,
+				Status: app.CompositeStatus{
+					Status:                 app.StatusError,
+					StatusHumanDescription: "step abandoned: no retry or skip within 3 days",
+					Metadata: map[string]any{
+						"abandoned": true,
+					},
+				},
+			})
+			if derr := setResultDirective(ctx, step.ID, DirectiveStop); derr != nil {
+				return errors.Wrap(derr, "unable to set stop directive for abandoned step")
+			}
 		}
 		return nil
 	}

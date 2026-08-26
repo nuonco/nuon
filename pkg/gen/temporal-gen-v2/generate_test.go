@@ -57,7 +57,7 @@ func TestGenerateExamples(t *testing.T) {
 	assert.Contains(t, string(content), "THIS FILE IS GENERATED. DO NOT EDIT.")
 
 	simpleAwait := string(content[strings.Index(string(content), "func AwaitSimpleActivity("):strings.Index(string(content), "func AwaitComplexActivity(")])
-	assert.Contains(t, simpleAwait, "MaximumAttempts: int32(870)")
+	assert.Contains(t, simpleAwait, "MaximumAttempts: int32(3)")
 	assert.NotContains(t, simpleAwait, "options.ScheduleToCloseTimeout = time.Duration(")
 	assert.Contains(t, string(content), "options.ScheduleToCloseTimeout = time.Duration(3600000000000)")
 

@@ -25,10 +25,10 @@ type GeneratorOptions struct {
 	ProcessImports bool
 }
 
-// 870 is chosen so unannotated activities give up after ~24h: at Temporal's
-// default backoff (1s initial, 2.0 coefficient, 100s max interval) that many
-// attempts span roughly a day.
-const defaultMaxRetries = 870
+// Unannotated activities give up fast (~7s at Temporal's default backoff) so
+// failures surface instead of hiding behind silent retries; activities that
+// genuinely need a longer budget must say so via @retry-policy-max-attempts.
+const defaultMaxRetries = 3
 
 func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 	var body bytes.Buffer
@@ -338,7 +338,7 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 		finalBytes = out.Bytes()
 	}
 
-	if err := os.WriteFile(outPath, finalBytes, 0644); err != nil {
+	if err := os.WriteFile(outPath, finalBytes, 0o644); err != nil {
 		return err
 	}
 
