@@ -18,6 +18,10 @@ type InstallerSDKConfig struct {
 	// RequiredInputs lists the install-input names that must be set before
 	// provisioning. The SDK enforces it at provision time.
 	RequiredInputs []string `json:"required_inputs,omitempty"`
+	// Names the app declares sensitive. InstallInputs is a released
+	// map[string]string with no room for per-key metadata, so this rides alongside
+	// like RequiredInputs.
+	SensitiveInputs []string `json:"sensitive_inputs,omitempty"`
 
 	AutoGenerateSecrets []string                      `json:"auto_generate_secrets,omitempty"`
 	Secrets             map[string]InstallerSDKSecret `json:"secrets,omitempty"`
