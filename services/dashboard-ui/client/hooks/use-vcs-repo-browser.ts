@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { getVCSConnectionRepos, getConnectionBranches } from '@/lib'
-import type { TVCSConnectionRepo, TVCSBranch } from '@/types'
+import type { TAPIError, TVCSConnectionRepo } from '@/types'
+
+const retryVCSRequest = (failureCount: number, error: TAPIError) => {
+  const status = error?.status
+  if (status && status >= 400 && status < 500) return false
+  return failureCount < 2
+}
 
 export function useVcsRepoBrowser({
   orgId,
@@ -28,7 +34,7 @@ export function useVcsRepoBrowser({
     queryKey: ['vcs-repos', orgId, vcsConnectionId],
     queryFn: () => getVCSConnectionRepos({ orgId, connectionId: vcsConnectionId }),
     enabled: enabled && !!orgId && !!vcsConnectionId,
-    retry: 2,
+    retry: retryVCSRequest,
   })
 
   const repos = reposData?.repositories
@@ -70,7 +76,7 @@ export function useVcsRepoBrowser({
     queryKey: ['vcs-branches', orgId, vcsConnectionId, owner, repoName],
     queryFn: () => getConnectionBranches(orgId, vcsConnectionId, owner!, repoName!),
     enabled: enabled && !!orgId && !!vcsConnectionId && !!owner && !!repoName,
-    retry: 2,
+    retry: retryVCSRequest,
   })
 
   useEffect(() => {
