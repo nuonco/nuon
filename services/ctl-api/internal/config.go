@@ -176,7 +176,6 @@ func init() {
 
 	config.RegisterDefault("internal_email_domains", []string{})
 
-	// Matches the default in dashboard-ui's BFF.
 	config.RegisterDefault("posthog_host", "https://us.i.posthog.com")
 
 	// Nuon Auth Service Configs
@@ -360,7 +359,6 @@ type Config struct {
 	NuonAuthProviderName string `config:"nuon_auth_provider_name"` // label shown on the sign-in page
 	NuonBrandedLogin     bool   `config:"nuon_branded_login"`
 
-	// Only the branded template renders the snippet, so BYOC deployments never load it even if set.
 	PostHogKey  string `config:"posthog_key"`
 	PostHogHost string `config:"posthog_host"`
 

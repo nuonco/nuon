@@ -67,8 +67,6 @@ func TestUseNuonBrandedLogin(t *testing.T) {
 	}
 }
 
-// Templates are parsed only at server startup, so without this a syntax or field error ships
-// and fails on boot.
 func TestIndexTemplatesRender(t *testing.T) {
 	sub, err := fs.Sub(tmplFS, "templates")
 	require.NoError(t, err)
