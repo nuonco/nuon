@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/config"
+	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/tags"
 )
 
 type ActivityOptions struct {
@@ -52,6 +53,7 @@ type UpdateOptions struct {
 
 type Annotation struct {
 	Type         string
+	Tags         []string
 	ActivityOpts *ActivityOptions
 	WorkflowOpts *WorkflowOptions
 	QueryOpts    *QueryOptions
@@ -80,8 +82,84 @@ func (a *Annotation) Validate() error {
 	return nil
 }
 
-// Parse checks if a comment group contains the generator annotation
+// TagError marks a failure to resolve the tags on a function: an unknown or
+// duplicated tag, a `@tag` with no config to resolve it against, or a `@tag` on
+// something other than an activity.
+//
+// It is distinguished from other parse errors because it is never recoverable:
+// non-strict runs downgrade parse failures to a warning and skip the function,
+// which for a mistyped tag would silently drop a wrapper the caller expects to
+// exist. See file.ProcessFile.
+type TagError struct {
+	Err error
+}
+
+func (e *TagError) Error() string { return e.Err.Error() }
+func (e *TagError) Unwrap() error { return e.Err }
+
+func tagErrorf(format string, args ...any) error {
+	return &TagError{Err: fmt.Errorf(format, args...)}
+}
+
+// Parse checks if a comment group contains the generator annotation.
+//
+// It applies no tag defaults; use ParseWithTags when a tag config is in play.
 func Parse(comments []string) (*Annotation, error) {
+	return ParseWithTags(comments, nil)
+}
+
+// ParseWithTags parses a comment group and folds in the defaults implied by
+// any `@tag <name>` set on the function.
+//
+// Tags apply to activities only. Tag attributes are lowered into synthetic
+// annotation lines that are parsed *ahead* of the function's own comments.
+// Since parseLines is last-write-wins, that yields the precedence chain
+// defaults -> tags (in source order) -> explicit annotations without a
+// second assignment code path.
+func ParseWithTags(comments []string, cfg *tags.Config) (*Annotation, error) {
+	annotation, err := parseLines(comments)
+	if err != nil || annotation == nil {
+		return nil, err
+	}
+
+	if len(annotation.Tags) > 0 && annotation.Type != "activity" {
+		return nil, tagErrorf("@tag is only supported on activities, found on %s", annotation.Type)
+	}
+
+	if annotation.Type == "activity" && (len(annotation.Tags) > 0 || cfg != nil) {
+		names := annotation.Tags
+
+		lines, err := cfg.AnnotationLines(names)
+		if err != nil {
+			return nil, &TagError{Err: err}
+		}
+
+		if len(lines) > 0 {
+			merged := make([]string, 0, len(lines)+len(comments)+1)
+			// Re-state the marker so the synthetic lines land inside an
+			// annotated block. The duplicate marker in `comments` is a no-op:
+			// parseLines only honours the first one.
+			merged = append(merged, "// @"+config.AnnotationPrefix+" "+annotation.Type)
+			merged = append(merged, lines...)
+			merged = append(merged, comments...)
+
+			annotation, err = parseLines(merged)
+			if err != nil {
+				return nil, err
+			}
+			annotation.Tags = names
+		}
+	}
+
+	if err := annotation.Validate(); err != nil {
+		return nil, err
+	}
+	return annotation, nil
+}
+
+// parseLines walks annotation comment lines in order, assigning as it goes.
+// Later lines overwrite earlier ones. It does not run Validate.
+func parseLines(comments []string) (*Annotation, error) {
 	var annotation *Annotation
 
 	for _, comment := range comments {
@@ -128,6 +206,12 @@ func Parse(comments []string) (*Annotation, error) {
 		// Handle arguments
 		switch parts[0] {
 		// Common Arguments
+		case "@tag":
+			if len(parts) < 2 {
+				return nil, tagErrorf("missing name for @tag (usage: @tag name)")
+			}
+			annotation.Tags = append(annotation.Tags, strings.Trim(parts[1], "\""))
+
 		case "@id":
 			if len(parts) < 2 {
 				return nil, fmt.Errorf("missing value for @id")
@@ -422,12 +506,6 @@ func Parse(comments []string) (*Annotation, error) {
 			// If it starts with @, assumes it's a directive. If we don't recognize it, error out.
 			// We only error if it's inside a block we are parsing (annotation != nil)
 			return nil, fmt.Errorf("unknown annotation argument: %s", parts[0])
-		}
-	}
-
-	if annotation != nil {
-		if err := annotation.Validate(); err != nil {
-			return nil, err
 		}
 	}
 
