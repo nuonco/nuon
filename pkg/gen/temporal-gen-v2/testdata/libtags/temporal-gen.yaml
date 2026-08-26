@@ -1,0 +1,5 @@
+version: 1
+tags:
+  db-read:
+    start-to-close-timeout: 5m
+    max-retries: 9
