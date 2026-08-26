@@ -1,10 +1,5 @@
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
 import { InstallsTable } from '@/components/installs/InstallsTable'
-import { PageLayout } from '@/components/layout/PageLayout'
-import { PageContent } from '@/components/layout/PageContent'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { PageSection } from '@/components/layout/PageSection'
+import { ListPage } from '@/components/layout/ListPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useOrg } from '@/hooks/use-org'
@@ -13,7 +8,7 @@ export const Installs = () => {
   const { org } = useOrg()
 
   return (
-    <PageLayout>
+    <>
       <PageTitle title="Installs" />
       <Breadcrumbs
         breadcrumbs={[
@@ -27,21 +22,13 @@ export const Installs = () => {
           },
         ]}
       />
-      <PageHeader>
-        <HeadingGroup>
-          <Text variant="h3" weight="stronger" level={1}>
-            Installs
-          </Text>
-          <Text theme="neutral">
-            View and manage all deployed installs here.
-          </Text>
-        </HeadingGroup>
-      </PageHeader>
-      <PageContent>
-        <PageSection>
-          <InstallsTable shouldPoll />
-        </PageSection>
-      </PageContent>
-    </PageLayout>
+      <ListPage
+        variant="page"
+        title="Installs"
+        description="View and manage all deployed installs here."
+      >
+        <InstallsTable shouldPoll />
+      </ListPage>
+    </>
   )
 }

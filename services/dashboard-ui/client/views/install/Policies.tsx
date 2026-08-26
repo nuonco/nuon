@@ -1,11 +1,10 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
 import { PolicyReportsFilter } from '@/components/policies/PolicyReportsFilter'
 import { PolicyReportsTable } from '@/components/policies/PolicyReportsTable'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
@@ -74,17 +73,11 @@ export const Policies = () => {
           },
         ]}
       />
-      <div className="flex items-start justify-between gap-4">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Policy reports
-          </Text>
-          <Text theme="neutral">
-            View policy compliance reports for this install.
-          </Text>
-        </HeadingGroup>
-        <PolicyReportsFilter />
-      </div>
+      <SectionHeader
+        title="Policy reports"
+        description="View policy compliance reports for this install."
+        actions={<PolicyReportsFilter />}
+      />
 
       <div className="flex flex-auto">
         {isLoading ? (
