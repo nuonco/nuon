@@ -148,12 +148,7 @@ go test ./...
 
 # Frontend tests
 cd services/dashboard-ui && bun run test
-
-# Database-backed integration suites (Postgres required)
-INTEGRATION=true go test ./...
 ```
-
-See [conventions/testing.md](/conventions/testing.md) for test-tier selection (Postgres integration vs sqlite unit) and testing patterns.
 
 ### Code Generation
 

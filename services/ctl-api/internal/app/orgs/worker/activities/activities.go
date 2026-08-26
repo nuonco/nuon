@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/salesforce"
 )
@@ -29,7 +28,6 @@ type Params struct {
 	VCSHelpers       *vcshelpers.Helpers
 	Features         *features.Features
 	Salesforce       salesforce.Client
-	AcctClient       *account.Client
 }
 
 type Activities struct {
@@ -42,7 +40,6 @@ type Activities struct {
 	vcsHelpers       *vcshelpers.Helpers
 	features         *features.Features
 	salesforce       salesforce.Client
-	acctClient       *account.Client
 }
 
 func New(params Params) (*Activities, error) {
@@ -56,6 +53,5 @@ func New(params Params) (*Activities, error) {
 		vcsHelpers:       params.VCSHelpers,
 		features:         params.Features,
 		salesforce:       params.Salesforce,
-		acctClient:       params.AcctClient,
 	}, nil
 }
