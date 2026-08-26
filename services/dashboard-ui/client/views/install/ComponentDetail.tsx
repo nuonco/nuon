@@ -37,21 +37,6 @@ import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getComponentBuilds, getInstallComponent } from '@/lib'
-import type { TComponentConfig, TInstall } from '@/types'
-
-function isComponentDisabled(
-  config?: TComponentConfig,
-  install?: TInstall,
-  componentId?: string
-): boolean {
-  if (!config?.toggleable) return false
-  const toggles = install?.install_config?.component_toggles
-  if (toggles && componentId && componentId in toggles) {
-    return !toggles[componentId]
-  }
-  return !config?.default_enabled
-}
-
 export const InstallComponentDetail = () => {
   const { componentId } = useParams()
   const { org } = useOrg()
@@ -91,7 +76,7 @@ export const InstallComponentDetail = () => {
   const isToggleable = config?.toggleable === true
   const isDisabled =
     installComponent?.status === 'disabled' ||
-    isComponentDisabled(config, install, componentId)
+    installComponent?.enabled === false
 
   const showHealth = !!org?.features?.['component-health']
 
