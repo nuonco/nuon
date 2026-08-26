@@ -24,7 +24,6 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 )
 
 type Params struct {
@@ -39,7 +38,6 @@ type Params struct {
 	ComponentHelpers *componenthelpers.Helpers
 	Helpers          *helpers.Helpers
 	AccountsHelpers  *accountshelpers.Helpers
-	AcctClient       *account.Client
 	AppsHelpers      *appshelpers.Helpers
 	OrgsHelpers      *orgshelpers.Helpers
 	RunnersHelpers   *runnershelpers.Helpers
@@ -63,7 +61,6 @@ type service struct {
 	componentHelpers *componenthelpers.Helpers
 	helpers          *helpers.Helpers
 	accountsHelpers  *accountshelpers.Helpers
-	acctClient       *account.Client
 	appsHelpers      *appshelpers.Helpers
 	orgsHelpers      *orgshelpers.Helpers
 	runnersHelpers   *runnershelpers.Helpers
@@ -365,6 +362,11 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	// Read-only, side-effect-free config fetch consumed by the Terraform
+	// provider's nuon_stack data source. Public: the per-stack-version
+	// phone_home_id in the URL path is the secret.
+	api.GET("/v1/stack-runs/:phone_home_id/config", s.GetInstallStackVersionConfig)
+
 	// phone home reported by the install stack over the runner API. The
 	// per-stack-version phone_home_id in the URL path is the secret; the route
 	// is already in the public whitelist, so no runner token is required.
@@ -394,7 +396,6 @@ func New(params Params) *service {
 		componentHelpers: params.ComponentHelpers,
 		helpers:          params.Helpers,
 		accountsHelpers:  params.AccountsHelpers,
-		acctClient:       params.AcctClient,
 		queueClient:      params.QueueClient,
 		appsHelpers:      params.AppsHelpers,
 		orgsHelpers:      params.OrgsHelpers,

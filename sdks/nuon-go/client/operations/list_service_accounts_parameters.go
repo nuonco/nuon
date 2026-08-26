@@ -68,12 +68,6 @@ type ListServiceAccountsParams struct {
 	*/
 	IncludeRunners *bool
 
-	/* IncludeStacks.
-
-	   include service accounts with the stack role (excluded by default)
-	*/
-	IncludeStacks *bool
-
 	/* Limit.
 
 	   limit of results to return
@@ -175,17 +169,6 @@ func (o *ListServiceAccountsParams) SetIncludeRunners(includeRunners *bool) {
 	o.IncludeRunners = includeRunners
 }
 
-// WithIncludeStacks adds the includeStacks to the list service accounts params
-func (o *ListServiceAccountsParams) WithIncludeStacks(includeStacks *bool) *ListServiceAccountsParams {
-	o.SetIncludeStacks(includeStacks)
-	return o
-}
-
-// SetIncludeStacks adds the includeStacks to the list service accounts params
-func (o *ListServiceAccountsParams) SetIncludeStacks(includeStacks *bool) {
-	o.IncludeStacks = includeStacks
-}
-
 // WithLimit adds the limit to the list service accounts params
 func (o *ListServiceAccountsParams) WithLimit(limit *int64) *ListServiceAccountsParams {
 	o.SetLimit(limit)
@@ -239,23 +222,6 @@ func (o *ListServiceAccountsParams) WriteToRequest(r runtime.ClientRequest, reg 
 		if qIncludeRunners != "" {
 
 			if err := r.SetQueryParam("include_runners", qIncludeRunners); err != nil {
-				return err
-			}
-		}
-	}
-
-	if o.IncludeStacks != nil {
-
-		// query param include_stacks
-		var qrIncludeStacks bool
-
-		if o.IncludeStacks != nil {
-			qrIncludeStacks = *o.IncludeStacks
-		}
-		qIncludeStacks := swag.FormatBool(qrIncludeStacks)
-		if qIncludeStacks != "" {
-
-			if err := r.SetQueryParam("include_stacks", qIncludeStacks); err != nil {
 				return err
 			}
 		}

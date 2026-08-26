@@ -67,13 +67,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	return nil
 }
 
-// The token exchange is also served on the runner API: an install stack applying
-// from CI reaches the runner API, not the public one, and needs somewhere to trade an
-// OIDC token for a Nuon token before it can authenticate. Same handler, already
-// public, so this exposes nothing new. Trust policies stay off it — vendor admin.
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	api.POST("/v1/oidc/token", s.ExchangeOIDCToken)
-
 	return nil
 }
 

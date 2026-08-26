@@ -76,6 +76,7 @@ interface IAwaitGCPDetails extends IStackDetails {
   installId?: string
   gcpProjectId?: string
   spaceliftEnabled?: boolean
+  tfProvider?: boolean
 }
 
 const telemetryExportConfigFilename = 'telemetry-export-config.yaml'
@@ -97,6 +98,7 @@ export const AwaitGCPDetails = ({
   installId,
   gcpProjectId,
   spaceliftEnabled,
+  tfProvider = false,
   loading,
 }: IAwaitGCPDetails) => {
   const version = stack?.versions?.at(0)
@@ -172,6 +174,8 @@ export const AwaitGCPDetails = ({
             terraform: (
               <TerraformTab
                 inputsTfvars={envelope.inputs}
+                providerTfvars={envelope.providerInputs}
+                tfProvider={tfProvider}
                 secretsTfvars={envelope.secrets}
                 installId={installId}
               />
@@ -190,6 +194,8 @@ export const AwaitGCPDetails = ({
       ) : (
         <TerraformTab
           inputsTfvars={envelope.inputs}
+          providerTfvars={envelope.providerInputs}
+          tfProvider={tfProvider}
           secretsTfvars={envelope.secrets}
           installId={installId}
         />
@@ -262,18 +268,25 @@ export const AwaitGCPDetails = ({
 
 interface ITerraformTab {
   inputsTfvars: string
+  providerTfvars: string
+  tfProvider: boolean
   secretsTfvars: string
   installId?: string
 }
 
 const TerraformTab = ({
   inputsTfvars,
+  providerTfvars,
+  tfProvider,
   secretsTfvars,
   installId,
 }: ITerraformTab) => {
-  const inputsFile = inputsTfvars
+  const inputsFile = tfProvider ? providerTfvars : inputsTfvars
 
-  const cloneCmd = `git clone https://github.com/nuonco/install-stacks.git
+  const cloneCmd = tfProvider
+    ? `git clone -b ja/stack-sdk https://github.com/nuonco/install-stacks.git
+cd install-stacks/gcp`
+    : `git clone https://github.com/nuonco/install-stacks.git
 cd install-stacks/gcp`
 
   const backendSnippet = `terraform {
@@ -287,6 +300,17 @@ cd install-stacks/gcp`
 
   return (
     <div className="flex flex-col gap-4 pt-4">
+      {tfProvider ? (
+        <Text variant="subtext" theme="neutral">
+          This module reads its configuration from the Nuon API via the{' '}
+          <code>stack</code> Terraform provider, so the tfvars stay slim. The
+          provider isn&apos;t published to the Terraform registry yet — add a
+          dev override in <code>~/.terraformrc</code> pointing{' '}
+          <code>nuonco/stack</code> at your local build before running{' '}
+          <code>terraform init</code>.
+        </Text>
+      ) : null}
+
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
           1. Clone the install stack module
