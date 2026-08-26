@@ -140,6 +140,7 @@ func GenerateForFile(f *file.File, opts GeneratorOptions) error {
 				Params:        params,
 				Receiver:      receiver,
 				ByFieldType:   byFieldType,
+				Tags:          fn.Annotation.Tags,
 			}
 			code, err = GenerateActivity(data)
 
