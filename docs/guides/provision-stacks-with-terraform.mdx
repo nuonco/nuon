@@ -6,13 +6,7 @@ boost: 10
 keywords: ["terraform", "install-stacks", "install stack", "stack", "terraform apply", "inputs.auto.tfvars", "secrets.auto.tfvars", "aws", "gcp", "backend", "remote state"]
 ---
 
-<Note>
-  For AWS installs, the [Terraform module flow](/guides/provision-stacks-with-terraform-module) is the recommended
-  path: your customer applies the published `nuonco/stack/aws` module with an API token, and no tfvars files change
-  hands. This page describes the legacy flow based on generated tfvars files.
-</Note>
-
-Nuon supports provisioning install stacks using Terraform. We maintain a collection of [open-source terraform modules](https://github.com/nuonco/install-stacks) that can be used directly, or forked and customized. In this legacy flow, you download generated `inputs.auto.tfvars` and `secrets.auto.tfvars` files from the dashboard and send them to your customer.
+Nuon supports provisioning install stacks using Terraform. We maintain a collection of [open-source terraform modules](https://github.com/nuonco/install-stacks) that can be used directly, or forked and customized.
 
 ## How it works
 

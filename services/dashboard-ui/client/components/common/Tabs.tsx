@@ -15,10 +15,6 @@ import './Tabs.css'
 interface ITabs extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   initActiveTab?: string
   tabs: Record<string, ReactNode>
-  // Overrides the label for a tab key. Labels are otherwise derived from the
-  // key, which lowercases everything after the first character — fine for
-  // ordinary words, wrong for anything with internal capitals ("TF Module").
-  tabLabels?: Record<string, string>
   tabsClassName?: string
   tabControlsClassName?: string
 }
@@ -28,7 +24,6 @@ export const Tabs = ({
   initActiveTab,
   tabControlsClassName,
   tabs,
-  tabLabels,
   tabsClassName,
   ...props
 }: ITabs) => {
@@ -164,7 +159,7 @@ export const Tabs = ({
             onFocus={() => handleTabHoverOrFocus(tabKey)}
             onBlur={handleTabsBlur}
           >
-            {tabLabels?.[tabKey] ?? toSentenceCase(camelToWords(tabKey))}
+            {toSentenceCase(camelToWords(tabKey))}
           </Button>
         ))}
       </div>
