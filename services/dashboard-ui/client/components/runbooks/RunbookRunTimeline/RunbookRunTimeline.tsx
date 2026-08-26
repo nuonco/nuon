@@ -49,7 +49,10 @@ export const RunbookRunTimeline = ({
             status={status}
             title={
               workflowId ? (
-                <Link href={`${basePath}/workflows/${workflowId}`}>
+                <Link
+                  href={`${basePath}/workflows/${workflowId}`}
+                  variant="inline"
+                >
                   {runbookName} run
                 </Link>
               ) : (

@@ -1,7 +1,7 @@
 import { useOutletContext, useParams } from 'react-router'
 import { BackLink } from '@/components/common/BackLink'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { Text } from '@/components/common/Text'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { TriggerRuleDetails } from '@/components/triggers'
 import type { TTrigger } from '@/types'
 export const TriggerRule = () => {
@@ -11,9 +11,7 @@ export const TriggerRule = () => {
     <div className="flex flex-col gap-6">
       <PageTitle title={`${trigger?.name ?? 'Trigger'} rule`} />
       <BackLink />
-      <Text variant="h3" weight="strong">
-        Rule details
-      </Text>
+      <SectionHeader title="Rule details" />
       {triggerId && ruleId ? (
         <TriggerRuleDetails triggerId={triggerId} ruleId={ruleId} />
       ) : null}

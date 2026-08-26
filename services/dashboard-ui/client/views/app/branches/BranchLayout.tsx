@@ -1,11 +1,10 @@
 import { useMemo } from 'react'
 import { Outlet, useMatch, useParams, useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { DetailHeader } from '@/components/layout/DetailHeader'
 import { PageContent } from '@/components/layout/PageContent'
-import { PageHeader } from '@/components/layout/PageHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useApp } from '@/hooks/use-app'
@@ -103,36 +102,34 @@ const BranchTemplate = () => {
   return (
     <>
       {!isDetailRoute ? (
-        <PageHeader>
-          <div className="flex flex-col gap-4 w-full">
-            <Breadcrumbs
-              breadcrumbs={[
-                { path: `/${orgId}`, text: org.name },
-                { path: `/${orgId}/apps`, text: 'Apps' },
-                { path: `/${orgId}/apps/${appId}`, text: app.name },
-                { path: basePath, text: branch.name },
-              ]}
-            />
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <HeadingGroup className="gap-1.5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Text variant="h3" weight="stronger" level={1}>
-                    {app.name}
-                  </Text>
-                  <AppBranchSwitcher />
-                </div>
-                <span className="flex items-center gap-2 flex-wrap">
-                  <BranchVcsBadges repo={vcs?.repo} branch={vcs?.branch} />
-                  <Text variant="subtext" theme="info">
-                    Last updated{' '}
-                    <Time
-                      variant="subtext"
-                      time={branch.updated_at}
-                      format="relative"
-                    />
-                  </Text>
-                </span>
-              </HeadingGroup>
+        <>
+          <Breadcrumbs
+            breadcrumbs={[
+              { path: `/${orgId}`, text: org.name },
+              { path: `/${orgId}/apps`, text: 'Apps' },
+              { path: `/${orgId}/apps/${appId}`, text: app.name },
+              { path: basePath, text: branch.name },
+            ]}
+          />
+          <DetailHeader
+            variant="page"
+            backLink={false}
+            title={app.name}
+            status={<AppBranchSwitcher />}
+            identity={
+              <>
+                <BranchVcsBadges repo={vcs?.repo} branch={vcs?.branch} />
+                <Text variant="subtext" theme="info">
+                  Last updated{' '}
+                  <Time
+                    variant="subtext"
+                    time={branch.updated_at}
+                    format="relative"
+                  />
+                </Text>
+              </>
+            }
+            actions={
               <BranchDetailActions
                 branch={branch}
                 currentConfig={currentConfig}
@@ -141,9 +138,9 @@ const BranchTemplate = () => {
                 showManage={false}
                 showTriggerNudge={showTriggerNudge}
               />
-            </div>
-          </div>
-        </PageHeader>
+            }
+          />
+        </>
       ) : null}
       <BranchSettingsPanel />
       <PageContent className="border-t" variant="row">

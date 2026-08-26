@@ -1,4 +1,4 @@
-import { InstallRunbooksTable } from '@/components/runbooks/InstallRunbooksTable'
+import { InstallRunbooksTable } from '@/components/runbooks/RunbooksTable'
 import { PageSection } from '@/components/layout/PageSection'
 import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'

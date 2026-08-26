@@ -1,11 +1,9 @@
 import { Outlet, useParams, useMatch } from 'react-router'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { CreateInstallButton } from '@/components/apps/CreateInstall'
-import { ID } from '@/components/common/ID'
+import { DetailHeader } from '@/components/layout/DetailHeader'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { PageHeadingGroup } from '@/components/layout/PageHeadingGroup'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useApp } from '@/hooks/use-app'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
@@ -37,13 +35,14 @@ const AppHeader = ({ isBranchPicker }: { isBranchPicker?: boolean }) => {
   const { app } = useApp()
 
   return (
-    <PageHeader>
-      <div className="flex flex-col gap-4 w-full md:flex-row md:justify-between md:items-start">
-        <div className="flex flex-col gap-2">
-          <PageHeadingGroup title={app?.name} subtitle={<ID>{app?.id}</ID>} />
-          {isBranchPicker ? <AppSourceChip /> : null}
-        </div>
-        <div className="flex items-center gap-4">
+    <DetailHeader
+      variant="page"
+      backLink={false}
+      title={app?.name}
+      id={app?.id}
+      identity={isBranchPicker ? <AppSourceChip /> : null}
+      actions={
+        <>
           <AdminDashboardLink
             path={`/queues?owner_id=${app?.id}&owner_type=apps`}
             label="View queues"
@@ -51,9 +50,9 @@ const AppHeader = ({ isBranchPicker }: { isBranchPicker?: boolean }) => {
           {!isBranchPicker && app?.runner_config ? (
             <CreateInstallButton variant="primary" />
           ) : null}
-        </div>
-      </div>
-    </PageHeader>
+        </>
+      }
+    />
   )
 }
 
