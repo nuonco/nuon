@@ -1,0 +1,93 @@
+---
+title: "Container Actions"
+description: "Run an action's steps inside a container image, so the tools your scripts need ship with the action."
+icon: "cube"
+keywords: ["container actions", "image-backed actions", "action image", "image-backed-actions", "action container", "run action in container", "actions image field", "containerized action", "action tools"]
+---
+
+An action's steps run on the install [runner](/concepts/runners), which carries a small toolchain.
+Setting `image` on an action runs its steps inside a container image you build instead, so the tools a
+step needs (`psql`, a migration binary, a specific `helm` version) ship with the action rather than
+being installed by the script on every run.
+
+<Note>
+  Container actions are behind the `image-backed-actions` org feature flag and are off by default.
+  [Reach out to Nuon](https://nuon.co/demo-request) to enable it for your org.
+</Note>
+
+## Requirements
+
+- The `image-backed-actions` org feature turned on.
+- An **AWS** install runner. Azure and GCP installs reject the run.
+- Every step in the action uses `inline_contents`. `command`, `public_repo`, and `connected_repo`
+  steps are not supported alongside an image.
+
+## Configure it
+
+Add `image` to the action and write each step as `inline_contents`:
+
+```toml actions/db_migrate.toml
+# action
+name    = "db_migrate"
+timeout = "10m"
+image   = "ghcr.io/acme/migrate-tools:v1.4.0"
+
+[[triggers]]
+type = "manual"
+
+[[steps]]
+name            = "migrate"
+inline_contents = """
+#!/usr/bin/env sh
+set -eu
+migrate -database "$DATABASE_URL" -path /migrations up
+"""
+
+[steps.env_vars]
+DATABASE_URL = "{{.nuon.install.sandbox.outputs.database_url}}"
+```
+
+Sync it the same way as any other action:
+
+```sh
+nuon apps sync
+```
+
+Everything else about the action is unchanged: triggers, `timeout` (30 minutes maximum), `role`,
+`enable_kube_config`, `env_vars`, and template interpolation all behave exactly as they do for a
+host-run action. See [Configure actions](/guides/actions) for those.
+
+
+## Choosing an image
+
+`image` is templated per install, so it can be a fixed reference or resolved from install state.
+
+### A public reference
+
+```toml actions/db_migrate.toml
+image = "ghcr.io/acme/migrate-tools:v1.4.0"
+```
+
+### A private image
+
+Publish the image as a [container image component](/guides/container-image-components) and point
+`image` at its `image.ref` output:
+
+```toml actions/db_migrate.toml
+image = "{{.nuon.components.migrate_tools.outputs.image.ref}}"
+```
+
+Registry access is configured once on the component, and every action referencing it inherits that.
+Referencing the component also registers it as a dependency of the action, so you do not need to list
+it under `dependencies`.
+
+<Warning>
+  Use the component's `image.ref` output, not `image.repository` and `image.tag`. A bare
+  `repository:tag` is rejected with `not digest-pinned`.
+</Warning>
+
+## Building the image
+
+Your steps run with the image's own `PATH`, and the runner's tooling is not available inside the
+container, so every binary a step calls has to be in the image.
+
