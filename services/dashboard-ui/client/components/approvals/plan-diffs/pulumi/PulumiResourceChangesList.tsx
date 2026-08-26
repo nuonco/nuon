@@ -6,6 +6,7 @@ import type { TPulumiChangeAction } from '@/types'
 import { cn } from '@/utils/classnames'
 import { isComplex, isStringJson, semanticEqual } from '@/utils/terraform-utils'
 import { DiffLineExpandButton } from '../DiffLineExpandModal'
+import { useWrapLines } from '../wrap-lines-context'
 import { TreeDiffValue } from '../terraform/TreeDiffValue'
 import {
   PULUMI_ACTION_BADGE_THEME,
@@ -78,17 +79,21 @@ function DetailedDiffBody({
 }: {
   detailedDiff: Record<string, IPropertyDiff>
 }) {
+  const wrapLines = useWrapLines()
+  const lineClass = wrapLines
+    ? 'flex whitespace-pre-wrap break-all'
+    : 'flex whitespace-pre'
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
-      <div className="min-w-fit">
+      <div className={cn(!wrapLines && 'min-w-fit')}>
       {Object.entries(detailedDiff).map(([prop, diff]) => {
         const prefix = getDiffPrefix(diff.kind)
         return (
-          <div className={cn('flex whitespace-pre', prefix.style)} key={prop}>
+          <div className={cn(lineClass, prefix.style)} key={prop}>
             <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
               {prefix.char}
             </span>
-            <span>
+            <span className="min-w-0">
               <span className="font-semibold">{prop}</span>
               <span className="opacity-60">
                 {'  '}
@@ -127,9 +132,14 @@ function InputsDiffBody({
     return { key, before, after, changed }
   })
 
+  const wrapLines = useWrapLines()
+  const lineClass = wrapLines
+    ? 'flex whitespace-pre-wrap break-all'
+    : 'flex whitespace-pre'
+
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
-      <div className="min-w-fit">
+      <div className={cn(!wrapLines && 'min-w-fit')}>
       {keyValues.length ? (
         keyValues.map((value, idx) => {
           const prefix = value.changed
@@ -145,7 +155,7 @@ function InputsDiffBody({
           if (hasComplexValue) {
             return (
               <div key={value.key + idx}>
-                <div className={cn('flex whitespace-pre', prefix.style)}>
+                <div className={cn(lineClass, prefix.style)}>
                   <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
                     {prefix.char}
                   </span>
@@ -163,26 +173,35 @@ function InputsDiffBody({
 
           return (
             <div
-              className={cn('flex whitespace-pre', prefix.style)}
+              className={cn(lineClass, prefix.style)}
               key={value.key + idx}
             >
               <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
                 {prefix.char}
               </span>
-              <span>
+              <span className="min-w-0">
                 <span className="font-semibold">{value.key}:</span>
                 {value.changed ? (
                   <>
                     {'  '}
                     <span
-                      className="text-red-800 dark:text-red-400 line-through opacity-70 inline-block max-w-[300px] truncate align-bottom"
+                      className={cn(
+                        'text-red-800 dark:text-red-400 line-through opacity-70',
+                        wrapLines
+                          ? 'break-all'
+                          : 'inline-block max-w-[300px] truncate align-bottom'
+                      )}
                       title={formattedBefore}
                     >
                       {formattedBefore}
                     </span>
                     <span className="opacity-50">{' -> '}</span>
                     <span
-                      className="inline-block max-w-[300px] truncate align-bottom"
+                      className={cn(
+                        wrapLines
+                          ? 'break-all'
+                          : 'inline-block max-w-[300px] truncate align-bottom'
+                      )}
                       title={formattedAfter}
                     >
                       {formattedAfter}
@@ -200,7 +219,11 @@ function InputsDiffBody({
                   <>
                     {'  '}
                     <span
-                      className="inline-block max-w-[500px] truncate align-bottom"
+                      className={cn(
+                        wrapLines
+                          ? 'break-all'
+                          : 'inline-block max-w-[500px] truncate align-bottom'
+                      )}
                       title={formattedAfter}
                     >
                       {formattedAfter}

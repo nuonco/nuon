@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
-import { CodeBlock } from '@/components/common/CodeBlock'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
 import { Text } from '@/components/common/Text'
@@ -16,6 +15,11 @@ import {
 import { HelmDiffSummary } from './HelmDiffSummary'
 import { humanize } from '@/utils/string-utils'
 import { DiffFilter } from '../DiffFilter'
+import {
+  DiffCodeBlock,
+  WrapLinesProvider,
+  WrapLinesToggle,
+} from '../wrap-lines-context'
 
 export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
   const { changes, summary } = useMemo(() => parseHelmPlan(plan), [plan])
@@ -33,14 +37,18 @@ export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
   const [allExpanded, setAllExpanded] = useState(true)
 
   return (
+    <WrapLinesProvider>
     <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-      <div className="flex flex-col px-4 py-4 sm:px-6 border-b">
-        <Text variant="base" weight="strong">
-          Helm changes
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          Operation: {humanize(plan.op)}
-        </Text>
+      <div className="flex items-start justify-between gap-4 px-4 py-4 sm:px-6 border-b">
+        <div className="flex flex-col">
+          <Text variant="base" weight="strong">
+            Helm changes
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            Operation: {humanize(plan.op)}
+          </Text>
+        </div>
+        <WrapLinesToggle />
       </div>
 
       <HelmDiffSummary summary={summary} />
@@ -99,13 +107,13 @@ export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
                   </div>
                 }
               >
-                <CodeBlock
+                <DiffCodeBlock
                   className="!rounded-none border-t"
                   language="yaml"
                   isDiff
                 >
                   {change.diff}
-                </CodeBlock>
+                </DiffCodeBlock>
               </Expand>
             )
           })}
@@ -121,5 +129,6 @@ export const HelmDiff = ({ plan }: { plan: THelmPlan }) => {
         </div>
       ) : null}
     </Card>
+    </WrapLinesProvider>
   )
 }

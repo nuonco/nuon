@@ -24,6 +24,7 @@ interface ICodeBlock
   showCopy?: boolean
   showLineNumbers?: boolean
   collapseUnchanged?: boolean
+  wrapLongLines?: boolean
 }
 
 function CodeBlockFallback({ children, className }: { children: string; className?: string }) {
@@ -47,6 +48,7 @@ export function CodeBlock({
   showCopy = false,
   showLineNumbers = false,
   collapseUnchanged = true,
+  wrapLongLines = false,
 }: ICodeBlock) {
   const prism = (
     <Suspense fallback={<CodeBlockFallback className={className}>{children}</CodeBlockFallback>}>
@@ -56,6 +58,7 @@ export function CodeBlock({
         isDiff={isDiff}
         showLineNumbers={showLineNumbers}
         collapseUnchanged={collapseUnchanged}
+        wrapLongLines={wrapLongLines}
       >
         {children}
       </PrismCodeBlock>

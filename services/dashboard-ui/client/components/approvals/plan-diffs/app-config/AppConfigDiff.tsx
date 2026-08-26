@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { Badge } from '@/components/common/Badge'
 import type { TBadgeTheme } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
-import { CodeBlock } from '@/components/common/CodeBlock'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
@@ -13,6 +12,12 @@ import { diffLines } from '@/utils/code-utils'
 import { cn } from '@/utils/classnames'
 import { scrollElementIntoView } from '@/utils/scroll'
 import type { TConfigDiffFocus } from '../config-diff-focus'
+import {
+  DiffCodeBlock,
+  WrapLinesProvider,
+  WrapLinesToggle,
+  useWrapLines,
+} from '../wrap-lines-context'
 import { humanize } from '@/utils/string-utils'
 
 const SECTION_CONFIG: Record<string, { displayName: string; icon: TIconVariant; grouped: boolean }> = {
@@ -311,7 +316,7 @@ export function computeSummary(sections: DiffSectionData[]) {
 }
 
 const AppConfigSummary = ({ summary }: { summary: { added: number; removed: number; changed: number } }) => (
-  <div className="px-4 py-3 sm:px-6 border-b bg-cool-grey-100 dark:bg-dark-grey-800">
+  <div className="px-4 py-3 sm:px-6 border-b bg-cool-grey-100 dark:bg-dark-grey-800 flex items-center justify-between gap-4">
     <div className="flex space-x-4">
       <div className="flex items-center gap-1.5">
         <Text variant="base" theme="success" weight="strong">{summary.added}</Text>
@@ -326,30 +331,37 @@ const AppConfigSummary = ({ summary }: { summary: { added: number; removed: numb
         <Text variant="subtext" theme="neutral">to remove</Text>
       </div>
     </div>
+    <WrapLinesToggle />
   </div>
 )
 
-const FieldsDiff = ({ fields }: { fields: DiffFieldEntry[] }) => (
-  <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
-    <div className="min-w-fit">
-      {fields.map((field, idx) => {
-        const prefix = getDiffPrefix(field.op)
-        return (
-          <div className={`flex whitespace-pre ${prefix.style}`} key={`${field.key}-${idx}`}>
-            <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
-              {prefix.char}
-            </span>
-            <span>
-              <span className="font-semibold">{field.key}:</span>
-              {'  '}
-              <span>{field.diff}</span>
-            </span>
-          </div>
-        )
-      })}
+const FieldsDiff = ({ fields }: { fields: DiffFieldEntry[] }) => {
+  const wrapLines = useWrapLines()
+  const lineClass = wrapLines
+    ? 'flex whitespace-pre-wrap break-all'
+    : 'flex whitespace-pre'
+  return (
+    <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
+      <div className={cn(!wrapLines && 'min-w-fit')}>
+        {fields.map((field, idx) => {
+          const prefix = getDiffPrefix(field.op)
+          return (
+            <div className={`${lineClass} ${prefix.style}`} key={`${field.key}-${idx}`}>
+              <span className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70">
+                {prefix.char}
+              </span>
+              <span className="min-w-0">
+                <span className="font-semibold">{field.key}:</span>
+                {'  '}
+                <span>{field.diff}</span>
+              </span>
+            </div>
+          )
+        })}
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 function langForFile(name: string): string {
   const lower = name.toLowerCase()
@@ -394,9 +406,9 @@ const FileDiffRow = ({
         </div>
       }
     >
-      <CodeBlock className="!rounded-none border-t" language={langForFile(file.name)} isDiff>
+      <DiffCodeBlock className="!rounded-none border-t" language={langForFile(file.name)} isDiff>
         {diffLines(file.before, file.after)}
-      </CodeBlock>
+      </DiffCodeBlock>
     </Expand>
   )
 }
@@ -595,9 +607,9 @@ const SectionGroup = ({
         <div className="flex flex-col divide-y">
           {section.content ? (
             <div className={`border-l-4 ${getOpBorderColor(section.content.op)}`}>
-              <CodeBlock className="!rounded-none" language="toml" isDiff>
+              <DiffCodeBlock className="!rounded-none" language="toml" isDiff>
                 {diffLines(section.content.before, section.content.after)}
-              </CodeBlock>
+              </DiffCodeBlock>
             </div>
           ) : section.grouped ? (
             section.entities.map((entity, idx) => (
@@ -678,19 +690,27 @@ export const AppConfigDiff = ({
   }
 
   return (
-    <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0 overflow-hidden">
-      {summary && <AppConfigSummary summary={summary} />}
+    <WrapLinesProvider>
+      <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0 overflow-hidden">
+        {summary ? (
+          <AppConfigSummary summary={summary} />
+        ) : (
+          <div className="px-4 sm:px-6 py-1.5 border-b bg-cool-grey-100 dark:bg-dark-grey-800 flex justify-end">
+            <WrapLinesToggle />
+          </div>
+        )}
 
-      <div className="flex flex-col">
-        {sections.map((section) => (
-          <SectionGroup
-            key={section.name}
-            section={section}
-            defaultOpen={defaultSectionsOpen}
-            focus={focus}
-          />
-        ))}
-      </div>
-    </Card>
+        <div className="flex flex-col">
+          {sections.map((section) => (
+            <SectionGroup
+              key={section.name}
+              section={section}
+              defaultOpen={defaultSectionsOpen}
+              focus={focus}
+            />
+          ))}
+        </div>
+      </Card>
+    </WrapLinesProvider>
   )
 }

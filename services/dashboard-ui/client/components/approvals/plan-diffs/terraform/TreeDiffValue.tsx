@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { cn } from '@/utils/classnames'
 import { generateDiffLines, type DiffLine } from '@/utils/terraform-utils'
+import { useWrapLines } from '../wrap-lines-context'
 
 interface TreeDiffValueProps {
   before: any
@@ -26,6 +27,7 @@ const prefixChars: Record<DiffLine['prefix'], string> = {
 
 export function TreeDiffValue({ before, after }: TreeDiffValueProps) {
   const [expanded, setExpanded] = useState(false)
+  const wrapLines = useWrapLines()
 
   const lines = useMemo(
     () => generateDiffLines(before, after),
@@ -39,11 +41,15 @@ export function TreeDiffValue({ before, after }: TreeDiffValueProps) {
   return (
     <div className="ml-4 my-1">
       <div className="font-mono text-[13px] leading-6 overflow-x-auto">
-        <div className="min-w-fit">
+        <div className={cn(!wrapLines && 'min-w-fit')}>
         {visibleLines.map((line, i) => (
           <div
             key={i}
-            className={cn('flex whitespace-pre', lineStyles[line.type])}
+            className={cn(
+              'flex',
+              wrapLines ? 'whitespace-pre-wrap break-all' : 'whitespace-pre',
+              lineStyles[line.type]
+            )}
           >
             <span
               className="inline-block w-[2ch] shrink-0 select-none text-right mr-2 opacity-70"
@@ -52,7 +58,10 @@ export function TreeDiffValue({ before, after }: TreeDiffValueProps) {
             </span>
             <span
               style={{ paddingLeft: `${line.indent * 1.5}rem` }}
-              className={cn(line.type === 'removed' && 'line-through opacity-70')}
+              className={cn(
+                'min-w-0',
+                line.type === 'removed' && 'line-through opacity-70'
+              )}
             >
               {line.text === 'Known after apply' ||
               line.text === '"Known after apply"' ? (

@@ -130,10 +130,12 @@ function renderDiffRow(
 function DiffCollapsedLines({
   id,
   count,
+  wrapLongLines,
   children,
 }: {
   id: string
   count: number
+  wrapLongLines?: boolean
   children: React.ReactNode
 }) {
   return (
@@ -149,12 +151,18 @@ function DiffCollapsedLines({
         </span>
       }
     >
-      <div className="whitespace-pre">{children}</div>
+      <div className={wrapLongLines ? 'whitespace-pre-wrap break-all' : 'whitespace-pre'}>
+        {children}
+      </div>
     </Expand>
   )
 }
 
-function collapseUnchangedRuns(renderedRows: any[], lines: string[]) {
+function collapseUnchangedRuns(
+  renderedRows: any[],
+  lines: string[],
+  wrapLongLines?: boolean
+) {
   const nodes: React.ReactNode[] = []
   const n = lines.length
   let i = 0
@@ -183,6 +191,7 @@ function collapseUnchangedRuns(renderedRows: any[], lines: string[]) {
           key={`collapse-${i}`}
           id={`collapse-${i}`}
           count={hiddenCount}
+          wrapLongLines={wrapLongLines}
         >
           {renderedRows.slice(hiddenStart, hiddenEnd)}
         </DiffCollapsedLines>
@@ -205,6 +214,7 @@ interface IPrismCodeBlock
   isDiff?: boolean
   showLineNumbers?: boolean
   collapseUnchanged?: boolean
+  wrapLongLines?: boolean
 }
 
 export function PrismCodeBlock({
@@ -214,6 +224,7 @@ export function PrismCodeBlock({
   isDiff = false,
   showLineNumbers = false,
   collapseUnchanged = true,
+  wrapLongLines = false,
 }: IPrismCodeBlock) {
   const colorScheme = useSystemTheme()
   const bgCode = colorScheme === 'dark' ? 'var(--color-dark-grey-800)' : 'var(--color-cool-grey-100)'
@@ -275,12 +286,17 @@ export function PrismCodeBlock({
                 return renderedRows
               }
 
-              return collapseUnchangedRuns(renderedRows, lines)
+              return collapseUnchangedRuns(renderedRows, lines, wrapLongLines)
             }
           : undefined
       }
       codeTagProps={{
-        className: cn('bg-code font-mono w-full', isDiff && 'min-w-fit block'),
+        className: cn(
+          'bg-code font-mono w-full',
+          isDiff && 'block',
+          isDiff && !wrapLongLines && 'min-w-fit',
+          wrapLongLines && '!whitespace-pre-wrap break-all'
+        ),
       }}
       customStyle={{
         background: 'var(--bg-code)',
