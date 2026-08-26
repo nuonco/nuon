@@ -6,12 +6,12 @@ import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Toast } from '@/components/surfaces/Toast'
 import { Link } from '@/components/common/Link'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -88,30 +88,26 @@ export const InstallSyncs = () => {
           },
         ]}
       />
-      <div className="flex items-center justify-between">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Install syncs
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            Sync install configurations from git.
-          </Text>
-        </HeadingGroup>
-        <div className="flex items-center gap-3">
-          <AdminDashboardLink
-            path={`/queues?owner_id=${app?.id}&owner_type=apps&name=app-install-syncs`}
-            label="View queue"
-          />
-          <ManageInstallsConfigButton />
-          <Button
-            variant="primary"
-            onClick={() => triggerSync()}
-            disabled={isPending}
-          >
-            {isPending ? 'Syncing...' : 'Sync now'}
-          </Button>
-        </div>
-      </div>
+      <SectionHeader
+        title="Install syncs"
+        description="Sync install configurations from git."
+        actions={
+          <>
+            <AdminDashboardLink
+              path={`/queues?owner_id=${app?.id}&owner_type=apps&name=app-install-syncs`}
+              label="View queue"
+            />
+            <ManageInstallsConfigButton />
+            <Button
+              variant="primary"
+              onClick={() => triggerSync()}
+              disabled={isPending}
+            >
+              {isPending ? 'Syncing...' : 'Sync now'}
+            </Button>
+          </>
+        }
+      />
 
       {installsConfig && (
         <Card>

@@ -13,8 +13,13 @@ import { Stacks } from './Stacks'
 import { Versions } from './Versions'
 import { Workflows } from './Workflows'
 import { Readme } from './Readme'
-import { InstallComponentDetail } from './ComponentDetail'
+import { InstallComponentLayout } from './InstallComponentLayout'
+import { InstallComponentOverviewTab } from './install-component-tabs/InstallComponentOverviewTab'
+import { InstallComponentDeploysTab } from './install-component-tabs/InstallComponentDeploysTab'
+import { InstallComponentConfigTab } from './install-component-tabs/InstallComponentConfigTab'
+import { InstallComponentStateTab } from './install-component-tabs/InstallComponentStateTab'
 import { DeployLayout } from './DeployLayout'
+import { DeploySummaryTab } from './deploy-tabs/DeploySummaryTab'
 import { DeployLogsTab } from './deploy-tabs/DeployLogsTab'
 import { DeployTraceTab } from './deploy-tabs/DeployTraceTab'
 import { DeployPlanTab } from './deploy-tabs/DeployPlanTab'
@@ -35,6 +40,7 @@ import { ActionRunDetail } from './ActionRunDetail'
 import { ActionRunLogsPage } from './ActionRunLogs'
 import { ActionRunTracePage } from './ActionRunTrace'
 import { SandboxRunLayout } from './SandboxRunLayout'
+import { SandboxRunSummaryTab } from './sandbox-tabs/SandboxRunSummaryTab'
 import { SandboxRunLogsTab } from './sandbox-tabs/SandboxRunLogsTab'
 import { SandboxRunPlanTab } from './sandbox-tabs/SandboxRunPlanTab'
 import { SandboxRunTraceTab } from './sandbox-tabs/SandboxRunTraceTab'
@@ -91,7 +97,8 @@ export const installRoutes: RouteObject[] = [
         path: ':orgId/installs/:installId/sandbox/runs/:runId',
         element: <SandboxRunLayout />,
         children: [
-          { index: true, element: <SandboxRunLogsTab /> },
+          { index: true, element: <SandboxRunSummaryTab /> },
+          { path: 'logs', element: <SandboxRunLogsTab /> },
           { path: 'trace', element: <SandboxRunTraceTab /> },
           { path: 'plan', element: <SandboxRunPlanTab /> },
           { path: 'variables', element: <SandboxRunVariablesTab /> },
@@ -110,20 +117,20 @@ export const installRoutes: RouteObject[] = [
       { path: ':orgId/installs/:installId/readme', element: <Readme /> },
       {
         path: ':orgId/installs/:installId/components/:componentId',
-        element: <InstallComponentDetail />,
-      },
-      {
-        path: ':orgId/installs/:installId/components/:componentId/deploys',
-        loader: ({ params }) =>
-          redirect(
-            `/${params.orgId}/installs/${params.installId}/components/${params.componentId}`
-          ),
+        element: <InstallComponentLayout />,
+        children: [
+          { index: true, element: <InstallComponentOverviewTab /> },
+          { path: 'deploys', element: <InstallComponentDeploysTab /> },
+          { path: 'config', element: <InstallComponentConfigTab /> },
+          { path: 'state', element: <InstallComponentStateTab /> },
+        ],
       },
       {
         path: ':orgId/installs/:installId/components/:componentId/deploys/:deployId',
         element: <DeployLayout />,
         children: [
-          { index: true, element: <DeployLogsTab /> },
+          { index: true, element: <DeploySummaryTab /> },
+          { path: 'logs', element: <DeployLogsTab /> },
           { path: 'trace', element: <DeployTraceTab /> },
           { path: 'plan', element: <DeployPlanTab /> },
           { path: 'variables', element: <DeployVariablesTab /> },

@@ -272,6 +272,102 @@ problem internally: with `tooltipProps` + `disabled` it renders `aria-disabled` 
 - **Nudge** (a controlled tooltip opened by app state, not hover) uses `useNudge(trigger)` +
   `tooltipProps={{ isOpen, disableHover: true, tipContent }}` — don't re-implement the timer.
 
+### Page shells & headers (`ListPage` / `SectionHeader` / `DetailPage` / `DetailHeader`)
+
+Never hand-assemble a page shell or a heading row. Four scaffolds own it. Full decision records:
+[UXDR 020](./.planning/ux/020-uxdr-page-shell-scaffolds.md) (list/section),
+[plan 024](./.planning/ux/024-plan-detail-scaffolds-and-convergence.md) (detail/run).
+
+| Scaffold | Use for | Renders |
+|----------|---------|---------|
+| **`SectionHeader`** | The one sanctioned heading row: `{ title, description?, status?, actions? }` | `variant="page"` → the row inside a `PageHeader` (h1, `h3` type scale). `variant="section"` (default) → the same row as a plain flex row (h2, `base` scale) at the top of a `PageSection`. |
+| **`ListPage`** | A page or section listing one resource | `SectionHeader` + `createAction` slot + body. `variant="page"` owns `PageLayout → PageContent → PageSection`; `variant="section"` renders a bare `PageSection`. |
+| **`DetailHeader`** | The identity header of one resource: `SectionHeader`'s row plus `{ backLink?, icon?, id?, identity?, metadata? }` | `BackLink` → heading row → ID/identity line → metadata `Card` → `children`. `variant="page"` supplies its own page padding (for a layout's header slot, directly under `PageLayout`); `variant="section"` (default) is padding-free, for use inside a `PageSection`. |
+| **`DetailPage`** | The shell for a detail/run/document page | `PageSection` (a container-query root) + `header` + `banners` + optional routed `TabNav` + body. Same `variant` shell rule as `ListPage`. |
+| **`HistoryRail`** | An entity page's related-history rail | Main column + a history column at `@5xl`. Pair it with `HistoryPanelButton` in the header's `actions` for narrow widths. |
+
+**`SectionHeader` or `DetailHeader`?** One question: *does the header identify a resource?* A
+resource ID, `BackLink`, label badges, a status chip, timestamps, or a metadata block → it is an
+**identity header** → `DetailHeader`. A page or section that just names what you are looking at
+("Components", "Install state", "Processes") → `SectionHeader`. `DetailHeader` renders
+`SectionHeader`'s row internally, so the two never disagree about the heading row itself.
+
+- **Shell ownership:** mounted via a parent layout's `Outlet` → `variant="section"`, never a
+  `PageLayout`. Top of a route tree → `variant="page"`. The scaffold does this for you; no hybrids.
+- **Two slots only.** Heading group left, actions right. Metadata (IDs, timestamps, badges, grids)
+  is content **below** the row — never a second header column.
+- **Create button:** a page listing a UI-creatable resource gets exactly one create button, in
+  `createAction` (primary, verb + object). The empty state may repeat it; the header button never
+  disappears once the list has items. System-created resources (builds, workflows, runner jobs) get
+  none. Non-create header actions go in `actions`.
+- **No search/filter/pagination slot** — `Table` and `Timeline` own those internally (`enableSearch`
+  defaults on; pass `pagination` and `filterActions` to the table, not the page).
+- Non-list section pages (documents, config pages, tab layouts) use `SectionHeader` inside their
+  existing `PageSection` — `ListPage` is for the list archetype.
+- **Every detail page's metadata is a `Card` below the heading row**, built from `LabeledValue` /
+  `LabeledStatus` — pass it to `DetailHeader`'s `metadata` slot. There is no value-count threshold
+  and no inline top-right metadata block.
+- **Run pages always use routed `TabNav`**, landing on a **Summary** tab, ordered
+  Summary · Logs · Trace · component-type tabs. Summary is `RunSummary` — the failure reason,
+  timing milestones, and the runner-job breakdown. Unrouted `Tabs` is a segmented control for
+  facets of one dataset inside a section, never page structure.
+- **Entity pages start as sections + `HistoryRail`** and graduate to routed `TabNav` at a third
+  independent concern (the rail then folds into a history tab).
+- **Review smells:** a hand-rolled `PageHeader` + `HeadingGroup` + actions `div`; a raw
+  `HeadingGroup` or `BackLink` + heading `Text` as a detail-page header; a heading `Text` with no
+  `HeadingGroup`; an Outlet child rendering `PageLayout`; a create button living in the table's
+  `filterActions` or only in the empty state; a hand-rolled `@container` + `grid-cols-12` history
+  rail; a resource's metadata rendered as a second header column.
+
+```tsx
+// Top-of-tree list page
+<ListPage variant="page" title="Installs" description="View and manage all deployed installs here."
+  createAction={<CreateInstallButton variant="primary" />}>
+  <InstallsTable shouldPoll />
+</ListPage>
+
+// Outlet child list page (app/install SubNav children, settings children)
+<ListPage title="App actions" description="Configure and run day-2 operations on your installs.">
+  <ActionsTable />
+</ListPage>
+
+// Non-list section page
+<PageSection>
+  <SectionHeader title="Install state" description="Raw state data for this install."
+    actions={<DownloadStateButton />} />
+  <JSONViewer data={state} />
+</PageSection>
+
+// Run page — identity header + banners + routed tabs (the layout renders the tab content)
+<DetailPage
+  header={<DeployHeader component={component} workflow={workflow} stepId={step?.id} />}
+  banners={deploy?.composite_error ? <CompositeError error={deploy.composite_error} /> : null}
+  tabNav={{ basePath, tabs }}
+>
+  <Outlet context={{ component, workflow, step }} />
+</DetailPage>
+
+// The identity header itself
+<DetailHeader
+  icon={<ComponentType type={component?.type} displayVariant="icon-only" />}
+  title={`${deploy?.component_name} deploy`}
+  id={deploy?.id}
+  identity={<Time time={deploy?.created_at} format="relative" variant="subtext" theme="info" />}
+  actions={<ManagementDropdown … />}
+  metadata={<><LabeledStatus label="Status" … /><LabeledValue label="Duration">…</LabeledValue></>}
+/>
+
+// Entity page — sections in the main column, related history in the rail
+<DetailPage
+  header={<DetailHeader backLink={false} title="Sandbox details" id={install?.sandbox?.id}
+    actions={<><HistoryPanelButton title="Sandbox history" history={history} /><ManagementDropdown /></>} />}
+>
+  <HistoryRail title="Sandbox history" history={history}>
+    <SandboxConfigCard config={sandboxConfig} />
+  </HistoryRail>
+</DetailPage>
+```
+
 ### Labeled-data components (`LabeledValue` / `KeyValueList` / `PropertyGrid`)
 
 Which component renders labeled data is fixed by who names the fields and the shape of each datum.

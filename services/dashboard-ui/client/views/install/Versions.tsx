@@ -3,7 +3,6 @@ import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
@@ -12,6 +11,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
@@ -48,26 +48,26 @@ export const Versions = () => {
           },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          App branch runs
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          History of app config updates applied to this install.
-        </Text>
-        {install?.app_branch_id && (
-          <div className="flex items-center gap-2 mt-1">
+      <SectionHeader
+        title="App branch runs"
+        description="History of app config updates applied to this install."
+        status={
+          install?.app_branch_id ? (
             <Badge size="sm" theme="info">
               {install.app_branch?.name || 'branch'}
             </Badge>
+          ) : null
+        }
+        actions={
+          install?.app_branch_id ? (
             <Link
               href={`/${org?.id}/apps/${install?.app_id}/branches/${install?.app_branch_id}`}
             >
               View branch
             </Link>
-          </div>
-        )}
-      </HeadingGroup>
+          ) : null
+        }
+      />
 
       {isLoading && (
         <Card>

@@ -5,10 +5,8 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useSyncedOnlyFilter } from '@/hooks/use-synced-only-filter'
 import { getInstallRunbooks } from '@/lib'
-import {
-  InstallRunbooksTable,
-  parseInstallRunbooksToTableData,
-} from './InstallRunbooksTable'
+import { RunbooksTable } from './RunbooksTable'
+import { parseInstallRunbooksToTableData } from './parse-install-runbooks'
 
 const LIMIT = 20
 
@@ -75,9 +73,10 @@ export const InstallRunbooksTableContainer = ({
   )
 
   return (
-    <InstallRunbooksTable
+    <RunbooksTable
       data={[...removedRows, ...currentRows]}
       isLoading={isLoading}
+      scope="install"
       filterActions={<SyncedFilterContainer />}
       pagination={{
         hasNext: result?.pagination?.hasNext ?? false,

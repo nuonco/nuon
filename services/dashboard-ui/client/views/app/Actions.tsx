@@ -1,7 +1,5 @@
 import { ActionsTable } from '@/components/actions/ActionsTable'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
-import { PageSection } from '@/components/layout/PageSection'
+import { ListPage } from '@/components/layout/ListPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -12,7 +10,7 @@ export const Actions = () => {
   const { app } = useApp()
 
   return (
-    <PageSection>
+    <>
       <PageTitle segments={['Actions', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
@@ -22,15 +20,12 @@ export const Actions = () => {
           { path: `/${org?.id}/apps/${app?.id}/actions`, text: 'Actions' },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          App actions
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          Configure and run day-2 operations on your installs.
-        </Text>
-      </HeadingGroup>
-      <ActionsTable />
-    </PageSection>
+      <ListPage
+        title="App actions"
+        description="Configure and run day-2 operations on your installs."
+      >
+        <ActionsTable />
+      </ListPage>
+    </>
   )
 }
