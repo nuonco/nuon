@@ -49,6 +49,7 @@ export const InstallActionRunTimeline = ({
             <span className="flex items-center gap-2">
               <Link
                 href={`${basePath}/actions/${actionId}/runs/${run.id}`}
+                variant="inline"
               >
                 {actionName} run
               </Link>

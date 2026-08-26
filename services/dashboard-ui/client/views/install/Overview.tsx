@@ -1,11 +1,10 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
 import { Expand } from '@/components/common/Expand'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Markdown } from '@/components/common/Markdown'
-import { Text } from '@/components/common/Text'
 import { ReadmeWarnings } from '@/components/installs/ReadmeWarnings'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { InstallDetailsButton } from '@/components/installs/ArchitectureDiagram'
@@ -27,7 +26,7 @@ export const Overview = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Overview | ${install?.name}`} />
+      <PageTitle segments={['Overview', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -36,20 +35,16 @@ export const Overview = () => {
         ]}
       />
 
-      <div className="flex items-start justify-between">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Install overview
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            View the install README, architecture, and current inputs.
-          </Text>
-        </HeadingGroup>
-        <div className="flex items-center gap-2">
-          <InstallDetailsButton variant="secondary" />
-          <ViewCurrentInputsButton variant="secondary" />
-        </div>
-      </div>
+      <SectionHeader
+        title="Install overview"
+        description="View the install README, architecture, and current inputs."
+        actions={
+          <>
+            <InstallDetailsButton variant="secondary" />
+            <ViewCurrentInputsButton variant="secondary" />
+          </>
+        }
+      />
 
       {readme?.readme ? (
         <div className="flex flex-col gap-4">

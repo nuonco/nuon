@@ -65,6 +65,12 @@ export const markdownStyles = `
   }
 `
 
+export const markdownAnchorClassName = cn(
+  'text-primary-600 dark:text-primary-500',
+  'hover:text-primary-800 dark:hover:text-primary-400',
+  'no-underline transition-colors'
+)
+
 export const proseClassName = cn(
   'prose dark:prose-invert max-w-[100%]',
   'prose-code:bg-code prose-code:text-sm prose-code:text-blue-500 prose-code:font-mono'

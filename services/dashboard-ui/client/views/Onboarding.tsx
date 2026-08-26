@@ -12,6 +12,7 @@ import { AppProfileStep } from '@/components/onboarding/steps/v2/AppProfileStep'
 import { CloudSetupStep } from '@/components/onboarding/steps/v2/CloudSetupStep'
 import { ProvisioningStep } from '@/components/onboarding/steps/v2/ProvisioningStep'
 import { NextStepsStep } from '@/components/onboarding/steps/v2/NextStepsStep'
+import { PageTitle } from '@/components/navigation/PageTitle'
 import { OnboardingJourneyProvider } from '@/providers/onboarding-journey-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
@@ -195,6 +196,7 @@ export function Onboarding() {
 
   return (
     <ToastProvider>
+      <PageTitle title="Onboarding" />
       <SurfacesProvider>
         {onboardingV2 ? wizard : (
           <OnboardingJourneyProvider>

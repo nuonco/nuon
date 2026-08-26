@@ -1,7 +1,5 @@
 import { ComponentsTable } from '@/components/components/ComponentsTable'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
-import { PageSection } from '@/components/layout/PageSection'
+import { ListPage } from '@/components/layout/ListPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -12,8 +10,8 @@ export const Components = () => {
   const { app } = useApp()
 
   return (
-    <PageSection>
-      <PageTitle title={`Components | ${app?.name}`} />
+    <>
+      <PageTitle segments={['Components', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -22,17 +20,14 @@ export const Components = () => {
           { path: `/${org?.id}/apps/${app?.id}/components`, text: 'Components' },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          App components
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          Manage the components that make up your application.
-        </Text>
-      </HeadingGroup>
-      <div className="flex flex-auto min-w-0">
-        <ComponentsTable />
-      </div>
-    </PageSection>
+      <ListPage
+        title="App components"
+        description="Manage the components that make up your application."
+      >
+        <div className="flex flex-auto min-w-0">
+          <ComponentsTable />
+        </div>
+      </ListPage>
+    </>
   )
 }

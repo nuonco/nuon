@@ -91,7 +91,7 @@ const columns: ColumnDef<TActionRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body">
-          <Link href={info.row.original.href}>{info.getValue() as string}</Link>
+          <Link href={info.row.original.href} variant="inline">{info.getValue() as string}</Link>
         </Text>
         <ID>{info.row.original.actionId as string}</ID>
       </span>
@@ -113,19 +113,6 @@ const columns: ColumnDef<TActionRow>[] = [
     accessorKey: 'actionSteps',
     header: 'Steps',
     cell: (info) => info.getValue() as ReactNode,
-  },
-  {
-    enableSorting: false,
-    accessorKey: 'href',
-    id: 'action',
-    header: '',
-    cell: (info) => (
-      <Text>
-        <Link className="text-left" href={info.getValue() as string}>
-          View <Icon variant="CaretRightIcon" />
-        </Link>
-      </Text>
-    ),
   },
 ]
 
@@ -154,7 +141,7 @@ export const ActionsTable = ({
         emptyTitle: 'No actions yet',
         action: (
           <Link href="https://docs.nuon.co/concepts/actions" isExternal>
-            Learn more <Icon size="14" variant="ArrowSquareOutIcon" />
+            Learn more
           </Link>
         ),
       }}

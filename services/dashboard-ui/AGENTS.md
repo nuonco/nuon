@@ -142,44 +142,99 @@ MainLayout (flex row: sidebar + content)
 
 ### Building Pages
 
-**Org-level page** (top-level route like Apps, Installs, Team):
+**Never hand-assemble a shell or a heading row.** `ListPage`/`SectionHeader` (list & section pages) and `DetailPage`/`DetailHeader` (detail, run and document pages) own both — see [DESIGN.md](./DESIGN.md) §5 "Page shells & headers" for the full rule.
+
+**`SectionHeader` or `DetailHeader`?** Does the header identify a resource — an ID, `BackLink`, label badges, a status chip, timestamps, or a metadata block? Then it is an identity header → `DetailHeader`. A heading that just names what you are looking at ("Components", "Install state") → `SectionHeader`.
+
+**Org-level list page** (top-level route like Apps, Installs, Team) — `variant="page"` owns the `PageLayout`:
 ```tsx
 export const MyPage = () => (
-  <PageLayout>
-    <PageHeader>
-      <PageHeadingGroup title="My page" />
-    </PageHeader>
-    <PageContent>
-      <PageSection>
-        {/* content */}
-      </PageSection>
-    </PageContent>
-  </PageLayout>
+  <>
+    <PageTitle title="My page" />
+    <Breadcrumbs breadcrumbs={[...]} />
+    <ListPage
+      variant="page"
+      title="My page"
+      description="What this page is for."
+      createAction={<CreateThingButton variant="primary" />}
+    >
+      <ThingsTable shouldPoll />
+    </ListPage>
+  </>
 )
 ```
 
-**Child page inside App/Install layout** (rendered via `<Outlet />`):
+**Child list page inside App/Install/Settings layout** (rendered via `<Outlet />`) — default `variant="section"`, renders a bare `PageSection`:
 ```tsx
 export const MyChildPage = () => (
+  <>
+    <PageTitle segments={['My page', app?.name]} />
+    <Breadcrumbs breadcrumbs={[...]} />
+    <ListPage title="My page" description="What this page is for.">
+      <ThingsTable />
+    </ListPage>
+  </>
+)
+```
+
+**Non-list section page** (document, config page, tab layout) — `SectionHeader` inside a `PageSection`:
+```tsx
+export const MyConfigPage = () => (
   <PageSection>
-    {/* content — that's it */}
+    <PageTitle segments={['Configuration', app?.name]} />
+    <Breadcrumbs breadcrumbs={[...]} />
+    <SectionHeader title="Configuration" description="What this page shows." actions={<EditButton />} />
+    {/* content */}
   </PageSection>
 )
 ```
 
-**Detail page with flush header**:
+**Run page** (deploy, build, sandbox run, action run) — `DetailPage` + a `DetailHeader`-based header component + routed `TabNav`. Landing tab is always Summary (`RunSummary`), then Logs · Trace · component-type tabs:
 ```tsx
-export const DeployDetail = () => (
+export const DeployLayout = () => (
   <>
-    <PageSection flush>
-      <DeployHeader />
-    </PageSection>
-    <PageSection>
-      <Logs />
-    </PageSection>
+    <Breadcrumbs breadcrumbs={[...]} />
+    <DetailPage
+      header={<DeployHeader component={component} workflow={workflow} stepId={step?.id} />}
+      banners={deploy?.composite_error ? <CompositeError error={deploy.composite_error} /> : null}
+      tabNav={{ basePath, tabs }}
+    >
+      <Outlet context={{ component, workflow, step }} />
+    </DetailPage>
   </>
 )
 ```
+
+**Entity page** (a configured thing: component, action, sandbox) — `DetailPage` + `HistoryRail`; the small-screen `HistoryPanelButton` goes in the header's `actions`. It graduates to routed `TabNav` once the page gains a third independent concern:
+```tsx
+export const Sandbox = () => {
+  const history = <SandboxRunsTimeline shouldPoll />
+  return (
+    <>
+      <PageTitle segments={['Sandbox', install?.name]} />
+      <Breadcrumbs breadcrumbs={[...]} />
+      <DetailPage
+        header={
+          <DetailHeader
+            backLink={false}
+            title="Sandbox details"
+            id={install?.sandbox?.id}
+            actions={<><HistoryPanelButton title="Sandbox history" history={history} /><ManagementDropdown /></>}
+          />
+        }
+      >
+        <HistoryRail title="Sandbox history" history={history}>
+          <SandboxConfigCard config={sandboxConfig} />
+        </HistoryRail>
+      </DetailPage>
+    </>
+  )
+}
+```
+
+**Metadata always goes in `DetailHeader`'s `metadata` slot** — it renders a `Card` of `LabeledValue`/`LabeledStatus` below the heading row. No inline top-right metadata block, no count threshold.
+
+`PageTitle` and `Breadcrumbs` are headless setters — render them as siblings before the scaffold, not inside it.
 
 ### Layout Components
 
@@ -188,8 +243,13 @@ export const DeployDetail = () => (
 | `PageLayout` | Top-level page wrapper. Renders topbar, scroll container, and BackToTop automatically. | `variant` (`dashboard-page` / `single-page`), `hideBreadcrumbs` |
 | `PageContent` | Sets flex direction for content area. | `variant` (`column` default, `row` for SubNav layouts) |
 | `PageSection` | Content block with standard padding/gap. | `flush` (removes padding/gap for full-bleed content) |
-| `PageHeader` | Page heading area above content. | Standard div props |
+| `PageHeader` | Page heading area above content. Rendered for you by `SectionHeader variant="page"`. | Standard div props |
+| `SectionHeader` | The only sanctioned heading row: heading group left, actions right. | `title`, `description`, `status`, `actions`, `variant` (`section` default / `page`) |
+| `ListPage` | List-archetype scaffold: `SectionHeader` + create action + body. Owns the shell per variant. | `title`, `description`, `status`, `actions`, `createAction`, `variant` |
 | `SubNav` | Secondary navigation sidebar. Sticky on desktop, horizontal scroll on mobile. | `basePath`, `links` |
+| `DetailHeader` | A resource's identity header: BackLink + heading row + ID/identity line + metadata `Card`. | `title`, `id`, `identity`, `icon`, `status`, `actions`, `metadata`, `backLink`, `loading`, `variant` |
+| `DetailPage` | Detail/run/document scaffold: header + banners + optional routed `TabNav` + body. | `header`, `banners`, `tabNav`, `variant` |
+| `HistoryRail` / `HistoryPanelButton` | Entity page's history rail (`@5xl` column) and its narrow-width panel trigger. | `title`, `history`, `children` |
 
 ### What You Get For Free
 
@@ -204,6 +264,14 @@ export const DeployDetail = () => (
 - Create `CONTAINER_ID` constants or pass `id` props to scroll containers
 - Import or render `<BackToTop />` in view files — PageLayout handles it
 - Use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead. (This rule is PageSection-specific: `Card` has no padding prop, so overriding it with paired values like `!p-4 !gap-4` is fine — always change padding and gap together so the spacing rhythm stays consistent.)
+- Hand-assemble a heading row (`PageHeader` + `HeadingGroup` + an actions `div`, or a bare heading `Text`) — use `SectionHeader`/`ListPage`
+- Hand-roll a detail page's identity header (`BackLink` + heading `Text` + `<ID>`) — use `DetailHeader`
+- Hand-roll a history rail (`@container` + `grid-cols-12` + a `@5xl:hidden` panel button) — use `HistoryRail` + `HistoryPanelButton`
+- Use unrouted `Tabs` for page structure on a detail page — detail-page tabs are always routed `TabNav`
+- Render `PageLayout` from a view mounted via a parent layout's `Outlet` — that's the `section` variant's job
+- Put metadata (IDs, timestamps, badges, grids) in a second header column — it's content below the heading row
+- Leave a create button in the table's `filterActions` or only in the empty state — it belongs in `ListPage`'s `createAction`
+- Add a page-level search or pagination control — `Table`/`Timeline` own those
 
 ### Mobile Sidebar
 
@@ -237,6 +305,36 @@ import { redirect, type RouteObject } from 'react-router'
 ```
 
 See `client/views/install/routes.tsx` for more examples.
+
+## Page Titles (`document.title`, UXDR 018)
+
+**Every routed view sets its own title. Layouts NEVER set it — the leaf view that renders the page owns `document.title`.** `PageTitleProvider` (mounted once at the app root) appends `| Nuon`, so a view supplies at most two segments, **most specific first**: `{specific} | {owning entity}`.
+
+- **`{specific}`** — sentence-case section name (`'Components'`, `'API tokens'`); the entity's own name for detail pages (`resource?.name`); for a **tab page**, fold the parent context in (`'Deploy logs'`, `` `${runbook?.name} steps` ``).
+- **`{owning entity}`** — the install or app name from `useInstall()` / `useApp()`. **Org-level pages have NO owner segment** — the org name is never a title segment (`<PageTitle title="Webhooks" />`).
+- Unset segments are dropped automatically — pass `install?.name`, never a guarded string or `${x?.name}` interpolation (which prints `"undefined"`).
+
+Render `<PageTitle>` as the **first element** the view returns:
+
+```tsx
+// Section / detail view
+<PageTitle title="Components" />
+<PageTitle segments={['Components', install?.name]} />
+
+// Views with early returns (loading/empty/error — common in tab panels):
+// wrap the body in a fragment so the title renders on every branch.
+export const DeployPlanTab = () => {
+  const { install } = useInstall()
+  return (
+    <>
+      <PageTitle segments={['Deploy plan', install?.name]} />
+      {isLoading ? <Skeleton /> : <Plan … />}
+    </>
+  )
+}
+```
+
+`PageTitle` lives in `client/components/navigation/PageTitle.tsx`. A `<PageTitle>` buried in only the happy-path return of an early-returning view is a bug — the title goes stale on the other branches; wrap in a fragment so it always renders. The `dashboard-ui:view` skill covers this for new views.
 
 ## API Integration (`client/lib/api.ts`)
 
@@ -612,26 +710,45 @@ A dev-mode console warning will tell you when a variant is missing from the map.
 
 ### Links & Navigation
 
-**Never import `Link` from `react-router` directly.** Use the common components instead:
+**Never import `Link` from `react-router` directly.** Use `Link` from `@/components/common/Link`
+(uses `href`, not `to`).
 
-- For inline text links: `Link` from `@/components/common/Link` (uses `href`, not `to`)
-- For navigation buttons (icon buttons, ghost nav actions): `Button` with `href` and `variant="ghost"`
+Every content link is one of three classes — see **[DESIGN.md](./DESIGN.md) §5 "Links"** and
+**[COPY_STYLE.md](./COPY_STYLE.md#links)** for the full taxonomy:
+
+- **Entity link** — the resource's name is the link text; the name navigates. No verb, no icon.
+- **View link** — a standalone `View {resource}` link. The default `Link` self-sizes at
+  subtext — no wrapper needed; use `textVariant` to size explicitly.
+- **External link** — set `isExternal`; the new-tab icon renders automatically (never hand-place
+  `ArrowSquareOutIcon`).
+
+**Sizing is component-owned:** the default `Link` renders at subtext on its own (`textVariant`
+to override); `variant="inline"` inherits the surrounding text — use it for links inside
+sentences, table cells, and other sized contexts. Never size a `Link` with a text-size class or
+a `Text` wrapper. Links never carry a trailing `CaretRightIcon`/`ArrowRightIcon` or a manual
+external icon. **Row navigation is the entity link — not** an icon-only
+`<Button href><Icon/></Button>` (deprecated; icon-only buttons are for non-nav chrome only).
 
 ```tsx
-// ✅ Correct — text link
+// ✅ Entity link in a sized context (table cell, sentence) — inherits via inline
 import { Link } from '@/components/common/Link'
-<Link href={`/${org.id}/connections/vcs/${id}`}>View</Link>
+<Link href={`/${org.id}/connections/vcs/${id}`} variant="inline">{connection.name}</Link>
 
-// ✅ Correct — nav button
-import { Button } from '@/components/common/Button'
-<Button href={`/${org.id}/connections/vcs/${id}`} variant="ghost" size="xs">
-  <Icon variant="ArrowRightIcon" size={16} />
-</Button>
+// ✅ View link — standalone, self-sizes at subtext (no wrapper)
+<Link href={`/${org.id}/connections/vcs/${id}`}>View connection</Link>
 
-// ❌ Wrong
+// ✅ External — isExternal renders the new-tab icon
+<Link href="https://docs.nuon.co" isExternal>View docs</Link>
+
+// ❌ Wrong — react-router import, sizing wrapper/class, icon-only nav button
 import { Link } from 'react-router'
-<Link to={`/${org.id}/connections/vcs/${id}`}>View</Link>
+<Text variant="subtext"><Link href="...">View connection</Link></Text>
+<Link href="..." className="text-xs">View connection</Link>
+<Button href={`/${org.id}/...`} variant="ghost"><Icon variant="ArrowRightIcon" /></Button>
 ```
+
+Markdown is the exception: the `Markdown` renderers emit plain styled `<a>` tags
+(`markdownAnchorClassName`), never the React `Link` — don't swap components into markdown.
 
 ### Button tooltips (disabled reasons & nudges)
 

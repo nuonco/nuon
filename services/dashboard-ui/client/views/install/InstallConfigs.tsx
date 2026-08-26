@@ -3,7 +3,6 @@ import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
@@ -12,6 +11,7 @@ import { Time } from '@/components/common/Time'
 import { Card } from '@/components/common/Card'
 import { ChangeCountSummary } from '@/components/approvals/plan-diffs/ChangeCountSummary'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { Toast } from '@/components/surfaces/Toast'
@@ -75,7 +75,7 @@ export const InstallConfigs = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Configs | ${install?.name}`} />
+      <PageTitle segments={['Configs', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -88,17 +88,11 @@ export const InstallConfigs = () => {
         ]}
       />
 
-      <div className="flex items-start justify-between gap-4">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Config history
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            Install config versions synced from git.
-          </Text>
-        </HeadingGroup>
-        {canSync && (
-          <div className="shrink-0">
+      <SectionHeader
+        title="Config history"
+        description="Install config versions synced from git."
+        actions={
+          canSync ? (
             <Button
               variant="secondary"
               disabled={isSyncing}
@@ -106,9 +100,9 @@ export const InstallConfigs = () => {
             >
               {isSyncing ? 'Syncing...' : 'Sync now'}
             </Button>
-          </div>
-        )}
-      </div>
+          ) : null
+        }
+      />
 
       {isLoading && (
         <Card>

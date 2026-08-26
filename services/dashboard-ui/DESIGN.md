@@ -181,6 +181,10 @@ These are the specific inconsistencies that make the UI look "off". Treat each a
    `Record<string, string>` display map whose entries just equal `humanize(key)` is dead weight.
    A `Badge` rendering a lifecycle status (use `Status`), a mono/`variant="code"` chip over
    vocabulary, or a sans chip over an identifier are all mis-classifications.
+10. **No link slop.** A trailing `CaretRightIcon`/`ArrowRightIcon` on a link, a hand-placed
+    `ArrowSquareOutIcon` next to an external link (the icon is component-owned via `isExternal`),
+    a text-size class on a `Link`, a non-"View" link verb ("See"/"Open"/"Go to"), or an
+    icon-only `<Button href><Icon/></Button>` used as row navigation are all slop. See §5 "Links".
 
 ---
 
@@ -268,6 +272,125 @@ problem internally: with `tooltipProps` + `disabled` it renders `aria-disabled` 
 - **Nudge** (a controlled tooltip opened by app state, not hover) uses `useNudge(trigger)` +
   `tooltipProps={{ isOpen, disableHover: true, tipContent }}` — don't re-implement the timer.
 
+### Page shells & headers (`ListPage` / `SectionHeader` / `DetailPage` / `DetailHeader`)
+
+Never hand-assemble a page shell or a heading row. Four scaffolds own it. Full decision records:
+[UXDR 020](./.planning/ux/020-uxdr-page-shell-scaffolds.md) (list/section),
+[plan 024](./.planning/ux/024-plan-detail-scaffolds-and-convergence.md) (detail/run).
+
+| Scaffold | Use for | Renders |
+|----------|---------|---------|
+| **`SectionHeader`** | The one sanctioned heading row: `{ title, description?, status?, actions? }` | `variant="page"` → the row inside a `PageHeader` (h1, `h3` type scale). `variant="section"` (default) → the same row as a plain flex row (h2, `base` scale) at the top of a `PageSection`. |
+| **`ListPage`** | A page or section listing one resource | `SectionHeader` + `createAction` slot + body. `variant="page"` owns `PageLayout → PageContent → PageSection`; `variant="section"` renders a bare `PageSection`. |
+| **`DetailHeader`** | The identity header of one resource: `SectionHeader`'s row plus `{ backLink?, icon?, id?, identity?, metadata? }` | `BackLink` → heading row → ID/identity line → metadata `Card` → `children`. `variant="page"` supplies its own page padding (for a layout's header slot, directly under `PageLayout`); `variant="section"` (default) is padding-free, for use inside a `PageSection`. |
+| **`DetailPage`** | The shell for a detail/run/document page | `PageSection` (a container-query root) + `header` + `banners` + optional routed `TabNav` + body. Same `variant` shell rule as `ListPage`. |
+| **`HistoryRail`** | An entity page's related-history rail | Main column + a history column at `@5xl`. Pair it with `HistoryPanelButton` in the header's `actions` for narrow widths. |
+
+**`SectionHeader` or `DetailHeader`?** One question: *does the header identify a resource?* A
+resource ID, `BackLink`, label badges, a status chip, timestamps, or a metadata block → it is an
+**identity header** → `DetailHeader`. A page or section that just names what you are looking at
+("Components", "Install state", "Processes") → `SectionHeader`. `DetailHeader` renders
+`SectionHeader`'s row internally, so the two never disagree about the heading row itself.
+
+- **Shell ownership:** mounted via a parent layout's `Outlet` → `variant="section"`, never a
+  `PageLayout`. Top of a route tree → `variant="page"`. The scaffold does this for you; no hybrids.
+- **Two slots only.** Heading group left, actions right. Metadata (IDs, timestamps, badges, grids)
+  is content **below** the row — never a second header column.
+- **Create button:** a page listing a UI-creatable resource gets exactly one create button, in
+  `createAction` (primary, verb + object). The empty state may repeat it; the header button never
+  disappears once the list has items. System-created resources (builds, workflows, runner jobs) get
+  none. Non-create header actions go in `actions`.
+- **No search/filter/pagination slot** — `Table` and `Timeline` own those internally (`enableSearch`
+  defaults on; pass `pagination` and `filterActions` to the table, not the page).
+- Non-list section pages (documents, config pages, tab layouts) use `SectionHeader` inside their
+  existing `PageSection` — `ListPage` is for the list archetype.
+- **Every detail page's metadata is a `Card` below the heading row**, built from `LabeledValue` /
+  `LabeledStatus` — pass it to `DetailHeader`'s `metadata` slot. There is no value-count threshold
+  and no inline top-right metadata block.
+- **Run pages always use routed `TabNav`**, landing on a **Summary** tab, ordered
+  Summary · Logs · Trace · component-type tabs. Summary is `RunSummary` — the failure reason,
+  timing milestones, and the runner-job breakdown. Unrouted `Tabs` is a segmented control for
+  facets of one dataset inside a section, never page structure.
+- **Entity pages start as sections + `HistoryRail`** and graduate to routed `TabNav` at a third
+  independent concern (the rail then folds into a history tab).
+- **Review smells:** a hand-rolled `PageHeader` + `HeadingGroup` + actions `div`; a raw
+  `HeadingGroup` or `BackLink` + heading `Text` as a detail-page header; a heading `Text` with no
+  `HeadingGroup`; an Outlet child rendering `PageLayout`; a create button living in the table's
+  `filterActions` or only in the empty state; a hand-rolled `@container` + `grid-cols-12` history
+  rail; a resource's metadata rendered as a second header column.
+
+```tsx
+// Top-of-tree list page
+<ListPage variant="page" title="Installs" description="View and manage all deployed installs here."
+  createAction={<CreateInstallButton variant="primary" />}>
+  <InstallsTable shouldPoll />
+</ListPage>
+
+// Outlet child list page (app/install SubNav children, settings children)
+<ListPage title="App actions" description="Configure and run day-2 operations on your installs.">
+  <ActionsTable />
+</ListPage>
+
+// Non-list section page
+<PageSection>
+  <SectionHeader title="Install state" description="Raw state data for this install."
+    actions={<DownloadStateButton />} />
+  <JSONViewer data={state} />
+</PageSection>
+
+// Run page — identity header + banners + routed tabs (the layout renders the tab content)
+<DetailPage
+  header={<DeployHeader component={component} workflow={workflow} stepId={step?.id} />}
+  banners={deploy?.composite_error ? <CompositeError error={deploy.composite_error} /> : null}
+  tabNav={{ basePath, tabs }}
+>
+  <Outlet context={{ component, workflow, step }} />
+</DetailPage>
+
+// The identity header itself
+<DetailHeader
+  icon={<ComponentType type={component?.type} displayVariant="icon-only" />}
+  title={`${deploy?.component_name} deploy`}
+  id={deploy?.id}
+  identity={<Time time={deploy?.created_at} format="relative" variant="subtext" theme="info" />}
+  actions={<ManagementDropdown … />}
+  metadata={<><LabeledStatus label="Status" … /><LabeledValue label="Duration">…</LabeledValue></>}
+/>
+
+// Entity page — sections in the main column, related history in the rail
+<DetailPage
+  header={<DetailHeader backLink={false} title="Sandbox details" id={install?.sandbox?.id}
+    actions={<><HistoryPanelButton title="Sandbox history" history={history} /><ManagementDropdown /></>} />}
+>
+  <HistoryRail title="Sandbox history" history={history}>
+    <SandboxConfigCard config={sandboxConfig} />
+  </HistoryRail>
+</DetailPage>
+```
+
+### Labeled-data components (`LabeledValue` / `KeyValueList` / `PropertyGrid`)
+
+Which component renders labeled data is fixed by who names the fields and the shape of each datum.
+Classify with the tests, then apply the treatment. Full decision record:
+[UXDR 022](./.planning/ux/022-uxdr-labeled-data-components.md).
+
+| Component | Test | Data shape |
+|-----------|------|------------|
+| **`LabeledValue`** (composed into a metadata block) | Did we write the label in the code? | Author-designed field set — labels are UI copy (`Status`, `Created`, `Cluster IP`). Sentence case. |
+| **`KeyValueList`** | Is this a key → value mapping from the API/user? | Semantically a map — each key's value IS the datum (outputs, env vars, tags, rendered TF/Helm/K8s values, log attributes). Keys/values are identifiers: mono, verbatim, **never re-cased**. |
+| **`PropertyGrid`** | Records with author-named columns, not a mapping? | Array of records whose columns we name (`{name, default, required}`, `{field, type, description}`). Field count is irrelevant — a two-field record is still a record; what disqualifies `KeyValueList` is that the second field isn't "the value of" the first. |
+
+- **`PropertyGrid` vs `Table` boundary:** `PropertyGrid` is static, descriptive records embedded
+  in a detail context. The moment the surface needs pagination, search, sorting, row actions, or
+  row drill-down, it is a `Table` (see below). A `PropertyGrid` carrying any of those is a violation.
+- **Header/label casing:** `LabeledValue` labels and explicit `PropertyGrid` headers are UI copy →
+  sentence case. `PropertyGrid`'s auto-derived headers route through `humanize()` (never
+  hand-rolled title casing). `KeyValueList` keys are never re-cased.
+- **Review smells:** a hand-rolled label/value `Text` stack (`flex flex-col` with a neutral
+  subtext label above a value → use `LabeledValue`); a 2-column `PropertyGrid` (it's a map →
+  `KeyValueList`, or author-labeled metadata → `LabeledValue` block); a `PropertyGrid` with row
+  actions/pagination (→ `Table`); re-cased `KeyValueList` keys.
+
 ### Tables
 Prefer the Stratus `Table`. If you must hand-roll (e.g. inside a modal), mirror its styling:
 - Header row on the secondary surface: `bg-cool-grey-100 dark:bg-dark-grey-700`.
@@ -311,11 +434,45 @@ const orgConfirmText = org?.name || orgId
 <AdminActionCard inputText={orgConfirmText} … />
 ```
 
-### Links — internal first
-Prefer in-app navigation; only fall back to external URLs. Drive `isExternal` off the internal href:
+### Links — the taxonomy (copy, icon, size)
+Every content link is exactly one of three classes; the class fixes copy, icon, and size.
+**Destination decides first: anything leaving the app is an external link, whatever its text.**
+(Nav-chrome — sidebar/MainNav, SubNav, breadcrumbs, tabs — is out of scope; it lives under the
+`Link` `nav`/`breadcrumb` variants.)
+
+- **Entity link** (internal): the resource's own name IS the link text (table cells, inline
+  refs). No verb, no icon; the name navigates. The name renders verbatim per §1's
+  rendered-string taxonomy.
+- **View link** (internal): a standalone "go see more" link. Copy is `View {resource}`
+  ("View plan", "View logs"), `View all {resources}` for lists, or `View details` only when no
+  better noun exists. Sentence case; no other verbs ("See"/"Open"/"Go to" all become "View").
+- **External link**: anything leaving the app (docs, cloud consoles, GitHub). Always `isExternal`.
+
+**Icons:**
+- Internal links carry **no link-affordance icon** — a trailing `CaretRightIcon`/`ArrowRightIcon`
+  on a link is slop; the copy already says what happens. Leading *content* icons (a
+  `GitBranchIcon` before a branch name) stay legal — they describe the resource, not the click.
+- The external new-tab icon is **component-owned**: `Link` renders it automatically when
+  `isExternal` (and `target` isn't `_self`). Never hand-place `ArrowSquareOutIcon` next to a
+  link. `AdminDashboardLink`/`TemporalLink` inherit this.
+- **No icon-only link/nav buttons.** `<Button href><Icon .../></Button>` is deprecated — row
+  navigation is the entity link. Icon-only buttons are legal only for non-nav chrome
+  (modal/panel close, dismiss).
+
+**Size is component-owned.** The default `Link` self-sizes at subtext (`textVariant` to size
+explicitly, e.g. `textVariant="body"`); `variant="inline"` inherits the surrounding text — use
+it for links inside sentences, table cells, and other sized contexts. Sizing a `Link` with a
+text-size class or a `Text` wrapper is slop.
+
+Prefer in-app navigation; drive `isExternal` off the internal href when a link may be either:
 ```tsx
 <Link href={href ?? `https://github.com/${name}`} isExternal={!href}>…</Link>
 ```
+
+Markdown is the exception: the `Markdown` renderers emit plain styled `<a>` tags
+(`markdownAnchorClassName` in `markdown-styles.ts`), never the React `Link` — markdown links
+inherit prose sizing natively and get no auto icon. Don't swap React components into markdown
+renderers.
 
 ### Resizable split panel
 `flex` layout, width via a CSS var; draggable `role="separator"` with `tabIndex={0}`,

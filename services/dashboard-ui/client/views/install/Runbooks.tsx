@@ -1,7 +1,6 @@
-import { InstallRunbooksTable } from '@/components/runbooks/InstallRunbooksTable'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
+import { InstallRunbooksTable } from '@/components/runbooks/RunbooksTable'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
@@ -13,7 +12,7 @@ export const Runbooks = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Runbooks | ${install?.name}`} />
+      <PageTitle segments={['Runbooks', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -25,14 +24,10 @@ export const Runbooks = () => {
           },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          Runbooks
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          View and run operational procedures for this install.
-        </Text>
-      </HeadingGroup>
+      <SectionHeader
+        title="Runbooks"
+        description="View and run operational procedures for this install."
+      />
       <InstallRunbooksTable shouldPoll />
     </PageSection>
   )

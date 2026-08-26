@@ -4,9 +4,13 @@ import { BuildSandboxButton } from '@/components/sandbox/management/BuildSandbox
 import { SandboxBuildTimeline } from '@/components/sandbox/builds/SandboxBuildTimeline'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
-import { PageSection } from '@/components/layout/PageSection'
+import { DetailPage } from '@/components/layout/DetailPage'
+import {
+  HistoryPanelButton,
+  HistoryRail,
+} from '@/components/layout/HistoryRail'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -34,9 +38,11 @@ export const Sandbox = () => {
     enabled: !!org?.id && !!app?.id && !!appConfigId,
   })
 
+  const history = <SandboxBuildTimeline shouldPoll />
+
   return (
-    <PageSection>
-      <PageTitle title={`Sandbox | ${app?.name}`} />
+    <>
+      <PageTitle segments={['Sandbox', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -46,20 +52,21 @@ export const Sandbox = () => {
         ]}
       />
 
-      <div className="flex items-start justify-between">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Sandbox
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            Test builds in an isolated environment before deploying to installs.
-          </Text>
-        </HeadingGroup>
-        <BuildSandboxButton />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">
-        <div className="md:col-span-8 flex flex-col gap-6">
+      <DetailPage
+        header={
+          <SectionHeader
+            title="Sandbox"
+            description="Test builds in an isolated environment before deploying to installs."
+            actions={
+              <>
+                <HistoryPanelButton title="Build history" history={history} />
+                <BuildSandboxButton />
+              </>
+            }
+          />
+        }
+      >
+        <HistoryRail title="Build history" history={history}>
           {isLoading ? (
             <Card>
               <Text>Loading...</Text>
@@ -76,15 +83,8 @@ export const Sandbox = () => {
               emptyMessage="Configure a sandbox in your application configuration to see it here."
             />
           )}
-        </div>
-
-        <div className="md:col-span-4 flex flex-col gap-4">
-          <Text variant="base" weight="strong">
-            Build history
-          </Text>
-          <SandboxBuildTimeline shouldPoll />
-        </div>
-      </div>
-    </PageSection>
+        </HistoryRail>
+      </DetailPage>
+    </>
   )
 }

@@ -105,7 +105,7 @@ const columns: ColumnDef<InstallActionRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body" flex className="items-center gap-2">
-          <Link href={info.row.original.href}>{info.getValue() as string}</Link>
+          <Link href={info.row.original.href} variant="inline">{info.getValue() as string}</Link>
           {info.row.original.removed ? (
             <RemovedFromAppConfigBadge kind="action" />
           ) : null}
@@ -142,19 +142,6 @@ const columns: ColumnDef<InstallActionRow>[] = [
     header: 'Status',
     cell: (info) => info.getValue() as ReactNode,
   },
-  {
-    enableSorting: false,
-    accessorKey: 'href',
-    id: 'action',
-    header: '',
-    cell: (info) => (
-      <Text>
-        <Link className="text-left" href={info.getValue() as string}>
-          View <Icon variant="CaretRightIcon" />
-        </Link>
-      </Text>
-    ),
-  },
 ]
 
 interface IInstallActionsTable {
@@ -183,7 +170,7 @@ export const InstallActionsTable = ({
         emptyTitle: 'No actions yet',
         action: (
           <Link href="https://docs.nuon.co/concepts/actions" isExternal>
-            Learn more <Icon size="14" variant="ArrowSquareOutIcon" />
+            Learn more
           </Link>
         ),
       }}

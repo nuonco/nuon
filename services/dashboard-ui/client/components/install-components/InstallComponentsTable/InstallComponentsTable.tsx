@@ -46,7 +46,6 @@ export function parseInstallComponentSummaryToTableData(
   orgId: string,
   installId: string,
   configConnections?: TComponentConfig[],
-  componentToggles?: { [key: string]: boolean },
   labelColors?: Record<string, string>,
   overriddenComponentNames?: Set<string>,
   removed = false
@@ -61,13 +60,7 @@ export function parseInstallComponentSummaryToTableData(
 
     let toggleStatusNode: ReactNode = <Icon variant="MinusIcon" />
     if (isToggleable) {
-      const componentId = component?.component_id
-      let isDisabled = false
-      if (componentToggles && componentId && componentId in componentToggles) {
-        isDisabled = !componentToggles[componentId]
-      } else {
-        isDisabled = !configConnection?.default_enabled
-      }
+      const isDisabled = component?.enabled === false
       toggleStatusNode = (
         <Badge size="sm" theme={isDisabled ? 'neutral' : 'success'}>
           {isDisabled ? 'Disabled' : 'Enabled'}
@@ -202,7 +195,7 @@ const baseColumns: ColumnDef<InstallComponentRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body" flex className="items-center gap-2">
-          <Link href={info.row.original.href}>{info.getValue() as string}</Link>
+          <Link href={info.row.original.href} variant="inline">{info.getValue() as string}</Link>
           {info.row.original.removed ? (
             <RemovedFromAppConfigBadge kind="component" />
           ) : null}

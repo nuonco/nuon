@@ -1,10 +1,9 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Markdown } from '@/components/common/Markdown'
 import { Skeleton } from '@/components/common/Skeleton'
-import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -36,7 +35,7 @@ export const Readme = () => {
 
   return (
     <PageSection className="!pb-6">
-      <PageTitle title={`README | ${app?.name}`} />
+      <PageTitle segments={['README', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -46,14 +45,10 @@ export const Readme = () => {
         ]}
       />
 
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          README
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          Documentation provided with your app configuration.
-        </Text>
-      </HeadingGroup>
+      <SectionHeader
+        title="README"
+        description="Documentation provided with your app configuration."
+      />
 
       {isLoading ? (
         <ReadmeSkeleton />

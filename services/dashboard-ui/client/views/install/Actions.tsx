@@ -1,8 +1,7 @@
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
 import { InstallActionsTable } from '@/components/actions/InstallActionsTable'
 import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
@@ -14,7 +13,7 @@ export const Actions = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Actions | ${install?.name}`} />
+      <PageTitle segments={['Actions', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -26,19 +25,11 @@ export const Actions = () => {
           },
         ]}
       />
-      <div className="flex items-start justify-between gap-4">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Actions
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            View and manage all actions for this install.
-          </Text>
-        </HeadingGroup>
-        <div className="shrink-0">
-          <RunAdhocActionButton />
-        </div>
-      </div>
+      <SectionHeader
+        title="Actions"
+        description="View and manage all actions for this install."
+        actions={<RunAdhocActionButton />}
+      />
 
       <InstallActionsTable shouldPoll />
     </PageSection>

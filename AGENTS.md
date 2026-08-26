@@ -350,7 +350,7 @@ receiver.
 
 ### Driving the Nuon CLI as an agent
 
-The `nuon` CLI has an agent-facing surface (see `bins/cli/AGENTS.md` "Output format" / "MCP server" / "Read-only
+The `nuon` CLI has an agent-facing surface (see `bins/cli/AGENTS.md` "Output format" / "MCP" / "Read-only
 mode" for details). When running `nuon` commands from a Claude session, prefer:
 
 - **`--output agent`** — stdout is exactly one `{"ok":true,"data":...}` / `{"ok":false,"error":{"code","message"}}`
@@ -360,10 +360,11 @@ mode" for details). When running `nuon` commands from a Claude session, prefer:
   builds failed/timed out (exit 1 = sync failed).
 - **`--read-only`** (or `NUON_READ_ONLY=1`) — guardrail that blocks any command mutating remote state (exit 2).
   Use it by default unless the task explicitly requires writes.
-- **`nuon mcp`** — stdio MCP server with read tools (`whoami`, `list_apps`, `get_app`, `list_installs`,
-  `get_install`, `list_install_components`, `list_components`); `--allow-writes` adds `create_install` /
-  `deploy_component`. Auth comes from `~/.nuon` (run `nuon auth login` first). Tools default to the selected
-  app/install context (what `nuon -h` shows); `whoami` reports it; pass `all=true` to list tools for org-wide.
+- **`nuon agents context`** — markdown orientation for the current CLI selection and how to use MCP.
+- **`nuon agents mcp`** — stdio MCP proxy to the control-plane HTTP MCP server; injects token + org ID from
+  `~/.nuon`. Read-only by default; `--allow-writes` exposes tools prefixed with `WRITE OPERATION:`.
+  (`nuon mcp` is a deprecated alias.) Auth: run `nuon auth login` first. Tools come from ctl-api (not local CLI
+  implementations); pass `X-Nuon-Org-ID` / selected org for multi-org accounts.
 - The dev build lives at `~/bin/nuon-dev`; rebuild with `cd bins/cli && go build -o ~/bin/nuon-dev .`
 
 ## User Journey & Onboarding System

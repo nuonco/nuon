@@ -1,18 +1,19 @@
 import type { ReactNode } from 'react'
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
-import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
-import { Card } from '@/components/common/Card'
 import { Duration } from '@/components/common/Duration'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import type { TActionConfigTriggerType, TInstallActionRun, TWorkflow, TWorkflowStep } from '@/types'
-import { cn } from '@/utils/classnames'
+import { DetailHeader } from '@/components/layout/DetailHeader'
+import type {
+  TActionConfigTriggerType,
+  TInstallActionRun,
+  TWorkflow,
+  TWorkflowStep,
+} from '@/types'
 
 interface IInstallActionRunHeader {
   actionId: string
@@ -40,62 +41,41 @@ export const InstallActionRunHeader = ({
   runnerJobPlanButton,
 }: IInstallActionRunHeader) => {
   return (
-    <header className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-4 justify-between w-full">
-        <HeadingGroup>
-          <BackLink className="mb-4" />
-          <Text
-            flex
-            className="gap-4 mb-2"
-            variant="h3"
-            weight="strong"
-          >
-            {actionName}{' '}
-            <ActionTriggerType
-              componentName={installActionRun?.run_env_vars?.COMPONENT_NAME}
-              componentPath={`${basePath}/components/${installActionRun?.run_env_vars?.COMPONENT_ID}`}
-              triggerType={
-                installActionRun?.triggered_by_type as TActionConfigTriggerType
-              }
-              size="sm"
-            />
-          </Text>
-          <span className="flex items-center gap-4">
-            <ID>{actionId}</ID>{' '}
-            {isAdmin && installActionRun?.install_action_workflow_id ? (
-              <ID>{String(installActionRun.install_action_workflow_id)}</ID>
-            ) : null}
-          </span>
+    <DetailHeader
+      title={actionName}
+      status={
+        <ActionTriggerType
+          componentName={installActionRun?.run_env_vars?.COMPONENT_NAME}
+          componentPath={`${basePath}/components/${installActionRun?.run_env_vars?.COMPONENT_ID}`}
+          triggerType={
+            installActionRun?.triggered_by_type as TActionConfigTriggerType
+          }
+          size="sm"
+        />
+      }
+      id={actionId}
+      identity={
+        <>
+          {isAdmin && installActionRun?.install_action_workflow_id ? (
+            <ID>{String(installActionRun.install_action_workflow_id)}</ID>
+          ) : null}
           <Time
             time={installActionRun?.updated_at}
             format="relative"
             variant="subtext"
             theme="info"
           />
-        </HeadingGroup>
-
-        <div className="flex items-center gap-4">
+        </>
+      }
+      actions={
+        <>
           {cancelWorkflowButton}
           {runnerJobPlanButton}
           {runActionButton}
-        </div>
-      </div>
-
-      <Card>
-        <div
-          className={cn(
-            'grid',
-            installActionRun?.config?.image ? 'grid-cols-6' : 'grid-cols-5'
-          )}
-        >
-          <LabeledValue
-            label={`Triggered via ${installActionRun?.triggered_by_type}`}
-          >
-            {installActionRun?.created_by?.email || (
-              <ID theme="default">{installActionRun?.created_by_id}</ID>
-            )}
-          </LabeledValue>
-
+        </>
+      }
+      metadata={
+        <>
           <LabeledStatus
             label="Status"
             statusProps={{
@@ -105,45 +85,49 @@ export const InstallActionRunHeader = ({
               tipContent: installActionRun?.status_v2?.status_human_description,
             }}
           />
-
-          <LabeledValue label={`Total duration`}>
+          <LabeledValue label="Total duration">
             <Duration nanoseconds={installActionRun?.execution_time} />
           </LabeledValue>
-
-          <LabeledValue label={`Timeout`}>
+          <LabeledValue label="Timeout">
             <Duration nanoseconds={installActionRun?.config?.timeout} />
           </LabeledValue>
-
+          <LabeledValue
+            label={`Triggered via ${installActionRun?.triggered_by_type}`}
+          >
+            {installActionRun?.created_by?.email || (
+              <ID theme="default">{installActionRun?.created_by_id}</ID>
+            )}
+          </LabeledValue>
           <LabeledValue label="Execution role">
             {installActionRun?.runner_job?.install_role_usage?.role_name ? (
-              <Text variant="subtext" family='mono' className="text-xs">
+              <Text variant="subtext" family="mono" className="text-xs">
                 {installActionRun.runner_job.install_role_usage.role_name}
               </Text>
             ) : (
               <Text variant="subtext" theme="neutral">
-                -
+                —
               </Text>
             )}
           </LabeledValue>
-
           {installActionRun?.config?.image ? (
             <LabeledValue label="Container image">
-              <Text variant="subtext" family="mono" className="text-xs break-all">
+              <Text
+                variant="subtext"
+                family="mono"
+                className="text-xs break-all"
+              >
                 {installActionRun.config.image}
               </Text>
             </LabeledValue>
           ) : null}
-        </div>
-      </Card>
-
+        </>
+      }
+    >
       {workflow ? (
-        <Button
-          href={`${basePath}/workflows/${workflow.id}?panel=${step?.id}`}
-        >
+        <Button href={`${basePath}/workflows/${workflow.id}?panel=${step?.id}`}>
           View workflow
-          <Icon variant="CaretRightIcon" />
         </Button>
       ) : null}
-    </header>
+    </DetailHeader>
   )
 }

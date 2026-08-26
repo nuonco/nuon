@@ -1,9 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
-import { PageContent } from '@/components/layout/PageContent'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { PageSection } from '@/components/layout/PageSection'
+import { ListPage } from '@/components/layout/ListPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import {
@@ -24,7 +21,7 @@ export const OIDCTrustPolicies = () => {
 
   return (
     <>
-      <PageTitle title={`OIDC federation | ${org?.name}`} />
+      <PageTitle title="OIDC federation" />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org.id}`, text: org?.name },
@@ -32,30 +29,22 @@ export const OIDCTrustPolicies = () => {
           { path: `/${org.id}/settings/oidc`, text: 'OIDC federation' },
         ]}
       />
-      <PageHeader className="flex items-center justify-between">
-        <HeadingGroup>
-          <Text variant="h3" weight="stronger" level={1}>
-            OIDC federation
+      <ListPage
+        title="OIDC federation"
+        description="Grant OIDC providers access to the Nuon control plane without storing long-lived static tokens."
+        createAction={
+          <CreateOIDCTrustPolicyButton
+            reservedNames={(policies ?? []).map((policy) => policy.name ?? '')}
+          />
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            Trust policies
           </Text>
-          <Text theme="neutral">
-            Grant OIDC providers access to the Nuon control plane without
-            storing long-lived static tokens.
-          </Text>
-        </HeadingGroup>
-        <CreateOIDCTrustPolicyButton
-          reservedNames={(policies ?? []).map((policy) => policy.name ?? '')}
-        />
-      </PageHeader>
-      <PageContent>
-        <PageSection>
-          <div className="flex flex-col gap-4">
-            <Text variant="base" weight="strong">
-              Trust policies
-            </Text>
-            <OIDCTrustPoliciesTable shouldPoll />
-          </div>
-        </PageSection>
-      </PageContent>
+          <OIDCTrustPoliciesTable shouldPoll />
+        </div>
+      </ListPage>
     </>
   )
 }

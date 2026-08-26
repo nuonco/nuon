@@ -36,7 +36,7 @@ export const VCSConnectionsTable = ({
         cell: ({ row }) => (
           <span className="flex items-center gap-2">
             <Icon variant="GitHub" size={16} />
-            <Link href={row.original.href}>
+            <Link href={row.original.href} variant="inline">
               {accountName(row.original.connection)}
             </Link>
           </span>

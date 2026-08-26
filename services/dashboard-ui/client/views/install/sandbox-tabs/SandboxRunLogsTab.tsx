@@ -1,17 +1,16 @@
-import { SSELogs } from '@/components/log-stream/SSELogs'
-import { LogStreamProvider } from '@/providers/log-stream-provider'
-import { LogViewerProvider } from '@/providers/log-viewer-provider'
+import { LogsPanel } from '@/components/log-stream/LogsPanel'
+import { PageTitle } from '@/components/navigation/PageTitle'
+import { useInstall } from '@/hooks/use-install'
 import { useSandboxRun } from '@/hooks/use-sandbox-run'
 
 export const SandboxRunLogsTab = () => {
   const { sandboxRun } = useSandboxRun()
-  const logStream = sandboxRun?.log_stream
+  const { install } = useInstall()
 
   return (
-    <LogStreamProvider logStreamId={logStream?.id}>
-      <LogViewerProvider>
-        <SSELogs filterClassName="top-0" />
-      </LogViewerProvider>
-    </LogStreamProvider>
+    <>
+      <PageTitle segments={['Sandbox run logs', install?.name]} />
+      <LogsPanel logStream={sandboxRun?.log_stream} />
+    </>
   )
 }

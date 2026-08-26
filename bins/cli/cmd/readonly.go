@@ -70,6 +70,8 @@ var readOnlyCommands = map[string]struct{}{
 	"unset-current":        {},
 	"init":                 {},
 	"mcp":                  {},
+	"agents":               {},
+	"context":              {},
 }
 
 func readOnlyFromEnv() bool {

@@ -217,6 +217,7 @@ export const AwaitGCPDetails = ({
             <Link
               href="https://docs.nuon.co/guides/export-runner-audit-logs"
               isExternal
+              variant="inline"
             >
               telemetry export reference
             </Link>{' '}
@@ -436,6 +437,7 @@ const SpaceliftTab = ({
           href="https://docs.spacelift.io/concepts/blueprint/"
           target="_blank"
           rel="noopener noreferrer"
+          variant="inline"
         >
           Blueprint
         </Link>{' '}
@@ -444,6 +446,7 @@ const SpaceliftTab = ({
           href="https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs"
           target="_blank"
           rel="noopener noreferrer"
+          variant="inline"
         >
           Terraform
         </Link>{' '}
@@ -599,6 +602,7 @@ const TerraformSubTab = ({
             href="https://docs.spacelift.io/integrations/api#spacelift-api-key"
             target="_blank"
             rel="noopener noreferrer"
+            variant="inline"
           >
             Spacelift API key
           </Link>{' '}
@@ -721,6 +725,7 @@ const BlueprintSubTab = ({ blueprintYaml }: IBlueprintSubTab) => {
             href="https://docs.spacelift.io/integrations/cloud-providers"
             target="_blank"
             rel="noopener noreferrer"
+            variant="inline"
           >
             Spacelift Integration
           </Link>{' '}

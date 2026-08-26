@@ -207,7 +207,7 @@ export const InstallGroupDiff = ({ groupName, installs, isLoading = false, label
                                 )
                               }
                             >
-                              View details <Icon variant="CaretRightIcon" />
+                              View details
                             </Button>
                           )}
                           <Badge theme={OP_THEME[item.op] ?? 'neutral'} size="sm">

@@ -70,6 +70,12 @@ func (a *Activities) ForgetInstall(ctx context.Context, req ForgetInstallRequest
 			Delete(&app.QueueEmitter{}); res.Error != nil {
 			return dbgenerics.TemporalGormError(res.Error, "unable to delete queue emitters: %w")
 		}
+
+		if res := a.db.WithContext(ctx).
+			Where("queue_id IN ?", allQueueIDs).
+			Delete(&app.QueueSignal{}); res.Error != nil {
+			return dbgenerics.TemporalGormError(res.Error, "unable to delete queue signals: %w")
+		}
 	}
 
 	if len(runnerQueueIDs) > 0 {

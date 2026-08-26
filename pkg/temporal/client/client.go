@@ -99,6 +99,7 @@ func (t *temporal) getOpts() tclient.Options {
 		Logger:             temporalzap.NewLogger(t.Logger),
 		DataConverter:      t.Converter,
 		ContextPropagators: t.propagators,
+		Interceptors:       t.interceptors,
 	}
 	if t.tallyScope != nil {
 		opts.MetricsHandler = sdktally.NewMetricsHandler(t.tallyScope)

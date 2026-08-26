@@ -11,9 +11,10 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { QuickManagementDropdown } from '@/components/installs/management/QuickManagementDropdown'
-import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import type { TCloudPlatform, TInstall } from '@/types'
+
+export type TInstallsTableScope = 'org' | 'app' | 'branch'
 
 export type InstallRow = {
   action: ReactNode
@@ -126,9 +127,21 @@ export function parseInstallsToTableData(
         </span>
       )
     })(),
-    branch: install.app_branch?.name ? (
-      <Badge size="sm" theme="brand">{install.app_branch.name}</Badge>
-    ) : null,
+    branch: install.app_branch?.id ? (
+      <span className="flex items-center gap-1.5">
+        <Icon variant="GitBranchIcon" size={14} />
+        <Link
+          href={`/${orgId}/apps/${install.app_id}/branches/${install.app_branch.id}`}
+          variant="inline"
+        >
+          {install.app_branch.name}
+        </Link>
+      </span>
+    ) : (
+      <Text variant="subtext" theme="neutral">
+        —
+      </Text>
+    ),
     activity: <ActivityCell install={install} />,
     updatedAt: install?.updated_at ?? '',
     action: (
@@ -146,7 +159,7 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => (
       <span>
         <Text variant="body">
-          <Link href={info.row.original.nameHref}>
+          <Link href={info.row.original.nameHref} variant="inline">
             {info.getValue() as string}
           </Link>
         </Text>
@@ -212,35 +225,55 @@ const columns: ColumnDef<InstallRow>[] = [
   },
 ]
 
+const HIDDEN_COLUMNS: Record<TInstallsTableScope, string[]> = {
+  org: [],
+  app: ['appName'],
+  branch: ['appName', 'branch'],
+}
+
 interface IInstallsTable {
   data: InstallRow[]
   isLoading: boolean
   emptyStateAction?: ReactNode
+  emptyTitle?: string
+  emptyMessage?: string
   filterActions?: ReactNode
   pagination: { hasNext?: boolean; offset: number; limit: number }
+  scope?: TInstallsTableScope
 }
 
 export const InstallsTable = ({
   data,
   isLoading,
   emptyStateAction,
+  emptyTitle = 'No installs created',
+  emptyMessage = 'An install is an instance of an application running in a customer cloud account.',
   filterActions,
   pagination,
+  scope = 'org',
 }: IInstallsTable) => {
+  const hidden = HIDDEN_COLUMNS[scope]
+  const scopedColumns = columns.filter(
+    (c) => !hidden.includes((c as { accessorKey?: string }).accessorKey ?? '')
+  )
+
   return (
     <Table<InstallRow>
-      columns={columns}
+      columns={scopedColumns}
       data={data}
       isLoading={isLoading}
       emptyStateProps={{
-        emptyMessage:
-          'An install is an instance of an application running in a customer cloud account.',
-        emptyTitle: 'No installs created',
+        emptyMessage,
+        emptyTitle,
         action: emptyStateAction,
       }}
       filterActions={filterActions}
       pagination={pagination}
-      searchPlaceholder="Search by name, branch or ID..."
+      searchPlaceholder={
+        scope === 'org'
+          ? 'Search by name, branch or ID...'
+          : 'Search by name or ID...'
+      }
     />
   )
 }

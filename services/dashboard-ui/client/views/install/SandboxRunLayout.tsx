@@ -3,10 +3,8 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { CompositeError } from '@/components/common/CompositeError'
 import { SandboxHeader } from '@/components/sandbox/SandboxHeader'
-import { PageSection } from '@/components/layout/PageSection'
+import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { PageTitle } from '@/components/navigation/PageTitle'
-import { TabNav } from '@/components/navigation/TabNav'
 import { SandboxRunProvider } from '@/providers/sandbox-run-provider'
 import { useSandboxRun } from '@/hooks/use-sandbox-run'
 import { useInstall } from '@/hooks/use-install'
@@ -16,7 +14,8 @@ import { getWorkflow } from '@/lib'
 import type { TNavLink } from '@/types'
 
 const sandboxTabs: TNavLink[] = [
-  { path: '/', text: 'Logs' },
+  { path: '/', text: 'Summary' },
+  { path: '/logs', text: 'Logs' },
   { path: '/trace', text: 'Trace' },
   { path: '/plan', text: 'Plan' },
   { path: '/variables', text: 'Variables' },
@@ -66,8 +65,7 @@ const SandboxRunLayoutInner = () => {
   }
 
   return (
-    <PageSection>
-      <PageTitle title={`Sandbox run | ${install?.name}`} />
+    <>
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -81,19 +79,23 @@ const SandboxRunLayoutInner = () => {
         ]}
       />
 
-      <SandboxHeader workflow={workflow} stepId={step?.id} flush />
-
-      {sandboxRun?.composite_error ? (
-        <CompositeError error={sandboxRun.composite_error} />
-      ) : null}
-
-      {pendingApproval && !isAutoApprove ? (
-        <ApprovalBanner step={step} />
-      ) : null}
-
-      <TabNav basePath={basePath} tabs={tabs} />
-      <Outlet context={{ workflow, step }} />
-    </PageSection>
+      <DetailPage
+        header={<SandboxHeader workflow={workflow} stepId={step?.id} />}
+        banners={
+          <>
+            {sandboxRun?.composite_error ? (
+              <CompositeError error={sandboxRun.composite_error} />
+            ) : null}
+            {pendingApproval && !isAutoApprove ? (
+              <ApprovalBanner step={step} />
+            ) : null}
+          </>
+        }
+        tabNav={{ basePath, tabs }}
+      >
+        <Outlet context={{ workflow, step }} />
+      </DetailPage>
+    </>
   )
 }
 

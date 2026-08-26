@@ -1,8 +1,7 @@
 import { useParams } from 'react-router'
 import { RunnerJobHeader } from '@/components/runners/job-details/RunnerJobHeader'
 import { RunnerJobLogs } from '@/components/runners/job-details/RunnerJobLogs'
-import { PageLayout } from '@/components/layout/PageLayout'
-import { PageSection } from '@/components/layout/PageSection'
+import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { RunnerJobProvider } from '@/providers/runner-job-provider'
@@ -15,8 +14,8 @@ const RunnerJobDetailContent = () => {
   const { job } = useRunnerJob()
 
   return (
-    <PageLayout className="pb-6">
-      <PageTitle title={`Job | ${org?.name}`} />
+    <>
+      <PageTitle title="Job" />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -24,13 +23,10 @@ const RunnerJobDetailContent = () => {
           { path: '', text: getJobName(job) },
         ]}
       />
-      <PageSection flush>
-        <RunnerJobHeader />
-        <PageSection className="!pb-12">
-          <RunnerJobLogs />
-        </PageSection>
-      </PageSection>
-    </PageLayout>
+      <DetailPage variant="page" header={<RunnerJobHeader />}>
+        <RunnerJobLogs />
+      </DetailPage>
+    </>
   )
 }
 

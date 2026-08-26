@@ -177,7 +177,7 @@ func DeployStatusToComponentStatus(status InstallDeployStatus) InstallComponentS
 		return InstallComponentStatusActive
 	case InstallDeployStatusInactive:
 		return InstallComponentStatusDeleted
-	case InstallDeployStatusError:
+	case InstallDeployStatusError, InstallDeployStatusHealthFailed:
 		return InstallComponentStatusError
 	case InstallDeployStatusPlanning:
 		return InstallComponentStatusPlanning

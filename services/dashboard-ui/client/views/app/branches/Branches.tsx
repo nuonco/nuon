@@ -1,6 +1,5 @@
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -31,19 +30,13 @@ export const Branches = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Branches | ${app?.name}`} />
+      <PageTitle segments={['Branches', app?.name]} />
       <Breadcrumbs breadcrumbs={breadcrumbs} />
-      <div className="flex items-center justify-between">
-        <HeadingGroup>
-          <Text variant="h3" weight="strong">
-            Branches
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            Manage app branches for version control and deployment
-          </Text>
-        </HeadingGroup>
-        <CreateBranchButton variant="primary" />
-      </div>
+      <SectionHeader
+        title="Branches"
+        description="Manage app branches for version control and deployment"
+        actions={<CreateBranchButton variant="primary" />}
+      />
       {hasNewAppIA ? <BranchCards shouldPoll /> : <BranchesTable shouldPoll />}
     </PageSection>
   )

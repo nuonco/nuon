@@ -1,7 +1,5 @@
-import { AppInstallsTable } from '@/components/apps/AppInstallsTable'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
-import { PageSection } from '@/components/layout/PageSection'
+import { InstallsTable } from '@/components/installs/InstallsTable'
+import { ListPage } from '@/components/layout/ListPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -12,8 +10,8 @@ export const Installs = () => {
   const { app } = useApp()
 
   return (
-    <PageSection>
-      <PageTitle title={`Installs | ${app?.name}`} />
+    <>
+      <PageTitle segments={['Installs', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -22,15 +20,12 @@ export const Installs = () => {
           { path: `/${org?.id}/apps/${app?.id}/installs`, text: 'Installs' },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          App installs
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          View and manage deployments of your app into customer cloud accounts.
-        </Text>
-      </HeadingGroup>
-      <AppInstallsTable appId={app?.id} />
-    </PageSection>
+      <ListPage
+        title="App installs"
+        description="View and manage deployments of your app into customer cloud accounts."
+      >
+        <InstallsTable appId={app?.id} />
+      </ListPage>
+    </>
   )
 }

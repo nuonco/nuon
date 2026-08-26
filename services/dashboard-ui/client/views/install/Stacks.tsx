@@ -2,7 +2,6 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -12,6 +11,7 @@ import { CustomStackTemplateURL } from '@/components/stacks/CustomStackTemplateU
 import { InstallStackVersionCards } from '@/components/stacks/InstallStackVersionCards'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
@@ -75,7 +75,7 @@ export const Stacks = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Stacks | ${install?.name}`} />
+      <PageTitle segments={['Stacks', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -87,19 +87,11 @@ export const Stacks = () => {
           },
         ]}
       />
-      <div className="flex items-start justify-between gap-4">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Install stacks
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            View your install stack config and versions below.
-          </Text>
-        </HeadingGroup>
-        <div className="shrink-0">
-          <EditStackOverridesButton variant="secondary" />
-        </div>
-      </div>
+      <SectionHeader
+        title="Install stacks"
+        description="View your install stack config and versions below."
+        actions={<EditStackOverridesButton variant="secondary" />}
+      />
 
       {stackChanged && (
         <Banner theme="info">
@@ -217,11 +209,9 @@ export const Stacks = () => {
                     </span>
                   }
                 >
-                  <Text variant="subtext">
-                    <Link href={effectiveRunnerURL} isExternal>
-                      {effectiveRunnerURL}
-                    </Link>
-                  </Text>
+                  <Link href={effectiveRunnerURL} isExternal>
+                    {effectiveRunnerURL}
+                  </Link>
                 </LabeledValue>
               ) : null}
               {effectiveVpcURL ? (
@@ -240,11 +230,9 @@ export const Stacks = () => {
                     </span>
                   }
                 >
-                  <Text variant="subtext">
-                    <Link href={effectiveVpcURL} isExternal>
-                      {effectiveVpcURL}
-                    </Link>
-                  </Text>
+                  <Link href={effectiveVpcURL} isExternal>
+                    {effectiveVpcURL}
+                  </Link>
                 </LabeledValue>
               ) : null}
             </div>

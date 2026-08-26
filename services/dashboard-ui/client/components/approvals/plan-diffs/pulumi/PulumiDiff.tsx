@@ -6,6 +6,7 @@ import { Text } from '@/components/common/Text'
 import { Modal } from '@/components/surfaces/Modal'
 import { usePulumiPlanFilter } from '@/hooks/use-pulumi-plan-filter'
 import { DiffFilter } from '../DiffFilter'
+import { WrapLinesProvider } from '../wrap-lines-context'
 import { PulumiSummary } from './PulumiSummary'
 import { PulumiResourceChangesList } from './PulumiResourceChangesList'
 import { PulumiPlanGraph } from './PulumiPlanGraph'
@@ -51,6 +52,7 @@ export function PulumiDiff({
     plan.resource_changes && plan.resource_changes.length > 0
 
   return (
+    <WrapLinesProvider>
     <div className="flex flex-col gap-6">
       {hasResourceChanges && (
         <Modal
@@ -137,5 +139,6 @@ export function PulumiDiff({
         )}
       </Card>
     </div>
+    </WrapLinesProvider>
   )
 }

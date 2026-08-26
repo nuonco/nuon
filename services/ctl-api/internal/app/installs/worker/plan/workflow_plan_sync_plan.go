@@ -66,11 +66,10 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 
 	// For image-type builds with source-identity recorded, copy the
 	// artifact by digest and tag the install-registry copy with the
-	// resolved tag instead of an internal ID. Fall back to build/deploy ID
-	// tagging for non-image components and image builds without source
-	// identity.
+	// resolved tag instead of an internal ID. Fall back to installRegistryTag
+	// for non-image components and image builds without source identity.
 	srcTag := deploy.ComponentBuildID
-	dstTag := deploy.ID
+	dstTag := installRegistryTag(deploy)
 	if compBuild.SourceDigest != "" {
 		// oras.Copy resolves both tags and digest references, so passing
 		// the manifest digest as the source ref pulls the exact same
@@ -106,33 +105,7 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 	if install.SandboxMode.Bool {
 		pln.SandboxMode = &plantypes.SandboxMode{
 			Enabled: true,
-			Outputs: map[string]any{
-				"image": map[string]interface{}{
-					// Sandbox outputs mirror the live runner sync outputs
-					// shape: `repository` and `tag` are the bare repo and
-					// resolved tag that user templates compose as
-					// `{{.repository}}:{{.tag}}`; `ref` is the additive
-					// digest-pinned form; `display_tag` carries the
-					// human-friendly tag.
-					"repository":    "registry.example.com/nuon/app-service",
-					"tag":           "v1.2.3",
-					"ref":           "registry.example.com/nuon/app-service@sha256:a123b456c789d012e345f678g901h234i567j890k123l456m789n012o345p",
-					"display_tag":   "v1.2.3",
-					"media_type":    "application/vnd.docker.distribution.manifest.v2+json",
-					"digest":        "sha256:a123b456c789d012e345f678g901h234i567j890k123l456m789n012o345p",
-					"size":          28437192,
-					"urls":          []string{"registry.example.com/nuon/app-service:v1.2.3"},
-					"annotations":   map[string]string{"org.opencontainers.image.created": "2024-04-29T10:15:30Z"},
-					"artifact_type": "application/vnd.docker.container.image.v1+json",
-					"platform": map[string]any{
-						"architecture": "arm64",
-						"os":           "linux",
-						"os_version":   "10.0",
-						"variant":      "v8",
-						"os_features":  []string{"sse4", "aes"},
-					},
-				},
-			},
+			Outputs: plantypes.FakeOCISyncOutputs("registry.example.com/nuon/app-service", "v1.2.3"),
 		}
 	}
 

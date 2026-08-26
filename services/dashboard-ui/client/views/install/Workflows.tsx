@@ -1,8 +1,7 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { AutoApproveToggle } from '@/components/installs/management/EnableAutoApprove'
@@ -52,7 +51,7 @@ export const Workflows = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Workflows | ${install?.name}`} />
+      <PageTitle segments={['Workflows', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -70,19 +69,11 @@ export const Workflows = () => {
         install={install}
       />
 
-      <div className="flex items-start justify-between gap-4">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Workflow history
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            View past and active workflows for this install.
-          </Text>
-        </HeadingGroup>
-        <div className="shrink-0">
-          <RunAdhocActionButton />
-        </div>
-      </div>
+      <SectionHeader
+        title="Workflow history"
+        description="View past and active workflows for this install."
+        actions={<RunAdhocActionButton />}
+      />
 
       <div className="flex items-center justify-between gap-4">
         <WorkflowSearch />

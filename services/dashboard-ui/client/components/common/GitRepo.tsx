@@ -57,11 +57,9 @@ export const GitRepo = ({ vcsConfig, isAutoGrid = false }: IGitRepo) => {
     <div className="grid gap-6" style={{ gridTemplateColumns }}>
       {vcsConfig?.repo && (
         <LabeledValue label="Repository">
-          <Text variant="subtext">
-            <Link href={`https://github.com/${vcsConfig.repo}`} isExternal>
-              {vcsConfig.repo}
-            </Link>
-          </Text>
+          <Link href={`https://github.com/${vcsConfig.repo}`} isExternal>
+            {vcsConfig.repo}
+          </Link>
         </LabeledValue>
       )}
 
@@ -87,7 +85,7 @@ export const GitRepo = ({ vcsConfig, isAutoGrid = false }: IGitRepo) => {
         <LabeledValue label="Directory">
           <Text variant="subtext">
             {directoryUrl ? (
-              <Link href={directoryUrl} isExternal>
+              <Link href={directoryUrl} isExternal variant="inline">
                 {vcsConfig.directory}
               </Link>
             ) : (

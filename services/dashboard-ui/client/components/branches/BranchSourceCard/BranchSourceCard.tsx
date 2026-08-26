@@ -1,5 +1,6 @@
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
+import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import {
@@ -12,14 +13,11 @@ const SourceField = ({ label, value }: { label: string; value?: string }) => {
   if (!value) return null
 
   return (
-    <div className="flex flex-col gap-0.5">
-      <Text variant="label" theme="neutral">
-        {label}
-      </Text>
+    <LabeledValue label={label}>
       <Text variant="subtext" className="break-all">
         {value}
       </Text>
-    </div>
+    </LabeledValue>
   )
 }
 
@@ -55,7 +53,7 @@ export const BranchSourceCard = ({ config, latestRun }: IBranchSourceCard) => {
           </Text>
         </div>
         {repoHref ? (
-          <Link href={repoHref} isExternal className="text-sm">
+          <Link href={repoHref} isExternal>
             View on GitHub
           </Link>
         ) : null}
@@ -69,12 +67,9 @@ export const BranchSourceCard = ({ config, latestRun }: IBranchSourceCard) => {
         </div>
       ) : null}
       {latestRun ? (
-        <div className="flex flex-col gap-1.5 border-t pt-4">
-          <Text variant="label" theme="neutral">
-            Latest run
-          </Text>
+        <LabeledValue label="Latest run" className="border-t pt-4">
           <BranchRunCommit {...latestRun} />
-        </div>
+        </LabeledValue>
       ) : null}
     </Card>
   )

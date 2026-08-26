@@ -1,10 +1,9 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Markdown } from '@/components/common/Markdown'
 import { EmptyState } from '@/components/common/EmptyState'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
 import { ReadmeWarnings } from '@/components/installs/ReadmeWarnings'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
@@ -27,7 +26,7 @@ export const Readme = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`README | ${install?.name}`} />
+      <PageTitle segments={['README', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -39,11 +38,9 @@ export const Readme = () => {
           },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          Install readme
-        </Text>
-      </HeadingGroup>
+      <SectionHeader
+        title="Install readme"
+      />
 
       {isLoading ? null : readme?.readme ? (
         <div className="flex flex-col gap-3">

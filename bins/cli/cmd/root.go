@@ -96,6 +96,7 @@ nuon sync
 		c.runbooksCmd(),
 		c.triggersCmd(),
 		c.mcpCmd(),
+		c.agentsCmd(),
 	}
 
 	if config.Debug() {

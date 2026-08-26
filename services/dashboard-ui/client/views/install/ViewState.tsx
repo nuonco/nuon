@@ -2,12 +2,12 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
 import { JSONViewer } from '@/components/common/JSONViewer'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
@@ -35,7 +35,7 @@ export const ViewState = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`State | ${install?.name}`} />
+      <PageTitle segments={['State', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -47,44 +47,40 @@ export const ViewState = () => {
           },
         ]}
       />
-      <div className="flex items-center justify-between">
-        <HeadingGroup>
-          <Text variant="base" weight="strong">
-            Install state
-          </Text>
-          <Text variant="subtext" theme="neutral">
-            Raw state data for this install.
-          </Text>
-        </HeadingGroup>
-        {state && (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              aria-label={isCopied ? 'Copied' : 'Copy state as JSON'}
-              title={isCopied ? 'Copied' : 'Copy state as JSON'}
-              onClick={() => {
-                navigator.clipboard.writeText(JSON.stringify(state, null, 2))
-                setIsCopied(true)
-              }}
-            >
-              <Icon variant={isCopied ? 'CheckIcon' : 'CopyIcon'} size="16" />
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() =>
-                createFileDownload(
-                  JSON.stringify(state, null, 2),
-                  `${install?.name || 'install'}-state.json`,
-                  'application/json'
-                )
-              }
-            >
-              <Icon variant="DownloadSimpleIcon" size="16" />
-              Download
-            </Button>
-          </div>
-        )}
-      </div>
+      <SectionHeader
+        title="Install state"
+        description="Raw state data for this install."
+        actions={
+          state ? (
+            <>
+              <Button
+                variant="secondary"
+                aria-label={isCopied ? 'Copied' : 'Copy state as JSON'}
+                title={isCopied ? 'Copied' : 'Copy state as JSON'}
+                onClick={() => {
+                  navigator.clipboard.writeText(JSON.stringify(state, null, 2))
+                  setIsCopied(true)
+                }}
+              >
+                <Icon variant={isCopied ? 'CheckIcon' : 'CopyIcon'} size="16" />
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  createFileDownload(
+                    JSON.stringify(state, null, 2),
+                    `${install?.name || 'install'}-state.json`,
+                    'application/json'
+                  )
+                }
+              >
+                <Icon variant="DownloadSimpleIcon" size="16" />
+                Download
+              </Button>
+            </>
+          ) : null
+        }
+      />
 
       {error ? (
         <Banner theme="error">

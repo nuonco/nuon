@@ -53,14 +53,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 		AppID:             s.AppID,
 		Status:            app.AppStatusActive,
-		StatusDescription: "polling for installs to be deprovisioned",
+		StatusDescription: "polling for installs and components to be deprovisioned",
 	}); err != nil {
 		return errors.Wrap(err, "unable to update status")
 	}
 	statusactivities.AwaitUpdateAppStatusV2(ctx, statusactivities.UpdateAppStatusV2Request{
 		AppID:             s.AppID,
 		Status:            app.AppStatusActive,
-		StatusDescription: "polling for installs to be deprovisioned",
+		StatusDescription: "polling for installs and components to be deprovisioned",
 	})
 
 	// Poll until all children are deprovisioned
@@ -174,15 +174,21 @@ func (s *Signal) pollChildrenDeprovisioned(ctx workflow.Context) error {
 			}
 		}
 
-		// If no installs remaining, we're done.
-		// Components are cascade-deleted when the app is deleted.
-		if installCnt < 1 {
+		componentCnt := 0
+		for _, component := range currentApp.Components {
+			if component.Status == app.ComponentStatusDeleteQueued ||
+				component.Status == app.ComponentStatusDeprovisioning {
+				componentCnt++
+			}
+		}
+
+		if installCnt < 1 && componentCnt < 1 {
 			return nil
 		}
 
 		// Check timeout
 		if workflow.Now(ctx).After(deadline) {
-			err := fmt.Errorf("timeout waiting for installs to deprovision")
+			err := fmt.Errorf("timeout waiting for installs and components to deprovision")
 			if updateErr := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
 				AppID:             s.AppID,
 				Status:            "error",

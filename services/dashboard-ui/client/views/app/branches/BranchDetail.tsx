@@ -1,15 +1,15 @@
 import { useMemo } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { BackLink } from '@/components/common/BackLink'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
-import { PageSection } from '@/components/layout/PageSection'
+import { DetailHeader } from '@/components/layout/DetailHeader'
+import { DetailPage } from '@/components/layout/DetailPage'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -85,107 +85,112 @@ const BranchDetailContent = () => {
     hasDeploymentPlan && !isLoadingRuns && runs.length === 0
 
   return (
-    <PageSection>
-      <PageTitle title={`${branch.name} | ${app.name}`} />
+    <>
+      <PageTitle segments={[branch?.name, app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org.id}`, text: org.name },
           { path: `/${org.id}/apps`, text: 'Apps' },
           { path: `/${org.id}/apps/${app.id}`, text: app.name },
           { path: `/${org.id}/apps/${app.id}/branches`, text: 'Branches' },
-          { path: `/${org.id}/apps/${app.id}/branches/${branchId}`, text: branch.name },
+          {
+            path: `/${org.id}/apps/${app.id}/branches/${branchId}`,
+            text: branch.name,
+          },
         ]}
       />
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <HeadingGroup className="gap-1.5">
-          <BackLink className="mb-4" />
-          <span className="flex items-center gap-3">
-            <Text variant="h3" weight="stronger" level={1}>
-              {branch.name}
-            </Text>
-            {branch?.managed_by && (
-              <LabelBadge
-                labelKey="managed by"
-                labelValue={branch.managed_by}
-                size="sm"
-                theme={branch.managed_by === 'config' ? 'brand' : 'default'}
+      <DetailPage
+        header={
+          <DetailHeader
+            title={branch.name}
+            status={
+              branch?.managed_by ? (
+                <LabelBadge
+                  labelKey="managed by"
+                  labelValue={branch.managed_by}
+                  size="sm"
+                  theme={branch.managed_by === 'config' ? 'brand' : 'default'}
+                />
+              ) : null
+            }
+            id={branch.id}
+            identity={
+              <Text variant="subtext" theme="info">
+                Last updated{' '}
+                <Time
+                  variant="subtext"
+                  time={branch.updated_at}
+                  format="relative"
+                />
+              </Text>
+            }
+            actions={
+              <BranchDetailActions
+                branch={branch}
+                currentConfig={currentConfig}
+                appId={appId}
+                orgId={orgId}
+                showTriggerNudge={showTriggerNudge}
               />
-            )}
-          </span>
-          <Text variant="subtext" theme="info">
-            Last updated{' '}
-            <Time
-              variant="subtext"
-              time={branch.updated_at}
-              format="relative"
-            />
-          </Text>
-        </HeadingGroup>
-        <BranchDetailActions
-          branch={branch}
-          currentConfig={currentConfig}
-          appId={appId}
-          orgId={orgId}
-          showTriggerNudge={showTriggerNudge}
-        />
-      </div>
-
-      <DeploymentPlanSection
-        config={currentConfig}
-        installsById={installsById}
-        orgId={orgId}
-        labelColors={labelColors}
-        createAction={
-          <EditDeploymentPlanButton
-            branch={branch}
-            currentConfig={currentConfig}
-            variant="secondary"
-            label="Create deployment plan"
-            onSuccess={refresh}
-          />
-        }
-        editAction={
-          <EditDeploymentPlanButton
-            branch={branch}
-            currentConfig={currentConfig}
-            variant="ghost"
-            label="Edit plan"
-            onSuccess={refresh}
-          />
-        }
-      />
-
-      <div className="flex flex-col gap-4">
-        <Text variant="base" weight="strong">
-          Workflow runs
-        </Text>
-
-        {isLoadingRuns ? (
-          <TimelineSkeleton eventCount={3} />
-        ) : runs.length === 0 ? (
-          <Card>
-            <EmptyState
-              variant="history"
-              emptyTitle="No workflow runs yet"
-              emptyMessage="Runs will appear here once you trigger a deployment of this branch."
-            />
-          </Card>
-        ) : (
-          <WorkflowTimelineComponent
-            workflows={runs}
-            pagination={{
-              hasNext: runsResult?.pagination?.hasNext ?? false,
-              offset,
-              limit: LIMIT,
-            }}
-            orgId={orgId}
-            getWorkflowHref={(run) =>
-              `/${orgId}/apps/${appId}/branches/${branchId}/runs/${run.id}`
             }
           />
-        )}
-      </div>
-    </PageSection>
+        }
+      >
+        <DeploymentPlanSection
+          config={currentConfig}
+          installsById={installsById}
+          orgId={orgId}
+          labelColors={labelColors}
+          createAction={
+            <EditDeploymentPlanButton
+              branch={branch}
+              currentConfig={currentConfig}
+              variant="secondary"
+              label="Create deployment plan"
+              onSuccess={refresh}
+            />
+          }
+          editAction={
+            <EditDeploymentPlanButton
+              branch={branch}
+              currentConfig={currentConfig}
+              variant="ghost"
+              label="Edit plan"
+              onSuccess={refresh}
+            />
+          }
+        />
+
+        <div className="flex flex-col gap-4">
+          <SectionHeader title="Workflow runs" />
+
+          {isLoadingRuns ? (
+            <TimelineSkeleton eventCount={3} />
+          ) : runs.length === 0 ? (
+            <Card>
+              <EmptyState
+                variant="history"
+                emptyTitle="No workflow runs yet"
+                emptyMessage="Runs will appear here once you trigger a deployment of this branch."
+              />
+            </Card>
+          ) : (
+            <WorkflowTimelineComponent
+              workflows={runs}
+              pagination={{
+                hasNext: runsResult?.pagination?.hasNext ?? false,
+                offset,
+                limit: LIMIT,
+              }}
+              orgId={orgId}
+              getWorkflowHref={(run) =>
+                `/${orgId}/apps/${appId}/branches/${branchId}/runs/${run.id}`
+              }
+            />
+          )}
+        </div>
+      </DetailPage>
+    </>
   )
 }
 

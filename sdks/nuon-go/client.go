@@ -197,6 +197,7 @@ type Client interface {
 	GetAllInstalls(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppInstall, bool, error)
 
 	GetInstall(ctx context.Context, installID string) (*models.AppInstall, error)
+	GetAvailableRoles(ctx context.Context, installID string) ([]*models.ServiceAvailableRole, error)
 	UpdateInstall(ctx context.Context, installID string, req *models.ServiceUpdateInstallRequest) (*models.AppInstall, error)
 	DeleteInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
 	ForgetInstall(ctx context.Context, installID string) (bool, error)

@@ -1,17 +1,16 @@
 import { useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
 import { Code } from '@/components/common/Code'
 import { Duration } from '@/components/common/Duration'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { ID } from '@/components/common/ID'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Text } from '@/components/common/Text'
 import { ActionStep } from '@/components/actions/ActionStep'
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
-import { PageSection } from '@/components/layout/PageSection'
+import { DetailHeader } from '@/components/layout/DetailHeader'
+import { DetailPage } from '@/components/layout/DetailPage'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -38,10 +37,11 @@ export const ActionDetail = () => {
 
   const config = action?.configs?.[0]
   const steps = config?.steps ? sortByIdx(config.steps) : undefined
+  const labelKeys = Object.keys(action?.labels ?? {}).sort()
 
   return (
-    <PageSection flush>
-      <PageTitle title={`${action?.name ?? 'Action'} | ${app?.name}`} />
+    <>
+      <PageTitle segments={[action?.name ?? 'Action', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -55,112 +55,119 @@ export const ActionDetail = () => {
         ]}
       />
 
-      <div className="p-6 border-b flex items-start justify-between gap-8">
-        <HeadingGroup>
-          <BackLink className="mb-6" />
-          <Text variant="base" weight="strong" loading={isLoading} loadingWidth={20}>
-            {action?.name}
-          </Text>
-          {actionId ? <ID>{actionId}</ID> : null}
-          {action?.labels && Object.keys(action.labels).length > 0 ? (
-            <span className="flex flex-wrap gap-1 mt-1">
-              {Object.keys(action.labels)
-                .sort()
-                .map((k) => (
-                  <LabelBadge key={k} labelKey={k} labelValue={action.labels[k]} size="sm" customColor={labelColors?.[k]} />
-                ))}
-            </span>
-          ) : null}
-        </HeadingGroup>
-
-        {isLoading ? (
-          <div className="flex flex-row gap-6 items-start">
-            <LabeledValue label="Timeout" loading />
-            <LabeledValue label="Kube config" loading />
-            <LabeledValue label="Triggers" loading />
-          </div>
-        ) : config &&
-          (config.triggers?.length ||
-            config.break_glass_role_arn ||
-            config.role ||
-            config.image) ? (
-          <div className="flex flex-row gap-6 items-start">
-            {config?.timeout ? (
-              <LabeledValue label="Timeout">
-                <Duration nanoseconds={config?.timeout} variant="subtext" />
-              </LabeledValue>
-            ) : null}
-
-            <LabeledValue label="Kube config">
-              <Badge
-                theme={config?.enable_kube_config ? 'info' : 'warn'}
-                variant="code"
-                size="sm"
-              >
-                {config?.enable_kube_config ? 'Enabled' : 'Disabled'}
-              </Badge>
-            </LabeledValue>
-
-            {config?.image ? (
-              <LabeledValue label="Container image">
-                <Code variant="inline">{config.image}</Code>
-              </LabeledValue>
-            ) : null}
-            {config.triggers?.length ? (
-              <LabeledValue label="Triggers">
-                <div className="flex flex-col gap-2">
-                  {config.triggers.map((trigger) => (
-                    <div
-                      key={trigger.id}
-                      className="flex items-center gap-2 flex-wrap"
-                    >
-                      <ActionTriggerType
-                        size="sm"
-                        triggerType={trigger.type as TActionConfigTriggerType}
-                        componentName={trigger?.component?.name}
-                        componentPath={`${appBase}/components/${trigger?.component_id}`}
-                        cronSchedule={trigger?.cron_schedule}
-                      />
-                    </div>
+      <DetailPage
+        header={
+          <DetailHeader
+            title={action?.name}
+            loading={isLoading}
+            loadingWidth={20}
+            id={actionId}
+            identity={
+              labelKeys.length ? (
+                <span className="flex flex-wrap gap-1">
+                  {labelKeys.map((k) => (
+                    <LabelBadge
+                      key={k}
+                      labelKey={k}
+                      labelValue={action?.labels?.[k]}
+                      size="sm"
+                      customColor={labelColors?.[k]}
+                    />
                   ))}
-                </div>
-              </LabeledValue>
-            ) : null}
+                </span>
+              ) : null
+            }
+            metadata={
+              isLoading ? (
+                <>
+                  <LabeledValue label="Timeout" loading />
+                  <LabeledValue label="Kube config" loading />
+                  <LabeledValue label="Triggers" loading />
+                </>
+              ) : config ? (
+                <>
+                  {config?.timeout ? (
+                    <LabeledValue label="Timeout">
+                      <Duration
+                        nanoseconds={config?.timeout}
+                        variant="subtext"
+                      />
+                    </LabeledValue>
+                  ) : null}
 
-            {config.break_glass_role_arn ? (
-              <LabeledValue label="Break glass role">
-                <Code variant="inline">{config.break_glass_role_arn}</Code>
-                <Text variant="subtext" theme="neutral">
-                  Must be enabled in the install stack before running this
-                  action.
-                </Text>
-              </LabeledValue>
-            ) : null}
+                  <LabeledValue label="Kube config">
+                    <Badge
+                      theme={config?.enable_kube_config ? 'info' : 'warn'}
+                      variant="code"
+                      size="sm"
+                    >
+                      {config?.enable_kube_config ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                  </LabeledValue>
 
-            {config.role ? (
-              <LabeledValue label="Execution role">
-                <Code variant="inline">{config.role}</Code>
-              </LabeledValue>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
+                  {config?.image ? (
+                    <LabeledValue label="Container image">
+                      <Code variant="inline">{config.image}</Code>
+                    </LabeledValue>
+                  ) : null}
 
-      <PageSection>
-        <Text variant="base" weight="strong">
-          Steps
-        </Text>
-        {steps?.length ? (
-          <div className="grid grid-cols-1 gap-4">
-            {steps.map((step, i) => (
-              <ActionStep key={step.id} step={step} index={i} />
-            ))}
-          </div>
-        ) : (
-          <Text theme="neutral">No steps configured.</Text>
-        )}
-      </PageSection>
+                  {config.triggers?.length ? (
+                    <LabeledValue label="Triggers">
+                      <div className="flex flex-col gap-2">
+                        {config.triggers.map((trigger) => (
+                          <div
+                            key={trigger.id}
+                            className="flex items-center gap-2 flex-wrap"
+                          >
+                            <ActionTriggerType
+                              size="sm"
+                              triggerType={
+                                trigger.type as TActionConfigTriggerType
+                              }
+                              componentName={trigger?.component?.name}
+                              componentPath={`${appBase}/components/${trigger?.component_id}`}
+                              cronSchedule={trigger?.cron_schedule}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </LabeledValue>
+                  ) : null}
 
-    </PageSection>
+                  {config.break_glass_role_arn ? (
+                    <LabeledValue label="Break glass role">
+                      <Code variant="inline">{config.break_glass_role_arn}</Code>
+                      <Text variant="subtext" theme="neutral">
+                        Must be enabled in the install stack before running this
+                        action.
+                      </Text>
+                    </LabeledValue>
+                  ) : null}
+
+                  {config.role ? (
+                    <LabeledValue label="Execution role">
+                      <Code variant="inline">{config.role}</Code>
+                    </LabeledValue>
+                  ) : null}
+                </>
+              ) : null
+            }
+          />
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <SectionHeader title="Steps" />
+          {steps?.length ? (
+            <div className="grid grid-cols-1 gap-4">
+              {steps.map((step, i) => (
+                <ActionStep key={step.id} step={step} index={i} />
+              ))}
+            </div>
+          ) : (
+            <Text theme="neutral">No steps configured.</Text>
+          )}
+        </div>
+      </DetailPage>
+    </>
   )
 }

@@ -1,9 +1,8 @@
 import { Card } from '@/components/common/Card'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
 import { HealthTimeline } from '@/components/install-health/HealthTimeline'
 import { InstallResourcesTable } from '@/components/install-resources/InstallResourcesTable'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
@@ -15,7 +14,7 @@ export const Resources = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Resources | ${install?.name}`} />
+      <PageTitle segments={['Resources', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -27,14 +26,10 @@ export const Resources = () => {
           },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          Resources
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          Live resources managed by this install's components, with per-resource health.
-        </Text>
-      </HeadingGroup>
+      <SectionHeader
+        title="Resources"
+        description="Live resources managed by this install's components, with per-resource health."
+      />
 
       <Card>
         <HealthTimeline shouldPoll />

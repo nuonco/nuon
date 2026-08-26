@@ -1,6 +1,5 @@
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { InstallRolesTable } from '@/components/roles/InstallRolesTable'
@@ -13,7 +12,7 @@ export const Roles = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Roles | ${install?.name}`} />
+      <PageTitle segments={['Roles', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -25,15 +24,10 @@ export const Roles = () => {
           },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          Install roles
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          View the IAM roles that your install uses to access customer AWS
-          resources.
-        </Text>
-      </HeadingGroup>
+      <SectionHeader
+        title="Install roles"
+        description="View the IAM roles that your install uses to access customer AWS resources."
+      />
 
       <InstallRolesTable />
     </PageSection>

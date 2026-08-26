@@ -58,6 +58,7 @@ export const ActionRunMetadata = ({
             {actionRun?.run_env_vars?.COMPONENT_ID ? (
               <Link
                 href={`/${orgId}/installs/${step?.owner_id}/components/${actionRun?.run_env_vars?.COMPONENT_ID}`}
+                variant="inline"
               >
                 {actionRun?.run_env_vars?.COMPONENT_NAME}
               </Link>

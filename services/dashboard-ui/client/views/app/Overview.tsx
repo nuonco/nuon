@@ -6,11 +6,11 @@ import { AppSandbox } from '@/components/apps/config/AppSandbox'
 import { AppStack } from '@/components/apps/config/AppStack'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { PropertyGridSkeleton } from '@/components/common/PropertyGrid'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { PageSection } from '@/components/layout/PageSection'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
@@ -42,7 +42,7 @@ export const Overview = () => {
 
   return (
     <PageSection>
-      <PageTitle title={`Configuration | ${app?.name}`} />
+      <PageTitle segments={['Configuration', app?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -51,14 +51,10 @@ export const Overview = () => {
         ]}
       />
 
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          App overview
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          View your app configuration, inputs, sandbox, runner, and stack settings.
-        </Text>
-      </HeadingGroup>
+      <SectionHeader
+        title="App overview"
+        description="View your app configuration, inputs, sandbox, runner, and stack settings."
+      />
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">

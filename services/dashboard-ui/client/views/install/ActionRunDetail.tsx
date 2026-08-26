@@ -21,7 +21,14 @@ export const ActionRunDetail = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageTitle title={`${installActionRun?.trigger_type ? `${installActionRun.trigger_type} run` : 'Run'} | ${install?.name}`} />
+      <PageTitle
+        segments={[
+          installActionRun?.trigger_type
+            ? `${installActionRun.trigger_type} run`
+            : 'Run',
+          install?.name,
+        ]}
+      />
       {hydratedSteps?.length ? (
         <ActionStepGraph steps={hydratedSteps} />
       ) : null}

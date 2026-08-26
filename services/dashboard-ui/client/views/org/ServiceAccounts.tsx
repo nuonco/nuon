@@ -1,8 +1,4 @@
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Text } from '@/components/common/Text'
-import { PageContent } from '@/components/layout/PageContent'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { PageSection } from '@/components/layout/PageSection'
+import { ListPage } from '@/components/layout/ListPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { ServiceAccountsTable } from '@/components/service-accounts/ServiceAccountsTable'
@@ -16,7 +12,7 @@ export const ServiceAccounts = () => {
 
   return (
     <>
-      <PageTitle title={`Service accounts | ${org?.name}`} />
+      <PageTitle title="Service accounts" />
       <Breadcrumbs
         breadcrumbs={[
           {
@@ -33,25 +29,16 @@ export const ServiceAccounts = () => {
           },
         ]}
       />
-      <PageHeader className="flex items-center justify-between">
-        <HeadingGroup>
-          <Text variant="h3" weight="stronger" level={1}>
-            Service accounts
-          </Text>
-          <Text theme="neutral">
-            Manage machine users.
-          </Text>
-        </HeadingGroup>
-        <CreateServiceAccountButton variant="primary" />
-      </PageHeader>
-      <PageContent>
-        <PageSection>
-          <div className="flex items-center justify-end">
-            <ShowRunnerAccounts />
-          </div>
-          <ServiceAccountsTable shouldPoll />
-        </PageSection>
-      </PageContent>
+      <ListPage
+        title="Service accounts"
+        description="Manage machine users."
+        createAction={<CreateServiceAccountButton variant="primary" />}
+      >
+        <div className="flex items-center justify-end">
+          <ShowRunnerAccounts />
+        </div>
+        <ServiceAccountsTable shouldPoll />
+      </ListPage>
     </>
   )
 }

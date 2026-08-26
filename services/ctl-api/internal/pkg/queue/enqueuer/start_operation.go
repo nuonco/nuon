@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/taskqueue"
 )
 
-func (e *Enqueuer) queueStartOperation(q *app.Queue) tclient.WithStartWorkflowOperation {
+func (e *Enqueuer) queueStartOptions(q *app.Queue) (tclient.StartWorkflowOptions, queue.QueueWorkflowRequest) {
 	wkflowReq := queue.QueueWorkflowRequest{
 		QueueID: q.ID,
 		Version: e.cfg.Version,
@@ -31,5 +31,5 @@ func (e *Enqueuer) queueStartOperation(q *app.Queue) tclient.WithStartWorkflowOp
 			MaximumAttempts: 0,
 		},
 	}
-	return e.tClient.NewWithStartWorkflowOperation(startOpts, "Queue", wkflowReq)
+	return startOpts, wkflowReq
 }

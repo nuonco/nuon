@@ -1,26 +1,23 @@
-import { Button } from '@/components/common/Button'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { Icon } from '@/components/common/Icon'
-import { ID } from '@/components/common/ID'
-import { Text } from '@/components/common/Text'
 import { SandboxRunsTimeline } from '@/components/sandbox/SandboxRunsTimeline'
 import { ManagementDropdown } from '@/components/sandbox/management/ManagementDropdown'
 import { SandboxConfigCard } from '@/components/sandbox/SandboxConfigCard'
 import { TerraformWorkspaceCard } from '@/components/terraform-workspace/TerraformWorkspaceCard'
-import { PageSection } from '@/components/layout/PageSection'
+import { DetailHeader } from '@/components/layout/DetailHeader'
+import { DetailPage } from '@/components/layout/DetailPage'
+import {
+  HistoryPanelButton,
+  HistoryRail,
+} from '@/components/layout/HistoryRail'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { Panel } from '@/components/surfaces/Panel'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallAppConfig } from '@/hooks/use-install-app-config'
 import { useOrg } from '@/hooks/use-org'
-import { useSurfaces } from '@/hooks/use-surfaces'
 
 export const Sandbox = () => {
   const { org } = useOrg()
   const { install } = useInstall()
-  const { addPanel } = useSurfaces()
 
   const { appConfig: configResult } = useInstallAppConfig()
 
@@ -34,9 +31,11 @@ export const Sandbox = () => {
       d?.target_id === latestSandboxRunId
   )
 
+  const history = <SandboxRunsTimeline shouldPoll />
+
   return (
-    <PageSection>
-      <PageTitle title={`Sandbox | ${install?.name}`} />
+    <>
+      <PageTitle segments={['Sandbox', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -49,57 +48,34 @@ export const Sandbox = () => {
         ]}
       />
 
-      <div className="@container flex flex-col flex-auto gap-6">
-        <div className="flex items-start justify-between gap-4">
-          <HeadingGroup>
-            <Text variant="base" weight="strong">
-              Sandbox details
-            </Text>
-            <ID>{install?.sandbox?.id}</ID>
-          </HeadingGroup>
-          <div className="shrink-0 flex items-center gap-2">
-            <div className="@5xl:hidden">
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  addPanel(
-                    <Panel heading="Sandbox history">
-                      <SandboxRunsTimeline shouldPoll />
-                    </Panel>
-                  )
-                }
-              >
-                <Icon variant="ClockCounterClockwiseIcon" size={16} />
-                History
-              </Button>
-            </div>
-            <ManagementDropdown />
-          </div>
-        </div>
+      <DetailPage
+        header={
+          <DetailHeader
+            backLink={false}
+            title="Sandbox details"
+            id={install?.sandbox?.id}
+            actions={
+              <>
+                <HistoryPanelButton
+                  title="Sandbox history"
+                  history={history}
+                />
+                <ManagementDropdown />
+              </>
+            }
+          />
+        }
+      >
+        <HistoryRail title="Sandbox history" history={history}>
+          {driftedObject ? <DriftedBanner drifted={driftedObject} /> : null}
 
-        <div className="grid grid-cols-1 @5xl:grid-cols-12 gap-6">
-          <div className="@5xl:col-span-8 flex flex-col gap-6 min-w-0">
-            {driftedObject ? <DriftedBanner drifted={driftedObject} /> : null}
+          <SandboxConfigCard config={sandboxConfig} loading={!sandboxConfig} />
 
-            <SandboxConfigCard
-              config={sandboxConfig}
-              loading={!sandboxConfig}
-            />
-
-            <TerraformWorkspaceCard
-              componentType={isPulumi ? 'pulumi' : 'terraform_module'}
-            />
-          </div>
-
-          <div className="hidden @5xl:flex flex-col @5xl:col-span-4 gap-4 min-w-0">
-            <Text variant="base" weight="strong">
-              Sandbox history
-            </Text>
-            <SandboxRunsTimeline shouldPoll />
-          </div>
-        </div>
-      </div>
-
-    </PageSection>
+          <TerraformWorkspaceCard
+            componentType={isPulumi ? 'pulumi' : 'terraform_module'}
+          />
+        </HistoryRail>
+      </DetailPage>
+    </>
   )
 }

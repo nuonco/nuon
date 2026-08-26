@@ -6416,7 +6416,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.TokenType": "auth" | "auth0" | "admin" | "static" | "integration" | "canary" | "nuon" | "federated";
+    "app.TokenType": "auth" | "auth0" | "admin" | "static" | "integration" | "canary" | "nuon" | "federated" | "oauth";
     "app.TriggerFilter": {
       from?: string;
       op?: components["schemas"]["app.TriggerFilterType"];

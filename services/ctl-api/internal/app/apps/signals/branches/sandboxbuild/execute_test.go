@@ -3,6 +3,7 @@ package sandboxbuild
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -10,6 +11,7 @@ import (
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
+	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -21,6 +23,9 @@ import (
 func TestExecuteAddsSandboxBuildIDToStepMetadata(t *testing.T) {
 	var suite testsuite.WorkflowTestSuite
 	env := suite.NewTestWorkflowEnvironment()
+	// the detector is wall-clock based, so a loaded CI host trips it on a
+	// workflow that is not actually blocked
+	env.SetWorkerOptions(worker.Options{DeadlockDetectionTimeout: time.Minute})
 	sig := &Signal{
 		AppBranchID: "branch-1",
 		RunID:       "run-1",

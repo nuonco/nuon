@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
+import { SectionHeader } from '@/components/layout/SectionHeader'
 import { SubNav } from '@/components/navigation/SubNav'
 import { useOrg } from '@/hooks/use-org'
 import { useCLIConfig } from '@/hooks/use-cli-config'
@@ -67,6 +68,7 @@ const SettingsTemplate = () => {
 
   return (
     <PageLayout>
+      <SectionHeader variant="page" title={`${org?.name} settings`} />
       <PageContent className="border-t" variant="row">
         <SubNav basePath={`/${org?.id}/settings`} links={navLinks} storageKey="subnav:settings" />
         <div className="flex flex-col flex-1 min-w-0">
