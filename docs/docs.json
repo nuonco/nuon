@@ -256,6 +256,234 @@
             ]
           },
           {
+            "group": "API Reference",
+            "pages": [
+              {
+                "group": "Accounts",
+                "pages": [
+                  "api-ref/accounts/create-an-api-token",
+                  "api-ref/accounts/delete-an-api-token",
+                  "api-ref/accounts/list-api-tokens"
+                ]
+              },
+              {
+                "group": "Actions",
+                "pages": [
+                  "api-ref/actions/create-action-workflow-config",
+                  "api-ref/actions/create-an-action-workflow-run-for-an-install",
+                  "api-ref/actions/create-an-app",
+                  "api-ref/actions/delete-an-app",
+                  "api-ref/actions/get-action-workflow-for-an-app",
+                  "api-ref/actions/get-action-workflow-runs-by-install-id",
+                  "api-ref/actions/get-action-workflow-runs-by-install-id-and-run-id",
+                  "api-ref/actions/get-action-workflows-for-an-app",
+                  "api-ref/actions/get-an-app-action-workflow",
+                  "api-ref/actions/get-an-app-action-workflow-1",
+                  "api-ref/actions/get-an-app-action-workflow-config",
+                  "api-ref/actions/get-latest-runs-for-all-action-workflows-by-install-id",
+                  "api-ref/actions/get-recent-runs-for-an-action-workflow-by-install-id",
+                  "api-ref/actions/patch-an-app"
+                ]
+              },
+              {
+                "group": "Apps",
+                "pages": [
+                  "api-ref/apps/create-an-app",
+                  "api-ref/apps/create-an-app-installer",
+                  "api-ref/apps/create-an-app-runner-config",
+                  "api-ref/apps/create-an-app-sandbox-config",
+                  "api-ref/apps/create-an-app-secret",
+                  "api-ref/apps/create-app-input-configs",
+                  "api-ref/apps/delete-an-app",
+                  "api-ref/apps/delete-an-app-installer",
+                  "api-ref/apps/delete-an-app-secret",
+                  "api-ref/apps/get-all-apps-for-the-current-org",
+                  "api-ref/apps/get-an-app",
+                  "api-ref/apps/get-an-app-config",
+                  "api-ref/apps/get-an-app-config-template",
+                  "api-ref/apps/get-an-app-installer",
+                  "api-ref/apps/get-app-configs",
+                  "api-ref/apps/get-app-input-configs",
+                  "api-ref/apps/get-app-runner-configs",
+                  "api-ref/apps/get-app-sandbox-configs",
+                  "api-ref/apps/get-app-secrets",
+                  "api-ref/apps/get-latest-app-config",
+                  "api-ref/apps/get-latest-app-input-config",
+                  "api-ref/apps/get-latest-app-runner-config",
+                  "api-ref/apps/get-latest-app-sandbox-config",
+                  "api-ref/apps/patch-v1apps-config",
+                  "api-ref/apps/post-v1apps-config",
+                  "api-ref/apps/post-v1apps-input-config",
+                  "api-ref/apps/render-an-app-installer",
+                  "api-ref/apps/update-an-app",
+                  "api-ref/apps/update-an-app-installer"
+                ]
+              },
+              {
+                "group": "Components",
+                "pages": [
+                  "api-ref/components/create-a-component",
+                  "api-ref/components/create-a-helm-component-config",
+                  "api-ref/components/create-a-terraform-component-config",
+                  "api-ref/components/create-an-external-image-component-config",
+                  "api-ref/components/create-component-build",
+                  "api-ref/components/delete-a-component",
+                  "api-ref/components/get-a-build",
+                  "api-ref/components/get-a-build-for-a-component",
+                  "api-ref/components/get-a-component",
+                  "api-ref/components/get-a-components-dependencies",
+                  "api-ref/components/get-a-components-for-a-specific-app",
+                  "api-ref/components/get-all-builds-for-a-component",
+                  "api-ref/components/get-all-components-for-an-app",
+                  "api-ref/components/get-all-components-for-an-org",
+                  "api-ref/components/get-all-configs-for-a-component",
+                  "api-ref/components/get-builds-for-components",
+                  "api-ref/components/get-component-build-logs",
+                  "api-ref/components/get-component-build-plan",
+                  "api-ref/components/get-latest-build-for-a-component",
+                  "api-ref/components/get-latest-config-for-a-component",
+                  "api-ref/components/update-a-component"
+                ]
+              },
+              {
+                "group": "General",
+                "pages": [
+                  "api-ref/general/allow-user-to-be-added-to-an-org-waitlist",
+                  "api-ref/general/get-config-for-cli",
+                  "api-ref/general/get-current-user",
+                  "api-ref/general/get-jsonschema-for-config-file",
+                  "api-ref/general/get-regions-for-a-cloud-platform",
+                  "api-ref/general/publish-a-metric-from-different-nuon-clients-for-telemetry-purposes"
+                ]
+              },
+              {
+                "group": "Installers",
+                "pages": [
+                  "api-ref/installers/create-an-installer",
+                  "api-ref/installers/delete-an-installer",
+                  "api-ref/installers/get-an-installer",
+                  "api-ref/installers/get-installers-for-current-org",
+                  "api-ref/installers/render-an-installer",
+                  "api-ref/installers/update-an-installer"
+                ]
+              },
+              {
+                "group": "Installs",
+                "pages": [
+                  "api-ref/installs/create-an-app-install",
+                  "api-ref/installs/create-an-app-install-from-an-installer",
+                  "api-ref/installs/create-install-inputs",
+                  "api-ref/installs/delete-an-install",
+                  "api-ref/installs/deploy-a-build-to-an-install",
+                  "api-ref/installs/deploy-all-components-on-an-install",
+                  "api-ref/installs/deprovision-an-install",
+                  "api-ref/installs/get-all-deploys-to-an-install",
+                  "api-ref/installs/get-all-installs-for-an-app",
+                  "api-ref/installs/get-all-installs-for-an-org",
+                  "api-ref/installs/get-an-install",
+                  "api-ref/installs/get-an-install-component",
+                  "api-ref/installs/get-an-install-component-outputs",
+                  "api-ref/installs/get-an-install-components-deploys",
+                  "api-ref/installs/get-an-install-deploy",
+                  "api-ref/installs/get-an-install-deploy-1",
+                  "api-ref/installs/get-an-install-event",
+                  "api-ref/installs/get-an-installer-install",
+                  "api-ref/installs/get-an-installs-components",
+                  "api-ref/installs/get-an-installs-current-inputs",
+                  "api-ref/installs/get-an-installs-inputs",
+                  "api-ref/installs/get-an-installs-runner-group",
+                  "api-ref/installs/get-an-installs-sandbox-runs",
+                  "api-ref/installs/get-events-for-an-install",
+                  "api-ref/installs/get-install-deploy-plan",
+                  "api-ref/installs/get-install-readme-rendered-with",
+                  "api-ref/installs/get-install-sandbox-run-logs",
+                  "api-ref/installs/get-the-latest-deploy-for-an-install-component",
+                  "api-ref/installs/reprovision-an-install",
+                  "api-ref/installs/teardown-an-install-component",
+                  "api-ref/installs/teardown-an-installs-components",
+                  "api-ref/installs/update-an-install",
+                  "api-ref/installs/update-an-install-input",
+                  "api-ref/installs/updates-install-input-config-for-app"
+                ]
+              },
+              {
+                "group": "Orgs",
+                "pages": [
+                  "api-ref/orgs/add-a-user-to-the-current-org",
+                  "api-ref/orgs/create-a-new-org",
+                  "api-ref/orgs/delete-an-org",
+                  "api-ref/orgs/get-an-org",
+                  "api-ref/orgs/get-an-orgs-health-checks",
+                  "api-ref/orgs/get-an-orgs-runner-group",
+                  "api-ref/orgs/invite-a-user-to-the-current-org",
+                  "api-ref/orgs/return-current-users-orgs",
+                  "api-ref/orgs/return-org-invites",
+                  "api-ref/orgs/update-current-org"
+                ]
+              },
+              {
+                "group": "Releases",
+                "pages": [
+                  "api-ref/releases/create-a-release",
+                  "api-ref/releases/get-a-release",
+                  "api-ref/releases/get-a-release-1",
+                  "api-ref/releases/get-all-releases-for-a-component",
+                  "api-ref/releases/get-all-releases-for-an-app"
+                ]
+              },
+              {
+                "group": "Roles",
+                "pages": [
+                  "api-ref/roles/list-roles"
+                ]
+              },
+              {
+                "group": "Runners",
+                "pages": [
+                  "api-ref/runners/cancel-runner-job",
+                  "api-ref/runners/get-a-log-stream",
+                  "api-ref/runners/get-runner-job",
+                  "api-ref/runners/get-runner-job-execution",
+                  "api-ref/runners/get-runner-job-plan",
+                  "api-ref/runners/get-runner-jobs",
+                  "api-ref/runners/read-a-log-streams-logs",
+                  "api-ref/runnersrunner/get-a-runner",
+                  "api-ref/runnersrunner/get-runner-job-executions",
+                  "api-ref/runnersrunner/get-runner-settings"
+                ]
+              },
+              {
+                "group": "Sandboxes",
+                "pages": [
+                  "api-ref/sandboxes/get-a-sandbox",
+                  "api-ref/sandboxes/get-all-sandboxes",
+                  "api-ref/sandboxes/get-sandbox-releases"
+                ]
+              },
+              {
+                "group": "Service Accounts",
+                "pages": [
+                  "api-ref/service-accounts/create-a-service-account",
+                  "api-ref/service-accounts/create-a-service-account-token",
+                  "api-ref/service-accounts/delete-a-service-account",
+                  "api-ref/service-accounts/list-service-accounts",
+                  "api-ref/service-accounts/update-a-service-account",
+                  "api-ref/service-accounts/update-a-service-account-role"
+                ]
+              },
+              {
+                "group": "VCS",
+                "pages": [
+                  "api-ref/vcs/create-a-vcs-connection-for-github",
+                  "api-ref/vcs/get-all-vcs-connected-repos-for-an-org",
+                  "api-ref/vcs/get-vcs-connection-for-an-org",
+                  "api-ref/vcs/public-connection-to-create-a-vcs-connection-via-a-callback",
+                  "api-ref/vcs/returns-a-vcs-connection-for-an-org"
+                ]
+              }
+            ]
+          },
+          {
             "group": "Config Reference",
             "root": "config-ref/index",
             "boost": 0.25,
