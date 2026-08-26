@@ -1,14 +1,11 @@
 import { Outlet, useParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
-import { PageSection } from '@/components/layout/PageSection'
+import { DetailHeader } from '@/components/layout/DetailHeader'
+import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
-import { TabNav } from '@/components/navigation/TabNav'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getRunbook } from '@/lib'
@@ -36,8 +33,10 @@ export const RunbookDetailLayout = () => {
     : `/${org?.id}/apps/${app?.id}`
   const basePath = `${appBase}/runbooks/${runbookId}`
 
+  const labelKeys = Object.keys(runbook?.labels ?? {}).sort()
+
   return (
-    <PageSection flush className="flex-1">
+    <>
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -54,66 +53,56 @@ export const RunbookDetailLayout = () => {
         ]}
       />
 
-      <div className="@container flex flex-col flex-1">
-        <header className="p-6 border-b flex flex-col gap-6">
-          <div className="flex flex-wrap items-start gap-4 justify-between w-full">
-            <HeadingGroup>
-              <BackLink className="mb-4" />
-              <Text
-                variant="h3"
-                weight="strong"
-                loading={isLoading}
-                loadingWidth={20}
-              >
-                {runbook?.name}
-              </Text>
-              <span className="flex flex-wrap items-center gap-4 mt-1">
-                {runbookId ? <ID>{runbookId}</ID> : null}
-                {runbook?.labels && Object.keys(runbook.labels).length > 0 ? (
-                  <span className="flex flex-wrap gap-1">
-                    {Object.keys(runbook.labels)
-                      .sort()
-                      .map((k) => (
-                        <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" customColor={labelColors?.[k]} />
-                      ))}
-                  </span>
-                ) : null}
-              </span>
-              {runbook?.description ? (
-                <Text variant="subtext" theme="neutral">
-                  {runbook.description}
-                </Text>
-              ) : null}
-            </HeadingGroup>
-          </div>
-        </header>
-
-        <PageSection>
-          <TabNav
-            basePath={basePath}
-            tabs={[
-              { path: '/', text: 'Readme' },
-              {
-                path: '/steps',
-                text: (
-                  <>
-                    Steps <Badge size="sm">{steps.length}</Badge>
-                  </>
-                ),
-              },
-            ]}
+      <DetailPage
+        header={
+          <DetailHeader
+            title={runbook?.name}
+            loading={isLoading}
+            loadingWidth={20}
+            description={runbook?.description}
+            id={runbookId}
+            identity={
+              labelKeys.length ? (
+                <span className="flex flex-wrap gap-1">
+                  {labelKeys.map((k) => (
+                    <LabelBadge
+                      key={k}
+                      labelKey={k}
+                      labelValue={runbook?.labels?.[k]}
+                      size="sm"
+                      customColor={labelColors?.[k]}
+                    />
+                  ))}
+                </span>
+              ) : null
+            }
           />
-          {isLoading ? (
-            <div className="flex flex-col gap-3">
-              <Text variant="body" loading loadingWidth={40} />
-              <Text variant="body" loading loadingWidth={60} />
-              <Text variant="body" loading loadingWidth={30} />
-            </div>
-          ) : (
-            <Outlet context={{ runbook }} />
-          )}
-        </PageSection>
-      </div>
-    </PageSection>
+        }
+        tabNav={{
+          basePath,
+          tabs: [
+            { path: '/', text: 'Readme' },
+            {
+              path: '/steps',
+              text: (
+                <>
+                  Steps <Badge size="sm">{steps.length}</Badge>
+                </>
+              ),
+            },
+          ],
+        }}
+      >
+        {isLoading ? (
+          <div className="flex flex-col gap-3">
+            <Text variant="body" loading loadingWidth={40} />
+            <Text variant="body" loading loadingWidth={60} />
+            <Text variant="body" loading loadingWidth={30} />
+          </div>
+        ) : (
+          <Outlet context={{ runbook }} />
+        )}
+      </DetailPage>
+    </>
   )
 }

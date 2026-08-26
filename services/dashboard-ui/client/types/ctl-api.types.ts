@@ -46,7 +46,7 @@ export type TAppSandboxBuild = {
   }
   composite_error?: TCompositeError
   log_stream?: { id?: string; open?: boolean }
-  runner_job?: { id: string }
+  runner_job?: TRunnerJob
   vcs_connection_commit?: { sha?: string; message?: string }
 }
 // Policy types - manually defined as API schema may not be deployed yet
