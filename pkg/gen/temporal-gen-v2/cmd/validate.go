@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/config"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/dir"
 	"github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/internal/file"
+	temporalgen "github.com/nuonco/nuon/pkg/gen/temporal-gen-v2/lib"
 )
 
 func newValidateCmd() *cobra.Command {
@@ -22,6 +23,8 @@ func newValidateCmd() *cobra.Command {
 		RunE:  runValidateCmd,
 	}
 	validateCmd.Flags().BoolVarP(&recursiveFlag, "recursive", "r", false, "Recursively process subdirectories")
+	validateCmd.Flags().StringVar(&configFlag, "config", "", "Path to temporal-gen.yaml (default: discovered by walking up from [dir])")
+	validateCmd.Flags().BoolVar(&noConfigFlag, "no-config", false, "Skip tag config discovery entirely")
 	return validateCmd
 }
 
@@ -44,6 +47,20 @@ func runValidate(targetDir string, recursive bool) error {
 		}
 	}
 
+	// Load the tag config up front so a malformed temporal-gen.yaml fails
+	// validation even when nothing references @tag yet.
+	tagCfg, err := temporalgen.ResolveConfig(temporalgen.Options{
+		Dir:        targetDir,
+		ConfigPath: configFlag,
+		NoConfig:   noConfigFlag,
+	})
+	if err != nil {
+		return err
+	}
+	if tagCfg != nil {
+		fmt.Printf("using tag config %s\n", tagCfg.Path())
+	}
+
 	fmt.Printf("Validating %s annotations in %s...\n", config.AnnotationPrefix, loadDir)
 	ctx := context.Background()
 	pkgs, err := dir.LoadPackages(ctx, loadDir)
@@ -61,7 +78,7 @@ func runValidate(targetDir string, recursive bool) error {
 				continue
 			}
 
-			if _, err := file.ProcessFile(pkg, syntax, path, true); err != nil {
+			if _, err := file.ProcessFile(pkg, syntax, path, true, tagCfg); err != nil {
 				fmt.Fprintf(os.Stderr, "Validation error in %s: %v\n", path, err)
 				hasError = true
 			}
