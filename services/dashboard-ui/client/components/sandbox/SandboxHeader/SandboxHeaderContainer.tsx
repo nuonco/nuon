@@ -7,13 +7,11 @@ import { SandboxHeader } from './SandboxHeader'
 interface ISandboxHeaderContainer {
   workflow: TWorkflow
   stepId: string
-  flush?: boolean
 }
 
 export const SandboxHeaderContainer = ({
   workflow,
   stepId,
-  flush,
 }: ISandboxHeaderContainer) => {
   const { org } = useOrg()
   const { install } = useInstall()
@@ -26,7 +24,6 @@ export const SandboxHeaderContainer = ({
       sandboxRun={sandboxRun}
       install={install}
       orgId={org?.id}
-      flush={flush}
     />
   )
 }

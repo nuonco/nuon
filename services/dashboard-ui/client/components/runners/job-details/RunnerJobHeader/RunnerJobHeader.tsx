@@ -1,11 +1,9 @@
-import { BackLink } from '@/components/common/BackLink'
 import { CompositeError } from '@/components/common/CompositeError'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
-import { ID } from '@/components/common/ID'
+import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
-import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { DetailHeader } from '@/components/layout/DetailHeader'
 import { getJobName } from '@/utils/runner-utils'
 import type { TRunnerJob } from '@/types'
 
@@ -15,36 +13,42 @@ interface IRunnerJobHeader {
 
 export const RunnerJobHeader = ({ job }: IRunnerJobHeader) => {
   return (
-    <>
-      <header className="p-6 border-b flex justify-between">
-        <HeadingGroup>
-          <BackLink className="mb-6" />
-          <div className="flex flex-col gap-2">
-            <Text variant="base" weight="strong">
-              {getJobName(job)}
-            </Text>
-            <ID>{job.id}</ID>
-            <Time variant="subtext" time={job.created_at} />
-          </div>
-        </HeadingGroup>
-
-        <div className="flex gap-6 items-start">
-          <LabeledValue label="Status">
-            <Status status={job.status} />
-          </LabeledValue>
+    <DetailHeader
+      title={getJobName(job)}
+      id={job?.id}
+      identity={
+        <Time
+          variant="subtext"
+          theme="info"
+          time={job?.created_at}
+          format="relative"
+        />
+      }
+      metadata={
+        <>
+          <LabeledStatus
+            label="Status"
+            statusProps={{ status: job?.status_v2?.status ?? job?.status }}
+            tooltipProps={{
+              tipContent: job?.status_description,
+              position: 'bottom',
+            }}
+          />
           <LabeledValue label="Type">
-            <Text variant="subtext">{job.type}</Text>
+            <Text variant="subtext">{job?.type}</Text>
           </LabeledValue>
           <LabeledValue label="Group">
-            <Text variant="subtext">{job.group}</Text>
+            <Text variant="subtext">{job?.group}</Text>
           </LabeledValue>
-        </div>
-      </header>
+          <LabeledValue label="Attempts">
+            <Text variant="subtext">{job?.execution_count ?? 1}</Text>
+          </LabeledValue>
+        </>
+      }
+    >
       {job?.composite_error ? (
-        <div className="mx-6 mt-4">
-          <CompositeError error={job.composite_error} />
-        </div>
+        <CompositeError error={job.composite_error} />
       ) : null}
-    </>
+    </DetailHeader>
   )
 }

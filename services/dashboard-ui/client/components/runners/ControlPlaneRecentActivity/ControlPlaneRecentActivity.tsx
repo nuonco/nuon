@@ -70,7 +70,7 @@ export const ControlPlaneRecentActivity = ({
               createdAt={item?.created_at}
               status={build?.status_v2?.status ?? build?.status}
               title={
-                <Link href={href}>
+                <Link href={href} variant="inline">
                   {item?.component_name ?? 'Component'} build
                 </Link>
               }
