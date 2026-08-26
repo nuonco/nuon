@@ -4,11 +4,10 @@ import { Badge } from '@/components/common/Badge'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
-import { ID } from '@/components/common/ID'
+import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
-import { Status } from '@/components/common/Status'
+import { DetailHeader } from '@/components/layout/DetailHeader'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Toast } from '@/components/surfaces/Toast'
@@ -45,27 +44,22 @@ export const InstallSyncDetail = ({
 
   return (
     <>
-      <HeadingGroup className="gap-1.5">
-        <div className="flex items-center gap-2.5">
-          <Text as="h1" variant="h2" weight="strong" className="leading-tight">
-            Install sync
-          </Text>
+      <DetailHeader
+        title="Install sync"
+        status={
           <Badge size="sm" variant="code">
             {sync.triggered_by}
           </Badge>
-        </div>
-        <ID className="text-[12px] font-mono text-cool-grey-400 dark:text-cool-grey-500">
-          {syncId}
-        </ID>
-        <div className="flex items-center gap-2 mt-0.5">
-          <Status status={status} variant="badge" />
-          {statusDescription && (
-            <Text variant="subtext" theme="neutral">
-              {statusDescription}
-            </Text>
-          )}
-        </div>
-      </HeadingGroup>
+        }
+        id={syncId}
+        metadata={
+          <LabeledStatus
+            label="Status"
+            statusProps={{ status }}
+            tooltipProps={{ tipContent: statusDescription, position: 'bottom' }}
+          />
+        }
+      />
 
       {approvalStep && workflowId && (
         <ApprovalBanner

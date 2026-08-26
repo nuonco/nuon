@@ -1,14 +1,16 @@
 import { useParams } from 'react-router'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BackLink } from '@/components/common/BackLink'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
-import { ID } from '@/components/common/ID'
 import { Skeleton } from '@/components/common/Skeleton'
-import { Text } from '@/components/common/Text'
 import { NotebookCellCard } from '@/components/notebooks/NotebookCellCard'
-import { PageSection } from '@/components/layout/PageSection'
+import { DetailHeader } from '@/components/layout/DetailHeader'
+import { DetailPage } from '@/components/layout/DetailPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
@@ -25,7 +27,11 @@ export const NotebookDetail = () => {
     placeholderData: keepPreviousData,
     queryKey: ['notebook', org?.id, install?.id, notebookId],
     queryFn: () =>
-      getNotebook({ orgId: org!.id, installId: install!.id, notebookId: notebookId! }),
+      getNotebook({
+        orgId: org!.id,
+        installId: install!.id,
+        notebookId: notebookId!,
+      }),
     enabled: !!org?.id && !!install?.id && !!notebookId,
   })
 
@@ -46,7 +52,7 @@ export const NotebookDetail = () => {
   const cells = notebook?.cells ?? []
 
   return (
-    <PageSection>
+    <>
       <PageTitle segments={[notebook?.name ?? 'Notebook', install?.name]} />
       <Breadcrumbs
         breadcrumbs={[
@@ -64,47 +70,46 @@ export const NotebookDetail = () => {
         ]}
       />
 
-      <HeadingGroup>
-        <BackLink className="mb-2" />
-        <Text variant="h3" weight="strong">
-          {notebook?.name || 'Untitled notebook'}
-        </Text>
-        {notebook?.description ? (
-          <Text variant="subtext" theme="neutral">
-            {notebook.description}
-          </Text>
-        ) : null}
-        {notebookId ? <ID>{notebookId}</ID> : null}
-      </HeadingGroup>
-
-      {isLoading ? (
-        <div className="flex flex-col gap-3">
-          <Skeleton height="200px" width="100%" />
-          <Skeleton height="200px" width="100%" />
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {cells.map((cell, i) => (
-            <NotebookCellCard
-              key={cell.id}
-              cell={cell}
-              notebookId={notebookId!}
-              index={i}
-            />
-          ))}
-
-          <div>
-            <Button
-              variant="secondary"
-              disabled={isAddingCell}
-              onClick={() => addCell()}
-            >
-              <Icon variant="PlusIcon" size={16} />
-              {isAddingCell ? 'Adding cell...' : 'Add cell'}
-            </Button>
+      <DetailPage
+        header={
+          <DetailHeader
+            title={notebook?.name || 'Untitled notebook'}
+            loading={isLoading}
+            loadingWidth={20}
+            description={notebook?.description}
+            id={notebookId}
+          />
+        }
+      >
+        {isLoading ? (
+          <div className="flex flex-col gap-3">
+            <Skeleton height="200px" width="100%" />
+            <Skeleton height="200px" width="100%" />
           </div>
-        </div>
-      )}
-    </PageSection>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {cells.map((cell, i) => (
+              <NotebookCellCard
+                key={cell.id}
+                cell={cell}
+                notebookId={notebookId!}
+                index={i}
+              />
+            ))}
+
+            <div>
+              <Button
+                variant="secondary"
+                disabled={isAddingCell}
+                onClick={() => addCell()}
+              >
+                <Icon variant="PlusIcon" size={16} />
+                {isAddingCell ? 'Adding cell...' : 'Add cell'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DetailPage>
+    </>
   )
 }

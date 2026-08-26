@@ -3,7 +3,7 @@ import { BackLink } from '@/components/common/BackLink'
 import { Card } from '@/components/common/Card'
 import { ID } from '@/components/common/ID'
 import { cn } from '@/utils/classnames'
-import { SectionHeader, type TSectionHeaderVariant } from './SectionHeader'
+import { SectionHeaderRow, type TSectionHeaderVariant } from './SectionHeader'
 
 export interface IDetailHeader {
   actions?: ReactNode
@@ -47,11 +47,11 @@ export const DetailHeader = ({
     title
   )
 
-  return (
-    <header className={cn('flex flex-col gap-6 w-full', className)}>
+  const content = (
+    <>
       <div className="flex flex-col gap-2 w-full">
         {backLink ? <BackLink className="mb-2" /> : null}
-        <SectionHeader
+        <SectionHeaderRow
           actions={actions}
           description={description}
           loading={loading}
@@ -77,6 +77,18 @@ export const DetailHeader = ({
       ) : null}
 
       {children}
+    </>
+  )
+
+  return (
+    <header
+      className={cn(
+        'flex flex-col gap-6 w-full',
+        variant === 'page' && 'shrink-0 p-4 md:p-6',
+        className
+      )}
+    >
+      {content}
     </header>
   )
 }
