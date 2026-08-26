@@ -80,12 +80,6 @@ func (s *service) addForgottenByLabels(ctx context.Context, installID string) er
 }
 
 func (s *service) forgetInstall(ctx context.Context, installID string) error {
-	// Before the install row goes: stack service accounts are only reachable by
-	// naming convention while the stack rows exist.
-	if err := s.acctClient.DeleteInstallStackServiceAccounts(ctx, installID); err != nil {
-		return fmt.Errorf("unable to delete stack service accounts: %w", err)
-	}
-
 	res := s.db.WithContext(ctx).Delete(&app.Install{
 		ID: installID,
 	})

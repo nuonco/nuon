@@ -780,8 +780,6 @@ export type TInstallActionRunStep =
 export type TInstallAction = components['schemas']['app.InstallActionWorkflow']
 
 export type TReadme = components['schemas']['service.Readme']
-export type TStackServiceAccount =
-  components['schemas']['service.StackServiceAccountResponse']
 
 export type TWaitlist = components['schemas']['app.Waitlist']
 
@@ -844,7 +842,6 @@ export interface TUpdateServiceAccountBody {
 
 export interface TCreateServiceAccountTokenBody {
   duration?: string
-  name?: string
   invalidate?: boolean
 }
 

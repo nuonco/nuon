@@ -41,13 +41,6 @@ func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 		}
 	}
 
-	// Stack service accounts are only reachable by naming convention while the
-	// stack rows still exist; see DeleteInstallStackServiceAccounts.
-	if err := a.acctClient.DeleteInstallStackServiceAccounts(ctx, req.InstallID); err != nil {
-		return err
-
-	}
-
 	res := a.db.WithContext(ctx).
 		Select(clause.Associations).
 		Delete(&app.Install{

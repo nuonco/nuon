@@ -18,11 +18,10 @@ func (c *client) ListRoles(ctx context.Context) ([]*models.AppRole, error) {
 	return resp.Payload, nil
 }
 
-func (c *client) ListServiceAccounts(ctx context.Context, includeRunners, includeStacks bool, query *models.GetPaginatedQuery) ([]*models.AppAccount, bool, error) {
+func (c *client) ListServiceAccounts(ctx context.Context, includeRunners bool, query *models.GetPaginatedQuery) ([]*models.AppAccount, bool, error) {
 	params := &operations.ListServiceAccountsParams{
 		Context:        ctx,
 		IncludeRunners: &includeRunners,
-		IncludeStacks:  &includeStacks,
 	}
 
 	params.Offset, params.Limit = applyPaginationQuery(query)
