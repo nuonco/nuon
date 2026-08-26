@@ -60,13 +60,34 @@ func (s *service) Index(c *gin.Context) {
 		})
 	}
 
-	c.HTML(http.StatusOK, "auth/index.tmpl", gin.H{
+	template := "auth/index.tmpl"
+	data := gin.H{
 		"IsAuthenticated": isAuthenticated,
 		"Email":           email,
 		"Providers":       options,
 		"RedirectURL":     redirectURLEncoded,
 		"DashboardURL":    s.cfg.AppURL,
-	})
+	}
+	if useNuonBrandedLogin(s.cfg.NuonBrandedLogin, s.cfg.AppURL) {
+		template = "auth/index_nuon.tmpl"
+		data["PostHogKey"] = s.cfg.PostHogKey
+		data["PostHogHost"] = s.cfg.PostHogHost
+	}
+
+	c.HTML(http.StatusOK, template, data)
+}
+
+func useNuonBrandedLogin(flagEnabled bool, appURL string) bool {
+	if flagEnabled {
+		return true
+	}
+
+	u, err := url.Parse(appURL)
+	if err != nil {
+		return false
+	}
+
+	return u.Hostname() == "app.nuon.co"
 }
 
 // providerDisplayName returns a human-readable name for the provider.
