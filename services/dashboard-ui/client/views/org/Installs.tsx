@@ -1,3 +1,4 @@
+import { CreateInstallButton } from '@/components/installs/CreateInstall'
 import { InstallsTable } from '@/components/installs/InstallsTable'
 import { ListPage } from '@/components/layout/ListPage'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -26,6 +27,7 @@ export const Installs = () => {
         variant="page"
         title="Installs"
         description="View and manage all deployed installs here."
+        createAction={<CreateInstallButton variant="primary" />}
       >
         <InstallsTable shouldPoll />
       </ListPage>
