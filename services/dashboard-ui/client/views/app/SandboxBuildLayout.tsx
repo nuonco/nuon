@@ -43,9 +43,13 @@ const SandboxBuildLayoutInner = () => {
 }
 
 export const SandboxBuildLayout = () => {
-  const { buildId } = useParams()
+  const { branchId, buildId } = useParams()
   const { org } = useOrg()
   const { app } = useApp()
+
+  const appBase = branchId
+    ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
+    : `/${org?.id}/apps/${app?.id}`
 
   return (
     <>
@@ -54,9 +58,9 @@ export const SandboxBuildLayout = () => {
           { path: `/${org?.id}`, text: org?.name },
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
-          { path: `/${org?.id}/apps/${app?.id}/sandbox`, text: 'Sandbox' },
+          { path: `${appBase}/sandbox`, text: 'Sandbox' },
           {
-            path: `/${org?.id}/apps/${app?.id}/sandbox/builds/${buildId}`,
+            path: `${appBase}/sandbox/builds/${buildId}`,
             text: 'Build',
           },
         ]}

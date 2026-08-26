@@ -68,9 +68,13 @@ const BuildLayoutInner = ({
 }
 
 export const BuildLayout = () => {
-  const { componentId, buildId } = useParams()
+  const { branchId, componentId, buildId } = useParams()
   const { org } = useOrg()
   const { app } = useApp()
+
+  const appBase = branchId
+    ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
+    : `/${org?.id}/apps/${app?.id}`
 
   const { data: component } = useQuery({
     placeholderData: keepPreviousData,
@@ -87,15 +91,15 @@ export const BuildLayout = () => {
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
           {
-            path: `/${org?.id}/apps/${app?.id}/components`,
+            path: `${appBase}/components`,
             text: 'Components',
           },
           {
-            path: `/${org?.id}/apps/${app?.id}/components/${componentId}`,
+            path: `${appBase}/components/${componentId}`,
             text: component?.name,
           },
           {
-            path: `/${org?.id}/apps/${app?.id}/components/${componentId}/builds/${buildId}`,
+            path: `${appBase}/components/${componentId}/builds/${buildId}`,
             text: 'Build',
           },
         ]}

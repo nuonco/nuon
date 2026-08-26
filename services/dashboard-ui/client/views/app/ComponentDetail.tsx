@@ -109,9 +109,10 @@ export const ComponentDetail = () => {
       !!b.vcs_connection_commit && (!branchId || b.app_branch_id === branchId)
   )
   const buildCommit = latestBuildWithCommit?.vcs_connection_commit
-  const componentBasePath = branchId
-    ? `/${org?.id}/apps/${app?.id}/branches/${branchId}/components/${componentId}`
-    : `/${org?.id}/apps/${app?.id}/components/${componentId}`
+  const appBase = branchId
+    ? `/${org?.id}/apps/${app?.id}/branches/${branchId}`
+    : `/${org?.id}/apps/${app?.id}`
+  const componentBasePath = `${appBase}/components/${componentId}`
   const latestCommit = buildCommit
     ? {
         status: latestBuildWithCommit?.status_v2?.status,
@@ -142,11 +143,11 @@ export const ComponentDetail = () => {
           { path: `/${org?.id}/apps`, text: 'Apps' },
           { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
           {
-            path: `/${org?.id}/apps/${app?.id}/components`,
+            path: `${appBase}/components`,
             text: 'Components',
           },
           {
-            path: `/${org?.id}/apps/${app?.id}/components/${componentId}`,
+            path: componentBasePath,
             text: component?.name,
           },
         ]}

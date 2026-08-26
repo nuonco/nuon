@@ -142,19 +142,6 @@ const columns: ColumnDef<InstallActionRow>[] = [
     header: 'Status',
     cell: (info) => info.getValue() as ReactNode,
   },
-  {
-    enableSorting: false,
-    accessorKey: 'href',
-    id: 'action',
-    header: '',
-    cell: (info) => (
-      <Text>
-        <Link className="text-left" href={info.getValue() as string} variant="inline">
-          View action
-        </Link>
-      </Text>
-    ),
-  },
 ]
 
 interface IInstallActionsTable {

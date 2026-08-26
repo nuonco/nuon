@@ -1,6 +1,6 @@
 import { useParams } from 'react-router'
-import { AppInstallsTable } from '@/components/apps/AppInstallsTable'
 import { CreateInstallButton } from '@/components/installs/CreateInstall'
+import { InstallsTable } from '@/components/installs/InstallsTable'
 import { useApp } from '@/hooks/use-app'
 import { useNewAppIA } from '@/hooks/use-new-app-ia'
 import { Installs } from '../../Installs'
@@ -22,12 +22,12 @@ const BranchInstallsContent = () => {
       subheading="Installs assigned to this branch's deployment plan."
       actions={createButton}
     >
-      <AppInstallsTable
+      <InstallsTable
         appId={app?.id}
-        filterBranchId={branchId}
+        branchId={branchId}
         emptyTitle="No installs in this deployment plan"
         emptyMessage="Create an install and assign it to one of this branch's deployment groups."
-        emptyAction={createButton}
+        emptyStateAction={createButton}
       />
     </BranchTabPage>
   )
