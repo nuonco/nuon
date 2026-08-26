@@ -309,6 +309,13 @@ export interface paths {
      */
     post: operations["CreateAppBranchConfig"];
   };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/configs/{config_id}": {
+    /**
+     * update app branch config settings
+     * @description Updates mutable settings on an existing app branch config (e.g. webhook trigger behavior).
+     */
+    patch: operations["UpdateAppBranchConfig"];
+  };
   "/v1/apps/{app_id}/branches/{app_branch_id}/latest-config": {
     /**
      * get latest app branch config
@@ -3582,11 +3589,15 @@ export interface components {
       action_ids?: string[];
       app_branch_id?: string;
       component_ids?: string[];
-      /** @description generated view field */
       config_number?: number;
       connected_github_vcs_config?: components["schemas"]["app.ConnectedGithubVCSConfig"];
       created_at?: string;
       created_by_id?: string;
+      /**
+       * @description DisableBranchTriggers stops git push / pull_request webhooks from enqueueing
+       * branch runs for this config. Manual triggers are unaffected.
+       */
+      disable_branch_triggers?: boolean;
       id?: string;
       install_groups?: components["schemas"]["app.AppBranchInstallGroup"][];
       org_id?: string;
@@ -9041,8 +9052,11 @@ export interface components {
       };
       name?: string;
     };
+    "service.UpdateAppBranchConfigRequest": {
+      disable_branch_triggers?: boolean;
+    };
     "service.UpdateAppBranchRequest": {
-      name: string;
+      name?: string;
     };
     "service.UpdateAppConfigInstallsRequest": {
       installIDs?: string[];
@@ -11745,6 +11759,66 @@ export interface operations {
       };
       /** @description Conflict */
       409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update app branch config settings
+   * @description Updates mutable settings on an existing app branch config (e.g. webhook trigger behavior).
+   */
+  UpdateAppBranchConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+        /** @description app branch config ID */
+        config_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateAppBranchConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.AppBranchConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

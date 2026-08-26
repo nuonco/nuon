@@ -9,6 +9,7 @@ import { formatDuration } from './shared/format'
 import { CommitStep } from './steps/CommitStep'
 import { ConfigStep } from './steps/ConfigStep'
 import { BuildStep } from './steps/BuildStep'
+import { ComparisonStep } from './steps/ComparisonStep'
 import { PlanGroupStep } from './steps/PlanGroupStep'
 import { DeployGroupStep } from './steps/DeployGroupStep'
 import { PostDeployRunbooksStep } from './steps/PostDeployRunbooksStep'
@@ -30,6 +31,7 @@ export const WorkflowStepDetail = ({
 
   const isCommitStep = step.name?.toLowerCase().includes('commit')
   const isBuildStep = step.name?.toLowerCase().includes('build')
+  const isComparisonStep = step.name?.toLowerCase().includes('compute run comparison')
   const isConfigStep =
     step.name?.toLowerCase().includes('config') &&
     !step.name?.toLowerCase().includes('diff')
@@ -119,6 +121,9 @@ export const WorkflowStepDetail = ({
             statusDescription={step.status?.status_human_description}
           />
         )}
+        {isComparisonStep && (
+          <ComparisonStep metadata={metadata} status={step.status?.status} />
+        )}
         {isBuildStep && (
           <BuildStep
             metadata={metadata}
@@ -137,6 +142,7 @@ export const WorkflowStepDetail = ({
 
         {!isCommitStep &&
           !isBuildStep &&
+          !isComparisonStep &&
           !isConfigStep &&
           !isPlanGroupStep &&
           !isDeployGroupStep &&

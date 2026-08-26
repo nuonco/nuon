@@ -27,7 +27,8 @@ type buildEntry struct {
 	IsNew         bool    `json:"is_new,omitempty"`
 	Status        string  `json:"status"`
 	Skipped       bool    `json:"skipped,omitempty"`
-	CacheStatus   string  `json:"cache_status,omitempty"` // "cache hit", "partial cache", "no cache"
+	CacheStatus   string  `json:"cache_status,omitempty"` // deprecated: use change_reason in UI
+	ChangeReason  string  `json:"change_reason,omitempty"`
 	ImageDigest   string  `json:"image_digest,omitempty"` // sha256:...
 	Duration      float64 `json:"duration,omitempty"`     // seconds
 }
@@ -103,7 +104,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			ComponentName: "Sandbox",
 			ComponentType: "sandbox",
 			Status:        "in-progress",
-			CacheStatus:   "no cache",
+			ChangeReason:  activities.ChangeReasonSourceChanged,
 		}
 		builds = append(builds, sandboxEntry)
 		s.updateBuildMetadata(ctx, builds)
@@ -151,6 +152,16 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 		}
 	}
 
+	sourceChangedByName := map[string]bool{}
+	if previousAppConfigID != "" {
+		sourceOut, err := activities.AwaitLoadComparisonSourceChanged(ctx, &activities.LoadComparisonSourceChangedInput{
+			RunID: s.RunID,
+		})
+		if err == nil && sourceOut != nil && sourceOut.ByComponentName != nil {
+			sourceChangedByName = sourceOut.ByComponentName
+		}
+	}
+
 	builds := make([]buildEntry, 0, len(componentIDs))
 	var toBuild []string
 	for _, componentID := range componentIDs {
@@ -163,11 +174,17 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 		isNew := previousAppConfigID == ""
 
 		if previousAppConfigID != "" && !force {
-			check, err := activities.AwaitCheckBuildNeeded(ctx, &activities.CheckBuildNeededInput{
+			checkInput := &activities.CheckBuildNeededInput{
 				ComponentID:    componentID,
 				NewAppConfigID: appConfigID,
 				OldAppConfigID: previousAppConfigID,
-			})
+			}
+			if _, ok := sourceChangedByName[name]; ok {
+				changed := sourceChangedByName[name]
+				checkInput.SourceChanged = &changed
+			}
+
+			check, err := activities.AwaitCheckBuildNeeded(ctx, checkInput)
 			if err == nil && !check.NeedsBuild {
 				l.Info("skipping build for unchanged component",
 					"component_id", componentID,
@@ -180,8 +197,20 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 					IsNew:         false,
 					Status:        "skipped",
 					Skipped:       true,
-					CacheStatus:   "cache hit",
+					ChangeReason:  activities.ChangeReasonNoChanges,
 				})
+				continue
+			}
+			if err == nil && check.NeedsBuild {
+				builds = append(builds, buildEntry{
+					ComponentID:   componentID,
+					ComponentName: name,
+					ComponentType: info.Type,
+					IsNew:         isNew,
+					Status:        "pending",
+					ChangeReason:  check.ChangeReason,
+				})
+				toBuild = append(toBuild, componentID)
 				continue
 			}
 			if err != nil {
@@ -189,17 +218,13 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 			}
 		}
 
-		cacheStatus := "no cache"
-		if previousAppConfigID != "" {
-			cacheStatus = "partial cache"
-		}
 		builds = append(builds, buildEntry{
 			ComponentID:   componentID,
 			ComponentName: name,
 			ComponentType: info.Type,
 			IsNew:         isNew,
 			Status:        "pending",
-			CacheStatus:   cacheStatus,
+			ChangeReason:  activities.ChangeReasonSourceChanged,
 		})
 		toBuild = append(toBuild, componentID)
 	}
@@ -360,6 +385,9 @@ func (s *Signal) updateBuildMetadataWithCompleted(ctx workflow.Context, builds [
 			"skipped":        b.Skipped,
 			"cache_status":   b.CacheStatus,
 		}
+		if b.ChangeReason != "" {
+			entry["change_reason"] = b.ChangeReason
+		}
 		if b.BuildID != "" {
 			entry["build_id"] = b.BuildID
 		}
@@ -409,7 +437,6 @@ func (s *Signal) markBuildsCompleted(ctx workflow.Context, l log.Logger, complet
 	}
 }
 
-// finalizeBuildMetadata writes the builds list plus builds_completed onto the step status.
 func (s *Signal) finalizeBuildMetadata(ctx workflow.Context, builds []buildEntry, completed bool) {
 	s.updateBuildMetadataWithCompleted(ctx, builds, &completed)
 }

@@ -27,7 +27,7 @@ import type {
   TBuild,
   TComponentType,
 } from '@/types'
-import { cacheBadgeTheme } from '../../shared/format'
+import { changeReasonBadgeTheme, changeReasonLabel } from '../../shared/format'
 
 interface IBuildStep {
   metadata: Record<string, any>
@@ -262,9 +262,17 @@ export const BuildRow = ({
             {build.component_name || build.component_id}
           </Text>
 
-          {build.cache_status && (
-            <Badge theme={cacheBadgeTheme(build.cache_status)} size="sm">
-              {build.cache_status}
+          {(build.change_reason || build.cache_status) && (
+            <Badge
+              theme={changeReasonBadgeTheme(
+                build.change_reason ||
+                  (build.cache_status === 'cache hit' ? 'no_changes' : undefined)
+              )}
+              size="sm"
+            >
+              {build.change_reason
+                ? changeReasonLabel(build.change_reason)
+                : build.cache_status}
             </Badge>
           )}
 
@@ -358,9 +366,42 @@ export const BuildStep = ({
     )
   }
 
-  const succeededCount = builds.filter(
-    (b: any) => b.status === 'success' || b.status === 'skipped'
-  ).length
+  const buildSummary = useMemo(() => {
+    const counts = {
+      source_changed: 0,
+      config_changed: 0,
+      no_changes: 0,
+      built: 0,
+    }
+    for (const b of builds) {
+      const reason =
+        b.change_reason ||
+        (b.skipped || b.status === 'skipped' ? 'no_changes' : 'source_changed')
+      if (reason === 'no_changes') {
+        counts.no_changes++
+      } else if (reason === 'config_changed') {
+        counts.config_changed++
+        counts.built++
+      } else if (reason === 'source_changed') {
+        counts.source_changed++
+        counts.built++
+      }
+    }
+    return counts
+  }, [builds])
+
+  const summaryParts: string[] = []
+  if (buildSummary.built > 0) {
+    summaryParts.push(
+      `${buildSummary.built} ${buildSummary.built === 1 ? 'component' : 'components'} built`
+    )
+  }
+  if (buildSummary.no_changes > 0) {
+    summaryParts.push(
+      `${buildSummary.no_changes} no changes`
+    )
+  }
+
   const totalDuration = builds.reduce(
     (acc: number, b: any) => acc + (b.duration || 0),
     0
@@ -371,12 +412,7 @@ export const BuildStep = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Text variant="body" theme="neutral">
-            <span className="font-semibold">{builds.length}</span> components
-            built
-          </Text>
-          <span className="text-[12px] text-cool-grey-400">·</span>
-          <Text variant="body" weight="strong" theme="success">
-            {succeededCount} succeeded
+            {summaryParts.length > 0 ? summaryParts.join(' · ') : `${builds.length} components`}
           </Text>
         </div>
         {totalDuration > 0 && (
