@@ -18,7 +18,6 @@ export const DURATION_OPTIONS = [
 
 export const CreateServiceAccountTokenModal = ({
   accountIdentity,
-  defaultDuration = '8760h',
   isPending,
   error,
   createdToken,
@@ -27,14 +26,13 @@ export const CreateServiceAccountTokenModal = ({
   ...props
 }: {
   accountIdentity: string
-  defaultDuration?: string
   isPending: boolean
   error: TAPIError | null
   createdToken: string | null
   onSubmit: (params: { duration: string; invalidate: boolean }) => void
   onDone: () => void
 } & Omit<IModal, 'onSubmit'>) => {
-  const [duration, setDuration] = useState(defaultDuration)
+  const [duration, setDuration] = useState('8760h')
   const [invalidate, setInvalidate] = useState(false)
 
   if (createdToken) {
@@ -111,9 +109,7 @@ export const CreateServiceAccountTokenModal = ({
         <CheckboxInput
           checked={invalidate}
           onChange={(e) => setInvalidate(e.target.checked)}
-          labelProps={{
-            labelText: 'Invalidate existing tokens for this service account',
-          }}
+          labelProps={{ labelText: 'Invalidate existing tokens for this service account' }}
         />
       </div>
     </Modal>
