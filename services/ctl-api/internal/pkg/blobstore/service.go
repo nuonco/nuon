@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-playground/validator/v10"
 
@@ -62,15 +63,6 @@ func NewService(cfg *internal.Config, mw metrics.Writer) (Service, error) {
 
 	v := validator.New()
 
-	// Create uploader
-	uploader, err := s3uploader.NewS3Uploader(
-		v,
-		s3uploader.WithBucketName(cfg.BlobStorageBucket),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create s3 uploader: %w", err)
-	}
-
 	// Create downloader
 	downloader, err := s3downloader.New(
 		cfg.BlobStorageBucket,
@@ -80,7 +72,7 @@ func NewService(cfg *internal.Config, mw metrics.Writer) (Service, error) {
 	}
 
 	// Load AWS config for direct S3 operations. A shared HTTP client with a
-	// pooled transport lets every blob download reuse TCP/TLS connections
+	// pooled transport lets every blob operation reuse TCP/TLS connections
 	// instead of opening a new one per request; a fresh s3.NewFromConfig per
 	// call would otherwise get its own connection pool and churn connections
 	// under load.
@@ -96,12 +88,22 @@ func NewService(cfg *internal.Config, mw metrics.Writer) (Service, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load aws config: %w", err)
 	}
+	s3Client := s3.NewFromConfig(awsConfig)
+
+	uploader, err := s3uploader.NewS3Uploader(
+		v,
+		s3uploader.WithBucketName(cfg.BlobStorageBucket),
+		s3uploader.WithUploader(manager.NewUploader(s3Client)),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create s3 uploader: %w", err)
+	}
 
 	return &service{
 		cfg:        cfg,
 		uploader:   uploader,
 		downloader: downloader,
-		s3Client:   s3.NewFromConfig(awsConfig),
+		s3Client:   s3Client,
 		mw:         mw,
 	}, nil
 }
