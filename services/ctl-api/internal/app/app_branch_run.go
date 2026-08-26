@@ -21,6 +21,10 @@ const (
 	AppBranchRunTypeGitPreview AppBranchRunType = "git-preview-run"
 )
 
+// AppBranchRunLabelBuildsCompleted is set on AppBranchRun.labels when the builds
+// step finishes. Used to select baseline runs for AppBranchRunComparison.
+const AppBranchRunLabelBuildsCompleted = "builds_completed"
+
 type AppBranchRun struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -89,6 +93,10 @@ type AppBranchRun struct {
 	PreviousRunID *string       `json:"previous_run_id,omitempty" temporaljson:"previous_run_id,omitzero,omitempty"`
 	PreviousRun   *AppBranchRun `json:"previous_run,omitempty" gorm:"foreignKey:PreviousRunID" temporaljson:"previous_run,omitzero,omitempty"`
 
+	// ComparisonID links to the AppBranchRunComparison for this run (as HeadRun).
+	ComparisonID *string                 `json:"comparison_id,omitempty" temporaljson:"comparison_id,omitzero,omitempty"`
+	Comparison   *AppBranchRunComparison `json:"comparison,omitempty" gorm:"foreignKey:ComparisonID" temporaljson:"comparison,omitzero,omitempty"`
+
 	// VCSConnectionCommit is the full commit record associated with this run
 	VCSConnectionCommitID *string              `json:"vcs_connection_commit_id,omitempty" swaggerignore:"true" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`
 	VCSConnectionCommit   *VCSConnectionCommit `json:"vcs_connection_commit,omitempty" temporaljson:"vcs_connection_commit,omitzero,omitempty"`
@@ -139,6 +147,12 @@ func (a *AppBranchRun) Indexes(db *gorm.DB) []migrations.Index {
 			Name: indexes.Name(db, &AppBranchRun{}, "vcs_connection_commit_id"),
 			Columns: []string{
 				"vcs_connection_commit_id",
+			},
+		},
+		{
+			Name: indexes.Name(db, &AppBranchRun{}, "comparison_id"),
+			Columns: []string{
+				"comparison_id",
 			},
 		},
 	}

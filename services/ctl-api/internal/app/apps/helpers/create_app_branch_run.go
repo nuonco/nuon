@@ -66,5 +66,11 @@ func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRu
 		return nil, fmt.Errorf("unable to create app branch run: %w", res.Error)
 	}
 
+	if shouldCreateComparison(runType, req.PlanOnly) {
+		if err := h.createAppBranchRunComparison(ctx, run); err != nil {
+			return nil, fmt.Errorf("unable to create app branch run comparison: %w", err)
+		}
+	}
+
 	return run, nil
 }

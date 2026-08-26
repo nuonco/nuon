@@ -64,6 +64,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	if len(appConfig.ComponentIDs) == 0 {
 		l.Info("no components to build")
+		s.markBuildsCompleted(ctx, l, true)
 		return nil
 	}
 
@@ -78,6 +79,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	builds, err := s.buildComponents(ctx, l, appConfig, run.AppConfigID, previousAppConfigID, run.Force)
 	if err != nil {
+		s.markBuildsCompleted(ctx, l, false)
+		s.finalizeBuildMetadata(ctx, builds, false)
 		if isPreview && run.PRNumber != nil {
 			s.finalizePreview(ctx, l, run, err)
 		}
@@ -105,7 +108,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 		if err := s.buildSandbox(ctx, l); err != nil {
 			s.setBuildStatus(builds, "sandbox", "error")
-			s.updateBuildMetadata(ctx, builds)
+			s.markBuildsCompleted(ctx, l, false)
+			s.finalizeBuildMetadata(ctx, builds, false)
 			if isPreview && run.PRNumber != nil {
 				s.finalizePreview(ctx, l, run, err)
 			}
@@ -121,6 +125,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.finalizePreview(ctx, l, run, nil)
 	}
 
+	s.markBuildsCompleted(ctx, l, true)
+	s.finalizeBuildMetadata(ctx, builds, true)
 	l.Info("all builds completed successfully")
 	return nil
 }
@@ -333,11 +339,14 @@ func (s *Signal) setBuildID(builds []buildEntry, componentID, buildID string) {
 // updateBuildMetadata writes the current builds list to the parent step's
 // status metadata so the UI can display real-time build progress.
 func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) {
+	s.updateBuildMetadataWithCompleted(ctx, builds, nil)
+}
+
+func (s *Signal) updateBuildMetadataWithCompleted(ctx workflow.Context, builds []buildEntry, buildsCompleted *bool) {
 	if s.StepID == "" {
 		return
 	}
 
-	// Convert builds to a slice of map[string]any for JSON serialization
 	buildList := make([]any, 0, len(builds))
 	for _, b := range builds {
 		entry := map[string]any{
@@ -361,18 +370,46 @@ func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) 
 		buildList = append(buildList, entry)
 	}
 
+	meta := map[string]any{
+		"builds": buildList,
+	}
+	statusVal := app.StatusInProgress
+	desc := fmt.Sprintf("building %d components", len(builds))
+	if buildsCompleted != nil {
+		meta[app.AppBranchRunLabelBuildsCompleted] = *buildsCompleted
+		if *buildsCompleted {
+			statusVal = app.StatusSuccess
+			desc = fmt.Sprintf("built %d components", len(builds))
+		} else {
+			statusVal = app.StatusError
+			desc = "builds failed"
+		}
+	}
+
 	status := app.CompositeStatus{
-		Status:                 app.StatusInProgress,
-		StatusHumanDescription: fmt.Sprintf("building %d components", len(builds)),
-		Metadata: map[string]any{
-			"builds": buildList,
-		},
+		Status:                 statusVal,
+		StatusHumanDescription: desc,
+		Metadata:               meta,
 	}
 
 	_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID:     s.StepID,
 		Status: status,
 	})
+}
+
+func (s *Signal) markBuildsCompleted(ctx workflow.Context, l log.Logger, completed bool) {
+	if err := activities.AwaitUpdateAppBranchRunBuildsCompleted(ctx, &activities.UpdateAppBranchRunBuildsCompletedInput{
+		RunID:           s.RunID,
+		BuildsCompleted: completed,
+	}); err != nil {
+		l.Warn("unable to update builds_completed label", "error", err, "builds_completed", completed)
+	}
+}
+
+// finalizeBuildMetadata writes the builds list plus builds_completed onto the step status.
+func (s *Signal) finalizeBuildMetadata(ctx workflow.Context, builds []buildEntry, completed bool) {
+	s.updateBuildMetadataWithCompleted(ctx, builds, &completed)
 }
 
 func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.AppBranchRun, buildErr error) {
