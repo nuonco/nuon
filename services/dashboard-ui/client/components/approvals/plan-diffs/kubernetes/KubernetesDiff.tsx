@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
-import { CodeBlock } from '@/components/common/CodeBlock'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
 import { Text } from '@/components/common/Text'
@@ -15,6 +14,7 @@ import {
 } from '../diff-style-utils'
 import { KubernetesDiffSummary } from './KubernetesDiffSummary'
 import { DiffFilter } from '../DiffFilter'
+import { DiffCodeBlock, WrapLinesProvider } from '../wrap-lines-context'
 
 export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
   const { changes, errors, summary } = useMemo(
@@ -35,6 +35,7 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
   const [allExpanded, setAllExpanded] = useState(true)
 
   return (
+    <WrapLinesProvider>
     <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
       <div className="flex flex-col px-4 py-4 sm:px-6 border-b">
         <Text variant="base" weight="strong">
@@ -134,13 +135,13 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
                   </div>
                 }
               >
-                <CodeBlock
+                <DiffCodeBlock
                   className="!rounded-none border-t"
                   language="yaml"
                   isDiff
                 >
                   {change.diff}
-                </CodeBlock>
+                </DiffCodeBlock>
               </Expand>
             )
           })}
@@ -156,5 +157,6 @@ export const KubernetesDiff = ({ plan }: { plan: TKubernetesPlan }) => {
         </div>
       )}
     </Card>
+    </WrapLinesProvider>
   )
 }

@@ -15,6 +15,7 @@ import {
   getHelmActionBorderColor,
   getPulumiActionBorderColor,
 } from './diff-style-utils'
+import { WrapLinesToggle } from './wrap-lines-context'
 
 const TERRAFORM_ACTIONS: {
   value: TTerraformChangeAction
@@ -110,6 +111,7 @@ export function DiffFilter({
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <WrapLinesToggle />
         {onToggleExpandAll && (
           <Button
             className="!p-1 flex items-center gap-1.5"
