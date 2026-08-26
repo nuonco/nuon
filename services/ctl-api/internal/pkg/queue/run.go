@@ -71,6 +71,9 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, errors.Wrap(err, "unable to start dispatcher")
 	}
 
+	l.Info("starting enqueue signal loop")
+	q.startEnqueueSignalLoop(ctx)
+
 	l.Info("requeuing any remaining signals")
 	if err := q.requeueSignals(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to requeue signals")
@@ -173,6 +176,8 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 			zap.Int("active_workers", q.activeWorkers))
 	}
 
+	drained := q.drainEnqueueSignalChannel(ctx, l)
+
 	if q.restarted {
 		q.setStatus(ctx, l, QueueStatusRestarted)
 		return false, nil
@@ -189,7 +194,8 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 	}
 
 	// handle idle functionality
-	if q.isIdle(ctx) && q.activeWorkers == 0 {
+	// drained > 0 forces continue-as-new so requeueSignals recovers those signals
+	if q.isIdle(ctx) && q.activeWorkers == 0 && drained == 0 {
 		l.Info("queue is idle, terminating workflow")
 		q.setStatus(ctx, l, QueueStatusIdle)
 		return true, nil
