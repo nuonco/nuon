@@ -11,30 +11,15 @@ import { createServiceAccountToken } from '@/lib'
 import type { TAccount } from '@/types'
 import { CreateServiceAccountTokenModal } from './ServiceAccountToken'
 
-// Takes an account ID and a label rather than a TAccount, so callers that only know
-// the ID — the install stack tab — can use it. The mutation never needed more.
-interface ICreateServiceAccountToken {
-  accountId: string
-  identity: string
-  defaultDuration?: string
-  // Labels the token on the org's API tokens page, which matters when the account's
-  // identity is an opaque ID, as an install stack's is.
-  tokenName?: string
-  onCreated?: () => void
-}
-
-export const CreateServiceAccountTokenModalContainer = ({
-  accountId,
-  identity,
-  defaultDuration,
-  tokenName,
-  onCreated,
+const CreateServiceAccountTokenModalContainer = ({
+  account,
   ...props
-}: ICreateServiceAccountToken & Record<string, any>) => {
+}: { account: TAccount } & Record<string, any>) => {
   const { org } = useOrg()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const [createdToken, setCreatedToken] = useState<string | null>(null)
+  const identity = account.email || account.id || ''
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: ({
@@ -45,17 +30,12 @@ export const CreateServiceAccountTokenModalContainer = ({
       invalidate: boolean
     }) =>
       createServiceAccountToken({
-        body: {
-          duration,
-          invalidate,
-          ...(tokenName ? { name: tokenName } : {}),
-        },
-        accountId,
+        body: { duration, invalidate },
+        accountId: account.id || '',
         orgId: org.id,
       }),
     onSuccess: (data) => {
       setCreatedToken(data?.token ?? null)
-      onCreated?.()
       addToast(
         <Toast heading="Token created" theme="success">
           <Text>Created a token for {identity}.</Text>
@@ -74,7 +54,6 @@ export const CreateServiceAccountTokenModalContainer = ({
   return (
     <CreateServiceAccountTokenModal
       accountIdentity={identity}
-      defaultDuration={defaultDuration}
       isPending={isPending}
       error={error}
       createdToken={createdToken}
@@ -90,12 +69,7 @@ export const CreateServiceAccountTokenButton = ({
   ...props
 }: { account: TAccount } & Omit<IButtonAsButton, 'children'>) => {
   const { addModal } = useSurfaces()
-  const modal = (
-    <CreateServiceAccountTokenModalContainer
-      accountId={account.id || ''}
-      identity={account.email || account.id || ''}
-    />
-  )
+  const modal = <CreateServiceAccountTokenModalContainer account={account} />
 
   return (
     <Button

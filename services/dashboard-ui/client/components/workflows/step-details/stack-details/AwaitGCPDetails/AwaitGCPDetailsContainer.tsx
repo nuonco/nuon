@@ -4,12 +4,14 @@ import type { IStackDetails } from '../types'
 
 interface IAwaitGCPDetailsContainer extends IStackDetails {
   spaceliftEnabled?: boolean
+  tfProvider?: boolean
 }
 
 export const AwaitGCPDetailsContainer = ({
   stack,
   step,
   spaceliftEnabled,
+  tfProvider,
   loading,
 }: IAwaitGCPDetailsContainer) => {
   const { install } = useInstall()
@@ -21,6 +23,7 @@ export const AwaitGCPDetailsContainer = ({
       installId={install?.id}
       gcpProjectId={install?.gcp_account?.project_id}
       spaceliftEnabled={spaceliftEnabled}
+      tfProvider={tfProvider}
     />
   )
 }

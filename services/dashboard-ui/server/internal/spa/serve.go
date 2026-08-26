@@ -36,7 +36,6 @@ var localFaviconRewrites = map[string]string{
 
 type clientConfig struct {
 	APIUrl                string `json:"apiUrl"`
-	RunnerAPIUrl          string `json:"runnerApiUrl,omitempty"`
 	TemporalUIUrl         string `json:"temporalUiUrl,omitempty"`
 	AuthServiceUrl        string `json:"authServiceUrl,omitempty"`
 	AppUrl                string `json:"appUrl"`
@@ -62,7 +61,6 @@ type clientConfig struct {
 func buildClientConfig(cfg *internal.Config) clientConfig {
 	cc := clientConfig{
 		APIUrl:                cfg.APIUrl,
-		RunnerAPIUrl:          cfg.RunnerAPIUrl,
 		TemporalUIUrl:         cfg.TemporalUIUrl,
 		AuthServiceUrl:        cfg.AuthServiceUrl,
 		AppUrl:                cfg.AppUrl,

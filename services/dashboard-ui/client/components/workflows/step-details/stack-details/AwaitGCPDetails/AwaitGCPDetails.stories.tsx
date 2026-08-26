@@ -152,6 +152,17 @@ export const SpaceliftDisabled = () => (
   </div>
 )
 
+export const TerraformProvider = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitGCPDetails
+      stack={mockStack}
+      step={mockStep}
+      installId="install-1"
+      tfProvider
+    />
+  </div>
+)
+
 export const LegacyContents = () => (
   <div className="max-w-2xl p-4">
     <AwaitGCPDetails

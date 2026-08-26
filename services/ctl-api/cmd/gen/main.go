@@ -44,11 +44,6 @@ func generateRunnerSchema(ctx context.Context) error {
 		"--parseDependency",
 		"--parseInternal", "-g", "runner.go",
 		"--markdownFiles", "docs/runner/descriptions",
-		// stacks/runner is deliberately absent. Those routes are served on the runner
-		// surface because that is what stack tokens authenticate against, but their
-		// only client is sdks/stack, which is hand-written and depends on no generated
-		// client. Whitelisting the tag here would generate operations and models into
-		// nuon-runner-go that nothing calls.
 		"-t", "orgs/runner,apps/runner,general/runner,sandboxes/runner,installs/runner,installers/runner,components/runner,runners/runner,runners/auth,actions/runner",
 	}
 
@@ -110,7 +105,7 @@ func generatePublicSchema(ctx context.Context) error {
 		"--parseInternal",
 		"-g", "public.go",
 		"--markdownFiles", "docs/public/descriptions",
-		"-t", "auth,accounts,apps,actions,components,installs,installers,general,notebooks,oidc_federation,onboarding,orgs,policy-reports,releases,runbooks,sandboxes,slack,stacks,vcs,runners,queues",
+		"-t", "auth,accounts,apps,actions,components,installs,installers,general,notebooks,oidc_federation,onboarding,orgs,policy-reports,releases,runbooks,sandboxes,slack,vcs,runners,queues",
 	}
 
 	cmd, err := command.New(v,

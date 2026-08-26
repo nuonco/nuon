@@ -22,10 +22,6 @@ type ServiceCreateServiceAccountTokenRequest struct {
 
 	// invalidate
 	Invalidate bool `json:"invalidate,omitempty"`
-
-	// Name labels the token wherever it is listed. Defaults to the service account's
-	// identity, the only thing distinguishing several of these.
-	Name string `json:"name,omitempty"`
 }
 
 // Validate validates this service create service account token request
