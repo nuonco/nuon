@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"go.temporal.io/sdk/temporal"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"golang.org/x/oauth2"
 )
 
@@ -30,6 +32,13 @@ func (H *Helpers) GetVCSConnectionClient(ctx context.Context, vcsConn *app.VCSCo
 
 	resp, _, err := H.ghClient.Apps.CreateInstallationToken(ctx, installID, &github.InstallationTokenOptions{})
 	if err != nil {
+		var ghErr *github.ErrorResponse
+		if errors.As(err, &ghErr) && ghErr.Response.StatusCode == http.StatusNotFound {
+			return nil, stderr.ErrNotFound{
+				Err:         fmt.Errorf("github installation not found: %w", err),
+				Description: "This GitHub installation is no longer available. Reconnect GitHub to restore repository access.",
+			}
+		}
 		return nil, fmt.Errorf("unable to get installation token: %w", err)
 	}
 
